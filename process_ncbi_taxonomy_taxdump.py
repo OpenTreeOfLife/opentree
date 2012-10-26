@@ -48,11 +48,14 @@ if __name__ == "__main__":
     count = 0
     pid = {} #key is the child id and the value is the parent
     cid = {} #key is the parent and value is the list of children
+    nrank = {} #key is the node id and the value is the rank
     for i in nodesf:
-        spls = i.strip().split("\t|\t")
+        spls = i.split("\t|\t")
         tid = spls[0].strip()
         parentid = spls[1].strip()
+        rank = spls[2].strip()
         pid[tid] = parentid
+        nrank[tid] = rank
         if parentid not in cid: 
             cid[parentid] = []
         cid[parentid].append(tid)
@@ -60,11 +63,12 @@ if __name__ == "__main__":
         if count % 100000 == 0:
             print count
     nodesf.close()
-    
+
     skip = ["x","environmental","unknown","unidentified","endophyte","uncultured","scgc","libraries","virus"]
     count = 0
     classes = []
     idstoexclude = []
+    nm_storage = {}
     lines = {}
     synonyms = {}
     for i in namesf:
@@ -89,13 +93,17 @@ if __name__ == "__main__":
             synonyms[gid].append(i.strip())
         else:
             lines[gid] = i.strip()
+            nm_storage[gid] = nm
         count += 1
     print "number of lines: ",count
     namesf.close()
 
     #now making sure that the taxonomy is functional before printing to the file
+
     skipids = []
     stack = idstoexclude
+
+    
     while len(stack) != 0:
         curid = stack.pop()
         if curid in skipids:
@@ -111,19 +119,49 @@ if __name__ == "__main__":
             del lines[i]
         if i in synonyms:
             del synonyms[i]
-
+        if i in nm_storage:
+            del nm_storage[i]
+    
     print "number of scientific names: ",len(lines)
     print "number of synonyms: ",len(synonyms)
 
-    #need to print id, parent id, and name
-    
-    
+    """
+    in this section we change the names of the parent child identical names for
+    1) if parent and child have the same name higher than genus, they are sunk
+    2) if the parent and child have the same name at genus and subspecies (etc), the subname
+    is called genusname rank subgenus name
+    """
+
+    for i in nm_storage:
+        if nm_storage[i] != "root":
+            if i in pid:
+                if nm_storage[i] == nm_storage[pid[i]]:
+                #do something for the genus 
+                    if nrank[pid[i]] == "genus":
+                        nm_storage[i] = nm_storage[pid[i]]+" "+nrank[i]+" "+nm_storage[i]
+                    else:
+                        idstoch = cid[i]
+                        for j in idstoch:
+                            pid[j] = pid[i]
+                        if i in synonyms:
+                            for j in synonyms[i]:
+                                if pid[i] in synonyms:
+                                    synonyms[pid[i]].append(j)
+                                else:
+                                    synonyms[pid[i]] = [j]
+                            del synonyms[i]
+                        del lines[i]
+                #do something for everything else
+                
+
+    #need to print id, parent id, and name   
     for i in lines:
         spls = lines[i].split("\t|\t")
         id = spls[0].strip()
         prid = pid[spls[0]].strip()
         sname = spls[1].strip()
-        outfile.write(id+"\t|\t"+prid+"\t|\t"+sname+"\t|\t\n")
+        #changed from sname to nm_storage to fix the dup name issue
+        outfile.write(id+"\t|\t"+prid+"\t|\t"+nm_storage[i]+"\t|\t\n")
     outfile.close()
 
     for i in synonyms:
