@@ -1,5 +1,6 @@
 import sys,os,sqlite3
 import os.path
+from collections import Counter
 
 """
 this processes the ncbi taxonomy tables for the synonyms and the 
@@ -71,6 +72,8 @@ if __name__ == "__main__":
     nm_storage = {}
     lines = {}
     synonyms = {}
+    namesd = []
+    allnames = []
     for i in namesf:
         spls = i.strip().split("\t|") #if you do \t|\t then you don't get the name class right because it is "\t|"
         gid = spls[0].strip()
@@ -94,8 +97,27 @@ if __name__ == "__main__":
         else:
             lines[gid] = i.strip()
             nm_storage[gid] = nm
+            allnames.append(nm)
         count += 1
+        if count % 10000 == 0:
+            print count
     print "number of lines: ",count
+    namesf.close()
+
+    #get the nameids that are double
+    c = Counter(allnames)
+    namesd = []
+    for i in c:
+        if c[i] > 1:
+            namesd.append(i)
+    ndoubles = []
+    namesf = open("names.dmp","r")
+    for i in namesf:
+        spls = i.strip().split("\t|") #IF YOU DO \T|\T THEN YOU DON'T GET THE NAME CLASS RIGHT BECAUSE IT IS "\T|"
+        gid = spls[0].strip()
+        nm = spls[1].strip()
+        if nm in namesd:
+            ndoubles.append(gid)
     namesf.close()
 
     #now making sure that the taxonomy is functional before printing to the file
@@ -132,13 +154,15 @@ if __name__ == "__main__":
     is called genusname rank subgenus name
     """
 
+    final_nm_storage = {}
+
     for i in nm_storage:
         if nm_storage[i] != "root":
             if i in pid:
                 if nm_storage[i] == nm_storage[pid[i]]:
                 #do something for the genus 
                     if nrank[pid[i]] == "genus":
-                        nm_storage[i] = nm_storage[pid[i]]+" "+nrank[i]+" "+nm_storage[i]
+                        final_nm_storage[i] = nm_storage[pid[i]]+" "+nrank[i]+" "+nm_storage[i]
                     else:
                         idstoch = cid[i]
                         for j in idstoch:
@@ -152,7 +176,30 @@ if __name__ == "__main__":
                             del synonyms[i]
                         del lines[i]
                 #do something for everything else
-                
+    
+    #checking for names that are the same in lineage but not parent child
+    for i in ndoubles:
+        if i not in nm_storage:
+            continue
+        stack = []
+        stack.append(i)
+        while len(stack) > 0:
+            cur = stack.pop()
+            if cur in nm_storage and i in nm_storage:
+                if nm_storage[cur] == nm_storage[i]:
+                    if cur not in final_nm_storage:
+                        tname = ""
+                        tcur = cur
+                        while tcur != i:
+                            tname += nm_storage[tcur] +" "+nrank[tcur]+" "
+                            if tcur in pid:
+                                tcur = pid[tcur]
+                            else:
+                                break
+                        final_nm_storage[cur] = nm_storage[i]+" "+nrank[i]+" "+tname
+            if cur in cid:
+                for j in cid[cur]:
+                    stack.append(j)
 
     #need to print id, parent id, and name   
     for i in lines:
@@ -161,7 +208,10 @@ if __name__ == "__main__":
         prid = pid[spls[0]].strip()
         sname = spls[1].strip()
         #changed from sname to nm_storage to fix the dup name issue
-        outfile.write(id+"\t|\t"+prid+"\t|\t"+nm_storage[i]+"\t|\t\n")
+        if i in final_nm_storage:
+            outfile.write(id+"\t|\t"+prid+"\t|\t"+final_nm_storage[i]+"\t|\t\n")
+        else:
+            outfile.write(id+"\t|\t"+prid+"\t|\t"+nm_storage[i]+"\t|\t\n")
     outfile.close()
 
     for i in synonyms:
