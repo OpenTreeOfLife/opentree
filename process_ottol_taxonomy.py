@@ -27,9 +27,6 @@ if __name__ == "__main__":
     for i in infile:
         spls = i.strip().split("\t")
         num = spls[0].strip()
-        if num in ignore:
-            print "ignoring: "+num
-            continue
         pnum = spls[1].strip()
         name = spls[3].strip()
         rank = spls[5].strip()
@@ -62,7 +59,7 @@ if __name__ == "__main__":
     print "getting the parent child duplicates fixed"
     ignoreid = []
     for i in nm_storage:
-        if i in pid:
+        if i in pid and pid[i] in nm_storage:
             if nm_storage[i] == nm_storage[pid[i]]:
                 print i,nm_storage[i],nrank[i],pid[i],nm_storage[pid[i]],nrank[pid[i]]
                 if nrank[i] == nrank[pid[i]]:
@@ -73,6 +70,24 @@ if __name__ == "__main__":
                     ignoreid.append(i)
     for i in ignoreid:
         del nm_storage[i]
+
+    #now making sure that the taxonomy is functional before printing to the file
+    print "checking the tree structure"
+    skipids = []
+    stack = ignore
+    while len(stack) != 0:
+        curid = stack.pop()
+        if curid in skipids:
+            continue
+        skipids.append(curid)
+        if curid in cid:
+            ids = cid[curid]
+            for i in ids:
+                stack.append(i)
+
+    for i in skipids:
+        if i in nm_storage:
+            del nm_storage[i]
 
     print "done counting"
     count = 0

@@ -44,7 +44,6 @@ if __name__ == "__main__":
     #check for homonyms
     outfile.write("==homonyms\n")
     for i in namesdup:
-        print "------"
         for j in namesall[i]:
             curid = j
             while curid in parents:

@@ -41,8 +41,9 @@ if __name__ == "__main__":
                 if spls[3] not in irmng:
                     irmng[spls[3]] = []
                 irmng[spls[3]].append(i)
-                if "invalid" in i or "awaiting" in i:
-                    print spls[3],i.strip()
+                #if "invalid" in i or "awaiting" in i:
+                    #print spls[3],i.strip()
+                    #break
     print len(irmng)
     infile2.close()
     verbose = False
@@ -51,7 +52,7 @@ if __name__ == "__main__":
         if len(nameslong[i]) < 2:
             continue
         if i == "Lemur":
-            verbose = True
+            verbose = False
         lists = nameslong[i]
         if verbose:
             print lists
@@ -75,7 +76,11 @@ if __name__ == "__main__":
                 indindices[j] = -(k+1)
         verbose = False
         #print min(indices)
-        
+        if lists[0][min(indices)+1] == "Eukaryota":
+            continue
+        if lists[0][min(indices)+1] == "Opisthokonta":
+            if len(lists) == 2:
+                continue
         outfile.write(i+"\t"+lists[0][min(indices)+1]+"\t(")
         for j in range(len(lists)):
             if j != 0:
@@ -92,4 +97,7 @@ if __name__ == "__main__":
                     outfile.write("NESTED")
                     outfile.write("\t")
         outfile.write("\n")
+        for j in range(len(lists)):
+            outfile.write( "\t"+ids[i][j]+" "+(", ".join(lists[j]))+"\n")
+            
     outfile.close()
