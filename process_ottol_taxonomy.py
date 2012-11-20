@@ -1,13 +1,22 @@
 import sys,os
 from collections import Counter
 
+"""
+ignore.txt should include a list of ids to ignore, all of their children
+should also be ignored but do not need to be listed
+"""
+
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print "python process_ottol_taxonomy.py taxa.txt outfile"
+    if len(sys.argv) != 4:
+        print "python process_ottol_taxonomy.py taxa.txt ignore.txt outfile"
         sys.exit(0)
     
     infile = open(sys.argv[1],"r")
-    outfile = open(sys.argv[2],"w")
+    infile2 = open(sys.argv[2],"r")
+    ignore = []
+    for i in infile2:
+        ignore.append(i.strip())
+    outfile = open(sys.argv[3],"w")
     names = [] 
     parents = []
     count = 0
@@ -18,6 +27,9 @@ if __name__ == "__main__":
     for i in infile:
         spls = i.strip().split("\t")
         num = spls[0].strip()
+        if num in ignore:
+            print "ignoring: "+num
+            continue
         pnum = spls[1].strip()
         name = spls[3].strip()
         rank = spls[5].strip()
