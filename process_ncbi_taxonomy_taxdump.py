@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 import sys,os,sqlite3
 import os.path
 from collections import Counter
@@ -207,11 +209,20 @@ if __name__ == "__main__":
         id = spls[0].strip()
         prid = pid[spls[0]].strip()
         sname = spls[1].strip()
+
         #changed from sname to nm_storage to fix the dup name issue
         if i in final_nm_storage:
-            outfile.write(id+"\t|\t"+prid+"\t|\t"+final_nm_storage[i]+"\t|\t\n")
+            nametowrite = final_nm_storage[i]
         else:
-            outfile.write(id+"\t|\t"+prid+"\t|\t"+nm_storage[i]+"\t|\t\n")
+            nametowrite = nm_storage[i]
+
+        # if it is the root node then we need to make its parent id blank and rename it "life"
+        if nametowrite.strip() == "root":
+            nametowrite = "life"
+            prid = ""
+
+        outfile.write(id+"\t|\t"+prid+"\t|\t"+nametowrite+"\t|\t\n")
+
     outfile.close()
 
     for i in synonyms:
