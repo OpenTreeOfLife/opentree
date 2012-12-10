@@ -26,13 +26,12 @@ connecting these to there parents
 """
 
 if __name__ == "__main__":
-    if len(sys.argv) != 3:
-        print "python process_ncbi_taxonomy_taxdump.py download[T|F] outfile"
+    if len(sys.argv) != 4:
+        print "python process_ncbi_taxonomy_taxdump.py download[T|F] skipids.file outfile"
         sys.exit(0)
-    
     download = sys.argv[1]
-    outfile = open(sys.argv[2],"w")
-    outfilesy = open(sys.argv[2]+".synonyms","w")
+    outfile = open(sys.argv[3],"w")
+    outfilesy = open(sys.argv[3]+".synonyms","w")
     if download.upper() == "T":
         print("downloading taxonomy")
         os.system("wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz")
@@ -40,10 +39,10 @@ if __name__ == "__main__":
 
     if os.path.isfile("nodes.dmp") == False:
         print "nodes.dmp is not present"
-        os.exit(0)
+        sys.exit(0)
     if os.path.isfile("names.dmp") == False:
         print "names.dmp is not present"
-        os.exit(0)
+        sys.exit(0)
 
     nodesf = open("nodes.dmp","r")
     namesf = open("names.dmp","r")
@@ -67,7 +66,14 @@ if __name__ == "__main__":
             print count
     nodesf.close()
 
-    skip = ["x","environmental","unknown","unidentified","endophyte","uncultured","scgc","libraries","virus"]
+    skip = ["x","environmental","unknown","unidentified","endophyte","endophytic","uncultured","scgc","libraries","virus"]
+    skipids = []
+    #run through the skip ids file
+    skipidf = open(sys.argv[2],"r")
+    for i in skipidf:
+    	skipids.append(i.strip())
+    skipidf.close()
+    
     count = 0
     classes = []
     idstoexclude = []
@@ -89,6 +95,8 @@ if __name__ == "__main__":
         for j in nms:
             if j in skip:
                 nm_keep = False
+        if gid in skipids:
+        	nm_keep = False
         if nm_keep == False:
             idstoexclude.append(gid)
             continue
