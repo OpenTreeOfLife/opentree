@@ -42,12 +42,39 @@ if __name__ == "__main__":
             outfile.write("\n")
     
     #check for homonyms
+    #only print out those that are in the same higher taxonomy
+    onlyinvalid = True
+    lastcuridlistnum = -3 #for ncbi this needs to be -3, for others it is -1
     outfile.write("==homonyms\n")
-    for i in namesdup:
-        for j in namesall[i]:
-            curid = j
-            while curid in parents:
-                outfile.write("("+curid+")"+names[curid]+" ")
-                curid = parents[curid]
-            outfile.write("\n")
-    outfile.close()
+    if onlyinvalid == False:
+        for i in namesdup:
+            for j in namesall[i]:
+                curid = j
+                while curid in parents:
+                    outfile.write("("+curid+")"+names[curid]+" ")
+                    curid = parents[curid]
+                outfile.write("\n")
+        outfile.close()
+    else:
+        for i in namesdup:
+            higher = None
+            printout = False
+            stri = ""
+            for j in namesall[i]:
+                curid = j
+                lastcurid = j
+                lastcuridlist = []
+                while curid in parents:
+                    stri += "("+curid+")"+names[curid]+"\t"
+                    lastcurid = curid
+                    lastcuridlist.append(curid)
+                    curid = parents[curid]
+                stri += "\n"
+                if higher == None:
+                    higher = lastcuridlist[lastcuridlistnum]
+                else:
+                    if higher == lastcuridlist[lastcuridlistnum]:
+                        printout = True
+            if printout:
+                outfile.write(stri)
+        outfile.close()

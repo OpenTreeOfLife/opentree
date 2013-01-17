@@ -20,6 +20,9 @@ skipping
 -scgc
 -libraries
 
+if it is a series based on names 3rd column
+adding series to the name
+
 connecting these to there parents
 -unclassified
 -incertae sedis
@@ -87,6 +90,7 @@ if __name__ == "__main__":
         gid = spls[0].strip()
         par = pid[gid]
         nm = spls[1].strip()
+        homonc = spls[2].strip() #can get if it is a series here
         nm_c = spls[3].strip()
         if nm_c not in classes:
             classes.append(nm_c)
@@ -100,6 +104,10 @@ if __name__ == "__main__":
         if nm_keep == False:
             idstoexclude.append(gid)
             continue
+        if "<series>" in homonc:
+            nm = nm + " series"
+        if "subgroup <" in homonc: #corrects some nested homonyms
+            nm = homonc.replace("<","").replace(">","")
         if nm_c != "scientific name":
             if gid not in synonyms:
                 synonyms[gid] = []
@@ -109,7 +117,7 @@ if __name__ == "__main__":
             nm_storage[gid] = nm
             allnames.append(nm)
         count += 1
-        if count % 10000 == 0:
+        if count % 100000 == 0:
             print count
     print "number of lines: ",count
     namesf.close()
@@ -135,7 +143,11 @@ if __name__ == "__main__":
     skipids = []
     stack = idstoexclude
 
-    
+
+    print "checking functionality of taxonomy"
+    print "count lefttocompare"
+
+    count = 0
     while len(stack) != 0:
         curid = stack.pop()
         if curid in skipids:
@@ -145,6 +157,9 @@ if __name__ == "__main__":
             ids = cid[curid]
             for i in ids:
                 stack.append(i)
+        count += 1
+        if count % 10000 == 0:
+            print count,len(stack)
 
     for i in skipids:
         if i in lines:
@@ -186,31 +201,43 @@ if __name__ == "__main__":
                             del synonyms[i]
                         del lines[i]
                 #do something for everything else
-    
+
+    print nm_storage["7164"]
+    print "7164" in final_nm_storage
+    print nm_storage["44484"]
+    print "44484" in final_nm_storage    
     #checking for names that are the same in lineage but not parent child
     for i in ndoubles:
         if i not in nm_storage:
             continue
         stack = []
+        if i in final_nm_storage:
+            continue
         stack.append(i)
         while len(stack) > 0:
             cur = stack.pop()
-            if cur in nm_storage and i in nm_storage:
+            if cur in nm_storage:
+                if cur in final_nm_storage:
+                    continue
                 if nm_storage[cur] == nm_storage[i]:
-                    if cur not in final_nm_storage:
-                        tname = ""
-                        tcur = cur
-                        while tcur != i:
-                            tname += nm_storage[tcur] +" "+nrank[tcur]+" "
-                            if tcur in pid:
-                                tcur = pid[tcur]
-                            else:
-                                break
-                        final_nm_storage[cur] = nm_storage[i]+" "+nrank[i]+" "+tname
+                    tname = ""
+                    tcur = cur
+                    if tcur == i:
+                        continue
+                    while tcur != i:
+                        tname += nm_storage[tcur] +" "+nrank[tcur]+" "
+                        if tcur in pid:
+                            tcur = pid[tcur]
+                        else:
+                            break
+                    final_nm_storage[cur] = nm_storage[i]+" "+nrank[i]+" "+tname
             if cur in cid:
                 for j in cid[cur]:
                     stack.append(j)
-
+    print nm_storage["7164"]
+    print "7164" in final_nm_storage 
+    print nm_storage["44484"]
+    print "44484" in final_nm_storage
     #need to print id, parent id, and name   
     for i in lines:
         spls = lines[i].split("\t|\t")
