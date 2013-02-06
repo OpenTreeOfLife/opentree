@@ -19,6 +19,7 @@ skipping
 -uncultured
 -scgc
 -libraries
+-unclassifed
 
 if it is a series based on names 3rd column
 adding series to the name
@@ -69,7 +70,7 @@ if __name__ == "__main__":
             print count
     nodesf.close()
 
-    skip = ["x","environmental","unknown","unidentified","endophyte","endophytic","uncultured","scgc","libraries","virus"]
+    skip = ["viral","unclassified","other","viroids","viruses","artificial","x","environmental","unknown","unidentified","endophyte","endophytic","uncultured","scgc","libraries","virus"]
     skipids = []
     #run through the skip ids file
     skipidf = open(sys.argv[2],"r")
@@ -97,7 +98,7 @@ if __name__ == "__main__":
         nm_keep = True
         nms = nm.split(" ")
         for j in nms:
-            if j in skip:
+            if j.lower() in skip:
                 nm_keep = False
         if gid in skipids:
         	nm_keep = False
