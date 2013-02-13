@@ -202,10 +202,6 @@ if __name__ == "__main__":
                         del lines[i]
                 #do something for everything else
 
-    print nm_storage["7164"]
-    print "7164" in final_nm_storage
-    print nm_storage["44484"]
-    print "44484" in final_nm_storage    
     #checking for names that are the same in lineage but not parent child
     for i in ndoubles:
         if i not in nm_storage:
@@ -234,10 +230,6 @@ if __name__ == "__main__":
             if cur in cid:
                 for j in cid[cur]:
                     stack.append(j)
-    print nm_storage["7164"]
-    print "7164" in final_nm_storage 
-    print nm_storage["44484"]
-    print "44484" in final_nm_storage
     #need to print id, parent id, and name   
     for i in lines:
         spls = lines[i].split("\t|\t")
