@@ -127,13 +127,15 @@ if __name__ == "__main__":
         if i in nm_storage:
             del nm_storage[i]
 
-        
+    """
+    output the id parentid name rank
+    """
     print "done counting"
     count = 0
     for i in nm_storage:
         #spls = i.strip().split("\t")
         #num = spls[0]
-        num = i
+        #num = i
 #        if num in ignoreid:
 #            print "ignoring ",num
 #            continue
@@ -149,11 +151,11 @@ if __name__ == "__main__":
         if name in dnames:
             #if num in dparents:
 	    #may need to add this back for null parents
-            outfile.write(num+"\t|\t"+pnum+"\t|\t"+name+"\t|\t\n")
+            outfile.write(num+"\t|\t"+pnum+"\t|\t"+name+"\t|\t"+nrank[i]+"\t|\t\n")
         else:
-            outfile.write(num+"\t|\t"+pnum+"\t|\t"+name+"\t|\t\n")
+            outfile.write(num+"\t|\t"+pnum+"\t|\t"+name+"\t|\t"+nrank[i]+"\t|\t\n")
         count += 1
         if count % 10000 == 0:
             print count
-    outfile.write("0\t|\t\t|\tlife\t|\t\n")
+    outfile.write("0\t|\t\t|\tlife\t|\t\t|\t\n")
     outfile.close()
