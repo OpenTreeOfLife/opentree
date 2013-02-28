@@ -135,7 +135,7 @@ if __name__ == "__main__":
     for i in nm_storage:
         #spls = i.strip().split("\t")
         #num = spls[0]
-        #num = i
+        num = i
 #        if num in ignoreid:
 #            print "ignoring ",num
 #            continue

@@ -70,7 +70,7 @@ if __name__ == "__main__":
             print count
     nodesf.close()
 
-    skip = ["viral","unclassified","other","viroids","viruses","artificial","x","environmental","unknown","unidentified","endophyte","endophytic","uncultured","scgc","libraries","virus"]
+    skip = ["viral","unclassified","other","viroids","viruses","artificial","x","environmental","unknown","unidentified","endophyte","endophytic","uncultured","scgc","libraries","virus","mycorrhizal samples"]
     skipids = []
     #run through the skip ids file
     skipidf = open(sys.argv[2],"r")
@@ -248,8 +248,8 @@ if __name__ == "__main__":
         if nametowrite.strip() == "root":
             nametowrite = "life"
             prid = ""
-
-        outfile.write(id+"\t|\t"+prid+"\t|\t"+nametowrite+"\t|\t\n")
+        rankwrite = nrank[id]
+        outfile.write(id+"\t|\t"+prid+"\t|\t"+nametowrite+"\t|\t"+rankwrite+"\t|\t\n")
 
     outfile.close()
 
