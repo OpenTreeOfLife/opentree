@@ -20,12 +20,15 @@ if __name__ == "__main__":
     pid = {} #key is the child id and the value is the parent
     cid = {} #key is the parent and value is the list of children
     nid = {}
+    nrank = {}
     targetid = ""
     for i in infile:
         spls = i.strip().split("\t|")
         tid = spls[0].strip()
         parentid = spls[1].strip()
         name = spls[2].strip()
+        rank = spls[3].strip()
+        nrank[tid] = rank
         nid[tid] = name
         if name == target:
             print "name set ",tid
@@ -42,7 +45,7 @@ if __name__ == "__main__":
     stack = [targetid]
     while len(stack) > 0:
         tempid = stack.pop()
-        outfile.write(tempid+"\t|\t"+pid[tempid]+"\t|\t"+nid[tempid]+"\t|\t\n")
+        outfile.write(tempid+"\t|\t"+pid[tempid]+"\t|\t"+nid[tempid]+"\t|\t"+nrank[tempid]+"\t|\t\n")
         if tempid in cid:
             for i in cid[tempid]:
                 stack.append(i)
