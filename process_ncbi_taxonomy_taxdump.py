@@ -90,7 +90,7 @@ if __name__ == "__main__":
         spls = i.strip().split("\t|") #if you do \t|\t then you don't get the name class right because it is "\t|"
         gid = spls[0].strip()
         par = pid[gid]
-        nm = spls[1].strip()
+        nm = spls[1].strip().replace("[").replace("]")
         homonc = spls[2].strip() #can get if it is a series here
         nm_c = spls[3].strip()
         if nm_c not in classes:
