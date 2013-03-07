@@ -1,0 +1,26 @@
+body {
+	background-color: white;
+}
+
+/* hard-coding of sizes based on the logo size, and
+   the desire to have a nice, big, fat search box.
+*/
+.header {
+	margin: 2px; 
+	width: 775px;
+	height: 75;
+}
+.headerlogo {
+	float: left;
+}
+.headersearch {	
+	float: right;
+	margin: 5px;
+	width: 600px;
+	margin-top: 25px;
+}
+.headerinputtext {
+	margin-left: 2px; 
+	width: 480px; 
+	border: 1px solid black;
+}

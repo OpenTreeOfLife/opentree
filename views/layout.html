@@ -1,23 +1,30 @@
 <html>
   <head>
-    <title>Open Tree of Life</title>
-    <link type="text/css" rel="stylesheet" href="../style.css">
+    <title>{{=response.title or request.application}}</title>
+    {{response.files.append(URL('static','plugin_layouts/opentree/default.css'))}}
+    {{response.files.append(URL('static','plugin_layouts/superfish.js'))}}
+    {{include 'web2py_ajax.html'}}
   </head>
-  <body bgcolor=#FFFFFF>
+  <body>
 
-<div>
-  <form>
-    <a href="http://opentreeoflife.org/"
-       ><img src="logo.png" width="144" height="74" valign="middle"
-       /></a>
-    &nbsp;&nbsp;&nbsp;
-    Search
-    <input type="text" size="100em"/>
-    <input type="submit" value="go" />
-  </form>
+<div class="header">
+  <div class="headerlogo">
+    {{=A(IMG(_src=URL('static','images/logo.png'), 
+            _alt="Open Tree of Life logo",
+            _width="144", 
+            _height="74",
+            _valign="middle"),
+        _href="http://opentreeoflife.org/")}}
+  </div>
+  <div class="headersearch">
+    <form>Search
+      <input type="text" class="headerinputtext"/>
+      <input type="submit" value="go" />
+    </form>
+  </div>
 </div>
 
-<table width="100%">
+<!--table width="100%">
   <tr>
     <td width="200em" valign="top">
 
@@ -79,7 +86,7 @@
       </iframe>
     </td>
   </tr>
-<table>
+<table!-->
 
 </body>
 </html>
