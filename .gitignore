@@ -1,4 +1,5 @@
 *~
+*.pyc
 databases
 cache
 sessions
