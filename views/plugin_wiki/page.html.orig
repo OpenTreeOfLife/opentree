@@ -1,0 +1,8 @@
+{{
+try:
+    from gluon.contrib import markmin2latex
+    response.headers['Content-Type']='text'
+    response.write(markmin2latex.markmin2latex(page.body),escape=False)
+else:
+    raise HTTP(405,'no latex')
+}}
