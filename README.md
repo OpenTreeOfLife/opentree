@@ -3,6 +3,12 @@ opentree
 
 Umbrella repo for opentree web site and services
 
+Installation
+============
+Instructions coming soon. This is a webl2py application, so if you make
+a link in a web2py/applications directory to this directory you should
+see this app (see the phylografter instructions in the meantime for
+more details about using web2py).
 
 Subdirectories
 --------------
