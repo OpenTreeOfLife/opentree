@@ -1,8 +1,2 @@
 *~
 *.pyc
-databases
-cache
-sessions
-errors
-sessions
-uploads
