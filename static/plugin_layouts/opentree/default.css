@@ -24,3 +24,20 @@ body {
 	width: 480px; 
 	border: 1px solid black;
 }
+
+.container {
+	width:100%;
+}
+
+/* the two-column layout for the main content area */
+.navbar {
+	width: 200px;
+	max-width: 200px;
+	float: left;
+}
+.vizcontent {
+	padding-left: 200px;
+}
+.vizcontent div {
+	padding: 0px;
+}
