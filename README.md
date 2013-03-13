@@ -5,10 +5,45 @@ Umbrella repo for opentree web site and services
 
 Installation
 ============
-Instructions coming soon. The contents of webapp are a web2py application,
-so if you make a link in a web2py/applications directory to the webapp directory,
-you should see this app (see the phylografter instructions in the meantime for
-more details about using web2py).
+Instructions coming soon. In the meantime, see the phylografter instructions for
+more details about using web2py.
+
+The contents of the webapp subdirectory  are a web2py application.  Make a symbolic 
+link called "opentree" in a web2py/applications directory to the webapp directory.
+You should be able to launch web2py and see the app running at http://127.0.0.1:8000/opentree/
+
+Briefly:
+
+1. Download and unpack the source code version of web2py from 
+http://www.web2py.com/examples/default/download MTH used version 2.4.2 of web2py
+
+2. Create the sym link
+
+<pre>
+cd web2py/applications
+ln -s /full/path/to/opentree/webapp opentree
+</pre>
+
+3. Install the argus repo in the javascript subdirectory (this will change if we
+migrate the argus code to inside the opentree repo).
+
+<pre>
+cd /full/path/to/opentree/webapp/static/js
+git clone git@github.com:OpenTreeOfLife/argus.git
+</pre>
+
+Note that if you do not have write-privileges to the argus repo, then you'll need to 
+use git://github.com/OpenTreeOfLife/argus.git as the URL.
+
+4. Launch web2py
+
+<pre>
+cd /full/path/to/web2py
+python web2py.py --nogui -a '&lt;recycle&gt;'
+</pre>
+
+Where the -a flag is allowing you to reuse the previous admin password that you used
+with this instance of web2py.
 
 Subdirectories
 --------------

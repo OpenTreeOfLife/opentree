@@ -3,6 +3,11 @@
     <title>{{=response.title or request.application}}</title>
     {{response.files.append(URL('static','plugin_layouts/opentree/default.css'))}}
     {{response.files.append(URL('static','plugin_layouts/superfish.js'))}}
+    
+    <!-- js dependencies for argus -->
+    {{response.files.append(URL('static','js/argus/raphael-min.js'))}}
+    {{response.files.append(URL('static','js/argus/jquery-1.7.2.min.js'))}}
+    
     {{include 'web2py_ajax.html'}}
   </head>
   <body>
@@ -76,14 +81,10 @@
     </div>
     <div class="vizcontent">
       <div>
-
-        <iframe src="http://opentreeoflife.github.com/argus/browser.html?domsource=ottol&nodeid=342890"
-        width="100%"
-        height="1000ex">
-          Iframes don't work, please visit
-  <a href="http://opentreeoflife.github.com/argus/browser.html?domsource=ottol&nodeid=342890"
-    >here</a>
-        </iframe>
+        {{=IFRAME('''Iframes don't work, please visit <a href="http://opentreeoflife.github.com/argus/browser.html?domsource=ottol&nodeid=342890">here</a>''',
+                  _src="http://opentreeoflife.github.com/argus/browser.html?domsource=ottol&nodeid=342890",
+                  _width="100%",
+                  _height="1000ex")}}
       </div>
     </div>
 </div>
