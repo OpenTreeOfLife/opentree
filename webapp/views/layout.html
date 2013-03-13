@@ -6,7 +6,7 @@
     
     <!-- js dependencies for argus -->
     {{response.files.append(URL('static','js/argus/raphael-min.js'))}}
-    {{response.files.append(URL('static','js/argus/jquery-1.7.2.min.js'))}}
+    {{response.files.append(URL('static','js/argus/drawtree.js'))}}
     
     {{include 'web2py_ajax.html'}}
   </head>
@@ -80,13 +80,17 @@
 
     </div>
     <div class="vizcontent">
-      <div>
-        {{=IFRAME('''Iframes don't work, please visit <a href="http://opentreeoflife.github.com/argus/browser.html?domsource=ottol&nodeid=342890">here</a>''',
-                  _src="http://opentreeoflife.github.com/argus/browser.html?domsource=ottol&nodeid=342890",
-                  _width="100%",
-                  _height="1000ex")}}
+      <div id="argusCanvasContainer">
+        
       </div>
     </div>
 </div>
+
+<script type="text/javascript">
+$(document).ready(function (){
+  var canvasParent = document.getElementById("argusCanvasContainer");
+  setupAtNode("342890", "ottol", canvasParent);
+});
+</script>
 </body>
 </html>
