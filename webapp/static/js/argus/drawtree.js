@@ -26,8 +26,7 @@ function isBlank(str) {
 }
 
 function buildUrl(focalclade) { 
-    //var address = "http://localhost:7474"
-    var address = "http://opentree-dev.bio.ku.edu:7474"
+    var address = "http://opentree-dev.bio.ku.edu:7476"
     var prefix = address+"/db/data/ext/GetJsons/node/";
     var suffix = "/getConflictTaxJsonAltRel";
     var url = prefix + focalclade + suffix; 
