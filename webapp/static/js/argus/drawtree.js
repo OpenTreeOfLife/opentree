@@ -210,7 +210,8 @@ function drawNode(node, domsource, isfirst) {
             var loadargs = {
                 "url": buildUrl(focalnodeid),
                 "method": "POST",
-                "jsonquerystring": buildJSONQuery(jsonargs)
+                "jsonquerystring": buildJSONQuery(jsonargs),
+                "container": paper.canvas.parentNode
             };
 
             /* This is weird... Despite the paper object being declared in the global scope,
@@ -220,7 +221,7 @@ function drawNode(node, domsource, isfirst) {
              * object. It is not clear why the first paper object is not overwritten by later
              * assignments to that variable name, but the code seems to work alright as is. */
             paper.remove();
-            loadData(loadargs, paper.canvas.parentNode);
+            loadData(loadargs);
         };
     }
 
@@ -388,10 +389,11 @@ function drawCycles(focalnode) {
                         var loadargs = {
                             "url": buildUrl(focalnodeid),
                             "method": "POST",
-                            "jsonquerystring": buildJSONQuery(jsonargs)
+                            "jsonquerystring": buildJSONQuery(jsonargs),
+                            "container": paper.canvas.parentNode
                         };
                         paper.remove();
-                        loadData(loadargs, paper.canvas.parentNode);
+                        loadData(loadargs);
                     };
                 }
 
@@ -482,11 +484,12 @@ function drawCycles(focalnode) {
                         var loadargs = {
                             "url": buildUrl(focalnodeid),
                             "method": "POST",
-                            "jsonquerystring": jsonquerystr
+                            "jsonquerystring": jsonquerystr,
+                            "container": paper.canvas.parentNode
                         };
                         //                        alert(jsonquerystr);
                         paper.remove();
-                        loadData(loadargs, paper.canvas.parentNode);
+                        loadData(loadargs);
                     };
                 }
 
@@ -605,9 +608,10 @@ function setupAtNode(nodeid, domsource, container) {
         var loadargs = {
             "url": url,
             "method": "POST",
-            "jsonquerystring": jsonquerystring
+            "jsonquerystring": jsonquerystring,
+            "container": container
         };
-        loadData(loadargs, container);
+        loadData(loadargs);
     }
 }
 
@@ -640,7 +644,7 @@ function setup(container) {
 // @param The `container` arg should be the DOM node that should serve as
 //      as the parent element for the canvas
 
-function loadData(argsobj, container) {
+function loadData(argsobj) {
 
     /* accepts three named arguments:
      *    url               the address to which the HTTP request is sent
@@ -650,6 +654,7 @@ function loadData(argsobj, container) {
     var url = argsobj.url;
     var jsonquerystr = argsobj.jsonquerystring;
     var method = argsobj.method;
+    var container = argsobj.container;
 
     var xobjPost = new XMLHttpRequest();
     xobjPost.open(method, url, false);
