@@ -1,5 +1,43 @@
 /*jslint indent: 4 */
 
+var paperContainer; // DOM element that is the parent of the paper element
+var paper; // raphael canvas object
+var curLeaf; // absolute leaf counter used in geometry
+var nodesHash;
+var nodesWithCycles;
+
+// ------------------ begin geometry --------------------
+
+// primary height scalar (also text size, node size, etc.)
+var r = 5; // the minimum radius of the node/tip circles
+// primary width scalar 
+var nodesWidth = 100; // the distance between parent/child nodes
+
+var nubDistScalar = 4; // the x/y distance of the nub from its child
+var fontScalar = 2.6; // multiplied by radius to set font size
+var nodeDiamScalar = 1.5; // how much nodes are scaled by logleafcount
+var tipOffset = 300; // distance from right margin at which leaf nodes are drawn
+var yNodeMargin = 4; // whitespace above/below nodes
+var yOffset = 10; // distance from top margin at which topmost nodes are drawn
+var xLabelMargin = 10; // the distance of the labels from the nodes
+var nodeHeight = 2 * r + yNodeMargin;
+
+/* coordinates determining where the first nodes (i.e. tips) are drawn.
+ * these are scaled to the size of the tree, and are set by the loadData()
+ * function below. We declare them here to give them global scope */
+var xOffset;
+
+// ------------------- end geometry ---------------------
+
+// colors
+var nodeColor = "#8af";
+var nodeHoverColor = "#bdf";
+var tipColor = "#14d";
+var tipHoverColor = "#b8f";
+var altRelColor = "#f00";
+var altPColor = "#c69";
+var altPLinkColor = "#900";
+
 function isNumeric(n) {
     return !isNaN(parseFloat(n)) && isFinite(n);
 }
@@ -17,6 +55,7 @@ function buildUrl(focalclade) {
     return url;
 }
 
+//@TEMP Shouldn't we just use some builtin for composing JSON?
 function buildJSONQuery(argsobj) {
 
     /* An example JSON query string:
@@ -28,58 +67,49 @@ function buildJSONQuery(argsobj) {
      * decide to make queries more complex
      * */
 
-    var empty = true;
     var previtem = false;
+    var json = '{';
+    var i;
 
-    if (typeof argsobj.domsource != "undefined") {
-        if (empty) {
-            var json = '{';
-            empty = false;
-        }
+    if (argsobj.domsource !== undefined) {
         json += '"domsource":"' + argsobj.domsource + '"';
         previtem = true;
     }
 
-    if (typeof argsobj.altrelids != "undefined") {
-
-        if (empty) {
-            var json = '{';
-            empty = false;
+    if (argsobj.altrelids !== undefined) {
+        if (previtem) {
+            json += ",";
         }
-        if (previtem) json += ",";
-
         json += '"altrels":[';
         for (i = 0; i < argsobj.altrelids.length; i++) {
             json += argsobj.altrelids[i];
-            if (i == argsobj.altrelids.length - 1) json += ']';
-            else json += ',';
+            if (i === argsobj.altrelids.length - 1) {
+                json += ']';
+            } else {
+                json += ',';
+            }
         }
         previtem = true;
     }
 
-    if (typeof argsobj.nubrelid != "undefined") {
-        if (empty) {
-            var json = '{';
-            empty = false;
+    if (argsobj.nubrelid !== undefined) {
+        if (previtem) {
+            json += ",";
         }
-        if (previtem) json += ",";
-
         json += '"nubrel":' + argsobj.nubrelid;
     }
-
-    if (!empty) json += '}';
-
+    json += '}';
     return json;
 }
 
 function drawNode(node, domsource, isfirst) {
     // if isfirst is undefined, then this is the root of a new tree; reset counters/containers
-    var isfirst = (typeof isfirst !== "undefined" ? isfirst : true);
-    if (isfirst == true) {
-        nodeshash = new Object();
-        nodeswithcycles = new Array();
+    isfirst = (isfirst !== undefined ? isfirst : true);
+    if (isfirst === true) {
+        nodesHash = {};
+        nodesWithCycles = new Array();
         isfirst = false;
-        curleaf = 0;
+        curLeaf = 0;
     }
 
     // if this node has no children then we have hit a leaf
@@ -87,17 +117,17 @@ function drawNode(node, domsource, isfirst) {
     if (nchildren == 0) {
 
         // leaves are drawn at the rightmost x-coord, incrementally from the topmost y-coord
-        node.x = xoffset;
-        node.y = curleaf * nodeheight + yoffset;
+        node.x = xOffset;
+        node.y = curLeaf * nodeHeight + yOffset;
 
         // draw the node
         var circle = paper.circle(node.x, node.y, r).attr({
-            "fill": tipcolor
+            "fill": tipColor
         }).toFront();
-        var label = paper.text(node.x + xlabelmargin, node.y, node.name).
+        var label = paper.text(node.x + xLabelMargin, node.y, node.name).
         attr({
             'text-anchor': 'start',
-            "font-size": r * fontscalar
+            "font-size": r * fontScalar
         });
 
         // create closure to access node attributes when hovering in/out
@@ -110,12 +140,12 @@ function drawNode(node, domsource, isfirst) {
         }
 
         circle.hover(getHoverHandlerNode({
-            "fill": tiphovercolor
+            "fill": tipHoverColor
         }), getHoverHandlerNode({
-            "fill": tipcolor
+            "fill": tipColor
         }));
 
-        curleaf++;
+        curLeaf++;
 
         // if the node has children then it is internal
     } else {
@@ -132,20 +162,20 @@ function drawNode(node, domsource, isfirst) {
         }
 
         // calculate this node's coordinates based on the positions of its children
-        node.x = Math.min.apply(null, childxs) - nodewidth; // use this line for square trees
+        node.x = Math.min.apply(null, childxs) - nodesWidth; // use this line for square trees
         node.y = childys.average();
 
         // scale size of node circle by number of contained leaves
-        node.r = r + nodediamscalar * Math.log(node.nleaves);
+        node.r = r + nodeDiamScalar * Math.log(node.nleaves);
 
         // draw node circle
         var label = paper.text(node.x - node.r, node.y + node.r, node.name).
         attr({
             'text-anchor': 'end',
-            "font-size": r * fontscalar
+            "font-size": r * fontScalar
         });
         var circle = paper.circle(node.x, node.y, node.r).attr({
-            "fill": nodecolor
+            "fill": nodeColor
         });
 
         // create closures to access node attributes when hovering in/out and clicking
@@ -159,9 +189,9 @@ function drawNode(node, domsource, isfirst) {
 
         // assign hover behaviors
         circle.hover(getHoverHandlerNode({
-            "fill": nodehovercolor
+            "fill": nodeHoverColor
         }), getHoverHandlerNode({
-            "fill": nodecolor
+            "fill": nodeColor
         }));
 
         // draw branches (square tree)
@@ -213,11 +243,11 @@ function drawNode(node, domsource, isfirst) {
     // if this node has cycles, record it; we will draw them once the tree is done
     var naltparents = (typeof node.altrels == "undefined" ? 0 : node.altrels.length);
     if (naltparents > 0) {
-        nodeswithcycles.push(node.nodeid);
+        nodesWithCycles.push(node.nodeid);
     }
 
     // store the node for fast access later
-    nodeshash[node.nodeid] = node;
+    nodesHash[node.nodeid] = node;
 }
 
 function drawCycles(focalnode) {
@@ -240,13 +270,13 @@ function drawCycles(focalnode) {
 
     tx = 10;
     ty = 30;
-    var togglelabel = paper.text(tx + r, ty + nodeheight * 0.95, "toggle alt rels")
+    var togglelabel = paper.text(tx + r, ty + nodeHeight * 0.95, "toggle alt rels")
         .attr({
         'text-anchor': 'start',
-        "font-size": r * fontscalar
+        "font-size": r * fontScalar
     });
 
-    var togglebox = paper.rect(tx, ty, nodewidth, nodeheight * 2)
+    var togglebox = paper.rect(tx, ty, nodesWidth, nodeHeight * 2)
         .attr({
         "stroke": "black",
         "stroke-width": "1px",
@@ -261,15 +291,15 @@ function drawCycles(focalnode) {
             "y": body.scrollTop() + ty
         }, 200);
         togglelabel.animate({
-            "y": body.scrollTop() + ty + nodeheight
+            "y": body.scrollTop() + ty + nodeHeight
         }, 200);
     });
 
     // for each node found to have more than one parent
-    for (var i = 0; i < nodeswithcycles.length; i++) {
+    for (var i = 0; i < nodesWithCycles.length; i++) {
 
         // this node is the child
-        var child = nodeshash[nodeswithcycles[i]];
+        var child = nodesHash[nodesWithCycles[i]];
         var cx = child.x;
         var cy = child.y;
 
@@ -282,7 +312,7 @@ function drawCycles(focalnode) {
         for (var j = 0; j < naltparents; j++) {
 
             // try to find this parent in the current tree
-            var parent = nodeshash[child.altrels[j].parentid];
+            var parent = nodesHash[child.altrels[j].parentid];
 
             // if the parent isn't in this tree, put it in the nub
             if (typeof parent == "undefined") {
@@ -310,10 +340,10 @@ function drawCycles(focalnode) {
                     var dst1 = "M" + cx + " " + cy + "L" + x1 + " " + y1;
                     var dst2 = "M" + x1 + " " + y2 + "L" + px + " " + py;
                     var dln1 = paper.path(dst1).attr({
-                        "stroke": altrelcolor
+                        "stroke": altRelColor
                     });
                     var dln2 = paper.path(dst2).attr({
-                        "stroke": altrelcolor
+                        "stroke": altRelColor
                     });
                     altrelsset.push(dln1);
                     altrelsset.push(dln2);
@@ -321,20 +351,20 @@ function drawCycles(focalnode) {
                     // main vertical line
                     var sst = "M" + x1 + " " + y1 + "L" + x1 + " " + y2;
                     var altrelline = paper.path(sst).attr({
-                        "stroke": altrelcolor
+                        "stroke": altRelColor
                     });
 
                     // if the parent and child are not vertically aligned, draw a straight line between them
                 } else {
                     var dln = "M" + cx + " " + cy + "L" + px + " " + py;
                     var altrelline = paper.path(dln).attr({
-                        "stroke": altrelcolor
+                        "stroke": altRelColor
                     });
                 }
                 altrelsset.push(altrelline);
 
                 var bw = 60;
-                var bh = nodeheight;
+                var bh = nodeHeight;
 
                 var altrellabel = paper.set();
                 var altrellabelbox = paper.rect((cx + px) / 2 - bw / 2, (cy + py) / 2 - bh / 2, bw, bh)
@@ -344,7 +374,7 @@ function drawCycles(focalnode) {
                 }).hide();
                 var altrellabeltext = paper.text((cx + px) / 2, (cy + py) / 2, child.altrels[j].source)
                     .attr({
-                    "font-size": r * fontscalar
+                    "font-size": r * fontScalar
                 }).hide();
                 altrellabel.push(altrellabelbox);
                 altrellabel.push(altrellabeltext);
@@ -414,22 +444,22 @@ function drawCycles(focalnode) {
         if (nub.nodes.length > 0) {
 
             // draw the nub
-            nub.x = cx - (r * nubdistscalar);
-            nub.y = cy + (r * nubdistscalar);
+            nub.x = cx - (r * nubDistScalar);
+            nub.y = cy + (r * nubDistScalar);
             nub.line = "M" + cx + " " + cy + "L" + nub.x + " " + nub.y;
             nub.dbr1 = paper.path(nub.line).attr({
-                "stroke": altrelcolor
+                "stroke": altRelColor
             });
             nub.circle = paper.circle(nub.x, nub.y, r).attr({
-                "fill": altpcolor
+                "fill": altPColor
             });
 
             // calc geometry for the nub info box, which contains links to alt topologies
             var infobox = paper.set();
-            infobox.x = nub.x - (nodewidth * 2 + (xlabelmargin * 2));
+            infobox.x = nub.x - (nodesWidth * 2 + (xLabelMargin * 2));
             infobox.y = nub.y;
-            infobox.w = nodewidth * 2 + (xlabelmargin * 2);
-            infobox.h = nodeheight * (nub.nodes.length + 1);
+            infobox.w = nodesWidth * 2 + (xLabelMargin * 2);
+            infobox.h = nodeHeight * (nub.nodes.length + 1);
 
             // draw the info box container
             var nublabelbox = paper.rect(infobox.x, infobox.y, infobox.w, infobox.h)
@@ -477,10 +507,10 @@ function drawCycles(focalnode) {
                 }
 
                 // links are drawn in a vertical sequence within the infobox container
-                thislink = paper.text(infobox.x + xlabelmargin, infobox.y + nodeheight + j * nodeheight, linktext)
+                thislink = paper.text(infobox.x + xLabelMargin, infobox.y + nodeHeight + j * nodeHeight, linktext)
                     .attr({
                     "text-anchor": "start",
-                    "font-size": r * fontscalar
+                    "font-size": r * fontScalar
                 })
                     .click(getClickHandlerNubRelLink());
 
@@ -495,7 +525,7 @@ function drawCycles(focalnode) {
 
                 // assign hover behavior
                 thislink.hover(getNubLinkHoverHandler({
-                    "fill": altplinkcolor
+                    "fill": altPLinkColor
                 }),
                 getNubLinkHoverHandler({
                     "fill": "black"
@@ -535,46 +565,6 @@ function drawCycles(focalnode) {
         }
     }
 }
-
-var paperContainer; // DOM element that is the parent of the paper element
-var paper; // raphael canvas object
-var curleaf; // absolute leaf counter used in geometry
-var nodeshash;
-var nodeswithcycles;
-
-// ------------------ begin geometry --------------------
-
-// primary height scalar (also text size, node size, etc.)
-var r = 5; // the minimum radius of the node/tip circles
-// primary width scalar 
-var nodewidth = 100; // the distance between parent/child nodes
-
-var nubdistscalar = 4; // the x/y distance of the nub from its child
-var sqnodedepthscalar = 20;
-var fontscalar = 2.6; // multiplied by radius to set font size
-var nodediamscalar = 1.5 // how much nodes are scaled by logleafcount
-var tipoffset = 300; // distance from right margin at which leaf nodes are drawn
-var ynodemargin = 4; // whitespace above/below nodes
-var yoffset = 10; // distance from top margin at which topmost nodes are drawn
-var xlabelmargin = 10; // the distance of the labels from the nodes
-var nodeheight = 2 * r + ynodemargin;
-
-/* coordinates determining where the first nodes (i.e. tips) are drawn.
- * these are scaled to the size of the tree, and are set by the loadData()
- * function below. We declare them here to give them global scope */
-var xoffset;
-var yoffset;
-
-// ------------------- end geometry ---------------------
-
-// colors
-var nodecolor = "#8af";
-var nodehovercolor = "#bdf";
-var tipcolor = "#14d";
-var tiphovercolor = "#b8f";
-var altrelcolor = "#f00";
-var altpcolor = "#c69";
-var altplinkcolor = "#900";
 
 // call this function on first page load to get initial tree
 //  @param `container` is passed to loadData as the DOM node that is the parent of the canvas
@@ -657,9 +647,9 @@ function loadData(argsobj) {
         var treedata = JSON.parse(eval(xobjPost.responseText));
 
         // calculate view-specific geometry parameters
-        var pheight = ((2 * r) + ynodemargin) * (treedata[0].nleaves) + (nubdistscalar * r) + (40 * nodeheight);
-        var pwidth = nodewidth * (treedata[0].maxnodedepth + 1) + 1.5 * tipoffset + xlabelmargin;
-        xoffset = pwidth - nodewidth - tipoffset;
+        var pheight = ((2 * r) + yNodeMargin) * (treedata[0].nleaves) + (nubDistScalar * r) + (40 * nodeHeight);
+        var pwidth = nodesWidth * (treedata[0].maxnodedepth + 1) + 1.5 * tipOffset + xLabelMargin;
+        xOffset = pwidth - nodesWidth - tipOffset;
 
         var domsource = treedata[1].domsource;
         if (typeof container === 'undefined') {
@@ -669,7 +659,7 @@ function loadData(argsobj) {
         }
         paper.setSize(pwidth, pheight);
         var sourcelabel = paper.text(10, 10, "source: " + domsource).attr({
-            "font-size": String(fontscalar * r) + "px",
+            "font-size": String(fontScalar * r) + "px",
             "text-anchor": "start"
         });
 
