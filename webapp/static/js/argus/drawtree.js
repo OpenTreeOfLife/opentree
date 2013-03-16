@@ -1,4 +1,5 @@
 /*jslint indent: 4 */
+/*globals XMLHttpRequest, Raphael, $, window, location */
 
 var paperContainer; // DOM element that is the parent of the paper element
 var paper; // raphael canvas object
@@ -37,6 +38,74 @@ var tipHoverColor = "#b8f";
 var altRelColor = "#f00";
 var altPColor = "#c69";
 var altPLinkColor = "#900";
+
+//functions defined in argus:
+var drawNode, drawCycles;
+// end function list
+
+// this function queries the db and draws the resulting tree.
+// 
+// @param The `container` arg should be the DOM node that should serve as
+//      as the parent element for the canvas
+
+function loadData(argsobj) {
+
+    /* accepts three named arguments:
+     *    url               the address to which the HTTP request is sent
+     *    jsonquerystring   a json string containing query information
+     *    method            e.g. GET or POST; POST is required for queries to the Neo4J REST service*/
+
+    var url = argsobj.url;
+    var jsonquerystr = argsobj.jsonquerystring;
+    var method = argsobj.method;
+    var container = argsobj.container;
+
+    var xobjPost = new XMLHttpRequest();
+    xobjPost.open(method, url, false);
+    xobjPost.setRequestHeader("Accept", "");
+
+    /* NOTE: we pass parameters to the REST service by encoding them in a JSON string
+     * and sending it through the XMLHttpRequest.send() method. We must specify the
+     * format of the incoming data (in this case JSON) with a call to
+     * XMLHttpRequest.SetRequestHeader() before we issue the send. */
+    xobjPost.setRequestHeader("Content-Type", "application/json");
+
+    xobjPost.onload = function () {
+
+        var jsonrespstr = xobjPost.responseText;
+        //    alert(jsonrespstr);
+        var treedata = JSON.parse(eval(xobjPost.responseText));
+
+        // calculate view-specific geometry parameters
+        var pheight = ((2 * r) + yNodeMargin) * (treedata[0].nleaves) + (nubDistScalar * r) + (40 * nodeHeight);
+        var pwidth = nodesWidth * (treedata[0].maxnodedepth + 1) + 1.5 * tipOffset + xLabelMargin;
+        xOffset = pwidth - nodesWidth - tipOffset;
+
+        var domsource = treedata[1].domsource;
+        if (container === undefined) {
+            paper = new Raphael(10, 10, 10, 10);
+        } else {
+            paper = new Raphael(container, 10, 10);
+        }
+        paper.setSize(pwidth, pheight);
+        var sourcelabel = paper.text(10, 10, "source: " + domsource).attr({
+            "font-size": String(fontScalar * r) + "px",
+            "text-anchor": "start"
+        });
+
+        // draw the tree
+        drawNode(treedata[0], domsource);
+
+        // draw the cylces
+        drawCycles(treedata[0].children[0].nodeid);
+    };
+
+    // TBD: maybe add an 'onerror' handler too
+
+    jsonquerystr = jsonquerystr === "" ? undefined : jsonquerystr;
+    xobjPost.send(jsonquerystr);
+}
+
 
 function isNumeric(n) {
     return !isNaN(parseFloat(n)) && isFinite(n);
@@ -104,40 +173,49 @@ function buildJSONQuery(argsobj) {
 
 function drawNode(node, domsource, isfirst) {
     // if isfirst is undefined, then this is the root of a new tree; reset counters/containers
+    var nchildren;
+    var circle;
+    var label;
+    var getHoverHandlerNode;
+    var getClickHandlerNode;
+    var i;
+    var childxs;
+    var childys;
+    var branch;
+    var branchSt;
+
     isfirst = (isfirst !== undefined ? isfirst : true);
     if (isfirst === true) {
         nodesHash = {};
-        nodesWithCycles = new Array();
+        nodesWithCycles = [];
         isfirst = false;
         curLeaf = 0;
     }
 
     // if this node has no children then we have hit a leaf
-    var nchildren = (typeof node.children == "undefined" ? 0 : node.children.length);
-    if (nchildren == 0) {
-
+    nchildren = (node.children === undefined ? 0 : node.children.length);
+    if (nchildren === 0) {
         // leaves are drawn at the rightmost x-coord, incrementally from the topmost y-coord
         node.x = xOffset;
         node.y = curLeaf * nodeHeight + yOffset;
 
         // draw the node
-        var circle = paper.circle(node.x, node.y, r).attr({
+        circle = paper.circle(node.x, node.y, r).attr({
             "fill": tipColor
         }).toFront();
-        var label = paper.text(node.x + xLabelMargin, node.y, node.name).
-        attr({
+        label = paper.text(node.x + xLabelMargin, node.y, node.name).attr({
             'text-anchor': 'start',
             "font-size": r * fontScalar
         });
 
         // create closure to access node attributes when hovering in/out
 
-        function getHoverHandlerNode(attributes) {
+        getHoverHandlerNode = function (attributes) {
             var nodeCircle = circle;
-            return function() {
+            return function () {
                 nodeCircle.attr(attributes);
             };
-        }
+        };
 
         circle.hover(getHoverHandlerNode({
             "fill": tipHoverColor
@@ -149,16 +227,20 @@ function drawNode(node, domsource, isfirst) {
 
         // if the node has children then it is internal
     } else {
-        var childxs = new Array();
-        var childys = new Array();
+        childxs = [];
+        childys = [];
 
-        for (var i = 0; i < nchildren; i++) {
+        for (i = 0; i < nchildren; i++) {
             // postorder traverse the children of this node
             drawNode(node.children[i], domsource, isfirst);
 
             // the traversal generated the childrens' coordinates; now get them
-            if (isNumeric(node.children[i].x)) childxs.push(node.children[i].x);
-            if (isNumeric(node.children[i].y)) childys.push(node.children[i].y);
+            if (isNumeric(node.children[i].x)) {
+                childxs.push(node.children[i].x);
+            }
+            if (isNumeric(node.children[i].y)) {
+                childys.push(node.children[i].y);
+            }
         }
 
         // calculate this node's coordinates based on the positions of its children
@@ -169,23 +251,22 @@ function drawNode(node, domsource, isfirst) {
         node.r = r + nodeDiamScalar * Math.log(node.nleaves);
 
         // draw node circle
-        var label = paper.text(node.x - node.r, node.y + node.r, node.name).
-        attr({
+        label = paper.text(node.x - node.r, node.y + node.r, node.name).attr({
             'text-anchor': 'end',
             "font-size": r * fontScalar
         });
-        var circle = paper.circle(node.x, node.y, node.r).attr({
+        circle = paper.circle(node.x, node.y, node.r).attr({
             "fill": nodeColor
         });
 
         // create closures to access node attributes when hovering in/out and clicking
 
-        function getHoverHandlerNode(attributes) {
+        getHoverHandlerNode = function (attributes) {
             var nodeCircle = circle;
-            return function() {
+            return function () {
                 nodeCircle.attr(attributes);
             };
-        }
+        };
 
         // assign hover behaviors
         circle.hover(getHoverHandlerNode({
@@ -197,15 +278,15 @@ function drawNode(node, domsource, isfirst) {
         // draw branches (square tree)
         var spine_st = "M" + node.x + " " + node.children[0].y + "L" + node.x + " " + node.children[nchildren - 1].y;
         var spine = paper.path(spine_st).toBack();
-        for (var i = 0; i < nchildren; i++) {
-            var branch_st = "M" + node.x + " " + node.children[i].y + "L" + node.children[i].x + " " + node.children[i].y;
-            var branch = paper.path(branch_st).toBack();
+        for (i = 0; i < nchildren; i++) {
+            branchSt = "M" + node.x + " " + node.children[i].y + "L" + node.children[i].x + " " + node.children[i].y;
+            branch = paper.path(branchSt).toBack();
         }
     }
 
-    function getClickHandlerNode() {
+    getClickHandlerNode = function () {
         var thisnode = node;
-        return function() {
+        return function () {
             paper.clear();
 
             /* at some point we will probably want to retain a history of preferred alt relationships, etc.
@@ -236,12 +317,12 @@ function drawNode(node, domsource, isfirst) {
             paper.remove();
             loadData(loadargs);
         };
-    }
+    };
 
     circle.click(getClickHandlerNode());
 
     // if this node has cycles, record it; we will draw them once the tree is done
-    var naltparents = (typeof node.altrels == "undefined" ? 0 : node.altrels.length);
+    var naltparents = (node.altrels === undefined ? 0 : node.altrels.length);
     if (naltparents > 0) {
         nodesWithCycles.push(node.nodeid);
     }
@@ -251,33 +332,43 @@ function drawNode(node, domsource, isfirst) {
 }
 
 function drawCycles(focalnode) {
-
+    var tx, ty, i, j, child, cx, cy, nub;
+    var naltparents;
+    var parent, px, py, offset, dst1, dst2, dln1, dln2;
+    var togglelabel, togglebox, body;
+    var sst, altrelline, dln;
+    var bw, bh, altrellabel, altrellabelbox, altrellabeltext;
+    var x1, y1, x2, y2;
+    var getClickHandlerAltRelLine;
+    var getHoverHandlerAltRelLineShow;
+    var getHoverHandlerAltRelLineHide;
+    var getClickHandlerNubRelLink, getNubLinkHoverHandler;
+    var getHoverHandlerShow, getHoverHandlerHide;
+    var infobox, nublabelbox, nublinks, linktext, thislink;
     var altrelsset = paper.set();
     altrelsset.hidden = false;
 
     function toggleAltRels() {
         var altrels = altrelsset;
-        return function() {
-            if (altrels.hidden == true) {
+        return function () {
+            if (altrels.hidden) {
                 altrels.show();
                 altrels.hidden = false;
             } else {
                 altrels.hide();
                 altrels.hidden = true;
             }
-        }
+        };
     }
 
     tx = 10;
     ty = 30;
-    var togglelabel = paper.text(tx + r, ty + nodeHeight * 0.95, "toggle alt rels")
-        .attr({
+    togglelabel = paper.text(tx + r, ty + nodeHeight * 0.95, "toggle alt rels").attr({
         'text-anchor': 'start',
         "font-size": r * fontScalar
     });
 
-    var togglebox = paper.rect(tx, ty, nodesWidth, nodeHeight * 2)
-        .attr({
+    togglebox = paper.rect(tx, ty, nodesWidth, nodeHeight * 2).attr({
         "stroke": "black",
         "stroke-width": "1px",
         "fill": "white",
@@ -285,8 +376,8 @@ function drawCycles(focalnode) {
     })
         .click(toggleAltRels());
 
-    var body = $("body");
-    $(window).bind("scroll", function() {
+    body = $("body");
+    $(window).bind("scroll", function () {
         togglebox.animate({
             "y": body.scrollTop() + ty
         }, 200);
@@ -296,84 +387,81 @@ function drawCycles(focalnode) {
     });
 
     // for each node found to have more than one parent
-    for (var i = 0; i < nodesWithCycles.length; i++) {
+    for (i = 0; i < nodesWithCycles.length; i++) {
 
         // this node is the child
-        var child = nodesHash[nodesWithCycles[i]];
-        var cx = child.x;
-        var cy = child.y;
+        child = nodesHash[nodesWithCycles[i]];
+        cx = child.x;
+        cy = child.y;
 
         // initialize nub object; it will contain links to topologies not present in the current tree
-        var nub = new Object();
-        nub.nodes = new Array();
+        nub = {};
+        nub.nodes = [];
 
         // for each alternative parent
-        var naltparents = child.altrels.length;
-        for (var j = 0; j < naltparents; j++) {
-
+        naltparents = child.altrels.length;
+        for (j = 0; j < naltparents; j++) {
             // try to find this parent in the current tree
-            var parent = nodesHash[child.altrels[j].parentid];
+            parent = nodesHash[child.altrels[j].parentid];
 
             // if the parent isn't in this tree, put it in the nub
-            if (typeof parent == "undefined") {
+            if (parent === undefined) {
                 nub.nodes.push(child.altrels[j]);
 
                 // the parent is in the tree; get its coordinates
             } else {
-                var px = parent.x;
-                var py = parent.y;
+                px = parent.x;
+                py = parent.y;
 
                 // if the parent and child are vertically aligned, draw an offset line between them
-                if (px == cx) {
+                if (px === cx) {
                     x1 = cx - r;
                     if (py > cy) {
-                        var offset = Math.abs(cx - x1);
+                        offset = Math.abs(cx - x1);
                         y1 = cy + offset;
                         y2 = py - offset;
                     } else {
-                        var offset = Math.abs(cx - x1);
+                        offset = Math.abs(cx - x1);
                         y1 = cy - offset;
                         y2 = py + offset;
                     }
 
                     // short diagonal connectors
-                    var dst1 = "M" + cx + " " + cy + "L" + x1 + " " + y1;
-                    var dst2 = "M" + x1 + " " + y2 + "L" + px + " " + py;
-                    var dln1 = paper.path(dst1).attr({
+                    dst1 = "M" + cx + " " + cy + "L" + x1 + " " + y1;
+                    dst2 = "M" + x1 + " " + y2 + "L" + px + " " + py;
+                    dln1 = paper.path(dst1).attr({
                         "stroke": altRelColor
                     });
-                    var dln2 = paper.path(dst2).attr({
+                    dln2 = paper.path(dst2).attr({
                         "stroke": altRelColor
                     });
                     altrelsset.push(dln1);
                     altrelsset.push(dln2);
 
                     // main vertical line
-                    var sst = "M" + x1 + " " + y1 + "L" + x1 + " " + y2;
-                    var altrelline = paper.path(sst).attr({
+                    sst = "M" + x1 + " " + y1 + "L" + x1 + " " + y2;
+                    altrelline = paper.path(sst).attr({
                         "stroke": altRelColor
                     });
 
                     // if the parent and child are not vertically aligned, draw a straight line between them
                 } else {
-                    var dln = "M" + cx + " " + cy + "L" + px + " " + py;
-                    var altrelline = paper.path(dln).attr({
+                    dln = "M" + cx + " " + cy + "L" + px + " " + py;
+                    altrelline = paper.path(dln).attr({
                         "stroke": altRelColor
                     });
                 }
                 altrelsset.push(altrelline);
 
-                var bw = 60;
-                var bh = nodeHeight;
+                bw = 60;
+                bh = nodeHeight;
 
-                var altrellabel = paper.set();
-                var altrellabelbox = paper.rect((cx + px) / 2 - bw / 2, (cy + py) / 2 - bh / 2, bw, bh)
-                    .attr({
+                altrellabel = paper.set();
+                altrellabelbox = paper.rect((cx + px) / 2 - bw / 2, (cy + py) / 2 - bh / 2, bw, bh).attr({
                     "stroke": "black",
                     "fill": "white"
                 }).hide();
-                var altrellabeltext = paper.text((cx + px) / 2, (cy + py) / 2, child.altrels[j].source)
-                    .attr({
+                altrellabeltext = paper.text((cx + px) / 2, (cy + py) / 2, child.altrels[j].source).attr({
                     "font-size": r * fontScalar
                 }).hide();
                 altrellabel.push(altrellabelbox);
@@ -381,7 +469,7 @@ function drawCycles(focalnode) {
 
                 // create closure so we can access this alt rel info when the corresponding line is clicked
 
-                function getClickHandlerAltRelLine() {
+                getClickHandlerAltRelLine = function () {
 
                     /* at some point we will probably want to retain a history of preferred altrelationships, etc.
                      * these should be stored/retrieved from a base-level query info object that is passed back
@@ -397,46 +485,45 @@ function drawCycles(focalnode) {
                         "domsource": child.altrels[j].source
                     };
 
-                    return function() {
-                        paper.clear();
+
+                    return function () {
                         var loadargs = {
                             "url": buildUrl(focalnodeid),
                             "method": "POST",
                             "jsonquerystring": buildJSONQuery(jsonargs),
                             "container": paper.canvas.parentNode
                         };
+                        paper.clear();
                         paper.remove();
                         loadData(loadargs);
                     };
-                }
+                };
 
                 // create closure so we can affect properties when we hover in/out
 
-                function getHoverHandlerAltRelLineShow(attributes) {
+                getHoverHandlerAltRelLineShow = function (attributes) {
                     var linetomodify = altrelline;
                     var label = altrellabel;
-                    return function() {
+                    return function () {
                         linetomodify.attr(attributes);
                         label.show().toFront();
                     };
-                }
+                };
 
-                function getHoverHandlerAltRelLineHide(attributes) {
+                getHoverHandlerAltRelLineHide = function (attributes) {
                     var linetomodify = altrelline;
                     var label = altrellabel;
-                    return function() {
+                    return function () {
                         linetomodify.attr(attributes);
                         label.hide();
                     };
-                }
+                };
                 // apply behaviors
                 altrelline.hover(getHoverHandlerAltRelLineShow({
                     "stroke-width": "3px"
-                }),
-                getHoverHandlerAltRelLineHide({
+                }), getHoverHandlerAltRelLineHide({
                     "stroke-width": "1px"
-                })).
-                click(getClickHandlerAltRelLine());
+                })).click(getClickHandlerAltRelLine());
             }
         }
 
@@ -455,28 +542,27 @@ function drawCycles(focalnode) {
             });
 
             // calc geometry for the nub info box, which contains links to alt topologies
-            var infobox = paper.set();
+            infobox = paper.set();
             infobox.x = nub.x - (nodesWidth * 2 + (xLabelMargin * 2));
             infobox.y = nub.y;
             infobox.w = nodesWidth * 2 + (xLabelMargin * 2);
             infobox.h = nodeHeight * (nub.nodes.length + 1);
 
             // draw the info box container
-            var nublabelbox = paper.rect(infobox.x, infobox.y, infobox.w, infobox.h)
-                .attr({
+            nublabelbox = paper.rect(infobox.x, infobox.y, infobox.w, infobox.h).attr({
                 "fill": "white"
             });
 
             // generate links for the infobox; use a paper.set object so we can easily toggle transparency
-            var nublinks = paper.set();
-            for (var j = 0; j < nub.nodes.length; j++) {
+            nublinks = paper.set();
+            for (j = 0; j < nub.nodes.length; j++) {
 
                 // the link labels are the names of the corresponding sources
                 linktext = nub.nodes[j].parentname + " > " + nub.nodes[j].source;
 
                 // create closure so we can access nub.nodes[j] when we click a source link
 
-                function getClickHandlerNubRelLink() {
+                getClickHandlerNubRelLink = function () {
 
                     /* at some point we will probably want to retain a history of preferred altrelationships, etc.
                      * these should be stored/retrieved from a base-level query info object that is passed back
@@ -492,7 +578,7 @@ function drawCycles(focalnode) {
                     };
                     var jsonquerystr = buildJSONQuery(jsonargs);
 
-                    return function() {
+                    return function () {
                         paper.clear();
                         var loadargs = {
                             "url": buildUrl(focalnodeid),
@@ -504,11 +590,10 @@ function drawCycles(focalnode) {
                         paper.remove();
                         loadData(loadargs);
                     };
-                }
+                };
 
                 // links are drawn in a vertical sequence within the infobox container
-                thislink = paper.text(infobox.x + xLabelMargin, infobox.y + nodeHeight + j * nodeHeight, linktext)
-                    .attr({
+                thislink = paper.text(infobox.x + xLabelMargin, infobox.y + nodeHeight + j * nodeHeight, linktext).attr({
                     "text-anchor": "start",
                     "font-size": r * fontScalar
                 })
@@ -516,18 +601,17 @@ function drawCycles(focalnode) {
 
                 // create closure so we can affect link properties when we hover in/out
 
-                function getNubLinkHoverHandler(attributes) {
+                getNubLinkHoverHandler = function (attributes) {
                     var nublinktomodify = thislink;
-                    return function() {
+                    return function () {
                         nublinktomodify.attr(attributes);
                     };
-                }
+                };
 
                 // assign hover behavior
                 thislink.hover(getNubLinkHoverHandler({
                     "fill": altPLinkColor
-                }),
-                getNubLinkHoverHandler({
+                }), getNubLinkHoverHandler({
                     "fill": "black"
                 }));
 
@@ -541,23 +625,23 @@ function drawCycles(focalnode) {
 
             // create closures so we can set hover in/out behaviors on the infobox
 
-            function getHoverHandlerShow() {
+            getHoverHandlerShow = function () {
                 var cSet = infobox;
-                return function() {
+                return function () {
                     cSet.show();
                     // bring the box to the front of the page
                     cSet[1].toFront();
                     // put the links in front of the box
                     cSet[0].toFront();
                 };
-            }
+            };
 
-            function getHoverHandlerHide() {
+            getHoverHandlerHide = function () {
                 var cSet = infobox;
-                return function() {
+                return function () {
                     cSet.hide();
                 };
-            }
+            };
 
             // assign behaviors
             nub.circle.hover(getHoverHandlerShow(), getHoverHandlerHide());
@@ -570,8 +654,9 @@ function drawCycles(focalnode) {
 //  @param `container` is passed to loadData as the DOM node that is the parent of the canvas
 
 function setupAtNode(nodeid, domsource, container) {
-    if (isBlank(domsource)) domsource = "ottol";
-
+    if (isBlank(domsource)) {
+        domsource = "ottol";
+    }
     // call webservice to display graph for indicated node id
     if (!isBlank(nodeid)) {
         var jsonquerystring = buildJSONQuery({
@@ -596,84 +681,23 @@ function setupAtNode(nodeid, domsource, container) {
 function setup(container) {
 
     // extract variables from url string
-
+    var tokstr, toks, i, arg;
+    var nodeid;
     var domsource = "";
-    if (location.search != "") {
-        var tokstr = location.search.substr(1).split("?");
-        var toks = String(tokstr).split("&");
-        for (var i = 0; i < toks.length; i++) {
-            var arg = toks[i].split("=");
-            if (arg[0] == "nodeid") nodeid = arg[1];
-            else if (arg[0] == "domsource") {
+    if (location.search !== "") {
+        tokstr = location.search.substr(1).split("?");
+        toks = String(tokstr).split("&");
+        for (i = 0; i < toks.length; i++) {
+            arg = toks[i].split("=");
+            if (arg[0] === "nodeid") {
+                nodeid = arg[1];
+            } else if (arg[0] === "domsource") {
                 domsource = arg[1];
             }
         }
     }
 
     setupAtNode(nodeid, domsource, container);
-}
-
-// this function queries the db and draws the resulting tree.
-// 
-// @param The `container` arg should be the DOM node that should serve as
-//      as the parent element for the canvas
-
-function loadData(argsobj) {
-
-    /* accepts three named arguments:
-     *    url               the address to which the HTTP request is sent
-     *    jsonquerystring   a json string containing query information
-     *    method            e.g. GET or POST; POST is required for queries to the Neo4J REST service*/
-
-    var url = argsobj.url;
-    var jsonquerystr = argsobj.jsonquerystring;
-    var method = argsobj.method;
-    var container = argsobj.container;
-
-    var xobjPost = new XMLHttpRequest();
-    xobjPost.open(method, url, false);
-    xobjPost.setRequestHeader("Accept", "");
-
-    /* NOTE: we pass parameters to the REST service by encoding them in a JSON string
-     * and sending it through the XMLHttpRequest.send() method. We must specify the
-     * format of the incoming data (in this case JSON) with a call to
-     * XMLHttpRequest.SetRequestHeader() before we issue the send. */
-    xobjPost.setRequestHeader("Content-Type", "application/json");
-
-    xobjPost.onload = function() {
-
-        var jsonrespstr = xobjPost.responseText;
-        //    alert(jsonrespstr);
-        var treedata = JSON.parse(eval(xobjPost.responseText));
-
-        // calculate view-specific geometry parameters
-        var pheight = ((2 * r) + yNodeMargin) * (treedata[0].nleaves) + (nubDistScalar * r) + (40 * nodeHeight);
-        var pwidth = nodesWidth * (treedata[0].maxnodedepth + 1) + 1.5 * tipOffset + xLabelMargin;
-        xOffset = pwidth - nodesWidth - tipOffset;
-
-        var domsource = treedata[1].domsource;
-        if (typeof container === 'undefined') {
-            paper = Raphael(10, 10, 10, 10);
-        } else {
-            paper = Raphael(container, 10, 10);
-        }
-        paper.setSize(pwidth, pheight);
-        var sourcelabel = paper.text(10, 10, "source: " + domsource).attr({
-            "font-size": String(fontScalar * r) + "px",
-            "text-anchor": "start"
-        });
-
-        // draw the tree
-        drawNode(treedata[0], domsource);
-
-        // draw the cylces
-        drawCycles(treedata[0].children[0].nodeid);
-    };
-
-    // TBD: maybe add an 'onerror' handler too
-
-    jsonquerystr = jsonquerystr == "" ? undefined : jsonquerystr;
-    xobjPost.send(jsonquerystr);
 }
 
 Array.prototype.average = function () {
@@ -686,4 +710,4 @@ Array.prototype.average = function () {
         count++;
     }
     return sum / count;
-}
+};
