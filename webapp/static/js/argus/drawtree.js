@@ -1,21 +1,4 @@
-Array.prototype.average = function() {
-    var sum = 0;
-    var count = 0;
-    var len = this.length;
-    for (var i = 0; i < len; i++) {
-        sum += this[i];
-        count++;
-    }
-    return sum / count;
-}
-
-function dir(obj) {
-    var attrs = [];
-    for (var key in obj) {
-        attrs.push([key, obj[key]]);
-    }
-    return attrs;
-}
+/*jslint indent: 4 */
 
 function isNumeric(n) {
     return !isNaN(parseFloat(n)) && isFinite(n);
@@ -27,7 +10,7 @@ function isBlank(str) {
 
 function buildUrl(focalclade) {
     //var address = "http://localhost:7474"
-    var address = "http://opentree-dev.bio.ku.edu:7476"
+    var address = "http://opentree-dev.bio.ku.edu:7476";
     var prefix = address + "/db/data/ext/GetJsons/node/";
     var suffix = "/getConflictTaxJsonAltRel";
     var url = prefix + focalclade + suffix;
@@ -615,6 +598,7 @@ function setupAtNode(nodeid, domsource, container) {
     }
 }
 
+
 // call this function on first page load to get initial tree based on
 //  the query portion of the URL (the location.search string) 
 //  @param `container` is passed to loadData as the DOM node that is the parent of the canvas
@@ -700,4 +684,16 @@ function loadData(argsobj) {
 
     jsonquerystr = jsonquerystr == "" ? undefined : jsonquerystr;
     xobjPost.send(jsonquerystr);
+}
+
+Array.prototype.average = function () {
+    var sum = 0;
+    var count = 0;
+    var len = this.length;
+    var i;
+    for (i = 0; i < len; i++) {
+        sum += this[i];
+        count++;
+    }
+    return sum / count;
 }
