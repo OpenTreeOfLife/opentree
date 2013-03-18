@@ -24,18 +24,7 @@ cd web2py/applications
 ln -s /full/path/to/opentree/webapp opentree
 </pre>
 
-3. Install the argus repo in the javascript subdirectory (this will change if we
-migrate the argus code to inside the opentree repo).
-
-<pre>
-cd /full/path/to/opentree/webapp/static/js
-git clone git@github.com:OpenTreeOfLife/argus.git
-</pre>
-
-Note that if you do not have write-privileges to the argus repo, then you'll need to 
-use git://github.com/OpenTreeOfLife/argus.git as the URL.
-
-4. Launch web2py
+3. Launch web2py
 
 <pre>
 cd /full/path/to/web2py
