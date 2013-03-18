@@ -6,9 +6,10 @@
 // Attributes of spec:
 //      domSource = "ottol"  The name of the source of trees. Currently only "ottol" is supported.
 //      nodeID = the ID for the node (according to the system of the service indicated by domSource)
-// if nodeID or domSource are lacking, they will *both* be parsed out of the URL query string (location.search)
-//      from nodeid and domsource url-encoded GET parameters. If they are not found there, the defaults are
-//      domSource="ottol" and nodeID = "805080"
+//          if nodeID or domSource are lacking, they will *both* be parsed out of the URL query string (location.search)
+//              from nodeid and domsource url-encoded GET parameters. If they are not found there, the defaults are
+//              domSource="ottol" and nodeID = "805080"
+//      container - DOM element that will contain the argus object
 var createArgus = function (spec) {
     var o;
     var argusObj;
@@ -44,13 +45,22 @@ var createArgus = function (spec) {
             // simple function to get nodeID and domSource the assuming ignored?key1=val1&key2=val2 structure to q
             var toks, i, arg;
             var ret = {};
-            toks = q.substr(1).split("?").split("&");
-            for (i = 0; i < toks.length; i++) {
-                arg = toks[i].split("=");
-                if (arg[0] === "nodeid") {
-                    ret.nodeID = arg[1];
-                } else if (arg[0] === "domsource") {
-                    ret.domSource = arg[1];
+            var firstSubstr, qListStr;
+            if (q) {
+                firstSubstr = q.substr(1);
+                if (firstSubstr) {
+                    qListStr = String(firstSubstr.split("?"));
+                    if (qList) {
+                        toks = qListStr.split("&");
+                        for (i = 0; i < toks.length; i++) {
+                            arg = toks[i].split("=");
+                            if (arg[0] === "nodeid") {
+                                ret.nodeID = arg[1];
+                            } else if (arg[0] === "domsource") {
+                                ret.domSource = arg[1];
+                            }
+                        }
+                    }
                 }
             }
             return ret;
@@ -58,16 +68,20 @@ var createArgus = function (spec) {
         spec.nodeID = o.nodeID === undefined ? "805080" : o.nodeID;
         spec.domSource = o.domSource === undefined ? "ottol" : o.nodeID;
     }
+    if (spec.container === undefined) {
+        spec.container = $("body");
+    }
     argusObj = {
         "nodeID": spec.nodeID,
-        "domSource": spec.domSource
+        "domSource": spec.domSource,
+        "container": spec.container
     };
     argusObj.loadData = function (o) {
-        /* accepts three named arguments:
-         *    o.url               the address to which the HTTP request is sent
-         *    o.data              arguement (object of str) to be sent to the URL as an argument
-         *    o.httpMethod        e.g. "GET" or "POST"; "POST" is the default
-         */
+        // accepts three named arguments:
+         //    o.url               the address to which the HTTP request is sent
+         //    o.data              arguement (object of str) to be sent to the URL as an argument
+         //   o.httpMethod        e.g. "GET" or "POST"; "POST" is the default
+         //
         $.ajax({
             url: o.url,
             type: o.httpMethod === undefined ? "POST" : o.httpMethod,
@@ -78,28 +92,27 @@ var createArgus = function (spec) {
             success: function (data, textStatus, jqXHR) {
                 spec.container.text("proxy returned data..." + data);
                 // calculate view-specific geometry parameters
-                /*
-                var pheight = ((2 * r) + yNodeMargin) * (treedata[0].nleaves) + (nubDistScalar * r) + (40 * nodeHeight);
-                var pwidth = nodesWidth * (treedata[0].maxnodedepth + 1) + 1.5 * tipOffset + xLabelMargin;
-                xOffset = pwidth - nodesWidth - tipOffset;
+                //var pheight = ((2 * r) + yNodeMargin) * (treedata[0].nleaves) + (nubDistScalar * r) + (40 * nodeHeight);
+                //var pwidth = nodesWidth * (treedata[0].maxnodedepth + 1) + 1.5 * tipOffset + xLabelMargin;
+                //xOffset = pwidth - nodesWidth - tipOffset;
 
-                var domsource = treedata[1].domsource;
-                if (spec.container === undefined) {
-                    paper = new Raphael(10, 10, 10, 10);
-                } else {
-                    paper = new Raphael(spec.container, 10, 10);
-                }
-                paper.setSize(pwidth, pheight);
-                var sourcelabel = paper.text(10, 10, "source: " + domsource).attr({
-                    "font-size": String(fontScalar * r) + "px",
-                    "text-anchor": "start"
-                });
+                //var domsource = treedata[1].domsource;
+                //if (spec.container === undefined) {
+                //    paper = new Raphael(10, 10, 10, 10);
+                //} else {
+                //    paper = new Raphael(spec.container, 10, 10);
+                //}
+                //paper.setSize(pwidth, pheight);
+                //var sourcelabel = paper.text(10, 10, "source: " + domsource).attr({
+                //    "font-size": String(fontScalar * r) + "px",
+                //    "text-anchor": "start"
+                //});
 
                 // draw the tree
-                drawNode(treedata[0], domsource);
+                //drawNode(treedata[0], domsource);
 
                 // draw the cylces
-                drawCycles(treedata[0].children[0].nodeid);*/
+                //drawCycles(treedata[0].children[0].nodeid);
             },
             error: function (jqXHR, textStatus, errorThrown) {
                 $(".flash").html("Error: Node lookup failed").slideDown();
@@ -107,17 +120,20 @@ var createArgus = function (spec) {
             }
         });
     };
+
     argusObj.displayNode = function (nodeID) {
-        var ajaxInfo = buildAjaxCallInfo({
-            "nodeID": nodeID,
-            "domSource": this.domSource
-        });
-        this.nodeID = nodeID;
-        this.loadData(ajaxInfo);
+        //var ajaxInfo = buildAjaxCallInfo({
+        //    "nodeID": nodeID,
+        //    "domSource": this.domSource
+        //});
+        //this.nodeID = nodeID;
+        this.container.text("test");
+        //this.loadData(ajaxInfo);
         return this;
     };
-
+    spec.container.text("test c");
     return argusObj;
+    
 };
 
 var paper; // raphael canvas object
