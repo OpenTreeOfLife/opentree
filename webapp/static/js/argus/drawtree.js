@@ -14,6 +14,12 @@ var createArgus = function (spec) {
     var o;
     var argusObj;
     var paper;
+    var getHoverHandlerNode;
+    var getClickHandlerNode;
+    var isNumeric = function (n) {
+        return !isNaN(parseFloat(n)) && isFinite(n);
+    };
+
     // helper function to create the URL and arg to be passed to URL. 
     //  Argument:
     //      o.nodeID
@@ -35,7 +41,8 @@ var createArgus = function (spec) {
         return {
             "url": url,
             "data": ajaxData,
-            "httpMethod": "POST" //@TEMP assuming ottol
+            "httpMethod": "POST", //@TEMP assuming ottol
+            "domSource": ds
         };
     };
 
@@ -74,47 +81,84 @@ var createArgus = function (spec) {
     argusObj = {
         "nodeID": spec.nodeID,
         "domSource": spec.domSource,
-        "container": spec.container
+        "container": spec.container,
+        "fontScalar": 2.6, // multiplied by radius to set font size
+        "minTipRadius": 5, // the minimum radius of the node/tip circles. "r" in old argus
+        "nodeDiamScalar": 1.5,  // how much internal nodes are scaled by logleafcount
+        "nodesWidth": 100, // the distance between parent/child nodes
+        "nubDistScalar": 4, // the x/y distance of the nub from its child
+        "tipOffset": 300,  // distance from right margin at which leaf nodes are drawn
+        "xLabelMargin": 10, // the distance of the labels from the nodes
+        "xOffset": 0, // reset in loadData call before drawing nodes
+        "yNodeMargin": 4, // whitespace above/below nodes
+        "yOffset": 10, // distance from top margin at which topmost nodes are drawn. reset in loadData
+        "altPColor": "#c69",
+        "altPLinkColor": "#900",
+        "altRelColor": "#f00",
+        "nodeColor": "#8af",
+        "nodeHoverColor": "#bdf",
+        "tipColor": "#14d",
+        "tipHoverColor": "#b8f"
     };
+    argusObj.nodeHeight = (2 * argusObj.minTipRadius) + argusObj.yNodeMargin;
     argusObj.loadData = function (o) {
         // accepts three named arguments:
          //    o.url               the address to which the HTTP request is sent
          //    o.data              arguement (object of str) to be sent to the URL as an argument
          //    o.httpMethod        e.g. "GET" or "POST"; "POST" is the default
+         //    o.domSource
          //
         var dataStr = JSON.stringify(o.data);
+        var domSource = o.domSource === undefined ? "ottol" : o.domSource;
+        var ajaxSuccess = function (dataStr, textStatus, jqXHR) {
+            var argusObjRef = this;
+            var treedata = $.parseJSON(dataStr);
+            var node = treedata[0];
+            var pheight, pwidth, xOffset, sourcelabel;
+            //spec.container.text("proxy returned data..." + treedata);
+            // calculate view-specific geometry parameters
+            pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.nleaves);
+            pheight += argusObjRef.nubDistScalar * argusObjRef.minTipRadius;
+            pheight += 40 * argusObjRef.nodeHeight; //@TEMP not sure what 40 is for...
+
+            pwidth = argusObjRef.nodesWidth * (node.maxnodedepth + 1);
+            pwidth += 1.5 * argusObjRef.tipOffset + argusObjRef.xLabelMargin;
+            argusObjRef.xOffset = pwidth - argusObjRef.nodesWidth - argusObjRef.tipOffset;
+            argusObjRef.yOffset = 10;
+
+            if (spec.container === undefined) {
+                paper = new Raphael(10, 10, 10, 10);
+            } else {
+                paper = new Raphael(spec.container, 10, 10);
+            }
+            paper.setSize(pwidth, pheight);
+            sourcelabel = paper.text(10, 10, "source: " + domSource).attr({
+                "font-size": String(argusObjRef.fontScalar * argusObjRef.minTipRadius) + "px",
+                "text-anchor": "start"
+            });
+
+            // refresh tree
+            argusObjRef.nodesHash = {};
+            argusObjRef.nodesWithCycles = [];
+            // draw the tree
+            argusObjRef.drawNode({
+                "node": node,
+                "domSource": domSource,
+                "curLeaf": 0
+            });
+
+            // draw the cylces
+            argusObjRef.drawCycles(treedata[0].children[0].nodeid);
+        };
         $.ajax({
             url: o.url,
             type: o.httpMethod === undefined ? "POST" : o.httpMethod,
             dataType: 'json',
             data: dataStr,
+            context: argusObj,
             crossDomain: true,
             contentType: 'application/json',
-            success: function (data, textStatus, jqXHR) {
-                spec.container.text("proxy returned data..." + data);
-                // calculate view-specific geometry parameters
-                //var pheight = ((2 * r) + yNodeMargin) * (treedata[0].nleaves) + (nubDistScalar * r) + (40 * nodeHeight);
-                //var pwidth = nodesWidth * (treedata[0].maxnodedepth + 1) + 1.5 * tipOffset + xLabelMargin;
-                //xOffset = pwidth - nodesWidth - tipOffset;
-
-                //var domsource = treedata[1].domsource;
-                //if (spec.container === undefined) {
-                //    paper = new Raphael(10, 10, 10, 10);
-                //} else {
-                //    paper = new Raphael(spec.container, 10, 10);
-                //}
-                //paper.setSize(pwidth, pheight);
-                //var sourcelabel = paper.text(10, 10, "source: " + domsource).attr({
-                //    "font-size": String(fontScalar * r) + "px",
-                //    "text-anchor": "start"
-                //});
-
-                // draw the tree
-                //drawNode(treedata[0], domsource);
-
-                // draw the cylces
-                //drawCycles(treedata[0].children[0].nodeid);
-            },
+            success: ajaxSuccess,
             error: function (jqXHR, textStatus, errorThrown) {
                 $(".flash").html("Error: Node lookup failed").slideDown();
                 spec.container.text("Whoops! The call to get the tree around a node did not work out the way we were hoping it would. That is a real shame.  I'm not sure what to suggest...");
@@ -122,18 +166,139 @@ var createArgus = function (spec) {
         });
     };
 
-    argusObj.displayNode = function (nodeID) {
+    argusObj.displayNode = function (nodeID, domSource) {
         var ajaxInfo = buildAjaxCallInfo({
             "nodeID": nodeID,
-            "domSource": this.domSource
+            "domSource": (domSource === undefined ? this.domSource : domSource)
         });
+        if (paper !== undefined) {
+            paper.clear();
+            paper.remove();
+        }
         this.nodeID = nodeID;
-        this.container.text("test");
         this.loadData(ajaxInfo);
         return this;
     };
+
+    // create closure to access node attributes when hovering in/out
+    getHoverHandlerNode = function (circle, attributes) {
+        var nodeCircle = circle;
+        return function () {
+            nodeCircle.attr(attributes);
+        };
+    };
+
+    getClickHandlerNode = function (nodeID, domSource) {
+        return function () {
+            argusObj.displayNode(nodeID, domSource);
+        };
+    };
+
+    argusObj.drawNode = function (obj) {
+        // if isfirst is undefined, then this is the root of a new tree; reset counters/containers
+        var nchildren;
+        var circle;
+        var label;
+        var i;
+        var childxs;
+        var childys;
+        var branchSt;
+        var node = obj.node;
+        var domSource = obj.domSource;
+        var curLeaf = obj.curLeaf;
+        var fontSize = this.minTipRadius * this.fontScalar;
+        var spineSt;
+        var nAltParents;
+
+        // if this node has no children then we have hit a leaf
+        nchildren = (node.children === undefined ? 0 : node.children.length);
+        if (nchildren === 0) {
+            // leaves are drawn at the rightmost x-coord, incrementally from the topmost y-coord
+            node.x = this.xOffset;
+            node.y = (curLeaf * this.nodeHeight) + this.yOffset;
+
+            // draw the node
+            circle = paper.circle(node.x, node.y, this.minTipRadius).attr({
+                "fill": this.tipColor
+            }).toFront();
+            label = paper.text(node.x + this.xLabelMargin, node.y, node.name).attr({
+                'text-anchor': 'start',
+                "font-size": fontSize
+            });
+
+            circle.hover(getHoverHandlerNode(circle, {
+                "fill": this.tipHoverColor
+            }), getHoverHandlerNode(circle, {
+                "fill": this.tipColor
+            }));
+
+            curLeaf++;
+
+            // if the node has children then it is internal
+        } else {
+            childxs = [];
+            childys = [];
+            for (i = 0; i < nchildren; i++) {
+                // postorder traverse the children of this node
+                curLeaf = this.drawNode({
+                    "node": node.children[i],
+                    "domSource": domSource,
+                    "curLeaf": curLeaf
+                });
+
+                // the traversal generated the childrens' coordinates; now get them
+                if (isNumeric(node.children[i].x)) {
+                    childxs.push(node.children[i].x);
+                }
+                if (isNumeric(node.children[i].y)) {
+                    childys.push(node.children[i].y);
+                }
+            }
+
+            // calculate this node's coordinates based on the positions of its children
+            node.x = Math.min.apply(null, childxs) - this.nodesWidth; // use this line for square trees
+            node.y = childys.average();
+
+            // scale size of node circle by number of contained leaves
+            node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.nleaves);
+
+            // draw node circle
+            label = paper.text(node.x - node.r, node.y + node.r, node.name).attr({
+                'text-anchor': 'end',
+                "font-size": fontSize
+            });
+            circle = paper.circle(node.x, node.y, node.r).attr({
+                "fill": this.nodeColor
+            });
+
+            // assign hover behaviors
+            circle.hover(getHoverHandlerNode(circle, {
+                "fill": this.nodeHoverColor
+            }), getHoverHandlerNode(circle, {
+                "fill": this.nodeColor
+            }));
+
+            // draw branches (square tree)
+            spineSt = "M" + node.x + " " + node.children[0].y + "L" + node.x + " " + node.children[nchildren - 1].y;
+            paper.path(spineSt).toBack();
+            for (i = 0; i < nchildren; i++) {
+                branchSt = "M" + node.x + " " + node.children[i].y + "L" + node.children[i].x + " " + node.children[i].y;
+                paper.path(branchSt).toBack();
+            }
+        }
+
+        circle.click(getClickHandlerNode(node.nodeid, domSource));
+
+        // if this node has cycles, record it; we will draw them once the tree is done
+        nAltParents = (node.altrels === undefined ? 0 : node.altrels.length);
+        if (nAltParents > 0) {
+            this.nodesWithCycles.push(node.nodeid);
+        }
+        // store the node for fast access later
+        this.nodesHash[node.nodeid] = node;
+        return curLeaf;
+    };
     return argusObj;
-    
 };
 
 var paper; // raphael canvas object
@@ -411,7 +576,7 @@ function drawNode(node, domsource, isfirst) {
 
         // draw branches (square tree)
         var spine_st = "M" + node.x + " " + node.children[0].y + "L" + node.x + " " + node.children[nchildren - 1].y;
-        var spine = paper.path(spine_st).toBack();
+        paper.path(spine_st).toBack();
         for (i = 0; i < nchildren; i++) {
             branchSt = "M" + node.x + " " + node.children[i].y + "L" + node.children[i].x + " " + node.children[i].y;
             branch = paper.path(branchSt).toBack();
