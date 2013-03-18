@@ -1,7 +1,125 @@
 /*jslint indent: 4 */
 /*globals XMLHttpRequest, Raphael, $, window, location */
 
-var paperContainer; // DOM element that is the parent of the paper element
+// factor function -- gradually going to encapsulate argus functions here for better
+//  information hiding and avoiding putting a lot of things into the global namespace
+// Attributes of spec:
+//      domSource = "ottol"  The name of the source of trees. Currently only "ottol" is supported.
+//      nodeID = the ID for the node (according to the system of the service indicated by domSource)
+// if nodeID or domSource are lacking, they will *both* be parsed out of the URL query string (location.search)
+//      from nodeid and domsource url-encoded GET parameters. If they are not found there, the defaults are
+//      domSource="ottol" and nodeID = "805080"
+var createArgus = function (spec) {
+    var o;
+    var argusObj;
+    var paper;
+    // helper function to create the URL and arg to be passed to URL. 
+    //  Argument:
+    //      o.nodeID
+    //      o.domSource (default "ottol")  @TEMP will need to be modified for cases when ottol is not the value
+    //      o.httpMethod (defaul "POST")
+    //  Return an object with
+    //      url -- URL for ajax call
+    //      data -- object to be sent to the server
+    //      httpMethod -- (currently "POST")
+    var buildAjaxCallInfo = function (o) {
+        //var address = "http://localhost:7474"
+        var address = "http://opentree-dev.bio.ku.edu:7476";
+        var prefix = address + "/db/data/ext/GetJsons/node/";
+        var suffix = "/getConflictTaxJsonAltRel";
+        // @TEMP assuming ottol
+        var url = prefix + o.nodeID + suffix;
+        var ds = o.domSource === undefined ? "ottol" : o.domSource;
+        var ajaxData = {"domsource": ds}; // phylotastic TNRS API wants domsource, MTH believes.
+        return {
+            "url": url,
+            "data": ajaxData,
+            "httpMethod": "POST" //@TEMP assuming ottol
+        };
+    };
+
+    // get defaults for the root nodeID and domSource
+    if (spec.nodeID === undefined || spec.domSource === undefined) {
+        o = (function (q) {
+            // simple function to get nodeID and domSource the assuming ignored?key1=val1&key2=val2 structure to q
+            var toks, i, arg;
+            var ret = {};
+            toks = q.substr(1).split("?").split("&");
+            for (i = 0; i < toks.length; i++) {
+                arg = toks[i].split("=");
+                if (arg[0] === "nodeid") {
+                    ret.nodeID = arg[1];
+                } else if (arg[0] === "domsource") {
+                    ret.domSource = arg[1];
+                }
+            }
+            return ret;
+        }(location.search));
+        spec.nodeID = o.nodeID === undefined ? "805080" : o.nodeID;
+        spec.domSource = o.domSource === undefined ? "ottol" : o.nodeID;
+    }
+    argusObj = {
+        "nodeID": spec.nodeID,
+        "domSource": spec.domSource
+    };
+    argusObj.loadData = function (o) {
+        /* accepts three named arguments:
+         *    o.url               the address to which the HTTP request is sent
+         *    o.data              arguement (object of str) to be sent to the URL as an argument
+         *    o.httpMethod        e.g. "GET" or "POST"; "POST" is the default
+         */
+        $.ajax({
+            url: o.url,
+            type: o.httpMethod === undefined ? "POST" : o.httpMethod,
+            dataType: 'json',
+            data: o.data,
+            crossDomain: true,
+            contentType: 'application/json',
+            success: function (data, textStatus, jqXHR) {
+                spec.container.text("proxy returned data..." + data);
+                // calculate view-specific geometry parameters
+                /*
+                var pheight = ((2 * r) + yNodeMargin) * (treedata[0].nleaves) + (nubDistScalar * r) + (40 * nodeHeight);
+                var pwidth = nodesWidth * (treedata[0].maxnodedepth + 1) + 1.5 * tipOffset + xLabelMargin;
+                xOffset = pwidth - nodesWidth - tipOffset;
+
+                var domsource = treedata[1].domsource;
+                if (spec.container === undefined) {
+                    paper = new Raphael(10, 10, 10, 10);
+                } else {
+                    paper = new Raphael(spec.container, 10, 10);
+                }
+                paper.setSize(pwidth, pheight);
+                var sourcelabel = paper.text(10, 10, "source: " + domsource).attr({
+                    "font-size": String(fontScalar * r) + "px",
+                    "text-anchor": "start"
+                });
+
+                // draw the tree
+                drawNode(treedata[0], domsource);
+
+                // draw the cylces
+                drawCycles(treedata[0].children[0].nodeid);*/
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                $(".flash").html("Error: Node lookup failed").slideDown();
+                spec.container.text("Whoops! The call to get the tree around a node did not work out the way we were hoping it would. That is a real shame.  I'm not sure what to suggest...");
+            }
+        });
+    };
+    argusObj.displayNode = function (nodeID) {
+        var ajaxInfo = buildAjaxCallInfo({
+            "nodeID": nodeID,
+            "domSource": this.domSource
+        });
+        this.nodeID = nodeID;
+        this.loadData(ajaxInfo);
+        return this;
+    };
+
+    return argusObj;
+};
+
 var paper; // raphael canvas object
 var curLeaf; // absolute leaf counter used in geometry
 var nodesHash;
@@ -53,15 +171,15 @@ function loadData(argsobj) {
     /* accepts three named arguments:
      *    url               the address to which the HTTP request is sent
      *    jsonquerystring   a json string containing query information
-     *    method            e.g. GET or POST; POST is required for queries to the Neo4J REST service*/
+     *    httpMethod            e.g. GET or POST; POST is required for queries to the Neo4J REST service*/
 
     var url = argsobj.url;
     var jsonquerystr = argsobj.jsonquerystring;
-    var method = argsobj.method;
+    var httpMethod = argsobj.httpMethod;
     var container = argsobj.container;
 
     var xobjPost = new XMLHttpRequest();
-    xobjPost.open(method, url, false);
+    xobjPost.open(httpMethod, url, false);
     xobjPost.setRequestHeader("Accept", "");
 
     /* NOTE: we pass parameters to the REST service by encoding them in a JSON string
@@ -303,7 +421,7 @@ function drawNode(node, domsource, isfirst) {
 
             var loadargs = {
                 "url": buildUrl(focalnodeid),
-                "method": "POST",
+                "httpMethod": "POST",
                 "jsonquerystring": buildJSONQuery(jsonargs),
                 "container": paper.canvas.parentNode
             };
@@ -489,7 +607,7 @@ function drawCycles(focalnode) {
                     return function () {
                         var loadargs = {
                             "url": buildUrl(focalnodeid),
-                            "method": "POST",
+                            "httpMethod": "POST",
                             "jsonquerystring": buildJSONQuery(jsonargs),
                             "container": paper.canvas.parentNode
                         };
@@ -582,7 +700,7 @@ function drawCycles(focalnode) {
                         paper.clear();
                         var loadargs = {
                             "url": buildUrl(focalnodeid),
-                            "method": "POST",
+                            "httpMethod": "POST",
                             "jsonquerystring": jsonquerystr,
                             "container": paper.canvas.parentNode
                         };
@@ -665,7 +783,7 @@ function setupAtNode(nodeid, domsource, container) {
         var url = buildUrl(nodeid);
         var loadargs = {
             "url": url,
-            "method": "POST",
+            "httpMethod": "POST",
             "jsonquerystring": jsonquerystring,
             "container": container
         };
