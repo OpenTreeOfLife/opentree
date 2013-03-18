@@ -50,7 +50,7 @@ var createArgus = function (spec) {
                 firstSubstr = q.substr(1);
                 if (firstSubstr) {
                     qListStr = String(firstSubstr.split("?"));
-                    if (qList) {
+                    if (qListStr) {
                         toks = qListStr.split("&");
                         for (i = 0; i < toks.length; i++) {
                             arg = toks[i].split("=");
@@ -80,13 +80,14 @@ var createArgus = function (spec) {
         // accepts three named arguments:
          //    o.url               the address to which the HTTP request is sent
          //    o.data              arguement (object of str) to be sent to the URL as an argument
-         //   o.httpMethod        e.g. "GET" or "POST"; "POST" is the default
+         //    o.httpMethod        e.g. "GET" or "POST"; "POST" is the default
          //
+        var dataStr = JSON.stringify(o.data);
         $.ajax({
             url: o.url,
             type: o.httpMethod === undefined ? "POST" : o.httpMethod,
             dataType: 'json',
-            data: o.data,
+            data: dataStr,
             crossDomain: true,
             contentType: 'application/json',
             success: function (data, textStatus, jqXHR) {
@@ -122,16 +123,15 @@ var createArgus = function (spec) {
     };
 
     argusObj.displayNode = function (nodeID) {
-        //var ajaxInfo = buildAjaxCallInfo({
-        //    "nodeID": nodeID,
-        //    "domSource": this.domSource
-        //});
-        //this.nodeID = nodeID;
+        var ajaxInfo = buildAjaxCallInfo({
+            "nodeID": nodeID,
+            "domSource": this.domSource
+        });
+        this.nodeID = nodeID;
         this.container.text("test");
-        //this.loadData(ajaxInfo);
+        this.loadData(ajaxInfo);
         return this;
     };
-    spec.container.text("test c");
     return argusObj;
     
 };
