@@ -29,6 +29,12 @@
   </div>
 </div>
 
+<p>Pre DB p element</p>
+<div id="argusDBContainer" />
+<p>Post DB p element</p>
+
+
+
 <div class="container">
   <div class="navbar">
 
@@ -88,8 +94,15 @@
 
 <script type="text/javascript">
 $(document).ready(function (){
+  var dbParent = document.getElementById("argusDBContainer");
   var canvasParent = document.getElementById("argusCanvasContainer");
+  var argus;
   setupAtNode("805080", "ottol", canvasParent);
+
+  argus = createArgus({
+    "domSource": "ottol",
+    "nodeID": "805080"
+  });
 });
 </script>
 </body>
