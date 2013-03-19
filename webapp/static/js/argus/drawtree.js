@@ -11,6 +11,7 @@
 //              domSource="ottol" and nodeID = "805080"
 //      container - DOM element that will contain the argus object
 function createArgus(spec) {
+    "use strict";
     var o;
     var argusObj;
     var paper;
@@ -117,7 +118,7 @@ function createArgus(spec) {
             var argusObjRef = this;
             var treedata = $.parseJSON(dataStr);
             var node = treedata[0];
-            var pheight, pwidth, xOffset, sourcelabel;
+            var pheight, pwidth, sourcelabel;
             //spec.container.text("proxy returned data..." + treedata);
             // calculate view-specific geometry parameters
             pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.nleaves);
@@ -151,10 +152,7 @@ function createArgus(spec) {
             });
 
             // draw the cylces
-            argusObjRef.drawCycles({
-                "node": node,
-                "domSource": domSource
-            });
+            argusObjRef.drawCycles();
         };
         $.ajax({
             url: o.url,
@@ -206,7 +204,6 @@ function createArgus(spec) {
          * anything about previous relationships.
          *                  var altrelids = // get altrels ;
          *                  altrelids.push(child.altrels[j].altrelid); */
-        var focalnodeid = nodeFromAJAX.parentid;
         return function () {
             argusObj.displayNode(nodeFromAJAX.parentid, nodeFromAJAX.source);
         };
@@ -318,9 +315,7 @@ function createArgus(spec) {
     };
 
 
-    argusObj.drawCycles = function (obj) {
-        var node = obj.node;
-        var domSource = obj.domSource;
+    argusObj.drawCycles = function () {
         var curNub;
         var tx, ty, i, j, child, cx, cy, nub;
         var naltparents;
@@ -328,12 +323,12 @@ function createArgus(spec) {
         var togglelabel, togglebox, body;
         var sst, altrelline, dln;
         var bw, bh, altrellabel, altrellabelbox, altrellabeltext;
-        var x1, y1, x2, y2;
+        var x1, y1, y2;
         var getClickHandlerAltRelLine;
         var getHoverHandlerAltRelLineShow;
         var getHoverHandlerAltRelLineHide;
         var toggleAltRels;
-        var getClickHandlerNubRelLink, getNubLinkHoverHandler;
+        var getNubLinkHoverHandler;
         var getInfoBoxHoverHandlerShow, getInfoBoxHoverHandlerHide;
         var infobox, nublabelbox, nublinks, linktext, thislink;
         var fontSize = this.minTipRadius * this.fontScalar;
@@ -570,6 +565,7 @@ function createArgus(spec) {
 }
 
 Array.prototype.average = function () {
+    "use strict";
     var sum = 0;
     var count = 0;
     var len = this.length;
