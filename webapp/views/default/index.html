@@ -9,14 +9,11 @@
 
 <script type="text/javascript">
 $(document).ready(function (){
-  var dbParent = document.getElementById("argusDBContainer");
-  var canvasParent = document.getElementById("argusCanvasContainer");
-  var argus;
-  setupAtNode("805080", "ottol", canvasParent);
-
-  argus = createArgus({
+  var argus = createArgus({
     "domSource": "ottol",
-    "nodeID": "805080"
+    "nodeID": "805080", 
+    "container": document.getElementById("argusCanvasContainer")
   });
+  argus.displayNode("805080", "ottol");
 });
 </script>
