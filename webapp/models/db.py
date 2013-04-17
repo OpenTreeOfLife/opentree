@@ -57,6 +57,12 @@ auth.settings.registration_requires_verification = False
 auth.settings.registration_requires_approval = False
 auth.settings.reset_password_requires_verification = True
 
+# basic setup for wikip plugin(s)
+plugins.wiki.editor = auth.user.email == mail.settings.sender
+plugins.wiki.level = 3
+plugins.wiki.mode = 'html' # OR 'markmin', others?
+# plugins.wiki.theme = 'ui-darkness'
+
 ## if you need to use OpenID, Facebook, MySpace, Twitter, Linkedin, etc.
 ## register with janrain.com, write your domain:api_key in private/janrain.key
 #from gluon.contrib.login_methods.rpx_account import use_janrain
