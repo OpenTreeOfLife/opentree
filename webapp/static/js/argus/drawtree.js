@@ -24,31 +24,6 @@ function createArgus(spec) {
         return !isNaN(parseFloat(n)) && isFinite(n);
     };
 
-    // helper function to create the URL and arg to be passed to URL. 
-    //  Argument:
-    //      o.nodeID
-    //      o.domSource (default "ottol")  @TEMP will need to be modified for cases when ottol is not the value
-    //      o.httpMethod (defaul "POST")
-    //  Return an object with
-    //      url -- URL for ajax call
-    //      data -- object to be sent to the server
-    //      httpMethod -- (currently "POST")
-    var buildAjaxCallInfo = function (o) {
-        //var address = "http://localhost:7474"
-        var address = "http://opentree-dev.bio.ku.edu:7476";
-        var prefix = address + "/db/data/ext/GetJsons/node/";
-        var suffix = "/getConflictTaxJsonAltRel";
-        // @TEMP assuming ottol
-        var url = prefix + o.nodeID + suffix;
-        var ds = o.domSource === undefined ? "ottol" : o.domSource;
-        var ajaxData = {"domsource": ds}; // phylotastic TNRS API wants domsource, MTH believes.
-        return {
-            "url": url,
-            "data": ajaxData,
-            "httpMethod": "POST", //@TEMP assuming ottol
-            "domSource": ds
-        };
-    };
 
     // get defaults for the root nodeID and domSource
     if (spec.nodeID === undefined || spec.domSource === undefined) {
@@ -82,10 +57,22 @@ function createArgus(spec) {
     if (spec.container === undefined) {
         spec.container = $("body");
     }
+    if (spec.treemachineDomain === undefined) {
+        spec.treemachineDomain = "http://opentree-dev.bio.ku.edu:7474";
+    }
+    if (spec.taxomachineDomain === undefined) {
+        spec.taxomachineDomain = "http://opentree-dev.bio.ku.edu:7476";
+    }
+    if (spec.useTreemachine === undefined) {
+        spec.useTreemachine = false; //@TEMP should the default really be taxomachine?
+    }
     argusObj = {
         "nodeID": spec.nodeID,
         "domSource": spec.domSource,
         "container": spec.container,
+        "treemachineDomain": spec.treemachineDomain,
+        "taxomachineDomain": spec.taxomachineDomain,
+        "useTreemachine": spec.useTreemachine,
         "fontScalar": 2.6, // multiplied by radius to set font size
         "minTipRadius": 5, // the minimum radius of the node/tip circles. "r" in old argus
         "nodeDiamScalar": 1.5,  // how much internal nodes are scaled by logleafcount
@@ -105,6 +92,50 @@ function createArgus(spec) {
         "tipHoverColor": "#b8f"
     };
     argusObj.nodeHeight = (2 * argusObj.minTipRadius) + argusObj.yNodeMargin;
+    // helper function to create the URL and arg to be passed to URL. 
+    //  Argument:
+    //      o.nodeID
+    //      o.domSource (default "ottol")  @TEMP will need to be modified for cases when ottol is not the value
+    //      o.httpMethod (defaul "POST")
+    //  Return an object with
+    //      url -- URL for ajax call
+    //      data -- object to be sent to the server
+    //      httpMethod -- (currently "POST")
+    argusObj.buildAjaxCallInfo = function (o) {
+        //var address = "http://localhost:7474"
+        var address;
+        var prefix;
+        var suffix;
+        var url;
+        var ds;
+        var ajaxData;
+        if (this.useTreemachine) {
+            address = this.treemachineDomain;
+            prefix = address + "/db/data/ext/GoLS/graphdb/";
+            suffix = "getSourceTree";
+            url = prefix + suffix;
+            // default is the classic "tree 4 in phylografter"
+            ds = o.domSource === undefined ? "4" : o.domSource;
+            ajaxData = {
+                "treeID": ds,
+                "format": "arguson"
+            };
+        } else {
+            address = this.taxomachineDomain;
+            prefix = address + "/db/data/ext/GetJsons/node/";
+            suffix = "/getConflictTaxJsonAltRel";
+            url = prefix + o.nodeID + suffix;
+            // @TEMP assuming ottol
+            ds = o.domSource === undefined ? "ottol" : o.domSource;
+            ajaxData = {"domsource": ds}; // phylotastic TNRS API wants domsource, MTH believes.
+        }
+        return {
+            "url": url,
+            "data": ajaxData,
+            "httpMethod": "POST", //@TEMP assuming ottol
+            "domSource": ds
+        };
+    };
     argusObj.loadData = function (o) {
         // accepts three named arguments:
          //    o.url               the address to which the HTTP request is sent
@@ -171,7 +202,7 @@ function createArgus(spec) {
     };
 
     argusObj.displayNode = function (nodeID, domSource) {
-        var ajaxInfo = buildAjaxCallInfo({
+        var ajaxInfo = this.buildAjaxCallInfo({
             "nodeID": nodeID,
             "domSource": (domSource === undefined ? this.domSource : domSource)
         });

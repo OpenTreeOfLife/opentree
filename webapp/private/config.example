@@ -1,0 +1,4 @@
+# rename this to "config" to make it active
+[domains]
+treemachine = http://127.0.0.1:7474
+taxomachine = http://127.0.0.1:7476
