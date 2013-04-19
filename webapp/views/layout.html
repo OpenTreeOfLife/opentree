@@ -9,88 +9,77 @@
     {{response.files.append(URL('static','js/argus/drawtree.js'))}}
     
     {{include 'web2py_ajax.html'}}
+    
+    {{
+    # using sidebars need to know what sidebar you want to use
+    left_sidebar_enabled = globals().get('left_sidebar_enabled',False)
+    right_sidebar_enabled = globals().get('right_sidebar_enabled',False)
+    middle_columns = {0:'span12',1:'span9',2:'span6'}[
+    (left_sidebar_enabled and 1 or 0)+(right_sidebar_enabled and 1 or 0)]
+    }}
   </head>
-  <body>
+  
+<body>
 
-<div class="header">
-  <div class="headerlogo">
-    {{=A(IMG(_src=URL('static','images/logo.png'), 
-            _alt="Open Tree of Life logo",
-            _width="144", 
-            _height="74",
-            _valign="middle"),
-        _href="http://opentreeoflife.org/")}}
-  </div>
-  <div class="headersearch">
-    <form>Search
-      <input type="text" class="headerinputtext"/>
-      <input type="submit" value="go" />
-    </form>
-  </div>
-</div>
+	<div class="header">
+	  <div class="headerlogo">
+		{{=A(IMG(_src=URL('static','images/logo.png'), 
+				_alt="Open Tree of Life logo",
+				_width="144", 
+				_height="74",
+				_valign="middle"),
+			_href="http://opentreeoflife.org/")}}
+	  </div>
+	  <div class="headersearch">
+		<form>Search
+		  <input type="text" class="headerinputtext"/>
+		  <input type="submit" value="go" />
+		</form>
+	  </div>
+	</div>
 
-<div class="container">
-  <div class="navbar">
+    <section id="main" class="main row">
+            {{if left_sidebar_enabled:}}
+        <div class="span3 left-sidebar">
+            {{block left_sidebar}}
+            <h3>Left Sidebar</h3>
+            <p></p>
+            {{end}}
+        </div>
+        {{pass}}
 
-      <br />
+        <div class="{{=middle_columns}}">
+            {{block center}}
+            {{include}}
+            {{end}}
+        </div>
 
-      <strong><a href="">Eukaryota</a></strong>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; cellular organisms </span>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; life </span>
-      <br />
-      <br />
-
-      <strong><a href="">Second search result</a></strong>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; parent taxon </span>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; grandparent taxon </span>
-      <br />
-      <br />
-
-      <hr />
-      <br />
-
-      <a href="extract.html">Extract subtree</a>
-      <br />
-
-      <a href="about.html">About the tree</a>
-      <br />
-
-      <a href="http://www.reelab.net/phylografter">Source tree manager</a>
-      <br />
-
-      <a href="download.html">Download</a>
-      <br />
-
-      <a href="credits.html">Credits</a>
-      <br />
-      <br />
-      <hr />
-      <i>What's new:</i>
-      <p style="margin-left:2em; font-size: 80%;">
-        New in version 0.73: Something very cool
-      </p>
-
+        {{if right_sidebar_enabled:}}
+        <div class="span3">
+            {{block right_sidebar}}
+            <h3>Right Sidebar</h3>
+            <p></p>
+            {{end}}
+        </div>
+        {{pass}}
+    </section>
+    
+    <!-- Footer ================================================== -->
+    <div class="row">
+        <footer class="footer span12" id="footer">
+            <div class="footer-content">
+                {{block footer}} <!-- this is default footer -->
+                <div id="fundedBy" class="pull-left">
+                	{{=T('Open Tree of Life is funded by NSF AVAToL Award #1208809')}}
+                	</div>
+                <div id="poweredBy" class="pull-right">
+                    {{=T('Powered by')}}
+                    <a href="http://www.web2py.com/">web2py</a>
+                </div>
+                {{end}}
+            </div>
+        </footer>
     </div>
-    <div class="vizcontent">
-      <div id="argusCanvasContainer">
-        
-      </div>
-    </div>
-</div>
 
-<script type="text/javascript">
-$(document).ready(function (){
-  var canvasParent = document.getElementById("argusCanvasContainer");
-  setupAtNode("805080", "ottol", canvasParent);
-});
-</script>
 </body>
 </html>
