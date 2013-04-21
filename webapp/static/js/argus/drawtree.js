@@ -89,7 +89,8 @@ function createArgus(spec) {
         "nodeColor": "#8af",
         "nodeHoverColor": "#bdf",
         "tipColor": "#14d",
-        "tipHoverColor": "#b8f"
+        "tipHoverColor": "#b8f",
+        "currMaxDepth": 4
     };
     argusObj.nodeHeight = (2 * argusObj.minTipRadius) + argusObj.yNodeMargin;
     // helper function to create the URL and arg to be passed to URL. 
@@ -109,6 +110,7 @@ function createArgus(spec) {
         var url;
         var ds;
         var ajaxData;
+
         if (this.useTreemachine) {
             address = this.treemachineDomain;
             prefix = address + "/db/data/ext/GoLS/graphdb/";
@@ -118,8 +120,12 @@ function createArgus(spec) {
             ds = o.domSource === undefined ? "4" : o.domSource;
             ajaxData = {
                 "treeID": ds,
-                "format": "arguson"
+                "format": "arguson",
+                "maxDepth": this.currMaxDepth
             };
+            if (o.nodeID !== undefined) {
+                ajaxData.subtreeNodeID = o.nodeID;
+            }
         } else {
             address = this.taxomachineDomain;
             prefix = address + "/db/data/ext/GetJsons/node/";
