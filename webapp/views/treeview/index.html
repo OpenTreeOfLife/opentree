@@ -67,6 +67,16 @@
 
 <script type="text/javascript">
 $(document).ready(function (){
+  {{if tree_id is None: }}
+    var treeID = "4";
+  {{else:}}
+    var treeID = "{{=tree_id}}";
+  {{pass}}
+  {{if node_id is None: }}
+    var nodeID = undefined;
+  {{else:}}
+    var nodeID = "{{=node_id}}";
+  {{pass}}
   var argus = createArgus({
     "domSource": "ottol",
     "nodeID": "805080", 
@@ -75,6 +85,6 @@ $(document).ready(function (){
     "taxomachineDomain":"{{=taxomachine_domain}}",
     "useTreemachine":true
   });
-  argus.displayNode(undefined, "4");
+  argus.displayNode(nodeID, treeID);
 });
 </script>

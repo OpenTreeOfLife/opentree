@@ -7,6 +7,8 @@ def download(): return response.download(request,db)
 def call(): return service()
 ### end requires
 def index():
-    return get_opentree_services_domains(request)
-
+    context_dict = get_opentree_services_domains(request)
+    context_dict['tree_id'] = request.vars.get('tree')
+    context_dict['node_id'] = request.vars.get('node')
+    return context_dict
 
