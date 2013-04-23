@@ -85,6 +85,7 @@ $(document).ready(function (){
     "taxomachineDomain":"{{=taxomachine_domain}}",
     "useTreemachine":true
   });
-  argus.displayNode(nodeID, treeID);
+  argus.displayNode({"nodeID" : nodeID, 
+                     "domSource" : treeID});
 });
 </script>

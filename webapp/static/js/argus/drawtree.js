@@ -90,7 +90,10 @@ function createArgus(spec) {
         "nodeHoverColor": "#bdf",
         "tipColor": "#14d",
         "tipHoverColor": "#b8f",
-        "currMaxDepth": 4
+        "currMaxDepth": 4,
+        "backStack": [], // args to previous displayNode calls
+        "forwardStack": [], // args to displayNode calls after the back button has been clicked
+        "currDisplayContext": undefined //arg to most recent displayNode call
     };
     argusObj.nodeHeight = (2 * argusObj.minTipRadius) + argusObj.yNodeMargin;
     // helper function to create the URL and arg to be passed to URL. 
@@ -207,16 +210,19 @@ function createArgus(spec) {
         });
     };
 
-    argusObj.displayNode = function (nodeID, domSource) {
+    argusObj.displayNode = function (o) {
         var ajaxInfo = this.buildAjaxCallInfo({
-            "nodeID": nodeID,
-            "domSource": (domSource === undefined ? this.domSource : domSource)
+            "nodeID": o.nodeID,
+            "domSource": (o.domSource === undefined ? this.domSource : o.domSource)
         });
         if (paper !== undefined) {
             paper.clear();
             paper.remove();
         }
-        this.nodeID = nodeID;
+        //if (o.storeThisCall === undefined or o.storeThisCall) {
+        //    o.
+        //}
+        this.nodeID = o.nodeID;
         this.loadData(ajaxInfo);
         return this;
     };
@@ -230,7 +236,8 @@ function createArgus(spec) {
     };
     getClickHandlerNode = function (nodeID, domSource) {
         return function () {
-            argusObj.displayNode(nodeID, domSource);
+            argusObj.displayNode({"nodeID": nodeID,
+                                  "domSource": domSource});
         };
     };
 
@@ -242,7 +249,8 @@ function createArgus(spec) {
          *                  var altrelids = // get altrels ;
          *                  altrelids.push(child.altrels[j].altrelid); */
         return function () {
-            argusObj.displayNode(nodeFromAJAX.parentid, nodeFromAJAX.source);
+            argusObj.displayNode({"nodeID": nodeFromAJAX.parentid,
+                                  "domSource": nodeFromAJAX.source});
         };
     };
 
