@@ -18,6 +18,8 @@ function createArgus(spec) {
 
     var getHoverHandlerNode;
     var getClickHandlerNode;
+    var getBackClickHandler;
+    var getForwardClickHandler;
     var getClickHandlerAltRelLine;
 
     var isNumeric = function (n) {
@@ -93,7 +95,13 @@ function createArgus(spec) {
         "currMaxDepth": 4,
         "backStack": [], // args to previous displayNode calls
         "forwardStack": [], // args to displayNode calls after the back button has been clicked
-        "currDisplayContext": undefined //arg to most recent displayNode call
+        "currDisplayContext": undefined, //arg to most recent displayNode call
+        toggleAltBoxX: 10,
+        toggleAltBoxY: 50,
+        sourceTextBoxX: 10,
+        sourceTextBoxY: 35,
+        backArrowX: 10,
+        backArrowY: 10
     };
     argusObj.nodeHeight = (2 * argusObj.minTipRadius) + argusObj.yNodeMargin;
     // helper function to create the URL and arg to be passed to URL. 
@@ -176,11 +184,12 @@ function createArgus(spec) {
                 paper = new Raphael(argusObjRef.container, 10, 10);
             }
             paper.setSize(pwidth, pheight);
-            sourcelabel = paper.text(10, 10, "source: " + domSource).attr({
+            sourcelabel = paper.text(argusObjRef.sourceTextBoxX,
+                                     argusObjRef.sourceTextBoxY,
+                                     "source: " + domSource).attr({
                 "font-size": String(argusObjRef.fontScalar * argusObjRef.minTipRadius) + "px",
                 "text-anchor": "start"
             });
-
             // refresh tree
             argusObjRef.nodesHash = {};
             argusObjRef.nodesWithCycles = [];
@@ -193,6 +202,16 @@ function createArgus(spec) {
 
             // draw the cylces
             argusObjRef.drawCycles();
+            if (argusObjRef.backStack.length > 0) {
+                paper.path("M21.871,9.814 15.684,16.001 21.871,22.188 18.335,25.725 8.612,16.001 18.335,6.276z")
+                    .attr({fill: "#000", stroke: "none"})
+                    .click(getBackClickHandler());
+            }
+            if (argusObjRef.forwardStack.length > 0) {
+                paper.path("M30.129,22.186 36.316,15.999 30.129,9.812 33.665,6.276 43.389,15.999 33.665,25.725z")
+                    .attr({fill: "#000", stroke: "none"})
+                    .click(getForwardClickHandler());
+            }
         };
         $.ajax({
             url: o.url,
@@ -219,9 +238,17 @@ function createArgus(spec) {
             paper.clear();
             paper.remove();
         }
-        //if (o.storeThisCall === undefined or o.storeThisCall) {
-        //    o.
-        //}
+        /* The next 9 lines store the last call to displayNode. We'll need to move this, if we use other functions as "public" entry points of Argus calls*/
+        if (o.storeThisCall === undefined || o.storeThisCall) {
+            if (this.currDisplayContext !== undefined) {
+                this.backStack.push(this.currDisplayContext);
+            }
+        }
+        this.currDisplayContext = $.extend(true, {}, o); // cryptic, eh?  this is a deep copy of o
+        if (o.storeThisCall === undefined || o.storeThisCall) {
+            delete this.currDisplayContext.storeThisCall;
+        }
+
         this.nodeID = o.nodeID;
         this.loadData(ajaxInfo);
         return this;
@@ -240,7 +267,20 @@ function createArgus(spec) {
                                   "domSource": domSource});
         };
     };
-
+    getBackClickHandler = function () {
+        return function () {
+            argusObj.forwardStack.push(argusObj.currDisplayContext);
+            o = argusObj.backStack.pop();
+            o.storeThisCall = false;
+            argusObj.displayNode(o);
+        };
+    };
+    getForwardClickHandler = function() {
+        return function () {
+            o = argusObj.forwardStack.pop();
+            argusObj.displayNode(o);
+        };
+    };
     getClickHandlerAltRelLine = function (nodeFromAJAX) {
         /* at some point we will probably want to retain a history of preferred altrelationships, etc.
          * these should be stored/retrieved from a base-level query info object that is passed back
@@ -432,8 +472,8 @@ function createArgus(spec) {
         };
 
 
-        tx = 10;
-        ty = 30;
+        tx = this.toggleAltBoxX;
+        ty = this.toggleAltBoxY;
         togglelabel = paper.text(tx + this.minTipRadius,
                                  ty + this.nodeHeight * 0.95,
                                  "toggle alt rels").attr({
