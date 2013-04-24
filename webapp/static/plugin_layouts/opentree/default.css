@@ -36,8 +36,14 @@ body {
 	float: left;
 }
 .vizcontent {
-	padding-left: 200px;
+	padding-left: 205px;
 }
-.vizcontent div {
+.vizcontent div.viewer-frame {
 	padding: 0px;
 }
+.vizcontent div.viewer-frame {
+	padding: 0px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+}
+
