@@ -55,8 +55,14 @@
 
     </div>
     <div class="vizcontent">
-      <div id="argusCanvasContainer">  
+      <div id="argusCanvasContainer" class="viewer-frame">  
       </div>
+      <!-- TODO: Add other viewers here? or common frame? -->
+
+      <h1>Comments for <i>{{=request.url}}</i></h1>
+      <ul>
+          {{=plugin_localcomments(url=request.url)}}
+      </ul>
     </div>
   </div>
 

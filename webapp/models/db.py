@@ -57,10 +57,33 @@ auth.settings.registration_requires_verification = False
 auth.settings.registration_requires_approval = False
 auth.settings.reset_password_requires_verification = True
 
+# basic setup for wikip plugin(s)
+plugins.wiki.editor = (auth.user) and (auth.user.email == mail.settings.sender)
+plugins.wiki.level = 3
+plugins.wiki.mode = 'html' # OR 'markmin', others?
+# plugins.wiki.theme = 'ui-darkness'
+
 ## if you need to use OpenID, Facebook, MySpace, Twitter, Linkedin, etc.
 ## register with janrain.com, write your domain:api_key in private/janrain.key
-from gluon.contrib.login_methods.rpx_account import use_janrain
-use_janrain(auth, filename='private/janrain.key')
+#from gluon.contrib.login_methods.rpx_account import use_janrain
+#use_janrain(auth, filename='private/janrain.key')
+try:
+    host = conf.get("hosting", "hostdomain")
+except:
+    host = "localhost:8000"
+
+from gluon.contrib.login_methods.rpx_account import RPXAccount
+auth.settings.actions_disabled=['register','change_password','request_reset_password']
+auth.settings.login_form = RPXAccount(
+    request, api_key='9435bcb6253fa24c4680cbbd0d4e75a0accde8b3',
+    domain='phylografter',
+    url = "http://%s/%s/default/user/login" % (host, request.application)
+    )
+
+if request.controller=='default' and request.function=='user' and request.args(0)=='login':
+    auth.settings.login_next = session._next or URL('index')
+else:
+    session._next = request.env.path_info
 
 #########################################################################
 ## Define your tables below (or better in another model file) for example
