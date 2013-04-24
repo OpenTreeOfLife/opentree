@@ -1,4 +1,15 @@
 # -*- coding: utf-8 -*-
+import os
+from ConfigParser import SafeConfigParser
+
+conf = SafeConfigParser({})
+try:
+    if os.path.isfile("applications/%s/private/localconfig" % request.application):
+        conf.read("applications/%s/private/localconfig" % request.application)
+    else:
+        conf.read("applications/%s/private/config" % request.application)
+except:
+    pass  #@TEMP probably should log this event...
 
 #########################################################################
 ## This scaffolding model makes your app work on Google App Engine too
