@@ -9,6 +9,10 @@ div.plugin_localcomments .byline {
     margin: 0px -4px 6px;
     padding: 2px 4px;
 }
+div.plugin_localcomments .byline .badge {
+    color: #080;
+}
+div.plugin_localcomments .deleted .controls,
 div.plugin_localcomments .byline .controls {
     padding-left: 20px;
 }
@@ -21,7 +25,7 @@ div.plugin_localcomments .byline .controls {
 }
 .plugin_localcomments .body {
     font-size: 120%;
-    padding: 3px 0;
+    padding: 3px 0 0;
 }
 .plugin_localcomments ul ul {
     padding-left: 20px;

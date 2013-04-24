@@ -27,7 +27,8 @@ function plugin_localcomments_init() {
                ////$'thread_parent_id': form.find('input[name="thread_parent_id"]').val(),
                'thread_parent_id': $form.parent().prev().attr('id').split('r')[1], 
                'url': $form.find('input[name="url"]').val(),
-               'body': $form.find('textarea[name="body"]').val()
+               'body': $form.find('textarea[name="body"]').val(),
+               'claimed_expertise': $form.find(':checkbox[name="claimed_expertise"]').is(':checked')
            },
            function(data,r){ 
                if(data) { 
@@ -82,8 +83,17 @@ function plugin_localcomments_init() {
   });
   jQuery('div.plugin_localcomments .delete').unbind('click').click(function(){
     delete_all_forms();
-    var parent = jQuery(this).parent()
-    jQuery.post(action+'/delete/'+parent.attr('id'),null,function(data,r){parent.addClass('deleted').html('[deleted comment]');});
+    var $commentDiv = jQuery(this).parent().parent().parent();
+    jQuery.post(
+        action+'/delete',
+        {
+            'thread_parent_id': 'delete',
+            'comment_id': $commentDiv.attr('id').split('r')[1]
+        },
+        function(data,r){
+            $commentDiv.addClass('deleted').find('.body').html('[deleted comment]');
+        }
+    );
     return false;
   });
 }
@@ -108,6 +118,8 @@ def index():
 
     url = request.vars['url'] # if not provided, show all
     thread_parent_id = request.vars['thread_parent_id'] # can be None
+    comment_id = request.vars['comment_id'] # used for some operations (eg, delete)
+    claims_expertise = request.vars['claimed_expertise'] # used for new comments
     thread = {0:[]}
     def node(comment):
         if not comment.deleted:
@@ -116,7 +128,9 @@ def index():
                 DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
                     DIV(comment.body,_class='body'),
-                    DIV(T('%s ',comment.created_by.first_name),T('%s',comment.created_by.last_name), T(' - %s',prettydate(comment.created_on,T)),
+                    DIV(T('%s ',comment.created_by.first_name),T('%s',comment.created_by.last_name), 
+                        SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
+                        T(' - %s',prettydate(comment.created_on,T)),
                         SPAN(
                             A(T('hide replies'),_class='toggle',_href='#'),
                             SPAN(' | ') if auth.user_id else '',
@@ -132,17 +146,20 @@ def index():
                 )
         elif comment.id in thread:
             return LI(
-                DIV(T('DELETED'),' [',
-                    A(T('toggle'),_class='toggle',_href='#'),']'),
+                DIV(SPAN(T('[deleted comment]'),_class='body'),' ',
+                    SPAN(
+                        A(T('hide replies'),_class='toggle',_href='#'),
+                    _class='controls'),
+                _class='deleted'),
                 DIV(_class='reply'),
                 SUL(*[node(comment) for comment in thread.get(comment.id,[])]))
         else: 
             return None
 
     if thread_parent_id == 'delete':
-        # delete the specified comment
-        if db(dbco.created_by==auth.user_id)(dbco.url==url)\
-                (dbco.id==request.args(3)[1:]).update(deleted=True):
+        # delete the specified comment ... ADD(dbco.url==url)?
+        if db(dbco.created_by==auth.user_id)\
+                (dbco.id==comment_id).update(deleted=True):
             return 'deleted'
         else:
             return error()
@@ -154,7 +171,7 @@ def index():
         dbco.url.default = url.strip()
         dbco.created_by.default = auth.user_id
         # TODO: add expertise checkbox, others
-        dbco.claimed_expertise.default = False
+        dbco.claimed_expertise.default = claims_expertise
         if len(re.compile('\s+').sub('',request.vars.body))<1:
             return ''
         item = dbco.insert(body=request.vars.body.strip())
@@ -169,7 +186,7 @@ def index():
                         INPUT(_type='text',_name='url',_value=url),  # OR _value=comment.url
                         # INPUT(_type='text',_name='thread_parent_id',_value=0),   # we'll get this from a nearby id, eg 'r8'
                         INPUT(_type='submit',_value=T('post'),_style='float:right'), 
-                        LABEL(INPUT(_type='checkbox',_value=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float:left; margin-right: 40px;'),
+                        LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float:left; margin-right: 40px;'),
                         A(T('help'),_href='http://daringfireball.net/projects/markdown/',
                           _target='_blank',_style='float:right; padding-right: 10px'),
                         SPAN(' | ',_style='float:right; padding-right: 6px'),
