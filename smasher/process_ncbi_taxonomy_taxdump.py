@@ -2,9 +2,12 @@
 
 # JAR copied this file from data/ in the taxomachine repository
 # to smasher/ in the opentree repository on 2013-04-25.
-# Some subsequent modifications.
+# Some subsequent modifications:
+#  - remove "unclassified"
+#  - add command line argument for directory in which to put ncbi
+#  - change skipids from list to dictionary for speed
 
-import sys,os,sqlite3
+import sys,os
 import os.path
 from collections import Counter
 
@@ -82,12 +85,13 @@ if __name__ == "__main__":
             print count
     nodesf.close()
 
-    skip = ["viral","unclassified","other","viroids","viruses","artificial","x","environmental","unknown","unidentified","endophyte","endophytic","uncultured","scgc","libraries","virus","mycorrhizal samples"]
-    skipids = []
+    # Removed "unclassified" 2013-04-25
+    skip = ["viral","other","viroids","viruses","artificial","x","environmental","unknown","unidentified","endophyte","endophytic","uncultured","scgc","libraries","virus","mycorrhizal samples"]
+    skipids = {}
     #run through the skip ids file
     skipidf = open(skipfile,"r")
     for i in skipidf:
-    	skipids.append(i.strip())
+    	skipids[i.strip()] = True
     skipidf.close()
     
     count = 0
@@ -102,7 +106,8 @@ if __name__ == "__main__":
         spls = i.strip().split("\t|") #if you do \t|\t then you don't get the name class right because it is "\t|"
         gid = spls[0].strip()
         par = pid[gid]
-        nm = spls[1].strip().replace("[").replace("]")
+        # was nm = spls[1].strip().replace("[","").replace("]","")
+        nm = spls[1].strip()
         homonc = spls[2].strip() #can get if it is a series here
         nm_c = spls[3].strip()
         if nm_c not in classes:
@@ -153,7 +158,7 @@ if __name__ == "__main__":
 
     #now making sure that the taxonomy is functional before printing to the file
 
-    skipids = []
+    skipids = {}
     stack = idstoexclude
 
 
@@ -165,7 +170,7 @@ if __name__ == "__main__":
         curid = stack.pop()
         if curid in skipids:
             continue
-        skipids.append(curid)
+        skipids[curid] = True
         if curid in cid:
             ids = cid[curid]
             for i in ids:

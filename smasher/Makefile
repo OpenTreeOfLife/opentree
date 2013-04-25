@@ -26,7 +26,7 @@ TEST_ARGS=Smasher $(TAXOMACHINE_ROOT)/example/nematoda.ncbi $(TAXOMACHINE_ROOT)/
       --aux $(WORK)/nem1.preottol \
       --out $(WORK)/nem2/
 
-NCBI=$(WORK)/ncbi_with_unclassified.txt
+NCBI=$(WORK)/ncbi_with_unclassified.processed
 #NCBI=$(WORK)/ncbi.processed
 GBIF=$(WORK)/gbif.processed
 
@@ -55,7 +55,7 @@ debug:
 	jdb $(CP) $(TEST_ARGS)
 
 prod: $(WORK)/ott2.log
-$(WORK)/ott2.log: Smasher.class $(PREOTTOL)/preottol-20121112.processed 
+$(WORK)/ott2.log: Smasher.class $(NCBI) $(PREOTTOL)/preottol-20121112.processed 
 	mkdir -p $(WORK)/ott2
 	java $(CP) -Xmx10g $(PROD_ARGS)
 
@@ -77,16 +77,16 @@ $(WORK)/nem1.ott: $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids
 $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
 
-$(WORK)/ncbi_with_unclassified.txt: $(WORK)/ncbi/nodes.dmp
-	(cd $(WORK)/ncbi; \
-	 python ../../taxomachine/data/process_ncbi_taxonomy_taxdump.py F \
-           ../../../taxomachine/data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP $@)
+$(NCBI): $(WORK)/ncbi/nodes.dmp process_ncbi_taxonomy_taxdump.py
+	python process_ncbi_taxonomy_taxdump.py F $(WORK)/ncbi \
+           $(TAXOMACHINE_ROOT)/data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP $@.tmp
+	mv -f $@.tmp $@
 
 $(WORK)/ncbi/nodes.dmp:
 	mkdir -p $(WORK)/ncbi
-	(cd $(WORK)/ncbi; \
-         wget ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz ; \
-         tar -xzvf taxdump.tar.gz)
+        wget --output-document=$(WORK)/ncbi/taxdump.tar.gz \
+	     ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz; \
+        tar -C $(WORK)/ncbi -xzvf taxdump.tar.gz)
 
 norbert:
 	rsync -vaxH --exclude=$(WORK) --exclude="*~" --exclude=backup \
