@@ -86,8 +86,8 @@ except:
 from gluon.contrib.login_methods.rpx_account import RPXAccount
 auth.settings.actions_disabled=['register','change_password','request_reset_password']
 auth.settings.login_form = RPXAccount(
-    request, api_key='9435bcb6253fa24c4680cbbd0d4e75a0accde8b3',
-    domain='phylografter',
+    request, api_key='92b50beed5bb2c286258342c83763c60294b2b6e',
+    domain='opentree',
     url = "http://%s/%s/default/user/login" % (host, request.application)
     )
 
