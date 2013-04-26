@@ -491,10 +491,10 @@ function createArgus(spec) {
         body = this.container; // this used to be $(body) instead of this.container. Which is correct
         $(window).bind("scroll", function () {
             togglebox.animate({
-                "y": body.scrollTop() + ty
+                "y": $('body').scrollTop() + ty
             }, 200);
             togglelabel.animate({
-                "y": body.scrollTop() + ty + this.nodeHeight
+                "y": $('body').scrollTop() + ty + argusObj.nodeHeight
             }, 200);
         });
 
