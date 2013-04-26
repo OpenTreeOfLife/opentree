@@ -466,6 +466,15 @@ class Taxonomy implements Iterable<Node> {
         }
     }
 
+    void dumpSynonyms(String filename) throws IOException {
+        PrintStream out = Taxonomy.openw(filename);
+        for (String name : this.synonyms.keySet())
+            for (Node node : this.synonyms.get(name))
+                out.println(name + "\t|\t" +
+                            node.id + "\t|\t");
+        out.close();
+    }
+
 	// Render this taxonomy as a Newick string
 
 	String toNewick() {
@@ -525,6 +534,19 @@ class Taxonomy implements Iterable<Node> {
 			}
 		}
 	}
+
+	static PrintStream openw(String filename) throws IOException {
+		PrintStream out;
+		if (filename.equals("-")) {
+			out = System.out;
+			System.err.println("Writing to standard output");
+		} else {
+			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)));
+			System.err.println("Writing " + filename);
+		}
+		return out;
+	}
+
 
 }
 
@@ -836,7 +858,7 @@ class UnionTaxonomy extends Taxonomy {
     }
 
     void dumpDeprecated(SourceTaxonomy idsource, String filename) throws IOException {
-		PrintStream out = openw(filename);
+		PrintStream out = Taxonomy.openw(filename);
         for (Answer answer : idsource.deprecated)
             out.println(answer.x.id
                         + "\t" +
@@ -859,7 +881,7 @@ class UnionTaxonomy extends Taxonomy {
     {
 		System.out.println("--- Comparing new auxiliary id mappings with old ones ---");
 		Node.resetStats();		// Taxon id clash
-		PrintStream out = openw(filename);
+		PrintStream out = Taxonomy.openw(filename);
         Set<Long> seen = new HashSet<Long>();
         Integer col = idsource.headerx.get("preottol_id"); // 8
         if (col != null) {
@@ -918,7 +940,7 @@ class UnionTaxonomy extends Taxonomy {
     void dumpAll(String outprefix) throws IOException {
         this.dumpLog(outprefix + "log");
         this.dump(this.root, outprefix + "taxonomy");
-        // TBD: synonyms
+        this.dumpSynonyms(outprefix + "synonyms");
         if (this.idsource != null)
             this.dumpDeprecated(this.idsource, outprefix + "deprecated");
         if (this.auxsource != null)
@@ -928,7 +950,7 @@ class UnionTaxonomy extends Taxonomy {
     }
 
 	void dump(Node node, String filename) throws IOException {
-		PrintStream out = openw(filename);
+		PrintStream out = Taxonomy.openw(filename);
 		//Formerly:
 		//out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\t" +
 		//			"source\t|\tsourceid\t|\tsourcepid\t|\tuniqname\t|\tpreottol_id\t|\t");
@@ -1005,7 +1027,7 @@ class UnionTaxonomy extends Taxonomy {
 	// called on union
 
 	void dumpLog(String filename) throws IOException {
-		PrintStream out = openw(filename);
+		PrintStream out = Taxonomy.openw(filename);
 
         // Strongylidae	nem:3600	yes	same-parent/direct	3600	Strongyloidea	false
 
@@ -1032,18 +1054,6 @@ class UnionTaxonomy extends Taxonomy {
         // might be missing some log entries for synonyms
 
 		out.close();
-	}
-
-	PrintStream openw(String filename) throws IOException {
-		PrintStream out;
-		if (filename.equals("-")) {
-			out = System.out;
-			System.err.println("Writing to standard output");
-		} else {
-			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)));
-			System.err.println("Writing " + filename);
-		}
-		return out;
 	}
 
     // this is a union taxonomy ...

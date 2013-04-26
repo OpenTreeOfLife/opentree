@@ -33,12 +33,12 @@ GBIF=$(WORK)/gbif.processed
 PROD_ARGS=Smasher $(NCBI) $(GBIF) \
       --ids $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids \
       --aux $(PREOTTOL)/preottol-20121112.processed \
-      --out $(WORK)/ott2/
+      --out $(WORK)/ott2.0/
 
 # Idempotency test
 IDEM_ARGS=Smasher $(NCBI) $(GBIF) \
-      --ids $(WORK)/ott2/taxonomy \
-      --out $(WORK)/ott3/
+      --ids $(WORK)/ott2.0/taxonomy \
+      --out $(WORK)/ott2.1/
 
 compile: Smasher.class
 
@@ -54,14 +54,14 @@ debug:
 	mkdir -p $(WORK)
 	jdb $(CP) $(TEST_ARGS)
 
-prod: $(WORK)/ott2.log
-$(WORK)/ott2.log: Smasher.class $(NCBI) $(PREOTTOL)/preottol-20121112.processed 
-	mkdir -p $(WORK)/ott2
+prod: $(WORK)/ott2.0/log
+$(WORK)/ott2.0/log: Smasher.class $(NCBI) $(PREOTTOL)/preottol-20121112.processed 
+	mkdir -p $(WORK)/ott2.0
 	java $(CP) -Xmx10g $(PROD_ARGS)
 
-idem: $(WORK)/ott3.log
-$(WORK)/ott3.log: Smasher.class
-	mkdir -p $(WORK)/ott3
+idem: $(WORK)/ott2.1.log
+$(WORK)/ott2.1.log: Smasher.class
+	mkdir -p $(WORK)/ott2.1
 	java $(CP) -Xmx10g $(IDEM_ARGS)
 
 # little test
@@ -79,14 +79,18 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 
 $(NCBI): $(WORK)/ncbi/nodes.dmp process_ncbi_taxonomy_taxdump.py
 	python process_ncbi_taxonomy_taxdump.py F $(WORK)/ncbi \
-           $(TAXOMACHINE_ROOT)/data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP $@.tmp
-	mv -f $@.tmp $@
+           $(TAXOMACHINE_ROOT)/data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP new+$@
+	mv -f new+$@ $@
+	mv -f new+$@.synonyms $@.synonyms
 
 $(WORK)/ncbi/nodes.dmp:
 	mkdir -p $(WORK)/ncbi
         wget --output-document=$(WORK)/ncbi/taxdump.tar.gz \
 	     ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz; \
         tar -C $(WORK)/ncbi -xzvf taxdump.tar.gz)
+
+tarball: $(WORK)/ott2.0/log
+	(cd $(WORK); tar czvf /raid/www/roots/opentree/ott2.0/ott2.0.tgz ott2.0)
 
 norbert:
 	rsync -vaxH --exclude=$(WORK) --exclude="*~" --exclude=backup \
