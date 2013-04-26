@@ -78,15 +78,18 @@ plugins.wiki.mode = 'html' # OR 'markmin', others?
 ## register with janrain.com, write your domain:api_key in private/janrain.key
 #from gluon.contrib.login_methods.rpx_account import use_janrain
 #use_janrain(auth, filename='private/janrain.key')
+janrain_api_key = open("applications/%s/private/janrain.key" % request.application).read().strip();
+
 try:
     host = conf.get("hosting", "hostdomain")
 except:
     host = "localhost:8000"
 
+
 from gluon.contrib.login_methods.rpx_account import RPXAccount
 auth.settings.actions_disabled=['register','change_password','request_reset_password']
 auth.settings.login_form = RPXAccount(
-    request, api_key='92b50beed5bb2c286258342c83763c60294b2b6e',
+    request, api_key=janrain_api_key,
     domain='opentree',
     url = "http://%s/%s/default/user/login" % (host, request.application)
     )
