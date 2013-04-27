@@ -28,6 +28,7 @@ function plugin_localcomments_init() {
                'thread_parent_id': $form.parent().prev().attr('id').split('r')[1], 
                'url': $form.find('input[name="url"]').val(),
                'body': $form.find('textarea[name="body"]').val(),
+               'feedback_type': $form.find('select[name="feedback_type"]').val(),
                'claimed_expertise': $form.find(':checkbox[name="claimed_expertise"]').is(':checked')
            },
            function(data,r){ 
@@ -119,6 +120,7 @@ def index():
     url = request.vars['url'] # if not provided, show all
     thread_parent_id = request.vars['thread_parent_id'] # can be None
     comment_id = request.vars['comment_id'] # used for some operations (eg, delete)
+    feedback_type = request.vars['feedback_type'] # used for new comments
     claims_expertise = request.vars['claimed_expertise'] # used for new comments
     thread = {0:[]}
     def node(comment):
@@ -130,6 +132,7 @@ def index():
                     DIV(comment.body,_class='body'),
                     DIV(T('%s ',comment.created_by.first_name),T('%s',comment.created_by.last_name), 
                         SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
+                        SPAN(' [',comment.feedback_type,']',_class='badge') if comment.feedback_type else '',
                         T(' - %s',prettydate(comment.created_on,T)),
                         SPAN(
                             A(T('hide replies'),_class='toggle',_href='#'),
@@ -168,9 +171,10 @@ def index():
         if not request.vars.body or not auth.user_id:
             return error()
         dbco.thread_parent_id.default = thread_parent_id
+        # TODO: normalize URLs to handle trailing '/', fragments, etc.
         dbco.url.default = url.strip()
         dbco.created_by.default = auth.user_id
-        # TODO: add expertise checkbox, others
+        dbco.feedback_type.default = feedback_type
         dbco.claimed_expertise.default = claims_expertise
         if len(re.compile('\s+').sub('',request.vars.body))<1:
             return ''
@@ -182,11 +186,18 @@ def index():
     return DIV(script,
                DIV(A(T('Add a comment'),_class='reply',_href='#'),_id='r0') if auth.user_id \
                    else A(T('Login to add comments'),_href=URL(r=request,c='default',f='user',args=['login'])),
-               DIV(FORM(TEXTAREA(_name='body',_style='width:100%; height: 40px'),
-                        INPUT(_type='text',_name='url',_value=url),  # OR _value=comment.url
+               DIV(FORM(SELECT(
+                            OPTION('What kind of feedback is this?', _value=''),
+                            OPTION('Reply or general comment', _value=''),
+                            OPTION('Reporting an error in phylogeny', _value='Error in phylogeny'),
+                            OPTION('Bug report (website behavior)', _value='Bug report'),
+                            OPTION('New feature request', _value='Feature request'),
+                        _name='feedback_type', value=''),
+                        LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;'),
+                        TEXTAREA(_name='body',_style='width:100%; height: 40px'),
+                        INPUT(_type='hidden',_name='url',_value=url),
                         # INPUT(_type='text',_name='thread_parent_id',_value=0),   # we'll get this from a nearby id, eg 'r8'
                         INPUT(_type='submit',_value=T('post'),_style='float:right'), 
-                        LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float:left; margin-right: 40px;'),
                         A(T('help'),_href='http://daringfireball.net/projects/markdown/',
                           _target='_blank',_style='float:right; padding-right: 10px'),
                         SPAN(' | ',_style='float:right; padding-right: 6px'),
