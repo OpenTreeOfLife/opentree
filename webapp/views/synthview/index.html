@@ -68,7 +68,7 @@
 <script type="text/javascript">
 $(document).ready(function (){
   {{if tree_id is None: }}
-    var treeID = "4";
+    var treeID = "otol.draft.22";
   {{else:}}
     var treeID = "{{=tree_id}}";
   {{pass}}
@@ -79,11 +79,12 @@ $(document).ready(function (){
   {{pass}}
   var argus = createArgus({
     "domSource": "ottol",
-    "nodeID": "805080", 
     "container": document.getElementById("argusCanvasContainer"),
     "treemachineDomain": "{{=treemachine_domain}}",
     "taxomachineDomain": "{{=taxomachine_domain}}",
-    "useTreemachine": true
+    "useTreemachine": true,
+    "useSyntheticTree": true,
+    "maxDepth": 3
   });
   argus.displayNode({"nodeID" : nodeID, 
                      "domSource" : treeID});

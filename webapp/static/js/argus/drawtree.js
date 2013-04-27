@@ -68,6 +68,12 @@ function createArgus(spec) {
     if (spec.useTreemachine === undefined) {
         spec.useTreemachine = false; //@TEMP should the default really be taxomachine?
     }
+    if (spec.useSyntheticTree === undefined) {
+        spec.useSyntheticTree = false; //@TEMP should the default really be sourcetrees?
+    }
+    if (spec.maxDepth === undefined) {
+        spec.maxDepth = 4;
+    }
     argusObj = {
         "nodeID": spec.nodeID,
         "domSource": spec.domSource,
@@ -75,6 +81,7 @@ function createArgus(spec) {
         "treemachineDomain": spec.treemachineDomain,
         "taxomachineDomain": spec.taxomachineDomain,
         "useTreemachine": spec.useTreemachine,
+        "useSyntheticTree": spec.useSyntheticTree,
         "fontScalar": 2.6, // multiplied by radius to set font size
         "minTipRadius": 5, // the minimum radius of the node/tip circles. "r" in old argus
         "nodeDiamScalar": 1.5,  // how much internal nodes are scaled by logleafcount
@@ -92,7 +99,7 @@ function createArgus(spec) {
         "nodeHoverColor": "#bdf",
         "tipColor": "#14d",
         "tipHoverColor": "#b8f",
-        "currMaxDepth": 4,
+        "currMaxDepth": spec.maxDepth,
         "backStack": [], // args to previous displayNode calls
         "forwardStack": [], // args to displayNode calls after the back button has been clicked
         "currDisplayContext": undefined, //arg to most recent displayNode call
@@ -126,7 +133,11 @@ function createArgus(spec) {
         if (this.useTreemachine) {
             address = this.treemachineDomain;
             prefix = address + "/db/data/ext/GoLS/graphdb/";
-            suffix = "getSourceTree";
+            if (this.useSyntheticTree) {
+                suffix = "getSyntheticTree";
+            } else {
+                suffix = "getSourceTree";
+            }
             url = prefix + suffix;
             // default is the classic "tree 4 in phylografter"
             ds = o.domSource === undefined ? "4" : o.domSource;
@@ -280,7 +291,7 @@ function createArgus(spec) {
             argusObj.displayNode(o);
         };
     };
-    getForwardClickHandler = function() {
+    getForwardClickHandler = function () {
         return function () {
             o = argusObj.forwardStack.pop();
             argusObj.displayNode(o);
