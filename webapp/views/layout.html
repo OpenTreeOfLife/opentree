@@ -9,6 +9,9 @@
     <!-- js dependencies for argus -->
     {{response.files.append(URL('static','js/argus/raphael-min.js'))}}
     {{response.files.append(URL('static','js/argus/drawtree.js'))}}
+
+    <!-- js for history management -->
+    {{response.files.append(URL('static','js/jquery.history.js'))}}
     
     {{include 'web2py_ajax.html'}}
     
