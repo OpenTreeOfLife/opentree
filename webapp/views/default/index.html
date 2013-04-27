@@ -56,11 +56,16 @@
         <a href="{{=URL(r=request,c='default',f='user',args=['login'])}}">Login</a>
     {{pass}}
 
-    </div>
+    </div><!-- END of navbar -->
+
     <div class="vizcontent">
+      <h1 id="main-title">Synthetic tree viewer</h1>
+
       <div id="argusCanvasContainer" class="viewer-frame">  
       </div>
       <!-- TODO: Add other viewers here? or common frame? -->
+
+      <div id="node-provenance-panel">&nbsp;</div>
 
       <h1>Comments for <i>{{=request.url}}</i></h1>
       <ul>
