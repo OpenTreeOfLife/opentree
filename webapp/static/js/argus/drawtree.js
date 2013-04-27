@@ -488,13 +488,19 @@ function createArgus(spec) {
             "fill-opacity": 0
         }).click(toggleAltRels(altrelsset));
 
-        body = this.container; // this used to be $(body) instead of this.container. Which is correct
-        $(window).bind("scroll", function () {
+        /* Let's try to keep floating widgets in the upper left corner of the
+         * argus viewport. That means it needs to track the scroll of the
+         * viewport (container) instead of the body.
+         * 
+         * NOTE that 'body' here is not the BODY element of the HTML page!
+         */
+        body = this.container; // this used to be $(body) instead of this.container. Which is correct?
+        $(body).bind("scroll", function () {
             togglebox.animate({
-                "y": $('body').scrollTop() + ty
+                "y": $(body).scrollTop() + ty
             }, 200);
             togglelabel.animate({
-                "y": $('body').scrollTop() + ty + argusObj.nodeHeight
+                "y": $(body).scrollTop() + ty + argusObj.nodeHeight
             }, 200);
         });
 
