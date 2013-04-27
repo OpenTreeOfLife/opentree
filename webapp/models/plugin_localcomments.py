@@ -12,6 +12,7 @@ db.define_table('plugin_localcomments_comment',
                 Field('title','text'),
                 Field('body','text'),
                 Field('deleted','boolean',default=False,readable=False,writable=False),
+                Field('feedback_type','text'),
                 Field('claimed_expertise','boolean',default=False,readable=False,writable=False),
                 Field('votes','integer',default=0,readable=False,writable=False),
                 Field('created_by',db.auth_user,default=auth.user_id,readable=False,writable=False),  # OR 'reference auth_user'
