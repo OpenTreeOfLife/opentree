@@ -101,7 +101,8 @@ function createArgus(spec) {
         sourceTextBoxX: 10,
         sourceTextBoxY: 35,
         backArrowX: 10,
-        backArrowY: 10
+        backArrowY: 10,
+        anchoredControls: null
     };
     argusObj.nodeHeight = (2 * argusObj.minTipRadius) + argusObj.yNodeMargin;
     // helper function to create the URL and arg to be passed to URL. 
@@ -184,12 +185,18 @@ function createArgus(spec) {
                 paper = new Raphael(argusObjRef.container, 10, 10);
             }
             paper.setSize(pwidth, pheight);
+            // this should also anchor to the scrolling viewport
             sourcelabel = paper.text(argusObjRef.sourceTextBoxX,
                                      argusObjRef.sourceTextBoxY,
                                      "source: " + domSource).attr({
                 "font-size": String(argusObjRef.fontScalar * argusObjRef.minTipRadius) + "px",
                 "text-anchor": "start"
             });
+            if (!argusObj.anchoredControls) {
+                argusObj.anchoredControls = paper.set();
+            }
+            argusObj.anchoredControls.push(sourcelabel);
+
             // refresh tree
             argusObjRef.nodesHash = {};
             argusObjRef.nodesWithCycles = [];
@@ -205,16 +212,6 @@ function createArgus(spec) {
         
             // draw the cylces
             argusObjRef.drawCycles();
-            if (argusObjRef.backStack.length > 0) {
-                paper.path("M21.871,9.814 15.684,16.001 21.871,22.188 18.335,25.725 8.612,16.001 18.335,6.276z")
-                    .attr({fill: "#000", stroke: "none"})
-                    .click(getBackClickHandler());
-            }
-            if (argusObjRef.forwardStack.length > 0) {
-                paper.path("M30.129,22.186 36.316,15.999 30.129,9.812 33.665,6.276 43.389,15.999 33.665,25.725z")
-                    .attr({fill: "#000", stroke: "none"})
-                    .click(getForwardClickHandler());
-            }
         };
         $.ajax({
             url: o.url,
@@ -412,7 +409,7 @@ function createArgus(spec) {
         var tx, ty, i, j, child, cx, cy, nub;
         var naltparents;
         var parent, px, py, offset, dst1, dst2, dln1, dln2;
-        var togglelabel, togglebox, body;
+        var togglelabel, togglebox, backStackPointer, forwardStackPointer, body;
         var sst, altrelline, dln;
         var bw, bh, altrellabel, altrellabelbox, altrellabeltext;
         var x1, y1, y2;
@@ -478,6 +475,10 @@ function createArgus(spec) {
             };
         };
 
+        // gather controls that should move together
+        if (!argusObj.anchoredControls) {
+            argusObj.anchoredControls = paper.set();
+        }
 
         tx = this.toggleAltBoxX;
         ty = this.toggleAltBoxY;
@@ -487,6 +488,7 @@ function createArgus(spec) {
             "text-anchor": "start",
             "font-size": fontSize
         });
+        argusObj.anchoredControls.push(togglelabel);
 
         togglebox = paper.rect(tx, ty, this.nodesWidth, this.nodeHeight * 2).attr({
             "stroke": "black",
@@ -494,8 +496,23 @@ function createArgus(spec) {
             "fill": "white",
             "fill-opacity": 0
         }).click(toggleAltRels(altrelsset));
+        argusObj.anchoredControls.push(togglebox);
 
-        /* Let's try to keep floating widgets in the upper left corner of the
+        backStackPointer = forwardStackPointer = null;
+        if (argusObj.backStack.length > 0) {
+            backStackPointer = paper.path("M21.871,9.814 15.684,16.001 21.871,22.188 18.335,25.725 8.612,16.001 18.335,6.276z")
+                .attr({fill: "#000", stroke: "none"})
+                .click(getBackClickHandler());
+            argusObj.anchoredControls.push(backStackPointer);
+        }
+        if (argusObj.forwardStack.length > 0) {
+            forwardStackPointer = paper.path("M30.129,22.186 36.316,15.999 30.129,9.812 33.665,6.276 43.389,15.999 33.665,25.725z")
+                .attr({fill: "#000", stroke: "none"})
+                .click(getForwardClickHandler());
+            argusObj.anchoredControls.push(forwardStackPointer);
+        }
+
+        /* Let's try to anchor some widgets in the upper left corner of the
          * argus viewport. That means it needs to track the scroll of the
          * viewport (container) instead of the body.
          * 
@@ -503,12 +520,8 @@ function createArgus(spec) {
          */
         body = this.container; // this used to be $(body) instead of this.container. Which is correct?
         $(body).bind("scroll", function () {
-            togglebox.animate({
-                "y": $(body).scrollTop() + ty
-            }, 200);
-            togglelabel.animate({
-                "y": $(body).scrollTop() + ty + argusObj.nodeHeight
-            }, 200);
+            // use relative transformation to match the viewport's X/Y scrolling
+            argusObj.anchoredControls.transform('t'+ $(body).scrollLeft() +','+ $(body).scrollTop() );
         });
 
         // for each node found to have more than one parent
