@@ -172,7 +172,8 @@ function createArgus(spec) {
             // calculate view-specific geometry parameters
             pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.nleaves);
             pheight += argusObjRef.nubDistScalar * argusObjRef.minTipRadius;
-            pheight += 40 * argusObjRef.nodeHeight; //@TEMP not sure what 40 is for...
+            // provide enough room for anchored widgets, more if needed for the tree
+            pheight = Math.max(pheight, 8 * argusObjRef.nodeHeight); 
 
             pwidth = argusObjRef.nodesWidth * (node.maxnodedepth + 1);
             pwidth += 1.5 * argusObjRef.tipOffset + argusObjRef.xLabelMargin;
