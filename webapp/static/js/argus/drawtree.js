@@ -200,6 +200,9 @@ function createArgus(spec) {
                 "curLeaf": 0
             });
 
+            // Release the forced height of the argus viewport
+            $(this.container).css('height', '');
+        
             // draw the cylces
             argusObjRef.drawCycles();
             if (argusObjRef.backStack.length > 0) {
@@ -234,6 +237,10 @@ function createArgus(spec) {
             "nodeID": o.nodeID,
             "domSource": (o.domSource === undefined ? this.domSource : o.domSource)
         });
+        
+        // Freeze the height of the argus viewport until new results arrive
+        $(this.container).css('height', $(this.container).css('height'));
+
         if (paper !== undefined) {
             paper.clear();
             paper.remove();
