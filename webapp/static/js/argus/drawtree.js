@@ -221,8 +221,13 @@ function createArgus(spec) {
 
             // Release the forced height of the argus viewport
             $(this.container).css('height', '');
+
+            // if there's a page-level callback function, call it now
+            if (typeof(nodeDataLoaded) === 'function') { 
+                nodeDataLoaded(node); 
+            }
         
-            // draw the cylces
+            // draw the cycles
             argusObjRef.drawCycles();
         };
         $.ajax({
@@ -240,6 +245,18 @@ function createArgus(spec) {
             }
         });
     };
+
+    argusObj.moveToNode = function (o) {
+        // if we're using History.js, all movement through the tree should be driven from history
+        if (History && History.enabled && pageUsesHistory) {
+            // add expected values for minimal history entry
+            var stateObj = $.extend(true, {'nodeName':''}, o); // deep copy of o, with default values if none supplied
+            History.pushState( stateObj, historyStateToWindowTitle(stateObj), historyStateToURL(stateObj));
+        } else {
+            // proceed directly to display (ignore browser history)
+            this.displayNode(o);
+        }
+    }
 
     argusObj.displayNode = function (o) {
         var ajaxInfo = this.buildAjaxCallInfo({
@@ -279,7 +296,7 @@ function createArgus(spec) {
     };
     getClickHandlerNode = function (nodeID, domSource) {
         return function () {
-            argusObj.displayNode({"nodeID": nodeID,
+            argusObj.moveToNode({"nodeID": nodeID,
                                   "domSource": domSource});
         };
     };
@@ -288,13 +305,13 @@ function createArgus(spec) {
             argusObj.forwardStack.push(argusObj.currDisplayContext);
             o = argusObj.backStack.pop();
             o.storeThisCall = false;
-            argusObj.displayNode(o);
+            argusObj.moveToNode(o);
         };
     };
     getForwardClickHandler = function () {
         return function () {
             o = argusObj.forwardStack.pop();
-            argusObj.displayNode(o);
+            argusObj.moveToNode(o);
         };
     };
     getClickHandlerAltRelLine = function (nodeFromAJAX) {
@@ -305,7 +322,7 @@ function createArgus(spec) {
          *                  var altrelids = // get altrels ;
          *                  altrelids.push(child.altrels[j].altrelid); */
         return function () {
-            argusObj.displayNode({"nodeID": nodeFromAJAX.parentid,
+            argusObj.moveToNode({"nodeID": nodeFromAJAX.parentid,
                                   "domSource": nodeFromAJAX.source});
         };
     };
