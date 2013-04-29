@@ -1,8 +1,6 @@
 {{extend 'layout.html'}}
 
-<p>Pre DB p element</p>
 <div id="argusDBContainer" />
-<p>Post DB p element</p>
 
 <div class="container">
   <div class="navbar">
@@ -52,29 +50,50 @@
       <p style="margin-left:2em; font-size: 80%;">
         New in version 0.73: Something very cool
       </p>
+    {{if auth.user_id:}}
+        <a href="{{=URL(r=request,c='default',f='user',args=['logout'])}}">Logout</a>
+    {{else:}}
+        <a href="{{=URL(r=request,c='default',f='user',args=['login'])}}">Login</a>
+    {{pass}}
 
-    </div>
+    </div><!-- END of navbar -->
+
     <div class="vizcontent">
+      <h1 id="main-title">Synthetic tree viewer</h1>
+
       <div id="argusCanvasContainer" class="viewer-frame">  
       </div>
       <!-- TODO: Add other viewers here? or common frame? -->
 
-      <h1>Comments for <i>{{=request.url}}</i></h1>
-      <ul>
-          {{=plugin_localcomments(url=request.url)}}
-      </ul>
+      <div id="node-provenance-panel">&nbsp;</div>
+
+      {{  # we'll use the node-identifier in the current URL to anchor local comments, or 
+          # the complete page URL if no node identifier is found
+          urlParts = request.url.split('/')
+          nodeIdentifier = [p for p in urlParts if '@' in p]
+          if len(nodeIdentifier) == 1:
+            commentLocation = nodeIdentifier[0]
+          else:
+            commentLocation = request.url
+          pass  # required in web2py view
+      }}
+      <h1>Comments for <i>{{=commentLocation}}</i></h1>
+      {{=plugin_localcomments(url=commentLocation)}}
     </div>
   </div>
 
-
-<script type="text/javascript">
-$(document).ready(function (){
-  var argus = createArgus({
-    "domSource": "ottol",
-    "nodeID": "805080", 
-    "container": document.getElementById("argusCanvasContainer")
-  });
-  argus.displayNode({"nodeID": "805080",
-                     "domSource": "ottol"});
-});
+  <script type="text/javascript">
+    // if inbound URL points to a particular location+view, record it here
+    var urlState = {
+     {{ if forcedByURL: }}
+      {{ if viewer: }} viewer: '{{=viewer}}', {{ pass}}
+      {{ if domSource: }} domSource: '{{=domSource}}', {{ pass}}
+      {{ if nodeID: }} nodeID: '{{=nodeID}}', {{ pass}}
+      {{ if nodeName: }} nodeName: '{{=nodeName}}', {{ pass}}
+        forcedByURL: true
+     {{ pass }}
+    };
+    // treeview.js will examine this to determine our starting view
+  </script>
+  <script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
 </script>

@@ -2,6 +2,7 @@
 div.plugin_localcomments {
     /* border: 1px dashed pink; */
     width: 800px;
+    margin-bottom: 30px;
 }
 div.plugin_localcomments .byline {
     background-color: #f5f5f5;

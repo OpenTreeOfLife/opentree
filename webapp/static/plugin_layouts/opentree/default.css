@@ -8,7 +8,7 @@ body {
 .header {
 	margin: 2px; 
 	width: 775px;
-	height: 75;
+	height: 75px;
 }
 .headerlogo {
 	float: left;
@@ -40,10 +40,10 @@ body {
 }
 .vizcontent div.viewer-frame {
 	padding: 0px;
-}
-.vizcontent div.viewer-frame {
-	padding: 0px;
+    background-color: #f5f5ec; /* #faf5ee; */
     border: 1px solid #ccc;
     border-radius: 5px;
+    height: 60%; /* don't fill to the current viewport */
+    overflow: auto;
 }
 
