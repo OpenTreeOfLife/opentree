@@ -13,8 +13,34 @@ body {
 	float: left;
 }
 .sidebar-search {	
+    background-color: #ffc;
+    border: 1px solid #dda;
+    border-radius: 4px;
+    margin: -3px;
+    padding: 8px 4px;
 }
-
+.sidebar-search form {	
+    margin: 0;
+}
+#search-results {
+}
+.search-result {
+    margin: 8px 0px 8px 6px;
+}
+.search-result strong {
+    display: block;
+}
+.search-result div {
+    font-size: 80%;
+    padding-left: 12px;
+}
+.search-result a {
+    color: #333;
+    text-decoration: none;
+}
+.search-result strong a {
+    color: #000;
+}
 .container {
 	width:100%;
 }
