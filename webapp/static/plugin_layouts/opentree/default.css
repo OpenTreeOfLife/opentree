@@ -46,4 +46,11 @@ body {
     height: 60%; /* don't fill to the current viewport */
     overflow: auto;
 }
-
+h1#main-title, 
+h1#comment-header {
+    margin-bottom: 0.5em;
+}
+div#links-to-local-comments,
+div#r0 {
+    margin: -12px 0 12px;
+}

@@ -60,6 +60,17 @@
 
     <div class="vizcontent">
       <h1 id="main-title">Synthetic tree viewer</h1>
+      <div id="links-to-local-comments">
+          <a href="#comment-header">Comments on this node</a>
+          |
+          <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply').click(); return true;">
+           {{if auth.user_id:}}
+             Add a comment
+           {{else:}}
+             Add a comment (login required)
+           {{pass}}
+         </a>
+      </div>
 
       <div id="argusCanvasContainer" class="viewer-frame">  
       </div>
@@ -77,7 +88,7 @@
             commentLocation = request.url
           pass  # required in web2py view
       }}
-      <h1>Comments for <i>{{=commentLocation}}</i></h1>
+      <h1 id="comment-header">Comments for <i>{{=commentLocation}}</i></h1>
       {{=plugin_localcomments(url=commentLocation)}}
     </div>
   </div>

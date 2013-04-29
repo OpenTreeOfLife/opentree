@@ -38,9 +38,18 @@ if ( History.enabled && pageUsesHistory ) {
         if (!nodeIdentifier) {
             nodeIdentifier = State.url;
         }
+        // update comment header (maybe again in the callback, when we have a name)
+        $('#comment-header').html('Comments for <i>'+ nodeIdentifier +'</i>');
         $('.plugin_localcomments').parent().load(
             '/opentree/plugin_localcomments',
-            {url: nodeIdentifier}
+            {url: nodeIdentifier},
+            function() {  // callback
+                // update the comment count at the top of the page
+                var howManyComments = $('.plugin_localcomments .body').length;
+                $('#links-to-local-comments a:eq(0)').html(
+                    'Comments on this node ('+ howManyComments +')'
+                );
+            }
         );
 
     });

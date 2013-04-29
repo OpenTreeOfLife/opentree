@@ -23,6 +23,7 @@ div.plugin_localcomments .byline .controls {
 .plugin_localcomments ul {
     list-style: none;
     padding-left: 5px;
+    margin: 0;
 }
 .plugin_localcomments .body {
     font-size: 120%;
