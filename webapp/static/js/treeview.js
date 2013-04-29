@@ -111,8 +111,7 @@ $(document).ready(function() {
             return false;
         }
         $.ajax({
-            //url: 'http://www.reelab.net/phylografter/study/autocomplete_ottolNodes',
-            url: 'http://localhost:8000/phylografter/ottol/autocomplete',
+            url: 'http://www.reelab.net/phylografter/ottol/autocomplete',
             data: {
                 'search': searchText
             },
