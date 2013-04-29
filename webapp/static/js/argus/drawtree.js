@@ -109,7 +109,8 @@ function createArgus(spec) {
         sourceTextBoxY: 35,
         backArrowX: 10,
         backArrowY: 10,
-        anchoredControls: null
+        anchoredControls: null,
+        targetNodeY: 0  // used to center the view (vertically) on the target node
     };
     argusObj.nodeHeight = (2 * argusObj.minTipRadius) + argusObj.yNodeMargin;
     // helper function to create the URL and arg to be passed to URL. 
@@ -183,13 +184,22 @@ function createArgus(spec) {
             // calculate view-specific geometry parameters
             pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.nleaves);
             pheight += argusObjRef.nubDistScalar * argusObjRef.minTipRadius;
+            
+            // for a narrow tree, push topmost nodes down away from the anchored widgets
+            if (pheight > 16 * argusObjRef.nodeHeight) {
+                argusObjRef.yOffset = 10;
+            } else {
+                var topBuffer = 8 * argusObjRef.nodeHeight;
+                argusObjRef.yOffset = topBuffer;
+                pheight += topBuffer;
+            }
             // provide enough room for anchored widgets, more if needed for the tree
-            pheight = Math.max(pheight, 8 * argusObjRef.nodeHeight); 
+            pheight = Math.max(pheight, 20 * argusObjRef.nodeHeight); 
 
             pwidth = argusObjRef.nodesWidth * (node.maxnodedepth + 1);
             pwidth += 1.5 * argusObjRef.tipOffset + argusObjRef.xLabelMargin;
+
             argusObjRef.xOffset = pwidth - argusObjRef.nodesWidth - argusObjRef.tipOffset;
-            argusObjRef.yOffset = 10;
 
             if (argusObjRef.container === undefined) {
                 paper = new Raphael(10, 10, 10, 10);
@@ -197,6 +207,7 @@ function createArgus(spec) {
                 paper = new Raphael(argusObjRef.container, 10, 10);
             }
             paper.setSize(pwidth, pheight);
+
             // this should also anchor to the scrolling viewport
             sourcelabel = paper.text(argusObjRef.sourceTextBoxX,
                                      argusObjRef.sourceTextBoxY,
@@ -216,7 +227,8 @@ function createArgus(spec) {
             argusObjRef.drawNode({
                 "node": node,
                 "domSource": domSource,
-                "curLeaf": 0
+                "curLeaf": 0,
+                "isTargetNode": true
             });
 
             // Release the forced height of the argus viewport
@@ -294,10 +306,11 @@ function createArgus(spec) {
             nodeCircle.attr(attributes);
         };
     };
-    getClickHandlerNode = function (nodeID, domSource) {
+    getClickHandlerNode = function (nodeID, domSource, nodeName) {
         return function () {
             argusObj.moveToNode({"nodeID": nodeID,
-                                  "domSource": domSource});
+                                 "domSource": domSource,
+                                 "nodeName": nodeName});
         };
     };
     getBackClickHandler = function () {
@@ -323,13 +336,14 @@ function createArgus(spec) {
          *                  altrelids.push(child.altrels[j].altrelid); */
         return function () {
             argusObj.moveToNode({"nodeID": nodeFromAJAX.parentid,
-                                  "domSource": nodeFromAJAX.source});
+                                 "domSource": nodeFromAJAX.source});
         };
     };
 
     // recursive function to draw nodes and branches for the "dominant" tree (the domSource)
     argusObj.drawNode = function (obj) {
         var node = obj.node;
+        var isTargetNode = obj.isTargetNode;
         var domSource = obj.domSource;
         var curLeaf = obj.curLeaf;
         var nchildren;
@@ -419,8 +433,11 @@ function createArgus(spec) {
                 paper.path(branchSt).toBack();
             }
         }
+        if (isTargetNode) {
+            this.targetNodeY = node.y;
+        }
 
-        circle.click(getClickHandlerNode(node.nodeid, domSource));
+        circle.click(getClickHandlerNode(node.nodeid, domSource, node.name));
 
         // if this node has cycles, record it; we will draw them once the tree is done
         nAltParents = (node.altrels === undefined ? 0 : node.altrels.length);
@@ -552,6 +569,8 @@ function createArgus(spec) {
             // use relative transformation to match the viewport's X/Y scrolling
             argusObj.anchoredControls.transform('t'+ $(body).scrollLeft() +','+ $(body).scrollTop() );
         });
+        // center the view on the target node
+        $(body).scrollTop((this.targetNodeY) - ($(this.container).height() / 2));
 
         // for each node found to have more than one parent
         for (i = 0; i < this.nodesWithCycles.length; i++) {

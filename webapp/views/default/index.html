@@ -74,5 +74,18 @@
     </div>
   </div>
 
+  <script type="text/javascript">
+    // if inbound URL points to a particular location+view, record it here
+    var urlState = {
+     {{ if forcedByURL: }}
+      {{ if viewer: }} viewer: '{{=viewer}}', {{ pass}}
+      {{ if domSource: }} domSource: '{{=domSource}}', {{ pass}}
+      {{ if nodeID: }} nodeID: '{{=nodeID}}', {{ pass}}
+      {{ if nodeName: }} nodeName: '{{=nodeName}}', {{ pass}}
+        forcedByURL: true
+     {{ pass }}
+    };
+    // treeview.js will examine this to determine our starting view
+  </script>
   <script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
 </script>

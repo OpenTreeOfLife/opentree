@@ -17,13 +17,13 @@ if ( History.enabled && pageUsesHistory ) {
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
         History.log(State.data, State.title, State.url);
 
-        jQuery('#main-title').html( 'Loading node data...' );
+        jQuery('#main-title').html( 'Loading new view...' );
         jQuery('#node-provenance-panel').html('...');
 
         // notify argus (trigger data load and/or view change)
         argus.displayNode({"nodeID": State.data.nodeID,
                            "domSource": State.data.domSource});
-
+        
         // we'll finish updating the page in a callback from argusObj.loadData()
 
         // TODO: load local comments for the new URL
@@ -34,13 +34,14 @@ if ( History.enabled && pageUsesHistory ) {
 $(document).ready(function() {
     // set default starting node and view, if the URL doesn't specify
     // TODO: move this to main page template, so we can build it from incoming URL in web2py?
-    var initialState = {
-        viewer:'argus', 
-        domSource:'ottol', 
-        nodeID:'805080', 
-        nodeName:'Acanthopharynx brachycapitata', 
-        viewport:'24,201,0,800'
-    };
+    var initialState = $.extend({
+        viewer: 'argus', 
+        domSource: 'ottol', 
+        nodeID: '805080', 
+        nodeName: '',  // Acanthopharynx brachycapitata
+        viewport: '24,201,0,800',
+        forcedByURL: false
+    }, urlState); // urlState should been defined in the main HTML view
 
     argus = createArgus({
       "container": document.getElementById("argusCanvasContainer")
@@ -50,20 +51,17 @@ $(document).ready(function() {
         // if there's no prior state, go to the initial target node in the synthetic tree
         var priorState = History.getState();
        
-        // TODO: Check first for incoming URL that might override prior history?
-        var incomingState = URLToHistoryState();
-        if (incomingState) {
-            // apply the state as specified in the URL
+        // Check first for incoming URL that might override prior history
+        if (initialState.forcedByURL || !(priorState.data.nodeID)) {
+            // apply the state as specified in the URL (or defaults, if prior history is incomplete)
             console.log("Applying state from incoming URL...");
-            incomingState.nudge = new Date().getTime();
-            History.pushState( incomingState, historyStateToWindowTitle(incomingState), historyStateToURL(incomingState));
-        } else if (priorState.data.nodeID) {
-            // nudge the view by nudging the existing state state
+            initialState.nudge = new Date().getTime();
+            History.pushState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
+        } else {
+            // nudge the (existing) browser state to view it again
             console.log("Nudging state (and hopefully initial view)...");
             priorState.data.nudge = new Date().getTime();
             History.replaceState( priorState.data, priorState.title, priorState.url );
-        } else {
-            History.pushState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
         }
     } else {
         // force initial argus view using defaults above
@@ -82,14 +80,16 @@ function historyStateToWindowTitle( stateObj ) {
 function historyStateToPageHeading( stateObj ) {
     // show name if possible, else just source+ID
     if (stateObj.nodeName.trim() === '') {
-        return ('Unnamed node '+ stateObj.domSource +':'+ stateObj.nodeID);
+        return ('Unnamed node '+ stateObj.domSource +'@'+ stateObj.nodeID);
     }
-    return ('Node \''+ stateObj.nodeName +'\' ('+ stateObj.domSource +':'+ stateObj.nodeID +')');
+    return ('Node \''+ stateObj.nodeName +'\' ('+ stateObj.domSource +'@'+ stateObj.nodeID +')');
 }
 function historyStateToURL( stateObj ) {
-    return ('?viewer='+ stateObj.viewer +'&node='+ stateObj.domSource +':'+ stateObj.nodeID +'&nodeName='+ stateObj.nodeName);
+    ///return ('?viewer='+ stateObj.viewer +'&node='+ stateObj.domSource +':'+ stateObj.nodeID +'&nodeName='+ stateObj.nodeName);
+    return '/opentree'+ (stateObj.viewer ? '/'+stateObj.viewer : '') +'/'+ stateObj.domSource +'@'+ stateObj.nodeID + (stateObj.nodeName ?  '/'+stateObj.nodeName : '');
 }
 
+/*
 function URLToHistoryState( url ) {
     // use to construct state for pasted-in URLs
     // currently based on query-string args 'viewer' and 'node' (source:ID)
@@ -128,14 +128,16 @@ function URLToHistoryState( url ) {
     }
     return urlState;
 }
+*/
 
 function nodeDataLoaded( nodeTree ) {
     // this callback from argObj.loadData() provides additional node data
     // nodeTree is actually a mini-tree of nodes
     var targetNode = nodeTree.children[0];
     var improvedState = $.extend( History.getState().data, {nodeName: targetNode.name});
-    // add missing information to the current history state?
-    ///History.replaceState( priorState.data, priorState.title, priorState.url );
+    // add missing information to the current history state
+    ///History.replaceState( improvedState.data, improvedState.title, improvedState.url );
+    // NO, this causes a loop of updates/history-changes, maybe later..
 
     // update page title and page contents
     jQuery('#main-title').html( historyStateToPageHeading( improvedState ) );
