@@ -17,14 +17,24 @@ if ( History.enabled && pageUsesHistory ) {
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
         History.log(State.data, State.title, State.url);
 
-        jQuery('#main-title').html( 'Loading new view...' );
-        jQuery('#node-provenance-panel').html('...');
+        $('#main-title').html( 'Loading new view...' );
+        $('#node-provenance-panel').html('...');
 
         // notify argus (trigger data load and/or view change)
         argus.displayNode({"nodeID": State.data.nodeID,
                            "domSource": State.data.domSource});
         
         // we'll finish updating the page in a callback from argusObj.loadData()
+
+        // update all login links to return directly to the new URL (NOTE that this 
+        // doesn't seem to work for Logout)
+        $('a.login-logout').each(function() {
+            var $link = $(this);
+            var itsHref = $link.attr('href');
+            itsHref = itsHref.split('?')[0];
+            itsHref += ('?_next='+ State.url);
+            $link.attr('href', itsHref);
+        });
 
         // load local comments for the new URL
         // eg, http://localhost:8000/opentree/plugin_localcomments?url=ottol@805080

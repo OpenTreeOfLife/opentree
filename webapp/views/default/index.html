@@ -51,9 +51,9 @@
         New in version 0.73: Something very cool
       </p>
     {{if auth.user_id:}}
-        <a href="{{=URL(r=request,c='default',f='user',args=['logout'])}}">Logout</a>
+        <a class="login-logout" href="{{=URL(r=request,c='default',f='user',args=['logout'])}}">Logout</a>
     {{else:}}
-        <a href="{{=URL(r=request,c='default',f='user',args=['login'])}}">Login</a>
+        <a class="login-logout" href="{{=URL(r=request,c='default',f='user',args=['login'])}}">Login</a>
     {{pass}}
 
     </div><!-- END of navbar -->
