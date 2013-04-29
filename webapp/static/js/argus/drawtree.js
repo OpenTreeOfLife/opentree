@@ -1,5 +1,5 @@
 /*jslint indent: 4 */
-/*globals XMLHttpRequest, Raphael, $, window, location */
+/*globals XMLHttpRequest, Raphael, $, window, location, History, pageUsesHistory, nodeDataLoaded, historyStateToURL, historyStateToWindowTitle*/
 
 // factor function -- gradually going to encapsulate argus functions here for better
 //  information hiding and avoiding putting a lot of things into the global namespace
@@ -184,7 +184,7 @@ function createArgus(spec) {
             // calculate view-specific geometry parameters
             pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.nleaves);
             pheight += argusObjRef.nubDistScalar * argusObjRef.minTipRadius;
-            
+
             // for a narrow tree, push topmost nodes down away from the anchored widgets
             if (pheight > 16 * argusObjRef.nodeHeight) {
                 argusObjRef.yOffset = 10;
@@ -194,7 +194,7 @@ function createArgus(spec) {
                 pheight += topBuffer;
             }
             // provide enough room for anchored widgets, more if needed for the tree
-            pheight = Math.max(pheight, 20 * argusObjRef.nodeHeight); 
+            pheight = Math.max(pheight, 20 * argusObjRef.nodeHeight);
 
             pwidth = argusObjRef.nodesWidth * (node.maxnodedepth + 1);
             pwidth += 1.5 * argusObjRef.tipOffset + argusObjRef.xLabelMargin;
@@ -235,10 +235,10 @@ function createArgus(spec) {
             $(this.container).css('height', '');
 
             // if there's a page-level callback function, call it now
-            if (typeof(nodeDataLoaded) === 'function') { 
-                nodeDataLoaded(node); 
+            if (typeof nodeDataLoaded === 'function') {
+                nodeDataLoaded(node);
             }
-        
+
             // draw the cycles
             argusObjRef.drawCycles();
         };
@@ -262,20 +262,20 @@ function createArgus(spec) {
         // if we're using History.js, all movement through the tree should be driven from history
         if (History && History.enabled && "pageUsesHistory" in window && pageUsesHistory) {
             // add expected values for minimal history entry
-            var stateObj = $.extend(true, {'nodeName':''}, o); // deep copy of o, with default values if none supplied
-            History.pushState( stateObj, historyStateToWindowTitle(stateObj), historyStateToURL(stateObj));
+            var stateObj = $.extend(true, {'nodeName': ''}, o); // deep copy of o, with default values if none supplied
+            History.pushState(stateObj, historyStateToWindowTitle(stateObj), historyStateToURL(stateObj));
         } else {
             // proceed directly to display (ignore browser history)
             this.displayNode(o);
         }
-    }
+    };
 
     argusObj.displayNode = function (o) {
         var ajaxInfo = this.buildAjaxCallInfo({
             "nodeID": o.nodeID,
             "domSource": (o.domSource === undefined ? this.domSource : o.domSource)
         });
-        
+
         // Freeze the height of the argus viewport until new results arrive
         $(this.container).css('height', $(this.container).css('height'));
 
@@ -567,7 +567,7 @@ function createArgus(spec) {
         body = this.container; // this used to be $(body) instead of this.container. Which is correct?
         $(body).bind("scroll", function () {
             // use relative transformation to match the viewport's X/Y scrolling
-            argusObj.anchoredControls.transform('t'+ $(body).scrollLeft() +','+ $(body).scrollTop() );
+            argusObj.anchoredControls.transform('t' + $(body).scrollLeft() + ',' + $(body).scrollTop());
         });
         // center the view on the target node
         $(body).scrollTop((this.targetNodeY) - ($(this.container).height() / 2));
