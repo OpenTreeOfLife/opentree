@@ -18,7 +18,7 @@ if ( History.enabled && pageUsesHistory ) {
         History.log(State.data, State.title, State.url);
 
         $('#main-title').html( 'Loading new view...' );
-        $('#node-provenance-panel').html('...');
+        $('#node-provenance-panel h3').html('Provenance');
 
         // notify argus (trigger data load and/or view change)
         argus.displayNode({"nodeID": State.data.nodeID,
@@ -49,7 +49,7 @@ if ( History.enabled && pageUsesHistory ) {
             nodeIdentifier = State.url;
         }
         // update comment header (maybe again in the callback, when we have a name)
-        $('#comment-header').html('Comments for <i>'+ nodeIdentifier +'</i>');
+        $('#comment-header').html('Comments <i>- '+ nodeIdentifier +'</i>');
         $('.plugin_localcomments').parent().load(
             '/opentree/plugin_localcomments',
             {url: nodeIdentifier},
@@ -175,7 +175,7 @@ function nodeDataLoaded( nodeTree ) {
 
     // update page title and page contents
     jQuery('#main-title').html( historyStateToPageHeading( improvedState ) );
-    jQuery('#node-provenance-panel').html('...');
+    jQuery('#node-provenance-panel h3').html("Provenance for '"+ targetNode.name  +"'");
     // load provenance data for this view (all visible nodes and edges)
 
 }

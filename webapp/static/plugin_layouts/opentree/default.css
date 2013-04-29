@@ -7,22 +7,12 @@ body {
 */
 .header {
 	margin: 2px; 
-	width: 775px;
-	height: 75px;
+	height: 85px;
 }
 .headerlogo {
 	float: left;
 }
-.headersearch {	
-	float: right;
-	margin: 5px;
-	width: 600px;
-	margin-top: 25px;
-}
-.headerinputtext {
-	margin-left: 2px; 
-	width: 480px; 
-	border: 1px solid black;
+.sidebar-search {	
 }
 
 .container {
@@ -36,7 +26,7 @@ body {
 	float: left;
 }
 .vizcontent {
-	padding-left: 205px;
+	padding-left: 212px;
 }
 .vizcontent div.viewer-frame {
 	padding: 0px;
@@ -48,9 +38,24 @@ body {
 }
 h1#main-title, 
 h1#comment-header {
-    margin-bottom: 0.5em;
+    margin: 0;
+    padding: 0.75em 0 0.5em;
+}
+h1#comment-header i {
+    color: #999;
 }
 div#links-to-local-comments,
 div#r0 {
     margin: -12px 0 12px;
+}
+
+#node-provenance-panel {
+    margin: 8px 0 0;
+    background-color: #eee;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 9px 12px;
+}
+#node-provenance-panel h3 {
+    margin: 0 0 0.5em;
 }
