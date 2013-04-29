@@ -14,9 +14,15 @@
 routes_in = (
     # all static stuff behaves normally
     ('/opentree/static/$anything', '/opentree/static/$anything'),
+    ('/opentree/default/user/$anything', '/opentree/default/user/$anything'),
+    ('/opentree/plugin_localcomments$anything', '/opentree/plugin_localcomments$anything'),
     # other special cases of standard routing? ADD HERE
 
     # capture remaining tree-view URLs for analysis and display
+    # some callers (eg round-trip login via Janrain) will use a complete URL...
+    ('/opentree/default/index/$anything', '/opentree/default/index/$anything'),
+    ('/opentree/default/index', '/opentree/default/index'),
+    # ...but generally they'll need expansion
     ('/opentree/$anything', '/opentree/default/index/$anything'),
 
     # I'd prefer to use 'ottol:123' instead of 'ottol@123' for node source+ID,
