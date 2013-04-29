@@ -67,9 +67,19 @@
 
       <div id="node-provenance-panel">&nbsp;</div>
 
-      <h1>Comments for <i>{{=request.url}}</i></h1>
+      {{  # we'll use the node-identifier in the current URL to anchor local comments, or 
+          # the complete page URL if no node identifier is found
+          urlParts = request.url.split('/')
+          nodeIdentifier = [p for p in urlParts if '@' in p]
+          if len(nodeIdentifier) == 1:
+            commentLocation = nodeIdentifier[0]
+          else:
+            commentLocation = request.url
+          pass  # required in web2py view
+      }}
+      <h1>Comments for <i>{{=commentLocation}}</i></h1>
       <ul>
-          {{=plugin_localcomments(url=request.url)}}
+          {{=plugin_localcomments(url=commentLocation)}}
       </ul>
     </div>
   </div>
