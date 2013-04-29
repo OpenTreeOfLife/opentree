@@ -78,8 +78,10 @@ plugins.wiki.mode = 'html' # OR 'markmin', others?
 ## register with janrain.com, write your domain:api_key in private/janrain.key
 #from gluon.contrib.login_methods.rpx_account import use_janrain
 #use_janrain(auth, filename='private/janrain.key')
-janrain_api_key = open("applications/%s/private/janrain.key" % request.application).read().strip();
-
+try:
+    janrain_api_key = open("applications/%s/private/janrain.key" % request.application).read().strip();
+except:
+    janrain_api_key=''
 try:
     host = conf.get("hosting", "hostdomain")
 except:
