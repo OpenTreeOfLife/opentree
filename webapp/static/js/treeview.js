@@ -26,15 +26,8 @@ if ( History.enabled && pageUsesHistory ) {
         
         // we'll finish updating the page in a callback from argusObj.loadData()
 
-        // update all login links to return directly to the new URL (NOTE that this 
-        // doesn't seem to work for Logout)
-        $('a.login-logout').each(function() {
-            var $link = $(this);
-            var itsHref = $link.attr('href');
-            itsHref = itsHref.split('?')[0];
-            itsHref += ('?_next='+ State.url);
-            $link.attr('href', itsHref);
-        });
+        // update all login links to use the new URL
+        fixLoginLinks();
 
         // load local comments for the new URL
         // eg, http://localhost:8000/opentree/plugin_localcomments?url=ottol@805080
@@ -54,6 +47,8 @@ if ( History.enabled && pageUsesHistory ) {
             '/opentree/plugin_localcomments',
             {url: nodeIdentifier},
             function() {  // callback
+                // update its login link (if any) to use the latest URL
+                fixLoginLinks();
                 // update the comment count at the top of the page
                 var howManyComments = $('.plugin_localcomments .body').length;
                 $('#links-to-local-comments a:eq(0)').html(
@@ -111,7 +106,7 @@ $(document).ready(function() {
             return false;
         }
         $.ajax({
-            url: 'http://www.reelab.net/phylografter/ottol/autocomplete',
+            url: 'http://localhost:8000/phylografter/ottol/autocomplete',
             data: {
                 'search': searchText
             },
@@ -134,6 +129,25 @@ $(document).ready(function() {
 
 });
 
+function fixLoginLinks() {
+    // update all login links to return directly to the current URL (NOTE that this 
+    // doesn't seem to work for Logout)
+    var currentURL;
+    try {
+        var State = History.getState();
+        currentURL = State.url;
+    } catch(e) {
+        currentURL = window.location.href;
+    }
+
+    $('a.login-logout').each(function() {
+        var $link = $(this);
+        var itsHref = $link.attr('href');
+        itsHref = itsHref.split('?')[0];
+        itsHref += ('?_next='+ currentURL);
+        $link.attr('href', itsHref);
+    });
+}
 
 function historyStateToWindowTitle( stateObj ) {
     // show name if possible, else just source+ID

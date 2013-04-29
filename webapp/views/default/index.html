@@ -63,8 +63,6 @@
       <hr />
     {{if auth.user_id:}}
         <a class="login-logout" href="{{=URL(r=request,c='default',f='user',args=['logout'])}}">Logout</a>
-    {{else:}}
-        <a class="login-logout" href="{{=URL(r=request,c='default',f='user',args=['login'])}}">Login</a>
     {{pass}}
 
     </div><!-- END of navbar -->
@@ -74,13 +72,7 @@
       <div id="links-to-local-comments">
           <a href="#comment-header">Comments on this node</a>
           |
-          <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply').click(); return true;">
-           {{if auth.user_id:}}
-             Add a comment
-           {{else:}}
-             Add a comment (login required)
-           {{pass}}
-         </a>
+          <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply, .plugin_localcomments a.login-logout').eq(0).click(); return true;">Add a comment</a>
       </div>
 
       <div id="argusCanvasContainer" class="viewer-frame">  

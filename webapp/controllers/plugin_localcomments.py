@@ -67,7 +67,7 @@ function plugin_localcomments_init() {
      }
      return false;
   });
-  jQuery('div.plugin_localcomments a.reply').unbind('click').click(function(){
+  jQuery('div.plugin_localcomments a.reply:not(.login-logout)').unbind('click').click(function(){
      delete_all_forms();
      if ($(this).closest('.controls').length > 0) {
         // this is a typical Reply link
@@ -184,8 +184,10 @@ def index():
     for comment in comments:
         thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
     return DIV(script,
-               DIV(A(T('Add a comment'),_class='reply',_href='#'),_id='r0') if auth.user_id \
-                   else A(T('Login to add comments'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout'),
+               DIV(
+                   A(T('Add a comment'),_class='reply',_href='#') if auth.user_id \
+                   else A(T('Add a comment'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
+               _id='r0'),
                DIV(FORM(SELECT(
                             OPTION('What kind of feedback is this?', _value=''),
                             OPTION('Reply or general comment', _value=''),
