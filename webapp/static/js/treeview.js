@@ -17,14 +17,24 @@ if ( History.enabled && pageUsesHistory ) {
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
         History.log(State.data, State.title, State.url);
 
-        jQuery('#main-title').html( 'Loading new view...' );
-        jQuery('#node-provenance-panel').html('...');
+        $('#main-title').html( 'Loading new view...' );
+        $('#node-provenance-panel').html('...');
 
         // notify argus (trigger data load and/or view change)
         argus.displayNode({"nodeID": State.data.nodeID,
                            "domSource": State.data.domSource});
         
         // we'll finish updating the page in a callback from argusObj.loadData()
+
+        // update all login links to return directly to the new URL (NOTE that this 
+        // doesn't seem to work for Logout)
+        $('a.login-logout').each(function() {
+            var $link = $(this);
+            var itsHref = $link.attr('href');
+            itsHref = itsHref.split('?')[0];
+            itsHref += ('?_next='+ State.url);
+            $link.attr('href', itsHref);
+        });
 
         // load local comments for the new URL
         // eg, http://localhost:8000/opentree/plugin_localcomments?url=ottol@805080
@@ -38,9 +48,18 @@ if ( History.enabled && pageUsesHistory ) {
         if (!nodeIdentifier) {
             nodeIdentifier = State.url;
         }
+        // update comment header (maybe again in the callback, when we have a name)
+        $('#comment-header').html('Comments for <i>'+ nodeIdentifier +'</i>');
         $('.plugin_localcomments').parent().load(
             '/opentree/plugin_localcomments',
-            {url: nodeIdentifier}
+            {url: nodeIdentifier},
+            function() {  // callback
+                // update the comment count at the top of the page
+                var howManyComments = $('.plugin_localcomments .body').length;
+                $('#links-to-local-comments a:eq(0)').html(
+                    'Comments on this node ('+ howManyComments +')'
+                );
+            }
         );
 
     });

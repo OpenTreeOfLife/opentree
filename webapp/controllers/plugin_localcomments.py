@@ -185,7 +185,7 @@ def index():
         thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
     return DIV(script,
                DIV(A(T('Add a comment'),_class='reply',_href='#'),_id='r0') if auth.user_id \
-                   else A(T('Login to add comments'),_href=URL(r=request,c='default',f='user',args=['login'])),
+                   else A(T('Login to add comments'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout'),
                DIV(FORM(SELECT(
                             OPTION('What kind of feedback is this?', _value=''),
                             OPTION('Reply or general comment', _value=''),
