@@ -22,7 +22,9 @@ body {
 .sidebar-search form {	
     margin: 0;
 }
-#search-results {
+#search-results i {
+    display: block; 
+    margin: 8px 0 0;
 }
 .search-result {
     margin: 6px 12px 0px;

@@ -101,8 +101,11 @@ $(document).ready(function() {
     $('input[name=taxon-search]').unbind('keyup').keyup(function() {
         var $input = $(this);
         var searchText = $input.val().trim();
-        if (searchText.length < 3) {
-            $('#search-results').html('<p><i>Enter three or more letters</i></p>');
+        if (searchText.length === 0) {
+            $('#search-results').html('');
+            return false;
+        } else if (searchText.length < 3) {
+            $('#search-results').html('<i>Enter three or more letters</i>');
             return false;
         }
         $.ajax({
@@ -123,6 +126,9 @@ $(document).ready(function() {
                         var itsName = $link.html()
                         $link.attr('href', '/opentree/ottol@'+ itsNodeID +'/'+ itsName);
                     });
+            },
+            error: function(data) {
+                $('#search-results').html('<i>Search not available.</i>');
             }
         });
     });
