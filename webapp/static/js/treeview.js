@@ -102,7 +102,39 @@ $(document).ready(function() {
         argus.displayNode({"nodeID": initialState.nodeID,
                            "domSource": initialState.domSource});
     }
+
+    $('input[name=taxon-search]').unbind('keyup').keyup(function() {
+        var $input = $(this);
+        var searchText = $input.val().trim();
+        if (searchText.length < 3) {
+            $('#search-results').html('<p><i>Enter three or more letters</i></p>');
+            return false;
+        }
+        $.ajax({
+            //url: 'http://www.reelab.net/phylografter/study/autocomplete_ottolNodes',
+            url: 'http://localhost:8000/phylografter/ottol/autocomplete',
+            data: {
+                'search': searchText
+            },
+            type: 'GET',
+            cache: true,
+            crossDomain: true,
+            success: function(data) {
+                $('#search-results').html(data);
+                $('#search-results a')
+                    .wrap('<div class="search-result"><strong></strong></div>')
+                    .each(function() {
+                        var $link = $(this);
+                        var itsNodeID = $link.attr('href');
+                        var itsName = $link.html()
+                        $link.attr('href', '/opentree/ottol@'+ itsNodeID +'/'+ itsName);
+                    });
+            }
+        });
+    });
+
 });
+
 
 function historyStateToWindowTitle( stateObj ) {
     // show name if possible, else just source+ID

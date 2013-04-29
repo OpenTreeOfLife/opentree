@@ -25,7 +25,7 @@ body {
 #search-results {
 }
 .search-result {
-    margin: 8px 0px 8px 6px;
+    margin: 6px 12px 0px;
 }
 .search-result strong {
     display: block;
