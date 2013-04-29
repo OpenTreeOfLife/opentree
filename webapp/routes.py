@@ -23,6 +23,12 @@ routes_in = (
     ('/opentree/default/index/$anything', '/opentree/default/index/$anything'),
     ('/opentree/default/index', '/opentree/default/index'),
     # ...but generally they'll need expansion
+    ('/opentree/treeview/', '/opentree/treeview/index'),
+    ('/opentree/treeview', '/opentree/treeview/index'),
+    ('/opentree/treeview/$anything', '/opentree/treeview/$anything'),
+    ('/opentree/synthview/', '/opentree/synthview/index'),
+    ('/opentree/synthview', '/opentree/synthview/index'),
+    ('/opentree/synthview/$anything', '/opentree/synthview/$anything'),
     ('/opentree/$anything', '/opentree/default/index/$anything'),
 
     # I'd prefer to use 'ottol:123' instead of 'ottol@123' for node source+ID,
