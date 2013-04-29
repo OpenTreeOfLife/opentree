@@ -260,7 +260,7 @@ function createArgus(spec) {
 
     argusObj.moveToNode = function (o) {
         // if we're using History.js, all movement through the tree should be driven from history
-        if (History && History.enabled && pageUsesHistory) {
+        if (History && History.enabled && "pageUsesHistory" in window && pageUsesHistory) {
             // add expected values for minimal history entry
             var stateObj = $.extend(true, {'nodeName':''}, o); // deep copy of o, with default values if none supplied
             History.pushState( stateObj, historyStateToWindowTitle(stateObj), historyStateToURL(stateObj));
