@@ -26,7 +26,22 @@ if ( History.enabled && pageUsesHistory ) {
         
         // we'll finish updating the page in a callback from argusObj.loadData()
 
-        // TODO: load local comments for the new URL
+        // load local comments for the new URL
+        // eg, http://localhost:8000/opentree/plugin_localcomments?url=ottol@805080
+        var pathParts = State.url.split('/');
+        var nodeIdentifier = null;
+        $.each(pathParts, function() {
+            if (this.indexOf('@') !== -1) {
+                nodeIdentifier = this;
+            }
+        });
+        if (!nodeIdentifier) {
+            nodeIdentifier = State.url;
+        }
+        $('.plugin_localcomments').parent().load(
+            '/opentree/plugin_localcomments',
+            {url: nodeIdentifier}
+        );
 
     });
 }
