@@ -92,11 +92,15 @@ function createArgus(spec) {
         "xOffset": 0, // reset in loadData call before drawing nodes
         "yNodeMargin": 4, // whitespace above/below nodes
         "yOffset": 10, // distance from top margin at which topmost nodes are drawn. reset in loadData
+        /* colors for the tree view */
+        "bgColor": "#f5f5ec",
         "altPColor": "#c69",
         "altPLinkColor": "#900",
         "altRelColor": "#f00",
         "nodeColor": "#8af",
         "nodeHoverColor": "#bdf",
+        "pathColor": "#997766",
+        "labelColor": "#997766",
         "tipColor": "#14d",
         "tipHoverColor": "#b8f",
         "currMaxDepth": spec.maxDepth,
@@ -179,7 +183,7 @@ function createArgus(spec) {
             var argusObjRef = this;
             var treedata = $.parseJSON(dataStr);
             var node = treedata[0];
-            var pheight, pwidth, sourcelabel;
+            var pheight, pwidth, sourcelabel, anchoredbg;
             //spec.container.text("proxy returned data..." + treedata);
             // calculate view-specific geometry parameters
             pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.nleaves);
@@ -208,6 +212,16 @@ function createArgus(spec) {
             }
             paper.setSize(pwidth, pheight);
 
+            anchoredbg = paper.rect(0,0,120,90).attr({
+                "fill": this.bgColor,
+                "fill-opacity": 0.6,
+                "stroke": 'none'
+            });
+            if (!argusObj.anchoredControls) {
+                argusObj.anchoredControls = paper.set();
+            }
+            argusObj.anchoredControls.push(anchoredbg);
+
             // this should also anchor to the scrolling viewport
             sourcelabel = paper.text(argusObjRef.sourceTextBoxX,
                                      argusObjRef.sourceTextBoxY,
@@ -215,10 +229,9 @@ function createArgus(spec) {
                 "font-size": String(argusObjRef.fontScalar * argusObjRef.minTipRadius) + "px",
                 "text-anchor": "start"
             });
-            if (!argusObj.anchoredControls) {
-                argusObj.anchoredControls = paper.set();
-            }
             argusObj.anchoredControls.push(sourcelabel);
+
+            
 
             // refresh tree
             argusObjRef.nodesHash = {};
@@ -228,7 +241,7 @@ function createArgus(spec) {
                 "node": node,
                 "domSource": domSource,
                 "curLeaf": 0,
-                "isTargetNode": true
+                "isTargetParent": true
             });
 
             // Release the forced height of the argus viewport
@@ -353,6 +366,7 @@ function createArgus(spec) {
     // recursive function to draw nodes and branches for the "dominant" tree (the domSource)
     argusObj.drawNode = function (obj) {
         var node = obj.node;
+        var isTargetParent = obj.isTargetParent;
         var isTargetNode = obj.isTargetNode;
         var domSource = obj.domSource;
         var curLeaf = obj.curLeaf;
@@ -376,10 +390,12 @@ function createArgus(spec) {
 
             // draw the node
             circle = paper.circle(node.x, node.y, this.minTipRadius).attr({
-                "fill": this.tipColor
+                "fill": (isTargetNode ? this.pathColor : this.tipColor),
+                "stroke": this.pathColor
             }).toFront();
             label = paper.text(node.x + this.xLabelMargin, node.y, node.name).attr({
                 'text-anchor': 'start',
+                "fill": this.labelColor,
                 "font-size": fontSize
             });
 
@@ -400,7 +416,8 @@ function createArgus(spec) {
                 curLeaf = this.drawNode({
                     "node": node.children[i],
                     "domSource": domSource,
-                    "curLeaf": curLeaf
+                    "curLeaf": curLeaf,
+                    "isTargetNode": (isTargetParent ? true : false )
                 });
 
                 // the traversal generated the childrens' coordinates; now get them
@@ -422,10 +439,12 @@ function createArgus(spec) {
             // draw node circle
             label = paper.text(node.x - node.r, node.y + node.r, node.name).attr({
                 'text-anchor': 'end',
+                "fill": this.labelColor,
                 "font-size": fontSize
             });
             circle = paper.circle(node.x, node.y, node.r).attr({
-                "fill": this.nodeColor
+                "fill": (isTargetNode ? this.pathColor : this.nodeColor),
+                "stroke": this.pathColor
             });
 
             // assign hover behaviors
@@ -437,10 +456,14 @@ function createArgus(spec) {
 
             // draw branches (square tree)
             spineSt = "M" + node.x + " " + node.children[0].y + "L" + node.x + " " + node.children[nchildren - 1].y;
-            paper.path(spineSt).toBack();
+            paper.path(spineSt).toBack().attr({
+                "stroke": this.pathColor
+            });
             for (i = 0; i < nchildren; i++) {
                 branchSt = "M" + node.x + " " + node.children[i].y + "L" + node.children[i].x + " " + node.children[i].y;
-                paper.path(branchSt).toBack();
+                paper.path(branchSt).toBack().attr({
+                    "stroke": this.pathColor
+                });
             }
         }
         if (isTargetNode) {
@@ -577,7 +600,7 @@ function createArgus(spec) {
         body = this.container; // this used to be $(body) instead of this.container. Which is correct?
         $(body).bind("scroll", function () {
             // use relative transformation to match the viewport's X/Y scrolling
-            argusObj.anchoredControls.transform('t' + $(body).scrollLeft() + ',' + $(body).scrollTop());
+            argusObj.anchoredControls.transform('t' + $(body).scrollLeft() + ',' + $(body).scrollTop()).toFront();
         });
         // center the view on the target node
         $(body).scrollTop((this.targetNodeY) - ($(this.container).height() / 2));
@@ -680,7 +703,8 @@ function createArgus(spec) {
                 nub.line = "M" + cx + " " + cy + "L" + nub.x + " " + nub.y;
                 nub.dbr1 = paper.path(nub.line).attr(altRelLineAttr);
                 nub.circle = paper.circle(nub.x, nub.y, this.minTipRadius).attr({
-                    "fill": this.altPColor
+                    "fill": this.altPColor,
+                    "stroke": this.pathColor
                 });
 
                 // calc geometry for the nub info box, which contains links to alt topologies
@@ -704,6 +728,7 @@ function createArgus(spec) {
                                           (infobox.y + j) * this.nodeHeight,
                                           linktext).attr({
                         "text-anchor": "start",
+                        "fill": this.labelColor,
                         "font-size": fontSize
                     }).click(getClickHandlerAltRelLine(curNub));
                     // assign hover behaviors
