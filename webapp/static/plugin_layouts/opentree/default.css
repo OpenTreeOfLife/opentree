@@ -36,16 +36,57 @@ body {
 	float: left;
 }
 .vizcontent {
-	padding-left: 205px;
+	margin-left: 205px;
+}
+
+#viewer-collection {
+    border: 1px dashed red;
+    overflow: hidden;
+    height: 60%; /* don't fill to the current viewport */
+    border: 1px solid #ccc;
+    /*border-radius: 8px;*/
+}
+#viewer-collection,
+#provenance-panel {
+    background-color: #eee;
+}
+.vizcontent div.viewer-frame, 
+#provenance-panel {
+    float: left;
+    height: 100%;
 }
 .vizcontent div.viewer-frame {
 	padding: 0px;
     background-color: #f5f5ec; /* #faf5ee; */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    height: 60%; /* don't fill to the current viewport */
     overflow: auto;
 }
+
+/* hide/show provenance with style, and share space with the viewer frame */
+.with-provenance .viewer-frame {
+    width: 66%;
+}
+.with-provenance #provenance-panel {
+    width: 30%;
+}
+.without-provenance .viewer-frame {
+    width: 100%;
+}
+.without-provenance #provenance-panel {
+    display: none;
+}
+#provenance-toggle {
+    float: right;
+    margin-top: -1.5em;
+    margin-right: 12px;
+}
+
+#provenance-panel {
+    border-left: 2px solid #ccc;
+    padding: 5px 0 0 8px;
+}
+
+
+
 h1#main-title, 
 h1#comment-header {
     margin-bottom: 0.5em;

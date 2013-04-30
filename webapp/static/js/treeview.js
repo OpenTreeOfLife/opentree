@@ -102,6 +102,18 @@ $(document).ready(function() {
         argus.displayNode({"nodeID": initialState.nodeID,
                            "domSource": initialState.domSource});
     }
+
+    // bind toggle for provenance panel
+    $('#provenance-toggle').unbind('click').click(function() {
+        if ($('#viewer-collection').is('.with-provenance')) {
+            $('#viewer-collection').removeClass('with-provenance').addClass('without-provenance');
+            $(this).html('Show provenance');
+        } else {
+            $('#viewer-collection').removeClass('without-provenance').addClass('with-provenance');
+            $(this).html('Hide provenance');
+        }
+        return false;
+    });
 });
 
 function historyStateToWindowTitle( stateObj ) {

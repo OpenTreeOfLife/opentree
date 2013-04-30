@@ -72,11 +72,12 @@
          </a>
       </div>
 
-      <div id="argusCanvasContainer" class="viewer-frame">  
+      <a id="provenance-toggle" href="#">Hide provenance</a>
+      <div id="viewer-collection" class="with-provenance">
+          <div id="argusCanvasContainer" class="viewer-frame">&nbsp;</div>
+          <!-- TODO: Add other viewers here? or common frame? -->
+          <div id="provenance-panel">Provenance for node...</div>
       </div>
-      <!-- TODO: Add other viewers here? or common frame? -->
-
-      <div id="node-provenance-panel">&nbsp;</div>
 
       {{  # we'll use the node-identifier in the current URL to anchor local comments, or 
           # the complete page URL if no node identifier is found
@@ -90,8 +91,8 @@
       }}
       <h1 id="comment-header">Comments for <i>{{=commentLocation}}</i></h1>
       {{=plugin_localcomments(url=commentLocation)}}
-    </div>
-  </div>
+    </div><!-- end of .vizcontent -->
+  </div><!-- end of .container -->
 
   <script type="text/javascript">
     // if inbound URL points to a particular location+view, record it here
