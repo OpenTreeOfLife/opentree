@@ -300,10 +300,20 @@ function createArgus(spec) {
     };
 
     // create closure to access node attributes when hovering in/out
-    getHoverHandlerNode = function (circle, attributes) {
+    getHoverHandlerNode = function (hoverState, circle, shapeAttributes, nodeInfo) {
         var nodeCircle = circle;
         return function () {
-            nodeCircle.attr(attributes);
+            nodeCircle.attr(shapeAttributes);
+            switch (hoverState) {
+                case 'OVER':
+                    console.log('OVER a node');
+                    break;
+                case 'OUT':
+                    console.log('OUT of a node');
+                    break;
+                default:
+                    console.log('Unexpected value for hoverState: '+ hoverState);
+            }
         };
     };
     getClickHandlerNode = function (nodeID, domSource, nodeName) {
@@ -373,9 +383,9 @@ function createArgus(spec) {
                 "font-size": fontSize
             });
 
-            circle.hover(getHoverHandlerNode(circle, {
+            circle.hover(getHoverHandlerNode('OVER', circle, {
                 "fill": this.tipHoverColor
-            }), getHoverHandlerNode(circle, {
+            }), getHoverHandlerNode('OUT', circle, {
                 "fill": this.tipColor
             }));
 
@@ -419,9 +429,9 @@ function createArgus(spec) {
             });
 
             // assign hover behaviors
-            circle.hover(getHoverHandlerNode(circle, {
+            circle.hover(getHoverHandlerNode('OVER', circle, {
                 "fill": this.nodeHoverColor
-            }), getHoverHandlerNode(circle, {
+            }), getHoverHandlerNode('OUT', circle, {
                 "fill": this.nodeColor
             }));
 
