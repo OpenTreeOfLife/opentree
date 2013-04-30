@@ -1,0 +1,25 @@
+Argus renders JSON (from taxomachine and treemachine).
+
+It expects two objects:
+    1. a tree
+    2. object with a 'domsource' attribute (e.g. {"domsource":"ottol"})
+
+The tree is nested set of node description. Each node has the attributes:
+    "children" -> list of child nodes.
+
+    "nleaves" -> 0 for a leaf, # of descendant "leaves" for the node. Note that
+        the # of leaves refers to the # of leaves in the tree that has been
+        pruned to "maxnodedepth" (see below), not the # of nodes in the source
+        graph that are descendants of the node.
+
+    "name" -> string with the node's name.
+
+    "nodeid" -> string that is a node ID in the webservice that generated the JSON
+        this ID is not guaranteed to be stable (at least, I don't think it is)
+        across multiple instances of the service. Perhaps not even stable if the 
+        neo4j db is recreated. Argus uses this to enable navigation by attaching a 
+        callback that requests more of the tree starting at node that corresponds to 
+        this nodeid.
+
+In addition the root is expected to have:
+    "maxnodedepth" -> number of node levels that include their children.

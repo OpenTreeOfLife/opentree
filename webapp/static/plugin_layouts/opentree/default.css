@@ -7,24 +7,42 @@ body {
 */
 .header {
 	margin: 2px; 
-	width: 775px;
-	height: 75;
+	height: 85px;
 }
 .headerlogo {
 	float: left;
 }
-.headersearch {	
-	float: right;
-	margin: 5px;
-	width: 600px;
-	margin-top: 25px;
+.sidebar-search {	
+    background-color: #ffc;
+    border: 1px solid #dda;
+    border-radius: 4px;
+    margin: -3px;
+    padding: 8px 4px;
 }
-.headerinputtext {
-	margin-left: 2px; 
-	width: 480px; 
-	border: 1px solid black;
+.sidebar-search form {	
+    margin: 0;
 }
-
+#search-results i {
+    display: block; 
+    margin: 8px 0 0;
+}
+.search-result {
+    margin: 6px 12px 0px;
+}
+.search-result strong {
+    display: block;
+}
+.search-result div {
+    font-size: 80%;
+    padding-left: 12px;
+}
+.search-result a {
+    color: #333;
+    text-decoration: none;
+}
+.search-result strong a {
+    color: #000;
+}
 .container {
 	width:100%;
 }
@@ -36,8 +54,36 @@ body {
 	float: left;
 }
 .vizcontent {
-	padding-left: 200px;
+	padding-left: 212px;
 }
-.vizcontent div {
+.vizcontent div.viewer-frame {
 	padding: 0px;
+    background-color: #f5f5ec; /* #faf5ee; */
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    height: 60%; /* don't fill to the current viewport */
+    overflow: auto;
+}
+h1#main-title, 
+h1#comment-header {
+    margin: 0;
+    padding: 0.75em 0 0.5em;
+}
+h1#comment-header i {
+    color: #999;
+}
+div#links-to-local-comments,
+div#r0 {
+    margin: -12px 0 12px;
+}
+
+#node-provenance-panel {
+    margin: 8px 0 0;
+    background-color: #eee;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 9px 12px;
+}
+#node-provenance-panel h3 {
+    margin: 0 0 0.5em;
 }

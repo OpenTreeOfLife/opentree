@@ -3,10 +3,15 @@
     <title>{{=response.title or request.application}}</title>
     {{response.files.append(URL('static','plugin_layouts/opentree/default.css'))}}
     {{response.files.append(URL('static','plugin_layouts/superfish.js'))}}
+    <!-- css for comments -->
+    {{response.files.append(URL('static','plugin_localcomments/css/localcomments.css'))}}
     
     <!-- js dependencies for argus -->
     {{response.files.append(URL('static','js/argus/raphael-min.js'))}}
     {{response.files.append(URL('static','js/argus/drawtree.js'))}}
+
+    <!-- js for history management -->
+    {{response.files.append(URL('static','js/jquery.history.js'))}}
     
     {{include 'web2py_ajax.html'}}
     
@@ -21,6 +26,7 @@
   
 <body>
 
+    <!-- moved into sidebar
 	<div class="header">
 	  <div class="headerlogo">
 		{{=A(IMG(_src=URL('static','images/logo.png'), 
@@ -30,17 +36,22 @@
 				_valign="middle"),
 			_href="http://opentreeoflife.org/")}}
 	  </div>
-	  <div class="headersearch">
-		<form>Search
-		  <input type="text" class="headerinputtext"/>
-		  <input type="submit" value="go" />
-		</form>
-	  </div>
 	</div>
+    -->
 
     <section id="main" class="main row">
             {{if left_sidebar_enabled:}}
         <div class="span3 left-sidebar">
+            <div class="header">
+              <div class="headerlogo">
+                {{=A(IMG(_src=URL('static','images/logo.png'), 
+                        _alt="Open Tree of Life logo",
+                        _width="144", 
+                        _height="74",
+                        _valign="middle"),
+                    _href="http://opentreeoflife.org/")}}
+              </div>
+            </div>
             {{block left_sidebar}}
             <h3>Left Sidebar</h3>
             <p></p>
@@ -70,7 +81,7 @@
             <div class="footer-content">
                 {{block footer}} <!-- this is default footer -->
                 <div id="fundedBy" class="pull-left">
-                	{{=T('Open Tree of Life is funded by NSF AVAToL Award #1208809')}}
+                	{{=T('Open Tree of Life is funded by NSF (AVAToL)')}}
                 	</div>
                 <div id="poweredBy" class="pull-right">
                     {{=T('Powered by')}}

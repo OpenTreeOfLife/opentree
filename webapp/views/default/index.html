@@ -1,50 +1,57 @@
 {{extend 'layout.html'}}
 
-<p>Pre DB p element</p>
 <div id="argusDBContainer" />
-<p>Post DB p element</p>
 
 <div class="container">
   <div class="navbar">
 
+	  <div class="header">
+	    <div class="headerlogo">
+		  {{=A(IMG(_src=URL('static','images/logo.png'), 
+				  _alt="Open Tree of Life logo",
+				  _width="144", 
+				  _height="74",
+				  _valign="middle"),
+			  _href="http://opentreeoflife.org/")}}
+	    </div>
+	  </div>
+
+	  <div class="sidebar-search">
+        <form style="text-align: center;">
+            <input type="text" style="width: 100%;" name="taxon-search" placeholder="Search for taxon/node"/>
+		</form>
+        <div id="search-results">
+<!--
+            <div class="search-result">
+                <strong><a href="#">Eukaryota</a></strong>
+                <div>&raquo; <a href="#">cellular organisms</a></div>
+                <div>&raquo; <a href="#">life </a></div>
+            </div>
+  
+            <div class="search-result">
+                <strong><a href="#">Second search result</a></strong>
+                <div>&raquo; <a href="#">parent taxon</a></div>
+                <div>&raquo; <a href="#">grandparent taxon</a></div>
+            </div>
+-->
+        </div>
+	  </div>
+
       <br />
 
-      <strong><a href="">Eukaryota</a></strong>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; cellular organisms </span>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; life </span>
-      <br />
+      <a href="#TODO-extract.html">Extract subtree</a>
       <br />
 
-      <strong><a href="">Second search result</a></strong>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; parent taxon </span>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; grandparent taxon </span>
-      <br />
-      <br />
-
-      <hr />
-      <br />
-
-      <a href="extract.html">Extract subtree</a>
-      <br />
-
-      <a href="about.html">About the tree</a>
+      <a href="#TODO-about.html">About the tree</a>
       <br />
 
       <a href="http://www.reelab.net/phylografter">Source tree manager</a>
       <br />
 
-      <a href="download.html">Download</a>
+      <a href="#TODO-download.html">Download</a>
       <br />
 
-      <a href="credits.html">Credits</a>
+      <a href="#TODO-credits.html">Credits</a>
       <br />
       <br />
       <hr />
@@ -52,22 +59,56 @@
       <p style="margin-left:2em; font-size: 80%;">
         New in version 0.73: Something very cool
       </p>
+      <hr />
+    {{if auth.user_id:}}
+        <a class="login-logout" href="{{=URL(r=request,c='default',f='user',args=['logout'])}}">Logout</a>
+    {{pass}}
 
-    </div>
+    </div><!-- END of navbar -->
+
     <div class="vizcontent">
-      <div id="argusCanvasContainer">  
+      <h1 id="main-title">Synthetic tree viewer</h1>
+      <div id="links-to-local-comments">
+          <a href="#comment-header">Comments on this node</a>
+          |
+          <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply, .plugin_localcomments a.login-logout').eq(0).click(); return true;">Add a comment</a>
       </div>
+
+      <div id="argusCanvasContainer" class="viewer-frame">  
+      </div>
+      <!-- TODO: Add other viewers here? or common frame? -->
+
+      <div id="node-provenance-panel">
+          <h3>Provenance</h3>
+      </div>
+
+      {{  # we'll use the node-identifier in the current URL to anchor local comments, or 
+          # the complete page URL if no node identifier is found
+          urlParts = request.url.split('/')
+          nodeIdentifier = [p for p in urlParts if '@' in p]
+          if len(nodeIdentifier) == 1:
+            commentLocation = nodeIdentifier[0]
+          else:
+            commentLocation = request.url
+          pass  # required in web2py view
+      }}
+      <h1 id="comment-header">Comments <i>- {{=commentLocation}}</i></h1>
+      {{=plugin_localcomments(url=commentLocation)}}
     </div>
   </div>
 
-
-<script type="text/javascript">
-$(document).ready(function (){
-  var argus = createArgus({
-    "domSource": "ottol",
-    "nodeID": "805080", 
-    "container": document.getElementById("argusCanvasContainer")
-  });
-  argus.displayNode("805080", "ottol");
-});
+  <script type="text/javascript">
+    // if inbound URL points to a particular location+view, record it here
+    var urlState = {
+     {{ if forcedByURL: }}
+      {{ if viewer: }} viewer: '{{=viewer}}', {{ pass}}
+      {{ if domSource: }} domSource: '{{=domSource}}', {{ pass}}
+      {{ if nodeID: }} nodeID: '{{=nodeID}}', {{ pass}}
+      {{ if nodeName: }} nodeName: '{{=nodeName}}', {{ pass}}
+        forcedByURL: true
+     {{ pass }}
+    };
+    // treeview.js will examine this to determine our starting view
+  </script>
+  <script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
 </script>
