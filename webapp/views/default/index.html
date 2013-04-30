@@ -5,44 +5,53 @@
 <div class="container">
   <div class="navbar">
 
+	  <div class="header">
+	    <div class="headerlogo">
+		  {{=A(IMG(_src=URL('static','images/logo.png'), 
+				  _alt="Open Tree of Life logo",
+				  _width="144", 
+				  _height="74",
+				  _valign="middle"),
+			  _href="http://opentreeoflife.org/")}}
+	    </div>
+	  </div>
+
+	  <div class="sidebar-search">
+        <form style="text-align: center;">
+            <input type="text" style="width: 100%;" name="taxon-search" placeholder="Search for taxon/node"/>
+		</form>
+        <div id="search-results">
+<!--
+            <div class="search-result">
+                <strong><a href="#">Eukaryota</a></strong>
+                <div>&raquo; <a href="#">cellular organisms</a></div>
+                <div>&raquo; <a href="#">life </a></div>
+            </div>
+  
+            <div class="search-result">
+                <strong><a href="#">Second search result</a></strong>
+                <div>&raquo; <a href="#">parent taxon</a></div>
+                <div>&raquo; <a href="#">grandparent taxon</a></div>
+            </div>
+-->
+        </div>
+	  </div>
+
       <br />
 
-      <strong><a href="">Eukaryota</a></strong>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; cellular organisms </span>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; life </span>
-      <br />
+      <a href="#TODO-extract.html">Extract subtree</a>
       <br />
 
-      <strong><a href="">Second search result</a></strong>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; parent taxon </span>
-      <br />
-      <span style="margin-left:1em; font-size: 80%;">
-      &raquo; grandparent taxon </span>
-      <br />
-      <br />
-
-      <hr />
-      <br />
-
-      <a href="extract.html">Extract subtree</a>
-      <br />
-
-      <a href="about.html">About the tree</a>
+      <a href="#TODO-about.html">About the tree</a>
       <br />
 
       <a href="http://www.reelab.net/phylografter">Source tree manager</a>
       <br />
 
-      <a href="download.html">Download</a>
+      <a href="#TODO-download.html">Download</a>
       <br />
 
-      <a href="credits.html">Credits</a>
+      <a href="#TODO-credits.html">Credits</a>
       <br />
       <br />
       <hr />
@@ -50,10 +59,9 @@
       <p style="margin-left:2em; font-size: 80%;">
         New in version 0.73: Something very cool
       </p>
+      <hr />
     {{if auth.user_id:}}
         <a class="login-logout" href="{{=URL(r=request,c='default',f='user',args=['logout'])}}">Logout</a>
-    {{else:}}
-        <a class="login-logout" href="{{=URL(r=request,c='default',f='user',args=['login'])}}">Login</a>
     {{pass}}
 
     </div><!-- END of navbar -->
@@ -63,20 +71,28 @@
       <div id="links-to-local-comments">
           <a href="#comment-header">Comments on this node</a>
           |
-          <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply').click(); return true;">
-           {{if auth.user_id:}}
-             Add a comment
-           {{else:}}
-             Add a comment (login required)
-           {{pass}}
-         </a>
+          <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply, .plugin_localcomments a.login-logout').eq(0).click(); return true;">Add a comment</a>
       </div>
 
       <a id="provenance-toggle" href="#">Hide provenance</a>
       <div id="viewer-collection" class="with-provenance">
           <div id="argusCanvasContainer" class="viewer-frame">&nbsp;</div>
           <!-- TODO: Add other viewers here? or common frame? -->
-          <div id="provenance-panel">Provenance for node...</div>
+          <div id="provenance-panel">
+           <div class="panel-content">
+            <div class="provenance-intro">Provenance for node</div>
+            <div class="provenance-title">Pseudichthydium</div>
+            <dl>
+                <dt>Original publication</dt>
+                <dd><a href="#">Cruikshank, 1992</a></dd>
+                <dd><a href="#">doi:10.1016/r.cruikshank.1992.03.013</a></dd>
+                <dt>Related publicatons</dt>
+                <dd><a href="#">Morrison, 2004</a></dd>
+                <dd><a href="#">doi:10.1016/l.morrison.2004.03.013</a></dd>
+            </dl>
+            <a href="#">Extract subtree</a>
+           </div>
+          </div>
       </div>
 
       {{  # we'll use the node-identifier in the current URL to anchor local comments, or 
@@ -89,7 +105,7 @@
             commentLocation = request.url
           pass  # required in web2py view
       }}
-      <h1 id="comment-header">Comments for <i>{{=commentLocation}}</i></h1>
+      <h1 id="comment-header">Comments <i>- {{=commentLocation}}</i></h1>
       {{=plugin_localcomments(url=commentLocation)}}
     </div><!-- end of .vizcontent -->
   </div><!-- end of .container -->

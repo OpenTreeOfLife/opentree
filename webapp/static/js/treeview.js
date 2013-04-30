@@ -18,7 +18,7 @@ if ( History.enabled && pageUsesHistory ) {
         History.log(State.data, State.title, State.url);
 
         $('#main-title').html( 'Loading new view...' );
-        $('#node-provenance-panel').html('...');
+        $('#node-provenance-panel h3').html('Provenance');
 
         // notify argus (trigger data load and/or view change)
         argus.displayNode({"nodeID": State.data.nodeID,
@@ -26,15 +26,8 @@ if ( History.enabled && pageUsesHistory ) {
         
         // we'll finish updating the page in a callback from argusObj.loadData()
 
-        // update all login links to return directly to the new URL (NOTE that this 
-        // doesn't seem to work for Logout)
-        $('a.login-logout').each(function() {
-            var $link = $(this);
-            var itsHref = $link.attr('href');
-            itsHref = itsHref.split('?')[0];
-            itsHref += ('?_next='+ State.url);
-            $link.attr('href', itsHref);
-        });
+        // update all login links to use the new URL
+        fixLoginLinks();
 
         // load local comments for the new URL
         // eg, http://localhost:8000/opentree/plugin_localcomments?url=ottol@805080
@@ -49,11 +42,13 @@ if ( History.enabled && pageUsesHistory ) {
             nodeIdentifier = State.url;
         }
         // update comment header (maybe again in the callback, when we have a name)
-        $('#comment-header').html('Comments for <i>'+ nodeIdentifier +'</i>');
+        $('#comment-header').html('Comments <i>- '+ nodeIdentifier +'</i>');
         $('.plugin_localcomments').parent().load(
             '/opentree/plugin_localcomments',
             {url: nodeIdentifier},
             function() {  // callback
+                // update its login link (if any) to use the latest URL
+                fixLoginLinks();
                 // update the comment count at the top of the page
                 var howManyComments = $('.plugin_localcomments .body').length;
                 $('#links-to-local-comments a:eq(0)').html(
@@ -114,7 +109,63 @@ $(document).ready(function() {
         }
         return false;
     });
+
+    $('input[name=taxon-search]').unbind('keyup').keyup(function() {
+        var $input = $(this);
+        var searchText = $input.val().trim();
+        if (searchText.length === 0) {
+            $('#search-results').html('');
+            return false;
+        } else if (searchText.length < 3) {
+            $('#search-results').html('<i>Enter three or more letters</i>');
+            return false;
+        }
+        $.ajax({
+            url: 'http://www.reelab.net/phylografter/ottol/autocomplete',
+            data: {
+                'search': searchText
+            },
+            type: 'GET',
+            cache: true,
+            crossDomain: true,
+            success: function(data) {
+                $('#search-results').html(data);
+                $('#search-results a')
+                    .wrap('<div class="search-result"><strong></strong></div>')
+                    .each(function() {
+                        var $link = $(this);
+                        var itsNodeID = $link.attr('href');
+                        var itsName = $link.html()
+                        $link.attr('href', '/opentree/ottol@'+ itsNodeID +'/'+ itsName);
+                    });
+            },
+            error: function(data) {
+                $('#search-results').html('<i>Search not available.</i>');
+            }
+        });
+    });
+
 });
+
+function fixLoginLinks() {
+    // update all login links to return directly to the current URL (NOTE that this 
+    // doesn't seem to work for Logout)
+    var currentURL;
+    try {
+        var State = History.getState();
+        currentURL = State.url;
+    } catch(e) {
+        currentURL = window.location.href;
+    }
+
+    $('a.login-logout').each(function() {
+        var $link = $(this);
+        var itsHref = $link.attr('href');
+        itsHref = itsHref.split('?')[0];
+        itsHref += ('?_next='+ currentURL);
+        $link.attr('href', itsHref);
+    });
+}
 
 function historyStateToWindowTitle( stateObj ) {
     // show name if possible, else just source+ID
@@ -187,7 +238,7 @@ function nodeDataLoaded( nodeTree ) {
 
     // update page title and page contents
     jQuery('#main-title').html( historyStateToPageHeading( improvedState ) );
-    jQuery('#node-provenance-panel').html('...');
+    jQuery('#node-provenance-panel h3').html("Provenance for '"+ targetNode.name  +"'");
     // load provenance data for this view (all visible nodes and edges)
 
 }

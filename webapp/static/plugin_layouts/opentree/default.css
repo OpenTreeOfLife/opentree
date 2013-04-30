@@ -7,24 +7,42 @@ body {
 */
 .header {
 	margin: 2px; 
-	width: 775px;
-	height: 75px;
+	height: 85px;
 }
 .headerlogo {
 	float: left;
 }
-.headersearch {	
-	float: right;
-	margin: 5px;
-	width: 600px;
-	margin-top: 25px;
+.sidebar-search {	
+    background-color: #ffc;
+    border: 1px solid #dda;
+    border-radius: 4px;
+    margin: -3px;
+    padding: 8px 4px;
 }
-.headerinputtext {
-	margin-left: 2px; 
-	width: 480px; 
-	border: 1px solid black;
+.sidebar-search form {	
+    margin: 0;
 }
-
+#search-results i {
+    display: block; 
+    margin: 8px 0 0;
+}
+.search-result {
+    margin: 6px 12px 0px;
+}
+.search-result strong {
+    display: block;
+}
+.search-result div {
+    font-size: 80%;
+    padding-left: 12px;
+}
+.search-result a {
+    color: #333;
+    text-decoration: none;
+}
+.search-result strong a {
+    color: #000;
+}
 .container {
 	width:100%;
 }
@@ -36,7 +54,7 @@ body {
 	float: left;
 }
 .vizcontent {
-	margin-left: 205px;
+	margin-left: 210px;
 }
 
 #viewer-collection {
@@ -44,11 +62,13 @@ body {
     overflow: hidden;
     height: 60%; /* don't fill to the current viewport */
     border: 1px solid #ccc;
-    /*border-radius: 8px;*/
+    border-radius: 8px;
+    margin: 0px;
 }
 #viewer-collection,
 #provenance-panel {
     background-color: #eee;
+    /* display: table-cell; */
 }
 .vizcontent div.viewer-frame, 
 #provenance-panel {
@@ -66,7 +86,7 @@ body {
     width: 66%;
 }
 .with-provenance #provenance-panel {
-    width: 30%;
+    width: 34%;
 }
 .without-provenance .viewer-frame {
     width: 100%;
@@ -81,17 +101,60 @@ body {
 }
 
 #provenance-panel {
+    overflow: auto;
+    /* adding full-height divider, subtracting from width */
     border-left: 2px solid #ccc;
+    margin-right: -2px;
+}
+#provenance-panel .panel-content {
+    /* isolating any style that might affect widths above */
     padding: 5px 0 0 8px;
+}
+.panel-content {
+}
+.provenance-intro {
+    font-size: 110%;
+    color: #777;
+}
+.provenance-title {
+    font-family: Helvetica, Arial, serif;
+    font-size: 130%;
+    color: #000;
+}
+.panel-content dl {
+    margin: 6px 0 12px;
+}
+.panel-content dl dt {
+    color: #777;
+}
+.panel-content dl dd {
+    margin-left: 12px;
+    color: #000;
+    margin-bottom: 4px;
 }
 
 
 
 h1#main-title, 
 h1#comment-header {
-    margin-bottom: 0.5em;
+    margin: 0;
+    padding: 0.75em 0 0.5em;
+}
+h1#comment-header i {
+    color: #999;
 }
 div#links-to-local-comments,
 div#r0 {
     margin: -12px 0 12px;
+}
+
+#node-provenance-panel {
+    margin: 8px 0 0;
+    background-color: #eee;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 9px 12px;
+}
+#node-provenance-panel h3 {
+    margin: 0 0 0.5em;
 }

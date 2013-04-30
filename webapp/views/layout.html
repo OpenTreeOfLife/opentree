@@ -26,6 +26,7 @@
   
 <body>
 
+    <!-- moved into sidebar
 	<div class="header">
 	  <div class="headerlogo">
 		{{=A(IMG(_src=URL('static','images/logo.png'), 
@@ -35,17 +36,22 @@
 				_valign="middle"),
 			_href="http://opentreeoflife.org/")}}
 	  </div>
-	  <div class="headersearch">
-		<form>Search
-		  <input type="text" class="headerinputtext"/>
-		  <input type="submit" value="go" />
-		</form>
-	  </div>
 	</div>
+    -->
 
     <section id="main" class="main row">
             {{if left_sidebar_enabled:}}
         <div class="span3 left-sidebar">
+            <div class="header">
+              <div class="headerlogo">
+                {{=A(IMG(_src=URL('static','images/logo.png'), 
+                        _alt="Open Tree of Life logo",
+                        _width="144", 
+                        _height="74",
+                        _valign="middle"),
+                    _href="http://opentreeoflife.org/")}}
+              </div>
+            </div>
             {{block left_sidebar}}
             <h3>Left Sidebar</h3>
             <p></p>
