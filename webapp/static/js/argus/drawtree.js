@@ -99,7 +99,7 @@ function createArgus(spec) {
         "altRelColor": "#f00",
         "nodeColor": "#8af",
         "nodeHoverColor": "#bdf",
-        "pathColor": "#997766",
+        "pathColor": "#bb9977",
         "labelColor": "#997766",
         "tipColor": "#14d",
         "tipHoverColor": "#b8f",
