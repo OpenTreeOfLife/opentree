@@ -74,13 +74,18 @@
           <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply, .plugin_localcomments a.login-logout').eq(0).click(); return true;">Add a comment</a>
       </div>
 
-      <a id="provenance-toggle" href="#">Hide provenance</a>
-      <div id="viewer-collection" class="with-provenance">
+      <a id="provenance-show" href="#">Show properties</a>
+      <div id="viewer-collection" class="with-small-provenance">
           <div id="argusCanvasContainer" class="viewer-frame">&nbsp;</div>
-          <!-- TODO: Add other viewers here? or common frame? -->
+          <!-- TODO: Add other viewers here, and code to switch among them -->
           <div id="provenance-panel">
            <div class="panel-content">
-            <div class="provenance-intro">Provenance for node</div>
+            <div class="panel-controls">
+                <a id="provenance-resize" href="#">Show more</a>
+                |
+                <a id="provenance-hide" href="#">Hide</a>
+            </div>
+            <div class="provenance-intro">Properties for node</div>
             <div class="provenance-title">Pseudichthydium</div>
             <dl>
                 <dt>Original publication</dt>

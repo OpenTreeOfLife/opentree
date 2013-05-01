@@ -99,13 +99,38 @@ $(document).ready(function() {
     }
 
     // bind toggle for provenance panel
+    var lastChosenProvenanceSize = 'small';  // 'large' or 'small'
     $('#provenance-toggle').unbind('click').click(function() {
-        if ($('#viewer-collection').is('.with-provenance')) {
-            $('#viewer-collection').removeClass('with-provenance').addClass('without-provenance');
-            $(this).html('Show provenance');
+        if ($('#viewer-collection').is('.without-provenance')) {
+            $('#viewer-collection').removeClass('without-provenance').addClass('with-'+ lastChosenProvenanceSize +'-provenance');
+            $(this).text('Hide properties');
         } else {
-            $('#viewer-collection').removeClass('without-provenance').addClass('with-provenance');
-            $(this).html('Hide provenance');
+            $('#viewer-collection').removeClass('with-large-provenance').removeClass('with-small-provenance').addClass('without-provenance');
+            $(this).text('Show properties');
+        }
+        return false;
+    });
+    $('#provenance-show').unbind('click').click(function() {
+        $('#viewer-collection').removeClass('without-provenance').addClass('with-'+ lastChosenProvenanceSize +'-provenance');
+        $(this).hide();
+        return false;
+    });
+    $('#provenance-hide').unbind('click').click(function() {
+        $('#viewer-collection').removeClass('with-large-provenance').removeClass('with-small-provenance').addClass('without-provenance');
+        $('#provenance-show').show();
+        return false;
+    });
+    $('#provenance-resize').unbind('click').click(function() {
+        // this toggles between large and small sizes
+        var resizeText = $(this).text();
+        if (resizeText === 'Show less') {
+            $('#viewer-collection').removeClass('without-provenance').removeClass('with-large-provenance').addClass('with-small-provenance');
+            $(this).text('Show more');
+            lastChosenProvenanceSize = 'small';
+        } else {  // assumes 'Show more'
+            $('#viewer-collection').removeClass('without-provenance').removeClass('with-small-provenance').addClass('with-large-provenance');
+            $(this).text('Show less');
+            lastChosenProvenanceSize = 'large';
         }
         return false;
     });

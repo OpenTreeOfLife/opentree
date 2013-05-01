@@ -58,7 +58,7 @@ body {
 }
 
 #viewer-collection {
-    border: 1px dashed red;
+    position: relative; /* force to fg versus #provenance-show */
     overflow: hidden;
     height: 60%; /* don't fill to the current viewport */
     border: 1px solid #ccc;
@@ -82,11 +82,17 @@ body {
 }
 
 /* hide/show provenance with style, and share space with the viewer frame */
-.with-provenance .viewer-frame {
+.with-small-provenance .viewer-frame {
     width: 66%;
 }
-.with-provenance #provenance-panel {
+.with-small-provenance #provenance-panel {
     width: 34%;
+}
+.with-large-provenance .viewer-frame {
+    width: 45%;
+}
+.with-large-provenance #provenance-panel {
+    width: 55%;
 }
 .without-provenance .viewer-frame {
     width: 100%;
@@ -94,10 +100,17 @@ body {
 .without-provenance #provenance-panel {
     display: none;
 }
-#provenance-toggle {
+#provenance-show {
+    display: none;
     float: right;
-    margin-top: -1.5em;
-    margin-right: 12px;
+    margin: -24px 22px -10px 0;
+    padding: 2px 10px 8px;
+    /* color: #555; */
+    text-decoration: none;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    border-radius-bottom: 0;
 }
 
 #provenance-panel {
@@ -108,9 +121,13 @@ body {
 }
 #provenance-panel .panel-content {
     /* isolating any style that might affect widths above */
-    padding: 5px 0 0 8px;
+    padding: 9px 0 0 12px;
 }
 .panel-content {
+}
+.panel-controls {
+    float: right;
+    margin: -6px 10px 2px 2px;
 }
 .provenance-intro {
     font-size: 110%;
