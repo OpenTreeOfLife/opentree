@@ -157,10 +157,13 @@ p#tree-description {
     font-weight: bold;
     margin: 0;
 }
-h1#main-title, 
-h1#comment-header {
+h1#main-title {
     margin: 0;
     padding: 2px 0 0.5em;
+}
+h1#comment-header {
+    margin: 0;
+    padding: 10px 0 0.5em;
 }
 h1#comment-header i {
     color: #999;
