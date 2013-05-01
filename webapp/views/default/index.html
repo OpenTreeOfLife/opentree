@@ -39,16 +39,16 @@
 
       <br />
 
-      <a href="#TODO-extract.html">Extract subtree</a>
-      <br />
-
       <a href="#TODO-about.html">About the tree</a>
       <br />
 
-      <a href="http://www.reelab.net/phylografter">Source tree manager</a>
+      <a href="#TODO-extract.html">Extracting subtrees</a>
       <br />
 
       <a href="#TODO-download.html">Download</a>
+      <br />
+
+      <a href="http://www.reelab.net/phylografter">Source tree manager</a>
       <br />
 
       <a href="#TODO-credits.html">Credits</a>
@@ -67,6 +67,7 @@
     </div><!-- END of navbar -->
 
     <div class="vizcontent">
+      <p id="tree-description">Exploring the primary synthetic tree</p>
       <h1 id="main-title">Synthetic tree viewer</h1>
       <div id="links-to-local-comments">
           <a href="#comment-header">Comments on this node</a>
@@ -74,12 +75,30 @@
           <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply, .plugin_localcomments a.login-logout').eq(0).click(); return true;">Add a comment</a>
       </div>
 
-      <div id="argusCanvasContainer" class="viewer-frame">  
-      </div>
-      <!-- TODO: Add other viewers here? or common frame? -->
-
-      <div id="node-provenance-panel">
-          <h3>Provenance</h3>
+      <a id="provenance-show" href="#">Show properties</a>
+      <div id="viewer-collection" class="with-small-provenance">
+          <div id="argusCanvasContainer" class="viewer-frame">&nbsp;</div>
+          <!-- TODO: Add other viewers here, and code to switch among them -->
+          <div id="provenance-panel">
+           <div class="panel-content">
+            <div class="panel-controls">
+                <a id="provenance-resize" href="#">Show more</a>
+                |
+                <a id="provenance-hide" href="#">Hide</a>
+            </div>
+            <div class="provenance-intro">Properties for node</div>
+            <div class="provenance-title">Pseudichthydium</div>
+            <dl>
+                <dt>Original publication</dt>
+                <dd><a href="#">Cruikshank, 1992</a></dd>
+                <dd><a href="#">doi:10.1016/r.cruikshank.1992.03.013</a></dd>
+                <dt>Related publicatons</dt>
+                <dd><a href="#">Morrison, 2004</a></dd>
+                <dd><a href="#">doi:10.1016/l.morrison.2004.03.013</a></dd>
+            </dl>
+            <a href="#">Extract subtree</a>
+           </div>
+          </div>
       </div>
 
       {{  # we'll use the node-identifier in the current URL to anchor local comments, or 
@@ -94,8 +113,8 @@
       }}
       <h1 id="comment-header">Comments <i>- {{=commentLocation}}</i></h1>
       {{=plugin_localcomments(url=commentLocation)}}
-    </div>
-  </div>
+    </div><!-- end of .vizcontent -->
+  </div><!-- end of .container -->
 
   <script type="text/javascript">
     // if inbound URL points to a particular location+view, record it here
