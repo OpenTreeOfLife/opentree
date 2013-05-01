@@ -54,23 +54,120 @@ body {
 	float: left;
 }
 .vizcontent {
-	padding-left: 212px;
+	margin-left: 210px;
+}
+
+#viewer-collection {
+    position: relative; /* force to fg versus #provenance-show */
+    overflow: hidden;
+    height: 60%; /* don't fill to the current viewport */
+    border: 1px solid #ccc;
+    border-radius: 8px;
+    margin: 0px;
+}
+#viewer-collection,
+#provenance-panel {
+    background-color: #eee;
+    /* display: table-cell; */
+}
+.vizcontent div.viewer-frame, 
+#provenance-panel {
+    float: left;
+    height: 100%;
 }
 .vizcontent div.viewer-frame {
 	padding: 0px;
     background-color: #f5f5ec; /* #faf5ee; */
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    height: 60%; /* don't fill to the current viewport */
     overflow: auto;
 }
-h1#main-title, 
+
+/* hide/show provenance with style, and share space with the viewer frame */
+.with-small-provenance .viewer-frame {
+    width: 66%;
+}
+.with-small-provenance #provenance-panel {
+    width: 34%;
+}
+.with-large-provenance .viewer-frame {
+    width: 45%;
+}
+.with-large-provenance #provenance-panel {
+    width: 55%;
+}
+.without-provenance .viewer-frame {
+    width: 100%;
+}
+.without-provenance #provenance-panel {
+    display: none;
+}
+#provenance-show {
+    display: none;
+    float: right;
+    margin: -24px 22px -10px 0;
+    padding: 2px 10px 8px;
+    /* color: #555; */
+    text-decoration: none;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    border-radius-bottom: 0;
+}
+
+#provenance-panel {
+    overflow: auto;
+    /* adding full-height divider, subtracting from width */
+    border-left: 2px solid #ccc;
+    margin-right: -2px;
+}
+#provenance-panel .panel-content {
+    /* isolating any style that might affect widths above */
+    padding: 9px 0 0 12px;
+}
+.panel-content {
+}
+.panel-controls {
+    float: right;
+    margin: -6px 10px 2px 2px;
+}
+.provenance-intro {
+    font-size: 110%;
+    color: #777;
+}
+.provenance-title {
+    font-family: Helvetica, Arial, serif;
+    font-size: 130%;
+    color: #000;
+}
+.panel-content dl {
+    margin: 6px 0 12px;
+}
+.panel-content dl dt {
+    color: #777;
+}
+.panel-content dl dd {
+    margin-left: 12px;
+    color: #000;
+    margin-bottom: 4px;
+}
+
+p#tree-description {
+    color: #aaa;
+    font-size: 135%;
+    padding: 3px 0 0 0;
+    font-weight: bold;
+    margin: 0;
+}
+h1#main-title {
+    margin: 0;
+    padding: 2px 0 0.5em;
+}
 h1#comment-header {
     margin: 0;
-    padding: 0.75em 0 0.5em;
+    padding: 10px 0 0.5em;
 }
 h1#comment-header i {
     color: #999;
+    padding: 0.75em 0 0.5em;
 }
 div#links-to-local-comments,
 div#r0 {
