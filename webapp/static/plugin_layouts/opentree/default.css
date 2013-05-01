@@ -61,7 +61,7 @@ body {
     position: relative; /* force to fg versus #provenance-show */
     overflow: hidden;
     height: 60%; /* don't fill to the current viewport */
-    border: 1px solid #ccc;
+    border: 2px solid #999;
     border-radius: 8px;
     margin: 0px;
 }
@@ -116,7 +116,7 @@ body {
 #provenance-panel {
     overflow: auto;
     /* adding full-height divider, subtracting from width */
-    border-left: 2px solid #ccc;
+    border-left: 2px solid #999;
     margin-right: -2px;
 }
 #provenance-panel .panel-content {
