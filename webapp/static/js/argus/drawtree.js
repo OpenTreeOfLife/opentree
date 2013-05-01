@@ -293,6 +293,10 @@ function createArgus(spec) {
         $(this.container).css('height', $(this.container).css('height'));
 
         if (paper !== undefined) {
+            $(this.container).unbind("scroll");
+            if (argusObj.anchoredControls) { 
+                argusObj.anchoredControls.remove();
+            }
             paper.clear();
             paper.remove();
         }
@@ -600,7 +604,8 @@ function createArgus(spec) {
         body = this.container; // this used to be $(body) instead of this.container. Which is correct?
         $(body).bind("scroll", function () {
             // use relative transformation to match the viewport's X/Y scrolling
-            argusObj.anchoredControls.transform('t' + $(body).scrollLeft() + ',' + $(body).scrollTop()).toFront();
+            argusObj.anchoredControls.transform('t' + $(body).scrollLeft() + ',' + $(body).scrollTop());
+            argusObj.anchoredControls.toFront();
         });
         // center the view on the target node
         $(body).scrollTop((this.targetNodeY) - ($(this.container).height() / 2));
