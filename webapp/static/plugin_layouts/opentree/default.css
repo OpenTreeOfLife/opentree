@@ -150,15 +150,21 @@ body {
     margin-bottom: 4px;
 }
 
-
-
+p#tree-description {
+    color: #aaa;
+    font-size: 135%;
+    padding: 3px 0 0 0;
+    font-weight: bold;
+    margin: 0;
+}
 h1#main-title, 
 h1#comment-header {
     margin: 0;
-    padding: 0.75em 0 0.5em;
+    padding: 2px 0 0.5em;
 }
 h1#comment-header i {
     color: #999;
+    padding: 0.75em 0 0.5em;
 }
 div#links-to-local-comments,
 div#r0 {
