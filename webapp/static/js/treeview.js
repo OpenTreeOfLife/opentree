@@ -135,6 +135,7 @@ $(document).ready(function() {
         return false;
     });
 
+    // taxon search on remote site (using JSONP to overcome the same-origin policy)
     $('input[name=taxon-search]').unbind('keyup').keyup(function() {
         var $input = $(this);
         var searchText = $input.val().trim();
@@ -145,15 +146,10 @@ $(document).ready(function() {
             $('#search-results').html('<i>Enter three or more letters</i>');
             return false;
         }
-        $.ajax({
-            url: 'http://www.reelab.net/phylografter/ottol/autocomplete',
-            data: {
-                'search': searchText
-            },
-            type: 'GET',
-            cache: true,
-            crossDomain: true,
-            success: function(data) {
+        $.getJSON(
+            'http://www.reelab.net/phylografter/ottol/autocomplete?callback=?',  // JSONP fetch URL
+            { search: searchText },  // data
+            function(data) {    // JSONP callback
                 $('#search-results').html(data);
                 $('#search-results a')
                     .wrap('<div class="search-result"><strong></strong></div>')
@@ -163,11 +159,9 @@ $(document).ready(function() {
                         var itsName = $link.html()
                         $link.attr('href', '/opentree/ottol@'+ itsNodeID +'/'+ itsName);
                     });
-            },
-            error: function(data) {
-                $('#search-results').html('<i>Search not available.</i>');
             }
-        });
+        );
+
     });
 
 });
