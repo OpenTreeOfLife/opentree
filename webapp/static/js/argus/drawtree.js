@@ -57,7 +57,7 @@ function createArgus(spec) {
         spec.domSource = o.domSource === undefined ? "ottol" : o.nodeID;
     }
     if (spec.container === undefined) {
-        spec.container = $("body");
+        spec.container = $("body")[0];
     }
     if (spec.treemachineDomain === undefined) {
         spec.treemachineDomain = "http://opentree-dev.bio.ku.edu:7474";
@@ -69,7 +69,7 @@ function createArgus(spec) {
         spec.useTreemachine = false; //@TEMP should the default really be taxomachine?
     }
     if (spec.useSyntheticTree === undefined) {
-        spec.useSyntheticTree = false; //@TEMP should the default really be sourcetrees?
+        spec.useSyntheticTree = true;
     }
     if (spec.maxDepth === undefined) {
         spec.maxDepth = 4;
@@ -149,10 +149,10 @@ function createArgus(spec) {
             ajaxData = {
                 "treeID": ds,
                 "format": "arguson",
-                "maxDepth": this.currMaxDepth
+                "maxDepth": String(this.currMaxDepth)
             };
             if (o.nodeID !== undefined) {
-                ajaxData.subtreeNodeID = o.nodeID;
+                ajaxData.subtreeNodeID = String(o.nodeID);
             }
         } else {
             address = this.taxomachineDomain;
@@ -241,7 +241,7 @@ function createArgus(spec) {
                 "node": node,
                 "domSource": domSource,
                 "curLeaf": 0,
-                "isTargetParent": true
+                "isTargetNode": true 
             });
 
             // Release the forced height of the argus viewport
@@ -266,7 +266,7 @@ function createArgus(spec) {
             success: ajaxSuccess,
             error: function (jqXHR, textStatus, errorThrown) {
                 $(".flash").html("Error: Node lookup failed").slideDown();
-                spec.container.text("Whoops! The call to get the tree around a node did not work out the way we were hoping it would. That is a real shame.  I'm not sure what to suggest...");
+                $(this.container).html('<p style="margin: 8px 12px;">Whoops! The call to get the tree around a node did not work out the way we were hoping it would. That is a real shame.  I\'m not sure what to suggest...</p>');
             }
         });
     };
@@ -370,7 +370,6 @@ function createArgus(spec) {
     // recursive function to draw nodes and branches for the "dominant" tree (the domSource)
     argusObj.drawNode = function (obj) {
         var node = obj.node;
-        var isTargetParent = obj.isTargetParent;
         var isTargetNode = obj.isTargetNode;
         var domSource = obj.domSource;
         var curLeaf = obj.curLeaf;
@@ -421,7 +420,7 @@ function createArgus(spec) {
                     "node": node.children[i],
                     "domSource": domSource,
                     "curLeaf": curLeaf,
-                    "isTargetNode": (isTargetParent ? true : false )
+                    "isTargetNode": false
                 });
 
                 // the traversal generated the childrens' coordinates; now get them
@@ -597,18 +596,16 @@ function createArgus(spec) {
 
         /* Let's try to anchor some widgets in the upper left corner of the
          * argus viewport. That means it needs to track the scroll of the
-         * viewport (container) instead of the body.
-         * 
-         * NOTE that 'body' here is not the BODY element of the HTML page!
+         * viewport (container) instead of the page body.
          */
-        body = this.container; // this used to be $(body) instead of this.container. Which is correct?
-        $(body).bind("scroll", function () {
+        var $argusContainer = $(this.container);
+        $argusContainer.bind("scroll", function () {
             // use relative transformation to match the viewport's X/Y scrolling
-            argusObj.anchoredControls.transform('t' + $(body).scrollLeft() + ',' + $(body).scrollTop());
+            argusObj.anchoredControls.transform('t' + $argusContainer.scrollLeft() + ',' + $argusContainer.scrollTop());
             argusObj.anchoredControls.toFront();
         });
         // center the view on the target node
-        $(body).scrollTop((this.targetNodeY) - ($(this.container).height() / 2));
+        $argusContainer.scrollTop((this.targetNodeY) - ($argusContainer.height() / 2));
 
         // for each node found to have more than one parent
         for (i = 0; i < this.nodesWithCycles.length; i++) {

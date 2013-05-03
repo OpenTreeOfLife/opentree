@@ -20,9 +20,26 @@ if ( History.enabled && pageUsesHistory ) {
         $('#main-title').html( 'Loading new view...' );
         $('#node-provenance-panel h3').html('Provenance');
 
-        // notify argus (trigger data load and/or view change)
-        argus.displayNode({"nodeID": State.data.nodeID,
-                           "domSource": State.data.domSource});
+        // fetch the matching synth-tree node ID, then notify argus (trigger data load and/or view change)
+        var ottolID = State.data.nodeID;
+        if (argus.useSyntheticTree && State.data.domSource == 'ottol') {
+            // we'll need to convert to a more volatile node ID for the current tree
+            var treeNodeID;
+            $.ajax({
+                type: 'POST',
+                url: 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getNodeIDForOttolID',
+                data: {'ottolID': String(ottolID)},
+                success: function(data) {
+                    argus.displayNode({"nodeID": data,
+                                       "domSource": 'otol.draft.22'});  // WAS State.data.domSource});
+                },
+                dataType: 'json'  // should return just the node ID (number)
+            });
+        } else {
+            // use ottol ID if we're browsing the taxonomy
+            argus.displayNode({"nodeID": ottolID,
+                               "domSource": State.data.domSource});
+        }
         
         // we'll finish updating the page in a callback from argusObj.loadData()
 
@@ -62,18 +79,26 @@ if ( History.enabled && pageUsesHistory ) {
 
 $(document).ready(function() {
     // set default starting node and view, if the URL doesn't specify
-    // TODO: move this to main page template, so we can build it from incoming URL in web2py?
+    // NOTE that we override this (using $.extend) with values set in the 
+    // main page template, so we can build it from incoming URL in web2py.
     var initialState = $.extend({
         viewer: 'argus', 
-        domSource: 'ottol', 
-        nodeID: '805080', 
-        nodeName: '',  // Acanthopharynx brachycapitata
+        domSource: syntheticTreeID,                  // from main HTML view
+        nodeID: syntheticTreeDefaultStartingNodeID,  // from main HTML view
+        nodeName: '',  // names will be updated/corrected by argus callback
         viewport: '24,201,0,800',
         forcedByURL: false
     }, urlState); // urlState should been defined in the main HTML view
 
+    // TODO: how should these defaults (borrowed from synthview/index.html) be set?
     argus = createArgus({
-      "container": document.getElementById("argusCanvasContainer")
+      "domSource": "ottol",
+      "container": $('#argusCanvasContainer')[0], // get the "raw" element, not a jQuery set
+      //"treemachineDomain": "{{=treemachine_domain}}",
+      //"taxomachineDomain": "{{=taxomachine_domain}}",
+      "useTreemachine": true, // TODO: pivot based on domSource? treeID?
+      "useSyntheticTree": true, // TODO: pivot based on domSource? treeID?
+      "maxDepth": 3
     });
 
     if ( History.enabled && pageUsesHistory ) {
@@ -94,7 +119,8 @@ $(document).ready(function() {
         }
     } else {
         // force initial argus view using defaults above
-        argus.displayNode({"nodeID": initialState.nodeID,
+        // NOTE: forcing even this through history, to get possible remapping of node IDs
+        argus.moveToNode({"nodeID": initialState.nodeID,
                            "domSource": initialState.domSource});
     }
 
@@ -157,7 +183,7 @@ $(document).ready(function() {
                         var $link = $(this);
                         var itsNodeID = $link.attr('href');
                         var itsName = $link.html()
-                        $link.attr('href', '/opentree/ottol@'+ itsNodeID +'/'+ itsName);
+                        $link.attr('href', '/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName);  // TODO: set domSource how???
                     });
             }
         );
@@ -249,7 +275,11 @@ function URLToHistoryState( url ) {
 function nodeDataLoaded( nodeTree ) {
     // this callback from argObj.loadData() provides additional node data
     // nodeTree is actually a mini-tree of nodes
-    var targetNode = nodeTree.children[0];
+
+    //var targetNode = (nodeTree.children) ? nodeTree.children[0] : nodeTree;
+    // TODO: revisit this logic, based on different tree/view types
+    var targetNode = nodeTree;
+
     var improvedState = $.extend( History.getState().data, {nodeName: targetNode.name});
     // add missing information to the current history state
     ///History.replaceState( improvedState.data, improvedState.title, improvedState.url );
@@ -257,8 +287,11 @@ function nodeDataLoaded( nodeTree ) {
 
     // update page title and page contents
     jQuery('#main-title').html( historyStateToPageHeading( improvedState ) );
-    jQuery('#node-provenance-panel h3').html("Provenance for '"+ targetNode.name  +"'");
-    // load provenance data for this view (all visible nodes and edges)
+    
+    // TODO: load provenance data for this view (all visible nodes and edges)
+    
+    // TODO: update properties (provenance) panel to show the target node
+    jQuery('#provenance-panel .provenance-title').html(targetNode.name);
 
 }
 
