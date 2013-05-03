@@ -56,3 +56,33 @@ def index():
 def error():
     return dict()
 
+def download_subtree():
+    ottol_id = request.args(0)
+    max_depth = request.args(1)
+    node_name = request.args(2)
+    import cStringIO
+    import contenttype as c
+    s=cStringIO.StringIO()
+     
+    try:
+        # fetch the Newick tree as JSON from remote site
+        from gluon.tools import fetch
+        import simplejson
+
+        # apparently this needs to be a POST, or it just describes the API
+        tree_response = fetch('http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getDraftTreeForOttolID', data={'ottolID': ottol_id, 'maxDepth': max_depth})
+        tree_json = simplejson.loads( tree_response )
+        newick_text = tree_json['tree'].encode('utf-8');
+
+        #s.write( u'Here comes the Newick subtree for ottol id "%s" (%s) with max depth %s:\n\n%s' % (ottol_id, node_name, max_depth, newick_text) )
+        s.write( newick_text )
+
+    except Exception, e:
+        # throw 403 or 500 or just leave it
+        s.write( u'ERROR - Unable to fetch the Newick subtree for ottol id "%s" (%s) with max depth %s:\n\n%s' % (ottol_id, node_name, max_depth, newick_text) )
+
+    finally:
+        response.headers['Content-Type'] = 'text/plain'
+        response.headers['Content-Disposition'] = \
+                    "attachment; filename=subtree-ottol-%s-%s.txt" % (ottol_id, node_name)
+        return s.getvalue()

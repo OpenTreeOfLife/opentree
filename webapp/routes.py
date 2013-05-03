@@ -15,6 +15,7 @@ routes_in = (
     # all static stuff behaves normally
     ('/opentree/static/$anything', '/opentree/static/$anything'),
     ('/opentree/appadmin$anything', '/opentree/appadmin$anything'),
+    ('/opentree/default/download_subtree/$anything', '/opentree/default/download_subtree/$anything'),
     ('/opentree/default/user/$anything', '/opentree/default/user/$anything'),
     ('/opentree/plugin_localcomments$anything', '/opentree/plugin_localcomments$anything'),
     # other special cases of standard routing? ADD HERE
