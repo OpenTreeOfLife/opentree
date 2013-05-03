@@ -81,25 +81,6 @@ body {
     overflow: auto;
 }
 
-/* hide/show provenance with style, and share space with the viewer frame */
-.with-small-provenance .viewer-frame {
-    width: 66%;
-}
-.with-small-provenance #provenance-panel {
-    width: 34%;
-}
-.with-large-provenance .viewer-frame {
-    width: 45%;
-}
-.with-large-provenance #provenance-panel {
-    width: 55%;
-}
-.without-provenance .viewer-frame {
-    width: 100%;
-}
-.without-provenance #provenance-panel {
-    display: none;
-}
 #provenance-show {
     display: none;
     float: right;
