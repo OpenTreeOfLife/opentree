@@ -276,6 +276,47 @@ function nodeDataLoaded( nodeTree ) {
     
     // TODO: update properties (provenance) panel to show the target node
     jQuery('#provenance-panel .provenance-title').html(targetNode.name);
+      
+    // offer subtree extraction, if available for this target (TODO: block this for edges!)
+    // we can restrict the depth, if needed to avoid monster trees
+    var subtreeDepthLimit = 4;
+    if ( improvedState.domSource == 'ottol' ) {
+        // we can fetch a subtree using this ottol id
+        var ottolID = improvedState.nodeID;
+        var nodeName = improvedState.nodeName || 'unnamed node';
+        $('#extract-subtree')
+            .css('color','')  // restore normal link color
+            .unbind('click').click(function() {
+                window.location = '/opentree/default/download_subtree/'+ ottolID +'/'+ subtreeDepthLimit +'/'+ nodeName;
+
+                /* OR this will load the Newick-tree text to show it in-browser
+                $.ajax({
+                    type: 'POST',
+                    url: 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getDraftTreeForOttolID',
+                    data: {
+                        'ottolID': String(ottolID),
+                        'maxDepth': String(subtreeDepthLimit),
+                    },
+                    success: function(data) {
+                        alert(data.tree);
+                    },
+                    dataType: 'json'  // should return a complete Newick tree
+                });
+                */
+
+                return false;
+            });
+        $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
+    } else {
+        // tree extraction not currently supported
+        $('#extract-subtree')
+            .css('color','#999')  // "dim" this link
+            .unbind('click').click(function() {
+                alert('Sorry, subtrees are not currently available for nodes without an ottol ID');
+                return false;
+            });
+        $('#extract-subtree-caveats').html('(not available for this node)');
+    }
 
 }
 
