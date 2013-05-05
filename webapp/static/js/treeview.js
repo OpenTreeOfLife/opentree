@@ -256,6 +256,74 @@ function URLToHistoryState( url ) {
 }
 */
 
+function showObjectProperties( objInfo ) {
+    console.log('> showObjectProperties for : '+ objInfo);
+    if ($('#provenance-show').is(':visible')) {
+        // show property inspector if it's hidden
+        $('#provenance-show').click();
+    }
+    // OR pass a reliable identifier?
+    var objType = 'node';  // 'node' | 'edge' | ?
+    var objName = '';      // eg, 'Chordata'
+    var objID = null; 
+    var objSource = null;  // eg, 'ottol' (a domSource)
+    var displayID = null;  // eg, 'ottol@2345' or 'otol.draft.22@4'
+
+    var displayName = 'Unnamed object';
+    // build a series of label / value pairs to display in standard format
+    var displayedProperties = {};
+
+    // examine incoming data to figure out what it is, and what to show
+
+    if (typeof(objInfo.nodeID) !== 'undefined') {
+        // this is minimal node info (nodeID, domSource, nodeName) from an argus node
+        // OR it's an edge with metadata for it and its adjacent (child) node
+        objType = (objInfo.type) ? objInfo.type : 'node';
+        objName = objInfo.nodeName;
+        objID = objInfo.nodeID;
+        objSource = objInfo.domSource || '?';
+    } else if (typeof(objInfo.nodeid) !== 'undefined') {
+        // this is minimal node info (nodeID, domSource, nodeName) from an argus node
+        // OR it's an edge with metadata for it and its adjacent (child) node
+        objType = (objInfo.type) ? objInfo.type : 'node';
+        objName = objInfo.name;
+        objID = objInfo.nodeiD;
+        objSource = '?';
+    } else {
+        // what's this?
+        debugger;
+    }
+   
+    // read more data from the existing tree-view JSON?
+    if (argus.treeData) {
+        if (!objName) {
+            // look up this node/edge by ID
+            switch(objType) {
+                case 'node':
+                    debugger;
+                    //objName = getMatchingProperty({'nodeid':objID});
+                    break;
+                case 'edge':
+                    // TODO
+                    break;
+            }
+        }
+
+        for (var p in argus.treeData.sourceToMetaMap) {
+            console.log("check '"+ p +"' in treeData...");
+            // eg, taxonomy
+            displayedProperties[ p ] = objInfo.sourceToMetaMap[ p ];
+        }
+    } else {
+        console.log(">> no treeData to examine?!?");
+    }
+
+    displayName = (objName) ? objName : ("Unnamed "+ objType);
+    
+    jQuery('#provenance-panel .provenance-intro').html( 'Properties for '+ objType );
+    jQuery('#provenance-panel .provenance-title').html( displayName );
+}
+
 function nodeDataLoaded( nodeTree ) {
     // this callback from argObj.loadData() provides additional node data
     // nodeTree is actually a mini-tree of nodes
@@ -272,10 +340,11 @@ function nodeDataLoaded( nodeTree ) {
     // update page title and page contents
     jQuery('#main-title').html( historyStateToPageHeading( improvedState ) );
     
-    // TODO: load provenance data for this view (all visible nodes and edges)
+    // TODO: load provenance data for this view (all visible nodes and edges)?
     
-    // TODO: update properties (provenance) panel to show the target node
-    jQuery('#provenance-panel .provenance-title').html(targetNode.name);
+    // update properties (provenance) panel to show the target node
+    console.log(">>> showing targetNode properties in nodeDataLoaded()...");
+    showObjectProperties( targetNode );
       
     // offer subtree extraction, if available for this target (TODO: block this for edges!)
     // we can restrict the depth, if needed to avoid monster trees
@@ -315,7 +384,7 @@ function nodeDataLoaded( nodeTree ) {
                 alert('Sorry, subtrees are not currently available for nodes without an ottol ID');
                 return false;
             });
-        $('#extract-subtree-caveats').html('(not available for this node)');
+        $('#extract-subtree-caveats').html('(not available for nodes without OTT id)');
     }
 
 }
