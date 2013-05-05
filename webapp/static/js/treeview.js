@@ -20,9 +20,26 @@ if ( History.enabled && pageUsesHistory ) {
         $('#main-title').html( 'Loading new view...' );
         $('#node-provenance-panel h3').html('Provenance');
 
-        // notify argus (trigger data load and/or view change)
-        argus.displayNode({"nodeID": State.data.nodeID,
-                           "domSource": State.data.domSource});
+        // fetch the matching synth-tree node ID, then notify argus (trigger data load and/or view change)
+        var ottolID = State.data.nodeID;
+        if (argus.useSyntheticTree && State.data.domSource == 'ottol') {
+            // we'll need to convert to a more volatile node ID for the current tree
+            var treeNodeID;
+            $.ajax({
+                type: 'POST',
+                url: 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getNodeIDForOttolID',
+                data: {'ottolID': String(ottolID)},
+                success: function(data) {
+                    argus.displayNode({"nodeID": data,
+                                       "domSource": 'otol.draft.22'});  // WAS State.data.domSource});
+                },
+                dataType: 'json'  // should return just the node ID (number)
+            });
+        } else {
+            // use ottol ID if we're browsing the taxonomy
+            argus.displayNode({"nodeID": ottolID,
+                               "domSource": State.data.domSource});
+        }
         
         // we'll finish updating the page in a callback from argusObj.loadData()
 
@@ -62,18 +79,26 @@ if ( History.enabled && pageUsesHistory ) {
 
 $(document).ready(function() {
     // set default starting node and view, if the URL doesn't specify
-    // TODO: move this to main page template, so we can build it from incoming URL in web2py?
+    // NOTE that we override this (using $.extend) with values set in the 
+    // main page template, so we can build it from incoming URL in web2py.
     var initialState = $.extend({
         viewer: 'argus', 
-        domSource: 'ottol', 
-        nodeID: '805080', 
-        nodeName: '',  // Acanthopharynx brachycapitata
+        domSource: syntheticTreeID,                  // from main HTML view
+        nodeID: syntheticTreeDefaultStartingNodeID,  // from main HTML view
+        nodeName: '',  // names will be updated/corrected by argus callback
         viewport: '24,201,0,800',
         forcedByURL: false
     }, urlState); // urlState should been defined in the main HTML view
 
+    // TODO: how should these defaults (borrowed from synthview/index.html) be set?
     argus = createArgus({
-      "container": document.getElementById("argusCanvasContainer")
+      "domSource": "ottol",
+      "container": $('#argusCanvasContainer')[0], // get the "raw" element, not a jQuery set
+      //"treemachineDomain": "{{=treemachine_domain}}",
+      //"taxomachineDomain": "{{=taxomachine_domain}}",
+      "useTreemachine": true, // TODO: pivot based on domSource? treeID?
+      "useSyntheticTree": true, // TODO: pivot based on domSource? treeID?
+      "maxDepth": 3
     });
 
     if ( History.enabled && pageUsesHistory ) {
@@ -94,44 +119,29 @@ $(document).ready(function() {
         }
     } else {
         // force initial argus view using defaults above
-        argus.displayNode({"nodeID": initialState.nodeID,
+        // NOTE: forcing even this through history, to get possible remapping of node IDs
+        argus.moveToNode({"nodeID": initialState.nodeID,
                            "domSource": initialState.domSource});
     }
 
-    // bind toggle for provenance panel
-    var lastChosenProvenanceSize = 'small';  // 'large' or 'small'
-    $('#provenance-toggle').unbind('click').click(function() {
-        if ($('#viewer-collection').is('.without-provenance')) {
-            $('#viewer-collection').removeClass('without-provenance').addClass('with-'+ lastChosenProvenanceSize +'-provenance');
-            $(this).text('Hide properties');
-        } else {
-            $('#viewer-collection').removeClass('with-large-provenance').removeClass('with-small-provenance').addClass('without-provenance');
-            $(this).text('Show properties');
-        }
-        return false;
+    // add splitter between argus + provenance panel (using jquery.splitter plugin)
+    var viewSplitter = $('#viewer-collection').split({
+        orientation:'vertical',
+        limit: 280,             // don't come closer than this to edge 
+        position:'70%'          // initial position
     });
+
+    // bind toggle for provenance panel
+    var lastViewSplitterPosition = viewSplitter.position();
     $('#provenance-show').unbind('click').click(function() {
-        $('#viewer-collection').removeClass('without-provenance').addClass('with-'+ lastChosenProvenanceSize +'-provenance');
+        viewSplitter.position(lastViewSplitterPosition);
         $(this).hide();
         return false;
     });
     $('#provenance-hide').unbind('click').click(function() {
-        $('#viewer-collection').removeClass('with-large-provenance').removeClass('with-small-provenance').addClass('without-provenance');
+        lastViewSplitterPosition = viewSplitter.position();
+        viewSplitter.position( viewSplitter.width() - 2 );
         $('#provenance-show').show();
-        return false;
-    });
-    $('#provenance-resize').unbind('click').click(function() {
-        // this toggles between large and small sizes
-        var resizeText = $(this).text();
-        if (resizeText === 'Show less') {
-            $('#viewer-collection').removeClass('without-provenance').removeClass('with-large-provenance').addClass('with-small-provenance');
-            $(this).text('Show more');
-            lastChosenProvenanceSize = 'small';
-        } else {  // assumes 'Show more'
-            $('#viewer-collection').removeClass('without-provenance').removeClass('with-small-provenance').addClass('with-large-provenance');
-            $(this).text('Show less');
-            lastChosenProvenanceSize = 'large';
-        }
         return false;
     });
 
@@ -157,7 +167,7 @@ $(document).ready(function() {
                         var $link = $(this);
                         var itsNodeID = $link.attr('href');
                         var itsName = $link.html()
-                        $link.attr('href', '/opentree/ottol@'+ itsNodeID +'/'+ itsName);
+                        $link.attr('href', '/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName);  // TODO: set domSource how???
                     });
             }
         );
@@ -249,7 +259,11 @@ function URLToHistoryState( url ) {
 function nodeDataLoaded( nodeTree ) {
     // this callback from argObj.loadData() provides additional node data
     // nodeTree is actually a mini-tree of nodes
-    var targetNode = nodeTree.children[0];
+
+    //var targetNode = (nodeTree.children) ? nodeTree.children[0] : nodeTree;
+    // TODO: revisit this logic, based on different tree/view types
+    var targetNode = nodeTree;
+
     var improvedState = $.extend( History.getState().data, {nodeName: targetNode.name});
     // add missing information to the current history state
     ///History.replaceState( improvedState.data, improvedState.title, improvedState.url );
@@ -257,8 +271,52 @@ function nodeDataLoaded( nodeTree ) {
 
     // update page title and page contents
     jQuery('#main-title').html( historyStateToPageHeading( improvedState ) );
-    jQuery('#node-provenance-panel h3').html("Provenance for '"+ targetNode.name  +"'");
-    // load provenance data for this view (all visible nodes and edges)
+    
+    // TODO: load provenance data for this view (all visible nodes and edges)
+    
+    // TODO: update properties (provenance) panel to show the target node
+    jQuery('#provenance-panel .provenance-title').html(targetNode.name);
+      
+    // offer subtree extraction, if available for this target (TODO: block this for edges!)
+    // we can restrict the depth, if needed to avoid monster trees
+    var subtreeDepthLimit = 4;
+    if ( improvedState.domSource == 'ottol' ) {
+        // we can fetch a subtree using this ottol id
+        var ottolID = improvedState.nodeID;
+        var nodeName = improvedState.nodeName || 'unnamed node';
+        $('#extract-subtree')
+            .css('color','')  // restore normal link color
+            .unbind('click').click(function() {
+                window.location = '/opentree/default/download_subtree/'+ ottolID +'/'+ subtreeDepthLimit +'/'+ nodeName;
+
+                /* OR this will load the Newick-tree text to show it in-browser
+                $.ajax({
+                    type: 'POST',
+                    url: 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getDraftTreeForOttolID',
+                    data: {
+                        'ottolID': String(ottolID),
+                        'maxDepth': String(subtreeDepthLimit),
+                    },
+                    success: function(data) {
+                        alert(data.tree);
+                    },
+                    dataType: 'json'  // should return a complete Newick tree
+                });
+                */
+
+                return false;
+            });
+        $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
+    } else {
+        // tree extraction not currently supported
+        $('#extract-subtree')
+            .css('color','#999')  // "dim" this link
+            .unbind('click').click(function() {
+                alert('Sorry, subtrees are not currently available for nodes without an ottol ID');
+                return false;
+            });
+        $('#extract-subtree-caveats').html('(not available for this node)');
+    }
 
 }
 

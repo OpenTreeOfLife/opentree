@@ -12,6 +12,11 @@
 
     <!-- js for history management -->
     {{response.files.append(URL('static','js/jquery.history.js'))}}
+
+    <!-- jquery splitter plugin -->
+    {{response.files.append(URL('static','js/jquery.splitter-0.6.js'))}}
+    {{response.files.append(URL('static','css/jquery.splitter.css'))}}
+
     
     {{include 'web2py_ajax.html'}}
     

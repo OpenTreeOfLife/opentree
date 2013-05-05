@@ -8,6 +8,14 @@ Installation
 Instructions coming soon. In the meantime, see the phylografter instructions for
 more details about using web2py.
 
+The included **requirements.txt** file lists known-good versions of all the required
+python modules for opentree, plus a few convenience modules. To [install these modules 
+using pip](http://www.pip-installer.org/en/latest/cookbook.html#requirements-files), 
+
+<pre>
+pip install -r requirements.txt
+</pre>
+
 The contents of the webapp subdirectory  are a web2py application.  Make a symbolic 
 link called "opentree" in a web2py/applications directory to the webapp directory.
 You should be able to launch web2py and see the app running at http://127.0.0.1:8000/opentree/
