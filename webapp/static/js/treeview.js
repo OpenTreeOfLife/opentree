@@ -11,6 +11,9 @@ var pageUsesHistory = true;
 // keep a global pointer to the argus instance
 var argus;
 
+// @TEMP - preserve incoming OTT id and source, so we can demo the Extract Subtree feature
+var incomingOttolID = null;
+
 if ( History.enabled && pageUsesHistory ) {
     // bind to statechange event
     History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
@@ -24,6 +27,10 @@ if ( History.enabled && pageUsesHistory ) {
         var ottolID = State.data.nodeID;
         if (argus.useSyntheticTree && State.data.domSource == 'ottol') {
             // we'll need to convert to a more volatile node ID for the current tree
+
+            // @TEMP - save this and we'll add it dataTree when it arrives
+            incomingOttolID = ottolID;
+
             var treeNodeID;
             $.ajax({
                 type: 'POST',
@@ -299,24 +306,29 @@ function showObjectProperties( objInfo ) {
     if (argus.treeData) {
         switch(objType) {
             case 'node':
-                if (objSource === '?') {
-                    // assume the tree we're currently viewing (otherwise it would be 'ottol'..right?)
-                    objSource = argus.domSource;
-                }
-
                 // try to fetch the node from treeData, using name or ID if we have them
                 var fullNode = getTreeDataNode( function(node) {
                     return ((node.nodeid === objID) || (node.name === objName)); 
                 });
+
+                if (objSource === '?') {
+                    // worst case, assume the node is native to the tree we're currently viewing
+                    objSource = argus.domSource;
+                }
+
                 if (fullNode) {
                     // override incoming name and ID, but only if they're missing
                     if (!objName) {
                         objName = fullNode.name;
                     }
 
-                    if (!objID) {
-                        objID = fullNode.nodeid;
+                    // check dataTree node for domSource and sourceID properties; these are 
+                    // PREFERRED, if we have them
+                    if (fullNode.domSource) {
+                        objSource = fullNode.domSource;
                     }
+
+                    objID = fullNode.sourceID ? fullNode.sourceID : fullNode.nodeid;
                 }
 
                 break;
@@ -473,6 +485,14 @@ function nodeDataLoaded( nodeTree ) {
     //var targetNode = (nodeTree.children) ? nodeTree.children[0] : nodeTree;
     // TODO: revisit this logic, based on different tree/view types
     var targetNode = nodeTree;
+
+    // @TEMP - decorate the incoming dataTree with saved OTTOL info
+    // (Ideally, the tree-view JSON would come with these properties for all nodes)
+    if (incomingOttolID) {
+        targetNode.domSource = 'ottol';
+        targetNode.sourceID = incomingOttolID;
+        incomingOttolID = null;
+    }
 
     var improvedState = $.extend( History.getState().data, {nodeName: targetNode.name});
     // add missing information to the current history state
