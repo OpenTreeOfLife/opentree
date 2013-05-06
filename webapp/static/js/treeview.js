@@ -11,6 +11,9 @@ var pageUsesHistory = true;
 // keep a global pointer to the argus instance
 var argus;
 
+// @TEMP - preserve incoming OTT id and source, so we can demo the Extract Subtree feature
+var incomingOttolID = null;
+
 if ( History.enabled && pageUsesHistory ) {
     // bind to statechange event
     History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
@@ -24,6 +27,10 @@ if ( History.enabled && pageUsesHistory ) {
         var ottolID = State.data.nodeID;
         if (argus.useSyntheticTree && State.data.domSource == 'ottol') {
             // we'll need to convert to a more volatile node ID for the current tree
+
+            // @TEMP - save this and we'll add it dataTree when it arrives
+            incomingOttolID = ottolID;
+
             var treeNodeID;
             $.ajax({
                 type: 'POST',
@@ -272,6 +279,7 @@ function showObjectProperties( objInfo ) {
     var displayName = 'Unnamed object';
     // build a series of label / value pairs to display in standard format
     var displayedProperties = {};
+    var metaMap = {};  // this should be replaced in synthetic-tree views
 
     // examine incoming data to figure out what it is, and what to show
 
@@ -296,32 +304,178 @@ function showObjectProperties( objInfo ) {
    
     // read more data from the existing tree-view JSON?
     if (argus.treeData) {
-        if (!objName) {
-            // look up this node/edge by ID
-            switch(objType) {
-                case 'node':
-                    debugger;
-                    //objName = getMatchingProperty({'nodeid':objID});
-                    break;
-                case 'edge':
-                    // TODO
-                    break;
-            }
+        switch(objType) {
+            case 'node':
+                // try to fetch the node from treeData, using name or ID if we have them
+                var fullNode = getTreeDataNode( function(node) {
+                    return ((node.nodeid === objID) || (node.name === objName)); 
+                });
+
+                if (objSource === '?') {
+                    // worst case, assume the node is native to the tree we're currently viewing
+                    objSource = argus.domSource;
+                }
+
+                if (fullNode) {
+                    // override incoming name and ID, but only if they're missing
+                    if (!objName) {
+                        objName = fullNode.name;
+                    }
+
+                    // check dataTree node for domSource and sourceID properties; these are 
+                    // PREFERRED, if we have them
+                    if (fullNode.domSource) {
+                        objSource = fullNode.domSource;
+                    }
+
+                    objID = fullNode.sourceID ? fullNode.sourceID : fullNode.nodeid;
+                }
+
+                break;
+            case 'edge':
+                // TODO
+                break;
         }
 
-        for (var p in argus.treeData.sourceToMetaMap) {
-            console.log("check '"+ p +"' in treeData...");
-            // eg, taxonomy
-            displayedProperties[ p ] = objInfo.sourceToMetaMap[ p ];
+        // fetch additional information used to detail provenance for nodes and edges
+        metaMap = argus.treeData[0].sourceToMetaMap;
+        if (metaMap) {
+            // for now, just report these values if found
+            for (var p in metaMap) {
+                var v = metaMap[p];
+                console.log("> metaMap['"+ p +"'] = "+ v);
+                for (var p2 in v) {
+                    var v2 = v[p2];
+                    console.log(">> metaMap."+ p +"['"+ p2 +"'] = "+ v2);
+                    for (var p3 in v2) {
+                        console.log(">> metaMap."+ p +"."+ p2 +"['"+ p3 +"'] = "+ v2[p3]);
+                    }
+                }
+            }
+        } else {
+            console.log(">> WARNING - no metaMap to examine?");
+        }
+
+        // try to spell out any available properties / provenance, based on type
+        switch(objType) {
+            case 'node':
+                // describe its source tree and node ID
+                displayedProperties['Source tree'] = objSource;
+                displayedProperties['Source node ID'] = objID;
+
+                break;
+            case 'edge':
+                // look for 'supportedBy' on the associated (child) node
+                var associatedChild = getTreeDataNode( function(node) {
+                    return (node.nodeid === objID); 
+                });
+                console.log("associatedChild? "+ associatedChild);
+                if (associatedChild) {
+                    console.log("YES, found an associatedChild... supportedBy? "+ associatedChild.supportedBy);
+
+                    for (var pp in associatedChild) {
+                        console.log(" child."+ pp +" = "+ associatedChild[pp]);
+                    }
+
+                    if (typeof associatedChild.supportedBy !== 'undefined') {
+                        displayedProperties['Supported by'] = associatedChild.supportedBy;
+                    }
+                }
+                break;
         }
     } else {
-        console.log(">> no treeData to examine?!?");
+        console.log(">> WARNING - no treeData to examine?");
     }
 
-    displayName = (objName) ? objName : ("Unnamed "+ objType);
-    
+    // start filling in the panel from the top
     jQuery('#provenance-panel .provenance-intro').html( 'Properties for '+ objType );
+
+    displayName = (objName) ? objName : ("Unnamed "+ objType);
     jQuery('#provenance-panel .provenance-title').html( displayName );
+
+    // clear and rebuild collection of detailed properties
+    var $details = $('#provenance-panel dl');
+    $details.html('');
+    for(p in displayedProperties) {
+        $details.append('<dt>'+ p +'</dt>');
+        $details.append('<dd>'+ displayedProperties[p] +'</dd>');
+        // TODO: Adapt to different types of information here:
+        //  * multiple values (add multiple DD elements)
+        //  * things requiring special lookup in metaMap
+    }
+
+    // offer subtree extraction, if available for this target
+    // we can restrict the depth, if needed to avoid monster trees
+    var subtreeDepthLimit = 4;
+    if (objType === 'node') {
+        $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Extract subtree</a></dt>');
+        $details.append('<dd id="extract-subtree-caveats">&nbsp;</dd>');
+      
+        if ( objSource == 'ottol' ) {
+            // we can fetch a subtree using this ottol id
+            var ottolID = objID;
+            $('#extract-subtree')
+                .css('color','')  // restore normal link color
+                .unbind('click').click(function() {
+                    window.location = '/opentree/default/download_subtree/'+ ottolID +'/'+ subtreeDepthLimit +'/'+ displayName;
+
+                    /* OR this will load the Newick-tree text to show it in-browser
+                    $.ajax({
+                        type: 'POST',
+                        url: 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getDraftTreeForOttolID',
+                        data: {
+                            'ottolID': String(ottolID),
+                            'maxDepth': String(subtreeDepthLimit),
+                        },
+                        success: function(data) {
+                            alert(data.tree);
+                        },
+                        dataType: 'json'  // should return a complete Newick tree
+                    });
+                    */
+
+                    return false;
+                });
+            $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
+        } else {
+            // tree extraction not currently supported
+            $('#extract-subtree')
+                .css('color','#999')  // "dim" this link
+                .unbind('click').click(function() {
+                    alert('Sorry, subtrees are not currently available for nodes without an OTT id');
+                    return false;
+                });
+            $('#extract-subtree-caveats').html('(not available for nodes without OTT id)');
+        }
+
+    }
+
+}
+
+function getTreeDataNode( filterFunc, testNode ) {
+    // helper method to retrieve a matching node from n-level treeData (tree-view JSON)
+    if (!testNode) { 
+        // start at top-most node in tree, if not specified
+        testNode = argus.treeData[0]; 
+    }
+    // test against our requirements (eg, a particular node ID)
+    if (filterFunc(testNode)) {
+        return testNode;
+    }
+    // still here? then recurse to test this node's children, returning any match found
+    var foundDescendant = null;
+    if (typeof testNode.children !== 'undefined') {
+        var numChildren = testNode.children.length;
+        for (var c = 0; c < numChildren; c++) {
+            foundDescendant = getTreeDataNode( filterFunc, testNode.children[c] );
+            if (foundDescendant) {
+                // stop as soon as we have a match
+                break;
+            }
+        }
+    }
+    // return any match found (or null)
+    return foundDescendant;
 }
 
 function nodeDataLoaded( nodeTree ) {
@@ -331,6 +485,14 @@ function nodeDataLoaded( nodeTree ) {
     //var targetNode = (nodeTree.children) ? nodeTree.children[0] : nodeTree;
     // TODO: revisit this logic, based on different tree/view types
     var targetNode = nodeTree;
+
+    // @TEMP - decorate the incoming dataTree with saved OTTOL info
+    // (Ideally, the tree-view JSON would come with these properties for all nodes)
+    if (incomingOttolID) {
+        targetNode.domSource = 'ottol';
+        targetNode.sourceID = incomingOttolID;
+        incomingOttolID = null;
+    }
 
     var improvedState = $.extend( History.getState().data, {nodeName: targetNode.name});
     // add missing information to the current history state
@@ -345,48 +507,6 @@ function nodeDataLoaded( nodeTree ) {
     // update properties (provenance) panel to show the target node
     console.log(">>> showing targetNode properties in nodeDataLoaded()...");
     showObjectProperties( targetNode );
-      
-    // offer subtree extraction, if available for this target (TODO: block this for edges!)
-    // we can restrict the depth, if needed to avoid monster trees
-    var subtreeDepthLimit = 4;
-    if ( improvedState.domSource == 'ottol' ) {
-        // we can fetch a subtree using this ottol id
-        var ottolID = improvedState.nodeID;
-        var nodeName = improvedState.nodeName || 'unnamed node';
-        $('#extract-subtree')
-            .css('color','')  // restore normal link color
-            .unbind('click').click(function() {
-                window.location = '/opentree/default/download_subtree/'+ ottolID +'/'+ subtreeDepthLimit +'/'+ nodeName;
-
-                /* OR this will load the Newick-tree text to show it in-browser
-                $.ajax({
-                    type: 'POST',
-                    url: 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getDraftTreeForOttolID',
-                    data: {
-                        'ottolID': String(ottolID),
-                        'maxDepth': String(subtreeDepthLimit),
-                    },
-                    success: function(data) {
-                        alert(data.tree);
-                    },
-                    dataType: 'json'  // should return a complete Newick tree
-                });
-                */
-
-                return false;
-            });
-        $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
-    } else {
-        // tree extraction not currently supported
-        $('#extract-subtree')
-            .css('color','#999')  // "dim" this link
-            .unbind('click').click(function() {
-                alert('Sorry, subtrees are not currently available for nodes without an ottol ID');
-                return false;
-            });
-        $('#extract-subtree-caveats').html('(not available for nodes without OTT id)');
-    }
-
 }
 
 // examples of changing state (see also https://developer.mozilla.org/en-US/docs/DOM/Manipulating_the_browser_history)
