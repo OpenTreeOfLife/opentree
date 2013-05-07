@@ -382,9 +382,14 @@ function createArgus(spec) {
     };
 
     argusObj.displayNode = function (o) {
+        // update argus' domSource to reflect that of the new target node?
+        //console.log("BEFORE, domSource was: "+ this.domSource);
+        this.domSource = (o.domSource === undefined) ? this.domSource : o.domSource;
+        //console.log("AFTER, domSource is: "+ this.domSource);
+
         var ajaxInfo = this.buildAjaxCallInfo({
             "nodeID": o.nodeID,
-            "domSource": (o.domSource === undefined ? this.domSource : o.domSource)
+            "domSource": this.domSource
         });
 
         // Freeze the height of the argus viewport until new results arrive
