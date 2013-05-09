@@ -480,42 +480,31 @@ function showObjectProperties( objInfo ) {
         $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Extract subtree</a></dt>');
         $details.append('<dd id="extract-subtree-caveats">&nbsp;</dd>');
       
-        if ( objSource == 'ottol' ) {
-            // we can fetch a subtree using this ottol id
-            var ottolID = objID;
-            $('#extract-subtree')
-                .css('color','')  // restore normal link color
-                .unbind('click').click(function() {
-                    window.location = '/opentree/default/download_subtree/'+ ottolID +'/'+ subtreeDepthLimit +'/'+ displayName;
+        // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
+        var idType = (objSource == 'ottol') ? 'ottol-id' : 'node-id';
+        $('#extract-subtree')
+            .css('color','')  // restore normal link color
+            .unbind('click').click(function() {
+                window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ displayName;
 
-                    /* OR this will load the Newick-tree text to show it in-browser
-                    $.ajax({
-                        type: 'POST',
-                        url: 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getDraftTreeForOttolID',
-                        data: {
-                            'ottolID': String(ottolID),
-                            'maxDepth': String(subtreeDepthLimit),
-                        },
-                        success: function(data) {
-                            alert(data.tree);
-                        },
-                        dataType: 'json'  // should return a complete Newick tree
-                    });
-                    */
+                /* OR this will load the Newick-tree text to show it in-browser
+                $.ajax({
+                    type: 'POST',
+                    url: 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getDraftTreeForOttolID',
+                    data: {
+                        'ottolID': String(ottolID),
+                        'maxDepth': String(subtreeDepthLimit),
+                    },
+                    success: function(data) {
+                        alert(data.tree);
+                    },
+                    dataType: 'json'  // should return a complete Newick tree
+                });
+                */
 
-                    return false;
-                });
-            $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
-        } else {
-            // tree extraction not currently supported
-            $('#extract-subtree')
-                .css('color','#999')  // "dim" this link
-                .unbind('click').click(function() {
-                    alert('Sorry, subtrees are not currently available for nodes without an OTT id');
-                    return false;
-                });
-            $('#extract-subtree-caveats').html('(not available for nodes without OTT id)');
-        }
+                return false;
+            });
+        $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
 
     }
 
