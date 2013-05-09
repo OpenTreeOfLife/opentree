@@ -222,6 +222,44 @@ function historyStateToURL( stateObj ) {
     return '/opentree'+ (stateObj.viewer ? '/'+stateObj.viewer : '') +'/'+ stateObj.domSource +'@'+ stateObj.nodeID + (stateObj.nodeName ?  '/'+stateObj.nodeName : '');
 }
 
+function buildNodeNameFromTreeData( node ) {
+    var compoundNodeNameDelimiter = ', ';
+    if (node.name) {
+        // easy, name was provided
+        return node.name;
+    }
+    // unnamed nodes should show two descendant names as tip taxa (eg, 'dog, cat')
+    if (node.descendantNameList) {
+        // children aren't in view, but their names are here
+        return node.descendantNameList.slice(0,2).join(compoundNodeNameDelimiter);
+    }
+    // we'll need to build a name from visible children and/or their descendantNamesList
+    if (node.children.length < 2) {
+        // we need at least two names to do this TODO: CONFIRM
+        return null;
+    }
+    // recurse as needed to build child names, then prune as needed
+    var firstChildName = buildNodeNameFromTreeData(node.children[0]);
+    var nameParts = firstChildName.split(compoundNodeNameDelimiter);
+    firstChildName = nameParts[0];
+    var lastChildName = buildNodeNameFromTreeData(node.children[ node.children.length-1 ]);
+    nameParts = lastChildName.split(compoundNodeNameDelimiter);
+    lastChildName = nameParts[nameParts.length - 1];
+    return firstChildName + compoundNodeNameDelimiter + lastChildName;
+};
+  
+// recursively populate any missing (implied) node names (called immediately after argus loads treeData)
+function buildAllMissingNodeNames( node ) {
+    if (!node.name) {
+        node.name = buildNodeNameFromTreeData(node);
+    }
+    if (node.children) {
+        for (var i = 0; i < node.children.length; i++) {
+            buildAllMissingNodeNames( node.children[i] );
+        }
+    }
+}
+
 /*
 function URLToHistoryState( url ) {
     // use to construct state for pasted-in URLs
@@ -264,7 +302,6 @@ function URLToHistoryState( url ) {
 */
 
 function showObjectProperties( objInfo ) {
-    console.log('> showObjectProperties for : '+ objInfo);
     if ($('#provenance-show').is(':visible')) {
         // show property inspector if it's hidden
         $('#provenance-show').click();
@@ -302,14 +339,21 @@ function showObjectProperties( objInfo ) {
         debugger;
     }
    
+    console.log('> showObjectProperties for '+ objType +' "'+ objName +'", ID='+ objID);
+
     // read more data from the existing tree-view JSON?
     if (argus.treeData) {
         switch(objType) {
             case 'node':
-                // try to fetch the node from treeData, using name or ID if we have them
+                // try to fetch the node from treeData, using ID (preferred) or name
                 var fullNode = getTreeDataNode( function(node) {
-                    return ((node.nodeid === objID) || (node.name === objName)); 
+                    return (node.nodeid === objID); 
                 });
+                if (!fullNode) {
+                    fullNode = getTreeDataNode( function(node) {
+                        return (node.name === objName); 
+                    });
+                }
 
                 if (objSource === '?') {
                     // worst case, assume the node is native to the tree we're currently viewing
@@ -319,7 +363,7 @@ function showObjectProperties( objInfo ) {
                 if (fullNode) {
                     // override incoming name and ID, but only if they're missing
                     if (!objName) {
-                        objName = fullNode.name;
+                        objName = buildNodeNameFromTreeData( fullNode );
                     }
 
                     // check dataTree node for domSource and sourceID properties; these are 
@@ -404,7 +448,11 @@ function showObjectProperties( objInfo ) {
     displayName = (objName) ? objName : ("Unnamed "+ objType);
     jQuery('#provenance-panel .provenance-title').html( displayName );
 
-    // clear and rebuild collection of detailed properties
+    /* Clear and rebuild collection of detailed properties, adapting to special
+     * requirements as needed:
+     *  - multiple values (add multiple DD elements)
+     *  - things requiring special lookup in metaMap
+     */
     var $details = $('#provenance-panel dl');
     $details.html('');
     var dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
@@ -425,19 +473,20 @@ function showObjectProperties( objInfo ) {
                     moreInfo = metaMap[ rawVal ];
                     if (typeof moreInfo === 'object') {
                         if (moreInfo['study']) {
-                            var pRef, pRefParts, pDOI, pURL, pID, pCurator;
+                            var pRef, pCompactRef, pRefParts, pDOI, pURL, pID, pCurator;
                             // assemble and display study info
                             pRef = moreInfo.study['ot:studyPublicationReference'];
                             pID = moreInfo.study['ot:studyId'];
                             if (pID) {
-                                displayVal = ('<a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">'+ pID +'.</a> ');
+                                displayVal = ('<a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">'+ pID +'</a>. ');
                             }
 
                             pCurator = moreInfo.study['ot:curatorName'];
                             
                             // be careful, in case we have an incomplete or badly-formatted reference
-                            // TODO: show compact reference instead, with full ref a click away
                             if (pRef) {
+                                // we'll show compact reference instead, with full ref a click away
+                                pRefCompact = "Smith, 1999";
                                 pRefParts = pRef.split('doi:');
                                 if (pRefParts.length === 2) {
                                     pDOI = pRefParts[1].trim();
@@ -448,11 +497,12 @@ function showObjectProperties( objInfo ) {
                                     // convert any DOI into lookup URL
                                     //  EXAMPLE: doi:10.1073/pnas.0813376106  =>  http://dx.doi.org/10.1073/pnas.0813376106
                                     pURL = 'http://dx.doi.org/'+ pDOI;
-                                    displayVal += '<a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pRef +'</a>';
+                                    displayVal += '<a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pRefCompact +'</a> <a href="#" class="full-ref-toggle">(full reference)</a><br/>';
+                                    displayVal += '<div class="full-ref">'+ pRef +'</div>';
                                 }
                             }
                             if (pCurator) {
-                                displayVal += ('<br/>Curator: '+ pCurator);
+                                displayVal += ('<div class="full-ref-curator">Curator: '+ pCurator +'</div>');
                             }
 
                         } else {
@@ -468,9 +518,15 @@ function showObjectProperties( objInfo ) {
             }
             $details.append('<dd>'+ displayVal +'</dd>');
         }
-        // TODO: Adapt to different types of information here:
-        //  * multiple values (add multiple DD elements)
-        //  * things requiring special lookup in metaMap
+        $details.find('.full-ref-toggle').unbind('click').click(function() {
+            var $itsReference = $(this).nextAll('.full-ref, .full-ref-curator');
+            if ($itsReference.is(':visible')) {
+                $itsReference.hide();
+            } else {
+                $itsReference.show();
+            }
+            return false;
+        });
     }
 
     // offer subtree extraction, if available for this target
