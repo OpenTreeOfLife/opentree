@@ -344,11 +344,21 @@ function showObjectProperties( objInfo ) {
             for (var p in metaMap) {
                 var v = metaMap[p];
                 console.log("> metaMap['"+ p +"'] = "+ v);
-                for (var p2 in v) {
-                    var v2 = v[p2];
-                    console.log(">> metaMap."+ p +"['"+ p2 +"'] = "+ v2);
-                    for (var p3 in v2) {
-                        console.log(">> metaMap."+ p +"."+ p2 +"['"+ p3 +"'] = "+ v2[p3]);
+                if (typeof v === 'object') {
+                    for (var p2 in v) {
+                        var v2 = v[p2];
+                        console.log(">> metaMap."+ p +"['"+ p2 +"'] = "+ v2);
+                        if (typeof v2 === 'object') {
+                            for (var p3 in v2) {
+                                var v3 = v2[p3];
+                                console.log(">>> metaMap."+ p +"."+ p2 +"['"+ p3 +"'] = "+ v3);
+                                if (typeof v3 === 'object') {
+                                    for (var p4 in v3) {
+                                        console.log(">>>> metaMap."+ p +"."+ p2 +"."+ p3 +"['"+ p4 +"'] = "+ v3[p4]);
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
@@ -360,9 +370,10 @@ function showObjectProperties( objInfo ) {
         switch(objType) {
             case 'node':
                 // describe its source tree and node ID
+                /*
                 displayedProperties['Source tree'] = objSource;
                 displayedProperties['Source node ID'] = objID;
-
+                */
                 break;
             case 'edge':
                 // look for 'supportedBy' on the associated (child) node
@@ -396,9 +407,66 @@ function showObjectProperties( objInfo ) {
     // clear and rebuild collection of detailed properties
     var $details = $('#provenance-panel dl');
     $details.html('');
-    for(p in displayedProperties) {
-        $details.append('<dt>'+ p +'</dt>');
-        $details.append('<dd>'+ displayedProperties[p] +'</dd>');
+    var dLabel, dValues, i, rawVal, displayVal, moreInfo;
+    for(dLabel in displayedProperties) {
+        dValues = String(displayedProperties[dLabel]).split(',');
+        for (i = 0; i < dValues.length; i++) {
+            $details.append('<dt>'+ dLabel +'</dt>');
+            rawVal = dValues[i];
+            switch(rawVal) {
+                // some values are simply displayed as-is, or slightly groomed
+                case ('taxonomy'):
+                    displayVal = 'Taxonomy';
+                    break;
+
+                default:
+                    // other values might have more information in the metaMap
+                    // EXAMPLE rawVal = 'WangEtAl2009-studyid-15' (a study)
+                    moreInfo = metaMap[ rawVal ];
+                    if (typeof moreInfo === 'object') {
+                        if (moreInfo['study']) {
+                            var pRef, pRefParts, pDOI, pURL, pID, pCurator;
+                            // assemble and display study info
+                            pRef = moreInfo.study['ot:studyPublicationReference'];
+                            pID = moreInfo.study['ot:studyId'];
+                            pCurator = moreInfo.study['ot:curatorName'];
+                            
+                            // be careful, in case we have an incomplete or badly-formatted reference
+                            if (pRef) {
+                                displayVal = pRef;
+                                pRefParts = pRef.split('doi:');
+                                if (pRefParts.length === 2) {
+                                    pDOI = pRefParts[1].trim();
+                                    // trim any final period
+                                    if (pDOI.slice(-1) === '.') {
+                                        pDOI = pDOI.slice(0, -1);
+                                    }
+                                    // convert any DOI into lookup URL
+                                    //  EXAMPLE: doi:10.1073/pnas.0813376106  =>  http://dx.doi.org/10.1073/pnas.0813376106
+                                    pURL = 'http://dx.doi.org/'+ pDOI;
+                                    displayVal = '<a href="'+ pURL +'" target="_blank">'+ pRef +'</a>';
+                                }
+                            }
+                            if (pID) {
+                                displayVal += ('<br/>Study ID: '+ pID);
+                            }
+                            if (pCurator) {
+                                displayVal += ('<br/>Curator: '+ pCurator);
+                            }
+
+                        } else {
+                            console.log("! FOUND mysterious stuff in metaMap:");
+                            for (p2 in moreInfo) {
+                                console.log("  "+ p2 +" = "+ moreInfo[p2]);
+                            }
+                        }
+                    } else {
+                        // when in doubt, just show the raw value
+                        displayVal = rawVal;
+                    }
+            }
+            $details.append('<dd>'+ displayVal +'</dd>');
+        }
         // TODO: Adapt to different types of information here:
         //  * multiple values (add multiple DD elements)
         //  * things requiring special lookup in metaMap
