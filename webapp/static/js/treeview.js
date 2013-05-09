@@ -407,7 +407,7 @@ function showObjectProperties( objInfo ) {
     // clear and rebuild collection of detailed properties
     var $details = $('#provenance-panel dl');
     $details.html('');
-    var dLabel, dValues, i, rawVal, displayVal, moreInfo;
+    var dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
     for(dLabel in displayedProperties) {
         dValues = String(displayedProperties[dLabel]).split(',');
         for (i = 0; i < dValues.length; i++) {
@@ -429,11 +429,15 @@ function showObjectProperties( objInfo ) {
                             // assemble and display study info
                             pRef = moreInfo.study['ot:studyPublicationReference'];
                             pID = moreInfo.study['ot:studyId'];
+                            if (pID) {
+                                displayVal = ('<a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">'+ pID +'.</a> ');
+                            }
+
                             pCurator = moreInfo.study['ot:curatorName'];
                             
                             // be careful, in case we have an incomplete or badly-formatted reference
+                            // TODO: show compact reference instead, with full ref a click away
                             if (pRef) {
-                                displayVal = pRef;
                                 pRefParts = pRef.split('doi:');
                                 if (pRefParts.length === 2) {
                                     pDOI = pRefParts[1].trim();
@@ -444,18 +448,15 @@ function showObjectProperties( objInfo ) {
                                     // convert any DOI into lookup URL
                                     //  EXAMPLE: doi:10.1073/pnas.0813376106  =>  http://dx.doi.org/10.1073/pnas.0813376106
                                     pURL = 'http://dx.doi.org/'+ pDOI;
-                                    displayVal = '<a href="'+ pURL +'" target="_blank">'+ pRef +'</a>';
+                                    displayVal += '<a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pRef +'</a>';
                                 }
-                            }
-                            if (pID) {
-                                displayVal += ('<br/>Study ID: '+ pID);
                             }
                             if (pCurator) {
                                 displayVal += ('<br/>Curator: '+ pCurator);
                             }
 
                         } else {
-                            console.log("! FOUND mysterious stuff in metaMap:");
+                            console.log("! expected a study, but found mysterious stuff in metaMap:");
                             for (p2 in moreInfo) {
                                 console.log("  "+ p2 +" = "+ moreInfo[p2]);
                             }
