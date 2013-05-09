@@ -172,9 +172,14 @@ $(document).ready(function() {
                     .wrap('<div class="search-result"><strong></strong></div>')
                     .each(function() {
                         var $link = $(this);
-                        var itsNodeID = $link.attr('href');
-                        var itsName = $link.html()
-                        $link.attr('href', '/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName);  // TODO: set domSource how???
+                        //// WAS constructed literal ('/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName)
+                        var safeURL = historyStateToURL({
+                            nodeID: $link.attr('href'), 
+                            domSource: 'ottol',
+                            nodeName: $link.html(),
+                            viewer: 'argus'
+                        });
+                        $link.attr('href', safeURL);
                     });
             }
         );
@@ -218,8 +223,12 @@ function historyStateToPageHeading( stateObj ) {
     return ('Node \''+ stateObj.nodeName +'\' ('+ stateObj.domSource +'@'+ stateObj.nodeID +')');
 }
 function historyStateToURL( stateObj ) {
-    ///return ('?viewer='+ stateObj.viewer +'&node='+ stateObj.domSource +':'+ stateObj.nodeID +'&nodeName='+ stateObj.nodeName);
-    return '/opentree'+ (stateObj.viewer ? '/'+stateObj.viewer : '') +'/'+ stateObj.domSource +'@'+ stateObj.nodeID + (stateObj.nodeName ?  '/'+stateObj.nodeName : '');
+    var safeNodeName = null;
+    if (stateObj.nodeName) {
+        // replace characters considered unsafe (blocked) by web2py
+        safeNodeName = stateObj.nodeName.replace(/[:()]/g, '-');
+    }
+    return '/opentree'+ (stateObj.viewer ? '/'+stateObj.viewer : '') +'/'+ stateObj.domSource +'@'+ stateObj.nodeID + (safeNodeName ? '/'+ safeNodeName : '');
 }
 
 function buildNodeNameFromTreeData( node ) {
