@@ -115,8 +115,8 @@ function createArgus(spec) {
         "backStack": [], // args to previous displayNode calls
         "forwardStack": [], // args to displayNode calls after the back button has been clicked
         "currDisplayContext": undefined, //arg to most recent displayNode call
-        toggleAltBoxX: 10,
-        toggleAltBoxY: 50,
+        toggleAltBoxX: 55,
+        toggleAltBoxY: 6,
         sourceTextBoxX: 10,
         sourceTextBoxY: 35,
         backArrowX: 10,
@@ -229,14 +229,18 @@ function createArgus(spec) {
             }
             paper.setSize(pwidth, pheight);
 
+            // gather all controls that should anchor to the scrolling viewport
+            if (!argusObj.anchoredControls) {
+                argusObj.anchoredControls = paper.set();
+            }
+
+            /* 
+            // if we need a larger, shared background
             anchoredbg = paper.rect(0,0,120,90).attr({
                 "fill": this.bgColor,
                 "fill-opacity": 0.6,
                 "stroke": 'none'
             });
-            if (!argusObj.anchoredControls) {
-                argusObj.anchoredControls = paper.set();
-            }
             argusObj.anchoredControls.push(anchoredbg);
 
             // this should also anchor to the scrolling viewport
@@ -247,6 +251,7 @@ function createArgus(spec) {
                 "text-anchor": "start"
             });
             argusObj.anchoredControls.push(sourcelabel);
+            */
 
             // add (and hide) moving highlights for node and edge provenance
             argusObj.nodeProvenanceHighlight = paper.set();
@@ -403,6 +408,7 @@ function createArgus(spec) {
             $(this.container).unbind("scroll");
             if (argusObj.anchoredControls) { 
                 argusObj.anchoredControls.remove();
+                argusObj.anchoredControls.clear();
             }
             paper.clear();
             paper.remove();
@@ -611,6 +617,7 @@ function createArgus(spec) {
         var visiblePath, triggerPath;
         var branchSt;
         var fontSize = this.minTipRadius * this.fontScalar;
+        var upwardSt;
         var spineSt;
         var nAltParents;
 
@@ -622,8 +629,9 @@ function createArgus(spec) {
             node.y = (curLeaf * this.nodeHeight) + this.yOffset;
 
             // draw the node
-            circle = paper.circle(node.x, node.y, this.minTipRadius).attr({
-                "fill": (isTargetNode ? this.pathColor : this.tipColor),
+            var isActualLeafNode = node.hasChildren === false || node.nleaves === 0;
+            circle = paper.circle(node.x, node.y, isActualLeafNode ? (this.minTipRadius * 0.7) : this.minTipRadius).attr({
+                "fill": ((isTargetNode || isActualLeafNode) ? this.bgColor : this.tipColor),
                 "title": "Click to move to this node",
                 "stroke": this.pathColor
             }).toFront();
@@ -637,7 +645,7 @@ function createArgus(spec) {
             circle.hover(getHoverHandlerNode('OVER', circle, {
                 "fill": this.tipHoverColor
             }), getHoverHandlerNode('OUT', circle, {
-                "fill": this.tipColor
+                "fill": (isTargetNode || isActualLeafNode) ? this.bgColor : this.tipColor
             }));
 
             curLeaf++;
@@ -687,7 +695,7 @@ function createArgus(spec) {
             circle.hover(getHoverHandlerNode('OVER', circle, {
                 "fill": this.nodeHoverColor
             }), getHoverHandlerNode('OUT', circle, {
-                "fill": this.nodeColor
+                "fill": (isTargetNode ? this.pathColor : this.nodeColor)
             }));
 
             // draw branches (square tree)
@@ -721,6 +729,64 @@ function createArgus(spec) {
         }
         if (isTargetNode) {
             this.targetNodeY = node.y;
+
+            if (node.pathToRoot) {
+                // try to draw upward path w/ up to 3 nodes, plus trailing edge if there's more
+                var upwardNode;
+                var maxUpwardNodes = 3;
+                var alphaStep = 0.15;
+                var xyStep = 25;
+                for (i = 0; i < node.pathToRoot.length; i++) {
+                    var startX = node.x - (xyStep * i);
+                    var startY = node.y - (xyStep * i);
+                    var endX = startX - xyStep;
+                    var endY = startY - xyStep;
+                    var pathOpacity = 1.0 - (alphaStep * (i+1));
+
+                    upwardSt = "M" + startX+ "," + startY + "L" + endX + " " + endY;
+                    paper.path(upwardSt).toBack().attr({
+                        "stroke": this.pathColor,
+                        "stroke-dasharray": '- ',
+                        "opacity": pathOpacity
+                    });
+
+                    var ancestorNode, ancestorCircle;
+                    if (i < maxUpwardNodes) {
+                        ancestorNode = node.pathToRoot[i];
+                        // draw node circle and label
+                        ancestorCircle = paper.circle(endX, endY, this.minTipRadius).attr({
+                            "fill": this.nodeColor,
+                            "title": "Click to move to this node",
+                            "stroke": this.pathColor
+                        });
+                        paper.text(endX - (this.minTipRadius * 1.2), endY + (this.minTipRadius * 1.2), ancestorNode.name).attr({
+                            'text-anchor': 'end',
+                            "fill": this.labelColor,
+                            "font-size": fontSize
+                        });
+
+                        // add handlers and metadata
+                        ancestorCircle.click(getClickHandlerNode(ancestorNode.nodeid, domSource, ancestorNode.name));
+                        // copy source data into the circle element (for use by highlight)
+                        ancestorCircle.data('sourceNodeInfo', {
+                            'nodeID': ancestorNode.nodeid,
+                            'nodeName': ancestorNode.name,
+                            'domSource': domSource
+                        });
+                        ancestorCircle.hover(getHoverHandlerNode('OVER', ancestorCircle, {
+                            "fill": this.nodeHoverColor
+                        }), getHoverHandlerNode('OUT', ancestorCircle, {
+                            "fill": this.nodeColor
+                        }));
+
+                    }
+
+                    if (i === maxUpwardNodes) {
+                        break; // we've drawn a final path bit, now we're done
+                    }
+                }
+
+            }
         }
 
         circle.click(getClickHandlerNode(node.nodeid, domSource, node.name));
@@ -820,35 +886,64 @@ function createArgus(spec) {
 
         tx = this.toggleAltBoxX;
         ty = this.toggleAltBoxY;
-        togglelabel = paper.text(tx + this.minTipRadius,
-                                 ty + this.nodeHeight * 0.95,
-                                 "toggle alt rels").attr({
-            "text-anchor": "start",
-            "font-size": fontSize
-        });
-        argusObj.anchoredControls.push(togglelabel);
+        var conflictsInView = this.nodesWithCycles.length > 0;
 
-        togglebox = paper.rect(tx, ty, this.nodesWidth, this.nodeHeight * 2).attr({
+        var conflictLabel = "Show or hide conflicting relationships in this view";
+        var disabledConflictLabel = "No conflicting relationships in this view";
+        var toggleHeight = this.nodeHeight * 1.5;
+        togglebox = paper.rect(tx, ty, this.nodesWidth, toggleHeight).attr({
             "stroke": "black",
             "stroke-width": "1px",
-            "fill": "white",
-            "fill-opacity": 0
+            "fill": this.bgColor,
+            "fill-opacity": 0.6,
+            "r": 4,  // rounded corner (radius)
+            "cursor": "pointer",
+            "title": (conflictsInView) ? conflictLabel : disabledConflictLabel,
+            "opacity": (conflictsInView) ? 1.0 : 0.4
         }).click(toggleAltRels(altrelsset));
         argusObj.anchoredControls.push(togglebox);
 
+        togglelabel = paper.text(tx + (this.nodesWidth/2),
+                                 ty + (toggleHeight / 2),
+                                 "Toggle conflicts").attr({
+            "cursor": "pointer",
+            "text-anchor": "middle",
+            "font-size": fontSize,
+            "title": (conflictsInView) ? conflictLabel : disabledConflictLabel,
+            "opacity": (conflictsInView) ? 1.0 : 0.4
+        });
+        // label on top needs identical action as box
+        //ktogglelabel.insertAfter(togglebox);
+        togglelabel.click(toggleAltRels(altrelsset));
+        argusObj.anchoredControls.push(togglelabel);
+
+        // add clickable Back and Forward pointers (now redundant with browser Back/Fwd buttons)
         backStackPointer = forwardStackPointer = null;
+        backStackPointer = paper.path("M21.871,9.814 15.684,16.001 21.871,22.188 18.335,25.725 8.612,16.001 18.335,6.276z")
+            .attr({
+                fill: "#000", 
+                stroke: "none",
+                cursor: "pointer",
+                title: (argusObj.backStack.length > 0) ? "Show the previous view in history" : "No previous views in history",
+                opacity: (argusObj.backStack.length > 0) ? 1.0 : 0.3
+            });
         if (argusObj.backStack.length > 0) {
-            backStackPointer = paper.path("M21.871,9.814 15.684,16.001 21.871,22.188 18.335,25.725 8.612,16.001 18.335,6.276z")
-                .attr({fill: "#000", stroke: "none"})
-                .click(getBackClickHandler());
-            argusObj.anchoredControls.push(backStackPointer);
+            backStackPointer.click(getBackClickHandler());
         }
+        argusObj.anchoredControls.push(backStackPointer);
+
+        forwardStackPointer = paper.path("M30.129,22.186 36.316,15.999 30.129,9.812 33.665,6.276 43.389,15.999 33.665,25.725z")
+            .attr({
+                fill: "#000", 
+                stroke: "none",
+                cursor: "pointer",
+                title: (argusObj.forwardStack.length > 0) ? "Show the next view in history" : "No later views in history",
+                opacity: (argusObj.forwardStack.length > 0) ? 1.0 : 0.3
+            });
         if (argusObj.forwardStack.length > 0) {
-            forwardStackPointer = paper.path("M30.129,22.186 36.316,15.999 30.129,9.812 33.665,6.276 43.389,15.999 33.665,25.725z")
-                .attr({fill: "#000", stroke: "none"})
-                .click(getForwardClickHandler());
-            argusObj.anchoredControls.push(forwardStackPointer);
+            forwardStackPointer.click(getForwardClickHandler());
         }
+        argusObj.anchoredControls.push(forwardStackPointer);
 
         /* Let's try to anchor some widgets in the upper left corner of the
          * argus viewport. That means it needs to track the scroll of the
