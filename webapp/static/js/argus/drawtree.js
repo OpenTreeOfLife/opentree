@@ -611,6 +611,7 @@ function createArgus(spec) {
         var visiblePath, triggerPath;
         var branchSt;
         var fontSize = this.minTipRadius * this.fontScalar;
+        var upwardSt;
         var spineSt;
         var nAltParents;
 
@@ -688,7 +689,7 @@ function createArgus(spec) {
             circle.hover(getHoverHandlerNode('OVER', circle, {
                 "fill": this.nodeHoverColor
             }), getHoverHandlerNode('OUT', circle, {
-                "fill": this.nodeColor
+                "fill": (isTargetNode ? this.pathColor : this.nodeColor)
             }));
 
             // draw branches (square tree)
@@ -722,6 +723,64 @@ function createArgus(spec) {
         }
         if (isTargetNode) {
             this.targetNodeY = node.y;
+
+            if (node.pathToRoot) {
+                // try to draw upward path w/ up to 3 nodes, plus trailing edge if there's more
+                var upwardNode;
+                var maxUpwardNodes = 3;
+                var alphaStep = 0.15;
+                var xyStep = 25;
+                for (i = 0; i < node.pathToRoot.length; i++) {
+                    var startX = node.x - (xyStep * i);
+                    var startY = node.y - (xyStep * i);
+                    var endX = startX - xyStep;
+                    var endY = startY - xyStep;
+                    var pathOpacity = 1.0 - (alphaStep * (i+1));
+
+                    upwardSt = "M" + startX+ "," + startY + "L" + endX + " " + endY;
+                    paper.path(upwardSt).toBack().attr({
+                        "stroke": this.pathColor,
+                        "stroke-dasharray": '- ',
+                        "opacity": pathOpacity
+                    });
+
+                    var ancestorNode, ancestorCircle;
+                    if (i < maxUpwardNodes) {
+                        ancestorNode = node.pathToRoot[i];
+                        // draw node circle and label
+                        ancestorCircle = paper.circle(endX, endY, this.minTipRadius).attr({
+                            "fill": this.nodeColor,
+                            "title": "Click to move to this node",
+                            "stroke": this.pathColor
+                        });
+                        paper.text(endX - (this.minTipRadius * 1.2), endY + (this.minTipRadius * 1.2), ancestorNode.name).attr({
+                            'text-anchor': 'end',
+                            "fill": this.labelColor,
+                            "font-size": fontSize
+                        });
+
+                        // add handlers and metadata
+                        ancestorCircle.click(getClickHandlerNode(ancestorNode.nodeid, domSource, ancestorNode.name));
+                        // copy source data into the circle element (for use by highlight)
+                        ancestorCircle.data('sourceNodeInfo', {
+                            'nodeID': ancestorNode.nodeid,
+                            'nodeName': ancestorNode.name,
+                            'domSource': domSource
+                        });
+                        ancestorCircle.hover(getHoverHandlerNode('OVER', ancestorCircle, {
+                            "fill": this.nodeHoverColor
+                        }), getHoverHandlerNode('OUT', ancestorCircle, {
+                            "fill": this.nodeColor
+                        }));
+
+                    }
+
+                    if (i === maxUpwardNodes) {
+                        break; // we've drawn a final path bit, now we're done
+                    }
+                }
+
+            }
         }
 
         circle.click(getClickHandlerNode(node.nodeid, domSource, node.name));
