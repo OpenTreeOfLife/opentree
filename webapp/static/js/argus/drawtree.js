@@ -195,6 +195,10 @@ function createArgus(spec) {
             var argusObjRef = this;
             argusObjRef.treeData = $.parseJSON(dataStr);
             var node = argusObjRef.treeData[0];
+
+            // recursively populate any missing (implied) node names
+            buildAllMissingNodeNames(node);
+
             var pheight, pwidth, sourcelabel, anchoredbg;
 
             //spec.container.text("proxy returned data..." + treeData);
@@ -623,6 +627,7 @@ function createArgus(spec) {
                 "title": "Click to move to this node",
                 "stroke": this.pathColor
             }).toFront();
+
             label = paper.text(node.x + this.xLabelMargin, node.y, node.name).attr({
                 'text-anchor': 'start',
                 "fill": this.labelColor,
