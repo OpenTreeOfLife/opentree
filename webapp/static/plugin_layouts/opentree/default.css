@@ -60,7 +60,7 @@ body {
 #viewer-collection {
     position: relative; /* force to fg versus #provenance-show */
     overflow: hidden;
-    height: 60%; /* don't fill to the current viewport */
+    height: 90%; /* don't fill to the current viewport */
     border: 2px solid #999;
     border-radius: 8px;
     margin: 0px;
@@ -129,6 +129,21 @@ body {
     margin-left: 12px;
     color: #000;
     margin-bottom: 4px;
+}
+a.full-ref-toggle {
+    color: #999 !important;
+    text-decoration: none;
+}
+.full-ref {
+    background-color: #fff;
+    border: 1px solid #eee;
+    margin: 0px 12px 0px -6px;
+    padding: 4px 6px;
+    display: none;
+}
+.full-ref-curator {
+    color: #777;
+    display: none;
 }
 
 p#tree-description {
