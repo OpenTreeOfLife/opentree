@@ -622,8 +622,9 @@ function createArgus(spec) {
             node.y = (curLeaf * this.nodeHeight) + this.yOffset;
 
             // draw the node
-            circle = paper.circle(node.x, node.y, this.minTipRadius).attr({
-                "fill": (isTargetNode ? this.pathColor : this.tipColor),
+            var isActualLeafNode = node.hasChildren === false || node.nleaves === 0;
+            circle = paper.circle(node.x, node.y, isActualLeafNode ? (this.minTipRadius * 0.7) : this.minTipRadius).attr({
+                "fill": ((isTargetNode || isActualLeafNode) ? this.bgColor : this.tipColor),
                 "title": "Click to move to this node",
                 "stroke": this.pathColor
             }).toFront();
@@ -637,7 +638,7 @@ function createArgus(spec) {
             circle.hover(getHoverHandlerNode('OVER', circle, {
                 "fill": this.tipHoverColor
             }), getHoverHandlerNode('OUT', circle, {
-                "fill": this.tipColor
+                "fill": (isTargetNode || isActualLeafNode) ? this.bgColor : this.tipColor
             }));
 
             curLeaf++;
