@@ -406,9 +406,11 @@ function showObjectProperties( objInfo ) {
                 if (fullNode) {
                     console.log("YES, found the full node... ");
 
+                    /*
                     for (var pp in fullNode) {
                         console.log(" fullNode."+ pp +" = "+ fullNode[pp]);
                     }
+                    */
 
                     // override incoming name and ID, but only if they're missing
                     if (!objName) {
@@ -484,6 +486,31 @@ function showObjectProperties( objInfo ) {
      */
     var $details = $('#provenance-panel dl');
     $details.html('');
+
+    // remove any old thumbnail image
+    $('#provenance-panel .taxon-image').remove();
+    // for nodes, load a thumbnail silhouette from PhyloPic
+    if (objType === 'node') {
+        $.getJSON(
+            'http://phylopic.org/api/a/name/search?callback=?',  // JSONP fetch URL
+            {   // GET data
+                text: objName,
+                options: 'icon illustrated' // uid? string?
+            },
+            function(data) {    // JSONP callback
+                if (data.result && (data.result.length > 0) && data.result[0].icon && data.result[0].icon.uid) {
+                    $('#provenance-panel .provenance-title').after(
+                        '<img class="taxon-image" src="http://phylopic.org/assets/images/submissions/'+ data.result[0].icon.uid 
+                        +'.icon.png" title="Click for image credits"/>'       // 'thumb.png' = 64px, 'icon.png' = 32px and blue
+                    );
+                    $('#provenance-panel .taxon-image').unbind('click').click(function() {
+                        window.open('http://phylopic.org/image/'+ data.result[0].icon.uid +'/', '_blank');
+                    });
+                }
+            }
+        );
+    }
+
     var dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
     for(dLabel in displayedProperties) {
         switch(dLabel) {
