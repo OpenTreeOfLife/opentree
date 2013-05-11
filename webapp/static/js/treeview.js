@@ -415,15 +415,11 @@ function showObjectProperties( objInfo ) {
                         objName = buildNodeNameFromTreeData( fullNode );
                     }
 
-                    if (fullNode.ottolId) {
-                        displayedProperties['OTT ID'] = fullNode.ottolId;
-                    }
-
-                    // show ALL sources (trees + IDs) for this node
+                    // show ALL taxonomic sources (taxonomies + IDs) for this node
                     // TODO: handle whatever scheme we use for multiple sources; for now,
                     // there's just one, or none.
                     if (fullNode.taxSource) {
-                        displayedProperties['Source tree'] = [
+                        displayedProperties['Source taxonomy'] = [
                             {
                                 taxSource: fullNode.taxSource,
                                 taxSourceId: fullNode.taxSourceId || '?',
@@ -432,6 +428,18 @@ function showObjectProperties( objInfo ) {
                             // TODO: add more here
                         ];
                     }
+                    if (fullNode.ottolId) {
+                        //displayedProperties['OTT ID'] = fullNode.ottolId;
+                        displayedProperties['Source taxonomy'].push(
+                            {
+                                taxSource: "OTT",
+                                taxSourceId: fullNode.ottolId
+                            }
+                        );
+                    }
+
+
+                    // TODO: show ALL source trees (phylo-trees + IDs) for this node
 
                     objID = fullNode.sourceID ? fullNode.sourceID : fullNode.nodeid;
                 } else {
@@ -479,21 +487,36 @@ function showObjectProperties( objInfo ) {
     var dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
     for(dLabel in displayedProperties) {
         switch(dLabel) {
-            case 'Source tree':
+            case 'Source taxonomy':
                 var sourceList = displayedProperties[dLabel];
                 for (i = 0; i < sourceList.length; i++) {
                     var sourceInfo = sourceList[i];
-                    displayVal = 'tree ID: '+ sourceInfo.taxSource;
-                    displayVal += '<br/>node ID: '+ sourceInfo.taxSourceId;
-                    if (sourceInfo.taxRank) {
-                        displayVal += '<br/>rank: '+ sourceInfo.taxRank;
+                    // build boilerplate URLs for common taxonomies
+                    switch(sourceInfo.taxSource.trim().toUpperCase()) {
+                        case 'NCBI':
+                            displayVal = '<a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id='+ sourceInfo.taxSourceId +'" target="_blank">NCBI: '+ sourceInfo.taxSourceId +'</a>';
+                            break;
+
+                        case 'GBIF':
+                            displayVal = '<a href="http://data.gbif.org/species/'+ sourceInfo.taxSourceId +'/" target="_blank">GBIF: '+ sourceInfo.taxSourceId +'</a>';
+                            break;
+
+                        case 'OTT': 
+                            // TODO: browse the OTT taxonomy in *local* window? or in a new one?
+                            displayVal = '<a href="/opentree/argus/ottol@'+ sourceInfo.taxSourceId +'" target="_blank">OTT: '+ sourceInfo.taxSourceId +'</a>';
+                            break;
+
+                        default:
+                            displayVal = '<span style="color: #777;" title="No URL for this taxonomy">GBIF: '+ sourceInfo.taxSourceId +'</span>';
+                            break;
                     }
-                }
-                if (sourceList.length > 0) {
+                    if (sourceInfo.taxRank) {
+                        displayVal += '<br/>Rank: '+ sourceInfo.taxRank;
+                    }
+
                     $details.append('<dt>'+ dLabel +'</dt>');
                     $details.append('<dd>'+ displayVal +'</dd>');
                 }
-
                 break;
 
             default:
