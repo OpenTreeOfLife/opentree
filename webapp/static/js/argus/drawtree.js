@@ -232,31 +232,11 @@ function createArgus(spec) {
             paper.setSize(pwidth, pheight);
             
             // add dividers before anything else
-            dividerBeforeEdges = paper.text().attr({
-                "x": 0,
-                "y": 0,
-                "text": "dividerBeforeEdges"
-            })
-            dividerBeforeLabels = paper.text().attr({
-                "x": 0,
-                "y": 0,
-                "text": "dividerBeforeLabels"
-            })
-            dividerBeforeHighlights = paper.text().attr({
-                "x": 0,
-                "y": 0,
-                "text": "dividerBeforeHighlights"
-            })
-            dividerBeforeNodes = paper.text().attr({
-                "x": 0,
-                "y": 0,
-                "text": "dividerBeforeNodes"
-            })
-            dividerBeforeAnchoredUI = paper.text().attr({
-                "x": 0,
-                "y": 0,
-                "text": "dividerBeforeAnchoredUI"
-            })
+            dividerBeforeEdges = paper.text();
+            dividerBeforeLabels = paper.text();
+            dividerBeforeHighlights = paper.text();
+            dividerBeforeNodes = paper.text();
+            dividerBeforeAnchoredUI = paper.text();
 
             // gather all controls that should anchor to the scrolling viewport
             if (!argusObj.anchoredControls) {
