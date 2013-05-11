@@ -14,7 +14,7 @@ var argus;
 // @TEMP - preserve incoming OTT id and source, so we can demo the Extract Subtree feature
 var incomingOttolID = null;
 
-if ( History.enabled && pageUsesHistory ) {
+if ( History && History.enabled && pageUsesHistory ) {
     // bind to statechange event
     History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
@@ -108,7 +108,7 @@ $(document).ready(function() {
       "maxDepth": 3
     });
 
-    if ( History.enabled && pageUsesHistory ) {
+    if ( History && History.enabled && pageUsesHistory ) {
         // if there's no prior state, go to the initial target node in the synthetic tree
         var priorState = History.getState();
        
