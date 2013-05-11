@@ -348,8 +348,6 @@ function showObjectProperties( objInfo ) {
         debugger;
     }
    
-    console.log('> showObjectProperties for '+ objType +' "'+ objName +'", ID='+ objID);
-
     // read more data from the existing tree-view JSON?
     if (argus.treeData) {
 
@@ -404,9 +402,8 @@ function showObjectProperties( objInfo ) {
                 }
 
                 if (fullNode) {
+                    /* dump all node properties
                     console.log("YES, found the full node... ");
-
-                    /*
                     for (var pp in fullNode) {
                         console.log(" fullNode."+ pp +" = "+ fullNode[pp]);
                     }
@@ -455,11 +452,12 @@ function showObjectProperties( objInfo ) {
                     return (node.nodeid === objID); 
                 });
                 if (associatedChild) {
+                    /* dump all node properties
                     console.log("YES, found an associatedChild... ");
-
                     for (var pp in associatedChild) {
                         console.log(" child."+ pp +" = "+ associatedChild[pp]);
                     }
+                    */
 
                     if (typeof associatedChild.supportedBy !== 'undefined') {
                         displayedProperties['Supported by'] = associatedChild.supportedBy;
@@ -715,7 +713,6 @@ function nodeDataLoaded( nodeTree ) {
     // TODO: load provenance data for this view (all visible nodes and edges)?
     
     // update properties (provenance) panel to show the target node
-    console.log(">>> showing targetNode properties in nodeDataLoaded()...");
     showObjectProperties( targetNode );
 }
 
