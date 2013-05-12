@@ -224,6 +224,8 @@ function createArgus(spec) {
 
             argusObjRef.xOffset = pwidth - argusObjRef.nodesWidth - argusObjRef.tipOffset;
 
+            hideSpinner();
+
             if (argusObjRef.container === undefined) {
                 paper = new Raphael(10, 10, 10, 10);
             } else {
@@ -381,6 +383,7 @@ function createArgus(spec) {
             contentType: 'application/json',
             success: ajaxSuccess,
             error: function (jqXHR, textStatus, errorThrown) {
+                hideSpinner();
                 $(".flash").html("Error: Node lookup failed").slideDown();
                 $(this.container).html('<p style="margin: 8px 12px;">Whoops! The call to get the tree around a node did not work out the way we were hoping it would. That is a real shame.  I\'m not sure what to suggest...</p>');
             }
@@ -422,6 +425,10 @@ function createArgus(spec) {
             paper.clear();
             paper.remove();
         }
+
+        clearPropertyInspector();
+        showSpinner($(this.container));
+
         /* The next 9 lines store the last call to displayNode. We'll need to move this, if we use other functions as "public" entry points of Argus calls*/
         if (o.storeThisCall === undefined || o.storeThisCall) {
             if (this.currDisplayContext !== undefined) {

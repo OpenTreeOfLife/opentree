@@ -331,6 +331,21 @@ function buildAllMissingNodeNames( node ) {
     }
 }
 
+var spinnerSelector = '#floatingCirclesG';
+function showSpinner( $container ) {
+    // put the spinner inside the specified container element (passed as jQuery selection)
+    // ? replace all of its contents?
+    var $spinner = $(spinnerSelector);
+    $container.append($spinner);
+    $spinner.show();
+}
+function hideSpinner() {
+    // restore spinner to its standby location
+    var $spinner = $(spinnerSelector);
+    $spinner.hide();
+    $('body').append($spinner);
+}
+
 /*
 function URLToHistoryState( url ) {
     // use to construct state for pasted-in URLs
@@ -372,6 +387,11 @@ function URLToHistoryState( url ) {
 }
 */
 
+function clearPropertyInspector() {
+    // clear all visible data (but not UI and re-usable elements) while new data is loading
+    $('#provenance-panel .provenance-intro, #provenance-panel .provenance-title, #provenance-panel dl').html('');
+    $('#provenance-panel .taxon-image').remove();
+}
 function showObjectProperties( objInfo ) {
     if ($('#provenance-show').is(':visible')) {
         // show property inspector if it's hidden

@@ -199,3 +199,8 @@ div#r0 {
 #node-provenance-panel h3 {
     margin: 0 0 0.5em;
 }
+
+/* center the big spinner inside the argus viewport */
+#argusCanvasContainer #floatingCirclesG {
+    margin: 100px 0 0 200px;
+}
