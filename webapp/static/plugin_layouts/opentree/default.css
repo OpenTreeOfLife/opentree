@@ -204,3 +204,16 @@ div#r0 {
 #argusCanvasContainer #spinner {
     margin: 100px 0 0 200px;
 }
+
+#footer {
+    font-size: 80%;
+    border-top: 1px solid #ccc;
+    overflow: hidden;
+    padding: 0.5em 0 0.25em;
+}
+#footer  .pull-left{
+    float: left;
+}
+#footer  .pull-right{
+    float: right;
+}
