@@ -771,7 +771,7 @@ function createArgus(spec) {
                             "title": "Click to move to this node",
                             "stroke": this.pathColor
                         }).insertBefore(dividerBeforeAnchoredUI);
-                        paper.text(endX - (this.minTipRadius * 1.2), endY + (this.minTipRadius * 1.2), ancestorNode.name).attr({
+                        paper.text(endX - (this.minTipRadius * 1.2), endY + (this.minTipRadius * 1.2), ancestorNode.name || "unnamed").attr({
                             'text-anchor': 'end',
                             "fill": this.labelColor,
                             "font-size": fontSize
