@@ -201,6 +201,6 @@ div#r0 {
 }
 
 /* center the big spinner inside the argus viewport */
-#argusCanvasContainer #floatingCirclesG {
+#argusCanvasContainer #spinner {
     margin: 100px 0 0 200px;
 }

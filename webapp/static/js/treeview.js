@@ -331,7 +331,7 @@ function buildAllMissingNodeNames( node ) {
     }
 }
 
-var spinnerSelector = '#floatingCirclesG';
+var spinnerSelector = '#spinner';
 function showSpinner( $container ) {
     // put the spinner inside the specified container element (passed as jQuery selection)
     // ? replace all of its contents?
