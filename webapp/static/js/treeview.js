@@ -153,23 +153,83 @@ $(document).ready(function() {
     });
 
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
-    $('input[name=taxon-search]').unbind('keyup').keyup(function() {
-        var $input = $(this);
-        var searchText = $input.val().trim();
-        if (searchText.length === 0) {
-            $('#search-results').html('');
-            return false;
-        } else if (searchText.length < 3) {
-            $('#search-results').html('<i>Enter three or more letters</i>');
-            return false;
+    //$('input[name=taxon-search]').unbind('keyup').keyup( searchForMatchingTaxa );
+    $('input[name=taxon-search-go]').unbind('click').click( searchForMatchingTaxa );
+});
+
+function searchForMatchingTaxa() {
+    var $input = $('input[name=taxon-search]');
+    var searchText = $input.val().trim();
+    if (searchText.length === 0) {
+        $('#search-results').html('');
+        return false;
+    } else if (searchText.length < 5) {
+        $('#search-results').html('<i>Enter five or more letters</i>');
+        return false;
+    }
+
+   /* 
+    // temporary version queried phylografter
+    $.getJSON(
+        'http://www.reelab.net/phylografter/ottol/autocomplete?callback=?',  // JSONP fetch URL
+        { search: searchText },  // data
+        function(data) {    // JSONP callback
+            $('#search-results').html(data);
+            $('#search-results a')
+                .wrap('<div class="search-result"><strong></strong></div>')
+                .each(function() {
+                    var $link = $(this);
+                    //// WAS constructed literal ('/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName)
+                    var safeURL = historyStateToURL({
+                        nodeID: $link.attr('href'), 
+                        domSource: 'ottol',
+                        nodeName: $link.html(),
+                        viewer: 'argus'
+                    });
+                    $link.attr('href', safeURL);
+                });
         }
-        $.getJSON(
-            'http://www.reelab.net/phylografter/ottol/autocomplete?callback=?',  // JSONP fetch URL
-            { search: searchText },  // data
-            function(data) {    // JSONP callback
-                $('#search-results').html(data);
+    );
+    */
+    
+    // proper version queries treemachine API
+    // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
+    $('#search-results').html('<i>Search in progress...</i>');
+    $.ajax({
+        url: 'http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames',  /// ?callback=?',
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({ 
+            "queryString": (searchText+"*"),
+            "contextName": ''
+        }),  // data (asterisk required for completion suggestions)
+        crossDomain: true,
+        contentType: 'application/json',
+        success: function(data) {    // JSONP callback
+            $('#search-results').html('');
+            var maxResults = 10;
+            var visibleResults = 0;
+            if (data.results && (data.results.length > 0)) {         // && data.results.matches && (data.results.matches.length > 0)
+                for (var rpos = 0; rpos < data.results.length; rpos++) {
+                    if (visibleResults >= maxResults) {
+                        break;
+                    }
+                    var result = data.results[rpos];
+                    for (var mpos = 0; mpos < result.matches.length; mpos++) {
+                        if (visibleResults >= maxResults) {
+                            break;
+                        }
+                        var match = result.matches[mpos];
+                        var matchingName = match.matchedName;
+                        //var matchingID = match.matchedNodeId; // in the current synthetic tree?
+                        var matchingSource = match.sourceName;
+                        var matchingID = match.matchedOttolID;
+                        $('#search-results').append('<div class="search-result"><strong><a title="match on \''+ match.searchString +'\'"href="'+ matchingID +'">'+ matchingName +'</a></strong></div>');
+                        visibleResults++;
+                    }
+                }
                 $('#search-results a')
-                    .wrap('<div class="search-result"><strong></strong></div>')
+                    //.wrap('<div class="search-result"><strong></strong></div>')
                     .each(function() {
                         var $link = $(this);
                         //// WAS constructed literal ('/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName)
@@ -181,12 +241,14 @@ $(document).ready(function() {
                         });
                         $link.attr('href', safeURL);
                     });
+            } else {
+                $('#search-results').html('<i>No results for this search</i>');
             }
-        );
-
+        }
     });
 
-});
+    return false;
+}
 
 function fixLoginLinks() {
     // update all login links to return directly to the current URL (NOTE that this 
