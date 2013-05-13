@@ -52,36 +52,88 @@ if ( History && History.enabled && pageUsesHistory ) {
 
         // update all login links to use the new URL
         fixLoginLinks();
-
-        // load local comments for the new URL
-        // eg, http://localhost:8000/opentree/plugin_localcomments?url=ottol@805080
-        var pathParts = State.url.split('/');
-        var nodeIdentifier = null;
-        $.each(pathParts, function() {
-            if (this.indexOf('@') !== -1) {
-                nodeIdentifier = this;
-            }
-        });
-        if (!nodeIdentifier) {
-            nodeIdentifier = State.url;
-        }
-        // update comment header (maybe again in the callback, when we have a name)
-        $('#comment-header').html('Comments <i>- '+ nodeIdentifier +'</i>');
-        $('.plugin_localcomments').parent().load(
-            '/opentree/plugin_localcomments',
-            {url: nodeIdentifier},
-            function() {  // callback
-                // update its login link (if any) to use the latest URL
-                fixLoginLinks();
-                // update the comment count at the top of the page
-                var howManyComments = $('.plugin_localcomments .body').length;
-                $('#links-to-local-comments a:eq(0)').html(
-                    'Comments on this node ('+ howManyComments +')'
-                );
-            }
-        );
-
     });
+}
+
+function getCommentIndexURL( rawURL ) {
+    var url = rawURL || window.location.href;
+    // extract a root-relative URL, with no query-string
+    var pathParts = url.split('/').slice(3);  // remove scheme and hostname:port
+    var indexURL = '/'+ pathParts.join('/');
+    return indexURL;
+}
+
+function loadLocalComments( chosenFilter ) {
+    // Load local comments for the new URL, including info on the current location
+    var fetchArgs = {
+        filter: '',
+        url: '',
+        synthtree_id: '',
+        synthtree_node_id: '',
+        sourcetree_id: '',
+        sourcetree_node_id: '',
+        ottol_id: ''
+    };
+    // add a mnemonic to the comment header (for this page? which node?)
+    var commentLabel = '';
+
+    if (argus.treeData) {
+        // default filter is for the current location in the synthetic tree
+        // TODO: pivot based on current page/view type..
+        fetchArgs.filter = chosenFilter || 'synthtree_id,synthtree_node_id';
+
+        var targetNode = argus.treeData[0];
+        fetchArgs.synthtree_id = argus.domSource;
+        fetchArgs.synthtree_node_id = targetNode.nodeid;
+        fetchArgs.sourcetree_id = targetNode.taxSource;
+        fetchArgs.sourcetree_node_id = targetNode.taxSourceId;
+        fetchArgs.ottol_id = targetNode.ottolId
+
+        commentLabel = buildNodeNameFromTreeData( targetNode );
+        /* OR should comment label reflect the current filter?
+        switch(fetchArgs.filter) {
+            case 'synthtree_id,synthtree_node_id':
+            default:
+                commentLabel = fetchArgs.synthtree_id +'@'+ fetchArgs.synthtree_node_id;
+                break;
+
+            case 'sourcetree_id,sourcetree_node_id':
+                commentLabel = fetchArgs.sourcetree_id +'@'+ fetchArgs.sourcetree_node_id;
+                break;
+
+            case 'ottol_id':
+                commentLabel = 'ottol@'+ fetchArgs.ottol_id;
+                break;
+        }
+        */
+    } else {
+        // use the fallback 'url' index (apparently there's no tree-view here)
+        console.log("loadLocalComments() - Loading comments based on 'url' (no argus.treeData!)");
+        fetchArgs.filter = 'url';
+        fetchArgs.url = getCommentIndexURL();
+
+        commentLabel = window.document.title;
+        if (commentLabel.endsWidth(' - opentree')) {
+            // trim to just the distinctive page title
+            commentLabel = commentLabel.slice(0, -11);
+        }
+    }
+
+    // update comment header (maybe again in the callback, when we have a name)
+    $('#comment-header').html('Comments <i>- '+ commentLabel +'</i>');
+    $('.plugin_localcomments').parent().load(
+        '/opentree/plugin_localcomments',
+        fetchArgs,  // determined above
+        function() {  // callback
+            // update its login link (if any) to use the latest URL
+            fixLoginLinks();
+            // update the comment count at the top of the page
+            var howManyComments = $('.plugin_localcomments .body').length;
+            $('#links-to-local-comments a:eq(0)').html(
+                'Comments on this node ('+ howManyComments +')'
+            );
+        }
+    );
 }
 
 $(document).ready(function() {
@@ -792,7 +844,8 @@ function nodeDataLoaded( nodeTree ) {
     // update page title and page contents
     jQuery('#main-title').html( historyStateToPageHeading( improvedState ) );
     
-    // TODO: load provenance data for this view (all visible nodes and edges)?
+    // now that we have all view data, update the comments and comment editor
+    loadLocalComments();
     
     // update properties (provenance) panel to show the target node
     showObjectProperties( targetNode );

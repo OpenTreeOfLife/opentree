@@ -114,18 +114,12 @@
           </div>
       </div>
 
-      {{  # we'll use the node-identifier in the current URL to anchor local comments, or 
-          # the complete page URL if no node identifier is found
-          urlParts = request.url.split('/')
-          nodeIdentifier = [p for p in urlParts if '@' in p]
-          if len(nodeIdentifier) == 1:
-            commentLocation = nodeIdentifier[0]
-          else:
-            commentLocation = request.url
-          pass  # required in web2py view
+      {{  # initialize comments with a naive url-based query
+          # (this will probably be overwritten by tree-view data)
+          url = request.url
       }}
-      <h1 id="comment-header">Comments <i>- {{=commentLocation}}</i></h1>
-      {{=plugin_localcomments(url=commentLocation)}}
+      <h1 id="comment-header">Comments <i></i></h1>
+      {{=plugin_localcomments(filter=('url',),url=url)}}
     </div><!-- end of .vizcontent -->
   </div><!-- end of .container -->
 
