@@ -14,7 +14,7 @@ var argus;
 // @TEMP - preserve incoming OTT id and source, so we can demo the Extract Subtree feature
 var incomingOttolID = null;
 
-if ( History.enabled && pageUsesHistory ) {
+if ( History && History.enabled && pageUsesHistory ) {
     // bind to statechange event
     History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
@@ -52,36 +52,88 @@ if ( History.enabled && pageUsesHistory ) {
 
         // update all login links to use the new URL
         fixLoginLinks();
-
-        // load local comments for the new URL
-        // eg, http://localhost:8000/opentree/plugin_localcomments?url=ottol@805080
-        var pathParts = State.url.split('/');
-        var nodeIdentifier = null;
-        $.each(pathParts, function() {
-            if (this.indexOf('@') !== -1) {
-                nodeIdentifier = this;
-            }
-        });
-        if (!nodeIdentifier) {
-            nodeIdentifier = State.url;
-        }
-        // update comment header (maybe again in the callback, when we have a name)
-        $('#comment-header').html('Comments <i>- '+ nodeIdentifier +'</i>');
-        $('.plugin_localcomments').parent().load(
-            '/opentree/plugin_localcomments',
-            {url: nodeIdentifier},
-            function() {  // callback
-                // update its login link (if any) to use the latest URL
-                fixLoginLinks();
-                // update the comment count at the top of the page
-                var howManyComments = $('.plugin_localcomments .body').length;
-                $('#links-to-local-comments a:eq(0)').html(
-                    'Comments on this node ('+ howManyComments +')'
-                );
-            }
-        );
-
     });
+}
+
+function getCommentIndexURL( rawURL ) {
+    var url = rawURL || window.location.href;
+    // extract a root-relative URL, with no query-string
+    var pathParts = url.split('/').slice(3);  // remove scheme and hostname:port
+    var indexURL = '/'+ pathParts.join('/');
+    return indexURL;
+}
+
+function loadLocalComments( chosenFilter ) {
+    // Load local comments for the new URL, including info on the current location
+    var fetchArgs = {
+        filter: '',
+        url: '',
+        synthtree_id: '',
+        synthtree_node_id: '',
+        sourcetree_id: '',
+        sourcetree_node_id: '',
+        ottol_id: ''
+    };
+    // add a mnemonic to the comment header (for this page? which node?)
+    var commentLabel = '';
+
+    if (argus.treeData) {
+        // default filter is for the current location in the synthetic tree
+        // TODO: pivot based on current page/view type..
+        fetchArgs.filter = chosenFilter || 'synthtree_id,synthtree_node_id';
+
+        var targetNode = argus.treeData[0];
+        fetchArgs.synthtree_id = argus.domSource;
+        fetchArgs.synthtree_node_id = targetNode.nodeid;
+        fetchArgs.sourcetree_id = targetNode.taxSource;
+        fetchArgs.sourcetree_node_id = targetNode.taxSourceId;
+        fetchArgs.ottol_id = targetNode.ottolId
+
+        commentLabel = buildNodeNameFromTreeData( targetNode );
+        /* OR should comment label reflect the current filter?
+        switch(fetchArgs.filter) {
+            case 'synthtree_id,synthtree_node_id':
+            default:
+                commentLabel = fetchArgs.synthtree_id +'@'+ fetchArgs.synthtree_node_id;
+                break;
+
+            case 'sourcetree_id,sourcetree_node_id':
+                commentLabel = fetchArgs.sourcetree_id +'@'+ fetchArgs.sourcetree_node_id;
+                break;
+
+            case 'ottol_id':
+                commentLabel = 'ottol@'+ fetchArgs.ottol_id;
+                break;
+        }
+        */
+    } else {
+        // use the fallback 'url' index (apparently there's no tree-view here)
+        console.log("loadLocalComments() - Loading comments based on 'url' (no argus.treeData!)");
+        fetchArgs.filter = 'url';
+        fetchArgs.url = getCommentIndexURL();
+
+        commentLabel = window.document.title;
+        if (commentLabel.endsWidth(' - opentree')) {
+            // trim to just the distinctive page title
+            commentLabel = commentLabel.slice(0, -11);
+        }
+    }
+
+    // update comment header (maybe again in the callback, when we have a name)
+    $('#comment-header').html('Comments <i>- '+ commentLabel +'</i>');
+    $('.plugin_localcomments').parent().load(
+        '/opentree/plugin_localcomments',
+        fetchArgs,  // determined above
+        function() {  // callback
+            // update its login link (if any) to use the latest URL
+            fixLoginLinks();
+            // update the comment count at the top of the page
+            var howManyComments = $('.plugin_localcomments .body').length;
+            $('#links-to-local-comments a:eq(0)').html(
+                'Comments on this node ('+ howManyComments +')'
+            );
+        }
+    );
 }
 
 $(document).ready(function() {
@@ -108,7 +160,7 @@ $(document).ready(function() {
       "maxDepth": 3
     });
 
-    if ( History.enabled && pageUsesHistory ) {
+    if ( History && History.enabled && pageUsesHistory ) {
         // if there's no prior state, go to the initial target node in the synthetic tree
         var priorState = History.getState();
        
@@ -153,23 +205,83 @@ $(document).ready(function() {
     });
 
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
-    $('input[name=taxon-search]').unbind('keyup').keyup(function() {
-        var $input = $(this);
-        var searchText = $input.val().trim();
-        if (searchText.length === 0) {
-            $('#search-results').html('');
-            return false;
-        } else if (searchText.length < 3) {
-            $('#search-results').html('<i>Enter three or more letters</i>');
-            return false;
+    //$('input[name=taxon-search]').unbind('keyup').keyup( searchForMatchingTaxa );
+    $('input[name=taxon-search-go]').unbind('click').click( searchForMatchingTaxa );
+});
+
+function searchForMatchingTaxa() {
+    var $input = $('input[name=taxon-search]');
+    var searchText = $input.val().trim();
+    if (searchText.length === 0) {
+        $('#search-results').html('');
+        return false;
+    } else if (searchText.length < 5) {
+        $('#search-results').html('<i>Enter five or more letters</i>');
+        return false;
+    }
+
+   /* 
+    // temporary version queried phylografter
+    $.getJSON(
+        'http://www.reelab.net/phylografter/ottol/autocomplete?callback=?',  // JSONP fetch URL
+        { search: searchText },  // data
+        function(data) {    // JSONP callback
+            $('#search-results').html(data);
+            $('#search-results a')
+                .wrap('<div class="search-result"><strong></strong></div>')
+                .each(function() {
+                    var $link = $(this);
+                    //// WAS constructed literal ('/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName)
+                    var safeURL = historyStateToURL({
+                        nodeID: $link.attr('href'), 
+                        domSource: 'ottol',
+                        nodeName: $link.html(),
+                        viewer: 'argus'
+                    });
+                    $link.attr('href', safeURL);
+                });
         }
-        $.getJSON(
-            'http://www.reelab.net/phylografter/ottol/autocomplete?callback=?',  // JSONP fetch URL
-            { search: searchText },  // data
-            function(data) {    // JSONP callback
-                $('#search-results').html(data);
+    );
+    */
+    
+    // proper version queries treemachine API
+    // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
+    $('#search-results').html('<i>Search in progress...</i>');
+    $.ajax({
+        url: 'http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames',  /// ?callback=?',
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({ 
+            "queryString": (searchText+"*"),
+            "contextName": ''
+        }),  // data (asterisk required for completion suggestions)
+        crossDomain: true,
+        contentType: 'application/json',
+        success: function(data) {    // JSONP callback
+            $('#search-results').html('');
+            var maxResults = 10;
+            var visibleResults = 0;
+            if (data.results && (data.results.length > 0)) {         // && data.results.matches && (data.results.matches.length > 0)
+                for (var rpos = 0; rpos < data.results.length; rpos++) {
+                    if (visibleResults >= maxResults) {
+                        break;
+                    }
+                    var result = data.results[rpos];
+                    for (var mpos = 0; mpos < result.matches.length; mpos++) {
+                        if (visibleResults >= maxResults) {
+                            break;
+                        }
+                        var match = result.matches[mpos];
+                        var matchingName = match.matchedName;
+                        //var matchingID = match.matchedNodeId; // in the current synthetic tree?
+                        var matchingSource = match.sourceName;
+                        var matchingID = match.matchedOttolID;
+                        $('#search-results').append('<div class="search-result"><strong><a title="match on \''+ match.searchString +'\'"href="'+ matchingID +'">'+ matchingName +'</a></strong></div>');
+                        visibleResults++;
+                    }
+                }
                 $('#search-results a')
-                    .wrap('<div class="search-result"><strong></strong></div>')
+                    //.wrap('<div class="search-result"><strong></strong></div>')
                     .each(function() {
                         var $link = $(this);
                         //// WAS constructed literal ('/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName)
@@ -181,12 +293,14 @@ $(document).ready(function() {
                         });
                         $link.attr('href', safeURL);
                     });
+            } else {
+                $('#search-results').html('<i>No results for this search</i>');
             }
-        );
-
+        }
     });
 
-});
+    return false;
+}
 
 function fixLoginLinks() {
     // update all login links to return directly to the current URL (NOTE that this 
@@ -269,6 +383,21 @@ function buildAllMissingNodeNames( node ) {
     }
 }
 
+var spinnerSelector = '#spinner';
+function showSpinner( $container ) {
+    // put the spinner inside the specified container element (passed as jQuery selection)
+    // ? replace all of its contents?
+    var $spinner = $(spinnerSelector);
+    $container.append($spinner);
+    $spinner.show();
+}
+function hideSpinner() {
+    // restore spinner to its standby location
+    var $spinner = $(spinnerSelector);
+    $spinner.hide();
+    $('body').append($spinner);
+}
+
 /*
 function URLToHistoryState( url ) {
     // use to construct state for pasted-in URLs
@@ -310,6 +439,11 @@ function URLToHistoryState( url ) {
 }
 */
 
+function clearPropertyInspector() {
+    // clear all visible data (but not UI and re-usable elements) while new data is loading
+    $('#provenance-panel .provenance-intro, #provenance-panel .provenance-title, #provenance-panel dl').html('');
+    $('#provenance-panel .taxon-image').remove();
+}
 function showObjectProperties( objInfo ) {
     if ($('#provenance-show').is(':visible')) {
         // show property inspector if it's hidden
@@ -348,8 +482,6 @@ function showObjectProperties( objInfo ) {
         debugger;
     }
    
-    console.log('> showObjectProperties for '+ objType +' "'+ objName +'", ID='+ objID);
-
     // read more data from the existing tree-view JSON?
     if (argus.treeData) {
 
@@ -404,26 +536,23 @@ function showObjectProperties( objInfo ) {
                 }
 
                 if (fullNode) {
+                    /* dump all node properties
                     console.log("YES, found the full node... ");
-
                     for (var pp in fullNode) {
                         console.log(" fullNode."+ pp +" = "+ fullNode[pp]);
                     }
+                    */
 
                     // override incoming name and ID, but only if they're missing
                     if (!objName) {
                         objName = buildNodeNameFromTreeData( fullNode );
                     }
 
-                    if (fullNode.ottolId) {
-                        displayedProperties['OTT ID'] = fullNode.ottolId;
-                    }
-
-                    // show ALL sources (trees + IDs) for this node
+                    // show ALL taxonomic sources (taxonomies + IDs) for this node
                     // TODO: handle whatever scheme we use for multiple sources; for now,
                     // there's just one, or none.
                     if (fullNode.taxSource) {
-                        displayedProperties['Source tree'] = [
+                        displayedProperties['Source taxonomy'] = [
                             {
                                 taxSource: fullNode.taxSource,
                                 taxSourceId: fullNode.taxSourceId || '?',
@@ -432,6 +561,18 @@ function showObjectProperties( objInfo ) {
                             // TODO: add more here
                         ];
                     }
+                    if (fullNode.ottolId) {
+                        //displayedProperties['OTT ID'] = fullNode.ottolId;
+                        displayedProperties['Source taxonomy'].push(
+                            {
+                                taxSource: "OTT",
+                                taxSourceId: fullNode.ottolId
+                            }
+                        );
+                    }
+
+
+                    // TODO: show ALL source trees (phylo-trees + IDs) for this node
 
                     objID = fullNode.sourceID ? fullNode.sourceID : fullNode.nodeid;
                 } else {
@@ -445,11 +586,12 @@ function showObjectProperties( objInfo ) {
                     return (node.nodeid === objID); 
                 });
                 if (associatedChild) {
+                    /* dump all node properties
                     console.log("YES, found an associatedChild... ");
-
                     for (var pp in associatedChild) {
                         console.log(" child."+ pp +" = "+ associatedChild[pp]);
                     }
+                    */
 
                     if (typeof associatedChild.supportedBy !== 'undefined') {
                         displayedProperties['Supported by'] = associatedChild.supportedBy;
@@ -476,24 +618,64 @@ function showObjectProperties( objInfo ) {
      */
     var $details = $('#provenance-panel dl');
     $details.html('');
+
+    // remove any old thumbnail image
+    $('#provenance-panel .taxon-image').remove();
+    // for nodes, load a thumbnail silhouette from PhyloPic
+    if (objType === 'node') {
+        $.getJSON(
+            'http://phylopic.org/api/a/name/search?callback=?',  // JSONP fetch URL
+            {   // GET data
+                text: objName,
+                options: 'icon illustrated' // uid? string?
+            },
+            function(data) {    // JSONP callback
+                if (data.result && (data.result.length > 0) && data.result[0].icon && data.result[0].icon.uid) {
+                    $('#provenance-panel .provenance-title').after(
+                        '<img class="taxon-image" src="http://phylopic.org/assets/images/submissions/'+ data.result[0].icon.uid 
+                        +'.icon.png" title="Click for image credits"/>'       // 'thumb.png' = 64px, 'icon.png' = 32px and blue
+                    );
+                    $('#provenance-panel .taxon-image').unbind('click').click(function() {
+                        window.open('http://phylopic.org/image/'+ data.result[0].icon.uid +'/', '_blank');
+                    });
+                }
+            }
+        );
+    }
+
     var dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
     for(dLabel in displayedProperties) {
         switch(dLabel) {
-            case 'Source tree':
+            case 'Source taxonomy':
                 var sourceList = displayedProperties[dLabel];
                 for (i = 0; i < sourceList.length; i++) {
                     var sourceInfo = sourceList[i];
-                    displayVal = 'tree ID: '+ sourceInfo.taxSource;
-                    displayVal += '<br/>node ID: '+ sourceInfo.taxSourceId;
-                    if (sourceInfo.taxRank) {
-                        displayVal += '<br/>rank: '+ sourceInfo.taxRank;
+                    // build boilerplate URLs for common taxonomies
+                    switch(sourceInfo.taxSource.trim().toUpperCase()) {
+                        case 'NCBI':
+                            displayVal = '<a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id='+ sourceInfo.taxSourceId +'" target="_blank">NCBI: '+ sourceInfo.taxSourceId +'</a>';
+                            break;
+
+                        case 'GBIF':
+                            displayVal = '<a href="http://data.gbif.org/species/'+ sourceInfo.taxSourceId +'/" target="_blank">GBIF: '+ sourceInfo.taxSourceId +'</a>';
+                            break;
+
+                        case 'OTT': 
+                            // TODO: browse the OTT taxonomy in *local* window? or in a new one?
+                            displayVal = '<a href="/opentree/argus/ottol@'+ sourceInfo.taxSourceId +'" target="_blank">OTT: '+ sourceInfo.taxSourceId +'</a>';
+                            break;
+
+                        default:
+                            displayVal = '<span style="color: #777;" title="No URL for this taxonomy">GBIF: '+ sourceInfo.taxSourceId +'</span>';
+                            break;
                     }
-                }
-                if (sourceList.length > 0) {
+                    if (sourceInfo.taxRank) {
+                        displayVal += '<br/>Rank: '+ sourceInfo.taxRank;
+                    }
+
                     $details.append('<dt>'+ dLabel +'</dt>');
                     $details.append('<dd>'+ displayVal +'</dd>');
                 }
-
                 break;
 
             default:
@@ -662,10 +844,10 @@ function nodeDataLoaded( nodeTree ) {
     // update page title and page contents
     jQuery('#main-title').html( historyStateToPageHeading( improvedState ) );
     
-    // TODO: load provenance data for this view (all visible nodes and edges)?
+    // now that we have all view data, update the comments and comment editor
+    loadLocalComments();
     
     // update properties (provenance) panel to show the target node
-    console.log(">>> showing targetNode properties in nodeDataLoaded()...");
     showObjectProperties( targetNode );
 }
 

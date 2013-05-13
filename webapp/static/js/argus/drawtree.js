@@ -15,6 +15,8 @@ function createArgus(spec) {
     var o;
     var argusObj;
     var paper;
+    // use a series of "empty" elements to organize others by depth
+    var dividerBeforeEdges, dividerBeforeLabels, dividerBeforeHighlights, dividerBeforeNodes, dividerBeforeAnchoredUI;
 
     var getHoverHandlerNode;
     var getHoverHandlerEdge; // ie, a path
@@ -222,12 +224,21 @@ function createArgus(spec) {
 
             argusObjRef.xOffset = pwidth - argusObjRef.nodesWidth - argusObjRef.tipOffset;
 
+            hideSpinner();
+
             if (argusObjRef.container === undefined) {
                 paper = new Raphael(10, 10, 10, 10);
             } else {
                 paper = new Raphael(argusObjRef.container, 10, 10);
             }
             paper.setSize(pwidth, pheight);
+            
+            // add dividers before anything else
+            dividerBeforeEdges = paper.text(0,0,'');
+            dividerBeforeLabels = paper.text(0,0,'');
+            dividerBeforeHighlights = paper.text(0,0,'');
+            dividerBeforeNodes = paper.text(0,0,'');
+            dividerBeforeAnchoredUI = paper.text(0,0,'');
 
             // gather all controls that should anchor to the scrolling viewport
             if (!argusObj.anchoredControls) {
@@ -265,7 +276,7 @@ function createArgus(spec) {
                     "title": "Click to see properties for this node", // add name?
                     "stroke-width": "2px",
                     "fill": "white"
-                }).toFront()
+                }).insertBefore(dividerBeforeNodes)
             );
             argusObj.nodeProvenanceHighlight.push(
                 paper.text().attr({
@@ -277,7 +288,7 @@ function createArgus(spec) {
                     "fill": argusObj.provenanceHighlightColor,
                     "font-weight": "bold",
                     "font-size": 12 
-                })
+                }).insertBefore(dividerBeforeNodes)
             );
             // hide until user rolls over a node
             argusObj.nodeProvenanceHighlight.hide();
@@ -303,7 +314,7 @@ function createArgus(spec) {
                     "fill": argusObj.provenanceHighlightColor,
                     "title": "Click to see properties for this edge",
                     "stroke": "none"
-                }).toFront()
+                }).insertBefore(dividerBeforeNodes)
             );
             argusObj.edgeProvenanceHighlight.push(
                 // Draw a circle or smaller lozenge shape
@@ -314,7 +325,7 @@ function createArgus(spec) {
                     "stroke": argusObj.provenanceHighlightColor,
                     "stroke-width": "2px",
                     "fill": "white"
-                }).toFront()
+                }).insertBefore(dividerBeforeNodes)
             );
             argusObj.edgeProvenanceHighlight.push(
                 paper.text().attr({
@@ -326,7 +337,7 @@ function createArgus(spec) {
                     "fill": argusObj.provenanceHighlightColor,
                     "font-weight": "bold",
                     "font-size": 12 
-                })
+                }).insertBefore(dividerBeforeNodes)
             );
             // hide until user rolls over an edge
             argusObj.edgeProvenanceHighlight.hide();
@@ -372,6 +383,7 @@ function createArgus(spec) {
             contentType: 'application/json',
             success: ajaxSuccess,
             error: function (jqXHR, textStatus, errorThrown) {
+                hideSpinner();
                 $(".flash").html("Error: Node lookup failed").slideDown();
                 $(this.container).html('<p style="margin: 8px 12px;">Whoops! The call to get the tree around a node did not work out the way we were hoping it would. That is a real shame.  I\'m not sure what to suggest...</p>');
             }
@@ -413,6 +425,10 @@ function createArgus(spec) {
             paper.clear();
             paper.remove();
         }
+
+        clearPropertyInspector();
+        showSpinner($(this.container));
+
         /* The next 9 lines store the last call to displayNode. We'll need to move this, if we use other functions as "public" entry points of Argus calls*/
         if (o.storeThisCall === undefined || o.storeThisCall) {
             if (this.currDisplayContext !== undefined) {
@@ -634,13 +650,13 @@ function createArgus(spec) {
                 "fill": ((isTargetNode || isActualLeafNode) ? this.bgColor : this.tipColor),
                 "title": "Click to move to this node",
                 "stroke": this.pathColor
-            }).toFront();
+            }).insertBefore(dividerBeforeAnchoredUI);
 
             label = paper.text(node.x + this.xLabelMargin, node.y, node.name).attr({
                 'text-anchor': 'start',
                 "fill": this.labelColor,
                 "font-size": fontSize
-            });
+            }).insertBefore(dividerBeforeHighlights);
 
             circle.hover(getHoverHandlerNode('OVER', circle, {
                 "fill": this.tipHoverColor
@@ -684,12 +700,12 @@ function createArgus(spec) {
                 'text-anchor': 'end',
                 "fill": this.labelColor,
                 "font-size": fontSize
-            });
+            }).insertBefore(dividerBeforeHighlights);
             circle = paper.circle(node.x, node.y, node.r).attr({
                 "fill": (isTargetNode ? this.pathColor : this.nodeColor),
                 "title": "Click to move to this node",
                 "stroke": this.pathColor
-            });
+            }).insertBefore(dividerBeforeAnchoredUI);
 
             // assign hover behaviors
             circle.hover(getHoverHandlerNode('OVER', circle, {
@@ -702,20 +718,23 @@ function createArgus(spec) {
             spineSt = "M" + node.x + " " + node.children[0].y + "L" + node.x + " " + node.children[nchildren - 1].y;
             paper.path(spineSt).toBack().attr({
                 "stroke": this.pathColor
-            });
+            }).insertBefore(dividerBeforeLabels);
             for (i = 0; i < nchildren; i++) {
                 branchSt = "M" + node.x + " " + node.children[i].y + "L" + node.children[i].x + " " + node.children[i].y;
-                // draw the visible path
+                
+                // draw a wide, invisible path to detect mouse-over
+                triggerPath = paper.path(branchSt).toBack().attr({
+                    "stroke-width": "5px",
+                    "stroke": this.bgColor
+                }).insertAfter(dividerBeforeEdges);
+                // NOTE that these are pushed behind all visible paths!
+                
+                // ... and a congruent, visible path
                 visiblePath = paper.path(branchSt).toBack().attr({
                     "stroke-width": "1px",
                     "stroke": this.pathColor
-                });
+                }).insertBefore(dividerBeforeLabels);
                 
-                // ... and a wider invisible path to detect mouse-over
-                triggerPath = paper.path(branchSt).toBack().attr({
-                    "stroke-width": "5px",
-                    "stroke": "white" //this.bgColor
-                });
                 // assign hover behaviors
                 triggerPath.hover(getHoverHandlerEdge('OVER', triggerPath, {}), getHoverHandlerEdge('OUT', triggerPath, {}));
 
@@ -748,7 +767,7 @@ function createArgus(spec) {
                         "stroke": this.pathColor,
                         "stroke-dasharray": '- ',
                         "opacity": pathOpacity
-                    });
+                    }).insertBefore(dividerBeforeLabels);
 
                     var ancestorNode, ancestorCircle;
                     if (i < maxUpwardNodes) {
@@ -758,12 +777,12 @@ function createArgus(spec) {
                             "fill": this.nodeColor,
                             "title": "Click to move to this node",
                             "stroke": this.pathColor
-                        });
-                        paper.text(endX - (this.minTipRadius * 1.2), endY + (this.minTipRadius * 1.2), ancestorNode.name).attr({
+                        }).insertBefore(dividerBeforeAnchoredUI);
+                        paper.text(endX - (this.minTipRadius * 1.2), endY + (this.minTipRadius * 1.2), ancestorNode.name || "unnamed").attr({
                             'text-anchor': 'end',
                             "fill": this.labelColor,
                             "font-size": fontSize
-                        });
+                        }).insertBefore(dividerBeforeHighlights);
 
                         // add handlers and metadata
                         ancestorCircle.click(getClickHandlerNode(ancestorNode.nodeid, domSource, ancestorNode.name));
@@ -900,7 +919,9 @@ function createArgus(spec) {
             "cursor": "pointer",
             "title": (conflictsInView) ? conflictLabel : disabledConflictLabel,
             "opacity": (conflictsInView) ? 1.0 : 0.4
-        }).click(toggleAltRels(altrelsset));
+        }).insertAfter(dividerBeforeAnchoredUI)
+          .click(toggleAltRels(altrelsset));
+                        
         argusObj.anchoredControls.push(togglebox);
 
         togglelabel = paper.text(tx + (this.nodesWidth/2),
@@ -911,9 +932,9 @@ function createArgus(spec) {
             "font-size": fontSize,
             "title": (conflictsInView) ? conflictLabel : disabledConflictLabel,
             "opacity": (conflictsInView) ? 1.0 : 0.4
-        });
+        }).insertAfter(dividerBeforeAnchoredUI);
+        
         // label on top needs identical action as box
-        //ktogglelabel.insertAfter(togglebox);
         togglelabel.click(toggleAltRels(altrelsset));
         argusObj.anchoredControls.push(togglelabel);
 

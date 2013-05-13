@@ -20,15 +20,38 @@ function plugin_localcomments_init() {
        delete_all_forms();
        return false;
      });
-    jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
+
+     // adjust UI for thread starters versus replies
+     var threadParentID = $('.plugin_localcomments form').parent().prev().attr('id').split('r')[1];
+     console.log('threadParentID:'+ threadParentID);
+     var isThreadStarter = threadParentID == 0;
+     if (isThreadStarter) {
+         //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'General comment' );
+         jQuery('div.plugin_localcomments select[name=feedback_type]').show();
+         jQuery('div.plugin_localcomments select[name=intended_scope]').show();
+     } else {
+         //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'Reply or general comment' );
+         jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
+         jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
+     }
+     // always hide expertise checkbox and surrounding label (not currently needed)
+     jQuery('div.plugin_localcomments label.expertise-option').hide();
+
+     jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
       var $form = jQuery(this).parent();
       jQuery.post(action,
            {
                ////$'thread_parent_id': form.find('input[name="thread_parent_id"]').val(),
-               'thread_parent_id': $form.parent().prev().attr('id').split('r')[1], 
+               'thread_parent_id': threadParentID,    ///$form.parent().prev().attr('id').split('r')[1], 
+               'synthtree_id': $form.find('input[name="synthtree_id"]').val(),
+               'synthtree_node_id': $form.find('input[name="synthtree_node_id"]').val(),
+               'sourcetree_id': $form.find('input[name="sourcetree_id"]').val(),
+               'sourcetree_node_id': $form.find('input[name="sourcetree_node_id"]').val(),
+               'ottol_id': $form.find('input[name="ottol_id"]').val(),
                'url': $form.find('input[name="url"]').val(),
                'body': $form.find('textarea[name="body"]').val(),
                'feedback_type': $form.find('select[name="feedback_type"]').val(),
+               'intended_scope': $form.find('select[name="intended_scope"]').val(),
                'claimed_expertise': $form.find(':checkbox[name="claimed_expertise"]').is(':checked')
            },
            function(data,r){ 
@@ -117,10 +140,18 @@ def index():
     # TODO: break this up into more sensible functions, and refactor
     # display/markup generation to shared code?
 
-    url = request.vars['url'] # if not provided, show all
+    synthtree_id = request.vars['synthtree_id']
+    synthtree_node_id = request.vars['synthtree_node_id']
+    sourcetree_id = request.vars['sourcetree_id']
+    sourcetree_node_id = request.vars['sourcetree_node_id']
+    ottol_id = request.vars['ottol_id']
+    url = request.vars['url']
+
+    filter = request.vars['filter']
     thread_parent_id = request.vars['thread_parent_id'] # can be None
     comment_id = request.vars['comment_id'] # used for some operations (eg, delete)
     feedback_type = request.vars['feedback_type'] # used for new comments
+    intended_scope = request.vars['intended_scope'] # used for new comments
     claims_expertise = request.vars['claimed_expertise'] # used for new comments
     thread = {0:[]}
     def node(comment):
@@ -131,8 +162,9 @@ def index():
                     # not sure why this doesn't work... db.auth record is not a mapping!?
                     DIV(comment.body,_class='body'),
                     DIV(T('%s ',comment.created_by.first_name),T('%s',comment.created_by.last_name), 
-                        SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
+                        # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
                         SPAN(' [',comment.feedback_type,']',_class='badge') if comment.feedback_type else '',
+                        SPAN(' [',comment.intended_scope,']',_class='badge') if comment.intended_scope else '',
                         T(' - %s',prettydate(comment.created_on,T)),
                         SPAN(
                             A(T('hide replies'),_class='toggle',_href='#'),
@@ -171,16 +203,32 @@ def index():
         if not request.vars.body or not auth.user_id:
             return error()
         dbco.thread_parent_id.default = thread_parent_id
+        dbco.synthtree_id.default = synthtree_id
+        dbco.synthtree_node_id.default = synthtree_node_id
+        dbco.sourcetree_id.default = sourcetree_id
+        dbco.sourcetree_node_id.default = sourcetree_node_id
+        dbco.ottol_id.default = ottol_id
         # TODO: normalize URLs to handle trailing '/', fragments, etc.
         dbco.url.default = url.strip()
         dbco.created_by.default = auth.user_id
         dbco.feedback_type.default = feedback_type
+        dbco.intended_scope.default = intended_scope
         dbco.claimed_expertise.default = claims_expertise
         if len(re.compile('\s+').sub('',request.vars.body))<1:
             return ''
         item = dbco.insert(body=request.vars.body.strip())
         return node(item)                
-    comments = db(dbco.url==url).select(orderby=~dbco.created_on)
+
+    # retrieve related comments, based on the chosen filter
+    if filter == 'synthtree_id,synthtree_node_id':
+        comments = db((dbco.synthtree_id==synthtree_id) & (dbco.synthtree_node_id==synthtree_node_id)).select(orderby=~dbco.created_on)
+    elif filter == 'sourcetree_id,sourcetree_node_id':
+        comments = db((dbco.sourcetree_id==sourcetree_id) & (dbco.sourcetree_node_id==sourcetree_node_id)).select(orderby=~dbco.created_on)
+    elif filter == 'ottol_id':
+        comments = db(dbco.ottol_id==ottol_id).select(orderby=~dbco.created_on)
+    else:   # fall back to url
+        comments = db(dbco.url==url).select(orderby=~dbco.created_on)
+
     for comment in comments:
         thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
     return DIV(script,
@@ -195,8 +243,20 @@ def index():
                             OPTION('Bug report (website behavior)', _value='Bug report'),
                             OPTION('New feature request', _value='Feature request'),
                         _name='feedback_type', value=''),
-                        LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;'),
-                        TEXTAREA(_name='body',_style='width:100%; height: 40px'),
+                        T(' '),
+                        SELECT(
+                            OPTION('about node placement in the synthetic tree', _value='Re: synthetic tree'),
+                            OPTION('about node placement in the source tree', _value='Re: source tree'),
+                            OPTION('about taxon data in OTT', _value='Re: OTT taxon'),
+                            OPTION('general feedback (none of the above)', _value=''),
+                        _name='intended_scope', value='synthtree'),
+                        LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
+                        TEXTAREA(_name='body',_style='width:100%; height: 50px; margin-top: 4px;'),
+                        INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
+                        INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
+                        INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
+                        INPUT(_type='hidden',_name='sourcetree_node_id',_value=sourcetree_node_id),
+                        INPUT(_type='hidden',_name='ottol_id',_value=ottol_id),
                         INPUT(_type='hidden',_name='url',_value=url),
                         # INPUT(_type='text',_name='thread_parent_id',_value=0),   # we'll get this from a nearby id, eg 'r8'
                         INPUT(_type='submit',_value=T('post'),_style='float:right'), 

@@ -81,6 +81,15 @@ body {
     overflow: auto;
 }
 
+#provenance-show,
+#provenance-hide {
+    text-decoration: none !important;
+    font-family: Helvetica, Arial, serif;
+    font-size: 0.9em;
+    line-height: 1.4em;
+    color: #555;
+}
+
 #provenance-show {
     display: none;
     float: right;
@@ -118,6 +127,16 @@ body {
     font-family: Helvetica, Arial, serif;
     font-size: 130%;
     color: #000;
+    margin-right: 65px; /* leave room for an PhyloPic image */
+}
+#provenance-panel .taxon-image {
+    float: right;
+    margin-top: -40px;
+    margin-right: 26px;
+    width: 32px;
+    height: 32px;
+    background: url(/opentree/static/images/phylopic-vignette.png) center center no-repeat;
+    padding: 2px;
 }
 .panel-content dl {
     margin: 6px 0 12px;
@@ -179,4 +198,22 @@ div#r0 {
 }
 #node-provenance-panel h3 {
     margin: 0 0 0.5em;
+}
+
+/* center the big spinner inside the argus viewport */
+#argusCanvasContainer #spinner {
+    margin: 100px 0 0 200px;
+}
+
+#footer {
+    font-size: 80%;
+    border-top: 1px solid #ccc;
+    overflow: hidden;
+    padding: 0.5em 0 0.25em;
+}
+#footer  .pull-left{
+    float: left;
+}
+#footer  .pull-right{
+    float: right;
 }
