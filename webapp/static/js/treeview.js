@@ -340,7 +340,7 @@ function historyStateToURL( stateObj ) {
     var safeNodeName = null;
     if (stateObj.nodeName) {
         // replace characters considered unsafe (blocked) by web2py
-        safeNodeName = stateObj.nodeName.replace(/[:()]./g, '-');
+        safeNodeName = stateObj.nodeName.replace(/[:(), ]+/g, '-');
     }
     return '/opentree'+ (stateObj.viewer ? '/'+stateObj.viewer : '') +'/'+ stateObj.domSource +'@'+ stateObj.nodeID + (safeNodeName ? '/'+ safeNodeName : '');
 }
