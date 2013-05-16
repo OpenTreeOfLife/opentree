@@ -698,7 +698,7 @@ function showObjectProperties( objInfo ) {
                             }
                             if (typeof moreInfo === 'object') {
                                 if (moreInfo['study']) {
-                                    var pRef, pCompactRef, pRefParts, pDOI, pURL, pID, pCurator;
+                                    var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pRefParts, pDOI, pURL, pID, pCurator;
                                     // assemble and display study info
                                     pRef = moreInfo.study['ot:studyPublicationReference'];
                                     pID = moreInfo.study['ot:studyId'];
@@ -711,7 +711,12 @@ function showObjectProperties( objInfo ) {
                                     // be careful, in case we have an incomplete or badly-formatted reference
                                     if (pRef) {
                                         // we'll show compact reference instead, with full ref a click away
-                                        pRefCompact = "Smith, 1999";
+                                        pCompactYear = pRef.match(/(\d{4})/)[0];  
+                                            // capture the first valid year
+                                        pCompactPrimaryAuthor = pRef.split(pCompactYear)[0].split(',')[0];
+                                            // split on the year to get authors (before), and capture the first surname
+                                        pRefCompact = pCompactPrimaryAuthor +", "+ pCompactYear;    // eg, "Smith, 1999";
+
                                         pRefParts = pRef.split('doi:');
                                         if (pRefParts.length === 2) {
                                             pDOI = pRefParts[1].trim();
