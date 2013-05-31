@@ -34,7 +34,7 @@ if ( History && History.enabled && pageUsesHistory ) {
             var treeNodeID;
             $.ajax({
                 type: 'POST',
-                url: 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getNodeIDForOttolID',
+                url: getNodeIDForOttolID_url,
                 data: {'ottolID': String(ottolID)},
                 success: function(data) {
                     argus.displayNode({"nodeID": data,
@@ -153,8 +153,8 @@ $(document).ready(function() {
     argus = createArgus({
       "domSource": "ottol",
       "container": $('#argusCanvasContainer')[0], // get the "raw" element, not a jQuery set
-      //"treemachineDomain": "{{=treemachine_domain}}",
-      //"taxomachineDomain": "{{=taxomachine_domain}}",
+      "treemachineDomain": treemachine_domain,    // "global" vars from main page template
+      "taxomachineDomain": taxomachine_domain,
       "useTreemachine": true, // TODO: pivot based on domSource? treeID?
       "useSyntheticTree": true, // TODO: pivot based on domSource? treeID?
       "maxDepth": 3
@@ -248,7 +248,7 @@ function searchForMatchingTaxa() {
     // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
     $('#search-results').html('<i>Search in progress...</i>');
     $.ajax({
-        url: 'http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames',  /// ?callback=?',
+        url: doTNRSForNames_url,
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({ 
@@ -779,7 +779,7 @@ function showObjectProperties( objInfo ) {
                 /* OR this will load the Newick-tree text to show it in-browser
                 $.ajax({
                     type: 'POST',
-                    url: 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getDraftTreeForOttolID',
+                    url: getDraftTreeForOttolID_url,
                     data: {
                         'ottolID': String(ottolID),
                         'maxDepth': String(subtreeDepthLimit),
