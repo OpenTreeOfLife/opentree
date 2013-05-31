@@ -64,8 +64,6 @@ def get_logger(request, name):
         logger.is_configured = True
     return logger
 
-
-
 def get_opentree_services_domains(request):
     '''
     Reads the local configuration to get the domains and returns a dictionary
@@ -91,4 +89,37 @@ def get_opentree_services_domains(request):
             ret['taxomachine_domain'] = conf.get('domains', 'taxomachine')
         except:
             pass
+    return ret
+
+def get_opentree_services_method_urls(request):
+    '''
+    Reads the local configuration to build on domains and return a dictionary
+        with keys:
+            treemachine_domain
+            taxomachine_domain
+        whose values are URLs combining domain and partial paths
+
+    This is useful for debugging and for adapting to different ways of 
+        configuring services, eg, proxied through a single domain 
+        (see private/conf.example)
+    '''
+    domains = get_opentree_services_domains(request)
+
+    conf = get_conf(request)
+    ret = {
+        'treemachine_domain' : domains['treemachine_domain'],
+        'taxomachine_domain' : domains['taxomachine_domain'],
+        'getSyntheticTree_url' : conf.get('method_urls', 'getSyntheticTree_url'),
+        'getSourceTree_url' : conf.get('method_urls', 'getSourceTree_url'),
+        'getConflictTaxJsonAltRel_url' :conf.get('method_urls', 'getConflictTaxJsonAltRel_url'),
+        'getDraftTreeForOttolID_url' : conf.get('method_urls', 'getDraftTreeForOttolID_url'),
+        'getDraftTreeForNodeID_url' : conf.get('method_urls', 'getDraftTreeForNodeID_url'),
+        'doTNRSForNames_url' : conf.get('method_urls', 'doTNRSForNames_url'),
+        'getNodeIDForOttolID_url' : conf.get('method_urls', 'getNodeIDForOttolID_url'),
+        'getJSONFromNode_url' : conf.get('method_urls', 'getJSONFromNode_url'),
+    }
+    # for property, value in vars(ret).iteritems():
+    for k,v in ret.iteritems():
+        ret[k] = v.replace('{treemachine_domain}', domains['treemachine_domain']).replace('{taxomachine_domain}', domains['taxomachine_domain'])
+
     return ret

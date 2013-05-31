@@ -7,6 +7,19 @@
     {{response.files.append(URL('static','plugin_localcomments/css/localcomments.css'))}}
     
     <!-- js dependencies for argus -->
+    <script type="text/javascript">
+        // make important domains available to client-side code
+        var treemachine_domain = "{{=treemachine_domain}}";
+        var taxomachine_domain = "{{=taxomachine_domain}}";
+        var getSyntheticTree_url = "{{=getSyntheticTree_url}}";
+        var getSourceTree_url = "{{=getSourceTree_url}}";
+        var getConflictTaxJsonAltRel_url = "{{=getConflictTaxJsonAltRel_url}}";
+        var getDraftTreeForOttolID_url = "{{=getDraftTreeForOttolID_url}}";
+        var getDraftTreeForNodeID_url = "{{=getDraftTreeForNodeID_url}}";
+        var doTNRSForNames_url = "{{=doTNRSForNames_url}}";
+        var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
+        var getJSONFromNode_url = "{{=getJSONFromNode_url}}";
+    </script>
     {{response.files.append(URL('static','js/argus/raphael-min.js'))}}
     {{response.files.append(URL('static','js/argus/drawtree.js'))}}
 
