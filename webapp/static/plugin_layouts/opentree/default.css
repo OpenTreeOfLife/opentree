@@ -7,24 +7,42 @@ body {
 */
 .header {
 	margin: 2px; 
-	width: 775px;
-	height: 75;
+	height: 85px;
 }
 .headerlogo {
 	float: left;
 }
-.headersearch {	
-	float: right;
-	margin: 5px;
-	width: 600px;
-	margin-top: 25px;
+.sidebar-search {	
+    background-color: #ffc;
+    border: 1px solid #dda;
+    border-radius: 4px;
+    margin: -3px;
+    padding: 8px 4px;
 }
-.headerinputtext {
-	margin-left: 2px; 
-	width: 480px; 
-	border: 1px solid black;
+.sidebar-search form {	
+    margin: 0;
 }
-
+#search-results i {
+    display: block; 
+    margin: 8px 0 0;
+}
+.search-result {
+    margin: 6px 12px 0px;
+}
+.search-result strong {
+    display: block;
+}
+.search-result div {
+    font-size: 80%;
+    padding-left: 12px;
+}
+.search-result a {
+    color: #333;
+    text-decoration: none;
+}
+.search-result strong a {
+    color: #000;
+}
 .container {
 	width:100%;
 }
@@ -36,8 +54,166 @@ body {
 	float: left;
 }
 .vizcontent {
-	padding-left: 200px;
+	margin-left: 210px;
 }
-.vizcontent div {
+
+#viewer-collection {
+    position: relative; /* force to fg versus #provenance-show */
+    overflow: hidden;
+    height: 90%; /* don't fill to the current viewport */
+    border: 2px solid #999;
+    border-radius: 8px;
+    margin: 0px;
+}
+#viewer-collection,
+#provenance-panel {
+    background-color: #eee;
+    /* display: table-cell; */
+}
+.vizcontent div.viewer-frame, 
+#provenance-panel {
+    float: left;
+    height: 100%;
+}
+.vizcontent div.viewer-frame {
 	padding: 0px;
+    background-color: #f5f5ec; /* #faf5ee; */
+    overflow: auto;
+}
+
+#provenance-show,
+#provenance-hide {
+    text-decoration: none !important;
+    font-family: Helvetica, Arial, serif;
+    font-size: 0.9em;
+    line-height: 1.4em;
+    color: #555;
+}
+
+#provenance-show {
+    display: none;
+    float: right;
+    margin: -24px 22px -10px 0;
+    padding: 2px 10px 8px;
+    /* color: #555; */
+    text-decoration: none;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    border-radius-bottom: 0;
+}
+
+#provenance-panel {
+    overflow: auto;
+    /* adding full-height divider, subtracting from width */
+    border-left: 2px solid #999;
+    margin-right: -2px;
+}
+#provenance-panel .panel-content {
+    /* isolating any style that might affect widths above */
+    padding: 9px 0 0 12px;
+}
+.panel-content {
+}
+.panel-controls {
+    float: right;
+    margin: -6px 10px 2px 2px;
+}
+.provenance-intro {
+    font-size: 110%;
+    color: #777;
+}
+.provenance-title {
+    font-family: Helvetica, Arial, serif;
+    font-size: 130%;
+    color: #000;
+    margin-right: 65px; /* leave room for an PhyloPic image */
+}
+#provenance-panel .taxon-image {
+    float: right;
+    margin-top: -40px;
+    margin-right: 26px;
+    width: 32px;
+    height: 32px;
+    background: url(/opentree/static/images/phylopic-vignette.png) center center no-repeat;
+    padding: 2px;
+}
+.panel-content dl {
+    margin: 6px 0 12px;
+}
+.panel-content dl dt {
+    color: #777;
+}
+.panel-content dl dd {
+    margin-left: 12px;
+    color: #000;
+    margin-bottom: 4px;
+}
+a.full-ref-toggle {
+    color: #999 !important;
+    text-decoration: none;
+}
+.full-ref {
+    background-color: #fff;
+    border: 1px solid #eee;
+    margin: 0px 12px 0px -6px;
+    padding: 4px 6px;
+    display: none;
+}
+.full-ref-curator {
+    color: #777;
+    display: none;
+}
+
+p#tree-description {
+    color: #aaa;
+    font-size: 135%;
+    padding: 3px 0 0 0;
+    font-weight: bold;
+    margin: 0;
+}
+h1#main-title {
+    margin: 0;
+    padding: 2px 0 0.5em;
+}
+h1#comment-header {
+    margin: 0;
+    padding: 10px 0 0.5em;
+}
+h1#comment-header i {
+    color: #999;
+    padding: 0.75em 0 0.5em;
+}
+div#links-to-local-comments,
+div#r0 {
+    margin: -12px 0 12px;
+}
+
+#node-provenance-panel {
+    margin: 8px 0 0;
+    background-color: #eee;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 9px 12px;
+}
+#node-provenance-panel h3 {
+    margin: 0 0 0.5em;
+}
+
+/* center the big spinner inside the argus viewport */
+#argusCanvasContainer #spinner {
+    margin: 100px 0 0 200px;
+}
+
+#footer {
+    font-size: 80%;
+    border-top: 1px solid #ccc;
+    overflow: hidden;
+    padding: 0.5em 0 0.25em;
+}
+#footer  .pull-left{
+    float: left;
+}
+#footer  .pull-right{
+    float: right;
 }

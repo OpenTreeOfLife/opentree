@@ -1,0 +1,92 @@
+{{extend 'layout.html'}}
+<p>Pre vars dump</p>
+<p>{{=treemachine_domain}}</p>
+<p>{{=taxomachine_domain}}</p>
+<p>Post vars dump</p>
+
+<p>Pre DB p element</p>
+<div id="argusDBContainer" />
+<p>Post DB p element</p>
+
+<div class="container">
+  <div class="navbar">
+
+      <br />
+
+      <strong><a href="">Eukaryota</a></strong>
+      <br />
+      <span style="margin-left:1em; font-size: 80%;">
+      &raquo; cellular organisms </span>
+      <br />
+      <span style="margin-left:1em; font-size: 80%;">
+      &raquo; life </span>
+      <br />
+      <br />
+
+      <strong><a href="">Second search result</a></strong>
+      <br />
+      <span style="margin-left:1em; font-size: 80%;">
+      &raquo; parent taxon </span>
+      <br />
+      <span style="margin-left:1em; font-size: 80%;">
+      &raquo; grandparent taxon </span>
+      <br />
+      <br />
+
+      <hr />
+      <br />
+
+      <a href="extract.html">Extract subtree</a>
+      <br />
+
+      <a href="about.html">About the tree</a>
+      <br />
+
+      <a href="http://www.reelab.net/phylografter">Source tree manager</a>
+      <br />
+
+      <a href="download.html">Download</a>
+      <br />
+
+      <a href="credits.html">Credits</a>
+      <br />
+      <br />
+      <hr />
+      <i>What's new:</i>
+      <p style="margin-left:2em; font-size: 80%;">
+        New in version 0.73: Something very cool
+      </p>
+
+    </div>
+    <div class="vizcontent">
+      <div id="argusCanvasContainer">  
+      </div>
+    </div>
+  </div>
+
+
+<script type="text/javascript">
+$(document).ready(function (){
+  {{if tree_id is None: }}
+    var treeID = "otol.draft.22";
+  {{else:}}
+    var treeID = "{{=tree_id}}";
+  {{pass}}
+  {{if node_id is None: }}
+    var nodeID = undefined;
+  {{else:}}
+    var nodeID = "{{=node_id}}";
+  {{pass}}
+  var argus = createArgus({
+    "domSource": "ottol",
+    "container": document.getElementById("argusCanvasContainer"),
+    "treemachineDomain": "{{=treemachine_domain}}",
+    "taxomachineDomain": "{{=taxomachine_domain}}",
+    "useTreemachine": true,
+    "useSyntheticTree": true,
+    "maxDepth": 3
+  });
+  argus.displayNode({"nodeID" : nodeID, 
+                     "domSource" : treeID});
+});
+</script>

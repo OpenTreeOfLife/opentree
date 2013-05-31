@@ -8,6 +8,14 @@ Installation
 Instructions coming soon. In the meantime, see the phylografter instructions for
 more details about using web2py.
 
+The included **requirements.txt** file lists known-good versions of all the required
+python modules for opentree, plus a few convenience modules. To [install these modules 
+using pip](http://www.pip-installer.org/en/latest/cookbook.html#requirements-files), 
+
+<pre>
+pip install -r requirements.txt
+</pre>
+
 The contents of the webapp subdirectory  are a web2py application.  Make a symbolic 
 link called "opentree" in a web2py/applications directory to the webapp directory.
 You should be able to launch web2py and see the app running at http://127.0.0.1:8000/opentree/
@@ -70,3 +78,18 @@ webapp/languages
 
 webapp/cache, webapp/databases, webapp/errors, webapp/sessions, webapp/uploads
 : directories used by web2py to store content associated with user's activities. Content here should not need to be committed to version control.
+
+Acknowledgements
+----------------
+Argus uses Raphaeljs and jQuery libraries.
+
+Arrow icons are from http://raphaeljs.com/icons those icons are licensed under the followin MIT license:
+=====================================================================================
+Copyright © 2008 Dmitry Baranovskiy
+
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+The software is provided “as is”, without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software.
+=====================================================================================

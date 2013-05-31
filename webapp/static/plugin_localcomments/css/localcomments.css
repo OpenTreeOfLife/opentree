@@ -1,0 +1,45 @@
+/* style for local (URL-based) comments */
+div.plugin_localcomments {
+    /* border: 1px dashed pink; */
+    width: 800px;
+    margin-bottom: 30px;
+}
+div.plugin_localcomments .byline {
+    background-color: #f5f5f5;
+    color: #888;
+    margin: 0px -4px 6px;
+    padding: 2px 4px;
+}
+div.plugin_localcomments .byline .badge {
+    color: #080;
+}
+div.plugin_localcomments .deleted .controls,
+div.plugin_localcomments .byline .controls {
+    padding-left: 20px;
+}
+.plugin_localcomments form {
+    /* border: 1px dashed mint; */
+}
+.plugin_localcomments ul {
+    list-style: none;
+    padding-left: 5px;
+    margin: 0;
+}
+.plugin_localcomments .body {
+    font-size: 120%;
+    padding: 3px 0 0;
+}
+.plugin_localcomments ul ul {
+    padding-left: 20px;
+    border-left: 1px dotted #ccc;
+}
+.plugin_localcomments ul li {
+    /* border: 1px dashed silver; */
+}
+.plugin_localcomments ul div.deleted {
+    color: #933;
+    margin-top: 5px;
+}
+.plugin_localcomments ul div.reply {
+    padding-left: 24px;
+}
