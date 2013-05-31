@@ -1,4 +1,7 @@
 # -*- coding: utf-8 -*-
+from opentreewebapputil import get_opentree_services_domains
+from opentreewebapputil import get_opentree_services_method_urls
+
 ### required - do no delete
 def user(): return dict(form=auth())
 def download(): return response.download(request,db)
@@ -19,7 +22,7 @@ def index():
     #   http://opentree.com/opentree/argus/0,23,100,400/ottol@123456/Homo+sapiens
 
     # modify the normal view dictionary to include location+view hints from the URL
-    treeview_dict = dict()
+    treeview_dict = get_opentree_services_method_urls(request)
     treeview_dict['viewer'] = 'argus'
     treeview_dict['domSource'] = ''
     treeview_dict['nodeID'] = ''
@@ -70,12 +73,14 @@ def download_subtree():
         from gluon.tools import fetch
         import simplejson
 
+        method_dict = get_opentree_services_method_urls(request)
+
         # use the appropriate web service for this ID type
         if id_type == 'ottol-id':
-            fetch_url = 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getDraftTreeForOttolID'
+            fetch_url = method_dict['getDraftTreeForOttolID_url']
             fetch_args = {'ottolID': node_or_ottol_id, 'maxDepth': max_depth}
         else:
-            fetch_url = 'http://opentree-dev.bio.ku.edu:7474/db/data/ext/GoLS/graphdb/getDraftTreeForNodeID'
+            fetch_url = method_dict['getDraftTreeForNodeID_url']
             fetch_args = {'nodeID': node_or_ottol_id, 'maxDepth': max_depth}
 
         # apparently this needs to be a POST, or it just describes the API

@@ -141,23 +141,16 @@ function createArgus(spec) {
     //      data -- object to be sent to the server
     //      httpMethod -- (currently "POST")
     argusObj.buildAjaxCallInfo = function (o) {
-        //var address = "http://localhost:7474"
-        var address;
-        var prefix;
-        var suffix;
         var url;
         var ds;
         var ajaxData;
 
         if (this.useTreemachine) {
-            address = this.treemachineDomain;
-            prefix = address + "/db/data/ext/GoLS/graphdb/";
             if (this.useSyntheticTree) {
-                suffix = "getSyntheticTree";
+                url = getSyntheticTree_url;
             } else {
-                suffix = "getSourceTree";
+                url = getSourceTree_url;
             }
-            url = prefix + suffix;
             // default is the classic "tree 4 in phylografter"
             ds = o.domSource === undefined ? "4" : o.domSource;
             ajaxData = {
@@ -169,10 +162,7 @@ function createArgus(spec) {
                 ajaxData.subtreeNodeID = String(o.nodeID);
             }
         } else {
-            address = this.taxomachineDomain;
-            prefix = address + "/db/data/ext/GetJsons/node/";
-            suffix = "/getConflictTaxJsonAltRel";
-            url = prefix + o.nodeID + suffix;
+            url = getConflictTaxJsonAltRel_url.replace('{nodeID}', o.nodeID);
             // @TEMP assuming ottol
             ds = o.domSource === undefined ? "ottol" : o.domSource;
             ajaxData = {"domsource": ds}; // phylotastic TNRS API wants domsource, MTH believes.
