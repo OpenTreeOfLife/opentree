@@ -169,6 +169,7 @@ public class Smasher {
         PrintStream out = System.out;
         Map<Long, String[]> a = readTable(afile);
         Map<Long, String[]> b = readTable(bfile);
+        System.err.println("# Sizes: " + a.size() + " " + b.size());
         for (Long id : a.keySet()) {
             String[] brow = b.get(id);
             if (brow != null) {
@@ -181,9 +182,12 @@ public class Smasher {
                     out.print(brow[j]);
                     out.print("\t");
                 }
+                out.println();
             }
         }
     }
+
+	static Pattern tabPattern = Pattern.compile("\t");
 
     static Map<Long, String[]> readTable(String filename) throws IOException {
         FileReader fr = new FileReader(filename);
@@ -191,7 +195,7 @@ public class Smasher {
         String str;
         Map<Long, String[]> rows = new HashMap<Long, String[]>();
 		while ((str = br.readLine()) != null) {
-			String[] parts = Taxonomy.p.split(str);
+			String[] parts = tabPattern.split(str);
             Long id;
             try {
                 id = new Long(parts[0]);
