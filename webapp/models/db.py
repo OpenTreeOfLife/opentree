@@ -124,3 +124,9 @@ else:
 mail.settings.server = settings.email_server
 mail.settings.sender = settings.email_sender
 mail.settings.login = settings.email_login
+
+# recognize and re-import any modules if file has changed (ie, after git pull)
+from gluon.custom_import import track_changes
+track_changes(True)
+
+
