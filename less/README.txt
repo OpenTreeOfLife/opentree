@@ -76,9 +76,4 @@ Or, to generate compressed/minified CSS:
     $ lessc --compress custom-bootstrap.less > ../webapp/static/css/bootstrap.min.css 
     $ lessc --compress custom-responsive.less > ../webapp/static/css/bootstrap-responsive.min.css 
 
-To update 
-
-    $ cd opentree/less
-    $ lessc --compress custom-bootstrap.less > ../webapp/static/css/bootstrap.min.css 
-
 --
