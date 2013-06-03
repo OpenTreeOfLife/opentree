@@ -12,6 +12,7 @@
     cursor: col-resize;
     z-index:900;
     width: 4px;
+    position: absolute !important;
 }
 
 .spliter_panel .hspliter {
@@ -19,10 +20,11 @@
     cursor: row-resize;
     z-index: 800;
     height: 4px;
+    position: absolute !important;
 }
 .spliter_panel .vspliter, .spliter_panel .left_panel, .spliter_panel .right_panel,
 .spliter_panel .hspliter, .spliter_panel .top_panel, .spliter_panel .bottom_panel {
-    position: absolute;
+    position: relative;
     overflow: auto;
 }
 .spliter_panel .vspliter, .spliter_panel .left_panel, .spliter_panel .right_panel {
