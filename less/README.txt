@@ -46,8 +46,8 @@ overwriting old stuff as needed:
 
 Move pre-digested files (incl. initial CSS) to the final static directories:
 
-    $ mv twitter-bootstrap-d9b502d/docs/assets/css/bootstrap-*.css ../webapp/static/css
-    $ mv twitter-bootstrap-d9b502d/docs/assets/js/bootstrap-*.js ../webapp/static/js
+    $ mv twitter-bootstrap-d9b502d/docs/assets/css/bootstra*.css ../webapp/static/css
+    $ mv twitter-bootstrap-d9b502d/docs/assets/js/bootstra*.js ../webapp/static/js
     $ mkdir -pv ../webapp/static/img
     $ mv twitter-bootstrap-d9b502d/docs/assets/img/glyphicons-*.png ../webapp/static/img
 
