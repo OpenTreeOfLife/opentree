@@ -43,18 +43,8 @@ body {
 .search-result strong a {
     color: #000;
 }
-.container {
-	width:100%;
-}
 
-/* the two-column layout for the main content area */
-.navbar {
-	width: 200px;
-	max-width: 200px;
-	float: left;
-}
 .vizcontent {
-	margin-left: 210px;
 }
 
 #viewer-collection {
@@ -168,7 +158,7 @@ a.full-ref-toggle {
 p#tree-description {
     color: #aaa;
     font-size: 135%;
-    padding: 3px 0 0 0;
+    padding: 0.75em 0 0 0;
     font-weight: bold;
     margin: 0;
 }
