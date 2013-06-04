@@ -123,6 +123,11 @@
       selector = selector && /#/.test(selector) && selector.replace(/.*(?=#[^\s]*$)/, '') //strip for ie7
     }
 
+    // hack to suppress warnings in Firefox (see https://github.com/twitter/bootstrap/issues/5566)
+    if(selector == '#') {
+        selector = '#-';
+    }
+
     $parent = selector && $(selector)
 
     if (!$parent || !$parent.length) $parent = $this.parent()
