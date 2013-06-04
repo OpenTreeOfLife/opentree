@@ -205,8 +205,10 @@ $(document).ready(function() {
     });
 
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
-    //$('input[name=taxon-search]').unbind('keyup').keyup( searchForMatchingTaxa );
-    $('input[name=taxon-search-go]').unbind('click').click( searchForMatchingTaxa );
+    $('#taxon-search-form').unbind('submit').submit(function() {
+        searchForMatchingTaxa();
+        return false;
+    });
 });
 
 function searchForMatchingTaxa() {
@@ -216,7 +218,8 @@ function searchForMatchingTaxa() {
         $('#search-results').html('');
         return false;
     } else if (searchText.length < 5) {
-        $('#search-results').html('<i>Enter five or more letters</i>');
+        $('#search-results').html('<li class="disabled"><a><span class="text-error">Enter five or more letters</span></a></li>');
+        $('#search-results').dropdown('toggle');
         return false;
     }
 
@@ -246,7 +249,8 @@ function searchForMatchingTaxa() {
     
     // proper version queries treemachine API
     // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
-    $('#search-results').html('<i>Search in progress...</i>');
+    $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
+    $('#search-results').dropdown('toggle');
     $.ajax({
         url: doTNRSForNames_url,
         type: 'POST',
@@ -276,12 +280,15 @@ function searchForMatchingTaxa() {
                         //var matchingID = match.matchedNodeId; // in the current synthetic tree?
                         var matchingSource = match.sourceName;
                         var matchingID = match.matchedOttolID;
-                        $('#search-results').append('<div class="search-result"><strong><a title="match on \''+ match.searchString +'\'"href="'+ matchingID +'">'+ matchingName +'</a></strong></div>');
+                        $('#search-results').append('<li><a title="match on \''+ match.searchString +'\'" href="'+ matchingID +'">'+ matchingName +'</a></li>');
                         visibleResults++;
                     }
                 }
                 $('#search-results a')
-                    //.wrap('<div class="search-result"><strong></strong></div>')
+                    .click(function(e) {
+                        // suppress normal dropdown logic and jump to link normally (TODO: Why is this needed?)
+                        e.stopPropagation();
+                    })
                     .each(function() {
                         var $link = $(this);
                         //// WAS constructed literal ('/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName)
@@ -293,8 +300,10 @@ function searchForMatchingTaxa() {
                         });
                         $link.attr('href', safeURL);
                     });
+                $('#search-results').dropdown('toggle');
             } else {
-                $('#search-results').html('<i>No results for this search</i>');
+                $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+                $('#search-results').dropdown('toggle');
             }
         }
     });
@@ -334,7 +343,9 @@ function historyStateToPageHeading( stateObj ) {
     if (stateObj.nodeName.trim() === '') {
         return ('Unnamed node '+ stateObj.domSource +'@'+ stateObj.nodeID);
     }
-    return ('Node \''+ stateObj.nodeName +'\' ('+ stateObj.domSource +'@'+ stateObj.nodeID +')');
+    //return ('Node \''+ stateObj.nodeName +'\' ('+ stateObj.domSource +'@'+ stateObj.nodeID +')');
+    //return (stateObj.nodeName +' <span style="color: #ccc; font-size: 0.8em;">('+ stateObj.domSource +'@'+ stateObj.nodeID +')</span>');
+    return (stateObj.nodeName +' <small style="color: #ccc;">('+ stateObj.domSource +'@'+ stateObj.nodeID +')</small>');
 }
 function historyStateToURL( stateObj ) {
     var safeNodeName = null;

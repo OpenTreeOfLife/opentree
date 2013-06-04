@@ -84,23 +84,48 @@
   <div class="navbar navbar-inverse navbar-static-top">
     <div class="navbar-inner">
       <div class="container">
+
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </a>
+
         <a class="brand" href="/opentree">Open Tree of Life</a>
-        <ul class="nav">
-          <li class="active"><a href="/opentree">Home</a></li>
-          <li><a href="#">About</a>
-          <!-- TODO: make this work!
-              <ul class="nav">
-                  <li><a href="#">Open Tree of Life</a>
-                  <li><a href="#">The synthetic tree</a>
-                  <li><a href="#">The source tree manager</a>
-                  <li><a href="#">Credits</a></li>
-              </ul>
-          -->
-          </li>
-          <li><a href="#">Source trees</a></li>
-          <li><a href="#">Subtrees</a></li>
-          <li><a href="#">Contact</a></li>
-        </ul>
+
+        <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="active"><a href="/opentree">Home</a></li>
+              <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                      About  <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                      <li><a href="#">Open Tree of Life</a>
+                      <li><a href="#">The synthetic tree</a>
+                      <li><a href="#">The source tree manager</a>
+                      <li><a href="#">Credits</a></li>
+                  </ul>
+              </li>
+              <li><a href="#">Source trees</a></li>
+              <li><a href="#">Subtrees</a></li>
+              <li><a href="#">Contact</a></li>
+            </ul>
+            <!-- TODO: add .navbar-search.pull-right -->
+            <form id="taxon-search-form" class="navbar-search pull-right" autocomplete="off">
+                <input type="text" name="taxon-search" class="search-query" placeholder="Search for taxon" autocomplete="off">
+                <!-- <input type="submit" style="" name="taxon-search-go" value="Go" onclick="return false;"/> -->
+                <!-- then show dropdown when results are ready... -->
+                <div class="pull-left">
+                    <ul id="search-results" class="dropdown-menu">
+                        ...
+                    </ul>
+                </div>
+            </form>
+
+        </div><!-- /.nav-collapse.collapse -->
+
       </div>
     </div>
   </div><!-- /.navbar -->
