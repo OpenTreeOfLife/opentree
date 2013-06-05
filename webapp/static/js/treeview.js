@@ -217,8 +217,8 @@ function searchForMatchingTaxa() {
     if (searchText.length === 0) {
         $('#search-results').html('');
         return false;
-    } else if (searchText.length < 5) {
-        $('#search-results').html('<li class="disabled"><a><span class="text-error">Enter five or more letters</span></a></li>');
+    } else if (searchText.length < 2) {
+        $('#search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
         $('#search-results').dropdown('toggle');
         return false;
     }
