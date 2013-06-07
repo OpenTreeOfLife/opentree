@@ -1,12 +1,27 @@
-<html>
+<!DOCTYPE html>
+<html lang="en">
   <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{=response.title or request.application}}</title>
+    {{response.files.append(URL('static','css/bootstrap.css'))}}
+    <style type="text/css">
+        /* TODO: add page-specific styles here */
+    </style>
+    {{response.files.append(URL('static','css/bootstrap-responsive.css'))}}
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      {{response.files.append(URL('static','js/html5shiv.js'))}}
+    <![endif]-->
+
     {{response.files.append(URL('static','plugin_layouts/opentree/default.css'))}}
     {{response.files.append(URL('static','plugin_layouts/superfish.js'))}}
     <!-- css for comments -->
     {{response.files.append(URL('static','plugin_localcomments/css/localcomments.css'))}}
     
     <!-- js dependencies for argus -->
+    {{if globals().get('treemachine_domain',False):}}  <!-- TODO: add a proper test here, to omit while in /opentree/appadmin -->
     <script type="text/javascript">
         // make important domains available to client-side code
         var treemachine_domain = "{{=treemachine_domain}}";
@@ -20,6 +35,7 @@
         var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
         var getJSONFromNode_url = "{{=getJSONFromNode_url}}";
     </script>
+    {{pass}}
     {{response.files.append(URL('static','js/argus/raphael-min.js'))}}
     {{response.files.append(URL('static','js/argus/drawtree.js'))}}
 
@@ -30,7 +46,21 @@
     {{response.files.append(URL('static','js/jquery.splitter-0.6.js'))}}
     {{response.files.append(URL('static','css/jquery.splitter.css'))}}
 
+    <!-- js for Bootstrap components -->
+    {{response.files.append(URL('static','js/bootstrap-transition.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-alert.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-modal.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-dropdown.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-scrollspy.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-tab.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-tooltip.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-popover.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-button.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-collapse.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-carousel.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-typeahead.js'))}}
     
+    <!-- support for web2py AJAX (incl. link to static/js/jquery.js) -->
     {{include 'web2py_ajax.html'}}
     
     {{
@@ -40,25 +70,72 @@
     middle_columns = {0:'span12',1:'span9',2:'span6'}[
     (left_sidebar_enabled and 1 or 0)+(right_sidebar_enabled and 1 or 0)]
     }}
+
+    <!-- Fav and touch icons (TODO: add these files to site root!)
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114-precomposed.png">
+      <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72-precomposed.png">
+                    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-57-precomposed.png">
+                                   <link rel="shortcut icon" href="/favicon.png">
+    -->
   </head>
   
 <body>
+  <div class="navbar navbar-inverse navbar-static-top">
+    <div class="navbar-inner">
+      <div class="container">
 
-    <!-- moved into sidebar
-	<div class="header">
-	  <div class="headerlogo">
-		{{=A(IMG(_src=URL('static','images/logo.png'), 
-				_alt="Open Tree of Life logo",
-				_width="144", 
-				_height="74",
-				_valign="middle"),
-			_href="http://opentreeoflife.org/")}}
-	  </div>
-	</div>
-    -->
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </a>
 
+        <a class="brand" href="/opentree" style="font-weight: 400; color: #bbb;">
+            <img style="margin: -12px 4px -8px -2px;" src="/opentree/static/images/mini-otol-logo.png">
+            Open Tree of Life
+        </a>
+
+        <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="active"><a href="/opentree">Home</a></li>
+              <li class="dropdown">
+                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                      About  <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                      <li><a href="#">Open Tree of Life</a>
+                      <li><a href="#">The synthetic tree</a>
+                      <li><a href="#">The source tree manager</a>
+                      <li><a href="#">Credits</a></li>
+                  </ul>
+              </li>
+              <li><a href="http://www.reelab.net/phylografter">Source trees</a></li>
+              <li><a href="#">Subtrees</a></li>
+              <li><a href="#">Contact</a></li>
+            </ul>
+            <!-- TODO: add .navbar-search.pull-right -->
+            <form id="taxon-search-form" class="navbar-search pull-right" autocomplete="off">
+                <input type="text" name="taxon-search" class="search-query" placeholder="Search for taxon" autocomplete="off">
+                <!-- <input type="submit" style="" name="taxon-search-go" value="Go" onclick="return false;"/> -->
+                <!-- then show dropdown when results are ready... -->
+                <div class="pull-left">
+                    <ul id="search-results" class="dropdown-menu">
+                        ...
+                    </ul>
+                </div>
+            </form>
+
+        </div><!-- /.nav-collapse.collapse -->
+
+      </div>
+    </div>
+  </div><!-- /.navbar -->
+
+  <div class="container">
     <section id="main" class="main row">
-            {{if left_sidebar_enabled:}}
+        {{if left_sidebar_enabled:}}
         <div class="span3 left-sidebar">
             <div class="header">
               <div class="headerlogo">
@@ -93,27 +170,29 @@
         {{pass}}
     </section>
     
-    <!-- Footer ================================================== -->
-    <div class="row">
-        <footer class="footer span12" id="footer">
-            <div class="footer-content">
-                {{block footer}} <!-- this is default footer -->
-                <div id="fundedBy" class="pull-left">
-                	{{=T('Open Tree of Life is funded by NSF (AVAToL)')}}
-                	</div>
-                <div id="poweredBy" class="pull-right">
-                    {{=T('Powered by')}}
-                    <a href="http://www.web2py.com/" target="_blank" >web2py</a>
-                </div>
-                {{end}}
-            </div>
-        </footer>
-    </div>
+</div><!-- /.container -->
 
-    <!-- hidden spinner (move and display as needed), created with http://preloaders.net/en/circular -->
-    <div id="spinner" style="display: none;">
-        <img src="/opentree/static/images/spinner.gif" />
+<!-- Footer ================================================== -->
+<footer class="footer" id="footer">
+  <div class="container">
+    <div class="footer-content">
+        {{block footer}} <!-- this is default footer -->
+        <div id="fundedBy" class="pull-left">
+            {{=T('Open Tree of Life is funded by NSF (AVAToL)')}}
+            </div>
+        <div id="poweredBy" class="pull-right">
+            {{=T('Powered by')}}
+            <a href="http://www.web2py.com/" target="_blank" >web2py</a>
+        </div>
+        {{end}}
     </div>
+  </div>
+</footer>
+
+<!-- hidden spinner (move and display as needed), created with http://preloaders.net/en/circular -->
+<div id="spinner" style="display: none;">
+    <img src="/opentree/static/images/spinner.gif" />
+</div>
 
 </body>
 </html>
