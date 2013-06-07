@@ -1,0 +1,25 @@
+# rename this to "conf" to make it active
+[domains]
+treemachine = http://127.0.0.1:7474
+taxomachine = http://127.0.0.1:7476
+
+[hosting]
+hostdomain = 127.0.0.1:8000
+
+
+# Building on domains above, complete the public-facing URL for all methods
+# (again, these should work from both server- and client-side code)
+#
+# NOTE: In our example setup, all service methods are proxied through Apache as
+# URLs within the main opentree site. So we assume that partial paths '/db/data/' 
+# are handled in the ProxyPass statement.
+[method_urls]
+getSyntheticTree_url = {treemachine_domain}/ext/GoLS/graphdb/getSyntheticTree  
+getSourceTree_url = {treemachine_domain}/ext/GoLS/graphdb/getSourceTree  
+getConflictTaxJsonAltRel_url = {taxomachine_domain}/ext/GetJsons/node/{nodeID}/getConflictTaxJsonAltRel
+getDraftTreeForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeForOttolID  
+getDraftTreeForNodeID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeForNodeID
+doTNRSForNames_url = {taxomachine_domain}/ext/TNRS/graphdb/doTNRSForNames
+getNodeIDForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getNodeIDForOttolID
+getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
+
