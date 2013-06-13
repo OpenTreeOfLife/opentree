@@ -38,7 +38,7 @@ if ( History && History.enabled && pageUsesHistory ) {
                 data: {'ottolID': String(ottolID)},
                 success: function(data) {
                     argus.displayNode({"nodeID": data,
-                                       "domSource": 'otol.draft.22'});  // WAS State.data.domSource});
+                                       "domSource": syntheticTreeID});  // from main HTML view
                 },
                 dataType: 'json'  // should return just the node ID (number)
             });
@@ -157,7 +157,7 @@ $(document).ready(function() {
       "taxomachineDomain": taxomachine_domain,
       "useTreemachine": true, // TODO: pivot based on domSource? treeID?
       "useSyntheticTree": true, // TODO: pivot based on domSource? treeID?
-      "maxDepth": 3
+      "maxDepth": 2 // TODO: reset to 3?
     });
 
     if ( History && History.enabled && pageUsesHistory ) {

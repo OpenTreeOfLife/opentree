@@ -54,6 +54,10 @@ def index():
     if treeview_dict['domSource'] and treeview_dict['nodeID']:
         treeview_dict['forcedByURL'] = True
 
+    # retrieve latest synthetic-tree ID (and its 'life' node ID)
+    # TODO: Only refresh this periodically? Or only when needed for initial destination?
+    treeview_dict['draftTreeName'], treeview_dict['lifeNodeID'] = fetch_current_synthetic_tree_ids()
+
     return treeview_dict
 
 def error():
@@ -103,3 +107,24 @@ def download_subtree():
         else:
             response.headers['Content-Disposition'] = "attachment; filename=subtree-node-%s-%s.txt" % (node_or_ottol_id, node_name)
         return s.getvalue()
+
+def fetch_current_synthetic_tree_ids():
+    try:
+        # fetch the latest IDs as JSON from remote site
+        from gluon.tools import fetch
+        import simplejson
+
+        method_dict = get_opentree_services_method_urls(request)
+        fetch_url = method_dict['getDraftTreeID_url']
+        # this needs to be a POST (pass empty fetch_args); if GET, it just describes the API
+        ids_response = fetch(fetch_url, data='')
+
+        ids_json = simplejson.loads( ids_response )
+        draftTreeName = ids_json['draftTreeName'].encode('utf-8')
+        lifeNodeID = ids_json['lifeNodeID'].encode('utf-8')
+        return (draftTreeName, lifeNodeID)
+
+    except Exception, e:
+        # throw 403 or 500 or just leave it
+        return ('ERROR', e.message);
+
