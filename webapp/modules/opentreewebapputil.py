@@ -109,6 +109,7 @@ def get_opentree_services_method_urls(request):
     ret = {
         'treemachine_domain' : domains['treemachine_domain'],
         'taxomachine_domain' : domains['taxomachine_domain'],
+        'getDraftTreeID_url' : conf.get('method_urls', 'getDraftTreeID_url'),
         'getSyntheticTree_url' : conf.get('method_urls', 'getSyntheticTree_url'),
         'getSourceTree_url' : conf.get('method_urls', 'getSourceTree_url'),
         'getConflictTaxJsonAltRel_url' :conf.get('method_urls', 'getConflictTaxJsonAltRel_url'),

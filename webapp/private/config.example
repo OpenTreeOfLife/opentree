@@ -20,6 +20,7 @@ taxomachine = http://dev.opentreeoflife.org/taxomachine:7476
 # URLs within the main opentree site. So we assume that partial paths '/db/data/' 
 # are handled in the ProxyPass statement.
 [method_urls]
+getDraftTreeID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeID
 getSyntheticTree_url = {treemachine_domain}/ext/GoLS/graphdb/getSyntheticTree  
 getSourceTree_url = {treemachine_domain}/ext/GoLS/graphdb/getSourceTree  
 getConflictTaxJsonAltRel_url = {taxomachine_domain}/ext/GetJsons/node/{nodeID}/getConflictTaxJsonAltRel
