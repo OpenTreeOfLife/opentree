@@ -368,7 +368,7 @@ function buildNodeNameFromTreeData( node ) {
         return node.descendantNameList.slice(0,2).join(compoundNodeNameDelimiter);
     }
     // we'll need to build a name from visible children and/or their descendantNamesList
-    if (node.children.length < 2) {
+    if (node.children === undefined || node.children.length < 2) {
         // we need at least two names to do this TODO: CONFIRM
         return null;
     }
