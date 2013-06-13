@@ -375,7 +375,7 @@ function createArgus(spec) {
             error: function (jqXHR, textStatus, errorThrown) {
                 hideSpinner();
                 $(".flash").html("Error: Node lookup failed").slideDown();
-                $('#argusCanvasContainer').css('height','500px');
+                $(this.container).css('height','500px');
                 $(this.container).html('<p style="margin: 8px 12px;">Whoops! The call to get the tree around a node did not work out the way we were hoping it would. '
                                      + '<a href="#" onclick="$(\'#error-details\').show(); return false;">Show details</a></p>'
                                      + '<p id="error-details" style="margin: 8px 12px; font-style: italic; display: none;"><b>['+ textStatus +'] '+ errorThrown +'</b>'
@@ -408,7 +408,9 @@ function createArgus(spec) {
         });
 
         // Freeze the height of the argus viewport until new results arrive
-        $(this.container).css('height', $(this.container).css('height'));
+        //$(this.container).css('height', $(this.container).css('height'));
+        var loadHeight = 360; // Math.min( Math.max( $(this.container).height(), 360), 360 );
+        $(this.container).css('height', loadHeight);
 
         if (paper !== undefined) {
             $(this.container).unbind("scroll");
