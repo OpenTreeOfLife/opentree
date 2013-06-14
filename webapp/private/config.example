@@ -7,7 +7,7 @@
 hostdomain = opentree.myserver.org
  
 
-# List public-facing hostname[:port] for treemachine and taxomachine services
+# List public-facing base URL for treemachine and taxomachine services
 # (NOTE that these are used by both server- and client-side code)
 [domains]
 treemachine = http://dev.opentreeoflife.org/treemachine:7474
