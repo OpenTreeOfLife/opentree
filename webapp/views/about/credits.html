@@ -3,9 +3,48 @@
 <div class="container">
       <h1 id="main-title">Credits</h1>
 
-      <p>Here's some basic information for you. Enjoy!</p>
-
-      <p><i>TODO: What goes here?</i></p>
+      <div class="row">
+          <div class="span4">
+              <dl class="dl-horizontal">
+                <dt>Role</dt>
+                    <dd>Firstname Lastname</dd>
+                <!-- NOTE: By default, long DT text is truncated to fit on one line. -->
+                <dt>This role takes more space to describe than others</dt>
+                    <dd>Firstname Lastname</dd>
+                <dt>Yet another role</dt>
+                    <dd>Firstname1 Lastname</dd>
+                    <dd>Firstname2 Lastname</dd>
+            </dl>
+          </div>
+          <div class="span4">
+              <dl class="dl-horizontal">
+                <dt>Yet another role</dt>
+                    <dd>Firstname1 Lastname3</dd>
+                    <dd>Firstname2 Lastname3</dd>
+                    <dd>Firstname3 Lastname3</dd>
+                <dt>A role</dt>
+                    <dd>Firstname Lastname</dd>
+                <dt>Another role</dt>
+                    <dd>Firstname Lastname</dd>
+            </dl>
+          </div>
+          <div class="span4">
+              <dl class="dl-horizontal">
+                <dt>Another role</dt>
+                    <dd>Firstname Lastname And Even a Third Name, Esq.</dd>
+                <!-- NOTE the styles + classes used here to handle long DT text without truncating it. -->
+                <dt style="white-space: normal;">A role that takes more space to describe than some</dt>
+                    <dd>Firstname Lastname</dd>
+                    <dd class="clearfix">Firstname2 Lastname</dd>
+                <dt>Yet another role</dt>
+                    <dd>Firstname Lastname</dd>
+            </dl>
+          </div>
+      </div>
+      <div class="hero-unit" style="margin-bottom: 10px; padding: 10px;">
+          <img src="http://fpoimg.com/1150x300?text=workshop+group+portrait?"/>
+          Here's a caption for the group portrait.
+      </div>
 
       <h3 id="comment-header">Comments <i></i></h3>
       {{=plugin_localcomments(filter=('url',),url=request.url)}}
