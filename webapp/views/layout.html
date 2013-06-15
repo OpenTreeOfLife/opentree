@@ -100,21 +100,21 @@
 
         <div class="nav-collapse collapse">
             <ul class="nav">
-              <li class="active"><a href="/opentree">Home</a></li>
+                <li class="active"><a href="{{= URL('default','index') }}">Home</a></li>
               <li class="dropdown">
-                  <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <a href="{{= URL('about','open-tree-of-life') }}" class="dropdown-toggle" data-toggle="dropdown">
                       About  <b class="caret"></b>
                   </a>
                   <ul class="dropdown-menu">
-                      <li><a href="#">Open Tree of Life</a>
-                      <li><a href="#">The synthetic tree</a>
-                      <li><a href="#">The source tree manager</a>
-                      <li><a href="#">Credits</a></li>
+                      <li><a href="{{= URL('about','open-tree-of-life') }}">Open Tree of Life</a>
+                      <li><a href="{{= URL('about','the-synthetic-tree') }}">The synthetic tree</a>
+                      <li><a href="{{= URL('about','the-source-tree-manager') }}">The source tree manager</a>
+                      <li><a href="{{= URL('about','credits') }}">Credits</a></li>
                   </ul>
               </li>
               <li><a href="http://www.reelab.net/phylografter">Source trees</a></li>
-              <li><a href="#">Subtrees</a></li>
-              <li><a href="#">Contact</a></li>
+              <li><a href="{{= URL('subtrees','index') }}">Subtrees</a></li>
+              <li><a href="{{= URL('contact','index') }}">Contact</a></li>
             </ul>
             <!-- TODO: add .navbar-search.pull-right -->
             <form id="taxon-search-form" class="navbar-search pull-right" autocomplete="off">

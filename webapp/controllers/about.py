@@ -7,16 +7,22 @@ def call(): return service()
 ### end requires
 
 def index():
+    # bump to first About page in menu
     redirect(URL('about', 'open-tree-of-life'))
-    #redirect(URL('open_tree_of_life'))
-    #redirect('/opentree/about/open_tree_of_life')
-    # return dict()
-    # failed attempts to use auth.wiki (too hard to wrangle proper URLs)
-    # return auth.wiki()
-    # return auth.wiki(slug="index")
 
 # NOTE that web2py should attempt to convert hyphens (dashes) in URLs into underscores
+
 def open_tree_of_life():
-    # in URL as /opentree/about/open-tree-of-life
+    # URL is /opentree/about/open-tree-of-life
     return dict()
 
+def the_synthetic_tree():
+    # URL is /opentree/about/the-synthetic-tree
+    return dict()
+
+def the_source_tree_manager():
+    # URL is /opentree/about/the-source-tree-manager
+    return dict()
+
+def credits():
+    return dict()

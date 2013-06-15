@@ -37,7 +37,7 @@ ln -s /full/path/to/opentree/webapp opentree
 <pre>
 # return to main web2py directory
 cd ..  
-cp applications/opentree/SITE.routes.py routes.py
+cp /full/path/to/opentree/SITE.routes.py routes.py
 </pre>
 
 This routing file works in tandem with the opentree app router and lets us have
