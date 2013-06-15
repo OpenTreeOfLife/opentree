@@ -32,7 +32,18 @@ cd web2py/applications
 ln -s /full/path/to/opentree/webapp opentree
 </pre>
 
-3. Launch web2py
+3. Customize web2py's site-wide routing behavior using "SITE.routes.py"
+
+<pre>
+# return to main web2py directory
+cd ..  
+cp /full/path/to/opentree/SITE.routes.py routes.py
+</pre>
+
+This routing file works in tandem with the opentree app router and lets us have
+proper URLs with hyphens instead of underscores.
+
+4. Launch web2py
 
 <pre>
 cd /full/path/to/web2py

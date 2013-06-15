@@ -58,7 +58,7 @@
 
     <div class="vizcontent">
       <p id="tree-description">Exploring the primary synthetic tree</p>
-      <h1 id="main-title">Synthetic tree viewer</h1>
+      <h1 id="main-title" style="margin: 0;">Synthetic tree viewer</h1>
       <div id="links-to-local-comments">
           <a href="#comment-header">Comments on this node</a>
           |
@@ -107,7 +107,7 @@
           # (this will probably be overwritten by tree-view data)
           url = request.url
       }}
-      <h1 id="comment-header">Comments <i></i></h1>
+      <h3 id="comment-header">Comments <i></i></h3>
       {{=plugin_localcomments(filter=('url',),url=url)}}
     </div><!-- end of .vizcontent -->
   </div><!-- end of .container -->

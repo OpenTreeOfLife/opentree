@@ -1,0 +1,15 @@
+{{extend 'layout.html'}}
+
+<div class="container">
+      <h1 id="main-title">Contact Us</h1>
+
+      <p><i>TODO: Round up contact information by various means..</i></p>
+
+      <h3 id="comment-header">Comments <i></i></h3>
+      {{=plugin_localcomments(filter=('url',),url=request.url)}}
+
+</div><!-- end of .container -->
+
+<script type="text/javascript">
+    // add any page-specific behavior here
+</script>
