@@ -4,6 +4,32 @@
       <h1 id="main-title">Credits</h1>
 
       <div class="row">
+          <div class="span3">
+              <ul class="nav nav-list">
+                  <li class="nav=header">Learn more about&hellip;</li>
+                  <li>
+                      <a href="{{= URL('about', 'open-tree-of-life') }}">Open Tree of Life</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'the-synthetic-tree') }}">The synthetic tree</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'the-source-tree-manager') }}">The source tree manager</a>
+                  </li>
+                  <li class="active">
+                      <a href="{{= URL('about', 'credits') }}">Credits</a>
+                  </li>
+              </ul>
+          </div>
+          <div class="span9">
+              <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
+              <div class="hero-unit" style="margin-top: -45px; margin-bottom: 10px; padding: 10px;">
+                  <img src="http://fpoimg.com/850x200?text=workshop+group+photo?"/>
+                  Here's a caption for the group portrait.
+              </div>
+          </div>
+      </div>
+      <div class="row">
           <div class="span4">
               <dl class="dl-horizontal">
                 <dt>Role</dt>
@@ -40,10 +66,6 @@
                     <dd>Firstname Lastname</dd>
             </dl>
           </div>
-      </div>
-      <div class="hero-unit" style="margin-bottom: 10px; padding: 10px;">
-          <img src="http://fpoimg.com/1150x300?text=workshop+group+portrait?"/>
-          Here's a caption for the group portrait.
       </div>
 
       <h3 id="comment-header">Comments <i></i></h3>
