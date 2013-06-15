@@ -345,7 +345,7 @@ function historyStateToPageHeading( stateObj ) {
     }
     //return ('Node \''+ stateObj.nodeName +'\' ('+ stateObj.domSource +'@'+ stateObj.nodeID +')');
     //return (stateObj.nodeName +' <span style="color: #ccc; font-size: 0.8em;">('+ stateObj.domSource +'@'+ stateObj.nodeID +')</span>');
-    return (stateObj.nodeName +' <small style="color: #ccc;">('+ stateObj.domSource +'@'+ stateObj.nodeID +')</small>');
+    return ('<span title="'+ stateObj.domSource +'@'+ stateObj.nodeID +'">'+ stateObj.nodeName +'</span>');
 }
 function historyStateToURL( stateObj ) {
     var safeNodeName = null;
