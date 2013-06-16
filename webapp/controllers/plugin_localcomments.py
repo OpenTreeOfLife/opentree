@@ -130,9 +130,10 @@ jQuery(document).ready(function() {
 );
 """)
 
-def SIMPLEindex():
+def moderation():
     comments = db().select(db.plugin_localcomments_comment.ALL, orderby=db.plugin_localcomments_comment.created_on)
-    return dict(comments=comments)
+    form = SQLFORM.factory(Field('tag_name'))
+    return dict(comments=comments, form=form)
 
 def index():
     # this is a tricky function that does simple display, handles POSTed comments, moderation, etc.

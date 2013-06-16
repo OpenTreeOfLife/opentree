@@ -1,0 +1,134 @@
+{{extend 'layout.html'}}
+
+{{ """ 
+    A friendly "time since" formatter, public domain from 
+    http://flask.pocoo.org/snippets/33/ 
+   """
+from datetime import datetime
+
+def timesince(dt, default="just now"):
+    """
+    Returns string representing "time since" e.g.
+    3 days ago, 5 hours ago etc.
+    """
+
+    now = datetime.utcnow()
+    diff = now - dt
+    
+    periods = (
+        (diff.days / 365, "year", "years"),
+        (diff.days / 30, "month", "months"),
+        (diff.days / 7, "week", "weeks"),
+        (diff.days, "day", "days"),
+        (diff.seconds / 3600, "hour", "hours"),
+        (diff.seconds / 60, "minute", "minutes"),
+        (diff.seconds, "second", "seconds"),
+    )
+
+    for period, singular, plural in periods:
+        if period:
+            return "%d %s ago" % (period, singular if period == 1 else plural)
+    pass
+
+    return default
+}}
+<div class="container">
+  <!--
+  <a class="pull-right" href="#" onclick="$('.more-info').toggle(); return false;">show full info</a>
+  -->
+  <h1 id="main-title">Feedback Moderation</h1>
+  
+  <div class="localcomments_moderation">
+  {{= form.custom.begin }}
+  <table class="table table-striped table-condensed">
+   <caption>A list of all feedback (bug reports, feature requests, general comments) on the site.</caption>
+   <tbody>
+    <tr>
+        <th>Type</th>
+        <th>Scope</th>
+        <th>Body</th>
+        <th>URL</th>
+        <th>OTT ID</th>
+        <th>Synth tree IDs</th>
+        <th>Source tree IDs</th>
+        <!-- <th>Votes</th> -->
+        <th>Posted</th>
+        <th>Author</th>
+        <th><input type="checkbox" /></th>
+    </tr>
+  {{ for comment in comments: }}
+    <tr class="{parentID: {{= comment.thread_parent_id }}, deleted: {{= comment.deleted }} }">
+        {{""" other interesting icons:
+                          icon-info-sign
+                          icon-fire
+                          icon-flag
+                          icon-ban-circle
+                          icon-thumbs-down 
+                          icon-thumbs-up 
+                          icon-heart
+                          icon-gift 
+        """}}
+        <td><i class="{{ if comment.feedback_type == 'Error in phylogeny': }}
+                          icon-move
+                      {{ pass }}
+                      {{ if comment.feedback_type == 'Bug report': }}
+                          icon-warning-sign 
+                      {{ pass }}
+                      {{ if comment.feedback_type == 'Feature request': }}
+                          icon-wrench
+                      {{ pass }}
+                      {{ if (comment.feedback_type == 'Reply or general') or (not comment.feedback_type): }}
+                          icon-comment
+                      {{ pass }}" title="{{= comment.feedback_type or 'Reply or general' }}"></i></td>
+        {{ scopeValues = {
+             'Re: synthetic tree' : 'SYN',
+             'Re: source tree' : 'SRC',
+             'Re: OTT taxon' : 'OTT',
+             'DEFAULT' :  'GEN', 
+           } }}
+        <td><strong title="{{= comment.intended_scope or 'General feedback' }}">{{= scopeValues[comment.intended_scope or "DEFAULT"] }}</strong></td>
+        <td>{{= comment.body or "-" }}</td>
+        <td>{{= comment.url or "-" }}</td>
+        <td>{{= comment.ottol_id or "-" }}</td>
+        <td>{{ if comment.synthtree_id: }}
+                {{= comment.synthtree_id }}@{{= comment.synthtree_node_id }}
+            {{ else: }}
+                -
+            {{ pass }}</td>
+        <td>{{ if comment.sourcetree_id: }}
+                {{= comment.sourcetree_id }}@{{= comment.sourcetree_node_id }}
+            {{ else: }}
+                -
+            {{ pass }}</td>
+        <!-- <td>{{= comment.votes }}</td> -->
+        <td><span title="{{= comment.created_on.strftime("%b %d, %Y - %I:%M %p") }}">{{= timesince(comment.created_on) }}</span></td>
+        <td>{{= T('%s ',comment.created_by.first_name) }} {{= T('%s',comment.created_by.last_name) }}</td>
+      <!--
+        <td>
+          <pre class="more-info" style="display: none;">
+          {{ # = vars(comment) }}
+  
+          {{'''
+          { comment_vars = vars(comment) }
+          { for k,v in comment_vars.iteritems(): }
+              {= k } = {= v }
+          { pass }
+          '''}}
+          </pre>
+        </td>
+      -->
+        <th>
+            <input type="checkbox" />
+        </th>
+    </tr>
+  {{ pass }}
+   </tbody>
+  </table>
+  <hr/>
+  {{ if comments: }}<input type="submit" value="del"/>{{ pass }}
+  <input name="tag_name" value="" size="5" />
+  <input type="submit" value="tag" />
+  {{= form.custom.end }}
+  </div>
+  
+</div><!-- .container -->
