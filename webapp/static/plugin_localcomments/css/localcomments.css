@@ -68,8 +68,17 @@ div.localcomments_moderation tr.feedback-summary td {
     white-space: nowrap;
     overflow: hidden;
 }
-div.localcomments_moderation tr.feedback-summary td.type-and-toggle-icons, 
 div.localcomments_moderation tr.feedback-summary td.body-excerpt {
+    width: 700px;
+    max-width: 700px;
+}
+div.localcomments_moderation tr.feedback-summary td.body-excerpt,
+div.localcomments_moderation tr.feedback-summary td.author-name {
+    /* white-space: normal; */
+    overflow: hidden; 
+    text-overflow: ellipsis;
+}
+div.localcomments_moderation tr.feedback-summary td.type-and-toggle-icons {
     white-space: normal;
 }
 div.localcomments_moderation tr.feedback-summary .feedback-toggle {
@@ -92,4 +101,5 @@ div.localcomments_moderation .feedback-body {
     color: $442;
     margin: 0 12px 4px 18px;
     padding: 4px 12px;
+    white-space: pre-wrap;
 }

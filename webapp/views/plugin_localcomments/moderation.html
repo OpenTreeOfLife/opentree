@@ -56,7 +56,7 @@ def timesince(dt, default="just now"):
    <tbody>
     <tr class="odd">
         <th width="40">Type</th>
-        <th>Body</th>
+        <th width="700">Body</th>
         <th colspan="4">Locations</th>
         <!--
         <th>URL</th>
@@ -128,7 +128,7 @@ def timesince(dt, default="just now"):
         <td><strong style="color: #999;" title="{{= comment.intended_scope or 'General feedback' }}">{{= scopeValues[comment.intended_scope or "DEFAULT"] }}</strong></td>
         <!-- <td>{{= comment.votes }}</td> -->
         <td><span title="{{= comment.created_on.strftime("%b %d, %Y - %I:%M %p") }}">{{= timesince(comment.created_on) }}</span></td>
-        <td>{{= T('%s ',comment.created_by.first_name) }} {{= T('%s',comment.created_by.last_name) }}</td>
+        <td class="author-name">{{= T('%s ',comment.created_by.first_name) }} {{= T('%s',comment.created_by.last_name) }}</td>
       <!--
         <td>
           <pre class="more-info" style="display: none;">
@@ -150,7 +150,7 @@ def timesince(dt, default="just now"):
     <tr class="{{= row_class}} feedback-details">
         <td colspan="2">
             <div class="feedback-body">{{= comment.body }}</div>
-            <div class="feedback-actions" style="padding-top: 8px; text-align: right; padding-right: 12px;">
+            <div class="feedback-actions" style="padding: 8px 12px; text-align: right;">
                 <a class="btn" href="#" onclick="alert('TODO'); return false;">View/reply in context</a>
                 &nbsp;
                 <a class="btn" href="#" onclick="alert('TODO'); return false;">Change location</a>

@@ -131,7 +131,7 @@ jQuery(document).ready(function() {
 """)
 
 def moderation():
-    comments = db().select(db.plugin_localcomments_comment.ALL, orderby=db.plugin_localcomments_comment.created_on)
+    comments = db().select(db.plugin_localcomments_comment.ALL, orderby=~db.plugin_localcomments_comment.created_on)  # =~ is DESCENDING ORDER
     form = SQLFORM.factory(Field('tag_name'))
     return dict(comments=comments, form=form)
 
