@@ -40,24 +40,40 @@ def timesince(dt, default="just now"):
   
   <div class="localcomments_moderation">
   {{= form.custom.begin }}
-  <table class="table table-striped table-condensed">
+
+  <div id="moderation-header">
+    <span id="feedback-selection-count"><b>0</b> comments selected</span>
+      &nbsp;
+    <a class="btn" href="#" onclick="alert('TODO'); return false;">Hide</a>
+      &nbsp;
+    <a class="btn" href="#" onclick="alert('TODO'); return false;">Un-hide</a>
+      &nbsp;
+    <a class="btn" href="#" onclick="alert('TODO'); return false;">Block authors</a>
+  </div>
+
+  <table class="table XXtable-striped table-condensed">
    <caption>A list of all feedback (bug reports, feature requests, general comments) on the site.</caption>
    <tbody>
-    <tr>
-        <th>Type</th>
-        <th>Scope</th>
+    <tr class="odd">
+        <th width="40">Type</th>
         <th>Body</th>
+        <th colspan="4">Locations</th>
+        <!--
         <th>URL</th>
         <th>OTT ID</th>
         <th>Synth tree IDs</th>
         <th>Source tree IDs</th>
+        -->
+        <th>Scope</th>
         <!-- <th>Votes</th> -->
         <th>Posted</th>
         <th>Author</th>
         <th><input type="checkbox" /></th>
     </tr>
-  {{ for comment in comments: }}
-    <tr class="{parentID: {{= comment.thread_parent_id }}, deleted: {{= comment.deleted }} }">
+  {{ import itertools
+     row_class = itertools.cycle(['even', 'odd']) 
+     for row_class, comment in itertools.izip(row_class, comments): }}
+    <tr class="{{= row_class}} feedback-summary {parentID: {{= comment.thread_parent_id }}, deleted: {{= comment.deleted }} }">
         {{""" other interesting icons:
                           icon-info-sign
                           icon-fire
@@ -68,7 +84,7 @@ def timesince(dt, default="just now"):
                           icon-heart
                           icon-gift 
         """}}
-        <td><i class="{{ if comment.feedback_type == 'Error in phylogeny': }}
+        <td class="type-and-toggle-icons"><i class="{{ if comment.feedback_type == 'Error in phylogeny': }}
                           icon-move
                       {{ pass }}
                       {{ if comment.feedback_type == 'Bug report': }}
@@ -79,27 +95,37 @@ def timesince(dt, default="just now"):
                       {{ pass }}
                       {{ if (comment.feedback_type == 'Reply or general') or (not comment.feedback_type): }}
                           icon-comment
-                      {{ pass }}" title="{{= comment.feedback_type or 'Reply or general' }}"></i></td>
+                      {{ pass }}" title="{{= comment.feedback_type or 'Reply or general' }}"></i>
+            <i class="icon-plus feedback-toggle" title="Show details" style="float: right;" onclick="toggleFeedbackDetails(this); return false;"></i>
+        </td>
+        <td class="body-excerpt">{{= comment.body or "-" }}</td>
+        <td>{{ if comment.url: }}
+                <strong title="{{= comment.url }}">URL</strong>
+            {{ else: }}
+                -
+            {{ pass }}</td>
+        <td>{{ if comment.ottol_id: }}
+                <strong title="{{= comment.ottol_id }}">OTT</strong>
+            {{ else: }}
+                -
+            {{ pass }}</td>
+        <td>{{ if comment.synthtree_id: }}
+                <strong title="{{= comment.synthtree_id }}@{{= comment.synthtree_node_id }}">SYN</strong>
+            {{ else: }}
+                -
+            {{ pass }}</td>
+        <td>{{ if comment.sourcetree_id: }}
+                <strong title="{{= comment.sourcetree_id }}@{{= comment.sourcetree_node_id }}">SRC</strong>
+            {{ else: }}
+                -
+            {{ pass }}</td>
         {{ scopeValues = {
              'Re: synthetic tree' : 'SYN',
              'Re: source tree' : 'SRC',
              'Re: OTT taxon' : 'OTT',
              'DEFAULT' :  'GEN', 
            } }}
-        <td><strong title="{{= comment.intended_scope or 'General feedback' }}">{{= scopeValues[comment.intended_scope or "DEFAULT"] }}</strong></td>
-        <td>{{= comment.body or "-" }}</td>
-        <td>{{= comment.url or "-" }}</td>
-        <td>{{= comment.ottol_id or "-" }}</td>
-        <td>{{ if comment.synthtree_id: }}
-                {{= comment.synthtree_id }}@{{= comment.synthtree_node_id }}
-            {{ else: }}
-                -
-            {{ pass }}</td>
-        <td>{{ if comment.sourcetree_id: }}
-                {{= comment.sourcetree_id }}@{{= comment.sourcetree_node_id }}
-            {{ else: }}
-                -
-            {{ pass }}</td>
+        <td><strong style="color: #999;" title="{{= comment.intended_scope or 'General feedback' }}">{{= scopeValues[comment.intended_scope or "DEFAULT"] }}</strong></td>
         <!-- <td>{{= comment.votes }}</td> -->
         <td><span title="{{= comment.created_on.strftime("%b %d, %Y - %I:%M %p") }}">{{= timesince(comment.created_on) }}</span></td>
         <td>{{= T('%s ',comment.created_by.first_name) }} {{= T('%s',comment.created_by.last_name) }}</td>
@@ -117,9 +143,49 @@ def timesince(dt, default="just now"):
           </pre>
         </td>
       -->
-        <th>
+        <td>
             <input type="checkbox" />
-        </th>
+        </td>
+    </tr>
+    <tr class="{{= row_class}} feedback-details">
+        <td colspan="2">
+            <div class="feedback-body">{{= comment.body }}</div>
+            <div class="feedback-actions" style="padding-top: 8px; text-align: right; padding-right: 12px;">
+                <a class="btn" href="#" onclick="alert('TODO'); return false;">View/reply in context</a>
+                &nbsp;
+                <a class="btn" href="#" onclick="alert('TODO'); return false;">Change location</a>
+                &nbsp;
+                <a class="btn" href="#" onclick="alert('TODO'); return false;">Email author</a>
+                &nbsp;
+                <a class="btn" href="#" onclick="alert('TODO'); return false;">Block author</a>
+                &nbsp;
+                <a class="btn" href="#" onclick="alert('TODO'); return false;">Hide comment</a>
+            </div>
+        </td>
+        <td colspan="8">
+            <strong>Posted by</strong> {{= T('%s ',comment.created_by.first_name) }} {{= T('%s',comment.created_by.last_name) }},
+            <strong>on</strong> {{= comment.created_on.strftime("%b %d, %Y - %I:%M %p") }}
+            <br/>
+            <strong>Location information</strong>
+        {{ if comment.url: }}
+            <br/>
+             &nbsp; &nbsp; <strong>URL</strong>: {{= comment.url }}
+        {{ pass }}
+        {{ if comment.synthtree_id: }}
+            <br/>
+             &nbsp; &nbsp; <strong>Synthetic tree IDs</strong>: {{= comment.synthtree_id }}@{{= comment.synthtree_node_id }}
+        {{ pass }}
+        {{ if comment.sourcetree_id: }}
+            <br/>
+             &nbsp; &nbsp; <strong>Source tree IDs</strong>: {{= comment.sourcetree_id }}@{{= comment.sourcetree_node_id }}
+        {{ pass }}
+        {{ if comment.ottol_id: }}
+            <br/>
+             &nbsp; &nbsp; <strong>OTT ID</strong>: {{= comment.ottol_id }}
+        {{ pass }}
+            <br/>
+            <strong>Intended scope</strong>: {{= comment.intended_scope or 'General feedback' }}
+        </td>
     </tr>
   {{ pass }}
    </tbody>
@@ -131,4 +197,20 @@ def timesince(dt, default="just now"):
   {{= form.custom.end }}
   </div>
   
+  <script type="text/javascript">
+      function toggleFeedbackDetails(clicked) {
+          var $clicked = $(clicked);
+          if ($clicked.hasClass('icon-plus')) {
+              $clicked.removeClass('icon-plus').addClass('icon-minus');
+              $clicked.css('display','block');
+              $clicked.attr('title','Hide details');
+          } else {
+              $clicked.removeClass('icon-minus').addClass('icon-plus');
+              $clicked.css('display','');
+              $clicked.attr('title','Show details');
+          }
+          var $detailsRow = $clicked.closest('tr').next('tr.feedback-details');
+          $detailsRow.toggle();
+      }
+  </script>
 </div><!-- .container -->

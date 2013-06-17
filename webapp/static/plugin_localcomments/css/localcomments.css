@@ -47,3 +47,49 @@ div.plugin_localcomments .byline .controls {
 div.localcomments_moderation {
 
 }
+div.localcomments_moderation #moderation-header {
+    text-align: right;
+    padding-bottom: 12px;
+}
+div.localcomments_moderation table caption {
+    display: none;
+}
+
+/* emulate Bootstrap's .table-striped, with more flexible striping */
+div.localcomments_moderation tr.odd td,
+div.localcomments_moderation tr.odd th {
+    background-color: #F9F9F9;
+}
+div.localcomments_moderation tr.even td,
+div.localcomments_moderation tr.even th {
+    background-color: #FFFFFF;
+}
+div.localcomments_moderation tr.feedback-summary td {
+    white-space: nowrap;
+    overflow: hidden;
+}
+div.localcomments_moderation tr.feedback-summary td.type-and-toggle-icons, 
+div.localcomments_moderation tr.feedback-summary td.body-excerpt {
+    white-space: normal;
+}
+div.localcomments_moderation tr.feedback-summary .feedback-toggle {
+    display: none;
+    cursor: pointer;
+}
+div.localcomments_moderation tr.feedback-summary:hover .feedback-toggle {
+    display: block;
+}
+div.localcomments_moderation tr.feedback-details {
+    display: none;
+}
+div.localcomments_moderation tr.feedback-details td {
+    border-top: 1px solid transparent;
+}
+div.localcomments_moderation .feedback-body {
+    border-radius: 5px;
+    border: 1px solid #eed;
+    background-color: #ffe;
+    color: $442;
+    margin: 0 12px 4px 18px;
+    padding: 4px 12px;
+}
