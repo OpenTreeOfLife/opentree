@@ -1,6 +1,7 @@
 # adapted from the plugin_comments provided with web2py
 import re
 from gluon.tools import prettydate
+from gluon.contrib.markdown.markdown2 import markdown
 
 dbco = db.plugin_localcomments_comment
 
@@ -161,7 +162,7 @@ def index():
             return LI(
                 DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
-                    DIV(comment.body,_class='body'),
+                    DIV( XML(markdown(comment.body or ''), sanitize=True),_class='body'),
                     DIV(T('%s ',comment.created_by.first_name),T('%s',comment.created_by.last_name), 
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
                         SPAN(' [',comment.feedback_type,']',_class='badge') if comment.feedback_type else '',
