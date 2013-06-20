@@ -1,6 +1,7 @@
 # adapted from the plugin_comments provided with web2py
 import re
 from gluon.tools import prettydate
+from gluon.contrib.markdown.markdown2 import markdown
 
 dbco = db.plugin_localcomments_comment
 
@@ -131,9 +132,81 @@ jQuery(document).ready(function() {
 """)
 
 def moderation():
-    comments = db().select(db.plugin_localcomments_comment.ALL, orderby=db.plugin_localcomments_comment.created_on)
+    comments = db().select(db.plugin_localcomments_comment.ALL, orderby=~db.plugin_localcomments_comment.created_on)  # =~ is DESCENDING ORDER
     form = SQLFORM.factory(Field('tag_name'))
     return dict(comments=comments, form=form)
+
+def sqlform():
+    # comments = db().select(db.plugin_localcomments_comment.ALL, orderby=~db.plugin_localcomments_comment.created_on)  # =~ is DESCENDING ORDER
+    form = SQLFORM(db.plugin_localcomments_comment)
+    return dict(form=form)
+    
+def show_type_icon(type):
+    iconClass = "icon-comment"
+    if type == 'Error in phylogeny':
+        iconClass = "icon-move"
+    elif type == 'Bug report':
+        iconClass = "icon-warning-sign"
+    elif type == 'Feature request':
+        iconClass = "icon-wrench"
+    elif type == 'Reply or general':
+        iconClass = "icon-comment"
+    return XML(I(_class=iconClass))
+
+@auth.requires_membership(role='editor')
+def grid():
+    db.plugin_localcomments_comment.intended_scope.readable = True
+    db.plugin_localcomments_comment.intended_scope.represent = lambda scope, row: scope and scope.capitalize() or XML(T('&mdash;'))
+    db.plugin_localcomments_comment.feedback_type.represent = lambda row, value: show_type_icon(value)
+
+    grid = SQLFORM.grid( db.plugin_localcomments_comment,
+
+        # formstyle controls only the Add/Edit forms for individual records! not the main grid :(
+        formstyle='bootstrap',
+        #formstyle='table3cols',
+        #formstyle='table2cols',
+        #formstyle='inline',
+        #formstyle='divs',
+        #formstyle='ul',
+
+        user_signature = False,  # False means *anyone* can edit, delete, etc! if they can use the method (see @auth.requires above)
+        # editable=auth.has_membership(role='editor'),  # use this instead of @auth above, to allow others to search all comments
+
+        create=False,
+        deletable=False,  # we'll flip the hidden flag, but not truly delete..?
+        orderby=~db.plugin_localcomments_comment.created_on,
+
+
+        fields=[ 
+            #db.plugin_localcomments_comment.id, 
+            db.plugin_localcomments_comment.feedback_type, 
+            db.plugin_localcomments_comment.body, 
+            db.plugin_localcomments_comment.url, 
+            db.plugin_localcomments_comment.ottol_id, 
+            db.plugin_localcomments_comment.synthtree_id, 
+            db.plugin_localcomments_comment.synthtree_node_id,
+            db.plugin_localcomments_comment.created_on,
+            db.plugin_localcomments_comment.intended_scope,
+        ],
+        headers = { 
+            # NOTE the funky key format used here
+            'plugin_localcomments_comment.feedback_type' : 'Type',
+        }
+        # TODO: add "virtual field" to show compound locations (treeID@nodeID), and hide underlying fields?
+
+        # TODO: add custom rendering (via lambdas) for some fields, eg, icons for feedback_type:
+        #   https://groups.google.com/forum/#!searchin/web2py/grid$20HTML/web2py/3KhSI4Ps5Tw/Ay4Nc0ti3g0J
+        #   https://groups.google.com/forum/#!searchin/web2py/grid$20HTML/web2py/4-rgcM9FNcA/NFpIyZdj4OkJ
+        #   http://web2py.com/books/default/chapter/29/06?search=represent#Record-representation
+
+    )
+    return locals()
+    
+def smartgrid():
+    # comments = db().select(db.plugin_localcomments_comment.ALL, orderby=~db.plugin_localcomments_comment.created_on)  # =~ is DESCENDING ORDER
+    grid = SQLFORM.smartgrid(db.plugin_localcomments_comment)
+    return locals()
+    
 
 def index():
     # this is a tricky function that does simple display, handles POSTed comments, moderation, etc.
@@ -161,7 +234,7 @@ def index():
             return LI(
                 DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
-                    DIV(comment.body,_class='body'),
+                    DIV( XML(markdown(comment.body or ''), sanitize=True),_class='body'),
                     DIV(T('%s ',comment.created_by.first_name),T('%s',comment.created_by.last_name), 
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
                         SPAN(' [',comment.feedback_type,']',_class='badge') if comment.feedback_type else '',

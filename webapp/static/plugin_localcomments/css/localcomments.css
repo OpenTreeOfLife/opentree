@@ -48,8 +48,6 @@ div.localcomments_moderation {
 
 }
 div.localcomments_moderation #moderation-header {
-    text-align: right;
-    padding-bottom: 12px;
 }
 div.localcomments_moderation table caption {
     display: none;
@@ -68,8 +66,17 @@ div.localcomments_moderation tr.feedback-summary td {
     white-space: nowrap;
     overflow: hidden;
 }
-div.localcomments_moderation tr.feedback-summary td.type-and-toggle-icons, 
 div.localcomments_moderation tr.feedback-summary td.body-excerpt {
+    width: 700px;
+    max-width: 700px;
+}
+div.localcomments_moderation tr.feedback-summary td.body-excerpt,
+div.localcomments_moderation tr.feedback-summary td.author-name {
+    /* white-space: normal; */
+    overflow: hidden; 
+    text-overflow: ellipsis;
+}
+div.localcomments_moderation tr.feedback-summary td.type-and-toggle-icons {
     white-space: normal;
 }
 div.localcomments_moderation tr.feedback-summary .feedback-toggle {
@@ -89,7 +96,12 @@ div.localcomments_moderation .feedback-body {
     border-radius: 5px;
     border: 1px solid #eed;
     background-color: #ffe;
-    color: $442;
+    color: #442;
+    white-space: pre-wrap;
     margin: 0 12px 4px 18px;
     padding: 4px 12px;
+/* alternate spacing to cover the one-line excerpt above 
+    margin: -32px 12px 4px 41px;
+    padding: 2px 8px;
+*/
 }
