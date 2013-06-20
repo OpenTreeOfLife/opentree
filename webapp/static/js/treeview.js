@@ -572,6 +572,7 @@ function showObjectProperties( objInfo ) {
                             // TODO: add more here
                         ];
                     }
+                    /* hide OTT id (since it's not a generally recognized taxonomy)
                     if (fullNode.ottolId) {
                         //displayedProperties['OTT ID'] = fullNode.ottolId;
                         displayedProperties['Source taxonomy'].push(
@@ -581,6 +582,7 @@ function showObjectProperties( objInfo ) {
                             }
                         );
                     }
+                    */
 
 
                     // TODO: show ALL source trees (phylo-trees + IDs) for this node
