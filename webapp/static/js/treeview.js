@@ -227,7 +227,6 @@ function setTaxaSearchFuse() {
     searchTimeoutID = setTimeout(searchForMatchingTaxa, searchDelay);
 }
 
-///var lastSearchTime = 0;
 var showingResultsForSearchText = '';
 function searchForMatchingTaxa() {
     // clear any pending search timeout and ID
