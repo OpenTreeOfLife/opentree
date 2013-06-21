@@ -205,15 +205,44 @@ $(document).ready(function() {
     });
 
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
+    $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
     $('#taxon-search-form').unbind('submit').submit(function() {
         searchForMatchingTaxa();
         return false;
     });
 });
 
+/* Sensible autocomplete behavior requires the use of timeouts
+ * and sanity checks for unchanged content, etc.
+ */
+clearTimeout(searchTimeoutID);  // in case there's a lingering search from last page!
+var searchTimeoutID = null;
+var searchDelay = 1000; // milliseconds
+function setTaxaSearchFuse() {
+    if (searchTimeoutID) {
+        // kill any pending search, apparently we're still typing
+        clearTimeout(searchTimeoutID);
+    }
+    // reset the timeout for another n milliseconds
+    searchTimeoutID = setTimeout(searchForMatchingTaxa, searchDelay);
+}
+
+///var lastSearchTime = 0;
+var showingResultsForSearchText = '';
 function searchForMatchingTaxa() {
+    // clear any pending search timeout and ID
+    clearTimeout(searchTimeoutID);
+    searchTimeoutID = null;
+
     var $input = $('input[name=taxon-search]');
     var searchText = $input.val().trim();
+
+    // is this unchanged from last time? no need to search again..
+    if (searchText == showingResultsForSearchText) {
+        ///console.log("TEXT UNCHANGED!");
+        return false; 
+    }
+
     if (searchText.length === 0) {
         $('#search-results').html('');
         return false;
@@ -223,34 +252,13 @@ function searchForMatchingTaxa() {
         return false;
     }
 
-   /* 
-    // temporary version queried phylografter
-    $.getJSON(
-        'http://www.reelab.net/phylografter/ottol/autocomplete?callback=?',  // JSONP fetch URL
-        { search: searchText },  // data
-        function(data) {    // JSONP callback
-            $('#search-results').html(data);
-            $('#search-results a')
-                .wrap('<div class="search-result"><strong></strong></div>')
-                .each(function() {
-                    var $link = $(this);
-                    //// WAS constructed literal ('/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName)
-                    var safeURL = historyStateToURL({
-                        nodeID: $link.attr('href'), 
-                        domSource: 'ottol',
-                        nodeName: $link.html(),
-                        viewer: 'argus'
-                    });
-                    $link.attr('href', safeURL);
-                });
-        }
-    );
-    */
+    var queryText = searchText; // trimmed above
     
     // proper version queries treemachine API
     // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
     $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
     $('#search-results').dropdown('toggle');
+
     $.ajax({
         url: doTNRSForNames_url,
         type: 'POST',
@@ -262,6 +270,9 @@ function searchForMatchingTaxa() {
         crossDomain: true,
         contentType: 'application/json',
         success: function(data) {    // JSONP callback
+            // stash the search-text used to generate these results
+            showingResultsForSearchText = queryText;
+
             $('#search-results').html('');
             var maxResults = 10;
             var visibleResults = 0;
