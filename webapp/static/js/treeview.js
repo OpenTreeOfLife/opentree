@@ -20,7 +20,8 @@ if ( History && History.enabled && pageUsesHistory ) {
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
         History.log(State.data, State.title, State.url);
 
-        $('#main-title').html( 'Loading new view...' );
+        $('#main-title .comments-indicator, #main-title .properties-indicator').hide();
+        $('#main-title .title').html( 'Loading tree view...' );
         $('#node-provenance-panel h3').html('Provenance');
 
         // fetch the matching synth-tree node ID, then notify argus (trigger data load and/or view change)
@@ -120,7 +121,8 @@ function loadLocalComments( chosenFilter ) {
     }
 
     // update comment header (maybe again in the callback, when we have a name)
-    $('#comment-header').html('Comments <i>- '+ commentLabel +'</i>');
+    $('#comments-panel .provenance-intro').html('Comments for');
+    $('#comments-panel .provenance-title').html(commentLabel);
     $('.plugin_localcomments').parent().load(
         '/opentree/plugin_localcomments',
         fetchArgs,  // determined above
@@ -132,6 +134,8 @@ function loadLocalComments( chosenFilter ) {
             $('#links-to-local-comments a:eq(0)').html(
                 'Comments on this node ('+ howManyComments +')'
             );
+            $('#comment-count').html( howManyComments );;
+            $('#comments-panel .provenance-intro').html(howManyComments + ' comment'+ (howManyComments === 1 ? '' : 's') +' for');
         }
     );
 }
@@ -183,6 +187,7 @@ $(document).ready(function() {
                            "domSource": initialState.domSource});
     }
 
+    /*
     // add splitter between argus + provenance panel (using jquery.splitter plugin)
     var viewSplitter = $('#viewer-collection').split({
         orientation:'vertical',
@@ -203,6 +208,7 @@ $(document).ready(function() {
         $('#provenance-show').show();
         return false;
     });
+    */
 
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
     $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
@@ -211,6 +217,35 @@ $(document).ready(function() {
         return false;
     });
 });
+
+var activeToggleFade = 0.5;
+var readyToggleFade = 1.0;
+var toggleFadeSpeed = 'fast';
+function toggleCommentsPanel() { if ($('#viewer-collection').hasClass('active-comments')) {
+        console.log('HIDING comments');
+        $('#viewer-collection').removeClass('active-comments');
+        $('.comments-indicator').fadeTo('fast', readyToggleFade);
+    } else {
+        console.log('SHOWING comments');
+        $('#viewer-collection').removeClass('active-properties');
+        $('.properties-indicator').fadeTo('fast', readyToggleFade);
+        $('#viewer-collection').addClass('active-comments');
+        $('.comments-indicator').fadeTo('fast', activeToggleFade);
+    }
+}
+function togglePropertiesPanel() {
+    if ($('#viewer-collection').hasClass('active-properties')) {
+        console.log('HIDING properties');
+        $('#viewer-collection').removeClass('active-properties');
+        $('.properties-indicator').fadeTo('fast', readyToggleFade);
+    } else {
+        console.log('SHOWING properties');
+        $('#viewer-collection').removeClass('active-comments');
+        $('.comments-indicator').fadeTo('fast', readyToggleFade);
+        $('#viewer-collection').addClass('active-properties');
+        $('.properties-indicator').fadeTo('fast', activeToggleFade);
+    }
+}
 
 /* Sensible autocomplete behavior requires the use of timeouts
  * and sanity checks for unchanged content, etc.
@@ -870,7 +905,8 @@ function nodeDataLoaded( nodeTree ) {
     // NO, this causes a loop of updates/history-changes, maybe later..
 
     // update page title and page contents
-    jQuery('#main-title').html( historyStateToPageHeading( improvedState ) );
+    jQuery('#main-title .comments-indicator, #main-title .properties-indicator').show();
+    jQuery('#main-title .title').html( historyStateToPageHeading( improvedState ) );
     
     // now that we have all view data, update the comments and comment editor
     loadLocalComments();

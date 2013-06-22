@@ -47,28 +47,165 @@ body {
 .vizcontent {
 }
 
-#viewer-collection {
-    position: relative; /* force to fg versus #provenance-show */
-    overflow: hidden;
-    height: 90%; /* don't fill to the current viewport */
-    border: 2px solid #999;
-    border-radius: 8px;
-    margin: 0px;
+#viz-header {
+    background-color: #fff;
 }
-#viewer-collection,
-#provenance-panel {
+
+#viewer-collection {
+    overflow: hidden;
+    border: 1px solid #999;
+    border-left: none;
+    border-right: none;
+    margin: 0px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 90px;  /* allow for taller (wrapping) main title? */
+    bottom: 0px;  /* WAS 25px for minimal footer */
+}
+#viewer-collection {
     background-color: #eee;
     /* display: table-cell; */
 }
 .vizcontent div.viewer-frame, 
+#comments-panel,
 #provenance-panel {
     float: left;
     height: 100%;
+    transition: 0.4s all ease; /* TODO: test using 4s */
 }
 .vizcontent div.viewer-frame {
 	padding: 0px;
     background-color: #f5f5ec; /* #faf5ee; */
     overflow: auto;
+    border-left: 1px solid #999;
+    border-right: 1px solid #999;
+    margin: 0 -1px;
+}
+
+/* set initial widths and margins for the sliding panels */
+#comments-panel,
+#provenance-panel {
+    width: 750px; /* just shy of our narrowest ('phone') screen size */
+}
+#comments-panel {
+    /* margin-left: -100%; */
+    margin-left: -750px;
+}
+div.viewer-frame {
+    width: 100%;  /* TODO: adapt to narrower window!? */
+    margin-left: 0;
+}
+#provenance-panel {
+    /* margin-right: -200%; */
+    margin-right: -1500px;
+}
+
+/* slide these using marker classes on #viewer-collection */
+.active-comments #comments-panel {   
+    margin-left: 0; 
+}
+.active-comments div.viewer-frame {
+    margin-right: -100%;
+}
+.active-comments #provenance-panel {    
+    margin-right: -750px;
+    float: right;       
+}
+
+.active-properties #comments-panel {   
+    margin-left: -750px; 
+}
+.active-properties div.viewer-frame {
+    margin-left: -751px;
+}
+.active-properties #provenance-panel {    
+    margin-right: 0px;
+    float: right;       
+}
+
+/* overrides for tablet-sized displays (matching Bootstrap media queries) */
+@media (min-width: 768px) and (max-width: 979px) {
+    /* set initial widths and margins for the sliding panels */
+    #comments-panel,
+    #provenance-panel {
+        width: 50%;
+    }
+    #comments-panel {
+        margin-left: -50%;
+    }
+    div.viewer-frame {
+        width: 100%;  /* TODO: adapt to narrower window!? */
+        margin-left: 0%;
+    }
+    #provenance-panel {
+        margin-right: -100%;
+    }
+
+    /* slide these using marker classes on #viewer-collection */
+    .active-comments #comments-panel {   
+        margin-left: 0%; 
+    }
+    .active-comments div.viewer-frame {
+        margin-right: -100%;
+    }
+    .active-comments #provenance-panel {    
+        margin-right: -100%;
+        float: right;       
+    }
+
+    .active-properties #comments-panel {   
+        margin-left: -100%; 
+    }
+    .active-properties div.viewer-frame {
+        margin-left: -50%;
+    }
+    .active-properties #provenance-panel {    
+        margin-right: -1%;
+        float: right;       
+    }
+}
+
+/* overrides for phone-sized displays (matching Bootstrap media queries) */
+@media (max-width: 767px) {
+    /* set initial widths and margins for the sliding panels */
+    #comments-panel,
+    #provenance-panel {
+        width: 90%;
+    }
+    #comments-panel {
+        margin-left: -100%;
+    }
+    div.viewer-frame {
+        width: 100%;  /* TODO: adapt to narrower window!? */
+        margin-left: 0%;
+    }
+    #provenance-panel {
+        margin-right: -100%;
+    }
+
+    /* slide these using marker classes on #viewer-collection */
+    .active-comments #comments-panel {   
+        margin-left: 0%; 
+    }
+    .active-comments div.viewer-frame {
+        margin-right: -100%;
+    }
+    .active-comments #provenance-panel {    
+        margin-right: -100%;
+        float: right;       
+    }
+
+    .active-properties #comments-panel {   
+        margin-left: -100%; 
+    }
+    .active-properties div.viewer-frame {
+        margin-left: -90%;
+    }
+    .active-properties #provenance-panel {    
+        margin-right: -1%;
+        float: right;       
+    }
 }
 
 #provenance-show,
@@ -93,15 +230,21 @@ body {
     border-radius-bottom: 0;
 }
 
+#comments-panel {
+    overflow: auto;
+}
+#comments-panel .panel-content {
+    /* isolating any style that might affect widths above */
+    padding: 8px 12px;
+}
+
 #provenance-panel {
     overflow: auto;
-    /* adding full-height divider, subtracting from width */
-    border-left: 2px solid #999;
-    margin-right: -2px;
 }
 #provenance-panel .panel-content {
     /* isolating any style that might affect widths above */
-    padding: 9px 0 0 12px;
+    /* padding: 9px 0 0 12px; */
+    padding: 8px 12px;
 }
 .panel-content {
 }
@@ -117,6 +260,8 @@ body {
     font-family: Helvetica, Arial, serif;
     font-size: 130%;
     color: #000;
+}
+#provenance-panel .provenance-title {
     margin-right: 65px; /* leave room for an PhyloPic image */
 }
 #provenance-panel .taxon-image {
@@ -158,7 +303,7 @@ a.full-ref-toggle {
 p#tree-description {
     color: #aaa;
     font-size: 135%;
-    padding: 0.75em 0 0 0;
+    padding: 0.8em 0 0 0;
     font-weight: bold;
     margin: 0;
 }
@@ -166,6 +311,11 @@ h1#main-title {
     margin-bottom: 0;
     padding: 2px 0 0.25em;
 }
+h1#main-title .comments-indicator,
+h1#main-title .properties-indicator {
+    vertical-align: middle;
+}
+
 #comment-header {
     margin: 0;
     padding: 10px 0 0.5em;
