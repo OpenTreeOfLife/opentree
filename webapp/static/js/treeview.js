@@ -607,15 +607,22 @@ function showObjectProperties( objInfo ) {
                     // show ALL taxonomic sources (taxonomies + IDs) for this node
                     // TODO: handle whatever scheme we use for multiple sources; for now,
                     // there's just one, or none.
+                    //
+                    // EXAMPLE w/ one source: "gbif:6101330"
+                    // EXAMPLE w/ multiple sources: "ncbi:2157,gbif:6101330"
                     if (fullNode.taxSource) {
-                        displayedProperties['Source taxonomy'] = [
-                            {
-                                taxSource: fullNode.taxSource,
-                                taxSourceId: fullNode.taxSourceId || '?',
-                                taxRank: fullNode.taxRank
+                        displayedProperties['Source taxonomy'] = [];
+                        var taxSources = fullNode.taxSource.split(',');
+                        for (var tsPos = 0; tsPos < taxSources.length; tsPos++) {
+                            var taxSourceInfo = taxSources[tsPos].split(':');
+                            if (taxSourceInfo.length === 2) {
+                                displayedProperties['Source taxonomy'].push({
+                                    taxSource: taxSourceInfo[0],
+                                    taxSourceId: taxSourceInfo[1],
+                                    taxRank: fullNode.taxRank
+                                });
                             }
-                            // TODO: add more here
-                        ];
+                        }
                     }
                     /* hide OTT id (since it's not a generally recognized taxonomy)
                     if (fullNode.ottolId) {
