@@ -21,8 +21,10 @@ if ( History && History.enabled && pageUsesHistory ) {
         History.log(State.data, State.title, State.url);
 
         $('#main-title .comments-indicator, #main-title .properties-indicator').hide();
-        $('#main-title .title').html( 'Loading tree view...' );
         $('#node-provenance-panel h3').html('Provenance');
+        $('#main-title .title').html( 'Loading tree view...' );
+        // nudge static viewer to show second line, if any
+        snapViewerFrameToMainTitle();
 
         // fetch the matching synth-tree node ID, then notify argus (trigger data load and/or view change)
         var ottolID = State.data.nodeID;
@@ -914,6 +916,8 @@ function nodeDataLoaded( nodeTree ) {
     // update page title and page contents
     jQuery('#main-title .comments-indicator, #main-title .properties-indicator').show();
     jQuery('#main-title .title').html( historyStateToPageHeading( improvedState ) );
+    // nudge static viewer to show second line, if any
+    snapViewerFrameToMainTitle();
     
     // now that we have all view data, update the comments and comment editor
     loadLocalComments();
@@ -921,6 +925,12 @@ function nodeDataLoaded( nodeTree ) {
     // update properties (provenance) panel to show the target node
     showObjectProperties( targetNode );
 }
+function snapViewerFrameToMainTitle() {
+    jQuery('#viewer-collection').css('top', $('#main-title').offset().top + $('#main-title').outerHeight() );
+}
+$(window).resize( function () {
+    snapViewerFrameToMainTitle();
+});
 
 // examples of changing state (see also https://developer.mozilla.org/en-US/docs/DOM/Manipulating_the_browser_history)
 if (false) {
