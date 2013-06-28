@@ -1,17 +1,18 @@
 /* style for local (URL-based) comments */
 div.plugin_localcomments {
     /* border: 1px dashed pink; */
-    width: 800px;
-    margin-bottom: 30px;
+    margin-bottom: 12px;
 }
 div.plugin_localcomments .byline {
-    background-color: #f5f5f5;
-    color: #888;
+    background-color: #ddd;
+    color: #777;
     margin: 0px -4px 6px;
     padding: 2px 4px;
 }
 div.plugin_localcomments .byline .badge {
-    color: #080;
+    background-color: #999;
+    color: #fff;
+    margin-left: 5px;
 }
 div.plugin_localcomments .deleted .controls,
 div.plugin_localcomments .byline .controls {
@@ -31,7 +32,7 @@ div.plugin_localcomments .byline .controls {
 }
 .plugin_localcomments ul ul {
     padding-left: 20px;
-    border-left: 1px dotted #ccc;
+    border-left: 2px dotted #ccc;
 }
 .plugin_localcomments ul li {
     /* border: 1px dashed silver; */
@@ -42,6 +43,16 @@ div.plugin_localcomments .byline .controls {
 }
 .plugin_localcomments ul div.reply {
     padding-left: 24px;
+}
+.plugin_localcomments div.reply textarea {
+    clear: both;
+    height: 50px;
+    width: 98%;
+    margin: 0 0 4px 0;
+}
+.plugin_localcomments ul div.reply textarea {
+    width: 100%;
+    margin: 4px 0 4px -10px;
 }
 
 div.localcomments_moderation {
