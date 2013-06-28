@@ -223,7 +223,9 @@ $(document).ready(function() {
 var activeToggleFade = 0.5;
 var readyToggleFade = 1.0;
 var toggleFadeSpeed = 'fast';
-function toggleCommentsPanel() { if ($('#viewer-collection').hasClass('active-comments')) {
+function toggleCommentsPanel( hideOrShow ) { 
+    // can be forced by passing hideOrShow ('HIDE'|'SHOW')
+    if ($('#viewer-collection').hasClass('active-comments') && (hideOrShow !== 'SHOW')) {
         console.log('HIDING comments');
         $('#viewer-collection').removeClass('active-comments');
         $('.comments-indicator').fadeTo('fast', readyToggleFade);
@@ -235,8 +237,9 @@ function toggleCommentsPanel() { if ($('#viewer-collection').hasClass('active-co
         $('.comments-indicator').fadeTo('fast', activeToggleFade);
     }
 }
-function togglePropertiesPanel() {
-    if ($('#viewer-collection').hasClass('active-properties')) {
+function togglePropertiesPanel( hideOrShow ) {
+    // can be forced by passing hideOrShow ('HIDE'|'SHOW')
+    if ($('#viewer-collection').hasClass('active-properties') && (hideOrShow !== 'SHOW')) {
         console.log('HIDING properties');
         $('#viewer-collection').removeClass('active-properties');
         $('.properties-indicator').fadeTo('fast', readyToggleFade);
@@ -503,10 +506,9 @@ function clearPropertyInspector() {
     $('#provenance-panel .taxon-image').remove();
 }
 function showObjectProperties( objInfo ) {
-    if ($('#provenance-show').is(':visible')) {
-        // show property inspector if it's hidden
-        $('#provenance-show').click();
-    }
+    // show property inspector if it's hidden
+    togglePropertiesPanel('SHOW');
+
     // OR pass a reliable identifier?
     var objType = 'node';  // 'node' | 'edge' | ?
     var objName = '';      // eg, 'Chordata'
