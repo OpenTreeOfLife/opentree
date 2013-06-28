@@ -66,6 +66,22 @@ function getCommentIndexURL( rawURL ) {
     return indexURL;
 }
 
+function currentScreenSize() {
+    // Take advantage of the Bootstrap dimensional rules for our three
+    // device types (desktop, tablet, phone). Each has possible implications to
+    // layout and behavior, and this function makes it easy to stay in sync
+    // with the CSS.
+    //
+    // ASSUMES that we have these three indicators in the current DOM! 
+    if ($('#screen-size-indicator .visible-phone').is(':visible')) {
+        return 'PHONE';
+    } else if ($('#screen-size-indicator .visible-tablet').is(':visible')) {
+        return 'TABLET';
+    } else {
+        return 'DESKTOP';
+    }
+}
+
 function loadLocalComments( chosenFilter ) {
     // Load local comments for the new URL, including info on the current location
     var fetchArgs = {
@@ -517,9 +533,11 @@ function clearPropertyInspector() {
     $('#provenance-panel .provenance-intro, #provenance-panel .provenance-title, #provenance-panel dl').html('');
     $('#provenance-panel .taxon-image').remove();
 }
-function showObjectProperties( objInfo ) {
+function showObjectProperties( objInfo, options ) {
     // show property inspector if it's hidden
-    togglePropertiesPanel('SHOW');
+    if (options !== 'HIDDEN') {
+        togglePropertiesPanel('SHOW');
+    }
 
     // OR pass a reliable identifier?
     var objType = 'node';  // 'node' | 'edge' | ?
@@ -937,7 +955,8 @@ function nodeDataLoaded( nodeTree ) {
     loadLocalComments();
     
     // update properties (provenance) panel to show the target node
-    showObjectProperties( targetNode );
+    // NOTE that we won't show it automatically if we're on a narrow screen
+    showObjectProperties( targetNode, (currentScreenSize() === 'PHONE' ? 'HIDDEN' : null) );
 }
 function snapViewerFrameToMainTitle() {
     var mainTitleBottom = $('#main-title').offset().top + $('#main-title').outerHeight();

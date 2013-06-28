@@ -350,3 +350,11 @@ div#r0 {
 #footer  .pull-right{
     float: right;
 }
+#screen-size-indicator {
+    position: absolute; 
+    left: 0; 
+    top: 0; 
+    padding: 1px 6px;
+    background: red; 
+    color: white;
+}
