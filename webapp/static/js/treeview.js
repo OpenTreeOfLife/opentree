@@ -292,10 +292,12 @@ function searchForMatchingTaxa() {
 
     if (searchText.length === 0) {
         $('#search-results').html('');
+        snapViewerFrameToMainTitle();
         return false;
     } else if (searchText.length < 2) {
         $('#search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
         $('#search-results').dropdown('toggle');
+        snapViewerFrameToMainTitle();
         return false;
     }
 
@@ -305,6 +307,7 @@ function searchForMatchingTaxa() {
     // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
     $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
     $('#search-results').dropdown('toggle');
+    snapViewerFrameToMainTitle();
 
     $.ajax({
         url: doTNRSForNames_url,
@@ -363,6 +366,7 @@ function searchForMatchingTaxa() {
                 $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
                 $('#search-results').dropdown('toggle');
             }
+            snapViewerFrameToMainTitle();
         }
     });
 
