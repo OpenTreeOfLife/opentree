@@ -186,6 +186,7 @@ div.viewer-frame {
     }
 }
 
+#comments-hide,
 #provenance-show,
 #provenance-hide {
     text-decoration: none !important;

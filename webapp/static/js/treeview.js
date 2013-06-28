@@ -211,6 +211,14 @@ $(document).ready(function() {
         return false;
     });
     */
+    $('#comments-hide').unbind('click').click(function() {
+        toggleCommentsPanel('HIDE');
+        return false;
+    });
+    $('#provenance-hide').unbind('click').click(function() {
+        togglePropertiesPanel('HIDE');
+        return false;
+    });
 
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
     $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
@@ -915,7 +923,7 @@ function nodeDataLoaded( nodeTree ) {
     ///History.replaceState( improvedState.data, improvedState.title, improvedState.url );
     // NO, this causes a loop of updates/history-changes, maybe later..
 
-    // update page title and page contents
+    ''// update page title and page contents
     jQuery('#main-title .comments-indicator, #main-title .properties-indicator').show();
     jQuery('#main-title .title').html( historyStateToPageHeading( improvedState ) );
     // nudge static viewer to show second line, if any
@@ -928,10 +936,18 @@ function nodeDataLoaded( nodeTree ) {
     showObjectProperties( targetNode );
 }
 function snapViewerFrameToMainTitle() {
-    jQuery('#viewer-collection').css('top', $('#main-title').offset().top + $('#main-title').outerHeight() );
+    var mainTitleBottom = $('#main-title').offset().top + $('#main-title').outerHeight();
+    jQuery('#viewer-collection').css('top', mainTitleBottom);
 }
 $(window).resize( function () {
     snapViewerFrameToMainTitle();
+});
+
+$('a.btn-navbar[data-target=".nav-collapse"], a.dropdown-toggle').click(function () {
+    setTimeout(
+        snapViewerFrameToMainTitle,
+        500
+    );
 });
 
 // examples of changing state (see also https://developer.mozilla.org/en-US/docs/DOM/Manipulating_the_browser_history)
