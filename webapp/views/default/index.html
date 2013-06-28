@@ -93,18 +93,20 @@
      <!--<a id="provenance-show" href="#">Show properties</a>-->
       <div id="viewer-collection" class="with-small-provenance">
           <div id="comments-panel">
-           <div class="panel-content">
-            <div class="panel-controls">
-                <a id="comments-hide" href="#" title="Hide comments">X</a>
-            </div>
-            <div class="provenance-intro">Loading&hellip;</div>
-            <div class="provenance-title">&nbsp;</div>
-            <div>
-              {{  # initialize comments with a naive url-based query
-                  # (this will probably be overwritten by tree-view data)
-                  url = request.url
-              }}
-              {{=plugin_localcomments(filter=('url',),url=url)}}
+           <div class="panel-edges">
+            <div class="panel-content">
+             <div class="panel-controls">
+                 <a id="comments-hide" href="#" title="Hide comments">X</a>
+             </div>
+             <div class="provenance-intro">Loading&hellip;</div>
+             <div class="provenance-title">&nbsp;</div>
+             <div>
+               {{  # initialize comments with a naive url-based query
+                   # (this will probably be overwritten by tree-view data)
+                   url = request.url
+               }}
+               {{=plugin_localcomments(filter=('url',),url=url)}}
+             </div>
             </div>
            </div>
           </div>
@@ -113,35 +115,37 @@
           <!-- TODO: Add other viewers here, and code to switch among them -->
 
           <div id="provenance-panel">
-           <div class="panel-content">
-            <div class="panel-controls">
-                <a id="provenance-hide" href="#" title="Hide properties">X</a>
+           <div class="panel-edges">
+            <div class="panel-content">
+             <div class="panel-controls">
+                 <a id="provenance-hide" href="#" title="Hide properties">X</a>
+             </div>
+             <div class="provenance-intro">Loading&hellip;</div>
+             <div class="provenance-title">&nbsp;</div>
+             <dl>
+             <!-- TODO: add these?
+                 OTT id: 
+                 Neo4J node ID:
+                 Tree ID:
+                 Source Tree:
+                IF TAXON,
+                 Jump to NCBI
+                 Jump to GBIF
+ 
+             -->
+             <!-- add found properties here
+                 <dt>Original publication</dt>
+                 <dd><a href="#">Cruikshank, 1992</a></dd>
+                 <dd><a href="#">doi:10.1016/r.cruikshank.1992.03.013</a></dd>
+                 <dt>Related publicatons</dt>
+                 <dd><a href="#">Morrison, 2004</a></dd>
+                 <dd><a href="#">doi:10.1016/l.morrison.2004.03.013</a></dd>
+                 <dt style="margin-top: 1em;"><a id="extract-subtree" href="#">Extract subtree</a></dt>
+                 <dd id="extract-subtree-caveats">...</dd>
+             -->
+             </dl>
+             <div></div>
             </div>
-            <div class="provenance-intro">Loading&hellip;</div>
-            <div class="provenance-title">&nbsp;</div>
-            <dl>
-            <!-- TODO: add these?
-                OTT id: 
-                Neo4J node ID:
-                Tree ID:
-                Source Tree:
-               IF TAXON,
-                Jump to NCBI
-                Jump to GBIF
-
-            -->
-            <!-- add found properties here
-                <dt>Original publication</dt>
-                <dd><a href="#">Cruikshank, 1992</a></dd>
-                <dd><a href="#">doi:10.1016/r.cruikshank.1992.03.013</a></dd>
-                <dt>Related publicatons</dt>
-                <dd><a href="#">Morrison, 2004</a></dd>
-                <dd><a href="#">doi:10.1016/l.morrison.2004.03.013</a></dd>
-                <dt style="margin-top: 1em;"><a id="extract-subtree" href="#">Extract subtree</a></dt>
-                <dd id="extract-subtree-caveats">...</dd>
-            -->
-            </dl>
-            <div></div>
            </div>
           </div>
       </div>

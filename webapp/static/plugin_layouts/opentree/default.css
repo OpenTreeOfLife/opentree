@@ -63,9 +63,10 @@ body {
     top: 90px;  /* allow for taller (wrapping) main title? */
     bottom: 0px;  /* WAS 25px for minimal footer */
 }
-#viewer-collection {
+#viewer-collection,
+#comments-panel .panel-edges,
+#provenance-panel .panel-edges {
     background-color: #eee;
-    /* display: table-cell; */
 }
 .vizcontent div.viewer-frame, 
 #comments-panel,
@@ -78,92 +79,60 @@ body {
 	padding: 0px;
     background-color: #f5f5ec; /* #faf5ee; */
     overflow: auto;
-    border-left: 1px solid #999;
-    border-right: 1px solid #999;
-    margin: 0 -1px;
 }
 
 /* set initial widths and margins for the sliding panels */
 #comments-panel,
 #provenance-panel {
-    width: 750px; /* just shy of our narrowest ('phone') screen size */
+    width: 50%;
 }
 #comments-panel {
-    /* margin-left: -100%; */
-    margin-left: -750px;
+    margin-left: -50%;
+    margin-right: 0;
 }
 div.viewer-frame {
     width: 100%;  /* TODO: adapt to narrower window!? */
     margin-left: 0;
+    margin-right: 0;
 }
 #provenance-panel {
     /* margin-right: -200%; */
-    margin-right: -1500px;
+    margin-left: 0;
+    margin-right: -50%;
 }
 
 /* slide these using marker classes on #viewer-collection */
 .active-comments #comments-panel {   
     margin-left: 0; 
+    margin-right: 0; 
 }
 .active-comments div.viewer-frame {
-    margin-right: -100%;
+    width: 50%;  /* TODO: adapt to narrower window!? */
+    margin-left: 0;
+    margin-right: 0; 
 }
 .active-comments #provenance-panel {    
-    margin-right: -750px;
-    float: right;       
+    margin-left: 0;
+    margin-right: -100%; 
 }
 
 .active-properties #comments-panel {   
-    margin-left: -750px; 
+    margin-left: -50%; 
+    margin-right: 0; 
 }
 .active-properties div.viewer-frame {
-    margin-left: -751px;
+    width: 50%;
+    margin-left: 0;
+    margin-right: 0; 
 }
 .active-properties #provenance-panel {    
-    margin-right: 0px;
-    float: right;       
+    margin-left: 0;
+    margin-right: 0; 
 }
 
 /* overrides for tablet-sized displays (matching Bootstrap media queries) */
 @media (min-width: 768px) and (max-width: 979px) {
-    /* set initial widths and margins for the sliding panels */
-    #comments-panel,
-    #provenance-panel {
-        width: 50%;
-    }
-    #comments-panel {
-        margin-left: -50%;
-    }
-    div.viewer-frame {
-        width: 100%;  /* TODO: adapt to narrower window!? */
-        margin-left: 0%;
-    }
-    #provenance-panel {
-        margin-right: -100%;
-    }
-
-    /* slide these using marker classes on #viewer-collection */
-    .active-comments #comments-panel {   
-        margin-left: 0%; 
-    }
-    .active-comments div.viewer-frame {
-        margin-right: -100%;
-    }
-    .active-comments #provenance-panel {    
-        margin-right: -100%;
-        float: right;       
-    }
-
-    .active-properties #comments-panel {   
-        margin-left: -100%; 
-    }
-    .active-properties div.viewer-frame {
-        margin-left: -50%;
-    }
-    .active-properties #provenance-panel {    
-        margin-right: -1%;
-        float: right;       
-    }
+    /* actually, the rules above work well at tablet sizes as well */
 }
 
 /* overrides for phone-sized displays (matching Bootstrap media queries) */
@@ -174,37 +143,46 @@ div.viewer-frame {
         width: 90%;
     }
     #comments-panel {
-        margin-left: -100%;
+        margin-left: -90%;
+        margin-right: 0;
     }
     div.viewer-frame {
-        width: 100%;  /* TODO: adapt to narrower window!? */
+        width: 100%;
         margin-left: 0%;
+        margin-right: 0;
     }
     #provenance-panel {
-        margin-right: -100%;
+        margin-left: 0%;
+        margin-right: -90%;
     }
 
     /* slide these using marker classes on #viewer-collection */
     .active-comments #comments-panel {   
-        margin-left: 0%; 
+        margin-left: 0; 
+        margin-right: 0;
     }
     .active-comments div.viewer-frame {
-        margin-right: -100%;
+        width: 100%;
+        margin-left: 0; 
+        margin-right: -90%;
     }
     .active-comments #provenance-panel {    
-        margin-right: -100%;
-        float: right;       
+        margin-left: 90%; 
+        margin-right: -180%;
     }
 
     .active-properties #comments-panel {   
-        margin-left: -100%; 
+        margin-left: -90%; 
+        margin-right: 0;
     }
     .active-properties div.viewer-frame {
+        width: 100%;
         margin-left: -90%;
+        margin-right: 0;
     }
     .active-properties #provenance-panel {    
-        margin-right: -1%;
-        float: right;       
+        margin-left: 0;
+        margin-right: 0;
     }
 }
 
@@ -239,7 +217,18 @@ div.viewer-frame {
 }
 
 #provenance-panel {
+    /*
+    overflow: visible;
+    */
     overflow: auto;
+}
+#comments-panel .panel-edges {
+    height: 100%;
+    border-right: 1px solid #999;
+}
+#provenance-panel .panel-edges {
+    height: 100%;
+    border-left: 1px solid #999;
 }
 #provenance-panel .panel-content {
     /* isolating any style that might affect widths above */
