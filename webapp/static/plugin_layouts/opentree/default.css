@@ -240,7 +240,8 @@ div.viewer-frame {
 }
 .panel-controls {
     float: right;
-    margin: -6px 10px 2px 2px;
+    margin: -6px 0px 2px 2px;
+    font-size: 20px;
 }
 .provenance-intro {
     font-size: 110%;
