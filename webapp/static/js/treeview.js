@@ -638,13 +638,34 @@ function showObjectProperties( objInfo, options ) {
                         objName = buildNodeNameFromTreeData( fullNode );
                     }
 
-                    // show ALL taxonomic sources (taxonomies + IDs) for this node
-                    // TODO: handle whatever scheme we use for multiple sources; for now,
-                    // there's just one, or none.
-                    //
-                    // EXAMPLE w/ one source: "gbif:6101330"
-                    // EXAMPLE w/ multiple sources: "ncbi:2157,gbif:6101330"
-                    if (fullNode.taxSource) {
+                    /* show ALL taxonomic sources (taxonomies + IDs) for this node
+                     * TODO: Handle whatever schemes we use for multiple sources; for now,
+                     * they look like one of the following (in order of preference):
+                      
+                       EXAMPLE w/ multiple sources (new format):  
+                       fullNode.taxSourceArray: [
+                           { "foreignID": "2", "taxSource": "ncbi" },
+                           { "foreignID": "3", "taxSource": "gbif" }
+                       ]
+
+                       EXAMPLE w/ multiple sources (old format):
+                       fullNode.taxSource: "ncbi:2157,gbif:6101330"
+
+                       EXAMPLE w/ one source:
+                       fullNode.taxSource: "gbif:6101330"
+
+                     */
+                    if (fullNode.taxSourceArray && fullNode.taxSourceArray.length > 0) {
+                        displayedProperties['Source taxonomy'] = [];
+                        for (var tsPos = 0; tsPos < fullNode.taxSourceArray.length; tsPos++) {
+                            var taxSourceInfo = fullNode.taxSourceArray[tsPos];
+                            displayedProperties['Source taxonomy'].push({
+                                taxSource: taxSourceInfo.taxSource,
+                                taxSourceId: taxSourceInfo.foreignID,
+                                taxRank: fullNode.taxRank
+                            });
+                        }
+                    } else if (fullNode.taxSource) {
                         displayedProperties['Source taxonomy'] = [];
                         var taxSources = fullNode.taxSource.split(',');
                         for (var tsPos = 0; tsPos < taxSources.length; tsPos++) {
