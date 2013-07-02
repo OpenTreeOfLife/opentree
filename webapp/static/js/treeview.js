@@ -20,8 +20,11 @@ if ( History && History.enabled && pageUsesHistory ) {
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
         History.log(State.data, State.title, State.url);
 
-        $('#main-title').html( 'Loading new view...' );
+        $('#main-title .comments-indicator, #main-title .properties-indicator').hide();
         $('#node-provenance-panel h3').html('Provenance');
+        $('#main-title .title').html( 'Loading tree view...' );
+        // nudge static viewer to show second line, if any
+        snapViewerFrameToMainTitle();
 
         // fetch the matching synth-tree node ID, then notify argus (trigger data load and/or view change)
         var ottolID = State.data.nodeID;
@@ -61,6 +64,22 @@ function getCommentIndexURL( rawURL ) {
     var pathParts = url.split('/').slice(3);  // remove scheme and hostname:port
     var indexURL = '/'+ pathParts.join('/');
     return indexURL;
+}
+
+function currentScreenSize() {
+    // Take advantage of the Bootstrap dimensional rules for our three
+    // device types (desktop, tablet, phone). Each has possible implications to
+    // layout and behavior, and this function makes it easy to stay in sync
+    // with the CSS.
+    //
+    // ASSUMES that we have these three indicators in the current DOM! 
+    if ($('#screen-size-indicator .visible-phone').is(':visible')) {
+        return 'PHONE';
+    } else if ($('#screen-size-indicator .visible-tablet').is(':visible')) {
+        return 'TABLET';
+    } else {
+        return 'DESKTOP';
+    }
 }
 
 function loadLocalComments( chosenFilter ) {
@@ -120,7 +139,8 @@ function loadLocalComments( chosenFilter ) {
     }
 
     // update comment header (maybe again in the callback, when we have a name)
-    $('#comment-header').html('Comments <i>- '+ commentLabel +'</i>');
+    $('#comments-panel .provenance-intro').html('Comments for');
+    $('#comments-panel .provenance-title').html(commentLabel);
     $('.plugin_localcomments').parent().load(
         '/opentree/plugin_localcomments',
         fetchArgs,  // determined above
@@ -132,6 +152,8 @@ function loadLocalComments( chosenFilter ) {
             $('#links-to-local-comments a:eq(0)').html(
                 'Comments on this node ('+ howManyComments +')'
             );
+            $('#comment-count').html( howManyComments );;
+            $('#comments-panel .provenance-intro').html(howManyComments + ' comment'+ (howManyComments === 1 ? '' : 's') +' for');
         }
     );
 }
@@ -183,6 +205,7 @@ $(document).ready(function() {
                            "domSource": initialState.domSource});
     }
 
+    /*
     // add splitter between argus + provenance panel (using jquery.splitter plugin)
     var viewSplitter = $('#viewer-collection').split({
         orientation:'vertical',
@@ -203,54 +226,105 @@ $(document).ready(function() {
         $('#provenance-show').show();
         return false;
     });
+    */
+    $('#comments-hide').unbind('click').click(function() {
+        toggleCommentsPanel('HIDE');
+        return false;
+    });
+    $('#provenance-hide').unbind('click').click(function() {
+        togglePropertiesPanel('HIDE');
+        return false;
+    });
 
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
+    $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
     $('#taxon-search-form').unbind('submit').submit(function() {
         searchForMatchingTaxa();
         return false;
     });
 });
 
+var activeToggleFade = 0.5;
+var readyToggleFade = 1.0;
+var toggleFadeSpeed = 'fast';
+function toggleCommentsPanel( hideOrShow ) { 
+    // can be forced by passing hideOrShow ('HIDE'|'SHOW')
+    if ($('#viewer-collection').hasClass('active-comments') && (hideOrShow !== 'SHOW')) {
+        console.log('HIDING comments');
+        $('#viewer-collection').removeClass('active-comments');
+        $('.comments-indicator').fadeTo('fast', readyToggleFade);
+    } else {
+        console.log('SHOWING comments');
+        $('#viewer-collection').removeClass('active-properties');
+        $('.properties-indicator').fadeTo('fast', readyToggleFade);
+        $('#viewer-collection').addClass('active-comments');
+        $('.comments-indicator').fadeTo('fast', activeToggleFade);
+    }
+}
+function togglePropertiesPanel( hideOrShow ) {
+    // can be forced by passing hideOrShow ('HIDE'|'SHOW')
+    if ($('#viewer-collection').hasClass('active-properties') && (hideOrShow !== 'SHOW')) {
+        console.log('HIDING properties');
+        $('#viewer-collection').removeClass('active-properties');
+        $('.properties-indicator').fadeTo('fast', readyToggleFade);
+    } else {
+        console.log('SHOWING properties');
+        $('#viewer-collection').removeClass('active-comments');
+        $('.comments-indicator').fadeTo('fast', readyToggleFade);
+        $('#viewer-collection').addClass('active-properties');
+        $('.properties-indicator').fadeTo('fast', activeToggleFade);
+    }
+}
+
+/* Sensible autocomplete behavior requires the use of timeouts
+ * and sanity checks for unchanged content, etc.
+ */
+clearTimeout(searchTimeoutID);  // in case there's a lingering search from last page!
+var searchTimeoutID = null;
+var searchDelay = 1000; // milliseconds
+function setTaxaSearchFuse() {
+    if (searchTimeoutID) {
+        // kill any pending search, apparently we're still typing
+        clearTimeout(searchTimeoutID);
+    }
+    // reset the timeout for another n milliseconds
+    searchTimeoutID = setTimeout(searchForMatchingTaxa, searchDelay);
+}
+
+var showingResultsForSearchText = '';
 function searchForMatchingTaxa() {
+    // clear any pending search timeout and ID
+    clearTimeout(searchTimeoutID);
+    searchTimeoutID = null;
+
     var $input = $('input[name=taxon-search]');
     var searchText = $input.val().trim();
+
+    // is this unchanged from last time? no need to search again..
+    if (searchText == showingResultsForSearchText) {
+        ///console.log("TEXT UNCHANGED!");
+        return false; 
+    }
+
     if (searchText.length === 0) {
         $('#search-results').html('');
+        snapViewerFrameToMainTitle();
         return false;
     } else if (searchText.length < 2) {
         $('#search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
         $('#search-results').dropdown('toggle');
+        snapViewerFrameToMainTitle();
         return false;
     }
 
-   /* 
-    // temporary version queried phylografter
-    $.getJSON(
-        'http://www.reelab.net/phylografter/ottol/autocomplete?callback=?',  // JSONP fetch URL
-        { search: searchText },  // data
-        function(data) {    // JSONP callback
-            $('#search-results').html(data);
-            $('#search-results a')
-                .wrap('<div class="search-result"><strong></strong></div>')
-                .each(function() {
-                    var $link = $(this);
-                    //// WAS constructed literal ('/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName)
-                    var safeURL = historyStateToURL({
-                        nodeID: $link.attr('href'), 
-                        domSource: 'ottol',
-                        nodeName: $link.html(),
-                        viewer: 'argus'
-                    });
-                    $link.attr('href', safeURL);
-                });
-        }
-    );
-    */
+    var queryText = searchText; // trimmed above
     
     // proper version queries treemachine API
     // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
     $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
     $('#search-results').dropdown('toggle');
+    snapViewerFrameToMainTitle();
+
     $.ajax({
         url: doTNRSForNames_url,
         type: 'POST',
@@ -262,6 +336,9 @@ function searchForMatchingTaxa() {
         crossDomain: true,
         contentType: 'application/json',
         success: function(data) {    // JSONP callback
+            // stash the search-text used to generate these results
+            showingResultsForSearchText = queryText;
+
             $('#search-results').html('');
             var maxResults = 10;
             var visibleResults = 0;
@@ -305,6 +382,7 @@ function searchForMatchingTaxa() {
                 $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
                 $('#search-results').dropdown('toggle');
             }
+            snapViewerFrameToMainTitle();
         }
     });
 
@@ -455,11 +533,12 @@ function clearPropertyInspector() {
     $('#provenance-panel .provenance-intro, #provenance-panel .provenance-title, #provenance-panel dl').html('');
     $('#provenance-panel .taxon-image').remove();
 }
-function showObjectProperties( objInfo ) {
-    if ($('#provenance-show').is(':visible')) {
-        // show property inspector if it's hidden
-        $('#provenance-show').click();
+function showObjectProperties( objInfo, options ) {
+    // show property inspector if it's hidden
+    if (options !== 'HIDDEN') {
+        togglePropertiesPanel('SHOW');
     }
+
     // OR pass a reliable identifier?
     var objType = 'node';  // 'node' | 'edge' | ?
     var objName = '';      // eg, 'Chordata'
@@ -559,19 +638,48 @@ function showObjectProperties( objInfo ) {
                         objName = buildNodeNameFromTreeData( fullNode );
                     }
 
-                    // show ALL taxonomic sources (taxonomies + IDs) for this node
-                    // TODO: handle whatever scheme we use for multiple sources; for now,
-                    // there's just one, or none.
-                    if (fullNode.taxSource) {
-                        displayedProperties['Source taxonomy'] = [
-                            {
-                                taxSource: fullNode.taxSource,
-                                taxSourceId: fullNode.taxSourceId || '?',
+                    /* show ALL taxonomic sources (taxonomies + IDs) for this node
+                     * TODO: Handle whatever schemes we use for multiple sources; for now,
+                     * they look like one of the following (in order of preference):
+                      
+                       EXAMPLE w/ multiple sources (new format):  
+                       fullNode.taxSourceArray: [
+                           { "foreignID": "2", "taxSource": "ncbi" },
+                           { "foreignID": "3", "taxSource": "gbif" }
+                       ]
+
+                       EXAMPLE w/ multiple sources (old format):
+                       fullNode.taxSource: "ncbi:2157,gbif:6101330"
+
+                       EXAMPLE w/ one source:
+                       fullNode.taxSource: "gbif:6101330"
+
+                     */
+                    if (fullNode.taxSourceArray && fullNode.taxSourceArray.length > 0) {
+                        displayedProperties['Source taxonomy'] = [];
+                        for (var tsPos = 0; tsPos < fullNode.taxSourceArray.length; tsPos++) {
+                            var taxSourceInfo = fullNode.taxSourceArray[tsPos];
+                            displayedProperties['Source taxonomy'].push({
+                                taxSource: taxSourceInfo.taxSource,
+                                taxSourceId: taxSourceInfo.foreignID,
                                 taxRank: fullNode.taxRank
+                            });
+                        }
+                    } else if (fullNode.taxSource) {
+                        displayedProperties['Source taxonomy'] = [];
+                        var taxSources = fullNode.taxSource.split(',');
+                        for (var tsPos = 0; tsPos < taxSources.length; tsPos++) {
+                            var taxSourceInfo = taxSources[tsPos].split(':');
+                            if (taxSourceInfo.length === 2) {
+                                displayedProperties['Source taxonomy'].push({
+                                    taxSource: taxSourceInfo[0],
+                                    taxSourceId: taxSourceInfo[1],
+                                    taxRank: fullNode.taxRank
+                                });
                             }
-                            // TODO: add more here
-                        ];
+                        }
                     }
+                    /* hide OTT id (since it's not a generally recognized taxonomy)
                     if (fullNode.ottolId) {
                         //displayedProperties['OTT ID'] = fullNode.ottolId;
                         displayedProperties['Source taxonomy'].push(
@@ -581,6 +689,7 @@ function showObjectProperties( objInfo ) {
                             }
                         );
                     }
+                    */
 
 
                     // TODO: show ALL source trees (phylo-trees + IDs) for this node
@@ -857,15 +966,33 @@ function nodeDataLoaded( nodeTree ) {
     ///History.replaceState( improvedState.data, improvedState.title, improvedState.url );
     // NO, this causes a loop of updates/history-changes, maybe later..
 
-    // update page title and page contents
-    jQuery('#main-title').html( historyStateToPageHeading( improvedState ) );
+    ''// update page title and page contents
+    jQuery('#main-title .comments-indicator, #main-title .properties-indicator').show();
+    jQuery('#main-title .title').html( historyStateToPageHeading( improvedState ) );
+    // nudge static viewer to show second line, if any
+    snapViewerFrameToMainTitle();
     
     // now that we have all view data, update the comments and comment editor
     loadLocalComments();
     
     // update properties (provenance) panel to show the target node
-    showObjectProperties( targetNode );
+    // NOTE that we won't show it automatically if we're on a narrow screen
+    showObjectProperties( targetNode, (currentScreenSize() === 'PHONE' ? 'HIDDEN' : null) );
 }
+function snapViewerFrameToMainTitle() {
+    var mainTitleBottom = $('#main-title').offset().top + $('#main-title').outerHeight();
+    jQuery('#viewer-collection').css('top', mainTitleBottom);
+}
+$(window).resize( function () {
+    snapViewerFrameToMainTitle();
+});
+
+$('a.btn-navbar[data-target=".nav-collapse"], a.dropdown-toggle').click(function () {
+    setTimeout(
+        snapViewerFrameToMainTitle,
+        500
+    );
+});
 
 // examples of changing state (see also https://developer.mozilla.org/en-US/docs/DOM/Manipulating_the_browser_history)
 if (false) {

@@ -110,7 +110,7 @@ function plugin_localcomments_init() {
     delete_all_forms();
     var $commentDiv = jQuery(this).parent().parent().parent();
     jQuery.post(
-        action+'/delete',
+        action,    // WAS: action+'/delete',
         {
             'thread_parent_id': 'delete',
             'comment_id': $commentDiv.attr('id').split('r')[1]
@@ -237,8 +237,8 @@ def index():
                     DIV( XML(markdown(comment.body or ''), sanitize=True),_class='body'),
                     DIV(T('%s ',comment.created_by.first_name),T('%s',comment.created_by.last_name), 
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
-                        SPAN(' [',comment.feedback_type,']',_class='badge') if comment.feedback_type else '',
-                        SPAN(' [',comment.intended_scope,']',_class='badge') if comment.intended_scope else '',
+                        SPAN(' ',comment.feedback_type,' ',_class='badge') if comment.feedback_type else '',
+                        SPAN(' ',comment.intended_scope,' ',_class='badge') if comment.intended_scope else '',
                         T(' - %s',prettydate(comment.created_on,T)),
                         SPAN(
                             A(T('hide replies'),_class='toggle',_href='#'),
@@ -325,7 +325,7 @@ def index():
                             OPTION('general feedback (none of the above)', _value=''),
                         _name='intended_scope', value='synthtree'),
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
-                        TEXTAREA(_name='body',_style='width:100%; height: 50px; margin-top: 4px;'),
+                        TEXTAREA(_name='body'),
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
                         INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
@@ -333,6 +333,7 @@ def index():
                         INPUT(_type='hidden',_name='ottol_id',_value=ottol_id),
                         INPUT(_type='hidden',_name='url',_value=url),
                         # INPUT(_type='text',_name='thread_parent_id',_value=0),   # we'll get this from a nearby id, eg 'r8'
+                        BR(),
                         INPUT(_type='submit',_value=T('post'),_style='float:right'), 
                         A(T('help'),_href='http://daringfireball.net/projects/markdown/',
                           _target='_blank',_style='float:right; padding-right: 10px'),
