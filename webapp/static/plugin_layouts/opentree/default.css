@@ -184,6 +184,10 @@ div.viewer-frame {
         margin-left: 0;
         margin-right: 0;
     }
+
+    h1#main-title {
+        font-size: 24px;
+    }
 }
 
 #comments-hide,
@@ -294,13 +298,14 @@ a.full-ref-toggle {
 p#tree-description {
     color: #aaa;
     font-size: 135%;
-    padding: 0.8em 0 0 0;
+    padding: 0.8em 0 26px 0;
     font-weight: bold;
     margin: 0;
 }
 h1#main-title {
     margin-bottom: 0;
-    padding: 2px 0 0.25em;
+    padding: 2px 0 26px;
+    line-height: 1em;
 }
 h1#main-title .comments-indicator,
 h1#main-title .properties-indicator {

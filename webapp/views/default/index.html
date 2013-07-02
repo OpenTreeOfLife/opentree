@@ -66,16 +66,7 @@
      <div id="viz-header" class="row">
       <div class="span12">
        <h1 id="main-title" class="pull-left" style="margin: 0;">
-           <a class="badge comments-indicator" href="#"
-              onclick="toggleCommentsPanel(); $(this).blur(); return false;">
-               <span id="comment-count">0</span>
-               <i class="icon-comment icon-white"></i>
-           </a>
            <span class="title">&nbsp;</span>
-           <a class="badge properties-indicator" href="#" 
-              onclick="togglePropertiesPanel(); $(this).blur(); return false;">
-               <i class="icon-info-sign icon-white"></i>
-           </a>
        </h1>
        <p id="tree-description" class="pull-right">Exploring the current synthetic tree</p>
        <!-- if main title is long, this should disappear on narrow screens -->
@@ -91,7 +82,23 @@
      </div>
 
      <!--<a id="provenance-show" href="#">Show properties</a>-->
-      <div id="viewer-collection" class="with-small-provenance">
+     <div id="viewer-collection" class="with-small-provenance"
+          style="overflow: visible;" >
+
+           <a class="badge comments-indicator" href="#"
+              style="position: absolute; left: 6px; top: -22px;"
+              title="Show comments for this node"
+              onclick="toggleCommentsPanel(); $(this).blur(); return false;">
+               <span id="comment-count">0</span>
+               <i class="icon-comment icon-white"></i>
+           </a>
+           <a class="badge properties-indicator" href="#" 
+              style="position: absolute; right: 6px; top: -22px;"
+              title="Show properties for the current selection"
+              onclick="togglePropertiesPanel(); $(this).blur(); return false;">
+               <i class="icon-info-sign icon-white"></i>
+           </a>
+
           <div id="comments-panel">
            <div class="panel-edges">
             <div class="panel-content">
@@ -111,7 +118,7 @@
            </div>
           </div>
 
-          <div id="argusCanvasContainer" class="viewer-frame">&nbsp;</div>
+          <div id="argusCanvasContainer" class="viewer-frame"> &nbsp;</div>
           <!-- TODO: Add other viewers here, and code to switch among them -->
 
           <div id="provenance-panel">
