@@ -250,29 +250,35 @@ var toggleFadeSpeed = 'fast';
 function toggleCommentsPanel( hideOrShow ) { 
     // can be forced by passing hideOrShow ('HIDE'|'SHOW')
     if ($('#viewer-collection').hasClass('active-comments') && (hideOrShow !== 'SHOW')) {
-        console.log('HIDING comments');
+        ///console.log('HIDING comments');
         $('#viewer-collection').removeClass('active-comments');
         $('.comments-indicator').fadeTo('fast', readyToggleFade);
+        $('.comments-indicator').attr('title', 'Show comments for this node');
     } else {
-        console.log('SHOWING comments');
+        ///console.log('SHOWING comments');
         $('#viewer-collection').removeClass('active-properties');
         $('.properties-indicator').fadeTo('fast', readyToggleFade);
+        $('.properties-indicator').attr('title', 'Show properties for the current selection');
         $('#viewer-collection').addClass('active-comments');
         $('.comments-indicator').fadeTo('fast', activeToggleFade);
+        $('.comments-indicator').attr('title', 'Hide comments for this node');
     }
 }
 function togglePropertiesPanel( hideOrShow ) {
     // can be forced by passing hideOrShow ('HIDE'|'SHOW')
     if ($('#viewer-collection').hasClass('active-properties') && (hideOrShow !== 'SHOW')) {
-        console.log('HIDING properties');
+        ///console.log('HIDING properties');
         $('#viewer-collection').removeClass('active-properties');
         $('.properties-indicator').fadeTo('fast', readyToggleFade);
+        $('.properties-indicator').attr('title', 'Show properties for the current selection');
     } else {
-        console.log('SHOWING properties');
+        ///console.log('SHOWING properties');
         $('#viewer-collection').removeClass('active-comments');
         $('.comments-indicator').fadeTo('fast', readyToggleFade);
+        $('.comments-indicator').attr('title', 'Show comments for this node');
         $('#viewer-collection').addClass('active-properties');
         $('.properties-indicator').fadeTo('fast', activeToggleFade);
+        $('.properties-indicator').attr('title', 'Hide properties for the current selection');
     }
 }
 
