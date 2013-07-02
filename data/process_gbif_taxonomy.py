@@ -111,13 +111,13 @@ if __name__ == "__main__":
 
     #now making sure that the taxonomy is functional before printing to the file
     print "checking the tree structure"
-    skipids = []
+    skipids = {}
     stack = ignore
     while len(stack) != 0:
         curid = stack.pop()
         if curid in skipids:
             continue
-        skipids.append(curid)
+        skipids[curid] = True
         if curid in cid:
             ids = cid[curid]
             for i in ids:

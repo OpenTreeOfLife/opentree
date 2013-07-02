@@ -2,8 +2,10 @@
 
   JAR's taxonomy combiner.
 
-  WORK IN PROGRESS... I'll split into multiple files when I'm ready to
-  do so; currently it's much easier to work with in this form.
+  Some people think having multiple classes in one file, or unpackaged
+  classes, is terrible programming style...  I'll split into multiple
+  files when I'm ready to do so; currently it's much easier to work
+  with in this form.
 
 
    Stephen's instructions
@@ -466,6 +468,15 @@ class Taxonomy implements Iterable<Node> {
         }
     }
 
+    void dumpSynonyms(String filename) throws IOException {
+        PrintStream out = Taxonomy.openw(filename);
+        for (String name : this.synonyms.keySet())
+            for (Node node : this.synonyms.get(name))
+                out.println(name + "\t|\t" +
+                            node.id + "\t|\t");
+        out.close();
+    }
+
 	// Render this taxonomy as a Newick string
 
 	String toNewick() {
@@ -525,6 +536,19 @@ class Taxonomy implements Iterable<Node> {
 			}
 		}
 	}
+
+	static PrintStream openw(String filename) throws IOException {
+		PrintStream out;
+		if (filename.equals("-")) {
+			out = System.out;
+			System.err.println("Writing to standard output");
+		} else {
+			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)));
+			System.err.println("Writing " + filename);
+		}
+		return out;
+	}
+
 
 }
 
@@ -836,7 +860,7 @@ class UnionTaxonomy extends Taxonomy {
     }
 
     void dumpDeprecated(SourceTaxonomy idsource, String filename) throws IOException {
-		PrintStream out = openw(filename);
+		PrintStream out = Taxonomy.openw(filename);
         for (Answer answer : idsource.deprecated)
             out.println(answer.x.id
                         + "\t" +
@@ -859,7 +883,7 @@ class UnionTaxonomy extends Taxonomy {
     {
 		System.out.println("--- Comparing new auxiliary id mappings with old ones ---");
 		Node.resetStats();		// Taxon id clash
-		PrintStream out = openw(filename);
+		PrintStream out = Taxonomy.openw(filename);
         Set<Long> seen = new HashSet<Long>();
         Integer col = idsource.headerx.get("preottol_id"); // 8
         if (col != null) {
@@ -918,7 +942,7 @@ class UnionTaxonomy extends Taxonomy {
     void dumpAll(String outprefix) throws IOException {
         this.dumpLog(outprefix + "log");
         this.dump(this.root, outprefix + "taxonomy");
-        // TBD: synonyms
+        this.dumpSynonyms(outprefix + "synonyms");
         if (this.idsource != null)
             this.dumpDeprecated(this.idsource, outprefix + "deprecated");
         if (this.auxsource != null)
@@ -927,19 +951,18 @@ class UnionTaxonomy extends Taxonomy {
                                outprefix + "aux");
     }
 
-	void dump(Node node, String filename) throws IOException {
-		PrintStream out = openw(filename);
-		//Formerly:
-		//out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\t" +
-		//			"source\t|\tsourceid\t|\tsourcepid\t|\tuniqname\t|\tpreottol_id\t|\t");
-		out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\tuniqname\t|\t"
-					// 0     1              2        3        4              5
-					);
+	void dump(Node unode, String filename) throws IOException {
+		PrintStream out = Taxonomy.openw(filename);
 
-		dumpNode(node, true, out);
+        out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\tuniqname\t|\t"
+                    // 0     1              2        3        4              5
+                    );
+
+		dumpNode(unode, true, out);
 		out.close();
 	}
 
+    // Recursive!
 	void dumpNode(Node unode, boolean rootp, PrintStream out) {
 		// uid:
 		out.print(unode.id + "\t|\t");
@@ -952,17 +975,10 @@ class UnionTaxonomy extends Taxonomy {
 		out.print((unode.rank == null ? "" : unode.rank) + "\t|\t");
 
         // 4. source information
-        if (unode.sourcenodes != null || unode.extra == null || unode.extra.length <= 4) {
-			out.print(unode.getSourceIds() + "\t|\t");
+        out.print(unode.getSourceIds() + "\t|\t");
 
-            // 5. uniqname
-            out.print(uniqueName(unode) + "\t|\t");
-
-		} else
-            // 4-5-6-7 Support old file format for --start x.in --select taxon y.out
-            // This is a kludge
-            for (int i = 4; i < unode.extra.length; ++i)
-                out.print(unode.extra[i] + "\t|\t");
+        // 5. uniqname
+        out.print(uniqueName(unode) + "\t|\t");
         
         out.println();
 
@@ -1005,7 +1021,7 @@ class UnionTaxonomy extends Taxonomy {
 	// called on union
 
 	void dumpLog(String filename) throws IOException {
-		PrintStream out = openw(filename);
+		PrintStream out = Taxonomy.openw(filename);
 
         // Strongylidae	nem:3600	yes	same-parent/direct	3600	Strongyloidea	false
 
@@ -1032,18 +1048,6 @@ class UnionTaxonomy extends Taxonomy {
         // might be missing some log entries for synonyms
 
 		out.close();
-	}
-
-	PrintStream openw(String filename) throws IOException {
-		PrintStream out;
-		if (filename.equals("-")) {
-			out = System.out;
-			System.err.println("Writing to standard output");
-		} else {
-			out = new java.io.PrintStream(new java.io.BufferedOutputStream(new java.io.FileOutputStream(filename)));
-			System.err.println("Writing " + filename);
-		}
-		return out;
 	}
 
     // this is a union taxonomy ...
@@ -1521,7 +1525,12 @@ class Node {
 					else
 						ids = ids + "," + id;
 				}
-		}
+		} else if (this.taxonomy.sourcecolumn >= 0) {
+            return (this.extra[this.taxonomy.sourcecolumn] + ":" +
+                    this.extra[this.taxonomy.sourceidcolumn]);
+        }
+
+
         return ids;
 	}
 
