@@ -667,8 +667,7 @@ function showObjectProperties( objInfo, options ) {
                             var taxSourceInfo = fullNode.taxSourceArray[tsPos];
                             displayedProperties['Source taxonomy'].push({
                                 taxSource: taxSourceInfo.taxSource,
-                                taxSourceId: taxSourceInfo.foreignID,
-                                taxRank: fullNode.taxRank
+                                taxSourceId: taxSourceInfo.foreignID
                             });
                         }
                     } else if (fullNode.taxSource) {
@@ -679,8 +678,7 @@ function showObjectProperties( objInfo, options ) {
                             if (taxSourceInfo.length === 2) {
                                 displayedProperties['Source taxonomy'].push({
                                     taxSource: taxSourceInfo[0],
-                                    taxSourceId: taxSourceInfo[1],
-                                    taxRank: fullNode.taxRank
+                                    taxSourceId: taxSourceInfo[1]
                                 });
                             }
                         }
@@ -697,6 +695,10 @@ function showObjectProperties( objInfo, options ) {
                     }
                     */
 
+                    // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
+                    if (typeof fullNode.taxRank !== 'undefined') {
+                        displayedProperties['Taxonomic rank'] = fullNode.taxRank;
+                    }
 
                     // TODO: show ALL source trees (phylo-trees + IDs) for this node
 
@@ -794,9 +796,6 @@ function showObjectProperties( objInfo, options ) {
                         default:
                             displayVal = '<span style="color: #777;" title="No URL for this taxonomy">GBIF: '+ sourceInfo.taxSourceId +'</span>';
                             break;
-                    }
-                    if (sourceInfo.taxRank) {
-                        displayVal += '<br/>Rank: '+ sourceInfo.taxRank;
                     }
 
                     $details.append('<dt>'+ dLabel +'</dt>');
