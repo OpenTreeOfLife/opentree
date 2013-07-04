@@ -254,14 +254,27 @@ function toggleCommentsPanel( hideOrShow ) {
         $('#viewer-collection').removeClass('active-comments');
         $('.comments-indicator').fadeTo('fast', readyToggleFade);
         $('.comments-indicator').attr('title', 'Show comments for this node');
+        // remove any toggling behavior bound to the argus view
+        $('#argusCanvasContainer').unbind('click.hideComments');
     } else {
         ///console.log('SHOWING comments');
         $('#viewer-collection').removeClass('active-properties');
         $('.properties-indicator').fadeTo('fast', readyToggleFade);
         $('.properties-indicator').attr('title', 'Show properties for the current selection');
+        // remove any toggling behavior bound to the argus view
+        $('#argusCanvasContainer').unbind('click.hideProperties');
+
         $('#viewer-collection').addClass('active-comments');
         $('.comments-indicator').fadeTo('fast', activeToggleFade);
         $('.comments-indicator').attr('title', 'Hide comments for this node');
+
+        if (currentScreenSize() === 'PHONE') {
+            // clicking on (marginalized) argus view hides the side panel
+            $('#argusCanvasContainer').unbind('click.hideComments')
+                 .bind('click.hideComments', function() {
+                     toggleCommentsPanel('HIDE');
+                 });
+        }
     }
 }
 function togglePropertiesPanel( hideOrShow ) {
@@ -271,14 +284,27 @@ function togglePropertiesPanel( hideOrShow ) {
         $('#viewer-collection').removeClass('active-properties');
         $('.properties-indicator').fadeTo('fast', readyToggleFade);
         $('.properties-indicator').attr('title', 'Show properties for the current selection');
+        // remove any toggling behavior bound to the argus view
+        $('#argusCanvasContainer').unbind('click.hideProperties');
     } else {
         ///console.log('SHOWING properties');
         $('#viewer-collection').removeClass('active-comments');
         $('.comments-indicator').fadeTo('fast', readyToggleFade);
         $('.comments-indicator').attr('title', 'Show comments for this node');
+        // remove any toggling behavior bound to the argus view
+        $('#argusCanvasContainer').unbind('click.hideComments');
+
         $('#viewer-collection').addClass('active-properties');
         $('.properties-indicator').fadeTo('fast', activeToggleFade);
         $('.properties-indicator').attr('title', 'Hide properties for the current selection');
+
+        if (currentScreenSize() === 'PHONE') {
+            // clicking on (marginalized) argus view hides the side panel
+            $('#argusCanvasContainer').unbind('click.hideProperties')
+                 .bind('click.hideProperties', function() {
+                     togglePropertiesPanel('HIDE');
+                 });
+        }
     }
 }
 
