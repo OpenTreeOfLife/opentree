@@ -68,7 +68,7 @@
        <h1 id="main-title" class="pull-left" style="margin: 0;">
            <span class="title">&nbsp;</span>
        </h1>
-       <p id="tree-description" class="pull-right">Exploring the current synthetic tree</p>
+       <p id="tree-description" class="hidden-phone pull-right">Exploring the current synthetic tree</p>
        <!-- if main title is long, this should disappear on narrow screens -->
 
        <!--
@@ -85,19 +85,45 @@
      <div id="viewer-collection" class="with-small-provenance"
           style="overflow: visible;" >
 
-           <a class="badge comments-indicator" href="#"
-              style="position: absolute; left: 6px; top: -22px;"
-              title="Show comments for this node"
-              onclick="toggleCommentsPanel(); $(this).blur(); return false;">
-               <span id="comment-count">0</span>
-               <i class="icon-comment icon-white"></i>
-           </a>
-           <a class="badge properties-indicator" href="#" 
-              style="position: absolute; right: 6px; top: -22px;"
-              title="Show properties for the current selection"
-              onclick="togglePropertiesPanel(); $(this).blur(); return false;">
-               <i class="icon-info-sign icon-white"></i>
-           </a>
+           <div id="argus-controls" style="position: absolute; top: -24px; width: 100%; line-height: 1em; text-align: center;">
+               <a class="badge comments-indicator" href="#"
+                  style="float: left; margin-left: 4px;"
+                  title="Show comments for this node"
+                  onclick="toggleCommentsPanel(); $(this).blur(); return false;">
+                   <span id="comment-count">0</span>
+                   <i class="icon-comment icon-white"></i>
+               </a>
+
+               <span class="badge zoom-widget"
+                   title="Magnify tree view"
+                   onclick="return false;"
+                   >
+                   <a href="#"
+                      onclick="(argus.getZoomInHandler())(); return false;" >
+                      <i class="icon-plus icon-white" style="margin-right: 8px;" ></i>
+                      <span class="hidden-phone" style="color: #fff;">Zoom tree view</span>
+                   </a>
+                   <a href="#"
+                      onclick="(argus.getZoomOutHandler())(); return false;" >
+                       <i class="icon-minus icon-white" style="margin-left: 8px;" ></i>
+                   </a>
+               </span>
+               &nbsp;
+               <a class="badge toggle-conflicts" href="#"
+                   style="display: none;"
+                   title="Toggle conflict information"
+                   onclick="f = argus.getToggleConflictsHandler(); if (f) f(); return false;"
+                   >
+                      Toggle conflicts
+               </a>
+
+               <a class="badge properties-indicator" href="#" 
+                  style="float: right; margin-right: 4px;"
+                  title="Show properties for the current selection"
+                  onclick="togglePropertiesPanel(); $(this).blur(); return false;">
+                   <i class="icon-info-sign icon-white"></i>
+               </a>
+           </div>
 
           <div id="comments-panel">
            <div class="panel-edges">
