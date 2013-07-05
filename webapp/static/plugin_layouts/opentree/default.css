@@ -200,6 +200,10 @@ div.viewer-frame {
     color: #555;
 }
 
+.zoom-widget a:hover {
+    text-decoration: none;
+}
+
 #provenance-show {
     display: none;
     float: right;

@@ -23,6 +23,11 @@ function createArgus(spec) {
     var getClickHandlerNode;
     var getBackClickHandler;
     var getForwardClickHandler;
+    var argusZoomLevel;
+    var defaultPaperWidth;
+    var defaultPaperHeight;
+    var zoomStep;
+    var setZoom;
     var getClickHandlerAltRelLine;
     var getHoverHandlerNodeHighlight;
     var getHoverHandlerEdgeHighlight;
@@ -128,7 +133,22 @@ function createArgus(spec) {
         edgeProvenanceHighlight: null,
         highlightedNodeInfo: null,
         highlightedEdgeInfo: null,
-        targetNodeY: 0  // used to center the view (vertically) on the target node
+        targetNodeY: 0,  // used to center the view (vertically) on the target node
+        getZoomInHandler: function () {
+            return function() {
+                setZoom('+');
+                return false;
+            };
+        },
+        getZoomOutHandler: function () {
+            return function() {
+                setZoom('-');
+                return false;
+            };
+        },
+        getToggleConflictsHandler: function() {
+            return null;
+        }
     };
     argusObj.nodeHeight = (2 * argusObj.minTipRadius) + argusObj.yNodeMargin;
     // helper function to create the URL and arg to be passed to URL. 
@@ -222,6 +242,12 @@ function createArgus(spec) {
                 paper = new Raphael(argusObjRef.container, 10, 10);
             }
             paper.setSize(pwidth, pheight);
+
+            // IMPORTANT for easy scaling below
+            paper.setViewBox(0, 0, pwidth, pheight, true);
+            defaultPaperWidth = paper.width;
+            defaultPaperHeight = paper.height;
+            setZoom();
             
             // add dividers before anything else
             dividerBeforeEdges = paper.text(0,0,'');
@@ -408,9 +434,7 @@ function createArgus(spec) {
         });
 
         // Freeze the height of the argus viewport until new results arrive
-        //$(this.container).css('height', $(this.container).css('height'));
-        var loadHeight = 360; // Math.min( Math.max( $(this.container).height(), 360), 360 );
-        $(this.container).css('height', loadHeight);
+        $(this.container).css('height', $(this.container).css('height'));
 
         if (paper !== undefined) {
             $(this.container).unbind("scroll");
@@ -438,6 +462,7 @@ function createArgus(spec) {
 
         this.nodeID = o.nodeID;
         this.loadData(ajaxInfo);
+        setZoom();
         return this;
     };
 
@@ -587,6 +612,42 @@ function createArgus(spec) {
             argusObj.moveToNode(o);
         };
     };
+
+    // reckon zoom level as a proportion of 1.0 (="natural" size)
+    argusZoomLevel = null;
+    zoomStep = 1.2;
+    setZoom = function( newLevel ) {
+        if (argusZoomLevel && argusZoomLevel === newLevel) {
+            return;  // do nothing
+        }
+        if (!paper) {
+            return;
+        }
+        if (typeof(argusZoomLevel) !== 'number') {
+            // set default size
+            argusZoomLevel = 1.0;
+            defaultPaperWidth = paper.width;
+            defaultPaperHeight = paper.height;
+        }
+        switch(newLevel) {
+            case '+':
+                argusZoomLevel *= zoomStep;
+                break;
+            case '-':
+                argusZoomLevel /= zoomStep;
+                break;
+            default:
+                if (typeof(newLevel) === 'number') {
+                    // assume it's an explicit zoom level
+                    argusZoomLevel = 1.0 * newLevel;
+                } else {
+                    // assume this is simply re-asserting the current zoom level (eg, in a new node)
+                }
+        }
+        // try to apply the new scale, while maintaining the current center point
+        paper.setSize(defaultPaperWidth * argusZoomLevel, defaultPaperHeight * argusZoomLevel);
+    }
+
     getClickHandlerAltRelLine = function (nodeFromAJAX) {
         /* at some point we will probably want to retain a history of preferred altrelationships, etc.
          * these should be stored/retrieved from a base-level query info object that is passed back
@@ -899,9 +960,23 @@ function createArgus(spec) {
             argusObj.anchoredControls = paper.set();
         }
 
+        var conflictsInView = this.nodesWithCycles.length > 0;
+        if (conflictsInView) {
+            argusObj.getToggleConflictsHandler = function() {
+                return function() {
+                    toggleAltRels(altrelsset);
+                }
+            };
+        } else {
+            // disable (hide?) the toggle gadget
+            argusObj.getToggleConflictsHandler = function() {
+                return null;
+            };
+        }
+
+        /*
         tx = this.toggleAltBoxX;
         ty = this.toggleAltBoxY;
-        var conflictsInView = this.nodesWithCycles.length > 0;
 
         var conflictLabel = "Show or hide conflicting relationships in this view";
         var disabledConflictLabel = "No conflicting relationships in this view";
@@ -933,7 +1008,9 @@ function createArgus(spec) {
         // label on top needs identical action as box
         togglelabel.click(toggleAltRels(altrelsset));
         argusObj.anchoredControls.push(togglelabel);
+        */
 
+        /* These are just under-powered history, remove them for now.. 
         // add clickable Back and Forward pointers (now redundant with browser Back/Fwd buttons)
         backStackPointer = forwardStackPointer = null;
         backStackPointer = paper.path("M21.871,9.814 15.684,16.001 21.871,22.188 18.335,25.725 8.612,16.001 18.335,6.276z")
@@ -961,6 +1038,7 @@ function createArgus(spec) {
             forwardStackPointer.click(getForwardClickHandler());
         }
         argusObj.anchoredControls.push(forwardStackPointer);
+        */
 
         /* Let's try to anchor some widgets in the upper left corner of the
          * argus viewport. That means it needs to track the scroll of the

@@ -268,17 +268,24 @@ function toggleCommentsPanel( hideOrShow ) {
         $('.comments-indicator').fadeTo('fast', activeToggleFade);
         $('.comments-indicator').attr('title', 'Hide comments for this node');
 
-        if (currentScreenSize() === 'PHONE') {
-            // clicking on (marginalized) argus view hides the side panel
-            $('#argusCanvasContainer').unbind('click.hideComments')
-                 .bind('click.hideComments', function() {
-                     toggleCommentsPanel('HIDE');
-                 });
-        }
+        // wait to set click behavior on argus, or it'll hide again immediately
+        setTimeout(
+            function() {
+                if (currentScreenSize() === 'PHONE') {
+                    // clicking on (marginalized) argus view hides the side panel
+                    $('#argusCanvasContainer').unbind('click.hideComments')
+                         .bind('click.hideComments', function() {
+                             toggleCommentsPanel('HIDE');
+                         });
+                }
+            }, 
+            10
+        );
     }
 }
 function togglePropertiesPanel( hideOrShow ) {
     // can be forced by passing hideOrShow ('HIDE'|'SHOW')
+    console.log('>>> togglePropertiesPanel('+ hideOrShow +')...');
     if ($('#viewer-collection').hasClass('active-properties') && (hideOrShow !== 'SHOW')) {
         ///console.log('HIDING properties');
         $('#viewer-collection').removeClass('active-properties');
@@ -298,13 +305,20 @@ function togglePropertiesPanel( hideOrShow ) {
         $('.properties-indicator').fadeTo('fast', activeToggleFade);
         $('.properties-indicator').attr('title', 'Hide properties for the current selection');
 
-        if (currentScreenSize() === 'PHONE') {
-            // clicking on (marginalized) argus view hides the side panel
-            $('#argusCanvasContainer').unbind('click.hideProperties')
-                 .bind('click.hideProperties', function() {
-                     togglePropertiesPanel('HIDE');
-                 });
-        }
+        // wait to set click behavior on argus, or it'll hide again immediately
+        setTimeout(
+            function() {
+                if (currentScreenSize() === 'PHONE') {
+                    // clicking on (marginalized) argus view hides the side panel
+                    $('#argusCanvasContainer').unbind('click.hideProperties')
+                         .bind('click.hideProperties', function() {
+                             console.log('PHONE CLICK HIDING!');
+                             togglePropertiesPanel('HIDE');
+                         });
+                }
+            }, 
+            10
+        );
     }
 }
 
@@ -997,9 +1011,17 @@ function nodeDataLoaded( nodeTree ) {
     ///History.replaceState( improvedState.data, improvedState.title, improvedState.url );
     // NO, this causes a loop of updates/history-changes, maybe later..
 
-    ''// update page title and page contents
+    // update page title and page contents
     jQuery('#main-title .comments-indicator, #main-title .properties-indicator').show();
     jQuery('#main-title .title').html( historyStateToPageHeading( improvedState ) );
+
+    // if the current node has conflicts, offer a toggle to hide/show them
+    if (argus.getToggleConflictsHandler() === null) {
+        jQuery('.toggle-conflicts').hide();
+    } else {
+        jQuery('.toggle-conflicts').show();
+    }
+
     // nudge static viewer to show second line, if any
     snapViewerFrameToMainTitle();
     
