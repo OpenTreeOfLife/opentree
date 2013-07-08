@@ -19,41 +19,58 @@ if __name__ == "__main__":
     for i in infile2:
         ignore.append(i.strip())
     outfile = open(sys.argv[3],"w")
+    outfilesy = open(sys.argv[3]+".synonyms","w")
     names = [] 
-    parents = []
+    parents = []    #list of ids
     count = 0
     skipcount = 0
     pid ={} #parent ids key is the id and the value is the parent
     cid ={} #child ids key is the id and the value is the children
     nm_storage = {} # storing the id and the name
     nrank = {}
+    synnames = {}
+    syntargets = {}
+    syntypes = {}
+    irmnghoms = {}
     print "count skipped"
     for i in infile:
         spls = i.strip().split("\t")
+        # For information on what information is in each column see
+        # meta.xml in the gbif distribution.
         num = spls[0].strip()
-        if "IRMNG Homonym" in i:
-            skipcount += 1
+        if not num.isdigit():
+            # Header line has "taxonID" here
             continue
+        if "IRMNG Homonym" in i:
+            irmnghoms[num] = True
         if "International Plant Names Index" in i:
             skipcount += 1
             continue
-        if "unclassified" in i or "unassigned" in i or "other" in i or "artificial" in i or "insertion" in i:
-            skipcount += 1
-            continue
+        # "unclassified" doesn't occur 2013-07-02
+        # "unassigned" doesn't occur 2013-07-02
+        # "other" never occurs as a word
+        # there are two "artificial" but they look OK
+        # there is one "insertion" and it looks OK
+        #if "unclassified" in i or "unassigned" in i or "other" in i or "artificial" in i or "insertion" in i:
+        #    skipcount += 1
+        #    continue
         if num == "0":
             continue #gbif incertae sedis
-        pnum = spls[1].strip()
+        pnum = spls[1].strip()  # parent number
         if pnum == "0":
             continue
         name = spls[4].strip()
         rank = spls[5].strip()
-        if rank == "form" or rank == "variety" or rank == "subspecies":
+        if rank == "form" or rank == "variety" or rank == "subspecies" or rank == "infraspecificname":
             continue
         if rank == "kingdom":
             pnum = "0"
         acc = spls[6].strip()
         if acc != "accepted":
             skipcount += 1
+            synnames[num] = name
+            syntargets[num] = spls[2].strip()
+            syntypes[num] = acc
             continue
         if len(pnum) == 0 or len(num) == 0 or len(name) == 0:
             skipcount += 1
@@ -72,13 +89,16 @@ if __name__ == "__main__":
             print count,skipcount
 
     infile.close()
+
     print "counting"
     b  = Counter(names)
+    # 2013-07-02 dnames is unused
     dnames = []
     for i in b:
         if b[i] > 1:
             dnames.append(i)
-    names = []
+    names = []  #GC
+
     b = Counter(parents)
     dparents = []
     dparents = b.keys()
@@ -92,7 +112,7 @@ if __name__ == "__main__":
 #                print i,nm_storage[i],nrank[i],pid[i],nm_storage[pid[i]],nrank[pid[i]]
 #                sys.exit(0)
 #                if nrank[i] == nrank[pid[i]]:
-                if i in cid:
+                if i in cid:     # If it has children,
                     idstoch = cid[i]
                     for j in idstoch:
                         pid[j] = pid[i]
@@ -100,14 +120,27 @@ if __name__ == "__main__":
     for i in ignoreid:
         del nm_storage[i]
 
+    # Flush taxa from the IRMNG homonym list that don't have children
+    count = 0
+    for num in irmnghoms:
+        if not num in cid:
+            if num in nm_storage:
+                del nm_storage[num]
+            count += 1
+    print "IRMNG homonyms deleted:", count
+
     #putting parentless taxa into the ignore list
+    count = 0
     for i in nm_storage:
         if pid[i] not in nm_storage:
+            count += 1
             if pid[i] != "0":
                 ignore.append(i)
+                if count % 3000 == 0:
+                    print "example orphan ",i,nm_storage[i]
             else:
-                print "skipping ",i,nm_storage[i]
-    print len(ignore)
+                print "top level ",i,nm_storage[i]
+    print "orphans: ", len(ignore)
 
     #now making sure that the taxonomy is functional before printing to the file
     print "checking the tree structure"
@@ -155,7 +188,14 @@ if __name__ == "__main__":
         else:
             outfile.write(num+"\t|\t"+pnum+"\t|\t"+name+"\t|\t"+nrank[i]+"\t|\t\n")
         count += 1
-        if count % 10000 == 0:
+        if count % 100000 == 0:
             print count
     outfile.write("0\t|\t\t|\tlife\t|\t\t|\t\n")
     outfile.close()
+
+    print "synonyms"
+    for num in synnames:
+        target = syntargets[num]
+        if target in nm_storage:
+            outfilesy.write(target+"\t|\t"+synnames[num]+"\t|\t"+syntypes[num]+"\t|\t\n")
+    outfilesy.close()

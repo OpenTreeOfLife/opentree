@@ -37,12 +37,7 @@ OTT20_ARGS=Smasher $(NCBI) $(GBIF) \
 # 2.0 idempotency test
 IDEM_ARGS=Smasher $(NCBI) $(GBIF) \
       --ids $(WORK)/ott2.0/taxonomy \
-      --out $(WORK)/ott2.0-idempotency-test
-
-OTT21_ARGS=Smasher $(NCBI) $(GBIF) \
-      --ids $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids \
-      --aux $(PREOTTOL)/preottol-20121112.processed \
-      --out $(WORK)/ott2.0/
+      --out $(WORK)/ott2.0-idem/
 
 
 compile: Smasher.class
@@ -60,14 +55,24 @@ debug:
 	jdb $(CP) $(TEST_ARGS)
 
 ott20: $(WORK)/ott2.0/log
-$(WORK)/ott2.0/log: Smasher.class $(NCBI) $(PREOTTOL)/preottol-20121112.processed 
+$(WORK)/ott2.0/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.processed 
 	mkdir -p $(WORK)/ott2.0
 	java $(CP) -Xmx10g $(OTT20_ARGS)
 
-idem: $(WORK)/ott2.1.log
-$(WORK)/ott2.1.log: Smasher.class
-	mkdir -p $(WORK)/ott2.1
+idem: $(WORK)/ott2.0.idem/log
+$(WORK)/ott2.0.idem/log: Smasher.class
+	mkdir -p $(WORK)/ott2.0.idem
 	java $(CP) -Xmx10g $(IDEM_ARGS)
+
+OTT21_ARGS=Smasher $(NCBI) $(GBIF) \
+      --ids $(WORK)/ott2.0/taxonomy \
+      --aux $(PREOTTOL)/preottol-20121112.processed \
+      --out $(WORK)/ott2.1/
+
+ott21: $(WORK)/ott2.1/log
+$(WORK)/ott2.1/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.processed 
+	mkdir -p $(WORK)/ott2.1
+	java $(CP) -Xmx10g $(OTT21_ARGS)
 
 # little test
 $(WORK)/dory.foo: $(WORK)/nem2/taxonomy Smasher.class
@@ -83,10 +88,14 @@ $(WORK)/nem1.ott: $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids
 $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
 
+# Formerly, where we now have /dev/null, we had
+# ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
+
 $(NCBI): $(WORK)/ncbi/nodes.dmp process_ncbi_taxonomy_taxdump.py
 	python process_ncbi_taxonomy_taxdump.py F $(WORK)/ncbi \
-            ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP $@.tmp
+            /dev/null $@.tmp
 	mv -f $@.tmp $@
+	mv -f $@.tmp.synonyms $@.synonyms
 
 $(WORK)/ncbi/taxdump.tar.gz:
 	mkdir -p $(WORK)/ncbi
@@ -95,12 +104,17 @@ $(WORK)/ncbi/taxdump.tar.gz:
 
 $(WORK)/ncbi/nodes.dmp: $(WORK)/ncbi/taxdump.tar.gz
 	tar -C $(WORK)/ncbi -xzvf $(WORK)/ncbi/taxdump.tar.gz
+	touch $(WORK)/ncbi/*.dmp
 
- $(GBIF): $(WORK)/gbif/taxon.txt ../data/process_gbif_taxonomy.py
-	python ../data/process_gbif_taxonomy.py \
+# Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
+
+gbif: $(GBIF)
+$(GBIF): $(WORK)/gbif/taxon.txt process_gbif_taxonomy.py
+	python process_gbif_taxonomy.py \
 	       $(WORK)/gbif/taxon.txt \
-	       ../data/gbif/ignore.txt $@.tmp
+	       /dev/null $@.tmp
 	mv -f $@.tmp $@
+	mv -f $@.tmp.synonyms $@.synonyms
 
 $(WORK)/gbif/taxon.txt:
 	mkdir -p $(WORK)/gbif
