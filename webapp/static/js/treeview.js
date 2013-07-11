@@ -236,6 +236,13 @@ $(document).ready(function() {
         return false;
     });
 
+    // bind widget prompts to trigger their respective links (badges)
+    $('#argus-controls .widget-prompt').unbind('click').click(function() {
+        var $clicked = $(this);
+        $clicked.parent().find('a:eq(0)').click();
+        return false;
+    });
+
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
     $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
     $('#taxon-search-form').unbind('submit').submit(function() {
@@ -252,21 +259,24 @@ function toggleCommentsPanel( hideOrShow ) {
     if ($('#viewer-collection').hasClass('active-comments') && (hideOrShow !== 'SHOW')) {
         ///console.log('HIDING comments');
         $('#viewer-collection').removeClass('active-comments');
-        $('.comments-indicator').fadeTo('fast', readyToggleFade);
+        $('.comments-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.comments-indicator').attr('title', 'Show comments for this node');
+        $('.comments-indicator .widget-prompt').text(' Show comments');
         // remove any toggling behavior bound to the argus view
         $('#argusCanvasContainer').unbind('click.hideComments');
     } else {
         ///console.log('SHOWING comments');
         $('#viewer-collection').removeClass('active-properties');
-        $('.properties-indicator').fadeTo('fast', readyToggleFade);
+        $('.properties-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.properties-indicator').attr('title', 'Show properties for the current selection');
+        $('.properties-indicator .widget-prompt').text('Show properties ');
         // remove any toggling behavior bound to the argus view
         $('#argusCanvasContainer').unbind('click.hideProperties');
 
         $('#viewer-collection').addClass('active-comments');
-        $('.comments-indicator').fadeTo('fast', activeToggleFade);
+        $('.comments-indicator .badge').fadeTo('fast', activeToggleFade);
         $('.comments-indicator').attr('title', 'Hide comments for this node');
+        $('.comments-indicator .widget-prompt').text(' Hide comments');
 
         // wait to set click behavior on argus, or it'll hide again immediately
         setTimeout(
@@ -289,21 +299,24 @@ function togglePropertiesPanel( hideOrShow ) {
     if ($('#viewer-collection').hasClass('active-properties') && (hideOrShow !== 'SHOW')) {
         ///console.log('HIDING properties');
         $('#viewer-collection').removeClass('active-properties');
-        $('.properties-indicator').fadeTo('fast', readyToggleFade);
+        $('.properties-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.properties-indicator').attr('title', 'Show properties for the current selection');
+        $('.properties-indicator .widget-prompt').text('Show properties ');
         // remove any toggling behavior bound to the argus view
         $('#argusCanvasContainer').unbind('click.hideProperties');
     } else {
         ///console.log('SHOWING properties');
         $('#viewer-collection').removeClass('active-comments');
-        $('.comments-indicator').fadeTo('fast', readyToggleFade);
+        $('.comments-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.comments-indicator').attr('title', 'Show comments for this node');
+        $('.comments-indicator .widget-prompt').text(' Show comments');
         // remove any toggling behavior bound to the argus view
         $('#argusCanvasContainer').unbind('click.hideComments');
 
         $('#viewer-collection').addClass('active-properties');
-        $('.properties-indicator').fadeTo('fast', activeToggleFade);
+        $('.properties-indicator .badge').fadeTo('fast', activeToggleFade);
         $('.properties-indicator').attr('title', 'Hide properties for the current selection');
+        $('.properties-indicator .widget-prompt').text('Hide properties ');
 
         // wait to set click behavior on argus, or it'll hide again immediately
         setTimeout(

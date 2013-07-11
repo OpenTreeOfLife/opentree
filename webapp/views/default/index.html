@@ -86,43 +86,52 @@
           style="overflow: visible;" >
 
            <div id="argus-controls" style="position: absolute; top: -24px; width: 100%; line-height: 1em; text-align: center;">
-               <a class="badge comments-indicator" href="#"
-                  style="float: left; margin-left: 4px;"
+              <span class="comments-indicator"
+                    style="float: left; margin-left: 4px;">
+               <a class="badge" href="#"
                   title="Show comments for this node"
                   onclick="toggleCommentsPanel(); $(this).blur(); return false;">
                    <span id="comment-count">0</span>
                    <i class="icon-comment icon-white"></i>
                </a>
-
-               <span class="badge zoom-widget"
+               <span class="hidden-phone widget-prompt"> Show comments</span>
+              </span><!-- .comments-indicator -->
+              
+              <span class="zoom-widget">
+               <span class="hidden-phone widget-prompt">Zoom tree view </span>
+               <span class="badge"
                    title="Magnify tree view"
                    onclick="return false;"
                    >
                    <a href="#"
-                      onclick="(argus.getZoomInHandler())(); return false;" >
+                      onclick="(argus.getZoomInHandler())(); $(this).blur(); return false;" >
                       <i class="icon-plus icon-white" style="margin-right: 8px;" ></i>
-                      <span class="hidden-phone" style="color: #fff;">Zoom tree view</span>
                    </a>
+                   <span style="color: #ccc;">|</span>
                    <a href="#"
-                      onclick="(argus.getZoomOutHandler())(); return false;" >
+                      onclick="(argus.getZoomOutHandler())(); $(this).blur(); return false;" >
                        <i class="icon-minus icon-white" style="margin-left: 8px;" ></i>
                    </a>
                </span>
-               &nbsp;
+              </span><!-- .zoom-widget -->
+
                <a class="badge toggle-conflicts" href="#"
                    style="display: none;"
                    title="Toggle conflict information"
-                   onclick="f = argus.getToggleConflictsHandler(); if (f) f(); return false;"
+                   onclick="f = argus.getToggleConflictsHandler(); if (f) f(); $(this).blur(); return false;"
                    >
                       Toggle conflicts
                </a>
 
-               <a class="badge properties-indicator" href="#" 
-                  style="float: right; margin-right: 4px;"
+              <span class="properties-indicator"
+                    style="float: right; margin-right: 4px;">
+               <span class="hidden-phone widget-prompt">Show properties </span>
+               <a class="badge" href="#" 
                   title="Show properties for the current selection"
                   onclick="togglePropertiesPanel(); $(this).blur(); return false;">
                    <i class="icon-info-sign icon-white"></i>
                </a>
+              </span><!-- .properties-indicator -->
            </div>
 
           <div id="comments-panel">

@@ -290,7 +290,7 @@ function createArgus(spec) {
                     "y": 0,
                     "stroke": argusObj.provenanceHighlightColor,
                     "title": "Click to see properties for this node", // add name?
-                    "stroke-width": "2px",
+                    "stroke-width": 2,
                     "fill": "white"
                 }).insertBefore(dividerBeforeNodes)
             );
@@ -339,7 +339,7 @@ function createArgus(spec) {
                     "y": 0,
                     "title": "Click to see properties for this edge",
                     "stroke": argusObj.provenanceHighlightColor,
-                    "stroke-width": "2px",
+                    "stroke-width": 2,
                     "fill": "white"
                 }).insertBefore(dividerBeforeNodes)
             );
@@ -781,14 +781,14 @@ function createArgus(spec) {
                 
                 // draw a wide, invisible path to detect mouse-over
                 triggerPath = paper.path(branchSt).toBack().attr({
-                    "stroke-width": "5px",
+                    "stroke-width": 5,
                     "stroke": this.bgColor
                 }).insertAfter(dividerBeforeEdges);
                 // NOTE that these are pushed behind all visible paths!
                 
                 // ... and a congruent, visible path
                 visiblePath = paper.path(branchSt).toBack().attr({
-                    "stroke-width": "1px",
+                    "stroke-width": 1,
                     "stroke": this.pathColor
                 }).insertBefore(dividerBeforeLabels);
                 
@@ -983,7 +983,7 @@ function createArgus(spec) {
         var toggleHeight = this.nodeHeight * 1.5;
         togglebox = paper.rect(tx, ty, this.nodesWidth, toggleHeight).attr({
             "stroke": "black",
-            "stroke-width": "1px",
+            "stroke-width": 1,
             "fill": this.bgColor,
             "fill-opacity": 0.6,
             "r": 4,  // rounded corner (radius)
@@ -1131,11 +1131,11 @@ function createArgus(spec) {
                     altrellabel.push(altrellabeltext);
                     curShowAltRelFn = getHoverHandlerAltRelLineShow(altrelline,
                                                                     altrellabel,
-                                                                    {"stroke-width": "3px"
+                                                                    {"stroke-width": 3
                             });
                     curHideAltRelFn = getHoverHandlerAltRelLineHide(altrelline,
                                                                     altrellabel,
-                                                                    {"stroke-width": "1px"
+                                                                    {"stroke-width": 1
                             });
                     altrelline.hover(curShowAltRelFn, curHideAltRelFn).click(
                         getClickHandlerAltRelLine(curAltRel)
