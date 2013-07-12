@@ -32,6 +32,7 @@ def status():
     conf = get_conf(request)
     try:
         nexsons_dir = conf.get('paths', 'nexsonsdir')
+        treemachine_domain = conf.get('domains', 'treemachine')
     except:
         raise HTTP(501, T('Server is not configured to report on NexSON status'))
     if (not os.path.exists(nexsons_dir)) or (not os.path.isdir(nexsons_dir)):
@@ -68,7 +69,7 @@ def status():
     if needs_updating:
         if VERBOSE:
             sys.stderr.write('"%s" is dirty\n' % treemachine_log_path)
-        run_treemachine_pg_import_check(paths, treemachine_db)
+        run_treemachine_pg_import_check(paths, treemachine_domain=treemachine_domain)
     elif VERBOSE:
         sys.stderr.write('"%s" is clean\n' % treemachine_log_path)
     #####################

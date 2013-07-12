@@ -106,32 +106,65 @@ def htmlize_treemachine_output(paths):
         output.close()
 
 
-def run_treemachine_pg_import_check(paths, treemachine_db):
-    n_path = paths['nexson']
-    l_path = paths['treemachine_log']
-    err_path = paths['treemachine_err']
-    log_err_dir = os.path.split(l_path)[0]
-    if not os.path.exists(log_err_dir):
-        os.makedirs(log_err_dir)
-    ingest_err_dir = os.path.split(err_path)[0]
-    if not os.path.exists(ingest_err_dir):
-        os.makedirs(ingest_err_dir)
-    if VERBOSE:
-        sys.stderr.write('Processing "%s" to "%s"\n' % (n_path, l_path))
-    err_file = open(err_path, 'w')
-    cmd = ['treemachine',
-           'pgloadind', 
-           treemachine_db,
-           n_path,
-           l_path]
-    if VERBOSE:
-        sys.stderr.write(' '.join(cmd) + '\n')
-    try:
-        rc = subprocess.call(cmd, stdout=err_file, stderr=subprocess.STDOUT)
-    except:
-        pass
-    err_file.close()
-
+def run_treemachine_pg_import_check(paths, treemachine_db=None, treemachine_domain=None):
+    if treemachine_db is not None:
+        n_path = paths['nexson']
+        l_path = paths['treemachine_log']
+        err_path = paths['treemachine_err']
+        log_err_dir = os.path.split(l_path)[0]
+        if not os.path.exists(log_err_dir):
+            os.makedirs(log_err_dir)
+        ingest_err_dir = os.path.split(err_path)[0]
+        if not os.path.exists(ingest_err_dir):
+            os.makedirs(ingest_err_dir)
+        if VERBOSE:
+            sys.stderr.write('Processing "%s" to "%s"\n' % (n_path, l_path))
+        err_file = open(err_path, 'w')
+        cmd = ['treemachine',
+               'pgloadind', 
+               treemachine_db,
+               n_path,
+               l_path]
+        if VERBOSE:
+            sys.stderr.write(' '.join(cmd) + '\n')
+        try:
+            rc = subprocess.call(cmd, stdout=err_file, stderr=subprocess.STDOUT)
+        except:
+            pass
+        err_file.close()
+    elif treemachine_domain is not None:
+        n_path = paths['nexson']
+        nexsonBlob = open(n_path, 'rU').read()
+        headers = {
+            'content-type' : 'application/json',
+            'accept' : 'application/json',
+        }
+        p = '/ext/GoLS/graphdb/getStudyIngestMessagesForNexSON'
+        if treemachine_domain.startswith('http://127.0.0.1'):
+            p = '/db/data' + p
+        SUBMIT_URI = treemachine_domain + p
+        resp = requests.post(SUBMIT_URI,
+                     headers=headers,
+                     data=json.dumps({'nexsonBlob': nexsonBlob}),
+                     allow_redirects=True)
+        resp.raise_for_status()
+        results = resp.json()
+        l_path = paths['treemachine_log']
+        log_err_dir = os.path.split(l_path)[0]
+        if not os.path.exists(log_err_dir):
+            os.makedirs(log_err_dir)
+        l_file = open(l_path, 'w')
+        try:
+            if isinstance(results, unicode) or isinstance(results, str):
+                results = json.loads(results)
+                json.dump(results, l_file, sort_keys=True, indent=4)
+            else:
+                json.dump(results, l_file, sort_keys=True, indent=4)
+        finally:
+            l_file.close()
+        return results
+    else:
+        raise ValueError('treemachine_domain or treemachine_db must be specified')
 def store_state_JSON(s, fp):
     td = open(fp, 'w')
     try:
@@ -659,6 +692,7 @@ def write_status_obj_as_html(status_obj, output):
 <head>
     <title>Snaphsot of treemachine status for phylografter study %s</title>
 </head>''' % phylografter_study_id)
+    return
     output.write('''<body>
 <h2>Study Info</h2>
     <p><a href="%s">%s</a></p>
