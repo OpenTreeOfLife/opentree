@@ -1,0 +1,108 @@
+{{extend 'layout.html'}}
+<h2>Study Info</h2>
+{{=A(study_info['phylografter_study_link'], _href=study_info['phylografter_study_link'])}}
+
+{{
+kl = study_info.keys()
+kl.sort()
+}}
+<table border="1">
+{{for k in kl:
+  v = study_info[k]
+  if isinstance(v, str) or isinstance(v, unicode):
+    v = v.encode('utf-8')
+  else:
+    v = str(v)
+  pass}}
+  {{if v.startswith('http:'):}}
+    <tr><td>{{=k}}</td><td>{{=A(v, _href=v)}}</td></tr>
+  {{else:}}
+    <tr><td>{{=k}}</td><td>{{=v}}</td></tr>
+  {{pass}}
+{{pass}}
+</table>
+
+{{
+to_ignore_keys = [ 'tree_index', ]
+detail_keys = ['number of external nodes', 'number edges', 'number nodes', 'ot:tag']
+verbose_keys = ['postpruning newick', 'subtrees', 'by_ott' ]
+valuable_tree_keys = ['id', 'ot:branchLengthMode', 'ingroup', 'ot:inGroupClade', 'ot:focalClade']
+special_keys = ['status', 'had_ott_ids_before_tnrs', 'deprecated', 'reused_tip_labels', 'pruned_dup', 'null_ottol_ids_in_final_mapping', 'null ott id for node', 'overlapping_tip_taxa', 'importable_into_treemachine', 'phylografter_tree_link', 'ott id missing', 'tnrs resolved ottolid', 'pruned unmapped', ]
+keys_to_lists = ['ot:tag']
+all_known_tree_keys = special_keys + verbose_keys + valuable_tree_keys + detail_keys + to_ignore_keys
+num_importable = study_info['num_trees_importable']
+}}
+
+{{for tree in tree_list:}}
+  {{tid = tree['id']}}
+  {{phylografter_tree_link = tree['phylografter_tree_link']}}
+  <h3>Tree {{=tid}}</h3>
+  <p>{{=A(phylografter_tree_link, _href=phylografter_tree_link)}}</p>
+  <p><b>Status: </b>{{=tree['status']['text']}}</p>
+  {{reason_list = tree['status']['reasons']}}
+  <table border="1">
+  {{for row in reason_list:}}
+    {{rc = row['rc']}}
+    <tr><td>{{=row['reason']}}</td>
+    {{if rc == 'USER':
+        t=row['details'].encode('utf-8')
+    elif rc == 'DUPLICATE':
+        ol = [i['original label'] for i in row['details']]
+        p = str(len(ol)) + ' taxa mapped to this OTT taxon. '
+        t = p + u'Their original labels were: "' + u'", "'.join([i.encode('utf-8') for i in ol]) + '"'
+    elif rc == 'OVERLAPPING':
+        d = row['details']
+        pru = d['pruned']
+        ret = d['retained']
+        p = u'To resolve this situation, "%s" ( OTTID %s ; original label "%s" ) was pruned. ' % (pru['name'].encode('utf-8'), pru['OTT ID'], pru['original label'].encode('utf-8'))
+        r = u'"%s" ( OTTID %s ; original label "%s" ) was retained. ' % (ret['name'].encode('utf-8'), ret['OTT ID'], ret['original label'].encode('utf-8'))
+        t = p + r
+    elif rc in ['PRUNING', 'PRUNING_UNMAPPED']:
+        d = row['details']
+        t = u'The original label of the pruned taxon was "%s"' % (d['original label'].encode('utf-8'))
+    elif rc == 'TNRS':
+        d = row['details']
+        t = u'Name searched for in TNRS was "%s"' % (d['searched on'].encode('utf-8'))
+    else:
+        assert rc == 'NULLID'
+        t = row['details'].encode('utf-8')
+    pass}}
+    <td>{{=t}}</td></tr>
+  {{pass}}
+  </table>
+  <p><b>Info</b></p>
+  <table border="1">
+    {{
+    kl = tree.keys()
+    for k in kl:
+        if k not in all_known_tree_keys:}}
+            <font color="red"><b>Unexpected key in tree: {{=k}}</b></font>
+       {{pass}}
+    {{pass}}
+    {{for k in keys_to_lists:
+        tl = tree.get(k)
+        if tl is not None:
+            tree[k] = '"%s"' % '", "'.join(tl)
+        pass
+    pass}}
+    {{for k in valuable_tree_keys + detail_keys:
+        v = tree.get(k)
+        if v is not None:
+            if isinstance(v, str) or isinstance(v, unicode):
+                v = v.encode('utf-8')
+            else:
+                v = str(v)
+            pass}}
+            <tr><td>{{=k.encode('utf-8')}}</td><td>{{=v.encode('utf-8')}}</td> 
+        {{else:}}
+            <tr><td>{{=k.encode('utf-8')}}</td><td><font color="red"><b>Missing!</b></font></td>
+        {{pass}}
+    {{pass}}
+  </table>
+  <hr/>
+{{pass}}
+{{if num_importable != 1:}}
+    <p><font color="red"><b>{{=str(num_importable)}} trees</b></font> importable from this study!</p>
+{{else:}}
+    <p>1 tree importable from this study.</p>
+{{pass}}
