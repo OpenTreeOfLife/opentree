@@ -1,4 +1,6 @@
 # Rename this file to "config" to make it active
+[paths]
+nexsonsdir = /usr/share/open-tree/avatol_nexsons
 
 
 # Specify the public-facing hostname[:port] for your opentree site, required to
