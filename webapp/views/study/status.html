@@ -70,4 +70,39 @@ num_importable = study_info['num_trees_importable']
     <td>{{=t}}</td></tr>
   {{pass}}
   </table>
+  <p><b>Info</b></p>
+  <table border="1">
+    {{
+    kl = tree.keys()
+    for k in kl:
+        if k not in all_known_tree_keys:}}
+            <font color="red"><b>Unexpected key in tree: {{=k}}</b></font>
+       {{pass}}
+    {{pass}}
+    {{for k in keys_to_lists:
+        tl = tree.get(k)
+        if tl is not None:
+            tree[k] = '"%s"' % '", "'.join(tl)
+        pass
+    pass}}
+    {{for k in valuable_tree_keys + detail_keys:
+        v = tree.get(k)
+        if v is not None:
+            if isinstance(v, str) or isinstance(v, unicode):
+                v = v.encode('utf-8')
+            else:
+                v = str(v)
+            pass}}
+            <tr><td>{{=k.encode('utf-8')}}</td><td>{{=v.encode('utf-8')}}</td> 
+        {{else:}}
+            <tr><td>{{=k.encode('utf-8')}}</td><td><font color="red"><b>Missing!</b></font></td>
+        {{pass}}
+    {{pass}}
+  </table>
+  <hr/>
+{{pass}}
+{{if num_importable != 1:}}
+    <p><font color="red"><b>{{=str(num_importable)}} trees</b></font> importable from this study!</p>
+{{else:}}
+    <p>1 tree importable from this study.</p>
 {{pass}}
