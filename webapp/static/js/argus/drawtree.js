@@ -319,7 +319,6 @@ function createArgus(spec) {
                 getClickHandlerNodeHighlight()
             );
 
-
             argusObj.edgeProvenanceHighlight = paper.set();
             // rect to allow scaling (vs path)
             argusObj.edgeProvenanceHighlight.push(
@@ -332,6 +331,15 @@ function createArgus(spec) {
                     "title": "Click to see properties for this edge",
                     "stroke": "none"
                 }).insertBefore(dividerBeforeNodes)
+
+                /* this path version was tempting, but doesn't scale easily!
+                paper.path("M-50 0L50 0").toBack().attr({
+                    "stroke": argusObj.provenanceHighlightColor,
+                    "stroke-linecap": 'round',
+                    "stroke-width": 4,
+                    "title": "Click to see properties for this edge",
+                }).insertBefore(dividerBeforeNodes)
+                */
             );
             argusObj.edgeProvenanceHighlight.push(
                 // Draw a circle or smaller lozenge shape
@@ -775,14 +783,36 @@ function createArgus(spec) {
             // draw branches (square tree)
             spineSt = "M" + node.x + " " + node.children[0].y + "L" + node.x + " " + node.children[nchildren - 1].y;
             paper.path(spineSt).toBack().attr({
-                "stroke": this.pathColor
+                "stroke": this.pathColor,
+                "stroke-linecap": 'round'
             }).insertBefore(dividerBeforeLabels);
             for (i = 0; i < nchildren; i++) {
+
+                var lineDashes, lineColor,
+                    sb = node.children[i].supportedBy,
+                    supportedByTaxonomy = $.inArray('taxonomy', sb) !== -1, 
+                    supportedByPhylogeny = sb.length > (supportedByTaxonomy ? 1 : 0);
+
+                if (supportedByTaxonomy && supportedByPhylogeny) {
+                    lineDashes = '';
+                    lineColor = this.pathColor;
+                } else if (supportedByPhylogeny){
+                    lineDashes = '-';
+                    lineColor = this.pathColor;
+                } else if (supportedByTaxonomy){
+                    lineDashes = '.';
+                    lineColor = this.pathColor;
+                } else {
+                    lineDashes = '--..';
+                    lineColor = 'orange';
+                }
+
                 branchSt = "M" + node.x + " " + node.children[i].y + "L" + node.children[i].x + " " + node.children[i].y;
                 
                 // draw a wide, invisible path to detect mouse-over
                 triggerPath = paper.path(branchSt).toBack().attr({
                     "stroke-width": 5,
+                    "stroke-linecap": 'butt',
                     "stroke": this.bgColor
                 }).insertAfter(dividerBeforeEdges);
                 // NOTE that these are pushed behind all visible paths!
@@ -790,7 +820,9 @@ function createArgus(spec) {
                 // ... and a congruent, visible path
                 visiblePath = paper.path(branchSt).toBack().attr({
                     "stroke-width": 1,
-                    "stroke": this.pathColor
+                    "stroke-linecap": 'round',
+                    "stroke-dasharray": lineDashes,
+                    "stroke": lineColor          // this.pathColor
                 }).insertBefore(dividerBeforeLabels);
                 
                 // assign hover behaviors
@@ -823,6 +855,7 @@ function createArgus(spec) {
                     upwardSt = "M" + startX+ "," + startY + "L" + endX + " " + endY;
                     paper.path(upwardSt).toBack().attr({
                         "stroke": this.pathColor,
+                        "stroke-linecap": 'round',
                         "stroke-dasharray": '- ',
                         "opacity": pathOpacity
                     }).insertBefore(dividerBeforeLabels);
