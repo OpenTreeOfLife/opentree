@@ -9,9 +9,75 @@ import os, sys, subprocess, json
 import requests
 import gzip
 import copy
+import time
 from cStringIO import StringIO
 from parse_nexson import Study, debug, warn
 VERBOSE = True
+
+
+class LockPolicy(object):
+    MAX_NUM_SLEEP_IN_WAITING_FOR_LOCK = os.environ.get('MAX_NUM_SLEEP_IN_WAITING_FOR_LOCK', 100)
+    try:
+        SLEEP_FOR_LOCK_TIME = float(os.environ.get('SLEEP_FOR_LOCK_TIME', 0.05))
+    except:
+        SLEEP_FOR_LOCK_TIME = 0.05 
+
+    def __init__(self):
+        self.early_exit_if_locked = False
+        self.wait_do_not_relock_if_locked = False
+        self._reset_current()
+
+    def _reset_current(self):
+        self.curr_lockfile, self.curr_owns_lock, self.curr_was_locked = False, False, False
+
+    def _wait_for_lock(self, lockfile):
+        '''Returns a pair of bools: lockfile previously existed, lockfile now owned by caller
+        '''
+        n = 0
+        pid = os.getpid()
+        previously_existed = False
+        while os.path.exists(lockfile):
+            previously_existed = True
+            n += 1
+            if self.early_exit_if_locked or n > LockPolicy.MAX_NUM_SLEEP_IN_WAITING_FOR_LOCK:
+                return True, False
+            if VERBOSE:
+                sys.stderr.write('Waiting for "%s" iter %d\n' % (lockfile, n))
+            time.sleep(LockPolicy.SLEEP_FOR_LOCK_TIME)
+        if previously_existed and self.wait_do_not_relock_if_locked:
+            return True, False
+        try:
+            o = open(lockfile, 'w')
+            o.write(str(pid) + '\n')
+            o.close()
+        except:
+            try:
+                self.remove_lock(lockfile)
+            except:
+                pass
+            return previously_existed, False
+        else:
+            return previously_existed, True
+    def wait_for_lock(self, lockfile):
+        t = self._wait_for_lock(lockfile)
+        self.curr_lockfile = lockfile
+        self.curr_was_locked, self.curr_owns_lock = t
+        if VERBOSE:
+            sys.stderr.write('Lockfile = "%s" was_locked=%s owns_lock=%s\n'% 
+                    (lockfile, 
+                     "TRUE" if self.curr_was_locked else "FALSE",
+                     "TRUE" if self.curr_owns_lock else "FALSE",
+                     ))
+        return t
+    def remove_lock(self):
+        try:
+            if self.curr_lockfile and self.curr_owns_lock:
+                self._remove_lock(self.curr_lockfile)
+        finally:
+            self._reset_current()
+    def _remove_lock(self, lockfile):
+        if os.path.exists(lockfile):
+            os.remove(lockfile)
 
 def target_is_dirty(src_path_list, dest_path_list, trigger=None):
     if bool(trigger):
@@ -44,13 +110,13 @@ def get_processing_paths_from_prefix(pref,
                                      to_html_output_dir='.',
                                      nexson_state_db=None):
     d = {'nexson': os.path.abspath(os.path.join(nexson_dir, pref)),
-            'treemachine_log': os.path.abspath(os.path.join(treemachine_ingest_dir, pref + '-out.json')),
-            'treemachine_err': os.path.abspath(os.path.join(treemachine_ingest_dir, pref + '-err.txt')),
-            'html_err': os.path.abspath(os.path.join(to_html_scratch_dir, pref + '-2html-err.txt')),
-            'html': os.path.abspath(os.path.join(to_html_output_dir, pref + '.html')),
-            'status_json': os.path.abspath(os.path.join(to_html_output_dir, pref + '.json')),
-            'nexson_state_db':nexson_state_db,
-            }
+         'treemachine_log': os.path.abspath(os.path.join(treemachine_ingest_dir, pref + '-out.json')),
+         'treemachine_err': os.path.abspath(os.path.join(treemachine_ingest_dir, pref + '-err.txt')),
+         'html_err': os.path.abspath(os.path.join(to_html_scratch_dir, pref + '-2html-err.txt')),
+         'html': os.path.abspath(os.path.join(to_html_output_dir, pref + '.html')),
+         'status_json': os.path.abspath(os.path.join(to_html_output_dir, pref + '.json')),
+         'nexson_state_db':nexson_state_db,
+         }
     if d['nexson_state_db'] is None:
         d['nexson_state_db'] = os.path.abspath(os.path.join(nexson_dir, '.to_download.json')), # stores the state of this repo. *very* hacky primitive db.
     return d
@@ -70,7 +136,7 @@ def get_study_filename_list(dir_dict):
         return [i[1] for i in nt]
     return [study_to_ingest]
 
-def htmlize_treemachine_output(paths):
+def refresh_of_status_json_from_treemachine_path(paths):
     n_path = paths['nexson']
     study = os.path.split(n_path)[-1]
     e_path = paths['treemachine_log']
@@ -98,12 +164,18 @@ def htmlize_treemachine_output(paths):
         json.dump(status_obj, status_stream, sort_keys=True, indent=1)
     finally:
         status_stream.close()
+    return status_obj
 
+def refresh_html_from_status_obj(paths, status_obj):
     output = open(paths['html'], 'w')
     try:
         write_status_obj_as_html(status_obj, output)
     finally:
         output.close()
+
+def htmlize_treemachine_output(paths):
+    status_obj = refresh_of_status_json_from_treemachine_path(paths)
+    refresh_html_from_status_obj(paths, status_obj)
 
 
 def run_treemachine_pg_import_check(paths, treemachine_db=None, treemachine_domain=None):
@@ -165,12 +237,15 @@ def run_treemachine_pg_import_check(paths, treemachine_db=None, treemachine_doma
         return results
     else:
         raise ValueError('treemachine_domain or treemachine_db must be specified')
+
 def store_state_JSON(s, fp):
-    td = open(fp, 'w')
+    tmpfilename = fp + '.tmpfile'
+    td = open(tmpfilename, 'w')
     try:
         json.dump(s, td, sort_keys=True, indent=0)
     finally:
         td.close()
+    os.rename(tmpfilename, fp) #atomic on POSIX
 
 
 def get_list_of_dirty_nexsons(dir_dict):
@@ -202,8 +277,7 @@ def get_list_of_dirty_nexsons(dir_dict):
     to_refresh = list(new_resp['studies'])
     return to_refresh, new_resp
 
-def download_nexson_from_phylografter(paths, download_db):
-
+def download_nexson_from_phylografter(paths, download_db, lock_policy):
     DOMAIN = os.environ.get('PHYLOGRAFTER_DOMAIN_PREF')
     if DOMAIN is None:
         DOMAIN = 'http://www.reelab.net/phylografter'
@@ -214,40 +288,49 @@ def download_nexson_from_phylografter(paths, download_db):
             'accept' : 'application/json',
         }
     nexson = paths['nexson']
-    study = os.path.split(nexson)[-1]
-    if VERBOSE:
-        sys.stderr.write('Downloading %s...\n' % study)
-    SUBMIT_URI = DOMAIN + '/study/export_gzipNexSON.json/' + study
-    resp = requests.get(SUBMIT_URI,
-                     headers=headers,
-                     allow_redirects=True)
-    resp.raise_for_status()
+    lockfile = nexson + '.lock'
+    was_locked, owns_lock = lock_policy.wait_for_lock(lockfile)
     try:
-        uncompressed = gzip.GzipFile(mode='rb', fileobj=StringIO(resp.content)).read()
-        results = uncompressed
-    except:
-        raise 
-    if isinstance(results, unicode) or isinstance(results, str):
-        er = json.loads(results)
-    else:
-        raise RuntimeError('Non gzipped response, but not a string is:', results)
-    should_write = False
-    if not os.path.exists(study):
-        should_write = True
-    else:
-        prev_content = json.load(open(study, 'rU'))
-        if prev_content != er:
-            should_write = True
-    if should_write:
-        store_state_JSON(er, study)
-    if download_db is not None:
+        if not owns_lock:
+            return False
+        study = os.path.split(nexson)[-1]
+        if VERBOSE:
+            sys.stderr.write('Downloading %s...\n' % study)
+        SUBMIT_URI = DOMAIN + '/study/export_gzipNexSON.json/' + study
+        resp = requests.get(SUBMIT_URI,
+                         headers=headers,
+                         allow_redirects=True)
+        resp.raise_for_status()
         try:
-            download_db['studies'].remove(int(study))
+            uncompressed = gzip.GzipFile(mode='rb', fileobj=StringIO(resp.content)).read()
+            results = uncompressed
         except:
-            warn('%s not in %s' % (study, paths['nexson_state_db']))
-            pass
+            raise 
+        if isinstance(results, unicode) or isinstance(results, str):
+            er = json.loads(results)
         else:
-            store_state_JSON(download_db, paths['nexson_state_db'])
+            raise RuntimeError('Non gzipped response, but not a string is:', results)
+        should_write = False
+        if not os.path.exists(study):
+            should_write = True
+        else:
+            prev_content = json.load(open(study, 'rU'))
+            if prev_content != er:
+                should_write = True
+        if should_write:
+            store_state_JSON(er, study)
+        if download_db is not None:
+            try:
+                download_db['studies'].remove(int(study))
+            except:
+                warn('%s not in %s' % (study, paths['nexson_state_db']))
+                pass
+            else:
+                store_state_JSON(download_db, paths['nexson_state_db'])
+    finally:
+        lock_policy.remove_lock()
+    return True
+
 
 
 ###############################################################################
@@ -692,7 +775,6 @@ def write_status_obj_as_html(status_obj, output):
 <head>
     <title>Snaphsot of treemachine status for phylografter study %s</title>
 </head>''' % phylografter_study_id)
-    return
     output.write('''<body>
 <h2>Study Info</h2>
     <p><a href="%s">%s</a></p>

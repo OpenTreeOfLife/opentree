@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from nexson2treemachine import get_processing_paths_from_prefix, get_default_dir_dict, target_is_dirty, get_study_filename_list
-from nexson2treemachine import get_list_of_dirty_nexsons, download_nexson_from_phylografter
+from nexson2treemachine import get_list_of_dirty_nexsons, download_nexson_from_phylografter, LockPolicy
 from nexson2treemachine import run_treemachine_pg_import_check, htmlize_treemachine_output
 import json
 VERBOSE = False
@@ -18,6 +18,11 @@ def status():
         raise HTTP(404)
     emit_json = study_id.lower().endswith('.json')
     study_id = study_id.split('.')[0]
+    try:
+        ls = long(study_id)
+        assert ls > 0
+    except:
+        raise HTTP(404)
     def get_conf(request): #@TEMP this get_conf should probably move to a module 
         conf = SafeConfigParser({})
         try:
@@ -43,6 +48,7 @@ def status():
     dirty_nexsons = [str(i) for i in dirty_nexsons]
     
     paths = get_processing_paths_from_prefix(study_id, **dd)
+    lock_policy = LockPolicy()
     #################
     # grab the paths
     #################
@@ -59,7 +65,8 @@ def status():
         dirty_nexsons.remove(study_id)
         if VERBOSE:
             sys.stderr.write('"%s" is dirty\n' % nexson_path)
-        download_nexson_from_phylografter(paths, download_db)
+        if not download_nexson_from_phylografter(paths, download_db, lock_policy):
+            raise HTTP(501, T('Obtainging the NexSON file for this study failed'))
     elif VERBOSE:
         sys.stderr.write('"%s" is clean\n' % nexson_path)
     #####################
