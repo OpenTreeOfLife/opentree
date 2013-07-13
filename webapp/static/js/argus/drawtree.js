@@ -736,21 +736,95 @@ function createArgus(spec) {
         } else {
             childxs = [];
             childys = [];
+
+            /* Prioritize phylogeny-based edges, use alphabetic order, and
+             * use clustering to deal with lots of uninteresting
+             * (taxonomy-based) edges.
+             */
+            var nodesWithHybridSupport = [ ],
+                nodesWithPhyloSupport = [ ],
+                nodesWithoutPhyloSupport = [ ],
+                nWithHybrid = 0,
+                nWithPhylo = 0,
+                nWithoutPhylo = 0;
+
+            // sort children alphabetically first..
+            node.children.sort(function(a,b) {
+                var aName = a.name.toLowerCase(),
+                    bName = b.name.toLowerCase();
+                if (aName > bName) return 1;
+                if (aName < bName) return -1;
+                return 0;
+            });
+            // group children based on type of edge support
             for (i = 0; i < nchildren; i++) {
+                var testChild = node.children[i],
+                    sb = node.children[i].supportedBy;
+                    supportedByTaxonomy = $.inArray('taxonomy', sb) !== -1,
+                    supportedByPhylogeny = sb.length > (supportedByTaxonomy ? 1 : 0);
+
+                if (supportedByPhylogeny && supportedByTaxonomy) {
+                    nodesWithHybridSupport.push(testChild);
+                } else if (supportedByPhylogeny) {
+                    nodesWithPhyloSupport.push(testChild);
+                } else {
+                    nodesWithoutPhyloSupport.push(testChild);
+                }
+            }
+            
+            // Use these groups and clusters to draw children
+            nWithHybrid = nodesWithHybridSupport.length;
+            for (i = 0; i < nWithHybrid; i++) {
                 // postorder traverse the children of this node
                 curLeaf = this.drawNode({
-                    "node": node.children[i],
+                    "node": nodesWithHybridSupport[i],
                     "domSource": domSource,
                     "curLeaf": curLeaf,
                     "isTargetNode": false
                 });
 
                 // the traversal generated the childrens' coordinates; now get them
-                if (isNumeric(node.children[i].x)) {
-                    childxs.push(node.children[i].x);
+                if (isNumeric(nodesWithHybridSupport[i].x)) {
+                    childxs.push(nodesWithHybridSupport[i].x);
                 }
-                if (isNumeric(node.children[i].y)) {
-                    childys.push(node.children[i].y);
+                if (isNumeric(nodesWithHybridSupport[i].y)) {
+                    childys.push(nodesWithHybridSupport[i].y);
+                }
+            }
+            nWithPhylo = nodesWithPhyloSupport.length;
+            for (i = 0; i < nWithPhylo; i++) {
+                // postorder traverse the children of this node
+                curLeaf = this.drawNode({
+                    "node": nodesWithPhyloSupport[i],
+                    "domSource": domSource,
+                    "curLeaf": curLeaf,
+                    "isTargetNode": false
+                });
+
+                // the traversal generated the childrens' coordinates; now get them
+                if (isNumeric(nodesWithPhyloSupport[i].x)) {
+                    childxs.push(nodesWithPhyloSupport[i].x);
+                }
+                if (isNumeric(nodesWithPhyloSupport[i].y)) {
+                    childys.push(nodesWithPhyloSupport[i].y);
+                }
+            }
+            nWithoutPhylo = nodesWithoutPhyloSupport.length;
+            for (i = 0; i < nWithoutPhylo; i++) {
+                // postorder traverse the children of this node
+                curLeaf = this.drawNode({
+                    "node": nodesWithoutPhyloSupport[i],
+                    "domSource": domSource,
+                    "curLeaf": curLeaf,
+                    "isTargetNode": false
+                });
+
+                // the traversal generated the childrens' coordinates; now get them
+                if (isNumeric(nodesWithoutPhyloSupport[i].x)) {
+                    childxs.push(nodesWithoutPhyloSupport[i].x);
+                }
+                if (isNumeric(nodesWithoutPhyloSupport[i].y)) {
+                    childys.push(nodesWithoutPhyloSupport[i].y);
                 }
             }
 
@@ -762,7 +836,7 @@ function createArgus(spec) {
             node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.nleaves);
 
             // draw node circle
-            label = paper.text(node.x - node.r, node.y + node.r, node.name).attr({
+            label = paper.text(node.x - (node.r * 1.25), node.y + (node.r * 1.25), node.name).attr({
                 'text-anchor': 'end',
                 "fill": this.labelColor,
                 "font-size": fontSize
@@ -781,7 +855,19 @@ function createArgus(spec) {
             }));
 
             // draw branches (square tree)
-            spineSt = "M" + node.x + " " + node.children[0].y + "L" + node.x + " " + node.children[nchildren - 1].y;
+            var topMostNode = (nodesWithHybridSupport.length > 0) ? 
+                                 nodesWithHybridSupport[0] : 
+                                 (nodesWithPhyloSupport.length > 0) ? 
+                                    nodesWithPhyloSupport[0] : 
+                                    nodesWithoutPhyloSupport[0];
+
+            var bottomMostNode = (nodesWithoutPhyloSupport.length > 0) ? 
+                                    nodesWithoutPhyloSupport[nWithoutPhylo - 1] : 
+                                    (nodesWithPhyloSupport.length > 0) ? 
+                                       nodesWithPhyloSupport[nWithPhylo - 1] : 
+                                       nodesWithHybridSupport[nWithHybrid - 1];
+
+            spineSt = "M" + node.x + " " + topMostNode.y + "L" + node.x + " " + bottomMostNode.y;
             paper.path(spineSt).toBack().attr({
                 "stroke": this.pathColor,
                 "stroke-linecap": 'round'
@@ -869,7 +955,7 @@ function createArgus(spec) {
                             "title": "Click to move to this node",
                             "stroke": this.pathColor
                         }).insertBefore(dividerBeforeAnchoredUI);
-                        paper.text(endX - (this.minTipRadius * 1.2), endY + (this.minTipRadius * 1.2), ancestorNode.name || "unnamed").attr({
+                        paper.text(endX - (this.minTipRadius * 1.25), endY + (this.minTipRadius * 1.25), ancestorNode.name || "unnamed").attr({
                             'text-anchor': 'end',
                             "fill": this.labelColor,
                             "font-size": fontSize
