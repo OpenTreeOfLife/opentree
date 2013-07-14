@@ -9,9 +9,76 @@ import os, sys, subprocess, json
 import requests
 import gzip
 import copy
+from datetime import datetime
+import time
 from cStringIO import StringIO
 from parse_nexson import Study, debug, warn
 VERBOSE = True
+
+
+class LockPolicy(object):
+    MAX_NUM_SLEEP_IN_WAITING_FOR_LOCK = os.environ.get('MAX_NUM_SLEEP_IN_WAITING_FOR_LOCK', 100)
+    try:
+        SLEEP_FOR_LOCK_TIME = float(os.environ.get('SLEEP_FOR_LOCK_TIME', 0.05))
+    except:
+        SLEEP_FOR_LOCK_TIME = 0.05 
+
+    def __init__(self):
+        self.early_exit_if_locked = False
+        self.wait_do_not_relock_if_locked = False
+        self._reset_current()
+
+    def _reset_current(self):
+        self.curr_lockfile, self.curr_owns_lock, self.curr_was_locked = False, False, False
+
+    def _wait_for_lock(self, lockfile):
+        '''Returns a pair of bools: lockfile previously existed, lockfile now owned by caller
+        '''
+        n = 0
+        pid = os.getpid()
+        previously_existed = False
+        while os.path.exists(lockfile):
+            previously_existed = True
+            n += 1
+            if self.early_exit_if_locked or n > LockPolicy.MAX_NUM_SLEEP_IN_WAITING_FOR_LOCK:
+                return True, False
+            if VERBOSE:
+                sys.stderr.write('Waiting for "%s" iter %d\n' % (lockfile, n))
+            time.sleep(LockPolicy.SLEEP_FOR_LOCK_TIME)
+        if previously_existed and self.wait_do_not_relock_if_locked:
+            return True, False
+        try:
+            o = open(lockfile, 'w')
+            o.write(str(pid) + '\n')
+            o.close()
+        except:
+            try:
+                self.remove_lock(lockfile)
+            except:
+                pass
+            return previously_existed, False
+        else:
+            return previously_existed, True
+    def wait_for_lock(self, lockfile):
+        t = self._wait_for_lock(lockfile)
+        self.curr_lockfile = lockfile
+        self.curr_was_locked, self.curr_owns_lock = t
+        if VERBOSE:
+            sys.stderr.write('Lockfile = "%s" was_locked=%s owns_lock=%s\n'% 
+                    (lockfile, 
+                     "TRUE" if self.curr_was_locked else "FALSE",
+                     "TRUE" if self.curr_owns_lock else "FALSE",
+                     ))
+        return t
+    def remove_lock(self):
+        try:
+            if self.curr_lockfile and self.curr_owns_lock:
+                self._remove_lock(self.curr_lockfile)
+        finally:
+            self._reset_current()
+    def _remove_lock(self, lockfile):
+        if os.path.exists(lockfile):
+            os.remove(lockfile)
 
 def target_is_dirty(src_path_list, dest_path_list, trigger=None):
     if bool(trigger):
@@ -19,15 +86,15 @@ def target_is_dirty(src_path_list, dest_path_list, trigger=None):
     for p in src_path_list:
         if not os.path.exists(p):
             warn('Source path "%s" does not exist' % p)
-            return False
+            return True
     for dest_path in dest_path_list:
         if not os.path.exists(dest_path):
             return True
     smt = max([os.path.getmtime(i) for i in src_path_list])
     dmt = min([os.path.getmtime(i) for i in dest_path_list])
-    return (smt >= dmt) or ('FORCE_PHYLOGRAFTER_STUDY' in os.environ)
+    return (smt >= dmt)
 
-def get_default_dir_dict(top_level = None):
+def get_default_dir_dict(top_level=None):
     r = '.' if top_level is None else top_level
     t = os.path.abspath(r)
     return  {'nexson_dir': t,
@@ -44,13 +111,13 @@ def get_processing_paths_from_prefix(pref,
                                      to_html_output_dir='.',
                                      nexson_state_db=None):
     d = {'nexson': os.path.abspath(os.path.join(nexson_dir, pref)),
-            'treemachine_log': os.path.abspath(os.path.join(treemachine_ingest_dir, pref + '-out.json')),
-            'treemachine_err': os.path.abspath(os.path.join(treemachine_ingest_dir, pref + '-err.txt')),
-            'html_err': os.path.abspath(os.path.join(to_html_scratch_dir, pref + '-2html-err.txt')),
-            'html': os.path.abspath(os.path.join(to_html_output_dir, pref + '.html')),
-            'status_json': os.path.abspath(os.path.join(to_html_output_dir, pref + '.json')),
-            'nexson_state_db':nexson_state_db,
-            }
+         'treemachine_log': os.path.abspath(os.path.join(treemachine_ingest_dir, pref + '-out.json')),
+         'treemachine_err': os.path.abspath(os.path.join(treemachine_ingest_dir, pref + '-err.txt')),
+         'html_err': os.path.abspath(os.path.join(to_html_scratch_dir, pref + '-2html-err.txt')),
+         'html': os.path.abspath(os.path.join(to_html_output_dir, pref + '.html')),
+         'status_json': os.path.abspath(os.path.join(to_html_output_dir, pref + '.json')),
+         'nexson_state_db':nexson_state_db,
+         }
     if d['nexson_state_db'] is None:
         d['nexson_state_db'] = os.path.abspath(os.path.join(nexson_dir, '.to_download.json')), # stores the state of this repo. *very* hacky primitive db.
     return d
@@ -70,110 +137,132 @@ def get_study_filename_list(dir_dict):
         return [i[1] for i in nt]
     return [study_to_ingest]
 
-def htmlize_treemachine_output(paths):
-    n_path = paths['nexson']
-    study = os.path.split(n_path)[-1]
-    e_path = paths['treemachine_log']
-    dest_path = paths['html']
-    err_path = paths['html_err']
-
-    status_dir = os.path.split(dest_path)[0]
-    if not os.path.exists(status_dir):
-        os.makedirs(status_dir)
-    err_dir = os.path.split(err_path)[0]
-    if not os.path.exists(err_dir):
-        os.makedirs(err_dir)
-    if VERBOSE:
-        sys.stderr.write('Processing "%s" to "%s"\n' % (e_path, dest_path))
-
-    oinp = open(paths['nexson'], 'rU')
-    inp = open(paths['treemachine_log'], 'rU')
-
-    log_object = json.load(inp)
-    orig_object = Study(json.load(oinp))
-    
-    status_obj = process_treemachine_log_info(log_object, orig_object, study)
+def refresh_of_status_json_from_treemachine_path(paths, lock_policy):
+    status_json_path = paths['status_json']
+    lockfile = status_json_path + '.lock'
+    was_locked, owns_lock = lock_policy.wait_for_lock(lockfile)
     try:
-        status_stream = open(paths['status_json'], 'w')
-        json.dump(status_obj, status_stream, sort_keys=True, indent=1)
+        if not owns_lock:
+            return None
+        n_path = paths['nexson']
+        study = os.path.split(n_path)[-1]
+        e_path = paths['treemachine_log']
+        status_dir = os.path.split(status_json_path)[0]
+        if not os.path.exists(status_dir):
+            os.makedirs(status_dir)
+        if VERBOSE:
+            sys.stderr.write('Processing "%s" to "%s"\n' % (e_path, status_json_path))
+        oinp = open(paths['nexson'], 'rU')
+        inp = open(paths['treemachine_log'], 'rU')
+        log_object = json.load(inp)
+        orig_object = Study(json.load(oinp))
+        status_obj = process_treemachine_log_info(log_object, orig_object, study)
+        ts = datetime.fromtimestamp(os.path.getmtime(n_path))
+        status_obj['nexson_mod_time'] = ts.strftime("%I:%M:%S%p %Z %A, %B %d, %Y")
+        store_state_JSON(status_obj, status_json_path)
+        return status_obj
     finally:
-        status_stream.close()
+        lock_policy.remove_lock()
 
-    output = open(paths['html'], 'w')
+def refresh_html_from_status_obj(paths, status_obj, lock_policy):
+    html_path = paths['html']
+    lockfile = html_path + '.lock'
+    was_locked, owns_lock = lock_policy.wait_for_lock(lockfile)
     try:
-        write_status_obj_as_html(status_obj, output)
+        if not owns_lock:
+            return None
+        output = open(html_path, 'w')
+        try:
+            write_status_obj_as_html(status_obj, output)
+        finally:
+            output.close()
     finally:
-        output.close()
+        lock_policy.remove_lock()
+    return True
+
+def htmlize_treemachine_output(paths, lock_policy):
+    status_obj = refresh_of_status_json_from_treemachine_path(paths, lock_policy)
+    refresh_html_from_status_obj(paths, status_obj, lock_policy)
 
 
-def run_treemachine_pg_import_check(paths, treemachine_db=None, treemachine_domain=None):
-    if treemachine_db is not None:
-        n_path = paths['nexson']
-        l_path = paths['treemachine_log']
-        err_path = paths['treemachine_err']
-        log_err_dir = os.path.split(l_path)[0]
-        if not os.path.exists(log_err_dir):
-            os.makedirs(log_err_dir)
-        ingest_err_dir = os.path.split(err_path)[0]
-        if not os.path.exists(ingest_err_dir):
-            os.makedirs(ingest_err_dir)
-        if VERBOSE:
-            sys.stderr.write('Processing "%s" to "%s"\n' % (n_path, l_path))
-        err_file = open(err_path, 'w')
-        cmd = ['treemachine',
-               'pgloadind', 
-               treemachine_db,
-               n_path,
-               l_path]
-        if VERBOSE:
-            sys.stderr.write(' '.join(cmd) + '\n')
-        try:
-            rc = subprocess.call(cmd, stdout=err_file, stderr=subprocess.STDOUT)
-        except:
-            pass
-        err_file.close()
-    elif treemachine_domain is not None:
-        n_path = paths['nexson']
-        nexsonBlob = open(n_path, 'rU').read()
-        headers = {
-            'content-type' : 'application/json',
-            'accept' : 'application/json',
-        }
-        p = '/ext/GoLS/graphdb/getStudyIngestMessagesForNexSON'
-        if treemachine_domain.startswith('http://127.0.0.1'):
-            p = '/db/data' + p
-        SUBMIT_URI = treemachine_domain + p
-        resp = requests.post(SUBMIT_URI,
-                     headers=headers,
-                     data=json.dumps({'nexsonBlob': nexsonBlob}),
-                     allow_redirects=True)
-        resp.raise_for_status()
-        results = resp.json()
-        l_path = paths['treemachine_log']
-        log_err_dir = os.path.split(l_path)[0]
-        if not os.path.exists(log_err_dir):
-            os.makedirs(log_err_dir)
-        l_file = open(l_path, 'w')
-        try:
+def run_treemachine_pg_import_check(paths, lock_policy, treemachine_db=None, treemachine_domain=None):
+    l_path = paths['treemachine_log']
+    lockfile = l_path + '.lock'
+    was_locked, owns_lock = lock_policy.wait_for_lock(lockfile)
+    try:
+        if not owns_lock:
+            return None
+        if treemachine_db is not None:
+            n_path = paths['nexson']
+            err_path = paths['treemachine_err']
+            log_err_dir = os.path.split(l_path)[0]
+            if not os.path.exists(log_err_dir):
+                os.makedirs(log_err_dir)
+            ingest_err_dir = os.path.split(err_path)[0]
+            if not os.path.exists(ingest_err_dir):
+                os.makedirs(ingest_err_dir)
+            if VERBOSE:
+                sys.stderr.write('Processing "%s" to "%s"\n' % (n_path, l_path))
+            err_file = open(err_path, 'w')
+            tf = l_path + '.tmpfile'
+            cmd = ['treemachine',
+                   'pgloadind', 
+                   treemachine_db,
+                   n_path,
+                   tf]
+            if VERBOSE:
+                sys.stderr.write(' '.join(cmd) + '\n')
+            try:
+                rc = subprocess.call(cmd, stdout=err_file, stderr=subprocess.STDOUT)
+            except:
+                pass
+            err_file.close()
+            if rc == 0:
+                os.rename(tf, l_path)
+                return json.load(open(l_path, 'rU'))
+            return None
+        elif treemachine_domain is not None:
+            n_path = paths['nexson']
+            nexsonBlob = open(n_path, 'rU').read()
+            headers = {
+                'content-type' : 'application/json',
+                'accept' : 'application/json',
+            }
+            p = '/ext/GoLS/graphdb/getStudyIngestMessagesForNexSON'
+            if treemachine_domain.startswith('http://127.0.0.1'):
+                p = '/db/data' + p
+            SUBMIT_URI = treemachine_domain + p
+            if VERBOSE:
+                sys.stderr.write('request to "%s"' % SUBMIT_URI)
+            resp = requests.post(SUBMIT_URI,
+                         headers=headers,
+                         data=json.dumps({'nexsonBlob': nexsonBlob}),
+                         allow_redirects=True)
+            resp.raise_for_status()
+            results = resp.json()
+            l_path = paths['treemachine_log']
+            log_err_dir = os.path.split(l_path)[0]
+            if not os.path.exists(log_err_dir):
+                os.makedirs(log_err_dir)
             if isinstance(results, unicode) or isinstance(results, str):
                 results = json.loads(results)
-                json.dump(results, l_file, sort_keys=True, indent=4)
-            else:
-                json.dump(results, l_file, sort_keys=True, indent=4)
-        finally:
-            l_file.close()
-        return results
-    else:
-        raise ValueError('treemachine_domain or treemachine_db must be specified')
+            store_state_JSON(results, l_path)
+            return results
+        else:
+            raise ValueError('treemachine_domain or treemachine_db must be specified')
+    finally:
+        lock_policy.remove_lock()
+
 def store_state_JSON(s, fp):
-    td = open(fp, 'w')
+    tmpfilename = fp + '.tmpfile'
+    td = open(tmpfilename, 'w')
     try:
         json.dump(s, td, sort_keys=True, indent=0)
     finally:
         td.close()
+    os.rename(tmpfilename, fp) #atomic on POSIX
 
-
-def get_list_of_dirty_nexsons(dir_dict):
+def get_previous_list_of_dirty_nexsons(dir_dict):
     filename = dir_dict['nexson_state_db']
     if os.path.exists(filename):
         old = json.load(open(filename, 'rU'))
@@ -182,7 +271,11 @@ def get_list_of_dirty_nexsons(dir_dict):
                'to': '2010-01-01T00:00:00',
                'studies': []
         }
+    return old['studies'], old
 
+def get_list_of_dirty_nexsons(dir_dict):
+    filename = dir_dict['nexson_state_db']
+    slist, old = get_previous_list_of_dirty_nexsons(dir_dict)
     DOMAIN = os.environ.get('PHYLOGRAFTER_DOMAIN_PREF')
     if DOMAIN is None:
         DOMAIN = 'http://www.reelab.net/phylografter'
@@ -202,8 +295,7 @@ def get_list_of_dirty_nexsons(dir_dict):
     to_refresh = list(new_resp['studies'])
     return to_refresh, new_resp
 
-def download_nexson_from_phylografter(paths, download_db):
-
+def download_nexson_from_phylografter(paths, download_db, lock_policy):
     DOMAIN = os.environ.get('PHYLOGRAFTER_DOMAIN_PREF')
     if DOMAIN is None:
         DOMAIN = 'http://www.reelab.net/phylografter'
@@ -214,40 +306,49 @@ def download_nexson_from_phylografter(paths, download_db):
             'accept' : 'application/json',
         }
     nexson = paths['nexson']
-    study = os.path.split(nexson)[-1]
-    if VERBOSE:
-        sys.stderr.write('Downloading %s...\n' % study)
-    SUBMIT_URI = DOMAIN + '/study/export_gzipNexSON.json/' + study
-    resp = requests.get(SUBMIT_URI,
-                     headers=headers,
-                     allow_redirects=True)
-    resp.raise_for_status()
+    lockfile = nexson + '.lock'
+    was_locked, owns_lock = lock_policy.wait_for_lock(lockfile)
     try:
-        uncompressed = gzip.GzipFile(mode='rb', fileobj=StringIO(resp.content)).read()
-        results = uncompressed
-    except:
-        raise 
-    if isinstance(results, unicode) or isinstance(results, str):
-        er = json.loads(results)
-    else:
-        raise RuntimeError('Non gzipped response, but not a string is:', results)
-    should_write = False
-    if not os.path.exists(study):
-        should_write = True
-    else:
-        prev_content = json.load(open(study, 'rU'))
-        if prev_content != er:
-            should_write = True
-    if should_write:
-        store_state_JSON(er, study)
-    if download_db is not None:
+        if not owns_lock:
+            return False
+        study = os.path.split(nexson)[-1]
+        if VERBOSE:
+            sys.stderr.write('Downloading %s...\n' % study)
+        SUBMIT_URI = DOMAIN + '/study/export_gzipNexSON.json/' + study
+        resp = requests.get(SUBMIT_URI,
+                         headers=headers,
+                         allow_redirects=True)
+        resp.raise_for_status()
         try:
-            download_db['studies'].remove(int(study))
+            uncompressed = gzip.GzipFile(mode='rb', fileobj=StringIO(resp.content)).read()
+            results = uncompressed
         except:
-            warn('%s not in %s' % (study, paths['nexson_state_db']))
-            pass
+            raise 
+        if isinstance(results, unicode) or isinstance(results, str):
+            er = json.loads(results)
         else:
-            store_state_JSON(download_db, paths['nexson_state_db'])
+            raise RuntimeError('Non gzipped response, but not a string is:', results)
+        should_write = False
+        if not os.path.exists(study):
+            should_write = True
+        else:
+            prev_content = json.load(open(study, 'rU'))
+            if prev_content != er:
+                should_write = True
+        if should_write:
+            store_state_JSON(er, study)
+        if download_db is not None:
+            try:
+                download_db['studies'].remove(int(study))
+            except:
+                warn('%s not in %s' % (study, paths['nexson_state_db']))
+                pass
+            else:
+                store_state_JSON(download_db, paths['nexson_state_db'])
+    finally:
+        lock_policy.remove_lock()
+    return True
+
 
 
 ###############################################################################
@@ -649,6 +750,7 @@ def warn_html(m):
 
 def _display_user_status_code(output, row):
     output.write('        <tr><td>%s</td><td>%s</td>\n' % (row['reason'], proc_val_for_html(row['details']))) 
+
 def _display_duplicate_taxon_status_code(output, row):
     ol = [i['original label'] for i in row['details']]
     p = str(len(ol)) + ' taxa mapped to this OTT taxon. '
@@ -692,7 +794,6 @@ def write_status_obj_as_html(status_obj, output):
 <head>
     <title>Snaphsot of treemachine status for phylografter study %s</title>
 </head>''' % phylografter_study_id)
-    return
     output.write('''<body>
 <h2>Study Info</h2>
     <p><a href="%s">%s</a></p>
