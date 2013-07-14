@@ -1,7 +1,7 @@
 opentree
 ========
 
-Umbrella repo for opentree web site and services
+Umbrella repo for opentree web site and services. Includes code for constructing the synthetic taxonomy.
 
 Installation
 ============
@@ -59,11 +59,14 @@ Subdirectories
 mockup
 : JAR's hand-written html that mock up the design of the site.
 
+smasher
+: construction of synthetic taxonomy. See https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-Taxonomy for details
+
 webapp/controllers
 : python code executed by web2py when a URL is successfully mapped to a controller.
 
 webapp/modules
-: python code that can be imported and used by the web app, but is not exposed as controller
+: python code that can be imported and used by the webpp, but is not exposed as controller
 
 webapp/models
 : code that describes the database structure used by the web app
@@ -86,7 +89,6 @@ webapp/databases
 webapp/languages
 : web2py code for internationalization
 
-
 webapp/cache, webapp/databases, webapp/errors, webapp/sessions, webapp/uploads
 : directories used by web2py to store content associated with user's activities. Content here should not need to be committed to version control.
 
@@ -95,7 +97,7 @@ Acknowledgements
 Argus uses Raphaeljs and jQuery libraries.
 
 Arrow icons are from http://raphaeljs.com/icons those icons are licensed under the followin MIT license:
-=====================================================================================
+
 Copyright © 2008 Dmitry Baranovskiy
 
 Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the “Software”), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
@@ -103,4 +105,3 @@ Permission is hereby granted, free of charge, to any person obtaining a copy of 
 The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
 
 The software is provided “as is”, without warranty of any kind, express or implied, including but not limited to the warranties of merchantability, fitness for a particular purpose and noninfringement. In no event shall the authors or copyright holders be liable for any claim, damages or other liability, whether in an action of contract, tort or otherwise, arising from, out of or in connection with the software or the use or other dealings in the software.
-=====================================================================================
