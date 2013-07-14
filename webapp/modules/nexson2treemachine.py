@@ -178,65 +178,71 @@ def htmlize_treemachine_output(paths):
     refresh_html_from_status_obj(paths, status_obj)
 
 
-def run_treemachine_pg_import_check(paths, treemachine_db=None, treemachine_domain=None):
-    if treemachine_db is not None:
-        n_path = paths['nexson']
-        l_path = paths['treemachine_log']
-        err_path = paths['treemachine_err']
-        log_err_dir = os.path.split(l_path)[0]
-        if not os.path.exists(log_err_dir):
-            os.makedirs(log_err_dir)
-        ingest_err_dir = os.path.split(err_path)[0]
-        if not os.path.exists(ingest_err_dir):
-            os.makedirs(ingest_err_dir)
-        if VERBOSE:
-            sys.stderr.write('Processing "%s" to "%s"\n' % (n_path, l_path))
-        err_file = open(err_path, 'w')
-        cmd = ['treemachine',
-               'pgloadind', 
-               treemachine_db,
-               n_path,
-               l_path]
-        if VERBOSE:
-            sys.stderr.write(' '.join(cmd) + '\n')
-        try:
-            rc = subprocess.call(cmd, stdout=err_file, stderr=subprocess.STDOUT)
-        except:
-            pass
-        err_file.close()
-    elif treemachine_domain is not None:
-        n_path = paths['nexson']
-        nexsonBlob = open(n_path, 'rU').read()
-        headers = {
-            'content-type' : 'application/json',
-            'accept' : 'application/json',
-        }
-        p = '/ext/GoLS/graphdb/getStudyIngestMessagesForNexSON'
-        if treemachine_domain.startswith('http://127.0.0.1'):
-            p = '/db/data' + p
-        SUBMIT_URI = treemachine_domain + p
-        resp = requests.post(SUBMIT_URI,
-                     headers=headers,
-                     data=json.dumps({'nexsonBlob': nexsonBlob}),
-                     allow_redirects=True)
-        resp.raise_for_status()
-        results = resp.json()
-        l_path = paths['treemachine_log']
-        log_err_dir = os.path.split(l_path)[0]
-        if not os.path.exists(log_err_dir):
-            os.makedirs(log_err_dir)
-        l_file = open(l_path, 'w')
-        try:
+def run_treemachine_pg_import_check(paths, lock_policy, treemachine_db=None, treemachine_domain=None):
+    l_path = paths['treemachine_log']
+    lockfile = l_path + '.lock'
+    was_locked, owns_lock = lock_policy.wait_for_lock(lockfile)
+    try:
+        if not owns_lock:
+            return None
+        if treemachine_db is not None:
+            n_path = paths['nexson']
+            err_path = paths['treemachine_err']
+            log_err_dir = os.path.split(l_path)[0]
+            if not os.path.exists(log_err_dir):
+                os.makedirs(log_err_dir)
+            ingest_err_dir = os.path.split(err_path)[0]
+            if not os.path.exists(ingest_err_dir):
+                os.makedirs(ingest_err_dir)
+            if VERBOSE:
+                sys.stderr.write('Processing "%s" to "%s"\n' % (n_path, l_path))
+            err_file = open(err_path, 'w')
+            tf = l_path + '.tmpfile'
+            cmd = ['treemachine',
+                   'pgloadind', 
+                   treemachine_db,
+                   n_path,
+                   tf]
+            if VERBOSE:
+                sys.stderr.write(' '.join(cmd) + '\n')
+            try:
+                rc = subprocess.call(cmd, stdout=err_file, stderr=subprocess.STDOUT)
+            except:
+                pass
+            err_file.close()
+            if rc == 0:
+                os.rename(tf, l_path)
+                return json.load(open(l_path, 'rU'))
+            return None
+        elif treemachine_domain is not None:
+            n_path = paths['nexson']
+            nexsonBlob = open(n_path, 'rU').read()
+            headers = {
+                'content-type' : 'application/json',
+                'accept' : 'application/json',
+            }
+            p = '/ext/GoLS/graphdb/getStudyIngestMessagesForNexSON'
+            if treemachine_domain.startswith('http://127.0.0.1'):
+                p = '/db/data' + p
+            SUBMIT_URI = treemachine_domain + p
+            resp = requests.post(SUBMIT_URI,
+                         headers=headers,
+                         data=json.dumps({'nexsonBlob': nexsonBlob}),
+                         allow_redirects=True)
+            resp.raise_for_status()
+            results = resp.json()
+            l_path = paths['treemachine_log']
+            log_err_dir = os.path.split(l_path)[0]
+            if not os.path.exists(log_err_dir):
+                os.makedirs(log_err_dir)
             if isinstance(results, unicode) or isinstance(results, str):
                 results = json.loads(results)
-                json.dump(results, l_file, sort_keys=True, indent=4)
-            else:
-                json.dump(results, l_file, sort_keys=True, indent=4)
-        finally:
-            l_file.close()
-        return results
-    else:
-        raise ValueError('treemachine_domain or treemachine_db must be specified')
+            store_state_JSON(results, l_path)
+            return results
+        else:
+            raise ValueError('treemachine_domain or treemachine_db must be specified')
+    finally:
+        lock_policy.remove_lock()
 
 def store_state_JSON(s, fp):
     tmpfilename = fp + '.tmpfile'
@@ -247,8 +253,7 @@ def store_state_JSON(s, fp):
         td.close()
     os.rename(tmpfilename, fp) #atomic on POSIX
 
-
-def get_list_of_dirty_nexsons(dir_dict):
+def get_previous_list_of_dirty_nexsons(dir_dict):
     filename = dir_dict['nexson_state_db']
     if os.path.exists(filename):
         old = json.load(open(filename, 'rU'))
@@ -257,7 +262,11 @@ def get_list_of_dirty_nexsons(dir_dict):
                'to': '2010-01-01T00:00:00',
                'studies': []
         }
+    return old['studies'], old
 
+def get_list_of_dirty_nexsons(dir_dict):
+    filename = dir_dict['nexson_state_db']
+    slist, old = get_previous_list_of_dirty_nexsons(dir_dict)
     DOMAIN = os.environ.get('PHYLOGRAFTER_DOMAIN_PREF')
     if DOMAIN is None:
         DOMAIN = 'http://www.reelab.net/phylografter'
