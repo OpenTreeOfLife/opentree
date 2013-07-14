@@ -13,7 +13,7 @@ from datetime import datetime
 import time
 from cStringIO import StringIO
 from parse_nexson import Study, debug, warn
-VERBOSE = True
+VERBOSE = False
 
 
 class LockPolicy(object):

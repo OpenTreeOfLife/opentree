@@ -83,7 +83,6 @@ def status():
               '-s', # create the status JSON
               study_id
               ]
-    sys.stderr.write("Launching '%s'\n" % "' '".join(invoc))
     if force_phylografter_reload:
         invoc.extend(['-l', '-n'])
         subprocess.Popen(invoc)
