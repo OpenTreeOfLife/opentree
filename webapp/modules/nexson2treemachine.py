@@ -9,6 +9,7 @@ import os, sys, subprocess, json
 import requests
 import gzip
 import copy
+from datetime import datetime
 import time
 from cStringIO import StringIO
 from parse_nexson import Study, debug, warn
@@ -85,15 +86,15 @@ def target_is_dirty(src_path_list, dest_path_list, trigger=None):
     for p in src_path_list:
         if not os.path.exists(p):
             warn('Source path "%s" does not exist' % p)
-            return False
+            return True
     for dest_path in dest_path_list:
         if not os.path.exists(dest_path):
             return True
     smt = max([os.path.getmtime(i) for i in src_path_list])
     dmt = min([os.path.getmtime(i) for i in dest_path_list])
-    return (smt >= dmt) or ('FORCE_PHYLOGRAFTER_STUDY' in os.environ)
+    return (smt >= dmt)
 
-def get_default_dir_dict(top_level = None):
+def get_default_dir_dict(top_level=None):
     r = '.' if top_level is None else top_level
     t = os.path.abspath(r)
     return  {'nexson_dir': t,
@@ -156,6 +157,8 @@ def refresh_of_status_json_from_treemachine_path(paths, lock_policy):
         log_object = json.load(inp)
         orig_object = Study(json.load(oinp))
         status_obj = process_treemachine_log_info(log_object, orig_object, study)
+        ts = datetime.fromtimestamp(os.path.getmtime(n_path))
+        status_obj['nexson_mod_time'] = ts.strftime("%I:%M:%S%p %Z %A, %B %d, %Y")
         store_state_JSON(status_obj, status_json_path)
         return status_obj
     finally:
@@ -229,6 +232,8 @@ def run_treemachine_pg_import_check(paths, lock_policy, treemachine_db=None, tre
             if treemachine_domain.startswith('http://127.0.0.1'):
                 p = '/db/data' + p
             SUBMIT_URI = treemachine_domain + p
+            if VERBOSE:
+                sys.stderr.write('request to "%s"' % SUBMIT_URI)
             resp = requests.post(SUBMIT_URI,
                          headers=headers,
                          data=json.dumps({'nexsonBlob': nexsonBlob}),
@@ -745,6 +750,7 @@ def warn_html(m):
 
 def _display_user_status_code(output, row):
     output.write('        <tr><td>%s</td><td>%s</td>\n' % (row['reason'], proc_val_for_html(row['details']))) 
+
 def _display_duplicate_taxon_status_code(output, row):
     ol = [i['original label'] for i in row['details']]
     p = str(len(ol)) + ' taxa mapped to this OTT taxon. '

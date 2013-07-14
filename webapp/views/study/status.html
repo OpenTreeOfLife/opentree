@@ -1,7 +1,28 @@
 {{extend 'layout.html'}}
-<h2>Study Info</h2>
-{{=A(study_info['phylografter_study_link'], _href=study_info['phylografter_study_link'])}}
+{{if not has_status:}}
+   <b>{{=message}}</b>
+   <p>Page will automatically reload every few seconds</p>
+   <script type="text/javascript">
+   var stripGetParamsAndReload = function() { //@hacky way to reload the page, but strip the fetchnexson GET query parameter so that the fetch is only done once (to keep the load on the server low)
+      var urlSplit = window.location.href.split('?');
+      if (urlSplit.length >= 2) {
+        window.location.search='';
+        window.location.replace(urlSplit[0]);
+      } else {
+        window.location.reload();
+      }
+   };
+   setTimeout(stripGetParamsAndReload, 2000); // 2 seconds
+   </script>
+{{else:}}
+<h3>About this status page</h3>
+<p>The information for this study was obtained from phylografter at {{=nexson_mod_time}}.</p>
+<p><i>Refetching the study info: </i> If you know that the study has been modified more recently than the date shown above, you can use {{=A('this link', _href=force_fetch_url)}} to force a refresh of the information. <b>Warning: </b>Refreshing lots of studies could degrade performance of the server, so please do not force the refetching of many studies while you wait. <b>Note: </b>If the information from phylografter is identical to what was previously stored, this status page will not change and the timestamp shown above will not change. Please use <a href="https://github.com/OpenTreeOfLife/opentree/issues">this issue tracker</a> to submit a bug report if you are confident that the refetched information is stale.</p>
 
+<h2>Study Info</h2>
+
+<p>Phylografter study link: {{=A(study_info['phylografter_study_link'], _href=study_info['phylografter_study_link'])}}
+</p>
 {{
 kl = study_info.keys()
 kl.sort()
@@ -37,7 +58,7 @@ num_importable = study_info['num_trees_importable']
   {{tid = tree['id']}}
   {{phylografter_tree_link = tree['phylografter_tree_link']}}
   <h3>Tree {{=tid}}</h3>
-  <p>{{=A(phylografter_tree_link, _href=phylografter_tree_link)}}</p>
+  <p>Phylografter tree link: {{=A(phylografter_tree_link, _href=phylografter_tree_link)}}</p>
   <p><b>Status: </b>{{=tree['status']['text']}}</p>
   {{reason_list = tree['status']['reasons']}}
   <table border="1">
@@ -105,4 +126,5 @@ num_importable = study_info['num_trees_importable']
     <p><font color="red"><b>{{=str(num_importable)}} trees</b></font> importable from this study!</p>
 {{else:}}
     <p>1 tree importable from this study.</p>
+{{pass}}
 {{pass}}
