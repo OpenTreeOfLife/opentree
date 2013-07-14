@@ -136,46 +136,50 @@ def get_study_filename_list(dir_dict):
         return [i[1] for i in nt]
     return [study_to_ingest]
 
-def refresh_of_status_json_from_treemachine_path(paths):
-    n_path = paths['nexson']
-    study = os.path.split(n_path)[-1]
-    e_path = paths['treemachine_log']
-    dest_path = paths['html']
-    err_path = paths['html_err']
-
-    status_dir = os.path.split(dest_path)[0]
-    if not os.path.exists(status_dir):
-        os.makedirs(status_dir)
-    err_dir = os.path.split(err_path)[0]
-    if not os.path.exists(err_dir):
-        os.makedirs(err_dir)
-    if VERBOSE:
-        sys.stderr.write('Processing "%s" to "%s"\n' % (e_path, dest_path))
-
-    oinp = open(paths['nexson'], 'rU')
-    inp = open(paths['treemachine_log'], 'rU')
-
-    log_object = json.load(inp)
-    orig_object = Study(json.load(oinp))
-    
-    status_obj = process_treemachine_log_info(log_object, orig_object, study)
+def refresh_of_status_json_from_treemachine_path(paths, lock_policy):
+    status_json_path = paths['status_json']
+    lockfile = status_json_path + '.lock'
+    was_locked, owns_lock = lock_policy.wait_for_lock(lockfile)
     try:
-        status_stream = open(paths['status_json'], 'w')
-        json.dump(status_obj, status_stream, sort_keys=True, indent=1)
+        if not owns_lock:
+            return None
+        n_path = paths['nexson']
+        study = os.path.split(n_path)[-1]
+        e_path = paths['treemachine_log']
+        status_dir = os.path.split(status_json_path)[0]
+        if not os.path.exists(status_dir):
+            os.makedirs(status_dir)
+        if VERBOSE:
+            sys.stderr.write('Processing "%s" to "%s"\n' % (e_path, status_json_path))
+        oinp = open(paths['nexson'], 'rU')
+        inp = open(paths['treemachine_log'], 'rU')
+        log_object = json.load(inp)
+        orig_object = Study(json.load(oinp))
+        status_obj = process_treemachine_log_info(log_object, orig_object, study)
+        store_state_JSON(status_obj, status_json_path)
+        return status_obj
     finally:
-        status_stream.close()
-    return status_obj
+        lock_policy.remove_lock()
 
-def refresh_html_from_status_obj(paths, status_obj):
-    output = open(paths['html'], 'w')
+def refresh_html_from_status_obj(paths, status_obj, lock_policy):
+    html_path = paths['html']
+    lockfile = html_path + '.lock'
+    was_locked, owns_lock = lock_policy.wait_for_lock(lockfile)
     try:
-        write_status_obj_as_html(status_obj, output)
+        if not owns_lock:
+            return None
+        output = open(html_path, 'w')
+        try:
+            write_status_obj_as_html(status_obj, output)
+        finally:
+            output.close()
     finally:
-        output.close()
+        lock_policy.remove_lock()
+    return True
 
-def htmlize_treemachine_output(paths):
-    status_obj = refresh_of_status_json_from_treemachine_path(paths)
-    refresh_html_from_status_obj(paths, status_obj)
+def htmlize_treemachine_output(paths, lock_policy):
+    status_obj = refresh_of_status_json_from_treemachine_path(paths, lock_policy)
+    refresh_html_from_status_obj(paths, status_obj, lock_policy)
 
 
 def run_treemachine_pg_import_check(paths, lock_policy, treemachine_db=None, treemachine_domain=None):
