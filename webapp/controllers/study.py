@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
 from nexson2treemachine import get_processing_paths_from_prefix, get_default_dir_dict, target_is_dirty, get_study_filename_list
-from nexson2treemachine import get_list_of_dirty_nexsons, download_nexson_from_phylografter
+from nexson2treemachine import get_list_of_dirty_nexsons, download_nexson_from_phylografter, LockPolicy
 from nexson2treemachine import run_treemachine_pg_import_check, htmlize_treemachine_output
 import json
+import sys
+import subprocess
 VERBOSE = False
 if VERBOSE:
     import sys
@@ -18,6 +20,11 @@ def status():
         raise HTTP(404)
     emit_json = study_id.lower().endswith('.json')
     study_id = study_id.split('.')[0]
+    try:
+        ls = long(study_id)
+        assert ls > 0
+    except:
+        raise HTTP(404)
     def get_conf(request): #@TEMP this get_conf should probably move to a module 
         conf = SafeConfigParser({})
         try:
@@ -33,56 +40,59 @@ def status():
     try:
         nexsons_dir = conf.get('paths', 'nexsonsdir')
         treemachine_domain = conf.get('domains', 'treemachine')
+        study_to_status_script = conf.get('paths', 'study_to_status_script')
     except:
         raise HTTP(501, T('Server is not configured to report on NexSON status'))
     if (not os.path.exists(nexsons_dir)) or (not os.path.isdir(nexsons_dir)):
         raise HTTP(501, T('Server is not properly configured to report on NexSON status'))
     
-    dd = get_default_dir_dict(nexsons_dir)
-    dirty_nexsons, download_db = get_list_of_dirty_nexsons(dd)
-    dirty_nexsons = [str(i) for i in dirty_nexsons]
+    force_phylografter_reload = request.get_vars.get('fetchnexson') is not None
     
+    response.title = 'Status page for study ' + str(study_id)
+    dd = get_default_dir_dict(nexsons_dir)
     paths = get_processing_paths_from_prefix(study_id, **dd)
-    #################
-    # grab the paths
-    #################
+    check_lock_policy = LockPolicy()
+    check_lock_policy.early_exit_if_locked = True
     nexson_path = paths['nexson']
-    treemachine_log_path = paths['treemachine_log']
-    treemachine_err_path = paths['treemachine_err']
-    html_path = paths['html']
-    html_err_path = paths['html_err']
-    status_json = paths['status_json']
-    #################
-    # get NexSON
-    #################
-    if study_id in dirty_nexsons:
-        dirty_nexsons.remove(study_id)
-        if VERBOSE:
-            sys.stderr.write('"%s" is dirty\n' % nexson_path)
-        download_nexson_from_phylografter(paths, download_db)
-    elif VERBOSE:
-        sys.stderr.write('"%s" is clean\n' % nexson_path)
-    #####################
-    # get treemachine log
-    #####################
-    needs_updating = target_is_dirty([nexson_path], [treemachine_log_path])
-    if needs_updating:
-        if VERBOSE:
-            sys.stderr.write('"%s" is dirty\n' % treemachine_log_path)
-        run_treemachine_pg_import_check(paths, treemachine_domain=treemachine_domain)
-    elif VERBOSE:
-        sys.stderr.write('"%s" is clean\n' % treemachine_log_path)
-    #####################
-    # parse treemachine log to html
-    #####################
-    needs_updating = target_is_dirty([nexson_path, treemachine_log_path], [html_path, status_json])
-    if needs_updating:
-        if VERBOSE:
-            sys.stderr.write('"%s" is dirty\n' % treemachine_log_path)
-        htmlize_treemachine_output(paths)
-    elif VERBOSE:
-        sys.stderr.write('"%s" is clean\n' % treemachine_log_path)
-    rich_log = json.load(open(status_json, 'rU'))
-    if emit_json:
-        return response.json(rich_log)
-    return rich_log
+    lockfile = nexson_path + '.studylock'
+    study_was_locked, owns_study_lock = check_lock_policy.wait_for_lock(lockfile)
+    try:
+        treemachine_log_path = paths['treemachine_log']
+        status_json = paths['status_json']
+        if study_was_locked:
+            return {'has_status': False,
+                    'message': 'The processing the information for this study is underway. Once it is complete the status will be displayed when this page reloads.'}
+        if not force_phylografter_reload:
+            if not target_is_dirty([nexson_path, treemachine_log_path], [status_json]):
+                rich_log = json.load(open(status_json, 'rU'))
+                rich_log['force_fetch_url'] = URL(a=request.application, 
+                                                  c=request.controller,
+                                                  f=request.function,
+                                                  args=[study_id], vars=dict(fetchnexson='True'))
+                if emit_json:
+                    return response.json(rich_log)
+                rich_log['has_status'] = True
+                return rich_log
+    finally:
+        check_lock_policy.remove_lock()
+    invoc = [sys.executable,
+              study_to_status_script,
+              treemachine_domain,
+              '-d%s' % nexsons_dir,
+              '-t', # run through treemachine if necessary
+              '-s', # create the status JSON
+              study_id
+              ]
+    sys.stderr.write("Launching '%s'\n" % "' '".join(invoc))
+    if force_phylografter_reload:
+        invoc.extend(['-l', '-n'])
+        subprocess.Popen(invoc)
+        return {'has_status': False,
+                'message': 'The process of fetching the latest information for this study from phylografter has begun. Once it is complete the status will be displayed when this page reloads.'}
+    # we will get here if:
+    #       1. we are not fetching NexSON from phylografter, 
+    #       2. we have not detected a lock indicating that the study is being processed, and
+    #       3. the status_json is out of date
+    subprocess.Popen(invoc)
+    return {'has_status': False,
+            'message': 'The process of analyzing previously downloaded information for this study is underway. Once it is complete the status will be displayed when this page reloads.'}
