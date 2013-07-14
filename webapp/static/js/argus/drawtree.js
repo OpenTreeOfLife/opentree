@@ -17,7 +17,6 @@ function createArgus(spec) {
     var paper;
     // use a series of "empty" elements to organize others by depth
     var dividerBeforeEdges, dividerBeforeLabels, dividerBeforeHighlights, dividerBeforeNodes, dividerBeforeAnchoredUI;
-
     var getHoverHandlerNode;
     var getHoverHandlerEdge; // ie, a path
     var getClickHandlerNode;
@@ -122,6 +121,12 @@ function createArgus(spec) {
         "backStack": [], // args to previous displayNode calls
         "forwardStack": [], // args to displayNode calls after the back button has been clicked
         "currDisplayContext": undefined, //arg to most recent displayNode call
+
+        clusters: {},      // a registry of clustered child-nodes, keyed to the parent-node's ID
+        clusterSize: 100,   // try to bundle sets of n children
+        minClusterSize: 10, // add fewer to the previous cluster instead
+        maxUnclusteredNodes: 30,  // show the most interesting n nodes outside of clusters
+
         toggleAltBoxX: 55,
         toggleAltBoxY: 6,
         sourceTextBoxX: 10,
@@ -208,6 +213,8 @@ function createArgus(spec) {
             argusObjRef.treeData = dataStr; // $.parseJSON(dataStr);
             //var node = argusObjRef.treeData[0];
             var node = argusObjRef.treeData;
+            // clear the registry of clustered child nodes
+            argusObj.clusters = {}; 
 
             // recursively populate any missing (implied) node names
             buildAllMissingNodeNames(node);
@@ -746,16 +753,11 @@ function createArgus(spec) {
                 nodesWithoutPhyloSupport = [ ],
                 nWithHybrid = 0,
                 nWithPhylo = 0,
-                nWithoutPhylo = 0;
+                nWithoutPhylo = 0,
+                clusters = argusObj.clusters;
 
             // sort children alphabetically first..
-            node.children.sort(function(a,b) {
-                var aName = a.name.toLowerCase(),
-                    bName = b.name.toLowerCase();
-                if (aName > bName) return 1;
-                if (aName < bName) return -1;
-                return 0;
-            });
+            node.children.sort(alphaSortByName);
             // group children based on type of edge support
             for (i = 0; i < nchildren; i++) {
                 var testChild = node.children[i],
@@ -772,6 +774,74 @@ function createArgus(spec) {
                 }
             }
             
+            // mark some less-interesting nodes for clustering
+            //
+            // sort first by number of descendants, so we always show the most
+            // populous clades
+            nodesWithoutPhyloSupport.sort(sortByDescendantCount);
+            // populous clades
+            var clusteredNodes = nodesWithoutPhyloSupport.slice( argusObj.maxUnclusteredNodes - nWithHybrid - nWithPhylo ),
+                nClustered = clusteredNodes.length,
+                nClusteredRemaining,
+                currentCluster = null,
+                nInCurrentCluster = 0;
+            
+            // re-sort the smaller ones by name, then sort into clusters
+            clusteredNodes.sort(alphaSortByName);
+            for (i = 0; i < nClustered; i++) {
+                testChild = clusteredNodes[i];
+                /// testChild.nameStartsWith = (testChild.name.length > 0 ? testChild.name[0].toLowerCase() : '');
+                if (nInCurrentCluster > argusObj.clusterSize) {
+                    // this cluster is full, start another one?
+                    if (testChild.name.startsWith(currentCluster.lastName)) {
+                        // no, push this node into the last one...
+                    } else {
+                        // are there enough nodes left to form a good cluster?
+                        nClusteredRemaining = nClustered - i;
+                        if (nClusteredRemaining > argusObj.minClusterSize) {
+                            // add a new cluster and start filling it
+                            clusters[node.nodeid].push({
+                                nodes: [ ],
+                                firstName: testChild.name.slice(0,3),
+                                lastName: testChild.name.slice(0,3)
+                            });
+                            currentCluster = clusters[node.nodeid].slice(-1)[0];
+                            nInCurrentCluster = 0;
+                        } 
+                        // else toss the remaining few children into the last cluster
+                    }
+                }
+                if (!currentCluster) {
+                    // add entry for this node, and its first (empty) cluster
+                    clusters[ node.nodeid ] = [{
+                        nodes: [ ],
+                        firstName: '',
+                        lastName: ''
+                    }];
+                    currentCluster = clusters[ node.nodeid ].slice(-1)[0];
+                    nInCurrentCluster = 0;
+                }
+                currentCluster.nodes.push(testChild);
+                if (currentCluster.firstName === '') {
+                    currentCluster.firstName = testChild.name.slice(0,3);
+                }
+                currentCluster.lastName = testChild.name.slice(0,3);
+                nInCurrentCluster++;
+            }
+            // use names to label each cluster alphabetically
+            
+            if (clusters[ node.nodeid ]) {
+                console.log(clusters[ node.nodeid ].length + " clusters created for this parent '"+ node.nodeid +"'");
+                for (i = 0; i < clusters[ node.nodeid ].length; i++) {
+                    var nthCluster = clusters[ node.nodeid ][i];
+                    console.log( " cluster ["+ i +"]");
+                    console.log( "  "+ nthCluster.nodes.length +" nodes");
+                    console.log( "  "+ nthCluster.firstName +" - "+ nthCluster.lastName);
+                }
+            } else {
+                console.log("No clusters created for this parent '"+ node.nodeid +"'");
+            }
+
             // Use these groups and clusters to draw children
             nWithHybrid = nodesWithHybridSupport.length;
             for (i = 0; i < nWithHybrid; i++) {
@@ -810,8 +880,18 @@ function createArgus(spec) {
                 }
             }
             nWithoutPhylo = nodesWithoutPhyloSupport.length;
+            // some taxonomy-supported nodes may be hidden in clusters (ignore these)
+            var firstClusterNode = clusters[node.nodeid] ? clusters[node.nodeid][0].nodes[0] : null;
+            console.log("firstClusterNode = "+ firstClusterNode +" <"+ typeof(firstClusterNode) +">");
             for (i = 0; i < nWithoutPhylo; i++) {
                 // postorder traverse the children of this node
+
+                if (nodesWithoutPhyloSupport[i] === firstClusterNode) {
+                    // stop when we reach clustered nodes
+                    console.log("SKIPPING remaining (clustered) nodes");
+                    break;
+                }
+
                 curLeaf = this.drawNode({
                     "node": nodesWithoutPhyloSupport[i],
                     "domSource": domSource,
@@ -828,8 +908,26 @@ function createArgus(spec) {
                 }
             }
 
-            // calculate this node's coordinates based on the positions of its children
+            // set the parent node's x so we can draw paths from it
             node.x = Math.min.apply(null, childxs) - this.nodesWidth; // use this line for square trees
+
+            // draw a lozenge for each cluster (save lozenge-as-ref on cluster obj?)
+            if (clusters[node.nodeid]) {
+                for (i = 0; i < clusters[node.nodeid].length; i++) {
+                    currentCluster = clusters[node.nodeid][i];
+                    var clusterX = node.x, // ie, the parent node
+                        clusterY =  Math.max.apply(null, childys) + (this.nodeHeight * 1.3);
+                    this.drawCluster({
+                        "cluster": currentCluster,
+                        "x": clusterX,
+                        "y": clusterY
+                    });
+                    childxs.push(clusterX);
+                    childys.push(clusterY);
+                }
+            }
+
+            // calculate this node's coordinates based on the positions of its children
             node.y = childys.average();
 
             // scale size of node circle by number of contained leaves
@@ -855,24 +953,18 @@ function createArgus(spec) {
             }));
 
             // draw branches (square tree)
-            var topMostNode = (nodesWithHybridSupport.length > 0) ? 
-                                 nodesWithHybridSupport[0] : 
-                                 (nodesWithPhyloSupport.length > 0) ? 
-                                    nodesWithPhyloSupport[0] : 
-                                    nodesWithoutPhyloSupport[0];
-
-            var bottomMostNode = (nodesWithoutPhyloSupport.length > 0) ? 
-                                    nodesWithoutPhyloSupport[nWithoutPhylo - 1] : 
-                                    (nodesWithPhyloSupport.length > 0) ? 
-                                       nodesWithPhyloSupport[nWithPhylo - 1] : 
-                                       nodesWithHybridSupport[nWithHybrid - 1];
-
-            spineSt = "M" + node.x + " " + topMostNode.y + "L" + node.x + " " + bottomMostNode.y;
+            spineSt = "M" + node.x + " " + Math.min.apply(null, childys) 
+                    + "L" + node.x + " " + Math.max.apply(null, childys);
             paper.path(spineSt).toBack().attr({
                 "stroke": this.pathColor,
                 "stroke-linecap": 'round'
             }).insertBefore(dividerBeforeLabels);
             for (i = 0; i < nchildren; i++) {
+
+                if (typeof(node.children[i].x) === 'undefined') {
+                    // this node is not (yet) visible.. skip it
+                    continue;
+                }
 
                 var lineDashes, lineColor,
                     sb = node.children[i].supportedBy,
@@ -1002,6 +1094,43 @@ function createArgus(spec) {
         this.nodesHash[node.nodeid] = node;
         return curLeaf;
     };
+
+    argusObj.drawCluster = function (obj) {
+        var cluster = obj.cluster;
+        var stemX = obj.x;
+        var clusterX = stemX + (this.nodesWidth / 3.0);
+        var clusterY = obj.y;
+        var fontSize = this.minTipRadius * this.fontScalar;
+        // draw a short branch out to this cluster
+        var branchSt = "M" + stemX + " " + clusterY + "L" + clusterX + " " + clusterY;
+        var branch = paper.path(branchSt).toBack().attr({
+            "stroke-width": 1,
+            "stroke-linecap": 'round',
+            "stroke-dasharray": '.',
+            "stroke": this.pathColor
+        }).insertBefore(dividerBeforeLabels);
+        // draw the cluster shape (a lozenge that can hold 'Aaa - Zzz')?
+        var box = paper.rect(clusterX, clusterY - (this.nodeHeight / 2.0), (this.nodesWidth * 0.8), this.nodeHeight).attr({
+            "stroke": this.pathColor,
+            "stroke-width": 1,
+            "stroke-dasharray": '.',
+            "fill": this.bgColor,
+            "r": 4,  // rounded corner (radius)
+         // "title": "TEST TITLE",
+            "cursor": "pointer"
+        }).insertAfter(dividerBeforeLabels)
+        // draw the cluster label
+        var clusterLabel = cluster.firstName +" - "+ cluster.lastName;
+        var label = paper.text(clusterX + (this.nodesWidth * 0.4), clusterY, clusterLabel).attr({
+            'text-anchor': 'middle',
+            "fill": this.labelColor,
+            "font-size": fontSize,
+            "cursor": "pointer"
+        }).insertBefore(dividerBeforeHighlights);
+          
+        // TODO: assign behaviors to expand/replace the cluster with its nodes
+          
+    }
 
 
     argusObj.drawCycles = function () {
@@ -1338,3 +1467,16 @@ Array.prototype.average = function () {
     }
     return sum / count;
 };
+
+function alphaSortByName(a,b) {
+    var aName = a.name.toLowerCase(),
+        bName = b.name.toLowerCase();
+    if (aName > bName) return 1;
+    if (aName < bName) return -1;
+    return 0;
+}
+function sortByDescendantCount(a,b) {
+    if (a.nleaves > b.leaves) return 1;
+    if (a.leaves < b.leaves) return -1;
+    return 0;
+}
