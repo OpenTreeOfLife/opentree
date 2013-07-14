@@ -205,8 +205,9 @@ function createArgus(spec) {
         var domSource = o.domSource === undefined ? "ottol" : o.domSource;
         var ajaxSuccess = function (dataStr, textStatus, jqXHR) {
             var argusObjRef = this;
-            argusObjRef.treeData = $.parseJSON(dataStr);
-            var node = argusObjRef.treeData[0];
+            argusObjRef.treeData = dataStr; // $.parseJSON(dataStr);
+            //var node = argusObjRef.treeData[0];
+            var node = argusObjRef.treeData;
 
             // recursively populate any missing (implied) node names
             buildAllMissingNodeNames(node);

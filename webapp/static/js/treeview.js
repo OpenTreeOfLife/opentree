@@ -101,7 +101,7 @@ function loadLocalComments( chosenFilter ) {
         // TODO: pivot based on current page/view type..
         fetchArgs.filter = chosenFilter || 'synthtree_id,synthtree_node_id';
 
-        var targetNode = argus.treeData[0];
+        var targetNode = argus.treeData;
         fetchArgs.synthtree_id = argus.domSource;
         fetchArgs.synthtree_node_id = targetNode.nodeid;
         fetchArgs.sourcetree_id = targetNode.taxSource;
@@ -635,7 +635,7 @@ function showObjectProperties( objInfo, options ) {
     if (argus.treeData) {
 
         // fetch additional information used to detail provenance for nodes and edges
-        metaMap = argus.treeData[0].sourceToMetaMap;
+        metaMap = argus.treeData.sourceToMetaMap;
         /* TEST FOR and REPORT metaMap
         if (metaMap) {
             // for now, just report these values if found
@@ -981,7 +981,7 @@ function getTreeDataNode( filterFunc, testNode ) {
     // helper method to retrieve a matching node from n-level treeData (tree-view JSON)
     if (!testNode) { 
         // start at top-most node in tree, if not specified
-        testNode = argus.treeData[0]; 
+        testNode = argus.treeData; 
     }
     // test against our requirements (eg, a particular node ID)
     if (filterFunc(testNode)) {
