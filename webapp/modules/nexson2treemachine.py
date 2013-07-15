@@ -250,7 +250,7 @@ def run_treemachine_pg_import_check(paths, lock_policy, treemachine_db=None, tre
                 p = '/db/data' + p
             SUBMIT_URI = treemachine_domain + p
             if VERBOSE:
-                sys.stderr.write('request to "%s"' % SUBMIT_URI)
+                sys.stderr.write('request to "%s"\n' % SUBMIT_URI)
             resp = requests.post(SUBMIT_URI,
                          headers=headers,
                          data=json.dumps({'nexsonBlob': nexsonBlob}),
