@@ -1,19 +1,31 @@
 {{extend 'layout.html'}}
 {{if not has_status:}}
-   <b>{{=message}}</b>
-   <p>Page will automatically reload every few seconds</p>
-   <script type="text/javascript">
-   var stripGetParamsAndReload = function() { //@hacky way to reload the page, but strip the fetchnexson GET query parameter so that the fetch is only done once (to keep the load on the server low)
-      var urlSplit = window.location.href.split('?');
-      if (urlSplit.length >= 2) {
-        window.location.search='';
-        window.location.replace(urlSplit[0]);
-      } else {
-        window.location.reload();
-      }
-   };
-   setTimeout(stripGetParamsAndReload, 2000); // 2 seconds
-   </script>
+  <h5>Status information for this study is currently unavailable</h5>
+  <p><b>{{=message}} </b>
+   {{try:
+      mll = message_link_list
+    except:
+      mll = []
+    pass
+    if mll:
+      for linkname, link in mll:}}
+         {{=A(linkname, _href=link)}}<b> </b>
+      {{pass}}
+    {{else:}}
+<p>Page will automatically reload every few seconds</p>
+<script type="text/javascript">
+var stripGetParamsAndReload = function() { //@hacky way to reload the page, but strip the fetchnexson GET query parameter so that the fetch is only done once (to keep the load on the server low)
+  var urlSplit = window.location.href.split('?');
+  if (urlSplit.length >= 2) {
+    window.location.search='';
+    window.location.replace(urlSplit[0]);
+  } else {
+    window.location.reload();
+  }
+};
+setTimeout(stripGetParamsAndReload, 2000); // 2 seconds
+</script>
+    {{pass}}
 {{else:}}
 <h3>About this status page</h3>
 <p>The information for this study was obtained from phylografter at {{=nexson_mod_time}}.</p>

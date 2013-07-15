@@ -12,8 +12,8 @@ import copy
 from datetime import datetime
 import time
 from cStringIO import StringIO
-from parse_nexson import Study, debug, warn
-VERBOSE = False
+from parse_nexson import Study, debug, warn, OTU
+VERBOSE = os.environ.get('VERBOSE_NEXSON_TO_STATUS_PAGE') not in [None, '0']
 
 
 class LockPolicy(object):
@@ -97,13 +97,17 @@ def target_is_dirty(src_path_list, dest_path_list, trigger=None):
 def get_default_dir_dict(top_level=None):
     r = '.' if top_level is None else top_level
     t = os.path.abspath(r)
-    return  {'nexson_dir': t,
+    d = {'nexson_dir': t,
             'treemachine_ingest_dir': os.path.join(t, 'ingest'),
-            'to_html_scratch_dir': os.path.join(t, 'ingest'),
+            'to_html_scratch_dir': os.path.join(t, 'processing_messages'),
             'to_html_output_dir': os.path.join(t, 'status'),
             'nexson_state_db': os.path.join(t, '.to_download.json'), # stores the state of this repo. *very* hacky primitive db.
-            }
-
+        }
+    if not os.path.exists(d['to_html_scratch_dir']):
+        os.makedirs(d['to_html_scratch_dir'])
+    if not os.path.exists(d['treemachine_ingest_dir']):
+        os.makedirs(d['treemachine_ingest_dir'])
+    return d
 def get_processing_paths_from_prefix(pref,
                                      nexson_dir='.',
                                      treemachine_ingest_dir='.',
@@ -112,11 +116,12 @@ def get_processing_paths_from_prefix(pref,
                                      nexson_state_db=None):
     d = {'nexson': os.path.abspath(os.path.join(nexson_dir, pref)),
          'treemachine_log': os.path.abspath(os.path.join(treemachine_ingest_dir, pref + '-out.json')),
-         'treemachine_err': os.path.abspath(os.path.join(treemachine_ingest_dir, pref + '-err.txt')),
+         'treemachine_err': os.path.abspath(os.path.join(to_html_scratch_dir, pref + '-err.txt')),
          'html_err': os.path.abspath(os.path.join(to_html_scratch_dir, pref + '-2html-err.txt')),
          'html': os.path.abspath(os.path.join(to_html_output_dir, pref + '.html')),
          'status_json': os.path.abspath(os.path.join(to_html_output_dir, pref + '.json')),
-         'nexson_state_db':nexson_state_db,
+         'nexson_state_db': nexson_state_db,
+         'launched_study_proc': os.path.abspath(os.path.join(to_html_scratch_dir, pref + '-processing-launched.txt')),
          }
     if d['nexson_state_db'] is None:
         d['nexson_state_db'] = os.path.abspath(os.path.join(nexson_dir, '.to_download.json')), # stores the state of this repo. *very* hacky primitive db.

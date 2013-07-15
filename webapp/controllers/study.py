@@ -61,7 +61,8 @@ def status():
         status_json = paths['status_json']
         if study_was_locked:
             return {'has_status': False,
-                    'message': 'The processing the information for this study is underway. Once it is complete the status will be displayed when this page reloads.'}
+                    'message': 'The processing of the information for this study is underway. Once it is complete the status will be displayed when this page reloads.'}
+        ## the study is not currently being processed
         if not force_phylografter_reload:
             if not target_is_dirty([nexson_path, treemachine_log_path], [status_json]):
                 rich_log = json.load(open(status_json, 'rU'))
@@ -73,6 +74,17 @@ def status():
                     return response.json(rich_log)
                 rich_log['has_status'] = True
                 return rich_log
+            else:
+                processing_launched_ts = paths['launched_study_proc']
+                if os.path.exists(processing_launched_ts) and target_is_dirty([processing_launched_ts], [status_json]):
+                    # the study is not currently being processed, the status_json is out of date, and the status_json is younger than
+                    #   the 'study processing has been launched flag' This means that the processing failed
+                    # We don't want to fall through hear and launch again, because that could
+                    #   lead to lots of processing getting launched as a problematic case repeatedly fails
+                    return {'has_status': False,
+                        'message': 'The processing of the information for this study appears to have failed. Please add this study id (%s) to the following issue tracking document (if it is not already listed):' % study_id,
+                        'message_link_list': [('Study/status problems document.', 'https://docs.google.com/spreadsheet/ccc?key=0AnYfNFYgyCWkdGRhUGNlbE8xVk9UNE1SV1NDTzBCdEE#gid=0')],
+                        }
     finally:
         check_lock_policy.remove_lock()
     invoc = [sys.executable,
