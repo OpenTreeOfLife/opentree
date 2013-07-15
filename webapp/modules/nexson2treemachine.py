@@ -4,8 +4,11 @@
 #          'refresh_ingest',
 #          'refresh_nexsons'
 #         ]
-
-import os, sys, subprocess, json
+import stat
+import os
+import sys
+import subprocess
+import json
 import requests
 import gzip
 import copy
@@ -15,6 +18,15 @@ from cStringIO import StringIO
 from parse_nexson import Study, debug, warn, OTU
 VERBOSE = os.environ.get('VERBOSE_NEXSON_TO_STATUS_PAGE') not in [None, '0']
 
+
+def open_for_group_write(fp, mode):
+    '''Open with mode=mode and permissions '-rw-rw-r--' group writable is 
+    the default on some systems/accounts, but it is important that it be present on our deployment machine
+    '''
+    o = open(fp, mode)
+    o.flush()
+    os.chmod(fp, stat.S_IRGRP | stat.S_IROTH | stat.S_IRUSR | stat.S_IWGRP | stat.S_IWUSR)
+    return o
 
 class LockPolicy(object):
     MAX_NUM_SLEEP_IN_WAITING_FOR_LOCK = os.environ.get('MAX_NUM_SLEEP_IN_WAITING_FOR_LOCK', 100)
@@ -48,7 +60,7 @@ class LockPolicy(object):
         if previously_existed and self.wait_do_not_relock_if_locked:
             return True, False
         try:
-            o = open(lockfile, 'w')
+            o = open_for_group_write(lockfile, 'w')
             o.write(str(pid) + '\n')
             o.close()
         except:
@@ -176,7 +188,7 @@ def refresh_html_from_status_obj(paths, status_obj, lock_policy):
     try:
         if not owns_lock:
             return None
-        output = open(html_path, 'w')
+        output = open_for_group_write(html_path, 'w')
         try:
             write_status_obj_as_html(status_obj, output)
         finally:
@@ -208,7 +220,7 @@ def run_treemachine_pg_import_check(paths, lock_policy, treemachine_db=None, tre
                 os.makedirs(ingest_err_dir)
             if VERBOSE:
                 sys.stderr.write('Processing "%s" to "%s"\n' % (n_path, l_path))
-            err_file = open(err_path, 'w')
+            err_file = open_for_group_write(err_path, 'w')
             tf = l_path + '.tmpfile'
             cmd = ['treemachine',
                    'pgloadind', 
@@ -260,7 +272,7 @@ def run_treemachine_pg_import_check(paths, lock_policy, treemachine_db=None, tre
 
 def store_state_JSON(s, fp):
     tmpfilename = fp + '.tmpfile'
-    td = open(tmpfilename, 'w')
+    td = open_for_group_write(tmpfilename, 'w')
     try:
         json.dump(s, td, sort_keys=True, indent=0)
     finally:
