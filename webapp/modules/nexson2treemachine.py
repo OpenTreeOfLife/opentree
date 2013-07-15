@@ -259,7 +259,10 @@ def run_treemachine_pg_import_check(paths, lock_policy, treemachine_db=None, tre
                          data=json.dumps({'nexsonBlob': nexsonBlob}),
                          allow_redirects=True)
             resp.raise_for_status()
-            results = resp.json()
+            try:
+                results = resp.json()
+            except:
+                results = resp.json
             l_path = paths['treemachine_log']
             log_err_dir = os.path.split(l_path)[0]
             if not os.path.exists(log_err_dir):
@@ -305,7 +308,10 @@ def get_list_of_dirty_nexsons(dir_dict):
     headers = {'content-type': 'application/json'}
     resp = requests.get(SUBMIT_URI, params=args, headers=headers)
     resp.raise_for_status()
-    new_resp = resp.json()
+    try:
+        new_resp = resp.json()
+    except:
+        new_resp = resp.json
     ss = set(new_resp['studies'] + old['studies'])
     sl = list(ss)
     sl.sort()
