@@ -15,7 +15,10 @@ import copy
 from datetime import datetime
 import time
 from cStringIO import StringIO
-from parse_nexson import Study, debug, warn, OTU
+try:
+    from parse_nexson import Study, debug, warn, OTU
+except:
+    from nexson2treemach.parse_nexson import Study, debug, warn, OTU
 VERBOSE = os.environ.get('VERBOSE_NEXSON_TO_STATUS_PAGE') not in [None, '0']
 
 
