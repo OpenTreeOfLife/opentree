@@ -856,11 +856,12 @@ function showObjectProperties( objInfo, options ) {
                 }
                 break;
 
+            case 'Supported by':
             default:
                 // general approach
+                var supportingStudyIDs = [ ];  // don't repeat studies under 'Supported by'
                 dValues = String(displayedProperties[dLabel]).split(',');
                 for (i = 0; i < dValues.length; i++) {
-                    $details.append('<dt>'+ dLabel +'</dt>');
                     rawVal = dValues[i];
                     switch(rawVal) {
                         // some values are simply displayed as-is, or slightly groomed
@@ -871,6 +872,12 @@ function showObjectProperties( objInfo, options ) {
                         default:
                             // other values might have more information in the metaMap
                             // EXAMPLE rawVal = 'WangEtAl2009-studyid-15' (a study)
+                            var studyID = rawVal.split('_')[0];
+                            if ($.inArray(studyID, supportingStudyIDs) !== -1) {
+                                // skip this study, we've already shown it
+                                continue;
+                            }
+                            supportingStudyIDs.push( studyID );
                             if (metaMap) {
                                 moreInfo = metaMap[ rawVal ];
                             }
@@ -883,9 +890,7 @@ function showObjectProperties( objInfo, options ) {
                                     if (pID) {
                                         displayVal = ('<a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">'+ pID +'</a>. ');
                                     }
-
                                     pCurator = moreInfo.study['ot:curatorName'];
-                                    
                                     // be careful, in case we have an incomplete or badly-formatted reference
                                     if (pRef) {
                                         // we'll show compact reference instead, with full ref a click away
@@ -906,8 +911,10 @@ function showObjectProperties( objInfo, options ) {
                                             //  EXAMPLE: doi:10.1073/pnas.0813376106  =>  http://dx.doi.org/10.1073/pnas.0813376106
                                             pURL = 'http://dx.doi.org/'+ pDOI;
                                             displayVal += '<a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pRefCompact +'</a> <a href="#" class="full-ref-toggle">(full reference)</a><br/>';
-                                            displayVal += '<div class="full-ref">'+ pRef +'</div>';
+                                        } else {
+                                            displayVal += pRefCompact +' <a href="#" class="full-ref-toggle">(full reference)</a><br/>';
                                         }
+                                        displayVal += '<div class="full-ref">'+ pRef +'</div>';
                                     }
                                     if (pCurator) {
                                         displayVal += ('<div class="full-ref-curator">Curator: '+ pCurator +'</div>');
@@ -924,6 +931,7 @@ function showObjectProperties( objInfo, options ) {
                                 displayVal = rawVal;
                             }
                     }
+                    $details.append('<dt>'+ dLabel +'</dt>');
                     $details.append('<dd>'+ displayVal +'</dd>');
                 }
                 $details.find('.full-ref-toggle').unbind('click').click(function() {
