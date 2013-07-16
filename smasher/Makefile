@@ -4,6 +4,8 @@
 #  $< = first prerequisite
 #  $@ = file name of target
 
+all: ott21
+
 # Root of local copy of taxomachine git repo
 TAXOMACHINE_ROOT=../../taxomachine
 
@@ -22,23 +24,13 @@ WORK=tmp
 
 CP=-classpath .
 TEST_ARGS=Smasher $(TAXOMACHINE_ROOT)/example/nematoda.ncbi $(TAXOMACHINE_ROOT)/example/nematoda.gbif \
+      --edits nem-edits/ \
       --ids $(WORK)/nem1.ott \
       --aux $(WORK)/nem1.preottol \
       --out $(WORK)/nem2/
 
 NCBI=$(WORK)/ncbi.processed
 GBIF=$(WORK)/gbif.processed
-
-OTT20_ARGS=Smasher $(NCBI) $(GBIF) \
-      --ids $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids \
-      --aux $(PREOTTOL)/preottol-20121112.processed \
-      --out $(WORK)/ott2.0/
-
-# 2.0 idempotency test
-IDEM_ARGS=Smasher $(NCBI) $(GBIF) \
-      --ids $(WORK)/ott2.0/taxonomy \
-      --out $(WORK)/ott2.0-idem/
-
 
 compile: Smasher.class
 
@@ -54,6 +46,28 @@ debug:
 	mkdir -p $(WORK)
 	jdb $(CP) $(TEST_ARGS)
 
+OTT21_ARGS=Smasher $(NCBI) $(GBIF) \
+      --edits edits/ \
+      --ids $(WORK)/ott2.0/taxonomy \
+      --aux $(PREOTTOL)/preottol-20121112.processed \
+      --out $(WORK)/ott2.1/
+
+ott21: $(WORK)/ott2.1/log
+$(WORK)/ott2.1/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.processed 
+	mkdir -p $(WORK)/ott2.1
+	java $(CP) -Xmx10g $(OTT21_ARGS)
+
+OTT20_ARGS=Smasher $(NCBI) $(GBIF) \
+      --ids $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids \
+      --aux $(PREOTTOL)/preottol-20121112.processed \
+      --out $(WORK)/ott2.0/
+
+# 2.0 idempotency test
+IDEM_ARGS=Smasher $(NCBI) $(GBIF) \
+      --ids $(WORK)/ott2.0/taxonomy \
+      --out $(WORK)/ott2.0-idem/
+
+
 ott20: $(WORK)/ott2.0/log
 $(WORK)/ott2.0/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.processed 
 	mkdir -p $(WORK)/ott2.0
@@ -63,16 +77,6 @@ idem: $(WORK)/ott2.0.idem/log
 $(WORK)/ott2.0.idem/log: Smasher.class
 	mkdir -p $(WORK)/ott2.0.idem
 	java $(CP) -Xmx10g $(IDEM_ARGS)
-
-OTT21_ARGS=Smasher $(NCBI) $(GBIF) \
-      --ids $(WORK)/ott2.0/taxonomy \
-      --aux $(PREOTTOL)/preottol-20121112.processed \
-      --out $(WORK)/ott2.1/
-
-ott21: $(WORK)/ott2.1/log
-$(WORK)/ott2.1/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.processed 
-	mkdir -p $(WORK)/ott2.1
-	java $(CP) -Xmx10g $(OTT21_ARGS)
 
 # little test
 $(WORK)/dory.foo: $(WORK)/nem2/taxonomy Smasher.class
@@ -122,8 +126,13 @@ $(WORK)/gbif/taxon.txt:
              http://ecat-dev.gbif.org/repository/export/checklist1.zip
 	(cd $(WORK)/gbif && unzip checklist1.zip)
 
-tarball: $(WORK)/ott2.0/log
-	(cd $(WORK) && tar czvf /raid/www/roots/opentree/ott2.0/ott2.0.tgz ott2.0)
+WHICH=ott2.1
+TARDIR=/raid/www/roots/opentree/ott
+
+tarball: $(WORK)/$(WHICH)/log
+	(cd $(WORK) && \
+	 tar czvf $(TARDIR)/$(WHICH).tgz.tmp $(WHICH) && \
+	 mv $(TARDIR)/$(WHICH).tgz.tmp $(TARDIR)/$(WHICH).tgz)
 
 norbert:
 	rsync -vaxH --exclude=$(WORK) --exclude="*~" --exclude=backup \

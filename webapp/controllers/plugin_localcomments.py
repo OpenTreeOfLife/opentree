@@ -1,6 +1,7 @@
 # adapted from the plugin_comments provided with web2py
 import re
 from gluon.tools import prettydate
+from gluon.contrib.markdown.markdown2 import markdown
 
 dbco = db.plugin_localcomments_comment
 
@@ -109,7 +110,7 @@ function plugin_localcomments_init() {
     delete_all_forms();
     var $commentDiv = jQuery(this).parent().parent().parent();
     jQuery.post(
-        action+'/delete',
+        action,    // WAS: action+'/delete',
         {
             'thread_parent_id': 'delete',
             'comment_id': $commentDiv.attr('id').split('r')[1]
@@ -131,9 +132,81 @@ jQuery(document).ready(function() {
 """)
 
 def moderation():
-    comments = db().select(db.plugin_localcomments_comment.ALL, orderby=db.plugin_localcomments_comment.created_on)
+    comments = db().select(db.plugin_localcomments_comment.ALL, orderby=~db.plugin_localcomments_comment.created_on)  # =~ is DESCENDING ORDER
     form = SQLFORM.factory(Field('tag_name'))
     return dict(comments=comments, form=form)
+
+def sqlform():
+    # comments = db().select(db.plugin_localcomments_comment.ALL, orderby=~db.plugin_localcomments_comment.created_on)  # =~ is DESCENDING ORDER
+    form = SQLFORM(db.plugin_localcomments_comment)
+    return dict(form=form)
+    
+def show_type_icon(type):
+    iconClass = "icon-comment"
+    if type == 'Error in phylogeny':
+        iconClass = "icon-move"
+    elif type == 'Bug report':
+        iconClass = "icon-warning-sign"
+    elif type == 'Feature request':
+        iconClass = "icon-wrench"
+    elif type == 'Reply or general':
+        iconClass = "icon-comment"
+    return XML(I(_class=iconClass))
+
+@auth.requires_membership(role='editor')
+def grid():
+    db.plugin_localcomments_comment.intended_scope.readable = True
+    db.plugin_localcomments_comment.intended_scope.represent = lambda scope, row: scope and scope.capitalize() or XML(T('&mdash;'))
+    db.plugin_localcomments_comment.feedback_type.represent = lambda row, value: show_type_icon(value)
+
+    grid = SQLFORM.grid( db.plugin_localcomments_comment,
+
+        # formstyle controls only the Add/Edit forms for individual records! not the main grid :(
+        formstyle='bootstrap',
+        #formstyle='table3cols',
+        #formstyle='table2cols',
+        #formstyle='inline',
+        #formstyle='divs',
+        #formstyle='ul',
+
+        user_signature = False,  # False means *anyone* can edit, delete, etc! if they can use the method (see @auth.requires above)
+        # editable=auth.has_membership(role='editor'),  # use this instead of @auth above, to allow others to search all comments
+
+        create=False,
+        deletable=False,  # we'll flip the hidden flag, but not truly delete..?
+        orderby=~db.plugin_localcomments_comment.created_on,
+
+
+        fields=[ 
+            #db.plugin_localcomments_comment.id, 
+            db.plugin_localcomments_comment.feedback_type, 
+            db.plugin_localcomments_comment.body, 
+            db.plugin_localcomments_comment.url, 
+            db.plugin_localcomments_comment.ottol_id, 
+            db.plugin_localcomments_comment.synthtree_id, 
+            db.plugin_localcomments_comment.synthtree_node_id,
+            db.plugin_localcomments_comment.created_on,
+            db.plugin_localcomments_comment.intended_scope,
+        ],
+        headers = { 
+            # NOTE the funky key format used here
+            'plugin_localcomments_comment.feedback_type' : 'Type',
+        }
+        # TODO: add "virtual field" to show compound locations (treeID@nodeID), and hide underlying fields?
+
+        # TODO: add custom rendering (via lambdas) for some fields, eg, icons for feedback_type:
+        #   https://groups.google.com/forum/#!searchin/web2py/grid$20HTML/web2py/3KhSI4Ps5Tw/Ay4Nc0ti3g0J
+        #   https://groups.google.com/forum/#!searchin/web2py/grid$20HTML/web2py/4-rgcM9FNcA/NFpIyZdj4OkJ
+        #   http://web2py.com/books/default/chapter/29/06?search=represent#Record-representation
+
+    )
+    return locals()
+    
+def smartgrid():
+    # comments = db().select(db.plugin_localcomments_comment.ALL, orderby=~db.plugin_localcomments_comment.created_on)  # =~ is DESCENDING ORDER
+    grid = SQLFORM.smartgrid(db.plugin_localcomments_comment)
+    return locals()
+    
 
 def index():
     # this is a tricky function that does simple display, handles POSTed comments, moderation, etc.
@@ -161,11 +234,11 @@ def index():
             return LI(
                 DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
-                    DIV(comment.body,_class='body'),
+                    DIV( XML(markdown(comment.body or ''), sanitize=True),_class='body'),
                     DIV(T('%s ',comment.created_by.first_name),T('%s',comment.created_by.last_name), 
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
-                        SPAN(' [',comment.feedback_type,']',_class='badge') if comment.feedback_type else '',
-                        SPAN(' [',comment.intended_scope,']',_class='badge') if comment.intended_scope else '',
+                        SPAN(' ',comment.feedback_type,' ',_class='badge') if comment.feedback_type else '',
+                        SPAN(' ',comment.intended_scope,' ',_class='badge') if comment.intended_scope else '',
                         T(' - %s',prettydate(comment.created_on,T)),
                         SPAN(
                             A(T('hide replies'),_class='toggle',_href='#'),
@@ -252,7 +325,7 @@ def index():
                             OPTION('general feedback (none of the above)', _value=''),
                         _name='intended_scope', value='synthtree'),
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
-                        TEXTAREA(_name='body',_style='width:100%; height: 50px; margin-top: 4px;'),
+                        TEXTAREA(_name='body'),
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
                         INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
@@ -260,6 +333,7 @@ def index():
                         INPUT(_type='hidden',_name='ottol_id',_value=ottol_id),
                         INPUT(_type='hidden',_name='url',_value=url),
                         # INPUT(_type='text',_name='thread_parent_id',_value=0),   # we'll get this from a nearby id, eg 'r8'
+                        BR(),
                         INPUT(_type='submit',_value=T('post'),_style='float:right'), 
                         A(T('help'),_href='http://daringfireball.net/projects/markdown/',
                           _target='_blank',_style='float:right; padding-right: 10px'),

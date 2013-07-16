@@ -63,6 +63,7 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.util.Collection;
 import java.io.PrintStream;
+import java.io.File;
 
 public class Smasher {
 
@@ -96,6 +97,11 @@ public class Smasher {
 					else if (argv[i].equals("--select")) {
 						String name = argv[++i];
 						union.dump(union.unique(name), argv[++i]);
+					}
+
+					else if (argv[i].equals("--edits")) {
+						String dirname = argv[++i];
+						union.edit(dirname);
 					}
 
 					//-----
@@ -243,6 +249,7 @@ class Taxonomy implements Iterable<Node> {
 	List<Node> lookup(String name) {
 		List<Node> nodes = this.nameIndex.get(name);
 		if (nodes != null) return nodes;
+		// Consider appending synonyms ??
 		return this.synonyms.get(name);
 	}
 
@@ -987,6 +994,125 @@ class UnionTaxonomy extends Taxonomy {
 		}
 	}
 
+	static Pattern tabPattern = Pattern.compile("\t");
+
+	// Apply a set of edits to the union taxonomy
+
+	void edit(String dirname) throws IOException {
+		File[] editfiles = new File(dirname).listFiles();
+		for (File editfile : editfiles) {
+			if (!editfile.getName().endsWith("~")) {
+				System.out.println("--- Applying edits from " + editfile + " ---");
+				FileReader fr = new FileReader(editfile);
+				BufferedReader br = new BufferedReader(fr);
+				String str;
+				while ((str = br.readLine()) != null) {
+					if (!(str.length()==0) && !str.startsWith("#")) {
+						String[] row = tabPattern.split(str);
+						if (row.length > 0 &&
+							!row[0].equals("command")) { // header row!
+							if (row.length != 6)
+								System.err.println("Ill-formed command: " + str);
+							else
+								applyOneEdit(row);
+						}
+					}
+				}
+				fr.close();
+			}
+		}
+	}
+
+	// E.g. add	Acanthotrema frischii	species	Acanthotrema	Fungi	IF:516851
+
+	void applyOneEdit(String[] row) {
+		String command = row[0];
+		String name = row[1];
+		String rank = row[2];
+		String parentName = row[3];
+		String contextName = row[4];
+		String sourceInfo = row[5];
+
+		List<Node> parentCandidates = this.lookup(parentName);
+		if (parentCandidates == null) {
+			System.err.println("(add) Parent not found: " + parentName);
+			return;
+		}
+
+		parentCandidates = filterByContext(parentCandidates, contextName);
+		if (parentCandidates == null) {
+			System.err.println("(add) Parent not found in context: " + parentName
+							   + " in " + contextName);
+			return;
+		}
+		if (parentCandidates.size() > 1) {
+			System.err.println("(add) Parent name is ambiguous: " + parentName);
+			return;
+		}
+		Node parent = parentCandidates.get(0);
+
+		if (!parent.name.equals(parentName))
+			System.err.println("(add) Warning: parent taxon name is a synonym: " + parentName);
+
+		List<Node> existing = this.lookup(name);
+		if (existing != null)
+			existing = filterByContext(existing, contextName);
+
+		if (command.equals("add")) {
+			if (existing != null) {
+				System.err.println("(add) Warning: taxon already present: " + name);
+				boolean winp = false;
+				Node oldparent = null;
+				for (Node node : existing)
+					if (node.parent == parent) winp = true;
+					else oldparent = node.parent;
+				if (!winp)
+					System.err.println("(add)  ... with a different parent: " + oldparent.name);
+			} else {
+				Node node = new Node(this);
+				node.setName(name);
+				node.rank = rank;
+				node.sourceInfo = sourceInfo;
+				parent.addChild(node);
+			}
+		} else if (command.equals("move")) {
+			if (existing == null)
+				System.err.println("(move) No taxon to move: " + name);
+			else if (existing.size() > 1)
+				System.err.println("(move) Ambiguous taxon name: " + name);
+			else {
+				Node node = existing.get(0);
+				if (node.parent == parent)
+					System.err.println("(move) Warning: already in the right place: " + name);
+				else
+					node.changeParent(parent);
+			}
+		} else if (command.equals("synonym")) {
+			// TBD: error checking
+			List<Node> nodes = this.synonyms.get(name);
+			if (nodes == null) {
+				nodes = new ArrayList<Node>(1);
+				this.synonyms.put(name, nodes);
+			}
+			nodes.add(parent);
+		} else
+			System.err.println("Unrecognized edit command: " + command);
+	}
+
+	List<Node> filterByContext(List<Node> nodes, String contextName) {
+		List<Node> fnodes = new ArrayList<Node>(1);
+		for (Node node : nodes)
+			// Follow ancestor chain to see whether this node is in the context
+			for (Node chain = node; chain != null; chain = chain.parent)
+				if (chain.name.equals(contextName)) {
+					fnodes.add(node);
+					break;
+				}
+		return fnodes.size() == 0 ? null : fnodes;
+	}
+
+	// outprefix should end with a / , but I guess . would work too
+
 	void dumpAll(String outprefix) throws IOException {
 		recursivelyDubious(this.root, false);
 		this.dumpLog(outprefix + "log");
@@ -1154,6 +1280,7 @@ class Node {
 	List<Node> children = null;
 	Taxonomy taxonomy;			// For subsumption checks etc.
 	String[] extra = null;		// Source, source id, other ottol fields
+	String sourceInfo = null;   // Cf. editing feature
 	int size = -1;
 	List<Node> sourcenodes = null;
 	Answer deprecationReason = null;
@@ -1205,7 +1332,7 @@ class Node {
 						"\\bunknown\\b|\\bunidentified\\b|\\bendophyte\\b|" +
 						"\\bendophytic\\b|\\bscgc\\b|\\blibraries\\b|\\bvirus\\b|" +
 						"\\bmycorrhizal samples\\b|\\bmetagenome\\b|" +
-						"\\bunclassified\\b|\\benvironmental\\b|\\buncultured\\b");
+						"\\bunclassified\\b|\\benvironmental\\b|\\buncultured\\b|\\bunclassified\\b");
 	
 
 	void setName(String name) {
@@ -1603,10 +1730,13 @@ class Node {
 			")";
 	}
 
+	// Returns a string of the form prefix:id,prefix:id,...
+	// Generally called on a union taxonomy node
+
 	String getSourceIds() {
 		String ids = null;
-		if (sourcenodes != null) {	// union (updated ottol)
-			for (Node source : sourcenodes)
+		if (this.sourcenodes != null) {	// union (updated ottol)
+			for (Node source : this.sourcenodes)
 				if (source != null && source.taxonomy.originp) {
 					String id = source.getQualifiedId();
 					if (ids == null)
@@ -1618,9 +1748,11 @@ class Node {
 		} else if (this.taxonomy.sourcecolumn >= 0) {
 			return (this.extra[this.taxonomy.sourcecolumn] + ":" +
 					this.extra[this.taxonomy.sourceidcolumn]);
-		} else if (this.taxonomy.infocolumn >= 0) {
+		} else if (this.taxonomy.infocolumn >= 0)
 			return this.extra[this.taxonomy.infocolumn];
-		} else
+		else if (this.sourceInfo != null)
+			return this.sourceInfo;
+		else
 			// callers expect non-null
 			return "";
 	}
@@ -1901,10 +2033,16 @@ class Node {
 	// Find a near-ancestor (parent, grandparent, etc) node that's in
 	// common with the other taxonomy
 	Node scan(Taxonomy other) {
-		Node p = this.parent;
-		while (p != null && other.lookup(p.name) == null)
-			p = p.parent;
-		return p;
+		Node up = this.parent;
+
+		// Cf. informative() method
+		// Without this we get ambiguities when the taxon is a species
+		while (up != null && this.name.startsWith(up.name))
+			up = up.parent;
+
+		while (up != null && other.lookup(up.name) == null)
+			up = up.parent;
+		return up;
 	}
 
 	int depth = -1;
@@ -2126,15 +2264,40 @@ abstract class Criterion {
 
 	abstract Answer assess(Node x, Node y);
 
+	// Ciliophora = ncbi:5878 = gbif:10 != gbif:3269382
+	static long[][] exceptions = {
+		{5878, 10, 3269382},	// Ciliophora
+		{29178, 389, 4983431}};	// Foraminifera
+
+	// This is obviously a horrible kludge, awaiting a rewrite
+	static Criterion adHoc =
+		new Criterion() {
+			Answer assess(Node x, Node y) {
+				if (!x.taxonomy.tag.equals("gbif")) return Answer.NOINFO;
+				Node source = null;
+				for (Node ysource : y.sourcenodes)
+					if (ysource != null) { source = ysource; break; }
+				if (source == null) return Answer.NOINFO;
+				if (!source.taxonomy.tag.equals("ncbi")) return Answer.NOINFO;
+				for (long[] exception : exceptions)
+					if (source.id == exception[0]) {
+						if (x.id == exception[1])
+							return Answer.yes(x, y, "ad-hoc", null);
+						else
+							return Answer.no(x, y, "ad-hoc-not", null);
+					}
+				return Answer.NOINFO;
+			}
+		};
+
 	static Criterion division =
 		new Criterion() {
 			Answer assess(Node x, Node y) {
 				String xdiv = x.getDivision();
 				String ydiv = y.getDivision();
 				if (xdiv == ydiv)
-					return Answer.NOINFO;	 // or Answer.YES ??
+					return Answer.NOINFO;
 				else if (xdiv != null && ydiv != null) {
-					y.addComment("not-same-division-as", x);
 					Answer a = Answer.heckNo(x, y, "different-division", xdiv);
 					return a;
 				} else
@@ -2209,9 +2372,9 @@ abstract class Criterion {
 			}
 		};
 
-	static Criterion[] criteria = { division, lineage, subsumption, elimination };
+	static Criterion[] criteria = { adHoc, division, lineage, subsumption, elimination };
 
-	static Criterion[] idCriteria = { division, lineage, subsumption, elimination };
+	static Criterion[] idCriteria = { adHoc, division, lineage, subsumption, elimination };
 
 }
 

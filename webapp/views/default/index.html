@@ -2,6 +2,12 @@
 
 <div id="argusDBContainer" />
 
+<div id="screen-size-indicator">
+<span class="visible-phone">phone</span>
+<span class="visible-tablet">tablet</span>
+<span class="visible-desktop">desktop</span>
+</div>
+
 <div class="container">
       <!--
     <div class="navbar">
@@ -57,58 +63,126 @@
    </div>--><!-- /.navbar -->
 
     <div class="vizcontent">
-      <p id="tree-description">Exploring the primary synthetic tree</p>
-      <h1 id="main-title" style="margin: 0;">Synthetic tree viewer</h1>
-      <div id="links-to-local-comments">
-          <a href="#comment-header">Comments on this node</a>
-          |
-          <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply, .plugin_localcomments a.login-logout').eq(0).click(); return true;">Add a comment</a>
+     <div id="viz-header" class="row">
+      <div class="span12">
+       <h1 id="main-title" class="pull-left" style="margin: 0;">
+           <span class="title">&nbsp;</span>
+       </h1>
+       <p id="tree-description" class="hidden-phone pull-right">Exploring the current synthetic tree</p>
+       <!-- if main title is long, this should disappear on narrow screens -->
+
+       <!--
+           <div id="links-to-local-comments" style="clear: both;">
+               <a href="#comment-header">Comments on this node</a>
+               |
+               <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply, .plugin_localcomments a.login-logout').eq(0).click(); return true;">Add a comment</a>
+           </div>
+       -->
       </div>
+     </div>
 
-      <a id="provenance-show" href="#">Show properties</a>
-      <div id="viewer-collection" class="with-small-provenance">
-          <div id="argusCanvasContainer" class="viewer-frame">&nbsp;</div>
-          <!-- TODO: Add other viewers here, and code to switch among them -->
-          <div id="provenance-panel">
-           <div class="panel-content">
-            <div class="panel-controls">
-                <a id="provenance-hide" href="#" title="Hide properties">X</a>
+     <!--<a id="provenance-show" href="#">Show properties</a>-->
+     <div id="viewer-collection" class="with-small-provenance"
+          style="overflow: visible;" >
+
+           <div id="argus-controls" style="position: absolute; top: -24px; width: 100%; line-height: 1em; text-align: center;">
+               <a class="badge comments-indicator" href="#"
+                  style="float: left; margin-left: 4px;"
+                  title="Show comments for this node"
+                  onclick="toggleCommentsPanel(); $(this).blur(); return false;">
+                   <span id="comment-count">0</span>
+                   <i class="icon-comment icon-white"></i>
+               </a>
+
+               <span class="badge zoom-widget"
+                   title="Magnify tree view"
+                   onclick="return false;"
+                   >
+                   <a href="#"
+                      onclick="(argus.getZoomInHandler())(); return false;" >
+                      <i class="icon-plus icon-white" style="margin-right: 8px;" ></i>
+                      <span class="hidden-phone" style="color: #fff;">Zoom tree view</span>
+                   </a>
+                   <a href="#"
+                      onclick="(argus.getZoomOutHandler())(); return false;" >
+                       <i class="icon-minus icon-white" style="margin-left: 8px;" ></i>
+                   </a>
+               </span>
+               &nbsp;
+               <a class="badge toggle-conflicts" href="#"
+                   style="display: none;"
+                   title="Toggle conflict information"
+                   onclick="f = argus.getToggleConflictsHandler(); if (f) f(); return false;"
+                   >
+                      Toggle conflicts
+               </a>
+
+               <a class="badge properties-indicator" href="#" 
+                  style="float: right; margin-right: 4px;"
+                  title="Show properties for the current selection"
+                  onclick="togglePropertiesPanel(); $(this).blur(); return false;">
+                   <i class="icon-info-sign icon-white"></i>
+               </a>
+           </div>
+
+          <div id="comments-panel">
+           <div class="panel-edges">
+            <div class="panel-content">
+             <div class="panel-controls">
+                 <a id="comments-hide" href="#" title="Hide comments">&times;</a>
+             </div>
+             <div class="provenance-intro">Loading&hellip;</div>
+             <div class="provenance-title">&nbsp;</div>
+             <div>
+               {{  # initialize comments with a naive url-based query
+                   # (this will probably be overwritten by tree-view data)
+                   url = request.url
+               }}
+               {{=plugin_localcomments(filter=('url',),url=url)}}
+             </div>
             </div>
-            <div class="provenance-intro">Loading&hellip;</div>
-            <div class="provenance-title">&nbsp;</div>
-            <dl>
-            <!-- TODO: add these?
-                OTT id: 
-                Neo4J node ID:
-                Tree ID:
-                Source Tree:
-               IF TAXON,
-                Jump to NCBI
-                Jump to GBIF
+           </div>
+          </div>
 
-            -->
-            <!-- add found properties here
-                <dt>Original publication</dt>
-                <dd><a href="#">Cruikshank, 1992</a></dd>
-                <dd><a href="#">doi:10.1016/r.cruikshank.1992.03.013</a></dd>
-                <dt>Related publicatons</dt>
-                <dd><a href="#">Morrison, 2004</a></dd>
-                <dd><a href="#">doi:10.1016/l.morrison.2004.03.013</a></dd>
-                <dt style="margin-top: 1em;"><a id="extract-subtree" href="#">Extract subtree</a></dt>
-                <dd id="extract-subtree-caveats">...</dd>
-            -->
-            </dl>
-            <div></div>
+          <div id="argusCanvasContainer" class="viewer-frame"> &nbsp;</div>
+          <!-- TODO: Add other viewers here, and code to switch among them -->
+
+          <div id="provenance-panel">
+           <div class="panel-edges">
+            <div class="panel-content">
+             <div class="panel-controls">
+                 <a id="provenance-hide" href="#" title="Hide properties">&times;</a>
+             </div>
+             <div class="provenance-intro">Loading&hellip;</div>
+             <div class="provenance-title">&nbsp;</div>
+             <dl>
+             <!-- TODO: add these?
+                 OTT id: 
+                 Neo4J node ID:
+                 Tree ID:
+                 Source Tree:
+                IF TAXON,
+                 Jump to NCBI
+                 Jump to GBIF
+ 
+             -->
+             <!-- add found properties here
+                 <dt>Original publication</dt>
+                 <dd><a href="#">Cruikshank, 1992</a></dd>
+                 <dd><a href="#">doi:10.1016/r.cruikshank.1992.03.013</a></dd>
+                 <dt>Related publicatons</dt>
+                 <dd><a href="#">Morrison, 2004</a></dd>
+                 <dd><a href="#">doi:10.1016/l.morrison.2004.03.013</a></dd>
+                 <dt style="margin-top: 1em;"><a id="extract-subtree" href="#">Extract subtree</a></dt>
+                 <dd id="extract-subtree-caveats">...</dd>
+             -->
+             </dl>
+             <div></div>
+            </div>
            </div>
           </div>
       </div>
 
-      {{  # initialize comments with a naive url-based query
-          # (this will probably be overwritten by tree-view data)
-          url = request.url
-      }}
-      <h3 id="comment-header">Comments <i></i></h3>
-      {{=plugin_localcomments(filter=('url',),url=url)}}
     </div><!-- end of .vizcontent -->
   </div><!-- end of .container -->
 

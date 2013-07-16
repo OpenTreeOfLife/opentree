@@ -1,17 +1,18 @@
 /* style for local (URL-based) comments */
 div.plugin_localcomments {
     /* border: 1px dashed pink; */
-    width: 800px;
-    margin-bottom: 30px;
+    margin-bottom: 12px;
 }
 div.plugin_localcomments .byline {
-    background-color: #f5f5f5;
-    color: #888;
+    background-color: #ddd;
+    color: #777;
     margin: 0px -4px 6px;
     padding: 2px 4px;
 }
 div.plugin_localcomments .byline .badge {
-    color: #080;
+    background-color: #999;
+    color: #fff;
+    margin-left: 5px;
 }
 div.plugin_localcomments .deleted .controls,
 div.plugin_localcomments .byline .controls {
@@ -31,7 +32,7 @@ div.plugin_localcomments .byline .controls {
 }
 .plugin_localcomments ul ul {
     padding-left: 20px;
-    border-left: 1px dotted #ccc;
+    border-left: 2px dotted #ccc;
 }
 .plugin_localcomments ul li {
     /* border: 1px dashed silver; */
@@ -43,13 +44,21 @@ div.plugin_localcomments .byline .controls {
 .plugin_localcomments ul div.reply {
     padding-left: 24px;
 }
+.plugin_localcomments div.reply textarea {
+    clear: both;
+    height: 50px;
+    width: 98%;
+    margin: 0 0 4px 0;
+}
+.plugin_localcomments ul div.reply textarea {
+    width: 100%;
+    margin: 4px 0 4px -10px;
+}
 
 div.localcomments_moderation {
 
 }
 div.localcomments_moderation #moderation-header {
-    text-align: right;
-    padding-bottom: 12px;
 }
 div.localcomments_moderation table caption {
     display: none;
@@ -68,8 +77,17 @@ div.localcomments_moderation tr.feedback-summary td {
     white-space: nowrap;
     overflow: hidden;
 }
-div.localcomments_moderation tr.feedback-summary td.type-and-toggle-icons, 
 div.localcomments_moderation tr.feedback-summary td.body-excerpt {
+    width: 700px;
+    max-width: 700px;
+}
+div.localcomments_moderation tr.feedback-summary td.body-excerpt,
+div.localcomments_moderation tr.feedback-summary td.author-name {
+    /* white-space: normal; */
+    overflow: hidden; 
+    text-overflow: ellipsis;
+}
+div.localcomments_moderation tr.feedback-summary td.type-and-toggle-icons {
     white-space: normal;
 }
 div.localcomments_moderation tr.feedback-summary .feedback-toggle {
@@ -89,7 +107,12 @@ div.localcomments_moderation .feedback-body {
     border-radius: 5px;
     border: 1px solid #eed;
     background-color: #ffe;
-    color: $442;
+    color: #442;
+    white-space: pre-wrap;
     margin: 0 12px 4px 18px;
     padding: 4px 12px;
+/* alternate spacing to cover the one-line excerpt above 
+    margin: -32px 12px 4px 41px;
+    padding: 2px 8px;
+*/
 }

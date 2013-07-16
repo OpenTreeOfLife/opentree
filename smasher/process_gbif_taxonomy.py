@@ -31,7 +31,7 @@ if __name__ == "__main__":
     synnames = {}
     syntargets = {}
     syntypes = {}
-    irmnghoms = {}
+    irmngs = {}
     print "count skipped"
     for i in infile:
         spls = i.strip().split("\t")
@@ -41,11 +41,15 @@ if __name__ == "__main__":
         if not num.isdigit():
             # Header line has "taxonID" here
             continue
-        if "IRMNG Homonym" in i:
-            irmnghoms[num] = True
         if "International Plant Names Index" in i:
             skipcount += 1
             continue
+        if num == "0":
+            continue #gbif incertae sedis
+        rank = spls[5].strip()
+        pnum = spls[1].strip()  # parent number
+        if ("IRMNG Homonym" in i) or ((pnum == "1" or pnum == "6") and rank == "genus" and "Interim Register of Marine" in i):
+            irmngs[num] = True
         # "unclassified" doesn't occur 2013-07-02
         # "unassigned" doesn't occur 2013-07-02
         # "other" never occurs as a word
@@ -54,17 +58,16 @@ if __name__ == "__main__":
         #if "unclassified" in i or "unassigned" in i or "other" in i or "artificial" in i or "insertion" in i:
         #    skipcount += 1
         #    continue
-        if num == "0":
-            continue #gbif incertae sedis
-        pnum = spls[1].strip()  # parent number
         if pnum == "0":
             continue
         name = spls[4].strip()
-        rank = spls[5].strip()
         if rank == "form" or rank == "variety" or rank == "subspecies" or rank == "infraspecificname":
             continue
         if rank == "kingdom":
             pnum = "0"
+        if len(num) == 0 or len(name) == 0:
+            skipcount += 1
+            continue
         acc = spls[6].strip()
         if acc != "accepted":
             skipcount += 1
@@ -72,7 +75,7 @@ if __name__ == "__main__":
             syntargets[num] = spls[2].strip()
             syntypes[num] = acc
             continue
-        if len(pnum) == 0 or len(num) == 0 or len(name) == 0:
+        if len(pnum) == 0:
             skipcount += 1
             continue
         nrank[num] = rank
@@ -122,12 +125,12 @@ if __name__ == "__main__":
 
     # Flush taxa from the IRMNG homonym list that don't have children
     count = 0
-    for num in irmnghoms:
-        if not num in cid:
+    for num in irmngs:
+        if (not num in cid) and num in nrank and nrank[num] != "species":
             if num in nm_storage:
                 del nm_storage[num]
             count += 1
-    print "IRMNG homonyms deleted:", count
+    print "IRMNG names deleted:", count
 
     #putting parentless taxa into the ignore list
     count = 0
@@ -136,7 +139,7 @@ if __name__ == "__main__":
             count += 1
             if pid[i] != "0":
                 ignore.append(i)
-                if count % 3000 == 0:
+                if count % 1000 == 0:
                     print "example orphan ",i,nm_storage[i]
             else:
                 print "top level ",i,nm_storage[i]
@@ -183,7 +186,7 @@ if __name__ == "__main__":
  #           name = spls[4]
         if name in dnames:
             #if num in dparents:
-	    #may need to add this back for null parents
+            #may need to add this back for null parents
             outfile.write(num+"\t|\t"+pnum+"\t|\t"+name+"\t|\t"+nrank[i]+"\t|\t\n")
         else:
             outfile.write(num+"\t|\t"+pnum+"\t|\t"+name+"\t|\t"+nrank[i]+"\t|\t\n")
