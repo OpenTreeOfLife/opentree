@@ -17,10 +17,11 @@ function createArgus(spec) {
     var paper;
     // use a series of "empty" elements to organize others by depth
     var dividerBeforeEdges, dividerBeforeLabels, dividerBeforeHighlights, dividerBeforeNodes, dividerBeforeAnchoredUI;
-
     var getHoverHandlerNode;
+    var getHoverHandlerCluster;
     var getHoverHandlerEdge; // ie, a path
     var getClickHandlerNode;
+    var getClickHandlerCluster;
     var getBackClickHandler;
     var getForwardClickHandler;
     var argusZoomLevel;
@@ -122,6 +123,12 @@ function createArgus(spec) {
         "backStack": [], // args to previous displayNode calls
         "forwardStack": [], // args to displayNode calls after the back button has been clicked
         "currDisplayContext": undefined, //arg to most recent displayNode call
+
+        clusters: {},      // a registry of clustered child-nodes, keyed to the parent-node's ID
+        clusterSize: 100,   // try to bundle sets of n children
+        minClusterSize: 10, // add fewer to the previous cluster instead
+        maxUnclusteredNodes: 30,  // show the most interesting n nodes outside of clusters
+
         toggleAltBoxX: 55,
         toggleAltBoxY: 6,
         sourceTextBoxX: 10,
@@ -208,6 +215,8 @@ function createArgus(spec) {
             argusObjRef.treeData = dataStr; // $.parseJSON(dataStr);
             //var node = argusObjRef.treeData[0];
             var node = argusObjRef.treeData;
+            // clear the registry of clustered child nodes
+            argusObj.clusters = {}; 
 
             // recursively populate any missing (implied) node names
             buildAllMissingNodeNames(node);
@@ -319,7 +328,6 @@ function createArgus(spec) {
                 getClickHandlerNodeHighlight()
             );
 
-
             argusObj.edgeProvenanceHighlight = paper.set();
             // rect to allow scaling (vs path)
             argusObj.edgeProvenanceHighlight.push(
@@ -332,6 +340,15 @@ function createArgus(spec) {
                     "title": "Click to see properties for this edge",
                     "stroke": "none"
                 }).insertBefore(dividerBeforeNodes)
+
+                /* this path version was tempting, but doesn't scale easily!
+                paper.path("M-50 0L50 0").toBack().attr({
+                    "stroke": argusObj.provenanceHighlightColor,
+                    "stroke-linecap": 'round',
+                    "stroke-width": 4,
+                    "title": "Click to see properties for this edge",
+                }).insertBefore(dividerBeforeNodes)
+                */
             );
             argusObj.edgeProvenanceHighlight.push(
                 // Draw a circle or smaller lozenge shape
@@ -376,7 +393,10 @@ function createArgus(spec) {
                 "node": node,
                 "domSource": domSource,
                 "curLeaf": 0,
-                "isTargetNode": true 
+                "isTargetNode": true,
+                "parentNodeX": argusObjRef.xOffset - (argusObjRef.nodesWidth * node.maxnodedepth),
+                "depthFromTargetNode": 0
+                // argusObjRef.xOffset - (argusObjRef.nodesWidth)
             });
 
             // Release the forced height of the argus viewport
@@ -494,6 +514,27 @@ function createArgus(spec) {
             }
         };
     };
+    getHoverHandlerCluster = function (hoverState, shape, shapeAttributes, label, labelAttributes, clusterInfo) {
+        var clusterShape = shape;
+        var clusterLabel = label;
+        return function () {
+            clusterShape.attr(shapeAttributes);
+            clusterLabel.attr(labelAttributes);
+            switch (hoverState) {
+                case 'OVER':
+                    // copy source-node values from the target node to the highlight
+                    var srcInfo = $.extend(true, {}, clusterShape.data('clusterInfo'));
+
+                    ///argusObj.highlightedNodeInfo = srcInfo;
+                    break;
+                case 'OUT':
+                    // do nothing for now
+                    break;
+                default:
+                    console.log('Unexpected value for hoverState: '+ hoverState);
+            }
+        };
+    };
     getHoverHandlerNodeHighlight = function (hoverState, highlight, shapeAttributes, highlightInfo) {
         var nodeHighlight = highlight;
         return function (evt) {
@@ -599,6 +640,109 @@ function createArgus(spec) {
                                  "nodeName": nodeName});
         };
     };
+    getClickHandlerCluster = function (minimizedClusterParts, parentNodeID, clusterPosition, depthFromTargetNode) {
+        return function () {
+            // clobber the minimized cluster
+            for (var i = 0; i < minimizedClusterParts.length; i++) {
+                minimizedClusterParts[i].remove();
+            }
+
+            var cluster = argusObj.clusters[ parentNodeID ][ clusterPosition ];
+            // draw its children, starting at the X and Y coords for this cluster
+            var child;
+            // fake the closest sensible curLeaf (nth child), based on cluster.y
+
+            argusObj.yOffset = cluster.y - (argusObj.nodeHeight * 0.3);  // nudge to standard node distance
+            var curLeaf = 0;
+            for (i = 0; i < cluster.nodes.length; i++) {
+                child = cluster.nodes[i];
+                curLeaf = argusObj.drawNode({
+                    "node": child,
+                    "domSource": null,
+                    "curLeaf": curLeaf,
+                    "isTargetNode": false,
+                    "isClusterNode": true,  // makes sure we add paths..
+                    "parentNodeX": cluster.x,
+                    "depthFromTargetNode": depthFromTargetNode + 1
+                });
+            }
+
+            // adjust the "spine" path for its parent node
+            var nudgeY = (curLeaf * argusObj.nodeHeight) - (argusObj.nodeHeight * 1.3),
+                spine = paper.getById( "spine-"+ cluster.parentNodeID),
+                path = spine.attr('path'),
+                oldBottomY = path[1][2],
+                newBottomY = oldBottomY + nudgeY;
+            path[1][2] = newBottomY;
+            // re-assert the modified path (vs. changing it in place), to force a redraw
+            spine.attr({'path': path});
+
+            // move all "downstream" nodes and minimized clusters down to make room...
+            var isDownstreamCluster = false;
+            for (i = 0; i < argusObj.clusters[cluster.parentNodeID].length; i++) {
+                var c = argusObj.clusters[cluster.parentNodeID][i];
+                if (isDownstreamCluster) {
+                    if (typeof(c.nodes[0].x) === 'undefined') {
+                        // this cluster is still minimized; nudge the minimized cluster (trigger)
+                        var minClusterBox = paper.getById( "min-cluster-box-"+ cluster.parentNodeID +"-"+ i),
+                            minClusterLabel = paper.getById( "min-cluster-label-"+ cluster.parentNodeID +"-"+ i),
+                            minClusterBranch = paper.getById( "min-cluster-branch-"+ cluster.parentNodeID +"-"+ i);
+
+                        minClusterBox.transform('...t0,'+ nudgeY);
+                        minClusterLabel.transform('...t0,'+ nudgeY);
+                        minClusterBranch.transform('...t0,'+ nudgeY);
+                        // update the stored y for this cluster to match (NOTE that we need to 
+                        // use a matrix operation to include the current transform)
+                        c.y = minClusterLabel.matrix.y(minClusterLabel.attr('x'), minClusterLabel.attr('y'));
+                    } else {
+                        // this cluster's nodes are visible; nudge them all
+                        for (var j = 0; j < c.nodes.length; j++) {
+                            child = c.nodes[j];
+
+                            var nodeBranch = paper.getById( "node-branch-"+ child.nodeid),
+                                nodeBranchTrigger = paper.getById( "node-branch-trigger-"+ child.nodeid),
+                                nodeMain = paper.getById( "node-circle-"+ child.nodeid),
+                                nodeLabel = paper.getById( "node-label-"+ child.nodeid);
+
+                            nodeBranch.transform('...t0,'+ nudgeY);
+                            nodeBranchTrigger.transform('...t0,'+ nudgeY);
+                            nodeMain.transform('...t0,'+ nudgeY);
+                            nodeLabel.transform('...t0,'+ nudgeY);
+
+                            if (child.children) {
+                                // keep going into ITS children
+                                var k, child2, nodeSpine;
+                                nodeSpine = paper.getById( "spine-"+ child.nodeid);
+                                nodeSpine.transform('...t0,'+ nudgeY);
+
+                                for (k = 0; k < child.children.length; k++) {
+                                    child2 = child.children[k];
+                                    if (child2.x) {  // its children are visible
+                                        nodeBranch = paper.getById( "node-branch-"+ child2.nodeid);
+                                        nodeBranchTrigger = paper.getById( "node-branch-trigger-"+ child2.nodeid);
+                                        nodeMain = paper.getById( "node-circle-"+ child2.nodeid);
+                                        nodeLabel = paper.getById( "node-label-"+ child2.nodeid);
+
+                                        nodeBranch.transform('...t0,'+ nudgeY);
+                                        nodeBranchTrigger.transform('...t0,'+ nudgeY);
+                                        nodeMain.transform('...t0,'+ nudgeY);
+                                        nodeLabel.transform('...t0,'+ nudgeY);
+                                    }
+                                }
+                            }
+
+                        }
+                    }
+                        
+                }
+
+                if (c === cluster) {
+                    isDownstreamCluster = true;
+                }
+            }
+
+        };
+    };
     getBackClickHandler = function () {
         return function () {
             argusObj.forwardStack.push(argusObj.currDisplayContext);
@@ -680,6 +824,8 @@ function createArgus(spec) {
     argusObj.drawNode = function (obj) {
         var node = obj.node;
         var isTargetNode = obj.isTargetNode;
+        var parentNodeX = obj.parentNodeX || 0;
+        var depthFromTargetNode = obj.depthFromTargetNode || 0; 
         var domSource = obj.domSource;
         var curLeaf = obj.curLeaf;
         var nchildren;
@@ -709,12 +855,14 @@ function createArgus(spec) {
                 "title": "Click to move to this node",
                 "stroke": this.pathColor
             }).insertBefore(dividerBeforeAnchoredUI);
+            circle.id = ('node-circle-'+ node.nodeid);
 
             label = paper.text(node.x + this.xLabelMargin, node.y, node.name).attr({
                 'text-anchor': 'start',
                 "fill": this.labelColor,
                 "font-size": fontSize
             }).insertBefore(dividerBeforeHighlights);
+            label.id = ('node-label-'+ node.nodeid);
 
             circle.hover(getHoverHandlerNode('OVER', circle, {
                 "fill": this.tipHoverColor
@@ -728,42 +876,225 @@ function createArgus(spec) {
         } else {
             childxs = [];
             childys = [];
+
+            /* Prioritize phylogeny-based edges, use alphabetic order, and
+             * use clustering to deal with lots of uninteresting
+             * (taxonomy-based) edges.
+             */
+            var nodesWithHybridSupport = [ ],
+                nodesWithPhyloSupport = [ ],
+                nodesWithoutPhyloSupport = [ ],
+                nWithHybrid = 0,
+                nWithPhylo = 0,
+                nWithoutPhylo = 0,
+                clusters = argusObj.clusters;
+
+            // sort children alphabetically first..
+            node.children.sort(alphaSortByName);
+            // group children based on type of edge support
             for (i = 0; i < nchildren; i++) {
+                var testChild = node.children[i],
+                    sb = node.children[i].supportedBy;
+                    supportedByTaxonomy = $.inArray('taxonomy', sb) !== -1,
+                    supportedByPhylogeny = sb.length > (supportedByTaxonomy ? 1 : 0);
+
+                if (supportedByPhylogeny && supportedByTaxonomy) {
+                    nodesWithHybridSupport.push(testChild);
+                } else if (supportedByPhylogeny) {
+                    nodesWithPhyloSupport.push(testChild);
+                } else {
+                    nodesWithoutPhyloSupport.push(testChild);
+                }
+            }
+            
+            // mark some less-interesting nodes for clustering
+            //
+            // sort first by number of descendants, so we always show the most
+            // populous clades
+            nodesWithoutPhyloSupport.sort(sortByDescendantCount);
+            // populous clades
+            var clusteredNodes = nodesWithoutPhyloSupport.slice( argusObj.maxUnclusteredNodes - nWithHybrid - nWithPhylo ),
+                nClustered = clusteredNodes.length,
+                nClusteredRemaining,
+                currentCluster = null,
+                nInCurrentCluster = 0;
+            
+            // re-sort the smaller ones by name, then sort into clusters
+            clusteredNodes.sort(alphaSortByName);
+            for (i = 0; i < nClustered; i++) {
+                testChild = clusteredNodes[i];
+                /// testChild.nameStartsWith = (testChild.name.length > 0 ? testChild.name[0].toLowerCase() : '');
+                if (nInCurrentCluster > argusObj.clusterSize) {
+                    // this cluster is full, start another one?
+                    if (testChild.name.startsWith(currentCluster.lastName)) {
+                        // no, push this node into the last one...
+                    } else {
+                        // are there enough nodes left to form a good cluster?
+                        nClusteredRemaining = nClustered - i;
+                        if (nClusteredRemaining > argusObj.minClusterSize) {
+                            // add a new cluster and start filling it
+                            clusters[node.nodeid].push({
+                                nodes: [ ],
+                                firstName: testChild.name.slice(0,3),
+                                lastName: testChild.name.slice(0,3),
+                                parentNodeID: node.nodeid
+                            });
+                            currentCluster = clusters[node.nodeid].slice(-1)[0];
+                            nInCurrentCluster = 0;
+                        } 
+                        // else toss the remaining few children into the last cluster
+                    }
+                }
+                if (!currentCluster) {
+                    // add entry for this node, and its first (empty) cluster
+                    clusters[ node.nodeid ] = [{
+                        nodes: [ ],
+                        firstName: '',
+                        lastName: '',
+                        parentNodeID: node.nodeid
+                    }];
+                    currentCluster = clusters[ node.nodeid ].slice(-1)[0];
+                    nInCurrentCluster = 0;
+                }
+                currentCluster.nodes.push(testChild);
+                if (currentCluster.firstName === '') {
+                    currentCluster.firstName = testChild.name.slice(0,3);
+                }
+                currentCluster.lastName = testChild.name.slice(0,3);
+                nInCurrentCluster++;
+            }
+            // use names to label each cluster alphabetically
+            
+            switch (depthFromTargetNode) {
+                case (0):
+                    node.x = this.xOffset - (this.nodesWidth * 2);
+                    break;
+                case (1):
+                    node.x = this.xOffset - (this.nodesWidth * 1);
+                    break;
+                case (2):
+                    node.x = this.xOffset;
+                    break;
+                default:
+                    alert("unexpected depthFromTargetNode: "+ depthFromTargetNode);
+                    node.x = this.xOffset;
+                    break;
+            }
+
+            // Use these groups and clusters to draw children
+            nWithHybrid = nodesWithHybridSupport.length;
+            for (i = 0; i < nWithHybrid; i++) {
                 // postorder traverse the children of this node
                 curLeaf = this.drawNode({
-                    "node": node.children[i],
+                    "node": nodesWithHybridSupport[i],
                     "domSource": domSource,
                     "curLeaf": curLeaf,
-                    "isTargetNode": false
+                    "isTargetNode": false,
+                    "parentNodeX": node.x,
+                    "depthFromTargetNode": depthFromTargetNode + 1
                 });
 
                 // the traversal generated the childrens' coordinates; now get them
-                if (isNumeric(node.children[i].x)) {
-                    childxs.push(node.children[i].x);
+                if (isNumeric(nodesWithHybridSupport[i].x)) {
+                    childxs.push(nodesWithHybridSupport[i].x);
                 }
-                if (isNumeric(node.children[i].y)) {
-                    childys.push(node.children[i].y);
+                if (isNumeric(nodesWithHybridSupport[i].y)) {
+                    childys.push(nodesWithHybridSupport[i].y);
+                }
+            }
+            nWithPhylo = nodesWithPhyloSupport.length;
+            for (i = 0; i < nWithPhylo; i++) {
+                // postorder traverse the children of this node
+                curLeaf = this.drawNode({
+                    "node": nodesWithPhyloSupport[i],
+                    "domSource": domSource,
+                    "curLeaf": curLeaf,
+                    "isTargetNode": false,
+                    "parentNodeX": node.x,
+                    "depthFromTargetNode": depthFromTargetNode + 1
+                });
+
+                // the traversal generated the childrens' coordinates; now get them
+                if (isNumeric(nodesWithPhyloSupport[i].x)) {
+                    childxs.push(nodesWithPhyloSupport[i].x);
+                }
+                if (isNumeric(nodesWithPhyloSupport[i].y)) {
+                    childys.push(nodesWithPhyloSupport[i].y);
+                }
+            }
+            nWithoutPhylo = nodesWithoutPhyloSupport.length;
+            // some taxonomy-supported nodes may be hidden in clusters (ignore these)
+            var firstClusterNode = clusters[node.nodeid] ? clusters[node.nodeid][0].nodes[0] : null;
+            for (i = 0; i < nWithoutPhylo; i++) {
+                // postorder traverse the children of this node
+
+                if (nodesWithoutPhyloSupport[i] === firstClusterNode) {
+                    // stop when we reach clustered nodes
+                    break;
+                }
+
+                curLeaf = this.drawNode({
+                    "node": nodesWithoutPhyloSupport[i],
+                    "domSource": domSource,
+                    "curLeaf": curLeaf,
+                    "isTargetNode": false,
+                    "parentNodeX": node.x,
+                    "depthFromTargetNode": depthFromTargetNode + 1
+                });
+
+                // the traversal generated the childrens' coordinates; now get them
+                if (isNumeric(nodesWithoutPhyloSupport[i].x)) {
+                    childxs.push(nodesWithoutPhyloSupport[i].x);
+                }
+                if (isNumeric(nodesWithoutPhyloSupport[i].y)) {
+                    childys.push(nodesWithoutPhyloSupport[i].y);
+                }
+            }
+
+            // set the parent node's x so we can draw paths from it
+            node.x = Math.min.apply(null, childxs) - this.nodesWidth; // use this line for square trees
+
+            // draw a lozenge for each cluster (save lozenge-as-ref on cluster obj?)
+            if (clusters[node.nodeid]) {
+                for (i = 0; i < clusters[node.nodeid].length; i++) {
+                    currentCluster = clusters[node.nodeid][i];
+                    var clusterX = node.x, // ie, the parent node
+                        clusterY =  Math.max.apply(null, childys) + (this.nodeHeight * 1.3);
+                    // add new coordinates to the cluster registry
+                    currentCluster.x = clusterX;
+                    currentCluster.y = clusterY;
+                    this.drawCluster({
+                        "cluster": currentCluster,
+                        "clusterPosition": i,
+                        "x": clusterX,
+                        "y": clusterY,
+                        "depthFromTargetNode": depthFromTargetNode
+                    });
+                    childxs.push(clusterX);
+                    childys.push(clusterY);
                 }
             }
 
             // calculate this node's coordinates based on the positions of its children
-            node.x = Math.min.apply(null, childxs) - this.nodesWidth; // use this line for square trees
             node.y = childys.average();
 
             // scale size of node circle by number of contained leaves
             node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.nleaves);
 
             // draw node circle
-            label = paper.text(node.x - node.r, node.y + node.r, node.name).attr({
+            label = paper.text(node.x - (node.r * 1.25), node.y + (node.r * 1.25), node.name).attr({
                 'text-anchor': 'end',
                 "fill": this.labelColor,
                 "font-size": fontSize
             }).insertBefore(dividerBeforeHighlights);
+            label.id = ('node-label-'+ node.nodeid);
+
             circle = paper.circle(node.x, node.y, node.r).attr({
                 "fill": (isTargetNode ? this.pathColor : this.nodeColor),
                 "title": "Click to move to this node",
                 "stroke": this.pathColor
             }).insertBefore(dividerBeforeAnchoredUI);
+            circle.id = ('node-circle-'+ node.nodeid);
 
             // assign hover behaviors
             circle.hover(getHoverHandlerNode('OVER', circle, {
@@ -773,38 +1104,68 @@ function createArgus(spec) {
             }));
 
             // draw branches (square tree)
-            spineSt = "M" + node.x + " " + node.children[0].y + "L" + node.x + " " + node.children[nchildren - 1].y;
+            spineSt = "M" + node.x + " " + Math.min.apply(null, childys) 
+                    + "L" + node.x + " " + Math.max.apply(null, childys);
             paper.path(spineSt).toBack().attr({
-                "stroke": this.pathColor
-            }).insertBefore(dividerBeforeLabels);
-            for (i = 0; i < nchildren; i++) {
-                branchSt = "M" + node.x + " " + node.children[i].y + "L" + node.children[i].x + " " + node.children[i].y;
-                
-                // draw a wide, invisible path to detect mouse-over
-                triggerPath = paper.path(branchSt).toBack().attr({
-                    "stroke-width": 5,
-                    "stroke": this.bgColor
-                }).insertAfter(dividerBeforeEdges);
-                // NOTE that these are pushed behind all visible paths!
-                
-                // ... and a congruent, visible path
-                visiblePath = paper.path(branchSt).toBack().attr({
-                    "stroke-width": 1,
-                    "stroke": this.pathColor
-                }).insertBefore(dividerBeforeLabels);
-                
-                // assign hover behaviors
-                triggerPath.hover(getHoverHandlerEdge('OVER', triggerPath, {}), getHoverHandlerEdge('OUT', triggerPath, {}));
-
-                // copy nth child node's data into the path element (for use by highlight)
-                triggerPath.data('sourceNodeInfo', {
-                    'nodeID': node.children[i].nodeid,
-                    'nodeName': node.children[i].name,
-                    'domSource': domSource
-                });
-            }
+                "stroke": this.pathColor,
+                "stroke-linecap": 'round'
+            }).insertBefore(dividerBeforeLabels)
+              .id = ("spine-"+ node.nodeid);
         }
+        if (!isTargetNode) {
+            // draw its "upward" branch to the parent's spine
+            var lineDashes, lineColor,
+                sb = node.supportedBy,
+                supportedByTaxonomy = $.inArray('taxonomy', sb) !== -1, 
+                supportedByPhylogeny = sb.length > (supportedByTaxonomy ? 1 : 0);
+
+            if (supportedByTaxonomy && supportedByPhylogeny) {
+                lineDashes = '';
+                lineColor = this.pathColor;
+            } else if (supportedByPhylogeny){
+                lineDashes = '-';
+                lineColor = this.pathColor;
+            } else if (supportedByTaxonomy){
+                lineDashes = '.';
+                lineColor = this.pathColor;
+            } else {
+                lineDashes = '--..';
+                lineColor = 'orange';
+            }
+
+            branchSt = "M" + parentNodeX + " " + node.y + "L" + node.x + " " + node.y;
+                
+            // draw a wide, invisible path to detect mouse-over
+            triggerPath = paper.path(branchSt).toBack().attr({
+                "stroke-width": 5,
+                "stroke-linecap": 'butt',
+                "stroke": this.bgColor
+            }).insertAfter(dividerBeforeEdges);
+            triggerPath.id = ('node-branch-trigger-'+ node.nodeid);
+            // NOTE that these are pushed behind all visible paths!
+            
+            // ... and a congruent, visible path
+            visiblePath = paper.path(branchSt).toBack().attr({
+                "stroke-width": 1,
+                "stroke-linecap": 'round',
+                "stroke-dasharray": lineDashes,
+                "stroke": lineColor          // this.pathColor
+            }).insertBefore(dividerBeforeLabels);
+            visiblePath.id = ('node-branch-'+ node.nodeid);
+                
+            // assign hover behaviors
+            triggerPath.hover(getHoverHandlerEdge('OVER', triggerPath, {}), getHoverHandlerEdge('OUT', triggerPath, {}));
+
+            // copy nth child node's data into the path element (for use by highlight)
+            triggerPath.data('sourceNodeInfo', {
+                'nodeID': node.nodeid,
+                'nodeName': node.name,
+                'domSource': domSource
+            });
+        }
+
         if (isTargetNode) {
+            // draw a series of ancestor nodes
             this.targetNodeY = node.y;
 
             if (node.pathToRoot) {
@@ -823,6 +1184,7 @@ function createArgus(spec) {
                     upwardSt = "M" + startX+ "," + startY + "L" + endX + " " + endY;
                     paper.path(upwardSt).toBack().attr({
                         "stroke": this.pathColor,
+                        "stroke-linecap": 'round',
                         "stroke-dasharray": '- ',
                         "opacity": pathOpacity
                     }).insertBefore(dividerBeforeLabels);
@@ -836,7 +1198,7 @@ function createArgus(spec) {
                             "title": "Click to move to this node",
                             "stroke": this.pathColor
                         }).insertBefore(dividerBeforeAnchoredUI);
-                        paper.text(endX - (this.minTipRadius * 1.2), endY + (this.minTipRadius * 1.2), ancestorNode.name || "unnamed").attr({
+                        paper.text(endX - (this.minTipRadius * 1.25), endY + (this.minTipRadius * 1.25), ancestorNode.name || "unnamed").attr({
                             'text-anchor': 'end',
                             "fill": this.labelColor,
                             "font-size": fontSize
@@ -883,6 +1245,77 @@ function createArgus(spec) {
         this.nodesHash[node.nodeid] = node;
         return curLeaf;
     };
+
+    argusObj.drawCluster = function (obj) {
+        var cluster = obj.cluster;
+        var parentNodeID = cluster.parentNodeID;
+        var depthFromTargetNode = obj.depthFromTargetNode;
+        var clusterPosition = obj.clusterPosition;
+        var stemX = obj.x;
+        var clusterX = stemX + (this.nodesWidth / 3.0);
+        var clusterY = obj.y;
+        var fontSize = this.minTipRadius * this.fontScalar;
+        // draw a short branch out to this cluster
+        var branchSt = "M" + stemX + " " + clusterY + "L" + clusterX + " " + clusterY;
+        var branch = paper.path(branchSt).toBack().attr({
+            "stroke-width": 1,
+            "stroke-linecap": 'round',
+            "stroke-dasharray": '.',
+            "stroke": this.pathColor
+        }).insertBefore(dividerBeforeLabels);
+        branch.id = ('min-cluster-branch-'+ parentNodeID +'-'+ clusterPosition);
+
+        // draw the cluster shape (a lozenge that can hold 'Aaa - Zzz')?
+        var minimizedCluster = paper.set().insertAfter(dividerBeforeLabels);
+        // NOTE that we can't set (retrieve) an ID on a Raphael set...
+
+        var box = paper.rect(clusterX, clusterY - (this.nodeHeight / 2.0), (this.nodesWidth * 0.8), this.nodeHeight).attr({
+            "stroke": this.pathColor,
+            "stroke-width": 1,
+            "stroke-dasharray": '.',
+            "fill": this.bgColor,
+            "r": 4,  // rounded corner (radius)
+         // "title": "TEST TITLE",
+            "cursor": "pointer"
+        });
+        box.id = ('min-cluster-box-'+ parentNodeID +'-'+ clusterPosition);
+        
+        minimizedCluster.push(box);
+        // draw the cluster label
+        var clusterLabel = cluster.firstName +" - "+ cluster.lastName;
+        var label = paper.text(clusterX + (this.nodesWidth * 0.4), clusterY, clusterLabel).attr({
+            'text-anchor': 'middle',
+            "fill": this.labelColor,
+            "font-size": fontSize,
+            "cursor": "pointer"
+        });
+        label.id = ('min-cluster-label-'+ parentNodeID +'-'+ clusterPosition);
+        minimizedCluster.push(label);
+          
+        /* copy source data into the main box element (for use by event handlers)
+        box.data('clusterInfo', {
+            'cluster': cluster,
+            'clusterX': clusterX,
+            'clusterY': clusterY
+        });
+        */
+        // assign behaviors to replace the minimized cluster with its nodes
+        var minimizedClusterParts = [branch, minimizedCluster];
+        minimizedCluster.click(getClickHandlerCluster(
+                                                        minimizedClusterParts, 
+                                                        parentNodeID, 
+                                                        clusterPosition,
+                                                        depthFromTargetNode
+                                                     ));
+        minimizedCluster.hover(getHoverHandlerCluster('OVER', 
+            box, { "fill": this.nodeColor }, 
+            label, { "fill": 'white' }
+        ), getHoverHandlerCluster('OUT', 
+            box, { "fill": this.bgColor }, 
+            label, { "fill": this.labelColor }
+        ));
+          
+    }
 
 
     argusObj.drawCycles = function () {
@@ -1219,3 +1652,16 @@ Array.prototype.average = function () {
     }
     return sum / count;
 };
+
+function alphaSortByName(a,b) {
+    var aName = a.name.toLowerCase(),
+        bName = b.name.toLowerCase();
+    if (aName > bName) return 1;
+    if (aName < bName) return -1;
+    return 0;
+}
+function sortByDescendantCount(a,b) {
+    if (a.nleaves > b.leaves) return 1;
+    if (a.leaves < b.leaves) return -1;
+    return 0;
+}
