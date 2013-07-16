@@ -682,10 +682,10 @@ function createArgus(spec) {
             for (i = 0; i < argusObj.clusters[cluster.parentNodeID].length; i++) {
                 var c = argusObj.clusters[cluster.parentNodeID][i];
                 if (isDownstreamCluster) {
-                    if (typeof(c.nodes[0].x) === 'undefined') {
+                    var minClusterBox = paper.getById( "min-cluster-box-"+ cluster.parentNodeID +"-"+ i);
+                    if (minClusterBox) {
                         // this cluster is still minimized; nudge the minimized cluster (trigger)
-                        var minClusterBox = paper.getById( "min-cluster-box-"+ cluster.parentNodeID +"-"+ i),
-                            minClusterLabel = paper.getById( "min-cluster-label-"+ cluster.parentNodeID +"-"+ i),
+                        var minClusterLabel = paper.getById( "min-cluster-label-"+ cluster.parentNodeID +"-"+ i),
                             minClusterBranch = paper.getById( "min-cluster-branch-"+ cluster.parentNodeID +"-"+ i);
 
                         minClusterBox.transform('...t0,'+ nudgeY);
@@ -926,7 +926,7 @@ function createArgus(spec) {
                 /// testChild.nameStartsWith = (testChild.name.length > 0 ? testChild.name[0].toLowerCase() : '');
                 if (nInCurrentCluster > argusObj.clusterSize) {
                     // this cluster is full, start another one?
-                    if (testChild.name.startsWith(currentCluster.lastName)) {
+                    if (testChild.name.indexOf(currentCluster.lastName) === 0) {  // ie, starts with...
                         // no, push this node into the last one...
                     } else {
                         // are there enough nodes left to form a good cluster?
@@ -1123,10 +1123,10 @@ function createArgus(spec) {
                 lineDashes = '';
                 lineColor = this.pathColor;
             } else if (supportedByPhylogeny){
-                lineDashes = '-';
+                lineDashes = '';
                 lineColor = this.pathColor;
             } else if (supportedByTaxonomy){
-                lineDashes = '.';
+                lineDashes = '-';
                 lineColor = this.pathColor;
             } else {
                 lineDashes = '--..';
@@ -1147,7 +1147,7 @@ function createArgus(spec) {
             // ... and a congruent, visible path
             visiblePath = paper.path(branchSt).toBack().attr({
                 "stroke-width": 1,
-                "stroke-linecap": 'round',
+                "stroke-linecap": (lineDashes === '.') ? 'butt' : 'round',      // avoids Chrome bug with dotted lines + round caps
                 "stroke-dasharray": lineDashes,
                 "stroke": lineColor          // this.pathColor
             }).insertBefore(dividerBeforeLabels);
@@ -1260,7 +1260,7 @@ function createArgus(spec) {
         var branch = paper.path(branchSt).toBack().attr({
             "stroke-width": 1,
             "stroke-linecap": 'round',
-            "stroke-dasharray": '.',
+            "stroke-dasharray": '-',
             "stroke": this.pathColor
         }).insertBefore(dividerBeforeLabels);
         branch.id = ('min-cluster-branch-'+ parentNodeID +'-'+ clusterPosition);
