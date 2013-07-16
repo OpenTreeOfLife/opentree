@@ -682,10 +682,10 @@ function createArgus(spec) {
             for (i = 0; i < argusObj.clusters[cluster.parentNodeID].length; i++) {
                 var c = argusObj.clusters[cluster.parentNodeID][i];
                 if (isDownstreamCluster) {
-                    if (typeof(c.nodes[0].x) === 'undefined') {
+                    var minClusterBox = paper.getById( "min-cluster-box-"+ cluster.parentNodeID +"-"+ i);
+                    if (minClusterBox) {
                         // this cluster is still minimized; nudge the minimized cluster (trigger)
-                        var minClusterBox = paper.getById( "min-cluster-box-"+ cluster.parentNodeID +"-"+ i),
-                            minClusterLabel = paper.getById( "min-cluster-label-"+ cluster.parentNodeID +"-"+ i),
+                        var minClusterLabel = paper.getById( "min-cluster-label-"+ cluster.parentNodeID +"-"+ i),
                             minClusterBranch = paper.getById( "min-cluster-branch-"+ cluster.parentNodeID +"-"+ i);
 
                         minClusterBox.transform('...t0,'+ nudgeY);
@@ -1260,7 +1260,7 @@ function createArgus(spec) {
         var branch = paper.path(branchSt).toBack().attr({
             "stroke-width": 1,
             "stroke-linecap": 'round',
-            "stroke-dasharray": '.',
+            "stroke-dasharray": '-',
             "stroke": this.pathColor
         }).insertBefore(dividerBeforeLabels);
         branch.id = ('min-cluster-branch-'+ parentNodeID +'-'+ clusterPosition);
