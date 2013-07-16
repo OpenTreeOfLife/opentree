@@ -1,5 +1,7 @@
 # Rename this file to "config" to make it active
-
+[paths]
+nexsonsdir = /usr/share/open-tree/avatol_nexsons
+study_to_status_script = /usr/share/open-tree/avatol_nexsons/nexson2treemach/study_nexson_to_status_html.py
 
 # Specify the public-facing hostname[:port] for your opentree site, required to
 # return seamlessly from Janrain login

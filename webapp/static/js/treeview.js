@@ -101,7 +101,7 @@ function loadLocalComments( chosenFilter ) {
         // TODO: pivot based on current page/view type..
         fetchArgs.filter = chosenFilter || 'synthtree_id,synthtree_node_id';
 
-        var targetNode = argus.treeData[0];
+        var targetNode = argus.treeData;
         fetchArgs.synthtree_id = argus.domSource;
         fetchArgs.synthtree_node_id = targetNode.nodeid;
         fetchArgs.sourcetree_id = targetNode.taxSource;
@@ -236,6 +236,13 @@ $(document).ready(function() {
         return false;
     });
 
+    // bind widget prompts to trigger their respective links (badges)
+    $('#argus-controls .widget-prompt').unbind('click').click(function() {
+        var $clicked = $(this);
+        $clicked.parent().find('a:eq(0)').click();
+        return false;
+    });
+
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
     $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
     $('#taxon-search-form').unbind('submit').submit(function() {
@@ -252,21 +259,24 @@ function toggleCommentsPanel( hideOrShow ) {
     if ($('#viewer-collection').hasClass('active-comments') && (hideOrShow !== 'SHOW')) {
         ///console.log('HIDING comments');
         $('#viewer-collection').removeClass('active-comments');
-        $('.comments-indicator').fadeTo('fast', readyToggleFade);
+        $('.comments-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.comments-indicator').attr('title', 'Show comments for this node');
+        $('.comments-indicator .widget-prompt').text(' Show comments');
         // remove any toggling behavior bound to the argus view
         $('#argusCanvasContainer').unbind('click.hideComments');
     } else {
         ///console.log('SHOWING comments');
         $('#viewer-collection').removeClass('active-properties');
-        $('.properties-indicator').fadeTo('fast', readyToggleFade);
+        $('.properties-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.properties-indicator').attr('title', 'Show properties for the current selection');
+        $('.properties-indicator .widget-prompt').text('Show properties ');
         // remove any toggling behavior bound to the argus view
         $('#argusCanvasContainer').unbind('click.hideProperties');
 
         $('#viewer-collection').addClass('active-comments');
-        $('.comments-indicator').fadeTo('fast', activeToggleFade);
+        $('.comments-indicator .badge').fadeTo('fast', activeToggleFade);
         $('.comments-indicator').attr('title', 'Hide comments for this node');
+        $('.comments-indicator .widget-prompt').text(' Hide comments');
 
         // wait to set click behavior on argus, or it'll hide again immediately
         setTimeout(
@@ -289,21 +299,24 @@ function togglePropertiesPanel( hideOrShow ) {
     if ($('#viewer-collection').hasClass('active-properties') && (hideOrShow !== 'SHOW')) {
         ///console.log('HIDING properties');
         $('#viewer-collection').removeClass('active-properties');
-        $('.properties-indicator').fadeTo('fast', readyToggleFade);
+        $('.properties-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.properties-indicator').attr('title', 'Show properties for the current selection');
+        $('.properties-indicator .widget-prompt').text('Show properties ');
         // remove any toggling behavior bound to the argus view
         $('#argusCanvasContainer').unbind('click.hideProperties');
     } else {
         ///console.log('SHOWING properties');
         $('#viewer-collection').removeClass('active-comments');
-        $('.comments-indicator').fadeTo('fast', readyToggleFade);
+        $('.comments-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.comments-indicator').attr('title', 'Show comments for this node');
+        $('.comments-indicator .widget-prompt').text(' Show comments');
         // remove any toggling behavior bound to the argus view
         $('#argusCanvasContainer').unbind('click.hideComments');
 
         $('#viewer-collection').addClass('active-properties');
-        $('.properties-indicator').fadeTo('fast', activeToggleFade);
+        $('.properties-indicator .badge').fadeTo('fast', activeToggleFade);
         $('.properties-indicator').attr('title', 'Hide properties for the current selection');
+        $('.properties-indicator .widget-prompt').text('Hide properties ');
 
         // wait to set click behavior on argus, or it'll hide again immediately
         setTimeout(
@@ -622,7 +635,7 @@ function showObjectProperties( objInfo, options ) {
     if (argus.treeData) {
 
         // fetch additional information used to detail provenance for nodes and edges
-        metaMap = argus.treeData[0].sourceToMetaMap;
+        metaMap = argus.treeData.sourceToMetaMap;
         /* TEST FOR and REPORT metaMap
         if (metaMap) {
             // for now, just report these values if found
@@ -843,11 +856,12 @@ function showObjectProperties( objInfo, options ) {
                 }
                 break;
 
+            case 'Supported by':
             default:
                 // general approach
+                var supportingStudyIDs = [ ];  // don't repeat studies under 'Supported by'
                 dValues = String(displayedProperties[dLabel]).split(',');
                 for (i = 0; i < dValues.length; i++) {
-                    $details.append('<dt>'+ dLabel +'</dt>');
                     rawVal = dValues[i];
                     switch(rawVal) {
                         // some values are simply displayed as-is, or slightly groomed
@@ -858,6 +872,12 @@ function showObjectProperties( objInfo, options ) {
                         default:
                             // other values might have more information in the metaMap
                             // EXAMPLE rawVal = 'WangEtAl2009-studyid-15' (a study)
+                            var studyID = rawVal.split('_')[0];
+                            if ($.inArray(studyID, supportingStudyIDs) !== -1) {
+                                // skip this study, we've already shown it
+                                continue;
+                            }
+                            supportingStudyIDs.push( studyID );
                             if (metaMap) {
                                 moreInfo = metaMap[ rawVal ];
                             }
@@ -870,9 +890,7 @@ function showObjectProperties( objInfo, options ) {
                                     if (pID) {
                                         displayVal = ('<a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">'+ pID +'</a>. ');
                                     }
-
                                     pCurator = moreInfo.study['ot:curatorName'];
-                                    
                                     // be careful, in case we have an incomplete or badly-formatted reference
                                     if (pRef) {
                                         // we'll show compact reference instead, with full ref a click away
@@ -893,8 +911,10 @@ function showObjectProperties( objInfo, options ) {
                                             //  EXAMPLE: doi:10.1073/pnas.0813376106  =>  http://dx.doi.org/10.1073/pnas.0813376106
                                             pURL = 'http://dx.doi.org/'+ pDOI;
                                             displayVal += '<a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pRefCompact +'</a> <a href="#" class="full-ref-toggle">(full reference)</a><br/>';
-                                            displayVal += '<div class="full-ref">'+ pRef +'</div>';
+                                        } else {
+                                            displayVal += pRefCompact +' <a href="#" class="full-ref-toggle">(full reference)</a><br/>';
                                         }
+                                        displayVal += '<div class="full-ref">'+ pRef +'</div>';
                                     }
                                     if (pCurator) {
                                         displayVal += ('<div class="full-ref-curator">Curator: '+ pCurator +'</div>');
@@ -911,6 +931,7 @@ function showObjectProperties( objInfo, options ) {
                                 displayVal = rawVal;
                             }
                     }
+                    $details.append('<dt>'+ dLabel +'</dt>');
                     $details.append('<dd>'+ displayVal +'</dd>');
                 }
                 $details.find('.full-ref-toggle').unbind('click').click(function() {
@@ -968,7 +989,7 @@ function getTreeDataNode( filterFunc, testNode ) {
     // helper method to retrieve a matching node from n-level treeData (tree-view JSON)
     if (!testNode) { 
         // start at top-most node in tree, if not specified
-        testNode = argus.treeData[0]; 
+        testNode = argus.treeData; 
     }
     // test against our requirements (eg, a particular node ID)
     if (filterFunc(testNode)) {
