@@ -926,7 +926,7 @@ function createArgus(spec) {
                 /// testChild.nameStartsWith = (testChild.name.length > 0 ? testChild.name[0].toLowerCase() : '');
                 if (nInCurrentCluster > argusObj.clusterSize) {
                     // this cluster is full, start another one?
-                    if (testChild.name.startsWith(currentCluster.lastName)) {
+                    if (testChild.name.indexOf(currentCluster.lastName) === 0) {  // ie, starts with...
                         // no, push this node into the last one...
                     } else {
                         // are there enough nodes left to form a good cluster?
@@ -1123,10 +1123,10 @@ function createArgus(spec) {
                 lineDashes = '';
                 lineColor = this.pathColor;
             } else if (supportedByPhylogeny){
-                lineDashes = '-';
+                lineDashes = '';
                 lineColor = this.pathColor;
             } else if (supportedByTaxonomy){
-                lineDashes = '.';
+                lineDashes = '-';
                 lineColor = this.pathColor;
             } else {
                 lineDashes = '--..';
@@ -1147,7 +1147,7 @@ function createArgus(spec) {
             // ... and a congruent, visible path
             visiblePath = paper.path(branchSt).toBack().attr({
                 "stroke-width": 1,
-                "stroke-linecap": 'round',
+                "stroke-linecap": (lineDashes === '.') ? 'butt' : 'round',      // avoids Chrome bug with dotted lines + round caps
                 "stroke-dasharray": lineDashes,
                 "stroke": lineColor          // this.pathColor
             }).insertBefore(dividerBeforeLabels);
