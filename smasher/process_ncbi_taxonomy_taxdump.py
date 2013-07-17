@@ -86,7 +86,8 @@ if __name__ == "__main__":
     nodesf.close()
 
     # Removed "unclassified" 2013-04-25
-    skip = ["viral","other","viroids","viruses","artificial","x","environmental","unknown","unidentified","endophyte","endophytic","uncultured","scgc","libraries","virus","mycorrhizal samples"]
+    skip = []
+    # skip = ["viral","other","viroids","viruses","artificial","x","environmental","unknown","unidentified","endophyte","endophytic","uncultured","scgc","libraries","virus","mycorrhizal samples"]
     skipids = {}
     #run through the skip ids file
     skipidf = open(skipfile,"r")

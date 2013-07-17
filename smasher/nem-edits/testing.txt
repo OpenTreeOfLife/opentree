@@ -1,0 +1,2 @@
+add	Acanthotrema frischii	species	Leptodasynemella	life	IF:516851
+synonym	Synonyma synonyma	rank	Leptodasynemella	life	syn:12345
