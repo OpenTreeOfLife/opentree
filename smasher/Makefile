@@ -4,6 +4,8 @@
 #  $< = first prerequisite
 #  $@ = file name of target
 
+all: ott21
+
 # Root of local copy of taxomachine git repo
 TAXOMACHINE_ROOT=../../taxomachine
 
@@ -22,23 +24,13 @@ WORK=tmp
 
 CP=-classpath .
 TEST_ARGS=Smasher $(TAXOMACHINE_ROOT)/example/nematoda.ncbi $(TAXOMACHINE_ROOT)/example/nematoda.gbif \
+      --edits nem-edits/ \
       --ids $(WORK)/nem1.ott \
       --aux $(WORK)/nem1.preottol \
       --out $(WORK)/nem2/
 
-NCBI=$(WORK)/ncbi_with_unclassified.processed
-#NCBI=$(WORK)/ncbi.processed
+NCBI=$(WORK)/ncbi.processed
 GBIF=$(WORK)/gbif.processed
-
-PROD_ARGS=Smasher $(NCBI) $(GBIF) \
-      --ids $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids \
-      --aux $(PREOTTOL)/preottol-20121112.processed \
-      --out $(WORK)/ott2/
-
-# Idempotency test
-IDEM_ARGS=Smasher $(NCBI) $(GBIF) \
-      --ids $(WORK)/ott2/taxonomy \
-      --out $(WORK)/ott3/
 
 compile: Smasher.class
 
@@ -46,7 +38,7 @@ Smasher.class: Smasher.java
 	javac $(CP) -g Smasher.java
 
 test: $(WORK)/nem2/log
-$(WORK)/nem2/log: Smasher.class $(WORK)/nem1.preottol
+$(WORK)/nem2/log: Smasher.class $(WORK)/nem1.preottol $(WORK)/nem1.ott
 	mkdir -p $(WORK)/nem2/
 	java $(CP) $(TEST_ARGS)
 
@@ -54,14 +46,36 @@ debug:
 	mkdir -p $(WORK)
 	jdb $(CP) $(TEST_ARGS)
 
-prod: $(WORK)/ott2.log
-$(WORK)/ott2.log: Smasher.class $(NCBI) $(PREOTTOL)/preottol-20121112.processed 
-	mkdir -p $(WORK)/ott2
-	java $(CP) -Xmx10g $(PROD_ARGS)
+OTT21_ARGS=Smasher $(NCBI) $(GBIF) \
+      --edits edits/ \
+      --ids $(WORK)/ott2.0/taxonomy \
+      --aux $(PREOTTOL)/preottol-20121112.processed \
+      --out $(WORK)/ott2.1/
 
-idem: $(WORK)/ott3.log
-$(WORK)/ott3.log: Smasher.class
-	mkdir -p $(WORK)/ott3
+ott21: $(WORK)/ott2.1/log
+$(WORK)/ott2.1/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.processed 
+	mkdir -p $(WORK)/ott2.1
+	java $(CP) -Xmx10g $(OTT21_ARGS)
+
+OTT20_ARGS=Smasher $(NCBI) $(GBIF) \
+      --ids $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids \
+      --aux $(PREOTTOL)/preottol-20121112.processed \
+      --out $(WORK)/ott2.0/
+
+# 2.0 idempotency test
+IDEM_ARGS=Smasher $(NCBI) $(GBIF) \
+      --ids $(WORK)/ott2.0/taxonomy \
+      --out $(WORK)/ott2.0-idem/
+
+
+ott20: $(WORK)/ott2.0/log
+$(WORK)/ott2.0/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.processed 
+	mkdir -p $(WORK)/ott2.0
+	java $(CP) -Xmx10g $(OTT20_ARGS)
+
+idem: $(WORK)/ott2.0.idem/log
+$(WORK)/ott2.0.idem/log: Smasher.class
+	mkdir -p $(WORK)/ott2.0.idem
 	java $(CP) -Xmx10g $(IDEM_ARGS)
 
 # little test
@@ -69,6 +83,7 @@ $(WORK)/dory.foo: $(WORK)/nem2/taxonomy Smasher.class
 	java $(CP) Smasher --start $< --select Dorylaimida $@
 
 $(WORK)/nem1.preottol: $(PREOTTOL)/preottol-20121112.processed
+	mkdir -p $(WORK)
 	java $(CP) -Xmx3g Smasher --start $< --select Nematoda $@
 
 $(WORK)/nem1.ott: $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids
@@ -77,16 +92,47 @@ $(WORK)/nem1.ott: $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids
 $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
 
+# Formerly, where we now have /dev/null, we had
+# ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
+
 $(NCBI): $(WORK)/ncbi/nodes.dmp process_ncbi_taxonomy_taxdump.py
 	python process_ncbi_taxonomy_taxdump.py F $(WORK)/ncbi \
-           $(TAXOMACHINE_ROOT)/data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP $@.tmp
+            /dev/null $@.tmp
 	mv -f $@.tmp $@
+	mv -f $@.tmp.synonyms $@.synonyms
 
-$(WORK)/ncbi/nodes.dmp:
+$(WORK)/ncbi/taxdump.tar.gz:
 	mkdir -p $(WORK)/ncbi
-        wget --output-document=$(WORK)/ncbi/taxdump.tar.gz \
-	     ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz; \
-        tar -C $(WORK)/ncbi -xzvf taxdump.tar.gz)
+	wget --output-document=$(WORK)/ncbi/taxdump.tar.gz \
+ 	     ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
+
+$(WORK)/ncbi/nodes.dmp: $(WORK)/ncbi/taxdump.tar.gz
+	tar -C $(WORK)/ncbi -xzvf $(WORK)/ncbi/taxdump.tar.gz
+	touch $(WORK)/ncbi/*.dmp
+
+# Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
+
+gbif: $(GBIF)
+$(GBIF): $(WORK)/gbif/taxon.txt process_gbif_taxonomy.py
+	python process_gbif_taxonomy.py \
+	       $(WORK)/gbif/taxon.txt \
+	       /dev/null $@.tmp
+	mv -f $@.tmp $@
+	mv -f $@.tmp.synonyms $@.synonyms
+
+$(WORK)/gbif/taxon.txt:
+	mkdir -p $(WORK)/gbif
+	wget --output-document=$(WORK)/gbif/checklist1.zip \
+             http://ecat-dev.gbif.org/repository/export/checklist1.zip
+	(cd $(WORK)/gbif && unzip checklist1.zip)
+
+WHICH=ott2.1
+TARDIR=/raid/www/roots/opentree/ott
+
+tarball: $(WORK)/$(WHICH)/log
+	(cd $(WORK) && \
+	 tar czvf $(TARDIR)/$(WHICH).tgz.tmp $(WHICH) && \
+	 mv $(TARDIR)/$(WHICH).tgz.tmp $(TARDIR)/$(WHICH).tgz)
 
 norbert:
 	rsync -vaxH --exclude=$(WORK) --exclude="*~" --exclude=backup \
