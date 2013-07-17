@@ -1056,10 +1056,19 @@ function createArgus(spec) {
 
             // draw a lozenge for each cluster (save lozenge-as-ref on cluster obj?)
             if (clusters[node.nodeid]) {
+                // nudge the yOffset, to avoid overlapping any later sibling branches
+                var oldYoffset = this.yOffset,
+                    clusterStartingY = null,
+                    clusterFinalY = null;
+
                 for (i = 0; i < clusters[node.nodeid].length; i++) {
                     currentCluster = clusters[node.nodeid][i];
                     var clusterX = node.x, // ie, the parent node
                         clusterY =  Math.max.apply(null, childys) + (this.nodeHeight * 1.3);
+                    if (!clusterStartingY) {
+                        // start counting from here
+                        clusterStartingY = Math.max.apply(null, childys);
+                    }
                     // add new coordinates to the cluster registry
                     currentCluster.x = clusterX;
                     currentCluster.y = clusterY;
@@ -1072,7 +1081,10 @@ function createArgus(spec) {
                     });
                     childxs.push(clusterX);
                     childys.push(clusterY);
+                    clusterFinalY = clusterY;
                 }
+                // make sure the next branch doesn't pile up on the new clusters
+                this.yOffset += (clusterFinalY - clusterStartingY) + (this.nodeHeight * 0.3);
             }
 
             // calculate this node's coordinates based on the positions of its children
