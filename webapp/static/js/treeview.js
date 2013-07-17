@@ -389,7 +389,7 @@ function searchForMatchingTaxa() {
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({ 
-            "queryString": (searchText+"*"),
+            "queryString": (searchText+","+searchText+"*"),
             "contextName": ''
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
