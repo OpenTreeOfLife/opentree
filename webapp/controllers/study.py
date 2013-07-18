@@ -14,6 +14,88 @@ def download(): return response.download(request,db)
 def call(): return service()
 ### end requires
 
+def _get_nexson_proc_conf(request):
+    def get_conf(request): #@TEMP this get_conf should probably move to a module 
+        conf = SafeConfigParser({})
+        try:
+            if os.path.isfile("applications/%s/private/localconfig" % request.application):
+                conf.read("applications/%s/private/localconfig" % request.application)
+            else:
+                conf.read("applications/%s/private/config" % request.application)
+        except:
+            pass  #@TEMP probably should log this event...
+        return conf
+    conf = get_conf(request)
+    try:
+        d = {}
+        d['nexsons_dir'] = conf.get('paths', 'nexsonsdir')
+        d['treemachine_domain'] = conf.get('domains', 'treemachine')
+        d['study_to_status_script'] = conf.get('paths', 'study_to_status_script')
+    except:
+        raise HTTP(501, T('Server is not configured to report on NexSON status'))
+    if (not os.path.exists(d['nexsons_dir'])) or (not os.path.isdir(d['nexsons_dir'])):
+        raise HTTP(501, T('Server is not properly configured to report on NexSON status'))
+    return d
+
+def index():
+    #####
+    # grab the install-time variables...
+    #
+    c = _get_nexson_proc_conf(request)
+    nexsons_dir = c['nexsons_dir']
+    response.title = 'List of known study status pages'
+    dd = get_default_dir_dict(nexsons_dir)
+    x = os.listdir(nexsons_dir)
+    study_list = []
+    for study_id in x:
+        try:
+            study_id_as_int = int(study_id)
+            study_list.append((study_id_as_int, study_id))
+        except:
+            continue
+    study_list.sort()
+    study_status_list = []
+    for study_id_as_int, study_id in study_list:
+        paths = get_processing_paths_from_prefix(study_id, **dd)
+        check_lock_policy = LockPolicy()
+        check_lock_policy.early_exit_if_locked = True
+        nexson_path = paths['nexson']
+        study_link = URL(a=request.application, 
+                         c=request.controller,
+                         f='status',
+                         args=[study_id])
+        el = {  'study_id': study_id,
+                'status_link': study_link,
+                'has_status': False,
+                'message_link_list': []
+            }
+        lockfile = nexson_path + '.studylock'
+        study_was_locked, owns_study_lock = check_lock_policy.wait_for_lock(lockfile)
+        try:
+            treemachine_log_path = paths['treemachine_log']
+            status_json = paths['status_json']
+            if study_was_locked:
+                el['message']='The status is being assessed.'
+            elif not target_is_dirty([nexson_path, treemachine_log_path], [status_json]):
+                el['has_status'] = True
+                el['message'] = 'Status is available'
+            else:
+                processing_launched_ts = paths['launched_study_proc']
+                if os.path.exists(processing_launched_ts) and target_is_dirty([processing_launched_ts], [status_json]):
+                    # the study is not currently being processed, the status_json is out of date, and the status_json is younger than
+                    #   the 'study processing has been launched flag' This means that the processing failed
+                    # We don't want to fall through hear and launch again, because that could
+                    #   lead to lots of processing getting launched as a problematic case repeatedly fails
+                    el['message'] = 'Error in status assessment. Please add this study id (%s) to the following issue tracking document (if it is not already listed):' % study_id
+                    el['message_link_list'] = [('Study/status problems document.', 'https://docs.google.com/spreadsheet/ccc?key=0AnYfNFYgyCWkdGRhUGNlbE8xVk9UNE1SV1NDTzBCdEE#gid=0')]
+                else:
+                    el['message']= 'The status of this study has not been assessed.'
+        finally:
+            check_lock_policy.remove_lock()
+        study_status_list.append(el)
+    return {'study_status_list' : study_status_list}
+
+
 def status():
     study_id = request.args(0)
     if study_id is None:
@@ -25,26 +107,13 @@ def status():
         assert ls > 0
     except:
         raise HTTP(404)
-    def get_conf(request): #@TEMP this get_conf should probably move to a module 
-        conf = SafeConfigParser({})
-        try:
-            if os.path.isfile("applications/%s/private/localconfig" % request.application):
-                conf.read("applications/%s/private/localconfig" % request.application)
-            else:
-                conf.read("applications/%s/private/config" % request.application)
-        except:
-            pass  #@TEMP probably should log this event...
-        return conf
-    
-    conf = get_conf(request)
-    try:
-        nexsons_dir = conf.get('paths', 'nexsonsdir')
-        treemachine_domain = conf.get('domains', 'treemachine')
-        study_to_status_script = conf.get('paths', 'study_to_status_script')
-    except:
-        raise HTTP(501, T('Server is not configured to report on NexSON status'))
-    if (not os.path.exists(nexsons_dir)) or (not os.path.isdir(nexsons_dir)):
-        raise HTTP(501, T('Server is not properly configured to report on NexSON status'))
+    #####
+    # grab the install-time variables...
+    #
+    c = _get_nexson_proc_conf(request)
+    nexsons_dir = c['nexsons_dir']
+    treemachine_domain = c['treemachine_domain']
+    study_to_status_script = c['study_to_status_script']
     
     force_phylografter_reload = request.get_vars.get('fetchnexson') is not None
     

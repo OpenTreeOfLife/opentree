@@ -1,0 +1,22 @@
+{{extend 'layout.html'}}
+<table border="1">
+{{for el in study_status_list:}}
+    <tr><td>{{=A(el['study_id'], _href=el['status_link'])}}</td>
+    {{if not el['has_status']:}}
+        <td><font color="red">{{=el['message']}}</font>
+        {{try:
+            mll = el['message_link_list']
+        except:
+            mll = []
+        pass
+        if mll:
+            for linkname, link in mll:}}
+                <b> </b>{{=A(linkname, _href=link)}}
+            {{pass}}
+        {{pass}}
+        </td>
+    {{else:}}
+        <td>{{=el['message']}}</td>
+    {{pass}}
+{{pass}}
+</table>
