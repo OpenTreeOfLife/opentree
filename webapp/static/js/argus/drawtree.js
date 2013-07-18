@@ -22,6 +22,7 @@ function createArgus(spec) {
     var getHoverHandlerEdge; // ie, a path
     var getClickHandlerNode;
     var getClickHandlerCluster;
+    var makeRoomForOpeningCluster;
     var getBackClickHandler;
     var getForwardClickHandler;
     var argusZoomLevel;
@@ -445,9 +446,7 @@ function createArgus(spec) {
 
     argusObj.displayNode = function (o) {
         // update argus' domSource to reflect that of the new target node?
-        //console.log("BEFORE, domSource was: "+ this.domSource);
         this.domSource = (o.domSource === undefined) ? this.domSource : o.domSource;
-        //console.log("AFTER, domSource is: "+ this.domSource);
 
         var ajaxInfo = this.buildAjaxCallInfo({
             "nodeID": o.nodeID,
@@ -640,53 +639,32 @@ function createArgus(spec) {
                                  "nodeName": nodeName});
         };
     };
-    getClickHandlerCluster = function (minimizedClusterParts, parentNodeID, clusterPosition, depthFromTargetNode) {
-        return function () {
-            // clobber the minimized cluster
-            for (var i = 0; i < minimizedClusterParts.length; i++) {
-                minimizedClusterParts[i].remove();
-            }
+    makeRoomForOpeningCluster = function(nodeID, cluster, nudgeY) {
+        /* For the specified node (by ID), adjust its spine and children by
+         * nudgeY (px) to accomodate new stuff appearing in the tree. 
+         *
+         * IF the openingCluster is a child of the target node, create space
+         * below the cluster.
+         *
+         * ELSE move the target node and all its branches and children, then
+         * adjust its upward branch and parent spine.  Recurse to ancestors
+         * until no spine is found.
+         */
 
-            var cluster = argusObj.clusters[ parentNodeID ][ clusterPosition ];
-            // draw its children, starting at the X and Y coords for this cluster
-            var child;
-            // fake the closest sensible curLeaf (nth child), based on cluster.y
-
-            argusObj.yOffset = cluster.y - (argusObj.nodeHeight * 0.3);  // nudge to standard node distance
-            var curLeaf = 0;
-            for (i = 0; i < cluster.nodes.length; i++) {
-                child = cluster.nodes[i];
-                curLeaf = argusObj.drawNode({
-                    "node": child,
-                    "domSource": null,
-                    "curLeaf": curLeaf,
-                    "isTargetNode": false,
-                    "isClusterNode": true,  // makes sure we add paths..
-                    "parentNodeX": cluster.x,
-                    "depthFromTargetNode": depthFromTargetNode + 1
-                });
-            }
-
-            // adjust the "spine" path for its parent node
-            var nudgeY = (curLeaf * argusObj.nodeHeight) - (argusObj.nodeHeight * 1.3),
-                spine = paper.getById( "spine-"+ cluster.parentNodeID),
-                path = spine.attr('path'),
-                oldBottomY = path[1][2],
-                newBottomY = oldBottomY + nudgeY;
-            path[1][2] = newBottomY;
-            // re-assert the modified path (vs. changing it in place), to force a redraw
-            spine.attr({'path': path});
-
-            // move all "downstream" nodes and minimized clusters down to make room...
+        // move all "downstream" nodes and minimized clusters down to make room...
+        var isClusterParent = false;
+        var foundClusterBranch = false;
+        var isDownstreamBranch = false;
+        if (argusObj.clusters[nodeID]) {
             var isDownstreamCluster = false;
-            for (i = 0; i < argusObj.clusters[cluster.parentNodeID].length; i++) {
-                var c = argusObj.clusters[cluster.parentNodeID][i];
+            for (var i = 0; i < argusObj.clusters[nodeID].length; i++) {
+                var c = argusObj.clusters[nodeID][i];
                 if (isDownstreamCluster) {
-                    var minClusterBox = paper.getById( "min-cluster-box-"+ cluster.parentNodeID +"-"+ i);
+                    var minClusterBox = paper.getById( "min-cluster-box-"+ nodeID +"-"+ i);
                     if (minClusterBox) {
                         // this cluster is still minimized; nudge the minimized cluster (trigger)
-                        var minClusterLabel = paper.getById( "min-cluster-label-"+ cluster.parentNodeID +"-"+ i),
-                            minClusterBranch = paper.getById( "min-cluster-branch-"+ cluster.parentNodeID +"-"+ i);
+                        var minClusterLabel = paper.getById( "min-cluster-label-"+ nodeID +"-"+ i),
+                            minClusterBranch = paper.getById( "min-cluster-branch-"+ nodeID +"-"+ i);
 
                         minClusterBox.transform('...t0,'+ nudgeY);
                         minClusterLabel.transform('...t0,'+ nudgeY);
@@ -697,7 +675,7 @@ function createArgus(spec) {
                     } else {
                         // this cluster's nodes are visible; nudge them all
                         for (var j = 0; j < c.nodes.length; j++) {
-                            child = c.nodes[j];
+                            var child = c.nodes[j];
 
                             var nodeBranch = paper.getById( "node-branch-"+ child.nodeid),
                                 nodeBranchTrigger = paper.getById( "node-branch-trigger-"+ child.nodeid),
@@ -708,7 +686,7 @@ function createArgus(spec) {
                             nodeBranchTrigger.transform('...t0,'+ nudgeY);
                             nodeMain.transform('...t0,'+ nudgeY);
                             nodeLabel.transform('...t0,'+ nudgeY);
-
+                            
                             if (child.children) {
                                 // keep going into ITS children
                                 var k, child2, nodeSpine;
@@ -737,10 +715,157 @@ function createArgus(spec) {
                 }
 
                 if (c === cluster) {
+                    isClusterParent = true;
                     isDownstreamCluster = true;
                 }
             }
+        }
+        if (!isClusterParent) { 
+            // nudge ancestor (or siblings) of the cluster's parent
+            var clusterParent = getTreeDataNode( function(node) {
+                return (node.nodeid === cluster.parentNodeID); 
+            })
+            var node = getTreeDataNode( function(node) {
+                return (node.nodeid === nodeID); 
+            });
+            // NOTE that these nodes appear to be reversed... bottom first!
+            for (i = node.children.length - 1; i >= 0; i--) {
+                var nodeChild = node.children[i];
+                if (foundClusterBranch) {
+                    isDownstreamBranch = true;
+                    // nudge its node
+                    var nodeBranch = paper.getById( "node-branch-"+ nodeChild.nodeid),
+                        nodeBranchTrigger = paper.getById( "node-branch-trigger-"+ nodeChild.nodeid),
+                        nodeMain = paper.getById( "node-circle-"+ nodeChild.nodeid),
+                        nodeLabel = paper.getById( "node-label-"+ nodeChild.nodeid);
 
+                    nodeBranch.transform('...t0,'+ nudgeY);
+                    nodeBranchTrigger.transform('...t0,'+ nudgeY);
+                    nodeMain.transform('...t0,'+ nudgeY);
+                    nodeLabel.transform('...t0,'+ nudgeY);
+
+                    if (nodeChild.children) {
+                        // move the "spine" path to its children
+                        spine = paper.getById( "spine-"+ nodeChild.nodeid);
+                        spine.transform('...t0,'+ nudgeY);
+
+                        // move any minimized clusters
+                        var itsClusters = argusObj.clusters[ nodeChild.nodeid ];
+                        for (var j = 0; j < itsClusters.length; j++) {
+                            var minClusterBox = paper.getById( "min-cluster-box-"+ nodeChild.nodeid +"-"+ j);
+                            if (minClusterBox) {
+                                // this cluster is still minimized; nudge the minimized cluster (trigger)
+                                var minClusterLabel = paper.getById( "min-cluster-label-"+ nodeChild.nodeid +"-"+ j),
+                                    minClusterBranch = paper.getById( "min-cluster-branch-"+ nodeChild.nodeid +"-"+ j);
+
+                                minClusterBox.transform('...t0,'+ nudgeY);
+                                minClusterLabel.transform('...t0,'+ nudgeY);
+                                minClusterBranch.transform('...t0,'+ nudgeY);
+                                // update the stored y for this cluster to match (NOTE that we need to 
+                                // use a matrix operation to include the current transform)
+                                (itsClusters[j]).y = minClusterLabel.matrix.y(minClusterLabel.attr('x'), minClusterLabel.attr('y'));
+                            }
+                        }
+
+                        // nudge all of its visible child nodes AND CLUSTERS
+                        for (var j = 0; j < nodeChild.children.length; j++) {
+                            var child = nodeChild.children[j];
+
+                            nodeBranch = paper.getById( "node-branch-"+ child.nodeid);
+                            if (nodeBranch) { // else it's hidden in a minimized cluster
+
+                                nodeBranchTrigger = paper.getById( "node-branch-trigger-"+ child.nodeid);
+                                nodeMain = paper.getById( "node-circle-"+ child.nodeid);
+                                nodeLabel = paper.getById( "node-label-"+ child.nodeid);
+
+                                nodeBranch.transform('...t0,'+ nudgeY);
+                                nodeBranchTrigger.transform('...t0,'+ nudgeY);
+                                nodeMain.transform('...t0,'+ nudgeY);
+                                nodeLabel.transform('...t0,'+ nudgeY);
+
+                                if (child.children) {
+                                    // keep going into ITS children
+                                    var k, child2, nodeSpine;
+                                    nodeSpine = paper.getById( "spine-"+ child.nodeid);
+                                    nodeSpine.transform('...t0,'+ nudgeY);
+
+                                    for (k = 0; k < child.children.length; k++) {
+                                        child2 = child.children[k];
+                                        if (child2.x) {  // its children are visible
+                                            nodeBranch = paper.getById( "node-branch-"+ child2.nodeid);
+                                            nodeBranchTrigger = paper.getById( "node-branch-trigger-"+ child2.nodeid);
+                                            nodeMain = paper.getById( "node-circle-"+ child2.nodeid);
+                                            nodeLabel = paper.getById( "node-label-"+ child2.nodeid);
+
+                                            nodeBranch.transform('...t0,'+ nudgeY);
+                                            nodeBranchTrigger.transform('...t0,'+ nudgeY);
+                                            nodeMain.transform('...t0,'+ nudgeY);
+                                            nodeLabel.transform('...t0,'+ nudgeY);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+
+                    }
+                        
+                }
+
+                if (nodeChild === clusterParent) {
+                    foundClusterBranch = true;
+                }
+            }
+        }
+
+        // do we need to stretch this node's spine?
+        var clusterIsOnLowestBranch = false;
+        if (isClusterParent || isDownstreamBranch) {
+            var spine = paper.getById( "spine-"+ nodeID),
+                path = spine.attr('path'),
+                oldBottomY = path[1][2],
+                newBottomY = oldBottomY + nudgeY;
+            path[1][2] = newBottomY;
+            // re-assert the modified path (vs. changing it in place), to force a redraw
+            spine.attr({'path': path});
+        }
+
+    };
+    getClickHandlerCluster = function (minimizedClusterParts, parentNodeID, clusterPosition, depthFromTargetNode) {
+        return function () {
+            // clobber the minimized cluster
+            for (var i = 0; i < minimizedClusterParts.length; i++) {
+                minimizedClusterParts[i].remove();
+            }
+
+            var cluster = argusObj.clusters[ parentNodeID ][ clusterPosition ];
+            // draw its children, starting at the X and Y coords for this cluster
+            var child;
+            // fake the closest sensible curLeaf (nth child), based on cluster.y
+
+            argusObj.yOffset = cluster.y - (argusObj.nodeHeight * 0.3);  // nudge to standard node distance
+            var curLeaf = 0;
+            for (i = 0; i < cluster.nodes.length; i++) {
+                child = cluster.nodes[i];
+                curLeaf = argusObj.drawNode({
+                    "node": child,
+                    "domSource": null,
+                    "curLeaf": curLeaf,
+                    "isTargetNode": false,
+                    "isClusterNode": true,  // makes sure we add paths..
+                    "parentNodeX": cluster.x,
+                    "depthFromTargetNode": depthFromTargetNode + 1
+                });
+            }
+
+            var nudgeY = (curLeaf * argusObj.nodeHeight) - (argusObj.nodeHeight * 1.3);
+            // adjust the parent node...
+            makeRoomForOpeningCluster(parentNodeID, cluster, nudgeY);
+            // ...and possibly its parent (the main target in argus) and siblings
+            var targetNodeID = argusObj.treeData.nodeid;
+            if (parentNodeID !== targetNodeID) {
+                makeRoomForOpeningCluster(targetNodeID, cluster, nudgeY);
+            } else {
+            }
         };
     };
     getBackClickHandler = function () {
@@ -808,14 +933,12 @@ function createArgus(spec) {
     getClickHandlerNodeHighlight = function () {
         return function () {
             // use source-node values copied from the target node
-            console.log(">>> showing highlighted node info...");
             showObjectProperties( argusObj.highlightedNodeInfo );
         };
     };
     getClickHandlerEdgeHighlight = function () {
         return function () {
             // use source-node values copied from the target edge
-            console.log(">>> showing highlighted edge info...");
             showObjectProperties( argusObj.highlightedEdgeInfo );
         };
     };
