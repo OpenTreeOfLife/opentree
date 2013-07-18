@@ -89,7 +89,7 @@ def index():
                     el['message'] = 'Error in status assessment. Please add this study id (%s) to the following issue tracking document (if it is not already listed):' % study_id
                     el['message_link_list'] = [('Study/status problems document.', 'https://docs.google.com/spreadsheet/ccc?key=0AnYfNFYgyCWkdGRhUGNlbE8xVk9UNE1SV1NDTzBCdEE#gid=0')]
                 else:
-                    el['message']= 'The status of this study has not been assessed.'
+                    el['message']= 'The status of this study has not been assessed. Click on the study # to start processing.'
         finally:
             check_lock_policy.remove_lock()
         study_status_list.append(el)
