@@ -1430,7 +1430,7 @@ function createArgus(spec) {
         var minimizedCluster = paper.set().insertAfter(dividerBeforeLabels);
         // NOTE that we can't set (retrieve) an ID on a Raphael set...
 
-        var box = paper.rect(clusterX, clusterY - (this.nodeHeight / 2.0), (this.nodesWidth * 0.8), this.nodeHeight).attr({
+        var box = paper.rect(clusterX, clusterY - (this.nodeHeight / 2.0), (this.nodesWidth * 1.2), this.nodeHeight).attr({
             "stroke": this.pathColor,
             "stroke-width": 1,
             "stroke-dasharray": '.',
@@ -1443,9 +1443,9 @@ function createArgus(spec) {
         
         minimizedCluster.push(box);
         // draw the cluster label
-        var clusterLabel = cluster.firstName +" - "+ cluster.lastName;
-        var label = paper.text(clusterX + (this.nodesWidth * 0.4), clusterY, clusterLabel).attr({
-            'text-anchor': 'middle',
+        var clusterLabel = "more ("+ cluster.firstName +" - "+ cluster.lastName +")...";
+        var label = paper.text(clusterX + 8, clusterY, clusterLabel).attr({
+            'text-anchor': 'start',
             "fill": this.labelColor,
             "font-size": fontSize,
             "cursor": "pointer"
