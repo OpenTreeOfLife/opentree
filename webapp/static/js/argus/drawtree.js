@@ -853,7 +853,7 @@ function createArgus(spec) {
         }
 
     };
-    getClickHandlerCluster = function (minimizedClusterParts, parentNodeID, clusterPosition, depthFromTargetNode) {
+    getClickHandlerCluster = function (minimizedClusterParts, parentNodeID, clusterPosition, depthFromTargetNode, domSource) {
         return function () {
             // clobber the minimized cluster
             for (var i = 0; i < minimizedClusterParts.length; i++) {
@@ -871,7 +871,7 @@ function createArgus(spec) {
                 child = cluster.nodes[i];
                 curLeaf = argusObj.drawNode({
                     "node": child,
-                    "domSource": null,
+                    "domSource": domSource,
                     "curLeaf": curLeaf,
                     "isTargetNode": false,
                     "isClusterNode": true,  // makes sure we add paths..
@@ -1222,6 +1222,7 @@ function createArgus(spec) {
                     this.drawCluster({
                         "cluster": currentCluster,
                         "clusterPosition": i,
+                        "domSource": domSource,
                         "x": clusterX,
                         "y": clusterY,
                         "depthFromTargetNode": depthFromTargetNode
@@ -1410,6 +1411,7 @@ function createArgus(spec) {
         var parentNodeID = cluster.parentNodeID;
         var depthFromTargetNode = obj.depthFromTargetNode;
         var clusterPosition = obj.clusterPosition;
+        var domSource = obj.domSource;
         var stemX = obj.x;
         var clusterX = stemX + (this.nodesWidth / 3.0);
         var clusterY = obj.y;
@@ -1464,7 +1466,8 @@ function createArgus(spec) {
                                                         minimizedClusterParts, 
                                                         parentNodeID, 
                                                         clusterPosition,
-                                                        depthFromTargetNode
+                                                        depthFromTargetNode,
+                                                        domSource
                                                      ));
         minimizedCluster.hover(getHoverHandlerCluster('OVER', 
             box, { "fill": this.nodeColor }, 
