@@ -693,6 +693,27 @@ function createArgus(spec) {
                                 nodeSpine = paper.getById( "spine-"+ child.nodeid);
                                 nodeSpine.transform('...t0,'+ nudgeY);
 
+                                /* pointless?
+                                // nudge its clusters, if any
+                                for (var m = 0; m < argusObj.clusters[child.nodeid].length; m++) {
+                                    var c2 = argusObj.clusters[child.nodeid][m];
+                                    minClusterBox = paper.getById( "min-cluster-box-"+ child.nodeid +"-"+ m);
+                                    if (minClusterBox) {
+                                        // this cluster is still minimized; nudge the minimized cluster (trigger)
+                                        var minClusterLabel = paper.getById( "min-cluster-label-"+ child.nodeid +"-"+ m),
+                                            minClusterBranch = paper.getById( "min-cluster-branch-"+ child.nodeid +"-"+ m);
+
+                                        minClusterBox.transform('...t0,'+ nudgeY);
+                                        minClusterLabel.transform('...t0,'+ nudgeY);
+                                        minClusterBranch.transform('...t0,'+ nudgeY);
+                                        // update the stored y for this cluster to match (NOTE that we need to 
+                                        // use a matrix operation to include the current transform)
+                                        c2.y = minClusterLabel.matrix.y(minClusterLabel.attr('x'), minClusterLabel.attr('y'));
+                                    }
+                                }
+                                */
+
+                                // nudge its visible children
                                 for (k = 0; k < child.children.length; k++) {
                                     child2 = child.children[k];
                                     if (child2.x) {  // its children are visible
@@ -751,19 +772,21 @@ function createArgus(spec) {
 
                         // move any minimized clusters
                         var itsClusters = argusObj.clusters[ nodeChild.nodeid ];
-                        for (var j = 0; j < itsClusters.length; j++) {
-                            var minClusterBox = paper.getById( "min-cluster-box-"+ nodeChild.nodeid +"-"+ j);
-                            if (minClusterBox) {
-                                // this cluster is still minimized; nudge the minimized cluster (trigger)
-                                var minClusterLabel = paper.getById( "min-cluster-label-"+ nodeChild.nodeid +"-"+ j),
-                                    minClusterBranch = paper.getById( "min-cluster-branch-"+ nodeChild.nodeid +"-"+ j);
+                        if (itsClusters) {
+                            for (var j = 0; j < itsClusters.length; j++) {
+                                var minClusterBox = paper.getById( "min-cluster-box-"+ nodeChild.nodeid +"-"+ j);
+                                if (minClusterBox) {
+                                    // this cluster is still minimized; nudge the minimized cluster (trigger)
+                                    var minClusterLabel = paper.getById( "min-cluster-label-"+ nodeChild.nodeid +"-"+ j),
+                                        minClusterBranch = paper.getById( "min-cluster-branch-"+ nodeChild.nodeid +"-"+ j);
 
-                                minClusterBox.transform('...t0,'+ nudgeY);
-                                minClusterLabel.transform('...t0,'+ nudgeY);
-                                minClusterBranch.transform('...t0,'+ nudgeY);
-                                // update the stored y for this cluster to match (NOTE that we need to 
-                                // use a matrix operation to include the current transform)
-                                (itsClusters[j]).y = minClusterLabel.matrix.y(minClusterLabel.attr('x'), minClusterLabel.attr('y'));
+                                    minClusterBox.transform('...t0,'+ nudgeY);
+                                    minClusterLabel.transform('...t0,'+ nudgeY);
+                                    minClusterBranch.transform('...t0,'+ nudgeY);
+                                    // update the stored y for this cluster to match (NOTE that we need to 
+                                    // use a matrix operation to include the current transform)
+                                    (itsClusters[j]).y = minClusterLabel.matrix.y(minClusterLabel.attr('x'), minClusterLabel.attr('y'));
+                                }
                             }
                         }
 
@@ -859,12 +882,13 @@ function createArgus(spec) {
 
             var nudgeY = (curLeaf * argusObj.nodeHeight) - (argusObj.nodeHeight * 1.3);
             // adjust the parent node...
+            console.log("stretching PARENT node "+ parentNodeID);
             makeRoomForOpeningCluster(parentNodeID, cluster, nudgeY);
             // ...and possibly its parent (the main target in argus) and siblings
             var targetNodeID = argusObj.treeData.nodeid;
             if (parentNodeID !== targetNodeID) {
+                console.log("stretching TARGET node "+ targetNodeID);
                 makeRoomForOpeningCluster(targetNodeID, cluster, nudgeY);
-            } else {
             }
         };
     };
