@@ -36,6 +36,21 @@ function createArgus(spec) {
     var getClickHandlerNodeHighlight;
     var getClickHandlerEdgeHighlight;
 
+/*
+    $.ajaxSetup({
+      contents: {
+        nodeTree: /nodeTree/
+      },
+      converters: {
+        "text nodeTree": function ( result ) {
+          // do stuff
+console.log("INSIDE custom converter");
+          return result;
+        }
+      }
+    });
+*/
+
     var isNumeric = function (n) {
         return !isNaN(parseFloat(n)) && isFinite(n);
     };
@@ -142,6 +157,39 @@ function createArgus(spec) {
         highlightedNodeInfo: null,
         highlightedEdgeInfo: null,
         targetNodeY: 0,  // used to center the view (vertically) on the target node
+
+        // use Javascript pseudo-classes (defined below) to make tree operations more sensible
+        makeNodeTree: function(key, value) {
+            // expects to get root JSON object? or each object (or key/val pair) as it's parsed?
+            ///console.log('makeNodeTree STARTING...');
+            if (value.nodeid) {
+                // convert to desired JS pseudo-class
+                ///console.log('> found a node: '+ value.name +' ('+ value.nodeid +')');
+                return $.extend( new ArgusNode(), value );
+            }
+            if (key === 'children') {
+                // TODO: pre-sort into desired order? create clusters?
+                ///console.log('@@@@@ found '+ value.length +' children!');
+            }
+    /*
+            if (value && typeof value === 'object' && value['type']) {
+                type = value['type'];
+                if (type && typeof type === 'string' && typeof window[type] === 'function') {
+                    return new (window[type])(value);
+                }
+            }
+    */
+            return value;
+        },
+
+        // utility methods for nodeTree above
+        getArgusNodeByID: function ( nodeID ) {
+            // NOTE depends on treeview.js methods
+            return getTreeDataNode( function(node) {
+                return (node.nodeid === nodeID); 
+            });
+        },
+
         getZoomInHandler: function () {
             return function() {
                 setZoom('+');
@@ -158,6 +206,8 @@ function createArgus(spec) {
             return null;
         }
     };
+
+
     argusObj.nodeHeight = (2 * argusObj.minTipRadius) + argusObj.yNodeMargin;
     // helper function to create the URL and arg to be passed to URL. 
     //  Argument:
@@ -414,11 +464,21 @@ function createArgus(spec) {
         $.ajax({
             url: o.url,
             type: o.httpMethod === undefined ? "POST" : o.httpMethod,
-            dataType: 'json',
+            dataType: 'text nodeTree',  // 'nodeTree' triggers converter below
             data: dataStr,
             context: argusObj,
             crossDomain: true,
             contentType: 'application/json',
+            converters: { 
+                // serialize this JSON into dedicated pseudo-classes
+                'text nodeTree': function(data) {
+                    console.log(">>> pre-processing raw JSON string..." );
+                    // NOTE that jQuery's parseJSON() doesn't support the 'reviver' option
+                    ///return $.parseJSON(data, argusObj.makeNodeTree);
+                    return JSON.parse(data, argusObj.makeNodeTree);
+                    // TODO: ensure proper JSON support in all target browsers, see http://stackoverflow.com/a/10936563
+                }
+            },
             success: ajaxSuccess,
             error: function (jqXHR, textStatus, errorThrown) {
                 hideSpinner();
@@ -1827,3 +1887,25 @@ function sortByDescendantCount(a,b) {
     if (a.leaves < b.leaves) return -1;
     return 0;
 }
+
+/* Let's deserialize tree-view JSON elements into useful  pseudo-classes. This should 
+ * simplify management of dynamic layouts, clustering, etc.
+ *
+ * TODO: add Tree, other classes?
+ */
+function ArgusNode() { // constructor 
+    // maintain ordered-and-clustered contents?
+    this.displayList = [ ]; // refs to (expanded) nodes and clusters
+    this.clusters = [ ];
+};
+ArgusNode.prototype.getCurrentDisplayHeight = function() {
+    var permaHeight = 3;
+    var displayHeight = permaHeight + (this.children ? (this.children.length * 5) : 0);
+    // TODO: query my currently *visible* contents, recursively
+    return displayHeight; 
+};
+
+function ArgusCluster() { // constructor 
+    this.FOO = 'this is my FOO';
+    this.height = 0; // based on currently visible contents, recursive
+};
