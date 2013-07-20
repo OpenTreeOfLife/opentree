@@ -36,21 +36,6 @@ function createArgus(spec) {
     var getClickHandlerNodeHighlight;
     var getClickHandlerEdgeHighlight;
 
-/*
-    $.ajaxSetup({
-      contents: {
-        nodeTree: /nodeTree/
-      },
-      converters: {
-        "text nodeTree": function ( result ) {
-          // do stuff
-console.log("INSIDE custom converter");
-          return result;
-        }
-      }
-    });
-*/
-
     var isNumeric = function (n) {
         return !isNaN(parseFloat(n)) && isFinite(n);
     };
@@ -171,14 +156,6 @@ console.log("INSIDE custom converter");
                 // TODO: pre-sort into desired order? create clusters?
                 ///console.log('@@@@@ found '+ value.length +' children!');
             }
-    /*
-            if (value && typeof value === 'object' && value['type']) {
-                type = value['type'];
-                if (type && typeof type === 'string' && typeof window[type] === 'function') {
-                    return new (window[type])(value);
-                }
-            }
-    */
             return value;
         },
 
