@@ -105,9 +105,9 @@ function createArgus(spec) {
         "nubDistScalar": 4, // the x/y distance of the nub from its child
         "tipOffset": 300,  // distance from right margin at which leaf nodes are drawn
         "xLabelMargin": 10, // the distance of the labels from the nodes
-        "xOffset": 0, // reset in loadData call before drawing nodes
+        "xOffset": 0, // rightmost edge of view-tree; this is set in loadData call before drawing nodes
         "yNodeMargin": 4, // whitespace above/below nodes
-        "yOffset": 10, // distance from top margin at which topmost nodes are drawn. reset in loadData
+        "yOffset": 10, // distance from top margin at which topmost nodes are drawn; also set in loadData
         /* colors for the tree view */
         "bgColor": "#f5f5ec",
         "altPColor": "#c69",
@@ -148,8 +148,16 @@ function createArgus(spec) {
             // expects to get root JSON object? or each object (or key/val pair) as it's parsed?
             ///console.log('makeNodeTree STARTING...');
             if (value.nodeid) {
+                // it's a tree node!
+
+                // assign parent ID to children, for fast tree traversal
+                if (value.children) {
+                    for (var i = 0; i < value.children.length; i++) {
+                        value.children[i].parentNodeID = value.nodeid;
+                    }
+                }
+
                 // convert to desired JS pseudo-class
-                ///console.log('> found a node: '+ value.name +' ('+ value.nodeid +')');
                 return $.extend( new ArgusNode(), value );
             }
             if (key === 'children') {
@@ -238,11 +246,28 @@ function createArgus(spec) {
          //
         var dataStr = JSON.stringify(o.data);
         var domSource = o.domSource === undefined ? "ottol" : o.domSource;
-        var ajaxSuccess = function (dataStr, textStatus, jqXHR) {
+        var ajaxSuccess = function (json, textStatus, jqXHR) {
             var argusObjRef = this;
-            argusObjRef.treeData = dataStr; // $.parseJSON(dataStr);
+            argusObjRef.treeData = json; // $.parseJSON(dataStr);
             //var node = argusObjRef.treeData[0];
             var node = argusObjRef.treeData;
+
+            // final setup of tree-view object hierarchy
+            // recursive marking of depth in local tree
+            var markNodeDepth = function (n, d) {
+                n.nodeDepth = d; // assume this is a number (where 0 = local root)
+                // slightly different, this is which column of nodes will hold this one
+                // (where 0 = the right-most (leaf nodes) column, higher = further left)
+                n.treeColumn = n.isLocalLeafNode() ? 0 : (argusObj.treeData.maxnodedepth - n.nodeDepth);
+                ///console.log("> node '"+ n.name +"' is in column "+ n.treeColumn);
+                if (n.children) {
+                    for (var i = 0; i < n.children.length; i++) {
+                        markNodeDepth( n.children[i], d + 1 );
+                    }
+                }
+            };
+            markNodeDepth(node, 0);
+
             // clear the registry of clustered child nodes
             argusObj.clusters = {}; 
 
@@ -422,7 +447,7 @@ function createArgus(spec) {
                 "domSource": domSource,
                 "curLeaf": 0,
                 "isTargetNode": true,
-                "parentNodeX": argusObjRef.xOffset - (argusObjRef.nodesWidth * node.maxnodedepth),
+                "parentNodeX": argusObjRef.xOffset - (argusObjRef.nodesWidth * node.treeColumn),   // * node.maxnodedepth),
                 "depthFromTargetNode": 0
                 // argusObjRef.xOffset - (argusObjRef.nodesWidth)
             });
@@ -1008,7 +1033,15 @@ function createArgus(spec) {
     argusObj.drawNode = function (obj) {
         var node = obj.node;
         var isTargetNode = obj.isTargetNode;
-        var parentNodeX = obj.parentNodeX || 0;
+        var parentNodeX = obj.parentNodeX;
+        if (!parentNodeX) {
+            // passed in arg is fastest, but this is now reliable
+            var parentNode = argusObj.getArgusNodeByID(node.parentNodeID);
+            parentNodeX = (parentNode) ? 
+              argusObj.xOffset - (argusObj.nodesWidth * parentNode.treeColumn) :
+              // if no parent ID, assume it's the local root node 
+              argusObj.xOffset - (argusObj.nodesWidth * argusObj.treeData.treeColumn);
+        }
         var depthFromTargetNode = obj.depthFromTargetNode || 0; 
         var domSource = obj.domSource;
         var curLeaf = obj.curLeaf;
@@ -1149,6 +1182,7 @@ function createArgus(spec) {
             }
             // use names to label each cluster alphabetically
             
+            /*
             switch (depthFromTargetNode) {
                 case (0):
                     node.x = this.xOffset - (this.nodesWidth * 2);
@@ -1164,6 +1198,8 @@ function createArgus(spec) {
                     node.x = this.xOffset;
                     break;
             }
+            */
+            node.x = this.xOffset - (this.nodesWidth * node.treeColumn);
 
             // Use these groups and clusters to draw children
             nWithHybrid = nodesWithHybridSupport.length;
@@ -1872,8 +1908,12 @@ function sortByDescendantCount(a,b) {
  */
 function ArgusNode() { // constructor 
     // maintain ordered-and-clustered contents?
+    this.nodeDepth = 0;  // 0 = root node, higher for descendants
+    this.treeColumn = 0; // 0 = rightmost (leaf nodes), higher = further left
     this.displayList = [ ]; // refs to (expanded) nodes and clusters
     this.clusters = [ ];
+    // parent IDs will be set during reviver sweep of tree-view JSON
+    this.parentNodeID = null;
 };
 ArgusNode.prototype.getCurrentDisplayHeight = function() {
     var permaHeight = 3;
@@ -1881,8 +1921,27 @@ ArgusNode.prototype.getCurrentDisplayHeight = function() {
     // TODO: query my currently *visible* contents, recursively
     return displayHeight; 
 };
+ArgusNode.prototype.getClusters = function() {
+    return argus.clusters[this.nodeID] || [ ];
+};
+ArgusNode.prototype.isLocalLeafNode = function() {
+    return (typeof this.children === 'undefined');
+};
+ArgusNode.prototype.isActualLeafNode = function() {
+    return this.hasChildren === false || this.nleaves === 0;
+};
 
 function ArgusCluster() { // constructor 
-    this.FOO = 'this is my FOO';
-    this.height = 0; // based on currently visible contents, recursive
+    // each cluster is either minimized (default) or expanded
+    this.expanded = false;
+    // TODO: add methods to gather clustered nodes? inner clusters?
+};
+ArgusCluster.prototype.getCurrentDisplayHeight = function() {
+    var minimizedHeight = 20; // TODO
+    if (this.expanded) {
+        // TODO: recursively query my currently *visible* contents (nodes and clusters)
+        return 0;
+    }
+    // else it's still minimized
+    return minimizedHeight;
 };
