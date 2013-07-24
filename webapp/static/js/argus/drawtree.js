@@ -1176,43 +1176,78 @@ function createArgus(spec) {
                     var endX = startX - xyStep;
                     var endY = startY - xyStep;
                     var pathOpacity = 1.0 - (alphaStep * (i+1));
+                    var ancestorNode = node.pathToRoot[i];
+                    // build IDs for visible elements (to move or create)
+                    nodeCircleElementID = 'node-circle-'+ ancestorNode.nodeid;
+                    nodeLabelElementID = 'node-label-'+ ancestorNode.nodeid;
+                    var nodeBranchElementID = 'node-branch-'+ ancestorNode.nodeid;
+                    // manipulate the existing elements, if any
+                    circle = paper.getById(nodeCircleElementID);
+                    label = paper.getById(nodeLabelElementID);
+                    var branch = paper.getById(nodeBranchElementID);
 
                     var upwardSt = "M" + startX+ "," + startY + "L" + endX + " " + endY;
-                    paper.path(upwardSt).toBack().attr({
-                        "stroke": this.pathColor,
-                        "stroke-linecap": 'round',
-                        "stroke-dasharray": '- ',
-                        "opacity": pathOpacity
-                    }).insertBefore(dividerBeforeLabels);
-
-                    var ancestorNode, ancestorCircle;
-                    if (i < maxUpwardNodes) {
-                        ancestorNode = node.pathToRoot[i];
-                        // draw node circle and label
-                        ancestorCircle = paper.circle(endX, endY, this.minTipRadius).attr({
-                            "fill": this.nodeColor,
-                            "title": "Click to move to this node",
-                            "stroke": this.pathColor
-                        }).insertBefore(dividerBeforeAnchoredUI);
-                        paper.text(endX - (this.minTipRadius * 1.25), endY + (this.minTipRadius * 1.25), ancestorNode.name || "unnamed").attr({
-                            'text-anchor': 'end',
-                            "fill": this.labelColor,
-                            "font-size": fontSize
-                        }).insertBefore(dividerBeforeHighlights);
-
-                        // add handlers and metadata
-                        ancestorCircle.click(getClickHandlerNode(ancestorNode.nodeid, domSource, ancestorNode.name));
-                        // copy source data into the circle element (for use by highlight)
-                        ancestorCircle.data('sourceNodeInfo', {
-                            'nodeID': ancestorNode.nodeid,
-                            'nodeName': ancestorNode.name,
-                            'domSource': domSource
+                    if (branch) {
+                        // update the existing branch
+                        branch.attr({
+                            'path': upwardSt
                         });
-                        ancestorCircle.hover(getHoverHandlerNode('OVER', ancestorCircle, {
-                            "fill": this.nodeHoverColor
-                        }), getHoverHandlerNode('OUT', ancestorCircle, {
-                            "fill": this.nodeColor
-                        }));
+                    } else {
+                        // create the new branch
+                        branch = paper.path(upwardSt).toBack().attr({
+                            "stroke": this.pathColor,
+                            "stroke-linecap": 'round',
+                            "stroke-dasharray": '- ',
+                            "opacity": pathOpacity
+                        }).insertBefore(dividerBeforeLabels);
+                        branch.id = (nodeBranchElementID);
+                    }
+
+                    if (i < maxUpwardNodes) {
+                        // draw node circle and label
+                        labelX = endX - (this.minTipRadius * 1.25); 
+                        labelY = endY + (this.minTipRadius * 1.25);
+                        if (circle && label) {
+                            // update the existing circle and label
+                            circle.attr({
+                                'cx': endX,
+                                'cy': endY
+                            });
+                            label.attr({
+                                'x': labelX,
+                                'y': labelY
+                            });
+    
+                        } else {
+                            // create the new circle and label
+                            circle = paper.circle(endX, endY, this.minTipRadius).attr({
+                                "fill": this.nodeColor,
+                                "title": "Click to move to this node",
+                                "stroke": this.pathColor
+                            }).insertBefore(dividerBeforeAnchoredUI);
+                            circle.id = (nodeCircleElementID);
+
+                            label = paper.text(labelX, labelY, ancestorNode.name || "unnamed").attr({
+                                'text-anchor': 'end',
+                                "fill": this.labelColor,
+                                "font-size": fontSize
+                            }).insertBefore(dividerBeforeHighlights);
+                            label.id = (nodeLabelElementID);
+
+                            // add handlers and metadata
+                            circle.click(getClickHandlerNode(ancestorNode.nodeid, domSource, ancestorNode.name));
+                            // copy source data into the circle element (for use by highlight)
+                            circle.data('sourceNodeInfo', {
+                                'nodeID': ancestorNode.nodeid,
+                                'nodeName': ancestorNode.name,
+                                'domSource': domSource
+                            });
+                            circle.hover(getHoverHandlerNode('OVER', circle, {
+                                "fill": this.nodeHoverColor
+                            }), getHoverHandlerNode('OUT', circle, {
+                                "fill": this.nodeColor
+                            }));
+                        }
 
                     }
 
