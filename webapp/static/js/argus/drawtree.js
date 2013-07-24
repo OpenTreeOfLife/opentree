@@ -325,8 +325,8 @@ function createArgus(spec) {
                                     // add a new cluster and start filling it
                                     var newCluster = $.extend( new ArgusCluster(), {
                                         nodes: [ ],
-                                        firstName: testChild.name.slice(0,3),
-                                        lastName: testChild.name.slice(0,3),
+                                        firstName: testChild.name,
+                                        lastName: testChild.name,
                                         parentNodeID: node.nodeid
                                     });
                                     clusters[node.nodeid].push(newCluster);
@@ -350,9 +350,9 @@ function createArgus(spec) {
                         }
                         currentCluster.nodes.push(testChild);
                         if (currentCluster.firstName === '') {
-                            currentCluster.firstName = testChild.name.slice(0,3);
+                            currentCluster.firstName = testChild.name;
                         }
-                        currentCluster.lastName = testChild.name.slice(0,3);
+                        currentCluster.lastName = testChild.name;
                         nInCurrentCluster++;
                     }
                     // use names to label each cluster alphabetically
@@ -1307,8 +1307,8 @@ function createArgus(spec) {
             // draw the cluster shape (a lozenge that can hold 'Aaa - Zzz')?
             var minimizedCluster = paper.set().insertAfter(dividerBeforeLabels);
             // NOTE that we can't set (or retrieve) an ID on a Raphael set...
-            box = paper.rect(clusterLeftEdge, cluster.y - (this.nodeHeight / 2.0), (this.nodesWidth * 1.3), this.nodeHeight).attr({
-                "stroke": this.pathColor,
+            box = paper.rect(clusterLeftEdge, cluster.y - (this.nodeHeight * 0.55), (this.nodesWidth * 3.5), this.nodeHeight * 1.2).attr({
+                "stroke": this.bgColor,
                 "stroke-width": 1,
                 "stroke-dasharray": '.',
                 "fill": this.bgColor,
@@ -1319,8 +1319,8 @@ function createArgus(spec) {
             minimizedCluster.push(box);
 
             // draw the cluster label
-            var clusterLabel = "more ("+ cluster.firstName +" - "+ cluster.lastName +")...";
-            label = paper.text(clusterLeftEdge + 8, cluster.y, clusterLabel).attr({
+            var clusterLabel = "more... ("+ cluster.firstName +" - "+ cluster.lastName +")";
+            label = paper.text(clusterLeftEdge + 8, cluster.y - (this.nodeHeight * 0.0), clusterLabel).attr({
                 'text-anchor': 'start',
                 "fill": this.labelColor,
                 "font-size": fontSize,
@@ -1799,8 +1799,8 @@ function ArgusCluster() { // constructor
 ArgusCluster.prototype.updateDisplayBounds = function() {
     // update my layout properties and store results (for faster access)
     this.displayBounds = {
-        topY: this.y - (argus.nodeHeight * 1.0),
-        bottomY: this.y + (argus.nodeHeight * 1.0)
+        topY: this.y - (argus.nodeHeight * 0.7),
+        bottomY: this.y + (argus.nodeHeight * 0.7)
     };
     return this.displayBounds;
 };
