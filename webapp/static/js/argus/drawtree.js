@@ -325,8 +325,8 @@ function createArgus(spec) {
                                     // add a new cluster and start filling it
                                     var newCluster = $.extend( new ArgusCluster(), {
                                         nodes: [ ],
-                                        firstName: testChild.name.slice(0,3),
-                                        lastName: testChild.name.slice(0,3),
+                                        firstName: testChild.name,
+                                        lastName: testChild.name,
                                         parentNodeID: node.nodeid
                                     });
                                     clusters[node.nodeid].push(newCluster);
@@ -350,9 +350,9 @@ function createArgus(spec) {
                         }
                         currentCluster.nodes.push(testChild);
                         if (currentCluster.firstName === '') {
-                            currentCluster.firstName = testChild.name.slice(0,3);
+                            currentCluster.firstName = testChild.name;
                         }
-                        currentCluster.lastName = testChild.name.slice(0,3);
+                        currentCluster.lastName = testChild.name;
                         nInCurrentCluster++;
                     }
                     // use names to label each cluster alphabetically
@@ -1319,7 +1319,7 @@ function createArgus(spec) {
             minimizedCluster.push(box);
 
             // draw the cluster label
-            var clusterLabel = "more ("+ cluster.firstName +" - "+ cluster.lastName +")...";
+            var clusterLabel = "more ("+ cluster.firstName.slice(0,3) +" - "+ cluster.lastName.slice(0,3) +")...";
             label = paper.text(clusterLeftEdge + 8, cluster.y, clusterLabel).attr({
                 'text-anchor': 'start',
                 "fill": this.labelColor,
