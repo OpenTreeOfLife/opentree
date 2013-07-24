@@ -148,7 +148,6 @@ function createArgus(spec) {
         // use Javascript pseudo-classes (defined below) to make tree operations more sensible
         makeNodeTree: function(key, value) {
             // expects to get root JSON object? or each object (or key/val pair) as it's parsed?
-            ///console.log('makeNodeTree STARTING...');
             if (value.nodeid) {
                 // it's a tree node!
 
@@ -162,10 +161,8 @@ function createArgus(spec) {
                 // convert to desired JS pseudo-class
                 return $.extend( new ArgusNode(), value );
             }
-            if (key === 'children') {
-                // TODO: pre-sort into desired order? create clusters?
-                ///console.log('@@@@@ found '+ value.length +' children!');
-            }
+
+            // more grooming (sorting, clustering, etc) happens later, in setupArgusNode()
             return value;
         },
 
@@ -303,8 +300,6 @@ function createArgus(spec) {
                     // sort first by number of descendants, so we always show the most
                     // populous clades
                     nodesWithoutPhyloSupport.sort(sortByDescendantCount);
-                    // populous clades
-                    //var nUnclusteredNodes = Math.min(0, )
                     var nUnclusteredNodes = argusObj.maxUnclusteredNodes - nWithHybrid - nWithPhylo;
                     var clusteredNodes = nodesWithoutPhyloSupport.slice( nUnclusteredNodes ),
                         firstClusteredNode = clusteredNodes[0],  // capture BEFORE re-sorting!
@@ -725,7 +720,7 @@ function createArgus(spec) {
                     nodeHighlight.attr(shapeAttributes);
                     break;
                 case 'OUT':
-                    // are we REALLY out side the lozenge, or just over the text?
+                    // are we REALLY outside the lozenge, or just over the text?
                       
                     // remap page-based mouse coordinates to the canvas
                     var localX = evt.pageX - $('#argusCanvasContainer').offset().left + $('#argusCanvasContainer').scrollLeft();
@@ -836,15 +831,13 @@ function createArgus(spec) {
             cluster.expanded = true;
             var parentNode = argusObj.getArgusNodeByID(parentNodeID);
             var dlPos = $.inArray(cluster, parentNode.displayList);
-            //parentNode.displayList.splice(dlPos, 1, cluster.nodes);
             // replace the minimized cluster with its nodes
             var listBeforeCluster = parentNode.displayList.slice(0,dlPos);
             var listAfterCluster = parentNode.displayList.slice(dlPos + 1);
             parentNode.displayList = listBeforeCluster.concat( cluster.nodes, listAfterCluster );
 
-            // redraw tree with changes
+            // redraw entire tree with changes
             argusObj.drawTree();
-            
         };
     };
     getBackClickHandler = function () {
@@ -1258,8 +1251,6 @@ function createArgus(spec) {
 
             }
         }
-
-        // TODO: do my instances exist? nudge them if yes, or create if no
     }
 
     argusObj.drawCluster = function (obj) {
@@ -1322,7 +1313,6 @@ function createArgus(spec) {
                 "stroke-dasharray": '.',
                 "fill": this.bgColor,
                 "r": 4,  // rounded corner (radius)
-             // "title": "TEST TITLE",
                 "cursor": "pointer"
             });
             box.id = (clusterBoxElementID);
@@ -1747,12 +1737,6 @@ function ArgusNode() { // constructor
     this.x = 0;
     this.y = 0;
 };
-ArgusNode.prototype.getCurrentDisplayHeight = function() {
-    var permaHeight = 3;
-    var displayHeight = permaHeight + (this.children ? (this.children.length * 5) : 0);
-    // TODO: query my currently *visible* contents, recursively
-    return displayHeight; 
-};
 ArgusNode.prototype.getClusters = function() {
     return argus.clusters[this.nodeid] || [ ];
 };
@@ -1811,16 +1795,6 @@ function ArgusCluster() { // constructor
     // X/Y coords (minimized cluster) will be set during drawNode
     this.x = 0;
     this.y = 0;
-    // TODO: add methods to gather clustered nodes? inner clusters?
-};
-ArgusCluster.prototype.getCurrentDisplayHeight = function() {
-    var minimizedHeight = 20; // TODO
-    if (this.expanded) {
-        // TODO: recursively query my currently *visible* contents (nodes and clusters)
-        return 100;
-    }
-    // else it's still minimized
-    return minimizedHeight;
 };
 ArgusCluster.prototype.updateDisplayBounds = function() {
     // update my layout properties and store results (for faster access)
