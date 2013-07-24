@@ -295,7 +295,6 @@ function toggleCommentsPanel( hideOrShow ) {
 }
 function togglePropertiesPanel( hideOrShow ) {
     // can be forced by passing hideOrShow ('HIDE'|'SHOW')
-    console.log('>>> togglePropertiesPanel('+ hideOrShow +')...');
     if ($('#viewer-collection').hasClass('active-properties') && (hideOrShow !== 'SHOW')) {
         ///console.log('HIDING properties');
         $('#viewer-collection').removeClass('active-properties');
