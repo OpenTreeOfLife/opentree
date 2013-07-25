@@ -289,15 +289,42 @@ div.viewer-frame {
 }
 #provenance-panel .taxon-image {
     float: right;
-    margin-top: -40px;
-    margin-right: 26px;
+    position: relative;
+    margin-top: -23px;
+    margin-right: 15px;
     width: 32px;
     height: 32px;
     background: url(/opentree/static/images/phylopic-vignette.png) center center no-repeat;
     padding: 2px;
 }
+#provenance-panel .ordered-sections {
+    margin-top: 0.5em;
+}
+#provenance-panel .properties-section {
+    border: 2px solid #bbb;
+    border-radius: 5px;
+    padding: 8px 6px 2px;
+    margin: 1.3em 0;
+    position: relative;
+}
+#provenance-panel .properties-section .section-title {
+    font-size: 110%;
+    font-weight: bold;
+    color: #999;
+    position: absolute;
+    top: -0.8em;
+    background-color: #eee;
+    padding: 0 0.25em;
+}
+#provenance-panel .properties-section.selected {
+    border: 2px solid #d33;
+}
+#provenance-panel .properties-section.selected .section-title {
+    color: #d33;
+}
+
 .panel-content dl {
-    margin: 6px 0 12px;
+    margin: 6px 0 12px 8px;
 }
 .panel-content dl dt {
     color: #777;
