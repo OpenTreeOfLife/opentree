@@ -1800,7 +1800,7 @@ ArgusCluster.prototype.updateDisplayBounds = function() {
     // update my layout properties and store results (for faster access)
     this.displayBounds = {
         topY: this.y - (argus.nodeHeight * 0.7),
-        bottomY: this.y + (argus.nodeHeight * 0.7)
+        bottomY: this.y + (argus.nodeHeight * 1.0)
     };
     return this.displayBounds;
 };

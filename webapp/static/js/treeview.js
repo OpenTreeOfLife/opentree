@@ -598,15 +598,17 @@ function showObjectProperties( objInfo, options ) {
     }
 
     // OR pass a reliable identifier?
-    var objType = 'node';  // 'node' | 'edge' | ?
+    var objType = '';  // 'node' | 'edge' | ?
     var objName = '';      // eg, 'Chordata'
     var objID = null; 
     var objSource = null;  // eg, 'ottol' (a domSource)
     var displayID = null;  // eg, 'ottol@2345' or 'otol.draft.22@4'
 
     var displayName = 'Unnamed object';
+    // build a series of named sections for complex objects, eg, a node + its edge(s)
+    var orderedSections = [ ];
+
     // build a series of label / value pairs to display in standard format
-    var displayedProperties = {};
     var metaMap = {};  // this should be replaced in synthetic-tree views
 
     // examine incoming data to figure out what it is, and what to show
@@ -629,7 +631,7 @@ function showObjectProperties( objInfo, options ) {
         // what's this?
         debugger;
     }
-   
+
     // read more data from the existing tree-view JSON?
     if (argus.treeData) {
 
@@ -664,18 +666,50 @@ function showObjectProperties( objInfo, options ) {
         }
         */
 
-        // try to spell out any available properties / provenance, based on type
-        var fullNode = null;
+        // Gather data for all displayed properties, storing each in the most
+        // appropriate section
         switch(objType) {
             case 'node':
+            case 'edge':
+                /* Try to spell out any available properties / provenance, based on
+                 * type. Note that we're going to conflate node and edge properties, 
+                 * since this is generally a 1:1 relationship, but:
+                 *   - clicking an edge trigger will highlight edge properties
+                 *   - if there are multiple edges, others will be dimmed
+                 */
+                var fullNode, parentNode, nodeSection, edgeSection;
+   
                 // try to fetch the node from treeData, using ID (preferred) or name
-                var fullNode = getTreeDataNode( function(node) {
-                    return (node.nodeid === objID); 
-                });
+                fullNode = argus.getArgusNodeByID( objID ); 
                 if (!fullNode) {
+                    console.log("WARNING: can't find node by ID, trying to match its name...");
                     fullNode = getTreeDataNode( function(node) {
                         return (node.name === objName); 
                     });
+                }
+                if (fullNode && fullNode.parentNodeID) {
+                    parentNode = argus.getArgusNodeByID( fullNode.parentNodeID );
+                }
+
+                // Show node and adjacent edge(s), highlighting whichever part
+                // was chosen by the user.
+                //
+                // TODO: show additional edge sections if there are multiple parents,
+                // and highlight (.selected) one if it was chosen
+                nodeSection = {
+                    name: 'Node properties',
+                    displayedProperties: {},
+                    selected: (objType === 'node')
+                };
+                orderedSections.push(nodeSection);
+
+                if (parentNode) {
+                    edgeSection = {
+                        name: 'Edge to parent <em>'+ parentNode.name +'</em>',
+                        displayedProperties: {},
+                        selected: (objType === 'edge')
+                    };
+                    orderedSections.push(edgeSection);
                 }
 
                 if (objSource === '?') {
@@ -714,21 +748,21 @@ function showObjectProperties( objInfo, options ) {
 
                      */
                     if (fullNode.taxSourceArray && fullNode.taxSourceArray.length > 0) {
-                        displayedProperties['Source taxonomy'] = [];
+                        nodeSection.displayedProperties['Source taxonomy'] = [];
                         for (var tsPos = 0; tsPos < fullNode.taxSourceArray.length; tsPos++) {
                             var taxSourceInfo = fullNode.taxSourceArray[tsPos];
-                            displayedProperties['Source taxonomy'].push({
+                            nodeSection.displayedProperties['Source taxonomy'].push({
                                 taxSource: taxSourceInfo.taxSource,
                                 taxSourceId: taxSourceInfo.foreignID
                             });
                         }
                     } else if (fullNode.taxSource) {
-                        displayedProperties['Source taxonomy'] = [];
+                        nodeSection.displayedProperties['Source taxonomy'] = [];
                         var taxSources = fullNode.taxSource.split(',');
                         for (var tsPos = 0; tsPos < taxSources.length; tsPos++) {
                             var taxSourceInfo = taxSources[tsPos].split(':');
                             if (taxSourceInfo.length === 2) {
-                                displayedProperties['Source taxonomy'].push({
+                                nodeSection.displayedProperties['Source taxonomy'].push({
                                     taxSource: taxSourceInfo[0],
                                     taxSourceId: taxSourceInfo[1]
                                 });
@@ -737,8 +771,8 @@ function showObjectProperties( objInfo, options ) {
                     }
                     /* hide OTT id (since it's not a generally recognized taxonomy)
                     if (fullNode.ottolId) {
-                        //displayedProperties['OTT ID'] = fullNode.ottolId;
-                        displayedProperties['Source taxonomy'].push(
+                        //nodeSection.displayedProperties['OTT ID'] = fullNode.ottolId;
+                        nodeSection.displayedProperties['Source taxonomy'].push(
                             {
                                 taxSource: "OTT",
                                 taxSourceId: fullNode.ottolId
@@ -749,44 +783,32 @@ function showObjectProperties( objInfo, options ) {
 
                     // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
                     if (typeof fullNode.taxRank !== 'undefined') {
-                        displayedProperties['Taxonomic rank'] = fullNode.taxRank;
+                        nodeSection.displayedProperties['Taxonomic rank'] = fullNode.taxRank;
                     }
 
                     // TODO: show ALL source trees (phylo-trees + IDs) for this node
 
                     objID = fullNode.sourceID ? fullNode.sourceID : fullNode.nodeid;
+
+                    // add basic edge properties (TODO: handle multiple edges!?)
+                    if (typeof fullNode.supportedBy !== 'undefined') {
+                        edgeSection.displayedProperties['Supported by'] = fullNode.supportedBy;
+                    }
                 } else {
                     console.log("NO full node found for this node!");
                 }
 
                 break;
-            case 'edge':
-                // look for 'supportedBy' on the associated (child) node
-                var associatedChild = getTreeDataNode( function(node) {
-                    return (node.nodeid === objID); 
-                });
-                if (associatedChild) {
-                    /* dump all node properties
-                    console.log("YES, found an associatedChild... ");
-                    for (var pp in associatedChild) {
-                        console.log(" child."+ pp +" = "+ associatedChild[pp]);
-                    }
-                    */
 
-                    if (typeof associatedChild.supportedBy !== 'undefined') {
-                        displayedProperties['Supported by'] = associatedChild.supportedBy;
-                    }
-                } else {
-                    console.log("NO full node found for this edge!");
-                }
-                break;
+            default:
+                // NOT CURRENTLY USED
+                console.log(">> WARNING - unexpected object type '"+ objType +"'!");
         }
     } else {
         console.log(">> WARNING - no treeData to examine?");
     }
 
     // start filling in the panel from the top
-    jQuery('#provenance-panel .provenance-intro').html( 'Properties for '+ objType );
 
     displayName = (objName) ? objName : ("Unnamed "+ objType);
     jQuery('#provenance-panel .provenance-title').html( displayName );
@@ -796,160 +818,173 @@ function showObjectProperties( objInfo, options ) {
      *  - multiple values (add multiple DD elements)
      *  - things requiring special lookup in metaMap
      */
-    var $details = $('#provenance-panel dl');
-    $details.html('');
+    var $sections = $('#provenance-panel .ordered-sections');
+    $sections.empty();  // clear any existing displayed sections
 
     // remove any old thumbnail image
     $('#provenance-panel .taxon-image').remove();
     // for nodes, load a thumbnail silhouette from PhyloPic
-    if (objType === 'node') {
-        $.getJSON(
-            'http://phylopic.org/api/a/name/search?callback=?',  // JSONP fetch URL
-            {   // GET data
-                text: objName,
-                options: 'icon illustrated' // uid? string?
-            },
-            function(data) {    // JSONP callback
-                if (data.result && (data.result.length > 0) && data.result[0].icon && data.result[0].icon.uid) {
-                    $('#provenance-panel .provenance-title').after(
-                        '<img class="taxon-image" src="http://phylopic.org/assets/images/submissions/'+ data.result[0].icon.uid 
-                        +'.icon.png" title="Click for image credits"/>'       // 'thumb.png' = 64px, 'icon.png' = 32px and blue
-                    );
-                    $('#provenance-panel .taxon-image').unbind('click').click(function() {
-                        window.open('http://phylopic.org/image/'+ data.result[0].icon.uid +'/', '_blank');
-                    });
+    switch (objType) {
+        case 'node':
+        case 'edge':
+            $.getJSON(
+                'http://phylopic.org/api/a/name/search?callback=?',  // JSONP fetch URL
+                {   // GET data
+                    text: objName,
+                    options: 'icon illustrated' // uid? string?
+                },
+                function(data) {    // JSONP callback
+                    if (data.result && (data.result.length > 0) && data.result[0].icon && data.result[0].icon.uid) {
+                        $('#provenance-panel .provenance-title').after(
+                            '<img class="taxon-image" src="http://phylopic.org/assets/images/submissions/'+ data.result[0].icon.uid 
+                            +'.icon.png" title="Click for image credits"/>'       // 'thumb.png' = 64px, 'icon.png' = 32px and blue
+                        );
+                        $('#provenance-panel .taxon-image').unbind('click').click(function() {
+                            window.open('http://phylopic.org/image/'+ data.result[0].icon.uid +'/', '_blank');
+                        });
+                    }
                 }
-            }
-        );
+            );
     }
 
-    var dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
-    for(dLabel in displayedProperties) {
-        switch(dLabel) {
-            case 'Source taxonomy':
-                var sourceList = displayedProperties[dLabel];
-                for (i = 0; i < sourceList.length; i++) {
-                    var sourceInfo = sourceList[i];
-                    // build boilerplate URLs for common taxonomies
-                    switch(sourceInfo.taxSource.trim().toUpperCase()) {
-                        case 'NCBI':
-                            displayVal = '<a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id='+ sourceInfo.taxSourceId +'" target="_blank">NCBI: '+ sourceInfo.taxSourceId +'</a>';
-                            break;
+    var sectionPos, sectionCount = orderedSections.length, 
+        aSection, dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
+    for (sectionPos = 0; sectionPos < sectionCount; sectionPos++) {
+        var aSection = orderedSections[sectionPos];
+        var useHighlight = (orderedSections.length > 1) && aSection.selected;
+        $newSection = $('<div class="properties-section '+ (useHighlight ? 'selected' : '') +'"><'+'/div>');
+        $newSection.append( '<div class="section-title">'+ aSection.name +'<'+'/div>');
+        $sections.append($newSection);
+        $details = $('<dl><'+'/dl>');
+        $newSection.append($details);
+        for(dLabel in aSection.displayedProperties) {
+            switch(dLabel) {
+                case 'Source taxonomy':
+                    var sourceList = aSection.displayedProperties[dLabel];
+                    for (i = 0; i < sourceList.length; i++) {
+                        var sourceInfo = sourceList[i];
+                        // build boilerplate URLs for common taxonomies
+                        switch(sourceInfo.taxSource.trim().toUpperCase()) {
+                            case 'NCBI':
+                                displayVal = '<a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id='+ sourceInfo.taxSourceId +'" target="_blank">NCBI: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
 
-                        case 'GBIF':
-                            displayVal = '<a href="http://data.gbif.org/species/'+ sourceInfo.taxSourceId +'/" target="_blank">GBIF: '+ sourceInfo.taxSourceId +'</a>';
-                            break;
+                            case 'GBIF':
+                                displayVal = '<a href="http://data.gbif.org/species/'+ sourceInfo.taxSourceId +'/" target="_blank">GBIF: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
 
-                        case 'OTT': 
-                            // TODO: browse the OTT taxonomy in *local* window? or in a new one?
-                            displayVal = '<a href="/opentree/argus/ottol@'+ sourceInfo.taxSourceId +'" target="_blank">OTT: '+ sourceInfo.taxSourceId +'</a>';
-                            break;
+                            case 'OTT': 
+                                // TODO: browse the OTT taxonomy in *local* window? or in a new one?
+                                displayVal = '<a href="/opentree/argus/ottol@'+ sourceInfo.taxSourceId +'" target="_blank">OTT: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
 
-                        default:
-                            displayVal = '<span style="color: #777;" title="No URL for this taxonomy">GBIF: '+ sourceInfo.taxSourceId +'</span>';
-                            break;
+                            default:
+                                displayVal = '<span style="color: #777;" title="No URL for this taxonomy">GBIF: '+ sourceInfo.taxSourceId +'</span>';
+                                break;
+                        }
+
+                        $details.append('<dt>'+ dLabel +'</dt>');
+                        $details.append('<dd>'+ displayVal +'</dd>');
                     }
+                    break;
 
-                    $details.append('<dt>'+ dLabel +'</dt>');
-                    $details.append('<dd>'+ displayVal +'</dd>');
-                }
-                break;
+                case 'Supported by':
+                default:
+                    // general approach
+                    var supportingStudyIDs = [ ];  // don't repeat studies under 'Supported by'
+                    dValues = String(aSection.displayedProperties[dLabel]).split(',');
+                    for (i = 0; i < dValues.length; i++) {
+                        rawVal = dValues[i];
+                        switch(rawVal) {
+                            // some values are simply displayed as-is, or slightly groomed
+                            case ('taxonomy'):
+                                displayVal = 'Taxonomy';
+                                break;
 
-            case 'Supported by':
-            default:
-                // general approach
-                var supportingStudyIDs = [ ];  // don't repeat studies under 'Supported by'
-                dValues = String(displayedProperties[dLabel]).split(',');
-                for (i = 0; i < dValues.length; i++) {
-                    rawVal = dValues[i];
-                    switch(rawVal) {
-                        // some values are simply displayed as-is, or slightly groomed
-                        case ('taxonomy'):
-                            displayVal = 'Taxonomy';
-                            break;
-
-                        default:
-                            // other values might have more information in the metaMap
-                            // EXAMPLE rawVal = 'WangEtAl2009-studyid-15' (a study)
-                            var studyID = rawVal.split('_')[0];
-                            if ($.inArray(studyID, supportingStudyIDs) !== -1) {
-                                // skip this study, we've already shown it
-                                continue;
-                            }
-                            supportingStudyIDs.push( studyID );
-                            if (metaMap) {
-                                moreInfo = metaMap[ rawVal ];
-                            }
-                            if (typeof moreInfo === 'object') {
-                                if (moreInfo['study']) {
-                                    var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pRefParts, pDOI, pURL, pID, pCurator;
-                                    // assemble and display study info
-                                    pRef = moreInfo.study['ot:studyPublicationReference'];
-                                    pID = moreInfo.study['ot:studyId'];
-                                    if (pID) {
-                                        displayVal = ('<a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">'+ pID +'</a>. ');
-                                    }
-                                    pCurator = moreInfo.study['ot:curatorName'];
-                                    // be careful, in case we have an incomplete or badly-formatted reference
-                                    if (pRef) {
-                                        // we'll show compact reference instead, with full ref a click away
-                                        pCompactYear = pRef.match(/(\d{4})/)[0];  
-                                            // capture the first valid year
-                                        pCompactPrimaryAuthor = pRef.split(pCompactYear)[0].split(',')[0];
-                                            // split on the year to get authors (before), and capture the first surname
-                                        pRefCompact = pCompactPrimaryAuthor +", "+ pCompactYear;    // eg, "Smith, 1999";
-
-                                        pRefParts = pRef.split('doi:');
-                                        if (pRefParts.length === 2) {
-                                            pDOI = pRefParts[1].trim();
-                                            // trim any final period
-                                            if (pDOI.slice(-1) === '.') {
-                                                pDOI = pDOI.slice(0, -1);
-                                            }
-                                            // convert any DOI into lookup URL
-                                            //  EXAMPLE: doi:10.1073/pnas.0813376106  =>  http://dx.doi.org/10.1073/pnas.0813376106
-                                            pURL = 'http://dx.doi.org/'+ pDOI;
-                                            displayVal += '<a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pRefCompact +'</a> <a href="#" class="full-ref-toggle">(full reference)</a><br/>';
-                                        } else {
-                                            displayVal += pRefCompact +' <a href="#" class="full-ref-toggle">(full reference)</a><br/>';
-                                        }
-                                        displayVal += '<div class="full-ref">'+ pRef +'</div>';
-                                    }
-                                    if (pCurator) {
-                                        displayVal += ('<div class="full-ref-curator">Curator: '+ pCurator +'</div>');
-                                    }
-
-                                } else {
-                                    console.log("! expected a study, but found mysterious stuff in metaMap:");
-                                    for (p2 in moreInfo) {
-                                        console.log("  "+ p2 +" = "+ moreInfo[p2]);
-                                    }
+                            default:
+                                // other values might have more information in the metaMap
+                                // EXAMPLE rawVal = 'WangEtAl2009-studyid-15' (a study)
+                                var studyID = rawVal.split('_')[0];
+                                if ($.inArray(studyID, supportingStudyIDs) !== -1) {
+                                    // skip this study, we've already shown it
+                                    continue;
                                 }
-                            } else {
-                                // when in doubt, just show the raw value
-                                displayVal = rawVal;
-                            }
+                                supportingStudyIDs.push( studyID );
+                                if (metaMap) {
+                                    moreInfo = metaMap[ rawVal ];
+                                }
+                                if (typeof moreInfo === 'object') {
+                                    if (moreInfo['study']) {
+                                        var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pRefParts, pDOI, pURL, pID, pCurator;
+                                        // assemble and display study info
+                                        pRef = moreInfo.study['ot:studyPublicationReference'];
+                                        pID = moreInfo.study['ot:studyId'];
+                                        if (pID) {
+                                            displayVal = ('<a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">'+ pID +'</a>. ');
+                                        }
+                                        pCurator = moreInfo.study['ot:curatorName'];
+                                        // be careful, in case we have an incomplete or badly-formatted reference
+                                        if (pRef) {
+                                            // we'll show compact reference instead, with full ref a click away
+                                            pCompactYear = pRef.match(/(\d{4})/)[0];  
+                                                // capture the first valid year
+                                            pCompactPrimaryAuthor = pRef.split(pCompactYear)[0].split(',')[0];
+                                                // split on the year to get authors (before), and capture the first surname
+                                            pRefCompact = pCompactPrimaryAuthor +", "+ pCompactYear;    // eg, "Smith, 1999";
+
+                                            pRefParts = pRef.split('doi:');
+                                            if (pRefParts.length === 2) {
+                                                pDOI = pRefParts[1].trim();
+                                                // trim any final period
+                                                if (pDOI.slice(-1) === '.') {
+                                                    pDOI = pDOI.slice(0, -1);
+                                                }
+                                                // convert any DOI into lookup URL
+                                                //  EXAMPLE: doi:10.1073/pnas.0813376106  =>  http://dx.doi.org/10.1073/pnas.0813376106
+                                                pURL = 'http://dx.doi.org/'+ pDOI;
+                                                displayVal += '<a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pRefCompact +'</a> <a href="#" class="full-ref-toggle">(full reference)</a><br/>';
+                                            } else {
+                                                displayVal += pRefCompact +' <a href="#" class="full-ref-toggle">(full reference)</a><br/>';
+                                            }
+                                            displayVal += '<div class="full-ref">'+ pRef +'</div>';
+                                        }
+                                        if (pCurator) {
+                                            displayVal += ('<div class="full-ref-curator">Curator: '+ pCurator +'</div>');
+                                        }
+
+                                    } else {
+                                        console.log("! expected a study, but found mysterious stuff in metaMap:");
+                                        for (p2 in moreInfo) {
+                                            console.log("  "+ p2 +" = "+ moreInfo[p2]);
+                                        }
+                                    }
+                                } else {
+                                    // when in doubt, just show the raw value
+                                    displayVal = rawVal;
+                                }
+                        }
+                        $details.append('<dt>'+ dLabel +'</dt>');
+                        $details.append('<dd>'+ displayVal +'</dd>');
                     }
-                    $details.append('<dt>'+ dLabel +'</dt>');
-                    $details.append('<dd>'+ displayVal +'</dd>');
-                }
-                $details.find('.full-ref-toggle').unbind('click').click(function() {
-                    var $itsReference = $(this).nextAll('.full-ref, .full-ref-curator');
-                    if ($itsReference.is(':visible')) {
-                        $itsReference.hide();
-                    } else {
-                        $itsReference.show();
-                    }
-                    return false;
-                });
-        
+                    $details.find('.full-ref-toggle').unbind('click').click(function() {
+                        var $itsReference = $(this).nextAll('.full-ref, .full-ref-curator');
+                        if ($itsReference.is(':visible')) {
+                            $itsReference.hide();
+                        } else {
+                            $itsReference.show();
+                        }
+                        return false;
+                    });
+            
+            }
         }
     }
 
     // offer subtree extraction, if available for this target
     // we can restrict the depth, if needed to avoid monster trees
     var subtreeDepthLimit = 4;
-    if (objType === 'node') {
+    if (nodeSection) {
+        $details = $sections.find('.properties-section:first dl');
         $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Extract subtree</a></dt>');
         $details.append('<dd id="extract-subtree-caveats">&nbsp;</dd>');
       
