@@ -245,6 +245,7 @@ $(document).ready(function() {
 
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
     $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
+    $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
     $('#taxon-search-form').unbind('submit').submit(function() {
         searchForMatchingTaxa();
         return false;
@@ -350,6 +351,7 @@ function setTaxaSearchFuse() {
 }
 
 var showingResultsForSearchText = '';
+var showingResultsForSearchContextName = '';
 function searchForMatchingTaxa() {
     // clear any pending search timeout and ID
     clearTimeout(searchTimeoutID);
@@ -357,10 +359,11 @@ function searchForMatchingTaxa() {
 
     var $input = $('input[name=taxon-search]');
     var searchText = $input.val().trim();
+    var searchContextName = $('select[name=taxon-search-context]').val();
 
     // is this unchanged from last time? no need to search again..
-    if (searchText == showingResultsForSearchText) {
-        ///console.log("TEXT UNCHANGED!");
+    if ((searchText == showingResultsForSearchText) && (searchContextName == showingResultsForSearchContextName)) {
+        ///console.log("Search text and context UNCHANGED!");
         return false; 
     }
 
@@ -375,7 +378,9 @@ function searchForMatchingTaxa() {
         return false;
     }
 
+    // stash these to use for later comparison (to avoid redundant searches)
     var queryText = searchText; // trimmed above
+    var queryContextName = searchContextName;
     
     // proper version queries treemachine API
     // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
@@ -383,19 +388,25 @@ function searchForMatchingTaxa() {
     $('#search-results').dropdown('toggle');
     snapViewerFrameToMainTitle();
 
+    var minWildcardLength = 4;
+    if (searchText.length >= minWildcardLength) {
+        searchText += (","+searchText+"*");
+    }
+
     $.ajax({
         url: doTNRSForNames_url,
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({ 
-            "queryString": (searchText+","+searchText+"*"),
-            "contextName": ''
+            "queryString": searchText,
+            "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
         contentType: 'application/json',
         success: function(data) {    // JSONP callback
             // stash the search-text used to generate these results
             showingResultsForSearchText = queryText;
+            showingResultsForSearchContextName = queryContextName;
 
             $('#search-results').html('');
             var maxResults = 10;
@@ -588,7 +599,7 @@ function URLToHistoryState( url ) {
 
 function clearPropertyInspector() {
     // clear all visible data (but not UI and re-usable elements) while new data is loading
-    $('#provenance-panel .provenance-intro, #provenance-panel .provenance-title, #provenance-panel dl').html('');
+    $('#provenance-panel .provenance-intro, #provenance-panel .provenance-title, #provenance-panel .ordered-sections').html('');
     $('#provenance-panel .taxon-image').remove();
 }
 function showObjectProperties( objInfo, options ) {
@@ -920,7 +931,7 @@ function showObjectProperties( objInfo, options ) {
                                         pRef = moreInfo.study['ot:studyPublicationReference'];
                                         pID = moreInfo.study['ot:studyId'];
                                         if (pID) {
-                                            displayVal = ('<a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">'+ pID +'</a>. ');
+                                            displayVal = ('<a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>. ');
                                         }
                                         pCurator = moreInfo.study['ot:curatorName'];
                                         // be careful, in case we have an incomplete or badly-formatted reference
@@ -931,9 +942,11 @@ function showObjectProperties( objInfo, options ) {
                                             pCompactPrimaryAuthor = pRef.split(pCompactYear)[0].split(',')[0];
                                                 // split on the year to get authors (before), and capture the first surname
                                             pRefCompact = pCompactPrimaryAuthor +", "+ pCompactYear;    // eg, "Smith, 1999";
+                                            displayVal += pRefCompact;
 
                                             pRefParts = pRef.split('doi:');
                                             if (pRefParts.length === 2) {
+                                                // reference includes POI
                                                 pDOI = pRefParts[1].trim();
                                                 // trim any final period
                                                 if (pDOI.slice(-1) === '.') {
@@ -942,10 +955,9 @@ function showObjectProperties( objInfo, options ) {
                                                 // convert any DOI into lookup URL
                                                 //  EXAMPLE: doi:10.1073/pnas.0813376106  =>  http://dx.doi.org/10.1073/pnas.0813376106
                                                 pURL = 'http://dx.doi.org/'+ pDOI;
-                                                displayVal += '<a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pRefCompact +'</a> <a href="#" class="full-ref-toggle">(full reference)</a><br/>';
-                                            } else {
-                                                displayVal += pRefCompact +' <a href="#" class="full-ref-toggle">(full reference)</a><br/>';
+                                                displayVal += '<a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pDOI +'</a><br/>';
                                             }
+                                            //displayVal += '<a href="#" class="full-ref-toggle">(compact reference)</a><br/>';
                                             displayVal += '<div class="full-ref">'+ pRef +'</div>';
                                         }
                                         if (pCurator) {

@@ -93,7 +93,7 @@
             <span class="icon-bar"></span>
         </a>
 
-        <a class="brand" href="/opentree" style="font-weight: 400; color: #bbb;">
+        <a class="brand" href="/opentree" style="font-weight: 400; color: #bbb; padding-right: 10px;">
             <img style="margin: -12px 4px -8px -2px;" src="/opentree/static/images/mini-otol-logo.png">
             Open Tree of Life
         </a>
@@ -116,11 +116,48 @@
               <li><a href="{{= URL('subtrees','index') }}">Subtrees</a></li>
               <li><a href="{{= URL('contact','index') }}">Contact</a></li>
             </ul>
-            <!-- TODO: add .navbar-search.pull-right -->
             <form id="taxon-search-form" class="navbar-search pull-right" autocomplete="off">
-                <input type="text" name="taxon-search" class="search-query" placeholder="Search for taxon" autocomplete="off">
+                <input type="text" name="taxon-search" class="search-query" placeholder="Search for taxon" autocomplete="off"
+                    style="width: 100px;">
                 <!-- <input type="submit" style="" name="taxon-search-go" value="Go" onclick="return false;"/> -->
                 <!-- then show dropdown when results are ready... -->
+                <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
+                <select style="margin-bottom: 0; width: auto;" name="taxon-search-context">
+                <!-- 
+                  NOTE that the displayed strings are literal values expected by the server. For a fresh list, try
+                  $ curl -X POST http://dev.opentreeoflife.org/taxomachine/ext/TNRS/graphdb/getContextsJSON
+                -->
+                    <option selected="selected">All life</option>
+                    <option>Fungi</option>
+                    <option>Bacteria</option>
+                    <option>Animals</option>
+                    <option>Birds</option>
+                    <option>Tetrapods</option>
+                    <option>Mammals</option>
+                    <option>Amphibians</option>
+                    <option>Vertebrates</option>
+                    <option>Arthropods</option>
+                    <option>Molluscs</option>
+                    <option>Platyhelminthes</option>
+                    <option>Annelids</option>
+                    <option>Cnidarians</option>
+                    <option>Arachnides</option>
+                    <option>Insects</option>
+                    <option>Land plants</option>
+                    <option>Hornworts</option>
+                    <option>Mosses</option>
+                    <option>Liverworts</option>
+                    <option>Vascular plants</option>
+                    <option>Club mosses</option>
+                    <option>Ferns</option>
+                    <option>Seed plants</option>
+                    <option>Flowering plants</option>
+                    <option>Magnoliids</option>
+                    <option>Monocots</option>
+                    <option>Eudicots</option>
+                    <option>Asterids</option>
+                    <option>Rosids</option>
+                </select>
                 <div class="">
                     <ul id="search-results" class="dropdown-menu">
                         ...
