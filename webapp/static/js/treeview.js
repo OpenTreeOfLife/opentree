@@ -245,6 +245,7 @@ $(document).ready(function() {
 
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
     $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
+    $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
     $('#taxon-search-form').unbind('submit').submit(function() {
         searchForMatchingTaxa();
         return false;
@@ -350,6 +351,7 @@ function setTaxaSearchFuse() {
 }
 
 var showingResultsForSearchText = '';
+var showingResultsForSearchContextName = '';
 function searchForMatchingTaxa() {
     // clear any pending search timeout and ID
     clearTimeout(searchTimeoutID);
@@ -357,10 +359,11 @@ function searchForMatchingTaxa() {
 
     var $input = $('input[name=taxon-search]');
     var searchText = $input.val().trim();
+    var searchContextName = $('select[name=taxon-search-context]').val();
 
     // is this unchanged from last time? no need to search again..
-    if (searchText == showingResultsForSearchText) {
-        ///console.log("TEXT UNCHANGED!");
+    if ((searchText == showingResultsForSearchText) && (searchContextName == showingResultsForSearchContextName)) {
+        ///console.log("Search text and context UNCHANGED!");
         return false; 
     }
 
@@ -375,7 +378,9 @@ function searchForMatchingTaxa() {
         return false;
     }
 
+    // stash these to use for later comparison (to avoid redundant searches)
     var queryText = searchText; // trimmed above
+    var queryContextName = searchContextName;
     
     // proper version queries treemachine API
     // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
@@ -383,19 +388,25 @@ function searchForMatchingTaxa() {
     $('#search-results').dropdown('toggle');
     snapViewerFrameToMainTitle();
 
+    var minWildcardLength = 4;
+    if (searchText.length >= minWildcardLength) {
+        searchText += (","+searchText+"*");
+    }
+
     $.ajax({
         url: doTNRSForNames_url,
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({ 
-            "queryString": (searchText+","+searchText+"*"),
-            "contextName": ''
+            "queryString": searchText,
+            "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
         contentType: 'application/json',
         success: function(data) {    // JSONP callback
             // stash the search-text used to generate these results
             showingResultsForSearchText = queryText;
+            showingResultsForSearchContextName = queryContextName;
 
             $('#search-results').html('');
             var maxResults = 10;
