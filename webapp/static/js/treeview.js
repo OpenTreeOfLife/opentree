@@ -359,13 +359,6 @@ function searchForMatchingTaxa() {
 
     var $input = $('input[name=taxon-search]');
     var searchText = $input.val().trim();
-    var searchContextName = $('select[name=taxon-search-context]').val();
-
-    // is this unchanged from last time? no need to search again..
-    if ((searchText == showingResultsForSearchText) && (searchContextName == showingResultsForSearchContextName)) {
-        ///console.log("Search text and context UNCHANGED!");
-        return false; 
-    }
 
     if (searchText.length === 0) {
         $('#search-results').html('');
@@ -378,21 +371,29 @@ function searchForMatchingTaxa() {
         return false;
     }
 
+    // groom trimmed text based on our search rules
+    var minWildcardLength = 4;
+    if (searchText.length >= minWildcardLength) {
+        searchText += (","+searchText+"*");
+    }
+    var searchContextName = $('select[name=taxon-search-context]').val();
+
+    // is this unchanged from last time? no need to search again..
+    if ((searchText == showingResultsForSearchText) && (searchContextName == showingResultsForSearchContextName)) {
+        ///console.log("Search text and context UNCHANGED!");
+        return false; 
+    }
+
     // stash these to use for later comparison (to avoid redundant searches)
     var queryText = searchText; // trimmed above
     var queryContextName = searchContextName;
-    
+
     // proper version queries treemachine API
     // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
     $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
     $('#search-results').dropdown('toggle');
     snapViewerFrameToMainTitle();
-
-    var minWildcardLength = 4;
-    if (searchText.length >= minWildcardLength) {
-        searchText += (","+searchText+"*");
-    }
-
+    
     $.ajax({
         url: doTNRSForNames_url,
         type: 'POST',
@@ -409,27 +410,48 @@ function searchForMatchingTaxa() {
             showingResultsForSearchContextName = queryContextName;
 
             $('#search-results').html('');
-            var maxResults = 10;
+            var maxResults = 100;
             var visibleResults = 0;
             if (data.results && (data.results.length > 0)) {         // && data.results.matches && (data.results.matches.length > 0)
-                for (var rpos = 0; rpos < data.results.length; rpos++) {
-                    if (visibleResults >= maxResults) {
-                        break;
-                    }
-                    var result = data.results[rpos];
-                    for (var mpos = 0; mpos < result.matches.length; mpos++) {
+                // match strings in the order submitted (start with exact matches, then wildcard)
+                var orderedMatchStrings = searchText.split(',');
+                var matchingNodeIDs = [ ];
+                /* TODO: cleanup after any possible commas entered manually? or encode these?
+                if (orderedMatchStrings.length > 2) {
+                    var lastItem
+                    orderedMatchStrings = 
+                }
+                */
+                for (var mspos = 0; mspos < orderedMatchStrings.length; mspos++) {
+                    // find results matching each string in turn; this is
+                    // generally exact matches first, then wildcards (if any)
+                    var matchingResult = $.grep(data.results, function(element, index) {
+                        return element['queried_name'] === orderedMatchStrings[mspos];
+                    })[0];
+                    // extract each match (if any) from this set of results and add to DOM
+                    for (var mpos = 0; mpos < matchingResult.matches.length; mpos++) {
                         if (visibleResults >= maxResults) {
                             break;
                         }
-                        var match = result.matches[mpos];
+                        var match = matchingResult.matches[mpos];
                         var matchingName = match.matchedName;
                         //var matchingID = match.matchedNodeId; // in the current synthetic tree?
                         var matchingSource = match.sourceName;
                         var matchingID = match.matchedOttolID;
-                        $('#search-results').append('<li><a title="match on \''+ match.searchString +'\'" href="'+ matchingID +'">'+ matchingName +'</a></li>');
-                        visibleResults++;
+                        if ($.inArray(matchingID, matchingNodeIDs) === -1) {
+                            // we're not showing this yet; add it now
+                            $('#search-results').append(
+                                '<li><a title="match on \''+ match.searchString +'\'" href="'+ matchingID +'">'+ matchingName +'</a></li>'
+                            );
+                            matchingNodeIDs.push(matchingID);
+                            visibleResults++;
+                        }
+                    }
+                    if (visibleResults >= maxResults) {
+                        break;
                     }
                 }
+                
                 $('#search-results a')
                     .click(function(e) {
                         // suppress normal dropdown logic and jump to link normally (TODO: Why is this needed?)
