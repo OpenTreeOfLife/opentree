@@ -116,6 +116,7 @@ def get_opentree_services_method_urls(request):
         'getDraftTreeForOttolID_url' : conf.get('method_urls', 'getDraftTreeForOttolID_url'),
         'getDraftTreeForNodeID_url' : conf.get('method_urls', 'getDraftTreeForNodeID_url'),
         'doTNRSForNames_url' : conf.get('method_urls', 'doTNRSForNames_url'),
+        'getContextsJSON_url' : conf.get('method_urls', 'getContextsJSON_url'),  # current contextName values for TNRS
         'getNodeIDForOttolID_url' : conf.get('method_urls', 'getNodeIDForOttolID_url'),
         'getJSONFromNode_url' : conf.get('method_urls', 'getJSONFromNode_url'),
     }
