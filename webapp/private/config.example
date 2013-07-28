@@ -29,6 +29,7 @@ getConflictTaxJsonAltRel_url = {taxomachine_domain}/ext/GetJsons/node/{nodeID}/g
 getDraftTreeForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeForOttolID  
 getDraftTreeForNodeID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeForNodeID
 doTNRSForNames_url = {taxomachine_domain}/ext/TNRS/graphdb/doTNRSForNames
+getContextsJSON_url = {taxomachine_domain}/ext/TNRS/graphdb/getContextsJSON
 getNodeIDForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getNodeIDForOttolID
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
 
