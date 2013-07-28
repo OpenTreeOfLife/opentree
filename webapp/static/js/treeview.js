@@ -817,7 +817,7 @@ function showObjectProperties( objInfo, options ) {
                         );
                     }
                     */
-
+                    
                     // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
                     if (typeof fullNode.taxRank !== 'undefined') {
                         nodeSection.displayedProperties['Taxonomic rank'] = fullNode.taxRank;
@@ -952,40 +952,62 @@ function showObjectProperties( objInfo, options ) {
                                 }
                                 if (typeof moreInfo === 'object') {
                                     if (moreInfo['study']) {
-                                        var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pRefParts, pDOI, pURL, pID, pCurator;
+                                        var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pDOI, pURL, pID, pCurator;
                                         // assemble and display study info
                                         pRef = moreInfo.study['ot:studyPublicationReference'];
-                                        pID = moreInfo.study['ot:studyId'];
-                                        if (pID) {
-                                            displayVal = ('<a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>. ');
-                                        }
-                                        pCurator = moreInfo.study['ot:curatorName'];
                                         // be careful, in case we have an incomplete or badly-formatted reference
                                         if (pRef) {
-                                            // we'll show compact reference instead, with full ref a click away
+                                            // we'll show full (vs. compact) reference for each study
+                                            displayVal = '<div class="full-ref">'+ pRef +'</div>';
+
+                                            /* compact ref logic, if needed later
                                             pCompactYear = pRef.match(/(\d{4})/)[0];  
                                                 // capture the first valid year
                                             pCompactPrimaryAuthor = pRef.split(pCompactYear)[0].split(',')[0];
                                                 // split on the year to get authors (before), and capture the first surname
                                             pRefCompact = pCompactPrimaryAuthor +", "+ pCompactYear;    // eg, "Smith, 1999";
                                             displayVal += pRefCompact;
+                                            */
+                                        }
 
-                                            pRefParts = pRef.split('doi:');
-                                            if (pRefParts.length === 2) {
-                                                // reference includes POI
-                                                pDOI = pRefParts[1].trim();
+                                        // look for separately stored DOI, or try to scrape it from full reference
+                                        var hasDOI = false;
+                                        pDOI = moreInfo.study['ot:studyPublication'];
+                                        if (pDOI) {
+                                            // validate as a proper URL for DOI lookup
+                                            pDOITestParts = pDOI.split('dx.doi.org/');
+                                            if (pDOITestParts.length === 2) {
+                                                pDOI = pDOITestParts[1].trim();
+                                                hasDOI = true;
+                                            }
+                                        }
+                                        if (!hasDOI) {
+                                            // ... or try scraping it from the full reference text
+                                            pDOITestParts = pRef.split('doi:');
+                                            if (pDOITestParts.length === 2) {
+                                                // reference includes DOI
+                                                pDOI = pDOITestParts[1].trim();
                                                 // trim any final period
                                                 if (pDOI.slice(-1) === '.') {
                                                     pDOI = pDOI.slice(0, -1);
                                                 }
-                                                // convert any DOI into lookup URL
-                                                //  EXAMPLE: doi:10.1073/pnas.0813376106  =>  http://dx.doi.org/10.1073/pnas.0813376106
-                                                pURL = 'http://dx.doi.org/'+ pDOI;
-                                                displayVal += '<a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pDOI +'</a><br/>';
+                                                hasDOI = true;
                                             }
-                                            //displayVal += '<a href="#" class="full-ref-toggle">(compact reference)</a><br/>';
-                                            displayVal += '<div class="full-ref">'+ pRef +'</div>';
                                         }
+                                        if (hasDOI) {
+                                            // convert any DOI into lookup URL
+                                            //  EXAMPLE: doi:10.1073/pnas.0813376106  =>  http://dx.doi.org/10.1073/pnas.0813376106
+                                            pURL = 'http://dx.doi.org/'+ pDOI;
+                                            displayVal += 'DOI: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pDOI +'</a><br/>';
+                                        }
+                                        //displayVal += '<a href="#" class="full-ref-toggle">(compact reference)</a><br/>';
+                                        
+                                        pID = moreInfo.study['ot:studyId'];
+                                        if (pID) {
+                                            displayVal += ('Phylografter: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
+                                        }
+
+                                        pCurator = moreInfo.study['ot:curatorName'];
                                         if (pCurator) {
                                             displayVal += ('<div class="full-ref-curator">Curator: '+ pCurator +'</div>');
                                         }
