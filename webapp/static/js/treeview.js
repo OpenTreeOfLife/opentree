@@ -428,6 +428,10 @@ function searchForMatchingTaxa() {
                     var matchingResult = $.grep(data.results, function(element, index) {
                         return element['queried_name'] === orderedMatchStrings[mspos];
                     })[0];
+                    if (!matchingResult) { 
+                        // no match on this term, try the next
+                        continue; 
+                    }
                     // extract each match (if any) from this set of results and add to DOM
                     for (var mpos = 0; mpos < matchingResult.matches.length; mpos++) {
                         if (visibleResults >= maxResults) {
