@@ -2,11 +2,17 @@
 import sys
 DEBUGGING = False
 def warn(m):
-    sys.stderr.write('WARNING: %s\n' % m)
+    try:
+        sys.stderr.write('WARNING: %s\n' % m)
+    except:
+        pass
 
 def debug(m):
     if DEBUGGING:
-        sys.stderr.write("DEBUG: %s\n" % m)
+        try:
+            sys.stderr.write("DEBUG: %s\n" % m)
+        except:
+            pass
 
 def _get_ottol_id_from_meta_dict(m):
     if m['@property'] == 'ot:ottolid':
