@@ -952,7 +952,7 @@ function showObjectProperties( objInfo, options ) {
                                 }
                                 if (typeof moreInfo === 'object') {
                                     if (moreInfo['study']) {
-                                        var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pDOI, pURL, pID, pCurator;
+                                        var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pURL, pID, pCurator;
                                         // assemble and display study info
                                         pRef = moreInfo.study['ot:studyPublicationReference'];
                                         // be careful, in case we have an incomplete or badly-formatted reference
@@ -970,41 +970,15 @@ function showObjectProperties( objInfo, options ) {
                                             */
                                         }
 
-                                        // look for separately stored DOI, or try to scrape it from full reference
-                                        var hasDOI = false;
-                                        pDOI = moreInfo.study['ot:studyPublication'];
-                                        if (pDOI) {
-                                            // validate as a proper URL for DOI lookup
-                                            pDOITestParts = pDOI.split('dx.doi.org/');
-                                            if (pDOITestParts.length === 2) {
-                                                pDOI = pDOITestParts[1].trim();
-                                                hasDOI = true;
-                                            }
+                                        // publication URL should always be present, non-empty, and a valid URL
+                                        pURL = moreInfo.study['ot:studyPublication'];
+                                        if (pURL) {
+                                            displayVal += 'Full publication: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pURL +'</a><br/>';
                                         }
-                                        if (!hasDOI) {
-                                            // ... or try scraping it from the full reference text
-                                            pDOITestParts = pRef.split('doi:');
-                                            if (pDOITestParts.length === 2) {
-                                                // reference includes DOI
-                                                pDOI = pDOITestParts[1].trim();
-                                                // trim any final period
-                                                if (pDOI.slice(-1) === '.') {
-                                                    pDOI = pDOI.slice(0, -1);
-                                                }
-                                                hasDOI = true;
-                                            }
-                                        }
-                                        if (hasDOI) {
-                                            // convert any DOI into lookup URL
-                                            //  EXAMPLE: doi:10.1073/pnas.0813376106  =>  http://dx.doi.org/10.1073/pnas.0813376106
-                                            pURL = 'http://dx.doi.org/'+ pDOI;
-                                            displayVal += 'DOI: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pDOI +'</a><br/>';
-                                        }
-                                        //displayVal += '<a href="#" class="full-ref-toggle">(compact reference)</a><br/>';
                                         
                                         pID = moreInfo.study['ot:studyId'];
                                         if (pID) {
-                                            displayVal += ('Phylografter: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
+                                            displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
                                         }
 
                                         pCurator = moreInfo.study['ot:curatorName'];
