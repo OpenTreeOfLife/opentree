@@ -124,6 +124,7 @@
                 <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
                 <select style="margin-bottom: 0; width: auto;" name="taxon-search-context">
                     {{ # generate our contextNames list based on newly fetched names
+                      try:
                        for context_name in taxonSearchContextNames:
                           if context_name == 'All life': }}
                            <option selected="selected">{{= context_name }}</option>
@@ -131,6 +132,8 @@
                             <option>{{= context_name }}</option>
                        {{ pass }}
                     {{ pass }}
+                    {{ except:
+                        pass}}
                 <!-- 
                 NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted 
                 by the server, ie, there's no distinction between visible and occult values.
