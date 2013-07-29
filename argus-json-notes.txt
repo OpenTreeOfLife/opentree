@@ -23,3 +23,7 @@ The tree is nested set of node description. Each node has the attributes:
 
 In addition the root is expected to have:
     "maxnodedepth" -> number of node levels that include their children.
+
+When this JSON is retrieved on the client, it is deserialized by a "reviver"
+function that converts some elements (those with the 'nodeid' attribute) from
+simple objects to instances of the ArgusNode pseudo-class.

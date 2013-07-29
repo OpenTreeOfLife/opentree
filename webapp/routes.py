@@ -49,6 +49,7 @@ routers = dict(
             'error',
             'download_subtree',
             'fetch_current_synthetic_tree_ids',
+            'fetch_current_TNRS_context_name',
             'user',     # implicit? inherited? and needed for login, logout, etc
         ],
         default_function='index',
