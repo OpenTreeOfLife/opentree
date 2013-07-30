@@ -898,25 +898,39 @@ function showObjectProperties( objInfo, options ) {
             switch(dLabel) {
                 case 'Source taxonomy':
                     var sourceList = aSection.displayedProperties[dLabel];
+                    debugger;
                     for (i = 0; i < sourceList.length; i++) {
                         var sourceInfo = sourceList[i];
                         // build boilerplate URLs for common taxonomies
                         switch(sourceInfo.taxSource.trim().toUpperCase()) {
                             case 'NCBI':
-                                displayVal = '<a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id='+ sourceInfo.taxSourceId +'" target="_blank">NCBI: '+ sourceInfo.taxSourceId +'</a>';
+                                displayVal = '<a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id='+ sourceInfo.taxSourceId +'" '
+                                              + 'title="NCBI Taxonomy" target="_blank">NCBI: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
                             case 'GBIF':
-                                displayVal = '<a href="http://data.gbif.org/species/'+ sourceInfo.taxSourceId +'/" target="_blank">GBIF: '+ sourceInfo.taxSourceId +'</a>';
+                                displayVal = '<a href="http://data.gbif.org/species/'+ sourceInfo.taxSourceId +'/" '
+                                              + 'title="GBIF Backbone Taxonomy" target="_blank">GBIF: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
+
+                            case 'IF':
+                                displayVal = '<a href="http://www.indexfungorum.org/names/NamesRecord.asp?RecordID='+ sourceInfo.taxSourceId +'/" '
+                                              + 'title="Index Fungorum" target="_blank">Index Fungorum: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
+
+                            case 'MB':
+                                displayVal = '<a href="http://www.mycobank.org/MB/'+ sourceInfo.taxSourceId +'/" '
+                                              + 'title="Mycobank" target="_blank">Mycobank: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
                             case 'OTT': 
                                 // TODO: browse the OTT taxonomy in *local* window? or in a new one?
-                                displayVal = '<a href="/opentree/argus/ottol@'+ sourceInfo.taxSourceId +'" target="_blank">OTT: '+ sourceInfo.taxSourceId +'</a>';
+                                displayVal = '<a href="/opentree/argus/ottol@'+ sourceInfo.taxSourceId +'" '
+                                              + 'title="OTT Taxonomy" target="_blank">OTT: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
                             default:
-                                displayVal = '<span style="color: #777;" title="No URL for this taxonomy">GBIF: '+ sourceInfo.taxSourceId +'</span>';
+                                displayVal = '<span style="color: #777;" title="No URL for this taxonomy">'+ sourceInfo.taxSource.trim() +': '+ sourceInfo.taxSourceId +'</span>';
                                 break;
                         }
 
