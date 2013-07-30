@@ -898,7 +898,6 @@ function showObjectProperties( objInfo, options ) {
             switch(dLabel) {
                 case 'Source taxonomy':
                     var sourceList = aSection.displayedProperties[dLabel];
-                    debugger;
                     for (i = 0; i < sourceList.length; i++) {
                         var sourceInfo = sourceList[i];
                         // build boilerplate URLs for common taxonomies
