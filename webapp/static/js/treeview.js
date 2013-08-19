@@ -171,6 +171,9 @@ $(document).ready(function() {
         forcedByURL: false
     }, urlState); // urlState should been defined in the main HTML view
 
+    // check for server-supplied input[type=hidden] widget with depth value
+    var currentMaxDepth = $('#currentMaxDepth').length === 1 ? $('#currentMaxDepth').val() : 4;     // TODO: reset to 2?
+
     // TODO: how should these defaults (borrowed from synthview/index.html) be set?
     argus = createArgus({
       "domSource": "ottol",
@@ -179,7 +182,7 @@ $(document).ready(function() {
       "taxomachineDomain": taxomachine_domain,
       "useTreemachine": true, // TODO: pivot based on domSource? treeID?
       "useSyntheticTree": true, // TODO: pivot based on domSource? treeID?
-      "maxDepth": 2 // TODO: reset to 3?
+      "maxDepth": currentMaxDepth
     });
 
     if ( History && History.enabled && pageUsesHistory ) {
