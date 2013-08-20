@@ -172,7 +172,7 @@ $(document).ready(function() {
     }, urlState); // urlState should been defined in the main HTML view
 
     // check for server-supplied input[type=hidden] widget with depth value
-    var currentMaxDepth = $('#currentMaxDepth').length === 1 ? $('#currentMaxDepth').val() : 4;     // TODO: reset to 2?
+    var currentMaxDepth = $('#currentMaxDepth').length === 1 ? $('#currentMaxDepth').val() : 3;     // TODO: reset to 2?
 
     // TODO: how should these defaults (borrowed from synthview/index.html) be set?
     argus = createArgus({
