@@ -1758,7 +1758,7 @@ ArgusNode.prototype.updateDisplayBounds = function() {
         var displayListCount = this.displayList.length;
         if (displayListCount > 0) {
             // this should override the minimal bounds above
-            topY = 10000;
+            topY = 1000000;  // an implausibly high number
             bottomY = 0;
             for (var i = 0; i < displayListCount; i++) {
                 var testChild = this.displayList[i];
