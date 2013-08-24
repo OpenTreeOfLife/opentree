@@ -81,7 +81,12 @@ public class Smasher {
 
 				if (argv[i].startsWith("--")) {
 
-					if (argv[i].equals("--ids")) {
+					if (argv[i].equals("--jscheme")) {
+						String[] jargs = {};
+						jscheme.REPL.main(jargs);
+					}
+
+					else if (argv[i].equals("--ids")) {
 						idsource = getSourceTaxonomy(argv[++i]);
 						union.assignIds(idsource);
 					}
@@ -401,7 +406,7 @@ class Taxonomy implements Iterable<Node> {
 						node.report("Multiple roots", root);
 					} else
 						root = node;
-					node.init(parts); // sets name
+					node.init(parts); // does setName
 				} catch (NumberFormatException e) {
 					this.header = parts; // Stow it just in case...
 					for (int i = 0; i < parts.length; ++i)
@@ -1332,7 +1337,7 @@ class Node {
 						"\\bunknown\\b|\\bunidentified\\b|\\bendophyte\\b|" +
 						"\\bendophytic\\b|\\bscgc\\b|\\blibraries\\b|\\bvirus\\b|" +
 						"\\bmycorrhizal samples\\b|\\bmetagenome\\b|" +
-						"\\bunclassified\\b|\\benvironmental\\b|\\buncultured\\b|\\bunclassified\\b");
+						"\\bunclassified\\b|\\benvironmental\\b|\\buncultured\\b|\\bUnclassified\\b");
 	
 
 	void setName(String name) {
@@ -1576,7 +1581,8 @@ class Node {
 					else if (child.mapped != null && mappedParent != child.mapped.parent)
 						sibs = false;
 
-				if (sibs &&
+				if (false &&	// See https://github.com/OpenTreeOfLife/opentree/issues/73
+					sibs &&
 					mappedParent != null &&
 					oldChildren.size() < mappedParent.children.size() &&
 					!(union.lookup(this.name) != null)) { // eschew homonyms

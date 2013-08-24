@@ -22,7 +22,7 @@ PREOTTOL=../../preottol
 # Working area (temporary, unversioned)
 WORK=tmp
 
-CP=-classpath .
+CP=-classpath .:jscheme.jar
 TEST_ARGS=Smasher $(TAXOMACHINE_ROOT)/example/nematoda.ncbi $(TAXOMACHINE_ROOT)/example/nematoda.gbif \
       --edits nem-edits/ \
       --ids $(WORK)/nem1.ott \
