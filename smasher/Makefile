@@ -4,7 +4,7 @@
 #  $< = first prerequisite
 #  $@ = file name of target
 
-all: ott21
+all: ott22
 
 # Root of local copy of taxomachine git repo
 TAXOMACHINE_ROOT=../../taxomachine
@@ -45,6 +45,19 @@ $(WORK)/nem2/log: Smasher.class $(WORK)/nem1.preottol $(WORK)/nem1.ott
 debug:
 	mkdir -p $(WORK)
 	jdb $(CP) $(TEST_ARGS)
+
+WHICH=ott2.2
+
+OTT22_ARGS=Smasher $(NCBI) $(GBIF) \
+      --edits edits/ \
+      --ids $(WORK)/ott2.1/taxonomy \
+      --aux $(PREOTTOL)/preottol-20121112.processed \
+      --out $(WORK)/ott2.2/
+
+ott22: $(WORK)/ott2.2/log
+$(WORK)/ott2.2/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.processed 
+	mkdir -p $(WORK)/ott2.2
+	java $(CP) -Xmx10g $(OTT22_ARGS)
 
 OTT21_ARGS=Smasher $(NCBI) $(GBIF) \
       --edits edits/ \
@@ -95,6 +108,7 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 # Formerly, where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
+ncbi: $(NCBI)
 $(NCBI): $(WORK)/ncbi/nodes.dmp process_ncbi_taxonomy_taxdump.py
 	python process_ncbi_taxonomy_taxdump.py F $(WORK)/ncbi \
             /dev/null $@.tmp
@@ -126,7 +140,6 @@ $(WORK)/gbif/taxon.txt:
              http://ecat-dev.gbif.org/repository/export/checklist1.zip
 	(cd $(WORK)/gbif && unzip checklist1.zip)
 
-WHICH=ott2.1
 TARDIR=/raid/www/roots/opentree/ott
 
 tarball: $(WORK)/$(WHICH)/log
