@@ -375,10 +375,6 @@ function searchForMatchingTaxa() {
     }
 
     // groom trimmed text based on our search rules
-    var minWildcardLength = 4;
-    if (searchText.length >= minWildcardLength) {
-        searchText += (","+searchText+"*");
-    }
     var searchContextName = $('select[name=taxon-search-context]').val();
 
     // is this unchanged from last time? no need to search again..
@@ -398,7 +394,7 @@ function searchForMatchingTaxa() {
     snapViewerFrameToMainTitle();
     
     $.ajax({
-        url: doTNRSForNames_url,
+        url: doTNRSForNames_url,  // NOTE that actual server-side method name might be quite different!
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({ 
@@ -415,47 +411,47 @@ function searchForMatchingTaxa() {
             $('#search-results').html('');
             var maxResults = 100;
             var visibleResults = 0;
-            if (data.results && (data.results.length > 0)) {         // && data.results.matches && (data.results.matches.length > 0)
-                // match strings in the order submitted (start with exact matches, then wildcard)
-                var orderedMatchStrings = searchText.split(',');
-                var matchingNodeIDs = [ ];
-                /* TODO: cleanup after any possible commas entered manually? or encode these?
-                if (orderedMatchStrings.length > 2) {
-                    var lastItem
-                    orderedMatchStrings = 
-                }
-                */
-                for (var mspos = 0; mspos < orderedMatchStrings.length; mspos++) {
-                    // find results matching each string in turn; this is
-                    // generally exact matches first, then wildcards (if any)
-                    var matchingResult = $.grep(data.results, function(element, index) {
-                        return element['queried_name'] === orderedMatchStrings[mspos];
-                    })[0];
-                    if (!matchingResult) { 
-                        // no match on this term, try the next
-                        continue; 
-                    }
-                    // extract each match (if any) from this set of results and add to DOM
-                    for (var mpos = 0; mpos < matchingResult.matches.length; mpos++) {
-                        if (visibleResults >= maxResults) {
-                            break;
-                        }
-                        var match = matchingResult.matches[mpos];
-                        var matchingName = match.matchedName;
-                        //var matchingID = match.matchedNodeId; // in the current synthetic tree?
-                        var matchingSource = match.sourceName;
-                        var matchingID = match.matchedOttolID;
-                        if ($.inArray(matchingID, matchingNodeIDs) === -1) {
-                            // we're not showing this yet; add it now
-                            $('#search-results').append(
-                                '<li><a title="match on \''+ match.searchString +'\'" href="'+ matchingID +'">'+ matchingName +'</a></li>'
-                            );
-                            matchingNodeIDs.push(matchingID);
-                            visibleResults++;
-                        }
-                    }
+            /*
+             * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
+             * with these properties:
+             *      ottId   // taxon ID in OTT taxonomic tree
+             *      nodeId  // ie, neo4j node ID
+             *      exact   // matches the entered text exactly? T/F
+             *      name    // taxon name
+             *      higher  // points to a genus or higher taxon? T/F
+             */
+            if (data && data.length && data.length > 0) {
+                // sort results to show exact match(es) first, then higher taxa, then others
+                // initial sort on higher taxa (will be overridden by exact matches)
+                data.sort(function(a,b) {
+                    if (a.higher === b.higher) return 0;
+                    if (a.higher) return -1;
+                    if (b.higher) return 1;
+                });
+                // final sort on exact matches (overrides higher taxa)
+                data.sort(function(a,b) {
+                    if (a.exact === b.exact) return 0;
+                    if (a.exact) return -1;
+                    if (b.exact) return 1;
+                });
+
+                // show all sorted results, up to our preset maximum
+                var matchingNodeIDs = [ ];  // ignore any duplicate results (point to the same taxon)
+                for (var mpos = 0; mpos < data.length; mpos++) {
                     if (visibleResults >= maxResults) {
                         break;
+                    }
+                    var match = data[mpos];
+                    var matchingName = match.name;
+                    // 
+                    var matchingID = match.ottId;
+                    if ($.inArray(matchingID, matchingNodeIDs) === -1) {
+                        // we're not showing this yet; add it now
+                        $('#search-results').append(
+                            '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
+                        );
+                        matchingNodeIDs.push(matchingID);
+                        visibleResults++;
                     }
                 }
                 
