@@ -361,7 +361,7 @@ function searchForMatchingTaxa() {
     searchTimeoutID = null;
 
     var $input = $('input[name=taxon-search]');
-    var searchText = $input.val().trim();
+    var searchText = $input.val().trimLeft();
 
     if (searchText.length === 0) {
         $('#search-results').html('');
@@ -1174,3 +1174,14 @@ if (false) {
     History.go(2); // this is *relative* to the current index (position) in history! ie, .go(-1) is the same at back()
 }
 
+
+/* provide string-trimming functions in older browsers */
+if (!String.prototype.trim) {
+    String.prototype.trim=function(){return this.replace(/^\s+|\s+$/g, '');};
+}
+if (!String.prototype.trimLeft) {
+    String.prototype.trimLeft=function(){return this.replace(/^\s+/,'');};
+}
+if (!String.prototype.trimRight) {
+    String.prototype.trimRight=function(){return this.replace(/\s+$/,'');};
+}
