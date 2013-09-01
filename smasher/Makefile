@@ -86,9 +86,9 @@ $(WORK)/ott2.0/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.
 	mkdir -p $(WORK)/ott2.0
 	java $(CP) -Xmx10g $(OTT20_ARGS)
 
-idem: $(WORK)/ott2.0.idem/log
-$(WORK)/ott2.0.idem/log: Smasher.class
-	mkdir -p $(WORK)/ott2.0.idem
+idem: $(WORK)/ott2.0-idem/log
+$(WORK)/ott2.0-idem/log: Smasher.class
+	mkdir -p $(WORK)/ott2.0-idem
 	java $(CP) -Xmx10g $(IDEM_ARGS)
 
 # little test

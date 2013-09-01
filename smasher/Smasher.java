@@ -856,7 +856,7 @@ class Taxonomy implements Iterable<Node> {
 		return out;
 	}
 
-}
+}  // End of class Taxonomy
 
 class SourceTaxonomy extends Taxonomy {
 
