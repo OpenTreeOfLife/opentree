@@ -577,23 +577,27 @@ class Taxonomy implements Iterable<Node> {
 			flagRecursively(node, "viral");
 		else if (unclassifiedRegex.matcher(node.name).find()) {// Rule 35
 			if (node.children != null) {
-				flagRecursively(node, "unclassified1");
+				flagRecursively(node, "unclassified_inherited");
 				elide(node);
 			} else
-				flag(node, "unclassified2");
+				flag(node, "unclassified_direct");				   // or "exact"
 		} else if (environmentalRegex.matcher(node.name).find()) {// Rule 2
 			if (node.children != null) {
-				flagRecursively(node, "unclassified3");
+				flagRecursively(node, "environmental");
 				elide(node);
 			} else
 				flag(node, "not_otu");
-		} else if (node.children != null && incertaeRegex.matcher(node.name).find()) {// Rule 4
+		} else if (incertaeRegex.matcher(node.name).find()) {// Rule 4
+			if (node.children != null) {
+				for (Node child : node.children)
+					flag(child, "incertae_sedis");
+				elide(node);
+			} else
+				flag(node, "incertae_sedis_direct");
+		}
+		if (node.children != null)
 			for (Node child : new ArrayList<Node>(node.children))
 				analyzeNodeNames(child);
-			for (Node child : node.children)
-				flag(child, "incertae_sedis");
-			elide(node);
-		}
 	}
 
 	void analyzeNodeRanks(Node node) {
@@ -614,23 +618,30 @@ class Taxonomy implements Iterable<Node> {
 			// Check for unequal ranks among children
 			// Figure out which rank is higher than the other...
 			int highrank = Integer.MAX_VALUE;
-			int highnorank = Integer.MAX_VALUE;
-			boolean mixed = false;
+			int lowrank = -1;
+			boolean norankp = false;
+
 			for (Node child : node.children) {
 				int rv = ranks.get(child.rank);
-				if (rv < highnorank) {
-					if (highnorank < Integer.MAX_VALUE)
-						mixed = true;
-					highnorank = rv;
-					// 0 = "no rank", acts as wildcard
-					if (rv > 0)
+				if (rv == 0)	// child.rank is "no rank"
+					norankp = true;
+				else {
+					if (rv < highrank)
 						highrank = rv;
+					if (rv > lowrank)
+						lowrank = rv;
 				}
 			}
+
+			// mixed is true iff there exist two children with different ranks
+			boolean mixed = false;
+			if (norankp)
+				mixed = (highrank < Integer.MAX_VALUE);
+			else 
+				mixed = (highrank != lowrank);
+
 			// highrank is the highest (lowest-numbered) rank among all the non-"no rank" children
-			// highnorank is the highest (lowest-numbered) rank among all the children
 			if (mixed) {
-				if (highrank == Integer.MAX_VALUE) highrank = highnorank; //shouldn't happen
 				// Two cases: subfamily/genus, phylum/genus
 				int x = uprank[highrank]; //subfamily->family, phylum->phylum
 				for (Node child : node.children) {
@@ -643,17 +654,19 @@ class Taxonomy implements Iterable<Node> {
 						if (y == x+1)
 							// 168940 of these, about 20% from GBIF
 							// e.g. Australopithecus
-							flag(child, "unplaced"); //genus not in subfamily
+							flag(child, "sibling_higher"); //genus not in subfamily
 						else
 							// 66309 of these, about half from GBIF
 							// e.g. Sirozythia
-							flagRecursively(child, "unclassified4");
+							flagRecursively(child, "major_rank_conflict");
 					} else
 						// 311695 e.g. Homininae
-						flag(child, "countme");
+						// Later: don't flag these
+						flag(child, "sibling_lower");
 				}
 			}
-		}
+		} else
+			flag(node, "barren");
 	}
 
 	// Splice the node out of the hierarchy, but leave it as a
