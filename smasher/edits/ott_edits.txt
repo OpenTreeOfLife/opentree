@@ -1,0 +1,4 @@
+# comment lines begin with '#"
+# include all columns for each line
+# separate columns with tabs, not spaces
+command name    rank    parent  context sourceInfo
