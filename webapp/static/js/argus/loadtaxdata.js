@@ -2,6 +2,10 @@
 //url = "http://localhost:7474/db/data/ext/TNRS/graphdb/doTNRSForNames";
 url = doTNRSForNames_url;   // passed from main HTML page template
 
+/*
+ * NOTE - This appears to be dead code, so I'm not adapting it to work with the autocompleteBoxQuery method
+ */
+
 function roundDecimal(value, precision) {
     var t = Math.pow(10,precision);
 	var result = Math.round(value*t)/t;

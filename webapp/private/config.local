@@ -19,7 +19,8 @@ getSourceTree_url = {treemachine_domain}/ext/GoLS/graphdb/getSourceTree
 getConflictTaxJsonAltRel_url = {taxomachine_domain}/ext/GetJsons/node/{nodeID}/getConflictTaxJsonAltRel
 getDraftTreeForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeForOttolID  
 getDraftTreeForNodeID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeForNodeID
-doTNRSForNames_url = {taxomachine_domain}/ext/TNRS/graphdb/doTNRSForNames
+doTNRSForNames_url = {taxomachine_domain}/ext/TNRS/graphdb/autocompleteBoxQuery
+    # NOTE that in this case, we switched to a new method name
 getContextsJSON_url = {taxomachine_domain}/ext/TNRS/graphdb/getContextsJSON
 getNodeIDForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getNodeIDForOttolID
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
