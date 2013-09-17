@@ -564,136 +564,210 @@ class Taxonomy implements Iterable<Node> {
 	*/
 
 	void analyze() {
-		analyzeNodeNames(this.root);
-		analyzeNodeRanks(this.root);
+		analyzeRankConflicts(this.root, 0);
+		analyze(this.root, 0);
 	}
 
-	void analyzeNodeNames(Node node) {
-		if (notOtuRegex.matcher(node.name).find()) // Rule 1
-			flagRecursively(node, "not_otu");
-		else if (hybridRegex.matcher(node.name).find()) // Rule 6
-			flagRecursively(node, "hybrid");
-		else if (viralRegex.matcher(node.name).find()) // Rule 7
-			flagRecursively(node, "viral");
-		else if (unclassifiedRegex.matcher(node.name).find()) {// Rule 35
-			if (node.children != null) {
-				flagRecursively(node, "unclassified_inherited");
-				elide(node);
-			} else
-				flag(node, "unclassified_direct");				   // or "exact"
-		} else if (environmentalRegex.matcher(node.name).find()) {// Rule 2
-			if (node.children != null) {
-				flagRecursively(node, "environmental");
-				elide(node);
-			} else
-				flag(node, "not_otu");
-		} else if (incertaeRegex.matcher(node.name).find()) {// Rule 4
-			if (node.children != null) {
-				for (Node child : node.children)
-					flag(child, "incertae_sedis");
-				elide(node);
-			} else
-				flag(node, "incertae_sedis_direct");
-		}
-		if (node.children != null)
-			for (Node child : new ArrayList<Node>(node.children))
-				analyzeNodeNames(child);
-	}
+	static final int NOT_OTU             =    1;
+	static final int HYBRID          	 =    2;
+	static final int VIRAL          	 =    4;
+	static final int UNCLASSIFIED 	  	 =    8;
+	static final int ENVIRONMENTAL 	  	 =   16;
+	static final int INCERTAE_SEDIS 	 =   32;
+	static final int SPECIFIC     	     =   64;
+	static final int BARREN      	     =  128;
+	static final int SIBLING_LOWER       =  512;
+	static final int SIBLING_HIGHER      = 1024;
+	static final int MAJOR_RANK_CONFLICT = 2048;
+	static final int TATTERED 			 = 4096;
+	static final int ANYSPECIES			 = 8192;
 
-	void analyzeNodeRanks(Node node) {
-		if (node.rank.equals("species")) {
-			if (node.children != null)
-				for (Node child : node.children)
-					flagRecursively(child, "infraspecific"); // ~= not_otu
-			node.barrenp = false;
-		}
-		else if (node.children != null) {
-			for (Node child : node.children) {
-				analyzeNodeRanks(child);
-				if (!child.barrenp) node.barrenp = false;
-			}
-			if (node.barrenp)
-				flag(node, "barren");
+	// Returns the node's rank (as an int).  In general the return
+	// value should be >= parentRank, but conceivably funny things
+	// could happen when combinings taxonomies.
 
-			// Check for unequal ranks among children
-			// Figure out which rank is higher than the other...
-			int highrank = Integer.MAX_VALUE;
+	static int analyzeRankConflicts(Node node, int parentRank) {
+		int myrank = (node.rank.equals("no rank") ? parentRank+1 : ranks.get(node.rank));
+		node.rankAsInt = myrank;
+
+		if (node.children != null) {
+
+			int highrank = Integer.MAX_VALUE; // highest rank among all descendents
 			int lowrank = -1;
-			boolean norankp = false;
 
+			// Preorder traversal
+			// In the process, calculate rank of highest child
 			for (Node child : node.children) {
-				int rv = ranks.get(child.rank);
-				if (rv == 0)	// child.rank is "no rank"
-					norankp = true;
-				else {
-					if (rv < highrank)
-						highrank = rv;
-					if (rv > lowrank)
-						lowrank = rv;
-				}
+				int rank = analyzeRankConflicts(child, myrank);
+				if (rank < highrank) highrank = rank;
+				if (rank > lowrank)  lowrank = rank;
 			}
 
-			// mixed is true iff there exist two children with different ranks
-			boolean mixed = false;
-			if (norankp)
-				mixed = (highrank < Integer.MAX_VALUE);
-			else 
-				mixed = (highrank != lowrank);
+			// assert myRank < highrank <= lowrank
+			if (myrank > highrank)
+				// The = case is weird too, there are about 200 of those
+				System.err.println("** Ranks out of order: " +
+								   node.id + " " + node.name + " " +
+								   myrank + ">" + highrank);
 
-			// highrank is the highest (lowest-numbered) rank among all the non-"no rank" children
-			if (mixed) {
-				// Two cases: subfamily/genus, phylum/genus
-				int x = uprank[highrank]; //subfamily->family, phylum->phylum
+			// highrank is the highest (lowest-numbered) rank among all the children.
+			// Similarly lowrank.  If they're different we have a 'rank conflict'
+			if (highrank != lowrank) {
+				// Two cases: subfamily/genus (minor), phylum/genus (major)
+				int x = highrank / 100; //int division, subfamily->family, phylum->phylum
 				for (Node child : node.children) {
-					// remember "no rank" => 0
-					int rv = ranks.get(child.rank);
+					int rv = child.rankAsInt;
 					// we know rv >= highrank
 					if (rv > highrank) {
-						int y = downrank[rv]; //genus->genus, subfamily->genus
+						int y = (rv + 99) / 100; //genus->genus, subfamily->genus
 						// we know y > x
 						if (y == x+1)
 							// 168940 of these, about 20% from GBIF
 							// e.g. Australopithecus
-							flag(child, "sibling_higher"); //genus not in subfamily
+							child.properFlags |= SIBLING_HIGHER; //e.g. genus not in subfamily
 						else
 							// 66309 of these, about half from GBIF
 							// e.g. Sirozythia
-							flagRecursively(child, "major_rank_conflict");
+							child.properFlags |= MAJOR_RANK_CONFLICT;
 					} else
 						// 311695 e.g. Homininae
-						// Later: don't flag these
-						flag(child, "sibling_lower");
+						// Probably best to drop them
+						child.properFlags |= SIBLING_LOWER;
 				}
 			}
-		} else
-			flag(node, "barren");
+		}
+		return myrank;
+	}
+
+	// Each Node has two parallel sets of flags: 
+	//   proper - applies particularly to this node
+	//   inherited - applies to this node because it applies to an ancestor
+	//     (where in some cases the ancestor may later be 'elided' so
+	//     not an ancestor any more)
+
+	static void analyze(Node node, int inheritedFlags) {
+		// Before
+		node.inheritedFlags |= inheritedFlags;
+		boolean anyspeciesp = false;     // Any descendant is a species?
+		boolean elidep = false;
+
+		// Prepare for recursive descent
+		if (notOtuRegex.matcher(node.name).find()) 
+			node.properFlags |= NOT_OTU;
+		if (hybridRegex.matcher(node.name).find()) 
+			node.properFlags |= HYBRID;
+		if (viralRegex.matcher(node.name).find()) 
+			node.properFlags |= VIRAL;
+
+		if (unclassifiedRegex.matcher(node.name).find()) {// Rule 3+5
+			node.properFlags |= UNCLASSIFIED;
+			elidep = true;
+		}
+		if (environmentalRegex.matcher(node.name).find()) {// Rule 3+5
+			node.properFlags |= ENVIRONMENTAL;
+			elidep = true;
+		}
+		if (incertae_sedisRegex.matcher(node.name).find()) {// Rule 3+5
+			node.properFlags |= INCERTAE_SEDIS;
+			elidep = true;
+		}
+		if (node.rank.equals("species")) {
+			node.properFlags |= SPECIFIC;
+			anyspeciesp = true;
+		}
+
+		int bequest = inheritedFlags | node.properFlags;		// What the children inherit
+
+		// Recursive descent
+		if (node.children != null)
+			for (Node child : new ArrayList<Node>(node.children)) {
+				analyze(child, bequest);
+				if ((child.properFlags & ANYSPECIES) != 0) anyspeciesp = true;
+			}
+
+		// After
+		if (anyspeciesp) node.properFlags |= ANYSPECIES;
+		if (elidep) elide(node);
 	}
 
 	// Splice the node out of the hierarchy, but leave it as a
 	// residual terminal non-OTU node
-	void elide(Node node) {
+	static void elide(Node node) {
 		if (node.children != null && node.parent != null)
 			for (Node child : new ArrayList<Node>(node.children))
 				child.changeParent(node.parent);
-		flag(node, "not_otu");
-		node.barrenp = true;
+		node.properFlags |= NOT_OTU;
 	}
 
-	// Ensure that the flags get propagated to all descendents
-	void flagRecursively(Node node, String flags) {
-		flag(node, flags);
-		if (node.children != null) {
-			for (Node child : node.children)
-				flagRecursively(child, flags);
+	static void printFlags(Node node, PrintStream out) {
+		boolean needComma = false;
+		if ((((node.properFlags | node.inheritedFlags) & NOT_OTU) != 0)
+			|| ((node.inheritedFlags & ENVIRONMENTAL) != 0)) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("not_otu");
 		}
-	}
+		if (((node.properFlags | node.inheritedFlags) & VIRAL) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("viral");
+		}
+		if (((node.properFlags | node.inheritedFlags) & HYBRID) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("hybrid");
+		}
 
-	// Typically there will only be one flag
-	void flag(Node node, String flags) {
-		if (node.flags == null)
-			node.flags = flags;
-		else
-			node.flags = node.flags + "," + flags;
+		if ((node.properFlags & INCERTAE_SEDIS) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("incertae_sedis_direct");
+		}
+		if ((node.inheritedFlags & INCERTAE_SEDIS) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("incertae_sedis_inherited");
+		}
+
+		if ((node.properFlags & UNCLASSIFIED) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("unclassified_direct");  // JAR prefers 'unclassified'
+		}
+		if ((node.inheritedFlags & UNCLASSIFIED) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("unclassified_inherited"); // JAR prefers 'unclassified_indirect' ?
+		}
+
+		if ((node.properFlags & ENVIRONMENTAL) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("environmental");
+		}
+
+		if ((node.properFlags & SIBLING_HIGHER) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("sibling_higher");
+		}
+		if ((node.properFlags & SIBLING_LOWER) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("sibling_lower");
+		}
+
+		if ((node.properFlags & MAJOR_RANK_CONFLICT) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("major_rank_conflict_direct");
+		}
+		if ((node.inheritedFlags & MAJOR_RANK_CONFLICT) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("major_rank_conflict_inherited");
+		}
+
+		if ((node.properFlags & TATTERED) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("tattered");
+		}
+
+		if ((node.inheritedFlags & SPECIFIC) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("infraspecific");
+		} else if ((node.properFlags & ANYSPECIES) == 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("barren");
+		}
 	}
 	
 	static Pattern notOtuRegex =
@@ -735,10 +809,9 @@ class Taxonomy implements Iterable<Node> {
 
 	static Pattern environmentalRegex = Pattern.compile("\\benvironmental\\b");
 
-	static Pattern incertaeRegex = Pattern.compile("\\bincertae sedis\\b");
+	static Pattern incertae_sedisRegex = Pattern.compile("\\bincertae sedis\\b");
 
 	static String[][] rankStrings = {
-		{"no rank"},
 		{"superkingdom",
 		 "kingdom",
 		 "subkingdom",
@@ -774,24 +847,10 @@ class Taxonomy implements Iterable<Node> {
 
 	static Map<String, Integer> ranks = new HashMap<String, Integer>();
 
-	static int[] downrank, uprank;
-
 	static void initRanks() {
-		int k = 0;
 		for (int i = 0; i < rankStrings.length; ++i) {
 			for (int j = 0; j < rankStrings[i].length; ++j)
-				ranks.put(rankStrings[i][j], k++);
-		}
-		downrank = new int[k];
-		uprank = new int[k];
-
-		k = 0;
-		for (int i = 0; i < rankStrings.length; ++i) {
-			for (int j = 0; j < rankStrings[i].length; ++j) {
-				uprank[k] = i;
-				downrank[k] = (j == 0 ? i : i+1);
-				++k;
-			}
+				ranks.put(rankStrings[i][j], (i+1)*100 + j*10);
 		}
 	}
 
@@ -1462,7 +1521,9 @@ class UnionTaxonomy extends Taxonomy {
 
 		// 6. flags
 		// (unode.mode == null ? "" : unode.mode)
-		out.print(((unode.flags != null) ? unode.flags : "") + "\t|\t");
+		Taxonomy.printFlags(unode, out);
+		out.print("\t|\t");
+		// was: out.print(((unode.flags != null) ? unode.flags : "") + "\t|\t");
 
 		out.println();
 
@@ -1550,6 +1611,7 @@ class UnionTaxonomy extends Taxonomy {
 		if (name == null) return;					 // Hmmph.
 		List<Answer> lg = this.logs.get(name);
 		if (lg == null) {
+			if (name.equals("environmental samples")) return; //3606 cohomonyms
 			lg = new ArrayList<Answer>(1);
 			this.logs.put(name, lg);
 		}
@@ -1581,8 +1643,7 @@ class Node {
 	Answer deprecationReason = null;
 	Answer blockedp = null;
 
-	String flags = null;
-	boolean barrenp = true;
+	int properFlags = 0, inheritedFlags = 0, rankAsInt = 0;
 
 	// State during merge operation
 	Node mapped = null;			// source node -> union node
@@ -1946,11 +2007,16 @@ class Node {
 				if (!retentivep) return null;
 				// All children are new, not previously matched.
 				// Compatible import of a subtree (new higher taxon).
-				// Might create a homonym, but if so, it should.
+				// Might create a homonym, but if it does, it should.
 				newnode = new Node(union);
 				for (Node augChild: newChildren)
 					newnode.addChild(augChild);
-				reason = "new/internal";
+
+				if (oldChildren.size() > 0) {
+					newnode.properFlags |= Taxonomy.TATTERED;
+					reason = "new/tattered";
+				} else
+					reason = "new/internal";
 				// should match old if possible ??
 				// fall through
 			}
