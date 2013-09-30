@@ -2,3 +2,8 @@
 # include all columns for each line
 # separate columns with tabs, not spaces
 command name    rank    parent  context sourceInfo
+move  Dermatobotrys saundersii  Species Scrophulariaceae  Lamiales  Angiosperm Phylogeny website
+synonym Hemichaena    Berendtia Lamiales  Angiosperm Phylogeny website
+move  Hemichaena  Genus Phrymaceae  Lamiales  Angiosperm Phylogeny website
+move  Triaenophora  Genus Orobanchaceae  Lamiales  Angiosperm Phylogeny website
+move  Rehmannia  Genus Orobanchaceae  Lamiales  Angiosperm Phylogeny website
