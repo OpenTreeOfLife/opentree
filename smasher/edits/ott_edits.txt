@@ -7,3 +7,7 @@ synonym Hemichaena    Berendtia Lamiales  Angiosperm Phylogeny website
 move  Hemichaena  Genus Phrymaceae  Lamiales  Angiosperm Phylogeny website
 move  Triaenophora  Genus Orobanchaceae  Lamiales  Angiosperm Phylogeny website
 move  Rehmannia  Genus Orobanchaceae  Lamiales  Angiosperm Phylogeny website
+move  Stemodiopsis  Genus Linderniaceae  Lamiales  Angiosperm Phylogeny website
+move  Micranthemum  Genus Linderniaceae  Lamiales  Angiosperm Phylogeny website
+synonym Psammetes    Bryodes  Lamiales  Tropicos; NCBI
+move  Psammetes  Genus Linderniaceae  Lamiales  Tropicos; NCBI
