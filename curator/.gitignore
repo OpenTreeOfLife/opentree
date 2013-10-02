@@ -1,0 +1,10 @@
+*.pyc
+cache/
+errors/
+sessions/
+databases/
+backup/
+tmp/
+*.class
+*~
+*.DS_Store
