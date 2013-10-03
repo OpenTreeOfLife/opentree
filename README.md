@@ -16,20 +16,24 @@ using pip](http://www.pip-installer.org/en/latest/cookbook.html#requirements-fil
 pip install -r requirements.txt
 </pre>
 
-The contents of the webapp subdirectory  are a web2py application.  Make a symbolic 
+The contents of the webapp subdirectory are a web2py application.  Make a symbolic 
 link called "opentree" in a web2py/applications directory to the webapp directory.
 You should be able to launch web2py and see the app running at http://127.0.0.1:8000/opentree/
+
+There is now a second web2py app for the curation tool, which will also need a
+symlink. This will be available at http://127.0.0.1:8000/curator/
 
 Briefly:
 
 1. Download and unpack the source code version of web2py from 
 http://www.web2py.com/examples/default/download MTH used version 2.4.2 of web2py
 
-2. Create the sym link
+2. Create the sym links for the main web app and the study curation tool.
 
 <pre>
 cd web2py/applications
 ln -s /full/path/to/opentree/webapp opentree
+ln -s /full/path/to/opentree/curator curator
 </pre>
 
 3. Customize web2py's site-wide routing behavior using "SITE.routes.py"
@@ -91,6 +95,9 @@ webapp/languages
 
 webapp/cache, webapp/databases, webapp/errors, webapp/sessions, webapp/uploads
 : directories used by web2py to store content associated with user's activities. Content here should not need to be committed to version control.
+
+curator/*
+: similar subdirectories to those in webapp/* above
 
 Acknowledgements
 ----------------
