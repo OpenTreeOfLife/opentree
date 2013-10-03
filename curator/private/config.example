@@ -1,0 +1,7 @@
+# Rename this file to "config" to make it active
+
+[apis]
+github_client_id = YOUR_CLIENT_ID_HERE
+github_client_secret = YOUR_CLIENT_SECRET_HERE
+# These values can be obtained by registering your instance as an
+# application with GitHub, at https://github.com/settings/applications/new

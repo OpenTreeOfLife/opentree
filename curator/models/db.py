@@ -1,4 +1,16 @@
 # -*- coding: utf-8 -*-
+import os
+from ConfigParser import SafeConfigParser
+
+conf = SafeConfigParser({})
+try:
+    if os.path.isfile("applications/%s/private/localconfig" % request.application):
+        conf.read("applications/%s/private/localconfig" % request.application)
+    else:
+        conf.read("applications/%s/private/config" % request.application)
+except:
+    pass  #@TEMP probably should log this event...
+
 
 #########################################################################
 ## This scaffolding model makes your app work on Google App Engine too
@@ -43,8 +55,80 @@ from gluon.tools import Auth, Crud, Service, PluginManager, prettydate
 auth = Auth(db)
 crud, service, plugins = Crud(db), Service(), PluginManager()
 
+
+
+#
+# OAuth2 for Github (API v3), based on the FB sample provided in gluon/contrib/login_methods/oauth20_account.py
+# 
+
+# You need to override the get_user method to match your auth provider needs.
+# define the auth_table before call to auth.define_tables()
+auth_table = db.define_table(
+   auth.settings.table_user_name,
+   Field('name', length=256, default=""),          # "Charles Darwin"
+   Field('email', length=128, default=""),         # "chuck@beagle.net"
+   Field('github_login', length=128, default=""),  # "chuckd"  [Github calls this 'login']
+   Field('github_url', length=256, default=""),    # "https://github.com/chuckd"  [Github calls this 'html_url']
+   Field('avatar_url', length=256, default=""),    # "http://0.gravatar.com/avatar/805...9689b.png"
+   #Field('password', 'password', length=256, readable=False, label='Password'),
+   Field('github_auth_token', length=128, default= "", writable=False, readable=False))
+   # is there another 'auth_token' field here already?
+
+auth_table.github_login.requires = IS_NOT_IN_DB(db, auth_table.github_login)
+auth.define_tables()
+
+# Looking for your app's client ID and secret in {app}/private/config
+try:
+    CLIENT_ID = conf.get("apis", "github_client_id")
+    CLIENT_SECRET = conf.get("apis", "github_client_secret")
+except: 
+    CLIENT_ID = "CLIENT_ID_NOT_FOUND"
+    CLIENT_SECRET = "CLIENT_SECRET_NOT_FOUND"
+
+AUTH_URL="http://..."
+TOKEN_URL="http://..."
+
+from gluon.contrib.login_methods.oauth20_account import OAuthAccount
+class GitHubAccount(OAuthAccount):
+    '''OAuth impl for GitHub'''
+    # http://developer.github.com/v3/oauth/
+    AUTH_URL="https://github.com/login/oauth/authorize"
+    TOKEN_URL="https://github.com/login/oauth/access_token"
+
+    def __init__(self):
+        OAuthAccount.__init__(self,
+                              client_id=CLIENT_ID,
+                              client_secret=CLIENT_SECRET,
+                              auth_url=self.AUTH_URL,
+                              token_url=self.TOKEN_URL,
+                              #redirect_uri=???
+                              #state=???            # random string, protects against cross-site request forgery
+                              scope='public_repo')  # or 'repo' if including private repos
+
+    def get_user(self):
+        '''Returns the user using the GitHub User API.'''
+        if not self.accessToken():
+            return None
+         
+        # TODO: fetch full user info, as if using
+        # curl -H "Authorization: token 1234567890" https://api.github.com/user
+        return dict(name = 'Pinco Pallino',
+                    github_login = 'pincopallino',
+                    avatar_url = 'http://0.gravatar.com/avatar/987654321.png',
+                    github_auth_token = '1234567890')
+
+
+auth.settings.actions_disabled=['register',
+   'change_password','request_reset_password','profile']
+auth.settings.login_form=GitHubAccount()
+
+# Any optional arg in the constructor will be passed asis to remote
+# server for requests. It can be used for the optional"scope" parameters for Facebook.
+
+
+
 ## create all tables needed by auth if not custom tables
-auth.define_tables(username=False, signature=False)
+#auth.define_tables(username=False, signature=False)
 
 ## configure email
 mail = auth.settings.mailer
