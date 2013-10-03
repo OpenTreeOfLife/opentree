@@ -81,9 +81,11 @@ auth.define_tables()
 try:
     CLIENT_ID = conf.get("apis", "github_client_id")
     CLIENT_SECRET = conf.get("apis", "github_client_secret")
+    REDIRECT_URI = conf.get("apis", "github_redirect_uri")
 except: 
     CLIENT_ID = "CLIENT_ID_NOT_FOUND"
     CLIENT_SECRET = "CLIENT_SECRET_NOT_FOUND"
+    REDIRECT_URI = "REDIRECT_URI_NOT_FOUND"
 
 AUTH_URL="http://..."
 TOKEN_URL="http://..."
@@ -101,9 +103,10 @@ class GitHubAccount(OAuthAccount):
                               client_secret=CLIENT_SECRET,
                               auth_url=self.AUTH_URL,
                               token_url=self.TOKEN_URL,
-                              #redirect_uri=???
-                              #state=???            # random string, protects against cross-site request forgery
-                              scope='public_repo')  # or 'repo' if including private repos
+                              redirect_uri=REDIRECT_URI,
+                              state=os.urandom(16).encode('hex'),
+                                  # random string to detect cross-site request forgery
+                              scope='public_repo')  # add ',repo' if including private repos
 
     def get_user(self):
         '''Returns the user using the GitHub User API.'''
