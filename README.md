@@ -28,6 +28,12 @@ Briefly:
 1. Download and unpack the source code version of web2py from 
 http://www.web2py.com/examples/default/download MTH used version 2.4.2 of web2py
 
+NOTE: This version of web2py includes basic support for OAuth 2.0, but it needs a minor patch to support for login via the GitHub API v3.
+(This is used for the curation UI, which uses GitHub for its datastore and attribution.) Replace this web2py file with a modified version in the same folder as this README:
+<pre>
+{web2py-2.4.4}/gluon/contrib/login_methods/oauth20_account.py
+</pre>
+
 2. Create the sym links for the main web app and the study curation tool.
 
 <pre>
