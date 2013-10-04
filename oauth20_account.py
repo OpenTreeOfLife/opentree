@@ -19,7 +19,6 @@ from urllib import urlencode
 from gluon import current, redirect, HTTP
 
 import json
-import sys
 
 class OAuthAccount(object):
     """
@@ -108,12 +107,8 @@ server for requests.  It can be used for the optional"scope" parameters for Face
             # avoid problems with proxied servers ('localhost:8000')
             uri = self.args['redirect_uri']
 
-            ##sys.stderr.write('> using PRESET self.redirect_uri: '+ uri +'\n')
-
         else:
             # no preset redirect_uri, try to construct one
-
-            ##sys.stderr.write('> using FOUND r.env.http_host: '+ r.env.http_host +'\n')
 
             http_host = r.env.http_host
 
@@ -130,7 +125,6 @@ server for requests.  It can be used for the optional"scope" parameters for Face
         if r.get_vars and not next:
             uri += '?' + urlencode(r.get_vars)
 
-        ##sys.stderr.write('> redirect_uri: '+ uri +'\n')
         return uri
 
 
@@ -166,7 +160,6 @@ server for requests.  It can be used for the optional"scope" parameters for Face
         code = current.request.vars.code
 
         if code:
-            sys.stderr.write('> current.session.redirect_uri: '+ current.session.redirect_uri +'\n')
             data = dict(client_id=self.client_id,
                         client_secret=self.client_secret,
                         redirect_uri=current.session.redirect_uri,
@@ -219,16 +212,6 @@ server for requests.  It can be used for the optional"scope" parameters for Face
                 try:
                     return current.session.token['access_token']
                 except Exception, e:
-                    sys.stderr.write('NO access_token in data!\n')
-                    sys.stderr.write('client_id: '+ self.client_id +'\n')
-                    sys.stderr.write('client_secret: '+ self.client_secret +'\n')
-                    sys.stderr.write('auth_url: '+ self.auth_url +'\n')
-                    sys.stderr.write('token_url: '+ self.token_url +'\n')
-
-                    ##sys.stderr.write(current.session.token)
-                    ##sys.stderr.write(current.session.token.keys())
-                    ##pprint(current.session.token)
-
                     raise Exception("No access_token found in data: %s %s" % (current.session.token, e))
                     return None
 
