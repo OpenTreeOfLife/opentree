@@ -126,6 +126,47 @@ class GitHubAccount(OAuthAccount):
 
         # adding session here, since older OAuthAccount doesn't seem to have it.. :-/
         self.session = globals()['session']
+     
+
+    def __redirect_uri(self, next=None):
+        """
+        Build the uri used by the authenticating server to redirect
+        the client back to the page originating the auth request.
+        Appends the _next action to the generated url so the flows continues.
+
+        NOTE that this is patched to use the redirect_uri originally passed in.
+        This prevents 'redirect_uri_mismatch' errors during GitHub authentication.
+        """
+        r = current.request
+
+        if 'redirect_uri' in self.args and self.args['redirect_uri']:
+            # avoid problems with proxied servers ('localhost:8000')
+            uri = self.args['redirect_uri']
+
+            ##sys.stderr.write('> using PRESET self.redirect_uri: '+ uri +'\n')
+
+        else:
+            # no preset redirect_uri, try to construct one
+
+            ##sys.stderr.write('> using FOUND r.env.http_host: '+ r.env.http_host +'\n')
+
+            http_host = r.env.http_host
+
+            if r.env.https == 'on':
+                url_scheme = 'https'
+            else:
+                url_scheme = r.env.wsgi_url_scheme
+            if next:
+                path_info = next
+            else:
+                path_info = r.env.path_info
+            uri = '%s://%s%s' % (url_scheme, http_host, path_info)
+
+        if r.get_vars and not next:
+            uri += '?' + urlencode(r.get_vars)
+
+        ##sys.stderr.write('> redirect_uri: '+ uri +'\n')
+        return uri
 
     def get_user(self):
         '''Returns the user using the GitHub User API.'''
