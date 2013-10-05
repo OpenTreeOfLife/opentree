@@ -1,0 +1,419 @@
+body {
+	background-color: white;
+}
+
+/* hard-coding of sizes based on the logo size, and
+   the desire to have a nice, big, fat search box.
+*/
+.header {
+	margin: 2px; 
+	height: 85px;
+}
+.headerlogo {
+	float: left;
+}
+.sidebar-search {	
+    background-color: #ffc;
+    border: 1px solid #dda;
+    border-radius: 4px;
+    margin: -3px;
+    padding: 8px 4px;
+}
+.sidebar-search form {	
+    margin: 0;
+}
+#search-results i {
+    display: block; 
+    margin: 8px 0 0;
+}
+.search-result {
+    margin: 6px 12px 0px;
+}
+.search-result strong {
+    display: block;
+}
+.search-result div {
+    font-size: 80%;
+    padding-left: 12px;
+}
+.search-result a {
+    color: #333;
+    text-decoration: none;
+}
+.search-result strong a {
+    color: #000;
+}
+
+.vizcontent {
+}
+
+#viz-header {
+    background-color: #fff;
+}
+
+#viewer-collection {
+    overflow: hidden;
+    border: 1px solid #999;
+    border-left: none;
+    border-right: none;
+    margin: 0px;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 90px;  /* allow for taller (wrapping) main title? */
+    bottom: 0px;  /* WAS 25px for minimal footer */
+}
+#viewer-collection,
+#comments-panel .panel-edges,
+#provenance-panel .panel-edges {
+    background-color: #eee;
+}
+.vizcontent div.viewer-frame, 
+#comments-panel,
+#provenance-panel {
+    float: left;
+    height: 100%;
+    transition: 0.4s all ease; /* TODO: test using 4s */
+}
+.vizcontent div.viewer-frame {
+	padding: 0px;
+    background-color: #f5f5ec; /* #faf5ee; */
+    overflow: auto;
+}
+
+/* set initial widths and margins for the sliding panels */
+#comments-panel,
+#provenance-panel {
+    width: 50%;
+}
+#comments-panel {
+    margin-left: -50%;
+    margin-right: 0;
+}
+div.viewer-frame {
+    width: 100%;  /* TODO: adapt to narrower window!? */
+    margin-left: 0;
+    margin-right: 0;
+}
+#provenance-panel {
+    /* margin-right: -200%; */
+    margin-left: 0;
+    margin-right: -50%;
+}
+
+/* slide these using marker classes on #viewer-collection */
+.active-comments #comments-panel {   
+    margin-left: 0; 
+    margin-right: 0; 
+}
+.active-comments div.viewer-frame {
+    width: 50%;  /* TODO: adapt to narrower window!? */
+    margin-left: 0;
+    margin-right: 0; 
+}
+.active-comments #provenance-panel {    
+    margin-left: 0;
+    margin-right: -100%; 
+}
+
+.active-properties #comments-panel {   
+    margin-left: -50%; 
+    margin-right: 0; 
+}
+.active-properties div.viewer-frame {
+    width: 50%;
+    margin-left: 0;
+    margin-right: 0; 
+}
+.active-properties #provenance-panel {    
+    margin-left: 0;
+    margin-right: 0; 
+}
+
+/* overrides for tablet-sized displays (matching Bootstrap media queries) */
+@media (min-width: 768px) and (max-width: 979px) {
+    /* actually, the rules above work well at tablet sizes as well */
+}
+
+/* overrides for phone-sized displays (matching Bootstrap media queries) */
+@media (max-width: 767px) {
+    /* set initial widths and margins for the sliding panels */
+    #comments-panel,
+    #provenance-panel {
+        width: 90%;
+    }
+    #comments-panel {
+        margin-left: -90%;
+        margin-right: 0;
+    }
+    div.viewer-frame {
+        width: 100%;
+        margin-left: 0%;
+        margin-right: 0;
+    }
+    #provenance-panel {
+        margin-left: 0%;
+        margin-right: -90%;
+    }
+
+    /* slide these using marker classes on #viewer-collection */
+    .active-comments #comments-panel {   
+        margin-left: 0; 
+        margin-right: 0;
+    }
+    .active-comments div.viewer-frame {
+        width: 100%;
+        margin-left: 0; 
+        margin-right: -90%;
+    }
+    .active-comments #provenance-panel {    
+        margin-left: 90%; 
+        margin-right: -180%;
+    }
+
+    .active-properties #comments-panel {   
+        margin-left: -90%; 
+        margin-right: 0;
+    }
+    .active-properties div.viewer-frame {
+        width: 100%;
+        margin-left: -90%;
+        margin-right: 0;
+    }
+    .active-properties #provenance-panel {    
+        margin-left: 0;
+        margin-right: 0;
+    }
+
+    h1#main-title {
+        font-size: 24px;
+    }
+}
+
+#comments-hide,
+#provenance-show,
+#provenance-hide {
+    text-decoration: none !important;
+    font-family: Helvetica, Arial, serif;
+    font-size: 0.9em;
+    line-height: 1.4em;
+    color: #555;
+}
+
+.zoom-widget a:hover {
+    text-decoration: none;
+}
+.widget-prompt {
+    font-size: 0.9em;
+    color: #bbb;
+    line-height: 1.5em;
+    cursor: pointer;
+}
+
+#argus-controls .comments-indicator,
+#argus-controls .properties-indicator {
+    width: 25%;
+}
+#argus-controls .comments-indicator {
+    text-align: left;
+}
+#argus-controls .properties-indicator {
+    text-align: right;
+}
+
+#argus-controls span:hover .widget-prompt {
+    color: #999;
+}
+#argus-controls span:hover .badge {
+    background-color: #333;
+}
+
+#provenance-show {
+    display: none;
+    float: right;
+    margin: -24px 22px -10px 0;
+    padding: 2px 10px 8px;
+    /* color: #555; */
+    text-decoration: none;
+    background-color: #eee;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    border-radius-bottom: 0;
+}
+
+#comments-panel {
+    overflow: auto;
+}
+#comments-panel .panel-content {
+    /* isolating any style that might affect widths above */
+    padding: 8px 12px;
+}
+
+#provenance-panel {
+    /*
+    overflow: visible;
+    */
+    overflow: auto;
+}
+#comments-panel .panel-edges {
+    height: 100%;
+    border-right: 1px solid #999;
+}
+#provenance-panel .panel-edges {
+    height: 100%;
+    border-left: 1px solid #999;
+}
+#provenance-panel .panel-content {
+    /* isolating any style that might affect widths above */
+    /* padding: 9px 0 0 12px; */
+    padding: 8px 12px;
+}
+.panel-content {
+}
+.panel-controls {
+    float: right;
+    margin: -6px 0px 2px 2px;
+    font-size: 20px;
+}
+.provenance-intro {
+    font-size: 110%;
+    color: #777;
+}
+.provenance-title {
+    font-family: Helvetica, Arial, serif;
+    font-size: 130%;
+    color: #000;
+}
+#provenance-panel .provenance-title {
+    margin-right: 65px; /* leave room for an PhyloPic image */
+}
+#provenance-panel .taxon-image {
+    float: right;
+    position: relative;
+    margin-top: -23px;
+    margin-right: 15px;
+    width: 32px;
+    height: 32px;
+    background: url(/opentree/static/images/phylopic-vignette.png) center center no-repeat;
+    padding: 2px;
+}
+#provenance-panel .ordered-sections {
+    margin-top: 0.5em;
+}
+#provenance-panel .properties-section {
+    border: 2px solid #bbb;
+    border-radius: 5px;
+    padding: 8px 6px 2px;
+    margin: 1.3em 0;
+    position: relative;
+}
+#provenance-panel .properties-section .section-title {
+    font-size: 110%;
+    font-weight: bold;
+    color: #999;
+    position: absolute;
+    top: -0.8em;
+    background-color: #eee;
+    padding: 0 0.25em;
+}
+#provenance-panel .properties-section.selected {
+    border: 2px solid #d33;
+}
+#provenance-panel .properties-section.selected .section-title {
+    color: #d33;
+}
+
+.panel-content dl {
+    margin: 6px 0 12px 8px;
+}
+.panel-content dl dt {
+    color: #777;
+}
+.panel-content dl dd {
+    margin-left: 12px;
+    color: #000;
+    margin-bottom: 4px;
+}
+a.full-ref-toggle {
+    color: #999 !important;
+    text-decoration: none;
+}
+.full-ref {
+    background-color: #fff;
+    border: 1px solid #eee;
+    margin: 0px 12px 0px -6px;
+    padding: 4px 6px;
+}
+.full-ref-curator {
+    color: #777;
+    display: none;
+}
+
+p#tree-description {
+    color: #aaa;
+    font-size: 135%;
+    padding: 0.8em 0 26px 0;
+    font-weight: bold;
+    margin: 0;
+}
+h1#main-title {
+    margin-bottom: 0;
+    padding: 2px 0 26px;
+    line-height: 1em;
+}
+h1#main-title .comments-indicator,
+h1#main-title .properties-indicator {
+    vertical-align: middle;
+}
+
+#comment-header {
+    margin: 0;
+    padding: 10px 0 0.5em;
+}
+#comment-header i {
+    color: #999;
+    padding: 0.75em 0 0.5em;
+}
+div#links-to-local-comments {
+    margin: -6px 0 12px;
+}
+div#r0 {
+    margin: 0 0 12px;
+}
+
+#node-provenance-panel {
+    margin: 8px 0 0;
+    background-color: #eee;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 9px 12px;
+}
+#node-provenance-panel h3 {
+    margin: 0 0 0.5em;
+}
+
+/* center the big spinner inside the argus viewport */
+#argusCanvasContainer #spinner {
+    margin: 100px 0 0 200px;
+}
+
+#footer {
+    font-size: 80%;
+    border-top: 1px solid #ccc;
+    overflow: hidden;
+    padding: 0.5em 0 0.25em;
+}
+#footer  .pull-left{
+    float: left;
+}
+#footer  .pull-right{
+    float: right;
+}
+#screen-size-indicator {
+    position: absolute; 
+    left: 0; 
+    top: 0; 
+    padding: 1px 6px;
+    background: red; 
+    color: white;
+}
