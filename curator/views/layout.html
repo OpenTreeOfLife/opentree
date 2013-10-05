@@ -79,8 +79,8 @@
       // add marker classes to final nav link (for logged-in user)
       var $authNavbar = jQuery('ul#auth-navbar');
       var $authMenuLink = $authNavbar.find('ul.dropdown-menu li:has(a)');
-      if ($authMenuLink.length === 1) {
-        // there's just one menu item (probably a Login link); make this a clickable top-level nav item
+      if (($authMenuLink.length === 1) && ($authMenuLink.text().indexOf('Login') !== -1)) {
+        // there's just one menu item, the Login link; make this a clickable top-level nav item
         $authNavbar.empty().append( $authMenuLink );
       } else {
         // it has multiple menu items; make it a proper (Bootstrap) dropdown menu
