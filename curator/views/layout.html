@@ -1,167 +1,293 @@
-<!--[if HTML5]><![endif]-->
 <!DOCTYPE html>
-<!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
-<!--[if lt IE 7]><html class="ie ie6 ie-lte9 ie-lte8 ie-lte7 no-js" lang="{{=T.accepted_language or 'en'}}"> <![endif]-->
-<!--[if IE 7]><html class="ie ie7 ie-lte9 ie-lte8 ie-lte7 no-js" lang="{{=T.accepted_language or 'en'}}"> <![endif]-->
-<!--[if IE 8]><html class="ie ie8 ie-lte9 ie-lte8 no-js" lang="{{=T.accepted_language or 'en'}}"> <![endif]-->
-<!--[if IE 9]><html class="ie9 ie-lte9 no-js" lang="{{=T.accepted_language or 'en'}}"> <![endif]-->
-<!--[if (gt IE 9)|!(IE)]><!--> <html class="no-js" lang="{{=T.accepted_language or 'en'}}"> <!--<![endif]-->
-<head>
-<title>{{=response.title or request.application}}</title>
-  <!--[if !HTML5]>
-      <meta http-equiv="X-UA-Compatible" content="IE=edge{{=not request.is_local and ',chrome=1' or ''}}">
-  <![endif]-->
-  <!-- www.phpied.com/conditional-comments-block-downloads/ -->
-  <!-- Always force latest IE rendering engine
-       (even in intranet) & Chrome Frame
-       Remove this if you use the .htaccess -->
-	   
-  <meta charset="utf-8" />
+<html lang="{{=T.accepted_language or 'en'}}" class="no-js"><!-- no-js need it for modernzr -->
+  <head>
+    
+    <meta charset="utf-8" />	  	
+    <!-- www.phpied.com/conditional-comments-block-downloads/ -->
+    <!--[if IE]><![endif]-->    
+    <!-- Always force latest IE rendering engine 
+	 (even in intranet) & Chrome Frame 
+	 Remove this if you use the .htaccess -->
+    <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+    
+    <title>{{=response.title or request.application}}</title>
+    {{response.files.append(URL('static','css/bootstrap.css'))}}
+    <style type="text/css">
+        /* TODO: add page-specific styles here */
+    </style>
+    {{response.files.append(URL('static','css/bootstrap-responsive.css'))}}
 
-  <!-- http://dev.w3.org/html5/markup/meta.name.html -->
-  <meta name="application-name" content="{{=request.application}}" />
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      {{response.files.append(URL('static','js/html5shiv.js'))}}
+    <![endif]-->
 
-  <!-- Speaking of Google, don't forget to set your site up:
-       http://google.com/webmasters -->
-  <meta name="google-site-verification" content="" />
+    
+    <!-- http://dev.w3.org/html5/markup/meta.name.html -->
+    <meta name="application-name" content="{{=request.application}}" />	
+    
+    <!-- Speaking of Google, don't forget to set your site up: 
+	 http://google.com/webmasters -->
+    <meta name="google-site-verification" content="" />
+    
+    <!--  Mobile Viewport Fix
+	  j.mp/mobileviewport & davidbcalhoun.com/2010/viewport-metatag 
+	  device-width: Occupy full width of the screen in its current orientation
+	  initial-scale = 1.0 retains dimensions instead of zooming out if page height > device height
+	  maximum-scale = 1.0 retains dimensions instead of zooming in if page width < device width
+      -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+    
+    <!-- All JavaScript at the bottom, except for Modernizr which enables HTML5 elements & feature detects -->
+    <script src="{{=URL('static','js/modernizr.custom.js')}}"></script>
+    
+    <script type='text/javascript'>var applicationName = '{{=request.application}}';</script>
+    
+    {{#------  require CSS and JS files for this page (read info in base.css) ------}}
+      {{#response.files.append(URL('static','css/skeleton.css'))}}
+      {{#response.files.append(URL('static','css/web2py.css'))}}
+      {{#response.files.append(URL('static','css/base.css'))}}
+      {{#response.files.append(URL('static','css/superfish.css'))}}
+    {{response.files.append(URL('static','css/default.css'))}}
+      {{#response.files.append(URL('static','js/superfish.js'))}}
+      {{#response.files.append(URL('static','js/uploader/fileuploader.css'))}}
+      {{#response.files.append(URL('static','jquery-ui.min.js'))}}
+      {{#response.files.append(URL('static','jquery.hoverIntent.js'))}}
+      {{#response.files.append(URL('static','jquery-ui-1.8.5.custom.css'))}}
 
-  <!--  Mobile Viewport Fix
-        j.mp/mobileviewport & davidbcalhoun.com/2010/viewport-metatag
-        device-width: Occupy full width of the screen in its current orientation
-        initial-scale = 1.0 retains dimensions instead of zooming out if page height > device height
-        user-scalable = yes allows the user to zoom in -->
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <!-- js for Bootstrap components -->
+    {{response.files.append(URL('static','js/bootstrap-transition.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-alert.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-modal.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-dropdown.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-scrollspy.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-tab.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-tooltip.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-popover.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-button.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-collapse.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-carousel.js'))}}
+    {{response.files.append(URL('static','js/bootstrap-typeahead.js'))}}
 
-  <link rel="shortcut icon" href="{{=URL('static','images/favicon.ico')}}" type="image/x-icon">
-  <link rel="apple-touch-icon" href="{{=URL('static','images/favicon.png')}}">
+    {{#------ include web2py specific js code (jquery, calendar, form stuff) ------}}
+    {{include 'web2py_ajax.html'}}
 
-  <!-- All JavaScript at the bottom, except for Modernizr which enables
-       HTML5 elements & feature detects -->
-  <script src="{{=URL('static','js/modernizr.custom.js')}}"></script>
+  <script type="text/javascript">
+  jQuery(document).ready(function(){ 
+    {{ if 'auth' in globals(): }}
 
-  <!-- include stylesheets -->
-  {{  
-  response.files.append(URL('static','css/web2py.css'))
-  response.files.append(URL('static','css/bootstrap.min.css'))
-  response.files.append(URL('static','css/bootstrap-responsive.min.css'))
-  response.files.append(URL('static','css/web2py_bootstrap.css'))
-  }}
+      // add marker classes to final nav link (for logged-in user)
+      var $authNavbar = jQuery('ul#auth-navbar');
+      var $authMenuLink = $authNavbar.find('ul.dropdown-menu li:has(a)');
+      if ($authMenuLink.length === 1) {
+        // there's just one menu item (probably a Login link); make this a clickable top-level nav item
+        $authNavbar.empty().append( $authMenuLink );
+      } else {
+        // it has multiple menu items; make it a proper (Bootstrap) dropdown menu
+        jQuery('ul#auth-navbar > li:last-child > a').attr({
+            'class':'dropdown-toggle',
+            'data-toggle': 'dropdown'
+        });
+      }
+      
+      // tweak validation errors to show proper Bootstrap classes
+      jQuery('div.error').addClass('alert').addClass('alert-error');
 
-  {{include 'web2py_ajax.html'}}
+    {{ pass }}
 
-  {{
-  # using sidebars need to know what sidebar you want to use
-  left_sidebar_enabled = globals().get('left_sidebar_enabled',False)
-  right_sidebar_enabled = globals().get('right_sidebar_enabled',False)
-  middle_columns = {0:'span12',1:'span9',2:'span6'}[
-    (left_sidebar_enabled and 1 or 0)+(right_sidebar_enabled and 1 or 0)]
-  }}
+  });
+  </script>
 
-  <!-- uncomment here to load jquery-ui
-       <link rel="stylesheet" href="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/themes/base/jquery-ui.css" type="text/css" media="all" />
-       <script src="http://ajax.googleapis.com/ajax/libs/jqueryui/1.8.16/jquery-ui.min.js" type="text/javascript"></script>
-       uncomment to load jquery-ui //-->
-  <noscript><link href="{{=URL('static', 'css/web2py_bootstrap_nojs.css')}}" rel="stylesheet" type="text/css" /></noscript>
-  {{block head}}{{end}}
-</head>
+    {{ # TODO: consider the simpler block used in 'opentree/webapp'
+    #using sidebars need to know what sidebar you want to use
+    #prior of using it, because of static width size of content, you can use
+    #left_sidebar, right_sidebar, both or none (False left and right)    
+    left_sidebar_enabled = globals().get('left_sidebar_enabled',False)
+    right_sidebar_enabled = globals().get('right_sidebar_enabled',False)
+    if left_sidebar_enabled and right_sidebar_enabled: width_content='63%'
+    elif left_sidebar_enabled != right_sidebar_enabled: width_content='740px'
+    else: width_content='100%'
+    if left_sidebar_enabled: left_sidebar_style = 'style="display: block;"'
+    else: left_sidebar_style = 'style="display: none;"'
+    if right_sidebar_enabled: right_sidebar_style = 'style="display: block;"'
+    else: right_sidebar_style = 'style="display: none;"'
+    style_content = 'style="width: %s"' % width_content
+    middle_columns = {0:'span12',1:'span9',2:'span6'}[
+     (left_sidebar_enabled and 1 or 0)+(right_sidebar_enabled and 1 or 0)]
+    }}
 
-<body>
-  <!-- Navbar ================================================== -->
-  <div class="navbar navbar-inverse navbar-fixed-top">
-    <div class="flash">{{=response.flash or ''}}</div>
+    <!-- Fav and touch icons (TODO: add these files to site root!)
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114-precomposed.png">
+      <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72-precomposed.png">
+                    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-57-precomposed.png">
+                                   <link rel="shortcut icon" href="/favicon.png">
+    -->
+  </head>
+  
+  <!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->	
+  <!--[if lt IE 7 ]> <body class="ie6"> <![endif]-->
+  <!--[if IE 7 ]>    <body class="ie7"> <![endif]-->
+  <!--[if IE 8 ]>    <body class="ie8"> <![endif]-->
+  <!--[if IE 9 ]>    <body class="ie9"> <![endif]-->
+  <!--[if (gt IE 9)|!(IE)]><!--> <body> <!--<![endif]-->
+    
+  <div class="navbar navbar-inverse navbar-static-top">
     <div class="navbar-inner">
       <div class="container">
-        <!-- the next tag is necessary for bootstrap menus, do not remove -->
-        <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-          <span class="icon-bar"></span>
-        </button>
-	{{=response.logo or ''}}
-        <ul id="navbar" class="nav pull-right">{{='auth' in globals() and auth.navbar(mode="dropdown") or ''}}</ul>
-        <div class="nav-collapse">
-          {{is_mobile=request.user_agent().is_mobile}}
-          {{if response.menu:}}
-          {{=MENU(response.menu, _class='mobile-menu nav' if is_mobile else 'nav',mobile=is_mobile,li_class='dropdown',ul_class='dropdown-menu')}}
-          {{pass}}
-        </div><!--/.nav-collapse -->
+
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </a>
+
+        <a class="brand" href="/opentree" style="font-weight: 400; color: #bbb; padding-right: 10px;">
+            <img style="margin: -12px 4px -8px -2px;" src="/opentree/static/images/mini-otol-logo.png">
+            Open Tree of Life
+        </a>
+
+        <div class="nav-collapse collapse">
+{{#----- THIS DOESN'T QUITE WORK with Bootstrap menus:   =MENU(response.menu, _class='nav', mobile=request.user_agent().is_mobile) ----}}
+            <!-- TODO: replace this STATIC HTML with proper dynamic menus! -->
+            <ul class="nav">
+                <li class="Xweb2py-menu-first"><a href="/curator">Home</a></li>
+                <li><a href="/curator/default/quickstart">Instructions</a></li>
+                <li class="dropdown">
+                    <a href="/curator/study" class="dropdown-toggle" data-toggle="dropdown">Studies  <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/curator/study">Browse all studies</a></li><!-- because link above is not clickable -->
+                        <li><a href="/curator/study/create">New study</a></li>
+                        <li><a href="/curator/study/tbimport">Import from TreeBASE</a></li>
+                    </ul>
+                </li>
+                <li class="dropdown">
+                    <a href="/curator/stree" class="dropdown-toggle" data-toggle="dropdown">Source Trees  <b class="caret"></b></a>
+                    <ul class="dropdown-menu">
+                        <li><a href="/curator/stree">Browse all source trees</a></li><!-- because link above is not clickable -->
+                        <li><a href="/curator/stree/otus_within">Taxon search</a></li>
+                    </ul>
+                </li>
+                <li><a href="http://dev.opentreeoflife.org/opentree">OpenTree Browser</a></li>
+            </ul>
+              {{ if 'auth' in globals(): }}
+            <ul id="auth-navbar" class="nav pull-right">
+                {{#-- this creates an LI.dropdown > A structure --}}
+                {{= auth.navbar(separators=(' ',' | ',''), mode="dropdown", )}}
+            </ul>
+              {{ pass }}
+        </div><!-- /.nav-collapse.collapse -->
+
       </div>
     </div>
-  </div><!--/top navbar -->
+  </div><!-- /.navbar -->
 
-  <div class="container">
-    <!-- Masthead ================================================== -->
-    <header class="mastheader row" id="header">
-        <div class="span12">
-            <div class="page-header">
-                <h1>
-                    {{=response.title or request.application}}
-                    <small>{{=response.subtitle or ''}}</small>
-                </h1>
-            </div>
+  <!--<div id="wrapper">-->
+
+<!--
+    <div class="topbar">
+      <div class="container">    
+        <div class="sixteen columns">
+          <div id="navbar">{{='auth' in globals() and auth.navbar(separators=(' ',' | ',''))}}</div>
+          {{is_mobile=request.user_agent().is_mobile}}
+          <div id="menu">{{=MENU(response.menu, _class='mobile-menu' if is_mobile else 'sf-menu',mobile=is_mobile)}}
+          </div>
         </div>
-    </header>
+      </div>
+    </div>
+--><!-- topbar -->
 
+    {{ if response.flash: }}
+    <div class="flash alert">
+        <button type="button" class="close" data-dismiss="alert">&times;</button>
+        {{=response.flash or ''}}
+    </div> <!-- notification div (adapted for Bootstrap) -->
+    {{ pass }}
+    
+    <!--
+    <div class="header">
+      <div class="container">         
+        <div class="sixteen columns">
+          <h2 style="margin:0; padding: .25em;
+		     background-color:#F0F0F0; color:SteelBlue;">
+          {{=A(response.title or request.application, _href=URL('default','index'))}}{{if response.subtitle:}}::{{=response.subtitle}}{{pass}}
+          </h2>
+        </div>
+      </div>
+    </div>--><!-- /.header -->
+	
+    <!--<div class="main">-->
+    <div class="container">                 
     <section id="main" class="main row">
         {{if left_sidebar_enabled:}}
-        <div class="span3 left-sidebar">
-            {{block left_sidebar}}
-            <h3>Left Sidebar</h3>
-            <p></p>
-            {{end}}
+        <div class="Xfour Xcolumns span3 left-sidebar">
+          {{block left_sidebar}}
+          <h3>Left Sidebar</h3>
+          <p></p>
+          {{end}}
         </div>
         {{pass}}
-
-        <div class="{{=middle_columns}}">
-            {{block center}}
-            {{include}}
-            {{end}}
+        
+        <div class="{{=middle_columns}} Xcolumns Xcenter">
+          <!--<div style="margin:0 1em 0 1em;">-->
+          <h1 id="main-title">
+          {{=A(response.title or request.application, _href=URL('default','index'))}}{{if response.subtitle:}}::{{=response.subtitle}}{{pass}}
+          </h1>
+          {{block center}}
+          {{include}}
+          {{end}}
+          <!--</div>-->
         </div>
-
+        
         {{if right_sidebar_enabled:}}
-        <div class="span3">
-            {{block right_sidebar}}
-            <h3>Right Sidebar</h3>
-            <p></p>
-            {{end}}
-        </div>
+        <div class="Xfour Xcolumns span3">
+          {{block right_sidebar}}
+          <h3>Right Sidebar</h3>
+          <p></p>
+          {{end}}
+        </div>    
         {{pass}}
-    </section><!--/main-->
-
-    <!-- Footer ================================================== -->
-    <div class="row">
-        <footer class="footer span12" id="footer">
-            <div class="footer-content">
-                {{block footer}} <!-- this is default footer -->
-                <div class="copyright pull-left">{{=T('Copyright')}} &#169; {{=request.now.year}}</div>
-                <div id="poweredBy" class="pull-right">
-                    {{=T('Powered by')}}
-                    <a href="http://www.web2py.com/">web2py</a>
-                </div>
-                {{end}}
+        
+    </section><!-- #main.main row -->
+    </div><!-- .container -->
+      <!--</div>--><!-- main -->
+	
+<!-- Footer ================================================== -->
+<footer class="footer" id="footer">
+  <div class="container">
+    <div class="footer-content">
+        {{block footer}} <!-- this is default footer -->
+        <div id="fundedBy" class="pull-left">
+            {{=T('Open Tree of Life is funded by NSF (AVAToL)')}}
             </div>
-        </footer>
+        <div id="poweredBy" class="pull-right">
+            {{=T('Powered by')}}
+            <a href="http://www.web2py.com/" target="_blank" >web2py</a>
+        </div>
+        {{end}}
     </div>
+  </div>
+</footer>
 
-  </div> <!-- /container -->
-
-  <!-- The javascript =============================================
-       (Placed at the end of the document so the pages load faster) -->
-  <script src="{{=URL('static','js/bootstrap.min.js')}}"></script>
-  <script src="{{=URL('static','js/web2py_bootstrap.js')}}"></script>
-  <!--[if lt IE 7 ]>
-      <script src="{{=URL('static','js/dd_belatedpng.js')}}"></script>
-      <script> DD_belatedPNG.fix('img, .png_bg'); //fix any <img> or .png_bg background-images </script>
-      <![endif]-->
-  
-  {{if response.google_analytics_id:}}
-  <script src="{{=URL('static','js/analytics.min.js')}}"></script>
-  <script type="text/javascript">
-  analytics.initialize({
-    'Google Analytics':{trackingId:'{{=response.google_analytics_id}}'} 
-  });</script>
-  {{pass}}
-  <script src="{{=URL('static','js/share.js',vars=dict(static=URL('static','images')))}}"></script>
-</body>
+    <!--[if lt IE 7 ]>
+	<script src="{{=URL('static','js/dd_belatedpng.js')}}"></script>
+	<script> DD_belatedPNG.fix('img, .png_bg'); //fix any <img> or .png_bg background-images </script>
+	<![endif]-->
+    
+    <!-- asynchronous google analytics: mathiasbynens.be/notes/async-analytics-snippet 
+	 change the UA-XXXXX-X to be your site's ID -->
+    <!--   
+	   <script>
+	     var _gaq = [['_setAccount', 'UA-XXXXX-X'], ['_trackPageview']];
+	     (function(d, t) {
+	     var g = d.createElement(t),
+	     s = d.getElementsByTagName(t)[0];
+	     g.async = true;
+	     g.src = '//www.google-analytics.com/ga.js';
+	     s.parentNode.insertBefore(g, s);
+	     })(document, 'script');
+	   </script>
+	   -->    
+  </body>
 </html>
-

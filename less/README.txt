@@ -44,15 +44,30 @@ overwriting old stuff as needed:
     $ mv twitter-bootstrap-d9b502d/img bootstrap
     $ mv twitter-bootstrap-d9b502d/js bootstrap
 
-Move pre-digested files (incl. initial CSS) to the final static directories:
+Move pre-digested files (incl. initial CSS) to the final static directories: 
 
-    $ mv twitter-bootstrap-d9b502d/docs/assets/css/bootstrap*.css ../webapp/static/css
-    $ mv twitter-bootstrap-d9b502d/docs/assets/js/bootstrap*.js ../webapp/static/js
-    $ mv twitter-bootstrap-d9b502d/docs/assets/js/html5shiv.js ../webapp/static/js
+    $ cp twitter-bootstrap-d9b502d/docs/assets/css/bootstrap*.css ../webapp/static/css
+    $ cp twitter-bootstrap-d9b502d/docs/assets/js/bootstrap*.js ../webapp/static/js
+    $ cp twitter-bootstrap-d9b502d/docs/assets/js/html5shiv.js ../webapp/static/js
     $ mkdir -pv ../webapp/static/img
-    $ mv twitter-bootstrap-d9b502d/docs/assets/img/glyphicons-*.png ../webapp/static/img
+    $ cp twitter-bootstrap-d9b502d/docs/assets/img/glyphicons-*.png ../webapp/static/img
 
-We can delete what's left of the zip output (we don't need it):
+NOTE that this also applies to any supplemental web2py apps like 'curator'.
+Just repeat the above commands, replacing '../webapp' with the path to your
+app. This can be handled with a Bash script that lists all app directories,
+like so:
+
+    #!/bin/bash
+    for app_path in {webapp, curator}
+    do
+        cp twitter-bootstrap-d9b502d/docs/assets/css/bootstrap*.css ../${app_path}/static/css
+        cp twitter-bootstrap-d9b502d/docs/assets/js/bootstrap*.js ../${app_path}/static/js
+        cp twitter-bootstrap-d9b502d/docs/assets/js/html5shiv.js ../${app_path}/static/js
+        mkdir -pv ../${app_path}/static/img
+        cp twitter-bootstrap-d9b502d/docs/assets/img/glyphicons-*.png ../${app_path}/static/img
+    done
+
+Now we can delete what's left of the zip output (we don't need it):
 
     $ rm -rf twitter-bootstrap-d9b502d 
 
@@ -63,6 +78,9 @@ We can delete what's left of the zip output (we don't need it):
 This requires a Less compiler (command-line via npm, or any of various desktop
 apps). Here we assume lessc, the command-line compiler that installs as part of
 node.js, or installed via npm.
+
+(Once again: To apply the same look and feel to other web2py apps, repeat the commands below 
+specifying their paths in place of '../webapp'.)
 
 Make all customizations in custom-*.less, then build the new stuff and test locally:
     
