@@ -100,7 +100,7 @@
 
         <div class="nav-collapse collapse">
             <ul class="nav">
-                <li class="active"><a href="{{= URL('default','index') }}">Home</a></li>
+              <li class="active"><a href="{{= URL('default','index') }}">Home</a></li>
               <li class="dropdown">
                   <a href="{{= URL('about','open-tree-of-life') }}" class="dropdown-toggle" data-toggle="dropdown">
                       About  <b class="caret"></b>
@@ -112,7 +112,15 @@
                       <li><a href="{{= URL('about','credits') }}">Credits</a></li>
                   </ul>
               </li>
-              <li><a href="http://www.reelab.net/phylografter">Source trees</a></li>
+              <li class="dropdown">
+                  <a href="http://www.reelab.net/phylografter" class="dropdown-toggle" data-toggle="dropdown">
+                      Source trees  <b class="caret"></b>
+                  </a>
+                  <ul class="dropdown-menu">
+                      <li><a href="http://www.reelab.net/phylografter">Phylografter</a></li>
+                      <li><a href="/curator">OpenTree Curator (under construction)</a>
+                  </ul>
+              </li>
               <li><a href="{{= URL('subtrees','index') }}">Subtrees</a></li>
               <li><a href="{{= URL('contact','index') }}">Contact</a></li>
             </ul>
