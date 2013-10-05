@@ -1,0 +1,46 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,False}}
+{{response.title = "Study Editor"}}
+{{response.subtitle = "study (id:%s)" % request.args[0]}}
+{{extend 'layout.html'}}
+
+<div class="row">
+    <div class="span8"><!-- not too wide... -->
+       {{if 'message' in globals():}}
+        <h4>{{=message}}</h4>
+       {{pass}}
+
+        <div class="">
+            <i>{tab/accordion set? with study editor}</i>
+            <br/>
+            <br/>
+            <br/>
+            <br/>
+            <br/>
+            <br/>
+        </div>
+
+    </div><!-- end of main col -->
+
+    <div class="span4">
+        <i>{quality indicator}</i>
+        <br/>
+        <br/>
+        <br/>
+        <i>{suggested next steps}</i>
+        <br/>
+        <br/>
+        <br/>
+    </div><!-- end of right col -->
+
+</div><!-- /.row -->
+
+{{block right_sidebar}}
+{{=A(T("Administrative Interface"), _href=URL('admin','default','index'), _class='btn',
+     _style='margin-top: 1em;')}}
+<h6>{{=T("Don't know what to do?")}}</h6>
+<ul>
+  <li>{{=A(T("Online examples"), _href=URL('examples','default','index'))}}</li>
+  <li><a href="http://web2py.com">web2py.com</a></li>
+  <li><a href="http://web2py.com/book">{{=T('Documentation')}}</a></li>
+</ul>
+{{end}}
