@@ -12,15 +12,21 @@
 
 def index():
     """
-    example action using the internationalization operator T and flash
-    rendered by views/default/index.html or views/generic.html
-
-    if you need a simple wiki simple replace the two lines below with:
-    return auth.wiki()
+    Show an introduction page for visitors, or personal curation dashboard for
+    a logged-in user.
     """
     #response.flash = T("Welcome to web2py!")
-    return dict()
 
+    if auth.is_logged_in():
+        # user is logged in, bounce to their personal dashboard
+        redirect(URL('dashboard'))
+    else:
+        # anonymous visitor, show a general info page
+        return dict()
+
+@auth.requires_login()
+def dashboard():
+    return dict(message="My Curation Activity")
 
 def user():
     """

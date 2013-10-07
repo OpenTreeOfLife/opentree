@@ -417,3 +417,8 @@ div#r0 {
     background: red; 
     color: white;
 }
+
+div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:pointer;}
+.ie-lte7  div.flash #closeflash
+{color:expression(this.parentNode.currentStyle['color']);float:none;position:absolute;right:4px;}
+
