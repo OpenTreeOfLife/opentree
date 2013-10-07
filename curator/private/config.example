@@ -6,3 +6,13 @@ github_client_secret = YOUR_CLIENT_SECRET_HERE
 github_redirect_uri = YOUR_REDIRECT_URI_HERE
 # These values can be obtained by registering your instance as an
 # application with GitHub, at https://github.com/settings/applications/new
+
+
+# RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
+#
+# If an API call is to another domain or subdomain, remember to enable JSONP by
+# appending '?jsoncallback=?' to each URL!
+
+API_create_study_POST_url = http://dev.opentreeoflife.org/api/api/study?jsoncallback=?
+API_load_study_GET_url = http://dev.opentreeoflife.org/api/api/study/{STUDY_ID}?jsoncallback=?
+API_update_study_PUT_url = http://dev.opentreeoflife.org/api/api/study/{STUDY_ID}?jsoncallback=?

@@ -198,12 +198,10 @@
     </div>
 --><!-- topbar -->
 
-    {{ if response.flash: }}
     <div class="flash alert">
-        <button type="button" class="close" data-dismiss="alert">&times;</button>
-        {{=response.flash or ''}}
+        <!--<button type="button" class="close" data-dismiss="alert">&times;</button>-->
+        <span class="message">{{=response.flash or ''}}</span>
     </div> <!-- notification div (adapted for Bootstrap) -->
-    {{ pass }}
     
     <!--
     <div class="header">

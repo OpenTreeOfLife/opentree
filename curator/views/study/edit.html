@@ -1,0 +1,134 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,False}}
+{{response.title = "Study Editor"}}
+{{response.subtitle = "study (id:%s)" % request.args[0]}}
+{{extend 'layout.html'}}
+
+<div class="row">
+    <div class="span8"><!-- not too wide... -->
+       {{if 'message' in globals():}}
+        <h4>{{=message}}</h4>
+       {{pass}}
+
+        <div class="">
+
+            <div class="navbar">
+              <div class="navbar-inner">
+                <ul class="nav">
+                  <li><a href="#">Import</a></li>
+                  <li class="active"><a href="#">Metadata</a></li>
+                  <li><a href="#">Trees</a></li>
+                  <li><a href="#">Files</a></li>
+                  <li><a href="#">Mapping</a></li>
+                  <li><a href="#">Status</a></li>
+                </ul>
+              </div>
+            </div>
+
+            <div id="ajax-busy-bar" class="progress progress-striped active">
+              <div class="bar" style="width: 100%;"></div>
+            </div>
+
+            <form class="form-horizontal wider-fields">
+              <div class="control-group">
+                <label class="control-label" for="ot_studyPublicationReference">Publication reference</label>
+                <div class="controls">
+                  <textarea id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder="">
+                  </textarea>
+                </div>
+              </div>
+              <div class="control-group">
+                <label class="control-label" for="ot_studyPublication">Publication</label>
+                <div class="controls">
+                  <input type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
+                </div>
+              </div>
+              <div class="control-group">
+                <label class="control-label" for="ot_studyYear">Study Year</label>
+                <div class="controls">
+                  <input type="text" id="ot_studyYear" class="input-mini" placeholder="">
+                </div>
+              </div>
+              <div class="control-group">
+                <label class="control-label" for="ot_studyId">Study ID</label>
+                <div class="controls">
+                  <input type="text" id="ot_studyId" class="input-small" placeholder="">
+                </div>
+              </div>
+              <div class="control-group">
+                <label class="control-label" for="ot_focalClade">Focal clade</label>
+                <div class="controls">
+                  <input type="text" id="ot_focalClade" class="input-small" placeholder="">
+                </div>
+              </div>
+              <div class="control-group">
+                <label class="control-label" for="ot_curatorName">Curator name</label>
+                <div class="controls">
+                  <input type="text" id="ot_curatorName" class="input-xlarge" placeholder="">
+                </div>
+              </div>
+
+              <div class="control-group">
+                <div class="controls">
+                  <label class="checkbox">
+                    <input type="checkbox"> This study has no rooted trees. (This is not typical.)
+                  </label>
+                  <label class="checkbox">
+                    <input type="checkbox"> This study should not contribute to synthesis.
+                  </label>
+                  <!--
+                  <button type="submit" class="btn">Sign in</button>
+                  -->
+                </div>
+              </div>
+            </form>
+
+            <br/>
+            <br/>
+            <br/>
+            <br/>
+            <br/>
+            <br/>
+        </div>
+
+    </div><!-- end of main col -->
+
+    <div class="span4">
+        <div class="Xbtn-group">
+              <button class="btn btn"
+                      onclick="if (validateFormData()) saveFormDataToStudyJSON(); return false;">Save Study</button>
+              <button class="btn btn-link">Cancel</button>
+              <button class="btn btn-danger pull-right"
+                      onclick="confirm('Are you sure you want to delete this study?'); return false;">Delete Study</button>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <strong>Study quality</strong> <a href="#">(hide details)</a>
+            <div class="progress progress-warning">
+              <div class="bar" style="width: 75%">
+                75%
+              </div>
+            </div>
+        </div>
+
+        <div Xclass="well well-large" style="margin-top: 20px;">
+            <strong>Suggested next steps</strong>
+            <ol>
+                <li><a href="#">Root default tree (5%)</a></li>
+                <li><a href="#">Map retaining taxon names (15%)</a></li>
+                <li><a href="#">Add supporting files (5%)</a></li>
+            </ol>
+        </div>
+    </div><!-- end of right col -->
+
+</div><!-- /.row -->
+
+<script type='text/javascript'>
+    var studyID = '{{= request.args[0] }}';
+    var authorName = '{{= auth.user.name }}';
+    var authorEmail = '{{= auth.user.email }}';
+    var authToken = '{{= auth.user.github_auth_token }}';
+    var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
+    var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
+    var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
+</script>
+<script src="{{=URL('static','js/study-editor.js')}}"></script>
