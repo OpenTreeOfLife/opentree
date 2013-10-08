@@ -69,6 +69,8 @@ public class Smasher {
 
 	public static void main(String argv[]) throws Exception {
 
+		Taxonomy.initRanks();
+
 		if (argv.length > 0) {
 
 			UnionTaxonomy union = new UnionTaxonomy();
@@ -81,7 +83,12 @@ public class Smasher {
 
 				if (argv[i].startsWith("--")) {
 
-					if (argv[i].equals("--ids")) {
+					if (argv[i].equals("--jscheme")) {
+						String[] jargs = {};
+						jscheme.REPL.main(jargs);
+					}
+
+					else if (argv[i].equals("--ids")) {
 						idsource = getSourceTaxonomy(argv[++i]);
 						union.assignIds(idsource);
 					}
@@ -401,7 +408,7 @@ class Taxonomy implements Iterable<Node> {
 						node.report("Multiple roots", root);
 					} else
 						root = node;
-					node.init(parts); // sets name
+					node.init(parts); // does setName
 				} catch (NumberFormatException e) {
 					this.header = parts; // Stow it just in case...
 					for (int i = 0; i < parts.length; ++i)
@@ -492,7 +499,364 @@ class Taxonomy implements Iterable<Node> {
 		out.close();
 	}
 
-	// Render this taxonomy as a Newick string
+	/*
+	   flags are:
+
+	   nototu # these are non-taxonomic entities that will never be made available for mapping to input tree nodes. we retain them so we can inform users if a tip is matched to one of these names
+	   unclassified # these are "dubious" taxa that will be made available for mapping but will not be included in synthesis unless they exist in a mapped source tree
+	   incertaesedis # these are (supposed to be) recognized taxa whose position is uncertain. they are generally mapped to some ancestral taxon, with the implication that a more precise placement is not possible (yet). shown in the synthesis tree whether they are mapped to a source tree or not
+	   hybrid # these are hybrids
+	   viral # these are viruses
+
+	   rules listed below, followed by keywords for that rule.
+	   rules should be applied to any names matching any keywords for that rule.
+	   flags are inherited (conservative approach), except for "incertaesedis", which is a taxonomically explicit case that we can confine to the exact relationship (hopefully).
+
+	   # removed keywords
+	   scgc # many of these are within unclassified groups, and will be treated accordingly. however there are some "scgc" taxa that are within recognized groups. e.g. http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Undef&id=939181&lvl=3&srchmode=2&keep=1&unlock . these should be left in. so i advocate removing this name and force-flagging all children of unclassified groups.
+
+	   ==== rules
+
+	   # rule 1: flag taxa and their descendents `nototu`
+	   # note: many of these are children of the "other sequences" container, but if we treat the cases individually then we will also catch any instances that may occur elsewhere (for some bizarre reason).
+	   # note: any taxa flagged `nototu` need not be otherwise flagged.
+	   other sequences
+	   metagenome
+	   artificial
+	   libraries
+	   bogus duplicates
+	   plasmids
+	   insertion sequences
+	   midvariant sequence
+	   transposons
+	   unknown
+	   unidentified
+	   unclassified sequences
+	   * .sp # apply this rule to "* .sp" taxa as well
+
+	   # rule 6: flag taxa and their descendents `hybrid`
+	   x
+
+	   # rule 7: flag taxa and their descendents `viral`
+	   viral
+	   viroids
+	   Viruses
+	   viruses
+	   virus
+
+	   # rule 3+5: if the taxon has descendents, 
+	   #             flag descendents `unclassified` and elide,
+	   #    		 else flag taxon `unclassified`.
+	   # (elide = move children to their grandparent and mark as 'not_otu')
+	   mycorrhizal samples
+	   uncultured
+	   unclassified
+	   endophyte
+	   endophytic
+
+	   # rule 2: if the taxon has descendents, 
+	   #             flag descendents `unclassified` and elide,
+ 	   # 			 else flag taxon 'not_otu'.
+	   environmental
+
+	   # rule 4: flag direct children `incertae_sedis` and elide taxon.
+	   incertae sedis
+	*/
+
+	void analyze() {
+		analyzeRankConflicts(this.root, 0);
+		analyze(this.root, 0);
+	}
+
+	static final int NOT_OTU             =    1;
+	static final int HYBRID          	 =    2;
+	static final int VIRAL          	 =    4;
+	static final int UNCLASSIFIED 	  	 =    8;
+	static final int ENVIRONMENTAL 	  	 =   16;
+	static final int INCERTAE_SEDIS 	 =   32;
+	static final int SPECIFIC     	     =   64;
+	static final int BARREN      	     =  128;
+	static final int SIBLING_LOWER       =  512;
+	static final int SIBLING_HIGHER      = 1024;
+	static final int MAJOR_RANK_CONFLICT = 2048;
+	static final int TATTERED 			 = 4096;
+	static final int ANYSPECIES			 = 8192;
+
+	// Returns the node's rank (as an int).  In general the return
+	// value should be >= parentRank, but conceivably funny things
+	// could happen when combinings taxonomies.
+
+	static int analyzeRankConflicts(Node node, int parentRank) {
+		int myrank = (node.rank.equals("no rank") ? parentRank+1 : ranks.get(node.rank));
+		node.rankAsInt = myrank;
+
+		if (node.children != null) {
+
+			int highrank = Integer.MAX_VALUE; // highest rank among all descendents
+			int lowrank = -1;
+
+			// Preorder traversal
+			// In the process, calculate rank of highest child
+			for (Node child : node.children) {
+				int rank = analyzeRankConflicts(child, myrank);
+				if (rank < highrank) highrank = rank;
+				if (rank > lowrank)  lowrank = rank;
+			}
+
+			// assert myRank < highrank <= lowrank
+			if (myrank > highrank)
+				// The = case is weird too, there are about 200 of those
+				System.err.println("** Ranks out of order: " +
+								   node.id + " " + node.name + " " +
+								   myrank + ">" + highrank);
+
+			// highrank is the highest (lowest-numbered) rank among all the children.
+			// Similarly lowrank.  If they're different we have a 'rank conflict'
+			if (highrank != lowrank) {
+				// Two cases: subfamily/genus (minor), phylum/genus (major)
+				int x = highrank / 100; //int division, subfamily->family, phylum->phylum
+				for (Node child : node.children) {
+					int rv = child.rankAsInt;
+					// we know rv >= highrank
+					if (rv > highrank) {
+						int y = (rv + 99) / 100; //genus->genus, subfamily->genus
+						// we know y > x
+						if (y == x+1)
+							// 168940 of these, about 20% from GBIF
+							// e.g. Australopithecus
+							child.properFlags |= SIBLING_HIGHER; //e.g. genus not in subfamily
+						else
+							// 66309 of these, about half from GBIF
+							// e.g. Sirozythia
+							child.properFlags |= MAJOR_RANK_CONFLICT;
+					} else
+						// 311695 e.g. Homininae
+						// Probably best to drop them
+						child.properFlags |= SIBLING_LOWER;
+				}
+			}
+		}
+		return myrank;
+	}
+
+	// Each Node has two parallel sets of flags: 
+	//   proper - applies particularly to this node
+	//   inherited - applies to this node because it applies to an ancestor
+	//     (where in some cases the ancestor may later be 'elided' so
+	//     not an ancestor any more)
+
+	static void analyze(Node node, int inheritedFlags) {
+		// Before
+		node.inheritedFlags |= inheritedFlags;
+		boolean anyspeciesp = false;     // Any descendant is a species?
+		boolean elidep = false;
+
+		// Prepare for recursive descent
+		if (notOtuRegex.matcher(node.name).find()) 
+			node.properFlags |= NOT_OTU;
+		if (hybridRegex.matcher(node.name).find()) 
+			node.properFlags |= HYBRID;
+		if (viralRegex.matcher(node.name).find()) 
+			node.properFlags |= VIRAL;
+
+		if (unclassifiedRegex.matcher(node.name).find()) {// Rule 3+5
+			node.properFlags |= UNCLASSIFIED;
+			elidep = true;
+		}
+		if (environmentalRegex.matcher(node.name).find()) {// Rule 3+5
+			node.properFlags |= ENVIRONMENTAL;
+			elidep = true;
+		}
+		if (incertae_sedisRegex.matcher(node.name).find()) {// Rule 3+5
+			node.properFlags |= INCERTAE_SEDIS;
+			elidep = true;
+		}
+		if (node.rank.equals("species")) {
+			node.properFlags |= SPECIFIC;
+			anyspeciesp = true;
+		}
+
+		int bequest = inheritedFlags | node.properFlags;		// What the children inherit
+
+		// Recursive descent
+		if (node.children != null)
+			for (Node child : new ArrayList<Node>(node.children)) {
+				analyze(child, bequest);
+				if ((child.properFlags & ANYSPECIES) != 0) anyspeciesp = true;
+			}
+
+		// After
+		if (anyspeciesp) node.properFlags |= ANYSPECIES;
+		if (elidep) elide(node);
+	}
+
+	// Splice the node out of the hierarchy, but leave it as a
+	// residual terminal non-OTU node
+	static void elide(Node node) {
+		if (node.children != null && node.parent != null)
+			for (Node child : new ArrayList<Node>(node.children))
+				child.changeParent(node.parent);
+		node.properFlags |= NOT_OTU;
+	}
+
+	static void printFlags(Node node, PrintStream out) {
+		boolean needComma = false;
+		if ((((node.properFlags | node.inheritedFlags) & NOT_OTU) != 0)
+			|| ((node.inheritedFlags & ENVIRONMENTAL) != 0)) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("not_otu");
+		}
+		if (((node.properFlags | node.inheritedFlags) & VIRAL) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("viral");
+		}
+		if (((node.properFlags | node.inheritedFlags) & HYBRID) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("hybrid");
+		}
+
+		if ((node.properFlags & INCERTAE_SEDIS) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("incertae_sedis_direct");
+		}
+		if ((node.inheritedFlags & INCERTAE_SEDIS) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("incertae_sedis_inherited");
+		}
+
+		if ((node.properFlags & UNCLASSIFIED) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("unclassified_direct");  // JAR prefers 'unclassified'
+		}
+		if ((node.inheritedFlags & UNCLASSIFIED) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("unclassified_inherited"); // JAR prefers 'unclassified_indirect' ?
+		}
+
+		if ((node.properFlags & ENVIRONMENTAL) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("environmental");
+		}
+
+		if ((node.properFlags & SIBLING_HIGHER) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("sibling_higher");
+		}
+		if ((node.properFlags & SIBLING_LOWER) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("sibling_lower");
+		}
+
+		if ((node.properFlags & MAJOR_RANK_CONFLICT) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("major_rank_conflict_direct");
+		}
+		if ((node.inheritedFlags & MAJOR_RANK_CONFLICT) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("major_rank_conflict_inherited");
+		}
+
+		if ((node.properFlags & TATTERED) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("tattered");
+		}
+
+		if ((node.inheritedFlags & SPECIFIC) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("infraspecific");
+		} else if ((node.properFlags & ANYSPECIES) == 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("barren");
+		}
+	}
+	
+	static Pattern notOtuRegex =
+		Pattern.compile(
+						"\\bother sequences\\b|" +
+						"\\bmetagenome\\b|" +
+						"\\bartificial\\b|" +
+						"\\blibraries\\b|" +
+						"\\bbogus duplicates\\b|" +
+						"\\bplasmids\\b|" +
+						"\\binsertion sequences\\b|" +
+						"\\bmidvariant sequence\\b|" +
+						"\\btransposons\\b|" +
+						"\\bunknown\\b|" +
+						"\\bunidentified\\b|" +
+						"\\bunclassified sequences\\b|" +
+						"\\bsp\\.$"
+						);
+
+	static Pattern hybridRegex = Pattern.compile("\\bx\\b");
+
+	static Pattern viralRegex =
+		Pattern.compile(
+						"\\bviral\\b|" +
+						"\\bviroids\\b|" +
+						"\\bViruses\\b|" +
+						"\\bviruses\\b|" +
+						"\\bvirus\\b"
+						);
+
+	static Pattern unclassifiedRegex =
+		Pattern.compile(
+						"\\bmycorrhizal samples\\b|" +
+						"\\buncultured\\b|" +
+						"\\bunclassified\\b|" +
+						"\\bendophyte\\b|" +
+						"\\bendophytic\\b"
+						);
+
+	static Pattern environmentalRegex = Pattern.compile("\\benvironmental\\b");
+
+	static Pattern incertae_sedisRegex = Pattern.compile("\\bincertae sedis\\b");
+
+	static String[][] rankStrings = {
+		{"superkingdom",
+		 "kingdom",
+		 "subkingdom",
+		 "superphylum"},
+		{"phylum",
+		 "subphylum",
+		 "superclass"},
+		{"class",
+		 "subclass",
+		 "infraclass",
+		 "superorder"},
+		{"order",
+		 "suborder",
+		 "infraorder",
+		 "parvorder",
+		 "superfamily"},
+		{"family",
+		 "subfamily",
+		 "tribe",
+		 "subtribe"},
+		{"genus",
+		 "subgenus",
+		 "species group",
+		 "species subgroup"},
+		{"species",
+		 "infraspecificname",
+		 "subspecies",
+		 "varietas",
+		 "subvariety",
+		 "forma",
+		 "subform"},
+	};
+
+	static Map<String, Integer> ranks = new HashMap<String, Integer>();
+
+	static void initRanks() {
+		for (int i = 0; i < rankStrings.length; ++i) {
+			for (int j = 0; j < rankStrings[i].length; ++j)
+				ranks.put(rankStrings[i][j], (i+1)*100 + j*10);
+		}
+	}
+
+	// -------------------- Newick stuff --------------------
+	// Render this taxonomy as a Newick string.
+	// This feature is very primitive and only for debugging purposes!
 
 	String toNewick() {
 		StringBuffer buf = new StringBuffer();
@@ -564,7 +928,7 @@ class Taxonomy implements Iterable<Node> {
 		return out;
 	}
 
-}
+}  // End of class Taxonomy
 
 class SourceTaxonomy extends Taxonomy {
 
@@ -1114,7 +1478,7 @@ class UnionTaxonomy extends Taxonomy {
 	// outprefix should end with a / , but I guess . would work too
 
 	void dumpAll(String outprefix) throws IOException {
-		recursivelyDubious(this.root, false);
+		this.analyze();
 		this.dumpLog(outprefix + "log");
 		this.dump(this.root, outprefix + "taxonomy");
 		this.dumpSynonyms(outprefix + "synonyms");
@@ -1124,16 +1488,6 @@ class UnionTaxonomy extends Taxonomy {
 			this.explainAuxIds(this.auxsource,
 							   this.idsource,
 							   outprefix + "aux");
-	}
-
-	// ensure that the 'dubiousp' flag gets propagated to all descendents
-	void recursivelyDubious(Node node, boolean dubiousp) {
-		if (dubiousp)
-			node.dubiousp = dubiousp;
-		if (node.children != null) {
-			for (Node child : node.children)
-				recursivelyDubious(child, node.dubiousp);
-		}
 	}
 
 	void dump(Node unode, String filename) throws IOException {
@@ -1167,7 +1521,9 @@ class UnionTaxonomy extends Taxonomy {
 
 		// 6. flags
 		// (unode.mode == null ? "" : unode.mode)
-		out.print(unode.dubiousp ? "D" : "" + "\t|\t");
+		Taxonomy.printFlags(unode, out);
+		out.print("\t|\t");
+		// was: out.print(((unode.flags != null) ? unode.flags : "") + "\t|\t");
 
 		out.println();
 
@@ -1255,6 +1611,7 @@ class UnionTaxonomy extends Taxonomy {
 		if (name == null) return;					 // Hmmph.
 		List<Answer> lg = this.logs.get(name);
 		if (lg == null) {
+			if (name.equals("environmental samples")) return; //3606 cohomonyms
 			lg = new ArrayList<Answer>(1);
 			this.logs.put(name, lg);
 		}
@@ -1286,7 +1643,7 @@ class Node {
 	Answer deprecationReason = null;
 	Answer blockedp = null;
 
-	boolean dubiousp = false;
+	int properFlags = 0, inheritedFlags = 0, rankAsInt = 0;
 
 	// State during merge operation
 	Node mapped = null;			// source node -> union node
@@ -1323,17 +1680,7 @@ class Node {
 			this.rank = parts[3];
 		if (parts.length >= 5)
 			this.extra = parts;
-		Matcher m = dubiousRegex.matcher(parts[2]);
-		this.dubiousp = m.find();
 	}
-
-	static Pattern dubiousRegex =
-		Pattern.compile("\\bother\\b|\\bviral\\b|\\bviroids\\b|\\bViruses\\b|\\bviruses\\b|\\bartificial\\b|\\bx\\b|" +
-						"\\bunknown\\b|\\bunidentified\\b|\\bendophyte\\b|" +
-						"\\bendophytic\\b|\\bscgc\\b|\\blibraries\\b|\\bvirus\\b|" +
-						"\\bmycorrhizal samples\\b|\\bmetagenome\\b|" +
-						"\\bunclassified\\b|\\benvironmental\\b|\\buncultured\\b|\\bunclassified\\b");
-	
 
 	void setName(String name) {
 		if (this.name != null)
@@ -1461,7 +1808,6 @@ class Node {
 
 		if (unode.name == null) unode.setName(this.name);
 		if (unode.rank == null) unode.rank = this.rank; // ?
-		unode.dubiousp = this.dubiousp;
 		unode.comapped = this;
 
 		if (this.comment != null) { // cf. deprecate()
@@ -1576,7 +1922,8 @@ class Node {
 					else if (child.mapped != null && mappedParent != child.mapped.parent)
 						sibs = false;
 
-				if (sibs &&
+				if (false &&	// See https://github.com/OpenTreeOfLife/opentree/issues/73
+					sibs &&
 					mappedParent != null &&
 					oldChildren.size() < mappedParent.children.size() &&
 					!(union.lookup(this.name) != null)) { // eschew homonyms
@@ -1660,11 +2007,16 @@ class Node {
 				if (!retentivep) return null;
 				// All children are new, not previously matched.
 				// Compatible import of a subtree (new higher taxon).
-				// Might create a homonym, but if so, it should.
+				// Might create a homonym, but if it does, it should.
 				newnode = new Node(union);
 				for (Node augChild: newChildren)
 					newnode.addChild(augChild);
-				reason = "new/internal";
+
+				if (oldChildren.size() > 0) {
+					newnode.properFlags |= Taxonomy.TATTERED;
+					reason = "new/tattered";
+				} else
+					reason = "new/internal";
 				// should match old if possible ??
 				// fall through
 			}
@@ -2364,7 +2716,9 @@ abstract class Criterion {
 	static Criterion elimination =
 		new Criterion() {
 			Answer assess(Node x, Node y) {
-				if (x.children != null && y.children != null) {
+				if (!x.rank.equals(y.rank)) {
+					return Answer.weakYes(x, y, "by-elimination/different-ranks", null);
+				} else if (x.children != null && y.children != null) {
 					return Answer.weakYes(x, y, "by-elimination/internal", null);
 				} else {
 					return Answer.weakYes(x, y, "by-elimination/tip", null);
