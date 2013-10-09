@@ -11,9 +11,7 @@ var API_load_study_GET_url;
 var API_update_study_PUT_url;
 
 // working space for parsed JSON objects (incl. sub-objects)
-var studyJSON;
-var metadataJSON; // do we want this?
-var treeJSON;  // re-use for each selected tree
+var viewModel;
 
 $(document).ready(function() {
     loadSelectedStudy(studyID);
@@ -64,14 +62,19 @@ function loadSelectedStudy(id) {
                 return;
             }
 
-            studyJSON = data;
-            metadataJSON = studyJSON.nexml['meta'];
-            if (typeof metadataJSON === 'undefined') {
-                // add this now?
-                studyJSON.nexml.meta = metadataJSON = [ ];
+            // declarative mapping of raw JS obj to view-model, using mapping plugin
+            var mapping = {  // modify default mapping options
+                // specify an (all-purpose?) function for determine a key property on some types
+                key: function(item) {
+                    // what happens if no @id is found on some items?
+                    return ko.utils.unwrapObservable(item['@id']);
+                },
+                // some properties should never changes; these can be copied as-is, avoiding the overhead of making them "observable"
+                copy: ['@property','@xsi:type']
             }
+            viewModel = ko.mapping.fromJS(data, mapping);
 
-            loadStudyJSONIntoForm();
+            ko.applyBindings(viewModel);
 
             $('#ajax-busy-bar').hide();
             showInfoMessage('Study data loaded.');
@@ -101,42 +104,6 @@ function showSuccessMessage(msg) {
                .addClass('alert-success').slideDown();
 }
 
-function loadStudyJSONIntoForm() {
-    // load all fields found in JSON; clear or remove any others
-
-    //// METADATA
-
-    var metadataFieldNames = [
-        'ot_studyPublicationReference',
-        'ot_studyPublication',
-        'ot_curatorName',
-        'ot_studyId',
-        'ot_studyYear',
-        'ot_focalClade',
-    ];
-    for (var i = 0; i < metadataFieldNames.length; i++) {
-        var fieldID = metadataFieldNames[i];
-        $('#'+ fieldID).val('');
-    }
-    for (i = 0; i < metadataJSON.length; i++) {
-        // place each value in its proper field
-        var slot = metadataJSON[i];
-        var property = slot['@property'];
-        // convert namespaced property to valid element ID
-        var fieldSelector = '#'+ property.replace(':','_');
-        var value = slot.$;
-        console.log("Setting field '"+ fieldSelector +"' to: "+ value);
-        $(fieldSelector).val(value);
-    }
-
-    //// TODO: TREES
-
-    //// TODO: FILES 
-
-    //// TODO: etc.
-
-}
-
 function validateFormData() {
     // return success (t/f?), or a structure with validation errors
     // TODO: or use more typical jQuery machinery, or validation plugin?
@@ -146,24 +113,6 @@ function validateFormData() {
 function saveFormDataToStudyJSON() {
     // save all populated fields; clear others, or remove from JSON(?)
     $('#ajax-busy-bar').show();
-
-    //// METADATA
-
-    var metadataFieldNames = [
-        'ot_studyPublicationReference',
-        'ot_studyPublication',
-        'ot_curatorName',
-        'ot_studyId',
-        'ot_studyYear',
-        'ot_focalClade',
-    ];
-    for (var i = 0; i < metadataFieldNames.length; i++) {
-        var fieldID = metadataFieldNames[i];
-        var field = $('#'+ fieldID);
-        var jsonPropertyName = fieldID.replace('_', ':');
-        var slot = getMatchingMetadataSlot( jsonPropertyName )
-        slot.$ = field.val();
-    }
 
     //// push changes back to storage
     var saveURL = API_update_study_PUT_url.replace('{STUDY_ID}', studyID);
@@ -176,7 +125,7 @@ function saveFormDataToStudyJSON() {
         url: saveURL,
         data: {
             // use JSON stringify (if available) for faster submission of JSON
-            nexson: (JSON && JSON.stringify) ? JSON.stringify(studyJSON) : studyJSON,
+            nexson: ko.mapping.toJSON(viewModel),
             author_name: authorName,
             author_email: authorEmail,
             auth_token: authToken
@@ -198,15 +147,89 @@ function saveFormDataToStudyJSON() {
     });
 }
 
-function getMatchingMetadataSlot( propName ) {
-    // TODO: replace this with something more general and powerful
-    for (i = 0; i < metadataJSON.length; i++) {
-        // find the one with the matching property name
-        var slot = metadataJSON[i];
-        var property = slot['@property'];
-        if (property === propName) return slot;
+/* 
+ * Use Knockout.js for smart, persistent binding of JS model to UI
+ */
+
+// TODO: incorporate its methods into mapped viewModel above?
+function StudyViewModel() {
+    var self = this;
+    self.nexml = {
+        meta: ko.observableArray([ ])
     }
-    // TODO: add a slot and return it?
+    self.getByAtProperty = function(array, prop) {
+        // fetch from a list by @property value
+        for (var i = 0; i < array.length; i++) {
+            var testItem = array[i];
+            if (testItem['@property'] === prop) {
+                return testItem.value; // assumes value is stored here
+            }
+            return null;
+        }
+    }
+
+};
+
+function getMetaTagAccessorByAtProperty(array, prop) {
+    // fetch accessor(!) function for a metatag in the specified list, using its @property value
+    for (var i = 0; i < array.length; i++) {
+        var testItem = array[i];
+        if (testItem['@property']() === prop) {
+            switch(testItem['@xsi:type']()) {
+                case 'nex:ResourceMeta':
+                    return testItem['@href'];  // uses special attribute
+                default: 
+                    return testItem.$; // assumes value is stored here
+            }
+        }
+    }
     return null;
 }
+
+/* support classes for objects in arrays 
+ * (TODO: use these instead of generlc observables?) 
+ */
+function MetaTag( name, type, value ) {
+    var self = this;
+    self.name = name;   // .@property
+    self.type = type;   // .@xsi:type
+    self.value = ko.observable(value);  // .$
+}
+function OTU(id, label, about, meta) {
+    var self = this;
+    self.id = id;   // .@id
+    self.label = label;   // .@label
+    self.about = about;   // .@about
+    self.meta = ko.observableArray();  // .meta
+    // add all meta entries as MetaTag instances
+    for(var i = 0; i < meta.length; i++) {
+        self.meta.push( new MetaTag( meta[i] ) );
+    }
+}
+function Tree(id, about, meta, edge, node) {
+    var self = this;
+    self.id = id;         // .@id
+    self.about = about;   // .@about
+    self.meta = ko.observableArray();  // .meta
+    // add all meta entries as MetaTag instances
+    for(var i = 0; i < meta.length; i++) {
+        self.meta.push( new MetaTag( meta[i] ) );
+    }
+    self.edge = ko.observableArray();  // .edge
+    // add all edge entries as TreeEdge instances
+    for(var i = 0; i < edge.length; i++) {
+        self.edge.push( new TreeEdge( edge[i] ) );
+    }
+    self.node = ko.observableArray();  // .node
+    // add all node entries as TreeNode instances
+    for(var i = 0; i < node.length; i++) {
+        self.node.push( new TreeNode( node[i] ) );
+    }
+}
+function TreeEdge() {
+}
+function TreeNode() {
+}
+
+
 

@@ -1,6 +1,22 @@
 {{left_sidebar_enabled,right_sidebar_enabled=False,False}}
 {{response.title = "Study Editor"}}
 {{response.subtitle = "study (id:%s)" % request.args[0]}}
+
+{{### Add support scripts for single-page editor 
+
+# JSON support for older browsers (esp. IE7) 
+response.files.append(URL('static','js/json2.js'))
+
+# Knockout.js for binding JSON model to editing UI 
+response.files.append(URL('static','js/knockout-2.3.0.js'))
+
+# Knockout plugin for easy declarative mapping 
+response.files.append(URL('static','js/knockout.mapping-2.4.1.js'))
+
+# Knockout bindings for Twitter Bootstrap components
+response.files.append(URL('static','js/knockout-bootstrap.min.js'))
+}}
+
 {{extend 'layout.html'}}
 
 <div class="row">
@@ -28,42 +44,42 @@
               <div class="bar" style="width: 100%;"></div>
             </div>
 
-            <form class="form-horizontal wider-fields">
+            <h2>Study metadata</h2>
+            <form class="form-horizontal wider-fields" XXdata-bind="foreach: nexml.meta">
               <div class="control-group">
                 <label class="control-label" for="ot_studyPublicationReference">Publication reference</label>
                 <div class="controls">
-                  <textarea id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder="">
-                  </textarea>
+                  <textarea data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublicationReference'), valueUpdate: 'afterkeydown'" id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder=""></textarea>
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_studyPublication">Publication</label>
                 <div class="controls">
-                  <input type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
+                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublication'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_studyYear">Study Year</label>
                 <div class="controls">
-                  <input type="text" id="ot_studyYear" class="input-mini" placeholder="">
+                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyYear'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyYear" class="input-mini" placeholder="">
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_studyId">Study ID</label>
                 <div class="controls">
-                  <input type="text" id="ot_studyId" class="input-small" placeholder="">
+                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyId'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyId" class="input-small" placeholder="">
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_focalClade">Focal clade</label>
                 <div class="controls">
-                  <input type="text" id="ot_focalClade" class="input-small" placeholder="">
+                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:focalClade'), valueUpdate: 'afterkeydown'" type="text" id="ot_focalClade" class="input-small" placeholder="">
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_curatorName">Curator name</label>
                 <div class="controls">
-                  <input type="text" id="ot_curatorName" class="input-xlarge" placeholder="">
+                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:curatorName'), valueUpdate: 'afterkeydown'" type="text" id="ot_curatorName" class="input-xlarge" placeholder="">
                 </div>
               </div>
 
@@ -80,6 +96,11 @@
                   -->
                 </div>
               </div>
+
+              <i>nexml.meta (remapped for return to server)</i>
+              <pre data-bind="visible: nexml.meta, text: ko.mapping.toJSON(nexml.meta)" style="color: #933; font-size: small; width: 100%; height: 500px; overflow: auto;">
+              </pre>
+
             </form>
 
             <br/>
