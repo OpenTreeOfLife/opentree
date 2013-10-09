@@ -2,12 +2,13 @@
 # include all columns for each line
 # separate columns with tabs, not spaces
 command name    rank    parent  context sourceInfo
-move  Dermatobotrys saundersii  Species Scrophulariaceae  Lamiales  Angiosperm Phylogeny website
-synonym Hemichaena    Berendtia Lamiales  Angiosperm Phylogeny website
-move  Hemichaena  Genus Phrymaceae  Lamiales  Angiosperm Phylogeny website
-move  Triaenophora  Genus Orobanchaceae  Lamiales  Angiosperm Phylogeny website
-move  Rehmannia  Genus Orobanchaceae  Lamiales  Angiosperm Phylogeny website
-move  Stemodiopsis  Genus Linderniaceae  Lamiales  Angiosperm Phylogeny website
-move  Micranthemum  Genus Linderniaceae  Lamiales  Angiosperm Phylogeny website
-synonym Psammetes    Bryodes  Lamiales  Tropicos; NCBI
-move  Psammetes  Genus Linderniaceae  Lamiales  Tropicos; NCBI
+move  Dermatobotrys saundersii  species Scrophulariaceae  lamiales  http://www.mobot.org/mobot/research/apweb/
+synonym Berendtia Hemichaena lamiales  http://www.tropicos.org/Name/50009025?tab=acceptednames; http://www.mobot.org/mobot/research/apweb/ 
+move  Hemichaena  genus Phrymaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/
+move  Triaenophora  genus orobanchaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/orobanchaceaegen.html (mispelled at url)
+move  Rehmannia  genus Orobanchaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/orobanchaceaegen.html
+move  Stemodiopsis  genus Linderniaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/linderniaceaegen.html
+move  Micranthemum  genus Linderniaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/linderniaceaegen.html
+synonym Bryodes madagascariensis  Psammetes  madagascariensis lamiales  http://www.tropicos.org/Name/29207676?tab=acceptednames
+move  Psammetes  genus Linderniaceae  Lamiales  http://www.ncbi.nlm.nih.gov/nuccore/421994792
+move  Bryodes  genus  Linderniaceae  http://www.biomedcentral.com/content/pdf/1471-2148-10-352.pdf
