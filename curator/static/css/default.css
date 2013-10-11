@@ -422,3 +422,23 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .ie-lte7  div.flash #closeflash
 {color:expression(this.parentNode.currentStyle['color']);float:none;position:absolute;right:4px;}
 
+.criterion-score {
+    float: right;
+    color: #999;
+}
+.criterion-score-bar {
+    height: 8px;
+    margin-bottom: 4px;
+}
+.criterion-details {
+    padding-top: 0px;
+    padding-bottom: 5px;
+}
+.criterion-details ul {
+    list-style-type: disc;
+    margin-bottom: 5px;
+}
+.criterion-details ul li {
+    line-height: 1em;
+    padding: 0.25em 0;
+}

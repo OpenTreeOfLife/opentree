@@ -74,11 +74,6 @@ function loadSelectedStudy(id) {
                 copy: ['@property','@xsi:type']
             }
             viewModel = ko.mapping.fromJS(data, mapping);
-/*
-            viewModel.studyQualityPercent = ko.computed(function() {
-                return Math.floor(Math.random() * 100) + 1;
-            });
-*/
             viewModel.studyQualityPercent = ko.observable(0);
             viewModel.studyQualityPercentStyle = ko.computed(function() {
                 // NOTE that we impose a minimum width, so the score is legible
@@ -86,13 +81,7 @@ function loadSelectedStudy(id) {
             });
             viewModel.studyQualityBarClass = ko.computed(function() {
                 var score = viewModel.studyQualityPercent();
-                if (score > 80) {
-                    return 'progress progress-success';
-                } else if (score > 40) {
-                    return 'progress progress-warning';
-                } else {
-                    return 'progress progress-danger';
-                }
+                return scoreToBarClasses(score);
             });
 
             ko.applyBindings(viewModel);
@@ -112,17 +101,76 @@ function loadSelectedStudy(id) {
     });
 }
 
+function floatToPercent( dec ) {
+    // assumes a float between 0.0 and 1.0
+    // EXAMPLE: 0.232 ==> 23%
+    return Math.round(dec * 100);
+}
+function scoreToBarClasses( percentScore ) {
+    if (percentScore > 80) {
+        return 'progress progress-success';  // green bar
+    } else if (percentScore > 40) {
+        return 'progress progress-warning';  // orange bar
+    } else {
+        return 'progress progress-danger';   // red bar
+    }
+}
+
 function updateQualityDisplay() {
+    // generate, then apply, fresh scoring information
     var scoreInfo = scoreStudy(viewModel);
     // update "progress bar" with percentage and color
-    viewModel.studyQualityPercent( Math.round(scoreInfo.overallScore * 100) );
+    viewModel.studyQualityPercent( floatToPercent(scoreInfo.overallScore) );
     // update list of suggested actions below
-    $('#suggested-actions').empty();
-    for (var i = 0; i < scoreInfo.comments.length; i++) {
-        var c = scoreInfo.comments[i];
-        if (c.suggestedAction) {
-            $('#suggested-actions').append('<li><a href="#">'+ c.suggestedAction +' <span style="color: #aaa;">('+ c.percentScore +'%)</span></a></li>');
+    var $detailsPanel = $('#study-quality-details');
+    var addingCriteriaPanels = ($detailsPanel.find('div.criterion-details').length === 0);
+    var cName, criterionScoreInfo, cPercentScore, criterionRules, rule, ruleScoreInfo;
+    var nthPanel = 0, $cPanel, $cProgressBar, $cSuggestionsList;
+    for (cName in scoreInfo.scoredCriteria) {
+        if (addingCriteriaPanels) {
+            // generate criteria detail areas (once only!)
+            $detailsPanel.append(
+                '<div class="criterion-details">'
+                  + '<strong>'+ cName +'</strong>'
+                  + '<span class="criterion-score">50%</span>'
+                  + '<div class="progress progress-info criterion-score-bar">'
+                    + '<div class="bar" style="width: 50%;"></div>'
+                  + '</div>'
+                  + '<ul></ul>'
+              + '</div>'
+            );
         }
+        criterionScoreInfo = scoreInfo.scoredCriteria[ cName ];
+        $cPanel = $detailsPanel.find('div.criterion-details:eq('+ nthPanel +')');
+        cPercentScore = floatToPercent(criterionScoreInfo.score / criterionScoreInfo.highestPossibleScore);
+        $cPanel.find('.criterion-score').text( cPercentScore+'%' );
+        $cPanel.find('.criterion-score-bar').attr('class', 'criterion-score-bar '+ scoreToBarClasses( cPercentScore ));
+        $cPanel.find('.criterion-score-bar .bar').css('width', Math.max(4, cPercentScore)+'%')
+        $cSuggestionsList = $cPanel.find('ul');
+
+        $cSuggestionsList.empty();
+        for (var i = 0; i < criterionScoreInfo.comments.length; i++) {
+            var c = criterionScoreInfo.comments[i];
+            if (c.suggestedAction) {
+                $cSuggestionsList.append('<li><a href="#">'+ c.suggestedAction);  /// TODO: restore this? +' <span style="color: #aaa;">('+ c.percentScore +'%)</span></a></li>');
+            }
+        }
+    
+        nthPanel++;
+    };
+
+}
+
+function toggleQualityDetails( hideOrShow ) {
+    // might be called directly from the toggle, or by someone else
+    var $toggle = $('#quality-details-toggle');
+    var $detailsPanel = $('#study-quality-details');
+    if ($detailsPanel.is(':visible') || hideOrShow === 'HIDE') {
+        $detailsPanel.slideUp();
+        $toggle.text('(show details)');
+    } else {
+        $detailsPanel.slideDown();
+        $toggle.text('(hide details)');
     }
 }
 
@@ -306,7 +354,7 @@ function TreeNode() {
  *
  */
 var studyScoringRules = {
-    'completeness': [
+    'Completeness': [
         // Is the study fully fleshed out?
         {
             description: "The study should have all metadata fields complete.",
@@ -338,7 +386,7 @@ var studyScoringRules = {
 
         }
     ],
-    'integrity': [  
+    'Data Integrity': [  
         // Is the study data internally consistent, with no loose ends?
         {
             description: "The study year should match the one in its publication reference.",
@@ -395,7 +443,7 @@ var studyScoringRules = {
 
         }
     ],
-    'FAKE CRITERION': [    // TODO: remove this, just for initial demo
+    'Other stuff [dummy tests]': [    // TODO: remove this, just for initial demo
         // this is just here to balance out the score with other, unseen stuff
         {
             description: "this represents good stuff elsewhere in the study",
@@ -427,84 +475,72 @@ function scoreStudy( studyData ) {
     // TODO: specify viewModel (fastest)? or JSON version? 
     // apply studyScoringRules below, recording score, comments
 
-    var studyScore = 0.0;  // build up a non-zero score, composed of all (relative) weight values
-    var highestPossibleScore = 0.0;  // normalize the final score relative to the max possible
+    var scoreInfo = {
+        rawOverallScore: 0.0,
+        highestPossibleOverallScore: 0.0,  // normalize the final score relative to the max possible
+        overallScore: 0.0,  // build up a non-zero score, composed of all (relative) weight values
+        allComments: new Array(),
+        scoredCriteria: {}  // support detailed display for each criterion
+    }
 
-    var comments = new Array();
-
-    var i, cName, criterion, rule;
+    var i, cName, criterionScoreInfo, criterionRules, rule, ruleScoreInfo;
     for(cName in studyScoringRules) {
-        criterion = studyScoringRules[cName];
+        criterionScoreInfo = {
+            score: 0.0,
+            highestPossibleScore: 0.0,
+            comments: new Array()
+        };
+        scoreInfo.scoredCriteria[cName] = criterionScoreInfo;
+
+        criterionRules = studyScoringRules[cName];
         ///console.log("Checking study against rules for "+ cName +"...");
-        for (i = 0; i < criterion.length; i++) {
-            rule = criterion[i];
+        for (i = 0; i < criterionRules.length; i++) {
+            rule = criterionRules[i];
             ///console.log("  rule.weight = "+ rule.weight);
-            highestPossibleScore += rule.weight;
+            
+            // bump up max scores for this criterion and the overall study
+            criterionScoreInfo.highestPossibleScore += rule.weight;
+            scoreInfo.highestPossibleOverallScore += rule.weight;
+
+            ruleScoreInfo = {
+                'weight': rule.weight, 
+                'message': null, 
+                'success': null,
+                'suggestedAction': null
+            };
+
             if (rule.test( studyData )) {
                 // passed this test
                 ///console.log("  PASSED this rule: "+ rule.description);
-                studyScore += rule.weight;
-                comments.push({
-                    'weight': rule.weight, 
-                    'message': rule.successMessage, 
-                    'success': true,
-                    'suggestedAction': null
-                });
+                criterionScoreInfo.score += rule.weight;
+                scoreInfo.rawOverallScore += rule.weight;
+
+                ruleScoreInfo.message = rule.successMessage;
+                ruleScoreInfo.success = true;
+                ruleScoreInfo.suggestedAction = null;
+
             } else {
                 // failed this test
                 ///console.log("  FAILED this rule: "+ rule.description);
-                //studyScore -= rule.weight;
-                comments.push({
-                    'weight': rule.weight, 
-                    'message': rule.failureMessage, 
-                    'success': false,
-                    'suggestedAction': rule.suggestedAction
-                });
+                ruleScoreInfo.message = rule.failureMessage;
+                ruleScoreInfo.success = false;
+                ruleScoreInfo.suggestedAction = rule.suggestedAction;
             }
+
+            scoreInfo.allComments.push(ruleScoreInfo);
+            criterionScoreInfo.comments.push(ruleScoreInfo);
             ///console.log("  now study score is "+ studyScore);
         }
+        // sort this criterion's comment list by weight
+        criterionScoreInfo.comments.sort(function(a,b) { return parseFloat(b.weight) - parseFloat(a.weight) } )
     }
+    // sort full comment list by weight
+    scoreInfo.allComments.sort(function(a,b) { return parseFloat(b.weight) - parseFloat(a.weight) } )
 
     // normalize score vs. highest possible?
-    ///console.log("RAW SCORE: "+ studyScore);
-    ///console.log("HIGHEST POSSIBLE SCORE: "+ highestPossibleScore);
-    studyScore = studyScore / highestPossibleScore;
-    ///console.log("NORMALIZED SCORE: "+ studyScore);
+    scoreInfo.overallScore = scoreInfo.rawOverallScore / scoreInfo.highestPossibleOverallScore;
 
-    // generalize to assign color to bar?
-    var barColor;
-    if (studyScore > 0.8) {
-        barColor = 'green';
-    } else if (studyScore > 0.6) {
-        barColor = 'yellow';
-    } else {
-        barColor = 'red';
-    }
-    // TODO: do something with this?
-
-    // sort comments by weight
-    //comments.sortOn( 'weight', Array.NUMERIC | Array.DESCENDING );
-    comments.sort(function(a,b) { return parseFloat(b.weight) - parseFloat(a.weight) } )
-    // TODO: (re)build list of suggested next steps
-
-    ///console.log("Captured these comments:");
-
-    // reckon weight of each comment as its final percentage (useful for display)
-    for (i = 0; i < comments.length; i++) {
-        var comment = comments[i];
-        comment.percentScore = Math.round(comment.weight / highestPossibleScore * 100);
-
-        var marker = comment.success ? '+' : '-';
-        ///console.log("  "+ comment.percentScore +" ("+ marker +") "+ comment.message +" ["+ comment.suggestedAction +"]");
-        ///if (comment.suggestedAction) {
-        ///    console.log( 'Suggested Action: '+ comment.suggestedAction );
-        ///}
-    }
-
-    return {
-        overallScore: studyScore,
-        comments: comments
-    }
+    return scoreInfo;
 }
 
 /* implement a basic "dirty" flag (to trigger quality assessment), as described here:

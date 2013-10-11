@@ -123,7 +123,7 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
         </div>
 
         <div style="margin-top: 20px;">
-            <strong>Study quality</strong> <a href="#">(hide details)</a>
+            <strong>Study quality</strong> <a id="quality-details-toggle" onclick="toggleQualityDetails(); return false;" href="#">(hide details)</a>
             
             <div data-bind="css: studyQualityBarClass">
               <div class="bar" data-bind="style: { width: studyQualityPercentStyle }">
@@ -132,13 +132,8 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
             </div>
         </div>
 
-        <div Xclass="well well-large" style="margin-top: 20px;">
-            <strong>Suggested next steps</strong>
-            <ol id="suggested-actions" style="margin-left: 20px;">
-                <li><a href="#">Root default tree (5%)</a></li>
-                <li><a href="#">Map retaining taxon names (15%)</a></li>
-                <li><a href="#">Add supporting files (5%)</a></li>
-            </ol>
+        <div id="study-quality-details" class="well" style="margin-top: -6px; padding: 11px 15px 0px;">
+            <!-- details for score criteria will appear here -->
         </div>
     </div><!-- end of right col -->
 
