@@ -15,6 +15,8 @@ var viewModel;
 var checkForModelChanges;
 
 $(document).ready(function() {
+    // activate scroll-spy feature (scrolling page highlights main nav links)
+    $('body').attr({'data-spy':'scroll', 'data-target':'.navbar'});
     loadSelectedStudy(studyID);
 });
 
