@@ -19,27 +19,53 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
 
 {{extend 'layout.html'}}
 
+<style type="text/css">
+    body {
+        margin-top: 80px;
+    }
+    .alert {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        margin-bottom: 0;
+    }
+    h2 {
+        /* padding-top: 90px; */
+    }
+    h1#main-title {
+        margin-bottom: -80px;
+    }
+    .tab-content .tab-pane {
+        display: block;
+        padding-top: 80px;
+        margin-bottom: -80px;
+    }
+</style>
+
 <div class="row">
     <div class="span8"><!-- not too wide... -->
        {{if 'message' in globals():}}
         <h4>{{=message}}</h4>
        {{pass}}
 
-        <div class="">
+        <div class="tab-content">
 
-            <div class="navbar">
+            <div class="navbar navbar-fixed-top" style="top: 40px;">
               <div class="navbar-inner">
+               <div class="container"><!-- to match main page width -->
                 <ul class="nav">
                 <!-- Appears only during creation..? then replaced by status
                   <li><a href="#">Import</a></li>
                 -->
-                  <li><a href="#">Status</a></li>
-                  <li class="active"><a href="#Metadata">Metadata</a></li>
+                  <li><a href="#Status">Status</a></li>
+                  <li><a href="#Metadata">Metadata</a></li>
                   <li><a href="#Trees">Trees</a></li>
                   <li><a href="#Files">Files</a></li>
                   <li><a href="#OTU-Mapping">OTU Mapping</a></li>
                   <li><a href="#Annotations">Annotations</a></li>
                 </ul>
+               </div>
               </div>
             </div>
 
@@ -47,7 +73,8 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
               <div class="bar" style="width: 100%;"></div>
             </div>
 
-            <h2 id="Status">Status</h2>
+          <div class="tab-pane" id="Status">
+            <h2>Status</h2>
             <div style="margin-bottom: 100px;">
 
             <img src="{{=URL('static','images/study-status-under-revision.png')}}" alt="Under Revision" />
@@ -70,8 +97,10 @@ Please review and re-submit.</pre>
               </div>
             </form>
             </div>
+          </div>
 
-            <h2 id="Metadata">Metadata</h2>
+          <div class="tab-pane" id="Metadata">
+            <h2>Metadata</h2>
             <form class="form-horizontal wider-fields">
               <div class="control-group">
                 <label class="control-label" for="ot_studyPublicationReference">Publication reference</label>
@@ -126,8 +155,11 @@ Please review and re-submit.</pre>
 
             </form>
 
+          </div>
 
-            <h2 id="Trees">Trees</h2>
+          <div class="tab-pane" id="Trees">
+
+            <h2 id="">Trees</h2>
             <div style="margin-bottom: 100px;">
                 <p><em>{A paginated list of trees in this study. Also possibly a single-tree import tool? Probably a modal tree view/editor (D3?).}</em></p>
 
@@ -168,8 +200,11 @@ Please review and re-submit.</pre>
                 </table>
             </div>
 
+          </div>
 
-            <h2 id="Files">Files</h2>
+          <div class="tab-pane" id="Files">
+
+            <h2 id="">Files</h2>
             <div style="margin-bottom: 100px;">
                 <p><em>{A paginated(?) list of files in this study. Also possibly an import tool? Bulk imports?}</em></p>
 
@@ -195,8 +230,11 @@ Please review and re-submit.</pre>
                 </table>
             </div>
 
+          </div>
 
-            <h2 id="OTU-Mapping">OTU Mapping</h2>
+          <div class="tab-pane" id="OTU-Mapping">
+
+            <h2 id="">OTU Mapping</h2>
             <div style="margin-bottom: 100px;">
                 <p><em>{A paginated(?) grid of OTUs (in preferred trees only?), their original names, and any mapping in effect. Also possibly some regex-helpers?}</em></p>
 
@@ -247,8 +285,11 @@ Please review and re-submit.</pre>
                 </table>
             </div>
 
+          </div>
 
-            <h2 id="Annotations">Annotations</h2>
+          <div class="tab-pane" id="Annotations">
+
+            <h2 id="">Annotations</h2>
             <div style="margin-bottom: 100px;">
                 <p><em>{A paginated list of notes in this study, most recent first. Add filters? Location links jump to each annotation in situ.}</em></p>
 
@@ -298,9 +339,11 @@ Please review and re-submit.</pre>
                 </table>
 
             </div>
+          </div>
+
 
             <i><a href="#" onclick="if ($('#formatted-nexson').is(':visible')) { $('#formatted-nexson').hide() } else { $('#formatted-nexson').show() }; return false;">current nexml</a> (remapped for return to server)</i>
-            <pre id="formatted-nexson" data-bind="text: ko.mapping.toJSON(nexml.meta)" style="color: #933; font-size: small; width: 100%; height: 500px; overflow: auto; display: none;">
+            <pre id="formatted-nexson" data-bind="text: ko.mapping.toJSON(nexml.meta)" style="color: #933; font-size: small; width: 90%; height: 500px; overflow: auto; display: none;">
             </pre>
             <div style="height: 2em;">&nbsp;</div>
 
@@ -309,6 +352,7 @@ Please review and re-submit.</pre>
     </div><!-- end of main col -->
 
     <div class="span4">
+      <div style="margin-top: 20px; position: fixed;">
         <div class="Xbtn-group">
               <button class="btn btn"
                       onclick="if (validateFormData()) saveFormDataToStudyJSON(); return false;">Save Study</button>
@@ -330,6 +374,7 @@ Please review and re-submit.</pre>
         <div id="study-quality-details" class="well" style="margin-top: -6px; padding: 11px 15px 0px;">
             <!-- details for score criteria will appear here -->
         </div>
+      </div>
     </div><!-- end of right col -->
 
 </div><!-- /.row -->
@@ -342,5 +387,12 @@ Please review and re-submit.</pre>
     var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
     var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
     var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
+    $(document).ready(function() {
+        $('body').attr({'data-spy':'scroll', 'data-offset': 80});
+
+        $('.navbar-inverse:eq(0)')
+            .addClass('navbar-fixed-top')
+            .removeClass('navbar-static-top');
+    });
 </script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
