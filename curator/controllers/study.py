@@ -36,6 +36,8 @@ def create():
 @auth.requires_login()
 def edit():
     #return dict(message="study/edit")
+    chosenLayout = request.vars.get('layout', 'TOP')  # TOP, LEFT, RIGHT
+    response.view = 'study/edit-%s.html' % chosenLayout  #e eg, 'study/edit-RIGHT.html'
     return dict()
 
 
