@@ -11,4 +11,6 @@ move  Stemodiopsis  genus Linderniaceae  Lamiales  http://www.mobot.org/mobot/re
 move  Micranthemum  genus Linderniaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/linderniaceaegen.html
 synonym Bryodes madagascariensis  Psammetes  madagascariensis lamiales  http://www.tropicos.org/Name/29207676?tab=acceptednames
 move  Psammetes  genus Linderniaceae  Lamiales  http://www.ncbi.nlm.nih.gov/nuccore/421994792
-move  Bryodes  genus  Linderniaceae  http://www.biomedcentral.com/content/pdf/1471-2148-10-352.pdf
+move  Bryodes  genus  Linderniaceae  Lamiales http://www.biomedcentral.com/content/pdf/1471-2148-10-352.pdf
+move  Acerites  genus  Sapindaceae  Sapindales
+move  Quercinium  genus  Fagaceae Fagales
