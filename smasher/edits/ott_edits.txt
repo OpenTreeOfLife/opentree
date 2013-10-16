@@ -18,3 +18,4 @@ move  Plataninium  genus  Platanaceae Fagales http://www.jstor.org/stable/247450
 move  Xylocaryon  genus  Proteaceae Proteales http://www.jstor.org/stable/2666212
 move  Limnobiophyllum  genus  Araceae Alismatales http://www.sciencedirect.com/science/article/pii/030437709400442O
 prune Flacourtiaceae  family  eudicotyledons Bryan Drew
+move  Perseoxylon genus Lauraceae Laurales  http://www.sciencedirect.com/science/article/pii/S0753396905000169
