@@ -15,3 +15,6 @@ move  Bryodes  genus  Linderniaceae  Lamiales http://www.biomedcentral.com/conte
 move  Acerites  genus  Sapindaceae  Sapindales  http://rstb.royalsocietypublishing.org/content/351/1340/589.short
 move  Quercinium  genus  Fagaceae Fagales http://palaeontology.palass-pubs.org/pdf/Vol%203/Pages%2086-92.pdf
 move  Plataninium  genus  Platanaceae Fagales http://www.jstor.org/stable/2474500
+move  Xylocaryon  genus  Proteaceae Proteales http://www.jstor.org/stable/2666212
+move  Limnobiophyllum  genus  Araceae Alismatales http://www.sciencedirect.com/science/article/pii/030437709400442O
+prune Flacourtiaceae  family  eudicotyledons Bryan Drew
