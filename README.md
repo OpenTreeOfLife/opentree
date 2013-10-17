@@ -8,6 +8,26 @@ Installation
 Instructions coming soon. In the meantime, see the phylografter instructions for
 more details about using web2py.
 
+We strongly recommend using a virtual environment to manage the version of
+Python and installed modules. We're currently running opentree with Python
+v2.7.3. Newer versions of python2.7 should work, but **NOTE that web2py is not
+compatible with Python 3**.
+
+If necessary, compile Python2.7 and use it when making your virtualenv.  You
+should be able to safely install multiple versions of python using your
+preferred package manager, or by configuring Python2.7 with the --prefix
+option and 'make altinstall'.
+
+So the final invocation to create your virtualenv should look something like:
+```
+$ virtualenv --python=/usr/bin/python2.7 --distribute <path/to/new/virtualenv/>
+```
+
+Or, if you're using virtualenvwrapper (http://virtualenvwrapper.readthedocs.org/en/latest/index.html):
+```
+$ mkvirtualenv --python=python2.7 --no-site-packages --distribute opentree
+```
+
 The included **requirements.txt** file lists known-good versions of all the required
 python modules for opentree, plus a few convenience modules. To [install these modules 
 using pip](http://www.pip-installer.org/en/latest/cookbook.html#requirements-files), 
