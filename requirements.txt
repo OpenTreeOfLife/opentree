@@ -3,14 +3,9 @@ nose==1.2.1
 ipython==0.13.1
 wsgiref==0.1.2
 PIL==1.1.7
-biopython==1.61
 lxml==3.1.1
-numpy==1.7.0
-scipy==0.11.0
 simplejson==3.2.0
 stevedore==0.8
 pyparsing==1.5.7
 requests==1.2.0
 virtualenv==1.9.1
-virtualenv-clone==0.2.4
-virtualenvwrapper==3.7
