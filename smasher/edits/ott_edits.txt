@@ -2,3 +2,20 @@
 # include all columns for each line
 # separate columns with tabs, not spaces
 command name    rank    parent  context sourceInfo
+move  Dermatobotrys saundersii  species Scrophulariaceae  lamiales  http://www.mobot.org/mobot/research/apweb/
+synonym Berendtia Hemichaena lamiales  http://www.tropicos.org/Name/50009025?tab=acceptednames; http://www.mobot.org/mobot/research/apweb/ 
+move  Hemichaena  genus Phrymaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/
+move  Triaenophora  genus orobanchaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/orobanchaceaegen.html (mispelled at url)
+move  Rehmannia  genus Orobanchaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/orobanchaceaegen.html
+move  Stemodiopsis  genus Linderniaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/linderniaceaegen.html
+move  Micranthemum  genus Linderniaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/linderniaceaegen.html
+synonym Bryodes madagascariensis  Psammetes  madagascariensis lamiales  http://www.tropicos.org/Name/29207676?tab=acceptednames
+move  Psammetes  genus Linderniaceae  Lamiales  http://www.ncbi.nlm.nih.gov/nuccore/421994792
+move  Bryodes  genus  Linderniaceae  Lamiales http://www.biomedcentral.com/content/pdf/1471-2148-10-352.pdf
+move  Acerites  genus  Sapindaceae  Sapindales  http://rstb.royalsocietypublishing.org/content/351/1340/589.short
+move  Quercinium  genus  Fagaceae Fagales http://palaeontology.palass-pubs.org/pdf/Vol%203/Pages%2086-92.pdf
+move  Plataninium  genus  Platanaceae Fagales http://www.jstor.org/stable/2474500
+move  Xylocaryon  genus  Proteaceae Proteales http://www.jstor.org/stable/2666212
+move  Limnobiophyllum  genus  Araceae Alismatales http://www.sciencedirect.com/science/article/pii/030437709400442O
+prune Flacourtiaceae  family  eudicotyledons Bryan Drew
+move  Perseoxylon genus Lauraceae Laurales  http://www.sciencedirect.com/science/article/pii/S0753396905000169

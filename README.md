@@ -8,6 +8,26 @@ Installation
 Instructions coming soon. In the meantime, see the phylografter instructions for
 more details about using web2py.
 
+We strongly recommend using a virtual environment to manage the version of
+Python and installed modules. We're currently running opentree with Python
+v2.7.3. Newer versions of python2.7 should work, but **NOTE that web2py is not
+compatible with Python 3**.
+
+If necessary, compile Python2.7 and use it when making your virtualenv.  You
+should be able to safely install multiple versions of python using your
+preferred package manager, or by configuring Python2.7 with the --prefix
+option and 'make altinstall'.
+
+So the final invocation to create your virtualenv should look something like:
+```
+$ virtualenv --python=/usr/bin/python2.7 --distribute <path/to/new/virtualenv/>
+```
+
+Or, if you're using virtualenvwrapper (http://virtualenvwrapper.readthedocs.org/en/latest/index.html):
+```
+$ mkvirtualenv --python=python2.7 --no-site-packages --distribute opentree
+```
+
 The included **requirements.txt** file lists known-good versions of all the required
 python modules for opentree, plus a few convenience modules. To [install these modules 
 using pip](http://www.pip-installer.org/en/latest/cookbook.html#requirements-files), 
@@ -16,20 +36,30 @@ using pip](http://www.pip-installer.org/en/latest/cookbook.html#requirements-fil
 pip install -r requirements.txt
 </pre>
 
-The contents of the webapp subdirectory  are a web2py application.  Make a symbolic 
+The contents of the webapp subdirectory are a web2py application.  Make a symbolic 
 link called "opentree" in a web2py/applications directory to the webapp directory.
 You should be able to launch web2py and see the app running at http://127.0.0.1:8000/opentree/
+
+There is now a second web2py app for the curation tool, which will also need a
+symlink. This will be available at http://127.0.0.1:8000/curator/
 
 Briefly:
 
 1. Download and unpack the source code version of web2py from 
 http://www.web2py.com/examples/default/download MTH used version 2.4.2 of web2py
 
-2. Create the sym link
+NOTE: This version of web2py includes basic support for OAuth 2.0, but it needs a minor patch to support for login via the GitHub API v3.
+(This is used for the curation UI, which uses GitHub for its datastore and attribution.) Replace this web2py file with a modified version in the same folder as this README:
+<pre>
+{web2py-2.4.4}/gluon/contrib/login_methods/oauth20_account.py
+</pre>
+
+2. Create the sym links for the main web app and the study curation tool.
 
 <pre>
 cd web2py/applications
 ln -s /full/path/to/opentree/webapp opentree
+ln -s /full/path/to/opentree/curator curator
 </pre>
 
 3. Customize web2py's site-wide routing behavior using "SITE.routes.py"
@@ -91,6 +121,9 @@ webapp/languages
 
 webapp/cache, webapp/databases, webapp/errors, webapp/sessions, webapp/uploads
 : directories used by web2py to store content associated with user's activities. Content here should not need to be committed to version control.
+
+curator/*
+: similar subdirectories to those in webapp/* above
 
 Acknowledgements
 ----------------

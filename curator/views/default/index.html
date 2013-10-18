@@ -1,0 +1,39 @@
+{{left_sidebar_enabled,right_sidebar_enabled=False,False}}
+{{response.title = "Study Curator"}}
+{{response.subtitle = "Building the tree, one study at a time"}}
+{{extend 'layout.html'}}
+
+<div class="row">
+<div class="span5"><!-- not too wide... -->
+{{if 'message' in globals():}}
+<h4>{{=message}}X</h4>
+{{pass}}
+
+<p>
+This tool allows you to contribute studies and trees to our database for
+synthesis. Once your data is submitted, you can return and make improvements,
+share your data more widely, and watch for changes in your area of interest.
+</p>
+<p>
+All data is stored as documents in <a href="https://github.com/" target="_blank">GitHub</a>, 
+a collaborative coding website. This curation tool makes it easy to edit and
+contribute data, but you'll need a (free) GitHub account to participate.
+</p>
+<p>
+Once you've created an account on GitHub, just <a href="/curator/user/login?_next=/curator">login</a> using the link above. Once
+you've agreed to give access to the OpenTree tool, you can start adding data
+immediately.
+</p>
+</div><!-- /div.spanX -->
+</div><!-- /.row -->
+
+{{block right_sidebar}}
+{{=A(T("Administrative Interface"), _href=URL('admin','default','index'), _class='btn',
+     _style='margin-top: 1em;')}}
+<h6>{{=T("Don't know what to do?")}}</h6>
+<ul>
+  <li>{{=A(T("Online examples"), _href=URL('examples','default','index'))}}</li>
+  <li><a href="http://web2py.com">web2py.com</a></li>
+  <li><a href="http://web2py.com/book">{{=T('Documentation')}}</a></li>
+</ul>
+{{end}}
