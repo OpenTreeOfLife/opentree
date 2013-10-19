@@ -1,0 +1,39 @@
+# Modified from local config found on norbert.csail.mit.edu October 2013
+
+# paths for the study/status page
+[paths]
+#nexsonsdir = /raid/not_backed_up/opentree/avatol_nexsons
+#study_to_status_script = /raid/not_backed_up/opentree/avatol_nexsons/nexson2treemach/study_nexson_to_status_html.py
+
+# Specify the public-facing hostname[:port] for your opentree site, required to
+# return seamlessly from Janrain login
+[hosting]
+hostdomain = dev.opentreeoflife.org
+ 
+
+# List public-facing base URL for treemachine and taxomachine services
+# (NOTE that these are used by both server- and client-side code)
+# Change these to localhost if tree/taxo are running locally
+[domains]
+treemachine = http://dev.opentreeoflife.org/treemachine
+taxomachine = http://dev.opentreeoflife.org/taxomachine
+ 
+
+# Building on the URLs above, complete the public-facing URL for all methods
+# (again, these should work from both server- and client-side code)
+#
+# NOTE: In our example setup, all service methods are proxied through Apache as
+# URLs within the main opentree site. So we assume that partial paths '/db/data/' 
+# are handled in the ProxyPass statement.
+[method_urls]
+getDraftTreeID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeID
+getSyntheticTree_url = {treemachine_domain}/ext/GoLS/graphdb/getSyntheticTree  
+getSourceTree_url = {treemachine_domain}/ext/GoLS/graphdb/getSourceTree  
+getConflictTaxJsonAltRel_url = {taxomachine_domain}/ext/GetJsons/node/{nodeID}/getConflictTaxJsonAltRel
+getDraftTreeForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeForOttolID  
+getDraftTreeForNodeID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeForNodeID
+doTNRSForNames_url = {taxomachine_domain}/ext/TNRS/graphdb/autocompleteBoxQuery
+getContextsJSON_url = {taxomachine_domain}/ext/TNRS/graphdb/getContextsJSON
+getNodeIDForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getNodeIDForOttolID
+getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
+
