@@ -13,7 +13,16 @@
 routers = dict(
     # base router
     BASE=dict(
+        default_application='opentree',
+
+        root_static=[
+            # look for these files in the default app's static/ directory
+            'favicon.ico',
+            'robots.txt',
+        ]
     ),
+
+    # for more routing rules, see routes.py (if any) inside each app's directory 
 )
 
 # Specify log level for rewrite's debug logging
@@ -21,7 +30,7 @@ routers = dict(
 #                  off, print (print uses print statement rather than logging)
 # GAE users may want to use 'off' to suppress routine logging.
 #
-#logging = 'debug'
+logging = 'off'
 
 def __routes_doctest():
     '''
