@@ -40,6 +40,7 @@ def index():
 
     if len(request.args) > 1:
         if not treeview_dict['nodeID']:
+        #if (not treeview_dict['nodeID']) and '@' in request.args[1]:
             treeview_dict['domSource'], treeview_dict['nodeID'] = request.args[1].split('@')
         else:
             treeview_dict['nodeName'] = request.args[1]
@@ -54,7 +55,7 @@ def index():
 
     # retrieve latest synthetic-tree ID (and its 'life' node ID)
     # TODO: Only refresh this periodically? Or only when needed for initial destination?
-    treeview_dict['draftTreeName'], treeview_dict['lifeNodeID'] = fetch_current_synthetic_tree_ids()
+    treeview_dict['draftTreeName'], treeview_dict['lifeNodeID'], treeview_dict['startingNodeID'] = fetch_current_synthetic_tree_ids()
     treeview_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names()
 
     return treeview_dict
@@ -115,17 +116,22 @@ def fetch_current_synthetic_tree_ids():
 
         method_dict = get_opentree_services_method_urls(request)
         fetch_url = method_dict['getDraftTreeID_url']
-        # this needs to be a POST (pass empty fetch_args); if GET, it just describes the API
-        ids_response = fetch(fetch_url, data='')
+
+        fetch_args = {'startingTaxonName': "cellular organisms"}
+
+        # this needs to be a POST (pass fetch_args or ''); if GET, it just describes the API
+        ids_response = fetch(fetch_url, data=fetch_args)
 
         ids_json = simplejson.loads( ids_response )
         draftTreeName = ids_json['draftTreeName'].encode('utf-8')
         lifeNodeID = ids_json['lifeNodeID'].encode('utf-8')
-        return (draftTreeName, lifeNodeID)
+        # IF we get a separate starting node ID, use it; else we'll start at 'life'
+        startingNodeID = ids_json.get('startingNodeID', lifeNodeID).encode('utf-8')
+        return (draftTreeName, lifeNodeID, startingNodeID)
 
     except Exception, e:
         # throw 403 or 500 or just leave it
-        return ('ERROR', e.message)
+        return ('ERROR', e.message, 'NO_STARTING_NODE_ID')
 
 def fetch_current_TNRS_context_names():
     try:
