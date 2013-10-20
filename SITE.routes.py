@@ -19,11 +19,20 @@ routers = dict(
             # look for these files in the default app's static/ directory
             'favicon.ico',
             'robots.txt',
-        ]
+        ],
     ),
 
     # for more routing rules, see routes.py (if any) inside each app's directory 
 )
+
+# error pages (for ALL APPS)
+routes_onerror=[
+  # ('init/400', '/opentree/default/login'),
+  # ('curator/*', '/opentree/static/fail.html'),
+  # ('*/404', '/opentree/static/cantfind.html'),
+  # ('opentree/*', '/opentree/static/fail.html'),
+  ('*/*', '/opentree/default/error'),
+]
 
 # Specify log level for rewrite's debug logging
 # Possible values: debug, info, warning, error, critical (loglevels),

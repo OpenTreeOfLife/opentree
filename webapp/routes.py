@@ -6,10 +6,13 @@
 # Let's keep all the important stuff here, and just copy a minimal router
 # (SITE.routes.py) into the site root.
 
-# TODO: Consider adding 
-#   root_static (for favicon and robots.txt)? I think these are handled by default!
-#   domain (maps domain name to app)
-#   map_static (?)
+# NOTE that this (app-specific) routes.py file mainly defines a router by the
+# same name. More general settings must be done in the main routes.py alongside
+# the web2py/applications/ directory
+#   root_static (for favicon.ico, robots.txt, etc)
+#   routes_onerror (defines error pages per app, per error code, or defaults)
+#   domain (maps domain names and ports to particular app)
+# See SITE.routes.py for recommended settings.
 
 routers = dict(
 
@@ -28,6 +31,9 @@ routers = dict(
             'fetch_current_TNRS_context_name',
             'user',     # implicit? inherited? and needed for login, logout, etc
         ],
+
+        # The default function will grab *anything* else, so it should know how to
+        # distinguish between errors and "generous" catch-all routing.
         default_function='index',
     ),
 )
