@@ -357,9 +357,10 @@ p#tree-description {
     margin: 0;
 }
 h1#main-title {
+    font-size: 32px;
     margin-bottom: 0;
     padding: 2px 0 26px;
-    line-height: 1em;
+    line-height: 1.2em;
 }
 h1#main-title .comments-indicator,
 h1#main-title .properties-indicator {
@@ -416,6 +417,12 @@ div#r0 {
     padding: 1px 6px;
     background: red; 
     color: white;
+}
+
+div.flash {
+    position: absolute;
+    left: 0;
+    right: 0;
 }
 
 div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:pointer;}

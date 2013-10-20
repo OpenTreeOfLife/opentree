@@ -15,8 +15,8 @@ var viewModel;
 var checkForModelChanges;
 
 $(document).ready(function() {
-    // activate scroll-spy feature (scrolling page highlights main nav links)
-    $('body').attr({'data-spy':'scroll', 'data-target':'.navbar'});
+    // auto-select first tab (Status)
+    $('.nav-tabs a:first').tab('show');
     loadSelectedStudy(studyID);
 });
 
@@ -36,13 +36,11 @@ function loadSelectedStudy(id) {
      */
 
     var fetchURL = API_load_study_GET_url.replace('{STUDY_ID}', studyID);
+    
+    // TEST URL with local JSON file
+    ///fetchURL = '/curator/static/1003.json';
 
     // TODO: try an alternate URL, pulling directly from GitHub?
-
-    // TODO: switch to JSONP, in case we're calling another domain
-
-    // HACK to prevent additional _ arg from being passed (didn't help)
-    //$.ajaxSetup({cache:true});
 
     // TODO: show/hide spinner during all AJAX requests?
     $('#ajax-busy-bar').show();
@@ -87,6 +85,10 @@ function loadSelectedStudy(id) {
             });
 
             ko.applyBindings(viewModel);
+
+            var studyShortDescription = getMetaTagAccessorByAtProperty(viewModel.nexml.meta(), 'ot:studyPublicationReference')();
+            $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyShortDescription);
+
             updateQualityDisplay();
 
             // update quality assessment whenever anything changes
@@ -365,17 +367,29 @@ var studyScoringRules = {
                 var studyMetatags = studyData.nexml.meta();
                 for (var i = 0; i < studyMetatags.length; i++) {
                     var testMeta = studyMetatags[i];
-                    var testValue;
-                    switch(testMeta['@xsi:type']()) {
-                        case 'nex:ResourceMeta':
-                            testValue = testMeta['@href']();  // uses special attribute
-                            break;
-                        default: 
-                            testValue = testMeta['$'](); // assumes value is stored here
-                    }
-                    if ($.trim(testValue) === "") {
-                        ///console.log(">>> metatag '"+ testMeta['@property']() +"' is empty!");
-                        return false;
+                    var testProperty = testMeta['@property']();
+                    switch(testProperty) {
+                        case 'ot:studyPublicationReference':
+                        case 'ot:studyPublication':
+                        case 'ot:studyYear':
+                        case 'ot:studyId':
+                        case 'ot:focalClade':
+                        case 'ot:curatorName':
+                            var testValue;
+                            switch(testMeta['@xsi:type']()) {
+                                case 'nex:ResourceMeta':
+                                    testValue = testMeta['@href']();  // uses special attribute
+                                    break;
+                                default: 
+                                    testValue = testMeta['$'](); // assumes value is stored here
+                            }
+                            if ($.trim(testValue) === "") {
+                                ///console.log(">>> metatag '"+ testMeta['@property']() +"' is empty!");
+                                return false;
+                            }
+                        default:
+                            // ignore other meta tags (annotations)
+                            continue;
                     }
                 }
                 return true;
