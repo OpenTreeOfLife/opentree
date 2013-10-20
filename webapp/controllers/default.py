@@ -37,6 +37,9 @@ def index():
             treeview_dict['viewer'] = request.args[0]
         elif '@' in request.args[0]:
             treeview_dict['domSource'], treeview_dict['nodeID'] = request.args[0].split('@')
+        else:
+            # first arg is neither a viewer nor a proper node, which is a Bad Thing
+            raise HTTP(404)
 
     if len(request.args) > 1:
         if not treeview_dict['nodeID']:
