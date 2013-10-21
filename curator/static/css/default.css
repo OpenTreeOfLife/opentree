@@ -440,6 +440,7 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .criterion-details {
     padding-top: 0px;
     padding-bottom: 5px;
+    cursor: pointer;
 }
 .criterion-details ul {
     list-style-type: disc;
@@ -448,4 +449,15 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .criterion-details ul li {
     line-height: 1em;
     padding: 0.25em 0;
+}
+
+.suggestion-list {
+    /* list-style-type: none; */
+}
+.suggestion-list li {
+    padding-bottom: 0.2em;
+    color: #b94a48;
+}
+.suggestion-list span.label {
+    padding: 0.3em 0.7em 0.4em;
 }
