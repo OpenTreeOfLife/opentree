@@ -91,8 +91,24 @@ function loadSelectedStudy(id) {
 
             ko.applyBindings(viewModel);
 
-            var studyShortDescription = getMetaTagAccessorByAtProperty(viewModel.nexml.meta(), 'ot:studyPublicationReference')();
-            $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyShortDescription);
+            var studyFullReference = getMetaTagAccessorByAtProperty(viewModel.nexml.meta(), 'ot:studyPublicationReference')();
+            var studyCompactReference = "(Untitled)";
+            if ($.trim(studyFullReference) !== "") {
+                // capture the first valid year in the reference
+                var compactYear = studyFullReference.match(/(\d{4})/)[0];  
+                // split on the year to get authors (before), and capture the first surname
+                var compactPrimaryAuthor = studyFullReference.split(compactYear)[0].split(',')[0];
+                var studyCompactReference = compactPrimaryAuthor +", "+ compactYear;    // eg, "Smith, 1999";
+            }
+            $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
+
+            var studyDOI = getMetaTagAccessorByAtProperty(viewModel.nexml.meta(), 'ot:studyPublication')();
+            studyDOI = $.trim(studyDOI);
+            if (studyDOI === "") {
+                $('a.main-title-DOI').hide();
+            } else {
+                $('a.main-title-DOI').text(studyDOI).attr('href', studyDOI).show();
+            }
 
             updateQualityDisplay();
 
