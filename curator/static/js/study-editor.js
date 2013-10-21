@@ -21,6 +21,11 @@ $(document).ready(function() {
 });
 
 
+function goToTab( tabName ) {
+    // click the corresponding tab, if found
+    $('.nav-tabs a:contains('+ tabName +')').tab('show');
+}
+
 function loadSelectedStudy(id) {
     /* Use REST API to pull study data from datastore
      * :EXAMPLE: GET http://api.opentreeoflife.org/1/study/{23}.json
@@ -123,18 +128,22 @@ function scoreToBarClasses( percentScore ) {
 function updateQualityDisplay() {
     // generate, then apply, fresh scoring information
     var scoreInfo = scoreStudy(viewModel);
+
     // update "progress bar" with percentage and color
     viewModel.studyQualityPercent( floatToPercent(scoreInfo.overallScore) );
     // update list of suggested actions below
     var $detailsPanel = $('#study-quality-details');
+    // update local tallies and suggestions in each matching tab and panel
+    var $navTabs = $('.nav-tabs:eq(0) li');
+    
     var addingCriteriaPanels = ($detailsPanel.find('div.criterion-details').length === 0);
     var cName, criterionScoreInfo, cPercentScore, criterionRules, rule, ruleScoreInfo;
-    var nthPanel = 0, $cPanel, $cProgressBar, $cSuggestionsList;
+    var nthPanel = 0, $cPanel, $cProgressBar, $cSuggestionsList, $cTabTally, $cTabSuggestionList, suggestionCount;
     for (cName in scoreInfo.scoredCriteria) {
         if (addingCriteriaPanels) {
             // generate criteria detail areas (once only!)
             $detailsPanel.append(
-                '<div class="criterion-details">'
+                '<div class="criterion-details" onclick="goToTab(\''+ cName +'\'); return false;">'
                   + '<strong>'+ cName +'</strong>'
                   + '<span class="criterion-score">50%</span>'
                   + '<div class="progress progress-info criterion-score-bar">'
@@ -146,20 +155,45 @@ function updateQualityDisplay() {
         }
         criterionScoreInfo = scoreInfo.scoredCriteria[ cName ];
         $cPanel = $detailsPanel.find('div.criterion-details:eq('+ nthPanel +')');
-        cPercentScore = floatToPercent(criterionScoreInfo.score / criterionScoreInfo.highestPossibleScore);
+
+        if (criterionScoreInfo.highestPossibleScore === 0.0) {
+            //continue;
+            cPercentScore = 100;  // placeholder if there are no active rules for this criterion
+        } else {
+            cPercentScore = floatToPercent(criterionScoreInfo.score / criterionScoreInfo.highestPossibleScore);
+        }
+
         $cPanel.find('.criterion-score').text( cPercentScore+'%' );
         $cPanel.find('.criterion-score-bar').attr('class', 'criterion-score-bar '+ scoreToBarClasses( cPercentScore ));
         $cPanel.find('.criterion-score-bar .bar').css('width', Math.max(4, cPercentScore)+'%')
         $cSuggestionsList = $cPanel.find('ul');
+        
+        // find a tab whose name matches this criterion
+        console.log($navTabs);
+        $cTabTally = $navTabs.filter(':contains('+ cName +')').find('span.badge');
+        console.log($cTabTally);
+
+        $cTabSugestionList = $('.tab-pane[id='+ cName.replace(' ','-') +'] ul.suggestion-list');
 
         $cSuggestionsList.empty();
+        $cTabSugestionList.empty();
+        var suggestionCount = 0;
+
         for (var i = 0; i < criterionScoreInfo.comments.length; i++) {
             var c = criterionScoreInfo.comments[i];
             if (c.suggestedAction) {
-                $cSuggestionsList.append('<li><a href="#">'+ c.suggestedAction);  /// TODO: restore this? +' <span style="color: #aaa;">('+ c.percentScore +'%)</span></a></li>');
+                suggestionCount++;
+                $cSuggestionsList.append('<li>'+ c.suggestedAction +'</li>');
+                $cTabSugestionList.append('<li>'+ c.suggestedAction);  /// TODO: restore this? +' <span style="color: #aaa;">('+ c.percentScore +'%)</span></a></li>');
             }
         }
     
+        if (suggestionCount === 0) {
+            $cTabTally.find();
+        } else {
+            $cTabTally.text(suggestionCount).show();
+        }
+
         nthPanel++;
     };
 
@@ -356,10 +390,25 @@ function TreeNode() {
  *
  * validity? or should we make it "impossible" to build invalid data here?
  *
+ * Let's try again, organizing by tab (Status, Metadata, etc)
  */
 var studyScoringRules = {
-    'Completeness': [
-        // Is the study fully fleshed out?
+    'Status': [
+        // general validation problems... something that spans multiple tabs
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ],
+    'Metadata': [
+        // problems with study metadata, DOIs, etc
         {
             description: "The study should have all metadata fields complete.",
             test: function(studyData) {
@@ -400,10 +449,7 @@ var studyScoringRules = {
             suggestedAction: "Check study metadata for empty fields."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
 
-        }
-    ],
-    'Data Integrity': [  
-        // Is the study data internally consistent, with no loose ends?
+        },
         {
             description: "The study year should match the one in its publication reference.",
             test: function(studyData) {
@@ -459,31 +505,76 @@ var studyScoringRules = {
 
         }
     ],
-    'Other stuff [dummy tests]': [    // TODO: remove this, just for initial demo
-        // this is just here to balance out the score with other, unseen stuff
-        {
-            description: "this represents good stuff elsewhere in the study",
-            test: function() {
-                return true;
-            },
-            weight: 0.4, 
-            successMessage: "",
-            failureMessage: "",
-            suggestedAction: ""
-                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        },
-        {
-            description: "this represents bad/incomplete stuff elsewhere in the study",
-            test: function() {
-                return false;
-            },
-            weight: 0.2, 
-            successMessage: "",
-            failureMessage: "",
-            suggestedAction: "Map all taxon names in preferred trees"
-                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        }
-    ]
+    'Trees': [
+        // no trees, unrooted or badly rooted trees
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ],
+    'Files': [
+        // problems with uploaded files (formats, missing, corrupt)
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ],
+    'OTU Mapping': [
+        // un-mapped taxon names, conflicting or dubious mapping
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ],
+    'Annotations': [
+        // pending or unanswered questions, etc.
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ],
+    'Tools': [
+        // maybe just happy news here.. new tools available?
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ],
 }
 
 
