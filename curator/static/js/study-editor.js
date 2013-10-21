@@ -185,9 +185,7 @@ function updateQualityDisplay() {
         $cSuggestionsList = $cPanel.find('ul');
         
         // find a tab whose name matches this criterion
-        console.log($navTabs);
         $cTabTally = $navTabs.filter(':contains('+ cName +')').find('span.badge');
-        console.log($cTabTally);
 
         $cTabSugestionList = $('.tab-pane[id='+ cName.replace(' ','-') +'] ul.suggestion-list');
 
