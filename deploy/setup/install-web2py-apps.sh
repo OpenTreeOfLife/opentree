@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 echo "Installing web2py applications"
 date
 
@@ -7,6 +9,7 @@ date
 # after server is up and running.
 
 mkdir -p downloads
+mkdir -p repo
 
 if [ ! -x `which dialog` ]; then
     # I was hoping this would help with apache2's configure step, but it doesn't
@@ -92,6 +95,8 @@ EOF
 # ---------- THE WEB APPLICATIONS ----------
 # Set up web2py apps as directed in the README.md file
 
+opentree=repo/opentree
+
 # Consider cloning a designated tag, using git clone --branch <tag>
 
 # ssh cloning fails with "Permission denied (publickey)"
@@ -101,32 +106,35 @@ EOF
 # has already been cloned, but it's more complicated than I want to
 # figure out right now.
 
-rm -rf opentree
-git clone https://github.com/OpenTreeOfLife/opentree.git
+if [ ! -d $opentree ] ; then
+    (cd `dirname $opentree`; git clone https://github.com/OpenTreeOfLife/opentree.git)
+else
+    (cd $opentree; git checkout .; git pull origin master)
+fi
 
 # Modify the requirements list
 # numpy etc. have all kinds of dependency problems.
-cp opentree/requirements.txt opentree/requirements.txt.save
+cp $opentree/requirements.txt requirements.txt.save
 if grep --invert-match "biopython\\|numpy\\|scipy\\|PIL\\|lxml" \
-      opentree/requirements.txt >requirements.txt.new ; then
-    mv requirements.txt.new opentree/requirements.txt
+      $opentree/requirements.txt >requirements.txt.new ; then
+    mv requirements.txt.new $opentree/requirements.txt
 fi
 
 # xslt
 # svnversion ?
-(cd opentree; pip install -r requirements.txt)
+(cd $opentree; pip install -r requirements.txt)
 
-cp -p opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
-cp -p opentree/SITE.routes.py web2py/routes.py
+cp -p $opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
+cp -p $opentree/SITE.routes.py web2py/routes.py
 
 # File pushed here using rsync, see push.sh
-cp -p setup/webapp-config opentree/webapp/private/config 
+cp -p setup/webapp-config $opentree/webapp/private/config 
 
 # Similarly taxomachine
 
 (cd web2py/applications; \
-    ln -sf ../../opentree/webapp ./opentree; \
-    ln -sf ../../opentree/curator ./)
+    ln -sf ../../repo/opentree/webapp ./opentree; \
+    ln -sf ../../repo/opentree/curator ./)
 
 # Set up apache
 
@@ -142,3 +150,4 @@ rm -f /etc/apache2/sites-available/000-default
 echo Restarting apache2
 sudo apache2ctl graceful
 
+echo "source $HOME/setup/activate" >~/.bashrc
