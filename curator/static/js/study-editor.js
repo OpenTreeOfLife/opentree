@@ -409,20 +409,6 @@ function TreeNode() {
  * Let's try again, organizing by tab (Status, Metadata, etc)
  */
 var studyScoringRules = {
-    'Status': [
-        // general validation problems... something that spans multiple tabs
-                        {
-                            description: "placeholder to fake happy data",
-                            test: function() {
-                                return true;
-                            },
-                            weight: 0.4, 
-                            successMessage: "",
-                            failureMessage: "",
-                            suggestedAction: ""
-                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-                        }
-    ],
     'Metadata': [
         // problems with study metadata, DOIs, etc
         {
@@ -591,6 +577,20 @@ var studyScoringRules = {
                                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
                         }
     ],
+    'Status': [
+        // general validation problems... something that spans multiple tabs
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ]
 }
 
 
