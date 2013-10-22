@@ -138,12 +138,27 @@ body {
                 </div>
 
                 <table class="table table-condensed">
+                  <thead>
                     <tr>
                         <th>Tree name (click to edit tree)</th>
                         <th>Type</th>
+                        <th>Ingroup clade</th>
                         <th>OTUs mapped</th>
+                        <th>Rooted?</th>
                         <th>Preferred</th>
                     </tr>
+                  </thead>
+                  <tbody data-bind="foreach: { data: nexml.trees.tree(), as: 'tree' }">
+                    <tr data-bind="if: true">
+                        <td><a href="#" data-bind="text: tree['@label'] || 'Untitled ('+ tree['@about']() +')'" onclick="alert('TODO: open tree viewer'); return false;">?</a></td><!-- TODO: click to view/edit tree -->
+                        <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta(), 'ot:curatedType') || 'Unspecified'">TYPE?</td>
+                        <td data-bind="text: getInGroupCladeDescriptionForTree(tree)"></td>
+                        <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
+                        <td data-bind="html: getRootedDescriptionForTree(tree)">?/?? (?%)</td>
+                        <td><input type="checkbox" style="margin: 0px 20px;" /></td><!--checked="checked"--> 
+                    </tr>
+                  </tbody>
+                <!-- EXAMPLES of tree-table entries
                     <tr>
                         <td><a href="#">Parsimony tree (urchins)</a></td>
                         <td>Parsimony</td>
@@ -162,6 +177,7 @@ body {
                         <td>14/20</td>
                         <td><input type="checkbox" /></td>
                     </tr>
+                -->
                 </table>
             </div>
 
@@ -293,7 +309,7 @@ body {
                         </td>
                     </tr>
                   </tbody>
-                  <!--
+                  <!-- EXAMPLES of other annotation types:
                         <td>Reply</td>
                         <td><a href="#">Message thread</a></td>
                         <td><a href="#">Charles Darwin</a></td>

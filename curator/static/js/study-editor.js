@@ -185,9 +185,7 @@ function updateQualityDisplay() {
         $cSuggestionsList = $cPanel.find('ul');
         
         // find a tab whose name matches this criterion
-        console.log($navTabs);
         $cTabTally = $navTabs.filter(':contains('+ cName +')').find('span.badge');
-        console.log($cTabTally);
 
         $cTabSugestionList = $('.tab-pane[id='+ cName.replace(' ','-') +'] ul.suggestion-list');
 
@@ -330,6 +328,101 @@ function getMetaTagAccessorByAtProperty(array, prop) {
     }
     return null;
 }
+
+function getMappedTallyForTree(tree) {
+    // return display-ready tally (mapped/total ratio and percentage)
+    if (!tree || !tree.node || !tree.node().length === 0) {
+        return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
+    }
+    var totalNodes = tree.node().length;
+    var mappedNodes = 0;
+    console.log("Testing "+ totalNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
+
+    $.each(tree.node(), function(i, node) {
+        // Simply check for the presence (or absence) of an @otu 'getter' function
+        // (so far, it doesn't seem to exist unless there's a mapped OTU)
+        
+        var nodeOTUAccessor = node['@otu'];
+        if (typeof(nodeOTUAccessor) === 'function') {
+            mappedNodes++;
+        } 
+        return true;  // skip to next node
+
+    });
+
+    var thinSpace = '&#8201;';
+    return '<strong>'+ mappedNodes +'</strong><span>'+ thinSpace +'/'+ thinSpace + totalNodes +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(mappedNodes/totalNodes) +'%)</span>';
+}
+
+function getRootedDescriptionForTree( tree ) {
+    // return display-ready description ('Rooted', 'Unrooted', 'Multiply rooted') based on count
+    if (!tree || !tree.node || !tree.node().length === 0) {
+        return 'Unrooted (empty)';
+    }
+    var totalNodes = tree.node().length;
+    var rootedNodes = 0;
+
+    $.each(tree.node(), function(i, node) {
+        // Simply check for the presence (or absence) of a @root 'getter' function
+        // (so far, it doesn't seem to exist unless there's a mapped OTU)
+        
+        var rootAccessor = node['@root'];
+        if (typeof(rootAccessor) === 'function') {
+            //console.log('@root found, value = '+ rootAccessor() +' <'+ typeof(rootAccessor()) +'>');
+            rootedNodes++;
+        } 
+        return true;  // skip to next node
+    });
+
+    switch (rootedNodes)  {
+        case 0:
+            return 'Unrooted';
+        case 1:
+            return 'Singly'; // OR 'Rooted';
+        default:
+            return 'Multiply rooted';
+    }
+}
+
+function getInGroupCladeDescriptionForTree( tree ) {
+    // return display-ready description ('Rooted', 'Unrooted', 'Multiply rooted') based on count
+    if (!tree || !tree.meta || !tree.meta().length === 0) {
+        return 'Unspecified';
+    }
+
+    // try to retrieve a recognizable taxon label for the ingroup clade's root
+    var nodeIDAccessor = getMetaTagAccessorByAtProperty(tree.meta(), 'ot:inGroupClade');
+    if (typeof(nodeIDAccessor) !== 'function') {
+        return 'Unspecified';
+    }
+    var nodeID = nodeIDAccessor();
+    var nodeName = ('Unmapped ('+ nodeID +')');
+
+    $.each(tree.node(), function(i, node) {
+        // Find the node with this ID and see if it has an assigned OTU
+        console.log("..checking for node '"+ nodeID +"' ...  "+ node['@id']());
+        if (node['@id']() === nodeID) {
+            var nodeOTUAccessor = node['@otu'];
+            console.log("nodeOTUAccessor is a <"+ typeof(nodeOTUAccessor) +">");
+            if (typeof(nodeOTUAccessor) === 'function') {
+                var nodeOTU = nodeOTUAccessor();
+                console.log("nodeOTU is: "+ nodeOTU);
+                // find the matching OTU and show its label
+                $.each(viewModel.nexml.otus.otu(), function(i, otu) {
+                    // Find the node with this ID and see if it has an assigned OTU
+                    if (otu['@id']() === nodeOTU) {
+                        nodeName = otu['@label']() || 'Unlabeled OTU';
+                    }
+                });
+            } 
+            return false; // stop checking nodes
+        }
+        return true;  // skip to next node
+    });
+
+    return nodeName;
+}
+
 
 /* support classes for objects in arrays 
  * (TODO: use these instead of generlc observables?) 

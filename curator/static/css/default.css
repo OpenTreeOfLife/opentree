@@ -420,9 +420,11 @@ div#r0 {
 }
 
 div.flash {
-    position: absolute;
+    position: fixed;
     left: 0;
     right: 0;
+    bottom: 0;
+    margin-bottom: 0;
 }
 
 div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:pointer;}
