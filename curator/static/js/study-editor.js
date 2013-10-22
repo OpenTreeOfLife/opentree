@@ -43,7 +43,7 @@ function loadSelectedStudy(id) {
     var fetchURL = API_load_study_GET_url.replace('{STUDY_ID}', studyID);
     
     // TEST URL with local JSON file
-    ///fetchURL = '/curator/static/1003.json';
+    fetchURL = '/curator/static/1003.json';
 
     // TODO: try an alternate URL, pulling directly from GitHub?
 
@@ -75,8 +75,43 @@ function loadSelectedStudy(id) {
                     // what happens if no @id is found on some items?
                     return ko.utils.unwrapObservable(item['@id']);
                 },
+                     
                 // some properties should never changes; these can be copied as-is, avoiding the overhead of making them "observable"
-                copy: ['@property','@xsi:type']
+                // NOTE that this is not being applied properly, since the mapping plugin expects a "full path", eg 'nexml.study.node.@property'
+                //   TODO: Fixing this will require a pull request (and some regex magic) in the main mapping plugin project on GitHub.
+                copy: ['@property','@xsi:type'],  // FAILS, see comment above
+
+                /* top-level create function (not much help here)
+                create: function( options ) {
+                    debugger;
+                    return options.data;
+                },
+                */
+
+ /* NOTE that we can't pass custom create behavior for arrays! Instead, I
+  * decided to patch the mapping plugin to use paged arrays (from the
+  * knockout-paged plugin) by default.
+  *
+            var pageSize = 5; // make this dynamic? different for each paginated list?
+                      
+            ...
+                // TODO: override some observableArray() calls to be observableArray().paged( pageSize )
+                'otu': {
+                    create: function( options ) {
+                        //debugger;
+                        console.log(">> creating otu!");
+                        return new ko.observableArray(options.data).paged( pageSize );
+                    }
+                },
+
+                'nexml.otus.otu': {
+                    create: function( options ) {
+                        console.log(">> creating a paged array!");
+                        return new ko.observableArray().paged( pageSize );
+                    }
+                }
+            ...
+*/
             }
             viewModel = ko.mapping.fromJS(data, mapping);
             viewModel.studyQualityPercent = ko.observable(0);
@@ -203,7 +238,7 @@ function updateQualityDisplay() {
         }
     
         if (suggestionCount === 0) {
-            $cTabTally.find();
+            $cTabTally.hide();
         } else {
             $cTabTally.text(suggestionCount).show();
         }
@@ -329,15 +364,29 @@ function getMetaTagAccessorByAtProperty(array, prop) {
     return null;
 }
 
+function getPageNumbers( pagedArray ) {
+    // Generates an array of display numbers (1-based) for use with Knockout's
+    // foreach binding. Let's build this with one-based values for easy display.
+    var pageNumbers = [ ];
+    var howManyPages = Math.ceil(pagedArray().length / pagedArray.pageSize);
+    for (var i = 1; i <= howManyPages; i++) {
+        pageNumbers.push( i );
+    }
+    return pageNumbers;
+}
+
 function getMappedTallyForTree(tree) {
     // return display-ready tally (mapped/total ratio and percentage)
+    
+    // TODO: Only check the *terminal* taxa (ie, "tips") of the tree! Right?
+
     if (!tree || !tree.node || !tree.node().length === 0) {
         return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
     }
+
     var totalNodes = tree.node().length;
     var mappedNodes = 0;
-    console.log("Testing "+ totalNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
-
+    ///console.log("Testing "+ totalNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
     $.each(tree.node(), function(i, node) {
         // Simply check for the presence (or absence) of an @otu 'getter' function
         // (so far, it doesn't seem to exist unless there's a mapped OTU)
@@ -400,13 +449,10 @@ function getInGroupCladeDescriptionForTree( tree ) {
 
     $.each(tree.node(), function(i, node) {
         // Find the node with this ID and see if it has an assigned OTU
-        console.log("..checking for node '"+ nodeID +"' ...  "+ node['@id']());
         if (node['@id']() === nodeID) {
             var nodeOTUAccessor = node['@otu'];
-            console.log("nodeOTUAccessor is a <"+ typeof(nodeOTUAccessor) +">");
             if (typeof(nodeOTUAccessor) === 'function') {
                 var nodeOTU = nodeOTUAccessor();
-                console.log("nodeOTU is: "+ nodeOTU);
                 // find the matching OTU and show its label
                 $.each(viewModel.nexml.otus.otu(), function(i, otu) {
                     // Find the node with this ID and see if it has an assigned OTU

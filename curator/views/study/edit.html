@@ -10,8 +10,12 @@ response.files.append(URL('static','js/json2.js'))
 # Knockout.js for binding JSON model to editing UI 
 response.files.append(URL('static','js/knockout-2.3.0.js'))
 
+# KO plugin for paginated lists
+response.files.append(URL('static','js/knockout-paged-e4a5770702.js'))
+
 # Knockout plugin for easy declarative mapping 
 response.files.append(URL('static','js/knockout.mapping-2.4.1.js'))
+### response.files.append(URL('static','js/knockout.mapping.SRC.js'))
 
 # Knockout bindings for Twitter Bootstrap components
 response.files.append(URL('static','js/knockout-bootstrap.min.js'))
@@ -217,50 +221,35 @@ body {
             <div style="margin-bottom: 100px;">
                 <p><em>{A paginated(?) grid of OTUs (in preferred trees only?), their original names, and any mapping in effect. Also possibly some regex-helpers?}</em></p>
 
-                <div class="pagination pagination-centered pagination-small">
+                <div class="pagination pagination-centered pagination-small" data-bind="if: nexml.otus.otu().length &gt; nexml.otus.otu.pagedItems().length">
                   <ul>
-                    <li class="disabled"><a href="#">&laquo;</a></li>
-                    <li class="active"><a href="#">1</a></li>
-                    <li><a href="#">2</a></li>
-                    <li><a href="#">3</a></li>
-                    <li><a href="#">4</a></li>
-                    <li><a href="#">5</a></li>
-                    <li><a href="#">6</a></li>
-                    <li><a href="#">7</a></li>
-                    <li><a href="#">8</a></li>
-                    <li><a href="#">&raquo;</a></li>
+                    <li data-bind="css: { 'disabled': !nexml.otus.otu.prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.nexml.otus.otu.prev(); return false;">&laquo;</a>
+                    </li>
+                   <!-- ko foreach: getPageNumbers( nexml.otus.otu) -->
+                    <li data-bind="css: { 'active': (viewModel.nexml.otus.otu.current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.otus.otu.goToPage(parseInt($(this).text())); return false;">0</a>
+                    </li>
+                   <!-- /ko -->
+                    <li data-bind="css: { 'disabled': !nexml.otus.otu.next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.nexml.otus.otu.next(); return false;">&raquo;</a>
+                    </li>
                   </ul>
                 </div>
 
                 <table class="table table-condensed">
+                  <thead>
                     <tr>
                         <th>Original label</th>
                         <th>Taxon</th>
                     </tr>
-                    <tr>
-                        <td> Allenopithecus nigroviridis ANI 1 </td>
-                        <td> Allenopithecus nigroviridis </td>
+                  </thead>
+                  <tbody data-bind="foreach: { data: nexml.otus.otu.pagedItems(), as: 'otu' }">
+                    <tr data-bind="if: true">
+                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')">TYPE?</td>
+                        <td data-bind="text: otu['@label']"></td>
                     </tr>
-                    <tr>
-                        <td> Alouatta belzebul ABE 1 </td>
-                        <td> Alouatta belzebul </td>
-                    </tr>
-                    <tr>
-                        <td> Alouatta caraya ACA 3   </td>
-                        <td> Alouatta caraya </td>
-                    </tr>
-                    <tr>
-                        <td> Alouatta palliata APL 1 </td>
-                        <td> Alouatta palliata </td>
-                    </tr>
-                    <tr>
-                        <td> Alouatta sara ASA 1 </td>
-                        <td> Alouatta sara </td>
-                    </tr>
-                    <tr>
-                        <td> Aotus azarae AZA 1  </td>
-                        <td> Aotus azarai </td>
-                    </tr>
+                  </tbody>
                 </table>
             </div>
 
