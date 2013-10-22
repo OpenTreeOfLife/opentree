@@ -314,6 +314,13 @@
 
 		parentPropertyName = parentPropertyName || "";
 
+
+        /*
+        console.log('parentName: '+ parentName);
+        console.log('parentPropertyName: '+ parentPropertyName);  // THIS seems to be the basis of 'copy' paths
+        console.log('');
+        */
+
 		// If this object was already mapped previously, take the options from there and merge them with our existing ones.
 		if (exports.isMapped(mappedRootObject)) {
 			var previousMapping = ko.utils.unwrapObservable(mappedRootObject)[mappingProperty];
@@ -446,6 +453,7 @@
 				// For non-atomic types, visit all properties and update recursively
 				visitPropertiesOrArrayEntries(rootObject, function (indexer) {
 					var fullPropertyName = parentPropertyName.length ? parentPropertyName + "." + indexer : indexer;
+                    ///console.log(fullPropertyName);  // THIS IS COMPARED when checking the 'copy' option, eg, "nexml.trees.tree[0].node[179].@id"
 
 					if (ko.utils.arrayIndexOf(options.ignore, fullPropertyName) != -1) {
 						return;
@@ -503,7 +511,7 @@
 
 			if (!ko.isObservable(mappedRootObject)) {
 				// When creating the new observable array, also add a bunch of utility functions that take the 'key' of the array items into account.
-				mappedRootObject = ko.observableArray([]);
+				mappedRootObject = ko.observableArray([]).asPaged(20);
 
 				mappedRootObject.mappedRemove = function (valueOrPredicate) {
 					var predicate = typeof valueOrPredicate == "function" ? valueOrPredicate : function (value) {
