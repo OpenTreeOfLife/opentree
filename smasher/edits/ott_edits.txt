@@ -19,3 +19,4 @@ move  Xylocaryon  genus  Proteaceae Proteales http://www.jstor.org/stable/266621
 move  Limnobiophyllum  genus  Araceae Alismatales http://www.sciencedirect.com/science/article/pii/030437709400442O
 prune Flacourtiaceae  family  eudicotyledons Bryan Drew
 move  Perseoxylon genus Lauraceae Laurales  http://www.sciencedirect.com/science/article/pii/S0753396905000169
+move  Oryxis  tribe  Phaseoleae Fabaceae  http://www.bioone.org/doi/pdf/10.1600/0363644041744464
