@@ -132,12 +132,19 @@ body {
             <div style="margin-bottom: 100px;">
                 <p><em>{A paginated list of trees in this study. Also possibly a single-tree import tool? Probably a modal tree view/editor (D3?).}</em></p>
 
-                <div class="pagination pagination-centered pagination-small">
+                <div class="pagination pagination-centered pagination-small" data-bind="if: nexml.trees.tree().length &gt; nexml.trees.tree.pagedItems().length">
                   <ul>
-                    <li class="disabled"><a href="#">&laquo;</a></li>
-                    <li class="active"><a href="#">1</a></li>
-                    <li><a href="#">2</a></li>
-                    <li><a href="#">&raquo;</a></li>
+                    <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+                    </li>
+                   <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
+                    <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">0</a>
+                    </li>
+                   <!-- /ko -->
+                    <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+                    </li>
                   </ul>
                 </div>
 
@@ -152,14 +159,14 @@ body {
                         <th>Preferred</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: nexml.trees.tree(), as: 'tree' }">
+                  <tbody data-bind="foreach: { data: nexml.trees.tree.pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
                         <td><a href="#" data-bind="text: tree['@label'] || 'Untitled ('+ tree['@about']() +')'" onclick="alert('TODO: open tree viewer'); return false;">?</a></td><!-- TODO: click to view/edit tree -->
                         <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta(), 'ot:curatedType') || 'Unspecified'">TYPE?</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree)"></td>
                         <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
                         <td data-bind="html: getRootedDescriptionForTree(tree)">?/?? (?%)</td>
-                        <td><input type="checkbox" style="margin: 0px 20px;" /></td><!--checked="checked"--> 
+                        <td><input type="checkbox" style="margin: 0px 20px;" data-bind="checked: false" /></td><!-- TODO: test for preferred tree? --> 
                     </tr>
                   </tbody>
                 <!-- EXAMPLES of tree-table entries
