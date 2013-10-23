@@ -11,6 +11,11 @@ date
 mkdir -p downloads
 mkdir -p repo
 
+if [ ! -r .updated ]; then
+    sudo apt-get --assume-yes update
+    touch .updated
+fi
+
 if [ ! -x `which dialog` ]; then
     # I was hoping this would help with apache2's configure step, but it doesn't
     sudo apt-get --assume-yes install dialog
@@ -143,7 +148,7 @@ cp -p setup/webapp-config $opentree/webapp/private/config
 
 sudo cp -p setup/apache-config /etc/apache2/sites-available/dev.opentreeoflife.org
 (cd /etc/apache2/sites-enabled; sudo ln -sf ../sites-available/dev.opentreeoflife.org ./)
-rm -f /etc/apache2/sites-available/000-default
+sudo rm -f /etc/apache2/sites-enabled/000-default
 
 # How to get favico.ico served up?
 

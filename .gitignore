@@ -3,3 +3,4 @@
 *.class
 tmp
 backup/
+*.pem
