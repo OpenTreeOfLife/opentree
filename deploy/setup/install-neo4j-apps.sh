@@ -11,6 +11,8 @@ elif [ x$FORREAL = x ]; then
     FORREAL=yes
 fi
 
+HOST=$1
+
 # Will not run on AWS free tier.  Recommended at least 80G disk and 16G RAM.
 
 echo "`date` Installing treemachine and taxomachine"
@@ -53,7 +55,9 @@ fi
 # ---------- APACHE CONFIG ----------
 # shell variable is used below
 configfile=web2py/applications/opentree/private/config
-cp -p setup/webapp-config $configfile
+if [ ! -r $configfile ] ; then
+    cp -p setup/webapp-config $configfile
+fi
 
 # ---------- TREEMACHINE / TAXOMACHINE ----------
 # Set up neo4j server
@@ -124,7 +128,7 @@ function neo4j_app {
 
 	# If treemachine is running locally, we need to modify the web2py
 	# config file to point to localhost instead of dev.opentreeoflife.org.
-	sed s+dev.opentreeoflife.org/$APP+localhost/$APP+ < $configfile > tmp.tmp
+	sed s+dev.opentreeoflife.org/$APP+$HOST/$APP+ < $configfile > tmp.tmp
 	mv tmp.tmp $configfile
 
         # Force apache to restart (because of config file change)

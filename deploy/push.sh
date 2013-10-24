@@ -16,8 +16,8 @@ fi
 
 SSH="ssh -i ${HOST}.pem"
 rsync -pr -e "${SSH}" "--exclude=*~" setup $USER@$HOST:
-${SSH} $USER@$HOST ./setup/install-web2py-apps.sh
-${SSH} $USER@$HOST ./setup/install-neo4j-apps.sh
+${SSH} $USER@$HOST ./setup/install-web2py-apps.sh ${HOST}
+${SSH} $USER@$HOST ./setup/install-neo4j-apps.sh ${HOST}
 
 # Test: 
 #  open http://ec2-54-202-160-175.us-west-2.compute.amazonaws.com/

@@ -2,7 +2,9 @@
 
 set -e
 
-echo "Installing web2py applications"
+HOST=$1
+
+echo "Installing web2py applications.  Hostname = $HOST"
 date
 
 # Temporary locations for things downloaded from web.  Can delete this
@@ -32,6 +34,9 @@ fi
 # Enable the apache proxy module
 if [ ! -r /etc/apache2/mods-enabled/proxy.load ]; then
     sudo a2enmod proxy
+fi
+if [ ! -r /etc/apache2/mods-enabled/proxy_http.load ]; then
+    sudo a2enmod proxy_http
 fi
 
 # ---------- UNZIP ----------
@@ -133,7 +138,13 @@ cp -p $opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
 cp -p $opentree/SITE.routes.py web2py/routes.py
 
 # File pushed here using rsync, see push.sh
-cp -p setup/webapp-config $opentree/webapp/private/config 
+configfile=web2py/applications/opentree/private/config
+if [ ! -r $configfile ] ; then
+    cp -p setup/webapp-config $configfile
+fi
+
+sed "s+hostdomain = dev.opentreeoflife.org+hostdomain = $HOST+" < $configfile > tmp.tmp
+mv tmp.tmp $configfile
 
 # Similarly taxomachine
 
