@@ -1,14 +1,32 @@
-# comment lines begin with '#"
-# include all columns for each line
-# separate columns with tabs, not spaces
-command name    rank    parent  context sourceInfo
-move  Dermatobotrys saundersii  species Scrophulariaceae  lamiales  http://www.mobot.org/mobot/research/apweb/
-synonym Berendtia Hemichaena lamiales  http://www.tropicos.org/Name/50009025?tab=acceptednames; http://www.mobot.org/mobot/research/apweb/ 
-move  Hemichaena  genus Phrymaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/
-move  Triaenophora  genus orobanchaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/orobanchaceaegen.html (mispelled at url)
-move  Rehmannia  genus Orobanchaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/orobanchaceaegen.html
-move  Stemodiopsis  genus Linderniaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/linderniaceaegen.html
-move  Micranthemum  genus Linderniaceae  Lamiales  http://www.mobot.org/mobot/research/apweb/genera/linderniaceaegen.html
-synonym Bryodes madagascariensis  Psammetes  madagascariensis lamiales  http://www.tropicos.org/Name/29207676?tab=acceptednames
-move  Psammetes  genus Linderniaceae  Lamiales  http://www.ncbi.nlm.nih.gov/nuccore/421994792
-move  Bryodes  genus  Linderniaceae  http://www.biomedcentral.com/content/pdf/1471-2148-10-352.pdf
+# Comment lines begin with '#".
+# Include all columns for each line.
+# Separate columns with tab characters, not spaces.
+# Capitalization matters!  Generally speaking, taxon names are capitalized.
+# Spacing matters!  Only one space between genus name and epithet.
+# sourceInfo should be either a URL or an abbreviated URL such as NCBI:12345.
+# If you want to put multiple sourceInfos, separate with commas,
+# without any intervening spaces.
+# Rank should be in lower case; use "no rank" if unknown or rank-free.
+#
+#
+#command	name	rank	parent	context	sourceInfo
+#
+# From Bryan Drew October 2013
+move	Dermatobotrys saundersii	species	Scrophulariaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/
+synonym	Berendtia	no rank	Hemichaena	Lamiales	http://www.tropicos.org/Name/50009025?tab=acceptednames,http://www.mobot.org/mobot/research/apweb/ 
+move	Hemichaena	genus	Phrymaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/
+move	Triaenophora	genus	Orobanchaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/genera/orobanchaceaegen.html (mispelled at url)
+move	Rehmannia	genus	Orobanchaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/genera/orobanchaceaegen.html
+move	Stemodiopsis	genus	Linderniaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/genera/linderniaceaegen.html
+move	Micranthemum	genus	Linderniaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/genera/linderniaceaegen.html
+
+# JAR removed ?tab=acceptednames from the URL
+synonym	Bryodes madagascariensis	Psammetes madagascariensis	Lamiales	http://www.tropicos.org/Name/29207676
+
+# Bryan had nuccore 421994792, but that's for a species, not a genus.  The genus is ncbi:421994792
+#  was: http://www.ncbi.nlm.nih.gov/nuccore/421994792
+move	Psammetes	genus	Linderniaceae	Lamiales	ncbi:421994792
+
+# Bryan used a PDF (BMC) reference for Bryodes, but it exists in NCBI
+#  was: http://www.biomedcentral.com/content/pdf/1471-2148-10-352.pdf
+move	Bryodes	genus	Linderniaceae	Lamialies	ncbi:752521

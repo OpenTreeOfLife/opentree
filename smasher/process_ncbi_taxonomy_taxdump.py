@@ -45,8 +45,9 @@ if __name__ == "__main__":
     nodesfile = downloaddir + "/nodes.dmp"
     namesfile = downloaddir + "/names.dmp"
     skipfile = sys.argv[3]
-    outfile = open(sys.argv[4],"w")
-    outfilesy = open(sys.argv[4]+".synonyms","w")
+    taxdir = sys.argv[4]
+    outfile = open(taxdir+"/taxonomy.tsv","w")
+    outfilesy = open(taxdir+"/synonyms.tsv","w")
     if download.upper() == "T":
         print("downloading taxonomy")
         os.system("wget --output-document=" +
