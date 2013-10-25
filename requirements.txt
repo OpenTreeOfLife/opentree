@@ -2,8 +2,6 @@ distribute==0.6.34
 nose==1.2.1
 ipython==0.13.1
 wsgiref==0.1.2
-PIL==1.1.7
-lxml==3.1.1
 simplejson==3.2.0
 stevedore==0.8
 pyparsing==1.5.7
