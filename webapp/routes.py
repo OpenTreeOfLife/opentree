@@ -6,40 +6,19 @@
 # Let's keep all the important stuff here, and just copy a minimal router
 # (SITE.routes.py) into the site root.
 
-# TODO: Consider adding 
-#   root_static (for favicon and robots.txt)? I think these are handled by default!
-#   domain (maps domain name to app)
-#   map_static (?)
+# NOTE that this (app-specific) routes.py file mainly defines a router by the
+# same name. More general settings must be done in the main routes.py alongside
+# the web2py/applications/ directory
+#   root_static (for favicon.ico, robots.txt, etc)
+#   routes_onerror (defines error pages per app, per error code, or defaults)
+#   domain (maps domain names and ports to particular app)
+# See SITE.routes.py for recommended settings.
 
 routers = dict(
 
-    # extend  base (site-wide) router
-    BASE=dict(
-        default_application='opentree',
-    ),
     opentree=dict(
         # convert dashes (hyphens) in URLs to underscores in web2py controller+action names
         map_hyphen=True,
-
-        # whitelist of known controllers, to decipher ambiguous URLs
-        ## controllers=[ 
-        ##     'default'
-        ##     'about',
-        ##     'subtrees',
-        ##     'contact',
-        ##     'plugin_localcomments',
-        ##     'appadmin',
-        ##     'user',
-        ##     # these are currently unused...
-        ##     # 'synthview',
-        ##     # 'treeview',
-        ##     # 'plugin_comments',
-        ##     # 'plugin_tagging',
-        ## ],
-        #
-        # NO, That seems really buggy. Just keep the default 'controllers'
-        # behavior (scans teh opentree/controllers/ directory, then adds the
-        # 'static' controller).
 
         default_controller='default',
 
@@ -52,23 +31,11 @@ routers = dict(
             'fetch_current_TNRS_context_name',
             'user',     # implicit? inherited? and needed for login, logout, etc
         ],
+
+        # The default function will grab *anything* else, so it should know how to
+        # distinguish between errors and "generous" catch-all routing.
         default_function='index',
     ),
 )
 
 # see router.example.py for (many) more options!
-
-# Specify log level for rewrite's debug logging? (Can we do this here?)
-# Possible values: debug, info, warning, error, critical (loglevels),
-#                  off, print (print uses print statement rather than logging)
-logging = 'debug'
-
-def __routes_doctest():
-    '''
-    see router.example.py for example doctests
-    '''
-    pass
-
-if __name__ == '__main__':
-    import doctest
-    doctest.testmod()

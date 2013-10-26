@@ -15,11 +15,16 @@ var viewModel;
 var checkForModelChanges;
 
 $(document).ready(function() {
-    // activate scroll-spy feature (scrolling page highlights main nav links)
-    $('body').attr({'data-spy':'scroll', 'data-target':'.navbar'});
+    // auto-select first tab (Status)
+    $('.nav-tabs a:first').tab('show');
     loadSelectedStudy(studyID);
 });
 
+
+function goToTab( tabName ) {
+    // click the corresponding tab, if found
+    $('.nav-tabs a:contains('+ tabName +')').tab('show');
+}
 
 function loadSelectedStudy(id) {
     /* Use REST API to pull study data from datastore
@@ -36,13 +41,11 @@ function loadSelectedStudy(id) {
      */
 
     var fetchURL = API_load_study_GET_url.replace('{STUDY_ID}', studyID);
+    
+    // TEST URL with local JSON file
+    ///fetchURL = '/curator/static/1003.json';
 
     // TODO: try an alternate URL, pulling directly from GitHub?
-
-    // TODO: switch to JSONP, in case we're calling another domain
-
-    // HACK to prevent additional _ arg from being passed (didn't help)
-    //$.ajaxSetup({cache:true});
 
     // TODO: show/hide spinner during all AJAX requests?
     $('#ajax-busy-bar').show();
@@ -72,8 +75,43 @@ function loadSelectedStudy(id) {
                     // what happens if no @id is found on some items?
                     return ko.utils.unwrapObservable(item['@id']);
                 },
+                     
                 // some properties should never changes; these can be copied as-is, avoiding the overhead of making them "observable"
-                copy: ['@property','@xsi:type']
+                // NOTE that this is not being applied properly, since the mapping plugin expects a "full path", eg 'nexml.study.node.@property'
+                //   TODO: Fixing this will require a pull request (and some regex magic) in the main mapping plugin project on GitHub.
+                copy: ['@property','@xsi:type'],  // FAILS, see comment above
+
+                /* top-level create function (not much help here)
+                create: function( options ) {
+                    debugger;
+                    return options.data;
+                },
+                */
+
+ /* NOTE that we can't pass custom create behavior for arrays! Instead, I
+  * decided to patch the mapping plugin to use paged arrays (from the
+  * knockout-paged plugin) by default.
+  *
+            var pageSize = 5; // make this dynamic? different for each paginated list?
+                      
+            ...
+                // TODO: override some observableArray() calls to be observableArray().paged( pageSize )
+                'otu': {
+                    create: function( options ) {
+                        //debugger;
+                        console.log(">> creating otu!");
+                        return new ko.observableArray(options.data).paged( pageSize );
+                    }
+                },
+
+                'nexml.otus.otu': {
+                    create: function( options ) {
+                        console.log(">> creating a paged array!");
+                        return new ko.observableArray().paged( pageSize );
+                    }
+                }
+            ...
+*/
             }
             viewModel = ko.mapping.fromJS(data, mapping);
             viewModel.studyQualityPercent = ko.observable(0);
@@ -87,6 +125,26 @@ function loadSelectedStudy(id) {
             });
 
             ko.applyBindings(viewModel);
+
+            var studyFullReference = getMetaTagAccessorByAtProperty(viewModel.nexml.meta(), 'ot:studyPublicationReference')();
+            var studyCompactReference = "(Untitled)";
+            if ($.trim(studyFullReference) !== "") {
+                // capture the first valid year in the reference
+                var compactYear = studyFullReference.match(/(\d{4})/)[0];  
+                // split on the year to get authors (before), and capture the first surname
+                var compactPrimaryAuthor = studyFullReference.split(compactYear)[0].split(',')[0];
+                var studyCompactReference = compactPrimaryAuthor +", "+ compactYear;    // eg, "Smith, 1999";
+            }
+            $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
+
+            var studyDOI = getMetaTagAccessorByAtProperty(viewModel.nexml.meta(), 'ot:studyPublication')();
+            studyDOI = $.trim(studyDOI);
+            if (studyDOI === "") {
+                $('a.main-title-DOI').hide();
+            } else {
+                $('a.main-title-DOI').text(studyDOI).attr('href', studyDOI).show();
+            }
+
             updateQualityDisplay();
 
             // update quality assessment whenever anything changes
@@ -121,18 +179,22 @@ function scoreToBarClasses( percentScore ) {
 function updateQualityDisplay() {
     // generate, then apply, fresh scoring information
     var scoreInfo = scoreStudy(viewModel);
+
     // update "progress bar" with percentage and color
     viewModel.studyQualityPercent( floatToPercent(scoreInfo.overallScore) );
     // update list of suggested actions below
     var $detailsPanel = $('#study-quality-details');
+    // update local tallies and suggestions in each matching tab and panel
+    var $navTabs = $('.nav-tabs:eq(0) li');
+    
     var addingCriteriaPanels = ($detailsPanel.find('div.criterion-details').length === 0);
     var cName, criterionScoreInfo, cPercentScore, criterionRules, rule, ruleScoreInfo;
-    var nthPanel = 0, $cPanel, $cProgressBar, $cSuggestionsList;
+    var nthPanel = 0, $cPanel, $cProgressBar, $cSuggestionsList, $cTabTally, $cTabSuggestionList, suggestionCount;
     for (cName in scoreInfo.scoredCriteria) {
         if (addingCriteriaPanels) {
             // generate criteria detail areas (once only!)
             $detailsPanel.append(
-                '<div class="criterion-details">'
+                '<div class="criterion-details" onclick="goToTab(\''+ cName +'\'); return false;">'
                   + '<strong>'+ cName +'</strong>'
                   + '<span class="criterion-score">50%</span>'
                   + '<div class="progress progress-info criterion-score-bar">'
@@ -144,20 +206,43 @@ function updateQualityDisplay() {
         }
         criterionScoreInfo = scoreInfo.scoredCriteria[ cName ];
         $cPanel = $detailsPanel.find('div.criterion-details:eq('+ nthPanel +')');
-        cPercentScore = floatToPercent(criterionScoreInfo.score / criterionScoreInfo.highestPossibleScore);
+
+        if (criterionScoreInfo.highestPossibleScore === 0.0) {
+            //continue;
+            cPercentScore = 100;  // placeholder if there are no active rules for this criterion
+        } else {
+            cPercentScore = floatToPercent(criterionScoreInfo.score / criterionScoreInfo.highestPossibleScore);
+        }
+
         $cPanel.find('.criterion-score').text( cPercentScore+'%' );
         $cPanel.find('.criterion-score-bar').attr('class', 'criterion-score-bar '+ scoreToBarClasses( cPercentScore ));
         $cPanel.find('.criterion-score-bar .bar').css('width', Math.max(4, cPercentScore)+'%')
         $cSuggestionsList = $cPanel.find('ul');
+        
+        // find a tab whose name matches this criterion
+        $cTabTally = $navTabs.filter(':contains('+ cName +')').find('span.badge');
+
+        $cTabSugestionList = $('.tab-pane[id='+ cName.replace(' ','-') +'] ul.suggestion-list');
 
         $cSuggestionsList.empty();
+        $cTabSugestionList.empty();
+        var suggestionCount = 0;
+
         for (var i = 0; i < criterionScoreInfo.comments.length; i++) {
             var c = criterionScoreInfo.comments[i];
             if (c.suggestedAction) {
-                $cSuggestionsList.append('<li><a href="#">'+ c.suggestedAction);  /// TODO: restore this? +' <span style="color: #aaa;">('+ c.percentScore +'%)</span></a></li>');
+                suggestionCount++;
+                $cSuggestionsList.append('<li>'+ c.suggestedAction +'</li>');
+                $cTabSugestionList.append('<li>'+ c.suggestedAction);  /// TODO: restore this? +' <span style="color: #aaa;">('+ c.percentScore +'%)</span></a></li>');
             }
         }
     
+        if (suggestionCount === 0) {
+            $cTabTally.hide();
+        } else {
+            $cTabTally.text(suggestionCount).show();
+        }
+
         nthPanel++;
     };
 
@@ -279,6 +364,112 @@ function getMetaTagAccessorByAtProperty(array, prop) {
     return null;
 }
 
+function getPageNumbers( pagedArray ) {
+    // Generates an array of display numbers (1-based) for use with Knockout's
+    // foreach binding. Let's build this with one-based values for easy display.
+    var pageNumbers = [ ];
+    var howManyPages = Math.ceil(pagedArray().length / pagedArray.pageSize);
+    for (var i = 1; i <= howManyPages; i++) {
+        pageNumbers.push( i );
+    }
+    return pageNumbers;
+}
+
+function getMappedTallyForTree(tree) {
+    // return display-ready tally (mapped/total ratio and percentage)
+    
+    // TODO: Only check the *terminal* taxa (ie, "tips") of the tree! Right?
+
+    if (!tree || !tree.node || !tree.node().length === 0) {
+        return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
+    }
+
+    var totalNodes = tree.node().length;
+    var mappedNodes = 0;
+    ///console.log("Testing "+ totalNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
+    $.each(tree.node(), function(i, node) {
+        // Simply check for the presence (or absence) of an @otu 'getter' function
+        // (so far, it doesn't seem to exist unless there's a mapped OTU)
+        
+        var nodeOTUAccessor = node['@otu'];
+        if (typeof(nodeOTUAccessor) === 'function') {
+            mappedNodes++;
+        } 
+        return true;  // skip to next node
+
+    });
+
+    var thinSpace = '&#8201;';
+    return '<strong>'+ mappedNodes +'</strong><span>'+ thinSpace +'/'+ thinSpace + totalNodes +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(mappedNodes/totalNodes) +'%)</span>';
+}
+
+function getRootedDescriptionForTree( tree ) {
+    // return display-ready description ('Rooted', 'Unrooted', 'Multiply rooted') based on count
+    if (!tree || !tree.node || !tree.node().length === 0) {
+        return 'Unrooted (empty)';
+    }
+    var totalNodes = tree.node().length;
+    var rootedNodes = 0;
+
+    $.each(tree.node(), function(i, node) {
+        // Simply check for the presence (or absence) of a @root 'getter' function
+        // (so far, it doesn't seem to exist unless there's a mapped OTU)
+        
+        var rootAccessor = node['@root'];
+        if (typeof(rootAccessor) === 'function') {
+            //console.log('@root found, value = '+ rootAccessor() +' <'+ typeof(rootAccessor()) +'>');
+            rootedNodes++;
+        } 
+        return true;  // skip to next node
+    });
+
+    switch (rootedNodes)  {
+        case 0:
+            return 'Unrooted';
+        case 1:
+            return 'Singly'; // OR 'Rooted';
+        default:
+            return 'Multiply rooted';
+    }
+}
+
+function getInGroupCladeDescriptionForTree( tree ) {
+    // return display-ready description ('Rooted', 'Unrooted', 'Multiply rooted') based on count
+    if (!tree || !tree.meta || !tree.meta().length === 0) {
+        return 'Unspecified';
+    }
+
+    // try to retrieve a recognizable taxon label for the ingroup clade's root
+    var nodeIDAccessor = getMetaTagAccessorByAtProperty(tree.meta(), 'ot:inGroupClade');
+    if (typeof(nodeIDAccessor) !== 'function') {
+        return 'Unspecified';
+    }
+    var nodeID = nodeIDAccessor();
+    var nodeName = ('Unmapped ('+ nodeID +')');
+
+    $.each(tree.node(), function(i, node) {
+        // Find the node with this ID and see if it has an assigned OTU
+        if (node['@id']() === nodeID) {
+            var nodeOTUAccessor = node['@otu'];
+            if (typeof(nodeOTUAccessor) === 'function') {
+                var nodeOTU = nodeOTUAccessor();
+                // find the matching OTU and show its label
+                $.each(viewModel.nexml.otus.otu(), function(i, otu) {
+                    // Find the node with this ID and see if it has an assigned OTU
+                    if (otu['@id']() === nodeOTU) {
+                        nodeName = otu['@label']() || 'Unlabeled OTU';
+                    }
+                });
+            } 
+            return false; // stop checking nodes
+        }
+        return true;  // skip to next node
+    });
+
+    return nodeName;
+}
+
+
 /* support classes for objects in arrays 
  * (TODO: use these instead of generlc observables?) 
  */
@@ -354,10 +545,11 @@ function TreeNode() {
  *
  * validity? or should we make it "impossible" to build invalid data here?
  *
+ * Let's try again, organizing by tab (Status, Metadata, etc)
  */
 var studyScoringRules = {
-    'Completeness': [
-        // Is the study fully fleshed out?
+    'Metadata': [
+        // problems with study metadata, DOIs, etc
         {
             description: "The study should have all metadata fields complete.",
             test: function(studyData) {
@@ -365,17 +557,29 @@ var studyScoringRules = {
                 var studyMetatags = studyData.nexml.meta();
                 for (var i = 0; i < studyMetatags.length; i++) {
                     var testMeta = studyMetatags[i];
-                    var testValue;
-                    switch(testMeta['@xsi:type']()) {
-                        case 'nex:ResourceMeta':
-                            testValue = testMeta['@href']();  // uses special attribute
-                            break;
-                        default: 
-                            testValue = testMeta['$'](); // assumes value is stored here
-                    }
-                    if ($.trim(testValue) === "") {
-                        ///console.log(">>> metatag '"+ testMeta['@property']() +"' is empty!");
-                        return false;
+                    var testProperty = testMeta['@property']();
+                    switch(testProperty) {
+                        case 'ot:studyPublicationReference':
+                        case 'ot:studyPublication':
+                        case 'ot:studyYear':
+                        case 'ot:studyId':
+                        case 'ot:focalClade':
+                        case 'ot:curatorName':
+                            var testValue;
+                            switch(testMeta['@xsi:type']()) {
+                                case 'nex:ResourceMeta':
+                                    testValue = testMeta['@href']();  // uses special attribute
+                                    break;
+                                default: 
+                                    testValue = testMeta['$'](); // assumes value is stored here
+                            }
+                            if ($.trim(testValue) === "") {
+                                ///console.log(">>> metatag '"+ testMeta['@property']() +"' is empty!");
+                                return false;
+                            }
+                        default:
+                            // ignore other meta tags (annotations)
+                            continue;
                     }
                 }
                 return true;
@@ -386,10 +590,7 @@ var studyScoringRules = {
             suggestedAction: "Check study metadata for empty fields."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
 
-        }
-    ],
-    'Data Integrity': [  
-        // Is the study data internally consistent, with no loose ends?
+        },
         {
             description: "The study year should match the one in its publication reference.",
             test: function(studyData) {
@@ -445,30 +646,89 @@ var studyScoringRules = {
 
         }
     ],
-    'Other stuff [dummy tests]': [    // TODO: remove this, just for initial demo
-        // this is just here to balance out the score with other, unseen stuff
-        {
-            description: "this represents good stuff elsewhere in the study",
-            test: function() {
-                return true;
-            },
-            weight: 0.4, 
-            successMessage: "",
-            failureMessage: "",
-            suggestedAction: ""
-                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        },
-        {
-            description: "this represents bad/incomplete stuff elsewhere in the study",
-            test: function() {
-                return false;
-            },
-            weight: 0.2, 
-            successMessage: "",
-            failureMessage: "",
-            suggestedAction: "Map all taxon names in preferred trees"
-                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        }
+    'Trees': [
+        // no trees, unrooted or badly rooted trees
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ],
+    'Files': [
+        // problems with uploaded files (formats, missing, corrupt)
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ],
+    'OTU Mapping': [
+        // un-mapped taxon names, conflicting or dubious mapping
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ],
+    'Annotations': [
+        // pending or unanswered questions, etc.
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ],
+    'Tools': [
+        // maybe just happy news here.. new tools available?
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
+    ],
+    'Status': [
+        // general validation problems... something that spans multiple tabs
+                        {
+                            description: "placeholder to fake happy data",
+                            test: function() {
+                                return true;
+                            },
+                            weight: 0.4, 
+                            successMessage: "",
+                            failureMessage: "",
+                            suggestedAction: ""
+                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+                        }
     ]
 }
 

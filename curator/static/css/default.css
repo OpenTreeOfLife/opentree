@@ -357,9 +357,10 @@ p#tree-description {
     margin: 0;
 }
 h1#main-title {
+    font-size: 32px;
     margin-bottom: 0;
     padding: 2px 0 26px;
-    line-height: 1em;
+    line-height: 1.2em;
 }
 h1#main-title .comments-indicator,
 h1#main-title .properties-indicator {
@@ -418,6 +419,14 @@ div#r0 {
     color: white;
 }
 
+div.flash {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin-bottom: 0;
+}
+
 div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:pointer;}
 .ie-lte7  div.flash #closeflash
 {color:expression(this.parentNode.currentStyle['color']);float:none;position:absolute;right:4px;}
@@ -433,6 +442,7 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .criterion-details {
     padding-top: 0px;
     padding-bottom: 5px;
+    cursor: pointer;
 }
 .criterion-details ul {
     list-style-type: disc;
@@ -441,4 +451,15 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .criterion-details ul li {
     line-height: 1em;
     padding: 0.25em 0;
+}
+
+.suggestion-list {
+    /* list-style-type: none; */
+}
+.suggestion-list li {
+    padding-bottom: 0.2em;
+    color: #b94a48;
+}
+.suggestion-list span.label {
+    padding: 0.3em 0.7em 0.4em;
 }
