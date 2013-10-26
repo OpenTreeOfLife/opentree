@@ -1,106 +1,83 @@
 # The tests work in JAR's setup...
 
+WHICH=2.3
+
 #  $^ = all prerequisites
 #  $< = first prerequisite
 #  $@ = file name of target
 
-all: ott22
+all: ott
 
-# Root of local copy of taxomachine git repo
-TAXOMACHINE_ROOT=../../taxomachine
+NCBI=$(TAX)/ncbi
+GBIF=$(TAX)/gbif
+SILVA=$(TAX)/silva
 
-# Root of 'ottol' directory (from
-#  https://bitbucket.org/blackrim/avatol-taxonomies/downloads#download-155949 )
-# for initial OTT ids and regression testing
-OTTOL=../../ottol
+# Root of local copy of taxomachine git repo, for nematode examples
+# (TBD: make local copies so that setup is simpler)
+TAXOMACHINE_EXAMPLE=../../taxomachine/example
 
-# Preottol
+# Preottol - for filling in the preottol id column
 #  https://bitbucket.org/mtholder/ottol/src/dc0f89986c6c2a244b366312a76bae8c7be15742/preOTToL_20121112.txt?at=master
-# for filling in the preottol id column
 PREOTTOL=../../preottol
 
-# Working area (temporary, unversioned)
-WORK=tmp
+# Scripts and other inputs related to taxonomy
+FEED=feed
 
+# The tax/ directory is full of taxonomies; mostly (entirely?) derived objects.
+TAX=tax
+
+# Nematode test
 CP=-classpath .:jscheme.jar
-TEST_ARGS=Smasher $(TAXOMACHINE_ROOT)/example/nematoda.ncbi $(TAXOMACHINE_ROOT)/example/nematoda.gbif \
-      --edits nem-edits/ \
-      --ids $(WORK)/nem1.ott \
-      --aux $(WORK)/nem1.preottol \
-      --out $(WORK)/nem2/
+TEST_ARGS=Smasher $(TAX)/nem_ncbi/ $(TAX)/nem_gbif/ \
+      --edits $(FEED)/nem/edits/ \
+      --ids $(TAX)/prev_nem/ \
+      --out $(TAX)/nem/
 
-NCBI=$(WORK)/ncbi.processed
-GBIF=$(WORK)/gbif.processed
+nem: $(TAX)/nem/log.tsv
+$(TAX)/nem/log.tsv: Smasher.class $(TAX)/prev_nem/taxonomy.tsv $(TAX)/nem_ncbi/taxonomy.tsv $(TAX)/nem_gbif/taxonomy.tsv
+	mkdir -p $(TAX)/nem/
+	java $(CP) $(TEST_ARGS)
+
+debug:
+	jdb $(CP) $(TEST_ARGS)
 
 compile: Smasher.class
 
 Smasher.class: Smasher.java
 	javac $(CP) -g Smasher.java
 
-test: $(WORK)/nem2/log
-$(WORK)/nem2/log: Smasher.class $(WORK)/nem1.preottol $(WORK)/nem1.ott
-	mkdir -p $(WORK)/nem2/
-	java $(CP) $(TEST_ARGS)
+# Inputs to the nem test
 
-debug:
-	mkdir -p $(WORK)
-	jdb $(CP) $(TEST_ARGS)
+$(TAX)/nem_ncbi/taxonomy.tsv:
+	mkdir -p `dirname $@`
+	cp -p $(TAXOMACHINE_EXAMPLE)/nematoda.ncbi $@
 
-WHICH=ott2.2
+$(TAX)/nem_gbif/taxonomy.tsv:
+	mkdir -p `dirname $@`
+	cp -p $(TAXOMACHINE_EXAMPLE)/nematoda.gbif $@
 
-OTT22_ARGS=Smasher $(NCBI) $(GBIF) \
+# little test of --select feature
+dory-test.tsv: $(TAX)/nem/log.tsv Smasher.class
+	java $(CP) Smasher --start $(TAX)/nem/ --select Dorylaimida $@
+
+# --------------------------------------------------------------------------
+
+OTT_ARGS=Smasher $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
       --edits edits/ \
-      --ids $(WORK)/ott2.1/taxonomy \
-      --aux $(PREOTTOL)/preottol-20121112.processed \
-      --out $(WORK)/ott2.2/
+      --ids $(TAX)/prev_ott/ \
+      --out $(TAX)/ott/
 
-ott22: $(WORK)/ott2.2/log
-$(WORK)/ott2.2/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.processed 
-	mkdir -p $(WORK)/ott2.2
-	java $(CP) -Xmx10g $(OTT22_ARGS)
+ott: $(TAX)/ott/log.tsv
+$(TAX)/ott/log.tsv: Smasher.class $(NCBI)/taxonomy.csv $(GBIF)/taxonomy.csv
+	mkdir -p $(TAX)/ott
+	java $(CP) -Xmx10g $(OTT_ARGS)
+	echo $(WHICH) >$(TAX)/ott/version.txt
 
-OTT21_ARGS=Smasher $(NCBI) $(GBIF) \
-      --edits edits/ \
-      --ids $(WORK)/ott2.0/taxonomy \
-      --aux $(PREOTTOL)/preottol-20121112.processed \
-      --out $(WORK)/ott2.1/
+# Create the aux (preottol) mapping in a separate step.
+# How does it know where to write to?
 
-ott21: $(WORK)/ott2.1/log
-$(WORK)/ott2.1/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.processed 
-	mkdir -p $(WORK)/ott2.1
-	java $(CP) -Xmx10g $(OTT21_ARGS)
-
-OTT20_ARGS=Smasher $(NCBI) $(GBIF) \
-      --ids $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids \
-      --aux $(PREOTTOL)/preottol-20121112.processed \
-      --out $(WORK)/ott2.0/
-
-# 2.0 idempotency test
-IDEM_ARGS=Smasher $(NCBI) $(GBIF) \
-      --ids $(WORK)/ott2.0/taxonomy \
-      --out $(WORK)/ott2.0-idem/
-
-
-ott20: $(WORK)/ott2.0/log
-$(WORK)/ott2.0/log: Smasher.class $(NCBI) $(GBIF) $(PREOTTOL)/preottol-20121112.processed 
-	mkdir -p $(WORK)/ott2.0
-	java $(CP) -Xmx10g $(OTT20_ARGS)
-
-idem: $(WORK)/ott2.0-idem/log
-$(WORK)/ott2.0-idem/log: Smasher.class
-	mkdir -p $(WORK)/ott2.0-idem
-	java $(CP) -Xmx10g $(IDEM_ARGS)
-
-# little test
-$(WORK)/dory.foo: $(WORK)/nem2/taxonomy Smasher.class
-	java $(CP) Smasher --start $< --select Dorylaimida $@
-
-$(WORK)/nem1.preottol: $(PREOTTOL)/preottol-20121112.processed
-	mkdir -p $(WORK)
-	java $(CP) -Xmx3g Smasher --start $< --select Nematoda $@
-
-$(WORK)/nem1.ott: $(OTTOL)/ottol_dump_w_uniquenames_preottol_ids
-	java $(CP) -Xmx3g Smasher --start $< --select Nematoda $@
+$(TAX)/ott.aux.tsv: Smasher.class $(TAX)/ott/log.tsv
+	hava $(CP) -Xmx10G Smasher $(TAX)/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
 
 $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
@@ -108,21 +85,22 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 # Formerly, where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
-ncbi: $(NCBI)
-$(NCBI): $(WORK)/ncbi/nodes.dmp process_ncbi_taxonomy_taxdump.py
-	python process_ncbi_taxonomy_taxdump.py F $(WORK)/ncbi \
-            /dev/null $@.tmp
-	mv -f $@.tmp $@
-	mv -f $@.tmp.synonyms $@.synonyms
+ncbi: $(NCBI)/taxonomy.tsv
+$(NCBI)/taxonomy.tsv: $(FEED)/ncbi/tmp/nodes.dmp $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py
+	mkdir -p $(NCBI)
+	python $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py F $(FEED)/ncbi/tmp \
+            /dev/null $(NCBI).tmp
+	rm -rf $(NCBI)
+	mv -f $(NCBI).tmp $(NCBI)
 
-$(WORK)/ncbi/taxdump.tar.gz:
-	mkdir -p $(WORK)/ncbi
-	wget --output-document=$(WORK)/ncbi/taxdump.tar.gz \
+$(FEED)/ncbi/nodes.dmp: $(FEED)/ncbi/taxdump.tar.gz
+	tar -C $(FEED)/ncbi -xzvf $(FEED)/ncbi/taxdump.tar.gz
+	touch $(FEED)/ncbi/*.dmp
+
+$(FEED)/ncbi/taxdump.tar.gz:
+	mkdir -p $(FEED)/ncbi
+	wget --output-document=$(FEED)/ncbi/taxdump.tar.gz \
  	     ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
-
-$(WORK)/ncbi/nodes.dmp: $(WORK)/ncbi/taxdump.tar.gz
-	tar -C $(WORK)/ncbi -xzvf $(WORK)/ncbi/taxdump.tar.gz
-	touch $(WORK)/ncbi/*.dmp
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 
@@ -139,6 +117,21 @@ $(WORK)/gbif/taxon.txt:
 	wget --output-document=$(WORK)/gbif/checklist1.zip \
              http://ecat-dev.gbif.org/repository/export/checklist1.zip
 	(cd $(WORK)/gbif && unzip checklist1.zip)
+
+silva: $(SILVA)
+$(SILVA): $(WORK)/silva/silva.fasta
+	(D=$(PWD); cd $(WORK)/silva; python $$D/process_silva.py)
+# process_silva.py takes 74 minutes to run
+
+$(FEED)/silva/silva.fasta:
+	mkdir -p $(FEED)/silva
+	wget --output-document=$(FEED)/silva/tax_ranks.txt \
+	  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.txt
+	wget --output-document=$(FEED)/silva/silva.fasta.tgz \
+	  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
+	(cd $(FEED)/silva && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
+
+# Silva 115: 206M uncompresses to 817M
 
 TARDIR=/raid/www/roots/opentree/ott
 
