@@ -6,7 +6,7 @@
 # sourceInfo should be either a URL or an abbreviated URL such as NCBI:12345.
 # If you want to put multiple sourceInfos, separate with commas,
 # without any intervening spaces.
-# Rank should be in lower case; use "no rank" if unknown or rank-free.
+# Rank should be in lower case; use 'no rank' if unknown or rank-free.
 #
 #
 #command	name	rank	parent	context	sourceInfo
