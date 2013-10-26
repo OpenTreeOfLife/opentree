@@ -7,6 +7,10 @@
   files when I'm ready to do so; currently it's much easier to work
   with in this form.
 
+  -----
+
+  Following are notes collected just before this program was written.
+  They are no longer current.
 
    Stephen's instructions
 	https://github.com/OpenTreeOfLife/taxomachine/wiki/Loading-the-OTToL-working-taxonomy
@@ -96,13 +100,15 @@ public class Smasher {
 					else if (argv[i].equals("--aux")) { // preottol
 						union.auxsource = getSourceTaxonomy(argv[++i]);
 						union.loadAuxIds(union.auxsource, idsource);
+                        union.dumpAuxIds(outprefix);
 					}
 
 					else if (argv[i].equals("--start"))
-						getTaxonomy(union, argv[++i]);
+						getTaxonomy(union, argv[++i]);    // Directory name, ending in /
 
 					else if (argv[i].equals("--select")) {
 						String name = argv[++i];
+                        union.analyze();
 						union.dump(union.unique(name), argv[++i]);
 					}
 
@@ -116,22 +122,6 @@ public class Smasher {
 						outprefix = argv[++i];
 						union.dumpAll(outprefix);
 					}
-
-					/*
-
-					  else if (argv[i].equals("--dump"))
-						union.dump(union.root, argv[++i]);
-
-					else if (argv[i].equals("--log")) {
-						if (++i < argv.length)
-							union.dumpLog(argv[i]);
-						else
-							System.err.println("Missing file name for --log");
-					}
-					else if (argv[i].equals("--deprecated"))
-						union.dumpDeprecated(idsource, argv[++i]);
-					//-----
-					*/
 
 					else if (argv[i].equals("--test"))
 						test();
@@ -168,6 +158,10 @@ public class Smasher {
 		if (designator.startsWith("(")) {
 			tax.root = tax.newickToNode(designator);
 		} else {
+            if (!designator.endsWith("/")) {
+                System.err.println("Taxonomy designator should end in / but doesn't: " + designator);
+                designator = designator + "/";
+            }
 			System.out.println("--- Reading " + designator + " ---");
 			tax.root = tax.loadTaxonomy(designator);
 		}
@@ -376,7 +370,8 @@ class Taxonomy implements Iterable<Node> {
 
 	static Pattern tabVbarTab = Pattern.compile("\t\\|\t?");
 
-	Node loadTaxonomy(String filename) throws IOException {
+	Node loadTaxonomy(String dirname) throws IOException {
+        String filename = dirname + "taxonomy.tsv";
 		FileReader fr = new FileReader(filename);
 		BufferedReader br = new BufferedReader(fr);
 		String str;
@@ -437,7 +432,7 @@ class Taxonomy implements Iterable<Node> {
 							   row + " rows, " + 
 							   root.count() + " reachable");
 
-		loadSynonyms(filename);
+		loadSynonyms(dirname + "synonyms.tsv");
 
 		return root;
 	}
@@ -575,7 +570,7 @@ class Taxonomy implements Iterable<Node> {
 	static final int ENVIRONMENTAL 	  	 =   16;
 	static final int INCERTAE_SEDIS 	 =   32;
 	static final int SPECIFIC     	     =   64;
-	static final int BARREN      	     =  128;
+	static final int UNUSEDXYZ     	     =  128;    // Unused
 	static final int SIBLING_LOWER       =  512;
 	static final int SIBLING_HIGHER      = 1024;
 	static final int MAJOR_RANK_CONFLICT = 2048;
@@ -1349,6 +1344,16 @@ class UnionTaxonomy extends Taxonomy {
 		out.close();
 	}
 
+    // Method on union taxonomy.
+    void dumpAuxIds(String outprefix) throws java.io.IOException {
+        // TBD: Should be done as a separate operation
+		if (this.auxsource != null)
+			this.explainAuxIds(this.auxsource,
+							   this.idsource,
+							   outprefix + "aux.tsv");
+    }
+
+
 	void finish() {
 		// Flag homonyms
 		for (Node node: this) {	  // this = union
@@ -1364,6 +1369,10 @@ class UnionTaxonomy extends Taxonomy {
 
 	void edit(String dirname) throws IOException {
 		File[] editfiles = new File(dirname).listFiles();
+        if (editfiles == null) {
+            System.err.println("No edit files in " + dirname);
+            return;
+        }
 		for (File editfile : editfiles) {
 			if (!editfile.getName().endsWith("~")) {
 				System.out.println("--- Applying edits from " + editfile + " ---");
@@ -1479,15 +1488,11 @@ class UnionTaxonomy extends Taxonomy {
 
 	void dumpAll(String outprefix) throws IOException {
 		this.analyze();
-		this.dumpLog(outprefix + "log");
-		this.dump(this.root, outprefix + "taxonomy");
-		this.dumpSynonyms(outprefix + "synonyms");
+		this.dumpLog(outprefix + "log.tsv");
+		this.dump(this.root, outprefix + "taxonomy.tsv");
+		this.dumpSynonyms(outprefix + "synonyms.tsv");
 		if (this.idsource != null)
-			this.dumpDeprecated(this.idsource, outprefix + "deprecated");
-		if (this.auxsource != null)
-			this.explainAuxIds(this.auxsource,
-							   this.idsource,
-							   outprefix + "aux");
+			this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv");
 	}
 
 	void dump(Node unode, String filename) throws IOException {
@@ -1611,6 +1616,7 @@ class UnionTaxonomy extends Taxonomy {
 		if (name == null) return;					 // Hmmph.
 		List<Answer> lg = this.logs.get(name);
 		if (lg == null) {
+            // Kludge! Why not other names as well?
 			if (name.equals("environmental samples")) return; //3606 cohomonyms
 			lg = new ArrayList<Answer>(1);
 			this.logs.put(name, lg);

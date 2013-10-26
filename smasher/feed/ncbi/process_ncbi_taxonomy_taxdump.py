@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+# Arguments:
+#   download - T or F - whether or not to download the tar.gz file from NCBI
+#   downloaddir - where to put the tar.gz and its contents
+#   kill list file
+#   destination dir - where taxonomy.tsv etc. are to be put
+
 # JAR copied this file from data/ in the taxomachine repository
 # to smasher/ in the opentree repository on 2013-04-25.
 # Some subsequent modifications:
@@ -41,12 +47,13 @@ if __name__ == "__main__":
         print "python process_ncbi_taxonomy_taxdump.py {T|F} tmpdir skipids.file outfile"
         sys.exit(0)
     download = sys.argv[1]
-    downloaddir = sys.argv[2]   # e.g. tmp/ncbi
+    downloaddir = sys.argv[2]   # e.g. feed/ncbi/tmp
     nodesfile = downloaddir + "/nodes.dmp"
     namesfile = downloaddir + "/names.dmp"
     skipfile = sys.argv[3]
-    outfile = open(sys.argv[4],"w")
-    outfilesy = open(sys.argv[4]+".synonyms","w")
+    taxdir = sys.argv[4]
+    outfile = open(taxdir+"/taxonomy.tsv","w")
+    outfilesy = open(taxdir+"/synonyms.tsv","w")
     if download.upper() == "T":
         print("downloading taxonomy")
         os.system("wget --output-document=" +
