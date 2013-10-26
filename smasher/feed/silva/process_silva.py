@@ -49,9 +49,6 @@ Be aware of a few things -
 '''
 import re
 
-#infile = open('SSURef_NR99_115_tax_silva.fasta','rU')
-infile = open('silva.fasta','rU')
-
 
 taxdict = {} #given the sequence identifier, return the taxonomy list
 iddict = {} #given the sequence name, return (<species id assigned here>,<unique sequence id from SSU ref file>) 
@@ -64,9 +61,9 @@ iddict['Archaea'] = (3,0)
 
 
 
-def makedict():
-	
-	outfile = open('silva_taxonly.txt','w') # I'm writing this out to have the taxonomy separate from the sequences - not necessary
+def makedict(infilename, outfilename):
+	infile = open(infilename,'rU')
+	outfile = open(outfilename,'w') # I'm writing this out to have the taxonomy separate from the sequences - not necessary
 	for line in infile:
 		if line[0] == '>' and not re.search('Metazoa',line) and not re.search('Fungi',line) and not re.search('Archaeplastida',line):	
 			taxlist = []		
@@ -84,7 +81,7 @@ def makedict():
 	return taxdict	
 
 
-def checkHomonym(uid,taxon,taxdict,olduid):		
+def checkHomonym(uid,taxon,taxdict,olduid,homfilename):
 	newtaxonomy = taxdict[uid]
 	oldtaxonomy = taxdict[olduid]
 	newparindex = taxdict[uid].index(taxon) - 1
@@ -92,22 +89,27 @@ def checkHomonym(uid,taxon,taxdict,olduid):
 	if oldtaxonomy[oldparindex] in newtaxonomy[newparindex] and oldtaxonomy[oldparindex]: #parent of original in new taxonomy
 		return True #link new to old
 	else:
-		hom_outfile = open('homonym_paths.txt','a')
+		hom_outfile = open(homfilename,'a')
 		hom_outfile.write(taxon + ',' + str(newtaxonomy)+ ',' +str(oldtaxonomy) + '\n')
 		hom_outfile.close()
 		return newtaxonomy[newparindex]
-def getRank(taxon,par):
-	infile = open('tax_ranks.txt','r')
+# I suspect we'll get much better speed by parsing the rank file only
+# once and keeping the ranks in a table
+# 'par' = the taxon's parent taxon
+def getRank(taxon,par,rankfilename):
+	infile = open(rankfilename,'r')
 	for line in infile:
 		path,node,rank,remark = line.split('\t')
 		if node == taxon and par == path.split(';')[-2]:
 			return rank
 	return 'no rank'
-def parseSilva(taxdict):
+def parseSilva(taxdict, indir, outdir):
 	rank = 'no rank' #for now
-	outfile = open('formatted_Silva.txt','w')
-	outfile.write('0\t|\t \t|\tLife\t|\tno rank\t|\tno seq\n')
+	outfile = open(outdir + '/taxonomy.tsv','w')
+	outfile.write('0\t|\t \t|\tlife\t|\tno rank\t|\tno seq\n')
 	count = 4
+	homfilename = outdir + '/homonym_paths.txt'
+	rankfilename = outdir + '/tax_ranks.txt'
 	for uid in taxdict.keys():
 		for taxon in taxdict[uid]:
 			if taxon in ['Bacteria','Eukaryota','Archaea']: 
@@ -129,7 +131,7 @@ def parseSilva(taxdict):
 
 				try:
 					speciesid = iddict[taxon][0] #does it already have an id?
-					if checkHomonym(uid,taxon,taxdict,iddict[taxon][1]) == True: #returns true if this taxon and the one in the db have the same parent
+					if checkHomonym(uid,taxon,taxdict,iddict[taxon][1],homfilename) == True: #returns true if this taxon and the one in the db have the same parent
 						speciesid = iddict[taxon][0]
 					else: #add as a new taxon with parent from homonym check (not sure if this will work)
 
@@ -141,7 +143,7 @@ def parseSilva(taxdict):
 					speciesid = count
 					iddict[taxon] = (count,uid)
 					count = count + 1
-				rank = getRank(taxon,par)
+				rank = getRank(taxon,par,rankfilename)
 				par = taxon
 				seqid = 'no seq id'	
 				
@@ -153,9 +155,10 @@ def parseSilva(taxdict):
 	outfile.close()
 	
 def main():
-	
-	taxdict = makedict()
-	parseSilva(taxdict)
-
+	indir = sys.argv[1]
+	outdir = sys.argv[2]
+	# was: infile = open('SSURef_NR99_115_tax_silva.fasta','rU')
+	taxdict = makedict(indir + '/silva.fasta', outdir + '/silva_taxonly.txt')
+	parseSilva(taxdict, indir, outdir)
 	
 main()

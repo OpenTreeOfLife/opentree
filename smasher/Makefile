@@ -76,18 +76,26 @@ $(TAX)/ott/log.tsv: Smasher.class $(NCBI)/taxonomy.csv $(GBIF)/taxonomy.csv
 # Create the aux (preottol) mapping in a separate step.
 # How does it know where to write to?
 
-$(TAX)/ott.aux.tsv: Smasher.class $(TAX)/ott/log.tsv
+$(TAX)/ott/aux.tsv: Smasher.class $(TAX)/ott/log.tsv
 	hava $(CP) -Xmx10G Smasher $(TAX)/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
 
 $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
+
+PREV_WHICH=2.2
+
+$(TAX)/prev_ott/taxonomy.tsv:
+	mkdir -p $(FEED)/prev_ott/tmp
+	wget --output-document=$(FEED)/prev_ott/tmp/ott$(PREV_WHICH).tgz
+	(cd $(FEED)/prev_ott/tmp/; tar xf ott$(PREV_WHICH).tgz)
+	mv $(FEED)/prev_ott/tmp/ott$(PREV_WHICH)/* $(TAX)/prev_ott/
 
 # Formerly, where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
 ncbi: $(NCBI)/taxonomy.tsv
 $(NCBI)/taxonomy.tsv: $(FEED)/ncbi/tmp/nodes.dmp $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py
-	mkdir -p $(NCBI)
+	mkdir -p $(NCBI).tmp
 	python $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py F $(FEED)/ncbi/tmp \
             /dev/null $(NCBI).tmp
 	rm -rf $(NCBI)
@@ -104,24 +112,27 @@ $(FEED)/ncbi/taxdump.tar.gz:
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 
-gbif: $(GBIF)
-$(GBIF): $(WORK)/gbif/taxon.txt process_gbif_taxonomy.py
-	python process_gbif_taxonomy.py \
-	       $(WORK)/gbif/taxon.txt \
-	       /dev/null $@.tmp
-	mv -f $@.tmp $@
-	mv -f $@.tmp.synonyms $@.synonyms
+gbif: $(GBIF)/taxonomy.tsv
+$(GBIF)/taxonomy.tsv: $(FEED)/gbif/tmp/taxon.txt $(FEED)/gbif/process_gbif_taxonomy.py
+	mkdir -p $(GBIF).tmp
+	python $(FEED)/gbif/process_gbif_taxonomy.py \
+	       $(FEED)/gbif/tmp/taxon.txt \
+	       /dev/null $(GBIF).tmp
+	rm -rf $(GBIF)
+	mv -f $(GBIF).tmp $(GBIF)
 
-$(WORK)/gbif/taxon.txt:
-	mkdir -p $(WORK)/gbif
-	wget --output-document=$(WORK)/gbif/checklist1.zip \
+$(FEED)/gbif/tmp/taxon.txt:
+	mkdir -p $(FEED)/gbif/tmp
+	wget --output-document=$(FEED)/gbif/tmp/checklist1.zip \
              http://ecat-dev.gbif.org/repository/export/checklist1.zip
-	(cd $(WORK)/gbif && unzip checklist1.zip)
+	(cd $(FEED)/gbif/tmp && unzip checklist1.zip)
 
 silva: $(SILVA)
-$(SILVA): $(WORK)/silva/silva.fasta
-	(D=$(PWD); cd $(WORK)/silva; python $$D/process_silva.py)
+$(SILVA): $(FEED)/silva/silva.fasta
+	python $(FEED)/silva/process_silva.py $(FEED)/silva $(TAX)/silva
 # process_silva.py takes 74 minutes to run
+
+# Silva 115: 206M uncompresses to 817M
 
 $(FEED)/silva/silva.fasta:
 	mkdir -p $(FEED)/silva
@@ -130,8 +141,6 @@ $(FEED)/silva/silva.fasta:
 	wget --output-document=$(FEED)/silva/silva.fasta.tgz \
 	  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
 	(cd $(FEED)/silva && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
-
-# Silva 115: 206M uncompresses to 817M
 
 TARDIR=/raid/www/roots/opentree/ott
 

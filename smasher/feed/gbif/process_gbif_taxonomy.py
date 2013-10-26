@@ -1,5 +1,11 @@
 #!/usr/bin/env python
 
+# Command line arguments
+#   1: taxon.txt
+#   2: kill list
+#   3: directory in which to put taxonomy.tsv and synonyms.tsv
+
+
 import sys,os
 from collections import Counter
 
@@ -18,8 +24,8 @@ if __name__ == "__main__":
     ignore = []
     for i in infile2:
         ignore.append(i.strip())
-    outfile = open(sys.argv[3],"w")
-    outfilesy = open(sys.argv[3]+".synonyms","w")
+    outfile = open(sys.argv[3]+"/taxonomy.tsv,"w")
+    outfilesy = open(sys.argv[3]+"/synonyms.tsv","w")
     names = [] 
     parents = []    #list of ids
     count = 0
