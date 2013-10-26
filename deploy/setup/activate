@@ -1,0 +1,9 @@
+# Source this file
+
+# Opentree home directory
+OTHOME=/home/ubuntu
+
+# Neo4j wants the following
+export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
+
+source $OTHOME/venv/bin/activate
