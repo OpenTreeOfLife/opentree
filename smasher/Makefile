@@ -62,13 +62,13 @@ dory-test.tsv: $(TAX)/nem/log.tsv Smasher.class
 
 # --------------------------------------------------------------------------
 
-OTT_ARGS=Smasher $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
+OTT_ARGS=Smasher $(NCBI)/ $(GBIF)/ \
       --edits edits/ \
       --ids $(TAX)/prev_ott/ \
       --out $(TAX)/ott/
 
 ott: $(TAX)/ott/log.tsv
-$(TAX)/ott/log.tsv: Smasher.class $(NCBI)/taxonomy.csv $(GBIF)/taxonomy.csv
+$(TAX)/ott/log.tsv: Smasher.class $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv
 	mkdir -p $(TAX)/ott
 	java $(CP) -Xmx10g $(OTT_ARGS)
 	echo $(WHICH) >$(TAX)/ott/version.txt
@@ -121,11 +121,13 @@ $(GBIF)/taxonomy.tsv: $(FEED)/gbif/tmp/taxon.txt $(FEED)/gbif/process_gbif_taxon
 	rm -rf $(GBIF)
 	mv -f $(GBIF).tmp $(GBIF)
 
-$(FEED)/gbif/tmp/taxon.txt:
-	mkdir -p $(FEED)/gbif/tmp
-	wget --output-document=$(FEED)/gbif/tmp/checklist1.zip \
-             http://ecat-dev.gbif.org/repository/export/checklist1.zip
+$(FEED)/gbif/tmp/taxon.txt: $(FEED)/gbif/tmp/checklist1.zip
 	(cd $(FEED)/gbif/tmp && unzip checklist1.zip)
+
+$(FEED)/gbif/tmp/checklist1.zip:
+	mkdir -p $(FEED)/gbif/tmp
+	wget --output-document=$@ \
+             http://ecat-dev.gbif.org/repository/export/checklist1.zip
 
 silva: $(SILVA)
 $(SILVA): $(FEED)/silva/silva.fasta

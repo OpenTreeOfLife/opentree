@@ -570,12 +570,13 @@ class Taxonomy implements Iterable<Node> {
 	static final int ENVIRONMENTAL 	  	 =   16;
 	static final int INCERTAE_SEDIS 	 =   32;
 	static final int SPECIFIC     	     =   64;
-	static final int UNUSEDXYZ     	     =  128;    // Unused
+	static final int EDITED     	     =  128;
 	static final int SIBLING_LOWER       =  512;
 	static final int SIBLING_HIGHER      = 1024;
 	static final int MAJOR_RANK_CONFLICT = 2048;
 	static final int TATTERED 			 = 4096;
 	static final int ANYSPECIES			 = 8192;
+	static final int FLAGGED			 = 8192 * 2;
 
 	// Returns the node's rank (as an int).  In general the return
 	// value should be >= parentRank, but conceivably funny things
@@ -754,6 +755,16 @@ class Taxonomy implements Iterable<Node> {
 		if ((node.properFlags & TATTERED) != 0) {
 			if (needComma) out.print(","); else needComma = true;
 			out.print("tattered");
+		}
+
+		if ((node.properFlags & EDITED) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("edited");
+		}
+
+		if ((node.properFlags & FLAGGED) != 0) {
+			if (needComma) out.print(","); else needComma = true;
+			out.print("flagged");
 		}
 
 		if ((node.inheritedFlags & SPECIFIC) != 0) {
@@ -1237,7 +1248,7 @@ class UnionTaxonomy extends Taxonomy {
 							   this.maxid + " < " + idsource.maxid);
 	}
 
-	// x is a source node drawn from idsource
+	// x is a source node drawn from the idsource taxonomy file
 
 	static Answer assessSource(Node x, Node y) {
 		if (x.extra != null && x.extra.length > 5) {
@@ -1447,6 +1458,7 @@ class UnionTaxonomy extends Taxonomy {
 				node.rank = rank;
 				node.sourceInfo = sourceInfo;
 				parent.addChild(node);
+				node.properFlags |= Taxonomy.EDITED;
 			}
 		} else if (command.equals("move")) {
 			if (existing == null)
@@ -1457,8 +1469,19 @@ class UnionTaxonomy extends Taxonomy {
 				Node node = existing.get(0);
 				if (node.parent == parent)
 					System.err.println("(move) Warning: already in the right place: " + name);
-				else
+				else {
 					node.changeParent(parent);
+					node.properFlags |= Taxonomy.EDITED;
+				}
+			}
+		} else if (command.equals("flag")) {
+			if (existing == null)
+				System.err.println("(move) No taxon to move: " + name);
+			else if (existing.size() > 1)
+				System.err.println("(move) Ambiguous taxon name: " + name);
+			else {
+				Node node = existing.get(0);
+				node.properFlags |= Taxonomy.FLAGGED;
 			}
 		} else if (command.equals("synonym")) {
 			// TBD: error checking
@@ -1776,12 +1799,16 @@ class Node {
 		}
 		if (this.taxonomy.infocolumn >= 0) {
 			String sourceqids = this.extra[this.taxonomy.infocolumn];
+			if (sourceqids.length() == 0)
+				return null;
+			// temporary hack to work around bug in ott 2.2
+			if (sourceqids.equals("null"))
+				return null;
 			int pos = sourceqids.indexOf(',');
 			if (pos > 0)
 				return new NodeRef(sourceqids.substring(0, pos));
-			else
-				return new NodeRef(sourceqids);
 			// for (String sourceqid : sourceqids.split(","))  ...
+			return new NodeRef(sourceqids);
 		}
 		return null;
 	}
