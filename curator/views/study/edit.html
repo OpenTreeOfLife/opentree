@@ -1,5 +1,11 @@
+{{# Pivot (in many places) based on whether the user is an editor (curator) or
+# someone else looking at the study
+viewOrEdit = auth.user and 'EDIT' or 'VIEW'
+
+response.title = (viewOrEdit == 'EDIT') and "Edit Study" or "View Study"
+}}
+
 {{left_sidebar_enabled,right_sidebar_enabled=False,False}}
-{{response.title = "Edit Study"}}
 {{response.subtitle = "loading study %s..." % request.args[0]}}
 
 {{### Add support scripts for single-page editor 
@@ -48,11 +54,17 @@ body {
     </ul>
 
     <div class="span4 Xbtn-group" style="float: right; margin-top: -56px;">
+        {{ if viewOrEdit == 'EDIT': }}
           <button class="btn btn"
             onclick="if (validateFormData()) saveFormDataToStudyJSON(); return false;">Save Study</button>
           <button class="btn btn-link">Cancel</button>
           <button class="btn btn-danger pull-right"
             onclick="confirm('Are you sure you want to delete this study?'); return false;">Delete Study</button>
+        {{ else: }} 
+          <a class="btn btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to study list</a>
+          <button class="btn btn-info pull-right"
+            onclick="confirm('Are you sure you want to edit this study?'); return false;">Login to Edit Study</button>
+        {{ pass }}
     </div>
   </div>
  </div>
@@ -75,51 +87,68 @@ body {
               <div class="control-group">
                 <label class="control-label" for="ot_studyPublicationReference">Publication reference</label>
                 <div class="controls">
+                {{ if viewOrEdit == 'EDIT': }}
                   <textarea data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublicationReference'), valueUpdate: 'afterkeydown'" id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder=""></textarea>
+                {{ else: }}
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublicationReference')"></p>
+                {{ pass }}
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_studyPublication">Publication</label>
                 <div class="controls">
+                {{ if viewOrEdit == 'EDIT': }}
                   <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublication'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
+                {{ else: }}
+                  <p class="static-form-value"><a target="_blank" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublication'), attr: { href: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublication') }"></a></p>
+                {{ pass }}
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_studyYear">Study Year</label>
                 <div class="controls">
+                {{ if viewOrEdit == 'EDIT': }}
                   <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyYear'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyYear" class="input-mini" placeholder="">
-                </div>
-              </div>
-              <div class="control-group">
-                <label class="control-label" for="ot_studyId">Study ID</label>
-                <div class="controls">
-                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyId'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyId" class="input-small" placeholder="">
+                {{ else: }}
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyYear')"></p>
+                {{ pass }}
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_focalClade">Focal clade</label>
                 <div class="controls">
+                {{ if viewOrEdit == 'EDIT': }}
                   <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:focalClade'), valueUpdate: 'afterkeydown'" type="text" id="ot_focalClade" class="input-small" placeholder="">
+                {{ else: }}
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:focalClade')"></p>
+                {{ pass }}
                 </div>
               </div>
               <div class="control-group">
-                <label class="control-label" for="ot_curatorName">Curator name</label>
+                <label class="control-label" for="ot_curatorName">Submitted by</label>
                 <div class="controls">
-                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:curatorName'), valueUpdate: 'afterkeydown'" type="text" id="ot_curatorName" class="input-xlarge" placeholder="">
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:curatorName')"></p>
                 </div>
               </div>
 
               <div class="control-group">
                 <div class="controls">
+                {{ if viewOrEdit == 'EDIT': }}
                   <label class="checkbox">
                     <input type="checkbox"> This study has no rooted trees. (This is not typical.)
                   </label>
+                {{ else: }}
+                  <p class="static-form-value" data-bind="css: (true) ? 'interesting-value' : 'boring-value', 
+                                                          text: (true) ? 'This study has no rooted trees. (This is not typical.)' : 'This study has rooted trees.'"></p>
+                {{ pass }}
+                {{ if viewOrEdit == 'EDIT': }}
                   <label class="checkbox">
                     <input type="checkbox"> This study should not contribute to synthesis.
                   </label>
-                  <!--
-                  <button type="submit" class="btn">Sign in</button>
-                  -->
+                {{ else: }}
+                  <p class="static-form-value" data-bind="css: (true) ? 'interesting-value' : 'boring-value', 
+                                                          text: (true) ? 'This study should not contribute to synthesis. (This is not typical.)' : 'This study should contribute to synthesis.'"></p>
+                {{ pass }}
                 </div>
               </div>
 
@@ -151,7 +180,11 @@ body {
                 <table class="table table-condensed">
                   <thead>
                     <tr>
+                      {{ if viewOrEdit == 'EDIT': }}
                         <th>Tree name (click to edit tree)</th>
+                      {{ else: }}
+                        <th>Tree name (click to view tree)</th>
+                      {{ pass }}
                         <th>Type</th>
                         <th>Ingroup clade</th>
                         <th>OTUs mapped</th>
@@ -166,7 +199,11 @@ body {
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree)"></td>
                         <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
                         <td data-bind="html: getRootedDescriptionForTree(tree)">?/?? (?%)</td>
-                        <td><input type="checkbox" style="margin: 0px 20px;" data-bind="checked: false" /></td><!-- TODO: test for preferred tree? --> 
+                      {{ if viewOrEdit == 'EDIT': }}
+                        <td><input type="checkbox" style="margin: 0px 20px;" data-bind="checked: false" /></td><!--checked="checked"--> 
+                      {{ else: }}
+                        <td data-bind="text: (true) ? 'NO' : 'YES'">?</td>
+                      {{ pass }}
                     </tr>
                   </tbody>
                 <!-- EXAMPLES of tree-table entries
@@ -358,18 +395,22 @@ Please review and re-submit.</pre>
                   </p>
 
             <form>
+            {{ if viewOrEdit == 'EDIT': }}
               <div class="control-group">
                 <div class="controls">
                   <button class="btn btn-disabled" disabled="disabled">Submit study for synthesis</button>
                 </div>
               </div>
+            {{ pass }}
             </form>
             </div>
           </div>
 
+        {{ if viewOrEdit == 'EDIT': }}
             <i><a href="#" onclick="if ($('#formatted-nexson').is(':visible')) { $('#formatted-nexson').hide() } else { $('#formatted-nexson').show() }; return false;">current nexml</a> (remapped for return to server)</i>
             <pre id="formatted-nexson" data-bind="text: ko.mapping.toJSON(nexml.meta)" style="color: #933; font-size: small; width: 90%; height: 500px; overflow: auto; display: none;">
             </pre>
+        {{ pass }}
             <div style="height: 2em;">&nbsp;</div>
 
         </div>
@@ -394,9 +435,10 @@ Please review and re-submit.</pre>
 
 <script type='text/javascript'>
     var studyID = '{{= request.args[0] }}';
-    var authorName = '{{= auth.user.name }}';
-    var authorEmail = '{{= auth.user.email }}';
-    var authToken = '{{= auth.user.github_auth_token }}';
+    var viewOrEdit = '{{= viewOrEdit }}';
+    var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
+    var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
+    var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
     var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
     var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
     var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';

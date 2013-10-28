@@ -28,6 +28,15 @@ def index():
     return dict(message="study/index")
 
 
+def view():
+    """
+    Allow any visitor to view (read-only!) a study on the 'master' branch
+
+    ? OR can this include work-in-progress from a personal branch?
+    """
+    response.view = 'study/edit.html'
+    return dict()
+
 @auth.requires_login()
 def create():
     return dict(message="study/create")

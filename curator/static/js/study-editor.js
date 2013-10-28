@@ -9,6 +9,7 @@ var studyID;
 var API_create_study_POST_url;
 var API_load_study_GET_url;
 var API_update_study_PUT_url;
+var viewOrEdit;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -230,10 +231,18 @@ function updateQualityDisplay() {
 
         for (var i = 0; i < criterionScoreInfo.comments.length; i++) {
             var c = criterionScoreInfo.comments[i];
+            // show suggestion action for editors, or failure message for other viewers
+            var displayMessage;
+            if (viewOrEdit == 'EDIT') {
+                displayMessage = c.suggestedAction;
+            } else {
+                displayMessage = c.message;
+            }
+
             if (c.suggestedAction) {
                 suggestionCount++;
-                $cSuggestionsList.append('<li>'+ c.suggestedAction +'</li>');
-                $cTabSugestionList.append('<li>'+ c.suggestedAction);  /// TODO: restore this? +' <span style="color: #aaa;">('+ c.percentScore +'%)</span></a></li>');
+                $cSuggestionsList.append('<li>'+ displayMessage +'</li>');
+                $cTabSugestionList.append('<li>'+ displayMessage +'</li>');  /// TODO: restore this? +' <span style="color: #aaa;">('+ c.percentScore +'%)</span></a></li>');
             }
         }
     
@@ -348,20 +357,33 @@ function StudyViewModel() {
 
 };
 
-function getMetaTagAccessorByAtProperty(array, prop) {
-    // fetch accessor(!) function for a metatag in the specified list, using its @property value
+function getMetaTagAccessorByAtProperty(array, prop, options) {
+    // fetch accessor function(s) for a metatag in the specified list, using its @property value
+    var foundMatch;
+    var returnAll = (typeof(options) === 'object' && options.FIND_ALL); // else return first match found
+    var allMatches = [ ];
     for (var i = 0; i < array.length; i++) {
         var testItem = array[i];
         if (testItem['@property']() === prop) {
             switch(testItem['@xsi:type']()) {
                 case 'nex:ResourceMeta':
-                    return testItem['@href'];  // uses special attribute
+                    foundMatch = testItem['@href'];  // uses special attribute
+                    break;
                 default: 
-                    return testItem.$; // assumes value is stored here
+                    foundMatch = testItem.$; // assumes value is stored here
+            }
+            if (returnAll) {
+                allMatches.push(foundMatch);
+            } else {
+                return foundMatch;
             }
         }
     }
-    return null;
+    if (returnAll) {
+        return allMatches;
+    } else {
+        return null;
+    }
 }
 
 function getPageNumbers( pagedArray ) {
@@ -380,7 +402,7 @@ function getMappedTallyForTree(tree) {
     
     // TODO: Only check the *terminal* taxa (ie, "tips") of the tree! Right?
 
-    if (!tree || !tree.node || !tree.node().length === 0) {
+    if (!tree || !tree.node || tree.node().length === 0) {
         return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
     }
 
@@ -405,7 +427,7 @@ function getMappedTallyForTree(tree) {
 
 function getRootedDescriptionForTree( tree ) {
     // return display-ready description ('Rooted', 'Unrooted', 'Multiply rooted') based on count
-    if (!tree || !tree.node || !tree.node().length === 0) {
+    if (!tree || !tree.node || tree.node().length === 0) {
         return 'Unrooted (empty)';
     }
     var totalNodes = tree.node().length;
@@ -648,17 +670,93 @@ var studyScoringRules = {
     ],
     'Trees': [
         // no trees, unrooted or badly rooted trees
-                        {
-                            description: "placeholder to fake happy data",
-                            test: function() {
-                                return true;
-                            },
-                            weight: 0.4, 
-                            successMessage: "",
-                            failureMessage: "",
-                            suggestedAction: ""
-                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+        {
+            description: "The study should contain at least one tree.",
+            test: function(studyData) {
+                // check for a tree in this study
+                return (viewModel.nexml.trees.tree().length > 0);
+            },
+            weight: 0.5, 
+            successMessage: "The study contains at least one tree.",
+            failureMessage: "The study should contain at least one tree.",
+            suggestedAction: "Upload or enter a tree for this study."
+                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+        },
+        {
+            description: "There should be at least one candidate tree (unless submitter has opted out).",
+            test: function(studyData) {
+                // check for opt-out flag
+                var optOutFlag = getMetaTagAccessorByAtProperty(studyData.nexml.meta(), 'ot:notIntendedForSynthesis');
+                if (optOutFlag && (optOutFlag() == true)) {
+                    // submitter has explicitly said this study is not intended for synthesis
+                    return true;
+                }
+                // check for any candidate tree in the study
+                var candidateTreeFound = false;
+                var candidateTreeMarkers = getMetaTagAccessorByAtProperty(studyData.nexml.meta(), 'ot:candidateTreeForSynthesis', { 'FIND_ALL': true });
+                $.each(candidateTreeMarkers, function(i, marker) {
+                    switch(marker()) {  // non-empty points to a candidate tree
+                        case '':
+                        case null:
+                        case undefined:
+                        case 0:
+                            break;
+                        default:
+                            candidateTreeFound = true;
+                    }
+                });
+                return candidateTreeFound;
+            },
+            weight: 0.3, 
+            successMessage: "There is at least one candidate tree, or the submitter has opted out of synthesis.",
+            failureMessage: "There should be at least one candidate tree, or the submitter should opt out of synthesis.",
+            suggestedAction: "Mark a tree as candidate for synthesis, or opt out of synthesis in Metadata."
+                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+        },
+        {
+            description: "Each tree should be rooted (unless submitter has opted out).",
+            test: function(studyData) {
+                // check for opt-out flag
+                var optOutFlag = getMetaTagAccessorByAtProperty(studyData.nexml.meta(), 'ot:notUsingRootedTrees');
+                if (optOutFlag && (optOutFlag() == true)) {
+                    // submitter has explicitly said this study does not have rooted trees
+                    return true;
+                }
+                // check for a proper root node in each tree found (TODO: check 'candidates' only?)
+                var unrootedTreeFound = false;
+                $.each(studyData.nexml.trees.tree(), function(i, tree) {
+                    // check for explicit tree-level marker (ot:inGroupClade) versus arbitrary root
+                    var rootNodeIDGetter = getMetaTagAccessorByAtProperty(tree.meta(), 'ot:inGroupClade');
+                    if (typeof(rootNodeIDGetter) === 'function') {
+                        var rootNodeID = rootNodeIDGetter();
+                        console.log('>>> found this rootNodeID: '+ rootNodeID + '<'+ typeof(rootNodeID) +'>');
+                        switch(rootNodeID) {
+                            // TODO: Test live data to see what "none" or "empty" looks like in this field
+                            case '':
+                            case null:
+                            case undefined:
+                            case 0:
+                            case 'none':
+                                unrootedTreeFound = true;
+                                return false;  // done looping through trees
+                            default:
+                                return true; // try the next tree
                         }
+                    } else {
+                        // no metadata on this tree, or no tag for inGroupClade
+                        unrootedTreeFound = true;
+                        return false;  // done looping through trees
+                    }
+                });
+                // if no rootless trees were found, it passes the test
+                return !unrootedTreeFound;
+            },
+            weight: 0.3, 
+            successMessage: "All trees are properly rooted, or the submitter has specified unrooted trees.",
+            failureMessage: "Every tree should be properly rooted, or the submitter should opt out of rooted trees.",
+            suggestedAction: "Designate a root node for each tree, or specified only unrooted trees in Metadata."
+                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+        }
     ],
     'Files': [
         // problems with uploaded files (formats, missing, corrupt)
@@ -676,17 +774,81 @@ var studyScoringRules = {
     ],
     'OTU Mapping': [
         // un-mapped taxon names, conflicting or dubious mapping
-                        {
-                            description: "placeholder to fake happy data",
-                            test: function() {
-                                return true;
-                            },
-                            weight: 0.4, 
-                            successMessage: "",
-                            failureMessage: "",
-                            suggestedAction: ""
-                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+        {
+            description: "All leaf nodes in candidate trees should be mapped to OTUs.",
+            test: function(studyData) {
+                // check for opt-out flag
+                var optOutFlag = getMetaTagAccessorByAtProperty(studyData.nexml.meta(), 'ot:notIntendedForSynthesis');
+                if (optOutFlag && (optOutFlag() == true)) {
+                    // submitter has explicitly said this study is not intended for synthesis
+                    return true;
+                }
+               
+                // find all the candidate trees by ID (on study metadata) and build a tally tree
+                var candidateTreeTallies = { };
+                var candidateTreeMarkers = getMetaTagAccessorByAtProperty(studyData.nexml.meta(), 'ot:candidateTreeForSynthesis', { 'FIND_ALL': true });
+                $.each(candidateTreeMarkers, function(i, marker) {
+                    var treeID = marker();
+                    switch(treeID) {  // non-empty points to a candidate tree
+                        case '':
+                        case null:
+                        case undefined:
+                        case 0:
+                            break;
+                        default:
+                            candidateTreeTallies[ treeID ] = {};
+                    }
+                });
+                
+                // check the proportion of mapped leaf nodes in all candidate trees
+                var unmappedLeafNodesFound = false;
+                $.each(studyData.nexml.trees.tree(), function(i, tree) {
+                    // skip any non-candidate trees
+                    treeID = tree['@id']();
+                    if (!candidateTreeTallies[ treeID ]) {
+                        // skip this tree (not a candidate)
+                        return true;
+                    }
+
+                    if (!tree.node || tree.node().length === 0) {
+                        // skip this tree (no nodes yet, which is weird but not relevant to the test)
+                        //candidateTreeTalies[ treeID ].mappedNodes = 0;
+                        //candidateTreeTalies[ treeID ].totalNodes = 0;
+                        return true;
+                    }
+
+                    // only check the leaf nodes on the tree
+                    var totalNodes = 0;
+                    var mappedNodes = 0;
+                    $.each(tree.node(), function(i, node) {
+                        // is this a leaf? check for metatag .isLeaf
+                        var leafMarker = getMetaTagAccessorByAtProperty(node.meta(), 'ot:isLeaf');
+                        if (leafMarker() == true) {
+                            // Simply check for the presence (or absence) of an @otu 'getter' function
+                            // (so far, it doesn't seem to exist unless there's a mapped OTU)
+                            totalNodes++;
+                            var nodeOTUAccessor = node['@otu'];
+                            if (typeof(nodeOTUAccessor) === 'function') {
+                                mappedNodes++;
+                            } else {
+                                unmappedLeafNodesFound = true;
+                                return false;   // bail out of loop
+                            }
                         }
+                    });
+                    // TODO: actually count these, for a proportional score?
+                    //candidateTreeTalies[ treeID ].mappedNodes = mappedNodes;
+                    //candidateTreeTalies[ treeID ].totalNodes = totalNodes;
+                });
+                // if no unmapped leaf nodes were found, it passes the test
+                return !unmappedLeafNodesFound;
+            },
+            weight: 0.5, 
+            successMessage: "Candidate trees (submitted for synthesis) have all their leaves mapped to OTUs.",
+            failureMessage: "There are unmapped leaf nodes in your candidate trees (submitted for synthesis).",
+            suggestedAction: "Review all unmapped nodes in OTU Mapping."
+                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+        }
     ],
     'Annotations': [
         // pending or unanswered questions, etc.
