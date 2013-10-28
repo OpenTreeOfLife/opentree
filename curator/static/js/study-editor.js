@@ -9,6 +9,7 @@ var studyID;
 var API_create_study_POST_url;
 var API_load_study_GET_url;
 var API_update_study_PUT_url;
+var viewOrEdit;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -230,10 +231,18 @@ function updateQualityDisplay() {
 
         for (var i = 0; i < criterionScoreInfo.comments.length; i++) {
             var c = criterionScoreInfo.comments[i];
+            // show suggestion action for editors, or failure message for other viewers
+            var displayMessage;
+            if (viewOrEdit == 'EDIT') {
+                displayMessage = c.suggestedAction;
+            } else {
+                displayMessage = c.message;
+            }
+
             if (c.suggestedAction) {
                 suggestionCount++;
-                $cSuggestionsList.append('<li>'+ c.suggestedAction +'</li>');
-                $cTabSugestionList.append('<li>'+ c.suggestedAction);  /// TODO: restore this? +' <span style="color: #aaa;">('+ c.percentScore +'%)</span></a></li>');
+                $cSuggestionsList.append('<li>'+ displayMessage +'</li>');
+                $cTabSugestionList.append('<li>'+ displayMessage +'</li>');  /// TODO: restore this? +' <span style="color: #aaa;">('+ c.percentScore +'%)</span></a></li>');
             }
         }
     
