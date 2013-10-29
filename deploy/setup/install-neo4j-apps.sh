@@ -60,9 +60,11 @@ if [ ! -r $configfile ] ; then
 fi
 
 # ---------- TREEMACHINE / TAXOMACHINE ----------
-# Set up neo4j server
+# Set up neo4j services
 
-function neo4j_app {
+jar=opentree-neo4j-plugins-0.0.1-SNAPSHOT.jar
+
+function make_neo4j_plugin {
     APP=$1
 
     # Create a copy of neo4j for this app
@@ -88,13 +90,21 @@ function neo4j_app {
 	fi
     fi
 
-    # Create the plugins .jar file
+    # Create and install the plugins .jar file
     # Compilation takes about 4 minutes... ugh
-    jar=opentree-neo4j-plugins-0.0.1-SNAPSHOT.jar
     if [ ! -r neo4j-$APP/plugins/$jar -o $changed = "yes" ]; then
 	(cd $plugin; ./mvn_serverplugins.sh)
 	mv -f $plugin/target/$jar neo4j-$APP/plugins/
     fi
+}
+
+function fetch_neo4j_plugin {
+    APP=$1
+    wget --no-verbose -O neo4j-$APP/plugins/$jar http://dev.opentreeoflife.org:/export/$APP.jar
+}
+
+function fetch_neo4j_db {
+    APP=$1
 
     # Retrieve and unpack the database
     # treemachine: 6G, expands to 12G (AWS free tier only gives you 8G total)
@@ -136,7 +146,15 @@ function neo4j_app {
     fi
 }
 
-neo4j_app treemachine
-neo4j_app taxomachine
+make_neo4j_plugin treemachine
+fetch_neo4j_db treemachine
+
+if true; then
+    # Taxomachine ig github is broken
+    fetch_neo4j_plugin taxomachine
+else
+    make_neo4j_plugin taxomachine
+fi
+fetch_neo4j_db taxomachine
 
 echo "`date` Done"
