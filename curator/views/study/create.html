@@ -1,0 +1,116 @@
+{{response.title = "Create Study"}}
+
+{{left_sidebar_enabled,right_sidebar_enabled=False,False}}
+{{response.subtitle = "license and import options"}}
+
+{{### Add support scripts as in single-page editor?}}
+
+{{extend 'layout.html'}}
+
+<style type="text/css">
+body {
+    overflow-y: scroll;
+}
+</style>
+
+<div class="row">
+ <div class="span8 wireframe">
+  <form class="form-inline" style="padding-bottom: 24px;" action="">
+    <p>
+    First things first. All data in the Open Tree of Life project must be freely shared.
+    </p>
+
+    <div>
+        <label for="cc0-agreement" class="featured-label">
+            <input type="checkbox" id="cc0-agreement" name="cc0-agreement"/>
+            I agree to share this data according to the CC-Zero license <strong style="color: #c33;">(required)</strong>.
+        </label>
+    </div>
+  </form>
+
+  <form id="import-options" class="form-inline" style="padding-bottom: 24px;" action="">
+    <p>
+    There are a few ways to add a new study to the system. You can import
+    study data and trees from {TODO}, or {TODO} to import simple metadata for the study.
+    Or you can start "from scratch" with a new study, but it won't be accepted
+    for synthesis until it's been published and a DOI has been entered.
+    </p>
+
+    <label for="import-option-TREEBASE" class="featured-label">
+        <input type="radio" id="import-option-TREEBASE" name="import-option" value="IMPORT_FROM_TREEBASE" />
+        Import the study from TreeBASE
+    </label>
+    <p class="featured-label-description">
+        This option is usually the best and fastest, since it will include tree data.
+    </p>
+    <div id="import-details-TREEBASE" class="featured-label-child">
+        <input class="span4" type="text" name="pub-DOI" placeholder="Enter the TreeBASE ID for this study"></input>
+        <a class="btn btn-info">Import from TreeBASE</a>
+    </div>
+
+
+    <label for="import-option-DRYAD" class="featured-label">
+        <input type="radio" id="import-option-DRYAD" name="import-option" value="IMPORT_FROM_DRYAD" />
+        Import the study from Dryad
+    </label>
+    <p class="featured-label-description">
+        This option is also preferred, since it may automate the import of tree data.
+    </p>
+    <div id="import-details-DRYAD" class="featured-label-child">
+        <input class="span4" type="text" name="pub-DOI" placeholder="Enter the Dryad deposition DOI"></input>
+        <a class="btn btn-info">Import using Dryad deposition DOI</a>
+    </div>
+
+
+    <label for="import-option-PUBLICATION_DOI" class="featured-label">
+        <input type="radio" id="import-option-PUBLICATION_DOI" name="import-option" value="IMPORT_FROM_PUBLICATION_DOI" />
+        Import the study's metadata using its publication DOI
+    </label>
+    <p class="featured-label-description">
+        This option saves a little time, but you'll need to upload and map the study's tree data.
+    </p>
+    <div id="import-details-PUBLICATION_DOI" class="featured-label-child">
+        <input class="span4" type="text" name="pub-DOI" placeholder="Enter the publication DOI"></input>
+        <a class="btn btn-info">Import using publication DOI</a>
+    </div>
+
+
+    <label for="import-option-MANUAL_ENTRY" class="featured-label">
+        <input type="radio" id="import-option-MANUAL_ENTRY" name="import-option" value="IMPORT_FROM_MANUAL_ENTRY" />
+        Enter all study data manually
+    </label>
+    <p class="featured-label-description">
+        This option is the most challenging, but necessary if the options above aren't available.
+    </p>
+    <div id="import-details-MANUAL_ENTRY" class="featured-label-child">
+        <a class="btn btn-info">Enter study data manually</a>
+    </div>
+  </form>
+
+ </div>
+</div>
+
+{{ if False: }}
+<div class="row">
+    <div class="span8 wireframe"><!-- not too wide... -->
+       {main column}
+    </div><!-- end of main col -->
+
+    <div class="span4 wireframe">
+        {sidebar}
+    </div><!-- end of right col -->
+</div><!-- /.row -->
+{{ pass }}
+
+<script type='text/javascript'>
+    var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
+    var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
+    var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
+    var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
+        // this can take a few possible POSTed arguments (DOI, or initial input)
+
+    // these are probably not needed here; upon creation, we'll immediate redirect to the Edit page (or back here, with an error)
+    var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
+    var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
+</script>
+<script src="{{=URL('static','js/study-creation.js')}}"></script>
