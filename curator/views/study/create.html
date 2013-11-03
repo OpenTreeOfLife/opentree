@@ -15,7 +15,7 @@ body {
 
 <div class="row">
  <div class="span8 wireframe">
-  <form class="form-inline" style="padding-bottom: 24px;" action="">
+  <form class="form-inline" style="padding-bottom: 24px;" action=".">
     <p>
     First things first. All data in the Open Tree of Life project must be freely shared.
     </p>
@@ -28,7 +28,7 @@ body {
     </div>
   </form>
 
-  <form id="import-options" class="form-inline" style="padding-bottom: 24px;" action="">
+  <form id="import-options" class="form-inline" style="padding-bottom: 24px;" action=".">
     <p>
     There are a few ways to add a new study to the system. You can import
     study data and trees from {TODO}, or {TODO} to import simple metadata for the study.
@@ -44,21 +44,8 @@ body {
         This option is usually the best and fastest, since it will include tree data.
     </p>
     <div id="import-details-TREEBASE" class="featured-label-child">
-        <input class="span4" type="text" name="pub-DOI" placeholder="Enter the TreeBASE ID for this study"></input>
-        <a class="btn btn-info">Import from TreeBASE</a>
-    </div>
-
-
-    <label for="import-option-DRYAD" class="featured-label">
-        <input type="radio" id="import-option-DRYAD" name="import-option" value="IMPORT_FROM_DRYAD" />
-        Import the study from Dryad
-    </label>
-    <p class="featured-label-description">
-        This option is also preferred, since it may automate the import of tree data.
-    </p>
-    <div id="import-details-DRYAD" class="featured-label-child">
-        <input class="span4" type="text" name="pub-DOI" placeholder="Enter the Dryad deposition DOI"></input>
-        <a class="btn btn-info">Import using Dryad deposition DOI</a>
+        <input class="span4" type="text" name="treebase-id" placeholder="Enter the TreeBASE ID for this study"></input>
+        <button class="btn btn-info">Import from TreeBASE</button>
     </div>
 
 
@@ -67,11 +54,11 @@ body {
         Import the study's metadata using its publication DOI
     </label>
     <p class="featured-label-description">
-        This option saves a little time, but you'll need to upload and map the study's tree data.
+        This option saves time, especially if this study's data is in Dryad.
     </p>
     <div id="import-details-PUBLICATION_DOI" class="featured-label-child">
-        <input class="span4" type="text" name="pub-DOI" placeholder="Enter the publication DOI"></input>
-        <a class="btn btn-info">Import using publication DOI</a>
+        <input class="span4" type="text" name="publication-DOI" placeholder="Enter the publication DOI"></input>
+        <button class="btn btn-info">Import using publication DOI</button>
     </div>
 
 
@@ -83,7 +70,7 @@ body {
         This option is the most challenging, but necessary if the options above aren't available.
     </p>
     <div id="import-details-MANUAL_ENTRY" class="featured-label-child">
-        <a class="btn btn-info">Enter study data manually</a>
+        <button class="btn btn-info">Enter study data manually</button>
     </div>
   </form>
 
@@ -110,6 +97,7 @@ body {
         // this can take a few possible POSTed arguments (DOI, or initial input)
 
     // these are probably not needed here; upon creation, we'll immediate redirect to the Edit page (or back here, with an error)
+    var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
     var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
     var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
 </script>
