@@ -49,25 +49,12 @@ body {
     </div>
 
 
-    <label for="import-option-DRYAD" class="featured-label">
-        <input type="radio" id="import-option-DRYAD" name="import-option" value="IMPORT_FROM_DRYAD" />
-        Import the study from Dryad
-    </label>
-    <p class="featured-label-description">
-        This option is also preferred, since it may automate the import of tree data.
-    </p>
-    <div id="import-details-DRYAD" class="featured-label-child">
-        <input class="span4" type="text" name="dryad-DOI" placeholder="Enter the Dryad deposition DOI"></input>
-        <button class="btn btn-info">Import using Dryad deposition DOI</button>
-    </div>
-
-
     <label for="import-option-PUBLICATION_DOI" class="featured-label">
         <input type="radio" id="import-option-PUBLICATION_DOI" name="import-option" value="IMPORT_FROM_PUBLICATION_DOI" />
         Import the study's metadata using its publication DOI
     </label>
     <p class="featured-label-description">
-        This option saves a little time, but you'll need to upload and map the study's tree data.
+        This option saves time, especially if this study's data is in Dryad.
     </p>
     <div id="import-details-PUBLICATION_DOI" class="featured-label-child">
         <input class="span4" type="text" name="publication-DOI" placeholder="Enter the publication DOI"></input>

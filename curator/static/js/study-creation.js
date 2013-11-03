@@ -117,7 +117,6 @@ function createStudyFromForm( clicked ) {
             'cc0_agreement': $('#cc0-agreement').is(':checked'),
             'import_option': $('[name=import-option]:checked').val() || '',
             'treebase_id': $('[name=treebase-id]').val() || '',
-            'dryad_DOI': $('[name=dryad-DOI]').val() || '',
             'publication_DOI': $('[name=publication-DOI]').val() || '',
             // misc identifying information
             'author_name': authorName,
