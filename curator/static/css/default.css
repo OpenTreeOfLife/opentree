@@ -463,3 +463,37 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .suggestion-list span.label {
     padding: 0.3em 0.7em 0.4em;
 }
+
+.static-form-value {
+    padding-top: 5px;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+.interesting-value {
+    color: #b94a48;
+}
+.boring-value {
+    color: #999;
+}
+.wireframe {
+    /* 
+    border: 1px dashed silver;
+    background-color: #ffc;
+     */
+}
+.featured-label {
+    font-size: 1.3em;
+    margin-top: 20px;
+}
+.featured-label input[type="radio"],
+.featured-label input[type="checkbox"] {
+    margin-top: 0px;
+}
+.featured-label-description {
+    color: #999;
+    font-style: italic;
+    padding: 2px 0 0 20px;
+}
+.featured-label-child {
+    padding-left: 20px;
+}
