@@ -80,7 +80,7 @@ function make_neo4j_plugin {
 	(cd `dirname $plugin`; git clone https://github.com/OpenTreeOfLife/$APP.git)
     else
 	before=`cd $plugin; git log | head -1`
-	(cd $plugin; git checkout .; git pull origin master)
+	(cd $plugin; git checkout master; git checkout .; git pull)
 	after=`cd $plugin; git log | head -1`
 	if [ "$before" = "$after" ] ; then
 	    echo "Repository is unchanged since last time"
@@ -106,6 +106,8 @@ function fetch_neo4j_plugin {
 function fetch_neo4j_db {
     APP=$1
 
+    neo4j-$APP/bin/neo4j stop || true
+
     # Retrieve and unpack the database
     # treemachine: 6G, expands to 12G (AWS free tier only gives you 8G total)
     # taxomachine: 4G, expands to 20G
@@ -114,6 +116,7 @@ function fetch_neo4j_db {
        [ ! -r downloads/$APP.db.tgz ] || \
        ! cmp downloads/$APP.db.tgz.md5 downloads/$APP.db.tgz.md5.new; then
         if [ $FORREAL = yes ]; then
+	    time \
 	    wget --no-verbose -O downloads/$APP.db.tgz http://dev.opentreeoflife.org:/export/$APP.db.tgz
 	    mv downloads/$APP.db.tgz.md5.new downloads/$APP.db.tgz.md5 
 	    rm -rf db.tmp
@@ -129,7 +132,6 @@ function fetch_neo4j_db {
     fi
 
     # Start the server.  (also need restart on reboot, TBD)
-    neo4j-$APP/bin/neo4j stop || true
     neo4j-$APP/bin/neo4j start
 
     # Configure apache to proxypass the tree/taxo web services to neo4j

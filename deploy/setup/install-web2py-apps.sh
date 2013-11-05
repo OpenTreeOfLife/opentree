@@ -109,17 +109,14 @@ opentree=repo/opentree
 
 # Consider cloning a designated tag, using git clone --branch <tag>
 
-# ssh cloning fails with "Permission denied (publickey)"
-# git clone git@github.com:OpenTreeOfLife/opentree.git
-
-# There ought to be a more efficient way of doing this, if the repo
-# has already been cloned, but it's more complicated than I want to
-# figure out right now.
+# We clone via https instead of ssh, because ssh cloning fails with
+# "Permission denied (publickey)".
 
 if [ ! -d $opentree ] ; then
     (cd `dirname $opentree`; git clone https://github.com/OpenTreeOfLife/opentree.git)
 else
-    (cd $opentree; git checkout .; git pull origin master)
+    # See http://stackoverflow.com/questions/1741143/git-pull-origin-mybranch-leaves-local-mybranch-n-commits-ahead-of-origin-why
+    (cd $opentree; git checkout master; git checkout .; git pull)
 fi
 
 # Modify the requirements list
