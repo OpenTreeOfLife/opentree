@@ -80,7 +80,7 @@ function make_neo4j_plugin {
 	(cd `dirname $plugin`; git clone https://github.com/OpenTreeOfLife/$APP.git)
     else
 	before=`cd $plugin; git log | head -1`
-	(cd $plugin; git checkout .; git pull origin master)
+	(cd $plugin; git checkout master; git checkout .; git pull)
 	after=`cd $plugin; git log | head -1`
 	if [ "$before" = "$after" ] ; then
 	    echo "Repository is unchanged since last time"
