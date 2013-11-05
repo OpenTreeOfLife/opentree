@@ -106,6 +106,8 @@ function fetch_neo4j_plugin {
 function fetch_neo4j_db {
     APP=$1
 
+    neo4j-$APP/bin/neo4j stop || true
+
     # Retrieve and unpack the database
     # treemachine: 6G, expands to 12G (AWS free tier only gives you 8G total)
     # taxomachine: 4G, expands to 20G
@@ -114,6 +116,7 @@ function fetch_neo4j_db {
        [ ! -r downloads/$APP.db.tgz ] || \
        ! cmp downloads/$APP.db.tgz.md5 downloads/$APP.db.tgz.md5.new; then
         if [ $FORREAL = yes ]; then
+	    time \
 	    wget --no-verbose -O downloads/$APP.db.tgz http://dev.opentreeoflife.org:/export/$APP.db.tgz
 	    mv downloads/$APP.db.tgz.md5.new downloads/$APP.db.tgz.md5 
 	    rm -rf db.tmp
@@ -129,7 +132,6 @@ function fetch_neo4j_db {
     fi
 
     # Start the server.  (also need restart on reboot, TBD)
-    neo4j-$APP/bin/neo4j stop || true
     neo4j-$APP/bin/neo4j start
 
     # Configure apache to proxypass the tree/taxo web services to neo4j
@@ -155,6 +157,13 @@ if true; then
 else
     make_neo4j_plugin taxomachine
 fi
+
+#org.neo4j.server.webserver.port=7474
+#org.neo4j.server.webserver.https.port=7473
+sed s+7474+7476+ < neo4j-taxomachine/conf/neo4j-server.properties | \
+sed s+7473+7475+ > props.tmp
+mv props.tmp neo4j-taxomachine/conf/neo4j-server.properties
+
 fetch_neo4j_db taxomachine
 
 echo "`date` Done"
