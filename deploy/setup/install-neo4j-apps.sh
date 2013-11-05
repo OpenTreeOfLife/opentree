@@ -157,6 +157,13 @@ if true; then
 else
     make_neo4j_plugin taxomachine
 fi
+
+#org.neo4j.server.webserver.port=7474
+#org.neo4j.server.webserver.https.port=7473
+sed s+7474+7476+ < neo4j-taxomachine/conf/neo4j-server.properties | \
+sed s+7473+7475+ > props.tmp
+mv props.tmp neo4j-taxomachine/conf/neo4j-server.properties
+
 fetch_neo4j_db taxomachine
 
 echo "`date` Done"
