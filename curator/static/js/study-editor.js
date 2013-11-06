@@ -55,7 +55,9 @@ function loadSelectedStudy(id) {
         type: 'GET',
         dataType: 'json',
         url: fetchURL,
-        data: { },
+        data: { 
+            'auth_token': authToken
+        },
         success: function( data, textStatus, jqXHR ) {
             // this should be properly parsed JSON
 

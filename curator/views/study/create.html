@@ -15,7 +15,7 @@ body {
 
 <div class="row">
  <div class="span8 wireframe">
-  <form class="form-inline" style="padding-bottom: 24px;" action="">
+  <form class="form-inline" style="padding-bottom: 24px;" action=".">
     <p>
     First things first. All data in the Open Tree of Life project must be freely shared.
     </p>
@@ -28,7 +28,7 @@ body {
     </div>
   </form>
 
-  <form id="import-options" class="form-inline" style="padding-bottom: 24px;" action="">
+  <form id="import-options" class="form-inline" style="padding-bottom: 24px;" action=".">
     <p>
     Select an import method (noting that these are roughly ordered in terms of required amount of curation). Note that Open Tree of Life only accepts published phylogenetic trees. `
     </p>
@@ -41,33 +41,20 @@ body {
         Importing from TreeBASE is fast, and requires only minimal curation post-import. 
     </p>
     <div id="import-details-TREEBASE" class="featured-label-child">
-        <input class="span4" type="text" name="pub-DOI" placeholder="Enter the TreeBASE ID for this study"></input>
-        <a class="btn btn-info">Import from TreeBASE</a>
-    </div>
-
-
-    <label for="import-option-DRYAD" class="featured-label">
-        <input type="radio" id="import-option-DRYAD" name="import-option" value="IMPORT_FROM_DRYAD" />
-        My phylogenetic tree file is in Dryad
-    </label>
-    <p class="featured-label-description">
-        We can copy over citation data and automatically create links to the study and Dryad data package. 
-    </p>
-    <div id="import-details-DRYAD" class="featured-label-child">
-        <input class="span4" type="text" name="pub-DOI" placeholder="Enter the Dryad deposition DOI"></input>
-        <a class="btn btn-info">Import using Dryad deposition DOI</a>
+        <input class="span4" type="text" name="treebase-id" placeholder="Enter the TreeBASE ID for this study"></input>
+        <button class="btn btn-info">Import from TreeBASE</button>
     </div>
 
     <label for="import-option-PUBLICATION_DOI" class="featured-label">
         <input type="radio" id="import-option-PUBLICATION_DOI" name="import-option" value="IMPORT_FROM_PUBLICATION_DOI" />
-        My study is published and has a DOI, but the data is not in TreeBASE / Dryad
+        My study is published and has a DOI. 
     </label>
     <p class="featured-label-description">
         The DOI allows us to retrieve citation data automatically, then you can upload your data files. 
     </p>
     <div id="import-details-PUBLICATION_DOI" class="featured-label-child">
-        <input class="span4" type="text" name="pub-DOI" placeholder="Enter the publication DOI"></input>
-        <a class="btn btn-info">Import using publication DOI</a>
+        <input class="span4" type="text" name="publication-DOI" placeholder="Enter the publication DOI"></input>
+        <button class="btn btn-info">Import using publication DOI</button>
     </div>
 
 
@@ -79,7 +66,7 @@ body {
         This is rare for recently-published papers.
     </p>
     <div id="import-details-MANUAL_ENTRY" class="featured-label-child">
-        <a class="btn btn-info">Enter study data manually</a>
+        <button class="btn btn-info">Enter study data manually</button>
     </div>
   </form>
 
@@ -106,6 +93,7 @@ body {
         // this can take a few possible POSTed arguments (DOI, or initial input)
 
     // these are probably not needed here; upon creation, we'll immediate redirect to the Edit page (or back here, with an error)
+    var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
     var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
     var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
 </script>

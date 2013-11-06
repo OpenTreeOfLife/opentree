@@ -21,6 +21,13 @@ $(document).ready(function() {
         var $cb = $(this);
         updateCreationDetails();
     });
+
+    // enable all submit buttons
+    $('#import-options button').click(function() {
+        createStudyFromForm();
+        return false;
+    });
+
     // set initial state for all details
     updateCreationDetails();
 });
@@ -87,39 +94,51 @@ function validateFormData() {
     return true;
 }
 
-function saveFormDataToStudyJSON() {
-    // save all populated fields; clear others, or remove from JSON(?)
+function createStudyFromForm( clicked ) {
+    // Gather current create/import options and trigger study cration.
+    // Server should create a new study (from JSON "template") and try to
+    // import data based on user input. Major errors (eg, import failure)
+    // should keep us here; otherwise, we should redirect to the new study in
+    // the full edit page. (Minor problems with imported data might appear
+    // there in a popup.)
+    //
+    // TODO: support ENTER key vs explicit button click?
+
     $('#ajax-busy-bar').show();
-
-    //// push changes back to storage
-    var saveURL = API_update_study_PUT_url.replace('{STUDY_ID}', studyID);
-
+    
     $.ajax({
-        type: 'POST',  // TODO: use PUT for updates?
+        type: 'POST',
         dataType: 'json',
         // crossdomain: true,
         // contentType: "application/json; charset=utf-8",
-        url: saveURL,
+        url: API_create_study_POST_url,
         data: {
-            // use JSON stringify (if available) for faster submission of JSON
-            nexson: ko.mapping.toJSON(viewModel),
-            author_name: authorName,
-            author_email: authorEmail,
-            auth_token: authToken
+            // gather chosen study-creation options
+            'cc0_agreement': $('#cc0-agreement').is(':checked'),
+            'import_option': $('[name=import-option]:checked').val() || '',
+            'treebase_id': $('[name=treebase-id]').val() || '',
+            'publication_DOI': $('[name=publication-DOI]').val() || '',
+            // misc identifying information
+            'author_name': authorName,
+            'author_email': authorEmail,
+            'auth_token': authToken
         },
         success: function( data, textStatus, jqXHR ) {
-            // this should be properly parsed JSON
-            ///console.log('saveFormDataToStudyJSON(): done! textStatus = '+ textStatus);
+            // creation method should return either a redirect URL to the new study, or an error
+            debugger;
+            console.log('createStudyFromForm(): done! textStatus = '+ textStatus);
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
-                showErrorMessage('Sorry, there was an error saving this study.');
+                showErrorMessage('Sorry, there was an error creating this study.');
                 return;
             }
 
             $('#ajax-busy-bar').hide();
-            showSuccessMessage('Study saved to remote storage.');
-
-            // TODO: should we expect fresh JSON to refresh the form?
+            showSuccessMessage('Study created, redirecting now....');
+            // TODO: bounce to the new location
+        },
+        error: function( data, textStatus, jqXHR ) {
+            debugger;
         }
     });
 }
