@@ -9,22 +9,133 @@
 <h4>{{=message}}X</h4>
 {{pass}}
 
-<p>
-This tool allows you to contribute studies and trees to our database for
-synthesis. Once your data is submitted, you can return and make improvements,
-share your data more widely, and watch for changes in your area of interest.
-</p>
-<p>
-All data is stored as documents in <a href="https://github.com/" target="_blank">GitHub</a>, 
-a collaborative coding website. This curation tool makes it easy to edit and
-contribute data, but you'll need a (free) GitHub account to participate.
-</p>
-<p>
-Once you've created an account on GitHub, just <a href="/curator/user/login?_next=/curator">login</a> using the link above. Once
-you've agreed to give access to the OpenTree tool, you can start adding data
-immediately.
-</p>
-</div><!-- /div.spanX -->
+      <div class="navbar">
+       <div class="navbar-inner">
+        <form class="navbar-search pull-left">
+            <input type="text" class="search-query" placeholder="Filter by author, title, journal">
+        </form>
+        <ul class="nav" style="padding-left: 1em;">
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  Any workflow state
+                  <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="#">Draft study</a></li>
+                    <li><a href="#">Submitted for synthesis</a></li>
+                    <li><a href="#">Under revision</a></li>
+                    <li><a href="#">Included in synthetic tree</a></li>
+                </ul>
+            </li>
+            <!--<li class="divider-vertical"></li>-->
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  Sort by
+                  <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu">
+                    <li><a href="#">Newest first</a></li>
+                    <li><a href="#">Oldest first</a></li>
+                    <li><a href="#">Workflow state</a></li>
+                    <li><a href="#">Completeness</a></li>
+                </ul>
+            </li>
+        </ul>
+        <div class="pagination pagination-right pagination-small" data-bind="if: nexml.trees.tree().length &gt; nexml.trees.tree.pagedItems().length">
+          <ul>
+            <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
+                <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+            </li>
+           <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
+            <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
+                <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">1</a>
+            </li>
+           <!-- /ko -->
+            <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
+                <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+            </li>
+          </ul>
+        </div>
+       </div>
+      </div>
+
+        <table class="table table-condensed">
+          <thead>
+            <tr>
+                <th>First Author</th>
+              {{ if False: }} <!-- TODO -->
+                <th>Study Title (click to edit study)</th>
+              {{ else: }}
+                <th>Study Title (click to view study)</th>
+              {{ pass }}
+                <th>Year</th>
+                <th>Journal</th>
+                <th>Completeness</th>
+                <th>Actions</th>
+            </tr>
+          </thead>
+       <!-- rough version of bound rows
+          <tbody data-bind="foreach: { data: collection.studies.pagedItems(), as: 'study' }">
+            <tr data-bind="if: true">
+                <td data-bind="html: getFirstAuthorName(study)">?</td>
+                <td><a href="#" data-bind="text: study['@label'] || 'Untitled ('+ study['@about']() +')'" onclick="alert('TODO: open study viewer'); return false;">?</a></td>
+                <td data-bind="text: getMetaTagAccessorByAtProperty(study.meta(), 'ot:curatedType') || 'Unspecified'">?</td>
+                <td data-bind="text: getInGroupCladeDescriptionForstudy(study)">?</td>
+                <td data-bind="html: getMappedTallyForstudy(study)">?</td>
+                <td data-bind="html: getRootedDescriptionForstudy(study)">?</td>
+            </tr>
+          </tbody>
+        -->
+        <!-- EXAMPLE study-table entries -->
+            <tr>
+                <td><a href="#">Cardoso D.B.</a></td>
+                <td><a href="#">A molecular phylogeny of the Vataireoid legumes unscores floral evolvability</a></td>
+                <td>2013</td>
+                <td><a href="#"><em>BMC Evol Biol</em></a></td>
+                <td>12%</td>
+                <td><a href="#">upload data</a></td>
+            </tr>
+            <tr>
+                <td><a href="#">Binder M.</a></td>
+                <td><a href="#">Phylogenetic and phylogenomic overview of the Polyporales</a></td>
+                <td>2013</td>
+                <td><a href="#"><em>Mycologia</em></a></td>
+                <td>75%</td>
+                <td><a href="#">annotate study</a></td>
+            </tr>
+            <tr>
+                <td><a href="#">Brown M.</a></td>
+                <td><a href="#">Most awesome phylogeny of snakes</a></td>
+                <td>2012</td>
+                <td><a href="#"><em>Herp Journal</em></a></td>
+                <td>45%</td>
+                <td><a href="#">map OTU labels</a></td>
+            </tr>
+        </table>
+
+    </div>
+    <div class="span4">
+        {{if 'message' in globals():}}
+        <h4>{{=message}}X</h4>
+        {{pass}}
+      <div class="well well-large">
+        <p>
+        This tool allows you to contribute studies and trees to our database for
+        synthesis. Once your data is submitted, you can return and make improvements,
+        share your data more widely, and watch for changes in your area of interest.
+        </p>
+        <p>
+        All data is stored as documents in <a href="https://github.com/" target="_blank">GitHub</a>, 
+        a collaborative coding website. This curation tool makes it easy to edit and
+        contribute data, but you'll need a (free) GitHub account to participate.
+        </p>
+        <p>
+        Once you've created an account on GitHub, just <a href="/curator/user/login?_next=/curator">login</a> using the link above. Once
+        you've agreed to give access to the OpenTree tool, you can start adding data
+        immediately.
+        </p>
+      </div>
+    </div><!-- /div.spanX -->
 </div><!-- /.row -->
 
 {{block right_sidebar}}

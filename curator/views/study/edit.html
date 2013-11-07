@@ -265,7 +265,39 @@ body {
             <div style="margin-bottom: 100px;">
                 <p><em>{A paginated(?) grid of OTUs (in preferred trees only?), their original names, and any mapping in effect. Also possibly some regex-helpers?}</em></p>
 
-                <div class="pagination pagination-centered pagination-small" data-bind="if: nexml.otus.otu().length &gt; nexml.otus.otu.pagedItems().length">
+              <div class="navbar">
+               <div class="navbar-inner">
+                <form class="navbar-search pull-left">
+                    <input type="text" class="search-query" placeholder="Filter by original or mapped label">
+                </form>
+                <ul class="nav" style="padding-left: 1em;">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                          Any workflow state
+                          <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">Draft study</a></li>
+                            <li><a href="#">Submitted for synthesis</a></li>
+                            <li><a href="#">Under revision</a></li>
+                            <li><a href="#">Included in synthetic tree</a></li>
+                        </ul>
+                    </li>
+                    <!--<li class="divider-vertical"></li>-->
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                          Sort by
+                          <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">Unmapped OTUs first</a></li>
+                            <li><a href="#">Mapped OTUs first</a></li>
+                            <li><a href="#">Original label (A-Z)</a></li>
+                            <li><a href="#">Original label (Z-A)</a></li>
+                        </ul>
+                    </li>
+                </ul>
+                <div class="pagination pagination-right pagination-small" data-bind="if: nexml.otus.otu().length &gt; nexml.otus.otu.pagedItems().length">
                   <ul>
                     <li data-bind="css: { 'disabled': !nexml.otus.otu.prev.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.nexml.otus.otu.prev(); return false;">&laquo;</a>
@@ -280,18 +312,23 @@ body {
                     </li>
                   </ul>
                 </div>
+               </div>
+              </div>
+
 
                 <table class="table table-condensed">
                   <thead>
                     <tr>
                         <th>Original label</th>
-                        <th>Taxon</th>
+                        <th>Working label</th>
+                        <th>Mapped to taxon</th>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: nexml.otus.otu.pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
-                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')">TYPE?</td>
-                        <td data-bind="text: otu['@label']"></td>
+                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')">ORIGINAL?</td>
+                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:label')">WORKING?</td>
+                        <td data-bind="text: otu['@label']">MAPPED?</td>
                     </tr>
                   </tbody>
                 </table>

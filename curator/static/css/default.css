@@ -475,3 +475,28 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .boring-value {
     color: #999;
 }
+.wireframe {
+    /* 
+    border: 1px dashed silver;
+    background-color: #ffc;
+     */
+}
+.featured-label {
+    font-size: 1.3em;
+    margin-top: 20px;
+}
+.featured-label input[type="radio"],
+.featured-label input[type="checkbox"] {
+    margin-top: 0px;
+}
+.featured-label-description {
+    color: #999;
+    font-style: italic;
+    padding: 2px 0 0 20px;
+}
+.featured-label-child {
+    padding-left: 20px;
+}
+.navbar-inner .pagination {
+    margin: 0.5em 0 0;
+}
