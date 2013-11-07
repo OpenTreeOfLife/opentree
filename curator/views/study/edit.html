@@ -70,18 +70,21 @@ body {
  </div>
 </div>
 <div class="row">
-    <div class="span8"><!-- not too wide... -->
+    <div class="span12">
        {{if 'message' in globals():}}
         <h4>{{=message}}</h4>
        {{pass}}
+        <div id="ajax-busy-bar" class="progress progress-striped active">
+          <div class="bar" style="width: 100%;"></div>
+        </div>
+    </div>
+</div><!-- /.row -->
 
-        <div class="tab-content">
-
-            <div id="ajax-busy-bar" class="progress progress-striped active">
-              <div class="bar" style="width: 100%;"></div>
-            </div>
+<div class="row">
+    <div class="tab-content">
 
           <div class="tab-pane" id="Metadata">
+           <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
             <form class="form-horizontal wider-fields">
               <div class="control-group">
@@ -154,9 +157,16 @@ body {
 
             </form>
 
-          </div>
+           </div><!-- end of main column... -->
+           <div class="span4"><!-- right col -->
+            <p>
+            [TODO] Here's a general introduction to the editor? Possibly tools to import (overwrite?) data for this study.
+            </p>
+           </div><!-- end of right col -->
+          </div><!-- /.tab-pane -->
 
           <div class="tab-pane" id="Trees">
+           <div class="span8"><!-- main column -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
                 <p><em>{A paginated list of trees in this study. Also possibly a single-tree import tool? Probably a modal tree view/editor (D3?).}</em></p>
@@ -237,9 +247,24 @@ body {
                 </div>
             </div>
 
-          </div>
+           </div><!-- end of main column... -->
+           <div class="span4"><!-- right col -->
+            <p>
+            [TODO] Here's some text about trees in a study. For example, what do we mean by 
+            <strong>preferred</strong> trees? Plus tools for importing/adding new trees.
+            </p>
+            <div class="well Xwell-large">
+                <h4 style="margin-top: 0;">Import a new tree</h4>
+                <ol>
+                    <li>by pasting a Newick string</li>
+                    <li>by uploading a file?</li>
+                </ol>
+            </div>
+           </div><!-- end of right col -->
+          </div><!-- /.tab-pane -->
 
           <div class="tab-pane" id="Files">
+           <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
                 <p><em>{A paginated(?) list of files in this study. Also possibly an import tool? Bulk imports?}</em></p>
@@ -274,9 +299,24 @@ body {
                 </div>
             </div>
 
-          </div>
+           </div><!-- end of main column... -->
+           <div class="span4"><!-- right col -->
+            <p>
+            [TODO] Here's some text about files in a study. Plus tools for importing/adding new files.
+            </p>
+            <div class="well Xwell-large">
+                <h4 style="margin-top: 0;">Add a file</h4>
+                <ol>
+                    <li>by uploading it?</li>
+                    <li>by importing from ???</li>
+                    <li>by pasting its data?</li>
+                </ol>
+            </div>
+           </div><!-- end of right col -->
+          </div><!-- /.tab-pane -->
 
           <div class="tab-pane" id="OTU-Mapping">
+           <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
                 <p><em>{A paginated(?) grid of OTUs (in preferred trees only?), their original names, and any mapping in effect. Also possibly some regex-helpers?}</em></p>
@@ -350,9 +390,32 @@ body {
                 </div>
             </div>
 
-          </div>
+           </div><!-- end of main column... -->
+           <div class="span4"><!-- right col -->
+            <p>
+            [TODO] Here's some text about mapping OTUs. Plus tools for grooming node labels.
+            </p>
+            <div class="well Xwell-large">
+                <h4 style="margin-top: 0;">Mapping status</h4>
+                <p>
+                    [TODO] Mapping in progress, please check again later...
+                </p>
+            </div>
+            <div class="well Xwell-large">
+                <h4 style="margin-top: 0;">Mapping tools</h4>
+                <ol>
+                    <li>Simple regex examples</li>
+                    <li>custom regex</li>
+                    <li>allow ordered operations?</li>
+                    <li>apply to visible leaves only?</li>
+                    <li>apply to all leaves in this tree?</li>
+                </ol>
+            </div>
+           </div><!-- end of right col -->
+          </div><!-- /.tab-pane -->
 
           <div class="tab-pane" id="Annotations">
+           <div class="span12"><!-- full width... -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
                 <p><em>{A paginated list of notes in this study, most recent first. Add filters? Location links jump to each annotation in situ.}</em></p>
@@ -422,16 +485,25 @@ body {
                 </table>
 
             </div>
-          </div>
+           </div><!-- end of full-width column... -->
+          </div><!-- /.tab-pane -->
 
           <div class="tab-pane" id="Tools">
+           <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
                 <p><em>{A collection of available tools for this study, and other (ghosted) tools that could become available. Space carrots!}</em></p>
             </div>
-          </div>
+           </div><!-- end of main column... -->
+           <div class="span4"><!-- right col -->
+            <p>
+            [TODO] Here's some text about the available tools and how to use them, add new ones, register a new tool..?
+            </p>
+           </div><!-- end of right col -->
+          </div><!-- /.tab-pane -->
 
           <div class="tab-pane" id="Status">
+           <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
 
@@ -447,17 +519,16 @@ Please review and re-submit.</pre>
                     There are <a href="#">5 open issues</a> in this study's annotations.
                   </p>
 
-            <form>
-            {{ if viewOrEdit == 'EDIT': }}
-              <div class="control-group">
-                <div class="controls">
-                  <button class="btn btn-disabled" disabled="disabled">Submit study for synthesis</button>
-                </div>
-              </div>
-            {{ pass }}
-            </form>
+                <form>
+                {{ if viewOrEdit == 'EDIT': }}
+                  <div class="control-group">
+                    <div class="controls">
+                      <button class="btn btn-disabled" disabled="disabled">Submit study for synthesis</button>
+                    </div>
+                  </div>
+                {{ pass }}
+                </form>
             </div>
-          </div>
 
         {{ if viewOrEdit == 'EDIT': }}
             <i><a href="#" onclick="if ($('#formatted-nexson').is(':visible')) { $('#formatted-nexson').hide() } else { $('#formatted-nexson').show() }; return false;">current nexml</a> (remapped for return to server)</i>
@@ -465,24 +536,24 @@ Please review and re-submit.</pre>
             </pre>
         {{ pass }}
             <div style="height: 2em;">&nbsp;</div>
+         </div><!-- end of main column... -->
+         <div class="span4"><!-- right col -->
+            <strong>Study quality</strong> <a id="quality-details-toggle" onclick="toggleQualityDetails(); return false;" href="#">(show details)</a>
+            
+            <div data-bind="css: studyQualityBarClass">
+              <div class="bar" data-bind="style: { width: studyQualityPercentStyle }">
+                  <span data-bind="text: studyQualityPercent"></span>%
+              </div>
+            </div>
 
-        </div>
+            <div id="study-quality-details" class="well" style="display: none; margin-top: -6px; padding: 11px 15px 0px;">
+                <!-- details for score criteria will appear here -->
+            </div>
+         </div><!-- end of right col -->
+       </div><!-- /.tab-pane -->
 
-    </div><!-- end of main col -->
+    </div><!-- /.tab-content -->
 
-    <div class="span4">
-        <strong>Study quality</strong> <a id="quality-details-toggle" onclick="toggleQualityDetails(); return false;" href="#">(show details)</a>
-        
-        <div data-bind="css: studyQualityBarClass">
-          <div class="bar" data-bind="style: { width: studyQualityPercentStyle }">
-              <span data-bind="text: studyQualityPercent"></span>%
-          </div>
-        </div>
-
-        <div id="study-quality-details" class="well" style="display: none; margin-top: -6px; padding: 11px 15px 0px;">
-            <!-- details for score criteria will appear here -->
-        </div>
-    </div><!-- end of right col -->
 
 </div><!-- /.row -->
 
