@@ -8,13 +8,15 @@ To test to see whether you can run Smasher, do 'make nem'.
 
 To create a new version of OTT:
 
-- Put previous version in tax/pre_ott/
+- Put previous version in tax/prev_ott/ .  The taxonomy file name
+  should be taxonomy.tsv, similarly synonyms.tsv and so on (at some
+  point it changed from no extension to a .tsv extension)
 
 - Edit definition of WHICH in Makefile to be new version number
 
 - To refresh NCBI, delete tax/ncbi.  Similarly GBIF and tax/gbif
-  (although I don't know whether gbif is being updated at the source
-  URL where we're getting it)
+  (although note that GBIF is being updated very infrequently,
+  so refreshing it is sort of a waste of time)
 
 - 'make'
 
