@@ -277,7 +277,12 @@ class Taxonomy implements Iterable<Node> {
 		nodes.add(node);
 	}
 
-	int count() { return this.root.count(); }
+	int count() {
+		if (this.root == null)
+			return 0;
+		else
+			return this.root.count();
+	}
 
 	// Iterate over all nodes reachable from root
 
@@ -951,32 +956,24 @@ class SourceTaxonomy extends Taxonomy {
 		// 2. Map internal nodes
 		// 3. Add previously unmapped tips and internal nodes
 
-		union.sources.add(this);
-
 		if (this.root != null) {
 
 			Node.resetStats();
 			System.out.println("--- Mapping " + this.getTag() + " into union ---");
 
+			union.sources.add(this);
+
 			int beforeCount = union.nameIndex.size();
 
-			// Ensure that union also has a root
-			if (union.root == null)
-				union.root = new Node(union); // Name gets set by unify
-			else
+			if (union.root != null) {
 				// Clear out gumminess from previous merges
 				union.root.reset();
 
-			// Generalize this later.
-			this.root.unifyWith(union.root);
+				// Prepare for subsumption checks
+				union.root.assignBrackets();
+			}
 
 			this.pin(union);
-
-			if (this.root.mapped == null)
-				this.root.report("Root didn't map", union.root);
-
-			// Prepare for subsumption checks
-			union.root.assignBrackets();
 
 			// Consider all matches where names coincide.
 			// When matching P homs to Q homs, we get PQ choices of which
@@ -1090,13 +1087,52 @@ class SourceTaxonomy extends Taxonomy {
 			System.out.println("Pinned " + count + " out of " + pins.length);
 	}
 
-	void augment(UnionTaxonomy union, boolean retentivep) {
+	void augment(UnionTaxonomy union) {
 		if (this.root != null) {
-			// Add heretofore unmapped consistent nodes, unless 'paraphyletic'
+
+			// Case analysis:
+			//  Trees are disjoint
+			//  this.root maps into union
+			//  union.root co-maps into this
+			//  roots are coincident (this.root maps to union.root)
+			//  roots map/co-map, but not coincident - a would-be cycle!
+
+			if (this.root.mapped == null) {
+				// Need a place to put the new root after we 'augment'.
+				// Create a new union "life" root, if needed.
+				if (union.root != null &&
+					(!union.root.name.equals("life") ||
+					 // This last case is extremely unlikely...
+					 union.root.comapped != null)) {
+					Node life = new Node(union);
+					life.setName("life");
+					Node oldroot = union.root;
+					union.root = life;
+					if (oldroot != null)
+						life.addChild(oldroot);
+
+					// Map new "life" to old "life"
+					if (this.root.name.equals("life"))
+						this.root.unifyWith(life);
+				}
+			}
+
+
+			// Add heretofore unmapped nodes to union
 			if (Node.windyp)
 				System.out.println("--- Augmenting union with new nodes from " + this.getTag() + " ---");
 			int startcount = union.count();
-			this.root.augment(union, retentivep);
+
+			// 'augment' always returns a node in the union tree
+			Node newroot = this.root.augment(union);
+
+			if (newroot != null && newroot != union.root && newroot.parent == null) {
+				if (union.root == null)
+					union.root = newroot;
+				else 
+					union.root.addChild(newroot);
+			}
+
 			if (Node.windyp) {
 				System.out.println("| Started with:		 " + startcount);
 				Node.augmentationReport();
@@ -1189,7 +1225,7 @@ class UnionTaxonomy extends Taxonomy {
 		source.which = this.sources.size();
 		source.mapInto(this, Criterion.criteria);
 		source.originp = true;
-		source.augment(this, true);
+		source.augment(this);
 		source.copySynonyms(this);
 	}
 
@@ -1536,8 +1572,10 @@ class UnionTaxonomy extends Taxonomy {
 		// 1. parent_uid:
 		out.print((rootp ? "" : unode.parent.id)  + "\t|\t");
 		// 2. name:
-		out.print((rootp ? "life" :
-				   (unode.name == null ? "?" : unode.name)) + "\t|\t");
+		out.print((unode.name == null ?
+				   (rootp ? "life" : "?") :
+				   unode.name)
+				  + "\t|\t");
 		// 3. rank:
 		out.print((unode.rank == null ? "" : unode.rank) + "\t|\t");
 
@@ -1738,6 +1776,9 @@ class Node {
 		} else if (child.parent != null) {
 			if (this.report("Attempt to steal child !!??", child))
 				Node.backtrace();
+		} else if (child == this) {
+			if (this.report("Attempt to create self-loop !!??", child))
+				Node.backtrace();
 		} else {
 			child.parent = this;
 			if (this.children == null)
@@ -1890,7 +1931,7 @@ class Node {
 			this.addComment(comment + "(" + name + ")");
 	}
 
-	Node augment(UnionTaxonomy union, boolean retentivep) {
+	Node augment(UnionTaxonomy union) {
 
 		Node newnode = null;
 		String reason = null;
@@ -1906,7 +1947,6 @@ class Node {
 				return null;
 			} else {
 				reason = "new/tip";
-				if (!retentivep) return null;
 				newnode = new Node(union);
 				// fall through
 			}
@@ -1922,11 +1962,11 @@ class Node {
 			// thus if B is nonempty (there is a 'loser') class C is called
 			// 'ambiguous'
 
-			List<Node> oldChildren = new ArrayList<Node>();
-			List<Node> newChildren = new ArrayList<Node>();
+			List<Node> oldChildren = new ArrayList<Node>();  //parent != null
+			List<Node> newChildren = new ArrayList<Node>();  //parent == null
 			// Recursion step
 			for (Node child: this.children) {
-				Node augChild = child.augment(union, retentivep);
+				Node augChild = child.augment(union);
 				if (augChild != null)
 					if (augChild.parent == null)
 						newChildren.add(augChild);
@@ -1934,124 +1974,94 @@ class Node {
 						oldChildren.add(augChild);
 			}
 
-			if (newChildren.size() == 0) {
-				if (this.mapped != null) {
-					Node.markEvent("mapped/internal");
-					return this.mapped;
-				}
-
-				if (this.deprecationReason != null &&
-					this.deprecationReason.value > Answer.HECK_NO) {
-					union.logAndMark(Answer.no(this, null, "blocked/internal", null));
-					return null;
-				}
-
-				// Check for possible insertion event
-				boolean sibs = true;
-				Node mappedParent = null;
-				for (Node child : this.children)
-					if (mappedParent == null && child.mapped != null)
-						mappedParent = child.mapped.parent;
-					else if (child.mapped != null && mappedParent != child.mapped.parent)
-						sibs = false;
-
-				if (false &&	// See https://github.com/OpenTreeOfLife/opentree/issues/73
-					sibs &&
-					mappedParent != null &&
-					oldChildren.size() < mappedParent.children.size() &&
-					!(union.lookup(this.name) != null)) { // eschew homonyms
-
-					// Insertion.
-					// All children are old,  and siblings of one another.
-					if (!retentivep) return null;
-
-					newnode = new Node(union);
-					mappedParent.addChild(newnode);
-					for (Node child : oldChildren)
-						// Steal it away!
-						child.changeParent(newnode);
-					this.unifyWith(newnode); // sets name.	might create a homonym, worry
-					union.logAndMark(Answer.yes(this, newnode, "insertion", null));
-					newnode.addComment("insertion", this);
-					return newnode;
-				} else {
-					// Children all got sent away to other taxa.
-					// The old union id (if any) will become deprecated.
-					Answer a = Answer.no(this, null, "mooted", null);
-					//this.deprecationReason = a;	not useful, it's not in idsource
-					union.logAndMark(a);
-					return null;
-				}
-			}
-
-			// At least one new child...
-
 			if (this.mapped != null) {
 				for (Node augChild : newChildren)
 					// *** This is where the Protozoa/Chromista trouble arises. ***
 					// *** They are imported, then set as children of 'life'. ***
 					this.mapped.addChild(augChild);
-
-				// Classify & report on what has just happened
-				// TBD: Maybe decorate the newChildren with info about the match?...
-				Node loser = this.antiwitness(this.mapped);
-				Node winner = this.witness(this.mapped);
-				if (winner != null) {
-					// Evidence of sameness [maybe parent agreement, or not]
-					if (loser == null)
-						// No evidence of differentness
-						// cf. "is-subsumed-by" - compatible extension
-						// (35,351)
-						union.logAndMark(Answer.heckYes(this, newnode, "mapped/coherent", null));
-					else {
-						// Evidence of differentness
-						// cf. "overlaps" ("type 1")
-						// (1,482)
-						union.logAndMark(Answer.yes(this, newnode, "mapped/incoherent", winner.name));
-						//if (newnode != null)   // This seems wrong somehow
-						//	newnode.mode = "incoherent"; // or "paraphyletic" ?
-					}
-				} else {
-					// No evidence of sameness [except possible parent agreement]
-					if (loser == null)
-						// No evidence of differentness
-						// cf. "by-elimination" - could actually be a homonym
-						// (7,093 occurrences, as of 2013-04-24, of which 571 'essential')
-						// (all but 94 of which have shared parents...)
-						union.logAndMark(Answer.noinfo(this, newnode, "mapped/neutral", null));
-					else
-						// Evidence of differentness
-						// This case is rare, because it's ruled out in
-						// Criterion.subsumption, cf. "incompatible-with" ("type 2")
-						// (52 times, as of 2013-04-24, + 13 unmapped)
-						// Still arises when agreement on parent
-						union.logAndMark(Answer.no(this, newnode, "mapped/incompatible", null));
-				}
-
+				this.reportOnMapping(union, (newChildren.size() == 0));
 				return this.mapped;
 			}
-			{
-				// Some of these are new non-homonyms,
-				// some are new "true" homonyms,
-				// some are new "false" homonyms.  Don't know how to
-				// distinguish the latter two cases.
 
-				// Assert (newChildren.size() == children.size())
-				if (!retentivep) return null;
-				// All children are new, not previously matched.
-				// Compatible import of a subtree (new higher taxon).
-				// Might create a homonym, but if it does, it should.
+			if (newChildren.size() == 0 && oldChildren.size() == 0) {
+				if (this.deprecationReason != null &&
+					this.deprecationReason.value > Answer.HECK_NO)
+					union.logAndMark(Answer.no(this, null, "blocked/internal", null));
+				else
+					union.logAndMark(Answer.no(this, null, "mooted", null));
+				return null;
+			}
+
+			if (oldChildren.size() == 0) {
+				// New children only... just copying new stuff to union
 				newnode = new Node(union);
 				for (Node augChild: newChildren)
 					newnode.addChild(augChild);
-
-				if (oldChildren.size() > 0) {
-					newnode.properFlags |= Taxonomy.TATTERED;
-					reason = "new/tattered";
-				} else
-					reason = "new/internal";
-				// should match old if possible ??
+				reason = "new/internal";
 				// fall through
+
+			} else {
+				// If all of the old children have the same parent,
+				// AND that parent is the only old ancestor of all the new children,
+				// then we can add the old children to the new taxon,
+				// which (if all goes well) will get inserted back into the union tree
+				// at the right point.
+
+				boolean lose = false;
+				Node oldParent = null;
+				for (Node old : oldChildren) {
+					if (oldParent == null) oldParent = old.parent;
+					if (old.parent != oldParent) {
+						lose = true;
+						// System.err.println("Old parents don't match: " + this.name);
+						break;
+					}
+				}
+				if (!lose)
+					for (Node nu : newChildren) {
+						Node anc = this.parent;
+						while (anc != null && anc.mapped == null)
+							anc = anc.parent;
+						if (anc == null) {
+							if (oldParent != null && oldParent.parent != null) {
+								lose = true;
+								break;
+							}
+						} else if (anc.mapped != oldParent) {
+							lose = true;
+							// System.err.println("Paraphyletic: " + anc + " " + oldParent);
+							break;	// Paraphyletic
+						}
+					}
+				if (!lose) {
+					// Move the new internal node over to union taxonomy.
+					// It will end up becoming a descendent of oldParent.
+					// Caution: See https://github.com/OpenTreeOfLife/opentree/issues/73 ...
+					// family as child of subfamily
+					// ranks.get(node1.rank) <= ranks.get(node2.rank) ....
+					newnode = new Node(union);
+					for (Node nu : newChildren) newnode.addChild(nu);
+					for (Node old : oldChildren) old.changeParent(newnode);   // Detach!!
+					union.logAndMark(Answer.yes(this, null, "new/insertion", null));
+					// fall through
+
+				} else if (newChildren.size() > 0) {
+					// Paraphyletic.
+					// Leave the old children where they are.
+					// Put the new children in a "tattered" incertae-sedis-like container.
+					newnode = new Node(union);
+					for (Node augChild: newChildren)
+						newnode.addChild(augChild);
+
+					newnode.properFlags |= Taxonomy.TATTERED;
+					union.logAndMark(Answer.yes(this, null, "new/tattered", null));
+					// fall through
+				} else {
+					// >= 1 old children, 0 new children
+					// something funny's happening here... maybe the parent should be marked incertae sedis??
+					union.logAndMark(Answer.no(this, null, "lose/paraphyletic", null));
+					return null;
+				}
 			}
 		}
 
@@ -2060,6 +2070,7 @@ class Node {
 		if (reason != null)
 			union.logAndMark(Answer.heckYes(this, newnode, reason, null));
 
+		// Report on homonymy.
 		// Either this is a name not before occurring in the union,
 		//	 or the corresponding node(s) in union has been rejected
 		//	 as a match.
@@ -2067,16 +2078,60 @@ class Node {
 		List<Node> losers = union.lookup(this.name);
 		if (losers != null && losers.size() >= 1) {
 			Node loser = losers.get(0);
-			if (this.getDivision() == loser.getDivision()) {   //double check
+			if (this.getDivision() == loser.getDivision())   //double check
 				union.logAndMark(Answer.no(this, loser, "new-homonym/in-division", null));
-			} else {
+			else
 				union.logAndMark(Answer.no(this, loser, "new-homonym/out-division", null));
-			} 
 		}
 
 		this.unifyWith(newnode);	   // sets name
 
 		return newnode;						 // = this.mapped
+	}
+
+	// pulled out of previous method to make it easier to read
+	void reportOnMapping(UnionTaxonomy union, boolean newp) {
+		Node newnode = null;
+
+		// --- Classify & report on what has just happened ---
+		// TBD: Maybe decorate the newChildren with info about the match?...
+		Node loser = this.antiwitness(this.mapped);
+		Node winner = this.witness(this.mapped);
+		if (winner != null) {
+			// Evidence of sameness [maybe parent agreement, or not]
+			if (loser == null)
+				// No evidence of differentness
+				// cf. "is-subsumed-by" - compatible extension
+				// (35,351)
+				union.logAndMark(Answer.heckYes(this, newnode, "mapped/coherent", null));
+			else {
+				// Evidence of differentness
+				// cf. "overlaps" ("type 1")
+				// (1,482)
+				union.logAndMark(Answer.yes(this, newnode, "mapped/incoherent", winner.name));
+				//if (newnode != null)   // This seems wrong somehow
+				//	newnode.mode = "incoherent"; // or "paraphyletic" ?
+			}
+		} else {
+			// No evidence of sameness [except maybe parent agreement]
+			if (loser == null) {
+				if (newp)
+					Node.markEvent("mapped/internal"); // Exact topology match
+				else
+					// No evidence of differentness
+					// cf. "by-elimination" - could actually be a homonym
+					// (7,093 occurrences, as of 2013-04-24, of which 571 'essential')
+					// (all but 94 of which have shared parents...)
+					union.logAndMark(Answer.noinfo(this, newnode, "mapped/neutral", null));
+			} else
+				// Evidence of differentness
+				// This case is rare, because it's ruled out in
+				// Criterion.subsumption, cf. "incompatible-with" ("type 2")
+				// (52 times, as of 2013-04-24, + 13 unmapped)
+				// Still arises when agreement on parent
+				union.logAndMark(Answer.no(this, newnode, "mapped/incompatible", null));
+		}
+		// --- End classify & report ---
 	}
 
 	// Mainly for debugging

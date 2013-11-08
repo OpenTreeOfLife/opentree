@@ -1,12 +1,22 @@
 # The tests work in JAR's setup...
 
+# You'll need to put a copy of the previous (or baseline) version of OTT in tax/prev_ott/.
+# This is a manual step.
+# Get it from http://files.opentreeoflife.org/ott/
+# and if there's a file "taxonomy" change that to "taxonomy.tsv".
+
 WHICH=2.3
+PREV_WHICH=2.2
 
 #  $^ = all prerequisites
 #  $< = first prerequisite
 #  $@ = file name of target
 
-all: ott
+# Scripts and other inputs related to taxonomy
+FEED=feed
+
+# The tax/ directory is full of taxonomies; mostly (entirely?) derived objects.
+TAX=tax
 
 NCBI=$(TAX)/ncbi
 GBIF=$(TAX)/gbif
@@ -20,11 +30,7 @@ TAXOMACHINE_EXAMPLE=../../taxomachine/example
 #  https://bitbucket.org/mtholder/ottol/src/dc0f89986c6c2a244b366312a76bae8c7be15742/preOTToL_20121112.txt?at=master
 PREOTTOL=../../preottol
 
-# Scripts and other inputs related to taxonomy
-FEED=feed
-
-# The tax/ directory is full of taxonomies; mostly (entirely?) derived objects.
-TAX=tax
+all: ott
 
 # Nematode test
 CP=-classpath .:jscheme.jar
@@ -63,12 +69,12 @@ dory-test.tsv: $(TAX)/nem/log.tsv Smasher.class
 # --------------------------------------------------------------------------
 
 OTT_ARGS=Smasher $(NCBI)/ $(GBIF)/ \
-      --edits edits/ \
+      --edits $(FEED)/ott/edits/ \
       --ids $(TAX)/prev_ott/ \
       --out $(TAX)/ott/
 
 ott: $(TAX)/ott/log.tsv
-$(TAX)/ott/log.tsv: Smasher.class $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv
+$(TAX)/ott/log.tsv: Smasher.class $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv $(FEED)/ott/edits/ott_edits.tsv
 	mkdir -p $(TAX)/ott
 	java $(CP) -Xmx10g $(OTT_ARGS)
 	echo $(WHICH) >$(TAX)/ott/version.txt
@@ -82,13 +88,12 @@ $(TAX)/ott/aux.tsv: Smasher.class $(TAX)/ott/log.tsv
 $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
 
-PREV_WHICH=2.2
-
 $(TAX)/prev_ott/taxonomy.tsv:
 	mkdir -p $(FEED)/prev_ott/tmp
 	wget --output-document=$(FEED)/prev_ott/tmp/ott$(PREV_WHICH).tgz
 	(cd $(FEED)/prev_ott/tmp/; tar xf ott$(PREV_WHICH).tgz)
 	mv $(FEED)/prev_ott/tmp/ott$(PREV_WHICH)/* $(TAX)/prev_ott/
+	rmdir $(FEED)/prev_ott/tmp
 
 # Formerly, where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
@@ -146,11 +151,12 @@ $(FEED)/silva/silva.fasta:
 
 TARDIR=/raid/www/roots/opentree/ott
 
-tarball: $(WORK)/$(WHICH)/log
-	(cd $(WORK) && \
-	 tar czvf $(TARDIR)/$(WHICH).tgz.tmp $(WHICH) && \
-	 mv $(TARDIR)/$(WHICH).tgz.tmp $(TARDIR)/$(WHICH).tgz)
+tarball: $(TAX)/ott/log.tsv
+	(cd $(TAX) && \
+	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp ott && \
+	 mv $(TARDIR)/ott$(WHICH).tgz.tmp $(TARDIR)/ott$(WHICH).tgz )
 
-norbert:
-	rsync -vaxH --exclude=$(WORK) --exclude="*~" --exclude=backup \
-           ./ norbert.csail.mit.edu:/raid/jar/NESCent/opentree/smasher
+# This predates use of git on norbert...
+#norbert:
+#	rsync -vaxH --exclude=$(WORK) --exclude="*~" --exclude=backup \
+#           ./ norbert.csail.mit.edu:/raid/jar/NESCent/opentree/smasher

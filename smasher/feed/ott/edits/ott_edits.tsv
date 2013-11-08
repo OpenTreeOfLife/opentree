@@ -21,7 +21,7 @@ move	Stemodiopsis	genus	Linderniaceae	Lamiales	http://www.mobot.org/mobot/resear
 move	Micranthemum	genus	Linderniaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/genera/linderniaceaegen.html
 
 # JAR removed ?tab=acceptednames from the URL
-synonym	Bryodes madagascariensis	Psammetes madagascariensis	Lamiales	http://www.tropicos.org/Name/29207676
+synonym	Bryodes madagascariensis	species	Psammetes madagascariensis	Lamiales	http://www.tropicos.org/Name/29207676
 
 # Bryan had nuccore 421994792, but that's for a species, not a genus.  The genus is ncbi:421994792
 #  was: http://www.ncbi.nlm.nih.gov/nuccore/421994792
@@ -31,7 +31,7 @@ move	Psammetes	genus	Linderniaceae	Lamiales	ncbi:421994792
 #  was: http://www.biomedcentral.com/content/pdf/1471-2148-10-352.pdf
 move	Bryodes	genus	Linderniaceae	Lamialies	ncbi:752521
 
-move	Acerites	genus		Sapindaceae	Sapindales	http://rstb.royalsocietypublishing.org/content/351/1340/589.short
+move	Acerites	genus	Sapindaceae	Sapindales	http://rstb.royalsocietypublishing.org/content/351/1340/589.short
 move	Quercinium	genus	Fagaceae	Fagales	http://palaeontology.palass-pubs.org/pdf/Vol%203/Pages%2086-92.pdf
 move	Plataninium	genus	Platanaceae	Fagales	http://www.jstor.org/stable/2474500
 move	Xylocaryon	genus	Proteaceae	Proteales	http://www.jstor.org/stable/2666212
