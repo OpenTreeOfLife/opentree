@@ -169,8 +169,6 @@ body {
            <div class="span8"><!-- main column -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
-                <p><em>{A paginated list of trees in this study. Also possibly a single-tree import tool? Probably a modal tree view/editor (D3?).}</em></p>
-
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
@@ -252,7 +250,9 @@ body {
             <p>
             [TODO] Here's some text about trees in a study. For example, what do we mean by 
             <strong>preferred</strong> trees? Plus tools for importing/adding new trees.
+            Clicking a tree name should open a modal tree view/editor (D3?).
             </p>
+
             <div class="well Xwell-large">
                 <h4 style="margin-top: 0;">Import a new tree</h4>
                 <ol>
@@ -267,7 +267,6 @@ body {
            <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
-                <p><em>{A paginated(?) list of files in this study. Also possibly an import tool? Bulk imports?}</em></p>
 
               <div class="navbar">
                <div class="navbar-inner">
@@ -302,7 +301,8 @@ body {
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
             <p>
-            [TODO] Here's some text about files in a study. Plus tools for importing/adding new files.
+            [TODO] Here's some text about files in a study. Plus tools for
+            importing/adding new files. What about bulk imports?
             </p>
             <div class="well Xwell-large">
                 <h4 style="margin-top: 0;">Add a file</h4>
@@ -319,7 +319,6 @@ body {
            <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
-                <p><em>{A paginated(?) grid of OTUs (in preferred trees only?), their original names, and any mapping in effect. Also possibly some regex-helpers?}</em></p>
 
               <div class="navbar">
                <div class="navbar-inner">
@@ -418,25 +417,46 @@ body {
            <div class="span12"><!-- full width... -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
-                <p><em>{A paginated list of notes in this study, most recent first. Add filters? Location links jump to each annotation in situ.}</em></p>
 
-                <div class="pagination pagination-centered pagination-small">
-                  <ul>
-                    <li class="disabled"><a href="#">&laquo;</a></li>
-                    <li class="active"><a href="#">1</a></li>
-                    <li><a href="#">2</a></li>
-                    <li><a href="#">3</a></li>
-                    <li><a href="#">4</a></li>
-                    <li><a href="#">5</a></li>
-                    <li><a href="#">&raquo;</a></li>
+              <div class="navbar">
+                 <div class="navbar-inner">
+                  <form class="navbar-search pull-left">
+                      <input type="text" class="search-query" placeholder="Filter by name, location, text">
+                  </form>
+                  <ul class="nav" style="padding-left: 1em;">
+                      <li class="dropdown">
+                          <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            In trees and nodes
+                            <b class="caret"></b>
+                          </a>
+                          <ul class="dropdown-menu">
+                              <li><a href="#">Anywhere in the study</a></li>
+                              <li><a href="#">In files</a></li>
+                              <li><a href="#">In OTU mapping</a></li>
+                              <li><a href="#">In study metadata</a></li>
+                              <li><a href="#">In trees and nodes</a></li>
+                          </ul>
+                      </li>
+                      <li class="dropdown">
+                          <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            Submitted by all
+                            <b class="caret"></b>
+                          </a>
+                          <ul class="dropdown-menu">
+                              <li><a href="#">Submitted by all</a></li>
+                              <li><a href="#">Submitted by users</a></li>
+                              <li><a href="#">Added by validation apps</a></li>
+                          </ul>
+                      </li>
                   </ul>
-                </div>
+                 </div>
+              </div>
 
                 <table class="table table-condensed">
                   <thead>
                     <tr>
                         <th>Type</th>
-                        <th>Location</th>
+                        <th>Location (click to see note there)</th>
                         <th>Added by</th>
                         <th>Message(s)</th>
                     </tr>
@@ -458,11 +478,13 @@ body {
                         </td>
                     </tr>
                   </tbody>
-                  <!-- EXAMPLES of other annotation types:
+                  <!-- EXAMPLES of other annotation types: -->
+                    <tr>
                         <td>Reply</td>
                         <td><a href="#">Message thread</a></td>
                         <td><a href="#">Charles Darwin</a></td>
                         <td style="font-style: italic;">Au contraire, mon ami. The condor properly belongs everywhere...</td>
+                    </tr>
                     <tr>
                         <td>Comment</td>
                         <td><a href="#">Charadriidae</a></td>
@@ -481,8 +503,24 @@ body {
                         <td><a href="#">Charles Darwin</a></td>
                         <td style="font-style: italic;">This tree is poorly rooted, in my opinion.</td>
                     </tr>
-                    -->
                 </table>
+
+                <!-- TODO: respond to calculated notes, gathered from throughout study Nexson -->
+                <div class="pagination pagination-centered pagination-small" data-bind="if: true">
+                  <ul>
+                    <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+                    </li>
+                   <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
+                    <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">1</a>
+                    </li>
+                   <!-- /ko -->
+                    <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+                    </li>
+                  </ul>
+                </div>
 
             </div>
            </div><!-- end of full-width column... -->
@@ -491,13 +529,44 @@ body {
           <div class="tab-pane" id="Tools">
            <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
+
             <div style="margin-bottom: 100px;">
-                <p><em>{A collection of available tools for this study, and other (ghosted) tools that could become available. Space carrots!}</em></p>
+
+                <table class="table Xtable-condensed bare-top-row">
+                  <tbody>
+                    <tr>
+                        <td width="100">
+                            <img class="tool-icon" alt="treemachine" src="" 
+                                 style=""/>
+                        </td>
+                        <td width="125"><a href="#">Open Tree of Life (treemachine)</a></td>
+                        <td>
+                            This runs automatically for any study in the
+                            system. <strong>This study fails</strong>, possibly
+                            because it has no preferred tree (marked for
+                            synthesis) or needs additional OTU mapping for
+                            synthesis.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <img alt="MIAPA validator" src="" 
+                                 style="width: 100px; height: 100px; background-color: #eee; Xborder: 1px solid #ccc; Xborder-radius: 8px;"/>
+                        </td>
+                        <td><a href="#">MIAPA Validator</a></td>
+                        <td>
+                            This runs automatically against any study in the system. <strong>This study passes!</strong>
+                        </td>
+                    </tr>
+                  </tbody>
+                </table>
+
             </div>
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
             <p>
             [TODO] Here's some text about the available tools and how to use them, add new ones, register a new tool..?
+            A collection of available tools for this study, and other (ghosted) tools that could become available. Space carrots!
             </p>
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
@@ -538,7 +607,7 @@ Please review and re-submit.</pre>
             <div style="height: 2em;">&nbsp;</div>
          </div><!-- end of main column... -->
          <div class="span4"><!-- right col -->
-            <strong>Study quality</strong> <a id="quality-details-toggle" onclick="toggleQualityDetails(); return false;" href="#">(show details)</a>
+            <strong>Study quality</strong> <a id="quality-details-toggle" onclick="toggleQualityDetails(); return false;" href="#">(hide details)</a>
             
             <div data-bind="css: studyQualityBarClass">
               <div class="bar" data-bind="style: { width: studyQualityPercentStyle }">
@@ -546,7 +615,7 @@ Please review and re-submit.</pre>
               </div>
             </div>
 
-            <div id="study-quality-details" class="well" style="display: none; margin-top: -6px; padding: 11px 15px 0px;">
+            <div id="study-quality-details" class="well" style="display: block; margin-top: -6px; padding: 11px 15px 0px;">
                 <!-- details for score criteria will appear here -->
             </div>
          </div><!-- end of right col -->
