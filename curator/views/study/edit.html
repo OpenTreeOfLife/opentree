@@ -194,7 +194,7 @@ body {
                   </thead>
                   <tbody data-bind="foreach: { data: nexml.trees.tree.pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
-                        <td><a href="#" data-bind="text: tree['@label'] || 'Untitled ('+ tree['@about']() +')'" onclick="alert('TODO: open tree viewer'); return false;">?</a></td><!-- TODO: click to view/edit tree -->
+                        <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label'] || 'Untitled ('+ tree['@about']() +')'">?</a></td><!-- TODO: click to view/edit tree -->
                         <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta(), 'ot:curatedType') || 'Unspecified'">TYPE?</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree)"></td>
                         <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
@@ -637,3 +637,18 @@ Please review and re-submit.</pre>
     var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
 </script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
+
+<!-- hidden template for the tree-viewer (editor) -->
+<div class="modal hide fade modal-tree-viewer" id="tree-viewer" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'></h3>
+    </div>
+    <div class="modal-body">
+        <div id="dialog-data"></div>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+      <a class="btn btn-primary" id="btnSaveChanges">Save changes</a>
+    </div>
+</div>

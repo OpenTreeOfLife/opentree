@@ -996,3 +996,20 @@ ko.dirtyFlag = function(root, isInitiallyDirty) {
     return result;
 };
 
+function showTreeViewer( tree ) {
+    if (viewOrEdit == 'EDIT') {
+        // TODO
+    } else {
+        // TODO
+    }
+    // quick test of modal
+    $('#tree-viewer .modal-body').css({
+        'height': '350px',
+        'border': '1px dashed red'
+    });
+    $('#tree-viewer').css({
+        'width': '90%',
+        'margin': 'auto -45%'
+    });
+    $('#tree-viewer').modal('show')
+}
