@@ -71,13 +71,13 @@
 
     # Restrict web2py admin pages to admin users on localhost (SSH tunnel)
     <Location /admin>
-      Order Deny, Allow
+      Order deny,allow
       Deny from all
       Allow from 127.0.0.1
     </Location>
 
     <LocationMatch ^/([^/]+)/appadmin>
-      Order Deny, Allow
+      Order deny,allow
       Deny from all
       Allow from 127.0.0.1
     </LocationMatch>
