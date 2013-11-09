@@ -60,9 +60,11 @@ if [ ! -r $configfile ] ; then
 fi
 
 # ---------- TREEMACHINE / TAXOMACHINE ----------
-# Set up neo4j server
+# Set up neo4j services
 
-function neo4j_app {
+jar=opentree-neo4j-plugins-0.0.1-SNAPSHOT.jar
+
+function make_neo4j_plugin {
     APP=$1
 
     # Create a copy of neo4j for this app
@@ -78,7 +80,7 @@ function neo4j_app {
 	(cd `dirname $plugin`; git clone https://github.com/OpenTreeOfLife/$APP.git)
     else
 	before=`cd $plugin; git log | head -1`
-	(cd $plugin; git checkout .; git pull origin master)
+	(cd $plugin; git checkout master; git checkout .; git pull)
 	after=`cd $plugin; git log | head -1`
 	if [ "$before" = "$after" ] ; then
 	    echo "Repository is unchanged since last time"
@@ -88,13 +90,23 @@ function neo4j_app {
 	fi
     fi
 
-    # Create the plugins .jar file
+    # Create and install the plugins .jar file
     # Compilation takes about 4 minutes... ugh
-    jar=opentree-neo4j-plugins-0.0.1-SNAPSHOT.jar
     if [ ! -r neo4j-$APP/plugins/$jar -o $changed = "yes" ]; then
 	(cd $plugin; ./mvn_serverplugins.sh)
 	mv -f $plugin/target/$jar neo4j-$APP/plugins/
     fi
+}
+
+function fetch_neo4j_plugin {
+    APP=$1
+    wget --no-verbose -O neo4j-$APP/plugins/$jar http://dev.opentreeoflife.org:/export/$APP.jar
+}
+
+function fetch_neo4j_db {
+    APP=$1
+
+    neo4j-$APP/bin/neo4j stop || true
 
     # Retrieve and unpack the database
     # treemachine: 6G, expands to 12G (AWS free tier only gives you 8G total)
@@ -104,6 +116,7 @@ function neo4j_app {
        [ ! -r downloads/$APP.db.tgz ] || \
        ! cmp downloads/$APP.db.tgz.md5 downloads/$APP.db.tgz.md5.new; then
         if [ $FORREAL = yes ]; then
+	    time \
 	    wget --no-verbose -O downloads/$APP.db.tgz http://dev.opentreeoflife.org:/export/$APP.db.tgz
 	    mv downloads/$APP.db.tgz.md5.new downloads/$APP.db.tgz.md5 
 	    rm -rf db.tmp
@@ -119,7 +132,6 @@ function neo4j_app {
     fi
 
     # Start the server.  (also need restart on reboot, TBD)
-    neo4j-$APP/bin/neo4j stop || true
     neo4j-$APP/bin/neo4j start
 
     # Configure apache to proxypass the tree/taxo web services to neo4j
@@ -136,7 +148,22 @@ function neo4j_app {
     fi
 }
 
-neo4j_app treemachine
-neo4j_app taxomachine
+make_neo4j_plugin treemachine
+fetch_neo4j_db treemachine
+
+if true; then
+    # Taxomachine ig github is broken
+    fetch_neo4j_plugin taxomachine
+else
+    make_neo4j_plugin taxomachine
+fi
+
+#org.neo4j.server.webserver.port=7474
+#org.neo4j.server.webserver.https.port=7473
+sed s+7474+7476+ < neo4j-taxomachine/conf/neo4j-server.properties | \
+sed s+7473+7475+ > props.tmp
+mv props.tmp neo4j-taxomachine/conf/neo4j-server.properties
+
+fetch_neo4j_db taxomachine
 
 echo "`date` Done"

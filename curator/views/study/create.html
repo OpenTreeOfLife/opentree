@@ -1,0 +1,100 @@
+{{response.title = "Create Study"}}
+
+{{left_sidebar_enabled,right_sidebar_enabled=False,False}}
+{{response.subtitle = "license and import options"}}
+
+{{### Add support scripts as in single-page editor?}}
+
+{{extend 'layout.html'}}
+
+<style type="text/css">
+body {
+    overflow-y: scroll;
+}
+</style>
+
+<div class="row">
+ <div class="span8 wireframe">
+  <form class="form-inline" style="padding-bottom: 24px;" action=".">
+    <p>
+    First things first. All data in the Open Tree of Life project must be freely shared.
+    </p>
+
+    <div>
+        <label for="cc0-agreement" class="featured-label">
+            <input type="checkbox" id="cc0-agreement" name="cc0-agreement"/>
+            First things first. Open Tree of Life requires that data underlying the tree be publicly available. By clicking this checkbox, I am agreeing to release this data under the Creative Commons Zero (CC0) waiver. <strong style="color: #c33;">(required)</strong>.
+        </label>
+    </div>
+  </form>
+
+  <form id="import-options" class="form-inline" style="padding-bottom: 24px;" action=".">
+    <p>
+    Select an import method (noting that these are roughly ordered in terms of required amount of curation). Note that Open Tree of Life only accepts published phylogenetic trees. `
+    </p>
+
+    <label for="import-option-TREEBASE" class="featured-label">
+        <input type="radio" id="import-option-TREEBASE" name="import-option" value="IMPORT_FROM_TREEBASE" />
+        My tree already exists in TreeBASE
+    </label>
+    <p class="featured-label-description">
+        Importing from TreeBASE is fast, and requires only minimal curation post-import. 
+    </p>
+    <div id="import-details-TREEBASE" class="featured-label-child">
+        <input class="span4" type="text" name="treebase-id" placeholder="Enter the TreeBASE ID for this study"></input>
+        <button class="btn btn-info">Import from TreeBASE</button>
+    </div>
+
+    <label for="import-option-PUBLICATION_DOI" class="featured-label">
+        <input type="radio" id="import-option-PUBLICATION_DOI" name="import-option" value="IMPORT_FROM_PUBLICATION_DOI" />
+        My study is published and has a DOI. 
+    </label>
+    <p class="featured-label-description">
+        The DOI allows us to retrieve citation data automatically, then you can upload your data files. 
+    </p>
+    <div id="import-details-PUBLICATION_DOI" class="featured-label-child">
+        <input class="span4" type="text" name="publication-DOI" placeholder="Enter the publication DOI"></input>
+        <button class="btn btn-info">Import using publication DOI</button>
+    </div>
+
+
+    <label for="import-option-MANUAL_ENTRY" class="featured-label">
+        <input type="radio" id="import-option-MANUAL_ENTRY" name="import-option" value="IMPORT_FROM_MANUAL_ENTRY" />
+        My study does not have a DOI
+    </label>
+    <p class="featured-label-description">
+        This is rare for recently-published papers.
+    </p>
+    <div id="import-details-MANUAL_ENTRY" class="featured-label-child">
+        <button class="btn btn-info">Enter study data manually</button>
+    </div>
+  </form>
+
+ </div>
+</div>
+
+{{ if False: }}
+<div class="row">
+    <div class="span8 wireframe"><!-- not too wide... -->
+       {main column}
+    </div><!-- end of main col -->
+
+    <div class="span4 wireframe">
+        {sidebar}
+    </div><!-- end of right col -->
+</div><!-- /.row -->
+{{ pass }}
+
+<script type='text/javascript'>
+    var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
+    var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
+    var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
+    var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
+        // this can take a few possible POSTed arguments (DOI, or initial input)
+
+    // these are probably not needed here; upon creation, we'll immediate redirect to the Edit page (or back here, with an error)
+    var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
+    var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
+    var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
+</script>
+<script src="{{=URL('static','js/study-creation.js')}}"></script>
