@@ -70,18 +70,21 @@ body {
  </div>
 </div>
 <div class="row">
-    <div class="span8"><!-- not too wide... -->
+    <div class="span12">
        {{if 'message' in globals():}}
         <h4>{{=message}}</h4>
        {{pass}}
+        <div id="ajax-busy-bar" class="progress progress-striped active">
+          <div class="bar" style="width: 100%;"></div>
+        </div>
+    </div>
+</div><!-- /.row -->
 
-        <div class="tab-content">
-
-            <div id="ajax-busy-bar" class="progress progress-striped active">
-              <div class="bar" style="width: 100%;"></div>
-            </div>
+<div class="row">
+    <div class="tab-content">
 
           <div class="tab-pane" id="Metadata">
+           <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
             <form class="form-horizontal wider-fields">
               <div class="control-group">
@@ -154,28 +157,25 @@ body {
 
             </form>
 
-          </div>
+           </div><!-- end of main column... -->
+           <div class="span4"><!-- right col -->
+            <p>
+            [TODO] Here's a general introduction to the editor? Possibly tools to import (overwrite?) data for this study.
+            </p>
+           </div><!-- end of right col -->
+          </div><!-- /.tab-pane -->
 
           <div class="tab-pane" id="Trees">
+           <div class="span8"><!-- main column -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
-                <p><em>{A paginated list of trees in this study. Also possibly a single-tree import tool? Probably a modal tree view/editor (D3?).}</em></p>
-
-                <div class="pagination pagination-centered pagination-small" data-bind="if: nexml.trees.tree().length &gt; nexml.trees.tree.pagedItems().length">
-                  <ul>
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
-                    </li>
-                   <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
-                    <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">0</a>
-                    </li>
-                   <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
-                    </li>
-                  </ul>
-                </div>
+              <div class="navbar">
+               <div class="navbar-inner">
+                <form class="navbar-search pull-left">
+                    <input type="text" class="search-query" placeholder="Filter by name or ingroup clade">
+                </form>
+               </div>
+              </div>
 
                 <table class="table table-condensed">
                   <thead>
@@ -194,7 +194,7 @@ body {
                   </thead>
                   <tbody data-bind="foreach: { data: nexml.trees.tree.pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
-                        <td><a href="#" data-bind="text: tree['@label'] || 'Untitled ('+ tree['@about']() +')'" onclick="alert('TODO: open tree viewer'); return false;">?</a></td><!-- TODO: click to view/edit tree -->
+                        <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label'] || 'Untitled ('+ tree['@about']() +')'">?</a></td><!-- TODO: click to view/edit tree -->
                         <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta(), 'ot:curatedType') || 'Unspecified'">TYPE?</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree)"></td>
                         <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
@@ -227,22 +227,54 @@ body {
                     </tr>
                 -->
                 </table>
-            </div>
 
-          </div>
-
-          <div class="tab-pane" id="Files">
-            <ul class="suggestion-list"></ul>
-            <div style="margin-bottom: 100px;">
-                <p><em>{A paginated(?) list of files in this study. Also possibly an import tool? Bulk imports?}</em></p>
-
-                <div class="pagination pagination-centered pagination-small">
+                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: nexml.trees.tree().length &gt; nexml.trees.tree.pagedItems().length">
                   <ul>
-                    <li class="disabled"><a href="#">&laquo;</a></li>
-                    <li class="active"><a href="#">1</a></li>
-                    <li class="disabled"><a href="#">&raquo;</a></li>
+                    <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+                    </li>
+                   <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
+                    <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">0</a>
+                    </li>
+                   <!-- /ko -->
+                    <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+                    </li>
                   </ul>
                 </div>
+            </div>
+
+           </div><!-- end of main column... -->
+           <div class="span4"><!-- right col -->
+            <p>
+            [TODO] Here's some text about trees in a study. For example, what do we mean by 
+            <strong>preferred</strong> trees? Plus tools for importing/adding new trees.
+            Clicking a tree name should open a modal tree view/editor (D3?).
+            </p>
+
+            <div class="well Xwell-large">
+                <h4 style="margin-top: 0;">Import a new tree</h4>
+                <ol>
+                    <li>by pasting a Newick string</li>
+                    <li>by uploading a file?</li>
+                </ol>
+            </div>
+           </div><!-- end of right col -->
+          </div><!-- /.tab-pane -->
+
+          <div class="tab-pane" id="Files">
+           <div class="span8"><!-- main column... -->
+            <ul class="suggestion-list"></ul>
+            <div style="margin-bottom: 100px;">
+
+              <div class="navbar">
+               <div class="navbar-inner">
+                <form class="navbar-search pull-left">
+                    <input type="text" class="search-query" placeholder="Filter by name">
+                </form>
+               </div>
+              </div>
 
                 <table class="table table-condensed">
                     <tr>
@@ -256,16 +288,91 @@ body {
                         <td>241 KB</td>
                     </tr>
                 </table>
+
+                <div class="pagination pagination-centered pagination-small">
+                  <ul>
+                    <li class="disabled"><a href="#">&laquo;</a></li>
+                    <li class="active"><a href="#">1</a></li>
+                    <li class="disabled"><a href="#">&raquo;</a></li>
+                  </ul>
+                </div>
             </div>
 
-          </div>
+           </div><!-- end of main column... -->
+           <div class="span4"><!-- right col -->
+            <p>
+            [TODO] Here's some text about files in a study. Plus tools for
+            importing/adding new files. What about bulk imports?
+            </p>
+            <div class="well Xwell-large">
+                <h4 style="margin-top: 0;">Add a file</h4>
+                <ol>
+                    <li>by uploading it?</li>
+                    <li>by importing from ???</li>
+                    <li>by pasting its data?</li>
+                </ol>
+            </div>
+           </div><!-- end of right col -->
+          </div><!-- /.tab-pane -->
 
           <div class="tab-pane" id="OTU-Mapping">
+           <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
-                <p><em>{A paginated(?) grid of OTUs (in preferred trees only?), their original names, and any mapping in effect. Also possibly some regex-helpers?}</em></p>
 
-                <div class="pagination pagination-centered pagination-small" data-bind="if: nexml.otus.otu().length &gt; nexml.otus.otu.pagedItems().length">
+              <div class="navbar">
+               <div class="navbar-inner">
+                <form class="navbar-search pull-left">
+                    <input type="text" class="search-query" placeholder="Filter by original or mapped label">
+                </form>
+                <ul class="nav" style="padding-left: 1em;">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                          In preferred trees
+                          <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">In all trees</a></li>
+                            <li><a href="#">In preferred trees</a></li>
+                            <li><a href="#">In non-preferred trees</a></li>
+                        </ul>
+                    </li>
+                    <!--<li class="divider-vertical"></li>-->
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                          Unmapped OTUs first
+                          <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a href="#">Unmapped OTUs first</a></li>
+                            <li><a href="#">Mapped OTUs first</a></li>
+                            <li><a href="#">Original label (A-Z)</a></li>
+                            <li><a href="#">Original label (Z-A)</a></li>
+                        </ul>
+                    </li>
+                </ul>
+               </div>
+              </div>
+
+
+                <table class="table table-condensed">
+                  <thead>
+                    <tr>
+                        <th>Original label</th>
+                        <th>Working label</th>
+                        <th>Mapped to taxon</th>
+                    </tr>
+                  </thead>
+                  <tbody data-bind="foreach: { data: nexml.otus.otu.pagedItems(), as: 'otu' }">
+                    <tr data-bind="if: true">
+                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')">ORIGINAL?</td>
+                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:label')">WORKING?</td>
+                        <td data-bind="text: otu['@label']">MAPPED?</td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: nexml.otus.otu().length &gt; nexml.otus.otu.pagedItems().length">
                   <ul>
                     <li data-bind="css: { 'disabled': !nexml.otus.otu.prev.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.nexml.otus.otu.prev(); return false;">&laquo;</a>
@@ -280,47 +387,76 @@ body {
                     </li>
                   </ul>
                 </div>
-
-                <table class="table table-condensed">
-                  <thead>
-                    <tr>
-                        <th>Original label</th>
-                        <th>Taxon</th>
-                    </tr>
-                  </thead>
-                  <tbody data-bind="foreach: { data: nexml.otus.otu.pagedItems(), as: 'otu' }">
-                    <tr data-bind="if: true">
-                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')">TYPE?</td>
-                        <td data-bind="text: otu['@label']"></td>
-                    </tr>
-                  </tbody>
-                </table>
             </div>
 
-          </div>
+           </div><!-- end of main column... -->
+           <div class="span4"><!-- right col -->
+            <p>
+            [TODO] Here's some text about mapping OTUs. Plus tools for grooming node labels.
+            </p>
+            <div class="well Xwell-large">
+                <h4 style="margin-top: 0;">Mapping status</h4>
+                <p>
+                    [TODO] Mapping in progress, please check again later...
+                </p>
+            </div>
+            <div class="well Xwell-large">
+                <h4 style="margin-top: 0;">Mapping tools</h4>
+                <ol>
+                    <li>Simple regex examples</li>
+                    <li>custom regex</li>
+                    <li>allow ordered operations?</li>
+                    <li>apply to visible leaves only?</li>
+                    <li>apply to all leaves in this tree?</li>
+                </ol>
+            </div>
+           </div><!-- end of right col -->
+          </div><!-- /.tab-pane -->
 
           <div class="tab-pane" id="Annotations">
+           <div class="span12"><!-- full width... -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
-                <p><em>{A paginated list of notes in this study, most recent first. Add filters? Location links jump to each annotation in situ.}</em></p>
 
-                <div class="pagination pagination-centered pagination-small">
-                  <ul>
-                    <li class="disabled"><a href="#">&laquo;</a></li>
-                    <li class="active"><a href="#">1</a></li>
-                    <li><a href="#">2</a></li>
-                    <li><a href="#">3</a></li>
-                    <li><a href="#">4</a></li>
-                    <li><a href="#">5</a></li>
-                    <li><a href="#">&raquo;</a></li>
+              <div class="navbar">
+                 <div class="navbar-inner">
+                  <form class="navbar-search pull-left">
+                      <input type="text" class="search-query" placeholder="Filter by name, location, text">
+                  </form>
+                  <ul class="nav" style="padding-left: 1em;">
+                      <li class="dropdown">
+                          <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            In trees and nodes
+                            <b class="caret"></b>
+                          </a>
+                          <ul class="dropdown-menu">
+                              <li><a href="#">Anywhere in the study</a></li>
+                              <li><a href="#">In files</a></li>
+                              <li><a href="#">In OTU mapping</a></li>
+                              <li><a href="#">In study metadata</a></li>
+                              <li><a href="#">In trees and nodes</a></li>
+                          </ul>
+                      </li>
+                      <li class="dropdown">
+                          <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                            Submitted by all
+                            <b class="caret"></b>
+                          </a>
+                          <ul class="dropdown-menu">
+                              <li><a href="#">Submitted by all</a></li>
+                              <li><a href="#">Submitted by users</a></li>
+                              <li><a href="#">Added by validation apps</a></li>
+                          </ul>
+                      </li>
                   </ul>
-                </div>
+                 </div>
+              </div>
 
                 <table class="table table-condensed">
                   <thead>
                     <tr>
                         <th>Type</th>
-                        <th>Location</th>
+                        <th>Location (click to see note there)</th>
                         <th>Added by</th>
                         <th>Message(s)</th>
                     </tr>
@@ -342,11 +478,13 @@ body {
                         </td>
                     </tr>
                   </tbody>
-                  <!-- EXAMPLES of other annotation types:
+                  <!-- EXAMPLES of other annotation types: -->
+                    <tr>
                         <td>Reply</td>
                         <td><a href="#">Message thread</a></td>
                         <td><a href="#">Charles Darwin</a></td>
                         <td style="font-style: italic;">Au contraire, mon ami. The condor properly belongs everywhere...</td>
+                    </tr>
                     <tr>
                         <td>Comment</td>
                         <td><a href="#">Charadriidae</a></td>
@@ -365,20 +503,76 @@ body {
                         <td><a href="#">Charles Darwin</a></td>
                         <td style="font-style: italic;">This tree is poorly rooted, in my opinion.</td>
                     </tr>
-                    -->
+                </table>
+
+                <!-- TODO: respond to calculated notes, gathered from throughout study Nexson -->
+                <div class="pagination pagination-centered pagination-small" data-bind="if: true">
+                  <ul>
+                    <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+                    </li>
+                   <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
+                    <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">1</a>
+                    </li>
+                   <!-- /ko -->
+                    <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+                    </li>
+                  </ul>
+                </div>
+
+            </div>
+           </div><!-- end of full-width column... -->
+          </div><!-- /.tab-pane -->
+
+          <div class="tab-pane" id="Tools">
+           <div class="span8"><!-- main column... -->
+            <ul class="suggestion-list"></ul>
+
+            <div style="margin-bottom: 100px;">
+
+                <table class="table Xtable-condensed bare-top-row">
+                  <tbody>
+                    <tr>
+                        <td width="100">
+                            <img class="tool-icon" alt="treemachine" src="" 
+                                 style=""/>
+                        </td>
+                        <td width="125"><a href="#">Open Tree of Life (treemachine)</a></td>
+                        <td>
+                            This runs automatically for any study in the
+                            system. <strong>This study fails</strong>, possibly
+                            because it has no preferred tree (marked for
+                            synthesis) or needs additional OTU mapping for
+                            synthesis.
+                        </td>
+                    </tr>
+                    <tr>
+                        <td>
+                            <img alt="MIAPA validator" src="" 
+                                 style="width: 100px; height: 100px; background-color: #eee; Xborder: 1px solid #ccc; Xborder-radius: 8px;"/>
+                        </td>
+                        <td><a href="#">MIAPA Validator</a></td>
+                        <td>
+                            This runs automatically against any study in the system. <strong>This study passes!</strong>
+                        </td>
+                    </tr>
+                  </tbody>
                 </table>
 
             </div>
-          </div>
-
-          <div class="tab-pane" id="Tools">
-            <ul class="suggestion-list"></ul>
-            <div style="margin-bottom: 100px;">
-                <p><em>{A collection of available tools for this study, and other (ghosted) tools that could become available. Space carrots!}</em></p>
-            </div>
-          </div>
+           </div><!-- end of main column... -->
+           <div class="span4"><!-- right col -->
+            <p>
+            [TODO] Here's some text about the available tools and how to use them, add new ones, register a new tool..?
+            A collection of available tools for this study, and other (ghosted) tools that could become available. Space carrots!
+            </p>
+           </div><!-- end of right col -->
+          </div><!-- /.tab-pane -->
 
           <div class="tab-pane" id="Status">
+           <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
             <div style="margin-bottom: 100px;">
 
@@ -394,17 +588,16 @@ Please review and re-submit.</pre>
                     There are <a href="#">5 open issues</a> in this study's annotations.
                   </p>
 
-            <form>
-            {{ if viewOrEdit == 'EDIT': }}
-              <div class="control-group">
-                <div class="controls">
-                  <button class="btn btn-disabled" disabled="disabled">Submit study for synthesis</button>
-                </div>
-              </div>
-            {{ pass }}
-            </form>
+                <form>
+                {{ if viewOrEdit == 'EDIT': }}
+                  <div class="control-group">
+                    <div class="controls">
+                      <button class="btn btn-disabled" disabled="disabled">Submit study for synthesis</button>
+                    </div>
+                  </div>
+                {{ pass }}
+                </form>
             </div>
-          </div>
 
         {{ if viewOrEdit == 'EDIT': }}
             <i><a href="#" onclick="if ($('#formatted-nexson').is(':visible')) { $('#formatted-nexson').hide() } else { $('#formatted-nexson').show() }; return false;">current nexml</a> (remapped for return to server)</i>
@@ -412,24 +605,24 @@ Please review and re-submit.</pre>
             </pre>
         {{ pass }}
             <div style="height: 2em;">&nbsp;</div>
+         </div><!-- end of main column... -->
+         <div class="span4"><!-- right col -->
+            <strong>Study quality</strong> <a id="quality-details-toggle" onclick="toggleQualityDetails(); return false;" href="#">(hide details)</a>
+            
+            <div data-bind="css: studyQualityBarClass">
+              <div class="bar" data-bind="style: { width: studyQualityPercentStyle }">
+                  <span data-bind="text: studyQualityPercent"></span>%
+              </div>
+            </div>
 
-        </div>
+            <div id="study-quality-details" class="well" style="display: block; margin-top: -6px; padding: 11px 15px 0px;">
+                <!-- details for score criteria will appear here -->
+            </div>
+         </div><!-- end of right col -->
+       </div><!-- /.tab-pane -->
 
-    </div><!-- end of main col -->
+    </div><!-- /.tab-content -->
 
-    <div class="span4">
-        <strong>Study quality</strong> <a id="quality-details-toggle" onclick="toggleQualityDetails(); return false;" href="#">(show details)</a>
-        
-        <div data-bind="css: studyQualityBarClass">
-          <div class="bar" data-bind="style: { width: studyQualityPercentStyle }">
-              <span data-bind="text: studyQualityPercent"></span>%
-          </div>
-        </div>
-
-        <div id="study-quality-details" class="well" style="display: none; margin-top: -6px; padding: 11px 15px 0px;">
-            <!-- details for score criteria will appear here -->
-        </div>
-    </div><!-- end of right col -->
 
 </div><!-- /.row -->
 
@@ -444,3 +637,18 @@ Please review and re-submit.</pre>
     var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
 </script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
+
+<!-- hidden template for the tree-viewer (editor) -->
+<div class="modal hide fade modal-tree-viewer" id="tree-viewer" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'></h3>
+    </div>
+    <div class="modal-body">
+        <div id="dialog-data"></div>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+      <a class="btn btn-primary" id="btnSaveChanges">Save changes</a>
+    </div>
+</div>

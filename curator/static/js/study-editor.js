@@ -401,30 +401,39 @@ function getPageNumbers( pagedArray ) {
 
 function getMappedTallyForTree(tree) {
     // return display-ready tally (mapped/total ratio and percentage)
-    
-    // TODO: Only check the *terminal* taxa (ie, "tips") of the tree! Right?
-
     if (!tree || !tree.node || tree.node().length === 0) {
         return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
     }
 
-    var totalNodes = tree.node().length;
-    var mappedNodes = 0;
-    ///console.log("Testing "+ totalNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
+    var totalNodes = 0;
+    var totalLeafNodes = 0;
+    var mappedLeafNodes = 0;
+    ///console.log("Testing "+ totalLeafNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
     $.each(tree.node(), function(i, node) {
+        totalNodes++;
+        // Is this a leaf node? If not, skip it
+        var isLeafAccessor = getMetaTagAccessorByAtProperty(node.meta(), 'ot:isLeaf');
+        if ((typeof(isLeafAccessor) !== 'function') || (isLeafAccessor() !== 'true')) {
+            // this is not a leaf node! skip to the next one
+            return true;
+        }
+        totalLeafNodes++;
+
         // Simply check for the presence (or absence) of an @otu 'getter' function
         // (so far, it doesn't seem to exist unless there's a mapped OTU)
-        
         var nodeOTUAccessor = node['@otu'];
         if (typeof(nodeOTUAccessor) === 'function') {
-            mappedNodes++;
+            mappedLeafNodes++;
         } 
         return true;  // skip to next node
 
     });
+    console.log("total nodes? "+ totalNodes);
+    console.log("total leaf nodes? "+ totalLeafNodes);
+    console.log("mapped leaf nodes? "+ mappedLeafNodes);
 
     var thinSpace = '&#8201;';
-    return '<strong>'+ mappedNodes +'</strong><span>'+ thinSpace +'/'+ thinSpace + totalNodes +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(mappedNodes/totalNodes) +'%)</span>';
+    return '<strong>'+ mappedLeafNodes +'</strong><span>'+ thinSpace +'/'+ thinSpace + totalLeafNodes +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(mappedLeafNodes/totalLeafNodes) +'%)</span>';
 }
 
 function getRootedDescriptionForTree( tree ) {
@@ -989,3 +998,20 @@ ko.dirtyFlag = function(root, isInitiallyDirty) {
     return result;
 };
 
+function showTreeViewer( tree ) {
+    if (viewOrEdit == 'EDIT') {
+        // TODO
+    } else {
+        // TODO
+    }
+    // quick test of modal
+    $('#tree-viewer .modal-body').css({
+        'height': '350px',
+        'border': '1px dashed red'
+    });
+    $('#tree-viewer').css({
+        'width': '90%',
+        'margin': 'auto -45%'
+    });
+    $('#tree-viewer').modal('show')
+}

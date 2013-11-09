@@ -497,3 +497,21 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .featured-label-child {
     padding-left: 20px;
 }
+.navbar-inner .pagination {
+    margin: 0.5em 0 0;
+}
+
+/* simplified table style with no headers */
+table.bare-top-row tr:first-child td {
+    border-top: none;
+}
+
+img.tool-icon {
+    width: 100px; 
+    height: 100px; 
+    background-color: #f5f5f5; 
+    /*
+    border: 1px solid #ccc; 
+    border-radius: 8px;
+    */
+}
