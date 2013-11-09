@@ -4,7 +4,7 @@
 {{extend 'layout.html'}}
 
 <div class="row">
-<div class="span5"><!-- not too wide... -->
+<div class="span8"><!-- not too wide... -->
 {{if 'message' in globals():}}
 <h4>{{=message}}X</h4>
 {{pass}}
@@ -41,21 +41,6 @@
                 </ul>
             </li>
         </ul>
-        <div class="pagination pagination-right pagination-small" data-bind="if: nexml.trees.tree().length &gt; nexml.trees.tree.pagedItems().length">
-          <ul>
-            <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
-                <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
-            </li>
-           <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
-            <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
-                <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">1</a>
-            </li>
-           <!-- /ko -->
-            <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
-                <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
-            </li>
-          </ul>
-        </div>
        </div>
       </div>
 
@@ -112,6 +97,22 @@
                 <td><a href="#">map OTU labels</a></td>
             </tr>
         </table>
+
+        <div class="pagination pagination-centered pagination-small" data-bind="if: nexml.trees.tree().length &gt; nexml.trees.tree.pagedItems().length">
+          <ul>
+            <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
+                <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+            </li>
+           <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
+            <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
+                <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">1</a>
+            </li>
+           <!-- /ko -->
+            <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
+                <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+            </li>
+          </ul>
+        </div>
 
     </div>
     <div class="span4">
