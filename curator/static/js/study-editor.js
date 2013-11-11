@@ -1015,3 +1015,14 @@ function showTreeViewer( tree ) {
     });
     $('#tree-viewer').modal('show')
 }
+
+function filenameFromFakePath( path ) {
+    // trim any path (possibly fake) from an input[type='file'] widget
+    var delim = (path.indexOf('\\') !== -1) ? '\\' : '/';
+    var parts = path.split(delim);
+    var howManyParts = parts.length;
+    if (howManyParts === 1) {
+        return path;
+    }
+    return parts[howManyParts-1];
+}

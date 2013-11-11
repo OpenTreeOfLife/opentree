@@ -253,12 +253,51 @@ body {
             Clicking a tree name should open a modal tree view/editor (D3?).
             </p>
 
-            <div class="well Xwell-large">
-                <h4 style="margin-top: 0;">Import a new tree</h4>
-                <ol>
-                    <li>by pasting a Newick string</li>
-                    <li>by uploading a file?</li>
-                </ol>
+            <div class="well">
+                <h4 style="margin-top: 0;">Add a tree to this study</h4>
+                <form style="margin: 0;">
+                 <fieldset>
+                  <label for="new-tree-newick">Paste a Newick string&hellip;</label>
+                  <textarea id="new-tree-newick" rows="5" class="input-block-level" Xstyle="width: 95%;"></textarea>
+                  
+                  <label for="new-tree-upload">&hellip;or upload a tree file</label>
+{{
+#                  <input id="new-tree-upload" type="file" class="Xinput-block-level">
+#
+#                    OK, that's hideous. Trying some more attractive styles as described here:
+#                        http://stackoverflow.com/questions/11235206/twitter-bootstrap-form-file-element-upload-button
+#                        http://duckranger.com/2012/06/pretty-file-input-field-in-bootstrap/
+#                        http://www.randomout.com/2012/07/hacking-more-visually-appealing-file.html
+}}
+
+                  <div style="position:relative; margin-bottom: 1em;">
+                    <a class="btn" href="javascript:;">
+                        Choose File...
+                        <input type="file" name="new-tree-upload" size="40" 
+                               style="position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';opacity:0;background-color:transparent;color:transparent;"
+                               onchange="$('#upload-tree-info').html( filenameFromFakePath($(this).val()) );">
+                    </a>
+                    &nbsp;
+                    <span class='label label-info' id="upload-tree-info"></span>
+                  </div>
+                  
+<!-- TODO: Enter a URL or DOI for the new tree?
+                  <label for="new-tree-URL">&hellip;or paste an URL to the tree</label>
+                  <input type="text" id="new-tree-URL" class="input-block-level" value="" placeholder="Paste URL here">
+-->
+
+                  <label class="checkbox">
+                      <input name="new-tree-preferred" type="checkbox" value="">
+                      Mark this tree as preferred for synthesis
+                  </label>
+
+                  <div Xclass="form-actions" style="margin-top: 1em;">
+                      <button type="submit" class="btn btn-primary btn-primary-disabled" disabled="disabled">Add new tree 
+                        <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
+                      <button type="button" class="btn">Cancel</button>
+                  </div>
+                 </fieldset>
+                </form>
             </div>
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
@@ -305,12 +344,37 @@ body {
             importing/adding new files. What about bulk imports?
             </p>
             <div class="well Xwell-large">
-                <h4 style="margin-top: 0;">Add a file</h4>
-                <ol>
-                    <li>by uploading it?</li>
-                    <li>by importing from ???</li>
-                    <li>by pasting its data?</li>
-                </ol>
+                <h4 style="margin-top: 0;">Add a file to this study</h4>
+                <form style="margin: 0;">
+                 <fieldset>
+<!--
+                  <label for="new-file-newick">Paste file contents here&hellip;</label>
+                  <textarea id="new-file-newick" rows="5" class="input-block-level" Xstyle="width: 95%;"></textarea>
+                  
+-->
+                  <label for="new-file-upload">Upload a file &hellip;</label>
+
+                  <div style="position:relative; margin-bottom: 1em;">
+                    <a class="btn" href="javascript:;">
+                        Choose File...
+                        <input type="file" name="new-file-upload" size="40" 
+                               style="position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';opacity:0;background-color:transparent;color:transparent;"
+                               onchange="$('#upload-file-info').html( filenameFromFakePath($(this).val()) );">
+                    </a>
+                    &nbsp;
+                    <span class='label label-info' id="upload-file-info"></span>
+                  </div>
+                  
+                  <label for="new-file-URL">&hellip;or paste its URL:</label>
+                  <input type="text" id="new-file-URL" class="input-block-level" value="" placeholder="Paste file URL here">
+
+                  <div Xclass="form-actions" style="margin-top: 1em;">
+                      <button type="submit" class="btn btn-primary btn-primary-disabled" disabled="disabled">Add new file 
+                        <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
+                      <button type="button" class="btn">Cancel</button>
+                  </div>
+                 </fieldset>
+                </form>
             </div>
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
