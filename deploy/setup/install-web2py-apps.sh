@@ -96,7 +96,6 @@ changed=no
 
 sed "s+hostdomain = .*+hostdomain = $HOST+" < $configfile > tmp.tmp
 if ! cmp -s tmp.tmp $configfile; then
-    diff $configfile tmp.tmp || true
     mv tmp.tmp $configfile
     changed=yes
 fi
@@ -111,7 +110,6 @@ if [ x$NEO4JHOST != x ]; then
     for APP in treemachine taxomachine; do
         sed "s+$APP = .*+$APP = http://$NEO4JHOST/$APP+" < $configfile > tmp.tmp
 	if ! cmp -s tmp.tmp $configfile; then
-    	    diff $configfile tmp.tmp || true
             mv tmp.tmp $configfile
 	    changed=yes
 	else

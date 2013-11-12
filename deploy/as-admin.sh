@@ -1,4 +1,5 @@
 # Run this script as an admin user (having 'sudo' privileges)
+#  = 'admin' on debian, 'ubuntu' on ubuntu
 
 set -e
 
@@ -17,6 +18,16 @@ fi
 # ---------- RSYNC ----------
 if [ `which rsync`x = x ]; then
     sudo apt-get --assume-yes install rsync
+fi
+
+# ---------- GCC (for some python packages) ----------
+if [ `which gcc`x = x ]; then
+    sudo apt-get --assume-yes install gcc
+fi
+
+# ---------- PYTHON-DEV (for some python packages) ----------
+if [ ! -r /usr/include/*/Python.h ]; then
+    sudo apt-get --assume-yes install python-dev
 fi
 
 # ---------- APACHE ----------

@@ -71,6 +71,7 @@ ${SSH} "$USER@$HOST" ./setup/install-neo4j-apps.sh "${HOST}"
 # The install scripts modify the apache config file, so do this last
 ${SSH} "$ADMIN@$HOST" \
   sudo cp -p "~$USER/setup/apache-config" /etc/apache2/sites-available/opentree
+echo "Restarting apache httpd..."
 ${SSH} "$ADMIN@$HOST" sudo apache2ctl graceful
 
 

@@ -6,6 +6,8 @@ set -e
 HOST=$1
 BRANCH=master
 
+# tbd: maybe allow a different branch for each repo
+
 # Will not run on AWS free tier.  Recommended at least 60G disk and 16G RAM.
 
 echo "`date` Installing treemachine and taxomachine"
@@ -24,7 +26,7 @@ fi
 # ---------- NEO4J WITH TREEMACHINE / TAXOMACHINE PLUGINS ----------
 # Set up neo4j services
 
-if git_refresh FePhyFoFum jade $BRANCH || [ ! -r repo/jade/target/*.jar ]; then
+if git_refresh FePhyFoFum jade master || [ ! -r repo/jade/target/*.jar ]; then
     (cd repo/jade; sh mvn_install.sh)
 fi
 
