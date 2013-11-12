@@ -42,19 +42,22 @@ fi
 # ---------- VIRTUALENV + WEB2PY + WSGI ----------
 
 # See http://stackoverflow.com/questions/11758147/web2py-in-apache-mod-wsgi-with-virtualenv
-cat <<EOF >/tmp/fragment
+cat <<EOF >fragment.tmp
 activate_this = '$PWD/venv/bin/activate_this.py'
 execfile(activate_this, dict(__file__=activate_this))
 import sys
 sys.path.insert(0, '$PWD/web2py')
 EOF
 
+# This is pretty darn fragile!  But if it fails, it will fail big -
+# the web apps won't work at all.
+
 (head -2 web2py/handlers/wsgihandler.py; \
- cat /tmp/fragment; \
+ cat fragment.tmp; \
  tail -n +3 web2py/handlers/wsgihandler.py) \
    > web2py/wsgihandler.py
 
-rm /tmp/fragment
+rm fragment.tmp
 
 # ---------- THE WEB APPLICATIONS ----------
 # Set up web2py apps as directed in the README.md file
