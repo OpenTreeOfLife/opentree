@@ -4,6 +4,7 @@ set -e
 . setup/functions.sh
 
 HOST=$1
+BRANCH=master
 
 total=`df -m . | (read; read fs total used available percent; echo $total)`
 if [ $total -lt 60000 ]; then
@@ -38,11 +39,11 @@ fi
 # ---------- NEO4J WITH TREEMACHINE / TAXOMACHINE PLUGINS ----------
 # Set up neo4j services
 
-if git_refresh FePhyFoFum jade || [ ! -r repo/jade/target/*.jar ]; then
+if git_refresh FePhyFoFum jade $BRANCH || [ ! -r repo/jade/target/*.jar ]; then
     (cd repo/jade; sh mvn_install.sh)
 fi
 
-if git_refresh OpenTreeOfLife ot-base || [ ! -r repo/ot-base/*.jar ]; then
+if git_refresh OpenTreeOfLife ot-base $BRANCH || [ ! -r repo/ot-base/target/*.jar ]; then
     (cd repo/ot-base; sh mvn_install.sh)
 fi
 
@@ -58,7 +59,7 @@ function make_neo4j_plugin {
     fi
 
     # Get plugin from git repository
-    if git_refresh OpenTreeOfLife $APP || [ ! -r neo4j-$APP/plugins/$jar ]; then
+    if git_refresh OpenTreeOfLife $APP $BRANCH || [ ! -r neo4j-$APP/plugins/$jar ]; then
         # Create and install the plugins .jar file
         # Compilation takes about 4 minutes... ugh
 	(cd repo/$APP; ./mvn_serverplugins.sh)
@@ -73,11 +74,16 @@ function fetch_neo4j_plugin {
 
 make_neo4j_plugin treemachine
 
-if false; then
-    fetch_neo4j_plugin taxomachine
-else
-    make_neo4j_plugin taxomachine
-fi
+make_neo4j_plugin taxomachine || \
+  fetch_neo4j_plugin taxomachine
+
+# Set taxomachine ports before starting it up
+
+#org.neo4j.server.webserver.port=7474
+#org.neo4j.server.webserver.https.port=7473
+sed s+7474+7476+ < neo4j-taxomachine/conf/neo4j-server.properties | \
+sed s+7473+7475+ > props.tmp
+mv props.tmp neo4j-taxomachine/conf/neo4j-server.properties
 
 # ---------- THE NEO4J DATABASES ----------
 
@@ -125,13 +131,6 @@ function fetch_neo4j_db {
 
 fetch_neo4j_db treemachine
 fetch_neo4j_db taxomachine
-
-
-#org.neo4j.server.webserver.port=7474
-#org.neo4j.server.webserver.https.port=7473
-sed s+7474+7476+ < neo4j-taxomachine/conf/neo4j-server.properties | \
-sed s+7473+7475+ > props.tmp
-mv props.tmp neo4j-taxomachine/conf/neo4j-server.properties
 
 echo "`date` Done"
 

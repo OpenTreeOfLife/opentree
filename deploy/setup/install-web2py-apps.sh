@@ -4,6 +4,7 @@ set -e
 . setup/functions.sh
 
 HOST=$1
+BRANCH=master
 
 echo "Installing web2py applications.  Hostname = $HOST"
 date
@@ -63,7 +64,7 @@ opentree=repo/opentree
 # We clone via https instead of ssh, because ssh cloning fails with
 # "Permission denied (publickey)".
 
-git_refresh OpenTreeOfLife opentree || true
+git_refresh OpenTreeOfLife opentree $BRANCH || true
 
 # Modify the requirements list
 # numpy etc. have all kinds of dependency problems.

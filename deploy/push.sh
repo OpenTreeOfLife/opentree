@@ -59,9 +59,12 @@ if [ ! -r ${PEM} ]; then
 fi
 
 SSH="ssh -i ${PEM}"
-scp -p -i "${PEM}" as-admin.sh "$ADMIN@$HOST":
-#${SSH} "$ADMIN@$HOST" ./as-admin.sh "${HOST}"
 
+# Do privileged stuff
+scp -p -i "${PEM}" as-admin.sh "$ADMIN@$HOST":
+${SSH} "$ADMIN@$HOST" ./as-admin.sh "${HOST}"
+
+# Unprivileged
 USER=opentree
 
 rsync -pr -e "${SSH}" "--exclude=*~" setup "$USER@$HOST":

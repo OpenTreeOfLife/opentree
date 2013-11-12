@@ -87,6 +87,12 @@ if [ `which mvn`x = x ]; then
     sudo apt-get --assume-yes install maven
 fi
 
+# ---------- LSOF ----------
+# neo4j needs this
+if [ `which lsof`x = x ]; then
+    sudo apt-get --assume-yes install lsof
+fi
+
 # ---------- APACHE VHOST ----------
 
 # Set up apache so that web2py takes over the vhost
@@ -96,13 +102,14 @@ fi
 # from a fresh EC2 instance, then modified it to make web2py work.
 # See /etc/apache2/sites-available/default .
 
-# Note that +00-opentree sorts before 000-default.
-# The purpose here is to avoid having to know all of our own vhost names.
-# Instead we make opentree the default for all vhosts.
-# The opentree config file gets put into place later on in the setup sequence.
+# The purpose here (of clobbering the default vhost) is to avoid
+# having to know all of our own vhost names.  Instead we make opentree
+# the default 'vhost'.  The opentree config file gets put into
+# place later on in the setup sequence.
 
+sudo rm -f /etc/apache2/sites-enabled/000-default
 (cd /etc/apache2/sites-enabled; \
- sudo ln -sf ../sites-available/opentree ./+00-opentree)
+ sudo ln -sf ../sites-available/opentree ./000-opentree)
 
 # ---------- UNPRIVILEGED USER ----------
 

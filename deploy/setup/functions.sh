@@ -7,6 +7,7 @@
 function git_refresh() {
     guser=$1    # OpenTreeOfLife
     reponame=$2
+    branch=$3
     # Directory in which all local checkouts of git repos reside
     repos_dir=repo
     repo_dir=$repos_dir/$reponame
@@ -17,7 +18,9 @@ function git_refresh() {
 	 git clone https://github.com/$guser/$reponame.git)
     else
 	before=`cd $repo_dir; git log | head -1`
-	(cd $repo_dir; git checkout master; git checkout .; git pull)
+	# What if branch doesn't exist locally, or doesn't track origin branch?
+	# This will need some tweaking...
+	(cd $repo_dir; git checkout $branch; git checkout .; git pull)
 	after=`cd $repo_dir; git log | head -1`
 	if [ "$before" = "$after" ] ; then
 	    echo "Repository $reponame is unchanged since last time"
