@@ -32,20 +32,21 @@ if [ ! -d venv ]; then
 fi
 source venv/bin/activate
 
-# Why exactly is this needed?  web2py?
+# The following helps establish the environment when web2py is fired
+# up by Apache via WSGI - I think
 
-if ! grep --silent --invert-match setup/activate .bashrc; then
+if ! grep --silent setup/activate .bashrc; then
     echo "source $HOME/setup/activate" >> ~/.bashrc
 fi
 
 # ---------- VIRTUALENV + WEB2PY + WSGI ----------
 
 # See http://stackoverflow.com/questions/11758147/web2py-in-apache-mod-wsgi-with-virtualenv
-echo <<EOF >/tmp/fragment
-activate_this = $PWD'/venv/bin/activate_this.py'
+cat <<EOF >/tmp/fragment
+activate_this = '$PWD/venv/bin/activate_this.py'
 execfile(activate_this, dict(__file__=activate_this))
 import sys
-sys.path.insert(0, $PWD'/web2py')
+sys.path.insert(0, '$PWD/web2py')
 EOF
 
 (head -2 web2py/handlers/wsgihandler.py; \
