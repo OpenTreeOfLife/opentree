@@ -47,14 +47,14 @@
 
     # See http://stackoverflow.com/questions/13216837/install-web2py-in-virtual-hosting
     # Had: user=opentree group=opentree
-    WSGIDaemonProcess web2py user=ubuntu group=ubuntu display-name=%{GROUP}
+    WSGIDaemonProcess web2py user=opentree group=opentree display-name=%{GROUP}
     WSGIProcessGroup web2py
-    WSGIScriptAlias / /home/ubuntu/web2py/wsgihandler.py
+    WSGIScriptAlias / /home/opentree/web2py/wsgihandler.py
 
     # We don't want the scriptalias to override mappings for
     #  treemachine and taxomachine... seems not to.
 
-    <Directory /home/ubuntu/web2py>
+    <Directory /home/opentree/web2py>
       AllowOverride None
       Order Allow,Deny
       Deny from all
@@ -63,8 +63,8 @@
       </Files>
     </Directory>
 
-    AliasMatch ^/([^/]+)/static/(.*)            /home/ubuntu/web2py/applications/$1/static/$2
-    <Directory /home/ubuntu/web2py/applications/*/static/>
+    AliasMatch ^/([^/]+)/static/(.*)            /home/opentree/web2py/applications/$1/static/$2
+    <Directory /home/opentree/web2py/applications/*/static/>
       Order Allow,Deny
       Allow from all
     </Directory>
