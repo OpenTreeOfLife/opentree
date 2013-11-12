@@ -253,12 +253,51 @@ body {
             Clicking a tree name should open a modal tree view/editor (D3?).
             </p>
 
-            <div class="well Xwell-large">
-                <h4 style="margin-top: 0;">Import a new tree</h4>
-                <ol>
-                    <li>by pasting a Newick string</li>
-                    <li>by uploading a file?</li>
-                </ol>
+            <div class="well">
+                <h4 style="margin-top: 0;">Add a tree to this study</h4>
+                <form style="margin: 0;">
+                 <fieldset>
+                  <label for="new-tree-newick">Paste a Newick string&hellip;</label>
+                  <textarea id="new-tree-newick" rows="5" class="input-block-level" Xstyle="width: 95%;"></textarea>
+                  
+                  <label for="new-tree-upload">&hellip;or upload a tree file</label>
+{{
+#                  <input id="new-tree-upload" type="file" class="Xinput-block-level">
+#
+#                    OK, that's hideous. Trying some more attractive styles as described here:
+#                        http://stackoverflow.com/questions/11235206/twitter-bootstrap-form-file-element-upload-button
+#                        http://duckranger.com/2012/06/pretty-file-input-field-in-bootstrap/
+#                        http://www.randomout.com/2012/07/hacking-more-visually-appealing-file.html
+}}
+
+                  <div style="position:relative; margin-bottom: 1em;">
+                    <a class="btn" href="javascript:;">
+                        Choose File...
+                        <input type="file" name="new-tree-upload" size="40" 
+                               style="position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';opacity:0;background-color:transparent;color:transparent;"
+                               onchange="$('#upload-tree-info').html( filenameFromFakePath($(this).val()) );">
+                    </a>
+                    &nbsp;
+                    <span class='label label-info' id="upload-tree-info"></span>
+                  </div>
+                  
+<!-- TODO: Enter a URL or DOI for the new tree?
+                  <label for="new-tree-URL">&hellip;or paste an URL to the tree</label>
+                  <input type="text" id="new-tree-URL" class="input-block-level" value="" placeholder="Paste URL here">
+-->
+
+                  <label class="checkbox">
+                      <input name="new-tree-preferred" type="checkbox" value="">
+                      Mark this tree as preferred for synthesis
+                  </label>
+
+                  <div Xclass="form-actions" style="margin-top: 1em;">
+                      <button type="submit" class="btn btn-primary btn-primary-disabled" disabled="disabled">Add new tree 
+                        <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
+                      <button type="button" class="btn">Cancel</button>
+                  </div>
+                 </fieldset>
+                </form>
             </div>
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
@@ -305,12 +344,37 @@ body {
             importing/adding new files. What about bulk imports?
             </p>
             <div class="well Xwell-large">
-                <h4 style="margin-top: 0;">Add a file</h4>
-                <ol>
-                    <li>by uploading it?</li>
-                    <li>by importing from ???</li>
-                    <li>by pasting its data?</li>
-                </ol>
+                <h4 style="margin-top: 0;">Add a file to this study</h4>
+                <form style="margin: 0;">
+                 <fieldset>
+<!--
+                  <label for="new-file-newick">Paste file contents here&hellip;</label>
+                  <textarea id="new-file-newick" rows="5" class="input-block-level" Xstyle="width: 95%;"></textarea>
+                  
+-->
+                  <label for="new-file-upload">Upload a file &hellip;</label>
+
+                  <div style="position:relative; margin-bottom: 1em;">
+                    <a class="btn" href="javascript:;">
+                        Choose File...
+                        <input type="file" name="new-file-upload" size="40" 
+                               style="position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';opacity:0;background-color:transparent;color:transparent;"
+                               onchange="$('#upload-file-info').html( filenameFromFakePath($(this).val()) );">
+                    </a>
+                    &nbsp;
+                    <span class='label label-info' id="upload-file-info"></span>
+                  </div>
+                  
+                  <label for="new-file-URL">&hellip;or paste its URL:</label>
+                  <input type="text" id="new-file-URL" class="input-block-level" value="" placeholder="Paste file URL here">
+
+                  <div Xclass="form-actions" style="margin-top: 1em;">
+                      <button type="submit" class="btn btn-primary btn-primary-disabled" disabled="disabled">Add new file 
+                        <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
+                      <button type="button" class="btn">Cancel</button>
+                  </div>
+                 </fieldset>
+                </form>
             </div>
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
@@ -359,14 +423,14 @@ body {
                   <thead>
                     <tr>
                         <th>Original label</th>
-                        <th>Working label</th>
+                        <th>Adjusted label</th>
                         <th>Mapped to taxon</th>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: nexml.otus.otu.pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
                         <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')">ORIGINAL?</td>
-                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:label')">WORKING?</td>
+                        <td><em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel'))">WORKING?</em></td>
                         <td data-bind="text: otu['@label']">MAPPED?</td>
                     </tr>
                   </tbody>
@@ -394,21 +458,94 @@ body {
             <p>
             [TODO] Here's some text about mapping OTUs. Plus tools for grooming node labels.
             </p>
-            <div class="well Xwell-large">
-                <h4 style="margin-top: 0;">Mapping status</h4>
-                <p>
-                    [TODO] Mapping in progress, please check again later...
-                </p>
+            <div class="alert alert-block">
+                <h4>Server-side mapping in progress</h4>
+                This section is blocked while the server works. Please check again later. [TODO] 
             </div>
             <div class="well Xwell-large">
-                <h4 style="margin-top: 0;">Mapping tools</h4>
-                <ol>
-                    <li>Simple regex examples</li>
-                    <li>custom regex</li>
-                    <li>allow ordered operations?</li>
-                    <li>apply to visible leaves only?</li>
-                    <li>apply to all leaves in this tree?</li>
-                </ol>
+                <h4 style="margin-top: 0;">Mapping speed</h4>
+                <div TODO-data-bind="css: mappingSpeedBarClass" style="margin-bottom: 0;"
+                     class="progress progress-warning">
+                  <div class="bar" TODO-data-bind="style: { width: studyQualityPercentStyle }"
+                       style="width: 72%;">
+                      <span TODO-data-bind="text: studyQualityPercent">10 sec / name</span>
+                  </div>
+                </div>
+            </div>
+            <div class="well">
+                <h4 style="margin-top: 0;">Label adjustments</h4>
+                <p>
+                If mapping is slow or fails, you can streamline the process by
+                modifying the original names. Any active substitutions below
+                will be applied to all names during OTU mapping. 
+                Try some common patterns from the drop-down menu below, or use
+                <a href="http://www.regular-expressions.info/javascript.html#replace" target="_blank">regular expressions</a> to construct your own.
+                </p>
+                <form class="form-inline" style="margin: 0;">
+                 <fieldset>
+                  <!--<label for="new-tree-newick">Substitutions</label>-->
+                  <table>
+                    <thead>
+                        <tr>
+                            <th width="20">&nbsp;</th>
+                            <th>Replace this...</th>
+                            <th>with this</th>
+                            <th width="20">&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mapping-adjustments">
+                        <tr>
+                            <td align="center" valign="center">
+                                <input type="checkbox" checked="checked" 
+                                       title="If checked, this substitution will be used."/>
+                            </td>
+                            <td>
+                                <input type="text" class="input-block-level" value="(\d*)$"/>
+                            </td>
+                            <td>
+                                <input type="text" class="input-block-level" value="" />
+                            </td>
+                            <td align="center" valign="center">
+                                <a href="#" title="Click to remove this substitution."/>
+                                    <i class="icon-remove"></i></a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" valign="center">
+                                <input type="checkbox"
+                                       title="If checked, this substitution will be used."/>
+                            </td>
+                            <td>
+                                <input type="text" class="input-block-level" value="" Xplaceholder="old text" />
+                            </td>
+                            <td>
+                                <input type="text" class="input-block-level" value="" Xplaceholder="new text" />
+                            </td>
+                            <td align="center" valign="center">
+                                <a href="#" title="Click to remove this substitution."/>
+                                    <i class="icon-remove"></i></a>
+                            </td>
+                        </tr>
+                    </tbody>
+                  </table>
+
+                  <div Xclass="form-actions" style="margin-top: 1em;">
+                      <select class="input-block-level">
+                        <option value="">Add a common substitution...</option>
+                        <option value="">Remove first word</option>
+                        <option value="">Remove last word</option>
+                        <option value="">Remove 'sp'</option>
+                        <option value="">Replace 'foo' with 'bar'</option>
+                        <option value="">Isolate NCBI taxon ID</option>
+                      </select>
+                  </div>
+                  <div Xclass="form-actions" style="margin-top: 1em;">
+                      <button type="submit" class="btn">Add another substitution 
+                        <i class="icon-add "></i></button>
+                  </div>
+
+                 </fieldset>
+                </form>
             </div>
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
