@@ -1026,3 +1026,36 @@ function filenameFromFakePath( path ) {
     }
     return parts[howManyParts-1];
 }
+
+function adjustedLabel(label) {
+    // apply any active OTU mapping adjustments to this string
+    if (typeof(label) === 'function') {
+        console.log('retrieving from label function...');
+        label = label();
+    }
+    console.log(typeof(label));
+    console.log(label);
+    if (typeof(label) !== 'string') {
+        // probably null
+        return label;
+    }
+    var adjusted = label;
+    $('#mapping-adjustments tr').each(function() {
+        var $row = $(this);
+        if (!$row.find(':checkbox:eq(0)').is(':checked')) {
+            return;  // skip to next adjustment
+        }
+        var oldText = $row.find(':text:eq(0)').val();
+        var newText = $row.find(':text:eq(1)').val();
+        console.log('OLD: '+ oldText);
+        console.log('NEW: '+ newText);
+        if ($.trim(oldText) === $.trim(newText) === "") {
+            return; // skip to next adjustment
+        }
+        var pattern = new RegExp(oldText);
+        adjusted = label.replace(pattern, newText);
+        console.log('ADJUSTED TO: '+ adjusted);
+    });
+    console.log('FINAL ADJUSTED LABEL: '+ adjusted);
+    return adjusted;
+}
