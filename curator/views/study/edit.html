@@ -423,7 +423,7 @@ body {
                   <thead>
                     <tr>
                         <th>Original label</th>
-                        <th>Working label</th>
+                        <th>Adjusted label</th>
                         <th>Mapped to taxon</th>
                     </tr>
                   </thead>
@@ -458,21 +458,94 @@ body {
             <p>
             [TODO] Here's some text about mapping OTUs. Plus tools for grooming node labels.
             </p>
-            <div class="well Xwell-large">
-                <h4 style="margin-top: 0;">Mapping status</h4>
-                <p>
-                    [TODO] Mapping in progress, please check again later...
-                </p>
+            <div class="alert alert-block">
+                <h4>Server-side mapping in progress</h4>
+                This section is blocked while the server works. Please check again later. [TODO] 
             </div>
             <div class="well Xwell-large">
-                <h4 style="margin-top: 0;">Mapping tools</h4>
-                <ol>
-                    <li>Simple regex examples</li>
-                    <li>custom regex</li>
-                    <li>allow ordered operations?</li>
-                    <li>apply to visible leaves only?</li>
-                    <li>apply to all leaves in this tree?</li>
-                </ol>
+                <h4 style="margin-top: 0;">Mapping speed</h4>
+                <div TODO-data-bind="css: mappingSpeedBarClass" style="margin-bottom: 0;"
+                     class="progress progress-warning">
+                  <div class="bar" TODO-data-bind="style: { width: studyQualityPercentStyle }"
+                       style="width: 72%;">
+                      <span TODO-data-bind="text: studyQualityPercent">10 sec / name</span>
+                  </div>
+                </div>
+            </div>
+            <div class="well">
+                <h4 style="margin-top: 0;">Label adjustments</h4>
+                <p>
+                If mapping is slow or fails, you can streamline the process by
+                modifying the original names. Any active substitutions below
+                will be applied to all names during OTU mapping. 
+                Try some common patterns from the drop-down menu below, or see
+                <a href="#">some regex reference</a> for help in constructing your own.
+                </p>
+                <form class="form-inline" style="margin: 0;">
+                 <fieldset>
+                  <!--<label for="new-tree-newick">Substitutions</label>-->
+                  <table>
+                    <thead>
+                        <tr>
+                            <th width="20">&nbsp;</th>
+                            <th>Replace this...</th>
+                            <th>with this</th>
+                            <th width="20">&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td align="center" valign="center">
+                                <input type="checkbox" checked="checked" 
+                                       title="If checked, this substitution will be used."/>
+                            </td>
+                            <td>
+                                <input type="text" class="input-small" value="^(\w*)"/>
+                            </td>
+                            <td>
+                                <input type="text" class="input-small" value="" />
+                            </td>
+                            <td align="center" valign="center">
+                                <a href="#" title="Click to remove this substitution."/>
+                                    <i class="icon-remove"></i></a>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td align="center" valign="center">
+                                <input type="checkbox"
+                                       title="If checked, this substitution will be used."/>
+                            </td>
+                            <td>
+                                <input type="text" class="input-small" value="" Xplaceholder="old text" />
+                            </td>
+                            <td>
+                                <input type="text" class="input-small" value="" Xplaceholder="new text" />
+                            </td>
+                            <td align="center" valign="center">
+                                <a href="#" title="Click to remove this substitution."/>
+                                    <i class="icon-remove"></i></a>
+                            </td>
+                        </tr>
+                    </tbody>
+                  </table>
+
+                  <div Xclass="form-actions" style="margin-top: 1em;">
+                      <select class="input-block-level">
+                        <option value="">Add a common substitution...</option>
+                        <option value="">Remove first word</option>
+                        <option value="">Remove last word</option>
+                        <option value="">Remove 'sp'</option>
+                        <option value="">Replace 'foo' with 'bar'</option>
+                        <option value="">Isolate NCBI taxon ID</option>
+                      </select>
+                  </div>
+                  <div Xclass="form-actions" style="margin-top: 1em;">
+                      <button type="submit" class="btn">Add another substitution 
+                        <i class="icon-add "></i></button>
+                  </div>
+
+                 </fieldset>
+                </form>
             </div>
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
