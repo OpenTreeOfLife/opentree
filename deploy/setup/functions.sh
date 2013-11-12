@@ -4,6 +4,11 @@
 
 # Refresh a git repo
 
+# We clone via https instead of ssh, because ssh cloning fails with
+# "Permission denied (publickey)".  This means we won't be able to
+# push changes very easily, which is OK because we don't expect to be
+# making any...
+
 function git_refresh() {
     guser=$1    # OpenTreeOfLife
     reponame=$2

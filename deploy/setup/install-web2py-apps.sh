@@ -4,6 +4,7 @@ set -e
 . setup/functions.sh
 
 HOST=$1
+NEO4JHOST=$2
 BRANCH=master
 
 echo "Installing web2py applications.  Hostname = $HOST"
@@ -61,15 +62,12 @@ opentree=repo/opentree
 
 # Consider cloning a designated tag, using git clone --branch <tag>
 
-# We clone via https instead of ssh, because ssh cloning fails with
-# "Permission denied (publickey)".
-
 git_refresh OpenTreeOfLife opentree $BRANCH || true
 
 # Modify the requirements list
 # numpy etc. have all kinds of dependency problems.
 cp $opentree/requirements.txt requirements.txt.save
-if grep --invert-match "biopython\\|numpy\\|scipy\\|PIL\\|lxml||\distribute" \
+if grep --invert-match "distribute" \
       $opentree/requirements.txt >requirements.txt.new ; then
     mv requirements.txt.new $opentree/requirements.txt
 fi
@@ -88,14 +86,43 @@ cp -p $opentree/SITE.routes.py web2py/routes.py
 # File pushed here using rsync, see push.sh
 configfile=web2py/applications/opentree/private/config
 
-# Not sure, maybe should do this conditionally ??
 cp -p setup/webapp-config $configfile
 
 # The web2py apps need to know their own host names, for
 # authentication purposes.  'hostname' doesn't work on EC2 instances,
 # so it has to be passed in.
 
-sed "s+hostdomain = .*+hostdomain = $HOST+" < $configfile > tmp.tmp
-mv tmp.tmp $configfile
+changed=no
 
-# Apache needs to be restarted, probably.
+sed "s+hostdomain = .*+hostdomain = $HOST+" < $configfile > tmp.tmp
+if ! cmp -s tmp.tmp $configfile; then
+    diff $configfile tmp.tmp || true
+    mv tmp.tmp $configfile
+    changed=yes
+fi
+
+# There will be additional edits to the config file if a neo4j
+# database gets installed locally.
+
+# Modify the web2py config file to point to the host that's running
+# treemachine and taxomachine.
+
+if [ x$NEO4JHOST != x ]; then
+    for APP in treemachine taxomachine; do
+        sed "s+$APP = .*+$APP = http://$NEO4JHOST/$APP+" < $configfile > tmp.tmp
+	if ! cmp -s tmp.tmp $configfile; then
+    	    diff $configfile tmp.tmp || true
+            mv tmp.tmp $configfile
+	    changed=yes
+	else
+	    echo "Sed failed !?"
+	fi
+    done
+else
+    echo "No NEO4JHOST !?"
+fi
+if [ $changed = yes ]; then
+    echo "Apache / web2py restart required"
+fi
+
+# Apache needs to be restarted.
