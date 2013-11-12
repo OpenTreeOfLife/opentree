@@ -610,8 +610,11 @@ var studyScoringRules = {
                                 ///console.log(">>> metatag '"+ testMeta['@property']() +"' is empty!");
                                 return false;
                             }
+                            break;
+
                         default:
                             // ignore other meta tags (annotations)
+                            console.log('found some other metadata (annotation?): '+ testProperty);
                             continue;
                     }
                 }
@@ -1058,4 +1061,157 @@ function adjustedLabel(label) {
     });
     console.log('FINAL ADJUSTED LABEL: '+ adjusted);
     return adjusted;
+}
+
+// example of annotation(s) for OTU mapping hints
+//viewModel.nexml.meta().push(...)
+
+/* 
+ * Templates for curator annotations
+ */
+
+// All its annotations should share some identifying information
+var curatorAnnotationAuthorInfo = {
+    "name": "OpenTree curation webapp",
+    "description": "Web-based interface for submitting, editing, and reviewing studies in the Open Tree of Life project.",
+    "url": "https://github.com/OpenTreeOfLife/opentree", 
+    "version": "0.0.0"   // TODO
+};
+
+
+var nexsonTemplates = {
+    'supporting files': {
+        /* App-specific metadata about associated support files for this study.
+         * This is intended to be temporary storage, until we can move all
+         * files and trees into a data repository. In the meantime, the
+         * curation webapp should offer the ability to upload and manage these files.
+         *
+         * Once the data has been safely migrated from the OTOL Nexson store,
+         * we should drop all of this and populate the study's main
+         * 'ot:dataDeposit' with the archival DOI or URL.
+         */
+        "id": "supporting-files-metadata",
+        "$": "Supporting files metadata", 
+        "@property": "ot:annotation", 
+        "@xsi:type": "nex:ResourceMeta", 
+        "author": {
+            "name": curatorAnnotationAuthorInfo.name, 
+            "url": curatorAnnotationAuthorInfo.url,
+            "description": curatorAnnotationAuthorInfo.description,
+            "version": curatorAnnotationAuthorInfo.version,
+            "invocation": {
+                /* abusing this space to store structured metadata */
+                "params": {
+                    "movedToPermanentArchive": false,   // OR check for ot:dataDeposit?
+                    "files": [
+                      /* typical example:
+                        { 
+                            "filename": "",
+                            "url": "",
+                            "type": "",  // eg, 'Microsoft Excel spreadsheet'
+                            "size": ""   // eg, '241 KB'
+                        }, 
+                      */
+                    ]
+                }
+              /* skip this stuff (not a validator, per se)
+                "env": {
+                    // key/value pairs, both strings!
+                    "batchSize": "5"
+                    "searchContext": "All life"
+                },
+                "method": "GET",
+                "checksPerformed": [ ],
+                "commandLine": [ ], 
+                "pythonImplementation": "CPython", 
+                "pythonVersion": "2.7.5"
+              */
+            }
+        }, 
+        // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
+        "dateCreated": new Date().toISOString(), 
+        "dateCreated": new Date().toISOString()
+      /* skip this stuff (not a validator, per se)
+        "isValid": true,   // 
+        "messages": [ ]
+       */
+    }, // END of 'supporting files' template
+    'OTU mapping hints': {
+        /* A series of regular expressions ('substitutions') to facilitate
+         * mapping of leaf nodes in study trees to known taxa. Also hints to
+         * the most likely search context for these names.
+         *
+         * TODO: Should this describe the remote service, instead of the curation webapp?
+         *
+         * TODO: Should we specify hints per-tree, instead of per-study? not
+         * sure how we'd do that, given that Nexml otus are shared...
+         */
+        "id": "otu-mapping-hints",
+        "$": "OTO mapping hints", 
+        "@property": "ot:annotation", 
+        "@xsi:type": "nex:ResourceMeta", 
+        "author": {
+            "name": curatorAnnotationAuthorInfo.name, 
+            "url": curatorAnnotationAuthorInfo.url,
+            "description": curatorAnnotationAuthorInfo.description,
+            "version": curatorAnnotationAuthorInfo.version,
+            "invocation": {
+                /* TODO: define AJAX calls here, to facilitate other tools? */
+                "params": {
+                    "searchContext": "All life",
+                    "substitutions": [
+                        // always one default (empty) substitution
+                        { 
+                            "old": "",
+                            "new": "",
+                            "active": false
+                        },
+                    ]
+                }
+              /* skip this stuff (not a validator, per se)
+                "env": {
+                    // key/value pairs, both strings!
+                    "batchSize": "5"
+                    "searchContext": "All life"
+                },
+                "method": "GET",
+                "checksPerformed": [ ],
+                "commandLine": [ ], 
+                "pythonImplementation": "CPython", 
+                "pythonVersion": "2.7.5"
+              */
+            }
+        }, 
+        // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
+        "dateCreated": new Date().toISOString(), 
+        "dateCreated": new Date().toISOString()
+      /* skip this stuff (not a validator, per se)
+        "isValid": true,   // 
+        "messages": [ ]
+       */
+    } // END of 'OTU mapping hints' template
+} // END of nexsonTemplates
+
+
+// For older browsers (IE <=8), provide Date.toISOString if not defined
+// http://stackoverflow.com/a/11440625
+if (!Date.prototype.toISOString) {
+    // Here we rely on JSON serialization for dates because it matches 
+    // the ISO standard. However, we check if JSON serializer is present 
+    // on a page and define our own .toJSON method only if necessary
+    if (!Date.prototype.toJSON) {
+        Date.prototype.toJSON = function (key) {
+            function f(n) {
+                // Format integers to have at least two digits.
+                return n < 10 ? '0' + n : n;
+            }
+            return this.getUTCFullYear()   + '-' +
+                f(this.getUTCMonth() + 1) + '-' +
+                f(this.getUTCDate())      + 'T' +
+                f(this.getUTCHours())     + ':' +
+                f(this.getUTCMinutes())   + ':' +
+                f(this.getUTCSeconds())   + 'Z';
+        };
+    }
+    Date.prototype.toISOString = Date.prototype.toJSON;
 }
