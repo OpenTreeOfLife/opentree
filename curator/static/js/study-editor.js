@@ -1189,7 +1189,14 @@ var nexsonTemplates = {
         "isValid": true,   // 
         "messages": [ ]
        */
-    } // END of 'OTU mapping hints' template
+    }, // END of 'OTU mapping hints' template
+    'mapping substitution': {
+        /* A single substitution added in the OTU Mapping section
+         */
+        "old": "",
+        "new": "",
+        "active": false
+    } // END of 'mapping substitution' template
 } // END of nexsonTemplates
 
 
