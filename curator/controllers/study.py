@@ -48,6 +48,9 @@ def edit():
     chosenLayout = request.vars.get('layout', None)  # TOP, LEFT, RIGHT
     if chosenLayout:
         response.view = 'study/edit-%s.html' % chosenLayout  #e eg, 'study/edit-RIGHT.html'
+    
+    # TODO: fetch a fresh list of search contexts for TNRS? see working example in
+    # the header search of the main opentree webapp
     return dict()
 
 
