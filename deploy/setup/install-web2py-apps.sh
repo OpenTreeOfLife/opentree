@@ -63,17 +63,25 @@ rm fragment.tmp
 # Set up web2py apps as directed in the README.md file
 
 opentree=repo/opentree
+api=repo/api.opentreeoflife.org
 
 # Consider cloning a designated tag, using git clone --branch <tag>
 
 git_refresh OpenTreeOfLife opentree $BRANCH || true
+echo "...fetching api.opentreeoflife.org repo..."
+git_refresh OpenTreeOfLife api.opentreeoflife.org $BRANCH || true
 
 # Modify the requirements list
 # numpy etc. have all kinds of dependency problems.
-cp $opentree/requirements.txt requirements.txt.save
+cp $opentree/requirements.txt requirements-opentree.txt.save
 if grep --invert-match "distribute" \
       $opentree/requirements.txt >requirements.txt.new ; then
     mv requirements.txt.new $opentree/requirements.txt
+fi
+cp $api/requirements.txt requirements-api.txt.save
+if grep --invert-match "distribute" \
+      $api/requirements.txt >requirements.txt.new ; then
+    mv requirements.txt.new $api/requirements.txt
 fi
 
 # xslt
@@ -85,6 +93,7 @@ cp -p $opentree/SITE.routes.py web2py/routes.py
 
 (cd web2py/applications; \
     ln -sf ../../repo/opentree/webapp ./opentree; \
+    ln -sf ../../repo/opentree/api.opentreeoflife.org ./api; \
     ln -sf ../../repo/opentree/curator ./)
 
 # File pushed here using rsync, see push.sh

@@ -13,7 +13,7 @@
 
 set -e
 
-# $0 -h <hostname> -u <username> -i <identityfile>
+# $0 -h <hostname> -u <username> -i <identityfile> -n <hostname>
 # OPENTREE_HOST
 # OPENTREE_ADMIN
 # OPENTREE_IDENTITY
