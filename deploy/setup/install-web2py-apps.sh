@@ -87,6 +87,7 @@ fi
 # xslt
 # svnversion ?
 (cd $opentree; pip install -r requirements.txt)
+(cd $api; pip install -r requirements.txt)
 
 cp -p $opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
 cp -p $opentree/SITE.routes.py web2py/routes.py
