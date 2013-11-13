@@ -67,6 +67,7 @@ api=repo/api.opentreeoflife.org
 
 # Consider cloning a designated tag, using git clone --branch <tag>
 
+echo "...fetching opentree repo (main webapp and curator)..."
 git_refresh OpenTreeOfLife opentree $BRANCH || true
 echo "...fetching api.opentreeoflife.org repo..."
 git_refresh OpenTreeOfLife api.opentreeoflife.org $BRANCH || true
@@ -94,7 +95,7 @@ cp -p $opentree/SITE.routes.py web2py/routes.py
 
 (cd web2py/applications; \
     ln -sf ../../repo/opentree/webapp ./opentree; \
-    ln -sf ../../repo/opentree/api.opentreeoflife.org ./api; \
+    ln -sf ../../repo/api.opentreeoflife.org ./api; \
     ln -sf ../../repo/opentree/curator ./)
 
 # File pushed here using rsync, see push.sh
