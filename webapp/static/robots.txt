@@ -1,2 +1,8 @@
+# blocking all bots site-wide
 User-agent: *
-Disallow: /   # blocking all bots site-wide
+Disallow: /
+# adding specific paths (should eventually replace catch-all path above)
+Disallow: /treemachine/
+Disallow: /taxomachine/
+Disallow: /admin/
+Crawl-delay: 60

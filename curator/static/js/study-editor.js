@@ -401,30 +401,39 @@ function getPageNumbers( pagedArray ) {
 
 function getMappedTallyForTree(tree) {
     // return display-ready tally (mapped/total ratio and percentage)
-    
-    // TODO: Only check the *terminal* taxa (ie, "tips") of the tree! Right?
-
     if (!tree || !tree.node || tree.node().length === 0) {
         return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
     }
 
-    var totalNodes = tree.node().length;
-    var mappedNodes = 0;
-    ///console.log("Testing "+ totalNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
+    var totalNodes = 0;
+    var totalLeafNodes = 0;
+    var mappedLeafNodes = 0;
+    ///console.log("Testing "+ totalLeafNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
     $.each(tree.node(), function(i, node) {
+        totalNodes++;
+        // Is this a leaf node? If not, skip it
+        var isLeafAccessor = getMetaTagAccessorByAtProperty(node.meta(), 'ot:isLeaf');
+        if ((typeof(isLeafAccessor) !== 'function') || (isLeafAccessor() !== 'true')) {
+            // this is not a leaf node! skip to the next one
+            return true;
+        }
+        totalLeafNodes++;
+
         // Simply check for the presence (or absence) of an @otu 'getter' function
         // (so far, it doesn't seem to exist unless there's a mapped OTU)
-        
         var nodeOTUAccessor = node['@otu'];
         if (typeof(nodeOTUAccessor) === 'function') {
-            mappedNodes++;
+            mappedLeafNodes++;
         } 
         return true;  // skip to next node
 
     });
+    console.log("total nodes? "+ totalNodes);
+    console.log("total leaf nodes? "+ totalLeafNodes);
+    console.log("mapped leaf nodes? "+ mappedLeafNodes);
 
     var thinSpace = '&#8201;';
-    return '<strong>'+ mappedNodes +'</strong><span>'+ thinSpace +'/'+ thinSpace + totalNodes +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(mappedNodes/totalNodes) +'%)</span>';
+    return '<strong>'+ mappedLeafNodes +'</strong><span>'+ thinSpace +'/'+ thinSpace + totalLeafNodes +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(mappedLeafNodes/totalLeafNodes) +'%)</span>';
 }
 
 function getRootedDescriptionForTree( tree ) {
@@ -601,8 +610,11 @@ var studyScoringRules = {
                                 ///console.log(">>> metatag '"+ testMeta['@property']() +"' is empty!");
                                 return false;
                             }
+                            break;
+
                         default:
                             // ignore other meta tags (annotations)
+                            console.log('found some other metadata (annotation?): '+ testProperty);
                             continue;
                     }
                 }
@@ -989,3 +1001,224 @@ ko.dirtyFlag = function(root, isInitiallyDirty) {
     return result;
 };
 
+function showTreeViewer( tree ) {
+    if (viewOrEdit == 'EDIT') {
+        // TODO
+    } else {
+        // TODO
+    }
+    // quick test of modal
+    $('#tree-viewer .modal-body').css({
+        'height': '350px',
+        'border': '1px dashed red'
+    });
+    $('#tree-viewer').css({
+        'width': '90%',
+        'margin': 'auto -45%'
+    });
+    $('#tree-viewer').modal('show')
+}
+
+function filenameFromFakePath( path ) {
+    // trim any path (possibly fake) from an input[type='file'] widget
+    var delim = (path.indexOf('\\') !== -1) ? '\\' : '/';
+    var parts = path.split(delim);
+    var howManyParts = parts.length;
+    if (howManyParts === 1) {
+        return path;
+    }
+    return parts[howManyParts-1];
+}
+
+function adjustedLabel(label) {
+    // apply any active OTU mapping adjustments to this string
+    if (typeof(label) === 'function') {
+        console.log('retrieving from label function...');
+        label = label();
+    }
+    console.log(typeof(label));
+    console.log(label);
+    if (typeof(label) !== 'string') {
+        // probably null
+        return label;
+    }
+    var adjusted = label;
+    $('#mapping-adjustments tr').each(function() {
+        var $row = $(this);
+        if (!$row.find(':checkbox:eq(0)').is(':checked')) {
+            return;  // skip to next adjustment
+        }
+        var oldText = $row.find(':text:eq(0)').val();
+        var newText = $row.find(':text:eq(1)').val();
+        console.log('OLD: '+ oldText);
+        console.log('NEW: '+ newText);
+        if ($.trim(oldText) === $.trim(newText) === "") {
+            return; // skip to next adjustment
+        }
+        var pattern = new RegExp(oldText);
+        adjusted = label.replace(pattern, newText);
+        console.log('ADJUSTED TO: '+ adjusted);
+    });
+    console.log('FINAL ADJUSTED LABEL: '+ adjusted);
+    return adjusted;
+}
+
+// example of annotation(s) for OTU mapping hints
+//viewModel.nexml.meta().push(...)
+
+/* 
+ * Templates for curator annotations
+ */
+
+// All its annotations should share some identifying information
+var curatorAnnotationAuthorInfo = {
+    "name": "OpenTree curation webapp",
+    "description": "Web-based interface for submitting, editing, and reviewing studies in the Open Tree of Life project.",
+    "url": "https://github.com/OpenTreeOfLife/opentree", 
+    "version": "0.0.0"   // TODO
+};
+
+
+var nexsonTemplates = {
+    'supporting files': {
+        /* App-specific metadata about associated support files for this study.
+         * This is intended to be temporary storage, until we can move all
+         * files and trees into a data repository. In the meantime, the
+         * curation webapp should offer the ability to upload and manage these files.
+         *
+         * Once the data has been safely migrated from the OTOL Nexson store,
+         * we should drop all of this and populate the study's main
+         * 'ot:dataDeposit' with the archival DOI or URL.
+         */
+        "id": "supporting-files-metadata",
+        "$": "Supporting files metadata", 
+        "@property": "ot:annotation", 
+        "@xsi:type": "nex:ResourceMeta", 
+        "author": {
+            "name": curatorAnnotationAuthorInfo.name, 
+            "url": curatorAnnotationAuthorInfo.url,
+            "description": curatorAnnotationAuthorInfo.description,
+            "version": curatorAnnotationAuthorInfo.version,
+            "invocation": {
+                /* abusing this space to store structured metadata */
+                "params": {
+                    "movedToPermanentArchive": false,   // OR check for ot:dataDeposit?
+                    "files": [
+                      /* typical example:
+                        { 
+                            "filename": "",
+                            "url": "",
+                            "type": "",  // eg, 'Microsoft Excel spreadsheet'
+                            "size": ""   // eg, '241 KB'
+                        }, 
+                      */
+                    ]
+                }
+              /* skip this stuff (not a validator, per se)
+                "env": {
+                    // key/value pairs, both strings!
+                    "batchSize": "5"
+                    "searchContext": "All life"
+                },
+                "method": "GET",
+                "checksPerformed": [ ],
+                "commandLine": [ ], 
+                "pythonImplementation": "CPython", 
+                "pythonVersion": "2.7.5"
+              */
+            }
+        }, 
+        // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
+        "dateCreated": new Date().toISOString(), 
+        "dateCreated": new Date().toISOString()
+      /* skip this stuff (not a validator, per se)
+        "isValid": true,   // 
+        "messages": [ ]
+       */
+    }, // END of 'supporting files' template
+    'OTU mapping hints': {
+        /* A series of regular expressions ('substitutions') to facilitate
+         * mapping of leaf nodes in study trees to known taxa. Also hints to
+         * the most likely search context for these names.
+         *
+         * TODO: Should this describe the remote service, instead of the curation webapp?
+         *
+         * TODO: Should we specify hints per-tree, instead of per-study? not
+         * sure how we'd do that, given that Nexml otus are shared...
+         */
+        "id": "otu-mapping-hints",
+        "$": "OTO mapping hints", 
+        "@property": "ot:annotation", 
+        "@xsi:type": "nex:ResourceMeta", 
+        "author": {
+            "name": curatorAnnotationAuthorInfo.name, 
+            "url": curatorAnnotationAuthorInfo.url,
+            "description": curatorAnnotationAuthorInfo.description,
+            "version": curatorAnnotationAuthorInfo.version,
+            "invocation": {
+                /* TODO: define AJAX calls here, to facilitate other tools? */
+                "params": {
+                    "searchContext": "All life",
+                    "substitutions": [
+                        // always one default (empty) substitution
+                        { 
+                            "old": "",
+                            "new": "",
+                            "active": false
+                        },
+                    ]
+                }
+              /* skip this stuff (not a validator, per se)
+                "env": {
+                    // key/value pairs, both strings!
+                    "batchSize": "5"
+                    "searchContext": "All life"
+                },
+                "method": "GET",
+                "checksPerformed": [ ],
+                "commandLine": [ ], 
+                "pythonImplementation": "CPython", 
+                "pythonVersion": "2.7.5"
+              */
+            }
+        }, 
+        // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
+        "dateCreated": new Date().toISOString(), 
+        "dateCreated": new Date().toISOString()
+      /* skip this stuff (not a validator, per se)
+        "isValid": true,   // 
+        "messages": [ ]
+       */
+    }, // END of 'OTU mapping hints' template
+    'mapping substitution': {
+        /* A single substitution added in the OTU Mapping section
+         */
+        "old": "",
+        "new": "",
+        "active": false
+    } // END of 'mapping substitution' template
+} // END of nexsonTemplates
+
+
+// For older browsers (IE <=8), provide Date.toISOString if not defined
+// http://stackoverflow.com/a/11440625
+if (!Date.prototype.toISOString) {
+    // Here we rely on JSON serialization for dates because it matches 
+    // the ISO standard. However, we check if JSON serializer is present 
+    // on a page and define our own .toJSON method only if necessary
+    if (!Date.prototype.toJSON) {
+        Date.prototype.toJSON = function (key) {
+            function f(n) {
+                // Format integers to have at least two digits.
+                return n < 10 ? '0' + n : n;
+            }
+            return this.getUTCFullYear()   + '-' +
+                f(this.getUTCMonth() + 1) + '-' +
+                f(this.getUTCDate())      + 'T' +
+                f(this.getUTCHours())     + ':' +
+                f(this.getUTCMinutes())   + ':' +
+                f(this.getUTCSeconds())   + 'Z';
+        };
+    }
+    Date.prototype.toISOString = Date.prototype.toJSON;
+}
