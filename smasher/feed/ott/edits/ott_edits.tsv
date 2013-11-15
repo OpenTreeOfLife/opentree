@@ -14,7 +14,8 @@
 # From Bryan Drew October 2013
 move	Dermatobotrys saundersii	species	Scrophulariaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/
 synonym	Berendtia	no rank	Hemichaena	Lamiales	http://www.tropicos.org/Name/50009025?tab=acceptednames,http://www.mobot.org/mobot/research/apweb/ 
-move	Hemichaena	genus	Phrymaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/
+# already in the right place
+#move	Hemichaena	genus	Phrymaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/
 move	Triaenophora	genus	Orobanchaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/genera/orobanchaceaegen.html (mispelled at url)
 move	Rehmannia	genus	Orobanchaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/genera/orobanchaceaegen.html
 move	Stemodiopsis	genus	Linderniaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/genera/linderniaceaegen.html
@@ -25,19 +26,20 @@ synonym	Bryodes madagascariensis	species	Psammetes madagascariensis	Lamiales	htt
 
 # Bryan had nuccore 421994792, but that's for a species, not a genus.  The genus is ncbi:421994792
 #  was: http://www.ncbi.nlm.nih.gov/nuccore/421994792
-move	Psammetes	genus	Linderniaceae	Lamiales	ncbi:421994792
+# already in the right place
+#move	Psammetes	genus	Linderniaceae	Lamiales	ncbi:421994792
 
 # Bryan used a PDF (BMC) reference for Bryodes, but it exists in NCBI
 #  was: http://www.biomedcentral.com/content/pdf/1471-2148-10-352.pdf
-move	Bryodes	genus	Linderniaceae	Lamialies	ncbi:752521
+move	Bryodes	genus	Linderniaceae	Magnoliophyta	ncbi:752521
 
-move	Acerites	genus	Sapindaceae	Sapindales	http://rstb.royalsocietypublishing.org/content/351/1340/589.short
-move	Quercinium	genus	Fagaceae	Fagales	http://palaeontology.palass-pubs.org/pdf/Vol%203/Pages%2086-92.pdf
-move	Plataninium	genus	Platanaceae	Fagales	http://www.jstor.org/stable/2474500
-move	Xylocaryon	genus	Proteaceae	Proteales	http://www.jstor.org/stable/2666212
-move	Limnobiophyllum	genus	Araceae	Alismatales	http://www.sciencedirect.com/science/article/pii/030437709400442O
+move	Acerites	genus	Sapindaceae	Magnoliophyta	http://rstb.royalsocietypublishing.org/content/351/1340/589.short
+move	Quercinium	genus	Fagaceae	Magnoliophyta	http://palaeontology.palass-pubs.org/pdf/Vol%203/Pages%2086-92.pdf
+move	Plataninium	genus	Platanaceae	Magnoliophyta	http://www.jstor.org/stable/2474500
+move	Xylocaryon	genus	Proteaceae	Magnoliophyta	http://www.jstor.org/stable/2666212
+move	Limnobiophyllum	genus	Araceae	Magnoliophyta	http://www.sciencedirect.com/science/article/pii/030437709400442O
 
-# parent is wrong, will have to be fixed or removed
-prune	Flacourtiaceae	family	eudicotyledons	xyz	Bryan Drew
-move	Perseoxylon	genus	Lauraceae	Laurales	http://www.sciencedirect.com/science/article/pii/S0753396905000169
+# Source for the following was "Bryan Drew" but that's not a URI
+prune	Flacourtiaceae	family	Flacourtiaceae	Magnoliophyta	http://bryan-drew.org/
+move	Perseoxylon	genus	Lauraceae	Magnoliophyta	http://www.sciencedirect.com/science/article/pii/S0753396905000169
 move	Oryxis	tribe	Phaseoleae	Fabaceae	http://www.bioone.org/doi/pdf/10.1600/0363644041744464

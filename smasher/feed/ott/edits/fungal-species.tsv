@@ -14,13 +14,13 @@ add	Chrysothrix caesia	species	Chrysothrix	Fungi	IF:519248
 #add	Clavulina pakaraimensis	species	Clavulina	Fungi	IF:564685
 #add	Clavulina rosiramea	species	Clavulina	Fungi	IF:564665
 add	Cochliobolus sativus 	species	Cochliobolus	Fungi	IF:285403
-add	Coniolepiota	genus	Agaricomycotina incertae sedis	Fungi	IF:518493
+#add	Coniolepiota	genus	Agaricomycotina incertae sedis	Fungi	IF:518493
 #add	Coniolepiota spongodes	species	Coniolepiota	Fungi	IF:518494
 #add	Crinipellis malesiana	species	Crinipellis	Fungi	IF:512275
 add	Epichloe liyangensis	species	Epichloe	Fungi	IF:518666
 synonym	Epichloë liyangensis	species	Epichloe liyangensis	Fungi	IF:518666
-add	Eriocybe	genus	Agaricomycotina incertae sedis	Fungi	MB:518495
-add	Eriocybe chionea	species	Agaricaceae	Fungi	MB:518496
+#add	Eriocybe	genus	Agaricomycotina incertae sedis	Fungi	MB:518495
+#add	Eriocybe chionea	species	Eriocybe	Fungi	MB:518496
 add	Flavoparmelia caperatula	species	Flavoparmelia	Fungi	IF:567930
 add	Hyphodiscus hyaloscyphoide	species	Hyphodiscus	Fungi	IF:518017
 #add	Lepiota phaeoderma	species	Lepiota	Fungi	IF:514125

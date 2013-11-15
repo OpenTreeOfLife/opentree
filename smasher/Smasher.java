@@ -389,40 +389,39 @@ class Taxonomy implements Iterable<Node> {
 				System.out.println("Bad row: " + row + " has " + parts.length + " parts");
 			} else {
 				// id | parentid | name | rank | ...
+				Long id;
 				try {
-					Long id = new Long(parts[0]);
-					Node node = this.idIndex.get(id);
-					if (node == null) {
-						node = new Node(this);
-						node.setId(id); // stores into this.idIndex
-					}
-					if (parts[1].length() > 0) {
-						Long parentId = new Long(parts[1]);
-						Node parent = this.idIndex.get(parentId);
-						if (parent == null) {
-							parent = new Node(this);	 //don't know parent's name yet
-							parent.setId(parentId);
-						}
-						parent.addChild(node);
-					} else if (root != null) {
-						node.report("Multiple roots", root);
-					} else
-						root = node;
-					node.init(parts); // does setName
+					id = new Long(parts[0]);
 				} catch (NumberFormatException e) {
 					this.header = parts; // Stow it just in case...
 					for (int i = 0; i < parts.length; ++i)
 						this.headerx.put(parts[i], i);
-
 					Integer o1 = this.headerx.get("source");
 					this.sourcecolumn = (o1 == null? -1 : o1);
 					Integer o2 = this.headerx.get("sourceid");
 					this.sourceidcolumn = (o2 == null? -1 : o2);
 					Integer o3 = this.headerx.get("sourceinfo");
 					this.infocolumn = (o3 == null? -1 : o3);
-
 					continue;
 				}
+				Node node = this.idIndex.get(id);
+				if (node == null) {
+					node = new Node(this);
+					node.setId(id); // stores into this.idIndex
+				}
+				if (parts[1].length() > 0) {
+					Long parentId = new Long(parts[1]);
+					Node parent = this.idIndex.get(parentId);
+					if (parent == null) {
+						parent = new Node(this);	 //don't know parent's name yet
+						parent.setId(parentId);
+					}
+					parent.addChild(node);
+				} else if (root != null) {
+					node.report("Multiple roots", root);
+				} else
+					root = node;
+				node.init(parts); // does setName
 			}
 			++row;
 			if (row % 500000 == 0)
@@ -445,7 +444,7 @@ class Taxonomy implements Iterable<Node> {
 	void loadSynonyms(String filename) throws IOException {
 		FileReader fr;
 		try {
-			fr = new FileReader(filename + ".synonyms");
+			fr = new FileReader(filename);
 		} catch (java.io.FileNotFoundException e) {
 			fr = null;
 		}
@@ -458,20 +457,23 @@ class Taxonomy implements Iterable<Node> {
 				// 36602	|	Sorbus alnifolia	|	synonym	|	|	
 				if (parts.length >= 2) {
 					String syn = parts[1];
-					Long id = new Long(parts[0]);
-					List<Node> good = this.nameIndex.get(syn);
-					Node node = this.idIndex.get(id);
-					if (good != null) {
-						if (false) {
-							boolean foo = false;
-							for (Node x : good)
-								if (x == node) {foo=true; break;}
-							if (!foo)
-								System.err.println("syno-euo-homonym: " + id + " " + syn);
-						}
+					Long id;
+					try {
+						id = new Long(parts[0]);
+					} catch (NumberFormatException e) {
+						// Header row, probably.  Eventually we should parse this for column names
 						continue;
 					}
-					if (node == null) continue;
+					Node node = this.idIndex.get(id);
+					if (node == null) {
+						System.err.println("No such synonym target! " + id + " " + syn);
+						continue;
+					}
+					List<Node> have = this.nameIndex.get(syn);
+					if (have != null && have.contains(node)) {
+						System.err.println("But that's really its name! " + id + " " + syn);
+						continue;
+					}
 					List<Node> nodes = this.synonyms.get(syn);
 					if (nodes == null) {
 						nodes = new ArrayList<Node>(1);
@@ -1059,6 +1061,8 @@ class SourceTaxonomy extends Taxonomy {
 			{"Viridiplantae", "Plantae"},
 			// JAR's list
 			{"Mollusca"},
+			{"Arthropoda"},		// Tetrapoda, Theria
+			{"Chordata"},
 			// {"Eukaryota"},		// doesn't occur in gbif, but useful for ncbi/ncbi test merge
 			// {"Archaea"},			// ambiguous in ncbi
 		};
@@ -1147,32 +1151,45 @@ class SourceTaxonomy extends Taxonomy {
 	// Some names that are synonyms in the source might be primary names in the union,
 	//  and vice versa.
 	void copySynonyms(UnionTaxonomy union) {
+		int count = 0;
 		for (String syn : this.synonyms.keySet()) {
-			List<Node> fromnodes = this.synonyms.get(syn);  // possibly a syno-homonym
+			// All of the nodes this is a synonym for:
+			List<Node> fromnodes = this.synonyms.get(syn);
+
 			List<Node> tonodes = union.nameIndex.get(syn);
 			List<Node> sonodes = union.synonyms.get(syn);
 
-			for (Node node : fromnodes)
+			// a is a synonym of b, c, and d
+			for (Node node : fromnodes) {
+				// Only mapped nodes can have their names preserved as synonyms
 				if (node.mapped != null) {
-					if (tonodes != null && tonodes.contains(node.mapped)) {
-						// 2124 merging GBIF into NCBI e.g. Avenella flexuosa
-						// System.err.println("Case 1: " + syn);
-						continue;
-					}
-					if (sonodes != null && sonodes.contains(node.mapped)) {
-						// 144 cases *within NCBI* as of 2013-07-06
-						// all were common names e.g. "diatoms"
-						// 21307 cases merging GBIF into NCBI ! e.g. Muraena miliaris
-						// System.err.println("Case 2: " + syn);
-						continue;
+					if (node.mapped.name.equals(syn)) continue;
+					if (false) {
+						if (tonodes != null && tonodes.contains(node.mapped)) {
+							// 2124 merging GBIF into NCBI e.g. Avenella flexuosa
+							// System.err.println("Case 1: " + syn);
+							continue;
+						}
+						if (sonodes != null && sonodes.contains(node.mapped)) {
+							// 144 cases *within NCBI* as of 2013-07-06
+							// all were common names e.g. "diatoms"
+							// 21307 cases merging GBIF into NCBI ! e.g. Muraena miliaris
+							// System.err.println("Case 2: " + syn);
+							continue;
+						}
 					}
 					if (sonodes == null) { // The normal case
 						sonodes = new ArrayList<Node>(1);
 						union.synonyms.put(syn, sonodes);
 					}
 					sonodes.add(node.mapped);
+					++count;
 				}
+			}
 		}
+		if (count > 0)
+			System.err.println("| Copied " + count + " synonyms");
+		count = 0;
 		for (String name : this.nameIndex.keySet()) {
 			List<Node> fromnodes = this.nameIndex.get(name);  // possibly a syno-homonym
 			List<Node> tonodes = union.nameIndex.get(name);
@@ -1180,10 +1197,13 @@ class SourceTaxonomy extends Taxonomy {
 
 			for (Node node : fromnodes)
 				if (node.mapped != null) {
-					if (tonodes != null && tonodes.contains(node.mapped))
-						continue; // The normal case
-					if (sonodes != null && sonodes.contains(node.mapped))
-						continue; // pretty frequent, 7131 GBIF/NCBI cases as of 2013-07-06
+					if (node.mapped.name.equals(name)) continue;
+					if (false) {
+						if (tonodes != null && tonodes.contains(node.mapped))
+							continue; // The normal case
+						if (sonodes != null && sonodes.contains(node.mapped))
+							continue; // pretty frequent, 7131 GBIF/NCBI cases as of 2013-07-06
+					}
 					if (sonodes == null) {
 						sonodes = new ArrayList<Node>(1);
 						union.synonyms.put(name, sonodes);
@@ -1191,10 +1211,11 @@ class SourceTaxonomy extends Taxonomy {
 						System.err.println("Case 4: " + name);
 					}
 					sonodes.add(node.mapped);
+					++count;
 				}
 		}
-			
-
+		if (count > 0)
+			System.err.println("| Copied " + count + " synonyms ");
 	}
 
 	static SourceTaxonomy readTaxonomy(String filename) throws IOException {
@@ -1461,8 +1482,8 @@ class UnionTaxonomy extends Taxonomy {
 
 		parentCandidates = filterByContext(parentCandidates, contextName);
 		if (parentCandidates == null) {
-			System.err.println("(add) Parent not found in context: " + parentName
-							   + " in " + contextName);
+			System.err.println("(add) Parent name " + parentName
+							   + " not found in context " + contextName);
 			return;
 		}
 		if (parentCandidates.size() > 1) {
@@ -1475,8 +1496,13 @@ class UnionTaxonomy extends Taxonomy {
 			System.err.println("(add) Warning: parent taxon name is a synonym: " + parentName);
 
 		List<Node> existing = this.lookup(name);
-		if (existing != null)
+		if (existing != null) {
 			existing = filterByContext(existing, contextName);
+			if (existing != null && existing.size() > 1) {
+				System.err.println("(move) Ambiguous taxon name: " + name);
+				return;
+			}
+		}
 
 		if (command.equals("add")) {
 			if (existing != null) {
@@ -1487,7 +1513,8 @@ class UnionTaxonomy extends Taxonomy {
 					if (node.parent == parent) winp = true;
 					else oldparent = node.parent;
 				if (!winp)
-					System.err.println("(add)  ... with a different parent: " + oldparent.name);
+					System.err.println("(add)  ... with a different parent: " +
+									   oldparent.name + " not " + parentName);
 			} else {
 				Node node = new Node(this);
 				node.setName(name);
@@ -1499,22 +1526,25 @@ class UnionTaxonomy extends Taxonomy {
 		} else if (command.equals("move")) {
 			if (existing == null)
 				System.err.println("(move) No taxon to move: " + name);
-			else if (existing.size() > 1)
-				System.err.println("(move) Ambiguous taxon name: " + name);
 			else {
 				Node node = existing.get(0);
 				if (node.parent == parent)
 					System.err.println("(move) Warning: already in the right place: " + name);
 				else {
+					// TBD: CYCLE PREVENTION!
 					node.changeParent(parent);
 					node.properFlags |= Taxonomy.EDITED;
 				}
 			}
+		} else if (command.equals("prune")) {
+			if (existing == null)
+				System.err.println("(prune) No taxon to prune: " + name);
+			else
+				existing.get(0).prune();
+
 		} else if (command.equals("flag")) {
 			if (existing == null)
 				System.err.println("(move) No taxon to move: " + name);
-			else if (existing.size() > 1)
-				System.err.println("(move) Ambiguous taxon name: " + name);
 			else {
 				Node node = existing.get(0);
 				node.properFlags |= Taxonomy.FLAGGED;
@@ -1881,7 +1911,8 @@ class Node {
 		this.mapped = unode;
 
 		if (unode.name == null) unode.setName(this.name);
-		if (unode.rank == null) unode.rank = this.rank; // ?
+		if (unode.rank == null || unode.rank.equals("no rank"))
+			unode.rank = this.rank; // !?
 		unode.comapped = this;
 
 		if (this.comment != null) { // cf. deprecate()
@@ -2541,6 +2572,23 @@ class Node {
 		}
 	};
 
+	// Delete this node and all of its descendents.
+	void prune() {
+		if (this.children != null) {
+			for (Node child : new ArrayList<Node>(children))
+				child.prune();
+			this.children = null;
+		}
+		if (this.parent != null) {
+			this.parent.children.remove(this);
+			this.parent = null;
+		}
+		List nodes = this.taxonomy.nameIndex.get(this.name);
+		nodes.remove(this);
+		if (nodes.size() == 0)
+			this.taxonomy.nameIndex.remove(this.name);
+		this.properFlags |= Taxonomy.EDITED;
+	}
 }
 
 // Consider all possible assignments

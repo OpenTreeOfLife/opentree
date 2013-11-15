@@ -68,16 +68,24 @@ dory-test.tsv: $(TAX)/nem/log.tsv Smasher.class
 
 # --------------------------------------------------------------------------
 
-OTT_ARGS=Smasher $(NCBI)/ $(GBIF)/ \
+# Add tax/if/ when it starts to work
+
+OTT_ARGS=Smasher tax/713/ $(NCBI)/ $(GBIF)/ \
       --edits $(FEED)/ott/edits/ \
       --ids $(TAX)/prev_ott/ \
       --out $(TAX)/ott/
 
 ott: $(TAX)/ott/log.tsv
-$(TAX)/ott/log.tsv: Smasher.class $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv $(FEED)/ott/edits/ott_edits.tsv
+$(TAX)/ott/log.tsv: Smasher.class tax/713/taxonomy.tsv \
+		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv $(FEED)/ott/edits/ott_edits.tsv
 	mkdir -p $(TAX)/ott
 	java $(CP) -Xmx10g $(OTT_ARGS)
 	echo $(WHICH) >$(TAX)/ott/version.txt
+
+tax/if/taxonomy.tsv:
+	mkdir -p `dirname $@`
+	wget --output-document=$@ http://files.opentreeoflife.org/ott/IF/taxonomy.txt
+	wget --output-document=tax/if/synonyms.tsv http://files.opentreeoflife.org/ott/IF/synonyms.txt
 
 # Create the aux (preottol) mapping in a separate step.
 # How does it know where to write to?
@@ -90,7 +98,8 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 
 $(TAX)/prev_ott/taxonomy.tsv:
 	mkdir -p $(FEED)/prev_ott/tmp
-	wget --output-document=$(FEED)/prev_ott/tmp/ott$(PREV_WHICH).tgz
+	wget --output-document=$(FEED)/prev_ott/tmp/ott$(PREV_WHICH).tgz \
+	  http://files.opentreeoflife.org/ott/ott$PREV_WHICH
 	(cd $(FEED)/prev_ott/tmp/; tar xf ott$(PREV_WHICH).tgz)
 	mv $(FEED)/prev_ott/tmp/ott$(PREV_WHICH)/* $(TAX)/prev_ott/
 	rmdir $(FEED)/prev_ott/tmp
