@@ -482,7 +482,7 @@ body {
                  <fieldset>
                     <!-- scraped from header search in main opentree webapp -->
                     <!-- TODO: fetch a live list, as we do there? -->
-                    <select class="input-block-level" style="margin-bottom: 1em;" name="taxon-search-context">
+                    <select class="input-block-level" style="margin-bottom: 1em;" name="taxon-search-context" data-bind="value: getOTUMappingHints().author.invocation.params.searchContext">
                             <option selected="selected">All life</option>
                             <option>Land plants</option>
                             <option>Hornworts</option>
@@ -528,6 +528,8 @@ body {
                 Try some common patterns from the drop-down menu below, or use
                 <a href="http://www.regular-expressions.info/javascript.html#replace" target="_blank">regular expressions</a> to construct your own.
                 </p>
+                <i data-bind="if: getOTUMappingHints() === null">ERROR: No mapping hints found!</i>
+              <!-- ko if: getOTUMappingHints() !== null -->
                 <form class="form-inline" style="margin: 0;">
                  <fieldset>
                   <!--<label for="new-tree-newick">Substitutions</label>-->
@@ -540,59 +542,47 @@ body {
                             <th width="20">&nbsp;</th>
                         </tr>
                     </thead>
-                    <tbody id="mapping-adjustments">
+                    <tbody id="mapping-adjustments" data-bind="foreach: { data: getOTUMappingHints().author.invocation.params.substitutions(), as: 'substitution'}">
                         <tr>
                             <td align="center" valign="center">
-                                <input type="checkbox" checked="checked" 
+                                <input type="checkbox" data-bind="checked: substitution.active" 
                                        title="If checked, this substitution will be used."/>
                             </td>
                             <td>
-                                <input type="text" class="input-block-level" value="(\d*)$"/>
+                                <input type="text" class="input-block-level" data-bind="value: substitution.old, valueUpdate: 'afterkeydown'"/>
                             </td>
                             <td>
-                                <input type="text" class="input-block-level" value="" />
+                                <input type="text" class="input-block-level" data-bind="value: substitution.new, valueUpdate: 'afterkeydown'"/>
                             </td>
                             <td align="center" valign="center">
-                                <a href="#" title="Click to remove this substitution."/>
-                                    <i class="icon-remove"></i></a>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td align="center" valign="center">
-                                <input type="checkbox"
-                                       title="If checked, this substitution will be used."/>
-                            </td>
-                            <td>
-                                <input type="text" class="input-block-level" value="" Xplaceholder="old text" />
-                            </td>
-                            <td>
-                                <input type="text" class="input-block-level" value="" Xplaceholder="new text" />
-                            </td>
-                            <td align="center" valign="center">
-                                <a href="#" title="Click to remove this substitution."/>
+                                <a href="#" title="Click to remove this substitution."
+                                   data-bind="click: function(data, event) { removeSubstitution(data);  }" />
                                     <i class="icon-remove"></i></a>
                             </td>
                         </tr>
                     </tbody>
                   </table>
 
-                  <div Xclass="form-actions" style="margin-top: 1em;">
-                      <select class="input-block-level">
+                  <div style="margin-top: 1em;">
+                      <select class="input-block-level" onchange="addSubstitution(this); return false;">
                         <option value="">Add a common substitution...</option>
-                        <option value="">Remove first word</option>
-                        <option value="">Remove last word</option>
-                        <option value="">Remove 'sp'</option>
-                        <option value="">Replace 'foo' with 'bar'</option>
-                        <option value="">Isolate NCBI taxon ID</option>
+                       <!-- NOTE the convention here... value="{OLD} =:= {NEW}" -->
+                        <option value="foo =:= bar">Replace 'foo' with 'bar'</option>
+                        <option value="^(\w*) =:= ">Remove first word</option>
+                        <option value="(\w*)$ =:= ">Remove last word</option>
+                        <option value="sp(.?) =:= ">Remove 'sp'</option>
+                        <option value="(\d+) =:= ">Isolate NCBI taxon ID</option>
                       </select>
                   </div>
-                  <div Xclass="form-actions" style="margin-top: 1em;">
-                      <button type="submit" class="btn">Add another substitution 
+                  <div style="margin-top: 1em;">
+                      <button type="submit" class="btn"
+                              onclick="addSubstitution(); return false;">Add another substitution 
                         <i class="icon-add "></i></button>
                   </div>
 
                  </fieldset>
                 </form>
+              <!-- /ko -->
             </div>
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
@@ -645,12 +635,14 @@ body {
                         <th>Message(s)</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: nexml.meta(), as: 'annotation' }">
+                  <tbody>
+                  <!-- ko foreach: { data: nexml.meta(), as: 'annotation' } -->
                     <tr data-bind="if: annotation['@property']() == 'ot:annotation'">
-                        <td data-bind="text: annotation.$, style: { color: annotation.isValid() ? '' : 'red' }"></td><!-- general description (annotation type) -->
+                        <td data-bind="text: annotation.$, style: { color: typeof(annotation.isValid) === 'undefined' || annotation.isValid() ? '' : 'red' }"></td><!-- general description (annotation type) -->
                         <td><a href="#">Study</a></td><!-- TODO -->
                         <td data-bind="text: annotation.author.name"></td>
-                        <td>
+                      <!-- ko if: annotation.messages -->
+                        <td data-bind="if: annotation.messages">
                             <ul style="list-style: none;" data-bind="foreach: annotation.messages()">
                                 <li style="border-bottom: 1px solid #ccc; padding: 2px 0;">
                                 <!-- data-bind="text: code" is SHOUTY_UPPERCASE -->
@@ -660,8 +652,14 @@ body {
                                 [<span data-bind="text: severity"></span>]
                             </ul>
                         </td>
+                      <!-- /ko -->
+                      <!-- ko if: !annotation.messages -->
+                        <td>
+                            NO MESSAGES HERE
+                        </td>
+                      <!-- /ko -->
                     </tr>
-                  </tbody>
+                  <!-- /ko -->
                   <!-- EXAMPLES of other annotation types: -->
                     <tr>
                         <td>Reply</td>
@@ -687,6 +685,7 @@ body {
                         <td><a href="#">Charles Darwin</a></td>
                         <td style="font-style: italic;">This tree is poorly rooted, in my opinion.</td>
                     </tr>
+                  </tbody>
                 </table>
 
                 <!-- TODO: respond to calculated notes, gathered from throughout study Nexson -->

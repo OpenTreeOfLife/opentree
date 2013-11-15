@@ -160,7 +160,7 @@ class GitHubAccount(OAuthAccount):
         ##pprint('----------- auth_user_fields ----------')
 
         # remap to our chosen auth_user fields
-        auth_user_fields = dict(name = user_json['name'],
+        auth_user_fields = dict(name = user_json.get('name', user_json['login']),
                                 email = user_json['email'],
                                 github_login = user_json['login'],
                                 registration_id = user_json['login'],
@@ -170,7 +170,7 @@ class GitHubAccount(OAuthAccount):
                                 github_auth_token = access_token,
                                 #   adding more (apparently) standard web2py fields, to make this work..
                                 first_name = user_json['login'],
-                                last_name = ("(%s)" % user_json['name']),
+                                last_name = ("(%s)" % user_json.get('name', user_json['login'])),
                                 username = user_json['login'],
                                 #password = 'TOP-SECRET',
                                 registration_key = user_json['login'],  

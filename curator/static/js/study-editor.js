@@ -14,6 +14,19 @@ var viewOrEdit;
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
 var checkForModelChanges;
+// declarative mapping of raw JS obj to view-model, using mapping plugin
+var studyMappingOptions = {  // modify default mapping options
+    // specify an (all-purpose?) function for determine a key property on some types
+    key: function(item) {
+        // what happens if no @id is found on some items?
+        return ko.utils.unwrapObservable(item['@id']);
+    },
+         
+    // some properties should never changes; these can be copied as-is, avoiding the overhead of making them "observable"
+    // NOTE that this is not being applied properly, since the mapping plugin expects a "full path", eg 'nexml.study.node.@property'
+    //   TODO: Fixing this will require a pull request (and some regex magic) in the main mapping plugin project on GitHub.
+    copy: ['@property','@xsi:type']  // FAILS, see comment above
+}
 
 $(document).ready(function() {
     // auto-select first tab (Status)
@@ -71,52 +84,12 @@ function loadSelectedStudy(id) {
                 return;
             }
 
-            // declarative mapping of raw JS obj to view-model, using mapping plugin
-            var mapping = {  // modify default mapping options
-                // specify an (all-purpose?) function for determine a key property on some types
-                key: function(item) {
-                    // what happens if no @id is found on some items?
-                    return ko.utils.unwrapObservable(item['@id']);
-                },
-                     
-                // some properties should never changes; these can be copied as-is, avoiding the overhead of making them "observable"
-                // NOTE that this is not being applied properly, since the mapping plugin expects a "full path", eg 'nexml.study.node.@property'
-                //   TODO: Fixing this will require a pull request (and some regex magic) in the main mapping plugin project on GitHub.
-                copy: ['@property','@xsi:type'],  // FAILS, see comment above
-
-                /* top-level create function (not much help here)
-                create: function( options ) {
-                    debugger;
-                    return options.data;
-                },
-                */
-
- /* NOTE that we can't pass custom create behavior for arrays! Instead, I
-  * decided to patch the mapping plugin to use paged arrays (from the
-  * knockout-paged plugin) by default.
-  *
-            var pageSize = 5; // make this dynamic? different for each paginated list?
-                      
-            ...
-                // TODO: override some observableArray() calls to be observableArray().paged( pageSize )
-                'otu': {
-                    create: function( options ) {
-                        //debugger;
-                        console.log(">> creating otu!");
-                        return new ko.observableArray(options.data).paged( pageSize );
-                    }
-                },
-
-                'nexml.otus.otu': {
-                    create: function( options ) {
-                        console.log(">> creating a paged array!");
-                        return new ko.observableArray().paged( pageSize );
-                    }
-                }
-            ...
-*/
+            // add templates for curator annotations (eg, files and OTU mapping hints)
+            if (getOTUMappingHints(data.nexml.meta) === null) {
+                data.nexml.meta.push( cloneFromNexsonTemplate('OTU mapping hints') );
             }
-            viewModel = ko.mapping.fromJS(data, mapping);
+
+            viewModel = ko.mapping.fromJS(data, studyMappingOptions);
             viewModel.studyQualityPercent = ko.observable(0);
             viewModel.studyQualityPercentStyle = ko.computed(function() {
                 // NOTE that we impose a minimum width, so the score is legible
@@ -359,6 +332,29 @@ function StudyViewModel() {
 
 };
 
+function getMetaTagByID(array, id) {
+    // fetch complete metatag in the specified list by matching the specified ID
+    for (var i = 0; i < array.length; i++) {
+        var testItem = array[i];
+        switch(typeof(testItem['id'])) {
+            case 'undefined':
+            case 'object':
+                continue;
+            case 'function':
+                if (testItem['id']() === id) {
+                    return testItem;
+                }
+                continue;
+            default:
+                if (testItem['id'] === id) {
+                    return testItem;
+                }
+                continue;
+        }
+    }
+    return null;
+}
+
 function getMetaTagAccessorByAtProperty(array, prop, options) {
     // fetch accessor function(s) for a metatag in the specified list, using its @property value
     var foundMatch;
@@ -411,6 +407,11 @@ function getMappedTallyForTree(tree) {
     ///console.log("Testing "+ totalLeafNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
     $.each(tree.node(), function(i, node) {
         totalNodes++;
+
+        if (!node.meta) {
+            // console.log("node has no meta(), skipping it...");
+            return true;
+        }
         // Is this a leaf node? If not, skip it
         var isLeafAccessor = getMetaTagAccessorByAtProperty(node.meta(), 'ot:isLeaf');
         if ((typeof(isLeafAccessor) !== 'function') || (isLeafAccessor() !== 'true')) {
@@ -428,9 +429,9 @@ function getMappedTallyForTree(tree) {
         return true;  // skip to next node
 
     });
-    console.log("total nodes? "+ totalNodes);
-    console.log("total leaf nodes? "+ totalLeafNodes);
-    console.log("mapped leaf nodes? "+ mappedLeafNodes);
+    // console.log("total nodes? "+ totalNodes);
+    // console.log("total leaf nodes? "+ totalLeafNodes);
+    // console.log("mapped leaf nodes? "+ mappedLeafNodes);
 
     var thinSpace = '&#8201;';
     return '<strong>'+ mappedLeafNodes +'</strong><span>'+ thinSpace +'/'+ thinSpace + totalLeafNodes +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(mappedLeafNodes/totalLeafNodes) +'%)</span>';
@@ -1033,38 +1034,31 @@ function filenameFromFakePath( path ) {
 function adjustedLabel(label) {
     // apply any active OTU mapping adjustments to this string
     if (typeof(label) === 'function') {
-        console.log('retrieving from label function...');
         label = label();
     }
-    console.log(typeof(label));
-    console.log(label);
     if (typeof(label) !== 'string') {
         // probably null
         return label;
     }
     var adjusted = label;
-    $('#mapping-adjustments tr').each(function() {
-        var $row = $(this);
-        if (!$row.find(':checkbox:eq(0)').is(':checked')) {
-            return;  // skip to next adjustment
+    // apply any active subsitutions in the viewMdel
+    var subList = getOTUMappingHints().author.invocation.params.substitutions();
+    $.each(subList, function(i, subst) {
+        console.log('... examining subst '+ i +'...');
+        console.log('  ACTIVE: '+ subst.active());
+        if (!subst.active()) {
+            return true; // skip to next adjustment
         }
-        var oldText = $row.find(':text:eq(0)').val();
-        var newText = $row.find(':text:eq(1)').val();
-        console.log('OLD: '+ oldText);
-        console.log('NEW: '+ newText);
+        var oldText = subst.old();
+        var newText = subst.new();
         if ($.trim(oldText) === $.trim(newText) === "") {
-            return; // skip to next adjustment
+            return true; // skip to next adjustment
         }
         var pattern = new RegExp(oldText);
-        adjusted = label.replace(pattern, newText);
-        console.log('ADJUSTED TO: '+ adjusted);
+        adjusted = adjusted.replace(pattern, newText);
     });
-    console.log('FINAL ADJUSTED LABEL: '+ adjusted);
     return adjusted;
 }
-
-// example of annotation(s) for OTU mapping hints
-//viewModel.nexml.meta().push(...)
 
 /* 
  * Templates for curator annotations
@@ -1199,6 +1193,10 @@ var nexsonTemplates = {
     } // END of 'mapping substitution' template
 } // END of nexsonTemplates
 
+function cloneFromNexsonTemplate( templateName ) {
+    // NOTE that we can use the same KO-mapping settings in piecemeal fashion
+    return ko.mapping.fromJS(nexsonTemplates[ templateName ], studyMappingOptions);
+}
 
 // For older browsers (IE <=8), provide Date.toISOString if not defined
 // http://stackoverflow.com/a/11440625
@@ -1221,4 +1219,38 @@ if (!Date.prototype.toISOString) {
         };
     }
     Date.prototype.toISOString = Date.prototype.toJSON;
+}
+
+function getOTUMappingHints(data) {
+    // retrieve this from the model (or other specified object); return null if not found
+    if (!data) {
+        data = viewModel.nexml.meta();
+    }
+    return getMetaTagByID(data, 'otu-mapping-hints')
+}
+function addSubstitution( clicked ) {
+    var subst = cloneFromNexsonTemplate('mapping substitution');
+    if ($(clicked).is('select')) {
+        var chosenSub = $(clicked).val();
+        if (chosenSub === '') {
+            // do nothing, we're still at the prompt
+            return false;
+        }
+        // add the chosen subsitution
+        var parts = chosenSub.split(' =:= ');
+        subst.old( parts[0] || '');
+        subst.new( parts[1] || '');
+        subst.active(true);
+        // reset the SELECT widget to its prompt
+        $(clicked).val('');
+    }
+    getOTUMappingHints().author.invocation.params.substitutions.push(subst);
+}
+function removeSubstitution( data ) {
+    var subList = getOTUMappingHints().author.invocation.params.substitutions;
+    subList.remove(data);
+    if (subList().length === 0) {
+        // add an inactive substitution with prompts
+        addSubstitution();
+    }
 }
