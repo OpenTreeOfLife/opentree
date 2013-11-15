@@ -88,7 +88,6 @@ function loadSelectedStudy(id) {
             if (getOTUMappingHints(data.nexml.meta) === null) {
                 data.nexml.meta.push( cloneFromNexsonTemplate('OTU mapping hints') );
             }
-
             viewModel = ko.mapping.fromJS(data, studyMappingOptions);
             viewModel.studyQualityPercent = ko.observable(0);
             viewModel.studyQualityPercentStyle = ko.computed(function() {
@@ -98,6 +97,16 @@ function loadSelectedStudy(id) {
             viewModel.studyQualityBarClass = ko.computed(function() {
                 var score = viewModel.studyQualityPercent();
                 return scoreToBarClasses(score);
+            });
+
+            // keep a very tentative list of failed OTU mappings (any change in hints should clear it)
+            var mappingHints = getOTUMappingHints();
+            mappingHints.author.invocation.params.searchContext.subscribe(clearFailedOTUList);
+            mappingHints.author.invocation.params.substitutions.subscribe(clearFailedOTUList);
+            $.each(mappingHints.author.invocation.params.substitutions(), function(i, subst) {
+                subst.active.subscribe(clearFailedOTUList);
+                subst.new.subscribe(clearFailedOTUList);
+                subst.old.subscribe(clearFailedOTUList);
             });
 
             ko.applyBindings(viewModel);
@@ -334,6 +343,8 @@ function StudyViewModel() {
 
 function getMetaTagByID(array, id) {
     // fetch complete metatag in the specified list by matching the specified ID
+    return getNexsonChildByProperty(array, 'id', id);
+/*
     for (var i = 0; i < array.length; i++) {
         var testItem = array[i];
         switch(typeof(testItem['id'])) {
@@ -347,6 +358,41 @@ function getMetaTagByID(array, id) {
                 continue;
             default:
                 if (testItem['id'] === id) {
+                    return testItem;
+                }
+                continue;
+        }
+    }
+    return null;
+*/
+}
+
+function getMetaTagByProperty(array, prop) {
+    // fetch complete metatag in the specified list by matching the specified ID
+    // TODO: support all if multiple instances?
+    return getNexsonChildByProperty(array, '@property', prop);
+}
+
+function getOTUByID(id) {
+    // fetch complete metatag in the specified list by matching the specified ID
+    return getNexsonChildByProperty(viewModel.nexml.otus.otu(), '@id', id);
+}
+
+function getNexsonChildByProperty(array, property, value) {
+    // fetch complete element in the specified list by matching the specified property
+    for (var i = 0; i < array.length; i++) {
+        var testItem = array[i];
+        switch(typeof(testItem[ property ])) {
+            case 'undefined':
+            case 'object':
+                continue;
+            case 'function':
+                if (testItem[ property ]() === value) {
+                    return testItem;
+                }
+                continue;
+            default:
+                if (testItem[ property ] === value) {
                     return testItem;
                 }
                 continue;
@@ -615,7 +661,7 @@ var studyScoringRules = {
 
                         default:
                             // ignore other meta tags (annotations)
-                            console.log('found some other metadata (annotation?): '+ testProperty);
+                            ///console.log('found some other metadata (annotation?): '+ testProperty);
                             continue;
                     }
                 }
@@ -744,7 +790,7 @@ var studyScoringRules = {
                     var rootNodeIDGetter = getMetaTagAccessorByAtProperty(tree.meta(), 'ot:inGroupClade');
                     if (typeof(rootNodeIDGetter) === 'function') {
                         var rootNodeID = rootNodeIDGetter();
-                        console.log('>>> found this rootNodeID: '+ rootNodeID + '<'+ typeof(rootNodeID) +'>');
+                        ///console.log('>>> found this rootNodeID: '+ rootNodeID + '<'+ typeof(rootNodeID) +'>');
                         switch(rootNodeID) {
                             // TODO: Test live data to see what "none" or "empty" looks like in this field
                             case '':
@@ -1044,8 +1090,6 @@ function adjustedLabel(label) {
     // apply any active subsitutions in the viewMdel
     var subList = getOTUMappingHints().author.invocation.params.substitutions();
     $.each(subList, function(i, subst) {
-        console.log('... examining subst '+ i +'...');
-        console.log('  ACTIVE: '+ subst.active());
         if (!subst.active()) {
             return true; // skip to next adjustment
         }
@@ -1074,6 +1118,7 @@ var curatorAnnotationAuthorInfo = {
 
 
 var nexsonTemplates = {
+
     'supporting files': {
         /* App-specific metadata about associated support files for this study.
          * This is intended to be temporary storage, until we can move all
@@ -1130,6 +1175,7 @@ var nexsonTemplates = {
         "messages": [ ]
        */
     }, // END of 'supporting files' template
+
     'OTU mapping hints': {
         /* A series of regular expressions ('substitutions') to facilitate
          * mapping of leaf nodes in study trees to known taxa. Also hints to
@@ -1184,18 +1230,46 @@ var nexsonTemplates = {
         "messages": [ ]
        */
     }, // END of 'OTU mapping hints' template
+
     'mapping substitution': {
         /* A single substitution added in the OTU Mapping section
          */
         "old": "",
         "new": "",
         "active": false
-    } // END of 'mapping substitution' template
+    }, // END of 'mapping substitution' template
+
+
+    'OTU entry': {
+        /* An OTU entry for newly-mapped nodes (do we need this?)
+         */
+        "@about": "#otu{otuID}",
+        "@id": "otu{otuID}", 
+        "@label": "{otuMappedName}",    // as mapped
+        "meta": [
+            {
+                "$": null,  // integer
+                "@property": "ot:ottId", 
+                "@xsi:type": "nex:LiteralMeta"
+            }, 
+            {
+                "$": "{otuOriginalName}",   // as submitted
+                "@property": "ot:originalLabel", 
+                "@xsi:type": "nex:LiteralMeta"
+            }
+        ]
+    }, // END of 'OTU entry' template
+
 } // END of nexsonTemplates
 
 function cloneFromNexsonTemplate( templateName ) {
     // NOTE that we can use the same KO-mapping settings in piecemeal fashion
     return ko.mapping.fromJS(nexsonTemplates[ templateName ], studyMappingOptions);
+}
+
+function cloneFromSimpleObject( obj ) {
+    // use this to create simple, observable objects (eg, metatags)
+    return ko.mapping.fromJS(obj, studyMappingOptions);
 }
 
 // For older browsers (IE <=8), provide Date.toISOString if not defined
@@ -1230,6 +1304,10 @@ function getOTUMappingHints(data) {
 }
 function addSubstitution( clicked ) {
     var subst = cloneFromNexsonTemplate('mapping substitution');
+    subst.active.subscribe(clearFailedOTUList);
+    subst.new.subscribe(clearFailedOTUList);
+    subst.old.subscribe(clearFailedOTUList);
+
     if ($(clicked).is('select')) {
         var chosenSub = $(clicked).val();
         if (chosenSub === '') {
@@ -1253,4 +1331,315 @@ function removeSubstitution( data ) {
         // add an inactive substitution with prompts
         addSubstitution();
     }
+}
+
+var autoMappingInProgress = ko.observable(false);
+var currentlyMappingOTUs = ko.observableArray([]); // drives spinners, etc.
+var failedMappingOTUs = ko.observableArray([]); // ignore these until we have new mapping hints
+// this should be cleared whenever something changes in mapping hints
+function clearFailedOTUList() {
+    console.log("clearing failed OTUs list");
+    failedMappingOTUs.removeAll();
+    // should we restart auto-mapping?
+    if (autoMappingInProgress()) {
+        if (currentlyMappingOTUs.length === 0) {
+            // looks like we ran out of steam.. try again!
+            requestTaxonMapping();
+        }
+    }
+}
+
+var recentMappingTimes = [ ];
+var recentMappingSpeedLabel = ko.observable(""); // seconds per name, based on rolling average
+var recentMappingSpeedPercent = ko.observable(0); // affects color of bar, etc
+var recentMappingSpeedBarClass = ko.observable('progress progress-info');
+
+
+function startAutoMapping() {
+    // begin a daisy-chain of AJAX operations, mapping 1 label (or more?) to known taxa
+    // TODO: what if there was a pending operation when we stopped?
+    autoMappingInProgress( true );
+    requestTaxonMapping();  // try to grab the first unmapped label in view
+}
+function stopAutoMapping() {
+    // TODO: what if there's an operation in progress? get its result, or drop it?
+    autoMappingInProgress( false );
+    currentlyMappingOTUs.removeAll();
+    recentMappingSpeedBarClass( 'progress progress-info' );   // inactive blue bar
+}
+
+function updateMappingSpeed( newElapsedTime ) {
+    recentMappingTimes.push(newElapsedTime);
+    if (recentMappingTimes.length > 5) {
+        // keep just the last 5 times
+        recentMappingTimes = recentMappingTimes.slice(-5);
+    }
+
+    var total = 0;
+    $.each(recentMappingTimes, function(i, time) {
+        total += time;
+    });
+    var rollingAverage = total / recentMappingTimes.length;
+    ///console.log('recentMappingTimes: '+ recentMappingTimes);
+    ///console.log('rollingAverage: '+ rollingAverage +' ms');
+    var secPerName = rollingAverage / 1000;
+    // show a legible number (first significant digit)
+    var displaySec;
+    if (secPerName >= 0.1) {
+        displaySec = secPerName.toFixed(1);
+    } else if (secParName >= 0.01) {
+        displaySec = secPerName.toFixed(2);
+    } else {
+        displaySec = secPerName.toFixed(3);
+    }
+
+    recentMappingSpeedLabel( displaySec +" sec / name");
+
+    // use arbitrary speeds here, for bad/fair/good
+    if (secPerName < 0.2) {
+        recentMappingSpeedBarClass( 'progress progress-success' );  // green bar
+    } else if (secPerName < 2.0) {
+        recentMappingSpeedBarClass( 'progress progress-warning' );  // orange bar
+    } else {
+        recentMappingSpeedBarClass( 'progress progress-danger' );   // red bar
+    }
+
+    // bar width is approximate, needs ~40% to show its text
+    recentMappingSpeedPercent( (40 + Math.min( (0.1 / secPerName) * 60, 60)).toFixed() +"%" );
+}
+
+
+
+function requestTaxonMapping() {
+    // set spinner, make request, handle response, and daisy-chain the next request
+    // TODO: send one at a time? or in a batch (5 items)?
+    
+    var visibleOTUs = viewModel.nexml.otus.otu.pagedItems();
+    var otuToMap = null;
+    $.each( visibleOTUs, function (i, otu) {
+        var ottMappingTag = getMetaTagByProperty(otu.meta(), 'ot:ottId');
+        if (!ottMappingTag) {
+            // this is an unmapped OTU!
+            if (failedMappingOTUs.indexOf(otu['@id']()) === -1) {
+                // it hasn't failed mapping (at least not yet)
+                otuToMap = otu
+                return false;
+            }
+        }
+    });
+    if (!otuToMap) {
+        showSuccessMessage('All visible OTUs have been mapped.');
+        return false;
+    }
+
+    var otuID = otuToMap['@id']();
+    var originalLabel = getMetaTagAccessorByAtProperty(otuToMap.meta(), 'ot:originalLabel')();
+    var searchText = adjustedLabel(originalLabel);
+
+    if (searchText.length === 0) {
+        console.log("No name to match!"); // TODO
+        return false;
+    } else if (searchText.length < 2) {
+        console.log("Need at least two letters!"); // TODO
+        return false;
+    }
+
+    // groom trimmed text based on our search rules
+    var searchContextName = getOTUMappingHints().author.invocation.params.searchContext();
+
+    // show spinner alongside this item...
+    currentlyMappingOTUs.push( otuID );
+    
+    var mappingStartTime = new Date();
+
+    $.ajax({
+        url: doTNRSForNames_url,  // NOTE that actual server-side method name might be quite different!
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({ 
+            "queryString": searchText,
+            "contextName": searchContextName
+        }),  // data (asterisk required for completion suggestions)
+        crossDomain: true,
+        contentType: 'application/json',
+        error: function(jqXHR, textStatus, errorThrown) {
+
+            console.log("!!! something went terribly wrong");
+            console.log(jqXHR.responseText);
+
+            showErrorMessage("Something went wrong in taxomachine:\n"+ jqXHR.responseText);
+
+            if (!autoMappingInProgress()) {
+                // curator has paused all mapping
+                return false;
+            }
+
+            currentlyMappingOTUs.remove( otuID );
+
+            // let's hope it's something about this label and try the next one...
+            failedMappingOTUs.push( otuID );
+            if (autoMappingInProgress()) {
+                setTimeout(requestTaxonMapping, 100);
+            }
+
+        },
+        success: function(data) {    // JSONP callback
+            // IF there's a proper response, assert this as the OTU and label for this node
+            // TODO: Give the curator a chance to push back? and cleanly roll back changes if they disagree?
+            if (!autoMappingInProgress()) {
+                // curator has paused all mapping
+                return false;
+            }
+
+            // update the rolling average for the mapping-speed bar
+            var mappingStopTime = new Date();
+            updateMappingSpeed( mappingStopTime.getTime() - mappingStartTime.getTime() );
+
+            var maxResults = 100;
+            var visibleResults = 0;
+            /*
+             * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
+             * with these properties:
+             *      ottId   // taxon ID in OTT taxonomic tree
+             *      nodeId  // ie, neo4j node ID
+             *      exact   // matches the entered text exactly? T/F
+             *      name    // taxon name
+             *      higher  // points to a genus or higher taxon? T/F
+             */
+            if (data && data.length && data.length > 0) {
+                // sort results to show exact match(es) first, then more precise (lower) taxa, then others
+                // initial sort on lower taxa (will be overridden by exact matches)
+                data.sort(function(a,b) {
+                    if (a.higher === b.higher) return 0;
+                    if (a.higher) return 1;
+                    if (b.higher) return -1;
+                });
+                // final sort on exact matches (overrides lower taxa)
+                data.sort(function(a,b) {
+                    if (a.exact === b.exact) return 0;
+                    if (a.exact) return -1;
+                    if (b.exact) return 1;
+                });
+
+                // for now, let's immediately apply the top name
+                var otuMapping = data[0];
+                // .name   
+                // .ottId   // number-as-string
+                // .nodeId  // number
+                // .exact   // boolean
+                // .higher  // boolean
+                mapOTUToTaxon( otuID, otuMapping )
+                
+                if (false) {
+                    // TODO: offer choices if multiple possibilities are found? 
+                    // show all sorted results, up to our preset maximum
+                    var matchingNodeIDs = [ ];  // ignore any duplicate results (point to the same taxon)
+                    for (var mpos = 0; mpos < data.length; mpos++) {
+                        if (visibleResults >= maxResults) {
+                            break;
+                        }
+                        var match = data[mpos];
+                        var matchingName = match.name;
+                        // 
+                        var matchingID = match.ottId;
+                        if ($.inArray(matchingID, matchingNodeIDs) === -1) {
+                            // TODO: we're not showing this yet; add it to a list of options?
+                            /*
+                            $('#search-results').append(
+                                '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
+                            );
+                            */
+                            console.log("Now I would offer choice '"+ matchingName +"' (id="+ matchingID +")...");
+                            matchingNodeIDs.push(matchingID);
+                            visibleResults++;
+                        }
+                    }
+                }
+
+            } else {
+                console.log("!!! I didn't find any matches for this search");  // TODO
+                //otuToMap['@label']( "MAPPING FAILED, please add hints" );
+                failedMappingOTUs.push( otuID );
+            }
+
+            currentlyMappingOTUs.remove( otuID );
+
+            // after a brief pause, try for the next available OTU...
+            if (autoMappingInProgress()) {
+                setTimeout(requestTaxonMapping, 100);
+            }
+
+            return false;
+        }
+    });
+
+    return false;
+}
+
+function mapOTUToTaxon( otuID, mappingInfo ) {
+    // TODO: apply this mapping, creating Nexson elements as needed
+
+    /* mappingInfo should contain these attributes:
+     * {
+     *   "name" : "Centranthus",
+     *   "ottId" : "759046",
+     *
+     *   // these may also be present, but aren't important here
+     *     "nodeId" : 3325605,
+     *     "exact" : false,
+     *     "higher" : true
+     * }
+     */
+
+    // FOR NOW, assume that any leaf node will have a corresponding otu entry;
+    // otherwise, we can't have name for the node!
+    var otu = getOTUByID( otuID );
+
+    // TODO: add/update its original label?
+    var originalLabel = getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')();
+    otu['@label']( mappingInfo.name || 'NAME MISSING!' );
+
+    // add (or update) a metatag mapping this to an OTT id
+    var ottId = Number(mappingInfo.ottId);
+    var ottMappingTag = getMetaTagByProperty(otu.meta(), 'ot:ottId');
+    if (!ottMappingTag) {
+        addMetaTagToParent(otu, {
+            "$": '',
+            "@property": "ot:ottId",
+            "@xsi:type": "nex:LiteralMeta"
+        });
+        ottMappingTag = getMetaTagByProperty(otu.meta(), 'ot:ottId');
+    }
+    ottMappingTag.$( ottId );
+}
+
+function unmapOTUFromTaxon( otuOrID ) {
+    // remove this mapping, removing any unneeded Nexson elements
+    var otu = (typeof otuOrID === 'object') ? otuOrID : getOTUByID( otuOrID );
+    // restore its original label (versus mapped label)
+    var originalLabel = getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')();
+    otu['@label']( '' );
+    // strip any metatag mapping this to an OTT id
+    var ottMappingTag = getMetaTagByProperty(otu.meta(), 'ot:ottId');
+    if (ottMappingTag) {
+        otu.meta.remove(ottMappingTag);
+    }
+}
+
+function addMetaTagToParent( parent, props ) {
+    // wrap submitted properties to make an observable metatag
+    var newTag = cloneFromSimpleObject( props );
+    if (!parent.meta) {
+        // add a meta() collection here
+        parent['meta'] = ko.observableArray();
+    }
+    parent.meta.push( newTag );
+}
+
+function clearVisibleMappings() {
+    // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) OTUs.
+    var visibleOTUs = viewModel.nexml.otus.otu.pagedItems();
+    $.each( visibleOTUs, function (i, otu) {
+        unmapOTUFromTaxon( otu );
+    });
 }

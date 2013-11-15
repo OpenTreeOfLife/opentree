@@ -423,7 +423,7 @@ body {
                   <thead>
                     <tr>
                         <th>Original label</th>
-                        <th>Modified label</th>
+                        <th>Modified for mapping</th>
                         <th>Mapped to taxon</th>
                     </tr>
                   </thead>
@@ -431,7 +431,17 @@ body {
                     <tr data-bind="if: true">
                         <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')">ORIGINAL?</td>
                         <td><em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel'))">WORKING?</em></td>
-                        <td data-bind="text: otu['@label']">MAPPED?</td>
+                        <td>
+                         <!-- ko if: currentlyMappingOTUs.indexOf(otu['@id']()) === -1 -->
+                            <strong data-bind="text: otu['@label']">MAPPED LABEL</strong>
+                         <!-- /ko -->
+                         <!-- ko if: currentlyMappingOTUs.indexOf(otu['@id']()) !== -1 -->
+                            <strong style="color: red;"><em>...mapping now...</em></strong>
+                         <!-- /ko -->
+                         <!-- ko if: failedMappingOTUs.indexOf(otu['@id']()) !== -1 -->
+                            <strong style="color: #999;"><em>Failed mapping (try adding hints)</em></strong>
+                         <!-- /ko -->
+                        </td>
                     </tr>
                   </tbody>
                 </table>
@@ -462,13 +472,31 @@ body {
                 <h4>Server-side mapping in progress</h4>
                 This section is blocked while the server works. Please check again later. [TODO] 
             </div>
+
+            <button class="btn btn-warning input-block-level" style="margin-bottom: 1em;"
+                    onclick="clearVisibleMappings(); return false;">
+                <i class="icon-warning-sign icon-white"></i>
+                Clear visible mappings (please be patient)
+            </button>
+
             <div class="well Xwell-large">
-                <h4 style="margin-top: 0;">Mapping speed</h4>
-                <div TODO-data-bind="css: mappingSpeedBarClass" style="margin-bottom: 0;"
-                     class="progress progress-warning">
-                  <div class="bar" TODO-data-bind="style: { width: studyQualityPercentStyle }"
-                       style="width: 72%;">
-                      <span TODO-data-bind="text: studyQualityPercent">10 sec / name</span>
+                <div class="pull-right" style="margin-top: -2px;">
+                    <button id="pause-mapping-button" class="btn btn-small" 
+                            data-bind="visible: autoMappingInProgress()"
+                            onclick="stopAutoMapping(); return false;">
+                        <i class="icon-pause"></i> Pause mapping</button>
+                    <button id="start-mapping-button" class="btn btn-small"
+                            data-bind="visible: !autoMappingInProgress()"
+                            onclick="startAutoMapping(); return false;">
+                        <i class="icon-play"></i> Start mapping</button>
+                </div>
+                <h4 style="margin-top: 0;">Mapping status</h4>
+                <div class="progress" 
+                     style="margin-bottom: 0; background-color: #333;"
+                     data-bind="css: recentMappingSpeedBarClass">
+                  <div class="bar" style="text-align: center;"
+                       data-bind="style: { width: recentMappingSpeedPercent }">
+                      <span data-bind="text: recentMappingSpeedLabel">10 sec / name</span>
                   </div>
                 </div>
             </div>
@@ -482,7 +510,8 @@ body {
                  <fieldset>
                     <!-- scraped from header search in main opentree webapp -->
                     <!-- TODO: fetch a live list, as we do there? -->
-                    <select class="input-block-level" style="margin-bottom: 1em;" name="taxon-search-context" data-bind="value: getOTUMappingHints().author.invocation.params.searchContext">
+                    <select class="input-block-level" style="margin-bottom: 1em;" name="taxon-search-context" 
+                            data-bind="value: getOTUMappingHints().author.invocation.params.searchContext">
                             <option selected="selected">All life</option>
                             <option>Land plants</option>
                             <option>Hornworts</option>
@@ -524,7 +553,7 @@ body {
                 If mapping is slow or failing, you can streamline the process by
                 modifying the original node labels. Any active substitutions below
                 will be applied to all labels during OTU mapping. (See the
-                italic 'Modified label' values at left.)
+                italic 'Modified for mapping' values at left.)
                 Try some common patterns from the drop-down menu below, or use
                 <a href="http://www.regular-expressions.info/javascript.html#replace" target="_blank">regular expressions</a> to construct your own.
                 </p>
@@ -568,8 +597,8 @@ body {
                         <option value="">Add a common substitution...</option>
                        <!-- NOTE the convention here... value="{OLD} =:= {NEW}" -->
                         <option value="foo =:= bar">Replace 'foo' with 'bar'</option>
-                        <option value="^(\w*) =:= ">Remove first word</option>
-                        <option value="(\w*)$ =:= ">Remove last word</option>
+                        <option value="^(\w*) \w =:= ">Remove first of multiple words</option>
+                        <option value="\w (\w*)$ =:= ">Remove last of multiple words</option>
                         <option value="sp(.?) =:= ">Remove 'sp'</option>
                         <option value="(\d+) =:= ">Isolate NCBI taxon ID</option>
                       </select>
@@ -818,6 +847,18 @@ Please review and re-submit.</pre>
     var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
     var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
     var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
+
+    var treemachine_domain = "{{=treemachine_domain}}";
+    var taxomachine_domain = "{{=taxomachine_domain}}";
+    var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
+    var getSyntheticTree_url = "{{=getSyntheticTree_url}}";
+    var getSourceTree_url = "{{=getSourceTree_url}}";
+    var getConflictTaxJsonAltRel_url = "{{=getConflictTaxJsonAltRel_url}}";
+    var getDraftTreeForOttolID_url = "{{=getDraftTreeForOttolID_url}}";
+    var getDraftTreeForNodeID_url = "{{=getDraftTreeForNodeID_url}}";
+    var doTNRSForNames_url = "{{=doTNRSForNames_url}}";
+    var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
+    var getJSONFromNode_url = "{{=getJSONFromNode_url}}";
 </script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
 
