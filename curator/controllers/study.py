@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from opentreewebapputil import get_opentree_services_method_urls
 
 #########################################################################
 ## Manages and manipulates studies in the OToL curation tool
@@ -35,7 +36,9 @@ def view():
     ? OR can this include work-in-progress from a personal branch?
     """
     response.view = 'study/edit.html'
-    return dict()
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names()
+    return view_dict
 
 @auth.requires_login()
 def create():
@@ -51,7 +54,9 @@ def edit():
     
     # TODO: fetch a fresh list of search contexts for TNRS? see working example in
     # the header search of the main opentree webapp
-    return dict()
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict = get_opentree_services_method_urls(request)
+    return view_dict
 
 
 @auth.requires_login()
@@ -73,3 +78,35 @@ def load():
 def store():
     return dict(message="study/store")
 
+
+def fetch_current_TNRS_context_names():
+    try:
+        # fetch the latest contextName values as JSON from remote site
+        from gluon.tools import fetch
+        import simplejson
+
+        method_dict = get_opentree_services_method_urls(request)
+        fetch_url = method_dict['getContextsJSON_url']
+        # as usual, this needs to be a POST (pass empty fetch_args)
+        contextnames_response = fetch(fetch_url, data='')
+
+        contextnames_json = simplejson.loads( contextnames_response )
+        # start with LIFE group (incl. 'All life'), and add any other ordered suggestions
+        ordered_group_names = unique_ordered_list(['LIFE','PLANTS','ANIMALS'] + [g for g in contextnames_json])
+        context_names = [ ]
+        for gname in ordered_group_names:
+            # allow for eventual removal or renaming of expected groups
+            if gname in contextnames_json:
+                context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
+
+        # draftTreeName = ids_json['draftTreeName'].encode('utf-8')
+        return (context_names)
+
+    except Exception, e:
+        # throw 403 or 500 or just leave it
+        return ('ERROR', e.message)
+
+def unique_ordered_list(seq):
+    seen = set()
+    seen_add = seen.add
+    return [ x for x in seq if x not in seen and not seen_add(x)]

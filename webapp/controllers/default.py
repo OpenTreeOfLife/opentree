@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-from opentreewebapputil import get_opentree_services_domains
 from opentreewebapputil import get_opentree_services_method_urls
 
 ### required - do no delete

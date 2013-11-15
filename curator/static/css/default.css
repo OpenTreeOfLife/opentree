@@ -515,3 +515,14 @@ img.tool-icon {
     border-radius: 8px;
     */
 }
+
+.well .progress {
+    /* darker style to stand out against well bg */
+    background-color: #dddddd;
+    background-image: -moz-linear-gradient(top, #dbdbdb, #dfdfdf);
+    background-image: -webkit-gradient(linear, 0 0, 0 100%, from(#dbdbdb), to(#dfdfdf));
+    background-image: -webkit-linear-gradient(top, #dbdbdb, #dfdfdf);
+    background-image: -o-linear-gradient(top, #dbdbdb, #dfdfdf);
+    background-image: linear-gradient(to bottom, #dbdbdb, #dfdfdf);
+    background-repeat: repeat-x;
+}
