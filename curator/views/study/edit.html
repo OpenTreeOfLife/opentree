@@ -432,14 +432,15 @@ body {
                         <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')">ORIGINAL?</td>
                         <td><em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel'))">WORKING?</em></td>
                         <td>
-                         <!-- ko if: currentlyMappingOTUs.indexOf(otu['@id']()) === -1 -->
-                            <strong data-bind="text: otu['@label']">MAPPED LABEL</strong>
-                         <!-- /ko -->
                          <!-- ko if: currentlyMappingOTUs.indexOf(otu['@id']()) !== -1 -->
                             <strong style="color: red;"><em>...mapping now...</em></strong>
                          <!-- /ko -->
                          <!-- ko if: failedMappingOTUs.indexOf(otu['@id']()) !== -1 -->
                             <strong style="color: #999;"><em>Failed mapping (try adding hints)</em></strong>
+                         <!-- /ko -->
+                         <!-- ko if: (currentlyMappingOTUs.indexOf(otu['@id']()) === -1) && 
+                                     (failedMappingOTUs.indexOf(otu['@id']()) === -1) -->
+                            <strong data-bind="text: otu['@label']">MAPPED LABEL</strong>
                          <!-- /ko -->
                         </td>
                     </tr>
