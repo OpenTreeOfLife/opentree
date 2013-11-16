@@ -1098,8 +1098,23 @@ function adjustedLabel(label) {
         if ($.trim(oldText) === $.trim(newText) === "") {
             return true; // skip to next adjustment
         }
-        var pattern = new RegExp(oldText, 'g');  // g = replace ALL instances
-        adjusted = adjusted.replace(pattern, newText);
+        try {
+            //var pattern = new RegExp(oldText, 'g');  // g = replace ALL instances
+            // NO, this causes weird repetition in common cases
+            var pattern = new RegExp(oldText);  
+            adjusted = adjusted.replace(pattern, newText);
+            // clear any stale invalid-regex marking on this field
+            if (!subst.valid) {
+                subst['valid'] = ko.observable(true);
+            }
+            subst.valid(true);
+        } catch(e) {
+            // there's probably invalid regex in the field... mark it and skip
+            if (!subst.valid) {
+                subst['valid'] = ko.observable(false);
+            }
+            subst.valid(false);
+        }
     });
     return adjusted;
 }
@@ -1204,6 +1219,7 @@ var nexsonTemplates = {
                         { 
                             "old": "",
                             "new": "",
+                            "valid": true,
                             "active": false
                         },
                     ]
@@ -1236,6 +1252,7 @@ var nexsonTemplates = {
          */
         "old": "",
         "new": "",
+        "valid": true,
         "active": false
     }, // END of 'mapping substitution' template
 
@@ -1318,6 +1335,7 @@ function addSubstitution( clicked ) {
         var parts = chosenSub.split(' =:= ');
         subst.old( parts[0] || '');
         subst.new( parts[1] || '');
+        subst.valid(true);
         subst.active(true);
         // reset the SELECT widget to its prompt
         $(clicked).val('');
