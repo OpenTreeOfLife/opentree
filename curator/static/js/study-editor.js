@@ -1098,7 +1098,7 @@ function adjustedLabel(label) {
         if ($.trim(oldText) === $.trim(newText) === "") {
             return true; // skip to next adjustment
         }
-        var pattern = new RegExp(oldText);
+        var pattern = new RegExp(oldText, 'g');  // g = replace ALL instances
         adjusted = adjusted.replace(pattern, newText);
     });
     return adjusted;
