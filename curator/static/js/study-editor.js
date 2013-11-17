@@ -1354,6 +1354,29 @@ function removeSubstitution( data ) {
 var autoMappingInProgress = ko.observable(false);
 var currentlyMappingOTUs = ko.observableArray([]); // drives spinners, etc.
 var failedMappingOTUs = ko.observableArray([]); // ignore these until we have new mapping hints
+var editedOTULabels = ko.observable({}); // stored any labels edited by hand, keyed by OTU id
+var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-editing UI to refresh!
+
+function editOTULabel(otu) {
+    var OTUid = otu['@id']();
+    var originalLabel = getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')();
+    editedOTULabels()[ OTUid ] = ko.observable( adjustedLabel(originalLabel) );
+    // this should make the editor appear
+    bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+}
+function editedLabelAccessor(otu) {
+    var OTUid = otu['@id']();
+    var acc = editedOTULabels()[ OTUid ] || null;
+    return acc;
+}
+function revertOTULabel(otu) {
+    // undoes 'editOTULabel', releasing a label to use shared hints
+    var OTUid = otu['@id']();
+    delete editedOTULabels()[ OTUid ];
+    // this should make the editor disappear and revert its adjusted label
+    bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+}
+
 // this should be cleared whenever something changes in mapping hints
 function clearFailedOTUList() {
     console.log("clearing failed OTUs list");
@@ -1452,7 +1475,9 @@ function requestTaxonMapping() {
 
     var otuID = otuToMap['@id']();
     var originalLabel = getMetaTagAccessorByAtProperty(otuToMap.meta(), 'ot:originalLabel')();
-    var searchText = adjustedLabel(originalLabel);
+    // use the manually edited label (if any), or the hint-adjusted version
+    var editedAcc = editedLabelAccessor(otuToMap);
+    var searchText = editedAcc ? editedAcc() : adjustedLabel(originalLabel);
 
     if (searchText.length === 0) {
         console.log("No name to match!"); // TODO
@@ -1660,4 +1685,5 @@ function clearVisibleMappings() {
     $.each( visibleOTUs, function (i, otu) {
         unmapOTUFromTaxon( otu );
     });
+    clearFailedOTUList();
 }

@@ -419,27 +419,55 @@ body {
               </div>
 
 
-                <table class="table table-condensed">
+                <table class="table table-condensed table-hover">
                   <thead>
                     <tr>
-                        <th>Original label</th>
-                        <th>Modified for mapping</th>
-                        <th>Mapped to taxon</th>
+                        <th width="30%">Original label</th>
+                        <th width="30%">Modified for mapping</th>
+                        <th width="5%">&nbsp;</th>
+                        <th width="35%">Taxon label in OTT</th>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: nexml.otus.otu.pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
                         <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')">ORIGINAL?</td>
-                        <td><em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel'))">WORKING?</em></td>
+                         <!-- ko if: (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
+                        <td>
+                            <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel'))">WORKING?</em>
+                        </td>
+                        <td>
+                            <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel">
+                                <i class="icon-edit"></i>
+                            </button>
+                        </td>
+                         <!-- /ko -->
+                         <!-- ko if: (bogusEditedLabelCounter() > 0)  && editedLabelAccessor(otu) != null --> 
+                        <td>
+                            <input type="text" style="height: 14px; margin: 0; width: 97%;" data-bind="value: editedLabelAccessor(otu)">
+                        </td>
+                        <td>
+                            <button class="btn btn-mini row-controls-ghosted" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel">
+                                <i class="icon-remove"></i>
+                            </button>
+                        </td>
+                         <!-- /ko -->
                         <td>
                          <!-- ko if: currentlyMappingOTUs.indexOf(otu['@id']()) !== -1 -->
                             <strong style="color: red;"><em>...mapping now...</em></strong>
                          <!-- /ko -->
                          <!-- ko if: failedMappingOTUs.indexOf(otu['@id']()) !== -1 -->
-                            <strong style="color: #999;"><em>Failed mapping (try adding hints)</em></strong>
+                            <strong style="color: #999;"><em>Failed mapping (edit or add hints)</em></strong>
                          <!-- /ko -->
                          <!-- ko if: (currentlyMappingOTUs.indexOf(otu['@id']()) === -1) && 
                                      (failedMappingOTUs.indexOf(otu['@id']()) === -1) -->
+                            <div class="btn-group pull-right row-controls-ghosted">
+                                <button class="btn btn-mini">
+                                    <i class="icon-ok"></i>
+                                </button>
+                                <button class="btn btn-mini" data-bind="click: unmapOTUFromTaxon">
+                                    <i class="icon-remove"></i>
+                                </button>
+                            </div>
                             <strong data-bind="text: otu['@label']">MAPPED LABEL</strong>
                          <!-- /ko -->
                         </td>
@@ -467,12 +495,26 @@ body {
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
             <p>
-            [TODO] Here's some text about mapping OTUs. Plus tools for grooming node labels.
+            For a tree in your study to contribute to synthesis in the Open
+            Tree of Life project, its leaf nodes should correspond to taxa in 
+            the OTT (Open Tree Taxonomy). This list includes all the OTUs
+            (operating taxonomic units) in your study. Each OTU is a distinct
+            label used in one or more of your study's trees.
             </p>
+            <p>
+            We use a TNRS (taxonomic name resolution service) to automate this
+            "mapping" process where possible. If you've used standard taxonomic
+            names for the nodes in your trees, mapping is fast and easy.
+            But most trees submitted have been labeled with institutional
+            shorthand, unrecognized taxa, or simple misspellings. The tools on
+            this page will help you adjust labels for faster mapping.
+            </p>
+<!-- TODO: If we're doing independent server-side mapping, show a blanket message like this to avoid conflicts?
             <div class="alert alert-block">
                 <h4>Server-side mapping in progress</h4>
                 This section is blocked while the server works. Please check again later. [TODO] 
             </div>
+-->
 
             <button class="btn btn-warning input-block-level" style="margin-bottom: 1em;"
                     onclick="clearVisibleMappings(); return false;">
@@ -554,7 +596,7 @@ body {
                 If mapping is slow or failing, you can streamline the process by
                 modifying the original node labels. Any active substitutions below
                 will be applied to all labels during OTU mapping. (See the
-                italic 'Modified for mapping' values at left.)
+                italic <strong>Modified for mapping</strong> values at left.)
                 Try some common patterns from the drop-down menu below, or use
                 <a href="http://www.regular-expressions.info/javascript.html#replace" target="_blank">regular expressions</a> to construct your own.
                 </p>
@@ -614,6 +656,11 @@ body {
                  </fieldset>
                 </form>
               <!-- /ko -->
+                <p style="margin: 1em 0 0;">
+                As a last resort, you can directly edit the label submitted for mapping. Just click 
+                the <button class="btn btn-mini"><i class="icon-edit"></i></button> buttons
+                in the <strong>Modified for mapping</strong> column at left.
+                </p>
             </div>
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->

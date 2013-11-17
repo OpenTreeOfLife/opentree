@@ -526,3 +526,10 @@ img.tool-icon {
     background-image: linear-gradient(to bottom, #dbdbdb, #dfdfdf);
     background-repeat: repeat-x;
 }
+
+tr .row-controls-ghosted {
+    opacity: 0.3;
+}
+tr:hover .row-controls-ghosted {
+    opacity: 1.0;
+}
