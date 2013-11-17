@@ -642,8 +642,8 @@ body {
                        <!-- NOTE the convention here... value="{OLD} =:= {NEW}" -->
                         <option value="\bsp(\.|\b) =:= ">Remove 'sp.'</option>
                         <option value="foo =:= bar">Replace 'foo' with 'bar'</option>
-                        <option value="^(\w*)\s* =:= ">Remove first of multiple words</option>
-                        <option value="\s*(\w*)$ =:= ">Remove last of multiple words</option>
+                        <option value="^(\w*)\s+\b =:= ">Remove first of multiple words</option>
+                        <option value="\b\s+(\w*)$ =:= ">Remove last of multiple words</option>
                         <option value=".*\s+(\w*)\s*$ =:= $1">Isolate trailing ID</option>
                       </select>
                   </div>
