@@ -1379,7 +1379,6 @@ function revertOTULabel(otu) {
 
 // this should be cleared whenever something changes in mapping hints
 function clearFailedOTUList() {
-    console.log("clearing failed OTUs list");
     failedMappingOTUs.removeAll();
     // should we restart auto-mapping?
     if (autoMappingInProgress()) {
@@ -1600,8 +1599,6 @@ function requestTaxonMapping() {
                 }
 
             } else {
-                console.log("!!! I didn't find any matches for this search");  // TODO
-                //otuToMap['@label']( "MAPPING FAILED, please add hints" );
                 failedMappingOTUs.push( otuID );
             }
 
