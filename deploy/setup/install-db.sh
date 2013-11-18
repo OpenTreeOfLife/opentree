@@ -13,7 +13,6 @@
 
 function install_db {
     APP=$1
-    HOST=$2
 
     next=neo4j-$APP/data/graph.db.new
     # Keep previous in case we need to revert
