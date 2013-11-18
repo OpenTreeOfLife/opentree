@@ -33,6 +33,9 @@ Look at push.sh to see how to set these parameters using shell variables.
 
 The push.sh script starts by pushing out a script to be run as the admin user (setup/as_admin.sh).  This script installs prerequisite software and sets up an unprivileged 'opentree' user.  Then further scripts are run as user 'opentree'.
 
+How to push the neo4j databases
+-------------------------------
+
 If the server is big and is to run treemachine or taxomachine, the appropriate database has to be pushed out to the server and installed, as a separate step.  Create a compressed tar file of the neo4j database directory (which by default is called 'graph.db' although you can call it whatever youlike).  Then copy it to the server using rsync:
 
     rsync -e "ssh -i opentree.pem" -vax newlocaldb.db.tgz  \
@@ -43,3 +46,7 @@ If you put the tarball in the target location as specified above, then the 'inst
     ssh -i opentree.pem opentree@$host setup/install_db.sh treemachine
 
 where $host is the same as <hostname> as specified above.
+
+Repeat substituting 'taxomachine' for 'treemachine' if desired.
+
+New versions of the database can be pushed out in this way as desired, replacing the previous version each time.  The previous version is kept for disaster recovery, but if it needs to be reinstalled, that has to be done manually.
