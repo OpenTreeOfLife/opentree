@@ -31,6 +31,6 @@ getDraftTreeForNodeID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeFo
 doTNRSForNames_url = {taxomachine_domain}/ext/TNRS/graphdb/autocompleteBoxQuery
     # NOTE that in this case, we switched to a new method name
 getContextsJSON_url = {taxomachine_domain}/ext/TNRS/graphdb/getContextsJSON
-getNodeIDForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getNodeIDForOttolID
+getNodeIDForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getNodeIDForottId
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
 
