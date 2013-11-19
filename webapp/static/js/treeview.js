@@ -38,7 +38,7 @@ if ( History && History.enabled && pageUsesHistory ) {
             $.ajax({
                 type: 'POST',
                 url: getNodeIDForOttolID_url,
-                data: {'ottolID': String(ottolID)},
+                data: {'ottId': String(ottolID)},
                 success: function(data) {
                     argus.displayNode({"nodeID": data,
                                        "domSource": syntheticTreeID});  // from main HTML view
@@ -1047,7 +1047,7 @@ function showObjectProperties( objInfo, options ) {
                     type: 'POST',
                     url: getDraftTreeForOttolID_url,
                     data: {
-                        'ottolID': String(ottolID),
+                        'ottId': String(ottolID),
                         'maxDepth': String(subtreeDepthLimit),
                     },
                     success: function(data) {

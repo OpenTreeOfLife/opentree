@@ -84,7 +84,7 @@ def download_subtree():
         # use the appropriate web service for this ID type
         if id_type == 'ottol-id':
             fetch_url = method_dict['getDraftTreeForOttolID_url']
-            fetch_args = {'ottolID': node_or_ottol_id, 'maxDepth': max_depth}
+            fetch_args = {'ottId': node_or_ottol_id, 'maxDepth': max_depth}
         else:
             fetch_url = method_dict['getDraftTreeForNodeID_url']
             fetch_args = {'nodeID': node_or_ottol_id, 'maxDepth': max_depth}
