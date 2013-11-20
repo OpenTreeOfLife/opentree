@@ -2,8 +2,6 @@
 
 # adapted from router.example.py
 
-# this is a meaningless change on an old branch (just for a test commit)
-
 # NOTE that a bare-bones parametric router is required here, since we've switched
 # to parametric routing for opentree and the two can't be mixed. The change
 # was required to support hyphens in proper URLs!
