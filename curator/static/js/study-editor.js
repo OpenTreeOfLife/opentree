@@ -6,10 +6,13 @@
 
 // these variables should already be defined in the main HTML page
 var studyID;
-var API_create_study_POST_url;
 var API_load_study_GET_url;
 var API_update_study_PUT_url;
 var viewOrEdit;
+var API_create_file_POST_url;
+var API_load_file_GET_url;
+var API_update_file_PUT_url;
+var API_remove_file_DELETE_url;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -88,6 +91,11 @@ function loadSelectedStudy(id) {
             if (getOTUMappingHints(data.nexml.meta) === null) {
                 data.nexml.meta.push( cloneFromNexsonTemplate('OTU mapping hints') );
             }
+            if (getSupportingFiles(data.nexml.meta) === null) {
+                data.nexml.meta.push( cloneFromNexsonTemplate('supporting files') );
+            }
+
+
             viewModel = ko.mapping.fromJS(data, studyMappingOptions);
             viewModel.studyQualityPercent = ko.observable(0);
             viewModel.studyQualityPercentStyle = ko.computed(function() {
@@ -289,7 +297,7 @@ function saveFormDataToStudyJSON() {
     var saveURL = API_update_study_PUT_url.replace('{STUDY_ID}', studyID);
 
     $.ajax({
-        type: 'POST',  // TODO: use PUT for updates?
+        type: 'PUT',  // TODO: use POST for updates?
         dataType: 'json',
         // crossdomain: true,
         // contentType: "application/json; charset=utf-8",
@@ -1191,6 +1199,16 @@ var nexsonTemplates = {
        */
     }, // END of 'supporting files' template
 
+    'single supporting file': {
+        /* A single file added in the Files section
+         */
+        "filename": "",
+        "url": "",
+        "type": "",  // eg, 'Microsoft Excel spreadsheet'
+        "size": ""   // eg, '241 KB'
+    }, // END of 'single supporting file' template
+
+
     'OTU mapping hints': {
         /* A series of regular expressions ('substitutions') to facilitate
          * mapping of leaf nodes in study trees to known taxa. Also hints to
@@ -1312,6 +1330,141 @@ if (!Date.prototype.toISOString) {
     Date.prototype.toISOString = Date.prototype.toJSON;
 }
 
+function getSupportingFiles(data) {
+    // retrieve this from the model (or other specified object); return null if not found
+    if (!data) {
+        data = viewModel.nexml.meta();
+    }
+    var metaTag = getMetaTagByID(data, 'supporting-files-metadata');
+    if (!metaTag) {
+        return null;
+    }
+    // return the inner 'files' observableArray (the interesting part)
+    return metaTag.author.invocation.params.files;
+}
+function addSupportingFile() {
+    // TODO: support file upload from desktop
+    // TODO: upload data in a preparatory step?
+    
+    // initial version supports URL entry only...
+    var chosenURL = $.trim( $('[name=new-file-url]').val() || '');
+    if (chosenURL === '') {
+        showErrorMessage('Please choose a local file or enter a valid URL.');
+        return;
+    }
+    
+
+    // TODO: do the actual removal (from the remote file-store) via AJAX
+  if (false) {
+
+
+    
+    // looking good, proceed with addition via AJAX
+    $('#ajax-busy-bar').show();
+    
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        // contentType: "application/json; charset=utf-8",
+        url: API_create_file_POST_url,
+        data: {
+            // TODO: gather chosen file-creation options
+            'file_url': chosenURL
+        },
+        success: function( data, textStatus, jqXHR ) {
+            // creation method should return either our JSON structure describing the new file, or an error
+            $('#ajax-busy-bar').hide();
+
+            console.log('addSupportingFile(): done! textStatus = '+ textStatus);
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                showErrorMessage('Sorry, there was an error adding this file.');
+                return;
+            }
+
+            showSuccessMessage('File added.');
+            // update the files list (and auto-save?)
+            var file = cloneFromNexsonTemplate('single supporting file');
+            file.filename( data.filename || "" );
+            file.url( data.url || "" );
+            file.type( data.type || "" );
+            file.size( data.size || "" );
+            getSupportingFiles().push(file);
+        },
+        error: function( data, textStatus, jqXHR ) {
+            debugger;
+        }
+    });
+
+
+
+  } // END if(false)
+
+  
+    // TODO: remove this pretend victory..
+    showSuccessMessage('File added.');
+    // update the files list (and auto-save?)
+    var file = cloneFromNexsonTemplate('single supporting file');
+    file.filename( "FAKEFILE.csv" );
+    file.url( "http://storage.blah.org/FAKEFILE.csv" );
+    file.type( "Comma-separated text" );
+    file.size( "1234.5 KB" );
+    getSupportingFiles().push(file);
+}
+function removeSupportingFile( fileListItem ) {
+    // let's be sure, since adding may be slow...
+    if (!confirm("Do you really want to remove this file? This action cannot be undone!")) {
+        return;
+    }
+    // TODO: do the actual removal (from the remote file-store) via AJAX
+  if (false) {
+
+
+
+    $('#ajax-busy-bar').show();
+    
+    $.ajax({
+        type: 'DELETE',
+        dataType: 'json',
+        // crossdomain: true,
+        // contentType: "application/json; charset=utf-8",
+        url: API_remove_file_DELETE_url,
+        data: { },
+        success: function( data, textStatus, jqXHR ) {
+            // deletion method should return ???, or an error
+            debugger;
+            console.log('removeSupportingFile(): done! textStatus = '+ textStatus);
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                showErrorMessage('Sorry, there was an error removing this file.');
+                return;
+            }
+
+            $('#ajax-busy-bar').hide();
+            showSuccessMessage('File removed.');
+            // update the files list
+            var fileList = getSupportingFiles();
+            fileList.remove(fileListItem);
+        },
+        error: function( data, textStatus, jqXHR ) {
+            debugger;
+        }
+    });
+
+
+
+  } // END if(false)
+
+  
+    // TODO: remove this pretend victory..
+    showSuccessMessage('File removed.');
+    // update the files list
+    var fileList = getSupportingFiles();
+    fileList.remove(fileListItem);
+
+}
+
 function getOTUMappingHints(data) {
     // retrieve this from the model (or other specified object); return null if not found
     if (!data) {
@@ -1379,7 +1532,6 @@ function revertOTULabel(otu) {
 
 // this should be cleared whenever something changes in mapping hints
 function clearFailedOTUList() {
-    console.log("clearing failed OTUs list");
     failedMappingOTUs.removeAll();
     // should we restart auto-mapping?
     if (autoMappingInProgress()) {
@@ -1600,8 +1752,6 @@ function requestTaxonMapping() {
                 }
 
             } else {
-                console.log("!!! I didn't find any matches for this search");  // TODO
-                //otuToMap['@label']( "MAPPING FAILED, please add hints" );
                 failedMappingOTUs.push( otuID );
             }
 

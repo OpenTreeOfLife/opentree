@@ -315,24 +315,40 @@ body {
                </div>
               </div>
 
-                <table class="table table-condensed">
+                <table class="table table-condensed table-hover">
+                  <thead>
                     <tr>
                         <th>File name (click to see file details)</th>
                         <th>Type</th>
                         <th>Size</th>
                     </tr>
+                  </thead>
+                  <tbody data-bind="foreach: { data: getSupportingFiles().pagedItems(), as: 'file' }">
                     <tr>
-                        <td><a href="#">Alignment data (urchins).xls</a></td>
-                        <td>Microsoft Excel spreadsheet</td>
-                        <td>241 KB</td>
+                        <td>
+                            <a href="#" target="_blank" data-bind="text: file.filename || '?', attr: { href: file.url || '#' }">
+                                Alignment data (urchins).xls
+                            </a>
+                        </td>
+                        <td data-bind="text: file.type || '?'">Microsoft Excel spreadsheet</td>
+                        <td data-bind="text: file.size || '?'">241 KB</td>
                     </tr>
+                  </tbody>
                 </table>
 
-                <div class="pagination pagination-centered pagination-small">
+                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: getSupportingFiles()().length &gt; getSupportingFiles().pagedItems().length">
                   <ul>
-                    <li class="disabled"><a href="#">&laquo;</a></li>
-                    <li class="active"><a href="#">1</a></li>
-                    <li class="disabled"><a href="#">&raquo;</a></li>
+                    <li data-bind="css: { 'disabled': !getSupportingFiles().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="getSupportingFiles().prev(); return false;">&laquo;</a>
+                    </li>
+                   <!-- ko foreach: getPageNumbers( getSupportingFiles() ) -->
+                    <li data-bind="css: { 'active': (getSupportingFiles().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="getSupportingFiles().goToPage(parseInt($(this).text())); return false;">0</a>
+                    </li>
+                   <!-- /ko -->
+                    <li data-bind="css: { 'disabled': !getSupportingFiles().next.enabled() }" class="disabled">
+                        <a href="#" onclick="getSupportingFiles().next(); return false;">&raquo;</a>
+                    </li>
                   </ul>
                 </div>
             </div>
@@ -365,11 +381,11 @@ body {
                     <span class='label label-info' id="upload-file-info"></span>
                   </div>
                   
-                  <label for="new-file-URL">&hellip;or paste its URL:</label>
-                  <input type="text" id="new-file-URL" class="input-block-level" value="" placeholder="Paste file URL here">
+                  <label for="new-file-url">&hellip;or paste its URL:</label>
+                  <input type="text" id="new-file-url" name="new-file-url" class="input-block-level" value="" placeholder="Paste file URL here">
 
                   <div Xclass="form-actions" style="margin-top: 1em;">
-                      <button type="submit" class="btn btn-primary btn-primary-disabled" disabled="disabled">Add new file 
+                      <button type="submit" class="btn btn-primary btn-primary-disabled" onclick="addSupportingFile(); return false;">Add new file 
                         <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
                       <button type="button" class="btn">Cancel</button>
                   </div>
@@ -893,9 +909,12 @@ Please review and re-submit.</pre>
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
     var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
-    var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
     var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
     var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
+    var API_create_file_POST_url = '{{= conf.get("apis", "API_create_file_POST_url") }}';
+    var API_load_file_GET_url = '{{= conf.get("apis", "API_load_file_GET_url") }}';
+    var API_update_file_PUT_url = '{{= conf.get("apis", "API_update_file_PUT_url") }}';
+    var API_remove_file_DELETE_url = '{{= conf.get("apis", "API_remove_file_DELETE_url") }}';
 
     var treemachine_domain = "{{=treemachine_domain}}";
     var taxomachine_domain = "{{=taxomachine_domain}}";

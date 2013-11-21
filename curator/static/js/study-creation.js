@@ -6,8 +6,6 @@
 
 // these variables should already be defined in the main HTML page
 var API_create_study_POST_url;
-var API_load_study_GET_url;
-var API_update_study_PUT_url;
 
 $(document).ready(function() {
     // disable radio buttons, pending acceptance of CC0
