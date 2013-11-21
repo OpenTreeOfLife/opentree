@@ -91,10 +91,5 @@ body {
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
     var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
         // this can take a few possible POSTed arguments (DOI, or initial input)
-
-    // these are probably not needed here; upon creation, we'll immediate redirect to the Edit page (or back here, with an error)
-    var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
-    var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
-    var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
 </script>
 <script src="{{=URL('static','js/study-creation.js')}}"></script>
