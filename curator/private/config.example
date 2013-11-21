@@ -10,13 +10,18 @@ github_redirect_uri = YOUR_REDIRECT_URI_HERE
 
 # RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #
-# If an API call is to another domain or subdomain, remember to enable JSONP by
-# appending '?jsoncallback=?' to each URL!
+# NOTE that we shouldn't need '?jsoncallback=?' on URLs for the OTOL API, since
+# it now supports cross-domain requests via CORS
 
-API_create_study_POST_url = http://dev.opentreeoflife.org/api/api/study?jsoncallback=?
-API_load_study_GET_url = http://dev.opentreeoflife.org/api/api/study/{STUDY_ID}?jsoncallback=?
-API_update_study_PUT_url = http://dev.opentreeoflife.org/api/api/study/{STUDY_ID}?jsoncallback=?
- 
+API_create_study_POST_url = http://dev.opentreeoflife.org/api/v1/study
+API_load_study_GET_url = http://dev.opentreeoflife.org/api/v1/study/{STUDY_ID}
+API_update_study_PUT_url = http://dev.opentreeoflife.org/api/v1/study/{STUDY_ID}
+API_remove_study_DELETE_url = http://dev.opentreeoflife.org/api/v1/study/{STUDY_ID}
+
+API_create_file_POST_url = http://dev.opentreeoflife.org/api/v1/study/{STUDY_ID}/file
+API_load_file_GET_url = http://dev.opentreeoflife.org/api/v1/study/{STUDY_ID}/file/{FILE_ID}
+API_update_file_PUT_url = http://dev.opentreeoflife.org/api/v1/study/{STUDY_ID}/file/{FILE_ID}
+API_remove_file_DELETE_url = http://dev.opentreeoflife.org/api/v1/study/{STUDY_ID}/file/{FILE_ID}
 
 # List public-facing base URL for treemachine and taxomachine services
 # (NOTE that these are used by both server- and client-side code)
@@ -40,6 +45,5 @@ getDraftTreeForNodeID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeFo
 doTNRSForNames_url = {taxomachine_domain}/ext/TNRS/graphdb/autocompleteBoxQuery
     # NOTE that in this case, we switched to a new method name
 getContextsJSON_url = {taxomachine_domain}/ext/TNRS/graphdb/getContextsJSON
-getNodeIDForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getNodeIDForOttolID
+getNodeIDForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getNodeIDForottId
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
-
