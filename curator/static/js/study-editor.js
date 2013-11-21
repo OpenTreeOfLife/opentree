@@ -289,7 +289,7 @@ function saveFormDataToStudyJSON() {
     var saveURL = API_update_study_PUT_url.replace('{STUDY_ID}', studyID);
 
     $.ajax({
-        type: 'POST',  // TODO: use PUT for updates?
+        type: 'PUT',  // TODO: use POST for updates?
         dataType: 'json',
         // crossdomain: true,
         // contentType: "application/json; charset=utf-8",
