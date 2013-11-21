@@ -160,15 +160,15 @@ public class Smasher {
 	}
 
 	static void getTaxonomy(Taxonomy tax, String designator) throws IOException {
-		if (designator.startsWith("(")) {
-			tax.root = tax.newickToNode(designator);
-		} else {
+		if (designator.startsWith("("))
+			tax.roots.add(tax.newickToNode(designator));
+		else {
             if (!designator.endsWith("/")) {
                 System.err.println("Taxonomy designator should end in / but doesn't: " + designator);
                 designator = designator + "/";
             }
 			System.out.println("--- Reading " + designator + " ---");
-			tax.root = tax.loadTaxonomy(designator);
+			tax.loadTaxonomy(designator);
 		}
 		tax.investigateHomonyms();
 	}
@@ -229,7 +229,7 @@ class Taxonomy implements Iterable<Node> {
 	Map<Long, Node> idIndex = new HashMap<Long, Node>();
 	Map<String, List<Node>> synonyms = new HashMap<String, List<Node>>();
 	boolean originp = false;
-	Node root;
+	List<Node> roots = new ArrayList<Node>(1);
 	int which = -1;
 	long maxid = -1;
 	protected String tag = null;
@@ -246,10 +246,6 @@ class Taxonomy implements Iterable<Node> {
 
 	public String toString() {
 		return "(taxonomy " + (tag != null ? tag : "?") + ")";
-	}
-
-	Node getRoot() {
-		return root;
 	}
 
 	List<Node> lookup(String name) {
@@ -283,28 +279,28 @@ class Taxonomy implements Iterable<Node> {
 	}
 
 	int count() {
-		if (this.root == null)
-			return 0;
-		else
-			return this.root.count();
+		int total = 0;
+		for (Node root : this.roots)
+			total += root.count();
+		return total;
 	}
 
-	// Iterate over all nodes reachable from root
+	// Iterate over all nodes reachable from roots
 
 	public Iterator<Node> iterator() {
 		final List<Iterator<Node>> its = new ArrayList<Iterator<Node>>();
+		its.add(this.roots.iterator());
 		final Node[] current = new Node[1]; // locative
-		current[0] = this.root;
+		current[0] = null;
 
 		return new Iterator<Node>() {
 			public boolean hasNext() {
 				if (current[0] != null) return true;
-				for (int z = its.size()-1; z >= 0; --z) {
-					if (its.get(z).hasNext())
-						return true;
-					its.remove(z);
+				while (true) {
+					if (its.size() == 0) return false;
+					if (its.get(0).hasNext()) return true;
+					else its.remove(0);
 				}
-				return false;
 			}
 			public Node next() {
 				Node node = current[0];
@@ -312,7 +308,8 @@ class Taxonomy implements Iterable<Node> {
 					current[0] = null;
 				else
 					// Caller has previously called hasNext(), so we're good to go
-					node = its.get(its.size()-1).next();
+					// Was: .get(its.size()-1)
+					node = its.get(0).next();
 				if (node.children != null)
 					its.add(node.children.iterator());
 				return node;
@@ -380,13 +377,12 @@ class Taxonomy implements Iterable<Node> {
 
 	static Pattern tabVbarTab = Pattern.compile("\t\\|\t?");
 
-	Node loadTaxonomy(String dirname) throws IOException {
+	void loadTaxonomy(String dirname) throws IOException {
         String filename = dirname + "taxonomy.tsv";
 		FileReader fr = new FileReader(filename);
 		BufferedReader br = new BufferedReader(fr);
 		String str;
 		int row = 0;
-		Node root = null;
 
 		while ((str = br.readLine()) != null) {
 			String[] parts = tabVbarTab.split(str);
@@ -422,10 +418,8 @@ class Taxonomy implements Iterable<Node> {
 						parent.setId(parentId);
 					}
 					parent.addChild(node);
-				} else if (root != null) {
-					node.report("Multiple roots", root);
 				} else
-					root = node;
+					roots.add(node);
 				node.init(parts); // does setName
 			}
 			++row;
@@ -439,16 +433,20 @@ class Taxonomy implements Iterable<Node> {
 				// Node was specified as a parent, but never provided
 				System.err.println("*** Rankless node! " + node.id);
 
-		if (root == null)
-			System.err.println("*** No root node!");
-		else if (row != root.count())
-			System.err.println(this.getTag() + " is ill-formed: " +
-							   row + " rows, " + 
-							   root.count() + " reachable");
-
+		if (roots.size() == 0)
+			System.err.println("*** No root nodes!");
+		else {
+			if (roots.size() > 1)
+				System.err.println("Multiple roots: " + roots.size());
+			int total = 0;
+			for (Node root : roots)
+				total += root.count();
+			if (row != total)
+				System.err.println(this.getTag() + " is ill-formed: " +
+								   row + " rows, " + 
+								   total + " reachable from roots");
+		}
 		loadSynonyms(dirname + "synonyms.tsv");
-
-		return root;
 	}
 
 	void loadSynonyms(String filename) throws IOException {
@@ -585,8 +583,10 @@ class Taxonomy implements Iterable<Node> {
 	*/
 
 	void analyze() {
-		analyzeRankConflicts(this.root);
-		analyze(this.root, 0);	// mutates the tree
+		for (Node root : this.roots)
+			analyzeRankConflicts(root);
+		for (Node root : this.roots)
+			analyze(root, 0);	// mutates the tree
 	}
 
 	static final int NOT_OTU             =    1;
@@ -900,15 +900,16 @@ class Taxonomy implements Iterable<Node> {
 
 	String toNewick() {
 		StringBuffer buf = new StringBuffer();
-		if (this.root != null)
-			this.root.appendNewickTo(buf); // class Node
+		for (Node root: this.roots) {
+			root.appendNewickTo(buf);
+			buf.append(";");
+		}
 		return buf.toString();
 	}
 
 	void dumpNewick(String outfile) throws java.io.IOException {
 		PrintStream out = openw(outfile);
 		out.print(this.toNewick());
-		out.println(";");
 		out.close();
 	}
 
@@ -923,6 +924,8 @@ class Taxonomy implements Iterable<Node> {
 		}
 	}
 
+	// TO BE DONE: Implement ; for reading forests
+
 	Node newickToNode(java.io.PushbackReader in) throws java.io.IOException {
 		int c = in.read();
 		if (c == '(') {
@@ -930,7 +933,7 @@ class Taxonomy implements Iterable<Node> {
 			{
 				Node child;
 				while ((child = newickToNode(in)) != null) {
-					if (child != null) children.add(child);
+					children.add(child);
 					int d = in.read();
 					if (d < 0 || d == ')') break;
 					if (d != ',')
@@ -939,9 +942,14 @@ class Taxonomy implements Iterable<Node> {
 			}
 			Node node = newickToNode(in); // get postfix name, x in (a,b)x
 			if (node != null || children.size() > 0) {
-				if (node == null) node = new Node(this);
+				if (node == null) {
+					node = new Node(this);
+					// kludge
+					node.setName("");
+				}
 				for (Node child : children)
 					node.addChild(child);
+				node.rank = (children.size() > 0) ? "no rank" : "species";
 				return node;
 			} else
 				return null;
@@ -952,6 +960,7 @@ class Taxonomy implements Iterable<Node> {
 					if (c >= 0) in.unread(c);
 					if (buf.length() > 0) {
 						Node node = new Node(this);
+						node.rank = "species";
 						node.setName(buf.toString());
 						return node;
 					} else return null;
@@ -992,7 +1001,7 @@ class SourceTaxonomy extends Taxonomy {
 		// 2. Map internal nodes
 		// 3. Add previously unmapped tips and internal nodes
 
-		if (this.root != null) {
+		if (this.roots.size() > 0) {
 
 			Node.resetStats();
 			System.out.println("--- Mapping " + this.getTag() + " into union ---");
@@ -1001,12 +1010,12 @@ class SourceTaxonomy extends Taxonomy {
 
 			int beforeCount = union.nameIndex.size();
 
-			if (union.root != null) {
+			for (Node root: union.roots) {
 				// Clear out gumminess from previous merges
-				union.root.reset();
+				root.reset();
 
 				// Prepare for subsumption checks
-				union.root.assignBrackets();
+				root.assignBrackets();
 			}
 
 			this.pin(union);
@@ -1126,55 +1135,44 @@ class SourceTaxonomy extends Taxonomy {
 	}
 
 	void augment(UnionTaxonomy union) {
-		if (this.root != null) {
-
-			// Case analysis:
-			//  Trees are disjoint
-			//  this.root maps into union
-			//  union.root co-maps into this
-			//  roots are coincident (this.root maps to union.root)
-			//  roots map/co-map, but not coincident - a would-be cycle!
-
-			if (this.root.mapped == null) {
-				// Need a place to put the new root after we 'augment'.
-				// Create a new union "life" root, if needed.
-				if (union.root != null &&
-					(!union.root.name.equals("life") ||
-					 // This last case is extremely unlikely...
-					 union.root.comapped != null)) {
-					Node life = new Node(union);
-					life.setName("life");
-					Node oldroot = union.root;
-					union.root = life;
-					if (oldroot != null)
-						life.addChild(oldroot);
-
-					// Map new "life" to old "life"
-					if (this.root.name.equals("life"))
-						this.root.unifyWith(life);
-				}
-			}
-
+		if (this.roots.size() > 0) {
 
 			// Add heretofore unmapped nodes to union
 			if (Node.windyp)
 				System.out.println("--- Augmenting union with new nodes from " + this.getTag() + " ---");
 			int startcount = union.count();
+			int startroots = union.roots.size();
 
-			// 'augment' always returns a node in the union tree
-			Node newroot = this.root.augment(union);
+			for (Node root : this.roots) {
 
-			if (newroot != null && newroot != union.root && newroot.parent == null) {
-				if (union.root == null)
-					union.root = newroot;
-				else 
-					union.root.addChild(newroot);
+				// 'augment' always returns a node in the union tree, or null
+				Node newroot = root.augment(union);
+
+				if (newroot != null && newroot.parent == null && !union.roots.contains(newroot))
+					union.roots.add(newroot);
 			}
 
+			// Tidy up the root set:
+			List<Node> losers = new ArrayList<Node>();
+			for (Node root : union.roots)
+				if (root.parent != null) {
+					System.out.println("| No longer a root: " + root);
+					losers.add(root);
+				}
+			for (Node loser : losers)
+				union.roots.remove(loser);
+
+			// Sanity check:
+			for (Node unode : union)
+				if (unode.parent == null && !union.roots.contains(unode))
+					System.err.println("| Missing root: " + unode);
+
 			if (Node.windyp) {
-				System.out.println("| Started with:		 " + startcount);
+				System.out.println("| Started with:		 " +
+								   startroots + " trees, " + startcount + " taxa");
 				Node.augmentationReport();
-				System.out.println("| Ended with:		 " + union.count());
+				System.out.println("| Ended with:		 " +
+								   union.roots.size() + " trees, " + union.count() + " taxa");
 			}
 			if (union.nameIndex.size() < 10)
 				System.out.println(" -> " + union.toNewick());
@@ -1254,13 +1252,13 @@ class SourceTaxonomy extends Taxonomy {
 
 	static SourceTaxonomy readTaxonomy(String filename) throws IOException {
 		SourceTaxonomy tax = new SourceTaxonomy();
-		tax.root = tax.loadTaxonomy(filename);
+		tax.loadTaxonomy(filename);
 		return tax;
 	}
 
 	static SourceTaxonomy parseNewick(String newick) {
 		SourceTaxonomy tax = new SourceTaxonomy();
-		tax.root = tax.newickToNode(newick);
+		tax.roots.add(tax.newickToNode(newick));
 		return tax;
 	}
 }
@@ -1612,33 +1610,38 @@ class UnionTaxonomy extends Taxonomy {
 	void dumpAll(String outprefix) throws IOException {
 		this.analyze();
 		this.dumpLog(outprefix + "log.tsv");
-		this.dump(this.root, outprefix + "taxonomy.tsv");
+		this.dump(this.roots, outprefix + "taxonomy.tsv");
 		this.dumpSynonyms(outprefix + "synonyms.tsv");
 		if (this.idsource != null)
 			this.dumpDeprecated(this.idsource, outprefix + "deprecated.tsv");
 	}
 
 	void dump(Node unode, String filename) throws IOException {
+		List<Node> it = new ArrayList<Node>(1);
+		it.add(unode);
+		this.dump(it, filename);
+	}
+
+	void dump(List<Node> unodes, String filename) throws IOException {
 		PrintStream out = Taxonomy.openw(filename);
 
 		out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\tuniqname\t|\tflags\t|\t"
 					// 0	 1				2		 3		  4				 5             6
 					);
 
-		dumpNode(unode, true, out);
+		for (Node unode : unodes)
+			dumpNode(unode, out);
 		out.close();
 	}
 
 	// Recursive!
-	void dumpNode(Node unode, boolean rootp, PrintStream out) {
+	void dumpNode(Node unode, PrintStream out) {
 		// 0. uid:
 		out.print(unode.id + "\t|\t");
 		// 1. parent_uid:
-		out.print((rootp ? "" : unode.parent.id)  + "\t|\t");
+		out.print((unode.parent == null ? "" : unode.parent.id)  + "\t|\t");
 		// 2. name:
-		out.print((unode.name == null ?
-				   (rootp ? "life" : "?") :
-				   unode.name)
+		out.print((unode.name == null ? "?" : unode.name)
 				  + "\t|\t");
 		// 3. rank:
 		out.print((unode.rank == null ? "" : unode.rank) + "\t|\t");
@@ -1660,7 +1663,7 @@ class UnionTaxonomy extends Taxonomy {
 
 		if (unode.children != null)
 			for (Node child : unode.children)
-				dumpNode(child, false, out);
+				dumpNode(child, out);
 	}
 
 	static String uniqueName(Node unode) {
@@ -2052,7 +2055,8 @@ class Node {
 				return this.mapped;
 			}
 
-			if (newChildren.size() == 0 && oldChildren.size() == 0) {
+			if (newChildren.size() == 0 // && oldChildren.size() == 0
+				) {
 				if (this.deprecationReason != null &&
 					this.deprecationReason.value > Answer.HECK_NO)
 					union.logAndMark(Answer.no(this, null, "blocked/internal", null));
@@ -2079,8 +2083,9 @@ class Node {
 				boolean lose = false;
 				Node oldParent = null;
 				for (Node old : oldChildren) {
+					// old has a nonnull parent, by contruction
 					if (oldParent == null) oldParent = old.parent;
-					if (old.parent != oldParent) {
+					else if (old.parent != oldParent) {
 						lose = true;
 						// System.err.println("Old parents don't match: " + this.name);
 						break;
@@ -2088,14 +2093,13 @@ class Node {
 				}
 				if (!lose)
 					for (Node nu : newChildren) {
+						// alternatively, could do some kind of MRCA
 						Node anc = this.parent;
 						while (anc != null && anc.mapped == null)
 							anc = anc.parent;
-						if (anc == null) {
-							if (oldParent != null && oldParent.parent != null) {
-								lose = true;
-								break;
-							}
+						if (anc == null) {    // ran past root of tree
+							lose = true;
+							break;
 						} else if (anc.mapped != oldParent) {
 							lose = true;
 							// System.err.println("Paraphyletic: " + anc + " " + oldParent);
@@ -2839,8 +2843,8 @@ abstract class Criterion {
 			Answer assess(Node x, Node y) {
 				Node y0 = y.scan(x.taxonomy);	  // ignore names not known in both taxonomies
 				Node x0 = x.scan(y.taxonomy);
-				if (x0 == null && y0 == null)
-					return Answer.heckYes(x, y, "both-at-top", null); // Both are roots
+				//if (x0 == null && y0 == null)
+				//	return Answer.heckYes(x, y, "both-at-top", null); // Both are roots
 				if (x0 == null || y0 == null)
 					return Answer.NOINFO;
 

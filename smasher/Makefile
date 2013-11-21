@@ -66,6 +66,10 @@ $(TAX)/nem_gbif/taxonomy.tsv:
 dory-test.tsv: $(TAX)/nem/log.tsv Smasher.class
 	java $(CP) Smasher --start $(TAX)/nem/ --select Dorylaimida $@
 
+# internal tests
+test: Smasher.class
+	java $(CP) Smasher --test
+
 # --------------------------------------------------------------------------
 
 # Add tax/if/ when it starts to work
