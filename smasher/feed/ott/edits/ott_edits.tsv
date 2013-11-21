@@ -12,7 +12,7 @@
 #command	name	rank	parent	context	sourceInfo
 #
 # From Bryan Drew October 2013
-move	Dermatobotrys saundersii	species	Scrophulariaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/
+move	Dermatobotrys	genus	Scrophulariaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/
 synonym	Berendtia	no rank	Hemichaena	Lamiales	http://www.tropicos.org/Name/50009025?tab=acceptednames,http://www.mobot.org/mobot/research/apweb/ 
 # already in the right place
 #move	Hemichaena	genus	Phrymaceae	Lamiales	http://www.mobot.org/mobot/research/apweb/
@@ -31,7 +31,7 @@ synonym	Bryodes madagascariensis	species	Psammetes madagascariensis	Lamiales	htt
 
 # Bryan used a PDF (BMC) reference for Bryodes, but it exists in NCBI
 #  was: http://www.biomedcentral.com/content/pdf/1471-2148-10-352.pdf
-move	Bryodes	genus	Linderniaceae	Magnoliophyta	ncbi:752521
+move	Bryodes	genus	Linderniaceae	Lamiales	ncbi:752521
 
 move	Acerites	genus	Sapindaceae	Magnoliophyta	http://rstb.royalsocietypublishing.org/content/351/1340/589.short
 move	Quercinium	genus	Fagaceae	Magnoliophyta	http://palaeontology.palass-pubs.org/pdf/Vol%203/Pages%2086-92.pdf

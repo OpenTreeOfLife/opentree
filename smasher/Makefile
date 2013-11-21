@@ -70,14 +70,15 @@ dory-test.tsv: $(TAX)/nem/log.tsv Smasher.class
 
 # Add tax/if/ when it starts to work
 
-OTT_ARGS=Smasher tax/713/ $(NCBI)/ $(GBIF)/ \
+OTT_ARGS=Smasher $(SILVA)/ tax/713/ $(NCBI)/ $(GBIF)/ \
       --edits $(FEED)/ott/edits/ \
       --ids $(TAX)/prev_ott/ \
       --out $(TAX)/ott/
 
 ott: $(TAX)/ott/log.tsv
-$(TAX)/ott/log.tsv: Smasher.class tax/713/taxonomy.tsv \
-		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv $(FEED)/ott/edits/ott_edits.tsv
+$(TAX)/ott/log.tsv: Smasher.class $(SILVA)/taxonomy.tsv tax/713/taxonomy.tsv \
+		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
+		    $(FEED)/ott/edits/ott_edits.tsv
 	mkdir -p $(TAX)/ott
 	java $(CP) -Xmx10g $(OTT_ARGS)
 	echo $(WHICH) >$(TAX)/ott/version.txt
@@ -97,27 +98,30 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
 
 $(TAX)/prev_ott/taxonomy.tsv:
-	mkdir -p $(FEED)/prev_ott/tmp
-	wget --output-document=$(FEED)/prev_ott/tmp/ott$(PREV_WHICH).tgz \
+	mkdir -p $(FEED)/prev_ott/in
+	wget --output-document=$(FEED)/prev_ott/in/ott$(PREV_WHICH).tgz \
 	  http://files.opentreeoflife.org/ott/ott$PREV_WHICH
-	(cd $(FEED)/prev_ott/tmp/; tar xf ott$(PREV_WHICH).tgz)
-	mv $(FEED)/prev_ott/tmp/ott$(PREV_WHICH)/* $(TAX)/prev_ott/
-	rmdir $(FEED)/prev_ott/tmp
+	(cd $(FEED)/prev_ott/in/; tar xf ott$(PREV_WHICH).tgz)
+	mv $(FEED)/prev_ott/in/ott$(PREV_WHICH)/* $(TAX)/prev_ott/
+	if [ -e $(TAX)/prev_ott/taxonomy ]; then mv $(TAX)/prev_ott/taxonomy $(TAX)/prev_ott/taxonomy.tsv; fi
+	if [ -e $(TAX)/prev_ott/synonyms ]; then mv $(TAX)/prev_ott/synonyms $(TAX)/prev_ott/synonyms.tsv; fi
+	rmdir $(FEED)/prev_ott/in
 
 # Formerly, where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
 ncbi: $(NCBI)/taxonomy.tsv
-$(NCBI)/taxonomy.tsv: $(FEED)/ncbi/tmp/nodes.dmp $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py
+$(NCBI)/taxonomy.tsv: $(FEED)/ncbi/in/nodes.dmp $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py
 	mkdir -p $(NCBI).tmp
-	python $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py F $(FEED)/ncbi/tmp \
+	python $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py F $(FEED)/ncbi/in \
             /dev/null $(NCBI).tmp
 	rm -rf $(NCBI)
 	mv -f $(NCBI).tmp $(NCBI)
 
-$(FEED)/ncbi/nodes.dmp: $(FEED)/ncbi/taxdump.tar.gz
-	tar -C $(FEED)/ncbi -xzvf $(FEED)/ncbi/taxdump.tar.gz
-	touch $(FEED)/ncbi/*.dmp
+$(FEED)/ncbi/in/nodes.dmp: $(FEED)/ncbi/taxdump.tar.gz
+	mkdir -p `dirname $@`
+	tar -C $(FEED)/ncbi/in -xzvf $(FEED)/ncbi/taxdump.tar.gz
+	touch $@
 
 $(FEED)/ncbi/taxdump.tar.gz:
 	mkdir -p $(FEED)/ncbi
@@ -127,36 +131,40 @@ $(FEED)/ncbi/taxdump.tar.gz:
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 
 gbif: $(GBIF)/taxonomy.tsv
-$(GBIF)/taxonomy.tsv: $(FEED)/gbif/tmp/taxon.txt $(FEED)/gbif/process_gbif_taxonomy.py
+$(GBIF)/taxonomy.tsv: $(FEED)/gbif/in/taxon.txt $(FEED)/gbif/process_gbif_taxonomy.py
 	mkdir -p $(GBIF).tmp
 	python $(FEED)/gbif/process_gbif_taxonomy.py \
-	       $(FEED)/gbif/tmp/taxon.txt \
+	       $(FEED)/gbif/in/taxon.txt \
 	       /dev/null $(GBIF).tmp
 	rm -rf $(GBIF)
 	mv -f $(GBIF).tmp $(GBIF)
 
-$(FEED)/gbif/tmp/taxon.txt: $(FEED)/gbif/tmp/checklist1.zip
-	(cd $(FEED)/gbif/tmp && unzip checklist1.zip)
+$(FEED)/gbif/in/taxon.txt: $(FEED)/gbif/in/checklist1.zip
+	(cd $(FEED)/gbif/in && unzip checklist1.zip)
 
-$(FEED)/gbif/tmp/checklist1.zip:
-	mkdir -p $(FEED)/gbif/tmp
+$(FEED)/gbif/in/checklist1.zip:
+	mkdir -p $(FEED)/gbif/in
 	wget --output-document=$@ \
              http://ecat-dev.gbif.org/repository/export/checklist1.zip
 
-silva: $(SILVA)
-$(SILVA): $(FEED)/silva/silva.fasta
-	python $(FEED)/silva/process_silva.py $(FEED)/silva $(TAX)/silva
-# process_silva.py takes 74 minutes to run
+# Significant tabs !!!
+
+silva: $(SILVA)/taxonomy.tsv
+$(SILVA)/taxonomy.tsv: $(FEED)/silva/process_silva.py $(FEED)/silva/in/silva.fasta
+	mkdir -p $(FEED)/silva/out
+	python $(FEED)/silva/process_silva.py $(FEED)/silva/in $(FEED)/silva/out
+	mkdir -p $(SILVA)
+	cp -p $(FEED)/silva/out/taxonomy.tsv $(SILVA)/taxonomy.tsv
 
 # Silva 115: 206M uncompresses to 817M
 
-$(FEED)/silva/silva.fasta:
-	mkdir -p $(FEED)/silva
-	wget --output-document=$(FEED)/silva/tax_ranks.txt \
+$(FEED)/silva/in/silva.fasta:
+	mkdir -p `basename $@`
+	wget --output-document=$(FEED)/silva/in/tax_ranks.txt \
 	  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/tax_ranks_ssu_115.txt
-	wget --output-document=$(FEED)/silva/silva.fasta.tgz \
+	wget --output-document=$(FEED)/silva/in/silva.fasta.tgz \
 	  https://www.arb-silva.de/fileadmin/silva_databases/release_115/Exports/SSURef_NR99_115_tax_silva.fasta.tgz
-	(cd $(FEED)/silva && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
+	(cd $(FEED)/silva/in && tar xzvf silva.fasta.tgz && mv *silva.fasta silva.fasta)
 
 TARDIR=/raid/www/roots/opentree/ott
 

@@ -126,6 +126,11 @@ public class Smasher {
 					else if (argv[i].equals("--test"))
 						test();
 
+					else if (argv[i].equals("--tre")) {
+						String outfile = argv[++i];
+						union.dumpNewick(outfile);
+					}
+
 					else if (argv[i].equals("--newick"))
 						System.out.println(" -> " + union.toNewick());
 
@@ -429,6 +434,11 @@ class Taxonomy implements Iterable<Node> {
 		}
 		fr.close();
 
+		for (Node node : this)
+			if (node.rank == null)
+				// Node was specified as a parent, but never provided
+				System.err.println("*** Rankless node! " + node.id);
+
 		if (root == null)
 			System.err.println("*** No root node!");
 		else if (row != root.count())
@@ -452,18 +462,27 @@ class Taxonomy implements Iterable<Node> {
 			int count = 0;
 			BufferedReader br = new BufferedReader(fr);
 			String str;
+			int syn_column = 1;
+			int id_column = 0;
 			while ((str = br.readLine()) != null) {
 				String[] parts = tabVbarTab.split(str);
 				// 36602	|	Sorbus alnifolia	|	synonym	|	|	
 				if (parts.length >= 2) {
-					String syn = parts[1];
 					Long id;
 					try {
-						id = new Long(parts[0]);
+						id = new Long(parts[id_column]);
 					} catch (NumberFormatException e) {
 						// Header row, probably.  Eventually we should parse this for column names
+						Map<String, Integer> headerx = new HashMap<String, Integer>();
+						for (int i = 0; i < parts.length; ++i)
+							headerx.put(parts[i], i);
+						Integer o1 = headerx.get("name");
+						if (o1 != null) syn_column = o1;
+						Integer o2 = headerx.get("id");
+						if (o2 != null) id_column = o2;
 						continue;
 					}
+					String syn = parts[syn_column];
 					Node node = this.idIndex.get(id);
 					if (node == null) {
 						System.err.println("No such synonym target! " + id + " " + syn);
@@ -566,8 +585,8 @@ class Taxonomy implements Iterable<Node> {
 	*/
 
 	void analyze() {
-		analyzeRankConflicts(this.root, 0);
-		analyze(this.root, 0);
+		analyzeRankConflicts(this.root);
+		analyze(this.root, 0);	// mutates the tree
 	}
 
 	static final int NOT_OTU             =    1;
@@ -589,53 +608,59 @@ class Taxonomy implements Iterable<Node> {
 	// value should be >= parentRank, but conceivably funny things
 	// could happen when combinings taxonomies.
 
-	static int analyzeRankConflicts(Node node, int parentRank) {
-		int myrank = (node.rank.equals("no rank") ? parentRank+1 : ranks.get(node.rank));
+	static int analyzeRankConflicts(Node node) {
+		int myrank = ranks.get(node.rank);    // no rank = -1
 		node.rankAsInt = myrank;
 
 		if (node.children != null) {
 
-			int highrank = Integer.MAX_VALUE; // highest rank among all descendents
+			int highrank = Integer.MAX_VALUE; // highest rank among all children
 			int lowrank = -1;
+			Node highchild = null;
 
 			// Preorder traversal
 			// In the process, calculate rank of highest child
 			for (Node child : node.children) {
-				int rank = analyzeRankConflicts(child, myrank);
-				if (rank < highrank) highrank = rank;
-				if (rank > lowrank)  lowrank = rank;
+				int rank = analyzeRankConflicts(child);
+				if (rank >= 0) {
+					if (rank < highrank) { highrank = rank; highchild = child; }
+					if (rank > lowrank)  lowrank = rank;
+				}
 			}
 
-			// assert myRank < highrank <= lowrank
-			if (myrank > highrank)
-				// The = case is weird too, there are about 200 of those
-				System.err.println("** Ranks out of order: " +
-								   node.id + " " + node.name + " " +
-								   myrank + ">" + highrank);
+			if (lowrank >= 0) {	// Any non-"no rank" children?
 
-			// highrank is the highest (lowest-numbered) rank among all the children.
-			// Similarly lowrank.  If they're different we have a 'rank conflict'
-			if (highrank != lowrank) {
-				// Two cases: subfamily/genus (minor), phylum/genus (major)
-				int x = highrank / 100; //int division, subfamily->family, phylum->phylum
-				for (Node child : node.children) {
-					int rv = child.rankAsInt;
-					// we know rv >= highrank
-					if (rv > highrank) {
-						int y = (rv + 99) / 100; //genus->genus, subfamily->genus
-						// we know y > x
-						if (y == x+1)
-							// 168940 of these, about 20% from GBIF
-							// e.g. Australopithecus
-							child.properFlags |= SIBLING_HIGHER; //e.g. genus not in subfamily
-						else
-							// 66309 of these, about half from GBIF
-							// e.g. Sirozythia
-							child.properFlags |= MAJOR_RANK_CONFLICT;
-					} else
-						// 311695 e.g. Homininae
-						// Probably best to drop them
-						child.properFlags |= SIBLING_LOWER;
+				// highrank is the highest (lowest-numbered) rank among all the children.
+				// Similarly lowrank.  If they're different we have a 'rank conflict'.
+				// Some 'rank conflicts' are 'minor', others are 'major'.
+				if (highrank < lowrank) {
+					// Suppose the parent is a class. We're looking at relative ranks of the children...
+					// Two cases: order/family (minor), order/genus (major)
+					int x = highrank / 100;       //e.g. order
+					for (Node child : node.children) {
+						int sibrank = child.rankAsInt;     //e.g. family or genus
+						if (sibrank < 0) continue;		   // skip "no rank" children
+						// we know sibrank >= highrank
+						if (sibrank < lowrank)  // if child is higher rank than some sibling...
+							// a family that has a sibling that's a genus
+							// SIBLING_LOWER means 'has a sibling with lower rank'
+							child.properFlags |= SIBLING_LOWER; //e.g. family with genus sibling
+						if (sibrank > highrank) {  // if lower rank than some sibling
+							int y = (sibrank + 99) / 100; //genus->genus, subfamily->genus
+							if (y > x+1)
+								// e.g. a genus that has an order as a sibling
+								child.properFlags |= MAJOR_RANK_CONFLICT;
+							else
+								child.properFlags |= SIBLING_HIGHER; //e.g. genus with family sibling
+						}
+					}
+
+					// Extra informational check.  See if ranks are inverted.
+					if (myrank >= 0 && myrank > highrank)
+						// The myrank == highrank case is weird too; there are about 200 of those.
+						System.err.println("** Ranks out of order: " +
+										   node + " " + node.rank + " has child " +
+										   highchild + " " + highchild.rank);
 				}
 			}
 		}
@@ -822,10 +847,11 @@ class Taxonomy implements Iterable<Node> {
 
 	static Pattern environmentalRegex = Pattern.compile("\\benvironmental\\b");
 
-	static Pattern incertae_sedisRegex = Pattern.compile("\\bincertae sedis\\b");
+	static Pattern incertae_sedisRegex = Pattern.compile("\\bincertae sedis\\b|\\bIncertae sedis\\b");
 
 	static String[][] rankStrings = {
-		{"superkingdom",
+		{"domain",
+		 "superkingdom",
 		 "kingdom",
 		 "subkingdom",
 		 "superphylum"},
@@ -865,6 +891,7 @@ class Taxonomy implements Iterable<Node> {
 			for (int j = 0; j < rankStrings[i].length; ++j)
 				ranks.put(rankStrings[i][j], (i+1)*100 + j*10);
 		}
+		ranks.put("no rank", -1);
 	}
 
 	// -------------------- Newick stuff --------------------
@@ -876,6 +903,13 @@ class Taxonomy implements Iterable<Node> {
 		if (this.root != null)
 			this.root.appendNewickTo(buf); // class Node
 		return buf.toString();
+	}
+
+	void dumpNewick(String outfile) throws java.io.IOException {
+		PrintStream out = openw(outfile);
+		out.print(this.toNewick());
+		out.println(";");
+		out.close();
 	}
 
 	// Parse Newick yielding nodes
@@ -1610,6 +1644,7 @@ class UnionTaxonomy extends Taxonomy {
 		out.print((unode.rank == null ? "" : unode.rank) + "\t|\t");
 
 		// 4. source information
+		// comma-separated list of URI-or-CURIE
 		out.print(unode.getSourceIds() + "\t|\t");
 
 		// 5. uniqname
@@ -1773,8 +1808,11 @@ class Node {
 	//		|	sourcepid	|	uniqname	|	preottol_id	|	
 	void init(String[] parts) {
 		this.setName(parts[2]);
-		if (parts.length >= 4)
+		if (parts.length >= 4) {
 			this.rank = parts[3];
+			if (Taxonomy.ranks.get(this.rank) == null)
+				System.err.println("!! Peculiar rank: " + this.rank + " " + this.id);
+		}
 		if (parts.length >= 5)
 			this.extra = parts;
 	}
@@ -2205,11 +2243,12 @@ class Node {
 	// Generally called on a union taxonomy node
 
 	String getSourceIds() {
-		String ids = null;
+		String ids = this.sourceInfo;
 		if (this.sourcenodes != null) {	// union (updated ottol)
 			for (Node source : this.sourcenodes)
 				if (source != null && source.taxonomy.originp) {
 					String id = source.getQualifiedId();
+					// What about Silva?  CURIE in sourceInfo column !!
 					if (ids == null)
 						ids = id;
 					else
@@ -2221,8 +2260,8 @@ class Node {
 					this.extra[this.taxonomy.sourceidcolumn]);
 		} else if (this.taxonomy.infocolumn >= 0)
 			return this.extra[this.taxonomy.infocolumn];
-		else if (this.sourceInfo != null)
-			return this.sourceInfo;
+		else if (ids != null)	// sourceInfo
+			return ids;
 		else
 			// callers expect non-null
 			return "";
@@ -2563,7 +2602,7 @@ class Node {
 			buf.append(")");
 		}
 		if (this.name != null)
-			buf.append(name);
+			buf.append(name.replace('(','[').replace(')',']').replace(':','?'));
 	}
 
 	static Comparator<Node> compareNodes = new Comparator<Node>() {

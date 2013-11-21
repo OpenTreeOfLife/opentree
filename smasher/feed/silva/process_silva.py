@@ -47,118 +47,124 @@ Be aware of a few things -
 	even though the it could be confusing.  Chloroplast (and other symbiont) data may need special treatment
 
 '''
+import sys
 import re
 
 
-taxdict = {} #given the sequence identifier, return the taxonomy list
-iddict = {} #given the sequence name, return (<species id assigned here>,<unique sequence id from SSU ref file>) 
+pathdict = {} #given the sequence identifier, return the taxonomy path
+seqdict = {} #given the taxon name, return (<species id assigned here>,<unique sequence id from SSU ref file>) 
 Seen = {} # to tell whether the taxon name has been seen before - to know if homonym check needs to be done
-
-iddict['Bacteria'] = (1,0)
-iddict['Eukaryota'] = (2,0)
-iddict['Archaea'] = (3,0)
+taxondict = {}  # maps (parentid, name) to taxonid
 
 
-
-
-def makedict(infilename, outfilename):
+def makePathDict(infilename, outfilename):
 	infile = open(infilename,'rU')
 	outfile = open(outfilename,'w') # I'm writing this out to have the taxonomy separate from the sequences - not necessary
-	for line in infile:
-		if line[0] == '>' and not re.search('Metazoa',line) and not re.search('Fungi',line) and not re.search('Archaeplastida',line):	
+	for line in infile:  #removing plants, animals, fungi, chloroplast and mitochondrial sequences - also specifying Oryza because it is problematic in this version the database (SSURef_NR99_115_tax_silva.fasta).
+		if line[0] == '>' and not re.search('Metazoa',line) and not re.search('Fungi',line) and not re.search('Archaeplastida',line) and not re.search('Chloroplast',line) and not re.search('mitochondria',line)  and not re.search('Oryza',line):	
 			taxlist = []		
 			uid = line.split()[0].strip() # was going to use the species but there are multiple 'unidentified', for example
 			taxlist_1  = line.strip(uid).strip().split(';')
-			for tax in taxlist_1:				
-				if not re.search('Incertae Sedis',tax) and tax not in taxlist:			
+			for tax in taxlist_1:
+				# JAR commented out the following... smasher takes care of these
+			    # if not re.search('Incertae Sedis',tax) and tax not in taxlist:			
 					taxlist.append(tax)			
-			if 'uncultured' in taxlist:
-				taxlist.remove('uncultured') #not sure...
-				
-			taxdict[uid] = taxlist
-			outfile.write(uid + ',' + str(taxdict[uid]) + '\n')
+			#if 'uncultured' in taxlist:
+			#	taxlist.remove('uncultured') #not sure...
+			pathdict[uid] = taxlist
+			outfile.write(uid + ',' + str(pathdict[uid]) + '\n')
 	outfile.close()		
-	return taxdict	
+	return pathdict	
 
-
-def checkHomonym(uid,taxon,taxdict,olduid,homfilename):
-	newtaxonomy = taxdict[uid]
-	oldtaxonomy = taxdict[olduid]
-	newparindex = taxdict[uid].index(taxon) - 1
-	oldparindex = taxdict[olduid].index(taxon) - 1
-	if oldtaxonomy[oldparindex] in newtaxonomy[newparindex] and oldtaxonomy[oldparindex]: #parent of original in new taxonomy
+def checkHomonym(uid,taxon,pathdict,olduid,homfilename):
+	newpath = pathdict[uid]
+	oldpath = pathdict[olduid]
+	newparindex = pathdict[uid].index(taxon) - 1
+	oldparindex = pathdict[olduid].index(taxon) - 1
+	if oldpath[oldparindex] in newpath[newparindex] and oldpath[oldparindex]: #parent of original in new path
 		return True #link new to old
 	else:
 		hom_outfile = open(homfilename,'a')
-		hom_outfile.write(taxon + ',' + str(newtaxonomy)+ ',' +str(oldtaxonomy) + '\n')
+		hom_outfile.write(taxon + ',' + str(newpath)+ ',' +str(oldpath) + '\n')
 		hom_outfile.close()
-		return newtaxonomy[newparindex]
-# I suspect we'll get much better speed by parsing the rank file only
-# once and keeping the ranks in a table
-# 'par' = the taxon's parent taxon
-def getRank(taxon,par,rankfilename):
-	infile = open(rankfilename,'r')
-	for line in infile:
+		return newpath[newparindex]
+
+ranks = {}
+
+def readRanks(indir):
+	rankfilename = indir + '/tax_ranks.txt'
+	rankfile = open(rankfilename,'r')
+	for line in rankfile:
 		path,node,rank,remark = line.split('\t')
-		if node == taxon and par == path.split(';')[-2]:
-			return rank
-	return 'no rank'
-def parseSilva(taxdict, indir, outdir):
+		components = path.split(';')
+		if len(components) >= 2:
+			rank_key = (node,components[-2])
+			if rank_key in ranks and ranks[rank_key] != rank:
+				print "Homonym with parent homonym", rank_key
+				ranks[rank_key] = 'no rank'
+			else:
+				ranks[rank_key] = rank
+	rankfile.close()
+
+def parseSilva(pathdict, indir, outdir):
+	readRanks(indir)
 	rank = 'no rank' #for now
 	outfile = open(outdir + '/taxonomy.tsv','w')
-	outfile.write('0\t|\t \t|\tlife\t|\tno rank\t|\tno seq\n')
-	count = 4
+	outfile.write('0\t|\t\t|\tlife\t|\tno rank\t|\t\n')
+	count = 1
 	homfilename = outdir + '/homonym_paths.txt'
-	rankfilename = outdir + '/tax_ranks.txt'
-	for uid in taxdict.keys():
-		for taxon in taxdict[uid]:
-			if taxon in ['Bacteria','Eukaryota','Archaea']: 
-				parentid = 0
-				speciesid = iddict[taxon][0]
-				par = taxon #for next in line
-				seqid = 'no seq id'
-				rank = 'domain'
-			elif taxon == taxdict[uid][-1]: #species always gets new id, even if it has the same name as another (e.g. lots of 'unidentified bacteria') 
-				parentid = iddict[par][0]
-				iddict[taxon] = (count,uid) 
-				speciesid = count
+    # uid is a unique sequence id e.g. A58083.1.1474
+	for uid in pathdict.keys():
+		which = 0
+		parentid = 0
+		par = ''      #for rank lookup
+		for taxname in pathdict[uid]:
+			taxon_key = (parentid, taxname)
+			if taxon_key in taxondict:
+				taxonid = taxondict[taxon_key]
+			else:
+				# No taxon with this name and parent.  Grow the tree.
+				taxonid = count
+				taxondict[taxon_key] = count
 				count = count + 1
-				par = taxon
-				seqid = uid
-				rank = 'species'
-			else:									
-				parentid = iddict[par][0]
 
-				try:
-					speciesid = iddict[taxon][0] #does it already have an id?
-					if checkHomonym(uid,taxon,taxdict,iddict[taxon][1],homfilename) == True: #returns true if this taxon and the one in the db have the same parent
-						speciesid = iddict[taxon][0]
-					else: #add as a new taxon with parent from homonym check (not sure if this will work)
+				seqid = '' # was 'no seq id'
 
-						speciesid = count
-						iddict[taxon] = (count,uid)
-						count = count + 1
-									
-				except:
-					speciesid = count
-					iddict[taxon] = (count,uid)
-					count = count + 1
-				rank = getRank(taxon,par,rankfilename)
-				par = taxon
-				seqid = 'no seq id'	
-				
-			try:
-				check = Seen[(speciesid,taxon)]
-			except:
-				Seen[(speciesid,taxon)] = 'yes'		
-				outfile.write(str(speciesid) + '\t|\t' + str(parentid)  + '\t|\t' + taxon  + '\t|\t' + rank + '\t|\t' + seqid + '\n')
+				if which == 0:  #taxname in ['Bacteria','Eukaryota','Archaea']: 
+					rank = 'domain'
+				elif which == len(pathdict[uid])-1:
+					seqdict[taxname] = (taxonid,uid)  #for homonym checking ??
+					seqid = 'silva:' + uid.lstrip('>')
+					rank = 'species'
+				else:									
+ 					#returns true if this taxon and the one in the db have the same parent
+					if taxname in seqdict:
+						checkHomonym(uid,taxname,pathdict,seqdict[taxname][1],homfilename)
+					seqdict[taxname] = (taxonid,uid)
+
+					rank_key = (taxname,par)
+					if rank_key in ranks:
+						rank = ranks[rank_key].lower()
+					else:
+						rank = 'no rank'
+
+				taxname = taxname.replace('Incertae Sedis', 'incertae sedis')
+				if rank == 'major_clade':
+					rank = 'no rank'
+				# Some of the 'uncultured' taxa are incorrectly assigned rank 'class' or 'order'
+				if taxname == 'uncultured':
+					rank = 'no rank'
+				outfile.write(str(taxonid) + '\t|\t' + str(parentid)  + '\t|\t' + taxname  + '\t|\t' + rank + '\t|\t' + seqid + '\n')
+			which = which + 1
+			parentid = taxonid
+			par = taxname
 	outfile.close()
 	
 def main():
 	indir = sys.argv[1]
 	outdir = sys.argv[2]
 	# was: infile = open('SSURef_NR99_115_tax_silva.fasta','rU')
-	taxdict = makedict(indir + '/silva.fasta', outdir + '/silva_taxonly.txt')
-	parseSilva(taxdict, indir, outdir)
+	pathdict = makePathDict(indir + '/silva.fasta', outdir + '/silva_taxonly.txt')
+	parseSilva(pathdict, indir, outdir)
 	
 main()

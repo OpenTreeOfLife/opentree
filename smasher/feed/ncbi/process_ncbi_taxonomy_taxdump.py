@@ -44,7 +44,7 @@ connecting these to there parents
 
 if __name__ == "__main__":
     if len(sys.argv) != 5:
-        print "python process_ncbi_taxonomy_taxdump.py {T|F} tmpdir skipids.file outfile"
+        print "python process_ncbi_taxonomy_taxdump.py {T|F} tmpdir skipids.file outdir"
         sys.exit(0)
     download = sys.argv[1]
     downloaddir = sys.argv[2]   # e.g. feed/ncbi/tmp
