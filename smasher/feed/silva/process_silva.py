@@ -49,6 +49,7 @@ Be aware of a few things -
 '''
 import sys
 import re
+import string
 
 
 pathdict = {} #given the sequence identifier, return the taxonomy path
@@ -118,6 +119,7 @@ def parseSilva(pathdict, indir, outdir):
 		which = 0
 		parentid = 0
 		par = ''      #for rank lookup
+		accession = string.split(uid.lstrip('>'),".",1)[0]
 		for taxname in pathdict[uid]:
 			taxon_key = (parentid, taxname)
 			if taxon_key in taxondict:
@@ -130,23 +132,28 @@ def parseSilva(pathdict, indir, outdir):
 
 				seqid = '' # was 'no seq id'
 
-				if which == 0:  #taxname in ['Bacteria','Eukaryota','Archaea']: 
-					rank = 'domain'
-				elif which == len(pathdict[uid])-1:
+				if which == len(pathdict[uid])-1:
 					seqdict[taxname] = (taxonid,uid)  #for homonym checking ??
-					seqid = 'silva:' + uid.lstrip('>')
+					seqid = 'seq:' + accession
+					# Consider rank = 'sequence' or 'sample'
 					rank = 'species'
-				else:									
- 					#returns true if this taxon and the one in the db have the same parent
-					if taxname in seqdict:
-						checkHomonym(uid,taxname,pathdict,seqdict[taxname][1],homfilename)
-					seqdict[taxname] = (taxonid,uid)
+				else:
+					# silva: = http://www.arb-silva.de/browser/ssu/silva/
+					# This link doesn't really work... one click short of destination
+					seqid = "silva:%s/#%d"%(accession, which+1)
+					if which == 0:  #taxname in ['Bacteria','Eukaryota','Archaea']: 
+						rank = 'domain'
+					else:									
+						#returns true if this taxon and the one in the db have the same parent
+						if taxname in seqdict:
+							checkHomonym(uid,taxname,pathdict,seqdict[taxname][1],homfilename)
+						seqdict[taxname] = (taxonid,uid)
 
-					rank_key = (taxname,par)
-					if rank_key in ranks:
-						rank = ranks[rank_key].lower()
-					else:
-						rank = 'no rank'
+						rank_key = (taxname,par)
+						if rank_key in ranks:
+							rank = ranks[rank_key].lower()
+						else:
+							rank = 'no rank'
 
 				taxname = taxname.replace('Incertae Sedis', 'incertae sedis')
 				if rank == 'major_clade':

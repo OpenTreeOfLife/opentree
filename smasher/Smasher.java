@@ -407,6 +407,7 @@ class Taxonomy implements Iterable<Node> {
 				}
 				Node node = this.idIndex.get(id);
 				if (node == null) {
+					// created earlier because it's the parent of some other node
 					node = new Node(this);
 					node.setId(id); // stores into this.idIndex
 				}
@@ -1337,36 +1338,34 @@ class UnionTaxonomy extends Taxonomy {
 							   this.maxid + " < " + idsource.maxid);
 	}
 
-	// x is a source node drawn from the idsource taxonomy file
+	// x is a source node drawn from the idsource taxonomy file.
+	// y is the union node it might or might not map to.
 
 	static Answer assessSource(Node x, Node y) {
-		if (x.extra != null && x.extra.length > 5) {
-			NodeRef ref = x.putativeSourceRef();
-			if (ref != null) {
-				String putativeSourceTag = ref.tag;
-				long putativeId = ref.id;
+		NodeRef ref = x.putativeSourceRef();
+		if (ref != null) {
+			String putativeSourceTag = ref.tag;
+			long putativeId = ref.id;
 
-				// Find source node in putative source taxonomy, if any
-				Node sourceThere = null;
-				for (Node source : y.sourcenodes)
-					if (source.taxonomy.getTag().equals(putativeSourceTag)) {
-						sourceThere = source;
-						break;
-					}
+			// Find source node in putative source taxonomy, if any
+			Node sourceThere = null;
+			for (Node source : y.sourcenodes)
+				if (source.taxonomy.getTag().equals(putativeSourceTag)) {
+					sourceThere = source;
+					break;
+				}
 
-				if (sourceThere == null)
-					return Answer.no(x, y, "note/different-source",
-									 ref
-									 + "->" +
-									 y.origin().getQualifiedId());
-				if (putativeId != (long)sourceThere.id)
-					return Answer.no(x, y, "note/different-source-id",
-									 ref
-									 + "->" +
-									 sourceThere.getQualifiedId());
-				else
-					return Answer.NOINFO;
-			} else
+			if (sourceThere == null)
+				return Answer.no(x, y, "note/different-source",
+								 ref
+								 + "->" +
+								 y.origin().getQualifiedId());
+			if (putativeId != (long)sourceThere.id)
+				return Answer.no(x, y, "note/different-source-id",
+								 ref
+								 + "->" +
+								 sourceThere.getQualifiedId());
+			else
 				return Answer.NOINFO;
 		} else
 			return Answer.NOINFO;
@@ -1814,10 +1813,12 @@ class Node {
 		if (parts.length >= 4) {
 			this.rank = parts[3];
 			if (Taxonomy.ranks.get(this.rank) == null)
-				System.err.println("!! Peculiar rank: " + this.rank + " " + this.id);
+				System.err.println("!! Unrecognized rank: " + this.rank + " " + this.id);
 		}
 		if (parts.length >= 5)
 			this.extra = parts;
+		// TBD: map source+sourceId when present (deprecated),
+		// parse sourceInfo when present
 	}
 
 	void setName(String name) {
@@ -1904,7 +1905,11 @@ class Node {
 	//out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\t" +
 	//			"source\t|\tsourceid\t|\tsourcepid\t|\tuniqname\t|\tpreottol_id\t|\t");
 
+	// TBD: There can be multiple sources, separated by commas.
+
 	NodeRef putativeSourceRef() {
+		if (this.extra == null || this.extra.length <= 5)
+			return null;
 		if (this.taxonomy.sourcecolumn >= 0) {
 			return new NodeRef(this.extra[this.taxonomy.sourcecolumn],
 							   Long.parseLong(this.extra[this.taxonomy.sourceidcolumn]));
@@ -2891,6 +2896,22 @@ abstract class Criterion {
 			}
 		};
 
+	// Match NCBI or GBIF identifiers
+	// This kicks in when we try to map the previous OTT to assign ids, after we've mapped GBIF.
+	static Criterion sameId =
+		new Criterion() {
+			Answer assess(Node x, Node y) {
+				// x is source node, y is union node.
+				// compare x.id to y.sourcenodes[...].id
+				// Try assessSource here !?
+				for (Node source : y.sourcenodes)
+					if (source != null &&
+						x.id.equals(source.id))
+						return Answer.yes(x, y, "sameId", null);
+				return Answer.NOINFO;
+			}
+		};
+
 	// E.g. Paraphelenchus
 	static Criterion elimination =
 		new Criterion() {
@@ -2905,9 +2926,9 @@ abstract class Criterion {
 			}
 		};
 
-	static Criterion[] criteria = { adHoc, division, lineage, subsumption, elimination };
+	static Criterion[] criteria = { adHoc, division, lineage, subsumption, sameId, elimination };
 
-	static Criterion[] idCriteria = { adHoc, division, lineage, subsumption, elimination };
+	static Criterion[] idCriteria = { adHoc, division, lineage, subsumption, sameId, elimination };
 
 }
 

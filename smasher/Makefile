@@ -33,7 +33,7 @@ PREOTTOL=../../preottol
 all: ott
 
 # Nematode test
-CP=-classpath .:jscheme.jar
+CP=-classpath ".:lib/*"
 TEST_ARGS=Smasher $(TAX)/nem_ncbi/ $(TAX)/nem_gbif/ \
       --edits $(FEED)/nem/edits/ \
       --ids $(TAX)/prev_nem/ \
@@ -47,7 +47,7 @@ $(TAX)/nem/log.tsv: Smasher.class $(TAX)/prev_nem/taxonomy.tsv $(TAX)/nem_ncbi/t
 debug:
 	jdb $(CP) $(TEST_ARGS)
 
-compile: Smasher.class
+compile: Smasher.class lib/jscheme.jar lib/json-simple-1.1.1.jar
 
 Smasher.class: Smasher.java
 	javac $(CP) -g Smasher.java
@@ -181,3 +181,9 @@ tarball: $(TAX)/ott/log.tsv
 #norbert:
 #	rsync -vaxH --exclude=$(WORK) --exclude="*~" --exclude=backup \
 #           ./ norbert.csail.mit.edu:/raid/jar/NESCent/opentree/smasher
+
+# ERROR: certificate common name `google.com' doesn't match requested host name `code.google.com'.
+
+lib/json-simple-1.1.1.jar:
+	wget --output-document=$@ --no-check-certificate \
+	  "https://json-simple.googlecode.com/files/json-simple-1.1.1.jar"
