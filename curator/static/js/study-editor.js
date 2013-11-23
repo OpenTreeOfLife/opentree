@@ -1075,8 +1075,6 @@ function showTreeViewer( tree ) {
     $('#tree-viewer').modal('show');
 
 
-
-
     /* load D3 tree view */
     var width = 960,
         height = 2200;
@@ -1087,48 +1085,129 @@ function showTreeViewer( tree ) {
     var diagonal = d3.svg.diagonal()
         .projection(function(d) { return [d.y, d.x]; });
 
-    var svg = d3.select("#tree-viewer .modal-body").append("svg")
-        .attr("width", width)
-        .attr("height", height)
-      .append("g")
-        .attr("transform", "translate(40,0)");
+    // some things should only happen once
+    var svg = d3.select("#tree-viewer svg");
+    if (svg[0][0] === null) {
+        svg = d3.select("#tree-viewer #dialog-data").append("svg")
+            .attr("width", width)
+            .attr("height", height)
+          .append("g")
+            .attr("transform", "translate(50,0)"); // make room for 'root' label
+    }
 
-    d3.json("/curator/static/js/test-tree-metazoa.json", function(error, root) {
-        debugger;
-        var startTime = new Date();
-        var nodes = cluster.nodes(root),
-            links = cluster.links(nodes);
-  
-        var link = svg.selectAll(".link")
-            .data(links)
-          .enter().append("path")
-            .attr("class", "link")
-            .attr("d", diagonal);
-  
-        var node = svg.selectAll(".node")
-            .data(nodes)
-          .enter().append("g")
-            .attr("class", "node")
-            .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-  
-        node.append("circle")
-            .attr("r", 4.5);
-  
-        node.append("text")
-            .attr("dx", function(d) { return d.children ? -8 : 8; })
-            .attr("dy", 3)
-            .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
-            .text(function(d) { return d.name; });
-  
-        var rightNow = new Date() - startTime;
-        console.log(">> Drawing tree took "+ (rightNow / 1000.0).toFixed(2) +" seconds");
+    var edges = tree.edge();
+    var edgeCount = edges.length;
+    cluster.children(function(d) {
+        var parentID = d['@id']();
+        var itsChildren = [];
+        $.each(edges, function(index, edge) {
+            if (edge['@source']() === parentID) {
+                var childID = edge['@target']();
+                var childNode = getTreeNodeByID(tree, childID);
+                itsChildren.push( childNode );
+            }
+        });
+        return itsChildren;
     });
 
+    var root;  // find the (a?) root node for the visible tree
+    var allRootNodes = getRootTreeNodes(tree);
+    switch(allRootNodes.length) {
+        case 0:
+            console.log("this tree is UNrooted");
+            root = tree.node()[0];
+            break;
+        case 1:
+            console.log("this tree is SINGLY rooted");
+            root = allRootNodes[0];
+            break;
+        default:
+            console.log("this tree is MULTIPLY rooted ("+ allRootNodes.length +" root nodes found)");
+            root = allRootNodes[0];
+            break;
+    }
+
+    var startTime = new Date();
+    var nodes = cluster.nodes(root),
+        links = cluster.links(nodes);
+
+    var link = svg.selectAll(".link")
+        .data(links)
+    /* smooth bezier curves between nodes */
+      .enter().append("path")
+        .attr("class", "link")
+        .attr("d", diagonal);
+    /* simple lines between nodes
+      .enter().append("line")
+        .attr("class", "link")
+        .attr("x1", function(d) { return d.source.y; })
+        .attr("y1", function(d) { return d.source.x; })
+        .attr("x2", function(d) { return d.target.y; })
+        .attr("y2", function(d) { return d.target.x; });
+    */
+
+    var node = svg.selectAll(".node")
+        .data(nodes)
+      .enter().append("g")
+        .attr("class", function(d) {
+            var itsClass = "node";
+            if (!d.children) {
+                itsClass += " leaf";
+            }
+            if (d['@root'] && d['@root']() === 'true') {
+                itsClass += " root";
+            }
+            return itsClass;
+        })
+        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
+
+    node.append("circle")
+        .attr("r", 4.5);
+
+    node.append("text")
+        .attr("dx", function(d) { return d.children ? -8 : 8; })
+        .attr("dy", 3)
+        .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
+        //.style("stroke", function(d) { return (d['@root'] && d['@root']() === 'true') ? "#f55" : "black"; })
+        .text(function(d) { return getTreeNodeLabel(d); });
+
+    var rightNow = new Date() - startTime;
+    console.log(">> Drawing tree took "+ (rightNow / 1000.0).toFixed(2) +" seconds");
 
 
+}
 
-
-
+function getTreeNodeByID(tree, id) {
+    // there should be only one matching (or none) within a tree
+    var foundNode = null;
+    $.each( tree.node(), function( index, node ) {
+        if (node['@id']() === id) {
+            foundNode = node;
+            return false;
+        }
+    });
+    return foundNode;
+}
+function getRootTreeNodes(tree) {
+    // REMEMBER: trees can be unrooted, singly rooted, or multiply rooted
+    var rootNodes = [];
+    $.each( tree.node(), function( index, node ) {
+        if (node['@root'] && node['@root']() === 'true') {
+            rootNodes.push( node );
+        }
+    });
+    return rootNodes;
+}
+function getTreeNodeLabel(node) {
+    var itsOTUAccessor = node['@otu'];
+    if (!itsOTUAccessor) {
+        if (node['@root'] && node['@root']() === 'true') {
+            return "root";
+        }
+        return "";
+    }
+    var otu = getOTUByID( itsOTUAccessor() );
+    return otu['@label']();
 }
 
 function filenameFromFakePath( path ) {

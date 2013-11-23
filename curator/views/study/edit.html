@@ -46,6 +46,18 @@ body {
   stroke: steelblue;
   stroke-width: 1.5px;
 }
+.node.leaf circle {
+  fill: #777;
+  stroke: none;
+}
+.node.root circle {
+  stroke: #f55;
+  stroke-width: 3px;
+}
+.node.root text {
+  stroke: #f77;
+  font-size: 1.3em;
+}
 
 .node {
   font: 10px sans-serif;
@@ -959,10 +971,14 @@ Please review and re-submit.</pre>
       <h3 id='dialog-heading'></h3>
     </div>
     <div class="modal-body">
-        <div id="dialog-data"></div>
+        <div id="dialog-data">
+            <form class="form-inline">
+            </form>
+            <!-- tree-view SVG goes here -->
+        </div>
     </div>
     <div class="modal-footer">
       <a data-dismiss="modal" class="btn" >Close</a>
-      <a class="btn btn-primary" id="btnSaveChanges">Save changes</a>
+      <!-- <a class="btn btn-primary" id="btnSaveChanges">Save changes</a> -->
     </div>
 </div>
