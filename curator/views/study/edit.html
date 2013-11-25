@@ -50,12 +50,40 @@ body {
   fill: #777;
   stroke: none;
 }
-.node.root circle {
-  stroke: #f55;
+/* less-important @root marker on some nodes */
+.node.atRoot circle {
+  stroke: #fa5;
   stroke-width: 3px;
 }
-.node.root text {
+.node.atRoot text {
+  stroke: #fa5;
+  font-size: 1.3em;
+}
+/* preferred ot:specifiedRoot */
+.node.specifiedRoot circle {
+  stroke: #f55;
+  stroke-width: 5px;
+}
+.node.specifiedRoot text {
   stroke: #f77;
+  font-size: 1.3em;
+}
+/* more preferred ot:nearestOutGroupNeighbor */
+.node.nearestOutGroupNeighbor circle {
+  stroke: #5f5;
+  stroke-width: 5px;
+}
+.node.nearestOutGroupNeighbor text {
+  stroke: #5f5;
+  font-size: 1.3em;
+}
+/* even more preferred ot:specifiedRoot */
+.node.inGroupClade circle {
+  stroke: #f5f;
+  stroke-width: 7px;
+}
+.node.inGroupClade text {
+  stroke: #f7f;
   font-size: 1.3em;
 }
 
