@@ -1215,6 +1215,7 @@ function drawTree( treeOrID ) {
 
     // ENTER + UPDATE (affects all new AND existing links)
     link
+        ///.transition().duration(750)
         .attr("d", diagonal);  // smooth bezier curves between nodes/
 
     /* ...or try simple lines between nodes
@@ -1238,13 +1239,16 @@ function drawTree( treeOrID ) {
     var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta(), 'ot:nearestOutGroupNeighbor');
     var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$() : null;
 
+    // DATA JOIN
     var node = svg.selectAll(".node")
         .data(nodes);
         ///.data(nodes, function(d) { return (timestamp + d['@id']()); }); // key function to bind elements
 
-    console.log();
+    // UPDATE (only affects existing links)
+    
 
-    // one-time initialization for new nodes
+
+    // ENTER (only affects new nodes; do one-time initialization here)
     var newNodeG = node.enter()
         .append("g");
 
@@ -1263,10 +1267,10 @@ function drawTree( treeOrID ) {
             //.style("stroke", function(d) { return (d['@root'] && d['@root']() === 'true') ? "#f55" : "black"; })
             .text(function(d) { return getTreeNodeLabel(tree, d, importantNodeIDs); });
 
-    node.exit().remove();
 
-    // updates for ALL nodes (new or existing)
-    node
+    // ENTER + UPDATE (affects all new AND existing nodes)
+    node   
+        ///.transition().duration(750)
         .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
         .attr("class", function(d) {
             var itsClass = "node";
@@ -1288,6 +1292,11 @@ function drawTree( treeOrID ) {
             ///console.log("CLASS is now "+ itsClass);
             return itsClass;
         });
+
+
+    // EXIT
+    node.exit().remove();
+
 
     var rightNow = new Date() - startTime;
     console.log(">> Drawing tree took "+ (rightNow / 1000.0).toFixed(2) +" seconds");
