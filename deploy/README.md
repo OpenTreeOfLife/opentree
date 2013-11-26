@@ -1,4 +1,3 @@
-
 The Open Tree Deployment Scheme
 ===============================
 
@@ -26,7 +25,7 @@ Run the setup script, which is called 'push.sh'.  This takes a few parameters, w
 
 * -i <identityfile>  ... ssh private key, defaults to opentree.pem
 * -h <hostname>  ... the hostname of the cloud host you'll be updating, and which will run web2py
-* -u <adminuser>  ... the name of the admin user, defaults to 'admin' which is correct for Debian
+* -u <adminuser>  ... the name of the admin user, defaults to 'admin' which is correct for Debian (use 'ubuntu' for ubuntu)
 * -n <neo4jhost>  ... the hostname of the server that's running treemachine and taxomachine, if different from the web2py server (which it will be, if the web2py server is small).  This must be set properly or you won't be able to see the synthetic tree.
 
 Look at push.sh to see how to set these parameters using shell variables.
