@@ -1177,7 +1177,7 @@ function drawTree( treeOrID ) {
         .projection(function(d) { return [d.y, d.x]; });
 
     // some things should only happen once
-    var svg = d3.select("#tree-viewer svg");
+    var svg = d3.select("#tree-viewer svg > g");
     if (svg[0][0] === null) {
         svg = d3.select("#tree-viewer #dialog-data").append("svg")
             .attr("width", width)
@@ -1188,26 +1188,46 @@ function drawTree( treeOrID ) {
         // clear special properties and visible tree elements, for a clean
         // sweep. TODO: do something more graceful, perhaps a transition?
         ///clearD3PropertiesFromTree(tree);
+        $('#tree-viewer #dialog-data svg > g > *').remove();
     }
 
     var startTime = new Date();
     var nodes = cluster.nodes(root),
         links = cluster.links(nodes);
 
+    ///var timestamp = new Date().getTime();
+    ///console.log("NEW timestamp: "+ timestamp);
+
+    // DATA JOIN
     var link = svg.selectAll(".link")
-        .data(links)
-    /* smooth bezier curves between nodes */
-      .enter().append("path")
-        .attr("class", "link")
-        .attr("d", diagonal);
-    /* simple lines between nodes
-      .enter().append("line")
+        .data(links);
+        ///.data(links, function(d) { return (timestamp + d.source['@id']() + d.target['@id']()); });
+
+    // UPDATE (only affects existing links)
+    link
+        .attr('class','link update');
+
+
+    // ENTER (only affects new links; do one-time initialization here)
+    link.enter()
+        .insert("path")  // should add this alongside other paths (behind nodes)
+        .attr("class", "link enter");
+
+    // ENTER + UPDATE (affects all new AND existing links)
+    link
+        .attr("d", diagonal);  // smooth bezier curves between nodes/
+
+    /* ...or try simple lines between nodes
+    link.enter().append("line")
         .attr("class", "link")
         .attr("x1", function(d) { return d.source.y; })
         .attr("y1", function(d) { return d.source.x; })
         .attr("x2", function(d) { return d.target.y; })
         .attr("y2", function(d) { return d.target.x; });
     */
+
+    // EXIT
+    link.exit().remove();
 
     var specifiedRootTag = getMetaTagByProperty(tree.meta(), 'ot:specifiedRoot');
     var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
@@ -1220,11 +1240,34 @@ function drawTree( treeOrID ) {
 
     var node = svg.selectAll(".node")
         .data(nodes);
+        ///.data(nodes, function(d) { return (timestamp + d['@id']()); }); // key function to bind elements
 
     console.log();
 
+    // one-time initialization for new nodes
+    var newNodeG = node.enter()
+        .append("g");
+
+    // append more stuff to the 'g' element
+    newNodeG.append("circle")
+            .attr("r", 4.5)
+            .on('click', function(d) {
+                // show a menu with appropriate options for this node
+                var nodePageOffset = $(d3.event.target).offset();
+                showNodeOptionsMenu( tree, d, nodePageOffset );
+            })
+    newNodeG.append("text")
+            .attr("dx", function(d) { return d.children ? -8 : 8; })
+            .attr("dy", 3)
+            .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
+            //.style("stroke", function(d) { return (d['@root'] && d['@root']() === 'true') ? "#f55" : "black"; })
+            .text(function(d) { return getTreeNodeLabel(tree, d, importantNodeIDs); });
+
+    node.exit().remove();
+
+    // updates for ALL nodes (new or existing)
     node
-      .enter().append("g")
+        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
         .attr("class", function(d) {
             var itsClass = "node";
             if (!d.children) {
@@ -1242,24 +1285,9 @@ function drawTree( treeOrID ) {
             if (d['@id']() === nearestOutGroupNeighbor) {
                 itsClass += " nearestOutGroupNeighbor";
             }
+            ///console.log("CLASS is now "+ itsClass);
             return itsClass;
-        })
-        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-        .on('click', function(d) {
-            // show a menu with appropriate options for this node
-            var nodePageOffset = $(d3.event.target).offset();
-            showNodeOptionsMenu( tree, d, nodePageOffset );
         });
-
-    node.append("circle")
-        .attr("r", 4.5);
-
-    node.append("text")
-        .attr("dx", function(d) { return d.children ? -8 : 8; })
-        .attr("dy", 3)
-        .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
-        //.style("stroke", function(d) { return (d['@root'] && d['@root']() === 'true') ? "#f55" : "black"; })
-        .text(function(d) { return getTreeNodeLabel(tree, d, importantNodeIDs); });
 
     var rightNow = new Date() - startTime;
     console.log(">> Drawing tree took "+ (rightNow / 1000.0).toFixed(2) +" seconds");
