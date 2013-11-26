@@ -296,6 +296,11 @@ function saveFormDataToStudyJSON() {
     //// push changes back to storage
     var saveURL = API_update_study_PUT_url.replace('{STUDY_ID}', studyID);
 
+    // strip any extraneous JS properties from study Nexson
+    $.each( viewModel.nexml.trees.tree(), function(i, tree) {
+        clearD3PropertiesFromTree(tree);
+    });
+    
     $.ajax({
         type: 'PUT',  // TODO: use POST for updates?
         dataType: 'json',
@@ -1045,8 +1050,12 @@ ko.dirtyFlag = function(root, isInitiallyDirty) {
         _isInitiallyDirty = ko.observable(isInitiallyDirty);
 
     result.isDirty = ko.computed(function() {
-        return false;  // TODO TODO TODO TODO: revert this once circularity error is fixed!
-        return _isInitiallyDirty() || _initialState() !== ko.toJSON(root);
+        try {
+            return _isInitiallyDirty() || _initialState() !== ko.toJSON(root);
+        } catch(e) {
+            //console.log('toJSON fails with circular reference');
+            return true;
+        }
     });
 
     result.reset = function() {
