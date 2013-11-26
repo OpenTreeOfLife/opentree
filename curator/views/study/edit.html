@@ -46,16 +46,50 @@ body {
   stroke: steelblue;
   stroke-width: 1.5px;
 }
+.node text {
+  fill: #ccc;
+}
 .node.leaf circle {
   fill: #777;
   stroke: none;
 }
-.node.root circle {
-  stroke: #f55;
+.node.leaf text {
+  fill: #333;
+}
+/* less-important @root marker on some nodes */
+.node.atRoot circle {
+  stroke: #fa5;
   stroke-width: 3px;
 }
-.node.root text {
-  stroke: #f77;
+.node.atRoot text {
+  fill: #fa5;
+  font-size: 1.3em;
+}
+/* preferred ot:specifiedRoot */
+.node.specifiedRoot circle {
+  stroke: #f55;
+  stroke-width: 5px;
+}
+.node.specifiedRoot text {
+  fill: #f77;
+  font-size: 1.3em;
+}
+/* more preferred ot:nearestOutGroupNeighbor */
+.node.nearestOutGroupNeighbor circle {
+  stroke: #5f5;
+  stroke-width: 5px;
+}
+.node.nearestOutGroupNeighbor text {
+  fill: #5f5;
+  font-size: 1.3em;
+}
+/* even more preferred ot:specifiedRoot */
+.node.inGroupClade circle {
+  stroke: #f5f;
+  stroke-width: 7px;
+}
+.node.inGroupClade text {
+  fill: #f7f;
   font-size: 1.3em;
 }
 
@@ -67,6 +101,12 @@ body {
   fill: none;
   stroke: #ccc;
   stroke-width: 1.5px;
+}
+.link.update {
+  /* stroke: #ccf; */
+}
+.link.enter {
+  /* stroke: #f00; */
 }
 
 </style>
