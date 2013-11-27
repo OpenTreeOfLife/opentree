@@ -28,6 +28,9 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
 
 # D3 for tree viewer/editor
 response.files.append(URL('static','js/d3.v3.min.js'))
+
+# Phylogram "plugin" for D3
+response.files.append(URL('static','js/d3.phylogram.js'))
 }}
 
 {{extend 'layout.html'}}
@@ -99,8 +102,8 @@ body {
 
 .link {
   fill: none;
-  stroke: #ccc;
-  stroke-width: 1.5px;
+  stroke: steelblue;
+  stroke-width: 1.0px;
 }
 .link.update {
   /* stroke: #ccf; */

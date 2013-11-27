@@ -1087,6 +1087,7 @@ function showTreeViewer( tree ) {
     drawTree( tree );
 }
 
+var vizInfo = { tree: null, vis: null };
 function drawTree( treeOrID ) {
     var tree = null;
     if (typeof(treeOrID) === 'object') {
@@ -1156,10 +1157,63 @@ function drawTree( treeOrID ) {
         console.log( "   "+ prop +" = "+ importantNodeIDs[prop] );
     }
 
+    var edges = tree.edge();
+
+    /* punt to phylogram, as a quick test */
+    
+    // preload nodes with proper labels and branch lengths
+    $.each(tree.node(), function(index, node) {
+        node.name = getTreeNodeLabel(tree, node, importantNodeIDs);
+    });
+    $.each(edges, function(index, edge) {
+        // transfer @length property (if any) to the child node
+        if (typeof( edge['@length'] ) === 'function') {
+            var childID = edge['@target']();
+            getTreeNodeByID(tree, childID).length = edge['@length']();
+        }
+    });
+    
+    //var currentWidth = $("#tree-viewer #dialog-data").width();
+    //var currentWidth = $("#tree-viewer #dialog-data").css('width').split('px')[0];
+    var currentWidth = $("#tree-viewer").width() - 400;
+    vizInfo = d3.phylogram.build(
+        "#tree-viewer #dialog-data",   // selector
+        root, // tree.node(),      // nodes 
+        {           // options
+            vis: vizInfo.vis,
+            width: currentWidth,  // must be simple integers
+            height: '800',
+            // simplify display by omitting scales or variable-length branches
+            skipTicks: false,
+            skipBranchLengthScaling: false,
+            children : function(d) {
+                var parentID = d['@id']();
+                var itsChildren = [];
+                $.each(edges, function(index, edge) {
+                    if (edge['@source']() === parentID) {
+                        var childID = edge['@target']();
+                        var childNode = getTreeNodeByID(tree, childID);
+                        itsChildren.push( childNode );
+                    }
+                });
+                console.log("> updated children for node "+ parentID +":");
+                /*
+                $.each(itsChildren, function(i,n) {
+                    console.log("   > "+ n['@id']());
+                });
+                */
+                return itsChildren;
+            }
+        }
+    );
+
+    return;
+
+
+
+
     var width = 960,
         height = 2200;
-
-    var edges = tree.edge();
 
     var cluster = d3.layout.cluster()
         .size([height, width - 160])
@@ -2406,5 +2460,7 @@ function clearD3PropertiesFromTree(tree) {
         delete node.depth;
         delete node.parent;
         delete node.children;
+        delete node.name;
+        delete node.length;
     });
 }
