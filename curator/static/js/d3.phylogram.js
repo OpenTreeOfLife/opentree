@@ -157,19 +157,19 @@ if (!d3) { throw "d3 wasn't included!"};
   }
   
   d3.phylogram.styleTreeNodes = function(vis) {
-    vis.selectAll('g.leaf.node')
+    vis.selectAll('g.node')
       .append("svg:circle")
-        .attr("r", 4.5)
-        .attr('stroke',  'yellowGreen')
-        .attr('fill', 'greenYellow')
-        .attr('stroke-width', '2px');
+        .attr("r", 2.5)
+        .attr('stroke', 'red')
+        .attr('pointer-events', 'all')      // detect on invisible stuff
+        .attr('stroke-opacity', '0.0')
+        .attr('stroke-width', '8px');
+
+    vis.selectAll('g.leaf.node circle')
+        .attr("r", 4.5);
     
-    vis.selectAll('g.root.node')
-      .append('svg:circle')
-        .attr("r", 4.5)
-        .attr('fill', 'steelblue')
-        .attr('stroke', '#369')
-        .attr('stroke-width', '2px');
+    vis.selectAll('g.root.node circle')
+        .attr("r", 4.5);
   }
   
   function scaleBranchLengths(nodes, w) {

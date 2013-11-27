@@ -1181,6 +1181,7 @@ function drawTree( treeOrID ) {
         root, // tree.node(),      // nodes 
         {           // options
             vis: vizInfo.vis,
+            // TODO: can we make the size "adaptive" based on vis contents?
             width: currentWidth,  // must be simple integers
             height: '800',
             // simplify display by omitting scales or variable-length branches
@@ -1207,9 +1208,40 @@ function drawTree( treeOrID ) {
         }
     );
 
+    // (re)assert proper classes for key nodes
+    vizInfo.vis.selectAll('.node')
+        .attr("class", function(d) {
+            var itsClass = "node";
+            if (!d.children) {
+                itsClass += " leaf";
+            }
+            if (d['@root'] && d['@root']() === 'true') {
+                itsClass += " atRoot";
+            }
+            if (d['@id']() === specifiedRoot) {
+                itsClass += " specifiedRoot";
+            }
+            if (d['@id']() === inGroupClade) {
+                itsClass += " inGroupClade";
+            }
+            if (d['@id']() === nearestOutGroupNeighbor) {
+                itsClass += " nearestOutGroupNeighbor";
+            }
+            ///console.log("CLASS is now "+ itsClass);
+            return itsClass;
+        });
+
+    // (re)assert standard click behavior for all nodes
+    vizInfo.vis.selectAll('.node circle')
+        .on('click', function(d) {
+            // show a menu with appropriate options for this node
+            var nodePageOffset = $(d3.event.target).offset();
+            showNodeOptionsMenu( tree, d, nodePageOffset );
+        })
+
+
+    /*
     return;
-
-
 
 
     var width = 960,
@@ -1227,12 +1259,12 @@ function drawTree( treeOrID ) {
                     itsChildren.push( childNode );
                 }
             });
-            /*
+            **
             console.log("> resetting children for node "+ parentID +":");
             $.each(itsChildren, function(i,n) {
                 console.log("   > "+ n['@id']());
             });
-            */
+            **
             return itsChildren;
         });
 
@@ -1281,14 +1313,14 @@ function drawTree( treeOrID ) {
         ///.transition().duration(750)
         .attr("d", diagonal);  // smooth bezier curves between nodes/
 
-    /* ...or try simple lines between nodes
+    ** ...or try simple lines between nodes
     link.enter().append("line")
         .attr("class", "link")
         .attr("x1", function(d) { return d.source.y; })
         .attr("y1", function(d) { return d.source.x; })
         .attr("x2", function(d) { return d.target.y; })
         .attr("y2", function(d) { return d.target.x; });
-    */
+    **
 
     // EXIT
     link.exit().remove();
@@ -1363,6 +1395,7 @@ function drawTree( treeOrID ) {
 
     var rightNow = new Date() - startTime;
     console.log(">> Drawing tree took "+ (rightNow / 1000.0).toFixed(2) +" seconds");
+    */
 
 }
 
