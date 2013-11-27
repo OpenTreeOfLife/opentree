@@ -1,4 +1,7 @@
 /*
+ * From https://gist.github.com/kueda/1036776
+ * Author: Ken-ichi Ueda (kueda.net, inaturalist.org)
+ * 
   d3.phylogram.js
   Wrapper around a d3-based phylogram (tree where branch lengths are scaled)
   Also includes a radial dendrogram visualization (branch lengths not scaled)
