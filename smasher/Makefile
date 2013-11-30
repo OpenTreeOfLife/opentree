@@ -64,7 +64,7 @@ $(TAX)/nem_gbif/taxonomy.tsv:
 
 # little test of --select feature
 dory-test.tsv: $(TAX)/nem/log.tsv Smasher.class
-	java $(CP) Smasher --start $(TAX)/nem/ --select Dorylaimida $@
+	java $(CP) Smasher --start $(TAX)/nem/ --select Dorylaimina $@
 
 # internal tests
 test: Smasher.class
@@ -105,7 +105,7 @@ $(TAX)/prev_ott/taxonomy.tsv:
 	mkdir -p $(FEED)/prev_ott/in
 	wget --output-document=$(FEED)/prev_ott/in/ott$(PREV_WHICH).tgz \
 	  http://files.opentreeoflife.org/ott/ott$PREV_WHICH
-	(cd $(FEED)/prev_ott/in/; tar xf ott$(PREV_WHICH).tgz)
+	(cd $(FEED)/prev_ott/in/ && tar xf ott$(PREV_WHICH).tgz)
 	mv $(FEED)/prev_ott/in/ott$(PREV_WHICH)/* $(TAX)/prev_ott/
 	if [ -e $(TAX)/prev_ott/taxonomy ]; then mv $(TAX)/prev_ott/taxonomy $(TAX)/prev_ott/taxonomy.tsv; fi
 	if [ -e $(TAX)/prev_ott/synonyms ]; then mv $(TAX)/prev_ott/synonyms $(TAX)/prev_ott/synonyms.tsv; fi
@@ -115,7 +115,7 @@ $(TAX)/prev_ott/taxonomy.tsv:
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
 
 ncbi: $(NCBI)/taxonomy.tsv
-$(NCBI)/taxonomy.tsv: $(FEED)/ncbi/in/nodes.dmp $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py
+$(NCBI)/taxonomy.tsv: $(FEED)/ncbi/in/nodes.dmp $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py 
 	mkdir -p $(NCBI).tmp
 	python $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py F $(FEED)/ncbi/in \
             /dev/null $(NCBI).tmp
@@ -154,11 +154,15 @@ $(FEED)/gbif/in/checklist1.zip:
 # Significant tabs !!!
 
 silva: $(SILVA)/taxonomy.tsv
-$(SILVA)/taxonomy.tsv: $(FEED)/silva/process_silva.py $(FEED)/silva/in/silva.fasta
+$(SILVA)/taxonomy.tsv: $(FEED)/silva/process_silva.py $(FEED)/silva/in/silva.fasta $(FEED)/silva/in/accessionid_to_taxonid.tsv 
 	mkdir -p $(FEED)/silva/out
 	python $(FEED)/silva/process_silva.py $(FEED)/silva/in $(FEED)/silva/out
 	mkdir -p $(SILVA)
 	cp -p $(FEED)/silva/out/taxonomy.tsv $(SILVA)/taxonomy.tsv
+	cp -p $(FEED)/silva/out/synonyms.tsv $(SILVA)/synonyms.tsv
+
+$(FEED)/silva/in/accessionid_to_taxonid.tsv: $(FEED)/silva/accessionid_to_taxonid.tsv
+	(cd `dirname $@` && ln -sf ../accessionid_to_taxonid.tsv ./)
 
 # Silva 115: 206M uncompresses to 817M
 
