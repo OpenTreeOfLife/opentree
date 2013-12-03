@@ -50,7 +50,12 @@ function make_neo4j_plugin {
         # Create and install the plugins .jar file
         # Compilation takes about 4 minutes... ugh
 	(cd repo/$APP; ./mvn_serverplugins.sh)
+
+	running_before=yes
+        ./neo4j-$APP/bin/neo4j status || running_before=no
+	if [ running_before = yes ]; then ./neo4j-$APP/bin/neo4j stop; fi
 	cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
+	if [ running_before = yes ]; then ./neo4j-$APP/bin/neo4j start; fi
     fi
 }
 

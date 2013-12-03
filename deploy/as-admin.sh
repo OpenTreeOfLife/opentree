@@ -108,10 +108,11 @@ fi
 
 # Set up apache so that web2py takes over the vhost
 
-# How the apache config (found in the deployment setup directory) was
-# created: we copied the apache default vhost config (000-default)
-# from a fresh EC2 instance, then modified it to make web2py work.
-# See /etc/apache2/sites-available/default .
+# How the apache config (the one found in the deployment setup
+# directory) was created: we copied the apache default vhost config
+# (000-default) from a fresh EC2 instance, then modified it to make
+# web2py work, per instructions found on the web.  See
+# /etc/apache2/sites-available/default .
 
 # The purpose here (of clobbering the default vhost) is to avoid
 # having to know all of our own vhost names.  Instead we make opentree
