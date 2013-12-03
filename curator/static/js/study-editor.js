@@ -1161,17 +1161,28 @@ function drawTree( treeOrID ) {
 
     /* punt to phylogram, as a quick test */
     
+    // clear special properties and visible tree elements, for a clean
+    // sweep. TODO: do something more graceful, perhaps a transition?
+    ///clearD3PropertiesFromTree(tree);
+    
     // preload nodes with proper labels and branch lengths
     $.each(tree.node(), function(index, node) {
         node.name = getTreeNodeLabel(tree, node, importantNodeIDs);
+        // reset x of all nodes, to avoid gradual "creeping" to the right
+        node.x = 0;
+        node.length = 0;  // ie, branch length
+        node.rootDist = 0;
     });
     $.each(edges, function(index, edge) {
         // transfer @length property (if any) to the child node
         if (typeof( edge['@length'] ) === 'function') {
             var childID = edge['@target']();
-            getTreeNodeByID(tree, childID).length = edge['@length']();
+            var childNode = getTreeNodeByID(tree, childID);
+            childNode.length = edge['@length']();
+            ///console.log("> reset length of node "+ childID+" to: "+ childNode.length);
         }
     });
+    console.log("> done sweeping edges");
     
     //var currentWidth = $("#tree-viewer #dialog-data").width();
     //var currentWidth = $("#tree-viewer #dialog-data").css('width').split('px')[0];
@@ -1183,7 +1194,7 @@ function drawTree( treeOrID ) {
             vis: vizInfo.vis,
             // TODO: can we make the size "adaptive" based on vis contents?
             width: currentWidth,  // must be simple integers
-            height: '800',
+            height: '3000',
             // simplify display by omitting scales or variable-length branches
             skipTicks: false,
             skipBranchLengthScaling: false,
@@ -1197,8 +1208,8 @@ function drawTree( treeOrID ) {
                         itsChildren.push( childNode );
                     }
                 });
-                console.log("> updated children for node "+ parentID +":");
                 /*
+                console.log("> updated children for node "+ parentID +":");
                 $.each(itsChildren, function(i,n) {
                     console.log("   > "+ n['@id']());
                 });
@@ -1234,10 +1245,19 @@ function drawTree( treeOrID ) {
     // (re)assert standard click behavior for all nodes
     vizInfo.vis.selectAll('.node circle')
         .on('click', function(d) {
+            d3.event.stopPropagation();
             // show a menu with appropriate options for this node
             var nodePageOffset = $(d3.event.target).offset();
             showNodeOptionsMenu( tree, d, nodePageOffset );
-        })
+        });
+
+    // (re)assert standard click behavior for main vis background
+    d3.select('#tree-viewer')  // div.modal-body')
+        .on('click', function(d) {
+            d3.event.stopPropagation();
+            // hide any node menu
+            hideNodeOptionsMenu( );
+        });
 
 
     /*
@@ -1531,8 +1551,20 @@ function updateEdgesInTree( tree ) {
         // only ingroup clade is defined, set direction away from ingroup
         // ancestor within the ingroup clade; disregard other edges
         console.log("sweeping ingroup edges only");
-        var naturalParent = 
-        sweepEdgePolarity( tree, specifiedRoot, naturalParent );
+        var naturalParent;
+        if (!nearestOutGroupNeighbor) {
+            // choose its parent based on current "upward" edge in tree
+            var edgeArray = getTreeEdgesByID(tree, inGroupClade, 'TARGET');
+            if (edgeArray.length === 0) {
+                // ingroup claded MRCA must also be the tree root
+                naturalParent = null;
+            } else {
+                edgeToParent = edgeArray[0];
+                naturalParent = edgeToParent['@source']();
+            }
+            console.log("...sweeping away from natural parent '"+ naturalParent +"'...");
+        }
+        sweepEdgePolarity( tree, inGroupClade, nearestOutGroupNeighbor || naturalParent );
     } else {
         // neither root node nor ingroup is defined; ignore all edges
         console.log("we'll ignore all polarity, so nothing to sweep");
@@ -1604,7 +1636,7 @@ function getTreeEdgesByID(tree, id, sourceOrTarget) {
                 }
                 return;
             case 'TARGET':
-                if (edge['@source']() === id) {
+                if (edge['@target']() === id) {
                     foundEdges.push( edge );
                 }
                 return;
@@ -2427,6 +2459,7 @@ function clearVisibleMappings() {
 function showNodeOptionsMenu( tree, node, nodePageOffset ) {
     // this is a Bootstrap-style menu whose pointer is centered on the
     // target node
+    console.log("showing menu for node '"+ node['@id']() +"'...");
     var nodeMenu = $('#node-menu');
     if (nodeMenu.length === 0) {
         // provide the needed ancestor classes, but minimize the surrounding "navbar"

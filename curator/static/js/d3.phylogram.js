@@ -82,6 +82,7 @@ if (!d3) { throw "d3 wasn't included!"};
     }
     
     function diagonal(diagonalPath, i) {
+      ///console.log("calculating path "+ diagonalPath.target['@id']());
       var source = diagonalPath.source,
           target = diagonalPath.target,
           midpointX = (source.x + target.x) / 2,
@@ -157,13 +158,9 @@ if (!d3) { throw "d3 wasn't included!"};
   }
   
   d3.phylogram.styleTreeNodes = function(vis) {
-    vis.selectAll('g.node')
-      .append("svg:circle")
-        .attr("r", 2.5)
-        .attr('stroke', 'red')
-        .attr('pointer-events', 'all')      // detect on invisible stuff
-        .attr('stroke-opacity', '0.0')
-        .attr('stroke-width', '8px');
+
+    vis.selectAll('g.node circle')
+        .attr("r", 2.5);
 
     vis.selectAll('g.leaf.node circle')
         .attr("r", 4.5);
@@ -213,7 +210,7 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("width", w + 300)
         .attr("height", h + 30)
       .append("svg:g")
-        .attr("transform", "translate(20, 20)");
+        .attr("transform", "translate(100, 20)");
     var nodes = tree(nodes);
     
     if (options.skipBranchLengthScaling) {
@@ -225,8 +222,10 @@ if (!d3) { throw "d3 wasn't included!"};
     }
     
     if (!options.skipTicks) {
-      vis.selectAll('line')
-          .data(yscale.ticks(10))
+      var lines = vis.selectAll('line')
+          .data(yscale.ticks(10));
+      
+      lines
         .enter().append('svg:line')
           .attr('y1', 0)
           .attr('y2', h)
@@ -234,8 +233,13 @@ if (!d3) { throw "d3 wasn't included!"};
           .attr('x2', yscale)
           .attr("stroke", "#ddd");
 
-      vis.selectAll("text.rule")
-          .data(yscale.ticks(10))
+      lines
+        .exit().remove();
+
+      var text_rules = vis.selectAll("text.rule")
+          .data(yscale.ticks(10));
+
+      text_rules
         .enter().append("svg:text")
           .attr("class", "rule")
           .attr("x", yscale)
@@ -245,20 +249,52 @@ if (!d3) { throw "d3 wasn't included!"};
           .attr('font-size', '8px')
           .attr('fill', '#ccc')
           .text(function(d) { return Math.round(d*100) / 100; });
+
+      text_rules
+        .exit().remove();
     }
         
-    var link = vis.selectAll("path.link")
-        .data(tree.links(nodes))
+    
+    // DATA JOIN
+    var timestamp = new Date().getTime();
+    console.log("NEW keys on timestamp: "+ timestamp);
+
+    var path_links = vis.selectAll("path.link")
+        .data(tree.links(nodes), function(d) { return d.source['@id']() +'_'+ d.target['@id'](); });
+
+    var g_nodes = vis.selectAll("g.node")
+        .data(nodes, function(d) { return d['@id'](); });
+
+
+    // UPDATE (only affects existing links)
+    path_links
+        .attr("stroke", "#aaa");
+    
+    
+    // ENTER (only affects new links; do one-time initialization here)
+    path_links
       .enter().append("svg:path")
         .attr("class", "link")
-        .attr("d", diagonal)
         .attr("fill", "none")
-        .attr("stroke", "#aaa")
+        .attr("stroke", "#f33")
         .attr("stroke-width", "4px");
+    
+    g_nodes
+      .enter()
+        .append("svg:g")
+          .append("svg:circle")
+            .attr("r", 2.5)
+            .attr('stroke', 'red')
+            .attr('pointer-events', 'all')      // detect on invisible stuff
+            .attr('stroke-opacity', '0.0')
+            .attr('stroke-width', '8px');
+      
+
+    // ENTER + UPDATE (affects all new AND existing links)
+    path_links
+        .attr("d", diagonal);
         
-    var node = vis.selectAll("g.node")
-        .data(nodes)
-      .enter().append("svg:g")
+    g_nodes
         .attr("class", function(n) {
           if (n.children) {
             if (n.depth == 0) {
@@ -271,25 +307,43 @@ if (!d3) { throw "d3 wasn't included!"};
           }
         })
         .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-      
-    d3.phylogram.styleTreeNodes(vis)
+
+
+    // EXIT
+    path_links
+      .exit()
+        .remove();
+
+    g_nodes
+      .exit().remove();
+
+    // any dynamic readjustments of non-CSS attributes
+    d3.phylogram.styleTreeNodes(vis);
     
+    vis.selectAll('g.node text').remove();
+
     if (!options.skipLabels) {
-      vis.selectAll('g.inner.node')
+      // refresh all labels based on tree position
+      vis.selectAll('g.node')
         .append("svg:text")
+          .attr('font-family', 'Helvetica Neue, Helvetica, sans-serif')
           .attr("dx", -6)
           .attr("dy", -6)
           .attr("text-anchor", 'end')
-          .attr('font-size', '8px')
+          .attr('font-size', '10px')
           .attr('fill', '#ccc')
-          .text(function(d) { return d.length; });
+          ///.text(function(d) { return d.length; });
+          .text(function(d) { return (d.name + ' ('+d.length+')'); });
 
-      vis.selectAll('g.leaf.node').append("svg:text")
+      vis.selectAll('g.root.node text')
+          .attr("dx", -8)
+          .attr("dy", 3)
+          .text(function(d) { return (d.name + ' (root)'); });
+
+      vis.selectAll('g.leaf.node text')
         .attr("dx", 8)
         .attr("dy", 3)
         .attr("text-anchor", "start")
-        .attr('font-family', 'Helvetica Neue, Helvetica, sans-serif')
-        .attr('font-size', '10px')
         .attr('fill', 'black')
         .text(function(d) { return d.name + ' ('+d.length+')'; });
     }
