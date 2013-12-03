@@ -1084,6 +1084,7 @@ function showTreeViewer( tree ) {
     });
     $('#tree-viewer').modal('show');
 
+    updateEdgesInTree( tree );
     drawTree( tree );
 }
 
@@ -1546,7 +1547,7 @@ function updateEdgesInTree( tree ) {
         // root is defined, and possibly ingroup; set direction away from root for all edges
         // NOTE that this polarity trumps any nearestOutGroupNeighbor
         console.log("sweeping all edges");
-        sweepEdgePolarity( tree, specifiedRoot, null );
+        sweepEdgePolarity( tree, specifiedRoot, null, inGroupClade );
     } else if (inGroupClade) {
         // only ingroup clade is defined, set direction away from ingroup
         // ancestor within the ingroup clade; disregard other edges
@@ -1564,14 +1565,14 @@ function updateEdgesInTree( tree ) {
             }
             console.log("...sweeping away from natural parent '"+ naturalParent +"'...");
         }
-        sweepEdgePolarity( tree, inGroupClade, nearestOutGroupNeighbor || naturalParent );
+        sweepEdgePolarity( tree, inGroupClade, nearestOutGroupNeighbor || naturalParent, inGroupClade );
     } else {
         // neither root node nor ingroup is defined; ignore all edges
         console.log("we'll ignore all polarity, so nothing to sweep");
     }
 }
 
-function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID ) {
+function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID, inGroupClade, insideInGroupClade ) {
     // push all adjacent edges away from starting node, except for
     // its upstream neighbor; this should recurse to sweep an entire tree (or
     // subtree) until we reach the tips
@@ -1595,8 +1596,20 @@ function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID ) {
         if (targetID === startNodeID) {
             reverseEdgeDirection( edge );
         }
+
+        if (!insideInGroupClade) {
+            // check to see if we just hit the ingroup clade MRCA
+            if (startNodeID === inGroupClade) {
+                insideInGroupClade = true;
+            }
+        }
+        // mark the start-node accordingly (so we can distinguish ingroup vs.
+        // outgroup paths in the tree view)
+        var startNode = getTreeNodeByID(tree, startNodeID);
+        startNode.ingroup = insideInGroupClade;
+
         // note that we're sweeping *away* from the current startNode
-        sweepEdgePolarity( tree, otherID, startNodeID );
+        sweepEdgePolarity( tree, otherID, startNodeID, inGroupClade, insideInGroupClade );
     });
 }
 
@@ -2552,5 +2565,6 @@ function clearD3PropertiesFromTree(tree) {
         delete node.children;
         delete node.name;
         delete node.length;
+        delete node.ingroup;
     });
 }

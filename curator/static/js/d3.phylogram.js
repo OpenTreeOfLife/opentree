@@ -231,7 +231,7 @@ if (!d3) { throw "d3 wasn't included!"};
           .attr('y2', h)
           .attr('x1', yscale)
           .attr('x2', yscale)
-          .attr("stroke", "#ddd");
+          .attr("stroke", "#eee");
 
       lines
         .exit().remove();
@@ -292,7 +292,8 @@ if (!d3) { throw "d3 wasn't included!"};
 
     // ENTER + UPDATE (affects all new AND existing links)
     path_links
-        .attr("d", diagonal);
+        .attr("d", diagonal)
+        .attr("class", function(d) { return "link "+ (d.source.ingroup ? "ingroup" : "outgroup"); });
         
     g_nodes
         .attr("class", function(n) {
