@@ -96,6 +96,38 @@ body {
   font: 10px sans-serif;
 }
 
+.dropdown-menu > li.node-information {
+    padding: 3px 20px;
+    clear: both;
+    font-weight: normal;
+    line-height: 20px;
+    color: #333333;
+    white-space: nowrap;
+    /* border-bottom: 1px solid #ddd; */
+}
+.dropdown-menu > li.node-information .node-name {
+    font-weight: bold;
+    color: #000;
+    padding-right: 1em;
+}
+.dropdown-menu > li.node-information .node-type {
+    float: right;
+    text-align: right;
+    color: #888;
+}
+.dropdown-menu > li.node-information .node-type.inGroupClade {
+    color: #f7f;
+}
+.dropdown-menu > li.node-information .node-type.nearestOutGroupNeighbor {
+    color: #5f5;
+}
+.dropdown-menu > li.node-information .node-type.atRoot {
+    color: #fa5;
+}
+.dropdown-menu > li.node-information .node-type.specifiedRoot {
+    color: #f77;
+}
+
 .link {
   fill: none;
   stroke: steelblue;

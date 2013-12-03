@@ -1248,7 +1248,7 @@ function drawTree( treeOrID ) {
             d3.event.stopPropagation();
             // show a menu with appropriate options for this node
             var nodePageOffset = $(d3.event.target).offset();
-            showNodeOptionsMenu( tree, d, nodePageOffset );
+            showNodeOptionsMenu( tree, d, nodePageOffset, importantNodeIDs );
         });
 
     // (re)assert standard click behavior for main vis background
@@ -2456,10 +2456,9 @@ function clearVisibleMappings() {
     clearFailedOTUList();
 }
 
-function showNodeOptionsMenu( tree, node, nodePageOffset ) {
+function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     // this is a Bootstrap-style menu whose pointer is centered on the
     // target node
-    console.log("showing menu for node '"+ node['@id']() +"'...");
     var nodeMenu = $('#node-menu');
     if (nodeMenu.length === 0) {
         // provide the needed ancestor classes, but minimize the surrounding "navbar"
@@ -2472,7 +2471,9 @@ function showNodeOptionsMenu( tree, node, nodePageOffset ) {
     // show appropriate choices for this node
     // if (node['@root']() === 'true') ?
     var nodeID = node['@id']();
+    ///console.log("showing menu for node '"+ nodeID +"'...");
 
+    /*
     var specifiedRootTag = getMetaTagByProperty(tree.meta(), 'ot:specifiedRoot');
     var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
 
@@ -2481,24 +2482,47 @@ function showNodeOptionsMenu( tree, node, nodePageOffset ) {
 
     var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta(), 'ot:nearestOutGroupNeighbor');
     var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$() : null;
+    */
 
-    if (nodeID == specifiedRoot) {
+    // general node information first, then actions
+    nodeMenu.append('<li class="node-information"></li>');
+    var nodeInfoBox = nodeMenu.find('.node-information');
+    nodeInfoBox.append('<span class="node-name">'+ getTreeNodeLabel(tree, node, importantNodeIDs) +'</span>');
+
+    if (nodeID == importantNodeIDs.specifiedRoot) {
+
+        nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
+
         nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id']() +'\', null ); return false;">Un-mark as root of this tree</a></li>');
     } else {
         nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id']() +'\', \''+ nodeID +'\' ); return false;">Mark as root of this tree</a></li>');
     }
-    if (nodeID == inGroupClade) {
+    if (nodeID == importantNodeIDs.inGroupClade) {
+
+        nodeInfoBox.append('<span class="node-type inGroupClade">ingroup clade</span>');
+
         nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id']() +'\', null ); return false;">Un-mark as the ingroup clade</a></li>');
     } else {
         nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id']() +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade</a></li>');
         
         // this shouldn't be possible if it's already the ingroup clade
-        if (nodeID == nearestOutGroupNeighbor) {
-            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id']() +'\', null ); return false;">Un-mark as the nearest outgroup neighbor</a></li>');
+        if (nodeID == importantNodeIDs.nearestOutGroupNeighbor) {
+
+            nodeInfoBox.append('<span class="node-type nearestOutGroupNeighbor">ingroup parent</span>');
+
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id']() +'\', null ); return false;">Un-mark as the ingroup clade\'s parent</a></li>');
         } else {
-            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id']() +'\', \''+ nodeID +'\' ); return false;">Mark as the nearest outgroup neighbor</a></li>');
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id']() +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade\'s parent</a></li>');
         }
     }
+
+    if (nodeInfoBox.find('.node-type').length === 0) {
+        if (node['@root'] && node['@root']() === 'true') {
+            nodeInfoBox.append('<span class="node-type atRoot">marked as @root</span>');
+        }
+    }
+    nodeInfoBox.after('<li class="divider"></li>');
+
     // show the menu 
     var pointerNudge = {x: -13, y: 8};
     nodeMenu.css({
