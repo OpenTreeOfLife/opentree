@@ -122,7 +122,7 @@ fi
 # treemachine and taxomachine.
 
 if [ x$NEO4JHOST != x ]; then
-    for APP in treemachine taxomachine; do
+    for APP in treemachine taxomachine oti; do
         sed "s+$APP = .*+$APP = http://$NEO4JHOST/$APP+" < $configfile > tmp.tmp
 	if ! cmp -s tmp.tmp $configfile; then
             mv tmp.tmp $configfile

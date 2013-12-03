@@ -116,6 +116,13 @@
       ProxyPass  http://localhost:7476/db/data
       ProxyPassReverse  http://localhost:7476/db/data
     </Location>
+    
+    <Location /oti>
+      Order allow,deny
+      Allow from all
+      ProxyPass  http://localhost:7478/db/data
+      ProxyPassReverse  http://localhost:7478/db/data
+    </Location>
 
     # END OPENTREE STUFF
 

@@ -20,24 +20,34 @@ mkdir -p repo
 
 # ---------- NEO4J ----------
 if [ ! -r downloads/neo4j.tgz ]; then
-    wget --no-verbose -O downloads/neo4j.tgz http://dist.neo4j.org/neo4j-community-1.9.4-unix.tar.gz?edition=community&version=1.9.4&distribution=tarball&dlid=2824963
+    wget --no-verbose -O downloads/neo4j.tgz http://dist.neo4j.org/neo4j-community-1.9.5-unix.tar.gz?edition=community&version=1.9.5&distribution=tarball&dlid=2824963
 fi
 
 # ---------- NEO4J WITH TREEMACHINE / TAXOMACHINE PLUGINS ----------
 # Set up neo4j services
 
-if git_refresh FePhyFoFum jade master || [ ! -r repo/jade/target/*.jar ]; then
+#if git_refresh FePhyFoFum jade master || [ ! -r repo/jade/target/*.jar ]; then
+if git_refresh FePhyFoFum jade master || [ ! -d ~/.m2/repository/org/opentree/jade ]; then
     (cd repo/jade; sh mvn_install.sh)
 fi
 
-if git_refresh OpenTreeOfLife ot-base $BRANCH || [ ! -r repo/ot-base/target/*.jar ]; then
+#if git_refresh OpenTreeOfLife ot-base $BRANCH || [ ! -r repo/ot-base/target/*.jar ]; then
+if git_refresh OpenTreeOfLife ot-base master || [ ! -d ~/.m2/repository/org/opentree/ot-base ]; then
     (cd repo/ot-base; sh mvn_install.sh)
 fi
 
-jar=opentree-neo4j-plugins-0.0.1-SNAPSHOT.jar
+if git_refresh OpenTreeOfLife taxomachine master || [ ! -d ~/.m2/repository/org/opentree/taxomachine ]; then
+    (cd repo/taxomachine; sh mvn_install.sh)
+fi
+
+#jar=opentree-neo4j-plugins-0.0.1-SNAPSHOT.jar
+VERSION=0.0.1-SNAPSHOT
 
 function make_neo4j_plugin {
+    
     APP=$1
+    jar=$APP-neo4j-plugins-$VERSION.jar
+    echo "installing plugin for" $APP
 
     # Create a copy of neo4j for this app
     if [ ! -x neo4j-$APP/bin/neo4j ] ; then
@@ -47,15 +57,17 @@ function make_neo4j_plugin {
 
     # Get plugin from git repository
     if git_refresh OpenTreeOfLife $APP $BRANCH || [ ! -r neo4j-$APP/plugins/$jar ]; then
+    
+        echo "attempting to recompile " $APP " plugins"
         # Create and install the plugins .jar file
         # Compilation takes about 4 minutes... ugh
-	(cd repo/$APP; ./mvn_serverplugins.sh)
+        (cd repo/$APP; ./mvn_serverplugins.sh)
 
-	running_before=yes
-        ./neo4j-$APP/bin/neo4j status || running_before=no
-	if [ running_before = yes ]; then ./neo4j-$APP/bin/neo4j stop; fi
-	cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
-	if [ running_before = yes ]; then ./neo4j-$APP/bin/neo4j start; fi
+        running_before=yes
+            ./neo4j-$APP/bin/neo4j status || running_before=no
+        if [ running_before = yes ]; then ./neo4j-$APP/bin/neo4j stop; fi
+        cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
+        if [ running_before = yes ]; then ./neo4j-$APP/bin/neo4j start; fi
     fi
 }
 
@@ -63,12 +75,15 @@ function make_neo4j_plugin {
 
 function fetch_neo4j_plugin {
     APP=$1
+    jar=$APP-neo4j-plugins-$VERSION.jar
     wget --no-verbose -O neo4j-$APP/plugins/$jar http://files.opentreeoflife.org:/export/$APP.jar
 }
 
 make_neo4j_plugin treemachine || fetch_neo4j_plugin taxomachine
 
 make_neo4j_plugin taxomachine || fetch_neo4j_plugin taxomachine
+
+make_neo4j_plugin oti || fetch_neo4j_plugin oti
 
 # Set taxomachine ports before starting it up
 
@@ -77,6 +92,19 @@ make_neo4j_plugin taxomachine || fetch_neo4j_plugin taxomachine
 sed s+7474+7476+ < neo4j-taxomachine/conf/neo4j-server.properties | \
 sed s+7473+7475+ > props.tmp
 mv props.tmp neo4j-taxomachine/conf/neo4j-server.properties
+
+# Change oti ports as well
+sed s+7474+7478+ < neo4j-oti/conf/neo4j-server.properties | \
+sed s+7473+7477+ > props.tmp
+mv props.tmp neo4j-oti/conf/neo4j-server.properties
+
+# setup oti database # currently failing
+#echo "attempting to run oti setup"
+#echo $JAVA_HOME # apparently this is not set
+#neo4j-oti/bin/neo4j start # failing here
+#repo/oti/index_current_repo.py 
+#echo "oti setup run"
+
 
 # ---------- THE NEO4J DATABASES ----------
 
@@ -117,6 +145,7 @@ if false; then
     fetch_neo4j_db treemachine
     fetch_neo4j_db taxomachine
 fi
+
 
 echo "`date` Done"
 

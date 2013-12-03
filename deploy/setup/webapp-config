@@ -17,6 +17,7 @@ hostdomain = dev.opentreeoflife.org
 [domains]
 treemachine = http://dev.opentreeoflife.org/treemachine
 taxomachine = http://dev.opentreeoflife.org/taxomachine
+oti = http://dev.opentreeoflife.org/oti
  
 
 # Building on the URLs above, complete the public-facing URL for all methods
