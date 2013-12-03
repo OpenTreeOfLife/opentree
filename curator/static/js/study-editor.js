@@ -1084,9 +1084,11 @@ function showTreeViewer( tree ) {
     });
     $('#tree-viewer').modal('show');
 
+    updateEdgesInTree( tree );
     drawTree( tree );
 }
 
+var vizInfo = { tree: null, vis: null };
 function drawTree( treeOrID ) {
     var tree = null;
     if (typeof(treeOrID) === 'object') {
@@ -1156,10 +1158,115 @@ function drawTree( treeOrID ) {
         console.log( "   "+ prop +" = "+ importantNodeIDs[prop] );
     }
 
+    var edges = tree.edge();
+
+    /* punt to phylogram, as a quick test */
+    
+    // clear special properties and visible tree elements, for a clean
+    // sweep. TODO: do something more graceful, perhaps a transition?
+    ///clearD3PropertiesFromTree(tree);
+    
+    // preload nodes with proper labels and branch lengths
+    $.each(tree.node(), function(index, node) {
+        node.name = getTreeNodeLabel(tree, node, importantNodeIDs);
+        // reset x of all nodes, to avoid gradual "creeping" to the right
+        node.x = 0;
+        node.length = 0;  // ie, branch length
+        node.rootDist = 0;
+    });
+    $.each(edges, function(index, edge) {
+        // transfer @length property (if any) to the child node
+        if (typeof( edge['@length'] ) === 'function') {
+            var childID = edge['@target']();
+            var childNode = getTreeNodeByID(tree, childID);
+            childNode.length = edge['@length']();
+            ///console.log("> reset length of node "+ childID+" to: "+ childNode.length);
+        }
+    });
+    console.log("> done sweeping edges");
+    
+    //var currentWidth = $("#tree-viewer #dialog-data").width();
+    //var currentWidth = $("#tree-viewer #dialog-data").css('width').split('px')[0];
+    var currentWidth = $("#tree-viewer").width() - 400;
+    vizInfo = d3.phylogram.build(
+        "#tree-viewer #dialog-data",   // selector
+        root, // tree.node(),      // nodes 
+        {           // options
+            vis: vizInfo.vis,
+            // TODO: can we make the size "adaptive" based on vis contents?
+            width: currentWidth,  // must be simple integers
+            height: '3000',
+            // simplify display by omitting scales or variable-length branches
+            skipTicks: false,
+            skipBranchLengthScaling: false,
+            children : function(d) {
+                var parentID = d['@id']();
+                var itsChildren = [];
+                $.each(edges, function(index, edge) {
+                    if (edge['@source']() === parentID) {
+                        var childID = edge['@target']();
+                        var childNode = getTreeNodeByID(tree, childID);
+                        itsChildren.push( childNode );
+                    }
+                });
+                /*
+                console.log("> updated children for node "+ parentID +":");
+                $.each(itsChildren, function(i,n) {
+                    console.log("   > "+ n['@id']());
+                });
+                */
+                return itsChildren;
+            }
+        }
+    );
+
+    // (re)assert proper classes for key nodes
+    vizInfo.vis.selectAll('.node')
+        .attr("class", function(d) {
+            var itsClass = "node";
+            if (!d.children) {
+                itsClass += " leaf";
+            }
+            if (d['@root'] && d['@root']() === 'true') {
+                itsClass += " atRoot";
+            }
+            if (d['@id']() === specifiedRoot) {
+                itsClass += " specifiedRoot";
+            }
+            if (d['@id']() === inGroupClade) {
+                itsClass += " inGroupClade";
+            }
+            if (d['@id']() === nearestOutGroupNeighbor) {
+                itsClass += " nearestOutGroupNeighbor";
+            }
+            ///console.log("CLASS is now "+ itsClass);
+            return itsClass;
+        });
+
+    // (re)assert standard click behavior for all nodes
+    vizInfo.vis.selectAll('.node circle')
+        .on('click', function(d) {
+            d3.event.stopPropagation();
+            // show a menu with appropriate options for this node
+            var nodePageOffset = $(d3.event.target).offset();
+            showNodeOptionsMenu( tree, d, nodePageOffset, importantNodeIDs );
+        });
+
+    // (re)assert standard click behavior for main vis background
+    d3.select('#tree-viewer')  // div.modal-body')
+        .on('click', function(d) {
+            d3.event.stopPropagation();
+            // hide any node menu
+            hideNodeOptionsMenu( );
+        });
+
+
+    /*
+    return;
+
+
     var width = 960,
         height = 2200;
-
-    var edges = tree.edge();
 
     var cluster = d3.layout.cluster()
         .size([height, width - 160])
@@ -1173,12 +1280,12 @@ function drawTree( treeOrID ) {
                     itsChildren.push( childNode );
                 }
             });
-            /*
+            **
             console.log("> resetting children for node "+ parentID +":");
             $.each(itsChildren, function(i,n) {
                 console.log("   > "+ n['@id']());
             });
-            */
+            **
             return itsChildren;
         });
 
@@ -1227,14 +1334,14 @@ function drawTree( treeOrID ) {
         ///.transition().duration(750)
         .attr("d", diagonal);  // smooth bezier curves between nodes/
 
-    /* ...or try simple lines between nodes
+    ** ...or try simple lines between nodes
     link.enter().append("line")
         .attr("class", "link")
         .attr("x1", function(d) { return d.source.y; })
         .attr("y1", function(d) { return d.source.x; })
         .attr("x2", function(d) { return d.target.y; })
         .attr("y2", function(d) { return d.target.x; });
-    */
+    **
 
     // EXIT
     link.exit().remove();
@@ -1309,6 +1416,7 @@ function drawTree( treeOrID ) {
 
     var rightNow = new Date() - startTime;
     console.log(">> Drawing tree took "+ (rightNow / 1000.0).toFixed(2) +" seconds");
+    */
 
 }
 
@@ -1439,20 +1547,32 @@ function updateEdgesInTree( tree ) {
         // root is defined, and possibly ingroup; set direction away from root for all edges
         // NOTE that this polarity trumps any nearestOutGroupNeighbor
         console.log("sweeping all edges");
-        sweepEdgePolarity( tree, specifiedRoot, null );
+        sweepEdgePolarity( tree, specifiedRoot, null, inGroupClade );
     } else if (inGroupClade) {
         // only ingroup clade is defined, set direction away from ingroup
         // ancestor within the ingroup clade; disregard other edges
         console.log("sweeping ingroup edges only");
-        var naturalParent = 
-        sweepEdgePolarity( tree, specifiedRoot, naturalParent );
+        var naturalParent;
+        if (!nearestOutGroupNeighbor) {
+            // choose its parent based on current "upward" edge in tree
+            var edgeArray = getTreeEdgesByID(tree, inGroupClade, 'TARGET');
+            if (edgeArray.length === 0) {
+                // ingroup claded MRCA must also be the tree root
+                naturalParent = null;
+            } else {
+                edgeToParent = edgeArray[0];
+                naturalParent = edgeToParent['@source']();
+            }
+            console.log("...sweeping away from natural parent '"+ naturalParent +"'...");
+        }
+        sweepEdgePolarity( tree, inGroupClade, nearestOutGroupNeighbor || naturalParent, inGroupClade );
     } else {
         // neither root node nor ingroup is defined; ignore all edges
         console.log("we'll ignore all polarity, so nothing to sweep");
     }
 }
 
-function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID ) {
+function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID, inGroupClade, insideInGroupClade ) {
     // push all adjacent edges away from starting node, except for
     // its upstream neighbor; this should recurse to sweep an entire tree (or
     // subtree) until we reach the tips
@@ -1476,8 +1596,20 @@ function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID ) {
         if (targetID === startNodeID) {
             reverseEdgeDirection( edge );
         }
+
+        if (!insideInGroupClade) {
+            // check to see if we just hit the ingroup clade MRCA
+            if (startNodeID === inGroupClade) {
+                insideInGroupClade = true;
+            }
+        }
+        // mark the start-node accordingly (so we can distinguish ingroup vs.
+        // outgroup paths in the tree view)
+        var startNode = getTreeNodeByID(tree, startNodeID);
+        startNode.ingroup = insideInGroupClade;
+
         // note that we're sweeping *away* from the current startNode
-        sweepEdgePolarity( tree, otherID, startNodeID );
+        sweepEdgePolarity( tree, otherID, startNodeID, inGroupClade, insideInGroupClade );
     });
 }
 
@@ -1517,7 +1649,7 @@ function getTreeEdgesByID(tree, id, sourceOrTarget) {
                 }
                 return;
             case 'TARGET':
-                if (edge['@source']() === id) {
+                if (edge['@target']() === id) {
                     foundEdges.push( edge );
                 }
                 return;
@@ -2337,7 +2469,7 @@ function clearVisibleMappings() {
     clearFailedOTUList();
 }
 
-function showNodeOptionsMenu( tree, node, nodePageOffset ) {
+function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     // this is a Bootstrap-style menu whose pointer is centered on the
     // target node
     var nodeMenu = $('#node-menu');
@@ -2352,7 +2484,9 @@ function showNodeOptionsMenu( tree, node, nodePageOffset ) {
     // show appropriate choices for this node
     // if (node['@root']() === 'true') ?
     var nodeID = node['@id']();
+    ///console.log("showing menu for node '"+ nodeID +"'...");
 
+    /*
     var specifiedRootTag = getMetaTagByProperty(tree.meta(), 'ot:specifiedRoot');
     var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
 
@@ -2361,24 +2495,47 @@ function showNodeOptionsMenu( tree, node, nodePageOffset ) {
 
     var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta(), 'ot:nearestOutGroupNeighbor');
     var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$() : null;
+    */
 
-    if (nodeID == specifiedRoot) {
+    // general node information first, then actions
+    nodeMenu.append('<li class="node-information"></li>');
+    var nodeInfoBox = nodeMenu.find('.node-information');
+    nodeInfoBox.append('<span class="node-name">'+ getTreeNodeLabel(tree, node, importantNodeIDs) +'</span>');
+
+    if (nodeID == importantNodeIDs.specifiedRoot) {
+
+        nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
+
         nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id']() +'\', null ); return false;">Un-mark as root of this tree</a></li>');
     } else {
         nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id']() +'\', \''+ nodeID +'\' ); return false;">Mark as root of this tree</a></li>');
     }
-    if (nodeID == inGroupClade) {
+    if (nodeID == importantNodeIDs.inGroupClade) {
+
+        nodeInfoBox.append('<span class="node-type inGroupClade">ingroup clade</span>');
+
         nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id']() +'\', null ); return false;">Un-mark as the ingroup clade</a></li>');
     } else {
         nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id']() +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade</a></li>');
         
         // this shouldn't be possible if it's already the ingroup clade
-        if (nodeID == nearestOutGroupNeighbor) {
-            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id']() +'\', null ); return false;">Un-mark as the nearest outgroup neighbor</a></li>');
+        if (nodeID == importantNodeIDs.nearestOutGroupNeighbor) {
+
+            nodeInfoBox.append('<span class="node-type nearestOutGroupNeighbor">ingroup parent</span>');
+
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id']() +'\', null ); return false;">Un-mark as the ingroup clade\'s parent</a></li>');
         } else {
-            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id']() +'\', \''+ nodeID +'\' ); return false;">Mark as the nearest outgroup neighbor</a></li>');
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id']() +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade\'s parent</a></li>');
         }
     }
+
+    if (nodeInfoBox.find('.node-type').length === 0) {
+        if (node['@root'] && node['@root']() === 'true') {
+            nodeInfoBox.append('<span class="node-type atRoot">marked as @root</span>');
+        }
+    }
+    nodeInfoBox.after('<li class="divider"></li>');
+
     // show the menu 
     var pointerNudge = {x: -13, y: 8};
     nodeMenu.css({
@@ -2406,5 +2563,8 @@ function clearD3PropertiesFromTree(tree) {
         delete node.depth;
         delete node.parent;
         delete node.children;
+        delete node.name;
+        delete node.length;
+        delete node.ingroup;
     });
 }
