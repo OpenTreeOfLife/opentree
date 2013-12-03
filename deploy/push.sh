@@ -26,24 +26,17 @@ NEO4JHOST=dev.opentreeoflife.org
 
 # On ubuntu, the admin user is called 'ubuntu'
 
-if [ "x$OPENTREE_HOST" != "x" ]; then
-    HOST="$OPENTREE_HOST"; fi
-if [ "x$OPENTREE_ADMIN" != "x" ]; then
-    ADMIN="$OPENTREE_ADMIN"; fi
-if [ "x$OPENTREE_IDENTITY" != "x" ]; then
-    PEM=$OPENTREE_IDENTITY; fi
-if [ "x$OPENTREE_NEO4J_HOST" != "x" ]; then
-    NEO4JHOST="$OPENTREE_NEO4J_HOST"; fi
-
 while [ $# -gt 0 ]; do
     if [ "x$1" = "x-h" ]; then
-	HOST="$2"
+	OPENTREE_HOST="$2"
     elif [ "x$1" = "x-u" ]; then
-	ADMIN="$2"
+	OPENTREE_ADMIN="$2"
     elif [ "x$1" = "x-i" ]; then
-	PEM="$2"
+	OPENTREE_IDENTITY="$2"
     elif [ "x$1" = "x-n" ]; then
-	NEO4JHOST="$2"
+	OPENTREE_NEO4J_HOST="$2"
+    elif [ "x$1" = "x-c" ]; then
+        source "$2"
     elif [ "x${1:0:1}" = "x-" ]; then
 	echo 1>&2 "Unrecognized flag: $1"
 	exit 1
@@ -53,6 +46,14 @@ while [ $# -gt 0 ]; do
     shift
     shift
 done
+
+# abbreviations... no good reason for these, they just make the commands shorter
+HOST=$OPENTREE_HOST
+ADMIN=$OPENTREE_ADMIN
+PEM=$OPENTREE_IDENTITY
+NEO4JHOST=$OPENTREE_NEO4J_HOST
+
+echo "Pushing to $HOST, admin=$ADMIN, pem=$PEM"
 
 SSH="ssh -i ${PEM}"
 

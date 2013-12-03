@@ -17,18 +17,21 @@ How to deploy a new server
 --------------------------
 
 Got to Amazon or some other cloud provider, and reserve an instance running Debian GNU/Linux.
+I've been using m1.small servers when running without big neo4j instances, m2.xlarge for those running with.
 
-Put the ssh private key somewhere, e.g. 'opentree.pem'.  Don't forget
-to set file permissions to 600.
+Put the ssh private key somewhere, e.g. 'opentree.pem'.  
+Set its file permissions to 600.
 
-Run the setup script, which is called 'push.sh'.  This takes a few parameters, which can be set (currently) using either shell variables or using command line arguments.  TO BE DONE: This is sort of a crufty design.  It would probably be better if the parameters resided in a little parameter block file.
+Create one configuration file for each server.  A configuration is just a shell script that sets some variables.
 
-* -i <identityfile>  ... ssh private key, defaults to opentree.pem
-* -h <hostname>  ... the hostname of the cloud host you'll be updating, and which will run web2py
-* -u <adminuser>  ... the name of the admin user, defaults to 'admin' which is correct for Debian (use 'ubuntu' for ubuntu)
-* -n <neo4jhost>  ... the hostname of the server that's running treemachine and taxomachine, if different from the web2py server (which it will be, if the web2py server is small).  This must be set properly or you won't be able to see the synthetic tree.
+Run the setup script, which is called 'push.sh', as
 
-Look at push.sh to see how to set these parameters using shell variables.
+     ./push.sh -c [configfile]
+
+* OPENTREE_IDENTITY=<identityfile>  ... ssh private key, defaults to opentree.pem
+* OPENTREE_HOST=<hostname>  ... the hostname of the cloud host you'll be updating, and which will run web2py and/or neo4j
+* OPENTREE_NEO4J_HOST=<neo4jhost>  ... the hostname of the server that's running treemachine and taxomachine, if different from the web2py server (which it will be, if the web2py server is small).  This must be set properly or you won't be able to see the synthetic tree.
+* OPENTREE_ADMIN=<adminuser>  ... the name of the admin user, defaults to 'admin' which is correct for Debian (use 'ubuntu' for ubuntu)
 
 The push.sh script starts by pushing out a script to be run as the admin user (setup/as_admin.sh).  This script installs prerequisite software and sets up an unprivileged 'opentree' user.  Then further scripts are run as user 'opentree'.
 
