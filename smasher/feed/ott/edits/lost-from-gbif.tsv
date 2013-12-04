@@ -1,5 +1,8 @@
 command	name	rank	related	context	sourceInfo
 
+# These are problems surfaced by checking for uses of newly deprecated
+#  taxa in existing OTU mappings.
+
 # This is a synonym for 'Bacteroides coprophilus JCM 13818'
 # Solution: add a synonym, or re-curate.  (JCM 13818 not currently in Phylografter)
 # study 2542
