@@ -28,6 +28,8 @@ Run the setup script, which is called 'push.sh', as
 
      ./push.sh -c [configfile]
 
+See sample.config in this directory for documentation on how to prepare a configuration file.  In summary:
+
 * OPENTREE_IDENTITY=<identityfile>  ... ssh private key, defaults to opentree.pem
 * OPENTREE_HOST=<hostname>  ... the hostname of the cloud host you'll be updating, and which will run web2py and/or neo4j
 * OPENTREE_NEO4J_HOST=<neo4jhost>  ... the hostname of the server that's running treemachine and taxomachine, if different from the web2py server (which it will be, if the web2py server is small).  This must be set properly or you won't be able to see the synthetic tree.
