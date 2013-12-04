@@ -97,10 +97,10 @@ make_neo4j_instance treemachine 7474 7473
 make_neo4j_instance taxomachine 7476 7475
 make_neo4j_instance oti         7478 7477
 
-if false; then
+if true; then
     # setup oti database # currently failing
     echo "attempting to run oti setup"
-    repo/oti/index_current_repo.py 
+    repo/oti/index_current_repo.py http://localhost:7478/db/data/
     echo "oti setup run"
 fi
 
