@@ -2,6 +2,16 @@
 # Utilities.
 # Source this file from another bash script.
 
+    javalink=`readlink /etc/alternatives/java`
+    # => /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java
+    javalink=`dirname $javalink`
+    # => /usr/lib/jvm/java-7-openjdk-amd64/jre/bin
+    javalink=`dirname $javalink`
+    # => /usr/lib/jvm/java-7-openjdk-amd64/jre
+    javalink=`dirname $javalink`
+    # => /usr/lib/jvm/java-7-openjdk-amd64
+export JAVA_HOME=$javalink
+
 # Refresh a git repo
 
 # We clone via https instead of ssh, because ssh cloning fails with
@@ -21,7 +31,7 @@ function git_refresh() {
     if [ ! -d $repo_dir ] ; then
         (cd $repos_dir; \
          git clone https://github.com/$guser/$reponame.git)
-        else
+    else
         before=`cd $repo_dir; git log | head -1`
         # What if branch doesn't exist locally, or doesn't track origin branch?
         # This will need some tweaking...

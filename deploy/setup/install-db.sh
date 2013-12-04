@@ -1,5 +1,7 @@
 #!/bin/bash
 
+. functions.sh
+
 # You might want to check out
 #  http://stackoverflow.com/questions/16572066/resuming-rsync-partial-p-partial-on-a-interrupted-transfer
 

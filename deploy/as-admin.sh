@@ -130,6 +130,7 @@ if [ ! -e ~opentree ]; then
     sudo cp -pr /etc/skel ~opentree
     sudo chown -R opentree:opentree ~opentree
     sudo chmod g+sw ~opentree
+    sudo chsh -s /bin/bash opentree 
 fi
 
 if [ ! -e ~opentree/.ssh ]; then
