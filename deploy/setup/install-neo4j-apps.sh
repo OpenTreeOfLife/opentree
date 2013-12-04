@@ -61,7 +61,7 @@ function make_neo4j_instance {
     # Get plugin from git repository
     if git_refresh OpenTreeOfLife $APP $BRANCH || [ ! -r neo4j-$APP/plugins/$jar ]; then
     
-        echo "attempting to recompile " $APP " plugins"
+        echo "attempting to recompile "$APP" plugins"
         # Create and install the plugins .jar file
         # Compilation takes about 4 minutes... ugh
         (cd repo/$APP; ./mvn_serverplugins.sh)
