@@ -55,7 +55,7 @@ taxpattern = re.compile(".*<TSeq_taxid>(.*)</TSeq_taxid>.*")
 
 def do_one_batch(batch):
 	#print batch
-	tempfilename = "efetch.out"
+	tempfilename = "efetch.tmp"
 	command = ("wget -q -O " + tempfilename +
 			  " \"http://eutils.ncbi.nlm.nih.gov/entrez/eutils/efetch.fcgi?db=nuccore&id=" +
 			  ",".join(batch) +

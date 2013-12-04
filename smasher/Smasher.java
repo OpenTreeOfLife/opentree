@@ -27,6 +27,9 @@ import java.util.Collections;
 import java.util.Collection;
 import java.io.PrintStream;
 import java.io.File;
+import org.json.simple.JSONObject; 
+import org.json.simple.parser.JSONParser; 
+import org.json.simple.parser.ParseException;
 
 public class Smasher {
 
@@ -288,6 +291,7 @@ abstract class Taxonomy implements Iterable<Node> {
 	}
 
 	void setTag() {
+		if (this.tag != null) return;
 		List<Node> probe = this.lookup("Caenorhabditis elegans");
 		if (probe == null)
 			this.tag = "tax" + this.which;
@@ -323,25 +327,32 @@ abstract class Taxonomy implements Iterable<Node> {
 		for (List<Node> nodes : nameIndex.values())
 			if (nodes.size() > 1) {
 				++homs;
+				boolean sibhomsp = false;
+				boolean cuzhomsp = false;
 				for (Node n1: nodes)
 					for (Node n2: nodes)
 						if (n1.id.compareTo(n2.id) < 0) {
 							if (n1.parent == n2.parent)
-								++sibhoms;
-							else if (n1.parent.parent == n2.parent.parent)
-								++cousinhoms;
+								sibhomsp = true;
+							else if (n1.parent != null && n2.parent != null &&
+									 n1.parent.parent == n2.parent.parent)
+								cuzhomsp = true;
 						}
+				if (sibhomsp) ++sibhoms;
+				if (cuzhomsp) ++cousinhoms;
 			}
 		if (homs > 0) {
-			System.out.println("| " + homs + " homonyms, " +
-							   cousinhoms + " cousin pairs, " +
-							   sibhoms + " sibling pairs");
+			System.out.println("| " + homs + " homonyms, of which " +
+							   cousinhoms + " name cousin taxa, " +
+							   sibhoms + " name sibling taxa");
 		}
 	}
 
 	static Pattern tabVbarTab = Pattern.compile("\t\\|\t?");
 
 	void loadTaxonomy(String dirname) throws IOException {
+		loadMetadata(dirname + "about.json");
+
         String filename = dirname + "taxonomy.tsv";
 		FileReader fr = new FileReader(filename);
 		BufferedReader br = new BufferedReader(fr);
@@ -375,8 +386,11 @@ abstract class Taxonomy implements Iterable<Node> {
 					node = new Node(this);
 					node.setId(id); // stores into this.idIndex
 				}
-				if (parts[1].length() > 0) {
-					String parentId = parts[1];
+
+				String parentId = parts[1];
+				if (parentId.equals(id))
+					System.err.println("!! Taxon is its own parent: " + id);
+				else if (parentId.length() > 0) {
 					Node parent = this.idIndex.get(parentId);
 					if (parent == null) {
 						parent = new Node(this);	 //don't know parent's name yet
@@ -395,7 +409,7 @@ abstract class Taxonomy implements Iterable<Node> {
 
 		for (Node node : this.idIndex.values()) {
 			if (node.name == null) {
-				System.err.println("*** Nameless node! " + node.id);
+				System.err.println("!! Identifier with no associated name, probably a missing parent: " + node.id);
 				node.setName("undefined:" + node.id);
 			}
 			if (node.rank == null || node.rank.length() == 0)
@@ -407,7 +421,7 @@ abstract class Taxonomy implements Iterable<Node> {
 			System.err.println("*** No root nodes!");
 		else {
 			if (roots.size() > 1)
-				System.err.println("Multiple roots: " + roots.size());
+				System.err.println("There are " + roots.size() + " roots");
 			int total = 0;
 			for (Node root : roots)
 				total += root.count();
@@ -419,6 +433,29 @@ abstract class Taxonomy implements Iterable<Node> {
 		loadSynonyms(dirname + "synonyms.tsv");
 	}
 
+	void loadMetadata(String filename) throws IOException {
+		FileReader fr;
+		try {
+			fr = new FileReader(filename);
+		} catch (java.io.FileNotFoundException e) {
+			return;
+		}
+		JSONParser parser = new JSONParser();
+		try {
+			Object obj = parser.parse(fr);
+			JSONObject jsonObject = (JSONObject) obj;
+			// System.out.println(jsonObject);
+			Object prefix = ((Map)obj).get("prefix");
+			if (prefix != null) {
+				System.out.println("prefix is " + prefix);
+				this.tag = (String)prefix;
+			}
+		} catch (ParseException e) {
+			System.err.println(e);
+		}
+		fr.close();
+	}
+
 	void loadSynonyms(String filename) throws IOException {
 		FileReader fr;
 		try {
@@ -427,12 +464,13 @@ abstract class Taxonomy implements Iterable<Node> {
 			fr = null;
 		}
 		if (fr != null) {
-			int count = 0;
 			BufferedReader br = new BufferedReader(fr);
+			int count = 0;
 			String str;
 			int syn_column = 1;
 			int id_column = 0;
 			int row = 0;
+			int losers = 0;
 			while ((str = br.readLine()) != null) {
 				String[] parts = tabVbarTab.split(str);
 				// uid | name | type | ? |
@@ -455,20 +493,26 @@ abstract class Taxonomy implements Iterable<Node> {
 					String syn = parts[syn_column];
 					Node node = this.idIndex.get(id);
 					if (node == null) {
-						System.err.println("Identifier " + id + " unrecognized for synonym " + syn);
+						if (++losers < 20)
+							System.err.println("Identifier " + id + " unrecognized for synonym " + syn);
+						else if (losers == 20)
+							System.err.println("...");
 						continue;
 					}
 					List<Node> nodes = this.nameIndex.get(syn);
+					if (nodes != null && nodes.contains(node)) {
+						if (node.name.equals(syn)) {
+							if (++losers < 20)
+								System.err.println("Putative synonym " + syn + " is the primary name of " + id);
+							else if (losers == 20)
+								System.err.println("...");
+						} else
+							;//lots of these System.err.println("Redundant synonymy: " + id + " " + syn);
+						continue;
+					}
 					if (nodes == null) {
 						nodes = new ArrayList<Node>(1);
 						this.nameIndex.put(syn, nodes);
-					}
-					if (nodes.contains(node)) {
-						if (node.name.equals(syn))
-							System.err.println("But that's really its name! " + id + " " + syn);
-						else
-							;//lots of these System.err.println("Redundant synonymy: " + id + " " + syn);
-						continue;
 					}
 					nodes.add(node);
 					++count;
@@ -1783,6 +1827,7 @@ class Node {
 		this.setName(parts[2]);
 		if (parts.length >= 4) {
 			this.rank = parts[3];
+			if (this.rank.length() == 0) this.rank = "no rank";
 			if (Taxonomy.ranks.get(this.rank) == null)
 				System.err.println("!! Unrecognized rank: " + this.rank + " " + this.id);
 		}
@@ -2989,7 +3034,7 @@ abstract class Criterion {
 			Answer assess(Node x, Node y) {
 				if (!x.name.equals(y.name))
 					// Evidence of difference, but not good enough to overturn synonymy evidence
-					return Answer.weakYes(x, y, "by-elimination/different-names", x.name);
+					return Answer.weakYes(x, y, "by-elimination/different-names", y.name);
 				else if (!x.rank.equals(y.rank))
 					// Evidence of difference, but not good enough to overturn name evidence
 					return Answer.weakYes(x, y, "by-elimination/different-ranks", x.rank + "/" + y.rank);

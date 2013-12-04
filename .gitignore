@@ -11,5 +11,7 @@ smasher/tax/nem_gbif
 smasher/tax/nem
 smasher/tax/ott
 smasher/tax/prev_ott
+smasher/feed/*/in
+smasher/feed/*/out
 *.pem
 smasher/lib/json-simple-1.1.1.jar

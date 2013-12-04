@@ -21,6 +21,7 @@ TAX=tax
 NCBI=$(TAX)/ncbi
 GBIF=$(TAX)/gbif
 SILVA=$(TAX)/silva
+IF=$(TAX)/if
 
 # Root of local copy of taxomachine git repo, for nematode examples
 # (TBD: make local copies so that setup is simpler)
@@ -72,25 +73,26 @@ test: Smasher.class
 
 # --------------------------------------------------------------------------
 
-# Add tax/if/ when it starts to work
+# Add $(TAX)/if/ when it starts to work
 
-OTT_ARGS=Smasher $(SILVA)/ tax/713/ $(NCBI)/ $(GBIF)/ \
+OTT_ARGS=Smasher $(SILVA)/ $(TAX)/713/ $(NCBI)/ $(GBIF)/ \
       --edits $(FEED)/ott/edits/ \
       --ids $(TAX)/prev_ott/ \
       --out $(TAX)/ott/
 
 ott: $(TAX)/ott/log.tsv
-$(TAX)/ott/log.tsv: Smasher.class $(SILVA)/taxonomy.tsv tax/713/taxonomy.tsv \
+$(TAX)/ott/log.tsv: Smasher.class $(SILVA)/taxonomy.tsv \
+		    $(TAX)/if/taxonomy.tsv $(TAX)/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
 		    $(FEED)/ott/edits/ott_edits.tsv
 	mkdir -p $(TAX)/ott
 	java $(CP) -Xmx10g $(OTT_ARGS)
 	echo $(WHICH) >$(TAX)/ott/version.txt
 
-tax/if/taxonomy.tsv:
+$(TAX)/if/taxonomy.tsv:
 	mkdir -p `dirname $@`
 	wget --output-document=$@ http://files.opentreeoflife.org/ott/IF/taxonomy.txt
-	wget --output-document=tax/if/synonyms.tsv http://files.opentreeoflife.org/ott/IF/synonyms.txt
+	wget --output-document=$(TAX)/if/synonyms.tsv http://files.opentreeoflife.org/ott/IF/synonyms.txt
 
 # Create the aux (preottol) mapping in a separate step.
 # How does it know where to write to?
@@ -158,8 +160,9 @@ $(SILVA)/taxonomy.tsv: $(FEED)/silva/process_silva.py $(FEED)/silva/in/silva.fas
 	mkdir -p $(FEED)/silva/out
 	python $(FEED)/silva/process_silva.py $(FEED)/silva/in $(FEED)/silva/out
 	mkdir -p $(SILVA)
-	cp -p $(FEED)/silva/out/taxonomy.tsv $(SILVA)/taxonomy.tsv
-	cp -p $(FEED)/silva/out/synonyms.tsv $(SILVA)/synonyms.tsv
+	cp -p $(FEED)/silva/out/taxonomy.tsv $(SILVA)/
+	cp -p $(FEED)/silva/out/synonyms.tsv $(SILVA)/
+	cp -p $(FEED)/silva/about.json $(SILVA)/
 
 $(FEED)/silva/in/accessionid_to_taxonid.tsv: $(FEED)/silva/accessionid_to_taxonid.tsv
 	(cd `dirname $@` && ln -sf ../accessionid_to_taxonid.tsv ./)

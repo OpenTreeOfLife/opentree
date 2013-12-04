@@ -57,11 +57,29 @@ seqdict = {} #given the taxon name, return (<species id assigned here>,<unique s
 Seen = {} # to tell whether the taxon name has been seen before - to know if homonym check needs to be done
 taxondict = {}  # maps (parentid, name) to taxid
 
+# It was judged that other taxonomies on balance will be better than Silva
+# for certain groups.
+# Silva classifies ABEG02010941 Caenorhabditis brenneri as a bacterium; this 
+# is clearly an artifact of sample contamination.
+
+kill = re.compile('|'.join(['Metazoa',
+							'Fungi',
+							'Archaeplastida',
+							'Chloroplast',
+							'mitochondria',
+							'Oryza',
+							'Herdmania',     # AB564305 AB564301 AB564299 ... all garbage
+							'ABEG02010941',  # Caenorhabditis brenneri
+							'ABRM01041397',  # Hydra magnipapillata
+							'ALWT01111512',  # Myotis davidii
+							'HP641760',		 # Alasmidonta varicosa
+							'JR876587']))	 # Embioptera sp. UVienna-2012
+
 def makePathDict(infilename, outfilename):
 	infile = open(infilename,'rU')
 	outfile = open(outfilename,'w') # I'm writing this out to have the taxonomy separate from the sequences - not necessary
 	for line in infile:  #removing plants, animals, fungi, chloroplast and mitochondrial sequences - also specifying Oryza because it is problematic in this version the database (SSURef_NR99_115_tax_silva.fasta).
-		if line[0] == '>' and not re.search('Metazoa',line) and not re.search('Fungi',line) and not re.search('Archaeplastida',line) and not re.search('Chloroplast',line) and not re.search('mitochondria',line)  and not re.search('Oryza',line):	
+		if line[0] == '>' and not re.search(kill,line):	
 			taxlist = []		
 			uid = line.split()[0].strip() # was going to use the species but there are multiple 'unidentified', for example
 			taxlist_1  = line.strip(uid).strip().split(';')
