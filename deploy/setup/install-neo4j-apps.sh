@@ -6,6 +6,15 @@ set -e
 HOST=$1
 BRANCH=master
 
+##### copied JAVA_HOME code from as_admin.sh, should probably be revised to avoid this duplication
+# Cf. file 'activate' - should be the same
+export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
+
+if [ ! -d $JAVA_HOME ]; then
+    echo 1>&2 No directory $JAVA_HOME
+    exit 1
+fi
+
 # tbd: maybe allow a different branch for each repo
 
 # Will not run on AWS free tier.  Recommended at least 60G disk and 16G RAM.
@@ -98,13 +107,6 @@ sed s+7474+7478+ < neo4j-oti/conf/neo4j-server.properties | \
 sed s+7473+7477+ > props.tmp
 mv props.tmp neo4j-oti/conf/neo4j-server.properties
 
-# setup oti database # currently failing
-#echo "attempting to run oti setup"
-#echo $JAVA_HOME # apparently this is not set
-#neo4j-oti/bin/neo4j start # failing here
-#repo/oti/index_current_repo.py 
-#echo "oti setup run"
-
 
 # ---------- THE NEO4J DATABASES ----------
 
@@ -145,6 +147,17 @@ if false; then
     fetch_neo4j_db treemachine
     fetch_neo4j_db taxomachine
 fi
+
+# setup oti database
+#if false; then
+if true; then
+    echo "attempting to setup the oti database"
+    ./neo4j-oti/bin/neo4j restart
+#    echo <(ls repo/oti/index_current_repo.py)
+    python repo/oti/index_current_repo.py http://localhost:7478/db/data
+    echo "oti setup run"
+fi
+
 
 
 echo "`date` Done"
