@@ -204,9 +204,9 @@ body {
                 <label class="control-label" for="ot_studyPublicationReference">Publication reference</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <textarea data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublicationReference'), valueUpdate: 'afterkeydown'" id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder=""></textarea>
+                  <textarea data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublicationReference'), valueUpdate: 'afterkeydown'" id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder=""></textarea>
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublicationReference')"></p>
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublicationReference')"></p>
                 {{ pass }}
                 </div>
               </div>
@@ -214,9 +214,9 @@ body {
                 <label class="control-label" for="ot_studyPublication">Publication</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublication'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
+                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublication'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value"><a target="_blank" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublication'), attr: { href: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublication') }"></a></p>
+                  <p class="static-form-value"><a target="_blank" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublication'), attr: { href: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublication') }"></a></p>
                 {{ pass }}
                 </div>
               </div>
@@ -224,9 +224,9 @@ body {
                 <label class="control-label" for="ot_studyYear">Study Year</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyYear'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyYear" class="input-mini" placeholder="">
+                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyYear'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyYear" class="input-mini" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyYear')"></p>
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyYear')"></p>
                 {{ pass }}
                 </div>
               </div>
@@ -234,16 +234,16 @@ body {
                 <label class="control-label" for="ot_focalClade">Focal clade</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:focalClade'), valueUpdate: 'afterkeydown'" type="text" id="ot_focalClade" class="input-small" placeholder="">
+                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:focalClade'), valueUpdate: 'afterkeydown'" type="text" id="ot_focalClade" class="input-small" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:focalClade')"></p>
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:focalClade')"></p>
                 {{ pass }}
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_curatorName">Submitted by</label>
                 <div class="controls">
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:curatorName')"></p>
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:curatorName')"></p>
                 </div>
               </div>
 
@@ -308,7 +308,7 @@ body {
                   <tbody data-bind="foreach: { data: nexml.trees.tree.pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
                         <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label'] || 'Untitled ('+ tree['@about']() +')'">?</a></td><!-- TODO: click to view/edit tree -->
-                        <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta(), 'ot:curatedType') || 'Unspecified'">TYPE?</td>
+                        <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta, 'ot:curatedType') || 'Unspecified'">TYPE?</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree)"></td>
                         <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
                         <td data-bind="html: getRootedDescriptionForTree(tree)">?/?? (?%)</td>
@@ -559,10 +559,10 @@ body {
                   </thead>
                   <tbody data-bind="foreach: { data: nexml.otus.otu.pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
-                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')">ORIGINAL?</td>
+                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')">ORIGINAL?</td>
                          <!-- ko if: (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
-                            <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel'))">WORKING?</em>
+                            <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel'))">WORKING?</em>
                         </td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel">
