@@ -2594,5 +2594,6 @@ function clearD3PropertiesFromTree(tree) {
         delete node.name;
         delete node.length;
         delete node.ingroup;
+        delete node.rootDist;
     });
 }
