@@ -119,7 +119,7 @@ function loadSelectedStudy(id) {
 
             ko.applyBindings(viewModel);
 
-            var studyFullReference = getMetaTagAccessorByAtProperty(viewModel.nexml.meta(), 'ot:studyPublicationReference')();
+            var studyFullReference = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:studyPublicationReference')();
             var studyCompactReference = "(Untitled)";
             if ($.trim(studyFullReference) !== "") {
                 // capture the first valid year in the reference
@@ -130,7 +130,7 @@ function loadSelectedStudy(id) {
             }
             $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
 
-            var studyDOI = getMetaTagAccessorByAtProperty(viewModel.nexml.meta(), 'ot:studyPublication')();
+            var studyDOI = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:studyPublication')();
             studyDOI = $.trim(studyDOI);
             if (studyDOI === "") {
                 $('a.main-title-DOI').hide();
@@ -419,6 +419,24 @@ function getMetaTagAccessorByAtProperty(array, prop, options) {
     var foundMatch;
     var returnAll = (typeof(options) === 'object' && options.FIND_ALL); // else return first match found
     var allMatches = [ ];
+
+    // NOTE that according to Badgerfish rules, the hoped-for array might
+    // be a simple object (singleton) or missing entirely!
+    // See http://badgerfish.ning.com/
+    if (typeof(array) === 'function') {
+        // unpack an observable array (from Knockout binding)
+        array = array();
+    } else {
+        if ((typeof(array) !== 'object') || array === null) {
+            // other simple value types are assumed to be incorrect
+            array = [];
+        }
+        if (typeof(array.length) === 'undefined') {
+            // it's a simple object, wrap it in an array
+            array = [array];
+        }
+    }
+
     for (var i = 0; i < array.length; i++) {
         var testItem = array[i];
         if (testItem['@property']() === prop) {
@@ -472,7 +490,7 @@ function getMappedTallyForTree(tree) {
             return true;
         }
         // Is this a leaf node? If not, skip it
-        var isLeafAccessor = getMetaTagAccessorByAtProperty(node.meta(), 'ot:isLeaf');
+        var isLeafAccessor = getMetaTagAccessorByAtProperty(node.meta, 'ot:isLeaf');
         if ((typeof(isLeafAccessor) !== 'function') || (isLeafAccessor() !== 'true')) {
             // this is not a leaf node! skip to the next one
             return true;
@@ -533,7 +551,7 @@ function getInGroupCladeDescriptionForTree( tree ) {
     }
 
     // try to retrieve a recognizable taxon label for the ingroup clade's root
-    var nodeIDAccessor = getMetaTagAccessorByAtProperty(tree.meta(), 'ot:inGroupClade');
+    var nodeIDAccessor = getMetaTagAccessorByAtProperty(tree.meta, 'ot:inGroupClade');
     if (typeof(nodeIDAccessor) !== 'function') {
         return 'Unspecified';
     }
@@ -691,7 +709,7 @@ var studyScoringRules = {
             description: "The study year should match the one in its publication reference.",
             test: function(studyData) {
                 // compare metatags for study year and publication reference
-                var studyMetatags = studyData.nexml.meta();
+                var studyMetatags = studyData.nexml.meta;
                 var studyYear = getMetaTagAccessorByAtProperty(studyMetatags, 'ot:studyYear')();
                 var pubRef = getMetaTagAccessorByAtProperty(studyMetatags, 'ot:studyPublicationReference')();
                 if (($.trim(studyYear) === "") || ($.trim(pubRef) === "")) {
@@ -714,7 +732,7 @@ var studyScoringRules = {
             description: "The study DOI should match the one in its publication reference.",
             test: function(studyData) {
                 // compare metatags for DOI and publication reference
-                var studyMetatags = studyData.nexml.meta();
+                var studyMetatags = studyData.nexml.meta;
                 var DOI = getMetaTagAccessorByAtProperty(studyMetatags, 'ot:studyPublication')();
                 var pubRef = getMetaTagAccessorByAtProperty(studyMetatags, 'ot:studyPublicationReference')();
                 if (($.trim(DOI) === "") || ($.trim(pubRef) === "")) {
