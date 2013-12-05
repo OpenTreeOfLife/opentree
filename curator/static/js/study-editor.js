@@ -357,27 +357,6 @@ function StudyViewModel() {
 function getMetaTagByID(array, id) {
     // fetch complete metatag in the specified list by matching the specified ID
     return getNexsonChildByProperty(array, 'id', id);
-/*
-    for (var i = 0; i < array.length; i++) {
-        var testItem = array[i];
-        switch(typeof(testItem['id'])) {
-            case 'undefined':
-            case 'object':
-                continue;
-            case 'function':
-                if (testItem['id']() === id) {
-                    return testItem;
-                }
-                continue;
-            default:
-                if (testItem['id'] === id) {
-                    return testItem;
-                }
-                continue;
-        }
-    }
-    return null;
-*/
 }
 
 function getMetaTagByProperty(array, prop) {
@@ -391,7 +370,32 @@ function getOTUByID(id) {
     return getNexsonChildByProperty(viewModel.nexml.otus.otu(), '@id', id);
 }
 
-function getNexsonChildByProperty(array, property, value, options) {
+function makeArray( val ) {
+    // The caller expects an array, so we should coerce, wrap, or replace
+    // the specified value as needed.
+    if (typeof(val) === 'function') {
+        // unpack an observable value (from Knockout binding) and continue
+        val = val();
+    }
+
+    var arr;
+    if ((typeof(val) === 'undefined') || val === null) {
+        arr = [];
+    } else if (typeof(val) !== 'object') {
+        // other simple value types should be wrapped in an array
+        arr = [val]
+    } else if (typeof(val.length) === 'undefined') {
+        // it's a simple object, wrap it in an array
+        arr = [val];
+    } else {
+        // anything else is already proper array
+        arr = val;
+    }
+
+    return arr;
+}
+
+function getNexsonChildByProperty(children, property, value, options) {
     // fetch complete element in the specified list by matching the specified property
     var foundMatch;
     var returnAll = (typeof(options) === 'object' && options.FIND_ALL); // else return first match found
@@ -400,22 +404,10 @@ function getNexsonChildByProperty(array, property, value, options) {
     // NOTE that according to Badgerfish rules, the hoped-for array might
     // be a simple object (singleton) or missing entirely!
     // See http://badgerfish.ning.com/
-    if (typeof(array) === 'function') {
-        // unpack an observable array (from Knockout binding)
-        array = array();
-    } else {
-        if ((typeof(array) !== 'object') || array === null) {
-            // other simple value types are assumed to be incorrect
-            array = [];
-        }
-        if (typeof(array.length) === 'undefined') {
-            // it's a simple object, wrap it in an array
-            array = [array];
-        }
-    }
+    children = makeArray( children );
 
-    for (var i = 0; i < array.length; i++) {
-        var testItem = array[i];
+    for (var i = 0; i < children.length; i++) {
+        var testItem = children[i];
         switch(typeof(testItem[ property ])) {
             case 'undefined':
             case 'object':
@@ -455,13 +447,7 @@ function getMetaTagAccessorByAtProperty(array, propertyName, options) {
 
     // adjust matchingTags to ensure uniform handling below
     var matchingTags = getNexsonChildByProperty(array, '@property', propertyName, options);
-    if ((typeof(matchingTags) !== 'object') || matchingTags === null) {
-        matchingTags = [];
-    }
-    if (typeof(matchingTags.length) === 'undefined') {
-        // it's a simple object, wrap it in an array
-        matchingTags = [matchingTags];
-    }
+    matchingTags = makeArray( matchingTags );
 
     for (var i = 0; i < matchingTags.length; i++) {
         var testItem = matchingTags[i];
