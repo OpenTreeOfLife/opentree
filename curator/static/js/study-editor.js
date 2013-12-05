@@ -391,31 +391,8 @@ function getOTUByID(id) {
     return getNexsonChildByProperty(viewModel.nexml.otus.otu(), '@id', id);
 }
 
-function getNexsonChildByProperty(array, property, value) {
+function getNexsonChildByProperty(array, property, value, options) {
     // fetch complete element in the specified list by matching the specified property
-    for (var i = 0; i < array.length; i++) {
-        var testItem = array[i];
-        switch(typeof(testItem[ property ])) {
-            case 'undefined':
-            case 'object':
-                continue;
-            case 'function':
-                if (testItem[ property ]() === value) {
-                    return testItem;
-                }
-                continue;
-            default:
-                if (testItem[ property ] === value) {
-                    return testItem;
-                }
-                continue;
-        }
-    }
-    return null;
-}
-
-function getMetaTagAccessorByAtProperty(array, prop, options) {
-    // fetch accessor function(s) for a metatag in the specified list, using its @property value
     var foundMatch;
     var returnAll = (typeof(options) === 'object' && options.FIND_ALL); // else return first match found
     var allMatches = [ ];
@@ -439,23 +416,70 @@ function getMetaTagAccessorByAtProperty(array, prop, options) {
 
     for (var i = 0; i < array.length; i++) {
         var testItem = array[i];
-        if (testItem['@property']() === prop) {
-            switch(testItem['@xsi:type']()) {
-                case 'nex:ResourceMeta':
-                    foundMatch = testItem['@href'];  // uses special attribute
+        switch(typeof(testItem[ property ])) {
+            case 'undefined':
+            case 'object':
+                continue;
+            case 'function':
+                if (testItem[ property ]() === value) {
+                    foundMatch = testItem;
                     break;
-                default: 
-                    foundMatch = testItem.$; // assumes value is stored here
-            }
-            if (returnAll) {
-                allMatches.push(foundMatch);
-            } else {
-                return foundMatch;
-            }
+                }
+                continue;
+            default:
+                if (testItem[ property ] === value) {
+                    foundMatch = testItem;
+                    break;
+                }
+                continue;
+        }
+
+        if (returnAll) {
+            allMatches.push(foundMatch);
+        } else {
+            return foundMatch;
         }
     }
     if (returnAll) {
         return allMatches;
+    } else {
+        return null;
+    }
+}
+
+function getMetaTagAccessorByAtProperty(array, propertyName, options) {
+    // fetch accessor function(s) for a metatag in the specified list, using its @property value
+    var foundAccessor;
+    var returnAll = (typeof(options) === 'object' && options.FIND_ALL); // else return first match found
+    var allAccessors = [ ];
+
+    // adjust matchingTags to ensure uniform handling below
+    var matchingTags = getNexsonChildByProperty(array, '@property', propertyName, options);
+    if ((typeof(matchingTags) !== 'object') || matchingTags === null) {
+        matchingTags = [];
+    }
+    if (typeof(matchingTags.length) === 'undefined') {
+        // it's a simple object, wrap it in an array
+        matchingTags = [matchingTags];
+    }
+
+    for (var i = 0; i < matchingTags.length; i++) {
+        var testItem = matchingTags[i];
+        switch(testItem['@xsi:type']()) {
+            case 'nex:ResourceMeta':
+                foundAccessor = testItem['@href'];  // uses special attribute
+                break;
+            default: 
+                foundAccessor = testItem.$; // assumes value is stored here
+        }
+        if (returnAll) {
+            allAccessors.push(foundAccessor);
+        } else {
+            return foundAccessor;
+        }
+    }
+    if (returnAll) {
+        return allAccessors;
     } else {
         return null;
     }
