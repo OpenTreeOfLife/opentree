@@ -59,6 +59,17 @@ if [ `which pip`x = x ]; then
     sudo apt-get --assume-yes install python-pip
 fi
 
+# ---------- LIBCURL + PYCURL ---------- # only needed on debian, may cause problems on ubunutu
+# used by oti indexing script
+#if [ `which pip`x = x ]; then
+#    sudo apt-cache search libcurl-dev
+    sudo apt-get --assume-yes install libcurl4-openssl-dev
+    echo "installing pycurl"
+    sudo pip install pycurl
+#fi
+
+exit
+
 # ---------- GIT ----------
 # Get git (so we can clone the opentree repo)
 if [ `which git`x = x ]; then
