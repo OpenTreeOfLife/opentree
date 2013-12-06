@@ -2,6 +2,7 @@
 # Utilities.
 # Source this file from another bash script.
 
+if false; then
     javalink=`readlink /etc/alternatives/java`
     # => /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java
     javalink=`dirname $javalink`
@@ -10,6 +11,10 @@
     # => /usr/lib/jvm/java-7-openjdk-amd64/jre
     javalink=`dirname $javalink`
     # => /usr/lib/jvm/java-7-openjdk-amd64
+else
+    javalink=/usr/lib/jvm/java-7-openjdk-amd64
+fi
+
 export JAVA_HOME=$javalink
 
 # Refresh a git repo
