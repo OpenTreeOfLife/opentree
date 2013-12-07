@@ -257,7 +257,7 @@ if (!d3) { throw "d3 wasn't included!"};
     
     // DATA JOIN
     var timestamp = new Date().getTime();
-    console.log("NEW keys on timestamp: "+ timestamp);
+    ///console.log("NEW keys on timestamp: "+ timestamp);
 
     var path_links = vis.selectAll("path.link")
         .data(tree.links(nodes), function(d) { return d.source['@id']() +'_'+ d.target['@id'](); });

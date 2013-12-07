@@ -1,6 +1,6 @@
 {{# Pivot (in many places) based on whether the user is an editor (curator) or
 # someone else looking at the study
-viewOrEdit = auth.user and 'EDIT' or 'VIEW'
+# viewOrEdit = (auth.user and request.) and 'EDIT' or 'VIEW'
 
 response.title = (viewOrEdit == 'EDIT') and "Edit Study" or "View Study"
 }}
@@ -307,7 +307,7 @@ body {
                   </thead>
                   <tbody data-bind="foreach: { data: nexml.trees.tree.pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
-                        <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label'] || 'Untitled ('+ tree['@about']() +')'">?</a></td><!-- TODO: click to view/edit tree -->
+                        <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label']">?</a></td><!-- TODO: click to view/edit tree -->
                         <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta, 'ot:curatedType') || 'Unspecified'">TYPE?</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree)"></td>
                         <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
@@ -1045,18 +1045,123 @@ Please review and re-submit.</pre>
 
 <!-- hidden template for the tree-viewer (editor) -->
 <div class="modal hide fade modal-tree-viewer" id="tree-viewer" style="display: none;">
+  <!-- KO binding here to 'tree' (as $data below) -->
     <div class="modal-header">
       <a data-dismiss="modal" class="close">×</a>
-      <h3 id='dialog-heading'></h3>
+      <h3 id='dialog-heading'>
+        {{ if viewOrEdit == 'EDIT': }}
+            Edit tree
+            <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
+                   data-bind="value: $data['@label'], valueUpdate: 'afterkeydown'"
+            />
+        {{ else: }}
+            View tree
+            '<span data-bind="text: $data['@label']">{TREE NAME}</span>'
+        {{ pass }}
+
+       </h3>
     </div>
     <div class="modal-body">
         <div id="dialog-data">
-            <form class="form-inline">
-            </form>
-            <!-- tree-view SVG goes here -->
+         <form class="form-inline" style="border-bottom: 1px solid #eee; overflow: hidden; padding-bottom: 4px;">
+          {{ if viewOrEdit == 'EDIT': }}
+            <!-- editable tree properties here -->
+              <div class="pull-left" style="width: 48%;">
+                <label>Tree type: </label>
+                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:curatedType'), valueUpdate: 'afterkeydown'"></input>
+              <br/>
+                <label for="testtest">Root node: </label>
+                <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
+              <br/>
+                <label for="testtest">Ingroup clade: </label>
+                <strong data-bind="text: getInGroupCladeDescriptionForTree($data)"></strong>
+              </div>
+              <div class="pull-left" style="width: 48%;">
+                <label>Mapped leaf nodes: </label>
+                <span data-bind="html: getMappedTallyForTree($data)">?? / ??</span>
+              <br/>
+               <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
+
+                <label for="testtest">Tags: </label>
+                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:tag'), valueUpdate: 'afterkeydown'"></input>
+              <br/>
+
+               <!-- todo: general statement of rooting (tree and ingroup)?
+                <label for="testtest">tree rooting: </label>
+                <strong data-bind="html: getrooteddescriptionfortree($data)">rooted-value</strong>
+              <br/>
+               -->
+
+                <label>Branch length mode: </label>
+                <select data-bind="options: branchLengthModeDescriptions,
+                    optionsValue: function(item) { 
+                        return item.value;
+                    },
+                    optionsText: function(item) { 
+                        return item.text;
+                    },
+                    value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode'),
+                    optionsCaption: 'Choose...'">TYPE</select>
+
+               <!-- ko if: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode')() === 'ot:time' -->
+                <label style="margin-left: 10px;">Time unit: </label>
+                <select data-bind="options: ['Myr'],
+                    value: getMetaTagAccessorByAtProperty($data.meta, 'branchLengthTimeUnit')">TYPE</select>
+               <!-- /ko -->
+
+               <!-- ko if: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode')() === 'ot:other' -->
+                <label style="margin-left: 10px;">&nbsp;</label>
+                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthDescription'), valueUpdate: 'afterkeydown'" placeholder="Describe here"></input>
+               <!-- /ko -->
+              </div>
+
+          {{ else: }}
+            <!-- read-only tree properties here -->
+              <div class="pull-left" style="width: 48%;">
+                <label>Tree type: </label>
+                <strong data-bind="text: getMetaTagAccessorByAtProperty($data.meta, 'ot:curatedType') || 'Unspecified'">TYPE</strong>
+              <br/>
+                <label for="testtest">Root node: </label>
+               <!-- TODO: tag(s) for this tree? -->
+                <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
+              <br/>
+                <label for="testtest">Ingroup clade: </label>
+                <strong data-bind="text: getInGroupCladeDescriptionForTree($data)"></strong>
+              </div>
+              <div class="pull-left" style="width: 48%;">
+                <label>Mapped leaf nodes: </label>
+                <span data-bind="html: getMappedTallyForTree($data)">?? / ??</span>
+              <br/>
+               <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
+
+                <label for="testtest">Tags: </label>
+                <strong data-bind="html: getTagDescriptionForTree($data)">{TAGS}</strong>
+              <br/>
+
+               <!-- TODO: General statement of rooting (tree and ingroup)?
+                <label for="testtest">Tree rooting: </label>
+                <strong data-bind="html: getRootedDescriptionForTree($data)">ROOTED-VALUE</strong>
+              <br/>
+               -->
+
+                <label>Branch length mode: </label>
+                <strong data-bind="text: getBranchLengthModeDescriptionForTree($data)">TYPE</strong>
+              </div>
+
+          {{ pass }}
+         </form>
+         <!-- tree-view SVG goes here -->
         </div>
     </div>
     <div class="modal-footer">
+      <div class="popup-legend pull-left form-inline">
+          <strong>Legend: </strong>
+          <label style="margin-left: 20px;">Ingroup: </label> <em>blah</em>
+
+          <label style="margin-left: 20px;">Outgroup: </label> <em>blah</em>
+
+          <label style="margin-left: 20px;" for=""> <input type="checkbox"> Hide branch lengths</label>
+      </div>
       <a data-dismiss="modal" class="btn" >Close</a>
       <!-- <a class="btn btn-primary" id="btnSaveChanges">Save changes</a> -->
     </div>
