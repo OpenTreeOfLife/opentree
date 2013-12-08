@@ -164,6 +164,7 @@ function loadSelectedStudy(id) {
                     'submitter': ko.observable("Submitted by all")
                 }
             };
+
             viewModel.filteredTrees = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
@@ -187,6 +188,30 @@ function loadSelectedStudy(id) {
                         
                 return ko.observableArray( filteredList ).asPaged(20);
             }); // END of filteredTrees
+            
+            viewModel.filteredFiles = ko.computed(function() {
+                // filter raw file list, returning a
+                // new paged observableArray
+                console.log(">>> computing filteredFiles");
+                var match = viewModel.listFilters.FILES.match(),
+                    matchPattern = new RegExp( $.trim(match), 'gi' );
+
+                // map old array to new and return it
+                var filteredList = ko.utils.arrayFilter( 
+                    getSupportingFiles()(),  // retrieve contents of observableArray
+                    function(file) {
+                        // match entered text against old or new label
+                        var fileName = file.filename();
+                        var fileType = file.type();
+                        if (!matchPattern.test(fileName) && !matchPattern.test(fileType)) {
+                            return false;
+                        }
+                        return true;
+                    }
+                );  // END of list filtering
+                        
+                return ko.observableArray( filteredList ).asPaged(20);
+            }); // END of filteredFiles
 
             viewModel.filteredOTUs = ko.computed(function() {
                 // filter raw OTU list, then sort, returning a

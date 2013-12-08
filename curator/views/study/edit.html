@@ -424,7 +424,8 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or type">
+                    <input type="text" class="search-query" placeholder="Filter by name or type"
+                           data-bind="value: viewModel.listFilters.FILES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
               </div>
@@ -437,7 +438,7 @@ body {
                         <th>Size</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: getSupportingFiles().pagedItems(), as: 'file' }">
+                  <tbody data-bind="foreach: { data: viewModel.filteredFiles().pagedItems(), as: 'file' }">
                     <tr>
                         <td>
                             <a href="#" target="_blank" data-bind="text: file.filename || '?', attr: { href: file.url || '#' }">
