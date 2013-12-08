@@ -516,31 +516,33 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by original or mapped label">
+                    <input type="text" class="search-query" placeholder="Filter by original or mapped label"
+                           data-bind="value: viewModel.listFilters.OTUS.match, valueUpdate: 'afterkeydown'">
                 </form>
                 <ul class="nav" style="padding-left: 1em;">
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                          In preferred trees
-                          <b class="caret"></b>
+                        <a href="#" class="dropdown-toggle"
+                            data-toggle="dropdown">
+                            <span data-bind="text: viewModel.listFilters.OTUS.scope">SCOPE</span>
+                            <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="#">In all trees</a></li>
-                            <li><a href="#">In preferred trees</a></li>
-                            <li><a href="#">In non-preferred trees</a></li>
+                        <ul class="dropdown-menu" data-bind="foreach: ['In all trees', 'In preferred trees', 'In non-preferred trees']">
+                            <li data-bind="css: {'disabled': viewModel.listFilters.OTUS.scope() == $data }">
+                                <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.OTUS.scope($data); }">SCOPE</a>
+                            </li>
                         </ul>
                     </li>
                     <!--<li class="divider-vertical"></li>-->
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                          Unmapped OTUs first
-                          <b class="caret"></b>
+                        <a href="#" class="dropdown-toggle"
+                            data-toggle="dropdown">
+                            <span data-bind="text: viewModel.listFilters.OTUS.order">SORT</span>
+                            <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="#">Unmapped OTUs first</a></li>
-                            <li><a href="#">Mapped OTUs first</a></li>
-                            <li><a href="#">Original label (A-Z)</a></li>
-                            <li><a href="#">Original label (Z-A)</a></li>
+                        <ul class="dropdown-menu" data-bind="foreach: ['Unmapped OTUs first', 'Mapped OTUs first', 'Original label (A-Z)', 'Original label (Z-A)']">
+                            <li data-bind="css: {'disabled': viewModel.listFilters.OTUS.order() == $data }">
+                                <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.OTUS.order($data); }">SORT</a>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -557,7 +559,7 @@ body {
                         <th width="35%">Taxon label in OTT</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: nexml.otus.otu.pagedItems(), as: 'otu' }">
+                  <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
                         <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')">ORIGINAL?</td>
                          <!-- ko if: (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
