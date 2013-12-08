@@ -285,7 +285,8 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or ingroup clade">
+                    <input type="text" class="search-query" placeholder="Filter by name or ingroup clade"
+                           data-bind="value: viewModel.listFilters.TREES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
               </div>
@@ -305,7 +306,7 @@ body {
                         <th>Preferred</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: nexml.trees.tree.pagedItems(), as: 'tree' }">
+                  <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
                         <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label']">?</a></td><!-- TODO: click to view/edit tree -->
                         <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta, 'ot:curatedType') || 'Unspecified'">TYPE?</td>

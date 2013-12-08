@@ -164,6 +164,30 @@ function loadSelectedStudy(id) {
                     'submitter': ko.observable("Submitted by all")
                 }
             };
+            viewModel.filteredTrees = ko.computed(function() {
+                // filter raw tree list, returning a
+                // new paged observableArray
+                console.log(">>> computing filteredTrees");
+                var match = viewModel.listFilters.TREES.match(),
+                    matchPattern = new RegExp( $.trim(match), 'gi' );
+
+                // map old array to new and return it
+                var filteredList = ko.utils.arrayFilter( 
+                    viewModel.nexml.trees.tree(), 
+                    function(tree) {
+                        // match entered text against old or new label
+                        var treeName = tree['@label']();
+                        var inGroupName = getInGroupCladeDescriptionForTree(tree);
+                        if (!matchPattern.test(treeName) && !matchPattern.test(inGroupName)) {
+                            return false;
+                        }
+                        return true;
+                    }
+                );  // END of list filtering
+                        
+                return ko.observableArray( filteredList ).asPaged(20);
+            }); // END of filteredTrees
+
             viewModel.filteredOTUs = ko.computed(function() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
@@ -275,7 +299,7 @@ function loadSelectedStudy(id) {
 
                 }
                 return ko.observableArray( filteredList ).asPaged(20);
-            });
+            }); // END of filteredOTUs
 
             viewModel.studyQualityPercent = ko.observable(0);
             viewModel.studyQualityPercentStyle = ko.computed(function() {
