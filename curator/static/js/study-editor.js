@@ -137,6 +137,264 @@ function loadSelectedStudy(id) {
             });
 
             viewModel = ko.mapping.fromJS(data, studyMappingOptions);
+
+            /*
+             * Add observable properties to the model to support the UI
+             */
+
+            // enable sorting and filtering for lists in the editor
+            viewModel.listFilters = {
+                // UI widgets bound to these variables will trigger the
+                // computed display lists below..
+                'TREES': {
+                    'match': ko.observable("")
+                },
+                'FILES': {
+                    'match': ko.observable("")
+                },
+                'OTUS': {
+                    // TODO: add 'pagesize'?
+                    'match': ko.observable(""),
+                    'scope': ko.observable("In preferred trees"),
+                    'order': ko.observable("Unmapped OTUs first")
+                },
+                'ANNOTATIONS': {
+                    'match': ko.observable(""),
+                    'scope': ko.observable("Anywhere in the study"),
+                    'submitter': ko.observable("Submitted by all")
+                }
+            };
+
+            // maintain a persistent array to preserve pagination (reset when computed)
+            viewModel._filteredTrees = ko.observableArray( ).asPaged(20);
+            viewModel.filteredTrees = ko.computed(function() {
+                // filter raw tree list, returning a
+                // new paged observableArray
+                console.log(">>> computing filteredTrees");
+                var match = viewModel.listFilters.TREES.match(),
+                    matchPattern = new RegExp( $.trim(match), 'i' );
+
+                // map old array to new and return it
+                var filteredList = ko.utils.arrayFilter( 
+                    viewModel.nexml.trees.tree(), 
+                    function(tree) {
+                        // match entered text against old or new label
+                        var treeName = tree['@label']();
+                        var inGroupName = getInGroupCladeDescriptionForTree(tree);
+                        if (!matchPattern.test(treeName) && !matchPattern.test(inGroupName)) {
+                            return false;
+                        }
+                        return true;
+                    }
+                );  // END of list filtering
+                        
+                viewModel._filteredTrees( filteredList );
+                viewModel._filteredTrees.goToPage(1);
+                return viewModel._filteredTrees;
+            }); // END of filteredTrees
+            
+            // maintain a persistent array to preserve pagination (reset when computed)
+            viewModel._filteredFiles = ko.observableArray( ).asPaged(20);
+            viewModel.filteredFiles = ko.computed(function() {
+                // filter raw file list, returning a
+                // new paged observableArray
+                console.log(">>> computing filteredFiles");
+                var match = viewModel.listFilters.FILES.match(),
+                    matchPattern = new RegExp( $.trim(match), 'i' );
+
+                // map old array to new and return it
+                var filteredList = ko.utils.arrayFilter( 
+                    getSupportingFiles()(),  // retrieve contents of observableArray
+                    function(file) {
+                        // match entered text against old or new label
+                        var fileName = file.filename();
+                        var fileType = file.type();
+                        if (!matchPattern.test(fileName) && !matchPattern.test(fileType)) {
+                            return false;
+                        }
+                        return true;
+                    }
+                );  // END of list filtering
+                        
+                viewModel._filteredFiles( filteredList );
+                viewModel._filteredFiles.goToPage(1);
+                return viewModel._filteredFiles;
+            }); // END of filteredFiles
+
+            // maintain a persistent array to preserve pagination (reset when computed)
+            viewModel._filteredOTUs = ko.observableArray( ).asPaged(20);
+            viewModel.filteredOTUs = ko.computed(function() {
+                // filter raw OTU list, then sort, returning a
+                // new (OR MODIFIED??) paged observableArray
+                console.log(">>> computing filteredOTUs");
+                var match = viewModel.listFilters.OTUS.match(),
+                    matchPattern = new RegExp( $.trim(match), 'i' );
+                var scope = viewModel.listFilters.OTUS.scope();
+                var order = viewModel.listFilters.OTUS.order();
+
+                // map old array to new and return it
+                var filteredList = ko.utils.arrayFilter( 
+                    viewModel.nexml.otus.otu(), 
+                    function(otu) {
+                        // match entered text against old or new label
+                        var originalLabel = getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')();
+                        var mappedLabel = otu['@label']();
+                        if (!matchPattern.test(originalLabel) && !matchPattern.test(mappedLabel)) {
+                            return false;
+                        }
+
+                        // check nodes against trees, if filtered
+                        switch (scope) {
+                            case 'In all trees':
+                                // nothing to do here, all nodes pass
+                                break;
+
+                            case 'In preferred trees':
+                            case 'In non-preferred trees':
+                                // check selected trees for this node
+                                var chosenTrees = (scope === 'In preferred trees') ?  getPreferredTrees() : getNonPreferredTrees(); 
+                                var foundInMatchingTree = false;
+                                var otuID = otu['@id']();
+                                $.each( chosenTrees, function(i, tree) {
+                                    // check this tree's nodes for this OTU id
+                                    $.each( tree.node(), function( i, node ) {
+                                        if (node['@otu'] && node['@otu']() === otuID) {
+                                            foundInMatchingTree = true;
+                                            return false; // stop looping on nodes
+                                        }
+                                    });
+                                    if (foundInMatchingTree) { 
+                                        return false; // stop looping on trees
+                                    }
+                                });
+                                if (!foundInMatchingTree) return false;
+                                break;
+
+                            default:
+                                console.log("Unexpected scope for OTU list: ["+ scope +"]");
+                                return false;
+                        }
+                        
+                        return true;
+                    }
+                );  // END of list filtering
+                        
+                // apply selected sort order
+                switch(order) {
+                    /* REMINDER: in sort functions, results are as follows:
+                     *  -1 = a comes before b
+                     *   0 = no change
+                     *   1 = b comes before a
+                     */
+                    case 'Unmapped OTUs first':
+                        filteredList.sort(function(a,b) { 
+                            var aMapStatus = $.trim(a['@label']()) !== '';
+                            var bMapStatus = $.trim(b['@label']()) !== '';
+                            if (aMapStatus === bMapStatus) return 0;
+                            if (aMapStatus) return 1;
+                            if (bMapStatus) return -1;
+                        });
+                        break;
+
+                    case 'Mapped OTUs first':
+                        filteredList.sort(function(a,b) { 
+                            var aMapStatus = $.trim(a['@label']()) !== '';
+                            var bMapStatus = $.trim(b['@label']()) !== '';
+                            if (aMapStatus === bMapStatus) return 0;
+                            if (aMapStatus) return -1;
+                            return 1;
+                        });
+                        break;
+
+                    case 'Original label (A-Z)':
+                        filteredList.sort(function(a,b) { 
+                            var aOriginal = getMetaTagAccessorByAtProperty(a.meta, 'ot:originalLabel')();
+                            var bOriginal = getMetaTagAccessorByAtProperty(b.meta, 'ot:originalLabel')();
+                            if (aOriginal === bOriginal) return 0;
+                            if (aOriginal < bOriginal) return -1;
+                            return 1;
+                        });
+                        break;
+
+                    case 'Original label (Z-A)':
+                        filteredList.sort(function(a,b) { 
+                            var aOriginal = getMetaTagAccessorByAtProperty(a.meta, 'ot:originalLabel')();
+                            var bOriginal = getMetaTagAccessorByAtProperty(b.meta, 'ot:originalLabel')();
+                            if (aOriginal === bOriginal) return 0;
+                            if (aOriginal > bOriginal) return -1;
+                            return 1;
+                        });
+                        break;
+
+                    default:
+                        console.log("Unexpected order for OTU list: ["+ order +"]");
+                        return false;
+
+                }
+                viewModel._filteredOTUs( filteredList );
+                viewModel._filteredOTUs.goToPage(1);
+                return viewModel._filteredOTUs;
+            }); // END of filteredOTUs
+
+            // maintain a persistent array to preserve pagination (reset when computed)
+            viewModel._filteredAnnotations = ko.observableArray( ).asPaged(20);
+            viewModel.filteredAnnotations = ko.computed(function() {
+                // filter raw OTU list, then sort, returning a
+                // new (OR MODIFIED??) paged observableArray
+                console.log(">>> computing filteredAnnotations");
+                var match = viewModel.listFilters.ANNOTATIONS.match(),
+                    matchPattern = new RegExp( $.trim(match), 'i' );
+                var scope = viewModel.listFilters.ANNOTATIONS.scope();
+                var submitter = viewModel.listFilters.ANNOTATIONS.submitter();
+
+                // filter study metadata, build new array to new and return it
+                var filteredList = ko.utils.arrayFilter( 
+                    viewModel.nexml.meta(),
+                    function(annotation) {
+                        // initial filter for annotations
+                        if (annotation['@property']() !== 'ot:annotation') {
+                            // it's something else entirely
+                            return false;
+                        }
+                        
+                        // match entered text against type, location, submitter name, message text
+                        var itsType = annotation.$();
+                        ///var itsLocation = "Study"; // TODO
+                        var itsSubmitter = annotation.author.name();
+                        var itsMessageText = annotation.messages ? annotation.messages().join("|") : "";
+                        var itsSortDate = annotation.dateModified ?  annotation.dateModified() : annotation.dateCreated();
+                        if (!matchPattern.test(itsType) && !matchPattern.test(itsSubmitter) && !matchPattern.test(itsMessageText)) {
+                            return false;
+                        }
+
+                        /* filter by submitter
+                         * TODO: Provide some kind of support for this?
+                        switch (submitter) {
+                            case 'Submitted by all':
+                                // nothing to do here, all nodes pass
+                                break;
+
+                            case 'Submitted by users':
+                                break;
+
+                            case 'Submitted by validation tools':
+                                break;
+
+                            default:
+                                console.log("Unexpected submitter option for annotations: ["+ submitter +"]");
+                                return false;
+                        }
+                        */
+                        
+                        return true;
+                    }
+                );  // END of list filtering
+                        
+                viewModel._filteredAnnotations( filteredList );
+                viewModel._filteredAnnotations.goToPage(1);
+                return viewModel._filteredAnnotations;
+            }); // END of filteredAnnotations
+
             viewModel.studyQualityPercent = ko.observable(0);
             viewModel.studyQualityPercentStyle = ko.computed(function() {
                 // NOTE that we impose a minimum width, so the score is legible
@@ -510,6 +768,40 @@ function getMetaTagAccessorByAtProperty(array, propertyName, options) {
     } else {
         return null;
     }
+}
+
+function getPreferredTreeIDs() {
+    preferredTreeIDs = [];
+    var candidateTreeMarkers = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:candidateTreeForSynthesis', { 'FIND_ALL': true });
+    $.each(candidateTreeMarkers, function(i, marker) {
+        var treeID = $.trim(marker());
+        switch(treeID) {  // non-empty points to a candidate tree
+            case '':
+            case '0':
+                break;
+            default:
+                preferredTreeIDs.push( treeID );
+        }
+    });
+    return preferredTreeIDs;
+}
+function getPreferredTrees() {
+    var preferredTreeIDs = getPreferredTreeIDs();
+    return ko.utils.arrayFilter( 
+        viewModel.nexml.trees.tree(), 
+        function(tree) {
+            return $.inArray( tree['@id'], preferredTreeIDs );
+        }
+    );
+}
+function getNonPreferredTrees() {
+    var preferredTreeIDs = getPreferredTreeIDs();
+    return ko.utils.arrayFilter( 
+        viewModel.nexml.trees.tree(), 
+        function(tree) {
+            return ! $.inArray( tree['@id'], preferredTreeIDs );
+        }
+    );
 }
 
 function getPageNumbers( pagedArray ) {
@@ -2208,7 +2500,6 @@ function addSupportingFile() {
         showErrorMessage('Please choose a local file or enter a valid URL.');
         return;
     }
-    
 
     // TODO: do the actual removal (from the remote file-store) via AJAX
   if (false) {

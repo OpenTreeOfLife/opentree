@@ -285,7 +285,8 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or ingroup clade">
+                    <input type="text" class="search-query" placeholder="Filter by name or ingroup clade"
+                           data-bind="value: viewModel.listFilters.TREES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
               </div>
@@ -305,7 +306,7 @@ body {
                         <th>Preferred</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: nexml.trees.tree.pagedItems(), as: 'tree' }">
+                  <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
                         <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label']">?</a></td><!-- TODO: click to view/edit tree -->
                         <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta, 'ot:curatedType') || 'Unspecified'">TYPE?</td>
@@ -341,21 +342,23 @@ body {
                 -->
                 </table>
 
-                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: nexml.trees.tree().length &gt; nexml.trees.tree.pagedItems().length">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredTrees()().length &gt; viewModel.filteredTrees().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredTrees().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredTrees().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
-                    <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">0</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredTrees() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredTrees().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredTrees().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredTrees().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredTrees().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
+
             </div>
 
            </div><!-- end of main column... -->
@@ -423,7 +426,8 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or type">
+                    <input type="text" class="search-query" placeholder="Filter by name or type"
+                           data-bind="value: viewModel.listFilters.FILES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
               </div>
@@ -436,7 +440,7 @@ body {
                         <th>Size</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: getSupportingFiles().pagedItems(), as: 'file' }">
+                  <tbody data-bind="foreach: { data: viewModel.filteredFiles().pagedItems(), as: 'file' }">
                     <tr>
                         <td>
                             <a href="#" target="_blank" data-bind="text: file.filename || '?', attr: { href: file.url || '#' }">
@@ -449,21 +453,23 @@ body {
                   </tbody>
                 </table>
 
-                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: getSupportingFiles()().length &gt; getSupportingFiles().pagedItems().length">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredFiles()().length &gt; viewModel.filteredFiles().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !getSupportingFiles().prev.enabled() }" class="disabled">
-                        <a href="#" onclick="getSupportingFiles().prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredFiles().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredFiles().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( getSupportingFiles() ) -->
-                    <li data-bind="css: { 'active': (getSupportingFiles().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="getSupportingFiles().goToPage(parseInt($(this).text())); return false;">0</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredFiles() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredFiles().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredFiles().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !getSupportingFiles().next.enabled() }" class="disabled">
-                        <a href="#" onclick="getSupportingFiles().next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredFiles().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredFiles().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
+
             </div>
 
            </div><!-- end of main column... -->
@@ -516,31 +522,33 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by original or mapped label">
+                    <input type="text" class="search-query" placeholder="Filter by original or mapped label"
+                           data-bind="value: viewModel.listFilters.OTUS.match, valueUpdate: 'afterkeydown'">
                 </form>
                 <ul class="nav" style="padding-left: 1em;">
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                          In preferred trees
-                          <b class="caret"></b>
+                        <a href="#" class="dropdown-toggle"
+                            data-toggle="dropdown">
+                            <span data-bind="text: viewModel.listFilters.OTUS.scope">SCOPE</span>
+                            <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="#">In all trees</a></li>
-                            <li><a href="#">In preferred trees</a></li>
-                            <li><a href="#">In non-preferred trees</a></li>
+                        <ul class="dropdown-menu" data-bind="foreach: ['In all trees', 'In preferred trees', 'In non-preferred trees']">
+                            <li data-bind="css: {'disabled': viewModel.listFilters.OTUS.scope() == $data }">
+                                <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.OTUS.scope($data); }">SCOPE</a>
+                            </li>
                         </ul>
                     </li>
                     <!--<li class="divider-vertical"></li>-->
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                          Unmapped OTUs first
-                          <b class="caret"></b>
+                        <a href="#" class="dropdown-toggle"
+                            data-toggle="dropdown">
+                            <span data-bind="text: viewModel.listFilters.OTUS.order">SORT</span>
+                            <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="#">Unmapped OTUs first</a></li>
-                            <li><a href="#">Mapped OTUs first</a></li>
-                            <li><a href="#">Original label (A-Z)</a></li>
-                            <li><a href="#">Original label (Z-A)</a></li>
+                        <ul class="dropdown-menu" data-bind="foreach: ['Unmapped OTUs first', 'Mapped OTUs first', 'Original label (A-Z)', 'Original label (Z-A)']">
+                            <li data-bind="css: {'disabled': viewModel.listFilters.OTUS.order() == $data }">
+                                <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.OTUS.order($data); }">SORT</a>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -557,7 +565,7 @@ body {
                         <th width="35%">Taxon label in OTT</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: nexml.otus.otu.pagedItems(), as: 'otu' }">
+                  <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
                         <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')">ORIGINAL?</td>
                          <!-- ko if: (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
@@ -604,18 +612,19 @@ body {
                   </tbody>
                 </table>
 
-                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: nexml.otus.otu().length &gt; nexml.otus.otu.pagedItems().length">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredOTUs()().length &gt; viewModel.filteredOTUs().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !nexml.otus.otu.prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.otus.otu.prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredOTUs().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredOTUs().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( nexml.otus.otu) -->
-                    <li data-bind="css: { 'active': (viewModel.nexml.otus.otu.current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.otus.otu.goToPage(parseInt($(this).text())); return false;">0</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredOTUs() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredOTUs().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredOTUs().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !nexml.otus.otu.next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.otus.otu.next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredOTUs().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredOTUs().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
@@ -802,8 +811,10 @@ body {
               <div class="navbar">
                  <div class="navbar-inner">
                   <form class="navbar-search pull-left">
-                      <input type="text" class="search-query" placeholder="Filter by name, location, text">
+                      <input type="text" class="search-query input-xlarge" placeholder="Filter by type, location, submitter, message"
+                             data-bind="value: viewModel.listFilters.ANNOTATIONS.match, valueUpdate: 'afterkeydown'">
                   </form>
+                <!-- TODO: Can we provide some kind of support for thes filters?
                   <ul class="nav" style="padding-left: 1em;">
                       <li class="dropdown">
                           <a href="#" class="dropdown-toggle" data-toggle="dropdown">
@@ -820,16 +831,17 @@ body {
                       </li>
                       <li class="dropdown">
                           <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            Submitted by all
-                            <b class="caret"></b>
+                              <span data-bind="text: viewModel.listFilters.ANNOTATIONS.submitter">SORT</span>
+                              <b class="caret"></b>
                           </a>
-                          <ul class="dropdown-menu">
-                              <li><a href="#">Submitted by all</a></li>
-                              <li><a href="#">Submitted by users</a></li>
-                              <li><a href="#">Added by validation apps</a></li>
+                          <ul class="dropdown-menu" data-bind="foreach: ['Submitted by all', 'Submitted by users', 'Submitted by validation tools']">
+                              <li data-bind="css: {'disabled': viewModel.listFilters.ANNOTATIONS.submitter() == $data }">
+                                  <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.ANNOTATIONS.submitter($data); }">SORT</a>
+                              </li>
                           </ul>
                       </li>
                   </ul>
+                  -->
                  </div>
               </div>
 
@@ -837,16 +849,15 @@ body {
                   <thead>
                     <tr>
                         <th>Type</th>
-                        <th>Location (click to see note there)</th>
+                        <!-- <th>Location (click to see note there)</th> -->
                         <th>Added by</th>
                         <th>Message(s)</th>
                     </tr>
                   </thead>
-                  <tbody>
-                  <!-- ko foreach: { data: nexml.meta(), as: 'annotation' } -->
-                    <tr data-bind="if: annotation['@property']() == 'ot:annotation'">
+                  <tbody data-bind="foreach: { data: viewModel.filteredAnnotations().pagedItems(), as: 'annotation' }">
+                    <tr>
                         <td data-bind="text: annotation.$, style: { color: typeof(annotation.isValid) === 'undefined' || annotation.isValid() ? '' : 'red' }"></td><!-- general description (annotation type) -->
-                        <td><a href="#">Study</a></td><!-- TODO -->
+                        <!-- <td><a href="#">Study</a></td> -->
                         <td data-bind="text: annotation.author.name"></td>
                       <!-- ko if: annotation.messages -->
                         <td data-bind="if: annotation.messages">
@@ -866,8 +877,9 @@ body {
                         </td>
                       <!-- /ko -->
                     </tr>
-                  <!-- /ko -->
-                  <!-- EXAMPLES of other annotation types: -->
+                  </tbody>
+                </table>
+                  <!-- EXAMPLES of other annotation types: 
                     <tr>
                         <td>Reply</td>
                         <td><a href="#">Message thread</a></td>
@@ -892,22 +904,22 @@ body {
                         <td><a href="#">Charles Darwin</a></td>
                         <td style="font-style: italic;">This tree is poorly rooted, in my opinion.</td>
                     </tr>
-                  </tbody>
-                </table>
+                  -->
 
                 <!-- TODO: respond to calculated notes, gathered from throughout study Nexson -->
-                <div class="pagination pagination-centered pagination-small" data-bind="if: true">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredAnnotations()().length &gt; viewModel.filteredAnnotations().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredAnnotations().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredAnnotations().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
-                    <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">1</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredAnnotations() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredAnnotations().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredAnnotations().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredAnnotations().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredAnnotations().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
