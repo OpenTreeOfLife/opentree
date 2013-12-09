@@ -66,13 +66,12 @@ function make_neo4j_instance {
         # Compilation takes about 4 minutes... ugh
         (cd repo/$APP; ./mvn_serverplugins.sh)
 
-        if [ ! ./neo4j-$APP/bin/neo4j status ]; then
-            ./neo4j-$APP/bin/neo4j stop
-        fi
-        cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
-
         # Stop any running server.  There may or may not be a database.
-        if [ ! ./neo4j-$APP/bin/neo4j status ]; then
+        # N.B. Theo 'neo4j status' command returns a phrase like this (for a stopped instance):
+        #    Neo4j Server is not running
+        # ... or this (for a running instance):
+        #    Neo4j Server is running at pid #####
+        if [[ "`./neo4j-$APP/bin/neo4j status`" =~ "is running" ]]; then
             ./neo4j-$APP/bin/neo4j stop
         fi
 
