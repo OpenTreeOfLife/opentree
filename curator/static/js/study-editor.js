@@ -165,12 +165,14 @@ function loadSelectedStudy(id) {
                 }
             };
 
+            // maintain a persistent array to preserve pagination (reset when computed)
+            viewModel._filteredTrees = ko.observableArray( ).asPaged(20);
             viewModel.filteredTrees = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
                 console.log(">>> computing filteredTrees");
                 var match = viewModel.listFilters.TREES.match(),
-                    matchPattern = new RegExp( $.trim(match), 'gi' );
+                    matchPattern = new RegExp( $.trim(match), 'i' );
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
@@ -186,15 +188,19 @@ function loadSelectedStudy(id) {
                     }
                 );  // END of list filtering
                         
-                return ko.observableArray( filteredList ).asPaged(20);
+                viewModel._filteredTrees( filteredList );
+                viewModel._filteredTrees.goToPage(1);
+                return viewModel._filteredTrees;
             }); // END of filteredTrees
             
+            // maintain a persistent array to preserve pagination (reset when computed)
+            viewModel._filteredFiles = ko.observableArray( ).asPaged(20);
             viewModel.filteredFiles = ko.computed(function() {
                 // filter raw file list, returning a
                 // new paged observableArray
                 console.log(">>> computing filteredFiles");
                 var match = viewModel.listFilters.FILES.match(),
-                    matchPattern = new RegExp( $.trim(match), 'gi' );
+                    matchPattern = new RegExp( $.trim(match), 'i' );
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
@@ -210,15 +216,19 @@ function loadSelectedStudy(id) {
                     }
                 );  // END of list filtering
                         
-                return ko.observableArray( filteredList ).asPaged(20);
+                viewModel._filteredFiles( filteredList );
+                viewModel._filteredFiles.goToPage(1);
+                return viewModel._filteredFiles;
             }); // END of filteredFiles
 
+            // maintain a persistent array to preserve pagination (reset when computed)
+            viewModel._filteredOTUs = ko.observableArray( ).asPaged(20);
             viewModel.filteredOTUs = ko.computed(function() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
                 console.log(">>> computing filteredOTUs");
                 var match = viewModel.listFilters.OTUS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'gi' );
+                    matchPattern = new RegExp( $.trim(match), 'i' );
                 var scope = viewModel.listFilters.OTUS.scope();
                 var order = viewModel.listFilters.OTUS.order();
 
@@ -321,15 +331,19 @@ function loadSelectedStudy(id) {
                         return false;
 
                 }
-                return ko.observableArray( filteredList ).asPaged(20);
+                viewModel._filteredOTUs( filteredList );
+                viewModel._filteredOTUs.goToPage(1);
+                return viewModel._filteredOTUs;
             }); // END of filteredOTUs
 
+            // maintain a persistent array to preserve pagination (reset when computed)
+            viewModel._filteredAnnotations = ko.observableArray( ).asPaged(20);
             viewModel.filteredAnnotations = ko.computed(function() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
                 console.log(">>> computing filteredAnnotations");
                 var match = viewModel.listFilters.ANNOTATIONS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'gi' );
+                    matchPattern = new RegExp( $.trim(match), 'i' );
                 var scope = viewModel.listFilters.ANNOTATIONS.scope();
                 var submitter = viewModel.listFilters.ANNOTATIONS.submitter();
 
@@ -376,7 +390,9 @@ function loadSelectedStudy(id) {
                     }
                 );  // END of list filtering
                         
-                return ko.observableArray( filteredList ).asPaged(20);
+                viewModel._filteredAnnotations( filteredList );
+                viewModel._filteredAnnotations.goToPage(1);
+                return viewModel._filteredAnnotations;
             }); // END of filteredAnnotations
 
             viewModel.studyQualityPercent = ko.observable(0);
@@ -2484,7 +2500,6 @@ function addSupportingFile() {
         showErrorMessage('Please choose a local file or enter a valid URL.');
         return;
     }
-    
 
     // TODO: do the actual removal (from the remote file-store) via AJAX
   if (false) {

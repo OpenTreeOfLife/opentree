@@ -342,21 +342,23 @@ body {
                 -->
                 </table>
 
-                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: nexml.trees.tree().length &gt; nexml.trees.tree.pagedItems().length">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredTrees()().length &gt; viewModel.filteredTrees().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredTrees().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredTrees().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
-                    <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">0</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredTrees() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredTrees().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredTrees().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredTrees().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredTrees().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
+
             </div>
 
            </div><!-- end of main column... -->
@@ -451,21 +453,23 @@ body {
                   </tbody>
                 </table>
 
-                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: getSupportingFiles()().length &gt; getSupportingFiles().pagedItems().length">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredFiles()().length &gt; viewModel.filteredFiles().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !getSupportingFiles().prev.enabled() }" class="disabled">
-                        <a href="#" onclick="getSupportingFiles().prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredFiles().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredFiles().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( getSupportingFiles() ) -->
-                    <li data-bind="css: { 'active': (getSupportingFiles().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="getSupportingFiles().goToPage(parseInt($(this).text())); return false;">0</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredFiles() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredFiles().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredFiles().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !getSupportingFiles().next.enabled() }" class="disabled">
-                        <a href="#" onclick="getSupportingFiles().next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredFiles().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredFiles().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
+
             </div>
 
            </div><!-- end of main column... -->
@@ -608,18 +612,19 @@ body {
                   </tbody>
                 </table>
 
-                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: nexml.otus.otu().length &gt; nexml.otus.otu.pagedItems().length">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredOTUs()().length &gt; viewModel.filteredOTUs().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !nexml.otus.otu.prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.otus.otu.prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredOTUs().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredOTUs().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( nexml.otus.otu) -->
-                    <li data-bind="css: { 'active': (viewModel.nexml.otus.otu.current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.otus.otu.goToPage(parseInt($(this).text())); return false;">0</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredOTUs() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredOTUs().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredOTUs().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !nexml.otus.otu.next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.otus.otu.next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredOTUs().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredOTUs().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
@@ -902,18 +907,19 @@ body {
                   -->
 
                 <!-- TODO: respond to calculated notes, gathered from throughout study Nexson -->
-                <div class="pagination pagination-centered pagination-small" data-bind="if: true">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredAnnotations()().length &gt; viewModel.filteredAnnotations().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredAnnotations().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredAnnotations().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
-                    <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">1</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredAnnotations() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredAnnotations().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredAnnotations().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredAnnotations().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredAnnotations().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
