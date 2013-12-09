@@ -70,17 +70,19 @@ api=repo/api.opentreeoflife.org
 echo "...fetching opentree repo (main webapp and curator)..."
 git_refresh OpenTreeOfLife opentree $BRANCH || true
 echo "...fetching api.opentreeoflife.org repo..."
-git_refresh OpenTreeOfLife api.opentreeoflife.org $BRANCH || true
 
 BRANCH="local"
+git_refresh OpenTreeOfLife api.opentreeoflife.org $BRANCH || true
+
+BRANCH="master"
 echo "...fetching treenexus repo..."
 git_refresh OpenTreeOfLife treenexus $BRANCH || true
 
-cd $api
-cp private/config.example private/config
+pushd .
+cd $api/private
+cp config.example config
 sed -i -e 's+REPO_PATH+/home/opentree/repo/treenexus+' config
-cd ..
-
+popd
 
 # Modify the requirements list
 # numpy etc. have all kinds of dependency problems.
