@@ -82,6 +82,9 @@ pushd .
 cd $api/private
 cp config.example config
 sed -i -e 's+REPO_PATH+/home/opentree/repo/treenexus+' config
+
+# oti search runs on 7478
+sed -i -e 's+7474+7478+' config
 popd
 
 # Modify the requirements list
