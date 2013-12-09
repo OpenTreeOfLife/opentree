@@ -806,8 +806,10 @@ body {
               <div class="navbar">
                  <div class="navbar-inner">
                   <form class="navbar-search pull-left">
-                      <input type="text" class="search-query" placeholder="Filter by name, location, text">
+                      <input type="text" class="search-query input-xlarge" placeholder="Filter by type, location, submitter, message"
+                             data-bind="value: viewModel.listFilters.ANNOTATIONS.match, valueUpdate: 'afterkeydown'">
                   </form>
+                <!-- TODO: Can we provide some kind of support for thes filters?
                   <ul class="nav" style="padding-left: 1em;">
                       <li class="dropdown">
                           <a href="#" class="dropdown-toggle" data-toggle="dropdown">
@@ -824,16 +826,17 @@ body {
                       </li>
                       <li class="dropdown">
                           <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            Submitted by all
-                            <b class="caret"></b>
+                              <span data-bind="text: viewModel.listFilters.ANNOTATIONS.submitter">SORT</span>
+                              <b class="caret"></b>
                           </a>
-                          <ul class="dropdown-menu">
-                              <li><a href="#">Submitted by all</a></li>
-                              <li><a href="#">Submitted by users</a></li>
-                              <li><a href="#">Added by validation apps</a></li>
+                          <ul class="dropdown-menu" data-bind="foreach: ['Submitted by all', 'Submitted by users', 'Submitted by validation tools']">
+                              <li data-bind="css: {'disabled': viewModel.listFilters.ANNOTATIONS.submitter() == $data }">
+                                  <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.ANNOTATIONS.submitter($data); }">SORT</a>
+                              </li>
                           </ul>
                       </li>
                   </ul>
+                  -->
                  </div>
               </div>
 
@@ -841,16 +844,15 @@ body {
                   <thead>
                     <tr>
                         <th>Type</th>
-                        <th>Location (click to see note there)</th>
+                        <!-- <th>Location (click to see note there)</th> -->
                         <th>Added by</th>
                         <th>Message(s)</th>
                     </tr>
                   </thead>
-                  <tbody>
-                  <!-- ko foreach: { data: nexml.meta(), as: 'annotation' } -->
-                    <tr data-bind="if: annotation['@property']() == 'ot:annotation'">
+                  <tbody data-bind="foreach: { data: viewModel.filteredAnnotations().pagedItems(), as: 'annotation' }">
+                    <tr>
                         <td data-bind="text: annotation.$, style: { color: typeof(annotation.isValid) === 'undefined' || annotation.isValid() ? '' : 'red' }"></td><!-- general description (annotation type) -->
-                        <td><a href="#">Study</a></td><!-- TODO -->
+                        <!-- <td><a href="#">Study</a></td> -->
                         <td data-bind="text: annotation.author.name"></td>
                       <!-- ko if: annotation.messages -->
                         <td data-bind="if: annotation.messages">
@@ -870,8 +872,9 @@ body {
                         </td>
                       <!-- /ko -->
                     </tr>
-                  <!-- /ko -->
-                  <!-- EXAMPLES of other annotation types: -->
+                  </tbody>
+                </table>
+                  <!-- EXAMPLES of other annotation types: 
                     <tr>
                         <td>Reply</td>
                         <td><a href="#">Message thread</a></td>
@@ -896,8 +899,7 @@ body {
                         <td><a href="#">Charles Darwin</a></td>
                         <td style="font-style: italic;">This tree is poorly rooted, in my opinion.</td>
                     </tr>
-                  </tbody>
-                </table>
+                  -->
 
                 <!-- TODO: respond to calculated notes, gathered from throughout study Nexson -->
                 <div class="pagination pagination-centered pagination-small" data-bind="if: true">

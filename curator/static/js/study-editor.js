@@ -223,8 +223,6 @@ function loadSelectedStudy(id) {
                 var order = viewModel.listFilters.OTUS.order();
 
                 // map old array to new and return it
-                ///return viewModel.nexml.otus.otu.asPaged(20);
-                //var filteredList = ko.utils.arrayMap( 
                 var filteredList = ko.utils.arrayFilter( 
                     viewModel.nexml.otus.otu(), 
                     function(otu) {
@@ -325,6 +323,61 @@ function loadSelectedStudy(id) {
                 }
                 return ko.observableArray( filteredList ).asPaged(20);
             }); // END of filteredOTUs
+
+            viewModel.filteredAnnotations = ko.computed(function() {
+                // filter raw OTU list, then sort, returning a
+                // new (OR MODIFIED??) paged observableArray
+                console.log(">>> computing filteredAnnotations");
+                var match = viewModel.listFilters.ANNOTATIONS.match(),
+                    matchPattern = new RegExp( $.trim(match), 'gi' );
+                var scope = viewModel.listFilters.ANNOTATIONS.scope();
+                var submitter = viewModel.listFilters.ANNOTATIONS.submitter();
+
+                // filter study metadata, build new array to new and return it
+                var filteredList = ko.utils.arrayFilter( 
+                    viewModel.nexml.meta(),
+                    function(annotation) {
+                        // initial filter for annotations
+                        if (annotation['@property']() !== 'ot:annotation') {
+                            // it's something else entirely
+                            return false;
+                        }
+                        
+                        // match entered text against type, location, submitter name, message text
+                        var itsType = annotation.$();
+                        ///var itsLocation = "Study"; // TODO
+                        var itsSubmitter = annotation.author.name();
+                        var itsMessageText = annotation.messages ? annotation.messages().join("|") : "";
+                        var itsSortDate = annotation.dateModified ?  annotation.dateModified() : annotation.dateCreated();
+                        if (!matchPattern.test(itsType) && !matchPattern.test(itsSubmitter) && !matchPattern.test(itsMessageText)) {
+                            return false;
+                        }
+
+                        /* filter by submitter
+                         * TODO: Provide some kind of support for this?
+                        switch (submitter) {
+                            case 'Submitted by all':
+                                // nothing to do here, all nodes pass
+                                break;
+
+                            case 'Submitted by users':
+                                break;
+
+                            case 'Submitted by validation tools':
+                                break;
+
+                            default:
+                                console.log("Unexpected submitter option for annotations: ["+ submitter +"]");
+                                return false;
+                        }
+                        */
+                        
+                        return true;
+                    }
+                );  // END of list filtering
+                        
+                return ko.observableArray( filteredList ).asPaged(20);
+            }); // END of filteredAnnotations
 
             viewModel.studyQualityPercent = ko.observable(0);
             viewModel.studyQualityPercentStyle = ko.computed(function() {
