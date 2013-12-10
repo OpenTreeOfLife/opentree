@@ -12,12 +12,12 @@
 
 def index():
     """
-    Show an introduction page for visitors, or personal curation dashboard for
+    Show an introduction page for visitors, or personalized curation dashboard for
     a logged-in user.
     """
     #response.flash = T("Welcome to web2py!")
 
-    if auth.is_logged_in():
+    if False:  ## auth.is_logged_in():
         # user is logged in, bounce to their personal dashboard
         redirect(URL('dashboard'))
     else:

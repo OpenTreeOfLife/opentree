@@ -1,7 +1,52 @@
+{{# Pivot (in many places) based on whether the user is an editor (curator) or
+# someone else looking at the study
+viewOrEdit = (auth.user) and 'EDIT' or 'VIEW'
+
+response.subtitle = "Building the tree, one study at a time"
+}}
+
 {{left_sidebar_enabled,right_sidebar_enabled=False,False}}
 {{response.title = "Study Curator"}}
-{{response.subtitle = "Building the tree, one study at a time"}}
+
+{{### Add support scripts for single-page editor 
+
+# JSON support for older browsers (esp. IE7) 
+response.files.append(URL('static','js/json2.js'))
+
+# Knockout.js for binding JSON model to editing UI 
+response.files.append(URL('static','js/knockout-2.3.0.js'))
+
+# KO plugin for paginated lists
+response.files.append(URL('static','js/knockout-paged-e4a5770702.js'))
+
+# Knockout plugin for easy declarative mapping 
+response.files.append(URL('static','js/knockout.mapping-2.4.1.js'))
+### response.files.append(URL('static','js/knockout.mapping.SRC.js'))
+
+# Knockout bindings for Twitter Bootstrap components
+response.files.append(URL('static','js/knockout-bootstrap.min.js'))
+
+}}
+
 {{extend 'layout.html'}}
+
+<script type='text/javascript'>
+    var viewOrEdit = '{{= viewOrEdit }}';
+    var API_load_study_list_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
+</script>
+
+<script src="{{=URL('static','js/curation-dashboard.js')}}"></script>
+
+<div class="row">
+    <div class="span12">
+       {{if 'message' in globals():}}
+        <h4>{{=message}}</h4>
+       {{pass}}
+        <div id="ajax-busy-bar" class="progress progress-striped active">
+          <div class="bar" style="width: 100%;"></div>
+        </div>
+    </div>
+</div><!-- /.row -->
 
 <div class="row">
 <div class="span8"><!-- not too wide... -->
@@ -12,32 +57,31 @@
       <div class="navbar">
        <div class="navbar-inner">
         <form class="navbar-search pull-left">
-            <input type="text" class="search-query" placeholder="Filter by author, title, journal">
+            <input type="text" class="search-query" placeholder="Filter by author, title, journal"
+                   data-bind="value: viewModel.listFilters.STUDIES.match, valueUpdate: 'afterkeydown'">
         </form>
         <ul class="nav" style="padding-left: 1em;">
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  Any workflow state
+                  <span data-bind="text: viewModel.listFilters.STUDIES.workflow">WORKFLOW</span>
                   <b class="caret"></b>
                 </a>
-                <ul class="dropdown-menu">
-                    <li><a href="#">Draft study</a></li>
-                    <li><a href="#">Submitted for synthesis</a></li>
-                    <li><a href="#">Under revision</a></li>
-                    <li><a href="#">Included in synthetic tree</a></li>
+                <ul class="dropdown-menu" data-bind="foreach: ['Any workflow state', 'Draft study', 'Submitted for synthesis', 'Under revision', 'Included in synthetic tree']">
+                    <li data-bind="css: {'disabled': viewModel.listFilters.STUDIES.workflow() == $data }">
+                        <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.STUDIES.workflow($data); }">WORKFLOW</a>
+                    </li>
                 </ul>
             </li>
             <!--<li class="divider-vertical"></li>-->
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  Sort by
+                  <span data-bind="text: viewModel.listFilters.STUDIES.order">SORT</span>
                   <b class="caret"></b>
                 </a>
-                <ul class="dropdown-menu">
-                    <li><a href="#">Newest first</a></li>
-                    <li><a href="#">Oldest first</a></li>
-                    <li><a href="#">Workflow state</a></li>
-                    <li><a href="#">Completeness</a></li>
+                <ul class="dropdown-menu" data-bind="foreach: ['Newest first', 'Oldest first', 'Workflow state', 'Completeness']">
+                    <li data-bind="css: {'disabled': viewModel.listFilters.STUDIES.order() == $data }">
+                        <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.STUDIES.order($data); }">SORT</a>
+                    </li>
                 </ul>
             </li>
         </ul>
@@ -48,7 +92,7 @@
           <thead>
             <tr>
                 <th>First Author</th>
-              {{ if False: }} <!-- TODO -->
+              {{ if viewOrEdit == 'EDIT': }}
                 <th>Study Title (click to edit study)</th>
               {{ else: }}
                 <th>Study Title (click to view study)</th>
@@ -59,57 +103,31 @@
                 <th>Actions</th>
             </tr>
           </thead>
-       <!-- rough version of bound rows
-          <tbody data-bind="foreach: { data: collection.studies.pagedItems(), as: 'study' }">
-            <tr data-bind="if: true">
-                <td data-bind="html: getFirstAuthorName(study)">?</td>
-                <td><a href="#" data-bind="text: study['@label'] || 'Untitled ('+ study['@about']() +')'" onclick="alert('TODO: open study viewer'); return false;">?</a></td>
-                <td data-bind="text: getMetaTagAccessorByAtProperty(study.meta(), 'ot:curatedType') || 'Unspecified'">?</td>
-                <td data-bind="text: getInGroupCladeDescriptionForstudy(study)">?</td>
-                <td data-bind="html: getMappedTallyForstudy(study)">?</td>
-                <td data-bind="html: getRootedDescriptionForstudy(study)">?</td>
+          <tbody data-bind="foreach: { data: viewModel.filteredStudies().pagedItems(), as: 'study' }">
+            <tr>
+                <td data-bind="html: getFirstAuthorLink(study)">?</td>
+                <td data-bind="html: getViewOrEditLink(study)">?</td>
+                <td data-bind="text: study.pubYear">?</td>
+                <td data-bind="html: getJournalLink(study)">?</td>
+                <td data-bind="text: study.completeness">?</td>
+                <td data-bind="html: getSuggestedActions(study)">?</td>
             </tr>
           </tbody>
-        -->
-        <!-- EXAMPLE study-table entries -->
-            <tr>
-                <td><a href="#">Cardoso D.B.</a></td>
-                <td><a href="#">A molecular phylogeny of the Vataireoid legumes unscores floral evolvability</a></td>
-                <td>2013</td>
-                <td><a href="#"><em>BMC Evol Biol</em></a></td>
-                <td>12%</td>
-                <td><a href="#">upload data</a></td>
-            </tr>
-            <tr>
-                <td><a href="#">Binder M.</a></td>
-                <td><a href="#">Phylogenetic and phylogenomic overview of the Polyporales</a></td>
-                <td>2013</td>
-                <td><a href="#"><em>Mycologia</em></a></td>
-                <td>75%</td>
-                <td><a href="#">annotate study</a></td>
-            </tr>
-            <tr>
-                <td><a href="#">Brown M.</a></td>
-                <td><a href="#">Most awesome phylogeny of snakes</a></td>
-                <td>2012</td>
-                <td><a href="#"><em>Herp Journal</em></a></td>
-                <td>45%</td>
-                <td><a href="#">map OTU labels</a></td>
-            </tr>
         </table>
 
-        <div class="pagination pagination-centered pagination-small" data-bind="if: nexml.trees.tree().length &gt; nexml.trees.tree.pagedItems().length">
+        <div class="pagination pagination-centered pagination-small" 
+             Xdata-bind="if: viewModel.filteredStudies()().length &gt; viewModel.filteredStudies().pagedItems().length">
           <ul>
-            <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
-                <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+            <li data-bind="css: { 'disabled': !viewModel.filteredStudies().prev.enabled() }" class="disabled">
+                <a href="#" onclick="viewModel.filteredStudies().prev(); return false;">&laquo;</a>
             </li>
-           <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
-            <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
-                <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">1</a>
+           <!-- ko foreach: getPageNumbers( viewModel.filteredStudies() ) -->
+            <li data-bind="css: { 'active': (viewModel.filteredStudies().current() === $data) }" class="active">
+                <a href="#" data-bind="text: $data" onclick="viewModel.filteredStudies().goToPage(parseInt($(this).text())); return false;">0</a>
             </li>
            <!-- /ko -->
-            <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
-                <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+            <li data-bind="css: { 'disabled': !viewModel.filteredStudies().next.enabled() }" class="disabled">
+                <a href="#" onclick="viewModel.filteredStudies().next(); return false;">&raquo;</a>
             </li>
           </ul>
         </div>
