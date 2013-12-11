@@ -72,10 +72,8 @@ echo "...fetching opentree repo (main webapp and curator)..."
 git_refresh OpenTreeOfLife opentree $BRANCH || true
 echo "...fetching api.opentreeoflife.org repo..."
 
-BRANCH="local"
 git_refresh OpenTreeOfLife api.opentreeoflife.org $BRANCH || true
 
-BRANCH="master"
 echo "...fetching treenexus repo..."
 git_refresh OpenTreeOfLife treenexus $BRANCH || true
 
