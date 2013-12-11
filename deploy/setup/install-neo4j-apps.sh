@@ -97,11 +97,13 @@ make_neo4j_instance taxomachine 7476 7475
 make_neo4j_instance oti         7478 7477
 
 if true; then
-    # setup oti database # currently failing
+    # setup oti database (should not really be done here)
     echo "attempting to index the current commit on treenexus master branch"
-    rm -R ./neo4j-$APP/data/graph.db
+    if [ -d neo4j-oti/data/graph.db ]; then
+        rm -rf neo4j-oti/data/graph.db
+    fi
+    ./neo4j-oti/bin/neo4j restart
     repo/oti/index_current_repo.py http://localhost:7478/db/data/
-    echo "oti setup run"
 fi
 
 # ---------- THE NEO4J DATABASES ----------
