@@ -22,6 +22,15 @@ I've been using m1.small servers when running without big neo4j instances, m2.xl
 Put the ssh private key somewhere, e.g. 'opentree.pem'.  
 Set its file permissions to 600.
 
+Currently there is a one-time manual step in setting up a new server: copying
+the Github SSH deployment keys which allows the OpenTree API to push changes to
+Github.
+
+    scp -p opentree opentree.pub opentree@server:~/.ssh
+
+Currently the ```opentree``` private key and ```opentree.pub``` public key can
+be found on files.opentreeoflife.org .
+
 Create one configuration file for each server.  A configuration is just a shell script that sets some variables.
 
 Run the setup script, which is called 'push.sh', as
