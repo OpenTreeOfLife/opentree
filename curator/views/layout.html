@@ -229,9 +229,11 @@
         
         <div class="{{=middle_columns}} Xcolumns Xcenter">
           <!--<div style="margin:0 1em 0 1em;">-->
+          {{ if response.title: }}
           <h1 id="main-title">
           {{=A(response.title or request.application, _href=URL('default','index'))}}{{if response.subtitle:}}::{{=response.subtitle}}{{pass}}
           </h1>
+          {{ pass }}
           {{block center}}
           {{include}}
           {{end}}

@@ -24,6 +24,9 @@ def index():
         # anonymous visitor, show a general info page
         return dict()
 
+def error():
+    return dict()
+
 @auth.requires_login()
 def dashboard():
     return dict(message="My Curation Activity")
