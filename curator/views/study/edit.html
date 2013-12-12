@@ -369,6 +369,7 @@ body {
             Clicking a tree name should open a modal tree view/editor (D3?).
             </p>
 
+        {{ if viewOrEdit == 'EDIT': }}
             <div class="well">
                 <h4 style="margin-top: 0;">Add a tree to this study</h4>
                 <form style="margin: 0;">
@@ -415,6 +416,8 @@ body {
                  </fieldset>
                 </form>
             </div>
+        {{ pass }}
+
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
@@ -478,6 +481,7 @@ body {
             [TODO] Here's some text about files in a study. Plus tools for
             importing/adding new files. What about bulk imports?
             </p>
+        {{ if viewOrEdit == 'EDIT': }}
             <div class="well Xwell-large">
                 <h4 style="margin-top: 0;">Add a file to this study</h4>
                 <form style="margin: 0;">
@@ -511,6 +515,7 @@ body {
                  </fieldset>
                 </form>
             </div>
+        {{ pass }}
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
@@ -560,14 +565,17 @@ body {
                   <thead>
                     <tr>
                         <th width="30%">Original label</th>
+                      {{ if viewOrEdit == 'EDIT': }}
                         <th width="30%">Modified for mapping</th>
                         <th width="5%">&nbsp;</th>
+                      {{ pass }}
                         <th width="35%">Taxon label in OTT</th>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
                         <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')">ORIGINAL?</td>
+                      {{ if viewOrEdit == 'EDIT': }}
                          <!-- ko if: (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
                             <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel'))">WORKING?</em>
@@ -588,6 +596,7 @@ body {
                             </button>
                         </td>
                          <!-- /ko -->
+                      {{ pass }}
                         <td>
                          <!-- ko if: currentlyMappingOTUs.indexOf(otu['@id']()) !== -1 -->
                             <strong style="color: red;"><em>...mapping now...</em></strong>
@@ -597,6 +606,7 @@ body {
                          <!-- /ko -->
                          <!-- ko if: (currentlyMappingOTUs.indexOf(otu['@id']()) === -1) && 
                                      (failedMappingOTUs.indexOf(otu['@id']()) === -1) -->
+                      {{ if viewOrEdit == 'EDIT': }}
                             <div class="btn-group pull-right row-controls-ghosted">
                                 <button class="btn btn-mini">
                                     <i class="icon-ok"></i>
@@ -605,6 +615,7 @@ body {
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
+                      {{ pass }}
                             <strong data-bind="text: otu['@label']">MAPPED LABEL</strong>
                          <!-- /ko -->
                         </td>
@@ -653,6 +664,8 @@ body {
                 This section is blocked while the server works. Please check again later. [TODO] 
             </div>
 -->
+
+        {{ if viewOrEdit == 'EDIT': }}
 
             <button class="btn btn-warning input-block-level" style="margin-bottom: 1em;"
                     onclick="clearVisibleMappings(); return false;">
@@ -800,6 +813,8 @@ body {
                 in the <strong>Modified for mapping</strong> column at left.
                 </p>
             </div>
+        {{ pass }}
+
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
