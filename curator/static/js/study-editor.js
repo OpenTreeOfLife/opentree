@@ -143,6 +143,7 @@ function loadSelectedStudy(id) {
              */
 
             // enable sorting and filtering for lists in the editor
+            viewModel.filterDelay = 250; // ms to wait for changes before updating filter
             viewModel.listFilters = {
                 // UI widgets bound to these variables will trigger the
                 // computed display lists below..
@@ -191,7 +192,7 @@ function loadSelectedStudy(id) {
                 viewModel._filteredTrees( filteredList );
                 viewModel._filteredTrees.goToPage(1);
                 return viewModel._filteredTrees;
-            }); // END of filteredTrees
+            }).extend({ throttle: viewModel.filterDelay }); // END of filteredTrees
             
             // maintain a persistent array to preserve pagination (reset when computed)
             viewModel._filteredFiles = ko.observableArray( ).asPaged(20);
@@ -219,7 +220,7 @@ function loadSelectedStudy(id) {
                 viewModel._filteredFiles( filteredList );
                 viewModel._filteredFiles.goToPage(1);
                 return viewModel._filteredFiles;
-            }); // END of filteredFiles
+            }).extend({ throttle: viewModel.filterDelay }); // END of filteredFiles
 
             // maintain a persistent array to preserve pagination (reset when computed)
             viewModel._filteredOTUs = ko.observableArray( ).asPaged(20);
@@ -334,7 +335,7 @@ function loadSelectedStudy(id) {
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
-            }); // END of filteredOTUs
+            }).extend({ throttle: viewModel.filterDelay }); // END of filteredOTUs
 
             // maintain a persistent array to preserve pagination (reset when computed)
             viewModel._filteredAnnotations = ko.observableArray( ).asPaged(20);
@@ -393,7 +394,7 @@ function loadSelectedStudy(id) {
                 viewModel._filteredAnnotations( filteredList );
                 viewModel._filteredAnnotations.goToPage(1);
                 return viewModel._filteredAnnotations;
-            }); // END of filteredAnnotations
+            }).extend({ throttle: viewModel.filterDelay }); // END of filteredAnnotations
 
             viewModel.studyQualityPercent = ko.observable(0);
             viewModel.studyQualityPercentStyle = ko.computed(function() {
@@ -2655,12 +2656,27 @@ var autoMappingInProgress = ko.observable(false);
 var currentlyMappingOTUs = ko.observableArray([]); // drives spinners, etc.
 var failedMappingOTUs = ko.observableArray([]); // ignore these until we have new mapping hints
 var editedOTULabels = ko.observable({}); // stored any labels edited by hand, keyed by OTU id
+var editedOTULabelSubscriptions = {}; // KO subscriptions for each, to enable mapping when a label is edited
+var proposedOTUMappings = ko.observable({}); // stored any labels proposed by server, keyed by OTU id
 var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-editing UI to refresh!
 
 function editOTULabel(otu) {
     var OTUid = otu['@id']();
     var originalLabel = getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')();
     editedOTULabels()[ OTUid ] = ko.observable( adjustedLabel(originalLabel) );
+    // add a subscriber to remove this from failed-OTU list when user makes
+    // changes
+    var sub = editedOTULabels()[ OTUid ].subscribe(function() {
+        failedMappingOTUs.remove(OTUid);
+        // nudge to update OTU list immediately
+        bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+    });
+    if (editedOTULabelSubscriptions[ OTUid ]) {
+        // clear any errant (old) subscriber for this OTU
+        editedOTULabelSubscriptions[ OTUid ].dispose();
+        delete editedOTULabelSubscriptions[ OTUid ];
+    }
+    editedOTULabelSubscriptions[ OTUid ] = sub;
     // this should make the editor appear
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
 }
@@ -2673,13 +2689,52 @@ function revertOTULabel(otu) {
     // undoes 'editOTULabel', releasing a label to use shared hints
     var OTUid = otu['@id']();
     delete editedOTULabels()[ OTUid ];
+    failedMappingOTUs.remove(OTUid );
+    if (editedOTULabelSubscriptions[ OTUid ]) {
+        // dispose, then remove, the subscriber for this OTU
+        editedOTULabelSubscriptions[ OTUid ].dispose();
+        delete editedOTULabelSubscriptions[ OTUid ];
+    }
     // this should make the editor disappear and revert its adjusted label
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+}
+
+function proposeOTULabel(OTUid, mappingInfo) {
+    proposedOTUMappings()[ OTUid ] = ko.observable( mappingInfo ).extend({ notify: 'always' });
+    proposedOTUMappings.valueHasMutated();
+    // this should make the editor appear
+}
+function proposedMapping( otu ) {
+    if (!otu || typeof otu['@id'] === 'undefined') {
+        console.log("proposedMapping() failed");
+        return null;
+    }
+    var OTUid = otu['@id']();
+    var acc = proposedOTUMappings()[ OTUid ];
+    return acc ? acc() : null;
+}
+function approveProposedOTULabel(otu) {
+    // undoes 'editOTULabel', releasing a label to use shared hints
+    var OTUid = otu['@id']();
+    var approvedMapping = proposedOTUMappings()[ OTUid ]();
+    delete proposedOTUMappings()[ OTUid ];
+    proposedOTUMappings.valueHasMutated();
+
+    // this should make the editor disappear and revert its adjusted label
+    mapOTUToTaxon( OTUid, approvedMapping );
+}
+function rejectProposedOTULabel(otu) {
+    // undoes 'proposeOTULabel', clearing its value
+    var OTUid = otu['@id']();
+    delete proposedOTUMappings()[ OTUid ];
+    proposedOTUMappings.valueHasMutated();
 }
 
 // this should be cleared whenever something changes in mapping hints
 function clearFailedOTUList() {
     failedMappingOTUs.removeAll();
+    // nudge to update OTU list immediately
+    bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
     // should we restart auto-mapping?
     if (autoMappingInProgress()) {
         if (currentlyMappingOTUs.length === 0) {
@@ -2720,14 +2775,12 @@ function updateMappingSpeed( newElapsedTime ) {
         total += time;
     });
     var rollingAverage = total / recentMappingTimes.length;
-    ///console.log('recentMappingTimes: '+ recentMappingTimes);
-    ///console.log('rollingAverage: '+ rollingAverage +' ms');
     var secPerName = rollingAverage / 1000;
     // show a legible number (first significant digit)
     var displaySec;
     if (secPerName >= 0.1) {
         displaySec = secPerName.toFixed(1);
-    } else if (secParName >= 0.01) {
+    } else if (secPerName >= 0.01) {
         displaySec = secPerName.toFixed(2);
     } else {
         displaySec = secPerName.toFixed(3);
@@ -2754,15 +2807,16 @@ function requestTaxonMapping() {
     // set spinner, make request, handle response, and daisy-chain the next request
     // TODO: send one at a time? or in a batch (5 items)?
     
-    var visibleOTUs = viewModel.nexml.otus.otu.pagedItems();
+    var visibleOTUs = viewModel.filteredOTUs().pagedItems();
     var otuToMap = null;
     $.each( visibleOTUs, function (i, otu) {
         var ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
-        if (!ottMappingTag) {
+        var proposedMappingInfo = proposedMapping(otu);
+        if (!ottMappingTag && !proposedMappingInfo) {
             // this is an unmapped OTU!
             if (failedMappingOTUs.indexOf(otu['@id']()) === -1) {
                 // it hasn't failed mapping (at least not yet)
-                otuToMap = otu
+                otuToMap = otu;
                 return false;
             }
         }
@@ -2828,10 +2882,14 @@ function requestTaxonMapping() {
         success: function(data) {    // JSONP callback
             // IF there's a proper response, assert this as the OTU and label for this node
             // TODO: Give the curator a chance to push back? and cleanly roll back changes if they disagree?
+
+            /* Let any pending mapping finish up, even if curator has
+             * paused auto-mapping!
             if (!autoMappingInProgress()) {
                 // curator has paused all mapping
                 return false;
             }
+            */
 
             // update the rolling average for the mapping-speed bar
             var mappingStopTime = new Date();
@@ -2865,12 +2923,15 @@ function requestTaxonMapping() {
 
                 // for now, let's immediately apply the top name
                 var otuMapping = data[0];
+                // NOTE that this is an object with several properties:
                 // .name   
                 // .ottId   // number-as-string
                 // .nodeId  // number
                 // .exact   // boolean
                 // .higher  // boolean
-                mapOTUToTaxon( otuID, otuMapping )
+
+                proposeOTULabel(otuID, otuMapping);
+                // postpone actual mapping until user approves
                 
                 if (false) {
                     // TODO: offer choices if multiple possibilities are found? 
@@ -2958,11 +3019,11 @@ function unmapOTUFromTaxon( otuOrID ) {
     var otu = (typeof otuOrID === 'object') ? otuOrID : getOTUByID( otuOrID );
     // restore its original label (versus mapped label)
     var originalLabel = getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')();
-    otu['@label']( '' );
+    otu['@label']( '' );    // TODO: THIS IS TOO SLOW, what's up?
     // strip any metatag mapping this to an OTT id
     var ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
     if (ottMappingTag) {
-        otu.meta.remove(ottMappingTag);
+        otu.meta.remove(ottMappingTag);    // TODO: THIS IS TOO SLOW, what's up?
     }
 }
 
@@ -2978,7 +3039,7 @@ function addMetaTagToParent( parent, props ) {
 
 function clearVisibleMappings() {
     // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) OTUs.
-    var visibleOTUs = viewModel.nexml.otus.otu.pagedItems();
+    var visibleOTUs = viewModel.filteredOTUs().pagedItems();
     $.each( visibleOTUs, function (i, otu) {
         unmapOTUFromTaxon( otu );
     });
@@ -3000,18 +3061,6 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     // show appropriate choices for this node
     // if (node['@root']() === 'true') ?
     var nodeID = node['@id']();
-    ///console.log("showing menu for node '"+ nodeID +"'...");
-
-    /*
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
-
-    var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$() : null;
-
-    var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$() : null;
-    */
 
     // general node information first, then actions
     nodeMenu.append('<li class="node-information"></li>');

@@ -1,6 +1,9 @@
 {{# Pivot (in many places) based on whether the user is an editor (curator) or
 # someone else looking at the study
-# viewOrEdit = (auth.user and request.) and 'EDIT' or 'VIEW'
+#
+# userCanEdit = True if the user is authorized to edit this study
+# viewOrEdit  = the function of this page ('EDIT' or 'VIEW'), regardless of
+#               user's permissions
 
 response.title = (viewOrEdit == 'EDIT') and "Edit Study" or "View Study"
 }}
@@ -170,13 +173,18 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
           <button class="btn btn"
             onclick="if (validateFormData()) saveFormDataToStudyJSON(); return false;">Save Study</button>
-          <button class="btn btn-link">Cancel</button>
+          <a class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
           <button class="btn btn-danger pull-right"
             onclick="confirm('Are you sure you want to delete this study?'); return false;">Delete Study</button>
         {{ else: }} 
           <a class="btn btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to study list</a>
-          <button class="btn btn-info pull-right"
-            onclick="confirm('Are you sure you want to edit this study?'); return false;">Login to Edit Study</button>
+         {{ if userCanEdit: }}
+          <a class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
+            onclick="return confirm('Are you sure you want to edit this study?');">Edit Study</a>
+         {{ else: }}
+          <a class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
+            onclick="return confirm('Are you sure you want to edit this study?');">Login to Edit Study</a>
+         {{ pass }}
         {{ pass }}
     </div>
   </div>
@@ -578,17 +586,22 @@ body {
                       {{ if viewOrEdit == 'EDIT': }}
                          <!-- ko if: (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
-                            <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel'))">WORKING?</em>
+                            <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')), 
+                                           style: { 'color' : (otu['@label']() === '' && !proposedMapping(otu))?  '' : 'silver' }"
+                               >WORKING?</em>
                         </td>
                         <td>
+                          <!-- ko if: otu['@label']() === '' && !proposedMapping(otu) -->
                             <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel">
                                 <i class="icon-edit"></i>
                             </button>
+                          <!-- /ko -->
                         </td>
                          <!-- /ko -->
                          <!-- ko if: (bogusEditedLabelCounter() > 0)  && editedLabelAccessor(otu) != null --> 
                         <td>
-                            <input type="text" style="height: 14px; margin: 0; width: 97%;" data-bind="value: editedLabelAccessor(otu)">
+                            <input type="text" style="height: 14px; margin:
+                            0; width: 97%;" data-bind="value: editedLabelAccessor(otu)">
                         </td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel">
@@ -607,16 +620,29 @@ body {
                          <!-- ko if: (currentlyMappingOTUs.indexOf(otu['@id']()) === -1) && 
                                      (failedMappingOTUs.indexOf(otu['@id']()) === -1) -->
                       {{ if viewOrEdit == 'EDIT': }}
-                            <div class="btn-group pull-right row-controls-ghosted">
-                                <button class="btn btn-mini">
+                          <!-- ko if: proposedMapping(otu) -->
+                            <div class="btn-group pull-right">
+                                <button class="btn btn-mini" data-bind="click: approveProposedOTULabel">
                                     <i class="icon-ok"></i>
                                 </button>
+                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel">
+                                    <i class="icon-remove"></i>
+                                </button>
+                            </div>
+                          <!-- /ko -->
+                          <!-- ko if: otu['@label'] -->
+                            <div class="btn-group pull-right row-controls-ghosted">
                                 <button class="btn btn-mini" data-bind="click: unmapOTUFromTaxon">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                      {{ pass }}
+                          <!-- /ko -->
+                            <strong data-bind="text: proposedMapping(otu) ?  proposedMapping(otu).name : otu['@label'],
+                                               style:  {'color': proposedMapping(otu) ? 'red' :'' }"
+                                >MAPPED (OR PROPOSED) LABEL</strong>
+                      {{ else: }}
                             <strong data-bind="text: otu['@label']">MAPPED LABEL</strong>
+                      {{ pass }}
                          <!-- /ko -->
                         </td>
                     </tr>
@@ -1044,7 +1070,7 @@ Please review and re-submit.</pre>
 </div><!-- /.row -->
 
 <script type='text/javascript'>
-    var studyID = '{{= request.args[0] }}';
+    var studyID = '{{= studyID }}';
     var viewOrEdit = '{{= viewOrEdit }}';
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
     var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
