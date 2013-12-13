@@ -1,6 +1,9 @@
 {{# Pivot (in many places) based on whether the user is an editor (curator) or
 # someone else looking at the study
-# viewOrEdit = (auth.user and request.) and 'EDIT' or 'VIEW'
+#
+# userCanEdit = True if the user is authorized to edit this study
+# viewOrEdit  = the function of this page ('EDIT' or 'VIEW'), regardless of
+#               user's permissions
 
 response.title = (viewOrEdit == 'EDIT') and "Edit Study" or "View Study"
 }}
@@ -170,13 +173,18 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
           <button class="btn btn"
             onclick="if (validateFormData()) saveFormDataToStudyJSON(); return false;">Save Study</button>
-          <button class="btn btn-link">Cancel</button>
+          <a class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
           <button class="btn btn-danger pull-right"
             onclick="confirm('Are you sure you want to delete this study?'); return false;">Delete Study</button>
         {{ else: }} 
           <a class="btn btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to study list</a>
-          <button class="btn btn-info pull-right"
-            onclick="confirm('Are you sure you want to edit this study?'); return false;">Login to Edit Study</button>
+         {{ if userCanEdit: }}
+          <a class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
+            onclick="return confirm('Are you sure you want to edit this study?');">Edit Study</a>
+         {{ else: }}
+          <a class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
+            onclick="return confirm('Are you sure you want to edit this study?');">Login to Edit Study</a>
+         {{ pass }}
         {{ pass }}
     </div>
   </div>
@@ -1044,7 +1052,7 @@ Please review and re-submit.</pre>
 </div><!-- /.row -->
 
 <script type='text/javascript'>
-    var studyID = '{{= request.args[0] }}';
+    var studyID = '{{= studyID }}';
     var viewOrEdit = '{{= viewOrEdit }}';
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
     var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
