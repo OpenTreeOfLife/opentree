@@ -586,17 +586,22 @@ body {
                       {{ if viewOrEdit == 'EDIT': }}
                          <!-- ko if: (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
-                            <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel'))">WORKING?</em>
+                            <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')), 
+                                           style: { 'color' : (otu['@label']() === '' && !proposedMapping(otu))?  '' : 'silver' }"
+                               >WORKING?</em>
                         </td>
                         <td>
+                          <!-- ko if: otu['@label']() === '' && !proposedMapping(otu) -->
                             <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel">
                                 <i class="icon-edit"></i>
                             </button>
+                          <!-- /ko -->
                         </td>
                          <!-- /ko -->
                          <!-- ko if: (bogusEditedLabelCounter() > 0)  && editedLabelAccessor(otu) != null --> 
                         <td>
-                            <input type="text" style="height: 14px; margin: 0; width: 97%;" data-bind="value: editedLabelAccessor(otu)">
+                            <input type="text" style="height: 14px; margin:
+                            0; width: 97%;" data-bind="value: editedLabelAccessor(otu)">
                         </td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel">
@@ -615,16 +620,29 @@ body {
                          <!-- ko if: (currentlyMappingOTUs.indexOf(otu['@id']()) === -1) && 
                                      (failedMappingOTUs.indexOf(otu['@id']()) === -1) -->
                       {{ if viewOrEdit == 'EDIT': }}
-                            <div class="btn-group pull-right row-controls-ghosted">
-                                <button class="btn btn-mini">
+                          <!-- ko if: proposedMapping(otu) -->
+                            <div class="btn-group pull-right">
+                                <button class="btn btn-mini" data-bind="click: approveProposedOTULabel">
                                     <i class="icon-ok"></i>
                                 </button>
+                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel">
+                                    <i class="icon-remove"></i>
+                                </button>
+                            </div>
+                          <!-- /ko -->
+                          <!-- ko if: otu['@label'] -->
+                            <div class="btn-group pull-right row-controls-ghosted">
                                 <button class="btn btn-mini" data-bind="click: unmapOTUFromTaxon">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                      {{ pass }}
+                          <!-- /ko -->
+                            <strong data-bind="text: proposedMapping(otu) ?  proposedMapping(otu).name : otu['@label'],
+                                               style:  {'color': proposedMapping(otu) ? 'red' :'' }"
+                                >MAPPED (OR PROPOSED) LABEL</strong>
+                      {{ else: }}
                             <strong data-bind="text: otu['@label']">MAPPED LABEL</strong>
+                      {{ pass }}
                          <!-- /ko -->
                         </td>
                     </tr>
