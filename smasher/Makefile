@@ -5,8 +5,8 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.3
-PREV_WHICH=2.2
+WHICH=2.4
+PREV_WHICH=2.3
 
 #  $^ = all prerequisites
 #  $< = first prerequisite
@@ -75,7 +75,7 @@ test: Smasher.class
 
 # Add $(TAX)/if/ when it starts to work
 
-OTT_ARGS=Smasher $(SILVA)/ $(TAX)/713/ $(NCBI)/ $(GBIF)/ \
+OTT_ARGS=Smasher $(SILVA)/ $(TAX)/713/ $(TAX)/if/ $(NCBI)/ $(GBIF)/ \
       --edits $(FEED)/ott/edits/ \
       --ids $(TAX)/prev_ott/ \
       --out $(TAX)/ott/
@@ -84,7 +84,8 @@ ott: $(TAX)/ott/log.tsv
 $(TAX)/ott/log.tsv: Smasher.class $(SILVA)/taxonomy.tsv \
 		    $(TAX)/if/taxonomy.tsv $(TAX)/713/taxonomy.tsv \
 		    $(NCBI)/taxonomy.tsv $(GBIF)/taxonomy.tsv \
-		    $(FEED)/ott/edits/ott_edits.tsv
+		    $(FEED)/ott/edits/ott_edits.tsv \
+		    $(TAX)/prev_ott/taxonomy.tsv
 	mkdir -p $(TAX)/ott
 	java $(CP) -Xmx10g $(OTT_ARGS)
 	echo $(WHICH) >$(TAX)/ott/version.txt
@@ -104,23 +105,27 @@ $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
 
 $(TAX)/prev_ott/taxonomy.tsv:
-	mkdir -p $(FEED)/prev_ott/in
+	mkdir -p $(FEED)/prev_ott/in 
 	wget --output-document=$(FEED)/prev_ott/in/ott$(PREV_WHICH).tgz \
-	  http://files.opentreeoflife.org/ott/ott$PREV_WHICH
-	(cd $(FEED)/prev_ott/in/ && tar xf ott$(PREV_WHICH).tgz)
-	mv $(FEED)/prev_ott/in/ott$(PREV_WHICH)/* $(TAX)/prev_ott/
+	  http://files.opentreeoflife.org/ott/ott$(PREV_WHICH).tgz
+	(cd $(FEED)/prev_ott/in/ && tar xvf ott$(PREV_WHICH).tgz)
+	rm -rf $(TAX)/prev_ott
+	mkdir -p $(TAX)/prev_ott
+	mv $(FEED)/prev_ott/in/ott*/* $(TAX)/prev_ott/
 	if [ -e $(TAX)/prev_ott/taxonomy ]; then mv $(TAX)/prev_ott/taxonomy $(TAX)/prev_ott/taxonomy.tsv; fi
 	if [ -e $(TAX)/prev_ott/synonyms ]; then mv $(TAX)/prev_ott/synonyms $(TAX)/prev_ott/synonyms.tsv; fi
-	rmdir $(FEED)/prev_ott/in
+	rm -rf $(FEED)/prev_ott/in
 
 # Formerly, where we now have /dev/null, we had
 # ../data/ncbi/ncbi.taxonomy.homonym.ids.MANUAL_KEEP
+
+NCBI_URL="ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz"
 
 ncbi: $(NCBI)/taxonomy.tsv
 $(NCBI)/taxonomy.tsv: $(FEED)/ncbi/in/nodes.dmp $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py 
 	mkdir -p $(NCBI).tmp
 	python $(FEED)/ncbi/process_ncbi_taxonomy_taxdump.py F $(FEED)/ncbi/in \
-            /dev/null $(NCBI).tmp
+            /dev/null $(NCBI).tmp $(NCBI_URL)
 	rm -rf $(NCBI)
 	mv -f $(NCBI).tmp $(NCBI)
 
@@ -131,8 +136,7 @@ $(FEED)/ncbi/in/nodes.dmp: $(FEED)/ncbi/taxdump.tar.gz
 
 $(FEED)/ncbi/taxdump.tar.gz:
 	mkdir -p $(FEED)/ncbi
-	wget --output-document=$(FEED)/ncbi/taxdump.tar.gz \
- 	     ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz
+	wget --output-document=$(FEED)/ncbi/taxdump.tar.gz $(NCBI_URL)
 
 # Formerly, where it says /dev/null, we had ../data/gbif/ignore.txt
 

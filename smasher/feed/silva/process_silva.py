@@ -62,18 +62,14 @@ taxondict = {}  # maps (parentid, name) to taxid
 # Silva classifies ABEG02010941 Caenorhabditis brenneri as a bacterium; this 
 # is clearly an artifact of sample contamination.
 
-kill = re.compile('|'.join(['Metazoa',
-							'Fungi',
-							'Archaeplastida',
-							'Chloroplast',
-							'mitochondria',
-							'Oryza',
-							'Herdmania',     # AB564305 AB564301 AB564299 ... all garbage
-							'ABEG02010941',  # Caenorhabditis brenneri
+kill = re.compile('|'.join(['ABEG02010941',  # Caenorhabditis brenneri
 							'ABRM01041397',  # Hydra magnipapillata
 							'ALWT01111512',  # Myotis davidii
 							'HP641760',		 # Alasmidonta varicosa
-							'JR876587']))	 # Embioptera sp. UVienna-2012
+							'JR876587',  	 # Embioptera sp. UVienna-2012
+							 ]))
+
+# AB564305 AB564301 AB564299 ... all garbage
 
 def makePathDict(infilename, outfilename):
 	infile = open(infilename,'rU')
@@ -153,7 +149,7 @@ def processSilva(pathdict, indir, outdir):
 	acc_success = 0
 
     # uid is a unique sequence id e.g. A58083.1.1474
-	for uid in pathdict.keys():
+	for uid in sorted(pathdict.keys()):
 		parentid = "0"
 		path = pathdict[uid]
 		accession = string.split(uid,".",1)[0]
@@ -186,28 +182,49 @@ def processSilva(pathdict, indir, outdir):
 					synonyms[longname] = taxid
 				outfile.write("%s\t|\t%s\t|\t%s\t|\t%s\t|\t\t|\t\n" %
 							  (taxid, parentid, taxname, rank))
+
 			parentid = taxid    #for next iteration
 
+			# Don't descend into groups that need to be suppressed
+			if taxname in ['Metazoa',
+						   'Fungi',
+						   'Chloroplast',
+						   'mitochondria',
+						   'Herdmania',
+						   'Oryza',
+						   'Chloroplastida',
+						   ]:
+				parentid = None
+				if taxname == 'Chloroplastida':
+					# What NCBI calls it
+					synonyms['Viridiplantae'] = taxid
+					# What GBIF calls it
+					synonyms['Plantae'] = taxid
+				elif taxname == 'Metazoa':
+					synonyms['Animalia'] = taxid
+				break
+				  
 		# value of parentid is set by the loop, feeds into the below.
 
 	    # Now process this particular tip.
 		# parentid wants to be parent of NCBI taxon, but NCBI taxon might be paraphyletic
 
-		if accession in accession_to_ncbi:
-			ncbi = accession_to_ncbi[accession]
-			if ncbi == '*':
-				blocked = blocked + 1
-			else:
-				acc_success = acc_success + 1
-				if ncbi in ncbi_silva_parent:
-					if ncbi_silva_parent[ncbi] != parentid:
-						ncbi_silva_parent[ncbi] = None
+		if parentid != None:
+			if accession in accession_to_ncbi:
+				ncbi = accession_to_ncbi[accession]
+				if ncbi == '*':
+					blocked = blocked + 1
 				else:
-					ncbi_silva_parent[ncbi] = parentid
-					ncbi_sample_accession[ncbi] = accession
-					ncbi_name[ncbi] = path[len(path)-1]
-		else:
-			missing.append(accession)
+					acc_success = acc_success + 1
+					if ncbi in ncbi_silva_parent:
+						if ncbi_silva_parent[ncbi] != parentid:
+							ncbi_silva_parent[ncbi] = None
+					else:
+						ncbi_silva_parent[ncbi] = parentid
+						ncbi_sample_accession[ncbi] = accession
+						ncbi_name[ncbi] = path[len(path)-1]
+			else:
+				missing.append(accession)
 
 	print "Higher taxa: %d"%internal
 	print "Accession number to NCBI taxon mappings: %d successful, %d blocked, %d missing"%(acc_success, blocked, len(missing))

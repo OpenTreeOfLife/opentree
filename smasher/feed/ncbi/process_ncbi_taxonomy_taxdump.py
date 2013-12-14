@@ -2,7 +2,7 @@
 
 # Arguments:
 #	download - T or F - whether or not to download the tar.gz file from NCBI
-#	downloaddir - where to put the tar.gz and its contents
+#	downloaddir - where to find (or put) the tar.gz and its contents
 #	kill list file
 #	destination dir - where taxonomy.tsv etc. are to be put
 
@@ -13,7 +13,7 @@
 #  - add command line argument for directory in which to put ncbi
 #  - change skipids from list to dictionary for speed
 
-import sys,os
+import sys,os,time
 import os.path
 from collections import Counter
 
@@ -43,35 +43,50 @@ connecting these to there parents
 """
 
 if __name__ == "__main__":
-	if len(sys.argv) != 5:
-		print "python process_ncbi_taxonomy_taxdump.py {T|F} tmpdir skipids.file outdir"
-		sys.exit(0)
+	if len(sys.argv) != 6:
+		print "Usage: python process_ncbi_taxonomy_taxdump.py {T|F} tmpdir skipids.file outdir url"
+		sys.exit(1)
 	download = sys.argv[1]
 	downloaddir = sys.argv[2]	# e.g. feed/ncbi/tmp
-	nodesfile = downloaddir + "/nodes.dmp"
-	namesfile = downloaddir + "/names.dmp"
+	nodesfilename = downloaddir + "/nodes.dmp"
+	namesfilename = downloaddir + "/names.dmp"
 	skipfile = sys.argv[3]
 	taxdir = sys.argv[4]
+	url = sys.argv[5]
+
+	aboutfilename = taxdir+"/about.json"
+	aboutfile = open(aboutfilename,"w")
+	aboutfile.write('{ "prefix" "ncbi",\n')
+	aboutfile.write('  "prefixDefinition": "http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=",\n')
+	aboutfile.write('  "description": "NCBI Taxonomy",\n')
+	# Get file date from nodes.dmp in downloaddir
+	# os.path.getmtime(file)   => number of seconds since epoch
+	ncbitime = os.path.getmtime(nodesfilename)
+	tuple_time = time.gmtime(ncbitime)
+	iso_time = time.strftime("%Y-%m-%dT%H:%M:%S", tuple_time)
+	aboutfile.write('  "source": {"URL": "%s", "date": "%s"},\n'%(url, iso_time))
+	aboutfile.write('}\n')
+	aboutfile.close()
+
 	outfile = open(taxdir+"/taxonomy.tsv","w")
 	outfilesy = open(taxdir+"/synonyms.tsv","w")
 	if download.upper() == "T":
 		print("downloading taxonomy")
 		os.system("wget --output-document=" +
-				  downloaddir + "/taxdump.tar.gz" +
-				  " ftp://ftp.ncbi.nih.gov/pub/taxonomy/taxdump.tar.gz")
+				  downloaddir + "/taxdump.tar.gz " + url)
 		os.system("tar -C " +
 				  downloaddir +
 				  " -xzvf taxdump.tar.gz")
 
-	if os.path.isfile(nodesfile) == False:
-		print nodesfile + " is not present"
+	if os.path.isfile(nodesfilename) == False:
+		print nodesfilename + " is not present"
 		sys.exit(0)
-	if os.path.isfile(namesfile) == False:
-		print namesfile + " is not present"
+	if os.path.isfile(namesfilename) == False:
+		print namesfilename + " is not present"
 		sys.exit(0)
 
-	nodesf = open(nodesfile,"r")
-	namesf = open(namesfile,"r")
+	nodesf = open(nodesfilename,"r")
+	namesf = open(namesfilename,"r")
 
 	count = 0
 	pid = {} #key is the child id and the value is the parent
@@ -155,7 +170,7 @@ if __name__ == "__main__":
 		if c[i] > 1:
 			namesd.append(i)
 	ndoubles = []
-	namesf = open(namesfile,"r")
+	namesf = open(namesfilename,"r")
 	for i in namesf:
 		spls = i.strip().split("\t|") #IF YOU DO \T|\T THEN YOU DON'T GET THE NAME CLASS RIGHT BECAUSE IT IS "\T|"
 		gid = spls[0].strip()
