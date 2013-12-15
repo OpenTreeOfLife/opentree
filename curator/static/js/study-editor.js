@@ -583,6 +583,121 @@ function showSuccessMessage(msg) {
                .addClass('alert-success').slideDown();
 }
 
+function updateMappingStatus() {
+    // update mapping status+details based on the current state of things
+    var detailsHTML, showBatchApprove, showBatchReject, needsAttention;
+    
+    /* TODO: defaults assume nothing particularly interesting going on
+    detailsHTML = '';
+    showBatchApprove = false;
+    showBatchReject = true;
+    needsAttention = false;
+    */
+    var proposedMappingNeedsDecision = false;
+    for (var p in proposedOTUMappings()) {
+        // the presence of anything here means there are proposed mappings
+        proposedMappingNeedsDecision = true;
+    }
+
+    if (autoMappingInProgress() === true) {
+        // auto-mapping is ACTIVE (meaning we have work in hand)
+        detailsHTML = '<p'+'>Mapping in progress...<'+'/p>';
+        showBatchApprove = false;
+        showBatchReject = false;
+        needsAttention = false;
+    } else {
+        if (getNextUnmappedOTU()) {
+            // IF auto-mapping is PAUSED, but there's more to do on this page
+            detailsHTML = '<p'+'>Mapping paused. Please adjust mapping hints and click the '
+                         +'<strong>Start mapping</strong> button above to try again.<'+'/p>';
+            showBatchApprove = false;
+            showBatchReject = proposedMappingNeedsDecision;
+            needsAttention = proposedMappingNeedsDecision;
+        } else {
+            // auto-mapping is PAUSED and everything's been mapped
+            if (proposedMappingNeedsDecision) {
+                // there are proposed mappings awaiting a decision
+                detailsHTML = '<p'+'>All visible OTUs have been mapped. Use the '
+                        +'<span class="btn-group" style="margin: -2px 0;">'
+                        +' <button class="btn btn-mini disabled"><i class="icon-ok"></i></button>'
+                        +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
+                        +'</span>'
+                        +' buttons to approve or reject each suggested mapping, or'
+                        +' or the buttons below to approve or reject the suggestions for all visible OTUs.<'+'/p>'; 
+                showBatchApprove = true;
+                showBatchReject = true;
+                needsAttention = true;
+            } else {
+                // there are NO proposed mappings awaiting a decision
+                //
+                /* TODO: check for two possibilities here
+                if () {
+                    // we can add more by including 'All trees'
+                    detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
+                            +'Mapping is suspended because all OTUs in this '
+                            +'study\'s preferred trees have approved labels already. To continue, '
+                            +'reject some mapped labels with the '
+                            +'<span class="btn-group" style="margin: -2px 0;">'
+                            +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
+                            +'</span> '
+                            +'button or change the filter to <strong>In all trees</strong>.<'+'/p>'; 
+                    showBatchApprove = false;
+                    showBatchReject = false;
+                    needsAttention = true;
+                } else {
+                    // we're truly done with mapping (in all trees)
+                    detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
+                            +'Mapping is suspended because all OTUs in this study have approved '
+                            +'labels already.. To continue, use the '
+                            +'<span class="btn-group" style="margin: -2px 0;">'
+                            +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
+                            +'</span>'
+                            +' buttons to reject any label at left.<'+'/p>'; 
+                    showBatchApprove = false;
+                    showBatchReject = false;
+                    needsAttention = true;
+                }
+                */
+
+                /* TODO: replace this stuff with if/else block above 
+                 */
+                detailsHTML = '<p'+'>Mapping is suspended because all visible OTUs have approved '
+                        +' labels already. To continue, use the '
+                        +'<span class="btn-group" style="margin: -2px 0;">'
+                        +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
+                        +'</span>'
+                        +' buttons to reject any label at left, or change the filter and sort options'
+                        +' to bring unmapped OTUs into view.<'+'/p>'; 
+                showBatchApprove = false;
+                showBatchReject = false;
+                needsAttention = true;
+            }
+        }
+    }
+
+    $('.mapping-details').html(detailsHTML);
+    if (showBatchApprove || showBatchReject) {
+        $('.mapping-batch-operations').show();
+        if (showBatchApprove) {
+            $('.mapping-batch-operations #batch-approve').show();
+        } else {
+            $('.mapping-batch-operations #batch-approve').hide();
+        }
+        if (showBatchReject) {
+            $('.mapping-batch-operations #batch-reject').show();
+        } else {
+            $('.mapping-batch-operations #batch-reject').hide();
+        }
+    } else {
+        $('.mapping-batch-operations').hide();
+    }
+    if (needsAttention) {
+        $('#mapping-status-panel').addClass('mapping-needs-attention');
+    } else {
+        $('#mapping-status-panel').removeClass('mapping-needs-attention');
+    }
+}
+
 function validateFormData() {
     // return success (t/f?), or a structure with validation errors
     // TODO: or use more typical jQuery machinery, or validation plugin?
@@ -2670,6 +2785,7 @@ function editOTULabel(otu) {
         failedMappingOTUs.remove(OTUid);
         // nudge to update OTU list immediately
         bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+        nudgeAutoMapping();
     });
     if (editedOTULabelSubscriptions[ OTUid ]) {
         // clear any errant (old) subscriber for this OTU
@@ -2697,6 +2813,7 @@ function revertOTULabel(otu) {
     }
     // this should make the editor disappear and revert its adjusted label
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+    nudgeAutoMapping();
 }
 
 function proposeOTULabel(OTUid, mappingInfo) {
@@ -2717,11 +2834,9 @@ function approveProposedOTULabel(otu) {
     // undoes 'editOTULabel', releasing a label to use shared hints
     var OTUid = otu['@id']();
     var approvedMapping = proposedOTUMappings()[ OTUid ]();
+    mapOTUToTaxon( OTUid, approvedMapping );
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
-
-    // this should make the editor disappear and revert its adjusted label
-    mapOTUToTaxon( OTUid, approvedMapping );
 }
 function rejectProposedOTULabel(otu) {
     // undoes 'proposeOTULabel', clearing its value
@@ -2730,12 +2845,44 @@ function rejectProposedOTULabel(otu) {
     proposedOTUMappings.valueHasMutated();
 }
 
+function getAllVisibleProposedMappings() {
+    // gather any proposed mappings (IDs) that are visible on this page
+    var visibleProposedMappings = [];
+    var visibleOTUs = viewModel.filteredOTUs().pagedItems();
+    $.each( visibleOTUs, function (i, otu) {
+        if (proposedMapping(otu)) {
+            // we have a proposed mapping for this OTU!
+            visibleProposedMappings.push( otu['@id']() );
+        }
+    });
+    return visibleProposedMappings; // return a series of IDs
+}
+function approveAllVisibleMappings() {
+    $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
+        var approvedMapping = proposedOTUMappings()[ OTUid ]();
+        delete proposedOTUMappings()[ OTUid ];
+        mapOTUToTaxon( OTUid, approvedMapping );
+    });
+    proposedOTUMappings.valueHasMutated();
+    startAutoMapping();
+}
+function rejectAllVisibleMappings() {
+    $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
+        delete proposedOTUMappings()[ OTUid ];
+    });
+    proposedOTUMappings.valueHasMutated();
+    stopAutoMapping();
+}
+
 // this should be cleared whenever something changes in mapping hints
 function clearFailedOTUList() {
     failedMappingOTUs.removeAll();
     // nudge to update OTU list immediately
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
-    // should we restart auto-mapping?
+    nudgeAutoMapping();
+}
+function nudgeAutoMapping() {
+    // restart auto-mapping, if enabled
     if (autoMappingInProgress()) {
         if (currentlyMappingOTUs.length === 0) {
             // looks like we ran out of steam.. try again!
@@ -2755,12 +2902,14 @@ function startAutoMapping() {
     // TODO: what if there was a pending operation when we stopped?
     autoMappingInProgress( true );
     requestTaxonMapping();  // try to grab the first unmapped label in view
+    updateMappingStatus();
 }
 function stopAutoMapping() {
     // TODO: what if there's an operation in progress? get its result, or drop it?
     autoMappingInProgress( false );
     currentlyMappingOTUs.removeAll();
     recentMappingSpeedBarClass( 'progress progress-info' );   // inactive blue bar
+    updateMappingStatus();
 }
 
 function updateMappingSpeed( newElapsedTime ) {
@@ -2802,13 +2951,9 @@ function updateMappingSpeed( newElapsedTime ) {
 }
 
 
-
-function requestTaxonMapping() {
-    // set spinner, make request, handle response, and daisy-chain the next request
-    // TODO: send one at a time? or in a batch (5 items)?
-    
+function getNextUnmappedOTU() {
+    var unmappedOTU = null;
     var visibleOTUs = viewModel.filteredOTUs().pagedItems();
-    var otuToMap = null;
     $.each( visibleOTUs, function (i, otu) {
         var ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
         var proposedMappingInfo = proposedMapping(otu);
@@ -2816,16 +2961,26 @@ function requestTaxonMapping() {
             // this is an unmapped OTU!
             if (failedMappingOTUs.indexOf(otu['@id']()) === -1) {
                 // it hasn't failed mapping (at least not yet)
-                otuToMap = otu;
+                unmappedOTU = otu;
                 return false;
             }
         }
     });
+    return unmappedOTU;
+}
+
+
+function requestTaxonMapping() {
+    // set spinner, make request, handle response, and daisy-chain the next request
+    // TODO: send one at a time? or in a batch (5 items)?
+    
+    var otuToMap = getNextUnmappedOTU();
     if (!otuToMap) {
-        showSuccessMessage('All visible OTUs have been mapped.');
+        stopAutoMapping();
         return false;
     }
 
+    updateMappingStatus();
     var otuID = otuToMap['@id']();
     var originalLabel = getMetaTagAccessorByAtProperty(otuToMap.meta, 'ot:originalLabel')();
     // use the manually edited label (if any), or the hint-adjusted version
