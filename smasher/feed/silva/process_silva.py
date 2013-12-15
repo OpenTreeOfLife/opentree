@@ -148,8 +148,10 @@ def processSilva(pathdict, indir, outdir):
 	internal = 0
 	acc_success = 0
 
+	uids = [uid for (z, uid) in sorted([(len(uid), uid) for uid in pathdict.keys()])]
+
     # uid is a unique sequence id e.g. A58083.1.1474
-	for uid in sorted(pathdict.keys()):
+	for uid in uids:
 		parentid = "0"
 		path = pathdict[uid]
 		accession = string.split(uid,".",1)[0]

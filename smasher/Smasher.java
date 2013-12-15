@@ -55,7 +55,8 @@ public class Smasher {
 					}
 
 					else if (argv[i].equals("--ids")) {
-						idsource = getSourceTaxonomy(argv[++i]);
+						// To smush or not to smush?
+						idsource = getSourceTaxonomy(argv[++i], false);
 						UnionTaxonomy union = tax.promote(); tax = union;
 						union.assignIds(idsource);
 					}
@@ -132,7 +133,12 @@ public class Smasher {
 	}
 
 	static SourceTaxonomy getSourceTaxonomy(String designator) throws IOException {
+		return getSourceTaxonomy(designator, false);
+	}
+
+	static SourceTaxonomy getSourceTaxonomy(String designator, boolean smushp) throws IOException {
 		SourceTaxonomy tax = new SourceTaxonomy();
+		tax.smushp = smushp;
 		getTaxonomy(tax, designator);
 		return tax;
 	}
@@ -211,7 +217,7 @@ abstract class Taxonomy implements Iterable<Node> {
 	Integer preottolcolumn = null;
 	JSONObject metadata = null;
 
-	boolean siblingHomonymsOK = false;
+	boolean smushp = false;
 
 	Taxonomy() { }
 
@@ -399,6 +405,9 @@ abstract class Taxonomy implements Iterable<Node> {
 				String id = parts[0];
 				String name = parts[2];
 				String rank = parts[3];
+				if (rank.length() == 0 || rank.equals("node.rank"))
+					rank = null;
+
 				String parentId = parts[1];
 				if (parentId.equals("null")) parentId = "";  // Index Fungorum
 				if (parentId.equals(id)) {
@@ -444,33 +453,36 @@ abstract class Taxonomy implements Iterable<Node> {
 					int c = other.id.length() - node.id.length();
 					if ((c < 0 || (c == 0 && other.id.compareTo(node.id) < 0)) &&
 						node.parent == other.parent &&
-						node.rank.equals(other.rank)) {
+						(node.rank == null ?
+						 other.rank == null :
+						 node.rank.equals(other.rank))) {
 
 						// node and other are sibling homonyms.
 						// deprecate node, replace it with other.
 
 						if (++siblingHomonymCount < 10)
-							System.err.println((siblingHomonymsOK ?
-												"Tolerating" :
-												"Smushing") +
+							System.err.println((smushp ?
+												"Smushing" :
+												"Tolerating") +
 											   " sibling homonym " + node.id +
 											   " => " + other.id +
 											   ", name = " + node.name);
 						else if (siblingHomonymCount == 10)
 							System.err.println("...");
 
-						if (!siblingHomonymsOK) {
+						if (smushp) {
 							// There might be references to this id from the synonyms file
 							final Taxonomy tax = this;
-							todo.add(new Runnable() {
-									public void run() {
+							//todo.add(new Runnable() {
+							//		public void run() {
 										if (node.children != null)
 											for (Node child : new ArrayList<Node>(node.children))
 												// might create new sibling homonyms...
 												child.changeParent(other);
 										node.prune();
 										tax.idIndex.put(node.id, other);
-									}});
+										other.addSource(node);
+							//		}});
 						}
 						// No need to keep searching for appropriate homonym, node
 						// has been flushed, try next homonym in the set.
@@ -489,8 +501,6 @@ abstract class Taxonomy implements Iterable<Node> {
 				node.setName("undefined:" + node.id);
 			}
 		
-			if (node.rank == null || node.rank.length() == 0)
-				node.rank = "no rank";
 			// if (node.parent == null && !roots.contains(node)) ...
 
 			if (node.parent != null) {
@@ -537,10 +547,10 @@ abstract class Taxonomy implements Iterable<Node> {
 				this.tag = (String)prefix;
 			}
 
-			Object sibhomsok = ((Map)obj).get("siblingHomonymsOK");
-			if (sibhomsok != null) {
-				System.out.println("siblingHomonymsOK is " + sibhomsok);
-				this.siblingHomonymsOK = sibhomsok.equals("yes");
+			Object smushp = ((Map)obj).get("smush");
+			if (smushp != null) {
+				System.out.println("smushp is " + smushp);
+				this.smushp = smushp.equals("yes");
 			}
 
 		} catch (ParseException e) {
@@ -725,11 +735,13 @@ abstract class Taxonomy implements Iterable<Node> {
 	// could happen when combinings taxonomies.
 
 	static int analyzeRankConflicts(Node node) {
-		if (node.rank == null) node.rank = "no rank"; //kludge
-		Integer m = ranks.get(node.rank);    // no rank = -1
-		if (m == null) {
-			System.err.println("Unrecognized rank: " + node);
-			m = ranks.get("no rank");
+		Integer m = -1;			// "no rank" = -1
+		if (node.rank != null) {
+			m = ranks.get(node.rank);
+			if (m == null) {
+				System.err.println("Unrecognized rank: " + node);
+				m = -1;
+			}
 		}
 		int myrank = m;
 		node.rankAsInt = myrank;
@@ -1130,7 +1142,7 @@ abstract class Taxonomy implements Iterable<Node> {
 				}
 				for (Node child : children)
 					node.addChild(child);
-				node.rank = (children.size() > 0) ? "no rank" : "species";
+				node.rank = (children.size() > 0) ? null : "species";
 				return node;
 			} else
 				return null;
@@ -1482,7 +1494,6 @@ class UnionTaxonomy extends Taxonomy {
 	void assignIds(SourceTaxonomy idsource) {
 		this.idsource = idsource;
 		// idsource.tag = "ids";
-		idsource.siblingHomonymsOK = true;
 		idsource.which = this.sources.size();
 		idsource.mapInto(this, Criterion.idCriteria);
 
@@ -1505,8 +1516,8 @@ class UnionTaxonomy extends Taxonomy {
 		}
 
 		// Phase 2: give new ids to union nodes that didn't get them above.
-		long maxid = this.maxid();
 		long sourcemax = idsource.maxid();
+		long maxid = this.maxid();
 		if (sourcemax > maxid) maxid = sourcemax;
 		System.out.println("| Highest id before: " + maxid);
 		for (Node node : this)	 // this = union, idsource = ottol
@@ -1946,8 +1957,8 @@ class Node {
 		this.setName(parts[2]);
 		if (parts.length >= 4) {
 			this.rank = parts[3];
-			if (this.rank.length() == 0) this.rank = "no rank";
-			if (Taxonomy.ranks.get(this.rank) == null)
+			if (this.rank.length() == 0) this.rank = null;
+			else if (Taxonomy.ranks.get(this.rank) == null)
 				System.err.println("!! Unrecognized rank: " + this.rank + " " + this.id);
 		}
 		// TBD: map source+sourceId when present (deprecated),
@@ -1982,11 +1993,8 @@ class Node {
 		String[] ids = commaPattern.split(info);
 		if (ids.length > 0) {
 			this.sourceIds = new ArrayList(ids.length);
-			for (String qid : ids) {
-				QualifiedId newqid = new QualifiedId(qid);
-				if (!this.sourceIds.contains(newqid))
-					this.sourceIds.add(newqid);
-			}
+			for (String qid : ids)
+				this.addSourceId(new QualifiedId(qid));
 		}
 	}
 
@@ -2105,7 +2113,7 @@ class Node {
 		this.mapped = unode;
 
 		if (unode.name == null) unode.setName(this.name);
-		if (unode.rank == null || unode.rank.equals("no rank"))
+		if (unode.rank == null)
 			unode.rank = this.rank; // !?
 		unode.comapped = this;
 
@@ -2152,16 +2160,19 @@ class Node {
 			this.addComment(comment + "(" + name + ")");
 	}
 
-	void addSource(Node source) {
-		// Temporarily maintain the two lists in parallel
+	void addSourceId(QualifiedId qid) {
 		if (this.sourceIds == null)
 			this.sourceIds = new ArrayList<QualifiedId>(1);
-		this.sourceIds.add(source.getQualifiedId());
+		if (!this.sourceIds.contains(qid))
+			this.sourceIds.add(qid);
+	}
+
+	void addSource(Node source) {
+		addSourceId(source.getQualifiedId());
 		// Accumulate ...
 		if (source.sourceIds != null)
 			for (QualifiedId qid : source.sourceIds)
-				if (!this.sourceIds.contains(qid))
-					this.sourceIds.add(qid);
+				addSourceId(qid);
 	}
 
 	QualifiedId getQualifiedId() {
@@ -2819,9 +2830,9 @@ class Node {
 					 i != null &&
 					 !this.name.endsWith(" sp."))) {
 					String urank = "";
-					if (!this.rank.equals("no rank")) urank = this.rank + " ";
+					if (this.rank != null) urank = this.rank + " ";
 					String irank = "";
-					if (!i.rank.equals("no rank")) irank = i.rank + " ";
+					if (i.rank != null) irank = i.rank + " ";
 					return this.name + " (" + urank + "in " + irank + i.name + ")";
 				} else
 					return this.name + " (" + this.getSourceIdsString() + ")";
@@ -3185,7 +3196,9 @@ abstract class Criterion {
 		new Criterion() {
 			public String toString() { return "same-rank"; }
 			Answer assess(Node x, Node y) {
-				if (x.rank.equals(y.rank))
+				if ((x == null ?
+					 x == y :
+					 x.rank.equals(y.rank)))
 					// Evidence of difference, but not good enough to overturn name evidence
 					return Answer.weakYes(x, y, "same-rank", x.rank);
 				else
