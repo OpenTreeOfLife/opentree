@@ -629,12 +629,45 @@ function updateMappingStatus() {
                 needsAttention = true;
             } else {
                 // there are NO proposed mappings awaiting a decision
-                detailsHTML = '<p'+'>All visible OTUs have been mapped. Use the '
+                //
+                /* TODO: check for two possibilities here
+                if () {
+                    // we can add more by including 'All trees'
+                    detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
+                            +'Mapping is suspended because all OTUs in this '
+                            +'study\'s preferred trees have approved labels already. To continue, '
+                            +'reject some mapped labels with the '
+                            +'<span class="btn-group" style="margin: -2px 0;">'
+                            +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
+                            +'</span> '
+                            +'button or change the filter to <strong>In all trees</strong>.<'+'/p>'; 
+                    showBatchApprove = false;
+                    showBatchReject = false;
+                    needsAttention = true;
+                } else {
+                    // we're truly done with mapping (in all trees)
+                    detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
+                            +'Mapping is suspended because all OTUs in this study have approved '
+                            +'labels already.. To continue, use the '
+                            +'<span class="btn-group" style="margin: -2px 0;">'
+                            +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
+                            +'</span>'
+                            +' buttons to reject any label at left.<'+'/p>'; 
+                    showBatchApprove = false;
+                    showBatchReject = false;
+                    needsAttention = true;
+                }
+                */
+
+                /* TODO: replace this stuff with if/else block above 
+                 */
+                detailsHTML = '<p'+'>Mapping is suspended because all visible OTUs have approved '
+                        +' labels already. To continue, use the '
                         +'<span class="btn-group" style="margin: -2px 0;">'
                         +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
                         +'</span>'
                         +' buttons to reject any label at left, or change the filter and sort options'
-                        +' at left to bring unmapped OTUs into view.<'+'/p>'; 
+                        +' to bring unmapped OTUs into view.<'+'/p>'; 
                 showBatchApprove = false;
                 showBatchReject = false;
                 needsAttention = true;
