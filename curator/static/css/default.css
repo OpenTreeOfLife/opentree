@@ -533,3 +533,14 @@ tr .row-controls-ghosted {
 tr:hover .row-controls-ghosted {
     opacity: 1.0;
 }
+.mapping-needs-attention {
+    background-color: #ddf5ff;
+    border-color: #bbddee;
+}
+.mapping-details p {
+    margin: 0.75em 0 0.75em;
+}
+.mapping-batch-operations {
+    margin: 0.75em 0 0;
+    overflow: hidden;
+}
