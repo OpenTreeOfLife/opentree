@@ -31,7 +31,12 @@ routes_onerror=[
   # ('curator/*', '/opentree/static/fail.html'),
   # ('*/404', '/opentree/static/cantfind.html'),
   # ('opentree/*', '/opentree/static/fail.html'),
-  ('*/*', '/opentree/default/error'),
+  ('curator/*', '/curator/default/error'),
+  # this catch-all captures errors in 'curator', so we need to spell out all apps below :-/
+  # ('*/*', '/opentree/default/error'),
+  ('opentree/*', '/opentree/default/error'),
+  ('api/*', '/opentree/default/error'),
+  ('admin/*', '/opentree/default/error'),
 ]
 
 # Specify log level for rewrite's debug logging

@@ -76,7 +76,10 @@ function docommand {
 	    pushstuff $*
     	    ;;
 	push-web2py)
-	    push-web2py $*
+	    pushweb2py $*
+	    ;;
+	push-api)
+	    pushapi $*
 	    ;;
 	push-db)
 	    pushdb $*
@@ -111,6 +114,11 @@ function pushstuff {
       sudo cp -p "~$OT_USER/setup/apache-config" /etc/apache2/sites-available/opentree
     echo "Restarting apache httpd..."
     ${SSH} "$ADMIN@$OPENTREE_HOST" sudo apache2ctl graceful
+}
+
+function pushapi {
+    sync_system
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" "${NEO4JHOST}" $CONTROLLER
 }
 
 function pushdb {

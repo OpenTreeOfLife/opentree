@@ -59,64 +59,50 @@ EOF
 
 rm fragment.tmp
 
-# ---------- THE WEB APPLICATIONS ----------
+# ---------- BROWSER & CURATOR ----------
 # Set up web2py apps as directed in the README.md file
 
 opentree=repo/opentree
-api=repo/api.opentreeoflife.org
 
 # Consider cloning a designated tag, using git clone --branch <tag>
 
 echo "...fetching opentree repo (main webapp and curator)..."
 git_refresh OpenTreeOfLife opentree $BRANCH || true
-echo "...fetching api.opentreeoflife.org repo..."
-git_refresh OpenTreeOfLife api.opentreeoflife.org $BRANCH || true
 
 # Modify the requirements list
-# numpy etc. have all kinds of dependency problems.
 cp $opentree/requirements.txt requirements-opentree.txt.save
 if grep --invert-match "distribute" \
       $opentree/requirements.txt >requirements.txt.new ; then
     mv requirements.txt.new $opentree/requirements.txt
 fi
-cp $api/requirements.txt requirements-api.txt.save
-if grep --invert-match "distribute" \
-      $api/requirements.txt >requirements.txt.new ; then
-    mv requirements.txt.new $api/requirements.txt
-fi
 
-# xslt
-# svnversion ?
 (cd $opentree; pip install -r requirements.txt)
-(cd $api; pip install -r requirements.txt)
 
-cp -p $opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
 cp -p $opentree/SITE.routes.py web2py/routes.py
 
 (cd web2py/applications; \
     ln -sf ../../repo/opentree/webapp ./opentree; \
-    ln -sf ../../repo/api.opentreeoflife.org ./api; \
     ln -sf ../../repo/opentree/curator ./)
 
-# File pushed here using rsync, see push.sh
+# ---------- WEB2PY CONFIGURATION ----------
+
+# Config file pushed here using rsync, see push.sh
 configfile=web2py/applications/opentree/private/config
 
 cp -p setup/webapp-config $configfile
 
 # The web2py apps need to know their own host names, for
 # authentication purposes.  'hostname' doesn't work on EC2 instances,
-# so it has to be passed in.
+# so it has to be passed in as a parameter.
 
 changed=no
-
 sed "s+hostdomain = .*+hostdomain = $OPENTREE_HOST+" < $configfile > tmp.tmp
 if ! cmp -s tmp.tmp $configfile; then
     mv tmp.tmp $configfile
     changed=yes
 fi
 
-# There will be additional edits to the config file if a neo4j
-# database gets installed locally.
+cp -p $opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
 
 # Modify the web2py config file to point to the host that's running
 # treemachine and taxomachine.
@@ -137,5 +123,7 @@ fi
 if [ $changed = yes ]; then
     echo "Apache / web2py restart required"
 fi
+
+log "Browser/curator installed"
 
 # Apache needs to be restarted.

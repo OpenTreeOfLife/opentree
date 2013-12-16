@@ -16,11 +16,21 @@ The web2py applications don't need much memory, so a 'micro' or 'small' server i
 How to deploy a new server
 --------------------------
 
-Got to Amazon or some other cloud provider, and reserve an instance running Debian GNU/Linux.
-I've been using m1.small servers when running without big neo4j instances, m2.xlarge for those running with.
+Got to Amazon or some other cloud provider, and reserve an instance
+running Debian GNU/Linux.  We've been using m1.small servers when
+running without big neo4j instances, m2.xlarge for those running with.
 
 Put the ssh private key somewhere, e.g. 'opentree.pem'.  
 Set its file permissions to 600.
+
+Currently there is a one-time manual step in setting up the doc store
+API on a new server: copying the Github SSH deployment keys which
+allows the OpenTree API to push changes to Github.
+
+    scp -p opentree opentree.pub opentree@server:~/.ssh
+
+Currently the ```opentree``` private key and ```opentree.pub``` public key can
+be found on files.opentreeoflife.org .
 
 Create one configuration file for each server.  A configuration is just a shell script that sets some variables.
 

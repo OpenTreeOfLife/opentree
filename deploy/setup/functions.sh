@@ -6,7 +6,8 @@ set -e
 # Utilities.
 # Source this file from another bash script.
 
-if true; then
+if false; then
+    # DOES NOT WORK ON UBUNTU, but preferred on Debian.
     javalink=`readlink /etc/alternatives/java`
     # => /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java
     javalink=`dirname $javalink`
@@ -15,10 +16,11 @@ if true; then
     # => /usr/lib/jvm/java-7-openjdk-amd64/jre
     javalink=`dirname $javalink`
     # => /usr/lib/jvm/java-7-openjdk-amd64
-    export JAVA_HOME=$javalink
 else
-    export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
+    javalink=/usr/lib/jvm/java-7-openjdk-amd64
 fi
+
+export JAVA_HOME=$javalink
 
 # Remember the host name
 
@@ -63,6 +65,7 @@ function git_refresh() {
     if [ ! -d $repo_dir ] ; then
         (cd $repos_dir; \
          git clone https://github.com/$guser/$reponame.git)
+	log Clone: $reponame `cd $repo_dir; git log | head -1`
     else
         before=`cd $repo_dir; git log | head -1`
         # What if branch doesn't exist locally, or doesn't track origin branch?
@@ -74,6 +77,7 @@ function git_refresh() {
             changed=1
         else
             echo "Repository $reponame has changed"
+	    log Checkout: $reponame `cd $repo_dir; git log | head -1`
         fi
     fi
     return $changed

@@ -1,6 +1,9 @@
 {{# Pivot (in many places) based on whether the user is an editor (curator) or
 # someone else looking at the study
-viewOrEdit = auth.user and 'EDIT' or 'VIEW'
+#
+# userCanEdit = True if the user is authorized to edit this study
+# viewOrEdit  = the function of this page ('EDIT' or 'VIEW'), regardless of
+#               user's permissions
 
 response.title = (viewOrEdit == 'EDIT') and "Edit Study" or "View Study"
 }}
@@ -170,13 +173,18 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
           <button class="btn btn"
             onclick="if (validateFormData()) saveFormDataToStudyJSON(); return false;">Save Study</button>
-          <button class="btn btn-link">Cancel</button>
+          <a class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
           <button class="btn btn-danger pull-right"
             onclick="confirm('Are you sure you want to delete this study?'); return false;">Delete Study</button>
         {{ else: }} 
           <a class="btn btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to study list</a>
-          <button class="btn btn-info pull-right"
-            onclick="confirm('Are you sure you want to edit this study?'); return false;">Login to Edit Study</button>
+         {{ if userCanEdit: }}
+          <a class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
+            onclick="return confirm('Are you sure you want to edit this study?');">Edit Study</a>
+         {{ else: }}
+          <a class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
+            onclick="return confirm('Are you sure you want to edit this study?');">Login to Edit Study</a>
+         {{ pass }}
         {{ pass }}
     </div>
   </div>
@@ -204,9 +212,9 @@ body {
                 <label class="control-label" for="ot_studyPublicationReference">Publication reference</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <textarea data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublicationReference'), valueUpdate: 'afterkeydown'" id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder=""></textarea>
+                  <textarea data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublicationReference'), valueUpdate: 'afterkeydown'" id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder=""></textarea>
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublicationReference')"></p>
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublicationReference')"></p>
                 {{ pass }}
                 </div>
               </div>
@@ -214,9 +222,9 @@ body {
                 <label class="control-label" for="ot_studyPublication">Publication</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublication'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
+                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublication'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value"><a target="_blank" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublication'), attr: { href: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyPublication') }"></a></p>
+                  <p class="static-form-value"><a target="_blank" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublication'), attr: { href: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublication') }"></a></p>
                 {{ pass }}
                 </div>
               </div>
@@ -224,9 +232,9 @@ body {
                 <label class="control-label" for="ot_studyYear">Study Year</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyYear'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyYear" class="input-mini" placeholder="">
+                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyYear'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyYear" class="input-mini" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:studyYear')"></p>
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyYear')"></p>
                 {{ pass }}
                 </div>
               </div>
@@ -234,16 +242,16 @@ body {
                 <label class="control-label" for="ot_focalClade">Focal clade</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:focalClade'), valueUpdate: 'afterkeydown'" type="text" id="ot_focalClade" class="input-small" placeholder="">
+                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:focalClade'), valueUpdate: 'afterkeydown'" type="text" id="ot_focalClade" class="input-small" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:focalClade')"></p>
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:focalClade')"></p>
                 {{ pass }}
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_curatorName">Submitted by</label>
                 <div class="controls">
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta(), 'ot:curatorName')"></p>
+                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:curatorName')"></p>
                 </div>
               </div>
 
@@ -285,7 +293,8 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or ingroup clade">
+                    <input type="text" class="search-query" placeholder="Filter by name or ingroup clade"
+                           data-bind="value: viewModel.listFilters.TREES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
               </div>
@@ -305,10 +314,10 @@ body {
                         <th>Preferred</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: nexml.trees.tree.pagedItems(), as: 'tree' }">
+                  <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
-                        <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label'] || 'Untitled ('+ tree['@about']() +')'">?</a></td><!-- TODO: click to view/edit tree -->
-                        <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta(), 'ot:curatedType') || 'Unspecified'">TYPE?</td>
+                        <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label']">?</a></td><!-- TODO: click to view/edit tree -->
+                        <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta, 'ot:curatedType') || 'Unspecified'">TYPE?</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree)"></td>
                         <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
                         <td data-bind="html: getRootedDescriptionForTree(tree)">?/?? (?%)</td>
@@ -341,21 +350,23 @@ body {
                 -->
                 </table>
 
-                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: nexml.trees.tree().length &gt; nexml.trees.tree.pagedItems().length">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredTrees()().length &gt; viewModel.filteredTrees().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredTrees().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredTrees().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
-                    <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">0</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredTrees() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredTrees().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredTrees().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredTrees().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredTrees().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
+
             </div>
 
            </div><!-- end of main column... -->
@@ -366,6 +377,7 @@ body {
             Clicking a tree name should open a modal tree view/editor (D3?).
             </p>
 
+        {{ if viewOrEdit == 'EDIT': }}
             <div class="well">
                 <h4 style="margin-top: 0;">Add a tree to this study</h4>
                 <form style="margin: 0;">
@@ -412,6 +424,8 @@ body {
                  </fieldset>
                 </form>
             </div>
+        {{ pass }}
+
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
@@ -423,7 +437,8 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or type">
+                    <input type="text" class="search-query" placeholder="Filter by name or type"
+                           data-bind="value: viewModel.listFilters.FILES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
               </div>
@@ -436,7 +451,7 @@ body {
                         <th>Size</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: getSupportingFiles().pagedItems(), as: 'file' }">
+                  <tbody data-bind="foreach: { data: viewModel.filteredFiles().pagedItems(), as: 'file' }">
                     <tr>
                         <td>
                             <a href="#" target="_blank" data-bind="text: file.filename || '?', attr: { href: file.url || '#' }">
@@ -449,21 +464,23 @@ body {
                   </tbody>
                 </table>
 
-                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: getSupportingFiles()().length &gt; getSupportingFiles().pagedItems().length">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredFiles()().length &gt; viewModel.filteredFiles().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !getSupportingFiles().prev.enabled() }" class="disabled">
-                        <a href="#" onclick="getSupportingFiles().prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredFiles().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredFiles().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( getSupportingFiles() ) -->
-                    <li data-bind="css: { 'active': (getSupportingFiles().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="getSupportingFiles().goToPage(parseInt($(this).text())); return false;">0</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredFiles() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredFiles().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredFiles().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !getSupportingFiles().next.enabled() }" class="disabled">
-                        <a href="#" onclick="getSupportingFiles().next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredFiles().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredFiles().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
+
             </div>
 
            </div><!-- end of main column... -->
@@ -472,6 +489,7 @@ body {
             [TODO] Here's some text about files in a study. Plus tools for
             importing/adding new files. What about bulk imports?
             </p>
+        {{ if viewOrEdit == 'EDIT': }}
             <div class="well Xwell-large">
                 <h4 style="margin-top: 0;">Add a file to this study</h4>
                 <form style="margin: 0;">
@@ -505,6 +523,7 @@ body {
                  </fieldset>
                 </form>
             </div>
+        {{ pass }}
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
@@ -516,31 +535,33 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by original or mapped label">
+                    <input type="text" class="search-query" placeholder="Filter by original or mapped label"
+                           data-bind="value: viewModel.listFilters.OTUS.match, valueUpdate: 'afterkeydown'">
                 </form>
                 <ul class="nav" style="padding-left: 1em;">
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                          In preferred trees
-                          <b class="caret"></b>
+                        <a href="#" class="dropdown-toggle"
+                            data-toggle="dropdown">
+                            <span data-bind="text: viewModel.listFilters.OTUS.scope">SCOPE</span>
+                            <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="#">In all trees</a></li>
-                            <li><a href="#">In preferred trees</a></li>
-                            <li><a href="#">In non-preferred trees</a></li>
+                        <ul class="dropdown-menu" data-bind="foreach: ['In all trees', 'In preferred trees', 'In non-preferred trees']">
+                            <li data-bind="css: {'disabled': viewModel.listFilters.OTUS.scope() == $data }">
+                                <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.OTUS.scope($data); }">SCOPE</a>
+                            </li>
                         </ul>
                     </li>
                     <!--<li class="divider-vertical"></li>-->
                     <li class="dropdown">
-                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                          Unmapped OTUs first
-                          <b class="caret"></b>
+                        <a href="#" class="dropdown-toggle"
+                            data-toggle="dropdown">
+                            <span data-bind="text: viewModel.listFilters.OTUS.order">SORT</span>
+                            <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu">
-                            <li><a href="#">Unmapped OTUs first</a></li>
-                            <li><a href="#">Mapped OTUs first</a></li>
-                            <li><a href="#">Original label (A-Z)</a></li>
-                            <li><a href="#">Original label (Z-A)</a></li>
+                        <ul class="dropdown-menu" data-bind="foreach: ['Unmapped OTUs first', 'Mapped OTUs first', 'Original label (A-Z)', 'Original label (Z-A)']">
+                            <li data-bind="css: {'disabled': viewModel.listFilters.OTUS.order() == $data }">
+                                <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.OTUS.order($data); }">SORT</a>
+                            </li>
                         </ul>
                     </li>
                 </ul>
@@ -552,27 +573,35 @@ body {
                   <thead>
                     <tr>
                         <th width="30%">Original label</th>
+                      {{ if viewOrEdit == 'EDIT': }}
                         <th width="30%">Modified for mapping</th>
                         <th width="5%">&nbsp;</th>
+                      {{ pass }}
                         <th width="35%">Taxon label in OTT</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: nexml.otus.otu.pagedItems(), as: 'otu' }">
+                  <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
-                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel')">ORIGINAL?</td>
+                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')">ORIGINAL?</td>
+                      {{ if viewOrEdit == 'EDIT': }}
                          <!-- ko if: (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
-                            <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta(), 'ot:originalLabel'))">WORKING?</em>
+                            <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')), 
+                                           style: { 'color' : (otu['@label']() === '' && !proposedMapping(otu))?  '' : 'silver' }"
+                               >WORKING?</em>
                         </td>
                         <td>
+                          <!-- ko if: otu['@label']() === '' && !proposedMapping(otu) -->
                             <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel">
                                 <i class="icon-edit"></i>
                             </button>
+                          <!-- /ko -->
                         </td>
                          <!-- /ko -->
                          <!-- ko if: (bogusEditedLabelCounter() > 0)  && editedLabelAccessor(otu) != null --> 
                         <td>
-                            <input type="text" style="height: 14px; margin: 0; width: 97%;" data-bind="value: editedLabelAccessor(otu)">
+                            <input type="text" style="height: 14px; margin:
+                            0; width: 97%;" data-bind="value: editedLabelAccessor(otu)">
                         </td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel">
@@ -580,6 +609,7 @@ body {
                             </button>
                         </td>
                          <!-- /ko -->
+                      {{ pass }}
                         <td>
                          <!-- ko if: currentlyMappingOTUs.indexOf(otu['@id']()) !== -1 -->
                             <strong style="color: red;"><em>...mapping now...</em></strong>
@@ -589,33 +619,49 @@ body {
                          <!-- /ko -->
                          <!-- ko if: (currentlyMappingOTUs.indexOf(otu['@id']()) === -1) && 
                                      (failedMappingOTUs.indexOf(otu['@id']()) === -1) -->
-                            <div class="btn-group pull-right row-controls-ghosted">
-                                <button class="btn btn-mini">
+                      {{ if viewOrEdit == 'EDIT': }}
+                          <!-- ko if: proposedMapping(otu) -->
+                            <div class="btn-group pull-right">
+                                <button class="btn btn-mini" data-bind="click: approveProposedOTULabel">
                                     <i class="icon-ok"></i>
                                 </button>
+                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel">
+                                    <i class="icon-remove"></i>
+                                </button>
+                            </div>
+                          <!-- /ko -->
+                          <!-- ko if: otu['@label'] -->
+                            <div class="btn-group pull-right row-controls-ghosted">
                                 <button class="btn btn-mini" data-bind="click: unmapOTUFromTaxon">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
+                          <!-- /ko -->
+                            <strong data-bind="text: proposedMapping(otu) ?  proposedMapping(otu).name : otu['@label'],
+                                               style:  {'color': proposedMapping(otu) ? 'red' :'' }"
+                                >MAPPED (OR PROPOSED) LABEL</strong>
+                      {{ else: }}
                             <strong data-bind="text: otu['@label']">MAPPED LABEL</strong>
+                      {{ pass }}
                          <!-- /ko -->
                         </td>
                     </tr>
                   </tbody>
                 </table>
 
-                <div class="pagination pagination-centered pagination-small" Xdata-bind="if: nexml.otus.otu().length &gt; nexml.otus.otu.pagedItems().length">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredOTUs()().length &gt; viewModel.filteredOTUs().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !nexml.otus.otu.prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.otus.otu.prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredOTUs().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredOTUs().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( nexml.otus.otu) -->
-                    <li data-bind="css: { 'active': (viewModel.nexml.otus.otu.current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.otus.otu.goToPage(parseInt($(this).text())); return false;">0</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredOTUs() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredOTUs().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredOTUs().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !nexml.otus.otu.next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.otus.otu.next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredOTUs().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredOTUs().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
@@ -645,13 +691,15 @@ body {
             </div>
 -->
 
+        {{ if viewOrEdit == 'EDIT': }}
+
             <button class="btn btn-warning input-block-level" style="margin-bottom: 1em;"
                     onclick="clearVisibleMappings(); return false;">
                 <i class="icon-warning-sign icon-white"></i>
                 Clear visible mappings (please be patient)
             </button>
 
-            <div class="well Xwell-large">
+            <div id="mapping-status-panel" class="well">
                 <div class="pull-right" style="margin-top: -2px;">
                     <button id="pause-mapping-button" class="btn btn-small" 
                             data-bind="visible: autoMappingInProgress()"
@@ -670,6 +718,19 @@ body {
                        data-bind="style: { width: recentMappingSpeedPercent }">
                       <span data-bind="text: recentMappingSpeedLabel">10 sec / name</span>
                   </div>
+                </div>
+                <div class="mapping-details"><!--
+                    <p>For best results, wrap messages here in paragraphs.</p>
+            --></div>
+                <div class="mapping-batch-operations" style="display: none;">
+                    <button id="batch-approve" class="btn btn-small pull-left"
+                            onclick="approveAllVisibleMappings(); return false;">
+                        <i class="icon-ok"></i> <strong>Approve all</strong> and continue
+                    </button>
+                    <button id="batch-reject" class="btn btn-small pull-right"
+                            onclick="rejectAllVisibleMappings(); return false;">
+                        <i class="icon-remove"></i> <strong>Reject all</strong> and pause
+                    </button>
                 </div>
             </div>
             <div class="well">
@@ -791,6 +852,8 @@ body {
                 in the <strong>Modified for mapping</strong> column at left.
                 </p>
             </div>
+        {{ pass }}
+
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
@@ -802,8 +865,10 @@ body {
               <div class="navbar">
                  <div class="navbar-inner">
                   <form class="navbar-search pull-left">
-                      <input type="text" class="search-query" placeholder="Filter by name, location, text">
+                      <input type="text" class="search-query input-xlarge" placeholder="Filter by type, location, submitter, message"
+                             data-bind="value: viewModel.listFilters.ANNOTATIONS.match, valueUpdate: 'afterkeydown'">
                   </form>
+                <!-- TODO: Can we provide some kind of support for thes filters?
                   <ul class="nav" style="padding-left: 1em;">
                       <li class="dropdown">
                           <a href="#" class="dropdown-toggle" data-toggle="dropdown">
@@ -820,16 +885,17 @@ body {
                       </li>
                       <li class="dropdown">
                           <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                            Submitted by all
-                            <b class="caret"></b>
+                              <span data-bind="text: viewModel.listFilters.ANNOTATIONS.submitter">SORT</span>
+                              <b class="caret"></b>
                           </a>
-                          <ul class="dropdown-menu">
-                              <li><a href="#">Submitted by all</a></li>
-                              <li><a href="#">Submitted by users</a></li>
-                              <li><a href="#">Added by validation apps</a></li>
+                          <ul class="dropdown-menu" data-bind="foreach: ['Submitted by all', 'Submitted by users', 'Submitted by validation tools']">
+                              <li data-bind="css: {'disabled': viewModel.listFilters.ANNOTATIONS.submitter() == $data }">
+                                  <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.ANNOTATIONS.submitter($data); }">SORT</a>
+                              </li>
                           </ul>
                       </li>
                   </ul>
+                  -->
                  </div>
               </div>
 
@@ -837,16 +903,15 @@ body {
                   <thead>
                     <tr>
                         <th>Type</th>
-                        <th>Location (click to see note there)</th>
+                        <!-- <th>Location (click to see note there)</th> -->
                         <th>Added by</th>
                         <th>Message(s)</th>
                     </tr>
                   </thead>
-                  <tbody>
-                  <!-- ko foreach: { data: nexml.meta(), as: 'annotation' } -->
-                    <tr data-bind="if: annotation['@property']() == 'ot:annotation'">
+                  <tbody data-bind="foreach: { data: viewModel.filteredAnnotations().pagedItems(), as: 'annotation' }">
+                    <tr>
                         <td data-bind="text: annotation.$, style: { color: typeof(annotation.isValid) === 'undefined' || annotation.isValid() ? '' : 'red' }"></td><!-- general description (annotation type) -->
-                        <td><a href="#">Study</a></td><!-- TODO -->
+                        <!-- <td><a href="#">Study</a></td> -->
                         <td data-bind="text: annotation.author.name"></td>
                       <!-- ko if: annotation.messages -->
                         <td data-bind="if: annotation.messages">
@@ -866,8 +931,9 @@ body {
                         </td>
                       <!-- /ko -->
                     </tr>
-                  <!-- /ko -->
-                  <!-- EXAMPLES of other annotation types: -->
+                  </tbody>
+                </table>
+                  <!-- EXAMPLES of other annotation types: 
                     <tr>
                         <td>Reply</td>
                         <td><a href="#">Message thread</a></td>
@@ -892,22 +958,22 @@ body {
                         <td><a href="#">Charles Darwin</a></td>
                         <td style="font-style: italic;">This tree is poorly rooted, in my opinion.</td>
                     </tr>
-                  </tbody>
-                </table>
+                  -->
 
                 <!-- TODO: respond to calculated notes, gathered from throughout study Nexson -->
-                <div class="pagination pagination-centered pagination-small" data-bind="if: true">
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.filteredAnnotations()().length &gt; viewModel.filteredAnnotations().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredAnnotations().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredAnnotations().prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( nexml.trees.tree) -->
-                    <li data-bind="css: { 'active': (viewModel.nexml.trees.tree.current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.nexml.trees.tree.goToPage(parseInt($(this).text())); return false;">1</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredAnnotations() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredAnnotations().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredAnnotations().goToPage(parseInt($(this).text())); return false;">0</a>
                     </li>
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !nexml.trees.tree.next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.nexml.trees.tree.next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredAnnotations().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredAnnotations().next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
@@ -1017,7 +1083,7 @@ Please review and re-submit.</pre>
 </div><!-- /.row -->
 
 <script type='text/javascript'>
-    var studyID = '{{= request.args[0] }}';
+    var studyID = '{{= studyID }}';
     var viewOrEdit = '{{= viewOrEdit }}';
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
     var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
@@ -1045,18 +1111,123 @@ Please review and re-submit.</pre>
 
 <!-- hidden template for the tree-viewer (editor) -->
 <div class="modal hide fade modal-tree-viewer" id="tree-viewer" style="display: none;">
+  <!-- KO binding here to 'tree' (as $data below) -->
     <div class="modal-header">
       <a data-dismiss="modal" class="close">×</a>
-      <h3 id='dialog-heading'></h3>
+      <h3 id='dialog-heading'>
+        {{ if viewOrEdit == 'EDIT': }}
+            Edit tree
+            <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
+                   data-bind="value: $data['@label'], valueUpdate: 'afterkeydown'"
+            />
+        {{ else: }}
+            View tree
+            '<span data-bind="text: $data['@label']">{TREE NAME}</span>'
+        {{ pass }}
+
+       </h3>
     </div>
     <div class="modal-body">
         <div id="dialog-data">
-            <form class="form-inline">
-            </form>
-            <!-- tree-view SVG goes here -->
+         <form class="form-inline" style="border-bottom: 1px solid #eee; overflow: hidden; padding-bottom: 4px;">
+          {{ if viewOrEdit == 'EDIT': }}
+            <!-- editable tree properties here -->
+              <div class="pull-left" style="width: 48%;">
+                <label>Tree type: </label>
+                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:curatedType'), valueUpdate: 'afterkeydown'"></input>
+              <br/>
+                <label for="testtest">Root node: </label>
+                <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
+              <br/>
+                <label for="testtest">Ingroup clade: </label>
+                <strong data-bind="text: getInGroupCladeDescriptionForTree($data)"></strong>
+              </div>
+              <div class="pull-left" style="width: 48%;">
+                <label>Mapped leaf nodes: </label>
+                <span data-bind="html: getMappedTallyForTree($data)">?? / ??</span>
+              <br/>
+               <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
+
+                <label for="testtest">Tags: </label>
+                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:tag'), valueUpdate: 'afterkeydown'"></input>
+              <br/>
+
+               <!-- todo: general statement of rooting (tree and ingroup)?
+                <label for="testtest">tree rooting: </label>
+                <strong data-bind="html: getrooteddescriptionfortree($data)">rooted-value</strong>
+              <br/>
+               -->
+
+                <label>Branch length mode: </label>
+                <select data-bind="options: branchLengthModeDescriptions,
+                    optionsValue: function(item) { 
+                        return item.value;
+                    },
+                    optionsText: function(item) { 
+                        return item.text;
+                    },
+                    value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode'),
+                    optionsCaption: 'Choose...'">TYPE</select>
+
+               <!-- ko if: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode')() === 'ot:time' -->
+                <label style="margin-left: 10px;">Time unit: </label>
+                <select data-bind="options: ['Myr'],
+                    value: getMetaTagAccessorByAtProperty($data.meta, 'branchLengthTimeUnit')">TYPE</select>
+               <!-- /ko -->
+
+               <!-- ko if: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode')() === 'ot:other' -->
+                <label style="margin-left: 10px;">&nbsp;</label>
+                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthDescription'), valueUpdate: 'afterkeydown'" placeholder="Describe here"></input>
+               <!-- /ko -->
+              </div>
+
+          {{ else: }}
+            <!-- read-only tree properties here -->
+              <div class="pull-left" style="width: 48%;">
+                <label>Tree type: </label>
+                <strong data-bind="text: getMetaTagAccessorByAtProperty($data.meta, 'ot:curatedType') || 'Unspecified'">TYPE</strong>
+              <br/>
+                <label for="testtest">Root node: </label>
+               <!-- TODO: tag(s) for this tree? -->
+                <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
+              <br/>
+                <label for="testtest">Ingroup clade: </label>
+                <strong data-bind="text: getInGroupCladeDescriptionForTree($data)"></strong>
+              </div>
+              <div class="pull-left" style="width: 48%;">
+                <label>Mapped leaf nodes: </label>
+                <span data-bind="html: getMappedTallyForTree($data)">?? / ??</span>
+              <br/>
+               <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
+
+                <label for="testtest">Tags: </label>
+                <strong data-bind="html: getTagDescriptionForTree($data)">{TAGS}</strong>
+              <br/>
+
+               <!-- TODO: General statement of rooting (tree and ingroup)?
+                <label for="testtest">Tree rooting: </label>
+                <strong data-bind="html: getRootedDescriptionForTree($data)">ROOTED-VALUE</strong>
+              <br/>
+               -->
+
+                <label>Branch length mode: </label>
+                <strong data-bind="text: getBranchLengthModeDescriptionForTree($data)">TYPE</strong>
+              </div>
+
+          {{ pass }}
+         </form>
+         <!-- tree-view SVG goes here -->
         </div>
     </div>
     <div class="modal-footer">
+      <div class="popup-legend pull-left form-inline">
+          <strong>Legend: </strong>
+          <label style="margin-left: 20px;">Ingroup: </label> <em>blah</em>
+
+          <label style="margin-left: 20px;">Outgroup: </label> <em>blah</em>
+
+          <label style="margin-left: 20px;" for=""> <input type="checkbox"> Hide branch lengths</label>
+      </div>
       <a data-dismiss="modal" class="btn" >Close</a>
       <!-- <a class="btn btn-primary" id="btnSaveChanges">Save changes</a> -->
     </div>

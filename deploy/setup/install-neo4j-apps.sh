@@ -49,6 +49,7 @@ function make_neo4j_instance {
     APORT=$2
     BPORT=$3
     jar=$APP-neo4j-plugins-$VERSION.jar
+    echo "installing plugin for" $APP
 
     # Create a copy of neo4j for this app
     if [ ! -x neo4j-$APP/bin/neo4j ] ; then
@@ -60,24 +61,38 @@ function make_neo4j_instance {
     # Get plugin from git repository
     if git_refresh OpenTreeOfLife $APP $BRANCH || [ ! -r neo4j-$APP/plugins/$jar ]; then
     
-        echo "attempting to recompile " $APP " plugins"
+        echo "attempting to recompile "$APP" plugins"
         # Create and install the plugins .jar file
         # Compilation takes about 4 minutes... ugh
         (cd repo/$APP; ./mvn_serverplugins.sh)
 
-        if ! [ ./neo4j-$APP/bin/neo4j status ]; then
-            ./neo4j-$APP/bin/neo4j stop
-        fi
-        cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
+	if true; then
+	    if ! ./neo4j-$APP/bin/neo4j status; then
+		./neo4j-$APP/bin/neo4j stop
+	    fi
+	    cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
 
-        # Stop any running server.  There may or may not be a database.
-        if ! [ ./neo4j-$APP/bin/neo4j status ]; then
-            ./neo4j-$APP/bin/neo4j stop
+	    # Stop any running server.  There may or may not be a database.
+	    if ! ./neo4j-$APP/bin/neo4j status; then
+		./neo4j-$APP/bin/neo4j stop
+            fi
+	else
+            # There was some question as to whether the above code worked.
+	    # I'm keeping the following replacement code for a while, just in case.
+	    # Stop any running server.  There may or may not be a database.
+	    # N.B. Theo 'neo4j status' command returns a phrase like this (for a stopped instance):
+	    #    Neo4j Server is not running
+	    # ... or this (for a running instance):
+	    #    Neo4j Server is running at pid #####
+	    if [[ "`./neo4j-$APP/bin/neo4j status`" =~ "is running" ]]; then
+		./neo4j-$APP/bin/neo4j stop
+            fi
         fi
 
         # Move new plugin code into place
         cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
         if [ running_before = yes ]; then ./neo4j-$APP/bin/neo4j start; fi
+
 
         # Replace defaults ports with ports appropriate for this application
         #org.neo4j.server.webserver.port=7474
@@ -97,13 +112,6 @@ function make_neo4j_instance {
 make_neo4j_instance treemachine 7474 7473
 make_neo4j_instance taxomachine 7476 7475
 make_neo4j_instance oti         7478 7477
-
-if false; then
-    # setup oti database # currently failing
-    echo "attempting to run oti setup"
-    repo/oti/index_current_repo.py 
-    echo "oti setup run"
-fi
 
 # ---------- THE NEO4J DATABASES ----------
 

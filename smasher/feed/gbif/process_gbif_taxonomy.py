@@ -24,7 +24,7 @@ if __name__ == "__main__":
     ignore = []
     for i in infile2:
         ignore.append(i.strip())
-    outfile = open(sys.argv[3]+"/taxonomy.tsv,"w")
+    outfile = open(sys.argv[3]+"/taxonomy.tsv","w")
     outfilesy = open(sys.argv[3]+"/synonyms.tsv","w")
     names = [] 
     parents = []    #list of ids
