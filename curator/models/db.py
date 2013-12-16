@@ -70,13 +70,15 @@ crud, service, plugins = Crud(db), Service(), PluginManager()
 
 SupportingFiles = db.define_table('supporting_files',
  Field('doc', 'upload', autodelete=True),
- Field('thumb', 'upload', autodelete=True),
- Field('sizeFile', 'float'),
- Field('sessionId', 'string'),)
- 
-from smarthumb import SMARTHUMB
-box = (200, 200)
-SupportingFiles.thumb.compute = lambda row: SMARTHUMB(row.doc, box)
+ #Field('thumb', 'upload', autodelete=True),
+ #Field('sizeFile', 'float'),
+ #Field('sessionId', 'string'),)
+ Field('file_size', 'float'),
+ Field('study_id', 'string'),)
+
+#from smarthumb import SMARTHUMB
+#box = (200, 200)
+#SupportingFiles.thumb.compute = lambda row: SMARTHUMB(row.doc, box)
 
 
 #
