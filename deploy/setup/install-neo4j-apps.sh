@@ -66,13 +66,12 @@ function make_neo4j_instance {
         # Compilation takes about 4 minutes... ugh
         (cd repo/$APP; ./mvn_serverplugins.sh)
 
-        if [ ! ./neo4j-$APP/bin/neo4j status ]; then
-            ./neo4j-$APP/bin/neo4j stop
-        fi
-        cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
-
         # Stop any running server.  There may or may not be a database.
-        if [ ! ./neo4j-$APP/bin/neo4j status ]; then
+        # N.B. Theo 'neo4j status' command returns a phrase like this (for a stopped instance):
+        #    Neo4j Server is not running
+        # ... or this (for a running instance):
+        #    Neo4j Server is running at pid #####
+        if [[ "`./neo4j-$APP/bin/neo4j status`" =~ "is running" ]]; then
             ./neo4j-$APP/bin/neo4j stop
         fi
 
@@ -98,10 +97,13 @@ make_neo4j_instance taxomachine 7476 7475
 make_neo4j_instance oti         7478 7477
 
 if true; then
-    # setup oti database # currently failing
-    echo "attempting to run oti setup"
+    # setup oti database (should not really be done here)
+    echo "attempting to index the current commit on treenexus master branch"
+    if [ -d neo4j-oti/data/graph.db ]; then
+        rm -rf neo4j-oti/data/graph.db
+    fi
+    ./neo4j-oti/bin/neo4j restart
     repo/oti/index_current_repo.py http://localhost:7478/db/data/
-    echo "oti setup run"
 fi
 
 # ---------- THE NEO4J DATABASES ----------
