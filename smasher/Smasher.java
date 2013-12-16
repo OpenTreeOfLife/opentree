@@ -42,7 +42,6 @@ public class Smasher {
 			Taxonomy tax = null;
 			boolean anyfile = false;
 			Node.windyp = false;
-			SourceTaxonomy idsource = null;
 			String outprefix = null;
 
 			for (int i = 0; i < argv.length; ++i) {
@@ -56,21 +55,16 @@ public class Smasher {
 
 					else if (argv[i].equals("--ids")) {
 						// To smush or not to smush?
-						idsource = getSourceTaxonomy(argv[++i], false);
 						UnionTaxonomy union = tax.promote(); tax = union;
+						SourceTaxonomy idsource = getSourceTaxonomy(argv[++i], false);
 						union.assignIds(idsource);
 					}
 
 					else if (argv[i].equals("--aux")) { // preottol
 						UnionTaxonomy union = tax.promote(); tax = union;
 						SourceTaxonomy auxsource = getSourceTaxonomy(argv[++i]);
-						union.loadAuxIds(auxsource, idsource);
+						union.loadAuxIds(auxsource);
                         union.dumpAuxIds(outprefix);
-					}
-
-					else if (argv[i].equals("--start")) {
-						tax = new SourceTaxonomy();
-						getTaxonomy(tax, argv[++i]);    // Directory name, ending in /
 					}
 
 					else if (argv[i].equals("--select")) {
@@ -78,7 +72,23 @@ public class Smasher {
 						Node root = tax.unique(name);
 						if (root != null) {
 							tax.analyze();    // otherwise they all show up as 'barren'
-							tax.dump(root, argv[++i]);
+							tax.select(root, argv[++i]);
+						}
+					}
+
+					else if (argv[i].equals("--sample")) {
+						String name = argv[++i];
+						int count = Integer.parseInt(argv[++i]);
+						Node sel = tax.unique(name);
+						if (sel != null) {
+							Taxonomy tax2 = new SourceTaxonomy();
+							Node sample = sel.sample(count, tax2);
+							System.out.println("| Sample has " + sample.count() + " taxa");
+							tax2.roots.add(sample);
+							tax = tax2;
+						} else {
+							System.err.println("Missing or ambiguous name: " + name);
+							break;
 						}
 					}
 
@@ -97,6 +107,11 @@ public class Smasher {
 
 					else if (argv[i].equals("--test"))
 						test();
+
+					else if (argv[i].equals("--start")) {
+						tax = new SourceTaxonomy();
+						getTaxonomy(tax, argv[++i]);    // Directory name, ending in /
+					}
 
 					else if (argv[i].equals("--tre")) {
 						String outfile = argv[++i];
@@ -256,10 +271,14 @@ abstract class Taxonomy implements Iterable<Node> {
 		nodes.add(node);
 	}
 
+	int cachedCount = -1;
+
 	int count() {
+		if (cachedCount > 0) return cachedCount;
 		int total = 0;
 		for (Node root : this.roots)
 			total += root.count();
+		cachedCount = total;
 		return total;
 	}
 
@@ -539,18 +558,22 @@ abstract class Taxonomy implements Iterable<Node> {
 		try {
 			Object obj = parser.parse(fr);
 			JSONObject jsonObject = (JSONObject) obj;
-			this.metadata = jsonObject;
+			if (jsonObject == null)
+				System.err.println("!! Opened file " + filename + " but no contents?");
+			else {
+				this.metadata = jsonObject;
 
-			Object prefix = ((Map)obj).get("prefix");
-			if (prefix != null) {
-				System.out.println("prefix is " + prefix);
-				this.tag = (String)prefix;
-			}
+				Object prefix = jsonObject.get("prefix");
+				if (prefix != null) {
+					System.out.println("prefix is " + prefix);
+					this.tag = (String)prefix;
+				}
 
-			Object smushp = ((Map)obj).get("smush");
-			if (smushp != null) {
-				System.out.println("smushp is " + smushp);
-				this.smushp = smushp.equals("yes");
+				Object smushp = ((Map)obj).get("smush");
+				if (smushp != null) {
+					System.out.println("smushp is " + smushp);
+					this.smushp = smushp.equals("yes");
+				}
 			}
 
 		} catch (ParseException e) {
@@ -624,7 +647,8 @@ abstract class Taxonomy implements Iterable<Node> {
 				}
 			}
 			br.close();
-			System.out.println("| " + count + " synonyms");
+			if (count > 0)
+				System.out.println("| " + count + " synonyms");
 		}
 	}
 
@@ -833,7 +857,8 @@ abstract class Taxonomy implements Iterable<Node> {
 			node.properFlags |= INCERTAE_SEDIS;
 			elidep = true;
 		}
-		if (node.rank.equals("species") || node.rank.equals("sample")) {
+		if (node.rank != null &&
+			(node.rank.equals("species") || node.rank.equals("sample"))) {
 			node.properFlags |= SPECIFIC;
 			anyspeciesp = true;
 		}
@@ -1029,14 +1054,23 @@ abstract class Taxonomy implements Iterable<Node> {
 		ranks.put("no rank", -1);
 	}
 
-	void dump(Node node, String filename) throws IOException {
+	// Called from --select
+	// TBD: synonyms and about file
+	void select(Node node, String outprefix) throws IOException {
+		System.out.println("| Selecting " + node.name);
 		List<Node> it = new ArrayList<Node>(1);
 		it.add(node);
-		this.dump(it, filename);
+		this.dump(it, outprefix);
+
+		if (this.metadata != null) {
+			PrintStream out = Taxonomy.openw(outprefix + "about.json");
+			out.println(this.metadata);
+			out.close();
+		}
 	}
 
-	void dump(Collection<Node> nodes, String filename) throws IOException {
-		PrintStream out = Taxonomy.openw(filename);
+	void dump(Collection<Node> nodes, String outprefix) throws IOException {
+		PrintStream out = Taxonomy.openw(outprefix + "taxonomy.tsv");
 
 		out.println("uid\t|\tparent_uid\t|\tname\t|\trank\t|\tsourceinfo\t|\tuniqname\t|\tflags\t|\t"
 					// 0	 1				2		 3		  4				 5             6
@@ -1178,7 +1212,7 @@ abstract class Taxonomy implements Iterable<Node> {
 	}
 
 	long maxid() {
-		long id = Long.MIN_VALUE;
+		long id = -1;
 		for (Node node : this) {
 			long idAsLong;
 			try {
@@ -1189,6 +1223,19 @@ abstract class Taxonomy implements Iterable<Node> {
 			}
 		}
 		return id;
+	}
+
+	void assignNewIds(long sourcemax) {
+		long maxid = this.maxid();
+		if (sourcemax > maxid) maxid = sourcemax;
+		System.out.println("| Highest id before: " + maxid);
+		for (Node node : this)
+			if (node.id == null) {
+				node.setId(Long.toString(++maxid));
+				node.addComment("new");
+				node.markEvent("new-id");
+			}
+		System.out.println("| Highest id after: " + maxid);
 	}
 
 }  // End of class Taxonomy
@@ -1517,19 +1564,10 @@ class UnionTaxonomy extends Taxonomy {
 
 		// Phase 2: give new ids to union nodes that didn't get them above.
 		long sourcemax = idsource.maxid();
-		long maxid = this.maxid();
-		if (sourcemax > maxid) maxid = sourcemax;
-		System.out.println("| Highest id before: " + maxid);
-		for (Node node : this)	 // this = union, idsource = ottol
-			if (node.id == null) {
-				node.setId(Long.toString(++maxid));
-				node.addComment("new");
-				node.markEvent("new-id");
-			}
+		this.assignNewIds(sourcemax);
+		// remember, this = union, idsource = previous version of ott
 
 		Node.printStats();		// Taxon id clash
-
-		System.out.println("| Highest id after: " + maxid);
 	}
 
 	// Cf. assignIds()
@@ -1617,7 +1655,7 @@ class UnionTaxonomy extends Taxonomy {
 		out.close();
 	}
 
-	void loadAuxIds(SourceTaxonomy aux, SourceTaxonomy idsource) {
+	void loadAuxIds(SourceTaxonomy aux) {
 		this.auxsource = aux;
 		aux.mapInto(this, Criterion.idCriteria);
 	}
@@ -1829,9 +1867,10 @@ class UnionTaxonomy extends Taxonomy {
 	// outprefix should end with a / , but I guess . would work too
 
 	void dumpAll(String outprefix) throws IOException {
+		this.assignNewIds(0);	// If we've seen an idsource, maybe this has already been done
 		this.analyze();
 		this.dumpLog(outprefix + "log.tsv");
-		this.dump(this.roots, outprefix + "taxonomy.tsv");
+		this.dump(this.roots, outprefix);
 		this.dumpSynonyms(outprefix + "synonyms.tsv");
 		this.dumpMetadata(outprefix + "about.json");
 		if (this.idsource != null)
@@ -2840,6 +2879,65 @@ class Node {
 		return "";
 	}
 
+	static Comparator<Node> compareNodesBySize = new Comparator<Node>() {
+		public int compare(Node x, Node y) {
+			return x.count() - y.count();
+		}
+	};
+
+    Node sample(int k, Taxonomy tax) {
+		if (k <= 0) return null;
+
+		// Always include this node ?
+		Node sam = new Node(tax);
+		sam.setName(this.name);
+		sam.id = this.id;
+		sam.rank = this.rank;
+
+		// Assume k <= n.
+		// We want to select k descendents out of the n that are available.
+
+		int n = this.count() ;
+	
+		// n1 ranges from 0 up to n-1    (the 1 is for the taxon itself)
+		// k1 ranges from 0 up to k-1    (the 1 is for sam)
+		// k1 : n1 :: k2 : n2 :: k : n
+		// k2 = (k*n) / n2
+		int n1 = 1;
+		int k1 = 1;
+
+		// maybe sort by size ???
+
+		if (this.children != null) {
+			java.util.Collections.sort(this.children, compareNodesBySize);
+			for (Node child : this.children) {
+
+				if (k1 >= k) break;    // redundant?
+
+				int n2 = n1 + child.count();
+
+				// Number of children we want to have after sampling
+				// From k2 : n2 :: k : n
+				int k2 = (n2 == n ? k : (k * n2) / n);
+				if (false)  //this.name.contains("cellular life")
+					System.out.println("? " + 
+									   k1 + " : " + k2 + " : " + k + " :: " +
+									   n1 + " : " + n2 + " : " + n + " " + child.name);
+				int dk = k2 - k1;
+
+				// Number of children to request
+				Node c = child.sample(dk, tax);
+				if (c != null) {
+					sam.addChild(c);
+					k1 += c.count();  // ???
+				}
+				n1 = n2;
+
+			}
+		}
+
+		return sam;
+	}
 }
 
 // Consider all possible assignments
