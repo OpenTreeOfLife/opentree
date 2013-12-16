@@ -13,18 +13,18 @@ def upload_file():
         f = request.vars['files[]']
          
         # Store file
-        id = db.files.insert(doc = db.files.doc.store(f.file, f.filename))
+        id = db.supporting_files.insert(doc = db.supporting_files.doc.store(f.file, f.filename))
          
         # Compute size of the file and update the record
-        record = db.files[id]
+        record = db.supporting_files[id]
         path_list = []
         path_list.append(request.folder)
         path_list.append('uploads')
         path_list.append(record['doc'])
-        size =  shutil.os.path.getsize(shutil.os.path.join(*path_list))
-        File = db(db.files.id==id).select()[0]
-        db.files[id] = dict(sizeFile=size)
-        db.files[id] = dict(sessionId=response.session_id)
+        size = shutil.os.path.getsize(shutil.os.path.join(*path_list))
+        File = db(db.supporting_files.id==id).select()[0]
+        db.supporting_files[id] = dict(sizeFile=size)
+        db.supporting_files[id] = dict(study_id=response.study_id)
          
         res = dict(files=[{"name": str(f.filename), "size": size, "url": URL(f='download', args=[File['doc']]), "thumbnail_url": URL(f='download', args=[File['thumb']]), "delete_url": URL(f='delete_file', args=[File['doc']]), "delete_type": "DELETE" }])
          
@@ -40,7 +40,7 @@ def delete_file():
     """
     try:
         name = request.args[0]
-        db(db.files.doc==name).delete()
+        db(db.supporting_files.doc==name).delete()
         return dict(message=T('File deleted'))
     except:
         return dict(message=T('Deletion error'))
