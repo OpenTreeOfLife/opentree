@@ -1,14 +1,14 @@
 #!/bin/bash
 
-set -e
-. setup/functions.sh
-
-HOST=$1
+OPENTREE_HOST=$1
 NEO4JHOST=$2
+CONTROLLER=$3
 BRANCH=master
 
-echo "Installing web2py applications.  Hostname = $HOST"
-date
+. setup/functions.sh
+
+echo "Installing web2py applications.  Hostname = $OPENTREE_HOST"
+log  "Installing web2py applications.  Hostname = $OPENTREE_HOST"
 
 # Temporary locations for things downloaded from web.  Can delete this
 # after server is up and running.
@@ -109,7 +109,7 @@ cp -p setup/webapp-config $configfile
 
 changed=no
 
-sed "s+hostdomain = .*+hostdomain = $HOST+" < $configfile > tmp.tmp
+sed "s+hostdomain = .*+hostdomain = $OPENTREE_HOST+" < $configfile > tmp.tmp
 if ! cmp -s tmp.tmp $configfile; then
     mv tmp.tmp $configfile
     changed=yes

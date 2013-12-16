@@ -1,16 +1,16 @@
 #!/bin/bash
 
-set -e
 . setup/functions.sh
 
-HOST=$1
+CONTROLLER=$1
 BRANCH=master
 
 # tbd: maybe allow a different branch for each repo
 
 # Will not run on AWS free tier.  Recommended at least 60G disk and 16G RAM.
 
-echo "`date` Installing treemachine and taxomachine"
+# Uses $CONTROLLER
+log  "Installing neo4j instances"
 
 # Temporary locations for things downloaded from web.  Can delete this
 # after server is up and running.
@@ -65,13 +65,13 @@ function make_neo4j_instance {
         # Compilation takes about 4 minutes... ugh
         (cd repo/$APP; ./mvn_serverplugins.sh)
 
-        if [ ! ./neo4j-$APP/bin/neo4j status ]; then
+        if ! [ ./neo4j-$APP/bin/neo4j status ]; then
             ./neo4j-$APP/bin/neo4j stop
         fi
         cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
 
         # Stop any running server.  There may or may not be a database.
-        if [ ! ./neo4j-$APP/bin/neo4j status ]; then
+        if ! [ ./neo4j-$APP/bin/neo4j status ]; then
             ./neo4j-$APP/bin/neo4j stop
         fi
 
@@ -82,8 +82,11 @@ function make_neo4j_instance {
         # Replace defaults ports with ports appropriate for this application
         #org.neo4j.server.webserver.port=7474
         #org.neo4j.server.webserver.https.port=7473
-        sed s+7474+$APORT+ < neo4j-$APP/conf/neo4j-server.properties | \
-        sed s+7473+$BPORT+ > props.tmp
+        cat neo4j-$APP/conf/neo4j-server.properties | \
+        sed s+7474+$APORT+ | \
+        sed s+7473+$BPORT+ | \
+	sed s+org.neo4j.server.http.log.enabled=false+org.neo4j.server.http.log.enabled=true+ \
+	  > props.tmp
         mv props.tmp neo4j-$APP/conf/neo4j-server.properties
 
         # Start or restart the server
@@ -142,7 +145,6 @@ if false; then
     fetch_neo4j_db taxomachine
 fi
 
-
-echo "`date` Done"
+log "Finished installing neo4j instances"
 
 # Apache needs to be restarted

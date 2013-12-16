@@ -1,7 +1,12 @@
+# Use with 'source' command
+# Variable CONTROLLER is an implicit parameter (name of user who ran the 'push.sh' command)
+
+set -e
 
 # Utilities.
 # Source this file from another bash script.
 
+if true; then
     javalink=`readlink /etc/alternatives/java`
     # => /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java
     javalink=`dirname $javalink`
@@ -10,7 +15,34 @@
     # => /usr/lib/jvm/java-7-openjdk-amd64/jre
     javalink=`dirname $javalink`
     # => /usr/lib/jvm/java-7-openjdk-amd64
-export JAVA_HOME=$javalink
+    export JAVA_HOME=$javalink
+else
+    export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
+fi
+
+# Remember the host name
+
+HOSTFILE=hostname
+if [ -e $HOSTFILE ]; then
+    OPENTREE_HOST=`cat $HOSTFILE`
+elif [ x$OPENTREE_HOST != x ]; then
+    echo $OPENTREE_HOST >$HOSTFILE
+else
+    echo "OPENTREE_HOST shell variable isn't set !?"
+    exit 1
+fi
+
+
+# Logging
+
+function log() {
+    if [ x$CONTROLLER = x ]; then
+	echo "CONTROLLER shell variable is not set !?"
+	exit 1
+    fi
+    mkdir -p log
+    (echo `date` $CONTROLLER $OPENTREE_TAG; echo " $*") >>log/messages
+}
 
 # Refresh a git repo
 

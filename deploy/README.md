@@ -40,16 +40,18 @@ The push.sh script starts by pushing out a script to be run as the admin user (s
 How to push the neo4j databases
 -------------------------------
 
-If the server is big and is to run treemachine or taxomachine, the appropriate database has to be pushed out to the server and installed, as a separate step.  Create a compressed tar file of the neo4j database directory (which by default is called 'graph.db' although you can call it whatever youlike).  Then copy it to the server using rsync:
+If the server is big and is to run treemachine or taxomachine, the appropriate database has to be pushed out to the server and installed, as a separate step.  Create a compressed tar file of the neo4j database directory (which by default is called 'graph.db' although you can call it whatever you like locally).  Then copy it to the server using rsync:
 
+    cd data
+    tar -C newlocaldb.db -czf newlocaldb.db.tgz .
     rsync -e "ssh -i opentree.pem" -vax newlocaldb.db.tgz  \
-        opentree@$host:downloads/treemachine.db.tgz
+        opentree@$host:downloads/$app.db.tgz
+
+where $host is the same as <hostname> as specified above and $app is taxomachine, treemachine, etc.
 
 If you put the tarball in the target location as specified above, then the 'install_db.sh' installation script can pick it up.  Run the installation script as follows:
 
     ssh -i opentree.pem opentree@$host setup/install_db.sh treemachine
-
-where $host is the same as <hostname> as specified above.
 
 Repeat substituting 'taxomachine' for 'treemachine' if desired.
 
