@@ -1,16 +1,15 @@
 #!/bin/bash
 
-set -e
 . setup/functions.sh
 
-HOST=$1
+CONTROLLER=$1
 BRANCH=master
 
 # tbd: maybe allow a different branch for each repo
 
 # Will not run on AWS free tier.  Recommended at least 60G disk and 16G RAM.
 
-echo "`date` Installing treemachine and taxomachine"
+# Uses $CONTROLLER
 
 # Temporary locations for things downloaded from web.  Can delete this
 # after server is up and running.
@@ -66,13 +65,27 @@ function make_neo4j_instance {
         # Compilation takes about 4 minutes... ugh
         (cd repo/$APP; ./mvn_serverplugins.sh)
 
-        # Stop any running server.  There may or may not be a database.
-        # N.B. Theo 'neo4j status' command returns a phrase like this (for a stopped instance):
-        #    Neo4j Server is not running
-        # ... or this (for a running instance):
-        #    Neo4j Server is running at pid #####
-        if [[ "`./neo4j-$APP/bin/neo4j status`" =~ "is running" ]]; then
-            ./neo4j-$APP/bin/neo4j stop
+	if true; then
+	    if ./neo4j-$APP/bin/neo4j status; then
+		./neo4j-$APP/bin/neo4j stop
+	    fi
+	    cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
+
+	    # Stop any running server.  There may or may not be a database.
+	    if ./neo4j-$APP/bin/neo4j status; then
+		./neo4j-$APP/bin/neo4j stop
+            fi
+	else
+            # There was some question as to whether the above code worked.
+	    # I'm keeping the following replacement code for a while, just in case.
+	    # Stop any running server.  There may or may not be a database.
+	    # N.B. Theo 'neo4j status' command returns a phrase like this (for a stopped instance):
+	    #    Neo4j Server is not running
+	    # ... or this (for a running instance):
+	    #    Neo4j Server is running at pid #####
+	    if [[ "`./neo4j-$APP/bin/neo4j status`" =~ "is running" ]]; then
+		./neo4j-$APP/bin/neo4j stop
+            fi
         fi
 
         # Move new plugin code into place
@@ -83,12 +96,16 @@ function make_neo4j_instance {
         # Replace defaults ports with ports appropriate for this application
         #org.neo4j.server.webserver.port=7474
         #org.neo4j.server.webserver.https.port=7473
-        sed s+7474+$APORT+ < neo4j-$APP/conf/neo4j-server.properties | \
-        sed s+7473+$BPORT+ > props.tmp
+        cat neo4j-$APP/conf/neo4j-server.properties | \
+        sed s+7474+$APORT+ | \
+        sed s+7473+$BPORT+ | \
+	sed s+org.neo4j.server.http.log.enabled=false+org.neo4j.server.http.log.enabled=true+ \
+	  > props.tmp
         mv props.tmp neo4j-$APP/conf/neo4j-server.properties
 
         # Start or restart the server
         ./neo4j-$APP/bin/neo4j start
+	log "Started $APP"
     fi
 }
 
@@ -96,57 +113,6 @@ make_neo4j_instance treemachine 7474 7473
 make_neo4j_instance taxomachine 7476 7475
 make_neo4j_instance oti         7478 7477
 
-if true; then
-    # setup oti database (should not really be done here)
-    echo "attempting to index the current commit on treenexus master branch"
-    if [ -d neo4j-oti/data/graph.db ]; then
-        rm -rf neo4j-oti/data/graph.db
-    fi
-    ./neo4j-oti/bin/neo4j restart
-    repo/oti/index_current_repo.py http://localhost:7478/db/data/
-fi
-
-# ---------- THE NEO4J DATABASES ----------
-
-function fetch_neo4j_db {
-    APP=$1
-
-    # Retrieve and unpack the database
-    # treemachine: 6G, expands to 12G (AWS free tier only gives you 8G total)
-    # taxomachine: 4G, expands to 20G
-    wget --no-verbose -O downloads/$APP.db.tgz.md5.new \
-      http://files.opentreeoflife.org:/export/$APP.db.tgz.md5
-    if [ ! -r downloads/$APP.db.tgz.md5 ] || \
-       [ ! -r downloads/$APP.db.tgz ] || \
-       ! cmp downloads/$APP.db.tgz.md5 downloads/$APP.db.tgz.md5.new; then
-        if [ $FORREAL = yes ]; then
-            time \
-            wget --no-verbose -O downloads/$APP.db.tgz \
-              http://files.opentreeoflife.org:/export/$APP.db.tgz
-            mv downloads/$APP.db.tgz.md5.new downloads/$APP.db.tgz.md5 
-
-            install_neo4j_db $APP
-            setup/install_db.sh $APP
-        else
-            echo "Should load $APP database, but not doing so"
-        fi
-    fi
-}
-
-if false; then
-    total=`df -m . | (read; read fs total used available percent; echo $total)`
-    if [ $total -lt 60000 ]; then
-        echo 1>&2 "Disk too small, will do a sham install of tree/taxo"
-        FORREAL=no
-    elif [ x$FORREAL = x ]; then
-        FORREAL=yes
-    fi
-
-    fetch_neo4j_db treemachine
-    fetch_neo4j_db taxomachine
-fi
-
-
-echo "`date` Done"
+log "Finished installing neo4j instances"
 
 # Apache needs to be restarted

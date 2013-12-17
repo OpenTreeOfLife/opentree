@@ -1,14 +1,13 @@
 #!/bin/bash
 
-set -e
-. setup/functions.sh
-
-HOST=$1
+OPENTREE_HOST=$1
 NEO4JHOST=$2
+CONTROLLER=$3
 BRANCH=master
 
-echo "Installing web2py applications.  Hostname = $HOST"
-date
+. setup/functions.sh
+
+echo "Installing web2py applications.  Hostname = $OPENTREE_HOST"
 
 # Temporary locations for things downloaded from web.  Can delete this
 # after server is up and running.
@@ -23,23 +22,26 @@ if [ ! -d web2py ]; then
 	  http://www.web2py.com/examples/static/web2py_src.zip
     fi
     unzip downloads/web2py_src.zip
+    log "Installed web2py"
 fi
 
-# ---------- OUR VIRTUALENV ----------
+# ---------- OUR PYTHON VIRTUALENV ----------
 # Set up python env
 if [ ! -d venv ]; then
     virtualenv venv
 fi
 source venv/bin/activate
 
-# The following helps establish the environment when web2py is fired
-# up by Apache via WSGI - I think
+# Needed? See functions.sh
 
 if ! grep --silent setup/activate .bashrc; then
     echo "source $HOME/setup/activate" >> ~/.bashrc
 fi
 
 # ---------- VIRTUALENV + WEB2PY + WSGI ----------
+
+# Patch web2py's wsgihandler so that it does the equivalent of 'venv/activate'
+# when started by Apache.
 
 # See http://stackoverflow.com/questions/11758147/web2py-in-apache-mod-wsgi-with-virtualenv
 cat <<EOF >fragment.tmp
@@ -59,97 +61,52 @@ EOF
 
 rm fragment.tmp
 
-# ---------- THE WEB APPLICATIONS ----------
+# ---------- BROWSER & CURATOR WEBAPPS ----------
 # Set up web2py apps as directed in the README.md file
 
 opentree=repo/opentree
-api=repo/api.opentreeoflife.org
-treenexus=repo/treenexus
 
 # Consider cloning a designated tag, using git clone --branch <tag>
 
 echo "...fetching opentree repo (main webapp and curator)..."
 git_refresh OpenTreeOfLife opentree $BRANCH || true
-echo "...fetching api.opentreeoflife.org repo..."
-
-git_refresh OpenTreeOfLife api.opentreeoflife.org $BRANCH || true
-
-echo "...fetching treenexus repo..."
-git_refresh OpenTreeOfLife treenexus $BRANCH || true
-
-pushd .
-cd $treenexus
-# All the repos above are cloned via https, but we need to push via
-# ssh to use our deploy keys
-if ! grep "originssh" .git/config ; then
-    git remote add originssh git@github.com:OpenTreeOfLife/treenexus.git
-fi
-popd
-
-pushd .
-cd $api/private
-cp config.example config
-sed -i -e 's+REPO_PATH+/home/opentree/repo/treenexus+' config
-
-# specify our remote to push to, which is added to treenexus above
-sed -i -e 's+REPO_REMOTE+originssh+' config
-
-# This wrapper script allows us to specify an ssh key to use in git pushes
-sed -i -e 's+GIT_SSH+/home/opentree/repo/api.opentreeoflife.org/bin/git.sh+' config
-# this is the file location of the SSH key that is used in git.sh
-sed -i -e 's+PKEY+/home/opentree/.ssh/opentree+' config
-
-
-# oti search runs on 7478
-sed -i -e 's+7474+7478+' config
-
-popd
 
 # Modify the requirements list
-# numpy etc. have all kinds of dependency problems.
 cp $opentree/requirements.txt requirements-opentree.txt.save
 if grep --invert-match "distribute" \
       $opentree/requirements.txt >requirements.txt.new ; then
     mv requirements.txt.new $opentree/requirements.txt
 fi
-cp $api/requirements.txt requirements-api.txt.save
-if grep --invert-match "distribute" \
-      $api/requirements.txt >requirements.txt.new ; then
-    mv requirements.txt.new $api/requirements.txt
-fi
 
-# xslt
-# svnversion ?
 (cd $opentree; pip install -r requirements.txt)
-(cd $api; pip install -r requirements.txt)
 
-cp -p $opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
 cp -p $opentree/SITE.routes.py web2py/routes.py
 
 (cd web2py/applications; \
     ln -sf ../../repo/opentree/webapp ./opentree; \
-    ln -sf ../../repo/api.opentreeoflife.org ./api; \
     ln -sf ../../repo/opentree/curator ./)
 
-# File pushed here using rsync, see push.sh
+# ---------- WEB2PY CONFIGURATION ----------
+
+# Config file pushed here using rsync, see push.sh
 configfile=web2py/applications/opentree/private/config
 
 cp -p setup/webapp-config $configfile
 
 # The web2py apps need to know their own host names, for
 # authentication purposes.  'hostname' doesn't work on EC2 instances,
-# so it has to be passed in.
+# so it has to be passed in as a parameter.
 
 changed=no
-
-sed "s+hostdomain = .*+hostdomain = $HOST+" < $configfile > tmp.tmp
+sed "s+hostdomain = .*+hostdomain = $OPENTREE_HOST+" < $configfile > tmp.tmp
 if ! cmp -s tmp.tmp $configfile; then
     mv tmp.tmp $configfile
     changed=yes
 fi
 
-# There will be additional edits to the config file if a neo4j
-# database gets installed locally.
+# ---------- CALLING OUT TO NEO4J FROM PYTHON AND JAVASCRIPT ----------
+
+cp -p $opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
 
 # Modify the web2py config file to point to the host that's running
 # treemachine and taxomachine.

@@ -2,39 +2,44 @@
 #  = 'admin' on debian, 'ubuntu' on ubuntu
 
 set -e
-
 # Current directory = home dir for admin user
 
+OPENTREE_HOST=$1
+
+APTGET="sudo apt-get -q --assume-yes"
+
+# ---------- UPDATE ----------
+
 if [ ! -r .updated ]; then
-    sudo apt-get --assume-yes update
+    $APTGET update
     touch .updated
 fi
 
-if [ ! -x `which dialog` ]; then
+if [ `which dialog`x = x ]; then
     # I was hoping this would help with apache2's configure step, but it doesn't
-    sudo apt-get --assume-yes install dialog
+    $APTGET install dialog
 fi
 
 # ---------- RSYNC ----------
 if [ `which rsync`x = x ]; then
-    sudo apt-get --assume-yes install rsync
+    $APTGET install rsync
 fi
 
 # ---------- GCC (for some python packages) ----------
 if [ `which gcc`x = x ]; then
-    sudo apt-get --assume-yes install gcc
+    $APTGET install gcc
 fi
 
 # ---------- PYTHON-DEV (for some python packages) ----------
 if [ ! -r /usr/include/*/Python.h ]; then
-    sudo apt-get --assume-yes install python-dev
+    $APTGET install python-dev
 fi
 
 # ---------- APACHE ----------
 if [ ! -r /etc/init.d/apache2 ]; then
     echo Installing apache httpd
     # Prompts "do you want to continue?"
-    sudo apt-get --assume-yes install apache2
+    $APTGET install apache2
     echo Done
 fi
 
@@ -50,13 +55,13 @@ fi
 # unzip is needed for unpacking web2py.  Somebody broke the 'which' program -
 # you can't just check the status code any more.
 if [ `which unzip`x = x ]; then
-    sudo apt-get --assume-yes install unzip
+    $APTGET install unzip
 fi
 
 # ---------- PIP ----------
 # Get pip
 if [ `which pip`x = x ]; then
-    sudo apt-get --assume-yes install python-pip
+    $APTGET install python-pip
 fi
 
 # ---------- LIBCURL + PYCURL ---------- # only needed on debian, may cause problems on ubunutu
@@ -73,13 +78,13 @@ exit
 # ---------- GIT ----------
 # Get git (so we can clone the opentree repo)
 if [ `which git`x = x ]; then
-    sudo apt-get --assume-yes install git
+    $APTGET install git
 fi
 
 # ---------- WSGI ----------
 # Get wsgi (apache / web2py communication)
 if [ ! -r /etc/apache2/mods-enabled/wsgi.load ]; then
-    sudo apt-get --assume-yes install libapache2-mod-wsgi
+    $APTGET install libapache2-mod-wsgi
 fi
 
 # AWS has python 2.7.3 built in, no need to install it.
@@ -87,13 +92,13 @@ fi
 # ---------- PYTHON VIRTUALENV ----------
 # Get virtualenv
 if [ `which virtualenv`x = x ]; then
-    sudo apt-get --assume-yes install python-virtualenv
+    $APTGET install python-virtualenv
 fi
 
 # ---------- JAVA ----------
 if [ `which javac`x = x ]; then
-    sudo apt-get --assume-yes install openjdk-7-jre 
-    sudo apt-get --assume-yes install openjdk-7-jdk
+    $APTGET install openjdk-7-jre 
+    $APTGET install openjdk-7-jdk
 fi
 
 # Cf. file 'activate' - should be the same
@@ -106,13 +111,13 @@ fi
 
 # ---------- MAVEN 3 ----------
 if [ `which mvn`x = x ]; then
-    sudo apt-get --assume-yes install maven
+    $APTGET install maven
 fi
 
 # ---------- LSOF ----------
 # neo4j needs this
 if [ `which lsof`x = x ]; then
-    sudo apt-get --assume-yes install lsof
+    $APTGET install lsof
 fi
 
 # ---------- APACHE VHOST ----------
@@ -150,3 +155,10 @@ if [ ! -e ~opentree/.ssh ]; then
     sudo chmod 700 ~opentree/.ssh/
     sudo chown -R opentree:opentree ~opentree
 fi
+
+HOSTFILE=~opentree/hostname
+cat <<EOF | sudo bash
+    echo "$OPENTREE_HOST" >$HOSTFILE
+    chmod go+r $HOSTFILE
+    chown opentree $HOSTFILE
+EOF

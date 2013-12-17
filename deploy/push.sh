@@ -14,20 +14,24 @@
 set -e
 
 # $0 -h <hostname> -u <username> -i <identityfile> -n <hostname>
-# OPENTREE_HOST
-# OPENTREE_ADMIN
-# OPENTREE_IDENTITY
-# OPENTREE_NEO4J_HOST
 
-HOST=dev.opentreeoflife.org
-ADMIN=admin
-PEM=opentree.pem
-NEO4JHOST=dev.opentreeoflife.org
+# The host must always be specified
+# OPENTREE_HOST=dev.opentreeoflife.org
+OPENTREE_ADMIN=admin
+OPENTREE_IDENTITY=opentree.pem
+OPENTREE_NEO4J_HOST=dev.opentreeoflife.org
+COMMAND=push
+
+if [ x$CONTROLLER = x ]; then
+    CONTROLLER=`whoami`
+fi
 
 # On ubuntu, the admin user is called 'ubuntu'
 
 while [ $# -gt 0 ]; do
-    if [ "x$1" = "x-h" ]; then
+    if [ ${1:0:1} != - ]; then
+	break
+    elif [ "x$1" = "x-h" ]; then
 	OPENTREE_HOST="$2"
     elif [ "x$1" = "x-u" ]; then
 	OPENTREE_ADMIN="$2"
@@ -37,55 +41,112 @@ while [ $# -gt 0 ]; do
 	OPENTREE_NEO4J_HOST="$2"
     elif [ "x$1" = "x-c" ]; then
         source "$2"
-    elif [ "x${1:0:1}" = "x-" ]; then
+    else
 	echo 1>&2 "Unrecognized flag: $1"
 	exit 1
-    else
-	COMMAND="$1"
     fi
     shift
     shift
 done
 
+if [ $# -gt 0 ]; then
+    COMMAND="$1"
+    shift
+else
+    COMMAND=push
+fi
+
+if [ "x$OPENTREE_HOST" = x ]; then echo "OPENTREE_HOST not specified"; exit 1; fi
+
 # abbreviations... no good reason for these, they just make the commands shorter
-HOST=$OPENTREE_HOST
 ADMIN=$OPENTREE_ADMIN
 PEM=$OPENTREE_IDENTITY
 NEO4JHOST=$OPENTREE_NEO4J_HOST
 
-echo "Pushing to $HOST, admin=$ADMIN, pem=$PEM"
-
 SSH="ssh -i ${PEM}"
 
-# Do privileged stuff
-scp -p -i "${PEM}" as-admin.sh "$ADMIN@$HOST":
-${SSH} "$ADMIN@$HOST" ./as-admin.sh "${HOST}"
+# For unprivileged actions
+OT_USER=opentree
 
-# Unprivileged actions
-USER=opentree
+echo "host=$OPENTREE_HOST, admin=$ADMIN, pem=$PEM, controller=$CONTROLLER, command=$COMMAND"
 
-rsync -pr -e "${SSH}" "--exclude=*~" setup "$USER@$HOST":
+# Eventually finer grained: e.g.
+#   server A - browser, curator
+#   server B - api, doc store, oti
+#   server C - treemachine, taxomachine
 
-${SSH} "$USER@$HOST" ./setup/install-web2py-apps.sh "${HOST}" "${NEO4JHOST}"
-${SSH} "$USER@$HOST" ./setup/install-neo4j-apps.sh "${HOST}"
-
-# The install scripts modify the apache config file, so do this last
-${SSH} "$ADMIN@$HOST" \
-  sudo cp -p "~$USER/setup/apache-config" /etc/apache2/sites-available/opentree
-echo "Restarting apache httpd..."
-${SSH} "$ADMIN@$HOST" sudo apache2ctl graceful
-
-
-# Work in progress - code not yet enabled
-# E.g. push_neo4j_db localnewdb.db.tgz taxomachine
-
-function push_neo4j_db {
-    TGZ=$1
-    APP=$2
-    rsync -vax -e "${SSH}" $1 "$USER@$HOST":downloads/$APP.db.tgz
-    ${SSH} ${PEM} setup/install_db.sh $APP "$HOST"
+function docommand {
+    case $COMMAND in
+        push)
+	    sync_system
+	    pushmost $*
+	    finish
+    	    ;;
+	push-web2py)
+            sync_system
+	    pushweb2py $*
+	    finish
+	    ;;
+	push-api)
+            sync_system
+	    pushapi $*
+	    ;;
+	push-db)
+	    sync_system
+	    pushdb $*
+    	    ;;
+	echo)
+	    ${SSH} "$OT_USER@$OPENTREE_HOST" bash <<EOF
+ 	        echo $*
+EOF
+	    ;;
+	*)
+	    echo fall-through
+	    ;;
+    esac 
 }
 
+function sync_system {
+    # Do privileged stuff
+    rsync -pr -e "${SSH}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
+    # was scp -p -i "${PEM}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
+    ${SSH} "$ADMIN@$OPENTREE_HOST" ./as-admin.sh "$OPENTREE_HOST"
+    # Copy files over
+    rsync -pr -e "${SSH}" "--exclude=*~" "--exclude=#*" setup "$OT_USER@$OPENTREE_HOST":
+    }
+
+function pushmost {
+    pushweb2py
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-apps.sh $CONTROLLER
+    finish
+}
+
+function finish {
+    # The install scripts modify the apache config file, so do this last
+    ${SSH} "$ADMIN@$OPENTREE_HOST" \
+      sudo cp -p "~$OT_USER/setup/apache-config" /etc/apache2/sites-available/opentree
+    echo "Restarting apache httpd..."
+    ${SSH} "$ADMIN@$OPENTREE_HOST" sudo apache2ctl graceful
+}
+
+function pushweb2py {
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${NEO4JHOST}" $CONTROLLER
+}
+
+function pushapi {
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" "${NEO4JHOST}" $CONTROLLER
+}
+
+function pushdb {
+    # Work in progress - code not yet enabled
+    # E.g. ./push.sh push-db localnewdb.db.tgz taxomachine
+    TARBALL=$1
+    APP=$2
+    rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":downloads/$APP.db.tgz
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install_db.sh "$OPENTREE_HOST" $APP
+}
+
+docommand $*
 
 # Test: 
 # Ubuntu micro:

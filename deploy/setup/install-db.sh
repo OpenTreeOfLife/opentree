@@ -1,6 +1,9 @@
 #!/bin/bash
 
-. functions.sh
+OPENTREE_HOST=$1
+APP=$2
+
+. setup/functions.sh
 
 # You might want to check out
 #  http://stackoverflow.com/questions/16572066/resuming-rsync-partial-p-partial-on-a-interrupted-transfer
@@ -13,30 +16,25 @@
 # Come here after the tarball has been copied to downloads/$APP.db.tgz
 # where APP = treemachine or taxomachine
 
-function install_db {
-    APP=$1
+next=neo4j-$APP/data/graph.db.new
+# Keep previous in case we need to revert
+prev=neo4j-$APP/data/graph.db.previous
 
-    next=neo4j-$APP/data/graph.db.new
-    # Keep previous in case we need to revert
-    prev=neo4j-$APP/data/graph.db.previous
+# Make space... deal with only two versions at a time
+rm -rf $prev
 
-    # Make space... deal with only two versions at a time
-    rm -rf $prev
+rm -rf $next
+mkdir $next
+tar --directory=$next -xzf downloads/$APP.db.tgz
 
-    rm -rf $next
-    mkdir $next
-    tar --directory=$next -xzf downloads/$APP.db.tgz
+neo4j-$APP/bin/neo4j stop || true
 
-    neo4j-$APP/bin/neo4j stop || true
+mv neo4j-$APP/data/graph.db $prev
+mv $next neo4j-$APP/data/graph.db
+log "Installed $APP neo4j database"
 
-    mv neo4j-$APP/data/graph.db $prev
-    mv $next neo4j-$APP/data/graph.db
-
-    # Start the server.  (also need restart on reboot!! TBD)
-    neo4j-$APP/bin/neo4j start
-}
-
-install_db $*
+# Start the server.  (also need restart on reboot!! TBD)
+neo4j-$APP/bin/neo4j start
 
 
 # Not sure what the db directory should be called; on norbert the

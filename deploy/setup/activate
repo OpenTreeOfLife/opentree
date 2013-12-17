@@ -1,7 +1,7 @@
 # Source this file
 
 # Opentree home directory
-OTHOME=/home/ubuntu
+OTHOME=/home/opentree
 
 # Neo4j wants the following
 export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
