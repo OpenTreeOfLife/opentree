@@ -37,6 +37,13 @@ else
     exit 1
 fi
 
+# ---------- OUR VIRTUALENV ----------
+# Set up python env
+if [ ! -d venv ]; then
+    virtualenv venv
+fi
+source venv/bin/activate
+
 # ---------- LOGGING ----------
 
 function log() {
@@ -48,11 +55,15 @@ function log() {
     (echo `date` $CONTROLLER $OPENTREE_TAG " $*") >>log/messages
 }
 
-# ---------- OUR VIRTUALENV ----------
+# ---------- WORKSPACES ----------
 
-if [ -r venv/bin/activate ]; then
-    source venv/bin/activate
-fi
+# Temporary locations for things downloaded from web.  Can delete this
+# after server is up and running.
+
+mkdir -p downloads
+
+REPOS_DIR=repo
+mkdir -p $REPOS_DIR
 
 # ---------- SHELL FUNCTIONS ----------
 
@@ -68,12 +79,11 @@ function git_refresh() {
     reponame=$2
     branch=$3
     # Directory in which all local checkouts of git repos reside
-    repos_dir=repo
-    repo_dir=$repos_dir/$reponame
+    repo_dir=$REPOS_DIR/$reponame
     # Exit 0 (true) means has changed
     changed=0
     if [ ! -d $repo_dir ] ; then
-        (cd $repos_dir; \
+        (cd $REPOS_DIR; \
          git clone https://github.com/$guser/$reponame.git)
 	log Clone: $reponame `cd $repo_dir; git log | head -1`
     else

@@ -43,12 +43,7 @@ Setting up the API and studies repo
 
     ./push.sh -c {configfile} push-api
 
-This will change soon (to operate via the config file), but currently there is a one-time manual step in setting up the doc store API on a new server: copying the Github SSH deployment keys which allows the OpenTree API to push changes to Github.
-
-    scp -p opentree opentree.pub opentree@server:~/.ssh
-
-Currently the ```opentree``` private key and ```opentree.pub``` public key can
-be found on files.opentreeoflife.org .
+This requires OPENTREE_GH_IDENTITY to point to the file containing the ssh private for github access.
 
 How to push the neo4j databases
 -------------------------------
