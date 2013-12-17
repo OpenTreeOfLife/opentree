@@ -6,7 +6,7 @@ set -e
 
 OPENTREE_HOST=$1
 
-APTGET="sudo apt-get -q --assume-yes"
+APTGET="sudo apt-get -q --assume-yes --no-install-recommends"
 
 # ---------- UPDATE ----------
 
@@ -66,12 +66,12 @@ fi
 
 # ---------- LIBCURL + PYCURL ---------- # only needed on debian, may cause problems on ubunutu
 # used by oti indexing script
-#if [ `which pip`x = x ]; then
+if ! (echo "import pycurl" | python); then
 #    sudo apt-cache search libcurl-dev
-    sudo apt-get --assume-yes install libcurl4-openssl-dev
+    $APTGET install libcurl4-openssl-dev
     echo "installing pycurl"
     sudo pip install pycurl
-#fi
+fi
 
 exit
 

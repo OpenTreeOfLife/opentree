@@ -1,16 +1,36 @@
 #!/bin/bash
 
+# Grab version of python prevailing before going into venv (see functions.sh).
+# The venv version fails on trying to import pycurl.
+PYTHON=`which python`
+
+# This has to run on the host that's running the oti neo4j instance
+
+OPENTREE_DOCSTORE=$1
+CONTROLLER=$2
+BRANCH=master
+
 . setup/functions.sh
 
-CONTROLLER=$1
-BRANCH=master
+APP=oti
 
 # setup oti database
 echo "attempting to index the current commit on treenexus master branch"
-if [ -d neo4j-oti/data/graph.db ]; then
-    rm -rf neo4j-oti/data/graph.db
-fi
-./neo4j-oti/bin/neo4j restart
-repo/oti/index_current_repo.py http://localhost:7478/db/data/
 
-log "OTI database indexed"
+# Stop neo4j!
+if ./neo4j-$APP/bin/neo4j status; then
+    ./neo4j-$APP/bin/neo4j stop
+fi
+
+rm -rf neo4j-$APP/data/graph.db
+
+# Restop neo4j!
+./neo4j-$APP/bin/neo4j start
+
+echo "Indexing $OPENTREE_DOCSTORE"
+
+# We need to pass in the doc store repo name here
+# Need to explicitly run python since ours is different from what you get from #!/usr/bin/env
+$PYTHON repo/$APP/index_current_repo.py http://127.0.0.1:7478/db/data/ $OPENTREE_DOCSTORE
+
+log "$APP database initialized from $OPENTREE_DOCSTORE and indexed"

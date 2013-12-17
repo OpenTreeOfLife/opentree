@@ -9,11 +9,7 @@ BRANCH=master
 
 echo "Installing web2py applications.  Hostname = $OPENTREE_HOST"
 
-# Temporary locations for things downloaded from web.  Can delete this
-# after server is up and running.
-
-mkdir -p downloads
-mkdir -p repo
+# **** Begin setup that is common to opentree/curator and api
 
 # ---------- WEB2PY ----------
 if [ ! -d web2py ]; then
@@ -25,66 +21,34 @@ if [ ! -d web2py ]; then
     log "Installed web2py"
 fi
 
-# ---------- OUR PYTHON VIRTUALENV ----------
-# Set up python env
-if [ ! -d venv ]; then
-    virtualenv venv
-fi
-source venv/bin/activate
-
-# Needed? See functions.sh
-
-if ! grep --silent setup/activate .bashrc; then
-    echo "source $HOME/setup/activate" >> ~/.bashrc
-fi
-
 # ---------- VIRTUALENV + WEB2PY + WSGI ----------
 
 # Patch web2py's wsgihandler so that it does the equivalent of 'venv/activate'
 # when started by Apache.
 
-# See http://stackoverflow.com/questions/11758147/web2py-in-apache-mod-wsgi-with-virtualenv
-cat <<EOF >fragment.tmp
-activate_this = '$PWD/venv/bin/activate_this.py'
-execfile(activate_this, dict(__file__=activate_this))
-import sys
-sys.path.insert(0, '$PWD/web2py')
+if grep -q -v activate_this web2py/wsgihandler.py; then
+
+    # See http://stackoverflow.com/questions/11758147/web2py-in-apache-mod-wsgi-with-virtualenv
+    cat <<EOF >fragment.tmp
+    activate_this = '$PWD/venv/bin/activate_this.py'
+    execfile(activate_this, dict(__file__=activate_this))
+    import sys
+    sys.path.insert(0, '$PWD/web2py')
 EOF
 
-# This is pretty darn fragile!  But if it fails, it will fail big -
-# the web apps won't work at all.
+    # This is pretty darn fragile!  But if it fails, it will fail big -
+    # the web apps won't work at all.
 
-(head -2 web2py/handlers/wsgihandler.py; \
- cat fragment.tmp; \
- tail -n +3 web2py/handlers/wsgihandler.py) \
-   > web2py/wsgihandler.py
+    (head -2 web2py/handlers/wsgihandler.py && \
+     cat fragment.tmp && \
+     tail -n +3 web2py/handlers/wsgihandler.py) \
+       > web2py/wsgihandler.py
 
-rm fragment.tmp
+    rm fragment.tmp
+    echo "Patched wsgihandler.py"
+    log "Patched wsgihandler.py"
 
-# ---------- BROWSER & CURATOR WEBAPPS ----------
-# Set up web2py apps as directed in the README.md file
-
-opentree=repo/opentree
-
-# Consider cloning a designated tag, using git clone --branch <tag>
-
-echo "...fetching opentree repo (main webapp and curator)..."
-git_refresh OpenTreeOfLife opentree $BRANCH || true
-
-# Modify the requirements list
-cp $opentree/requirements.txt requirements-opentree.txt.save
-if grep --invert-match "distribute" \
-      $opentree/requirements.txt >requirements.txt.new ; then
-    mv requirements.txt.new $opentree/requirements.txt
 fi
-
-(cd $opentree; pip install -r requirements.txt)
-
-cp -p $opentree/SITE.routes.py web2py/routes.py
-
-(cd web2py/applications; \
-    ln -sf ../../repo/opentree/webapp ./opentree; \
-    ln -sf ../../repo/opentree/curator ./)
 
 # ---------- WEB2PY CONFIGURATION ----------
 
@@ -97,20 +61,23 @@ cp -p setup/webapp-config $configfile
 # authentication purposes.  'hostname' doesn't work on EC2 instances,
 # so it has to be passed in as a parameter.
 
-changed=no
 sed "s+hostdomain = .*+hostdomain = $OPENTREE_HOST+" < $configfile > tmp.tmp
 if ! cmp -s tmp.tmp $configfile; then
     mv tmp.tmp $configfile
-    changed=yes
+    echo "Apache / web2py restart required (host name)"
 fi
 
 # ---------- CALLING OUT TO NEO4J FROM PYTHON AND JAVASCRIPT ----------
 
-cp -p $opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
+# TBD: Need more fine-grained control so that different neo4j services
+# can live on different hosts.
+
+cp -p repo/opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
 
 # Modify the web2py config file to point to the host that's running
 # treemachine and taxomachine.
 
+changed=no
 if [ x$NEO4JHOST != x ]; then
     for APP in treemachine taxomachine oti; do
         sed "s+$APP = .*+$APP = http://$NEO4JHOST/$APP+" < $configfile > tmp.tmp
@@ -125,7 +92,42 @@ else
     echo "No NEO4JHOST !?"
 fi
 if [ $changed = yes ]; then
-    echo "Apache / web2py restart required"
+    echo "Apache / web2py restart required (links to neo4j services)"
 fi
 
-# Apache needs to be restarted.
+# ---------- ROUTES ----------
+
+cp -p repo/opentree/SITE.routes.py web2py/routes.py
+
+# **** End web2py setup that is common to opentree/curator and api
+
+# ---------- BROWSER & CURATOR WEBAPPS ----------
+# Set up web2py apps as directed in the README.md file
+# Compare install-api.sh
+
+WEBAPP=opentree
+APPROOT=repo/$WEBAPP
+
+echo "...fetching $WEBAPP repo..."
+git_refresh OpenTreeOfLife $WEBAPP $BRANCH || true
+
+# Modify the requirements list
+cp -p $APPROOT/requirements.txt $APPROOT/requirements.txt.save
+if grep --invert-match "distribute" \
+      $APPROOT/requirements.txt >requirements.txt.new ; then
+    mv requirements.txt.new $APPROOT/requirements.txt
+fi
+
+(cd $APPROOT; pip install -r requirements.txt)
+
+(cd web2py/applications; \
+    ln -sf ../../repo/$WEBAPP/webapp ./$WEBAPP; \
+    ln -sf ../../repo/$WEBAPP/curator ./)
+
+# ---------- RANDOM ----------
+
+# Sort of random.  Nothing depends on this.
+
+if ! grep --silent setup/activate .bashrc; then
+    echo "source $HOME/setup/activate" >> ~/.bashrc
+fi

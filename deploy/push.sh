@@ -17,9 +17,11 @@ set -e
 
 # The host must always be specified
 # OPENTREE_HOST=dev.opentreeoflife.org
+# OPENTREE_NEO4J_HOST=dev.opentreeoflife.org
 OPENTREE_ADMIN=admin
 OPENTREE_IDENTITY=opentree.pem
-OPENTREE_NEO4J_HOST=dev.opentreeoflife.org
+OPENTREE_DOCSTORE=treenexus
+OPENTREE_GH_IDENTITY=opentree-gh.pem
 COMMAND=push
 
 if [ x$CONTROLLER = x ]; then
@@ -40,6 +42,7 @@ while [ $# -gt 0 ]; do
     elif [ "x$1" = "x-n" ]; then
 	OPENTREE_NEO4J_HOST="$2"
     elif [ "x$1" = "x-c" ]; then
+	# Config file overrides default parameter settings
         source "$2"
     else
 	echo 1>&2 "Unrecognized flag: $1"
@@ -56,7 +59,9 @@ else
     COMMAND=push
 fi
 
-if [ "x$OPENTREE_HOST" = x ]; then echo "OPENTREE_HOST not specified"; exit 1; fi
+[ "x$OPENTREE_HOST" != x ] || (echo "OPENTREE_HOST not specified"; exit 1)
+[ -r $OPENTREE_IDENTITY ] || (echo "$OPENTREE_IDENTITY not found"; exit 1)
+[ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J=$OPENTREE_HOST
 
 # abbreviations... no good reason for these, they just make the commands shorter
 ADMIN=$OPENTREE_ADMIN
@@ -76,24 +81,22 @@ echo "host=$OPENTREE_HOST, admin=$ADMIN, pem=$PEM, controller=$CONTROLLER, comma
 #   server C - treemachine, taxomachine
 
 function docommand {
+    sync_system
     case $COMMAND in
-        push)
-	    sync_system
-	    pushmost $*
-	    finish
+        push | pushmost)
+	    pushmost $*; restart_apache
     	    ;;
 	push-web2py)
-            sync_system
-	    pushweb2py $*
-	    finish
+            pushweb2py $*; restart_apache
 	    ;;
-	push-api)
-            sync_system
-	    pushapi $*
+	push-api | pushapi)
+            pushapi $*; restart_apache
 	    ;;
-	push-db)
-	    sync_system
+	push-db | pushdb)
 	    pushdb $*
+    	    ;;
+	index | indexoti)
+	    indexoti $*
     	    ;;
 	echo)
 	    ${SSH} "$OT_USER@$OPENTREE_HOST" bash <<EOF
@@ -101,7 +104,7 @@ function docommand {
 EOF
 	    ;;
 	*)
-	    echo fall-through
+	    echo "Unrecognized command: $COMMAND"
 	    ;;
     esac 
 }
@@ -118,10 +121,9 @@ function sync_system {
 function pushmost {
     pushweb2py
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-apps.sh $CONTROLLER
-    finish
 }
 
-function finish {
+function restart_apache {
     # The install scripts modify the apache config file, so do this last
     ${SSH} "$ADMIN@$OPENTREE_HOST" \
       sudo cp -p "~$OT_USER/setup/apache-config" /etc/apache2/sites-available/opentree
@@ -134,7 +136,14 @@ function pushweb2py {
 }
 
 function pushapi {
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" "${NEO4JHOST}" $CONTROLLER
+    echo "doc store is $OPENTREE_DOCSTORE"
+    rsync -pr -e "${SSH}" $OPENTREE_GH_IDENTITY "$OT_USER@$OPENTREE_HOST":.ssh/opentree
+    ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" $OPENTREE_DOCSTORE $CONTROLLER
+}
+
+function indexoti {
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/index-doc-store.sh $OPENTREE_DOCSTORE $CONTROLLER
 }
 
 function pushdb {
