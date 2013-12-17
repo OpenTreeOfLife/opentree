@@ -8,7 +8,6 @@ BRANCH=master
 . setup/functions.sh
 
 echo "Installing web2py applications.  Hostname = $OPENTREE_HOST"
-log  "Installing web2py applications.  Hostname = $OPENTREE_HOST"
 
 # Temporary locations for things downloaded from web.  Can delete this
 # after server is up and running.
@@ -23,23 +22,26 @@ if [ ! -d web2py ]; then
 	  http://www.web2py.com/examples/static/web2py_src.zip
     fi
     unzip downloads/web2py_src.zip
+    log "Installed web2py"
 fi
 
-# ---------- OUR VIRTUALENV ----------
+# ---------- OUR PYTHON VIRTUALENV ----------
 # Set up python env
 if [ ! -d venv ]; then
     virtualenv venv
 fi
 source venv/bin/activate
 
-# The following helps establish the environment when web2py is fired
-# up by Apache via WSGI - I think
+# Needed? See functions.sh
 
 if ! grep --silent setup/activate .bashrc; then
     echo "source $HOME/setup/activate" >> ~/.bashrc
 fi
 
 # ---------- VIRTUALENV + WEB2PY + WSGI ----------
+
+# Patch web2py's wsgihandler so that it does the equivalent of 'venv/activate'
+# when started by Apache.
 
 # See http://stackoverflow.com/questions/11758147/web2py-in-apache-mod-wsgi-with-virtualenv
 cat <<EOF >fragment.tmp
@@ -59,7 +61,7 @@ EOF
 
 rm fragment.tmp
 
-# ---------- BROWSER & CURATOR ----------
+# ---------- BROWSER & CURATOR WEBAPPS ----------
 # Set up web2py apps as directed in the README.md file
 
 opentree=repo/opentree
@@ -102,6 +104,8 @@ if ! cmp -s tmp.tmp $configfile; then
     changed=yes
 fi
 
+# ---------- CALLING OUT TO NEO4J FROM PYTHON AND JAVASCRIPT ----------
+
 cp -p $opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
 
 # Modify the web2py config file to point to the host that's running
@@ -123,7 +127,5 @@ fi
 if [ $changed = yes ]; then
     echo "Apache / web2py restart required"
 fi
-
-log "Browser/curator installed"
 
 # Apache needs to be restarted.

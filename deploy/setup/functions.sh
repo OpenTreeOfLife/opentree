@@ -6,6 +6,8 @@ set -e
 # Utilities.
 # Source this file from another bash script.
 
+# ---------- JAVA HOME ----------
+
 if false; then
     # DOES NOT WORK ON UBUNTU, but preferred on Debian.
     javalink=`readlink /etc/alternatives/java`
@@ -22,6 +24,7 @@ fi
 
 export JAVA_HOME=$javalink
 
+# ---------- HOST NAME ----------
 # Remember the host name
 
 HOSTFILE=hostname
@@ -34,8 +37,7 @@ else
     exit 1
 fi
 
-
-# Logging
+# ---------- LOGGING ----------
 
 function log() {
     if [ x$CONTROLLER = x ]; then
@@ -43,8 +45,16 @@ function log() {
 	exit 1
     fi
     mkdir -p log
-    (echo `date` $CONTROLLER $OPENTREE_TAG; echo " $*") >>log/messages
+    (echo `date` $CONTROLLER $OPENTREE_TAG " $*") >>log/messages
 }
+
+# ---------- OUR VIRTUALENV ----------
+
+if [ -r venv/bin/activate ]; then
+    source venv/bin/activate
+fi
+
+# ---------- SHELL FUNCTIONS ----------
 
 # Refresh a git repo
 

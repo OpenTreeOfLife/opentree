@@ -10,7 +10,6 @@ BRANCH=master
 # Will not run on AWS free tier.  Recommended at least 60G disk and 16G RAM.
 
 # Uses $CONTROLLER
-log  "Installing neo4j instances"
 
 # Temporary locations for things downloaded from web.  Can delete this
 # after server is up and running.
@@ -67,13 +66,13 @@ function make_neo4j_instance {
         (cd repo/$APP; ./mvn_serverplugins.sh)
 
 	if true; then
-	    if ! ./neo4j-$APP/bin/neo4j status; then
+	    if ./neo4j-$APP/bin/neo4j status; then
 		./neo4j-$APP/bin/neo4j stop
 	    fi
 	    cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
 
 	    # Stop any running server.  There may or may not be a database.
-	    if ! ./neo4j-$APP/bin/neo4j status; then
+	    if ./neo4j-$APP/bin/neo4j status; then
 		./neo4j-$APP/bin/neo4j stop
             fi
 	else
@@ -106,52 +105,13 @@ function make_neo4j_instance {
 
         # Start or restart the server
         ./neo4j-$APP/bin/neo4j start
+	log "Started $APP"
     fi
 }
 
 make_neo4j_instance treemachine 7474 7473
 make_neo4j_instance taxomachine 7476 7475
 make_neo4j_instance oti         7478 7477
-
-# ---------- THE NEO4J DATABASES ----------
-
-function fetch_neo4j_db {
-    APP=$1
-
-    # Retrieve and unpack the database
-    # treemachine: 6G, expands to 12G (AWS free tier only gives you 8G total)
-    # taxomachine: 4G, expands to 20G
-    wget --no-verbose -O downloads/$APP.db.tgz.md5.new \
-      http://files.opentreeoflife.org:/export/$APP.db.tgz.md5
-    if [ ! -r downloads/$APP.db.tgz.md5 ] || \
-       [ ! -r downloads/$APP.db.tgz ] || \
-       ! cmp downloads/$APP.db.tgz.md5 downloads/$APP.db.tgz.md5.new; then
-        if [ $FORREAL = yes ]; then
-            time \
-            wget --no-verbose -O downloads/$APP.db.tgz \
-              http://files.opentreeoflife.org:/export/$APP.db.tgz
-            mv downloads/$APP.db.tgz.md5.new downloads/$APP.db.tgz.md5 
-
-            install_neo4j_db $APP
-            setup/install_db.sh $APP
-        else
-            echo "Should load $APP database, but not doing so"
-        fi
-    fi
-}
-
-if false; then
-    total=`df -m . | (read; read fs total used available percent; echo $total)`
-    if [ $total -lt 60000 ]; then
-        echo 1>&2 "Disk too small, will do a sham install of tree/taxo"
-        FORREAL=no
-    elif [ x$FORREAL = x ]; then
-        FORREAL=yes
-    fi
-
-    fetch_neo4j_db treemachine
-    fetch_neo4j_db taxomachine
-fi
 
 log "Finished installing neo4j instances"
 

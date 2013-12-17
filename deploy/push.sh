@@ -70,18 +70,29 @@ OT_USER=opentree
 
 echo "host=$OPENTREE_HOST, admin=$ADMIN, pem=$PEM, controller=$CONTROLLER, command=$COMMAND"
 
+# Eventually finer grained: e.g.
+#   server A - browser, curator
+#   server B - api, doc store, oti
+#   server C - treemachine, taxomachine
+
 function docommand {
     case $COMMAND in
         push)
-	    pushstuff $*
+	    sync_system
+	    pushmost $*
+	    finish
     	    ;;
 	push-web2py)
+            sync_system
 	    pushweb2py $*
+	    finish
 	    ;;
 	push-api)
+            sync_system
 	    pushapi $*
 	    ;;
 	push-db)
+	    sync_system
 	    pushdb $*
     	    ;;
 	echo)
@@ -97,18 +108,20 @@ EOF
 
 function sync_system {
     # Do privileged stuff
-    scp -p -i "${PEM}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
+    rsync -pr -e "${SSH}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
+    # was scp -p -i "${PEM}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
     ${SSH} "$ADMIN@$OPENTREE_HOST" ./as-admin.sh "$OPENTREE_HOST"
     # Copy files over
-    rsync -pr -e "${SSH}" "--exclude=*~" setup "$OT_USER@$OPENTREE_HOST":
+    rsync -pr -e "${SSH}" "--exclude=*~" "--exclude=#*" setup "$OT_USER@$OPENTREE_HOST":
     }
 
-function pushstuff {
-    sync_system
-
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${NEO4JHOST}" $CONTROLLER
+function pushmost {
+    pushweb2py
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-apps.sh $CONTROLLER
+    finish
+}
 
+function finish {
     # The install scripts modify the apache config file, so do this last
     ${SSH} "$ADMIN@$OPENTREE_HOST" \
       sudo cp -p "~$OT_USER/setup/apache-config" /etc/apache2/sites-available/opentree
@@ -116,8 +129,11 @@ function pushstuff {
     ${SSH} "$ADMIN@$OPENTREE_HOST" sudo apache2ctl graceful
 }
 
+function pushweb2py {
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${NEO4JHOST}" $CONTROLLER
+}
+
 function pushapi {
-    sync_system
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" "${NEO4JHOST}" $CONTROLLER
 }
 
@@ -127,7 +143,7 @@ function pushdb {
     TARBALL=$1
     APP=$2
     rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":downloads/$APP.db.tgz
-    ${SSH} ${PEM} setup/install_db.sh $APP "$OPENTREE_HOST"
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install_db.sh "$OPENTREE_HOST" $APP
 }
 
 docommand $*

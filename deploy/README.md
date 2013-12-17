@@ -23,20 +23,11 @@ running without big neo4j instances, m2.xlarge for those running with.
 Put the ssh private key somewhere, e.g. 'opentree.pem'.  
 Set its file permissions to 600.
 
-Currently there is a one-time manual step in setting up the doc store
-API on a new server: copying the Github SSH deployment keys which
-allows the OpenTree API to push changes to Github.
-
-    scp -p opentree opentree.pub opentree@server:~/.ssh
-
-Currently the ```opentree``` private key and ```opentree.pub``` public key can
-be found on files.opentreeoflife.org .
-
 Create one configuration file for each server.  A configuration is just a shell script that sets some variables.
 
 Run the setup script, which is called 'push.sh', as
 
-     ./push.sh -c [configfile]
+     ./push.sh -c {configfile}
 
 See sample.config in this directory for documentation on how to prepare a configuration file.  In summary:
 
@@ -47,22 +38,29 @@ See sample.config in this directory for documentation on how to prepare a config
 
 The push.sh script starts by pushing out a script to be run as the admin user (setup/as_admin.sh).  This script installs prerequisite software and sets up an unprivileged 'opentree' user.  Then further scripts are run as user 'opentree'.
 
+Setting up the API and studies repo
+-----------------------------------
+
+    ./push.sh -c {configfile} push-api
+
+This will change soon (to operate via the config file), but currently there is a one-time manual step in setting up the doc store API on a new server: copying the Github SSH deployment keys which allows the OpenTree API to push changes to Github.
+
+    scp -p opentree opentree.pub opentree@server:~/.ssh
+
+Currently the ```opentree``` private key and ```opentree.pub``` public key can
+be found on files.opentreeoflife.org .
+
 How to push the neo4j databases
 -------------------------------
 
-If the server is big and is to run treemachine or taxomachine, the appropriate database has to be pushed out to the server and installed, as a separate step.  Create a compressed tar file of the neo4j database directory (which by default is called 'graph.db' although you can call it whatever you like locally).  Then copy it to the server using rsync:
+(WORK IN PROGRESS.)
+
+If the server is to run treemachine or taxomachine (ordinarily this requires a 'big' server), the appropriate database has to be pushed out to the server and installed, as a separate step.  Create a compressed tar file of the neo4j database directory (which by default is called 'graph.db' although you can call it whatever you like locally).  Then copy it to the server using rsync:
 
     cd data
     tar -C newlocaldb.db -czf newlocaldb.db.tgz .
-    rsync -e "ssh -i opentree.pem" -vax newlocaldb.db.tgz  \
-        opentree@$host:downloads/$app.db.tgz
+    {deploy}/push.sh push-db -c {configfile} newlocaldb.db {app}
 
-where $host is the same as <hostname> as specified above and $app is taxomachine, treemachine, etc.
-
-If you put the tarball in the target location as specified above, then the 'install_db.sh' installation script can pick it up.  Run the installation script as follows:
-
-    ssh -i opentree.pem opentree@$host setup/install_db.sh treemachine
-
-Repeat substituting 'taxomachine' for 'treemachine' if desired.
+where {app} is taxomachine, treemachine, etc. and {deploy} is the path to the directory containing push.sh.
 
 New versions of the database can be pushed out in this way as desired, replacing the previous version each time.  The previous version is kept for disaster recovery, but if it needs to be reinstalled, that has to be done manually.
