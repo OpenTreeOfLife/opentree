@@ -35,6 +35,76 @@ $(document).ready(function() {
     // auto-select first tab (Status)
     $('.nav-tabs a:first').tab('show');
     loadSelectedStudy(studyID);
+
+    // Initialize the jQuery File Upload widget:
+    $('#fileupload').fileupload({
+        disableImageResize: true,
+        // maxNumberOfFiles: 5,
+        // maxFileSize: 5000000,  // TODO: allow maximum
+        // acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i  // TODO: allow any
+        url: '/curator/supporting_files/upload_file',
+        dataType: 'json',
+        autoUpload: 'True',
+        done: function() {
+            console.log('done!');
+        }
+    }).on('fileuploadprogressall', function (e, data) {
+        console.log('fileuploadprogressall');
+        var progress = parseInt(data.loaded / data.total * 100, 10);
+        $('#file-upload-progress .bar').css(
+            'width',
+            progress + '%'
+        );
+        $('#file-upload-progress .bar span').text(
+            progress + '%'
+        );
+    }).on('fileuploaddone', function (e, data) {
+        console.log('fileuploaddone');
+        $.each(data.result.files, function (index, file) {
+            if (file.url) {
+                var link = $('<a>')
+                    .attr('target', '_blank')
+                    .prop('href', file.url);
+                /*
+                $(data.context.children()[index])
+                    .wrap(link);
+                */
+                console.log( "SUCCESS, file url = "+ link);
+                /* 'file' obj has these properties
+                    .delete_type: "DELETE"
+                    .delete_url: "/curator/supporting_files/delete_file/supporting_files.doc.96...3461.m4a"
+                    .name: "10_6_2011 6_03 PM.m4a"
+                    .size: 35036641
+                    .url: "/curator/supporting_files/download/supporting_files.doc.96acd92...3461.m4a"
+                */
+            } else if (file.error) {
+                var error = $('<span class="text-danger"/>').text(file.error);
+                /*
+                $(data.context.children()[index])
+                    .append('<br>')
+                    .append(error);
+                */
+                debugger;
+                console.log( "FAILURE, msg = "+ error);
+            }
+        });
+    }) 
+    
+    // Load existing files (?)
+    $('#fileupload').addClass('fileupload-processing');
+    $.ajax({
+        // Uncomment the following to send cross-domain cookies:
+        //xhrFields: {withCredentials: true},
+        url: $('#fileupload').fileupload('option', 'url'),
+        dataType: 'json',
+        context: $('#fileupload')[0]
+    }).always(function () {
+        $(this).removeClass('fileupload-processing');
+    }).done(function (result) {
+        $(this).fileupload('option', 'done')
+            .call(this, $.Event('done'), {result: result});
+    });
+
 });
 
 
