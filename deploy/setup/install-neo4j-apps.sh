@@ -102,11 +102,15 @@ function make_neo4j_instance {
 	sed s+org.neo4j.server.http.log.enabled=false+org.neo4j.server.http.log.enabled=true+ \
 	  > props.tmp
         mv props.tmp neo4j-$APP/conf/neo4j-server.properties
+    fi
 
-        # Start or restart the server
-        ./neo4j-$APP/bin/neo4j start
+    if ! ./neo4j-$APP/bin/neo4j status; then
+	# Start or restart the server
+	echo "Starting $APP neo4j server"
+	./neo4j-$APP/bin/neo4j start
 	log "Started $APP"
     fi
+
 }
 
 make_neo4j_instance treemachine 7474 7473

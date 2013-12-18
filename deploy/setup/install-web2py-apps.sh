@@ -26,35 +26,30 @@ fi
 # Patch web2py's wsgihandler so that it does the equivalent of 'venv/activate'
 # when started by Apache.
 
-if grep -q -v activate_this web2py/wsgihandler.py; then
-
-    # See http://stackoverflow.com/questions/11758147/web2py-in-apache-mod-wsgi-with-virtualenv
-    cat <<EOF >fragment.tmp
-    activate_this = '$PWD/venv/bin/activate_this.py'
-    execfile(activate_this, dict(__file__=activate_this))
-    import sys
-    sys.path.insert(0, '$PWD/web2py')
+# See http://stackoverflow.com/questions/11758147/web2py-in-apache-mod-wsgi-with-virtualenv
+# Indentation (or lack thereof) is critical
+cat <<EOF >fragment.tmp
+activate_this = '$PWD/venv/bin/activate_this.py'
+execfile(activate_this, dict(__file__=activate_this))
+import sys
+sys.path.insert(0, '$PWD/web2py')
 EOF
 
-    # This is pretty darn fragile!  But if it fails, it will fail big -
-    # the web apps won't work at all.
+# This is pretty darn fragile!  But if it fails, it will fail big -
+# the web apps won't work at all.
 
-    (head -2 web2py/handlers/wsgihandler.py && \
-     cat fragment.tmp && \
-     tail -n +3 web2py/handlers/wsgihandler.py) \
-       > web2py/wsgihandler.py
+(head -2 web2py/handlers/wsgihandler.py && \
+ cat fragment.tmp && \
+ tail -n +3 web2py/handlers/wsgihandler.py) \
+   > web2py/wsgihandler.py
 
-    rm fragment.tmp
-    echo "Patched wsgihandler.py"
-    log "Patched wsgihandler.py"
-
-fi
+rm fragment.tmp
 
 # ---------- WEB2PY CONFIGURATION ----------
 
-# Config file pushed here using rsync, see push.sh
-configfile=web2py/applications/opentree/private/config
+configfile=repo/opentree/webapp/private/config
 
+# Config file pushed here using rsync, see push.sh
 cp -p setup/webapp-config $configfile
 
 # The web2py apps need to know their own host names, for
