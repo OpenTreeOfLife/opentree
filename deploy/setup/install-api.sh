@@ -52,18 +52,18 @@ pushd .
 
     cd $APPROOT/private
     cp config.example config
-    sed -i -e 's+REPO_PATH+$OTHOME/repo/$OPENTREE_DOCSTORE+' config
+    sed -i -e "s+REPO_PATH+$OTHOME/repo/$OPENTREE_DOCSTORE+" config
     # Specify our remote to push to, which is added to local repo above
-    sed -i -e 's+REPO_REMOTE+originssh+' config
+    sed -i -e "s+REPO_REMOTE+originssh+" config
 
     # This wrapper script allows us to specify an ssh key to use in git pushes
-    sed -i -e 's+GIT_SSH+$OTHOME/repo/$WEBAPP/bin/git.sh+' config
+    sed -i -e "s+GIT_SSH+$OTHOME/repo/$WEBAPP/bin/git.sh+" config
 
     # This is the file location of the SSH key that is used in git.sh
-    sed -i -e 's+PKEY+$OTHOME/.ssh/opentree+' config
+    sed -i -e "s+PKEY+$OTHOME/.ssh/opentree+" config
 
     # Access oti search from port 7478 on localhost
-    sed -i -e 's+7474+7478+' config
+    sed -i -e "s+7474+7478+" config
 popd
 
 echo "Apache needs to be restarted (API)"
