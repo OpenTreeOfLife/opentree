@@ -30,7 +30,7 @@ def upload_file():
         db.supporting_files[id] = dict(file_size=size)
         db.supporting_files[id] = dict(study_id=response.study_id)
          
-        res = dict(files=[{"name": str(f.filename), "size": size, "url": URL(f='download', args=[File['doc']]), "delete_url": URL(f='delete_file', args=[File['doc']]), "delete_type": "DELETE" }])
+        res = dict(files=[{"name": str(f.filename), "size": size, "url": URL(f='download', args=[File['doc']]), "delete_url": URL(f='delete_file', args=[File['doc']])}])
          
         import gluon
         ## print(">>>>>>>")
@@ -51,6 +51,7 @@ def delete_file():
     """
     Delete an uploaded file
     """
+    response.view = 'generic.json'
     try:
         name = request.args[0]
         db(db.supporting_files.doc==name).delete()

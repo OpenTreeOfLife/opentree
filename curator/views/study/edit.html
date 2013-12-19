@@ -445,7 +445,7 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or type"
+                    <input type="text" class="search-query" placeholder="Filter by name or description"
                            data-bind="value: viewModel.listFilters.FILES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
@@ -454,20 +454,40 @@ body {
                 <table class="table table-condensed table-hover">
                   <thead>
                     <tr>
-                        <th>File name (click to see file details)</th>
-                        <th>Type</th>
-                        <th>Size</th>
+                        <th width="35%">File name (click to download)</th>
+                        <th width="*">Description</th>
+                        <th width="15%">Size</th><!-- also includes possible delete button -->
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredFiles().pagedItems(), as: 'file' }">
                     <tr>
+                    {{ if viewOrEdit == 'EDIT': }}
                         <td>
                             <a href="#" target="_blank" data-bind="text: file.filename || '?', attr: { href: file.url || '#' }">
                                 Alignment data (urchins).xls
                             </a>
                         </td>
-                        <td data-bind="text: file.type || '?'">Microsoft Excel spreadsheet</td>
-                        <td data-bind="text: file.size || '?'">241 KB</td>
+                        <td>
+                            <div><textarea data-bind="value: file.description" placeholder="Describe this file's format and purpoose." rows="2" class="input-block-level">?</textarea></div>
+                            <em data-bind="if: file.sourceForTree() !== '', text: file.sourceForTree">Microsoft Excel spreadsheet</em>
+                        </td>
+                        <td><span data-bind="text: getHumanReadableFileSize(file.size()) || '?'">241 KB</span>
+                            <button class="pull-right btn btn-mini row-controls-ghosted" data-bind="click: removeSupportingFile">
+                                <i class="icon-remove"></i>
+                            </button>
+                        </td>
+                    {{ else: }}
+                        <td>
+                            <a href="#" target="_blank" data-bind="text: file.filename || '?', attr: { href: file.url || '#' }">
+                                Alignment data (urchins).xls
+                            </a>
+                        </td>
+                        <td>
+                            <div data-bind="text: file.description">Microsoft Excel spreadsheet</div>
+                            <em data-bind="if: file.sourceForTree() !== '', text: file.sourceForTree">Microsoft Excel spreadsheet</em>
+                        </td>
+                        <td><span data-bind="text: file.size || '?'">241 KB</span> bytes</td>
+                    {{ pass }}
                     </tr>
                   </tbody>
                 </table>
@@ -552,7 +572,7 @@ body {
                   <input type="text" id="new-file-url" name="new-file-url" class="input-block-level" value="" placeholder="Paste file URL here">
 
                   <div Xclass="form-actions" style="margin-top: 1em;">
-                      <button type="submit" class="btn btn-primary btn-primary-disabled" onclick="addSupportingFile(); return false;">Add new file 
+                      <button type="submit" class="btn btn-primary btn-primary-disabled" onclick="addSupportingFileFromURL(); return false;">Add new file 
                         <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
                       <button type="button" class="btn">Cancel</button>
                   </div>
