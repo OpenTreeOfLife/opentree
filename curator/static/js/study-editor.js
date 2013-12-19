@@ -35,6 +35,83 @@ $(document).ready(function() {
     // auto-select first tab (Status)
     $('.nav-tabs a:first').tab('show');
     loadSelectedStudy(studyID);
+
+    // Initialize the jQuery File Upload widget:
+    $('#fileupload').fileupload({
+        disableImageResize: true,
+        // maxNumberOfFiles: 5,
+        // maxFileSize: 5000000,  // TODO: allow maximum
+        // acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i  // TODO: allow any
+        url: '/curator/supporting_files/upload_file',
+        dataType: 'json',
+        autoUpload: 'True',
+        done: function() {
+            console.log('done!');
+        }
+    }).on('fileuploadprogressall', function (e, data) {
+        console.log('fileuploadprogressall');
+        var progress = parseInt(data.loaded / data.total * 100, 10);
+        $('#file-upload-progress .bar').css(
+            'width',
+            progress + '%'
+        );
+        $('#file-upload-progress .bar span').text(
+            progress + '%'
+        );
+    }).on('fileuploaddone', function (e, data) {
+        console.log('fileuploaddone');
+        $.each(data.result.files, function (index, file) {
+            if (file.url) {
+                var link = $('<a>')
+                    .attr('target', '_blank')
+                    .prop('href', file.url);
+
+                /* 'file' obj has these properties
+                    .delete_url: "/curator/supporting_files/delete_file/supporting_files.doc.96...3461.m4a"
+                    .name: "10_6_2011 6_03 PM.m4a"
+                    .size: 35036641
+                    .url: "/curator/supporting_files/download/supporting_files.doc.96acd92...3461.m4a"
+                */
+                // update the files list (and auto-save?)
+                var fileNexson = cloneFromNexsonTemplate('single supporting file');
+                fileNexson.filename( file.name );
+                fileNexson.url( file.url );  // TODO: prepend current domain name, if missing?
+                fileNexson.type( "" );  // TODO: glean this from file extension?
+                fileNexson.size( file.size );  // convert byte count for display?
+                // TODO: incorporate the delete URL provided? or generate as-needed?
+                // fileNexson.delete_url( file.delete_url );
+
+                getSupportingFiles().push(fileNexson);
+
+                showSuccessMessage('File added.');
+            } else if (file.error) {
+                var error = $('<span class="text-danger"/>').text(file.error);
+                /*
+                $(data.context.children()[index])
+                    .append('<br>')
+                    .append(error);
+                */
+                debugger;
+                console.log( "FAILURE, msg = "+ error);
+            }
+        });
+    }) 
+    
+    // Load existing files (?)
+    $('#fileupload').addClass('fileupload-processing');
+    $.ajax({
+        // Uncomment the following to send cross-domain cookies:
+        //xhrFields: {withCredentials: true},
+        url: $('#fileupload').fileupload('option', 'url'),
+        dataType: 'json',
+        context: $('#fileupload')[0]
+    }).always(function () {
+        $(this).removeClass('fileupload-processing');
+    }).done(function (result) {
+        $(this).fileupload('option', 'done')
+            .call(this, $.Event('done'), {result: result});
+    });
+
 });
 
 
@@ -2469,6 +2546,8 @@ var nexsonTemplates = {
         "filename": "",
         "url": "",
         "type": "",  // eg, 'Microsoft Excel spreadsheet'
+        "description": "",  // eg, "Alignment data for tree #3"
+        "sourceForTree": "",  // used IF this file was the original data for a tree
         "size": ""   // eg, '241 KB'
     }, // END of 'single supporting file' template
 
@@ -2606,23 +2685,18 @@ function getSupportingFiles(data) {
     // return the inner 'files' observableArray (the interesting part)
     return metaTag.author.invocation.params.files;
 }
-function addSupportingFile() {
+function addSupportingFileFromURL() {
     // TODO: support file upload from desktop
     // TODO: upload data in a preparatory step?
     
     // initial version supports URL entry only...
     var chosenURL = $.trim( $('[name=new-file-url]').val() || '');
     if (chosenURL === '') {
-        showErrorMessage('Please choose a local file or enter a valid URL.');
+        showErrorMessage('Please enter a valid URL.');
         return;
     }
 
-    // TODO: do the actual removal (from the remote file-store) via AJAX
-  if (false) {
-
-
-    
-    // looking good, proceed with addition via AJAX
+    // TODO: support import-from-URL via AJAX
     $('#ajax-busy-bar').show();
     
     $.ajax({
@@ -2639,7 +2713,7 @@ function addSupportingFile() {
             // creation method should return either our JSON structure describing the new file, or an error
             $('#ajax-busy-bar').hide();
 
-            console.log('addSupportingFile(): done! textStatus = '+ textStatus);
+            console.log('addSupportingFileFromURL(): done! textStatus = '+ textStatus);
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
                 showErrorMessage('Sorry, there was an error adding this file.');
@@ -2652,55 +2726,48 @@ function addSupportingFile() {
             file.filename( data.filename || "" );
             file.url( data.url || "" );
             file.type( data.type || "" );
+            file.description( data.description || "" );
+            file.sourceForTree( data.sourceForTree || "" );
             file.size( data.size || "" );
+
             getSupportingFiles().push(file);
         },
         error: function( data, textStatus, jqXHR ) {
-            debugger;
+            showErrorMessage('Sorry, there was an error adding this file.');
         }
     });
 
-
-
-  } // END if(false)
-
-  
-    // TODO: remove this pretend victory..
-    showSuccessMessage('File added.');
-    // update the files list (and auto-save?)
-    var file = cloneFromNexsonTemplate('single supporting file');
-    file.filename( "FAKEFILE.csv" );
-    file.url( "http://storage.blah.org/FAKEFILE.csv" );
-    file.type( "Comma-separated text" );
-    file.size( "1234.5 KB" );
-    getSupportingFiles().push(file);
 }
-function removeSupportingFile( fileListItem ) {
+
+function removeSupportingFile( fileInfo ) {
     // let's be sure, since adding may be slow...
-    if (!confirm("Do you really want to remove this file? This action cannot be undone!")) {
+    if (!confirm("Are you sure you want to delete this file?")) {
         return;
     }
+
+    ///var removeURL = API_remove_file_DELETE_url.replace('STUDY_ID', 'TODO').replace('FILE_ID', 'TODO');
+
     // TODO: do the actual removal (from the remote file-store) via AJAX
-  if (false) {
-
-
-
     $('#ajax-busy-bar').show();
     
     $.ajax({
-        type: 'DELETE',
+        // type: 'DELETE',
         dataType: 'json',
         // crossdomain: true,
         // contentType: "application/json; charset=utf-8",
-        url: API_remove_file_DELETE_url,
+        //url: removeURL // modified API call, see above
+        url: '/curator/supporting_files/delete_file/'+ fileInfo.filename(),
         data: { },
         success: function( data, textStatus, jqXHR ) {
-            // deletion method should return ???, or an error
-            debugger;
-            console.log('removeSupportingFile(): done! textStatus = '+ textStatus);
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
                 showErrorMessage('Sorry, there was an error removing this file.');
+                console.log("ERROR: textStatus !== 'success', but "+ textStatus);
+                return;
+            }
+            if (data.message !== 'File deleted') {
+                showErrorMessage('Sorry, there was an error removing this file.');
+                console.log("ERROR: message !== 'File deleted', but "+ data.message);
                 return;
             }
 
@@ -2708,24 +2775,14 @@ function removeSupportingFile( fileListItem ) {
             showSuccessMessage('File removed.');
             // update the files list
             var fileList = getSupportingFiles();
-            fileList.remove(fileListItem);
+            fileList.remove(fileInfo);
         },
         error: function( data, textStatus, jqXHR ) {
-            debugger;
+            showErrorMessage('Sorry, there was an error removing this file.');
+            console.log("ERROR: textStatus: "+ textStatus);
+            return;
         }
     });
-
-
-
-  } // END if(false)
-
-  
-    // TODO: remove this pretend victory..
-    showSuccessMessage('File removed.');
-    // update the files list
-    var fileList = getSupportingFiles();
-    fileList.remove(fileListItem);
-
 }
 
 function getOTUMappingHints(data) {
@@ -3302,4 +3359,13 @@ function clearD3PropertiesFromTree(tree) {
         delete node.ingroup;
         delete node.rootDist;
     });
+}
+
+// adapted from http://stackoverflow.com/a/4506030
+var fileSizePrefixes = ' KMGTPEZYXWVU';
+function getHumanReadableFileSize(size) {
+  if(size <= 0) return '0';
+  var t2 = Math.min(Math.round(Math.log(size)/Math.log(1024)), 12);
+  return (Math.round(size * 100 / Math.pow(1024, t2)) / 100) +
+    fileSizePrefixes.charAt(t2).replace(' ', '') + 'B';
 }
