@@ -68,6 +68,7 @@ fi
 # can live on different hosts.
 
 cp -p repo/opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
+cp -p repo/opentree/rpx_account.py web2py/gluon/contrib/login_methods/
 
 # Modify the web2py config file to point to the host that's running
 # treemachine and taxomachine.
