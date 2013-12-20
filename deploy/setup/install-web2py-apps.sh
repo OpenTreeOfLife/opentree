@@ -67,9 +67,6 @@ fi
 # TBD: Need more fine-grained control so that different neo4j services
 # can live on different hosts.
 
-cp -p repo/opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
-cp -p repo/opentree/rpx_account.py web2py/gluon/contrib/login_methods/
-
 # Modify the web2py config file to point to the host that's running
 # treemachine and taxomachine.
 
@@ -90,10 +87,6 @@ fi
 if [ $changed = yes ]; then
     echo "Apache / web2py restart required (links to neo4j services)"
 fi
-
-# ---------- ROUTES ----------
-
-cp -p repo/opentree/SITE.routes.py web2py/routes.py
 
 # **** End web2py setup that is common to opentree/curator and api
 
@@ -119,6 +112,15 @@ fi
 (cd web2py/applications; \
     ln -sf ../../repo/$WEBAPP/webapp ./$WEBAPP; \
     ln -sf ../../repo/$WEBAPP/curator ./)
+
+
+# ---------- ROUTES AND WEB2PY PATCHES ----------
+# These require a fresh pull of the opentree repo (above)
+
+cp -p repo/opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
+cp -p repo/opentree/rpx_account.py web2py/gluon/contrib/login_methods/
+cp -p repo/opentree/SITE.routes.py web2py/routes.py
+
 
 # ---------- RANDOM ----------
 
