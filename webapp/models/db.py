@@ -93,7 +93,7 @@ auth.settings.actions_disabled=['register','change_password','request_reset_pass
 auth.settings.login_form = RPXAccount(
     request, api_key=janrain_api_key,
     domain='opentree',
-    url = "http://%s/%s/default/user/login" % (host, request.application)
+    url = "http://%s/user/login" % (host,)
     )
 
 if request.controller=='default' and request.function=='user' and request.args(0)=='login':
