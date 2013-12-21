@@ -35,6 +35,8 @@ while [ $# -gt 0 ]; do
 	break
     elif [ "x$1" = "x-h" ]; then
 	OPENTREE_HOST="$2"
+    elif [ "x$1" = "x-p" ]; then
+	OPENTREE_PUBLIC_DOMAIN="$2"
     elif [ "x$1" = "x-u" ]; then
 	OPENTREE_ADMIN="$2"
     elif [ "x$1" = "x-i" ]; then
@@ -62,6 +64,7 @@ fi
 [ "x$OPENTREE_HOST" != x ] || (echo "OPENTREE_HOST not specified"; exit 1)
 [ -r $OPENTREE_IDENTITY ] || (echo "$OPENTREE_IDENTITY not found"; exit 1)
 [ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J=$OPENTREE_HOST
+[ "x$OPENTREE_PUBLIC_DOMAIN" != x ] || OPENTREE_PUBLIC_DOMAIN=$OPENTREE_HOST
 
 # abbreviations... no good reason for these, they just make the commands shorter
 ADMIN=$OPENTREE_ADMIN
@@ -132,7 +135,7 @@ function restart_apache {
 }
 
 function pushweb2py {
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${NEO4JHOST}" $CONTROLLER
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER
 }
 
 function pushapi {

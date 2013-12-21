@@ -29,14 +29,13 @@ Run the setup script, which is called 'push.sh', as
 
      ./push.sh -c {configfile}
 
-See sample.config in this directory for documentation on how to prepare a configuration file.  In summary:
+See sample.config in this directory for documentation on how to prepare a configuration file. 
 
-* OPENTREE_IDENTITY=<identityfile>  ... ssh private key, defaults to opentree.pem
-* OPENTREE_HOST=<hostname>  ... the hostname of the cloud host you'll be updating, and which will run web2py and/or neo4j
-* OPENTREE_NEO4J_HOST=<neo4jhost>  ... the hostname of the server that's running treemachine and taxomachine, if different from the web2py server (which it will be, if the web2py server is small).  This must be set properly or you won't be able to see the synthetic tree.
-* OPENTREE_ADMIN=<adminuser>  ... the name of the admin user, defaults to 'admin' which is correct for Debian (use 'ubuntu' for ubuntu)
+The push.sh script starts by pushing out a script to be run as the admin user (setup/as_admin.sh).  This script installs prerequisite software and sets up an unprivileged 'opentree' user.  Then further scripts are run as user 'opentree'.  The only privileged operation thereafter is restarting Apache.
 
-The push.sh script starts by pushing out a script to be run as the admin user (setup/as_admin.sh).  This script installs prerequisite software and sets up an unprivileged 'opentree' user.  Then further scripts are run as user 'opentree'.
+All manipulation of the server, other than ad hoc temporary patches and debugging, should be done through the push script.  If you find you need functionality that it doesn't provide please contact JAR.
+
+The script may be re-run, and it tries to save time by avoiding reexecution of steps it has already performed based on sources that haven't changed.  If you're debugging you can re-run it repeatedly every time you want to try a change. (Unfortunately, at present it always reads from master branches of repos, but this is supposed to change soon.)
 
 Setting up the API and studies repo
 -----------------------------------
@@ -48,14 +47,19 @@ This requires OPENTREE_GH_IDENTITY to point to the file containing the ssh priva
 How to push the neo4j databases
 -------------------------------
 
-(WORK IN PROGRESS.)
+If the server is to run treemachine or taxomachine (optional; ordinarily this requires a 'big' server), the appropriate database has to be pushed out to the server and installed, as a separate step.  Create a compressed tar file of the neo4j database directory (which by default is called 'graph.db' although you can call it whatever you like locally).  Then copy it to the server using rsync.  Suppose the neo4j .db directory is data/newlocaldb.db. The you would say:
 
-If the server is to run treemachine or taxomachine (ordinarily this requires a 'big' server), the appropriate database has to be pushed out to the server and installed, as a separate step.  Create a compressed tar file of the neo4j database directory (which by default is called 'graph.db' although you can call it whatever you like locally).  Then copy it to the server using rsync:
-
-    cd data
-    tar -C newlocaldb.db -czf newlocaldb.db.tgz .
+    tar -C data/newlocaldb.db -czf newlocaldb.db.tgz .
     {deploy}/push.sh push-db -c {configfile} newlocaldb.db {app}
 
-where {app} is taxomachine, treemachine, etc. and {deploy} is the path to the directory containing push.sh.
+where {app} is taxomachine, or treemachine, and {deploy} is the path to the directory containing push.sh.
 
 New versions of the database can be pushed out in this way as desired, replacing the previous version each time.  The previous version is kept for disaster recovery, but if it needs to be reinstalled, that has to be done manually.
+
+Indexing the store
+------------------
+
+The following causes oti to index all of the studies in the study store [which one?].  WORK IN PROGRESS, not yet functional as of 2013-12-20.
+
+    ./push.sh -c {configfile} index-db
+
