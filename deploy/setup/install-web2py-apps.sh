@@ -1,13 +1,14 @@
 #!/bin/bash
 
 OPENTREE_HOST=$1
-NEO4JHOST=$2
-CONTROLLER=$3
+OPENTREE_PUBLIC_DOMAIN=$2
+NEO4JHOST=$3
+CONTROLLER=$4
 BRANCH=master
 
 . setup/functions.sh
 
-echo "Installing web2py applications.  Hostname = $OPENTREE_HOST"
+echo "Installing web2py applications.  Hostname = $OPENTREE_HOST. Public-facing domain = $OPENTREE_PUBLIC_DOMAIN"
 
 # **** Begin setup that is common to opentree/curator and api
 
@@ -56,7 +57,7 @@ cp -p setup/webapp-config $configfile
 # authentication purposes.  'hostname' doesn't work on EC2 instances,
 # so it has to be passed in as a parameter.
 
-sed "s+hostdomain = .*+hostdomain = $OPENTREE_HOST+" < $configfile > tmp.tmp
+sed "s+hostdomain = .*+hostdomain = $OPENTREE_PUBLIC_DOMAIN+" < $configfile > tmp.tmp
 if ! cmp -s tmp.tmp $configfile; then
     mv tmp.tmp $configfile
     echo "Apache / web2py restart required (host name)"
