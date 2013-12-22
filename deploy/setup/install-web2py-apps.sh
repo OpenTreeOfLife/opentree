@@ -53,6 +53,8 @@ configfile=repo/opentree/webapp/private/config
 # Config file pushed here using rsync, see push.sh
 cp -p setup/webapp-config $configfile
 
+# N.B. Another file 'janrain.key' with secret Janrain key was already placed via rsync (in push.sh)
+
 # The web2py apps need to know their own host names, for
 # authentication purposes.  'hostname' doesn't work on EC2 instances,
 # so it has to be passed in as a parameter.

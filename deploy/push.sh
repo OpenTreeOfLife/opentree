@@ -136,6 +136,8 @@ function restart_apache {
 
 function pushweb2py {
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER
+    # place the file with secret Janrain key
+    rsync -pr -e "${SSH}" ../webapp/private/janrain.key "$OT_USER@$OPENTREE_HOST":repo/opentree/webapp/private/janrain.key
 }
 
 function pushapi {
