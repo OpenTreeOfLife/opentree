@@ -5,7 +5,7 @@
 # Get it from http://files.opentreeoflife.org/ott/
 # and if there's a file "taxonomy" change that to "taxonomy.tsv".
 
-WHICH=2.4
+WHICH=2.4.draft2
 PREV_WHICH=2.3
 
 #  $^ = all prerequisites
@@ -15,8 +15,6 @@ PREV_WHICH=2.3
 # Scripts and other inputs related to taxonomy
 
 # The tax/ directory is full of taxonomies; mostly (entirely?) derived objects.
-TAX=tax
-
 NCBI=tax/ncbi
 GBIF=tax/gbif
 SILVA=tax/silva
@@ -30,19 +28,16 @@ TAXOMACHINE_EXAMPLE=../../taxomachine/example
 #  https://bitbucket.org/mtholder/ottol/src/dc0f89986c6c2a244b366312a76bae8c7be15742/preOTToL_20121112.txt?at=master
 PREOTTOL=../../preottol
 
-all: ott
+CP=-classpath ".:lib/*"
+JAVA=java $(CP)
+BIG_JAVA=$(JAVA) -Xmx12G
 
-debug:
-	jdb $(JAVA_ARGS) $(TEST_ARGS)
+all: ott
 
 compile: Smasher.class lib/jscheme.jar lib/json-simple-1.1.1.jar
 
 Smasher.class: Smasher.java
 	javac -g $(CP) Smasher.java
-
-# internal tests
-test: Smasher.class
-	java $(JAVA_ARGS) Smasher --test
 
 # --------------------------------------------------------------------------
 
@@ -60,7 +55,7 @@ tax/ott/log.tsv: Smasher.class $(SILVA)/taxonomy.tsv \
 		    feed/ott/edits/ott_edits.tsv \
 		    tax/prev_ott/taxonomy.tsv
 	mkdir -p tax/ott
-	java $(JAVA_ARGS) $(OTT_ARGS)
+	$(BIG_JAVA) $(OTT_ARGS)
 	echo $(WHICH) >tax/ott/version.txt
 
 tax/if/taxonomy.tsv:
@@ -72,7 +67,7 @@ tax/if/taxonomy.tsv:
 # How does it know where to write to?
 
 tax/ott/aux.tsv: Smasher.class tax/ott/log.tsv
-	hava $(JAVA_ARGS) Smasher tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
+	$(BIG_JAVA) Smasher tax/ott/ --aux $(PREOTTOL)/preottol-20121112.processed
 
 $(PREOTTOL)/preottol-20121112.processed: $(PREOTTOL)/preOTToL_20121112.txt
 	python process-preottol.py $< $@
@@ -161,6 +156,7 @@ tarball: tax/ott/log.tsv
 	(cd tax && \
 	 tar czvf $(TARDIR)/ott$(WHICH).tgz.tmp ott && \
 	 mv $(TARDIR)/ott$(WHICH).tgz.tmp $(TARDIR)/ott$(WHICH).tgz )
+	echo "Don't forget to bump the version number"
 
 # This predates use of git on norbert...
 #norbert:
@@ -173,21 +169,33 @@ lib/json-simple-1.1.1.jar:
 	wget --output-document=$@ --no-check-certificate \
 	  "https://json-simple.googlecode.com/files/json-simple-1.1.1.jar"
 
+# internal tests
+test: Smasher.class
+	$(JAVA) Smasher --test
+
+
+ids_report.tsv:
+	time wget -O ids_report.csv "http://reelab.net/phylografter/ottol/ottol_names_report.csv/" 
+	tr "," "	" <ids_report.csv >$@
+
+short-list.tsv: ids_report.tsv tax/ott/deprecated.tsv
+	grep "\\*" tax/ott/deprecated.tsv | grep -v "excluded" >dep-tmp.tsv
+	$(JAVA) Smasher --join ids_report.tsv dep-tmp.tsv >$@
+	wc $@
+
+# -----------------------------------------------------------------------------
+# Test: nematodes
+
 # Nematode test
-CP=-classpath ".:lib/*"
-JAVA_ARGS=$(CP) -Xmx12G
 TEST_ARGS=Smasher tax/nem_ncbi/ tax/nem_gbif/ \
       --edits feed/nem/edits/ \
       --ids tax/prev_nem/ \
       --out tax/nem/
 
-# -----------------------------------------------------------------------------
-# Test: nematodes
-
 nem: tax/nem/log.tsv
 tax/nem/log.tsv: Smasher.class tax/prev_nem/taxonomy.tsv tax/nem_ncbi/taxonomy.tsv tax/nem_gbif/taxonomy.tsv
 	mkdir -p tax/nem/
-	java $(JAVA_ARGS) $(TEST_ARGS)
+	$(JAVA) $(TEST_ARGS)
 
 # Inputs to the nem test
 
@@ -202,32 +210,38 @@ tax/nem_gbif/taxonomy.tsv:
 # little test of --select feature
 tax/nem_dory/taxonomy.tsv: tax/nem/log.tsv Smasher.class
 	mkdir -p `dirname $@`
-	java $(JAVA_ARGS) Smasher --start tax/nem/ --select Dorylaimina tax/nem_dory/
+	$(JAVA) Smasher --start tax/nem/ --select Dorylaimina tax/nem_dory/
 
 # -----------------------------------------------------------------------------
-# Microcosm: Campanulinidae
+# Model village: Asterales
 
-TAXON=Asterales #wants to be campanulinids
+TAXON=Asterales
 
-t/tax/prev/taxonomy.tsv: tax/prev_ott/taxonomy.tsv
+# t/tax/prev/taxonomy.tsv: tax/prev_ott/taxonomy.tsv   - expensive
+t/tax/prev_aster/taxonomy.tsv: tax/prev_ott/taxonomy.tsv
 	mkdir -p `dirname $@`
-	java $(JAVA_ARGS) Smasher tax/prev_ott/ --select $(TAXON) t/tax/prev/
+	$(BIG_JAVA) Smasher tax/prev_ott/ --select2 $(TAXON) --out t/tax/prev_aster/
 
-t/tax/ncbi/taxonomy.tsv: tax/ncbi/taxonomy.tsv
+t/tax/ncbi_aster/taxonomy.tsv: tax/ncbi/taxonomy.tsv
 	mkdir -p `dirname $@`
-	java $(JAVA_ARGS) Smasher tax/ncbi/ --select $(TAXON) t/tax/ncbi/
+	$(BIG_JAVA) Smasher tax/ncbi/ --select2 $(TAXON) --out t/tax/ncbi_aster/
 
-t/tax/gbif/taxonomy.tsv: tax/gbif/taxonomy.tsv
+t/tax/gbif_aster/taxonomy.tsv: tax/gbif/taxonomy.tsv
 	mkdir -p `dirname $@`
-	java $(JAVA_ARGS) Smasher tax/gbif/ --select $(TAXON) t/tax/gbif/
+	$(BIG_JAVA) Smasher tax/gbif/ --select2 $(TAXON) --out t/tax/gbif_aster/
 
-t/tax/camp/taxonomy.tsv: Smasher.class \
-			 t/tax/prev/taxonomy.tsv \
-			 t/tax/ncbi/taxonomy.tsv \
-			 t/tax/gbif/taxonomy.tsv
+t/tax/aster/taxonomy.tsv: Smasher.class \
+			  t/tax/ncbi_aster/taxonomy.tsv \
+			  t/tax/gbif_aster/taxonomy.tsv \
+			  t/tax/prev_aster/taxonomy.tsv
 	mkdir -p `dirname $@`
-	java $(JAVA_ARGS) Smasher t/tax/ncbi/ t/tax/gbif/ \
-	     --ids t/tax/prev/ \
-	     --out t/tax/camp/
+	$(JAVA) Smasher t/tax/ncbi_aster/ t/tax/gbif_aster/ \
+	     --ids t/tax/prev_aster/ \
+	     --out t/tax/aster/
 
-camp: t/tax/camp/taxonomy.tsv
+aster: t/tax/aster/taxonomy.tsv
+
+aster-tarball: t/tax/aster/taxonomy.tsv
+	(cd t/tax && \
+	 tar -czvf $(TARDIR)/aster.tgz.tmp aster && \
+	 mv $(TARDIR)/aster.tgz.tmp $(TARDIR)/aster.tgz )
