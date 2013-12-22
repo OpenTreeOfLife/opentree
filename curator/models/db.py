@@ -60,6 +60,26 @@ auth = Auth(db)
 crud, service, plugins = Crud(db), Service(), PluginManager()
 
 
+#
+# Simple storage for study supporting files. These are stored temporary,
+# pending deposition in Dryad or another permanent repository.
+#
+# I'm adapting a recipe for using web2py with the jQuery-File-Upload plugin:
+# http://in10min.blogspot.com/2013/04/web2py-implement-multiple-files-upload.html
+#
+
+SupportingFiles = db.define_table('supporting_files',
+ Field('doc', 'upload', autodelete=True),
+ #Field('thumb', 'upload', autodelete=True),
+ #Field('sizeFile', 'float'),
+ #Field('sessionId', 'string'),)
+ Field('file_size', 'float'),
+ Field('study_id', 'string'),)
+
+#from smarthumb import SMARTHUMB
+#box = (200, 200)
+#SupportingFiles.thumb.compute = lambda row: SMARTHUMB(row.doc, box)
+
 
 #
 # OAuth2 for Github (API v3), based on the FB sample provided in gluon/contrib/login_methods/oauth20_account.py

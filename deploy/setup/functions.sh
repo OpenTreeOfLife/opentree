@@ -1,8 +1,15 @@
+# Use with 'source' command
+# Variable CONTROLLER is an implicit parameter (name of user who ran the 'push.sh' command)
+
+set -e
 
 # Utilities.
 # Source this file from another bash script.
 
+# ---------- JAVA HOME ----------
+
 if false; then
+    # DOES NOT WORK ON UBUNTU, but preferred on Debian.
     javalink=`readlink /etc/alternatives/java`
     # => /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java
     javalink=`dirname $javalink`
@@ -17,6 +24,49 @@ fi
 
 export JAVA_HOME=$javalink
 
+# ---------- HOST NAME ----------
+# Remember the host name
+
+HOSTFILE=hostname
+if [ -e $HOSTFILE ]; then
+    OPENTREE_HOST=`cat $HOSTFILE`
+elif [ x$OPENTREE_HOST != x ]; then
+    echo $OPENTREE_HOST >$HOSTFILE
+else
+    echo "OPENTREE_HOST shell variable isn't set !?"
+    exit 1
+fi
+
+# ---------- OUR VIRTUALENV ----------
+# Set up python env
+if [ ! -d venv ]; then
+    virtualenv venv
+fi
+source venv/bin/activate
+
+# ---------- LOGGING ----------
+
+function log() {
+    if [ x$CONTROLLER = x ]; then
+	echo "CONTROLLER shell variable is not set !?"
+	exit 1
+    fi
+    mkdir -p log
+    (echo `date` $CONTROLLER $OPENTREE_TAG " $*") >>log/messages
+}
+
+# ---------- WORKSPACES ----------
+
+# Temporary locations for things downloaded from web.  Can delete this
+# after server is up and running.
+
+mkdir -p downloads
+
+REPOS_DIR=repo
+mkdir -p $REPOS_DIR
+
+# ---------- SHELL FUNCTIONS ----------
+
 # Refresh a git repo
 
 # We clone via https instead of ssh, because ssh cloning fails with
@@ -29,13 +79,13 @@ function git_refresh() {
     reponame=$2
     branch=$3
     # Directory in which all local checkouts of git repos reside
-    repos_dir=repo
-    repo_dir=$repos_dir/$reponame
+    repo_dir=$REPOS_DIR/$reponame
     # Exit 0 (true) means has changed
     changed=0
     if [ ! -d $repo_dir ] ; then
-        (cd $repos_dir; \
+        (cd $REPOS_DIR; \
          git clone https://github.com/$guser/$reponame.git)
+	log Clone: $reponame `cd $repo_dir; git log | head -1`
     else
         before=`cd $repo_dir; git log | head -1`
         # What if branch doesn't exist locally, or doesn't track origin branch?
@@ -47,6 +97,7 @@ function git_refresh() {
             changed=1
         else
             echo "Repository $reponame has changed"
+	    log Checkout: $reponame `cd $repo_dir; git log | head -1`
         fi
     fi
     return $changed

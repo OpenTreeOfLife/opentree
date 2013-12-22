@@ -1,20 +1,16 @@
 #!/bin/bash
 
-set -e
-. setup/functions.sh
-
-HOST=$1
-NEO4JHOST=$2
+OPENTREE_HOST=$1
+OPENTREE_PUBLIC_DOMAIN=$2
+NEO4JHOST=$3
+CONTROLLER=$4
 BRANCH=master
 
-echo "Installing web2py applications.  Hostname = $HOST"
-date
+. setup/functions.sh
 
-# Temporary locations for things downloaded from web.  Can delete this
-# after server is up and running.
+echo "Installing web2py applications.  Hostname = $OPENTREE_HOST. Public-facing domain = $OPENTREE_PUBLIC_DOMAIN"
 
-mkdir -p downloads
-mkdir -p repo
+# **** Begin setup that is common to opentree/curator and api
 
 # ---------- WEB2PY ----------
 if [ ! -d web2py ]; then
@@ -23,25 +19,16 @@ if [ ! -d web2py ]; then
 	  http://www.web2py.com/examples/static/web2py_src.zip
     fi
     unzip downloads/web2py_src.zip
-fi
-
-# ---------- OUR VIRTUALENV ----------
-# Set up python env
-if [ ! -d venv ]; then
-    virtualenv venv
-fi
-source venv/bin/activate
-
-# The following helps establish the environment when web2py is fired
-# up by Apache via WSGI - I think
-
-if ! grep --silent setup/activate .bashrc; then
-    echo "source $HOME/setup/activate" >> ~/.bashrc
+    log "Installed web2py"
 fi
 
 # ---------- VIRTUALENV + WEB2PY + WSGI ----------
 
+# Patch web2py's wsgihandler so that it does the equivalent of 'venv/activate'
+# when started by Apache.
+
 # See http://stackoverflow.com/questions/11758147/web2py-in-apache-mod-wsgi-with-virtualenv
+# Indentation (or lack thereof) is critical
 cat <<EOF >fragment.tmp
 activate_this = '$PWD/venv/bin/activate_this.py'
 execfile(activate_this, dict(__file__=activate_this))
@@ -52,108 +39,41 @@ EOF
 # This is pretty darn fragile!  But if it fails, it will fail big -
 # the web apps won't work at all.
 
-(head -2 web2py/handlers/wsgihandler.py; \
- cat fragment.tmp; \
+(head -2 web2py/handlers/wsgihandler.py && \
+ cat fragment.tmp && \
  tail -n +3 web2py/handlers/wsgihandler.py) \
    > web2py/wsgihandler.py
 
 rm fragment.tmp
 
-# ---------- THE WEB APPLICATIONS ----------
-# Set up web2py apps as directed in the README.md file
+# ---------- WEB2PY CONFIGURATION ----------
 
-opentree=repo/opentree
-api=repo/api.opentreeoflife.org
-treenexus=repo/treenexus
+configfile=repo/opentree/webapp/private/config
 
-# Consider cloning a designated tag, using git clone --branch <tag>
-
-echo "...fetching opentree repo (main webapp and curator)..."
-git_refresh OpenTreeOfLife opentree $BRANCH || true
-echo "...fetching api.opentreeoflife.org repo..."
-
-git_refresh OpenTreeOfLife api.opentreeoflife.org $BRANCH || true
-
-echo "...fetching treenexus repo..."
-git_refresh OpenTreeOfLife treenexus $BRANCH || true
-
-pushd .
-cd $treenexus
-# All the repos above are cloned via https, but we need to push via
-# ssh to use our deploy keys
-if ! grep "originssh" .git/config ; then
-    git remote add originssh git@github.com:OpenTreeOfLife/treenexus.git
-fi
-popd
-
-pushd .
-cd $api/private
-cp config.example config
-sed -i -e 's+REPO_PATH+/home/opentree/repo/treenexus+' config
-
-# specify our remote to push to, which is added to treenexus above
-sed -i -e 's+REPO_REMOTE+originssh+' config
-
-# This wrapper script allows us to specify an ssh key to use in git pushes
-sed -i -e 's+GIT_SSH+/home/opentree/repo/api.opentreeoflife.org/bin/git.sh+' config
-# this is the file location of the SSH key that is used in git.sh
-sed -i -e 's+PKEY+/home/opentree/.ssh/opentree+' config
-
-
-# oti search runs on 7478
-sed -i -e 's+7474+7478+' config
-
-popd
-
-# Modify the requirements list
-# numpy etc. have all kinds of dependency problems.
-cp $opentree/requirements.txt requirements-opentree.txt.save
-if grep --invert-match "distribute" \
-      $opentree/requirements.txt >requirements.txt.new ; then
-    mv requirements.txt.new $opentree/requirements.txt
-fi
-cp $api/requirements.txt requirements-api.txt.save
-if grep --invert-match "distribute" \
-      $api/requirements.txt >requirements.txt.new ; then
-    mv requirements.txt.new $api/requirements.txt
-fi
-
-# xslt
-# svnversion ?
-(cd $opentree; pip install -r requirements.txt)
-(cd $api; pip install -r requirements.txt)
-
-cp -p $opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
-cp -p $opentree/SITE.routes.py web2py/routes.py
-
-(cd web2py/applications; \
-    ln -sf ../../repo/opentree/webapp ./opentree; \
-    ln -sf ../../repo/api.opentreeoflife.org ./api; \
-    ln -sf ../../repo/opentree/curator ./)
-
-# File pushed here using rsync, see push.sh
-configfile=web2py/applications/opentree/private/config
-
+# Config file pushed here using rsync, see push.sh
 cp -p setup/webapp-config $configfile
+
+# N.B. Another file 'janrain.key' with secret Janrain key was already placed via rsync (in push.sh)
 
 # The web2py apps need to know their own host names, for
 # authentication purposes.  'hostname' doesn't work on EC2 instances,
-# so it has to be passed in.
+# so it has to be passed in as a parameter.
 
-changed=no
-
-sed "s+hostdomain = .*+hostdomain = $HOST+" < $configfile > tmp.tmp
+sed "s+hostdomain = .*+hostdomain = $OPENTREE_PUBLIC_DOMAIN+" < $configfile > tmp.tmp
 if ! cmp -s tmp.tmp $configfile; then
     mv tmp.tmp $configfile
-    changed=yes
+    echo "Apache / web2py restart required (host name)"
 fi
 
-# There will be additional edits to the config file if a neo4j
-# database gets installed locally.
+# ---------- CALLING OUT TO NEO4J FROM PYTHON AND JAVASCRIPT ----------
+
+# TBD: Need more fine-grained control so that different neo4j services
+# can live on different hosts.
 
 # Modify the web2py config file to point to the host that's running
 # treemachine and taxomachine.
 
+changed=no
 if [ x$NEO4JHOST != x ]; then
     for APP in treemachine taxomachine oti; do
         sed "s+$APP = .*+$APP = http://$NEO4JHOST/$APP+" < $configfile > tmp.tmp
@@ -168,7 +88,47 @@ else
     echo "No NEO4JHOST !?"
 fi
 if [ $changed = yes ]; then
-    echo "Apache / web2py restart required"
+    echo "Apache / web2py restart required (links to neo4j services)"
 fi
 
-# Apache needs to be restarted.
+# **** End web2py setup that is common to opentree/curator and api
+
+# ---------- BROWSER & CURATOR WEBAPPS ----------
+# Set up web2py apps as directed in the README.md file
+# Compare install-api.sh
+
+WEBAPP=opentree
+APPROOT=repo/$WEBAPP
+
+echo "...fetching $WEBAPP repo..."
+git_refresh OpenTreeOfLife $WEBAPP $BRANCH || true
+
+# Modify the requirements list
+cp -p $APPROOT/requirements.txt $APPROOT/requirements.txt.save
+if grep --invert-match "distribute" \
+      $APPROOT/requirements.txt >requirements.txt.new ; then
+    mv requirements.txt.new $APPROOT/requirements.txt
+fi
+
+(cd $APPROOT; pip install -r requirements.txt)
+
+(cd web2py/applications; \
+    ln -sf ../../repo/$WEBAPP/webapp ./$WEBAPP; \
+    ln -sf ../../repo/$WEBAPP/curator ./)
+
+
+# ---------- ROUTES AND WEB2PY PATCHES ----------
+# These require a fresh pull of the opentree repo (above)
+
+cp -p repo/opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
+cp -p repo/opentree/rpx_account.py web2py/gluon/contrib/login_methods/
+cp -p repo/opentree/SITE.routes.py web2py/routes.py
+
+
+# ---------- RANDOM ----------
+
+# Sort of random.  Nothing depends on this.
+
+if ! grep --silent setup/activate .bashrc; then
+    echo "source $HOME/setup/activate" >> ~/.bashrc
+fi

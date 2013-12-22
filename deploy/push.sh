@@ -14,21 +14,29 @@
 set -e
 
 # $0 -h <hostname> -u <username> -i <identityfile> -n <hostname>
-# OPENTREE_HOST
-# OPENTREE_ADMIN
-# OPENTREE_IDENTITY
-# OPENTREE_NEO4J_HOST
 
-HOST=dev.opentreeoflife.org
-ADMIN=admin
-PEM=opentree.pem
-NEO4JHOST=dev.opentreeoflife.org
+# The host must always be specified
+# OPENTREE_HOST=dev.opentreeoflife.org
+# OPENTREE_NEO4J_HOST=dev.opentreeoflife.org
+OPENTREE_ADMIN=admin
+OPENTREE_IDENTITY=opentree.pem
+OPENTREE_DOCSTORE=treenexus
+OPENTREE_GH_IDENTITY=opentree-gh.pem
+COMMAND=push
+
+if [ x$CONTROLLER = x ]; then
+    CONTROLLER=`whoami`
+fi
 
 # On ubuntu, the admin user is called 'ubuntu'
 
 while [ $# -gt 0 ]; do
-    if [ "x$1" = "x-h" ]; then
+    if [ ${1:0:1} != - ]; then
+	break
+    elif [ "x$1" = "x-h" ]; then
 	OPENTREE_HOST="$2"
+    elif [ "x$1" = "x-p" ]; then
+	OPENTREE_PUBLIC_DOMAIN="$2"
     elif [ "x$1" = "x-u" ]; then
 	OPENTREE_ADMIN="$2"
     elif [ "x$1" = "x-i" ]; then
@@ -36,56 +44,123 @@ while [ $# -gt 0 ]; do
     elif [ "x$1" = "x-n" ]; then
 	OPENTREE_NEO4J_HOST="$2"
     elif [ "x$1" = "x-c" ]; then
+	# Config file overrides default parameter settings
         source "$2"
-    elif [ "x${1:0:1}" = "x-" ]; then
+    else
 	echo 1>&2 "Unrecognized flag: $1"
 	exit 1
-    else
-	COMMAND="$1"
     fi
     shift
     shift
 done
 
+if [ $# -gt 0 ]; then
+    COMMAND="$1"
+    shift
+else
+    COMMAND=push
+fi
+
+[ "x$OPENTREE_HOST" != x ] || (echo "OPENTREE_HOST not specified"; exit 1)
+[ -r $OPENTREE_IDENTITY ] || (echo "$OPENTREE_IDENTITY not found"; exit 1)
+[ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J=$OPENTREE_HOST
+[ "x$OPENTREE_PUBLIC_DOMAIN" != x ] || OPENTREE_PUBLIC_DOMAIN=$OPENTREE_HOST
+
 # abbreviations... no good reason for these, they just make the commands shorter
-HOST=$OPENTREE_HOST
 ADMIN=$OPENTREE_ADMIN
 PEM=$OPENTREE_IDENTITY
 NEO4JHOST=$OPENTREE_NEO4J_HOST
 
-echo "Pushing to $HOST, admin=$ADMIN, pem=$PEM"
-
 SSH="ssh -i ${PEM}"
 
-# Do privileged stuff
-scp -p -i "${PEM}" as-admin.sh "$ADMIN@$HOST":
-${SSH} "$ADMIN@$HOST" ./as-admin.sh "${HOST}"
+# For unprivileged actions
+OT_USER=opentree
 
-# Unprivileged actions
-USER=opentree
+echo "host=$OPENTREE_HOST, admin=$ADMIN, pem=$PEM, controller=$CONTROLLER, command=$COMMAND"
 
-rsync -pr -e "${SSH}" "--exclude=*~" setup "$USER@$HOST":
+# Eventually finer grained: e.g.
+#   server A - browser, curator
+#   server B - api, doc store, oti
+#   server C - treemachine, taxomachine
 
-${SSH} "$USER@$HOST" ./setup/install-web2py-apps.sh "${HOST}" "${NEO4JHOST}"
-${SSH} "$USER@$HOST" ./setup/install-neo4j-apps.sh "${HOST}"
-
-# The install scripts modify the apache config file, so do this last
-${SSH} "$ADMIN@$HOST" \
-  sudo cp -p "~$USER/setup/apache-config" /etc/apache2/sites-available/opentree
-echo "Restarting apache httpd..."
-${SSH} "$ADMIN@$HOST" sudo apache2ctl graceful
-
-
-# Work in progress - code not yet enabled
-# E.g. push_neo4j_db localnewdb.db.tgz taxomachine
-
-function push_neo4j_db {
-    TGZ=$1
-    APP=$2
-    rsync -vax -e "${SSH}" $1 "$USER@$HOST":downloads/$APP.db.tgz
-    ${SSH} ${PEM} setup/install_db.sh $APP "$HOST"
+function docommand {
+    sync_system
+    case $COMMAND in
+        push | pushmost)
+	    pushmost $*; restart_apache
+    	    ;;
+	push-web2py)
+            pushweb2py $*; restart_apache
+	    ;;
+	push-api | pushapi)
+            pushapi $*; restart_apache
+	    ;;
+	push-db | pushdb)
+	    pushdb $*
+    	    ;;
+	index | indexoti)
+	    indexoti $*
+    	    ;;
+	echo)
+	    ${SSH} "$OT_USER@$OPENTREE_HOST" bash <<EOF
+ 	        echo $*
+EOF
+	    ;;
+	*)
+	    echo "Unrecognized command: $COMMAND"
+	    ;;
+    esac 
 }
 
+function sync_system {
+    # Do privileged stuff
+    rsync -pr -e "${SSH}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
+    # was scp -p -i "${PEM}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
+    ${SSH} "$ADMIN@$OPENTREE_HOST" ./as-admin.sh "$OPENTREE_HOST"
+    # Copy files over
+    rsync -pr -e "${SSH}" "--exclude=*~" "--exclude=#*" setup "$OT_USER@$OPENTREE_HOST":
+    }
+
+function pushmost {
+    pushweb2py
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-apps.sh $CONTROLLER
+}
+
+function restart_apache {
+    # The install scripts modify the apache config file, so do this last
+    ${SSH} "$ADMIN@$OPENTREE_HOST" \
+      sudo cp -p "~$OT_USER/setup/apache-config" /etc/apache2/sites-available/opentree
+    echo "Restarting apache httpd..."
+    ${SSH} "$ADMIN@$OPENTREE_HOST" sudo apache2ctl graceful
+}
+
+function pushweb2py {
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER
+    # place the file with secret Janrain key
+    rsync -pr -e "${SSH}" ../webapp/private/janrain.key "$OT_USER@$OPENTREE_HOST":repo/opentree/webapp/private/janrain.key
+}
+
+function pushapi {
+    echo "doc store is $OPENTREE_DOCSTORE"
+    rsync -pr -e "${SSH}" $OPENTREE_GH_IDENTITY "$OT_USER@$OPENTREE_HOST":.ssh/opentree
+    ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" $OPENTREE_DOCSTORE $CONTROLLER
+}
+
+function indexoti {
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/index-doc-store.sh $OPENTREE_DOCSTORE $CONTROLLER
+}
+
+function pushdb {
+    # Work in progress - code not yet enabled
+    # E.g. ./push.sh push-db localnewdb.db.tgz taxomachine
+    TARBALL=$1
+    APP=$2
+    rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":downloads/$APP.db.tgz
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install_db.sh "$OPENTREE_HOST" $APP
+}
+
+docommand $*
 
 # Test: 
 # Ubuntu micro:
