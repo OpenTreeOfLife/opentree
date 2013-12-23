@@ -657,7 +657,7 @@ abstract class Taxonomy implements Iterable<Node> {
 
 	void addSynonym(String syn, Node node) {
 		if (node.taxonomy != this)
-			System.err.println("!? Synonym for a node that's not in this taxonomy: " + syn + " " + node)
+			System.err.println("!? Synonym for a node that's not in this taxonomy: " + syn + " " + node);
 		List<Node> nodes = this.nameIndex.get(syn);
 		if (nodes != null) {
 			if (nodes.contains(node))
