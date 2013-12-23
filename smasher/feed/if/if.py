@@ -120,7 +120,7 @@ def startup(args):
     name2taxon = dict()
     name2synonym = dict()
     taxon_table = []
-    synonym_table = []
+    synonyms = []
     taxon_rows = []
     for row in name_rows:
         name = row['Name']
@@ -134,7 +134,7 @@ def startup(args):
             logging.info("Found synonym %s; IF-ID %s; CurrentNameID %s",display_name,display_id,utf8e(row['CurrentNameID']))
             real_id = resolve_synonym(row,if_id_dict)
             row['CurrentNameID'] = real_id
-            synonym_table.append(row)
+            synonyms.append(row)
             name2synonym[name] = row
             row['status'] = 'synonym'
         elif 'CurrentNameID' not in row:
@@ -198,13 +198,13 @@ def startup(args):
             taxon_rows.append(row)
  
         
-    get_taxonomy(name_rows) #second pass
+    get_taxonomy(name_rows,fdc_dict,name2taxon,name2synonym) #second pass
     write_taxonomy(results_fname,name_rows,name2taxon,name2synonym) #second arg was taxon_table
-    write_synonyms(synonyms_fname,synonym_table)
+    write_synonyms(synonyms_fname,synonyms)
 
 
 
-def get_taxonomy(name_rows):
+def get_taxonomy(name_rows,fdc_dict,name2taxon,name2synonym):
     for row in name_rows: 
         if 'status' in row:
             if row['status'] == 'available':
@@ -252,11 +252,11 @@ def write_taxonomy(taxonomy_fname,name_table,name2taxon,name2synonym):
 SYNONYM_HEADER = "uid\t|\tname\t|\ttype\t|\tTBD\t|\n"
 SYNONYM_TEMPLATE = "%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n"
 
-def write_synonyms(synonyms_fname,synonym_table):
+def write_synonyms(synonyms_fname,synonyms):
     try:
         synonyms_file = codecs.open(synonyms_fname,"w","utf-8")
         synonyms_file.write(SYNONYM_HEADER)
-        for syn in synonym_table:
+        for syn in synonyms:
             if 'CurrentNameID' in syn:  #if no id, then nothing worth writing
                 outstr = SYNONYM_TEMPLATE % (syn['CurrentNameID'],syn['Name'],'synonym','')
                 synonyms_file.write(outstr)
@@ -314,34 +314,6 @@ def back_translate_name(name,name2taxon,name2synonym):
         logging.info("Back translate failed for %s",name)
         return ''
 
-
-map_ranks_in_missing = {"Genus name": "genus",
-                        "Family name": "family",
-                        "Order name": "order",
-                        "Subclass name": "subclass",
-                        "Class name": "class",
-                        "Subphylum name": "subphylum",
-                        "Phylum name" : "phylum"}
-        
-
-not_found_rank_list= ["Family name",
-                      "Order name",
-                      "Subclass name",
-                      "Class name",
-                      "Subphylum name",
-                      "Phylum name"]
-
-
-not_found_rank_map = {"Family name": ("family","Order name"), 
-                      "Order name": ("order","Subclass name"),
-                      "Subclass name": ("subclass","Class name"),
-                      "Class name": ("class","Subphylum name"),
-                      "Subphylum name": ("subphylum","Phylum name"),
-                      "Phylum name": ("phylum","Kingdom name"),
-                      "Kingdom name": ("kingdom",None)
-                     }
-
-raw_not_found_rank_list = ["family","order","subclass","class","subphylum","phylum"]
 
 rank_map = {"GenusName": ("genus","FamilyName"),
             "FamilyName": ("family","OrderName"), 
