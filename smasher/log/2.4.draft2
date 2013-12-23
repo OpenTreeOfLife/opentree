@@ -1,0 +1,408 @@
+$ make
+javac -g -classpath ".:lib/*" Smasher.java
+Note: Smasher.java uses unchecked or unsafe operations.
+Note: Recompile with -Xlint:unchecked for details.
+mkdir -p tax/ott
+java -classpath ".:lib/*" -Xmx12G Smasher tax/silva/ tax/713/ tax/if/ tax/ncbi/ tax/gbif/ --edits feed/ott/edits/ --ids tax/prev_ott/ --out tax/ott/
+--- Reading tax/silva/ ---
+prefix is silva
+smushp is no
+! No header row
+Tolerating sibling homonym AB497058 => X56575, name = Vibrio campbellii
+Tolerating sibling homonym AB497069 => X70641, name = Vibrio ordalii
+Tolerating sibling homonym X72870 => L09176, name = Clostridium stercorarium subsp. thermolacticum
+Tolerating sibling homonym EF687778 => U44771, name = Mycoplasma ovipneumoniae
+Tolerating sibling homonym HQ407269 => AM397063, name = Wohlfahrtiimonas chitiniclastica
+Tolerating sibling homonym EF015477 => AY683045, name = Methylobacterium oryzae
+Tolerating sibling homonym AJ234059 => X73952, name = Arcanobacterium haemolyticum
+Tolerating sibling homonym X72771 => X72770, name = Methylococcus capsulatus
+Tolerating sibling homonym AB109887 => Z76666, name = Pseudomonas pseudoalcaligenes
+...
+874 sibling homonyms
+| 135433 synonyms
+| 881 homonyms, of which 29 name cousin taxa, 784 name sibling taxa
+--- Mapping silva into union ---
+| Names in common: 0
+| Copied 135433 synonyms
+--- Reading tax/713/ ---
+prefix is study713
+! No header row
+--- Mapping study713 into union ---
+Pinned 2 out of 11
+| Names in common: 4
+| different-division: 1
+| Of 121 nodes in study713: 4 with name in common, of which 3 matched with existing, 1 blocked
+--- Augmenting union with new nodes from study713 ---
+| Started with:		 1 trees, 73480 taxa
+| mapped/tip: 1
+| new/tip: 91
+| new/internal: 27
+| new-homonym/out-division: 1
+| mapped/incompatible: 1
+| mapped/coherent: 1
+| Ended with:		 1 trees, 73480 taxa
+--- Reading tax/if/ ---
+prefix is if
+smushp is yes
+! No header row
+Smushing sibling homonym 187602 => 174664, name = Aspergillus mollis
+Smushing sibling homonym 187613 => 179455, name = Agaricus ocreatus
+Smushing sibling homonym 172101 => 161362, name = Aecidium cardui
+Smushing sibling homonym 22545 => 22402, name = Trichostroma
+Smushing sibling homonym 172023 => 132849, name = Clitocybe applanata
+Smushing sibling homonym 187562 => 187208, name = Mucor fuscus
+Smushing sibling homonym 187726 => 180525, name = Diaporthe celastrina
+Smushing sibling homonym 22409 => 22387, name = Variolaria
+Smushing sibling homonym 172241 => 158217, name = Mycogone flava
+...
+6262 sibling homonyms
+!! Identifier with no associated name, probably a missing parent: 10105
+!! Identifier with no associated name, probably a missing parent: 10415
+!! Identifier with no associated name, probably a missing parent: 10282
+!! Identifier with no associated name, probably a missing parent: 7487
+!! Identifier with no associated name, probably a missing parent: 7267
+!! Identifier with no associated name, probably a missing parent: 12058
+!! Identifier with no associated name, probably a missing parent: 901
+!! Identifier with no associated name, probably a missing parent: 5702
+!! Identifier with no associated name, probably a missing parent: 3859
+!! Identifier with no associated name, probably a missing parent: 4813
+!! Identifier with no associated name, probably a missing parent: 16284
+!! Identifier with no associated name, probably a missing parent: not found
+!! Identifier with no associated name, probably a missing parent: 9365
+!! Identifier with no associated name, probably a missing parent: 9237
+!! Identifier with no associated name, probably a missing parent: 8190
+!! Identifier with no associated name, probably a missing parent: 8080
+!! Identifier with no associated name, probably a missing parent: 8924
+!! Identifier with no associated name, probably a missing parent: 8961
+!! Identifier with no associated name, probably a missing parent: 8555
+!! Identifier with no associated name, probably a missing parent: 90402
+!! Identifier with no associated name, probably a missing parent: 17938
+!! Identifier with no associated name, probably a missing parent: 17506
+!! Identifier with no associated name, probably a missing parent: 17030
+!! Identifier with no associated name, probably a missing parent: 17045
+!! Identifier with no associated name, probably a missing parent: 18728
+!! Identifier with no associated name, probably a missing parent: 18640
+!! Identifier with no associated name, probably a missing parent: 2170
+!! Identifier with no associated name, probably a missing parent: 1387
+!! Identifier with no associated name, probably a missing parent: 3563
+There are 851 roots
+if is ill-formed: 254844 rows, but only 247067 reachable from roots
+Putative synonym Russula atropurpurea is the primary name of 356485
+Putative synonym Melanoleuca striimarginata is the primary name of 127262
+Identifier 381041 unrecognized for synonym Mucor sphaerocephalus
+Putative synonym Agaricus ocreatus is the primary name of 187613
+Putative synonym Capnodium mangiferae is the primary name of 537975
+Putative synonym Hygrocybe keithgeorgei is the primary name of 531533
+Identifier 274192 unrecognized for synonym Diaporthe batatas
+Putative synonym Odontia is the primary name of 34083
+Putative synonym Borofutus is the primary name of 800166
+Putative synonym Phyllosticta citrichinaensis is the primary name of 561072
+Putative synonym Chaenocarpus is the primary name of 930
+Putative synonym Entomophthora is the primary name of 20219
+Putative synonym Sphaeropsis is the primary name of 9992
+Putative synonym Tremella is the primary name of 18665
+Putative synonym Chaenocarpus is the primary name of 930
+Putative synonym Pellionella is the primary name of 9243
+Putative synonym Sistotrema is the primary name of 18551
+Putative synonym Tomentella is the primary name of 18650
+Putative synonym Protoroccella is the primary name of 28916
+...
+| 126373 synonyms
+| 55 homonyms, of which 1 name cousin taxa, 20 name sibling taxa
+--- Mapping if into union ---
+Pinned 1 out of 11
+| Names in common: 406
+| unresolved/contentious: 4
+| unresolved/ambiguous: 3
+| excluded(overlaps): 1
+| excluded(same-primary-name): 1
+| incompatible-with: 1
+| Of 247067 nodes in if: 358 with name in common, of which 350 matched with existing, 8 blocked
+--- Augmenting union with new nodes from if ---
+| Started with:		 1 trees, 73480 taxa
+| new/tip: 235684
+| new/internal: 10926
+| mapped/tip: 261
+| mapped/coherent: 72
+| new/tattered: 48
+| mapped/neutral: 57
+| blocked/tip: 6
+| new-homonym/in-division: 22
+| mapped/incoherent: 7
+| new-homonym/out-division: 33
+| new/insertion: 5
+| mapped/incompatible: 1
+| Ended with:		 714 trees, 73480 taxa
+| Copied 122013 synonyms
+--- Reading tax/ncbi/ ---
+prefix is ncbi
+! No header row
+500000
+1000000
+Tolerating sibling homonym 487343 => 169972, name = environmental samples
+Tolerating sibling homonym 931999 => 412391, name = environmental samples
+Tolerating sibling homonym 675263 => 259321, name = environmental samples
+Tolerating sibling homonym 1289957 => 255778, name = Endoxyla
+Tolerating sibling homonym 699875 => 99260, name = environmental samples
+Tolerating sibling homonym 904971 => 390305, name = environmental samples
+Tolerating sibling homonym 291201 => 111737, name = environmental samples
+Tolerating sibling homonym 296834 => 259321, name = environmental samples
+Tolerating sibling homonym 860775 => 129633, name = environmental samples
+...
+13 sibling homonyms
+Putative synonym metagenomes is the primary name of 408169
+Identifier 68337 unrecognized for synonym Flexistipes group
+Putative synonym environmental samples is the primary name of 211103
+Identifier 118001 unrecognized for synonym Chrysiogenes group
+Putative synonym other sequences is the primary name of 28384
+Identifier 188708 unrecognized for synonym Togobacteria
+Identifier 67799 unrecognized for synonym Thermodesulfobacterium group
+Identifier 1760 unrecognized for synonym Actinomycetes
+Identifier 1760 unrecognized for synonym High GC gram-positive bacteria
+Identifier 1760 unrecognized for synonym high G+C Gram-positive bacteria
+Identifier 1760 unrecognized for synonym high GC Gram+
+Identifier 32061 unrecognized for synonym Chloroflecales
+Identifier 32061 unrecognized for synonym not "Chlorobacteria" Cavalier-Smith 1992
+Identifier 32061 unrecognized for synonym not Chlorobacteria Cavalier-Smith 2002
+Putative synonym environmental samples is the primary name of 50742
+| 262585 synonyms
+| 714 homonyms, of which 3 name cousin taxa, 2 name sibling taxa
+--- Mapping ncbi into union ---
+Pinned 6 out of 11
+| Names in common: 112238
+| different-division: 652
+| excluded(same-ancestor): 44
+| unresolved/ambiguous: 696
+| excluded(same-primary-name): 4
+| unresolved/blocked: 233
+| incompatible-with: 163
+| excluded(overlaps): 14
+| unresolved/contentious: 35
+| lost-race-to-union(same-rank): 221
+| lost-race-to-union(same-ancestor): 1369
+| lost-race-to-union(name-in-common): 22
+| lost-race-to-union(overlaps): 44
+| Of 1092634 nodes in ncbi: 103253 with name in common, of which 100104 matched with existing, 3149 blocked
+--- Augmenting union with new nodes from ncbi ---
+| No longer a root: (null=if:517068 Phytopythium*)
+| No longer a root: (null=if:30565 Pyrotheca*)
+| No longer a root: (null=if:30549 Ovipleistophora*)
+| No longer a root: (null=if:30544 Ordospora*)
+| No longer a root: (null=if:30539 Nucleospora*)
+| No longer a root: (null=if:20444 Protoachlya*)
+| No longer a root: (null=if:30493 Helmichia*)
+| No longer a root: (null=if:30560 Polydispyrenia*)
+| No longer a root: (null=if:582935 Polyascus*)
+| ...
+| Started with:		 714 trees, 73480 taxa
+| new/tip: 891099
+| new/internal: 94852
+| new-homonym/in-division: 1346
+| mapped/tip: 87354
+| new/tattered: 1617
+| mapped/coherent: 5904
+| new/insertion: 3001
+| mapped/incoherent: 2203
+| mapped/neutral: 4055
+| new-homonym/out-division: 4229
+| mapped/incompatible: 1171
+| mapped/internal: 39
+| blocked/tip: 1202
+| lose/dispersed: 107
+| lose/mooted: 30
+| Ended with:		 508 trees, 73480 taxa
+| Copied 255563 synonyms
+--- Reading tax/gbif/ ---
+prefix is gbif
+smushp is yes
+! No header row
+500000
+1000000
+1500000
+2000000
+Smushing sibling homonym 7325111 => 7325110, name = Dichanthium saccharoides saccharoides
+Smushing sibling homonym 7237629 => 7186519, name = Leandria
+Smushing sibling homonym 7237714 => 7074317, name = Discophrya
+Smushing sibling homonym 7236145 => 5431251, name = Pogonus
+4 sibling homonyms
+gbif is ill-formed: 2257729 rows, but only 2257725 reachable from roots
+Putative synonym Mycothyridium vestitum is the primary name of 5953789
+Putative synonym Porina alba is the primary name of 7086902
+Putative synonym Pyrenula chilensis is the primary name of 7187161
+| 894779 synonyms
+| 3582 homonyms, of which 55 name cousin taxa, 8 name sibling taxa
+--- Mapping gbif into union ---
+Pinned 7 out of 11
+| Trying ad-hoc mismatch rule: (gbif:3269382 Ciliophora)
+| Trying ad-hoc match rule: (gbif:10 Ciliophora)
+| Trying ad-hoc mismatch rule: (gbif:4983431. Foraminifera)
+| Trying ad-hoc match rule: (gbif:389 Foraminiferida)
+| Names in common: 618404
+| incompatible-with: 142
+| excluded(overlaps): 115
+| different-division: 3469
+| unresolved/ambiguous: 403
+| unresolved/contentious: 221
+| unresolved/blocked: 777
+| ad-hoc-not: 2
+| excluded(same-ancestor): 1744
+| excluded(same-rank): 4
+| lost-race-to-union(same-ancestor): 24381
+| excluded(same-primary-name): 81
+| lost-race-to-union(overlaps): 136
+| lost-race-to-union(same-rank): 12021
+| lost-race-to-union(name-in-common): 147
+| eschew-tattered: 13
+| lost-race-to-union(same-primary-name): 1
+| Of 2257725 nodes in gbif: 512901 with name in common, of which 474485 matched with existing, 38416 blocked
+--- Augmenting union with new nodes from gbif ---
+| No longer a root: (null=if:30591 Trichoduboscqia*)
+| No longer a root: (null=if:21224 Pelicothallos*)
+| No longer a root: (null=if:30564 Pulicispora*)
+| No longer a root: (null=if:511499 Combresomyces*)
+| No longer a root: (null=if:12204 Pygmomyces*)
+| No longer a root: (null=if:27258 Pseudospora*)
+| No longer a root: (null=if:22176 Gremlia*)
+| No longer a root: (null=if:20037 Aphanomycopsis*)
+| No longer a root: (null=if:30465 Krishtalia*)
+| ...
+| Started with:		 508 trees, 73480 taxa
+| mapped/tip: 407643
+| blocked/tip: 33156
+| new/tip: 1617178
+| mapped/coherent: 56307
+| mapped/neutral: 7453
+| new/internal: 124175
+| mapped/incoherent: 6546
+| new/insertion: 2642
+| new/tattered: 1444
+| new-homonym/in-division: 1133
+| new-homonym/out-division: 2710
+| lose/mooted: 462
+| mapped/incompatible: 486
+| lose/dispersed: 83
+| mapped/internal: 150
+| Ended with:		 239 trees, 73480 taxa
+| Copied 798518 synonyms
+--- Applying edits from feed/ott/edits/flag-test.tsv ---
+--- Applying edits from feed/ott/edits/misplaced-kingdoms.tsv ---
+--- Applying edits from feed/ott/edits/lost-from-gbif.tsv ---
+--- Applying edits from feed/ott/edits/fungal-species.tsv ---
+(add) Warning: taxon already present: Acanthotrema frischii
+(add) Warning: taxon already present: Agaricus tlaxcalensis
+(add) Warning: taxon already present: Botrytis sinoallii
+(add) Warning: taxon already present: Brigantiaea sorediata
+(add) Warning: taxon already present: Cantharellus texensis
+(add) Warning: taxon already present: Chrysothrix caesia
+Synonym already known: EpichloÃ« liyangensis
+(add) Warning: taxon already present: Flavoparmelia caperatula
+(add) Warning: taxon already present: Marasmiellus celebanticus
+(add) Warning: taxon already present: Melanelixia glabratula
+(add) Warning: taxon already present: Muscodor sutura
+? Ambiguous taxon name: Ophiostoma
+(add) Warning: taxon already present: Ophiostoma crescericum
+? Ambiguous taxon name: Ophiostoma
+(add) Warning: taxon already present: Ophiostoma euskadiense
+? Ambiguous taxon name: Ophiostoma
+(add) Warning: taxon already present: Ophiostoma nebulare
+(add) Warning: taxon already present: Paraconiothyrium babiogorense
+(add) Warning: taxon already present: Paraphysoderma
+(add) Warning: taxon already present: Paraphysoderma sedebokerense
+(add) Warning: taxon already present: Periglandula turbinae
+? Ambiguous taxon name: Phyllosticta
+(add) Warning: taxon already present: Phyllosticta cavendishii
+? Ambiguous taxon name: Phyllosticta
+(add) Warning: taxon already present: Phyllosticta hostae
+? Ambiguous taxon name: Phyllosticta
+(add) Warning: taxon already present: Phyllosticta schimae
+(add) Warning: taxon already present: Plectosphaerella delsorboi
+(add) Warning: taxon already present: Plectosphaerella oratosquillae
+(add) Warning: taxon already present: Pluteus stenotrichus
+(add) Warning: taxon already present: Pluteus sublaevigatus
+(add) Warning: taxon already present: Podosphaera filipendulae
+(add) Warning: taxon already present: Psilachnum staphyleae
+(add) Warning: taxon already present: Ramichloridium mali
+? Ambiguous taxon name: Rhodotorula
+(add) Warning: taxon already present: Rhodotorula rosulata
+(add) Warning: taxon already present: Schizotrema zebrinum
+(add) Warning: taxon already present: Sclerostagonospora cycadis
+(add) Warning: taxon already present: Spiroplana
+(add)  ... with a different parent: Pezizomycotina not Pleosporales
+(add) Warning: taxon already present: Spiroplana centripeta
+(add) Warning: taxon already present: Trichoderma brunneoviride
+(add) Warning: taxon already present: Volvariella nullicystidiata
+(add) Warning: taxon already present: Volvariella nivea
+(add) Warning: taxon already present: Lignosus hainanensis
+(add) Parent name Hyaloperonospora not found in context Oomycetes
+--- Applying edits from feed/ott/edits/ott_edits.tsv ---
+--- Applying edits from feed/ott/edits/misc_edits.tsv ---
+(move) Note: already in the right place: Dermatobotrys
+(move) Note: already in the right place: Rehmannia
+(move) Note: already in the right place: Stemodiopsis
+(move) Note: already in the right place: Micranthemum
+(move) Note: already in the right place: Bryodes
+--- Reading tax/prev_ott/ ---
+! No header row
+500000
+1000000
+1500000
+2000000
+2500000
+3000000
+Tolerating sibling homonym 4082337 => 51476, name = Phaeographina
+Tolerating sibling homonym 4930393 => 4930355, name = environmental samples
+Tolerating sibling homonym 4930914 => 4930760, name = environmental samples
+Tolerating sibling homonym 4931261 => 4931256, name = environmental samples
+Tolerating sibling homonym 4935664 => 134753, name = Mycena
+Tolerating sibling homonym 4925950 => 4925948, name = environmental samples
+Tolerating sibling homonym 4923300 => 2826439, name = Platynematum
+Tolerating sibling homonym 4923839 => 866120, name = Ganymedidae
+Tolerating sibling homonym 4922764 => 1003209, name = Discophrya
+...
+675 sibling homonyms
+| 1530877 synonyms
+| 4570 homonyms, of which 139 name cousin taxa, 646 name sibling taxa
+--- Mapping ott into union ---
+Pinned 11 out of 11
+| Names in common: 4234402
+| unresolved/blocked: 915
+| unresolved/ambiguous: 403
+| unresolved/contentious: 170
+| incompatible-with: 71
+| excluded(same-ancestor): 315
+| excluded(same-qualified-id): 751
+| lost-race-to-union(same-ancestor): 16947
+| different-division: 374
+| excluded(overlaps): 141
+| lost-race-to-union(overlaps): 37
+| excluded(same-rank): 1
+| excluded(same-primary-name): 29
+| lost-race-to-union(same-rank): 12115
+| lost-race-to-union(same-primary-name): 2
+| lost-race-to-union(name-in-common): 15
+| lost-race-to-union(same-qualified-id): 420
+| eschew-tattered: 114
+| Of 3066373 nodes in ott: 3066214 with name in common, of which 3036024 matched with existing, 30190 blocked
+--- Assigning ids to union starting with ott ---
+| Highest id before: 5267058
+| Highest id after: 5287300
+| keeping-id: 3025844
+| note/different-source-id: 9290
+| note/different-source: 909
+| new-id: 20242
+| Highest id before: 5287300
+| Highest id after: 5287300
+** Ranks out of order: (16113=if:3192 Microspora*) genus has child (5278435=gbif:1175 Microsporida) order
+** Ranks out of order: (3655460=gbif:4872229 Ophiurinidae*) family has child (258604=ncbi:133711 Ophiurina*) suborder
+** Ranks out of order: (182610=ncbi:351107 Cryptobranchia*) genus has child (4958364=gbif:4304694. Calycidorididae*) family
+** Ranks out of order: (2850721=gbif:4587706 Nuculoidea*) genus has child (2850730=gbif:4587862 Nucularcidae*) family
+** Ranks out of order: (4969615=gbif:3252101 Rhynchonellidae*) family has child (795939=ncbi:151154 Rhynchonelloidea*) superfamily
+** Ranks out of order: (4163996=gbif:4865225 Chonetoidea*) genus has child (4163997=gbif:4869637 Chonostrophiidae*) family
+** Ranks out of order: (1041449=ncbi:6849 Limulus*) genus has child (5128446=gbif:3267257 Strabopidae*) family
+Writing tax/ott/log.tsv
+Writing tax/ott/taxonomy.tsv
+Writing tax/ott/synonyms.tsv
+!? Confused Berendtia laevigata
+Writing tax/ott/about.json
+Writing tax/ott/deprecated.tsv
+echo 2.4.draft2 >tax/ott/version.txt
