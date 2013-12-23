@@ -73,8 +73,6 @@ if ! (echo "import pycurl" | python); then
     sudo pip install pycurl
 fi
 
-exit
-
 # ---------- GIT ----------
 # Get git (so we can clone the opentree repo)
 if [ `which git`x = x ]; then
