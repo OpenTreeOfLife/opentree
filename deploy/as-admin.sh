@@ -65,15 +65,11 @@ if [ `which pip`x = x ]; then
 fi
 
 # ---------- LIBCURL + PYCURL ---------- # only needed on debian, may cause problems on ubunutu
-# used by oti indexing script
-if ! (echo "import pycurl" | python); then
+# used by oti indexing script (make sure we have SSL support)
+if [ `which curl`x = x ] || [ `curl-config --feature | grep SSL`x = x ]; then
 #    sudo apt-cache search libcurl-dev
     $APTGET install libcurl4-openssl-dev
-    echo "installing pinned pycurl version, in system python"
-    # without specifying a version, pip finds 7.19.02.win32(!) version
-    # as the latest and fails to install that
-    sudo pip install pycurl==7.19.0.2
-    # NOTE that we'll pip-install pycurl again inside our venv (in index-doc-store.sh)
+    # NOTE that we'll pip-install pycurl inside our venv (in index-doc-store.sh)
 fi
 
 exit
