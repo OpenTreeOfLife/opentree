@@ -70,7 +70,9 @@ if ! (echo "import pycurl" | python); then
 #    sudo apt-cache search libcurl-dev
     $APTGET install libcurl4-openssl-dev
     echo "installing pycurl"
-    sudo pip install pycurl
+    # without specifying a version, pip finds 7.19.02.win32(!) version
+    # as the latest and fails to install that
+    sudo pip install pycurl==7.19.0.2
 fi
 
 # ---------- GIT ----------
