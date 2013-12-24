@@ -14,7 +14,7 @@ BRANCH=master
 
 echo "installing pinned pycurl version (inside venv)"
 # specify a pinned version to avoid getting Windows pkg
-sudo pip install pycurl==7.19.0.2
+pip install pycurl==7.19.0.2
 
 APP=oti
 
