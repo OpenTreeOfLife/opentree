@@ -12,8 +12,9 @@ BRANCH=master
 
 . setup/functions.sh
 
-echo "installing pycurl (inside venv)"
-sudo pip install pycurl
+echo "installing pinned pycurl version (inside venv)"
+# specify a pinned version to avoid getting Windows pkg
+sudo pip install pycurl==7.19.0.2
 
 APP=oti
 
