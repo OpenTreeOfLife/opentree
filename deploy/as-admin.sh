@@ -65,12 +65,11 @@ if [ `which pip`x = x ]; then
 fi
 
 # ---------- LIBCURL + PYCURL ---------- # only needed on debian, may cause problems on ubunutu
-# used by oti indexing script
-if ! (echo "import pycurl" | python); then
+# used by oti indexing script (make sure we have SSL support)
+if [ `which curl`x = x ] || [ `curl-config --feature | grep SSL`x = x ]; then
 #    sudo apt-cache search libcurl-dev
     $APTGET install libcurl4-openssl-dev
-    echo "installing pycurl"
-    sudo pip install pycurl
+    # NOTE that we'll pip-install pycurl inside our venv (in index-doc-store.sh)
 fi
 
 exit

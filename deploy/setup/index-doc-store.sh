@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Grab version of python prevailing before going into venv (see functions.sh).
-# The venv version fails on trying to import pycurl.
-PYTHON=`which python`
-
 # This has to run on the host that's running the oti neo4j instance
 
 OPENTREE_DOCSTORE=$1
@@ -11,6 +7,10 @@ CONTROLLER=$2
 BRANCH=master
 
 . setup/functions.sh
+
+echo "installing pinned pycurl version, inside venv"
+# specify a pinned version to avoid getting Windows pkg
+pip install pycurl==7.19.0.2
 
 APP=oti
 
@@ -31,6 +31,6 @@ echo "Indexing $OPENTREE_DOCSTORE"
 
 # We need to pass in the doc store repo name here
 # Need to explicitly run python since ours is different from what you get from #!/usr/bin/env
-$PYTHON repo/$APP/index_current_repo.py http://127.0.0.1:7478/db/data/ $OPENTREE_DOCSTORE
+python repo/$APP/index_current_repo.py http://127.0.0.1:7478/db/data/ $OPENTREE_DOCSTORE
 
 log "$APP database initialized from $OPENTREE_DOCSTORE and indexed"
