@@ -12,6 +12,9 @@ BRANCH=master
 
 . setup/functions.sh
 
+echo "installing pycurl (inside venv)"
+sudo pip install pycurl
+
 APP=oti
 
 # setup oti database
@@ -31,6 +34,6 @@ echo "Indexing $OPENTREE_DOCSTORE"
 
 # We need to pass in the doc store repo name here
 # Need to explicitly run python since ours is different from what you get from #!/usr/bin/env
-$PYTHON repo/$APP/index_current_repo.py http://127.0.0.1:7478/db/data/ $OPENTREE_DOCSTORE
+python repo/$APP/index_current_repo.py http://127.0.0.1:7478/db/data/ $OPENTREE_DOCSTORE
 
 log "$APP database initialized from $OPENTREE_DOCSTORE and indexed"
