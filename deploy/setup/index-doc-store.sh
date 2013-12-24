@@ -1,9 +1,5 @@
 #!/bin/bash
 
-# Grab version of python prevailing before going into venv (see functions.sh).
-# The venv version fails on trying to import pycurl.
-PYTHON=`which python`
-
 # This has to run on the host that's running the oti neo4j instance
 
 OPENTREE_DOCSTORE=$1
@@ -12,7 +8,7 @@ BRANCH=master
 
 . setup/functions.sh
 
-echo "installing pinned pycurl version (inside venv)"
+echo "installing pinned pycurl version, inside venv"
 # specify a pinned version to avoid getting Windows pkg
 pip install pycurl==7.19.0.2
 
