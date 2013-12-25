@@ -72,8 +72,6 @@ if [ `which curl`x = x ] || [ `curl-config --feature | grep SSL`x = x ]; then
     # NOTE that we'll pip-install pycurl inside our venv (in index-doc-store.sh)
 fi
 
-exit
-
 # ---------- GIT ----------
 # Get git (so we can clone the opentree repo)
 if [ `which git`x = x ]; then

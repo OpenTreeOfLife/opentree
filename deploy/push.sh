@@ -114,8 +114,8 @@ EOF
 
 function sync_system {
     # Do privileged stuff
-    rsync -pr -e "${SSH}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
-    # was scp -p -i "${PEM}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
+    # Don't use rsync - might not be installed yet
+    scp -p -i "${PEM}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
     ${SSH} "$ADMIN@$OPENTREE_HOST" ./as-admin.sh "$OPENTREE_HOST"
     # Copy files over
     rsync -pr -e "${SSH}" "--exclude=*~" "--exclude=#*" setup "$OT_USER@$OPENTREE_HOST":
@@ -137,7 +137,12 @@ function restart_apache {
 function pushweb2py {
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER
     # place the file with secret Janrain key
-    rsync -pr -e "${SSH}" ../webapp/private/janrain.key "$OT_USER@$OPENTREE_HOST":repo/opentree/webapp/private/janrain.key
+    keyfile=../webapp/private/janrain.key
+    if [ -r $keyfile ]; then
+        rsync -pr -e "${SSH}" $keyfile "$OT_USER@$OPENTREE_HOST":repo/opentree/webapp/private/janrain.key
+    else
+	echo "Cannot find janrain key file $keyfile"
+    fi
 }
 
 function pushapi {
