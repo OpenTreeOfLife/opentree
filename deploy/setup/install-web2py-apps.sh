@@ -54,6 +54,9 @@ rm fragment.tmp
 WEBAPP=opentree
 APPROOT=repo/$WEBAPP
 
+# Make sure that we have the opentree Git repo before manipulating
+# files inside of it below
+
 echo "...fetching $WEBAPP repo..."
 git_refresh OpenTreeOfLife $WEBAPP $BRANCH || true
 
@@ -108,8 +111,6 @@ fi
 if [ $changed = yes ]; then
     echo "Apache / web2py restart required (links to neo4j services)"
 fi
-
-# **** End web2py setup that is common to opentree/curator and api
 
 (cd $APPROOT; pip install -r requirements.txt)
 
