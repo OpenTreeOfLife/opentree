@@ -164,12 +164,49 @@ function loadSelectedStudy(id) {
                 return;
             }
 
-            // add templates for curator annotations (eg, files and OTU mapping hints)
-            if (getOTUMappingHints(data.nexml.meta) === null) {
-                data.nexml.meta.push( cloneFromNexsonTemplate('OTU mapping hints') );
+            // add study-level containers for annotations
+            if (getStudyAnnotationEvents(data) === null) {
+                data.nexml.meta.push( cloneFromNexsonTemplate('study annotation events') );
             }
+            if (getStudyAnnotationAgents(data) === null) {
+                data.nexml.meta.push( cloneFromNexsonTemplate('study annotation agents') );
+            }
+            if (getStudyAnnotationMessages(data) === null) {
+                data.nexml.meta.push( cloneFromNexsonTemplate('annotation message collection') );
+            }
+
+            // add agent singleton for this curation tool
+            var isCurrentCurationTool = function(agent) {
+                return (agent.name === curatorAnnotationAgentInfo.name) 
+                    && (agent.version === curatorAnnotationAgentInfo.version);
+            }
+            if (!agentExists( isCurrentCurationTool )) {
+                addAgent( curatorAnnotationAgentInfo );
+            }
+
+            // add baseline (empty) annotation for OTU mapping hints
+            if (getOTUMappingHints(data.nexml.meta) === null) {
+                var hintsAnnotationBundle = $.extend(
+                    { 
+                        targetElement: viewModel.nexml, 
+                        agents: [ curatorAgent ]
+                    }, 
+                    nexsonTemplates['OTU mapping hints']
+                );
+                createAnnotation( hintsAnnotationBundle );
+            }
+            
+            // add baseline (empty) annotation for supporting files 
             if (getSupportingFiles(data.nexml.meta) === null) {
-                data.nexml.meta.push( cloneFromNexsonTemplate('supporting files') );
+                ///data.nexml.meta.push( cloneFromNexsonTemplate('supporting files') );
+                var filesAnnotationBundle = $.extend(
+                    { 
+                        targetElement: viewModel.nexml, 
+                        agents: [ curatorAgent ]
+                    }, 
+                    nexsonTemplates['supporting files']
+                );
+                createAnnotation( filesAnnotationBundle );
             }
 
             // add expected tree properties and metadata, if missing
@@ -2473,7 +2510,8 @@ function adjustedLabel(label) {
  */
 
 // All its annotations should share some identifying information
-var curatorAnnotationAuthorInfo = {
+var curatorAnnotationAgentInfo = {
+    "id": "opentree-curation-webapp",//  OR use a generated (unique) ID
     "name": "OpenTree curation webapp",
     "description": "Web-based interface for submitting, editing, and reviewing studies in the Open Tree of Life project.",
     "url": "https://github.com/OpenTreeOfLife/opentree", 
@@ -2492,52 +2530,51 @@ var nexsonTemplates = {
          * Once the data has been safely migrated from the OTOL Nexson store,
          * we should drop all of this and populate the study's main
          * 'ot:dataDeposit' with the archival DOI or URL.
+         *
+         * NOTE that this object describes an annotation bundle with
+         * several main parts, each of which will be applied separately to
+         * the target Nexml:
+         *  targetElement  // supplied by template consumer
+         *  annotationEvent
+         *  agent(s)
+         *  message(s)
          */
-        "id": "supporting-files-metadata",
-        "$": "Supporting files metadata", 
-        "@property": "ot:annotation", 
-        "@xsi:type": "nex:ResourceMeta", 
-        "author": {
-            "name": curatorAnnotationAuthorInfo.name, 
-            "url": curatorAnnotationAuthorInfo.url,
-            "description": curatorAnnotationAuthorInfo.description,
-            "version": curatorAnnotationAuthorInfo.version,
-            "invocation": {
-                /* abusing this space to store structured metadata */
-                "params": {
-                    "movedToPermanentArchive": false,   // OR check for ot:dataDeposit?
-                    "files": [
-                      /* typical example:
-                        { 
-                            "filename": "",
-                            "url": "",
-                            "type": "",  // eg, 'Microsoft Excel spreadsheet'
-                            "size": ""   // eg, '241 KB'
-                        }, 
-                      */
-                    ]
-                }
-              /* skip this stuff (not a validator, per se)
-                "env": {
-                    // key/value pairs, both strings!
-                    "batchSize": "5"
-                    "searchContext": "All life"
-                },
-                "method": "GET",
-                "checksPerformed": [ ],
-                "commandLine": [ ], 
-                "pythonImplementation": "CPython", 
-                "pythonVersion": "2.7.5"
-              */
+        // 'targetElement': ,
+        'annotationEvent': {
+            "id": "supporting-files-metadata",
+            "description": "Describes supporting data files for this study",
+            "wasAssociatedWithAgentId": "opentree-curation-webapp",
+            // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
+            "dateCreated": new Date().toISOString(), 
+            "passedChecks": true,  // this is moot
+            "preserve": true
+            // "otherProperty": [ ]  // SKIP THIS, use messages for details
+        },
+        // 'agents': [],      // will be provided by template consumer
+        'messages': [{
+            "id": "",
+            "wasGeneratedById": "supporting-files-metadata",
+            "severity": "INFO",
+            "code": "SUPPORTING_FILE_INFO",
+            "humanMessageType": "NONE",
+            "data": {
+                "movedToPermanentArchive": false,   
+                    // OR check for ot:dataDeposit?
+                "files": [
+                  /* typical example:
+                    { 
+                        "filename": "",
+                        "url": "",
+                        "type": "",  // eg, 'Microsoft Excel spreadsheet'
+                        "size": ""   // eg, '241 KB'
+                    }, 
+                  */
+                ]
+            },
+            "refersTo": {
+                "top": "meta"
             }
-        }, 
-        // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
-        "dateCreated": new Date().toISOString(), 
-        "dateCreated": new Date().toISOString()
-      /* skip this stuff (not a validator, per se)
-        "isValid": true,   // 
-        "messages": [ ]
-       */
+        }]
     }, // END of 'supporting files' template
 
     'single supporting file': {
@@ -2551,18 +2588,115 @@ var nexsonTemplates = {
         "size": ""   // eg, '241 KB'
     }, // END of 'single supporting file' template
 
+    'study annotation events': {
+        // a singleton, on the study only
+        "@property": "ot:annotationEvents", 
+        "@xsi:type": "nex:ResourceMeta", 
+        "annotation": []
+    },
+    'study annotation agents': {
+        // a singleton, on the study only
+        "@property": "ot:agents", 
+        "@xsi:type": "nex:ResourceMeta", 
+        "agent": []
+    },
+    'annotation message collection': {
+        // can be on the study, or some other element
+        "@property": "ot:messages", 
+        "@xsi:type": "nex:ResourceMeta", 
+        "message": []
+    },
+
+    'single annotation event': {
+        "id": "",
+        "description": "",
+        "wasAssociatedWithAgentId": "",
+        "dateCreated": ""
+        //"passedChecks": true,
+        //"preserve": true,
+        //"otherProperty": []
+    },
+    'single annotation agent': {
+        "id": "",
+        "name": "",
+        "url": "",
+        "description": "",
+        "version": "",
+        "invocation": {
+            "commandLine": [],
+            "method": "",
+            "data": "",
+            "checksPerformed": ""
+            //"otherProperty": []
+        }
+        //"otherProperty": []
+    },
+    'single annotation message': {
+        "id": "",
+        "wasGeneratedById": "",
+        //"wasAttributedToId": "",
+        "severity": "",
+        "code": "",
+        "humanMessageType": "",
+        "humanMessage": "",
+        "dataAnnotation": "",
+        "data": {},
+        "refersTo": {},
+        "other": {}
+    },
 
     'OTU mapping hints': {
         /* A series of regular expressions ('substitutions') to facilitate
          * mapping of leaf nodes in study trees to known taxa. Also hints to
          * the most likely search context for these names.
          *
-         * TODO: Should this describe the remote service, instead of the curation webapp?
-         *
          * TODO: Should we specify hints per-tree, instead of per-study? not
          * sure how we'd do that, given that Nexml otus are shared...
+         *
+         * NOTE that this object describes an annotation bundle with
+         * several main parts, each of which will be applied separately to
+         * the target Nexml:
+         *  targetElement  // supplied by template consumer
+         *  annotationEvent
+         *  agent(s)
+         *  message(s)
          */
-        "id": "otu-mapping-hints",
+        // 'targetElement': ,
+        'annotationEvent': {
+            "id": "otu-mapping-hints",
+            "description": "Aids for mapping study OTUs to OTT taxa",
+            "wasAssociatedWithAgentId": "opentree-curation-webapp",
+            // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
+            "dateCreated": new Date().toISOString(), 
+            "passedChecks": true,  // this is moot
+            "preserve": true
+            // "otherProperty": [ ]  // SKIP THIS, use messages for details
+        },
+        // 'agents': [],      // will be provided by template consumer
+        'messages': [{
+            "id": "",
+            "wasGeneratedById": "otu-mapping-hints",
+            "severity": "INFO",
+            "code": "OTU_MAPPING_HINTS",
+            "humanMessageType": "NONE",
+            "data": {
+                "searchContext": "",
+                "substitutions": [
+                    // always one default (empty) substitution
+                    { 
+                        "old": "",
+                        "new": "",
+                        "valid": true,
+                        "active": false
+                    }
+                ]
+            },
+            "refersTo": {
+                "top": "meta"
+            }
+        }],
+
+        /*
         "$": "OTO mapping hints", 
         "@property": "ot:annotation", 
         "@xsi:type": "nex:ResourceMeta", 
@@ -2572,7 +2706,6 @@ var nexsonTemplates = {
             "description": curatorAnnotationAuthorInfo.description,
             "version": curatorAnnotationAuthorInfo.version,
             "invocation": {
-                /* TODO: define AJAX calls here, to facilitate other tools? */
                 "params": {
                     "searchContext": "All life",
                     "substitutions": [
@@ -2585,27 +2718,9 @@ var nexsonTemplates = {
                         },
                     ]
                 }
-              /* skip this stuff (not a validator, per se)
-                "env": {
-                    // key/value pairs, both strings!
-                    "batchSize": "5"
-                    "searchContext": "All life"
-                },
-                "method": "GET",
-                "checksPerformed": [ ],
-                "commandLine": [ ], 
-                "pythonImplementation": "CPython", 
-                "pythonVersion": "2.7.5"
-              */
             }
-        }, 
-        // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
-        "dateCreated": new Date().toISOString(), 
-        "dateCreated": new Date().toISOString()
-      /* skip this stuff (not a validator, per se)
-        "isValid": true,   // 
-        "messages": [ ]
-       */
+        }
+        */
     }, // END of 'OTU mapping hints' template
 
     'mapping substitution': {
@@ -2790,7 +2905,16 @@ function getOTUMappingHints(data) {
     if (!data) {
         data = viewModel.nexml.meta;
     }
-    return getMetaTagByID(data, 'otu-mapping-hints')
+    var annotations = getStudyAnnotationEvents( data );
+    var hintsAnnotation = null;
+    $.each(annotations, function(i, annotation) {
+        if (annotation.id === 'otu-mapping-hints') {
+            hintsAnnotation = annotation;
+            return false;
+        }
+    });
+    
+    return hintsAnnotation;
 }
 function addSubstitution( clicked ) {
     var subst = cloneFromNexsonTemplate('mapping substitution');
@@ -3369,3 +3493,225 @@ function getHumanReadableFileSize(size) {
   return (Math.round(size * 100 / Math.pow(1024, t2)) / 100) +
     fileSizePrefixes.charAt(t2).replace(' ', '') + 'B';
 }
+
+/*
+ * Annotation helpers
+ */
+
+// manage central collections
+function getStudyAnnotationEvents( data ) {
+    // returns an array (OR observableArray?), possibly empty
+    if (!data) {
+        data = viewModel;
+    }
+    return getMetaTagByProperty(data.nexml.meta, 'ot:annotationEvents');
+}
+function getStudyAnnotationAgents( data ) {
+    // returns an array (OR observableArray?), possibly empty
+    if (!data) {
+        data = viewModel;
+    }
+    return getMetaTagByProperty(data.nexml.meta, 'ot:agents');
+}
+function getStudyAnnotationMessages( data ) {
+    // returns an array (OR observableArray?), possibly empty
+    if (!data) {
+        data = viewModel;
+    }
+    return getMetaTagByProperty(data.nexml.meta, 'ot:messages');
+}
+
+// manage "local" messages collection for any element
+function getLocalMessages( element ) {
+    // returns an array (OR observableArray?), possibly empty
+    var messages = [];
+    if (localMessagesCollectionExists( element )) {
+        var collection = getLocalMessagesCollection( element );
+        $.each(collection, function(i, msg ) {
+            // TODO: iterate properly (child elements?)
+            messages.push(msg);
+        });
+    }
+    return messages;
+}
+function getLocalMessagesCollection( element ) {
+    // returns the actual collection, or null
+    // TODO: get the real deal
+    return null;
+}
+function localMessagesCollectionExists( element ) {
+    // return T|F
+    return getLocalMessagesCollection( element ) ? true : false;
+}
+function localMessagesCollectionIsBeingUsed( element ) {
+    // return T|F
+    var localMessages = getElementAnnotationMessages( element );
+    return localMessages.length > 0;
+}
+function addLocalMessagesCollection( element ) {
+    // TODO: RESTRICT to these elements: nexml, tree, node, edge, otu
+}
+function removeLocalMessagesCollection( element ) {
+    var messageList = getLocalMessagesCollection( element );
+    if (messageList) {
+        element.meta.remove(messageList);
+    }
+}
+
+
+// chase relationships from elements, agents, etc
+function getAnnotationsRelatedToElement( element ) {
+    // returns an array, possibly empty
+}
+function getAgentsForAnnotationEvent( annotationEvent ) {
+    // returns an array, possibly empty
+}
+function getMessagesForAnnotationEvent( annotationEvent ) {
+    // returns an array, possibly empty
+}
+function getAnnotationEventsForAgent( agent ) {
+    // returns an array, possibly empty
+}
+function getAnnotationEventForMessage( message ) {
+    // returns a single event, or null
+}
+
+// fetch bundled annotationEvent, agent(s), and message(s)?
+function getAnnotationBundle( annotationEvent ) {
+    // returns an object with event, agents, messages
+    var bundle = {
+        'event' : annotationEvent,
+        'agents' : [],
+        'messages' : []
+    };
+    return bundle;
+}
+
+// create/update/delete annotations, managing collections as needed
+function createAnnotation( targetElement, annotationEvent, agents, messages ) {
+    // RENAME to updateAnnotation, setAnnotation?
+    // TODO: make sure we can handle "split" events that specify multiple elements
+}
+function deleteAnnotationEvent( annotationEvent ) {
+    // clear related messages and agents (if no longer used)
+
+    cleanupMessagesCollection( element );
+    var localMessages = getElementAnnotationMessages( element )
+}
+
+// manage agents (each is a singleton that disappears if unused)
+function agentExists( testFunc ) {
+    // TODO: return T|F
+}
+function agentIsBeingUsed( testFunc ) {
+    // return T|F
+    var relatedEvents = getAnnotationEventsForAgent( agent );
+    return relatedEvents.length > 0;
+}
+function addAgent( props ) {
+    // assumes that props are 
+    var agentInfo = $.extend(
+        { id: getNextAvailableAnnotationAgentID() }, 
+        props
+    );
+    addMetaTagToParent( viewModel.nexml.meta, agentInfo );
+}
+function removeAgent( testFunc ) {
+    var agentList = getStudyAnnotationAgents();
+    var doomedAgent = null;
+    $.each(agentList, function(i, agent) {
+        if (testFunc(agent)) {
+            doomedAgent = agent;
+            return false;
+        }
+    });
+    if (doomedAgent) {
+        agentList.remove(doomedAgent);
+    }
+}
+
+/*
+ * Manage unique (study-wide) IDs for annotation types. Note that in
+ * each case, we're using text IDs (eg, "message987") but keeping simple
+ * integer tallies to show determine the next available ID in the current
+ * study.
+ */
+var highestAnnotationEventID = null;
+var annotationEventIDPrefix = 'annotation';
+
+var highestAnnotationAgentID = null;
+var annotationAgentIDPrefix = 'agent';
+
+var highestAnnotationMessageID = null;
+var annotationMessageIDPrefix = 'message';
+
+function getNextAvailableAnnotationEventID() {
+    if (highestAnnotationEventID === null) {
+        // do a one-time(?) scan for the highest ID currently in use
+        var allEvents = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:annotationEvents')();
+        if (allEvents.length === 0) {
+            highestAnnotationEventID = 0;
+        } else {
+            var sortedEvents = allEvents.sort(function(a,b) {
+                if (a.id() > b.id()) return -1;
+                return 1;
+            });
+            var highestID = sortedEvents[0].id();
+            highestAnnotationEventID = highestID.split( annotationEventIDPrefix )[1];
+        }
+    }
+    highestAnnotationEventID++;
+    return annotationEventIDPrefix + highestAnnotationEventID;
+}
+function getNextAvailableAnnotationAgentID() {
+    if (highestAnnotationAgentID === null) {
+        // do a one-time(?) scan for the highest ID currently in use
+        var allAgents = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:agents')();
+        if (allAgents.length === 0) {
+            highestAnnotationAgentID = 0;
+        } else {
+            var sortedAgents = allAgents.sort(function(a,b) {
+                if (a.id() > b.id()) return -1;
+                return 1;
+            });
+            var highestID = sortedEvents[0].id();
+            highestAnnotationAgentID = highestID.split( annotationAgentIDPrefix )[1];
+        }
+    }
+    highestAnnotationAgentID++;
+    return annotationAgentIDPrefix + highestAnnotationAgentID;
+}
+function getNextAvailableAnnotationMessageID() {
+    if (highestAnnotationMessageID === null) {
+        // do a one-time(?) scan for the highest ID currently in use
+        var allMessages = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:messages')();
+        // gather "local" messages from all other elements!
+        // NOTE: Add any new target elements here to avoid duplication!
+        $.each(viewData.nexml.otus.otu(), function(i, otu) {
+            var localMessage = getMetaTagAccessorByAtProperty(otu.meta, 'ot:messages')();
+            allMessages += localMessages;
+        });
+        $.each(viewData.nexml.trees.tree(), function(i, tree) {
+            var localMessage = getMetaTagAccessorByAtProperty(tree.meta, 'ot:messages')();
+            allMessages += localMessages;
+            // look again at all nodes in the tree
+            $.each(tree.node(), function(i, node) {
+                var localMessage = getMetaTagAccessorByAtProperty(node.meta, 'ot:messages')();
+                allMessages += localMessages;
+            });
+        });
+        if (allMessages.length === 0) {
+            highestAnnotationMessageID = 0;
+        } else {
+            var sortedMessages = allMessages.sort(function(a,b) {
+                if (a.id() > b.id()) return -1;
+                return 1;
+            });
+            var highestID = sortedEvents[0].id();
+            highestAnnotationMessageID = highestID.split( annotationMessageIDPrefix )[1];
+        }
+    }
+    highestAnnotationMessageID++;
+    return annotationMessageIDPrefix + highestAnnotationMessageID;
+}
+
