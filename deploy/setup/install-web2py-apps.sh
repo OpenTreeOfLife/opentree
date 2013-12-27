@@ -46,6 +46,27 @@ EOF
 
 rm fragment.tmp
 
+
+# ---------- BROWSER & CURATOR WEBAPPS ----------
+# Set up web2py apps as directed in the README.md file
+# Compare install-api.sh
+
+WEBAPP=opentree
+APPROOT=repo/$WEBAPP
+
+# Make sure that we have the opentree Git repo before manipulating
+# files inside of it below
+
+echo "...fetching $WEBAPP repo..."
+git_refresh OpenTreeOfLife $WEBAPP $BRANCH || true
+
+# Modify the requirements list
+cp -p $APPROOT/requirements.txt $APPROOT/requirements.txt.save
+if grep --invert-match "distribute" \
+      $APPROOT/requirements.txt >requirements.txt.new ; then
+    mv requirements.txt.new $APPROOT/requirements.txt
+fi
+
 # ---------- WEB2PY CONFIGURATION ----------
 
 configfile=repo/opentree/webapp/private/config
@@ -89,25 +110,6 @@ else
 fi
 if [ $changed = yes ]; then
     echo "Apache / web2py restart required (links to neo4j services)"
-fi
-
-# **** End web2py setup that is common to opentree/curator and api
-
-# ---------- BROWSER & CURATOR WEBAPPS ----------
-# Set up web2py apps as directed in the README.md file
-# Compare install-api.sh
-
-WEBAPP=opentree
-APPROOT=repo/$WEBAPP
-
-echo "...fetching $WEBAPP repo..."
-git_refresh OpenTreeOfLife $WEBAPP $BRANCH || true
-
-# Modify the requirements list
-cp -p $APPROOT/requirements.txt $APPROOT/requirements.txt.save
-if grep --invert-match "distribute" \
-      $APPROOT/requirements.txt >requirements.txt.new ; then
-    mv requirements.txt.new $APPROOT/requirements.txt
 fi
 
 (cd $APPROOT; pip install -r requirements.txt)
