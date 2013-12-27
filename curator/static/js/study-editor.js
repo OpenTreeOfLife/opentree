@@ -2541,26 +2541,27 @@ var nexsonTemplates = {
          */
         // 'targetElement': ,
         'annotationEvent': {
-            "id": "supporting-files-metadata",
-            "description": "Describes supporting data files for this study",
-            "wasAssociatedWithAgentId": "opentree-curation-webapp",
+            "@id": "supporting-files-metadata",
+            "@description": "Describes supporting data files for this study",
+            "@wasAssociatedWithAgentId": "opentree-curation-webapp",
             // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
-            "dateCreated": new Date().toISOString(), 
-            "passedChecks": true,  // this is moot
-            "preserve": true
+            "@dateCreated": new Date().toISOString(), 
+            "@passedChecks": true,  // this is moot
+            "@preserve": true
             // "otherProperty": [ ]  // SKIP THIS, use messages for details
         },
         // 'agents': [],      // will be provided by template consumer
         'messages': [{
-            "id": "",
-            "wasGeneratedById": "supporting-files-metadata",
-            "severity": "INFO",
-            "code": "SUPPORTING_FILE_INFO",
-            "humanMessageType": "NONE",
+            "@id": "",
+            "@wasGeneratedById": "supporting-files-metadata",
+            "@severity": "INFO",
+            "@code": "SUPPORTING_FILE_INFO",
+            "@humanMessageType": "NONE",
             "data": {
-                "movedToPermanentArchive": false,   
+                "@movedToPermanentArchive": false,   
                     // OR check for ot:dataDeposit?
-                "files": [
+                "files": { "file":
+                    [
                   /* typical example:
                     { 
                         "filename": "",
@@ -2569,7 +2570,7 @@ var nexsonTemplates = {
                         "size": ""   // eg, '241 KB'
                     }, 
                   */
-                ]
+                ]}
             },
             "refersTo": {
                 "top": "meta"
@@ -2632,14 +2633,14 @@ var nexsonTemplates = {
         //"otherProperty": []
     },
     'single annotation message': {
-        "id": "",
-        "wasGeneratedById": "",
-        //"wasAttributedToId": "",
-        "severity": "",
-        "code": "",
-        "humanMessageType": "",
-        "humanMessage": "",
-        "dataAnnotation": "",
+        "@id": "",
+        "@wasGeneratedById": "",
+        //"@wasAttributedToId": "",
+        "@severity": "",
+        "@code": "",
+        "@humanMessageType": "",
+        "humanMessage": {"$": ""},
+        "dataAnnotation": {"$": ""},
         "data": {},
         "refersTo": {},
         "other": {}
@@ -2650,8 +2651,7 @@ var nexsonTemplates = {
          * mapping of leaf nodes in study trees to known taxa. Also hints to
          * the most likely search context for these names.
          *
-         * TODO: Should we specify hints per-tree, instead of per-study? not
-         * sure how we'd do that, given that Nexml otus are shared...
+         * TODO: Should we specify hints per-tree, instead of per-study?
          *
          * NOTE that this object describes an annotation bundle with
          * several main parts, each of which will be applied separately to
@@ -2663,73 +2663,47 @@ var nexsonTemplates = {
          */
         // 'targetElement': ,
         'annotationEvent': {
-            "id": "otu-mapping-hints",
-            "description": "Aids for mapping study OTUs to OTT taxa",
-            "wasAssociatedWithAgentId": "opentree-curation-webapp",
+            "@id": "otu-mapping-hints",
+            "@description": "Aids for mapping study OTUs to OTT taxa",
+            "@wasAssociatedWithAgentId": "opentree-curation-webapp",
             // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
-            "dateCreated": new Date().toISOString(), 
-            "passedChecks": true,  // this is moot
-            "preserve": true
+            "@dateCreated": new Date().toISOString(), 
+            "@passedChecks": true,  // this is moot
+            "@preserve": true
             // "otherProperty": [ ]  // SKIP THIS, use messages for details
         },
         // 'agents': [],      // will be provided by template consumer
         'messages': [{
-            "id": "",
-            "wasGeneratedById": "otu-mapping-hints",
-            "severity": "INFO",
-            "code": "OTU_MAPPING_HINTS",
-            "humanMessageType": "NONE",
+            "@id": "",
+            "@wasGeneratedById": "otu-mapping-hints",
+            "@severity": "INFO",
+            "@code": "OTU_MAPPING_HINTS",
+            "@humanMessageType": "NONE",
             "data": {
-                "searchContext": "",
-                "substitutions": [
+                "searchContext": {"$": "All life"},
+                "substitutions": {"substitution": [
                     // always one default (empty) substitution
                     { 
-                        "old": "",
-                        "new": "",
-                        "valid": true,
-                        "active": false
+                        "old": {"$": ""},
+                        "new": {"$": ""},
+                        "@valid": true,
+                        "@active": false
                     }
-                ]
+                ]}
             },
             "refersTo": {
                 "top": "meta"
             }
         }],
-
-        /*
-        "$": "OTO mapping hints", 
-        "@property": "ot:annotation", 
-        "@xsi:type": "nex:ResourceMeta", 
-        "author": {
-            "name": curatorAnnotationAuthorInfo.name, 
-            "url": curatorAnnotationAuthorInfo.url,
-            "description": curatorAnnotationAuthorInfo.description,
-            "version": curatorAnnotationAuthorInfo.version,
-            "invocation": {
-                "params": {
-                    "searchContext": "All life",
-                    "substitutions": [
-                        // always one default (empty) substitution
-                        { 
-                            "old": "",
-                            "new": "",
-                            "valid": true,
-                            "active": false
-                        },
-                    ]
-                }
-            }
-        }
-        */
     }, // END of 'OTU mapping hints' template
 
     'mapping substitution': {
         /* A single substitution added in the OTU Mapping section
          */
-        "old": "",
-        "new": "",
-        "valid": true,
-        "active": false
+        "old": {"$": ""},
+        "new": {"$": ""},
+        "@valid": true,
+        "@active": false
     }, // END of 'mapping substitution' template
 
 
