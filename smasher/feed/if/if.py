@@ -10,6 +10,10 @@ DEFAULT_LOG_NAME = 'if.log'
 DEFAULT_TAXONOMY_NAME = 'taxonomy.tsv'
 DEFAULT_SYNONYMS_NAME = 'synonyms.tsv'
 
+# The provided files seem to have been provided in the latin-1 character set
+# If this changes, change here and maybe the calls to utf8e can disappear as well
+INPUT_ENCODING = 'latin-1'
+
 import sys
 import codecs
 import logging
@@ -85,7 +89,7 @@ def startup(args):
     logging.info("Processing names from %s\n", names_fname)
 
     try:
-        names_file = codecs.open(names_fname,"r",'latin-1')
+        names_file = codecs.open(names_fname,"r",INPUT_ENCODING)
         name_rows = get_dicts(names_file)
     except IOError as e:
         msg = "opening %s as names file" % str(e)
@@ -94,7 +98,7 @@ def startup(args):
         sys.exit(1)
         
     try:
-        taxonomy_file = codecs.open(taxonomy_fname,"r",'latin-1')
+        taxonomy_file = codecs.open(taxonomy_fname,"r",INPUT_ENCODING)
         taxonomy_rows = get_dicts(taxonomy_file)
     except IOError as e:
         msg = "opening %s as taxonomy file" % str(e)
@@ -142,43 +146,23 @@ def startup(args):
             if fdc_find(name,fdc_set):
                 logging.info('found unsupported name in hard lineage search %s',display_name)
                 if row['IF-ID'] not in KNOWNBAD:
-                    name2taxon[row['Name']] = row
-                    logging.info("Adding %s to name to taxon with id %s",display_name,display_id)
-                    row['status'] = 'available'
-                    taxon_rows.append(row)
+                    validate_name(name2taxon,name,row,taxon_rows)
+                    logging.info('Adding %s to name to taxon with id %s',display_name,display_id)
                 else:
                     logging.info('Rejecting known bad Name: %s, id: %s',display_name,display_id)
             elif len(name.split(' ')) == 2:
                 logging.info('trying unsupported species %s',display_name)
                 if row['IF-ID'] not in KNOWNBAD:
-                    name2taxon[row['Name']] = row
+                    validate_name(name2taxon,name,row,taxon_rows)
                     logging.info('Adding %s to name to taxon with id %s',display_name,display_id)
-                    row['status'] = 'available'
-                    taxon_rows.append(row)
             else:
                 logging.info("rejecting name w/o Current ID: %s",display_name)
                 row['status'] = 'invalid' 
         elif name in name2taxon:
+            current_authority = format_authority(row)
             existing_row = name2taxon[name]
-            if 'Author' in row:
-                row_author = utf8e(row['Author'])
-            else:
-                row_author = ''
-            if 'Year' in row:
-                row_year = utf8e(row['Year'])
-            else:
-                row_year = ''
-            existing_name = utf8e(existing_row['Name'])
-            if 'Author' in existing_row:
-                existing_author =  utf8e(existing_row['Author'])
-            else:
-                existing_author = ''
-            if 'Year' in existing_row:
-                existing_year = utf8e(existing_row['Year'])
-            else:
-                existing_year = ''
-            logging.info("duplicate taxon name existing: %s ( %s, %s); new: %s (%s, %s)",existing_name,existing_author,existing_year,display_name,row_author,row_year)
-
+            existing_authority = format_authority(existing_row)
+            logging.info("duplicate taxon name existing: %s; new: %s",existing_authority,current_authority)
             existing_msg = "Existing id: %s " % existing_row['IF-ID'] 
             if "FDC-FK" in existing_row:
                 existing_msg = existing_msg + ("; FDC-FK: %s" % existing_row['FDC-FK'])
@@ -192,19 +176,23 @@ def startup(args):
                 new_msg = new_msg + ("; CurrentNameID: %s" % row['CurrentNameID'])
             logging.info(new_msg)
         else:
-            name2taxon[name] = row
+            validate_name(name2taxon,name,row,taxon_rows)
             logging.info("Adding %s to name to taxon with id %s",display_name,display_id)
-            row['status'] = 'available'
-            taxon_rows.append(row)
- 
-        
     get_taxonomy(name_rows,fdc_dict,name2taxon,name2synonym) #second pass
-    write_taxonomy(results_fname,name_rows,name2taxon,name2synonym) #second arg was taxon_table
+    write_taxonomy(results_fname,name_rows,name2taxon)
     write_synonyms(synonyms_fname,synonyms)
 
 
 
+def validate_name(name2taxon,name,row,taxon_rows):
+    """marks name as valid and updates lists and mappings """
+    name2taxon[name] = row
+    row['status'] = 'available'
+    taxon_rows.append(row)
+
+
 def get_taxonomy(name_rows,fdc_dict,name2taxon,name2synonym):
+    """ """
     for row in name_rows: 
         if 'status' in row:
             if row['status'] == 'available':
@@ -215,12 +203,34 @@ def get_taxonomy(name_rows,fdc_dict,name2taxon,name2synonym):
 
 
 def is_synonym(row):
+    """
+    tests if the if id and the current name id differ, which indicates a synonym
+    """
     return 'CurrentNameID' in row and (row['IF-ID'] != row['CurrentNameID'])
+
+def format_authority(row):
+    """
+    Generates an authority string for a name
+    """
+    name_str = utf8e(row['Name'])
+    if 'Author' in row:
+        author_str = utf8e(row['Author'])
+    else:
+        author_str = ''
+    if 'Year' in row:
+        year_str = utf8e(row['Year'])
+    else:
+        year_str = ''
+    return  "%s (%s, %s)" %(name_str,author_str,year_str)
 
 TAXON_HEADER = "uid\t|\tparent_uid\t|\tname\t|\trank\t|\t\n"
 TAXON_TEMPLATE = "%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n"
 
-def write_taxonomy(taxonomy_fname,name_table,name2taxon,name2synonym):
+def write_taxonomy(taxonomy_fname,name_table,name2taxon):
+    """
+    Opens and writes lines in the taxonomy file corresponding to
+    each valid (available) name
+    """
     try:        
         taxonomy_file = codecs.open(taxonomy_fname,"w","utf-8")
         taxonomy_file.write(TAXON_HEADER)
@@ -248,17 +258,28 @@ def write_taxonomy(taxonomy_fname,name_table,name2taxon,name2synonym):
         logging.error("error %s opening/writing %s as taxonomy file file",str(e),taxonomy_fname)
         
 
-
 SYNONYM_HEADER = "uid\t|\tname\t|\ttype\t|\tTBD\t|\n"
 SYNONYM_TEMPLATE = "%s\t|\t%s\t|\t%s\t|\t%s\t|\t\n"
 
 def write_synonyms(synonyms_fname,synonyms):
+    """
+    Opens and writes lines in the synonyms file corresponding to
+    each name identified as a synonym (IF id != Current Name id)
+    If authority information is available, it will appear in the
+    third column, prefix by 'authority', rather than by 'synonym'     
+    """
     try:
         synonyms_file = codecs.open(synonyms_fname,"w","utf-8")
         synonyms_file.write(SYNONYM_HEADER)
         for syn in synonyms:
             if 'CurrentNameID' in syn:  #if no id, then nothing worth writing
-                outstr = SYNONYM_TEMPLATE % (syn['CurrentNameID'],syn['Name'],'synonym','')
+                if 'Author' in syn and 'Year' in syn:
+                    namefield = "%s %s %s" % (syn['Name'],syn['Author'],syn['Year'])
+                    typefield = 'authority'
+                else:
+                    namefield = syn['Name']
+                    typefield = 'synonym'
+                outstr = SYNONYM_TEMPLATE % (syn['CurrentNameID'],namefield,typefield,'')
                 synonyms_file.write(outstr)
         synonyms_file.close()
     except IOError as e:
@@ -267,6 +288,13 @@ def write_synonyms(synonyms_fname,synonyms):
 BAD_SYNONYMS = []
 
 def resolve_synonym(row,if_id_dict):
+    """
+    This chains back to find the taxonomically valid name for the synonym 
+    in the name field of row.  Synonyms are names of rows which have
+    a CurrentNameID defined and has a different value from the IF-ID.  This
+    returns the IF-ID of the first row encountered in the chaining that is
+    not a synonym.    
+    """
     if_id = row['IF-ID']
     if if_id in BAD_SYNONYMS:
        logging.info("found bad synonym %s",if_id)
@@ -283,19 +311,19 @@ def resolve_synonym(row,if_id_dict):
            if 'CurrentNameID' in new_row:
                current_id = new_row['CurrentNameID']
            else:
-               logging.info("recursive resolve mapped %s to unsupported id %s",row['IF-ID'],if_id)
+               logging.info("chained synonym resolution mapped %s to unsupported id %s",row['IF-ID'],if_id)
                return if_id
        else:
-           logging.info("Recursive id lookup failed: %s",current_id)
+           logging.info("chained id lookup failed: %s",current_id)
            return if_id
-    logging.info("recursive resolve mapped %s to %s",row['IF-ID'],current_id)
+    logging.info("chained synonym resolution mapped %s to %s",row['IF-ID'],current_id)
     return current_id
 
            
 def fill_if_dict(name_rows):
     if_dict = dict()
     for row in name_rows:
-        if not 'IF-ID' in row:
+        if 'IF-ID' not in row:
             logging.info("found name row without IF-ID: %s",str(row))
         elif row['IF-ID'] in if_dict:
             logging.info("duplicate if_id found %s",str(row))
@@ -304,6 +332,7 @@ def fill_if_dict(name_rows):
     return if_dict
 
 def back_translate_name(name,name2taxon,name2synonym):
+    """returns an if-id for a name"""
     if name in name2taxon:
         row = name2taxon[name]
         return row['IF-ID']
@@ -315,81 +344,90 @@ def back_translate_name(name,name2taxon,name2synonym):
         return ''
 
 
-rank_map = {"GenusName": ("genus","FamilyName"),
-            "FamilyName": ("family","OrderName"), 
-            "OrderName": ("order","SubclassName"),
-            "SubclassName": ("subclass","ClassName"),
-            "ClassName": ("class","SubphylumName"),
-            "SubphylumName": ("subphylum","PhylumName"),
-            "PhylumName": ("phylum","KingdomName"),
-            "KingdomName": ("kingdom",None)
+rank_map = {"GenusName": "genus",
+            "FamilyName": "family",
+            "OrderName": "order",
+            "SubclassName": "subclass",
+            "ClassName": "class",
+            "SubphylumName": "subphylum",
+            "PhylumName": "phylum",
+            "KingdomName": "kingdom"
             }
 
 #temporary - should be getting this from the FDC file headers
 rank_list = ["GenusName","FamilyName","OrderName","SubclassName","ClassName","SubphylumName","PhylumName","KingdomName"]
 raw_rank_list = ["genus","family","order","subclass","class","subphylum","phylum","kingdom"]
+rank_list_len = len(rank_list)
 
 def get_rank(row,fdc_dict):
     name = row['Name']
-    logging.info("Looking for rank for %s",utf8e(name))
+    display_name = utf8e(name)
+    logging.info("Looking for rank for %s",display_name)
     if ('FDC-FK' in row and row['IF-ID'] != row['FDC-FK']):
         # probably species
         if len(name.split(' ')) == 2:
-            logging.info("found species %s",utf8e(name))
+            logging.info("found species %s",display_name)
             row['rank'] = 'species'
         else:  # problem, check FDC-FK
             logging.info("probably not a species")
             if row['FDC-FK'] in fdc_dict:
                 hier = fdc_dict[row['FDC-FK']]
-                for n,rank_field in enumerate(rank_list):
+                for rank_field in rank_list:
                     if name == hier[rank_field]:
-                        row['rank'] = raw_rank_list[n]
-                        logging.info("found %s %s",utf8e(name),row['rank'])
+                        row['rank'] = rank_map[rank_field]
+                        logging.info("found %s %s",display_name,row['rank'])
                 else:               
                     if 'CurrentNameID' in row:
-                       logging.info('Bad species? %s', utf8e(row['Name']))
+                       logging.info('Bad species? %s',display_name)
             else:
                 fdc_list = fdc_search(name,fdc_dict)
                 if len(fdc_list) > 0:
-                    logging.info('found in hard search %s',str(fdc_list))
+                    logging.info('found (and lost) in hard search %s',str(fdc_list))
+                    if validate_lineages(name,fdc_list):
+                        rank_guess = fdc_list[0][1]
+                        logging.info("adding name %s with guessed rank %s",display_name,rank_guess)
+                        row['rank'] = rank_guess
                 else:               
                     if 'CurrentNameID' in row:
-                        logging.info('Bad species? %s',utf8e(row['Name']))
+                        logging.info('Bad species? %s',display_name)
     elif ('FDC-FK' in row and row['IF-ID'] == row['FDC-FK']):
         rank_guess = 'genus'
         row['rank'] = rank_guess
-        logging.info("probably  a genus")
+        logging.info("probably a genus")
         if len(row['Name'].split(' ')) > 1:
             if 'CurrentNameID' in row:
-                logging.info('Bad genus? %s',utf8e(row['Name']))
+                logging.info('Bad genus? %s',display_name)
             else:
                 fdc_list = fdc_search(name,fdc_dict)
                 if len(fdc_list) > 0:
                     logging.info('found in hard search %s',str(fdc_list))
                     if validate_lineages(name,fdc_list):
                         rank_guess = fdc_list[0][1]
-                        logging.info("adding name %s with guessed rank %s",utf8e(row['Name'],rank_guess))
+                        logging.info("adding name %s with guessed rank %s",display_name,rank_guess)
                         row['rank'] = rank_guess
                 else:               
                     if 'CurrentNameID' in row:
-                        logging.info('Bad taxon? %s',utf8e(row['Name']))
+                        logging.warn('Bad taxon? %s',utf8e(row['Name']))
                     else:
-                        logging.info("Name without currentNameID not found %s",utf8e(row['Name']))
+                        logging.warn("Name without currentNameID not found %s",display_name)
     else:
         fdc_list = fdc_search(name,fdc_dict)
         if len(fdc_list) > 0:
             logging.info('found in hard search %s',str(fdc_list))
             if validate_lineages(name,fdc_list):
                 rank_guess = fdc_list[0][1]
-                logging.info("adding name %s with guessed rank %s",utf8e(row['Name']),rank_guess)
+                logging.info("adding name %s with guessed rank %s",display_name,rank_guess)
                 row['rank'] = rank_guess
         else:               
             if 'CurrentNameID' in row:
-                logging.error('Bad taxon? %s',utf8e(row['Name']))
+                logging.warn('Bad taxon? %s',display_name)
             else:
-                logging.error("Name without currentNameID not found %s",utf8e(row['Name']))
+                logging.warn("Name without currentNameID not found %s",display_name)
+
 
 def get_parent(row,fdc_dict,name2taxon,name2synonym):
+    """
+    """
     name = row['Name']
     if ('FDC-FK' in row and row['IF-ID'] != row['FDC-FK']):         # probably species
         if len(name.split(' ')) == 2:
@@ -398,13 +436,15 @@ def get_parent(row,fdc_dict,name2taxon,name2synonym):
                 if parent_name in name2taxon:
                     t = name2taxon[parent_name]
                     if 'IF-ID' in t:
-                        parent_id = name2taxon[parent_name]['IF-ID']
+                        parent_id = t['IF-ID']
+                    else:
+                        parent_id = 'not found'
                 elif parent_name in name2synonym:
-                    t = name2synonym[parent_name]
-                    if 'CurrentNameID' in t:
-                        parent_id = name2synonym[parent_name]['CurrentNameID']
+                    s = name2synonym[parent_name]
+                    if 'CurrentNameID' in s:
+                        parent_id = s['CurrentNameID']
                 else:
-                    parent_id = ''
+                    parent_id = 'not found'
             else:
                 logging.warn('fdc not found: %s',row['FDC-FK'])
                 parent_id = 'not found'
@@ -426,7 +466,7 @@ def fdc_parent_search(row,fdc_dict,name2taxon,name2synonym):
             row['parent'] = parent_id
         else:
             parent_id = extract_parent(name,hier,name2taxon,name2synonym)
-            row['parent'] = 'null'
+            row['parent'] = parent_id
             #row['status'] = 'non-fungi'
             logging.info("Taxon %s is in kingdom %s, not fungi",utf8e(name),utf8e(hier['KingdomName']))
     else:
@@ -434,13 +474,9 @@ def fdc_parent_search(row,fdc_dict,name2taxon,name2synonym):
         if len(fdc_list) > 0:
             fdc = fdc_list[0][0]
             hier = fdc_dict[fdc]
-            if hier['KingdomName'] == 'Fungi':
-                parent_id = extract_parent(name,hier,name2taxon,name2synonym)
-                row['parent'] = parent_id
-            else:
-                parent_id = extract_parent(name,hier,name2taxon,name2synonym)
-                row['parent'] = 'null'
-                #row['status'] = 'non-fungi'
+            parent_id = extract_parent(name,hier,name2taxon,name2synonym)
+            row['parent'] = parent_id
+            if hier['KingdomName'] != 'Fungi':
                 logging.info("Taxon %s is in kingdom %s, not fungi",utf8e(name),utf8e(hier['KingdomName']))
         else:               
             if 'CurrentNameID' in row:
@@ -449,94 +485,50 @@ def fdc_parent_search(row,fdc_dict,name2taxon,name2synonym):
 
 def extract_parent(name,hier,name2taxon,name2synonym):
     disp_name = utf8e(name)
+    logging.info("extracting parent for %s",disp_name)
+    parent_offset = find_immediate_parent(name,hier) 
+    foo = re_search_ranks(parent_offset,hier,name2taxon,name2synonym,disp_name)
+    logging.info("tried re_search_ranks for %s, got %s",disp_name,utf8e(foo))
+    return foo
+
+def find_immediate_parent(name,hier):
     for n,rank_field in enumerate(rank_list):
         if name == hier[rank_field]:
-            if len(rank_list) > n+1:
-                parent_name = hier[rank_list[n+1]]
-                if parent_name != 'Incertae sedis':
-                    parent_id = back_translate_name(parent_name,name2taxon,name2synonym)
-                    if parent_id == '':  #failure, check for 'Fossil' taxon
-                        logging.info("initial backtranslate failed for parent %s",parent_name)
-                        if parent_name.startswith('Fossil'):
-                            parent_name = parent_name[len('Fossil '):]
-                            parent_id = back_translate_name(parent_name,name2taxon,name2synonym)
-                            if parent_id != '':
-                                logging.info("found parent %s for non-species %s with id %s",utf8e(parent_name),disp_name,utf8e(parent_id))
-                                return parent_id
-                            else:
-                                for sub_key in rank_list[rank_list.index(rank_field)+1:]:
-                                    logging.info("sub_key is %s",sub_key)
-                                    next_parent = hier[sub_key]
-                                    if next_parent != 'Incertae sedis':
-                                        parent_name = next_parent
-                                        parent_id = back_translate_name(parent_name,name2taxon,name2synonym)
-                                        if parent_id == '':  #failure, check for 'Fossil' taxon
-                                            logging.info("initial backtranslate failed for parent %s",parent_name)
-                                            if parent_name.startswith('Fossil'):
-                                                parent_name = parent_name[len('Fossil '):]
-                                                parent_id = back_translate_name(parent_name,name2taxon,name2synonym)
-                                                if parent_id != '':
-                                                    logging.info("found parent %s for %s %s with id %s",
-                                                                  utf8e(parent_name),
-                                                                  utf8e(sub_key),
-                                                                  disp_name,
-                                                                  utf8e(parent_id))
-                                                    return parent_id
-                                                else:
-                                                    continue
-                                        else:
-                                            logging.info("found parent %s for non-species %s with id %s",utf8e(parent_name),disp_name,utf8e(parent_id))
-                                            return parent_id
-                                    else:
-                                        break
-                    else:
-                        logging.info("found parent %s for non-species %s with id %s",utf8e(parent_name),disp_name,utf8e(parent_id))
-                        return parent_id
-                else:
-                    for sub_key in rank_list[rank_list.index(rank_field)+1:]:
-                        logging.info("sub_key is %s",sub_key)
-                        next_parent = hier[sub_key]
-                        if next_parent != 'Incertae sedis':
-                            parent_name = next_parent
-                            parent_id = back_translate_name(parent_name,name2taxon,name2synonym)
-                            if parent_id == '':  #failure, check for 'Fossil' taxon
-                                logging.info("initial backtranslate failed for parent %s",parent_name)
-                                if parent_name.startswith('Fossil '):
-                                    parent_name = parent_name[len('Fossil '):]
-                                    parent_id = back_translate_name(parent_name,name2taxon,name2synonym)
-                                    if parent_id != '':
-                                        logging.info("found parent %s for non-species %s with id %s",utf8e(parent_name),disp_name,utf8e(parent_id))
-                                        return parent_id
-                                    else:
-                                        continue
-                            else:
-                                logging.info("found parent %s for non-species %s with id %s",utf8e(parent_name),disp_name,utf8e(parent_id))
-                                return parent_id
-                    else:
-                        logging.warn('failed to find parent id for %s',disp_name)
-                        return ''
-                    break
-            else:  #only at kingdom level
-                logging.warn('failed to find parent at kingdom level for %s',disp_name)
-                return ''
-    logging.info('failed to find parent id for %s',disp_name)
-    return ''
+            return n+1
+
+def re_search_ranks(parent_index,hier,name2taxon,name2synonym,disp_name):
+    for sub_key in rank_list[parent_index:]:
+        logging.info("sub_key is %s",sub_key)
+        next_parent = hier[sub_key]
+        if next_parent != 'Incertae sedis':
+            parent_name = next_parent
+            parent_id = back_translate_name(parent_name,name2taxon,name2synonym)
+            if parent_id != '':  
+                logging.info("found parent %s for non-species %s with id %s",utf8e(parent_name),disp_name,utf8e(parent_id))
+                return parent_id      
+            if parent_name.startswith('Fossil '):
+                parent_name = parent_name[len('Fossil '):]
+                parent_id = back_translate_name(parent_name,name2taxon,name2synonym)
+                if parent_id != '':
+                    logging.info("found parent %s for non-species %s with id %s",utf8e(parent_name),disp_name,utf8e(parent_id))
+                    return parent_id
+    else:
+        logging.warn('failed to find parent id for %s',disp_name)
+        return ''
 
 def fdc_search(name,fdc_dict):
     result =[]
     for fdc_id in fdc_dict:
         row = fdc_dict[fdc_id]
-        for n,rank_field in enumerate(rank_list):
+        for rank_field in rank_map:
             if name == row[rank_field]:
-                if len(rank_list)>n:
-                    result.append((fdc_id,raw_rank_list[n]))
+                result.append((fdc_id,rank_map[rank_field]))
     return result
 
 def init_fdc_set(fdc_dict):
     fset = set()
     for fdc_id in fdc_dict:
-        row = fdc_dict[fdc_id]
-        for name in row.values():
+        for name in fdc_dict[fdc_id].values():
             fset.add(name)
     return fset
 
@@ -621,7 +613,11 @@ def reverse_name_lookup(id,name_rows):
             return row['name']
     return None
 
+# Not sure this is the best way to make the
+# formatting errors in log messages disappear,
+# but it seems to be effective.
 def utf8e(str):
+    """returns utf-8 encoded string from latin-1(?) argument"""
     return codecs.encode(str,'utf-8')
 
 
