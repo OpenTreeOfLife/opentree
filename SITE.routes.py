@@ -35,7 +35,8 @@ routes_onerror=[
   # this catch-all captures errors in 'curator', so we need to spell out all apps below :-/
   # ('*/*', '/opentree/default/error'),
   ('opentree/*', '/opentree/default/error'),
-  ('api/*', '/opentree/default/error'),
+  # this obfuscates error messages from the API
+  # ('api/*', '/opentree/default/error'),
   ('admin/*', '/opentree/default/error'),
 ]
 
