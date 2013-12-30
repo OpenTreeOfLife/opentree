@@ -529,11 +529,11 @@ function loadSelectedStudy(id) {
 
             // keep a very tentative list of failed OTU mappings (any change in hints should clear it)
             var mappingHints = getOTUMappingHints();
-            var hintsMessage = getMessagesForAnnotationEvent( mappingHints )[0];
+            //var hintsMessage = getMessagesForAnnotationEvent( mappingHints )[0];
 
-            hintsMessage.data.searchContext.$.subscribe(clearFailedOTUList);
-            hintsMessage.data.substitutions.substitution.subscribe(clearFailedOTUList);
-            $.each(hintsMessage.data.substitutions.substitution(), function(i, subst) {
+            mappingHints.data.searchContext.$.subscribe(clearFailedOTUList);
+            mappingHints.data.substitutions.substitution.subscribe(clearFailedOTUList);
+            $.each(mappingHints.data.substitutions.substitution(), function(i, subst) {
                 subst['@active'].subscribe(clearFailedOTUList);
                 subst.new.$.subscribe(clearFailedOTUList);
                 subst.old.$.subscribe(clearFailedOTUList);
@@ -2483,7 +2483,7 @@ function adjustedLabel(label) {
     }
     var adjusted = label;
     // apply any active subsitutions in the viewMdel
-    var subList = getOTUMappingHints().author.invocation.params.substitutions();
+    var subList = getOTUMappingHints().data.substitutions.substitution();
     $.each(subList, function(i, subst) {
         if (!subst.active()) {
             return true; // skip to next adjustment
@@ -2676,7 +2676,7 @@ var nexsonTemplates = {
         },
         // 'agents': [],      // will be provided by template consumer
         'messages': [{
-            "@id": "",
+            //"@id": "",      // will be assigned via $.extend
             "@wasGeneratedById": "otu-mapping-hints",
             "@severity": "INFO",
             "@code": "OTU_MAPPING_HINTS",
@@ -2877,7 +2877,8 @@ function removeSupportingFile( fileInfo ) {
 }
 
 function getOTUMappingHints(nexml) {
-    // retrieve this from the model (or other specified object); return null if not found
+    // retrieve this annotation message from the model (or other specified
+    // object); return null if not found
     if (!nexml) {
         nexml = viewModel.nexml;
     }
@@ -2894,7 +2895,11 @@ function getOTUMappingHints(nexml) {
         }
     });
     
-    return hintsAnnotation;
+    //return hintsAnnotation;
+    if (!hintsAnnotation) {
+        return null;
+    }
+    return getMessagesForAnnotationEvent( hintsAnnotation, nexml )[0]
 }
 function addSubstitution( clicked ) {
     var subst = cloneFromNexsonTemplate('mapping substitution');
@@ -2917,10 +2922,10 @@ function addSubstitution( clicked ) {
         // reset the SELECT widget to its prompt
         $(clicked).val('');
     }
-    getOTUMappingHints().author.invocation.params.substitutions.push(subst);
+    getOTUMappingHints().data.substitutions.substitution.push(subst);
 }
 function removeSubstitution( data ) {
-    var subList = getOTUMappingHints().author.invocation.params.substitutions;
+    var subList = getOTUMappingHints().data.substitutions.substitution;
     subList.remove(data);
     if (subList().length === 0) {
         // add an inactive substitution with prompts
@@ -3157,7 +3162,7 @@ function requestTaxonMapping() {
     }
 
     // groom trimmed text based on our search rules
-    var searchContextName = getOTUMappingHints().author.invocation.params.searchContext();
+    var searchContextName = getOTUMappingHints().data.searchContext.$();
 
     // show spinner alongside this item...
     currentlyMappingOTUs.push( otuID );
@@ -3542,6 +3547,13 @@ function removeLocalMessagesCollection( element ) {
     }
 }
 
+// TODO: manage individual annotation messages, anywhere in the study
+/*
+function addAnnotationMessage() {
+}
+function removeAnnotationMessage( msg ) {
+}
+*/
 
 // chase relationships from elements, agents, etc
 function getAnnotationsRelatedToElement( element ) {
@@ -3556,9 +3568,12 @@ function getAgentForAnnotationEvent( annotationEvent ) {
     }
     return matchingAgent;
 }
-function getMessagesForAnnotationEvent( annotationEvent ) {
+function getMessagesForAnnotationEvent( annotationEvent, nexml ) {
     // returns an array, possibly empty
-    var allMessages = getAllAnnotationMessagesInStudy(viewModel.nexml);
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
+    var allMessages = getAllAnnotationMessagesInStudy(nexml);
     var eventID = annotationEvent['@id']();
     var matchingMessages = ko.utils.arrayFilter( 
         allMessages, 
@@ -3616,7 +3631,11 @@ function createAnnotation( annotationBundle, nexml ) {
         collection = addLocalMessagesCollection( target );
     }
     $.each( messages, function( i, msg ) {
-        var properMsg = ko.mapping.fromJS(msg, studyMappingOptions);
+        var messageInfo = $.extend(
+            { '@id': getNextAvailableAnnotationMessageID( nexml ) }, 
+            msg
+        );
+        var properMsg = ko.mapping.fromJS(messageInfo, studyMappingOptions);
         collection.message.push( properMsg );
     });
     
@@ -3635,12 +3654,16 @@ function createAnnotation( annotationBundle, nexml ) {
 
     // add the main event to this study
     var eventCollection = getStudyAnnotationEvents( nexml );
-    var properEvent = ko.mapping.fromJS(annEvent, studyMappingOptions);
+    // apply a unique annotation event ID, if there's not one baked in
+    // already
+    eventInfo = $.extend(
+        { '@id': getNextAvailableAnnotationEventID( nexml ) }, 
+        annEvent
+    );
+    var properEvent = ko.mapping.fromJS(eventInfo, studyMappingOptions);
     eventCollection.annotation.push( properEvent );
 
-    // TODO: assign other IDs across elements?
-    debugger;
-
+    // return something interesting here?
 }
 function deleteAnnotationEvent( annotationEvent ) {
     // TODO: clear related messages and agents (if no longer used)
@@ -3680,7 +3703,7 @@ function addAgent( props, nexml ) {
         nexml = viewModel.nexml;
     }
     var agentInfo = $.extend(
-        { id: getNextAvailableAnnotationAgentID( nexml ) }, 
+        { '@id': getNextAvailableAnnotationAgentID( nexml ) }, 
         props
     );
     var properAgent = ko.mapping.fromJS(agentInfo, studyMappingOptions);
@@ -3725,7 +3748,7 @@ function getNextAvailableAnnotationEventID(nexml) {
             nexml = viewModel.nexml;
         }
         // do a one-time(?) scan for the highest ID currently in use
-        var allEvents = getMetaTagAccessorByAtProperty(nexml.meta, 'ot:annotationEvents')();
+        var allEvents = makeArray(getMetaTagAccessorByAtProperty(nexml.meta, 'ot:annotationEvents'));
         if (allEvents.length === 0) {
             highestAnnotationEventID = 0;
         } else {
@@ -3789,22 +3812,22 @@ function getAllAnnotationMessagesInStudy(nexml) {
     var allMessages = getMetaTagByProperty(nexml.meta, 'ot:messages').message();
     // gather "local" messages from all other elements!
     // NOTE: Add any new target elements here to avoid duplication!
-    $.each(nexml.otus.otu(), function(i, otu) {
+    $.each(makeArray(nexml.otus.otu), function(i, otu) {
         var localMessages = getMetaTagByProperty(otu.meta, 'ot:messages');
         if (localMessages) {
-            allMessages += localMessages.message();
+            allMessages += makeArray(localMessages.message);
         }
     });
-    $.each(nexml.trees.tree(), function(i, tree) {
+    $.each(makeArray(nexml.trees.tree), function(i, tree) {
         var localMessages = getMetaTagByProperty(tree.meta, 'ot:messages');
         if (localMessages) {
-            allMessages += localMessages.message();
+            allMessages += makeArray(localMessages.message);
         }
         // look again at all nodes in the tree
-        $.each(tree.node(), function(i, node) {
+        $.each(makeArray(tree.node), function(i, node) {
             var localMessages = getMetaTagByProperty(node.meta, 'ot:messages');
             if (localMessages) {
-                allMessages += localMessages.message();
+                allMessages += makeArray(localMessages.message);
             }
         });
     });
