@@ -153,6 +153,10 @@ if [ ! -e ~opentree/.ssh ]; then
     sudo chown -R opentree:opentree ~opentree
 fi
 
+# This is required to make "git pull" work correctly
+sudo -u opentree git config --global user.name "OpenTree API"
+sudo -u opentree git config --global user.email api@opentreeoflife.org
+
 HOSTFILE=~opentree/hostname
 cat <<EOF | sudo bash
     echo "$OPENTREE_HOST" >$HOSTFILE
