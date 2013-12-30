@@ -175,11 +175,12 @@ function loadSelectedStudy(id) {
                 data.nexml.meta.push( cloneFromNexsonTemplate('annotation message collection') );
             }
 
+
             // add agent singleton for this curation tool
             var curatorAgent;
             var isCurrentCurationTool = function(agent) {
                 return (agent['@name']() === curatorAnnotationAgentInfo['@name']) 
-                    && (agent['@version']() === curatorAnnotationAgentInfo['@version']);
+                    && (agent['@version'] && agent['@version']() === curatorAnnotationAgentInfo['@version']);
             }
             if (!agentExists( isCurrentCurationTool, data.nexml )) {
                 curatorAgent = ko.mapping.fromJS(curatorAnnotationAgentInfo, studyMappingOptions);
@@ -469,21 +470,21 @@ function loadSelectedStudy(id) {
                 var submitter = viewModel.listFilters.ANNOTATIONS.submitter();
 
                 // filter study metadata, build new array to new and return it
+                var annotationsCollection = getMetaTagByProperty(viewModel.nexml.meta, 'ot:annotationEvents');
                 var filteredList = ko.utils.arrayFilter( 
-                    viewModel.nexml.meta(),
+                    annotationsCollection.annotation(),
                     function(annotation) {
-                        // initial filter for annotations
-                        if (annotation['@property']() !== 'ot:annotation') {
-                            // it's something else entirely
-                            return false;
-                        }
-                        
                         // match entered text against type, location, submitter name, message text
-                        var itsType = annotation.$();
+                        var itsAgent = getAgentForAnnotationEvent( annotation );
+                        var itsMessages = getMessagesForAnnotationEvent( annotation );
+
+                        var itsType = itsMessages ? itsMessages[0]['@code']() : ""; // TODO: incorporate all messages?
                         ///var itsLocation = "Study"; // TODO
-                        var itsSubmitter = annotation.author.name();
-                        var itsMessageText = annotation.messages ? annotation.messages().join("|") : "";
-                        var itsSortDate = annotation.dateModified ?  annotation.dateModified() : annotation.dateCreated();
+                        var itsSubmitter = itsAgent['@name']();
+                        var itsMessageText = itsMessages ? 
+                            $.map(itsMessages, function(m) { return m['humanMessage'] ? m['@humanMessage']() : ""; }).join('|') :
+                            ""; 
+                        var itsSortDate = annotation['@dateCreated']();
                         if (!matchPattern.test(itsType) && !matchPattern.test(itsSubmitter) && !matchPattern.test(itsMessageText)) {
                             return false;
                         }
@@ -528,12 +529,14 @@ function loadSelectedStudy(id) {
 
             // keep a very tentative list of failed OTU mappings (any change in hints should clear it)
             var mappingHints = getOTUMappingHints();
-            mappingHints.author.invocation.params.searchContext.subscribe(clearFailedOTUList);
-            mappingHints.author.invocation.params.substitutions.subscribe(clearFailedOTUList);
-            $.each(mappingHints.author.invocation.params.substitutions(), function(i, subst) {
-                subst.active.subscribe(clearFailedOTUList);
-                subst.new.subscribe(clearFailedOTUList);
-                subst.old.subscribe(clearFailedOTUList);
+            var hintsMessage = getMessagesForAnnotationEvent( mappingHints )[0];
+
+            hintsMessage.data.searchContext.$.subscribe(clearFailedOTUList);
+            hintsMessage.data.substitutions.substitution.subscribe(clearFailedOTUList);
+            $.each(hintsMessage.data.substitutions.substitution(), function(i, subst) {
+                subst['@active'].subscribe(clearFailedOTUList);
+                subst.new.$.subscribe(clearFailedOTUList);
+                subst.old.$.subscribe(clearFailedOTUList);
             });
 
             var mainPageArea = $('#main .tab-content')[0];
@@ -2880,8 +2883,12 @@ function getOTUMappingHints(nexml) {
     }
     var annotations = getStudyAnnotationEvents( nexml );
     var hintsAnnotation = null;
-    $.each(annotations, function(i, annotation) {
-        if (annotation.id === 'otu-mapping-hints') {
+    $.each(annotations.annotation(), function(i, annotation) {
+        var itsID = typeof(annotation['@id']) === 'function' ? 
+            annotation['@id']() :
+            annotation['@id']
+
+        if (itsID === 'otu-mapping-hints') {
             hintsAnnotation = annotation;
             return false;
         }
@@ -3538,19 +3545,35 @@ function removeLocalMessagesCollection( element ) {
 
 // chase relationships from elements, agents, etc
 function getAnnotationsRelatedToElement( element ) {
-    // returns an array, possibly empty
+    // TODO: returns an array, possibly empty
 }
-function getAgentsForAnnotationEvent( annotationEvent ) {
-    // returns an array, possibly empty
+function getAgentForAnnotationEvent( annotationEvent ) {
+    // returns an agent object, or null if not found
+    var agentID = annotationEvent['@wasAssociatedWithAgentId']();
+    var matchingAgent = null;
+    if (agentID) {
+        matchingAgent = getAgent( function(a) { return a['@id']() === agentID; }, viewModel.nexml );
+    }
+    return matchingAgent;
 }
 function getMessagesForAnnotationEvent( annotationEvent ) {
     // returns an array, possibly empty
+    var allMessages = getAllAnnotationMessagesInStudy(viewModel.nexml);
+    var eventID = annotationEvent['@id']();
+    var matchingMessages = ko.utils.arrayFilter( 
+        allMessages, 
+        function(msg) {
+            console.dir(msg);
+            return msg['@wasGeneratedById']() === eventID;
+        }
+    );
+    return matchingMessages;
 }
 function getAnnotationEventsForAgent( agent ) {
-    // returns an array, possibly empty
+    // TODO: returns an array, possibly empty
 }
 function getAnnotationEventForMessage( message ) {
-    // returns a single event, or null
+    // TODO: returns a single event, or null
 }
 
 // fetch bundled annotationEvent, agent(s), and message(s)?
@@ -3620,10 +3643,10 @@ function createAnnotation( annotationBundle, nexml ) {
 
 }
 function deleteAnnotationEvent( annotationEvent ) {
-    // clear related messages and agents (if no longer used)
+    // TODO: clear related messages and agents (if no longer used)
 
     cleanupMessagesCollection( element );
-    var localMessages = getElementAnnotationMessages( element )
+    var localMessages = getElementAnnotationMessages( element );
 }
 
 // manage agents (each is a singleton that disappears if unused)
@@ -3740,26 +3763,11 @@ function getNextAvailableAnnotationAgentID(nexml) {
 }
 function getNextAvailableAnnotationMessageID(nexml) {
     if (highestAnnotationMessageID === null) {
+        // do a one-time(?) scan for the highest ID currently in use
         if (!nexml) {
             nexml = viewModel.nexml;
         }
-        // do a one-time(?) scan for the highest ID currently in use
-        var allMessages = getMetaTagAccessorByAtProperty(nexml.meta, 'ot:messages')();
-        // gather "local" messages from all other elements!
-        // NOTE: Add any new target elements here to avoid duplication!
-        $.each(viewData.nexml.otus.otu(), function(i, otu) {
-            var localMessage = getMetaTagAccessorByAtProperty(otu.meta, 'ot:messages')();
-            allMessages += localMessages;
-        });
-        $.each(viewData.nexml.trees.tree(), function(i, tree) {
-            var localMessage = getMetaTagAccessorByAtProperty(tree.meta, 'ot:messages')();
-            allMessages += localMessages;
-            // look again at all nodes in the tree
-            $.each(tree.node(), function(i, node) {
-                var localMessage = getMetaTagAccessorByAtProperty(node.meta, 'ot:messages')();
-                allMessages += localMessages;
-            });
-        });
+        var allMessages = getAllAnnotationMessagesInStudy(nexml);
         if (allMessages.length === 0) {
             highestAnnotationMessageID = 0;
         } else {
@@ -3774,4 +3782,31 @@ function getNextAvailableAnnotationMessageID(nexml) {
     highestAnnotationMessageID++;
     return annotationMessageIDPrefix + highestAnnotationMessageID;
 }
-
+function getAllAnnotationMessagesInStudy(nexml) {
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
+    var allMessages = getMetaTagByProperty(nexml.meta, 'ot:messages').message();
+    // gather "local" messages from all other elements!
+    // NOTE: Add any new target elements here to avoid duplication!
+    $.each(nexml.otus.otu(), function(i, otu) {
+        var localMessages = getMetaTagByProperty(otu.meta, 'ot:messages');
+        if (localMessages) {
+            allMessages += localMessages.message();
+        }
+    });
+    $.each(nexml.trees.tree(), function(i, tree) {
+        var localMessages = getMetaTagByProperty(tree.meta, 'ot:messages');
+        if (localMessages) {
+            allMessages += localMessages.message();
+        }
+        // look again at all nodes in the tree
+        $.each(tree.node(), function(i, node) {
+            var localMessages = getMetaTagByProperty(node.meta, 'ot:messages');
+            if (localMessages) {
+                allMessages += localMessages.message();
+            }
+        });
+    });
+    return allMessages;
+}
