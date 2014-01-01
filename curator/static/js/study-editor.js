@@ -81,7 +81,7 @@ $(document).ready(function() {
                 // TODO: incorporate the delete URL provided? or generate as-needed?
                 // fileNexson.delete_url( file.delete_url );
 
-                getSupportingFiles().push(fileNexson);
+                getSupportingFiles().data.files.file.push(fileNexson);
 
                 showSuccessMessage('File added.');
             } else if (file.error) {
@@ -326,7 +326,7 @@ function loadSelectedStudy(id) {
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
-                    getSupportingFiles()(),  // retrieve contents of observableArray
+                    getSupportingFiles().data.files.file(),  // retrieve contents of observableArray
                     function(file) {
                         // match entered text against old or new label
                         var fileName = file.filename();
@@ -2485,11 +2485,11 @@ function adjustedLabel(label) {
     // apply any active subsitutions in the viewMdel
     var subList = getOTUMappingHints().data.substitutions.substitution();
     $.each(subList, function(i, subst) {
-        if (!subst.active()) {
+        if (!subst['@active']()) {
             return true; // skip to next adjustment
         }
-        var oldText = subst.old();
-        var newText = subst.new();
+        var oldText = subst.old.$();
+        var newText = subst.new.$();
         if ($.trim(oldText) === $.trim(newText) === "") {
             return true; // skip to next adjustment
         }
@@ -2499,16 +2499,16 @@ function adjustedLabel(label) {
             var pattern = new RegExp(oldText);  
             adjusted = adjusted.replace(pattern, newText);
             // clear any stale invalid-regex marking on this field
-            if (!subst.valid) {
-                subst['valid'] = ko.observable(true);
+            if (!subst['@valid']) {
+                subst['@valid'] = ko.observable(true);
             }
-            subst.valid(true);
+            subst['@valid'](true);
         } catch(e) {
             // there's probably invalid regex in the field... mark it and skip
-            if (!subst.valid) {
-                subst['valid'] = ko.observable(false);
+            if (!subst['@valid']) {
+                subst['@valid'] = ko.observable(false);
             }
-            subst.valid(false);
+            subst['@valid'](false);
         }
     });
     return adjusted;
@@ -2582,7 +2582,7 @@ var nexsonTemplates = {
                 ]}
             },
             "refersTo": {
-                "top": "meta"
+                "top": {"$": "meta"}
             }
         }]
     }, // END of 'supporting files' template
@@ -2694,7 +2694,7 @@ var nexsonTemplates = {
                 ]}
             },
             "refersTo": {
-                "top": "meta"
+                "top": {"$": "meta"}
             }
         }],
     }, // END of 'OTU mapping hints' template
@@ -2765,16 +2765,30 @@ if (!Date.prototype.toISOString) {
 }
 
 function getSupportingFiles(nexml) {
-    // retrieve this from the model (or other specified object); return null if not found
+    // retrieve this annotation message from the model (or other specified
+    // object); return null if not found
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    var metaTag = getMetaTagByID(nexml.meta, 'supporting-files-metadata');
-    if (!metaTag) {
+    var annotations = getStudyAnnotationEvents( nexml );
+    var filesAnnotation = null;
+    $.each(annotations.annotation(), function(i, annotation) {
+        var itsID = typeof(annotation['@id']) === 'function' ? 
+            annotation['@id']() :
+            annotation['@id']
+
+        if (itsID === 'supporting-files-metadata') {
+            filesAnnotation = annotation;
+            return false;
+        }
+    });
+    
+    //return filesAnnotation;
+    if (!filesAnnotation) {
         return null;
     }
-    // return the inner 'files' observableArray (the interesting part)
-    return metaTag.author.invocation.params.files;
+    // return its message with the interesting parts
+    return getMessagesForAnnotationEvent( filesAnnotation, nexml )[0]
 }
 function addSupportingFileFromURL() {
     // TODO: support file upload from desktop
@@ -2821,7 +2835,7 @@ function addSupportingFileFromURL() {
             file.sourceForTree( data.sourceForTree || "" );
             file.size( data.size || "" );
 
-            getSupportingFiles().push(file);
+            getSupportingFiles().data.files.file.push(file);
         },
         error: function( data, textStatus, jqXHR ) {
             showErrorMessage('Sorry, there was an error adding this file.');
@@ -2865,7 +2879,7 @@ function removeSupportingFile( fileInfo ) {
             $('#ajax-busy-bar').hide();
             showSuccessMessage('File removed.');
             // update the files list
-            var fileList = getSupportingFiles();
+            var fileList = getSupportingFiles().data.files.file;
             fileList.remove(fileInfo);
         },
         error: function( data, textStatus, jqXHR ) {
@@ -2899,13 +2913,14 @@ function getOTUMappingHints(nexml) {
     if (!hintsAnnotation) {
         return null;
     }
+    // return its message with the interesting parts
     return getMessagesForAnnotationEvent( hintsAnnotation, nexml )[0]
 }
 function addSubstitution( clicked ) {
     var subst = cloneFromNexsonTemplate('mapping substitution');
-    subst.active.subscribe(clearFailedOTUList);
-    subst.new.subscribe(clearFailedOTUList);
-    subst.old.subscribe(clearFailedOTUList);
+    subst['@active'].subscribe(clearFailedOTUList);
+    subst.new.$.subscribe(clearFailedOTUList);
+    subst.old.$.subscribe(clearFailedOTUList);
 
     if ($(clicked).is('select')) {
         var chosenSub = $(clicked).val();
@@ -2915,10 +2930,10 @@ function addSubstitution( clicked ) {
         }
         // add the chosen subsitution
         var parts = chosenSub.split(' =:= ');
-        subst.old( parts[0] || '');
-        subst.new( parts[1] || '');
-        subst.valid(true);
-        subst.active(true);
+        subst.old.$( parts[0] || '');
+        subst.new.$( parts[1] || '');
+        subst['@valid'](true);
+        subst['@active'](true);
         // reset the SELECT widget to its prompt
         $(clicked).val('');
     }
