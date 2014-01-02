@@ -16,6 +16,10 @@ echo "Installing API"
 WEBAPP=api.opentreeoflife.org
 APPROOT=repo/$WEBAPP
 
+# This is required to make "git pull" work correctly
+git config --global user.name "OpenTree API"
+git config --global user.email api@opentreeoflife.org
+
 echo "...fetching $WEBAPP repo..."
 git_refresh OpenTreeOfLife $WEBAPP $BRANCH || true
 
