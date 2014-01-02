@@ -1,5 +1,0 @@
-{ "prefix": "gbif",
-  "prefixDefinition": "http://data.gbif.org/species/",
-  "description": "GBIF backbone taxonomy",
-  "smush": "yes",
-}
