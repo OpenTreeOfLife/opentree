@@ -3781,7 +3781,7 @@ function getNextAvailableAnnotationAgentID(nexml) {
             highestAnnotationAgentID = 0;
         } else {
             var sortedAgents = allAgents().sort(function(a,b) {
-                if (ko.unwrap( a['@id'] ) > ko.unwrap( b['@id'] ))) return -1;
+                if (ko.unwrap( a['@id'] ) > ko.unwrap( b['@id'] )) return -1;
                 return 1;
             });
             var highestID = ko.unwrap( sortedAgents[0]['@id'] );
