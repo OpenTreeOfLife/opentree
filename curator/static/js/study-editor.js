@@ -3580,12 +3580,12 @@ function getMessagesForAnnotationEvent( annotationEvent, nexml ) {
         nexml = viewModel.nexml;
     }
     var allMessages = getAllAnnotationMessagesInStudy(nexml);
-    var eventID = annotationEvent['@id']();
+    var eventID = ko.unwrap( annotationEvent['@id'] );
     var matchingMessages = ko.utils.arrayFilter( 
         allMessages, 
         function(msg) {
             console.dir(msg);
-            return msg['@wasGeneratedById']() === eventID;
+            return ko.unwrap( msg['@wasGeneratedById'] ) === eventID;
         }
     );
     return matchingMessages;
@@ -3649,7 +3649,7 @@ function createAnnotation( annotationBundle, nexml ) {
     $.each(agents, function(i, agent) {
         var hasMatchingID = function(a) { 
             var testID = ko.unwrap( agent['@id'] );
-            return a['@id']() === testID; 
+            return ko.unwrap( a['@id'] ) === testID; 
         }
         if (!agentExists( hasMatchingID, nexml)) {
             var properAgent = ko.mapping.fromJS(agent, studyMappingOptions);
@@ -3758,10 +3758,10 @@ function getNextAvailableAnnotationEventID(nexml) {
             highestAnnotationEventID = 0;
         } else {
             var sortedEvents = allEvents.sort(function(a,b) {
-                if (a.id() > b.id()) return -1;
+                if (ko.unwrap( a['@id'] ) > ko.unwrap( b['@id'] ))) return -1;
                 return 1;
             });
-            var highestID = sortedEvents[0].id();
+            var highestID = ko.unwrap( sortedEvents[0]['@id'] );
             highestAnnotationEventID = highestID.split( annotationEventIDPrefix )[1];
         }
     }
@@ -3779,10 +3779,10 @@ function getNextAvailableAnnotationAgentID(nexml) {
             highestAnnotationAgentID = 0;
         } else {
             var sortedAgents = allAgents().sort(function(a,b) {
-                if (a.id() > b.id()) return -1;
+                if (ko.unwrap( a['@id'] ) > ko.unwrap( b['@id'] ))) return -1;
                 return 1;
             });
-            var highestID = sortedEvents[0].id();
+            var highestID = ko.unwrap( sortedAgents[0]['@id'] );
             highestAnnotationAgentID = highestID.split( annotationAgentIDPrefix )[1];
         }
     }
@@ -3805,7 +3805,7 @@ function getNextAvailableAnnotationMessageID(nexml) {
                 }
                 return 1;
             });
-            var highestID = ko.unwrap(sortedEvents[0]['@id']);
+            var highestID = ko.unwrap(sortedMessages[0]['@id']);
             highestAnnotationMessageID = highestID.split( annotationMessageIDPrefix )[1];
         }
     }
