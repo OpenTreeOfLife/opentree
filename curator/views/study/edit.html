@@ -468,7 +468,7 @@ body {
                             </a>
                         </td>
                         <td>
-                            <div><textarea data-bind="value: file.description" placeholder="Describe this file's format and purpoose." rows="2" class="input-block-level">?</textarea></div>
+                            <div><textarea data-bind="value: file.description" placeholder="Describe this file's format and purpose." rows="2" class="input-block-level">?</textarea></div>
                             <em data-bind="if: file.sourceForTree() !== '', text: file.sourceForTree">Microsoft Excel spreadsheet</em>
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file.size()) || '?'">241 KB</span>
@@ -801,7 +801,7 @@ body {
                     <!-- scraped from header search in main opentree webapp -->
                     <!-- TODO: fetch a live list, as we do there? -->
                     <select class="input-block-level" style="margin-bottom: 1em;" name="taxon-search-context" 
-                            data-bind="value: getOTUMappingHints().data.searchContext">
+                            data-bind="value: getOTUMappingHints().data.searchContext.$">
                             <option selected="selected">All life</option>
                             <option>Land plants</option>
                             <option>Hornworts</option>
