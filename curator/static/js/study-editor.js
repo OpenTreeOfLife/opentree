@@ -2768,9 +2768,7 @@ function getSupportingFiles(nexml) {
     var annotations = getStudyAnnotationEvents( nexml );
     var filesAnnotation = null;
     $.each(makeArray(annotations.annotation), function(i, annotation) {
-        var itsID = typeof(annotation['@id']) === 'function' ? 
-            annotation['@id']() :
-            annotation['@id']
+        var itsID = ko.unwrap(annotation['@id']);
 
         if (itsID === 'supporting-files-metadata') {
             filesAnnotation = annotation;
@@ -2894,9 +2892,7 @@ function getOTUMappingHints(nexml) {
     var annotations = getStudyAnnotationEvents( nexml );
     var hintsAnnotation = null;
     $.each(makeArray(annotations.annotation), function(i, annotation) {
-        var itsID = typeof(annotation['@id']) === 'function' ? 
-            annotation['@id']() :
-            annotation['@id']
+        var itsID = ko.unwrap( annotation['@id'] );
 
         if (itsID === 'otu-mapping-hints') {
             hintsAnnotation = annotation;
@@ -3652,8 +3648,7 @@ function createAnnotation( annotationBundle, nexml ) {
     // add (or confirm) the specified agent and assign to event
     $.each(agents, function(i, agent) {
         var hasMatchingID = function(a) { 
-            var testID = typeof( agent['@id'] ) === 'function' ?
-                agent['@id']() : agent['@id'];
+            var testID = ko.unwrap( agent['@id'] );
             return a['@id']() === testID; 
         }
         if (!agentExists( hasMatchingID, nexml)) {
@@ -3804,16 +3799,13 @@ function getNextAvailableAnnotationMessageID(nexml) {
         if (allMessages.length === 0) {
             highestAnnotationMessageID = 0;
         } else {
-            var propertiesAreWrapped = typeof( allMessages[0]['@id'] ) === 'function';
             var sortedMessages = allMessages.sort(function(a,b) {
-                if (propertiesAreWrapped) {
-                    if (a['@id']() > b['@id']()) return -1;
-                } else {
-                    if (a['@id'] > b['@id']) return -1;
+                if (ko.unwrap(a['@id']) > ko.unwrap(b['@id'])) {
+                    return -1;
                 }
                 return 1;
             });
-            var highestID = propertiesAreWrapped ? sortedEvents[0]['@id']() : sortedEvents[0]['@id'];
+            var highestID = ko.unwrap(sortedEvents[0]['@id']);
             highestAnnotationMessageID = highestID.split( annotationMessageIDPrefix )[1];
         }
     }
