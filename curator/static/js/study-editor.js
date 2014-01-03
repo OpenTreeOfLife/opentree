@@ -179,8 +179,8 @@ function loadSelectedStudy(id) {
             // add agent singleton for this curation tool
             var curatorAgent;
             var isCurrentCurationTool = function(agent) {
-                return (agent['@name']() === curatorAnnotationAgentInfo['@name']) 
-                    && (agent['@version'] && agent['@version']() === curatorAnnotationAgentInfo['@version']);
+                return (agent['@name'] === curatorAnnotationAgentInfo['@name']) 
+                    && (agent['@version'] && agent['@version'] === curatorAnnotationAgentInfo['@version']);
             }
             if (!agentExists( isCurrentCurationTool, data.nexml )) {
                 curatorAgent = ko.mapping.fromJS(curatorAnnotationAgentInfo, studyMappingOptions);
