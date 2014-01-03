@@ -2613,7 +2613,7 @@ var nexsonTemplates = {
     },
 
     'single annotation event': {
-        "@id": "",
+        // "@id": "",
         "@description": "",
         "@wasAssociatedWithAgentId": "",
         "@dateCreated": ""
@@ -2622,7 +2622,7 @@ var nexsonTemplates = {
         //"@otherProperty": []
     },
     'single annotation agent': {
-        "@id": "",
+        // "@id": "",
         "@name": "",
         "@description": "",
         "@url": "",
@@ -2630,7 +2630,7 @@ var nexsonTemplates = {
         //"otherProperty": []
     },
     'single annotation message': {
-        "@id": "",
+        // "@id": "",
         "@wasGeneratedById": "",
         //"@wasAttributedToId": "",
         "@severity": "",
@@ -3804,11 +3804,16 @@ function getNextAvailableAnnotationMessageID(nexml) {
         if (allMessages.length === 0) {
             highestAnnotationMessageID = 0;
         } else {
+            var propertiesAreWrapped = typeof( allMessages[0]['@id'] ) === 'function';
             var sortedMessages = allMessages.sort(function(a,b) {
-                if (a.id() > b.id()) return -1;
+                if (propertiesAreWrapped) {
+                    if (a['@id']() > b['@id']()) return -1;
+                } else {
+                    if (a['@id'] > b['@id']) return -1;
+                }
                 return 1;
             });
-            var highestID = sortedEvents[0].id();
+            var highestID = propertiesAreWrapped ? sortedEvents[0]['@id']() : sortedEvents[0]['@id'];
             highestAnnotationMessageID = highestID.split( annotationMessageIDPrefix )[1];
         }
     }
@@ -3819,7 +3824,7 @@ function getAllAnnotationMessagesInStudy(nexml) {
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    var allMessages = getMetaTagByProperty(nexml.meta, 'ot:messages').message();
+    var allMessages = makeArray(getMetaTagByProperty(nexml.meta, 'ot:messages').message);
     // gather "local" messages from all other elements!
     // NOTE: Add any new target elements here to avoid duplication!
     $.each(makeArray(nexml.otus.otu), function(i, otu) {
