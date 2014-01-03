@@ -2562,7 +2562,7 @@ var nexsonTemplates = {
             "@preserve": true
             // "otherProperty": [ ]  // SKIP THIS, use messages for details
         },
-        // 'agents': [],      // will be provided by template consumer
+        // 'agent': null,      // will be provided by template consumer
         'messages': [{
             //"@id": "",      // will be assigned via $.extend
             "@wasGeneratedById": "supporting-files-metadata",
@@ -2669,7 +2669,7 @@ var nexsonTemplates = {
             "@preserve": true
             // "otherProperty": [ ]  // SKIP THIS, use messages for details
         },
-        // 'agents': [],      // will be provided by template consumer
+        // 'agent': null,      // will be provided by template consumer
         'messages': [{
             //"@id": "",      // will be assigned via $.extend
             "@wasGeneratedById": "otu-mapping-hints",
@@ -3602,7 +3602,7 @@ function getAnnotationBundle( annotationEvent ) {
     // returns an object with event, agents, messages
     var bundle = {
         'event' : annotationEvent,
-        'agents' : [],
+        'agent' : 'TODO',
         'messages' : []
     };
     return bundle;
@@ -3647,7 +3647,7 @@ function createAnnotation( annotationBundle, nexml ) {
     
     // add (or confirm) the specified agent and assign to event
     var hasMatchingID = function(a) { 
-        var testID = ko.unwrap( agent['@id'] );
+        var testID = ko.unwrap( a['@id'] );
         return ko.unwrap( a['@id'] ) === testID; 
     }
     if (!agentExists( hasMatchingID, nexml)) {
