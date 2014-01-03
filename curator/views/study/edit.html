@@ -463,30 +463,34 @@ body {
                     <tr>
                     {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <a href="#" target="_blank" data-bind="text: file.filename || '?', attr: { href: file.url || '#' }">
+                            <a href="#" target="_blank" data-bind="text: file['@filename']() || '?', attr: { href: file['@url']() || '#' }">
                                 Alignment data (urchins).xls
                             </a>
                         </td>
                         <td>
-                            <div><textarea data-bind="value: file.description" placeholder="Describe this file's format and purpoose." rows="2" class="input-block-level">?</textarea></div>
-                            <em data-bind="if: file.sourceForTree() !== '', text: file.sourceForTree">Microsoft Excel spreadsheet</em>
+                            <div><textarea data-bind="value: file.description.$" placeholder="Describe this file's format and purpose." rows="2" class="input-block-level">?</textarea></div>
+                            <em data-bind="if: file['@sourceForTree']() !== '', text: file['@sourceForTree']()">SOURCE_FOR_TREE_ID</em>
+                           <!-- TODO: make this directly editable?
+                            <input type="text" data-bind="value: file['@sourceForTree']()"
+                                   placeholder="Tree ID (if source file for a tree)">OPTIONAL_TREE_ID</em>
+                           -->
                         </td>
-                        <td><span data-bind="text: getHumanReadableFileSize(file.size()) || '?'">241 KB</span>
+                        <td><span data-bind="text: getHumanReadableFileSize(file['@size']()) || '?'">241 KB</span>
                             <button class="pull-right btn btn-mini row-controls-ghosted" data-bind="click: removeSupportingFile">
                                 <i class="icon-remove"></i>
                             </button>
                         </td>
                     {{ else: }}
                         <td>
-                            <a href="#" target="_blank" data-bind="text: file.filename || '?', attr: { href: file.url || '#' }">
+                            <a href="#" target="_blank" data-bind="text: file['@filename']() || '?', attr: { href: file['@url']() || '#' }">
                                 Alignment data (urchins).xls
                             </a>
                         </td>
                         <td>
-                            <div data-bind="text: file.description">Microsoft Excel spreadsheet</div>
-                            <em data-bind="if: file.sourceForTree() !== '', text: file.sourceForTree">Microsoft Excel spreadsheet</em>
+                            <div data-bind="text: file.description.$">Microsoft Excel spreadsheet</div>
+                            <em data-bind="if: file['@sourceForTree']() !== '', text: file['@sourceForTree']()">SOURCE_FOR_TREE_ID</em>
                         </td>
-                        <td><span data-bind="text: file.size || '?'">241 KB</span> bytes</td>
+                        <td><span data-bind="text: getHumanReadableFileSize(file['@size']()) || '?'">241 KB</span></td>
                     {{ pass }}
                     </tr>
                   </tbody>
@@ -801,7 +805,7 @@ body {
                     <!-- scraped from header search in main opentree webapp -->
                     <!-- TODO: fetch a live list, as we do there? -->
                     <select class="input-block-level" style="margin-bottom: 1em;" name="taxon-search-context" 
-                            data-bind="value: getOTUMappingHints().author.invocation.params.searchContext">
+                            data-bind="value: getOTUMappingHints().data.searchContext.$">
                             <option selected="selected">All life</option>
                             <option>Land plants</option>
                             <option>Hornworts</option>
@@ -861,18 +865,19 @@ body {
                             <th width="20">&nbsp;</th>
                         </tr>
                     </thead>
-                    <tbody id="mapping-adjustments" data-bind="foreach: { data: getOTUMappingHints().author.invocation.params.substitutions(), as: 'substitution'}">
+                    <tbody id="mapping-adjustments" data-bind="foreach: { data: getOTUMappingHints().data.substitutions.substitution(), as: 'substitution'}">
                         <tr>
                             <td align="center" valign="center">
-                                <input type="checkbox" data-bind="checked: substitution.active" 
+                                <input type="checkbox" data-bind="checked: substitution['@active']" 
                                        title="If checked, this substitution will be used."/>
                             </td>
                             <td>
                                 <input type="text" class="input-block-level" 
-                                       data-bind="value: substitution.old, valueUpdate: 'afterkeydown', style: { 'background-color': substitution.valid() ? '' : '#fdd' }"/>
+                                       data-bind="value: substitution.old.$, valueUpdate: 'afterkeydown', style: { 'background-color': substitution['@valid']() ? '' : '#fdd' }"/>
                             </td>
                             <td>
-                                <input type="text" class="input-block-level" data-bind="value: substitution.new, valueUpdate: 'afterkeydown'"/>
+                                <input type="text"
+                                class="input-block-level" data-bind="value: substitution.new.$, valueUpdate: 'afterkeydown'"/>
                             </td>
                             <td align="center" valign="center">
                                 <a href="#" title="Click to remove this substitution."
@@ -967,22 +972,23 @@ body {
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredAnnotations().pagedItems(), as: 'annotation' }">
                     <tr>
-                        <td data-bind="text: annotation.$, style: { color: typeof(annotation.isValid) === 'undefined' || annotation.isValid() ? '' : 'red' }"></td><!-- general description (annotation type) -->
+                        <td data-bind="text: annotation['@description'](), style: { color: annotation['@passedChecks']() ? '' : 'red' }"></td><!-- general description (annotation type) -->
                         <!-- <td><a href="#">Study</a></td> -->
-                        <td data-bind="text: annotation.author.name"></td>
-                      <!-- ko if: annotation.messages -->
-                        <td data-bind="if: annotation.messages">
-                            <ul style="list-style: none;" data-bind="foreach: annotation.messages()">
+                        <td data-bind="text: getAgentForAnnotationEvent( annotation )['@name']"></td>
+                      <!-- ko if: getMessagesForAnnotationEvent( annotation ).length > 0 -->
+                        <td data-bind="if: getMessagesForAnnotationEvent( annotation ).length > 0">
+                            <ul style="list-style: none; margin: 0 0 8px 0;"
+                            data-bind="foreach: getMessagesForAnnotationEvent( annotation )">
                                 <li style="border-bottom: 1px solid #ccc; padding: 2px 0;">
                                 <!-- data-bind="text: code" is SHOUTY_UPPERCASE -->
-                                <span data-bind="text: comment"></span>
+                                <span data-bind="text: $data['@comment']"></span>
                                 <!-- data-bind="text: data" can be object or function or ... -->
-                                in <span data-bind="text: refersTo.top()"></span>
-                                [<span data-bind="text: severity"></span>]
+                                in <span data-bind="text: $data.refersTo.top.$"></span>
+                                [<span data-bind="text: $data['@severity']"></span>]
                             </ul>
                         </td>
                       <!-- /ko -->
-                      <!-- ko if: !annotation.messages -->
+                      <!-- ko if: getMessagesForAnnotationEvent( annotation).length === 0 -->
                         <td>
                             NO MESSAGES HERE
                         </td>
