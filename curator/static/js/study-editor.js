@@ -196,7 +196,7 @@ function loadSelectedStudy(id) {
                 var hintsAnnotationBundle = $.extend(
                     { 
                         targetElement: data.nexml, 
-                        agents: [ curatorAgent ]
+                        agent: curatorAgent
                     }, 
                     nexsonTemplates['OTU mapping hints']
                 );
@@ -209,7 +209,7 @@ function loadSelectedStudy(id) {
                 var filesAnnotationBundle = $.extend(
                     { 
                         targetElement: data.nexml, 
-                        agents: [ curatorAgent ]
+                        agent: curatorAgent
                     }, 
                     nexsonTemplates['supporting files']
                 );
@@ -3610,7 +3610,7 @@ function getAnnotationBundle( annotationEvent ) {
 
 // create/update/delete annotations, managing collections as needed
 function createAnnotation( annotationBundle, nexml ) {
-    // targetElement, annotationEvent, agents, messages ) {
+    // targetElement, annotationEvent, agent, messages ) {
     // RENAME to updateAnnotation, setAnnotation?
     // TODO: make sure we can handle "split" events that specify multiple elements
     console.dir(annotationBundle, "bundle");
@@ -3621,7 +3621,7 @@ function createAnnotation( annotationBundle, nexml ) {
 
     var target = annotationBundle.targetElement;
     var annEvent = annotationBundle.annotationEvent;
-    var agents = annotationBundle.agents;
+    var agent = annotationBundle.agent;
     var messages = annotationBundle.messages;
 
     // add message(s) to its target element, building a local message 
@@ -3646,16 +3646,14 @@ function createAnnotation( annotationBundle, nexml ) {
     });
     
     // add (or confirm) the specified agent and assign to event
-    $.each(agents, function(i, agent) {
-        var hasMatchingID = function(a) { 
-            var testID = ko.unwrap( agent['@id'] );
-            return ko.unwrap( a['@id'] ) === testID; 
-        }
-        if (!agentExists( hasMatchingID, nexml)) {
-            var properAgent = ko.mapping.fromJS(agent, studyMappingOptions);
-            addAgent( properAgent, nexml );
-        }
-    });
+    var hasMatchingID = function(a) { 
+        var testID = ko.unwrap( agent['@id'] );
+        return ko.unwrap( a['@id'] ) === testID; 
+    }
+    if (!agentExists( hasMatchingID, nexml)) {
+        var properAgent = ko.mapping.fromJS(agent, studyMappingOptions);
+        addAgent( properAgent, nexml );
+    }
 
     // add the main event to this study
     var eventCollection = getStudyAnnotationEvents( nexml );
