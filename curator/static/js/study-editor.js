@@ -2767,7 +2767,7 @@ function getSupportingFiles(nexml) {
     }
     var annotations = getStudyAnnotationEvents( nexml );
     var filesAnnotation = null;
-    $.each(annotations.annotation(), function(i, annotation) {
+    $.each(makeArray(annotations.annotation), function(i, annotation) {
         var itsID = typeof(annotation['@id']) === 'function' ? 
             annotation['@id']() :
             annotation['@id']
@@ -2893,7 +2893,7 @@ function getOTUMappingHints(nexml) {
     }
     var annotations = getStudyAnnotationEvents( nexml );
     var hintsAnnotation = null;
-    $.each(annotations.annotation(), function(i, annotation) {
+    $.each(makeArray(annotations.annotation), function(i, annotation) {
         var itsID = typeof(annotation['@id']) === 'function' ? 
             annotation['@id']() :
             annotation['@id']
