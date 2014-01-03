@@ -3758,7 +3758,9 @@ function getNextAvailableAnnotationEventID(nexml) {
             highestAnnotationEventID = 0;
         } else {
             var sortedEvents = allEvents.sort(function(a,b) {
-                if (ko.unwrap( a['@id'] ) > ko.unwrap( b['@id'] ))) return -1;
+                if (ko.unwrap( a['@id'] ) > ko.unwrap( b['@id'] )) {
+                    return -1;
+                }
                 return 1;
             });
             var highestID = ko.unwrap( sortedEvents[0]['@id'] );
