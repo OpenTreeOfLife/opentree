@@ -3691,7 +3691,7 @@ function getAgent( testFunc, nexml ) {
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    var agentList = getStudyAnnotationAgents( nexml ).agent();
+    var agentList = makeArray(getStudyAnnotationAgents( nexml ).agent);
     var foundAgent = null;
     $.each(agentList, function(i, agent) {
         if (testFunc(agent)) {
