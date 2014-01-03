@@ -463,30 +463,34 @@ body {
                     <tr>
                     {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <a href="#" target="_blank" data-bind="text: file.filename || '?', attr: { href: file.url || '#' }">
+                            <a href="#" target="_blank" data-bind="text: file['@filename']() || '?', attr: { href: file['@url']() || '#' }">
                                 Alignment data (urchins).xls
                             </a>
                         </td>
                         <td>
-                            <div><textarea data-bind="value: file.description" placeholder="Describe this file's format and purpose." rows="2" class="input-block-level">?</textarea></div>
-                            <em data-bind="if: file.sourceForTree() !== '', text: file.sourceForTree">Microsoft Excel spreadsheet</em>
+                            <div><textarea data-bind="value: file.description.$" placeholder="Describe this file's format and purpose." rows="2" class="input-block-level">?</textarea></div>
+                            <em data-bind="if: file['@sourceForTree']() !== '', text: file['@sourceForTree']()">SOURCE_FOR_TREE_ID</em>
+                           <!-- TODO: make this directly editable?
+                            <input type="text" data-bind="value: file['@sourceForTree']()"
+                                   placeholder="Tree ID (if source file for a tree)">OPTIONAL_TREE_ID</em>
+                           -->
                         </td>
-                        <td><span data-bind="text: getHumanReadableFileSize(file.size()) || '?'">241 KB</span>
+                        <td><span data-bind="text: getHumanReadableFileSize(file['@size']()) || '?'">241 KB</span>
                             <button class="pull-right btn btn-mini row-controls-ghosted" data-bind="click: removeSupportingFile">
                                 <i class="icon-remove"></i>
                             </button>
                         </td>
                     {{ else: }}
                         <td>
-                            <a href="#" target="_blank" data-bind="text: file.filename || '?', attr: { href: file.url || '#' }">
+                            <a href="#" target="_blank" data-bind="text: file['@filename']() || '?', attr: { href: file['@url']() || '#' }">
                                 Alignment data (urchins).xls
                             </a>
                         </td>
                         <td>
-                            <div data-bind="text: file.description">Microsoft Excel spreadsheet</div>
-                            <em data-bind="if: file.sourceForTree() !== '', text: file.sourceForTree">Microsoft Excel spreadsheet</em>
+                            <div data-bind="text: file.description.$">Microsoft Excel spreadsheet</div>
+                            <em data-bind="if: file['@sourceForTree']() !== '', text: file['@sourceForTree']()">SOURCE_FOR_TREE_ID</em>
                         </td>
-                        <td><span data-bind="text: file.size || '?'">241 KB</span> bytes</td>
+                        <td><span data-bind="text: getHumanReadableFileSize(file['@size']()) || '?'">241 KB</span></td>
                     {{ pass }}
                     </tr>
                   </tbody>

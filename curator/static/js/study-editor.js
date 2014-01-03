@@ -74,10 +74,10 @@ $(document).ready(function() {
                 */
                 // update the files list (and auto-save?)
                 var fileNexson = cloneFromNexsonTemplate('single supporting file');
-                fileNexson.filename( file.name );
-                fileNexson.url( file.url );  // TODO: prepend current domain name, if missing?
-                fileNexson.type( "" );  // TODO: glean this from file extension?
-                fileNexson.size( file.size );  // convert byte count for display?
+                fileNexson['@filename']( file.name );
+                fileNexson['@url']( file.url );  // TODO: prepend current domain name, if missing?
+                fileNexson['@type']( "" );  // TODO: glean this from file extension?
+                fileNexson['@size']( file.size );  // convert byte count for display?
                 // TODO: incorporate the delete URL provided? or generate as-needed?
                 // fileNexson.delete_url( file.delete_url );
 
@@ -329,9 +329,12 @@ function loadSelectedStudy(id) {
                     getSupportingFiles().data.files.file(),  // retrieve contents of observableArray
                     function(file) {
                         // match entered text against old or new label
-                        var fileName = file.filename();
-                        var fileType = file.type();
-                        if (!matchPattern.test(fileName) && !matchPattern.test(fileType)) {
+                        var fileName = file['@filename']();
+                        var fileType = file['@type']();
+                        var fileDesc = file.description.$();
+                        if (!matchPattern.test(fileName) 
+                         && !matchPattern.test(fileType) 
+                         && !matchPattern.test(fileDesc)) {
                             return false;
                         }
                         return true;
@@ -2561,7 +2564,7 @@ var nexsonTemplates = {
         },
         // 'agents': [],      // will be provided by template consumer
         'messages': [{
-            "@id": "",
+            //"@id": "",      // will be assigned via $.extend
             "@wasGeneratedById": "supporting-files-metadata",
             "@severity": "INFO",
             "@code": "SUPPORTING_FILE_INFO",
@@ -2569,16 +2572,8 @@ var nexsonTemplates = {
             "data": {
                 "@movedToPermanentArchive": false,   
                     // OR check for ot:dataDeposit?
-                "files": { "file":
-                    [
-                  /* typical example:
-                    { 
-                        "filename": "",
-                        "url": "",
-                        "type": "",  // eg, 'Microsoft Excel spreadsheet'
-                        "size": ""   // eg, '241 KB'
-                    }, 
-                  */
+                "files": { "file": [
+                    /* an array of objects based on 'single supporting file' below */
                 ]}
             },
             "refersTo": {
@@ -2590,12 +2585,12 @@ var nexsonTemplates = {
     'single supporting file': {
         /* A single file added in the Files section
          */
-        "filename": "",
-        "url": "",
-        "type": "",  // eg, 'Microsoft Excel spreadsheet'
-        "description": "",  // eg, "Alignment data for tree #3"
-        "sourceForTree": "",  // used IF this file was the original data for a tree
-        "size": ""   // eg, '241 KB'
+        "@filename": "",
+        "@url": "",
+        "@type": "",  // eg, 'Microsoft Excel spreadsheet'
+        "description": {"$": ""},  // eg, "Alignment data for tree #3"
+        "@sourceForTree": "",  // used IF this file was the original data for a tree
+        "@size": ""   // eg, '241 KB'
     }, // END of 'single supporting file' template
 
     'study annotation events': {
@@ -2828,12 +2823,12 @@ function addSupportingFileFromURL() {
             showSuccessMessage('File added.');
             // update the files list (and auto-save?)
             var file = cloneFromNexsonTemplate('single supporting file');
-            file.filename( data.filename || "" );
-            file.url( data.url || "" );
-            file.type( data.type || "" );
-            file.description( data.description || "" );
-            file.sourceForTree( data.sourceForTree || "" );
-            file.size( data.size || "" );
+            file['@filename']( data.filename || "" );
+            file['@url']( data.url || "" );
+            file['@type']( data.type || "" );
+            file.description.$( data.description || "" );
+            file['@sourceForTree']( data.sourceForTree || "" );
+            file['@size']( data.size || "" );
 
             getSupportingFiles().data.files.file.push(file);
         },
@@ -2861,7 +2856,7 @@ function removeSupportingFile( fileInfo ) {
         // crossdomain: true,
         // contentType: "application/json; charset=utf-8",
         //url: removeURL // modified API call, see above
-        url: '/curator/supporting_files/delete_file/'+ fileInfo.filename(),
+        url: '/curator/supporting_files/delete_file/'+ fileInfo['@filename'](),
         data: { },
         success: function( data, textStatus, jqXHR ) {
             // report errors or malformed data, if any
