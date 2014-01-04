@@ -998,7 +998,7 @@ function getMetaTagAccessorByAtProperty(array, propertyName, options) {
 
     for (var i = 0; i < matchingTags.length; i++) {
         var testItem = matchingTags[i];
-        switch(testItem['@xsi:type']()) {
+        switch(ko.unwrap(testItem['@xsi:type'])) {
             case 'nex:ResourceMeta':
                 foundAccessor = testItem['@href'];  // uses special attribute
                 break;
@@ -2733,7 +2733,7 @@ var nexsonTemplates = {
 
 function cloneFromNexsonTemplate( templateName, options ) {
     // NOTE that we can use the same KO-mapping settings in piecemeal fashion
-    var applyKnockoutMapping = options && options.applyKnockoutMapping ? options.applyKnockoutMapping : true;
+    var applyKnockoutMapping = options && (options.applyKnockoutMapping === false) ? false : true;
     if (applyKnockoutMapping) {
         return ko.mapping.fromJS(nexsonTemplates[ templateName ], studyMappingOptions);
     } else {
@@ -2743,7 +2743,7 @@ function cloneFromNexsonTemplate( templateName, options ) {
 
 function cloneFromSimpleObject( obj, options ) {
     // use this to create simple, observable objects (eg, metatags)
-    var applyKnockoutMapping = options && options.applyKnockoutMapping ? options.applyKnockoutMapping : true;
+    var applyKnockoutMapping = options && (options.applyKnockoutMapping === false) ? false : true;
     if (applyKnockoutMapping) {
         return ko.mapping.fromJS(obj, studyMappingOptions);
     } else {
@@ -3671,7 +3671,6 @@ function createAnnotation( annotationBundle, nexml ) {
     }
     if (!agentExists( hasMatchingID, nexml)) {
         // at this point, viewModel should already be mapped by KO
-        var  = ko.mapping.fromJS(, studyMappingOptions);
         var properAgent = cloneFromSimpleObject( agent, {applyKnockoutMapping: false} );
         addAgent( properAgent, nexml );
     }
@@ -3729,7 +3728,6 @@ function addAgent( props, nexml ) {
 
     // is the specified nexson already mapped to Knockout observables?
     var nexmlIsMapped = ko.isObservable( nexml.meta );
-
     var agentInfo = $.extend(
         { '@id': getNextAvailableAnnotationAgentID( nexml ) }, 
         props
@@ -3807,11 +3805,11 @@ function getNextAvailableAnnotationAgentID(nexml) {
             nexml = viewModel.nexml;
         }
         // do a one-time(?) scan for the highest ID currently in use
-        var allAgents = getMetaTagAccessorByAtProperty(nexml.meta, 'ot:agents');
-        if (!allAgents || allAgents().length === 0) {
+        var allAgents = makeArray(getMetaTagAccessorByAtProperty(nexml.meta, 'ot:agents'));
+        if (allAgents.length === 0) {
             highestAnnotationAgentID = 0;
         } else {
-            var sortedAgents = allAgents().sort(function(a,b) {
+            var sortedAgents = allAgents.sort(function(a,b) {
                 if (ko.unwrap( a['@id'] ) > ko.unwrap( b['@id'] )) return -1;
                 return 1;
             });
