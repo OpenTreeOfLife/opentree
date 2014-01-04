@@ -166,26 +166,32 @@ function loadSelectedStudy(id) {
 
             // add study-level containers for annotations
             if (getStudyAnnotationEvents(data.nexml) === null) {
-                data.nexml.meta.push( cloneFromNexsonTemplate('study annotation events') );
+                data.nexml.meta.push( 
+                    cloneFromNexsonTemplate('study annotation events', {applyKnockoutMapping: false})
+                );
             }
             if (getStudyAnnotationAgents(data.nexml) === null) {
-                data.nexml.meta.push( cloneFromNexsonTemplate('study annotation agents') );
+                data.nexml.meta.push( 
+                    cloneFromNexsonTemplate('study annotation agents', {applyKnockoutMapping: false}) 
+                );
             }
             if (getStudyAnnotationMessages(data.nexml) === null) {
-                data.nexml.meta.push( cloneFromNexsonTemplate('annotation message collection') );
+                data.nexml.meta.push( 
+                    cloneFromNexsonTemplate('annotation message collection', {applyKnockoutMapping: false}) 
+                );
             }
 
 
             // add agent singleton for this curation tool
             var curatorAgent;
             var isCurrentCurationTool = function(agent) {
+                var curatorAnnotationAgentInfo = nexsonTemplates[ 'curator annotation agent' ];
                 return (agent['@name'] === curatorAnnotationAgentInfo['@name']) 
                     && (agent['@version'] && agent['@version'] === curatorAnnotationAgentInfo['@version']);
             }
             if (!agentExists( isCurrentCurationTool, data.nexml )) {
-                curatorAgent = ko.mapping.fromJS(curatorAnnotationAgentInfo, studyMappingOptions);
                 addAgent( 
-                    curatorAgent, 
+                    cloneFromNexsonTemplate('curator annotation agent', {applyKnockoutMapping: false}), 
                     data.nexml 
                 );
             }
@@ -2521,17 +2527,16 @@ function adjustedLabel(label) {
  * Templates for curator annotations
  */
 
-// All its annotations should share some identifying information
-var curatorAnnotationAgentInfo = {
-    "@id": "opentree-curation-webapp",//  OR use a generated (unique) ID
-    "@name": "OpenTree curation webapp",
-    "@description": "Web-based interface for submitting, editing, and reviewing studies in the Open Tree of Life project.",
-    "@url": "https://github.com/OpenTreeOfLife/opentree", 
-    "@version": "0.0.0"   // TODO
-};
-
-
 var nexsonTemplates = {
+
+    // all annotations created here should share some identifying information
+    'curator annotation agent': {
+        "@id": "opentree-curation-webapp",//  OR use a generated (unique) ID
+        "@name": "OpenTree curation webapp",
+        "@description": "Web-based interface for submitting, editing, and reviewing studies in the Open Tree of Life project.",
+        "@url": "https://github.com/OpenTreeOfLife/opentree", 
+        "@version": "0.0.0"   // TODO
+    },
 
     'supporting files': {
         /* App-specific metadata about associated support files for this study.
@@ -2726,14 +2731,24 @@ var nexsonTemplates = {
 
 } // END of nexsonTemplates
 
-function cloneFromNexsonTemplate( templateName ) {
+function cloneFromNexsonTemplate( templateName, options ) {
     // NOTE that we can use the same KO-mapping settings in piecemeal fashion
-    return ko.mapping.fromJS(nexsonTemplates[ templateName ], studyMappingOptions);
+    var applyKnockoutMapping = options && options.applyKnockoutMapping ? options.applyKnockoutMapping : true;
+    if (applyKnockoutMapping) {
+        return ko.mapping.fromJS(nexsonTemplates[ templateName ], studyMappingOptions);
+    } else {
+        return $.extend( true, {}, nexsonTemplates[ templateName ]);
+    }
 }
 
-function cloneFromSimpleObject( obj ) {
+function cloneFromSimpleObject( obj, options ) {
     // use this to create simple, observable objects (eg, metatags)
-    return ko.mapping.fromJS(obj, studyMappingOptions);
+    var applyKnockoutMapping = options && options.applyKnockoutMapping ? options.applyKnockoutMapping : true;
+    if (applyKnockoutMapping) {
+        return ko.mapping.fromJS(obj, studyMappingOptions);
+    } else {
+        return $.extend( true, {}, obj);
+    }
 }
 
 // For older browsers (IE <=8), provide Date.toISOString if not defined
@@ -3619,6 +3634,10 @@ function createAnnotation( annotationBundle, nexml ) {
         nexml = viewModel.nexml;
     }
 
+    // is the specified nexson already mapped to Knockout observables?
+    var nexmlIsMapped = ko.isObservable( nexml.meta );
+    console.log("createAnnotation(): nexmlIsMapped = "+ nexmlIsMapped);
+
     var target = annotationBundle.targetElement;
     var annEvent = annotationBundle.annotationEvent;
     var agent = annotationBundle.agent;
@@ -3641,7 +3660,7 @@ function createAnnotation( annotationBundle, nexml ) {
             { '@id': getNextAvailableAnnotationMessageID( nexml ) }, 
             msg
         );
-        var properMsg = ko.mapping.fromJS(messageInfo, studyMappingOptions);
+        var properMsg = cloneFromSimpleObject( messageInfo, {applyKnockoutMapping: nexmlIsMapped} );
         collection.message.push( properMsg );
     });
     
@@ -3651,7 +3670,9 @@ function createAnnotation( annotationBundle, nexml ) {
         return ko.unwrap( a['@id'] ) === testID; 
     }
     if (!agentExists( hasMatchingID, nexml)) {
-        var properAgent = ko.mapping.fromJS(agent, studyMappingOptions);
+        // at this point, viewModel should already be mapped by KO
+        var  = ko.mapping.fromJS(, studyMappingOptions);
+        var properAgent = cloneFromSimpleObject( agent, {applyKnockoutMapping: false} );
         addAgent( properAgent, nexml );
     }
 
@@ -3663,7 +3684,7 @@ function createAnnotation( annotationBundle, nexml ) {
         { '@id': getNextAvailableAnnotationEventID( nexml ) }, 
         annEvent
     );
-    var properEvent = ko.mapping.fromJS(eventInfo, studyMappingOptions);
+    var properEvent = cloneFromSimpleObject( eventInfo, {applyKnockoutMapping: nexmlIsMapped} );
     eventCollection.annotation.push( properEvent );
 
     // return something interesting here?
@@ -3701,15 +3722,19 @@ function agentIsBeingUsed( testFunc ) {
     return relatedEvents.length > 0;
 }
 function addAgent( props, nexml ) {
-    // nexml is option (default is viewModel.nexml)
+    // nexml is optional (default is viewModel.nexml)
     if (!nexml) {
         nexml = viewModel.nexml;
     }
+
+    // is the specified nexson already mapped to Knockout observables?
+    var nexmlIsMapped = ko.isObservable( nexml.meta );
+
     var agentInfo = $.extend(
         { '@id': getNextAvailableAnnotationAgentID( nexml ) }, 
         props
     );
-    var properAgent = ko.mapping.fromJS(agentInfo, studyMappingOptions);
+    var properAgent = cloneFromSimpleObject(agentInfo, {applyKnockoutMapping: nexmlIsMapped});
     var agentList = getStudyAnnotationAgents( nexml ).agent;
     agentList.push( properAgent );
 }
@@ -3761,8 +3786,16 @@ function getNextAvailableAnnotationEventID(nexml) {
                 }
                 return 1;
             });
-            var highestID = ko.unwrap( sortedEvents[0]['@id'] );
-            highestAnnotationEventID = highestID.split( annotationEventIDPrefix )[1];
+            highestAnnotationEventID = 0;
+            for (var i = 0; i < sortedEvents.length; i++) {
+                // ignore agents with special IDs, eg, 'opentree-curation-webapp'
+                var testEvent = sortedEvents[i];
+                var testID = ko.unwrap(testEvent['@id']);
+                if (testID.indexOf(annotationEventIDPrefix) === 0) {
+                    highestAnnotationEventID = testID.split( annotationEventIDPrefix )[1];
+                    break;
+                }
+            }
         }
     }
     highestAnnotationEventID++;
@@ -3782,8 +3815,16 @@ function getNextAvailableAnnotationAgentID(nexml) {
                 if (ko.unwrap( a['@id'] ) > ko.unwrap( b['@id'] )) return -1;
                 return 1;
             });
-            var highestID = ko.unwrap( sortedAgents[0]['@id'] );
-            highestAnnotationAgentID = highestID.split( annotationAgentIDPrefix )[1];
+            highestAnnotationAgentID = 0;
+            for (var i = 0; i < sortedAgents.length; i++) {
+                // ignore agents with special IDs, eg, 'opentree-curation-webapp'
+                var testAgent = sortedAgents[i];
+                var testID = ko.unwrap(testAgent['@id']);
+                if (testID.indexOf(annotationAgentIDPrefix) === 0) {
+                    highestAnnotationAgentID = testID.split( annotationAgentIDPrefix )[1];
+                    break;
+                }
+            }
         }
     }
     highestAnnotationAgentID++;
@@ -3805,8 +3846,16 @@ function getNextAvailableAnnotationMessageID(nexml) {
                 }
                 return 1;
             });
-            var highestID = ko.unwrap(sortedMessages[0]['@id']);
-            highestAnnotationMessageID = highestID.split( annotationMessageIDPrefix )[1];
+            highestAnnotationMessageID = 0;
+            for (var i = 0; i < sortedMessages.length; i++) {
+                // ignore agents with special IDs, eg, 'opentree-curation-webapp'
+                var testMessage = sortedMessages[i];
+                var testID = ko.unwrap(testMessage['@id']);
+                if (testID.indexOf(annotationMessageIDPrefix) === 0) {
+                    highestAnnotationMessageID = testID.split( annotationMessageIDPrefix )[1];
+                    break;
+                }
+            }
         }
     }
     highestAnnotationMessageID++;
