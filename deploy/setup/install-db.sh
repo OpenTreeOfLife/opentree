@@ -2,16 +2,14 @@
 
 OPENTREE_HOST=$1
 APP=$2
+CONTROLLER=$3
 
 . setup/functions.sh
 
 # You might want to check out
 #  http://stackoverflow.com/questions/16572066/resuming-rsync-partial-p-partial-on-a-interrupted-transfer
 
-# Usage: e.g.
-#    rsync -e "ssh -i opentree.pem" -vax newlocaldb.db.tgz  \
-#       opentree@$host:downloads/treemachine.db.tgz
-#    ssh -i opentree.pem opentree@$host setup/install_db.sh treemachine $host
+# For usage see sample.config
 
 # Come here after the tarball has been copied to downloads/$APP.db.tgz
 # where APP = treemachine or taxomachine

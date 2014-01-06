@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Some of this repeats what's found in install-api.sh.  Keep in sync.
+
 OPENTREE_HOST=$1
 OPENTREE_PUBLIC_DOMAIN=$2
 NEO4JHOST=$3

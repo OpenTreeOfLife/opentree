@@ -35,11 +35,14 @@ Run the setup script, which is called 'push.sh', as
 
      ./push.sh -c {configfile}
 
-See sample.config in this directory for documentation on how to prepare a configuration file. 
+See sample.config in this directory for documentation on how to prepare a configuration file.
+
+All manipulation of the server, other than ad hoc temporary patches and debugging, should be done through the push script.  If you find you need functionality that it doesn't provide please contact JAR.
 
 The push.sh script starts by pushing out a script to be run as the admin user (setup/as_admin.sh).  This script installs prerequisite software and sets up an unprivileged 'opentree' user.  Then further scripts are run as user 'opentree'.  The only privileged operation thereafter is restarting Apache.
 
-All manipulation of the server, other than ad hoc temporary patches and debugging, should be done through the push script.  If you find you need functionality that it doesn't provide please contact JAR.
+After this, on each invocation of push.sh, the contents of the setup/
+directory are synchronized from setup/ in the current directory.
 
 The script may be re-run, and it tries to save time by avoiding reexecution of steps it has already performed based on sources that haven't changed.  If you're debugging you can re-run it repeatedly every time you want to try a change. (Unfortunately, at present it always reads from master branches of repos, but this is supposed to change soon.)
 
@@ -50,7 +53,7 @@ Setting up the API and studies repo
 
     ./push.sh -c {configfile} push-api
 
-This requires OPENTREE_GH_IDENTITY to point to the file containing the ssh private key for github access.
+This requires OPENTREE_GH_IDENTITY, as set in the configuration file, to point to the file containing the ssh private key for github access.
 
 How to push the neo4j databases
 -------------------------------
