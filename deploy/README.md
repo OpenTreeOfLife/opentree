@@ -46,7 +46,19 @@ directory are synchronized from setup/ in the current directory.
 
 The script may be re-run, and it tries to save time by avoiding reexecution of steps it has already performed based on sources that haven't changed.  If you're debugging you can re-run it repeatedly every time you want to try a change. (Unfortunately, at present it always reads from master branches of repos, but this is supposed to change soon.)
 
+Updating and debugging
+----------------------
+
 The contents of the setup/ directory are pushed out to the server every time push.sh runs.  This makes debugging deployment scripts easy, since that directory doesn't need to be pushed out to github first.  Application files from the various repositories are refreshed as needed from github.
+
+You can deploy individual components by giving them as an argument to
+the 'push.sh' command.  For example:
+
+    ./push.sh -c {configfile} treemachine
+
+updates the treemachine plugin and starts its neo4j instance.
+
+For a list of components, see sample.config.
 
 Setting up the API and studies repo
 -----------------------------------
