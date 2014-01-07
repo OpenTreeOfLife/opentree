@@ -3599,7 +3599,7 @@ function getMessagesForAnnotationEvent( annotationEvent, nexml ) {
     var matchingMessages = ko.utils.arrayFilter( 
         allMessages, 
         function(msg) {
-            console.dir(msg);
+            ///console.dir(msg);
             return ko.unwrap( msg['@wasGeneratedById'] ) === eventID;
         }
     );
@@ -3886,4 +3886,42 @@ function getAllAnnotationMessagesInStudy(nexml) {
         });
     });
     return allMessages;
+}
+
+
+/* 
+ * Manage free-form tags for a specified study or tree. This is somewhat
+ * complicated by the fact that these are stored as a set of zero or more
+ * metatags, with no duplicate values for the parent element.
+ */
+
+function getTags( parentElement ) {
+    var tags = [];
+    var tagAccessors = getMetaTagAccessorByAtProperty(parentElement.meta, 'ot:tag', { 'FIND_ALL': true });
+    $.each(tagAccessors, function(i, tagGetter) {
+        var tagText = $.trim(tagGetter());
+        switch(tagText) {  // non-empty points to a candidate tree
+            case '':
+                break;
+            default:
+                tags.push( tagText );
+        }
+    });
+    return tags;
+}
+function addTag( parentElement, newTagText ) {
+    addMetaTagToParent(parentElement, {
+        "$": newTagText,
+        "@property": "ot:tag",
+        "@xsi:type": "nex:LiteralMeta"
+    });
+}
+function removeTag( parentElement, oldTagText ) {
+    var tagElements = getNexsonChildByProperty(parentElement.meta, '@property', 'ot:tag', { 'FIND_ALL': true });
+    $.each(tagElements, function(i, tag) {
+        var tagText = $.trim(tag.$());
+        if (tagText === oldTagText) {
+            parentElement.meta.remove(tag);
+        }
+    });
 }
