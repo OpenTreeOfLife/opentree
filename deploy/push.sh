@@ -1,8 +1,13 @@
 #!/bin/sh
 
-# TBD: Should take as an argument a command to execute, e.g. update
-# web2py without touch neo4j, or vice versa, or upload a new version
-# of a database.
+# push.sh -c {configfile} {command} {arg...}  - see README.md for documentation
+# The command is either a component to install, or an operation to
+# perform.  Components are opentree [web app], api, taxomachine, etc.
+# Operation to perform would be copying a neo4j database image or
+# invoking the OTI indexing operation.
+
+# If command is missing, components are pushed to the server according
+# to OPENTREE_COMPONENTS as defined in the config file.
 
 # You may wonder about my use of $foo vs. ${foo} vs. "$foo" vs. "${foo}".
 # It's basically random.  I'm expecting to come up with some rules for
@@ -22,7 +27,8 @@ OPENTREE_ADMIN=admin
 OPENTREE_IDENTITY=opentree.pem
 OPENTREE_DOCSTORE=treenexus
 OPENTREE_GH_IDENTITY=opentree-gh.pem
-COMMAND=push
+OPENTREE_COMPONENTS=most
+DRYRUN=no
 
 if [ x$CONTROLLER = x ]; then
     CONTROLLER=`whoami`
@@ -33,33 +39,31 @@ fi
 while [ $# -gt 0 ]; do
     if [ ${1:0:1} != - ]; then
 	break
-    elif [ "x$1" = "x-h" ]; then
-	OPENTREE_HOST="$2"
-    elif [ "x$1" = "x-p" ]; then
-	OPENTREE_PUBLIC_DOMAIN="$2"
-    elif [ "x$1" = "x-u" ]; then
-	OPENTREE_ADMIN="$2"
-    elif [ "x$1" = "x-i" ]; then
-	OPENTREE_IDENTITY="$2"
-    elif [ "x$1" = "x-n" ]; then
-	OPENTREE_NEO4J_HOST="$2"
-    elif [ "x$1" = "x-c" ]; then
+    fi
+    flag=$1
+    shift
+    if [ "x$flag" = "x-c" ]; then
 	# Config file overrides default parameter settings
-        source "$2"
+        source "$1"; shift
+    elif [ "$flag" = "--dry-run" ]; then
+	DRYRUN=yes
+    # The following are all legacy; do not add cases to this 'while'.
+    # Configuration should now be done in the config file.
+    elif [ "x$flag" = "x-h" ]; then
+	OPENTREE_HOST="$1"; shift
+    elif [ "x$flag" = "x-p" ]; then
+	OPENTREE_PUBLIC_DOMAIN="$1"; shift
+    elif [ "x$flag" = "x-u" ]; then
+	OPENTREE_ADMIN="$1"; shift
+    elif [ "x$flag" = "x-i" ]; then
+	OPENTREE_IDENTITY="$1"; shift
+    elif [ "x$flag" = "x-n" ]; then
+	OPENTREE_NEO4J_HOST="$1"; shift
     else
-	echo 1>&2 "Unrecognized flag: $1"
+	echo 1>&2 "Unrecognized flag: $flag"
 	exit 1
     fi
-    shift
-    shift
 done
-
-if [ $# -gt 0 ]; then
-    COMMAND="$1"
-    shift
-else
-    COMMAND=push
-fi
 
 [ "x$OPENTREE_HOST" != x ] || (echo "OPENTREE_HOST not specified"; exit 1)
 [ -r $OPENTREE_IDENTITY ] || (echo "$OPENTREE_IDENTITY not found"; exit 1)
@@ -68,65 +72,100 @@ fi
 
 # abbreviations... no good reason for these, they just make the commands shorter
 ADMIN=$OPENTREE_ADMIN
-PEM=$OPENTREE_IDENTITY
 NEO4JHOST=$OPENTREE_NEO4J_HOST
 
-SSH="ssh -i ${PEM}"
+SSH="ssh -i ${OPENTREE_IDENTITY}"
 
 # For unprivileged actions
 OT_USER=opentree
 
-echo "host=$OPENTREE_HOST, admin=$ADMIN, pem=$PEM, controller=$CONTROLLER, command=$COMMAND"
+echo "host=$OPENTREE_HOST, admin=$ADMIN, pem=$OPENTREE_IDENTITY, controller=$CONTROLLER, command=$1"
 
-# Eventually finer grained: e.g.
-#   server A - browser, curator
-#   server B - api, doc store, oti
-#   server C - treemachine, taxomachine
+restart_apache=no
 
 function docommand {
-    sync_system
-    case $COMMAND in
-        push | pushmost)
-	    pushmost $*; restart_apache
+
+    if [ $# -eq 0 ]; then
+	if [ $DRYRUN = yes ]; then echo "[no command]"; fi
+	for component in $OPENTREE_COMPONENTS; do
+	    docommand $component
+	done
+	return
+    fi
+
+    command="$1"
+    shift
+    case $command in
+	# Legacy default
+        most  | all | push | pushmost)
+	    if [ $DRYRUN = yes ]; then echo "[all]"; fi
+    	    push_opentree
+    	    push_all_neo4j
+	    restart_apache=yes
     	    ;;
-	push-web2py)
-            pushweb2py $*; restart_apache
+	# Components
+	opentree  | push-web2py)
+            push_opentree
+	    restart_apache=yes
 	    ;;
-	push-api | pushapi)
-            pushapi $*; restart_apache
+	api  | push-api | push_api)
+	    # Does this work without a prior push_opentree? ... maybe not.
+            push_api; restart_apache
+	    ;;
+	oti)
+            push_neo4j oti
+	    ;;
+	treemachine)
+            push_neo4j treemachine
+	    ;;
+	taxomachine)
+            push_neo4j taxomachine
+	    ;;
+
+	none)
+	    echo "No components specified.  Try configuring OPENTREE_COMPONENTS"
 	    ;;
 	push-db | pushdb)
-	    pushdb $*
+	    push_db $*
     	    ;;
-	index | indexoti)
-	    indexoti $*
+	index  | indexoti | index-db)
+	    index
     	    ;;
 	echo)
+	    # Test ability to do remote commands inline...
 	    ${SSH} "$OT_USER@$OPENTREE_HOST" bash <<EOF
  	        echo $*
 EOF
 	    ;;
 	*)
-	    echo "Unrecognized command: $COMMAND"
+	    echo "Unrecognized command: $command"
 	    ;;
     esac 
 }
 
 function sync_system {
+    echo "Syncing"
+    if [ $DRYRUN = "yes" ]; then echo "[sync]"; return; fi
     # Do privileged stuff
     # Don't use rsync - might not be installed yet
-    scp -p -i "${PEM}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
+    scp -p -i "${OPENTREE_IDENTITY}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
     ${SSH} "$ADMIN@$OPENTREE_HOST" ./as-admin.sh "$OPENTREE_HOST"
     # Copy files over
     rsync -pr -e "${SSH}" "--exclude=*~" "--exclude=#*" setup "$OT_USER@$OPENTREE_HOST":
     }
 
-function pushmost {
-    pushweb2py
+function push_all_neo4j {
+    if [ $DRYRUN = "yes" ]; then echo "[all neo4j apps]"; return; fi
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-apps.sh $CONTROLLER
 }
 
+function push_neo4j {
+    if [ $DRYRUN = "yes" ]; then echo "[neo4j app: $1]"; return; fi
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-apps.sh $CONTROLLER $1
+}
+
 function restart_apache {
+    if [ $DRYRUN = "yes" ]; then echo "[restarting apache]"; return; fi
     # The install scripts modify the apache config file, so do this last
     ${SSH} "$ADMIN@$OPENTREE_HOST" \
       sudo cp -p "~$OT_USER/setup/apache-config" /etc/apache2/sites-available/opentree
@@ -134,7 +173,8 @@ function restart_apache {
     ${SSH} "$ADMIN@$OPENTREE_HOST" sudo apache2ctl graceful
 }
 
-function pushweb2py {
+function push_opentree {
+    if [ $DRYRUN = "yes" ]; then echo "[opentree]"; return; fi
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER
     # place the file with secret Janrain key
     keyfile=../webapp/private/janrain.key
@@ -145,27 +185,34 @@ function pushweb2py {
     fi
 }
 
-function pushapi {
+function push_api {
     echo "doc store is $OPENTREE_DOCSTORE"
+    if [ $DRYRUN = "yes" ]; then echo "[api]"; return; fi
     rsync -pr -e "${SSH}" $OPENTREE_GH_IDENTITY "$OT_USER@$OPENTREE_HOST":.ssh/opentree
     ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" $OPENTREE_DOCSTORE $CONTROLLER
 }
 
-function indexoti {
+function index {
+    if [ $DRYRUN = "yes" ]; then echo "[index]"; return; fi
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/index-doc-store.sh $OPENTREE_DOCSTORE $CONTROLLER
 }
 
-function pushdb {
+function push_db {
+    if [ $DRYRUN = "yes" ]; then echo "[push_db]"; return; fi
     # Work in progress - code not yet enabled
     # E.g. ./push.sh push-db localnewdb.db.tgz taxomachine
     TARBALL=$1
     APP=$2
     rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":downloads/$APP.db.tgz
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install_db.sh "$OPENTREE_HOST" $APP
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh "$OPENTREE_HOST" $APP $CONTROLLER
 }
 
+sync_system
 docommand $*
+if [ $restart_apache = "yes" ]; then
+    restart_apache
+fi
 
 # Test: 
 # Ubuntu micro:
