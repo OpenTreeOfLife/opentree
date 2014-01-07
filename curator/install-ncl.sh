@@ -17,4 +17,4 @@ make installcheck || exit
 
 echo '[external]' >> private/config
 echo "dir=${NCL_INSTALL_DIR}/private/scratch" >> private/config
-echo "2nexml=${NCL_INSTALL_DIR}/bin/NCLConverter" >> private/config
+echo "2nexml=${NCL_INSTALL_DIR}/bin/NCLconverter" >> private/config

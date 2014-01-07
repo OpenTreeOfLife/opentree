@@ -84,11 +84,12 @@ def data():
 
 def to_nexml():
     from externalproc import get_external_proc_dir_for_upload, get_logger, invoc_status, \
-            ExternalProcStatus, get_conf, write_input_files, write_ext_proc_content
+            ExternalProcStatus, get_conf, write_input_files, write_ext_proc_content, do_ext_proc_launch
     import os
     import datetime
     import codecs
     import locket
+    import shutil
     _LOG = get_logger(request, 'to_nexml')
     try:
         unique_id = request.vars.uploadid
@@ -108,6 +109,8 @@ def to_nexml():
         raise HTTP(404)
     INPUT_FILENAME = 'in.nex'
     PROV_FILENAME = 'provenance.json'
+    NEXML_FILENAME = 'out.xml'
+    ERR_FILENAME = 'err.txt'
     
     INPUT_FILEPATH = os.path.join(working_dir, INPUT_FILENAME)
     INP_LOCKFILEPATH = os.path.join(working_dir, INPUT_FILENAME + '.lock')
@@ -131,58 +134,73 @@ def to_nexml():
         PROV_FILEPATH =  os.path.join(working_dir, PROV_FILENAME)
         response.view = 'generic.json'
         return json.load(codecs.open(PROV_FILEPATH, 'rU', encoding='utf-8'))
-    '''if output == 'ot:nexson':
-        sentinel = os.path.join()
-        if os.path.exists()
-    if output == ''
-    
+    if output == 'input':
+        response.headers['Content-Type'] = 'text/plain'
+        return open(INPUT_FILEPATH, 'rU').read()
+    NEXML_FILEPATH = os.path.join(working_dir, NEXML_FILENAME)
     block = True
-    timeout_duration = 0.1 #@TEMPORARY should not be hard coded
-
-    out_filename = 'out.xml'
-    err_filename = 'err.txt'
+    timeout_duration = 0.1 #@TEMPORARY should not be hard coded`
     #@TEMPORARY could be refactored into a launch_or_get_status() call
     status = invoc_status(request, working_dir)
     launched_this_call = False
     if status == ExternalProcStatus.NOT_FOUND:
-        try:
+        inp_format = request.vars.inputformat or 'nexus'
+        inp_format = inp_format.lower()
+        input_choices = ['nexus', 'newick', 'nexml']
+        if inp_format not in input_choices:
+            raise HTTP(400, 'inputformat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
+        if inp_format == 'newick':
+            inp_format = 'relaxedphyliptree'
+        if inp_format == 'nexml':
+            shutil.copyfile(INPUT_FILEPATH, NEXML_FILEPATH)
+        else:
             try:
-                exe_path = get_conf(request).get("external", "2nexml")
+                try:
+                    exe_path = get_conf(request).get("external", "2nexml")
+                except:
+                    _LOG.warn("Config does not have external/2nexml setting")
+                    raise
+                assert(os.path.exists(exe_path))
             except:
-                _LOG.warn("Config does not have external/2nexml setting")
-                raise
-            assert(os.path.exists(exe_path))
-        except:
-            _LOG.warn("Could not find the 2nexml executable")
-            raise HTTP(501, T("Server is not configured to allow 2nexml conversion"))
-        do_ext_proc_launch(request,
-                           working_dir,
-                           [exe_path, 'in.nex'],
-                           out_filename,
-                           err_filename,
-                           wait=block)
-        if not block:
-            time.sleep(timeout_duration)
-        status = invoc_status(request, working_dir)
-        assert(status != ExternalProcStatus.NOT_FOUND)
-        launched_this_call = True
+                response.view = 'generic.json'; return {'hb':exe_path}
+                _LOG.warn("Could not find the 2nexml executable")
+                raise HTTP(501, T("Server is not configured to allow 2nexml conversion"))
+            do_ext_proc_launch(request,
+                               working_dir,
+                               [exe_path, '-f{f}'.format(f=inp_format),'in.nex'],
+                               NEXML_FILENAME,
+                               ERR_FILENAME,
+                               wait=block)
+            if not block:
+                time.sleep(timeout_duration)
+            status = invoc_status(request, working_dir)
+            assert(status != ExternalProcStatus.NOT_FOUND)
+            launched_this_call = True
     if status == ExternalProcStatus.RUNNING:
         if not launched_this_call:
             time.sleep(timeout_duration)
             status = invoc_status(request, working_dir)
         if status == ExternalProcStatus.RUNNING:
-            return HTTP(102, T("Process still running"))
-    #@TEMPORARY /end of potential launch_or_get_status call...
-    
+            return HTTP(102, "Process still running")
     if status == ExternalProcStatus.FAILED:
         try:
-            err_file = os.path.join(working_dir, err_filename)
-            err_content = 'Error message:\n ' + open(err_file, 'rU').read()
+            ERR_FILEPATH = os.path.join(working_dir, ERR_FILENAME)
+            err_content = 'Error message:\n ' + open(ERR_FILEPATH, 'rU').read()
         except:
             err_content = ''
-        response.headers['Content-Type'] = 'text/xml'
+        response.headers['Content-Type'] = 'text/plain'
         raise HTTP(501, T("Conversion to NeXML failed.\n" + err_content))
+    if output == 'nexml':
+        response.headers['Content-Type'] = 'text/xml'
+        return open(NEXML_FILEPATH, 'rU').read()
+    '''if output == 'ot:nexson':
+        sentinel = os.path.join()
+        if os.path.exists()
+    if output == ''
+    
+    
+    #@TEMPORARY /end of potential launch_or_get_status call...
+    
     output = os.path.join(working_dir, 'out.xml')
-    response.headers['Content-Type'] = 'text/xml'
-    return open(output, 'rU').read()
+    
     '''

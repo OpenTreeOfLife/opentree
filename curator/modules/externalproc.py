@@ -211,7 +211,6 @@ def do_ext_proc_launch(request,
     `inp_file_path_list` should be a list of tuples of (filename, content)
         which need to be written to the par_dir before the invocation.
     '''
-    write_input_files(request, par_dir, inp_file_path_list)
     app_name = request.application
     job_launcher = os.path.abspath("applications/%s/modules/joblauncher.py" % app_name)
     if not os.path.exists(job_launcher):
