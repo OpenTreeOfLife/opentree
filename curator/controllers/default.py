@@ -97,8 +97,27 @@ def to_nexml():
     from xml2jsonbadgerfish import to_badgerfish_dict, cull_for_ot_nexson
     '''
     Controller for conversion of NEXUS, newick, or NeXML to NeXSON
-    required arguments:
-        "uploadid" - should be a
+    Required arguments:
+        "uploadid" - A unique string for this upload. It needs
+            to match the pattern '^[-_.a-zA-Z0-9]{5,85}$'
+            clash with a previously used ID will cause data from the
+            previous upload to be returned.
+        "file" should be a multipart-encoded file to be translated to NexSON
+    Optional arguments:
+        "output" one of ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
+            the default is ot:nexson. This specifies what is to be returned.
+            Possible values are: 
+            "ot:nexson" is the Open Tree NexSON (with character data culled).
+                This should be the first call to this uploadid. Subsequent
+                calls can retrieve intermediates. JSON.
+            "nexson" is the complete NexSON version of the data. JSON.
+            "nexml" is the NeXML version of the file. This is an intermediate
+                for the NexSON. XML.
+            "input" returns the uploaded file. text/plain.
+            "provenance" returns a simple, ad-hoc JSON with initial call details.
+        "dataDeposit" should be a URL that should be added to the meta element
+            in the Open Tree NexSON object.
+        "inputformat" should be "nexus", "newick", or "nexml"
     '''
     _LOG = get_logger(request, 'to_nexml')
     try:
@@ -112,7 +131,7 @@ def to_nexml():
     output = output.lower()
     output_choices = ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
     if output not in output_choices:
-        raise HTTP(400, 'Output should be one of: "{c}"'.format(c='", "'.join(output_choices)))
+        raise HTTP(400, 'The "output" should be one of: "{c}"'.format(c='", "'.join(output_choices)))
     try:
         working_dir = get_external_proc_dir_for_upload(request, '2nexml', unique_id)
     except Exception, x:
@@ -129,6 +148,8 @@ def to_nexml():
     inpfp = os.path.join(working_dir, INPUT_FILENAME)
     with locket.lock_file(INP_LOCKFILEPATH):
         if not os.path.exists(INPUT_FILEPATH):
+            if output != 'ot:nexson':
+                raise HTTP(400, 'The "output" argument should be "ot:nexson" in the first call with each "uploadid"')
             if request.vars.file is None:
                 raise HTTP(400, 'Expecting a "file" argument with an input file')
             upf = request.vars.file
@@ -138,6 +159,8 @@ def to_nexml():
                 'filename' : upf.filename,
                 'date-created': datetime.datetime.utcnow().isoformat(),
             }
+            if request.vars.dataDeposit:
+                prov_info['data-deposit'] = request.vars.dataDeposit
             write_ext_proc_content(request,
                                    working_dir,
                                    [(PROV_FILENAME, json.dumps(prov_info))],
