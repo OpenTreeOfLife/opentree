@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 # this file is released under public domain and you can use without limitations
+import re
 
 #########################################################################
 ## This is a samples controller
@@ -82,7 +83,10 @@ def data():
     """
     return dict(form=crud())
 
+
+UPLOADID_PAT = re.compile(r'^[-_.a-zA-Z0-9]{5,85}$')
 def to_nexml():
+    global UPLOADID_PAT
     from externalproc import get_external_proc_dir_for_upload, get_logger, invoc_status, \
             ExternalProcStatus, get_conf, write_input_files, write_ext_proc_content, do_ext_proc_launch
     import os
@@ -91,12 +95,19 @@ def to_nexml():
     import locket
     import shutil
     from xml2jsonbadgerfish import to_badgerfish_dict, cull_for_ot_nexson
+    '''
+    Controller for conversion of NEXUS, newick, or NeXML to NeXSON
+    required arguments:
+        "uploadid" - should be a
+    '''
     _LOG = get_logger(request, 'to_nexml')
     try:
         unique_id = request.vars.uploadid
         assert unique_id is not None
     except:
         raise HTTP(400, 'Expecting an "uploadid" argument with a unique ID for this upload')
+    if not UPLOADID_PAT.match(unique_id):
+        raise HTTP(400, 'uploadid must be series of letters, numbers, dots or dashes between 5 and 85 characters long. "{u}" does not match this pattern'.format(u=unique_id))
     output = request.vars.output or 'ot:nexson'
     output = output.lower()
     output_choices = ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
