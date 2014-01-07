@@ -1,8 +1,13 @@
 #!/bin/sh
 
-# TBD: Should take as an argument a command to execute, e.g. update
-# web2py without touch neo4j, or vice versa, or upload a new version
-# of a database.
+# push.sh -c {configfile} {command} {arg...}  - see README.md for documentation
+# The command is either a component to install, or an operation to
+# perform.  Components are opentree [web app], api, taxomachine, etc.
+# Operation to perform would be copying a neo4j database image or
+# invoking the OTI indexing operation.
+
+# If command is missing, components are pushed to the server according
+# to OPENTREE_COMPONENTS as defined in the config file.
 
 # You may wonder about my use of $foo vs. ${foo} vs. "$foo" vs. "${foo}".
 # It's basically random.  I'm expecting to come up with some rules for
@@ -74,7 +79,7 @@ SSH="ssh -i ${OPENTREE_IDENTITY}"
 # For unprivileged actions
 OT_USER=opentree
 
-echo "host=$OPENTREE_HOST, admin=$ADMIN, pem=$OPENTREE_IDENTITY, controller=$CONTROLLER, command=$command"
+echo "host=$OPENTREE_HOST, admin=$ADMIN, pem=$OPENTREE_IDENTITY, controller=$CONTROLLER, command=$1"
 
 restart_apache=no
 
