@@ -163,6 +163,15 @@ body {
   /* stroke: #f00; */
 }
 
+/* force proper styles for Bootstrap Tags Input */
+.bootstrap-tagsinput input {
+    border: none !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+}
+
 </style>
 
 <div class="row">
@@ -260,6 +269,33 @@ body {
                 {{ pass }}
                 </div>
               </div>
+              <div class="control-group">
+                <label class="control-label">Tags</label>
+                <div class="controls">
+
+                {{ if viewOrEdit == 'EDIT': }}
+                    <select id="study-tags" multiple="multiple" placeholder="Add tags"
+                            onchange="updateElementTags(this);"
+                            data-bind="options: getTags(viewModel.nexml)">
+                    </select>
+                {{ else: }}
+                    <!-- TODO: make all tags clickable (search in new window?) -->
+                    <div class="bootstrap-tagsinput" 
+                         style="border: none; margin-bottom: 0; padding: 4px 0;"
+                         data-bind="visible: getTags(viewModel.nexml).length > 0">
+                    <!-- ko foreach: gettags( viewmodel.nexml ) -->
+                        <span class="tag label label-info" data-bind="text: $data">TAG</span>
+                    <!-- /ko -->
+                    </div>
+                    <p class="static-form-value"
+                       data-bind="visible: getTags(viewModel.nexml).length === 0">
+                       <em>None</em>
+                    </p>
+                {{ pass }}
+
+                </div>
+              </div>
+
               <div class="control-group">
                 <label class="control-label" for="ot_curatorName">Submitted by</label>
                 <div class="controls">
@@ -1215,8 +1251,13 @@ Please review and re-submit.</pre>
               <br/>
                <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
 
-                <label for="testtest">Tags: </label>
-                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:tag'), valueUpdate: 'afterkeydown'"></input>
+                <label>Tags: </label>
+                <select id="tree-tags" multiple="multiple" placeholder="Add tags"
+                        onchange="updateElementTags(this);"
+                        data-bind="attr: {'treeid': $data['@id']() },
+                                   options: getTags( getTreeByID($data['@id']()) )">
+                </select>
+
               <br/>
 
                <!-- todo: general statement of rooting (tree and ingroup)?
@@ -1267,8 +1308,18 @@ Please review and re-submit.</pre>
               <br/>
                <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
 
-                <label for="testtest">Tags: </label>
-                <strong data-bind="html: getTagDescriptionForTree($data)">{TAGS}</strong>
+                <label>Tags: </label>
+                <!-- TODO: make all tags clickable (search in new window?) -->
+                <div class="bootstrap-tagsinput" 
+                     style="display: inline-block; border: none; margin-bottom: 0; padding: 0 0 4px 0;"
+                     data-bind="visible: getTags(getTreeByID($data['@id']())).length > 0">
+                <!-- ko foreach: getTags( getTreeByID($data['@id']()) ) -->
+                    <span class="tag label label-info" data-bind="text: $data">TAG</span>
+                <!-- /ko -->
+                </div>
+                <strong data-bind="visible: getTags(getTreeByID($data['@id']())).length === 0">
+                   <em>None</em>
+                </strong>
               <br/>
 
                <!-- TODO: General statement of rooting (tree and ingroup)?
