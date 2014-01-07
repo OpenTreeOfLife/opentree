@@ -1,6 +1,9 @@
 #!/bin/sh
 set -x
-git clone https://github.com/mtholder/ncl.git || exit
+if ! test -d ncl
+then
+    git clone https://github.com/mtholder/ncl.git || exit
+fi
 export NCL_INSTALL_DIR="${PWD}/private"
 if ! test -d build-ncl-static
 then
@@ -14,7 +17,7 @@ make -j2 || exit
 make check || exit
 make install || exit
 make installcheck || exit
-
+cd ..
 echo '[external]' >> private/config
-echo "dir=${NCL_INSTALL_DIR}/private/scratch" >> private/config
+echo "dir=${NCL_INSTALL_DIR}/scratch" >> private/config
 echo "2nexml=${NCL_INSTALL_DIR}/bin/NCLconverter" >> private/config
