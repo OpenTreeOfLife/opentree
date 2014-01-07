@@ -118,6 +118,7 @@ def to_nexml():
         "dataDeposit" should be a URL that should be added to the meta element
             in the Open Tree NexSON object.
         "inputformat" should be "nexus", "newick", or "nexml"
+        
     '''
     _LOG = get_logger(request, 'to_nexml')
     try:
@@ -146,12 +147,17 @@ def to_nexml():
     INPUT_FILEPATH = os.path.join(working_dir, INPUT_FILENAME)
     INP_LOCKFILEPATH = os.path.join(working_dir, INPUT_FILENAME + '.lock')
     inpfp = os.path.join(working_dir, INPUT_FILENAME)
+    input_choices = ['nexus', 'newick', 'nexml']
     with locket.lock_file(INP_LOCKFILEPATH):
         if not os.path.exists(INPUT_FILEPATH):
             if output != 'ot:nexson':
                 raise HTTP(400, 'The "output" argument should be "ot:nexson" in the first call with each "uploadid"')
             if request.vars.file is None:
                 raise HTTP(400, 'Expecting a "file" argument with an input file')
+            inp_format = request.vars.inputformat or 'nexus'
+            inp_format = inp_format.lower()
+            if inp_format not in input_choices:
+                raise HTTP(400, 'inputformat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
             upf = request.vars.file
             upload_stream = upf.file
             write_input_files(request, working_dir, [(INPUT_FILENAME, upload_stream)])
@@ -181,7 +187,6 @@ def to_nexml():
     if status == ExternalProcStatus.NOT_FOUND:
         inp_format = request.vars.inputformat or 'nexus'
         inp_format = inp_format.lower()
-        input_choices = ['nexus', 'newick', 'nexml']
         if inp_format not in input_choices:
             raise HTTP(400, 'inputformat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
         if inp_format == 'newick':
