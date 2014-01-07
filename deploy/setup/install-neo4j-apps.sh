@@ -3,6 +3,7 @@
 . setup/functions.sh
 
 CONTROLLER=$1
+WHICH_APP=$2
 BRANCH=master
 
 # tbd: maybe allow a different branch for each repo
@@ -111,9 +112,18 @@ function make_neo4j_instance {
 
 }
 
-make_neo4j_instance treemachine 7474 7473
-make_neo4j_instance taxomachine 7476 7475
-make_neo4j_instance oti         7478 7477
+if [ x$WHICH_APP = x ]; then
+    make_neo4j_instance treemachine 7474 7473
+    make_neo4j_instance taxomachine 7476 7475
+    make_neo4j_instance oti         7478 7477
+else
+    case $WHICH_APP in
+	oti) 	     make_neo4j_instance oti         7478 7477 ;;
+	treemachine) make_neo4j_instance treemachine 7474 7473 ;;
+	taxomachine) make_neo4j_instance taxomachine 7476 7475 ;;
+    esac
+fi
+
 
 log "Finished installing neo4j instances"
 

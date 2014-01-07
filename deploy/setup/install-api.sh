@@ -1,5 +1,7 @@
 #!/bin/bash
 
+# Some of this repeats what's found in install-web2py-apps.sh.  Keep in sync.
+
 OPENTREE_HOST=$1
 OPENTREE_DOCSTORE=$2
 CONTROLLER=$3
@@ -8,6 +10,11 @@ BRANCH=master
 . setup/functions.sh
 
 echo "Installing API"
+
+# Required from install-web2py-apps.sh:
+#  Fetch and set up web2py
+#  Virtualenv
+#  WSGI handler
 
 # ---------- API & TREE STORE ----------
 # Set up api web app

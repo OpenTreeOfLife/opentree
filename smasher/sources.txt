@@ -1,5 +1,0 @@
-idprefix	shortname	gbifname	urlprefix
-NCBI	NCBI	NCBI Taxonomy	http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id=	
-GBIF	GBIF	GBIF Backbone Taxonomy	http://data.gbif.org/species/
-IF	Index Fungorum	Index Fungorum	http://www.indexfungorum.org/names/NamesRecord.asp?RecordID=
-MB	Mycobank	Mycobank	http://www.mycobank.org/MB/
