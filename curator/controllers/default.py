@@ -118,6 +118,7 @@ def to_nexml():
         "dataDeposit" should be a URL that should be added to the meta element
             in the Open Tree NexSON object.
         "inputformat" should be "nexus", "newick", or "nexml"
+            default is "nexus"
         
     '''
     _LOG = get_logger(request, 'to_nexml')
