@@ -1,0 +1,116 @@
+{{extend 'layout.html'}}
+
+<div class="container">
+      <h1 id="main-title">Resources on the web</h1>
+
+      <div class="row">
+          <div class="span3">
+              <ul class="nav nav-pills nav-stacked">
+                  <li class="nav=header">Learn more about&hellip;</li>
+                  <li>
+                      <a href="{{= URL('about', 'open-tree-of-life') }}">Open Tree of Life</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'the-synthetic-tree') }}">The synthetic tree</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'the-source-tree-manager') }}">The source tree manager</a>
+                  </li>
+                  <li class="active">
+                      <a href="{{= URL('about', 'resources') }}">Resources</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'credits') }}">Credits</a>
+                  </li>
+              </ul>
+          </div>
+          <div class="span8 offset1">
+
+            <p>Search all open tree of life sites
+                <script>
+                (function() {
+                  var cx = '008969357630728117148:1adkfaq9u3i';
+                  var gcse = document.createElement('script'); gcse.type = 'text/javascript';
+                  gcse.async = true;
+                  gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
+                      '//www.google.com/cse/cse.js?cx=' + cx;
+                  var s = document.getElementsByTagName('script')[0];
+                  s.parentNode.insertBefore(gcse, s);
+                })();
+                </script>
+                <gcse:search></gcse:search>
+            </p>
+
+            <p>
+            Content and server roadmap
+            </p>
+              <ul>
+                <li>open tree software system specifically
+                  <ul>
+                <li>what we have so far
+                  <ul>
+                    <li><a href="http://dev.opentreeoflife.org/opentree/">browse the tree</a></li>
+                    <li><a href="http://dev.opentreeoflife.org/curator/">curation tool</a></li>
+                    <!-- was http://opentreeoflife.github.com/argus/browser.html?domsource=ottol&nodeid=901718 -->
+                    <!-- 
+                    <li><a href="http://opentreeoflife.github.com/argus/"
+                       >search for taxon</a> (argus)
+                      -->
+                    <li><a href="http://www.reelab.net/phylografter">source tree management</a> (phylografter) </li>
+                        <li>view taxonomy and start from...</li>
+                          <ul>
+                            <li><a href="/other/taxa_viz_dyn.html?ottolID=805080">life</a></li>
+                            <li><a href="/other/taxa_viz_dyn.html?ottolID=656316">Dikarya</a></li>
+                            <li><a href="/other/taxa_viz_dyn.html?ottolID=372049">Streptophytina (in plants)</a></li>
+                            <li><a href="/other/taxa_viz_dyn.html?ottolID=1064655">Amoebozoa</a></li>
+                            <li><a href="/other/taxa_viz_dyn.html?ottolID=229558">Theria</a></li>
+                            <li><a href="/other/taxa_viz_dyn.html?ottolID=770315">Homo saiens</a></li>
+                          </ul>
+                        <li>view simple synthesis tree (not as much info or features as <a href="opentree/">above</a>) and start from...</li>
+                          <ul>
+                            <li><a href="/other/synth_viz_dyn.html?ottolID=93302">cellular organisms</a></li>
+                            <li><a href="/other/synth_viz_dyn.html?ottolID=656316">Dikarya</a></li>
+                            <li><a href="/other/synth_viz_dyn.html?ottolID=372049">Streptophytina (in plants)</a></li>
+                            <li><a href="/other/synth_viz_dyn.html?ottolID=1064655">Amoebozoa</a></li>
+                            <li><a href="/other/synth_viz_dyn.html?ottolID=229558">Theria</a></li>
+                            <li><a href="/other/synth_viz_dyn.html?ottolID=770315">Homo saiens</a></li>
+                          </ul>
+                    <li><a href="/other/curnewicks/index.html">newicks of the tree</a></li>
+                  </ul>
+                </li><li><a href="/ott/">OTT - Open Tree reference taxonomy</a>
+                </li><li><a href="https://trello.com/board/software/4fb665cce706648863c3cc90">trello board</a></li>
+                <li><a href="https://github.com/OpenTreeOfLife/">github</a> (github.com/OpenTreeOfLife)
+                </li><li><a href="https://bitbucket.org/blackrim/avatol-taxonomies/downloads">AVATOL taxonomies</a>
+                       (bitbucket.org/blackrim/avatol-taxonomies) </li>
+                <li><a href="https://bitbucket.org/mtholder/ottol/src">PreOTToL bitbucket</a> </li>
+                <li><a href="https://groups.google.com/forum/?fromgroups#!forum/opentreeoflife-software">google group</a></li>
+                <li><a href="/">project management</a>
+                  <ul>
+                    <!-- 
+                    <li><a href="docs/model/model.html"
+                       >project roadmap</a> </li>
+             -->
+                    <li><a href="http://opentree.wikispaces.com/Requirements+gathering">requirements gathering</a> </li>
+                    <li><a href="docs/ot-preso-1/">JAR presentation to NESCENT informatics</a></li>
+                  </ul></li>
+                <li><a href="http://www.onezoom.org/">OneZoom</a></li>
+                </ul></li>
+                <li><a href="http://opentree.wikispaces.com/">wiki</a> (opentree.wikispaces.com) </li>
+                <li><a href="https://groups.google.com/forum/?fromgroups#!forum/opentreeoflife">google group</a></li>
+                <li><a href="https://trello.com/opentree">trello boards</a> </li>
+                <li><a href="http://opentreeoflife.org/">opentreeoflife.org</a>
+                </li><li><a href="http://opentree.wikispaces.com/Grant+Proposal">grant proposal</a>
+                </li><li> see also google drive </li>
+            </ul>
+
+          </div>
+      </div>
+
+      <h3 id="comment-header">Comments <i></i></h3>
+      {{=plugin_localcomments(filter=('url',),url=request.url)}}
+
+</div><!-- end of .container -->
+
+<script type="text/javascript">
+    // add any page-specific behavior here
+</script>

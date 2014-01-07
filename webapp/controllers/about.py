@@ -24,5 +24,8 @@ def the_source_tree_manager():
     # URL is /opentree/about/the-source-tree-manager
     return dict()
 
+def resources():
+    return dict()
+
 def credits():
     return dict()
