@@ -36,4 +36,17 @@ Optional arguments:
     "inputformat" should be "nexus", "newick", or "nexml"
         default is "nexus"
 
+The service operates by:
+    1. taking the input file and a unique string (could be a uuid).
+    2. It creates a subdirectory for this upload where the subdirectory name
+        is the unique uploadid and the parent is config-dependent.
+    3. A simple provenance file (in JSON) is written with the original filename.
+    4. The input is written to the server's filesystem in the appropriate directory.
+    5. NCL's NCLconverter is used to convert it to NeXML
+    6. python code converts the NeXML to NeXSON using badgerfish conventions
+        but does not add any open-tree specific fields to the NexSON.
+    7. some more python code converts the NeXSON to "open tree NexSON". Currently this just deletes the "characters" element and adds a dataDeposit meta element. We probably need to do more to make the rest of the open tree tools happy with this file.
+
+Primarily for the sake of debugging, the intermediates can be fetched using the "output" argument.
+
 See test/test.sh for two example invocations of this web-service.
