@@ -90,6 +90,7 @@ def to_nexml():
     import codecs
     import locket
     import shutil
+    from xml2jsonbadgerfish import to_badgerfish_dict, cull_for_ot_nexson
     _LOG = get_logger(request, 'to_nexml')
     try:
         unique_id = request.vars.uploadid
@@ -193,14 +194,49 @@ def to_nexml():
     if output == 'nexml':
         response.headers['Content-Type'] = 'text/xml'
         return open(NEXML_FILEPATH, 'rU').read()
-    '''if output == 'ot:nexson':
-        sentinel = os.path.join()
-        if os.path.exists()
-    if output == ''
+    NEXSON_FILENAME = 'nexson.json'
+    NEXSON_FILEPATH = os.path.join(working_dir, NEXSON_FILENAME)
+    NEXSON_DONE_FILEPATH = NEXSON_FILEPATH + '.written'
+    NEXSON_LOCKFILEPATH = NEXSON_FILEPATH+ '.lock'
+    if not os.path.exists(NEXSON_DONE_FILEPATH):
+        try:
+            with locket.lock_file(NEXSON_LOCKFILEPATH, timeout=0):
+                if not os.path.exists(NEXSON_DONE_FILEPATH):
+                    dfj = to_badgerfish_dict(NEXML_FILEPATH)
+                    out = codecs.open(NEXSON_FILEPATH, 'w', encoding='utf-8')
+                    json.dump(dfj, out, indent=0, sort_keys=True)
+                    out.write('\n')
+                    out.close()
+                    out = open(NEXSON_DONE_FILEPATH, 'w')
+                    out.write('0\n')
+                    out.close()
+        except locket.LockError:
+            return HTTP(102, "Conversion to NexSON still running")
+    if output == 'nexson':
+        response.view = 'generic.json'
+        return json.load(codecs.open(NEXSON_FILEPATH, 'rU', encoding='utf-8'))
+    # Open Tree NeXSON - cull characters
+    OT_NEXSON_FILENAME = 'ot_nexson.json'
+    OT_NEXSON_FILEPATH = os.path.join(working_dir, OT_NEXSON_FILENAME)
+    OT_NEXSON_DONE_FILEPATH = OT_NEXSON_FILEPATH + '.written'
+    OT_NEXSON_LOCKFILEPATH = OT_NEXSON_FILEPATH+ '.lock'
+    if not os.path.exists(OT_NEXSON_DONE_FILEPATH):
+        try:
+            with locket.lock_file(OT_NEXSON_LOCKFILEPATH, timeout=0):
+                if not os.path.exists(OT_NEXSON_DONE_FILEPATH):
+                    inf = codecs.open(NEXSON_FILEPATH, 'rU', encoding='utf-8')
+                    full_nexson = json.load(inf)
+                    cull_for_ot_nexson(full_nexson, data_deposit=request.vars.dataDeposit)
+                    out = codecs.open(OT_NEXSON_FILEPATH, 'w', encoding='utf-8')
+                    json.dump(full_nexson, out, indent=0, sort_keys=True)
+                    out.write('\n')
+                    out.close()
+                    out = open(OT_NEXSON_DONE_FILEPATH, 'w')
+                    out.write('0\n')
+                    out.close()
+        except locket.LockError:
+            return HTTP(102, "Conversion to ot:NexSON still running")
+    assert (output == 'ot:nexson')
+    response.view = 'generic.json'
+    return json.load(codecs.open(OT_NEXSON_FILEPATH, 'rU', encoding='utf-8'))
     
-    
-    #@TEMPORARY /end of potential launch_or_get_status call...
-    
-    output = os.path.join(working_dir, 'out.xml')
-    
-    '''
