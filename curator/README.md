@@ -19,6 +19,9 @@ Required arguments:
         clash with a previously used ID will cause data from the
         previous upload to be returned.
     "file" should be a multipart-encoded file to be translated to NexSON
+          OR
+    "content" which is a string that contains the content of the file
+        format. "content" is checked if "file" is not provided.
 Optional arguments:
     "output" one of ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
         the default is ot:nexson. This specifies what is to be returned.

@@ -103,6 +103,9 @@ def to_nexml():
             clash with a previously used ID will cause data from the
             previous upload to be returned.
         "file" should be a multipart-encoded file to be translated to NexSON
+          OR
+        "content" which is a string that contains the content of the file
+            format. "content" is checked if "file" is not provided.
     Optional arguments:
         "output" one of ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
             the default is ot:nexson. This specifies what is to be returned.
@@ -153,17 +156,22 @@ def to_nexml():
         if not os.path.exists(INPUT_FILEPATH):
             if output != 'ot:nexson':
                 raise HTTP(400, 'The "output" argument should be "ot:nexson" in the first call with each "uploadid"')
-            if request.vars.file is None:
-                raise HTTP(400, 'Expecting a "file" argument with an input file')
+            if request.vars.file is not None:
+                upf = request.vars.file
+                upload_stream = upf.file
+                filename = upf.filename
+            elif request.vars.content is not None:
+                upload_stream = request.vars.content # stream is a bad name, but write_input_files does the write thing.
+                filename = '<content provided as a string in a "content" rather than a file upload>'
+            else:
+                raise HTTP(400, 'Expecting a "file" argument with an input file or a "content" argument with the contents of in input file')
             inp_format = request.vars.inputformat or 'nexus'
             inp_format = inp_format.lower()
             if inp_format not in input_choices:
                 raise HTTP(400, 'inputformat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
-            upf = request.vars.file
-            upload_stream = upf.file
             write_input_files(request, working_dir, [(INPUT_FILENAME, upload_stream)])
             prov_info = {
-                'filename' : upf.filename,
+                'filename' : filename,
                 'date-created': datetime.datetime.utcnow().isoformat(),
             }
             if request.vars.dataDeposit:
