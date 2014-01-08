@@ -91,8 +91,6 @@ function make_neo4j_instance {
 
         # Move new plugin code into place
         cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
-        if [ running_before = yes ]; then ./neo4j-$APP/bin/neo4j start; fi
-
 
         # Replace defaults ports with ports appropriate for this application
         #org.neo4j.server.webserver.port=7474

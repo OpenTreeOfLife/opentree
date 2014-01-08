@@ -8,9 +8,12 @@ BRANCH=master
 
 . setup/functions.sh
 
-echo "installing pinned pycurl version, inside venv"
-# specify a pinned version to avoid getting Windows pkg
-pip install pycurl==7.19.0.2
+if false; then
+    # No longer using pycurl!  Using requests instead.
+    echo "installing pinned pycurl version, inside venv"
+    # specify a pinned version to avoid getting Windows pkg
+    pip install pycurl==7.19.0.2
+fi
 
 APP=oti
 
@@ -24,13 +27,13 @@ fi
 
 rm -rf neo4j-$APP/data/graph.db
 
-# Restop neo4j!
+# Restart neo4j!
 ./neo4j-$APP/bin/neo4j start
 
 echo "Indexing $OPENTREE_DOCSTORE"
 
 # We need to pass in the doc store repo name here
 # Need to explicitly run python since ours is different from what you get from #!/usr/bin/env
-python repo/$APP/index_current_repo.py http://127.0.0.1:7478/db/data/ $OPENTREE_DOCSTORE
+time python repo/$APP/index_current_repo.py http://127.0.0.1:7478/db/data/ $OPENTREE_DOCSTORE local
 
 log "$APP database initialized from $OPENTREE_DOCSTORE and indexed"
