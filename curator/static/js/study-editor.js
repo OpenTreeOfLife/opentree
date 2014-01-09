@@ -123,10 +123,6 @@ $(document).ready(function() {
         $(this).fileupload('option', 'done')
             .call(this, $.Event('done'), {result: result});
     });
-
-    // Customize the tags-input UI
-    $('#study-tags').tagsinput( tagsOptions );
-    ///$('#tree-tags').tagsinput( tagsOptions );
 });
 
 
@@ -135,6 +131,7 @@ function goToTab( tabName ) {
     $('.nav-tabs a:contains('+ tabName +')').tab('show');
 }
 
+var studyTagsInitialized = false;
 function loadSelectedStudy(id) {
     /* Use REST API to pull study data from datastore
      * :EXAMPLE: GET http://api.opentreeoflife.org/1/study/{23}.json
@@ -594,6 +591,13 @@ function loadSelectedStudy(id) {
                 ///console.log("something changed!");
                 updateQualityDisplay();
             });
+
+            // init (or refresh) the study tags
+            if (studyTagsInitialized) {
+                $('#study-tags').tagsinput('destroy');
+            }
+            $('#study-tags').tagsinput( tagsOptions );
+            studyTagsInitialized = true;
 
             $('#ajax-busy-bar').hide();
             showInfoMessage('Study data loaded.');
@@ -3948,7 +3952,8 @@ function updateElementTags( select ) {
     console.log("BEFORE: there were "+ getTags(parentElement).length +" tags");
     removeAllTags( parentElement );
     // read and apply the values in this tags-input SELECT element
-    var values = $(select).val();
+    // N.B. multiple-value select returns null if no values selected!
+    var values = $(select).val() || [];  
     $.each(values, function(i,v) {
         addTag( parentElement, $.trim(v) );
     });

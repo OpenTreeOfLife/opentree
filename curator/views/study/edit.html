@@ -281,13 +281,14 @@ body {
                 {{ else: }}
                     <!-- TODO: make all tags clickable (search in new window?) -->
                     <div class="bootstrap-tagsinput" 
-                         style="border: none; margin-bottom: 0; padding: 4px 0;"
+                         style="border: none; margin-bottom: 0; padding: 4px 0; display: none;"
                          data-bind="visible: getTags(viewModel.nexml).length > 0">
-                    <!-- ko foreach: gettags( viewmodel.nexml ) -->
-                        <span class="tag label label-info" data-bind="text: $data">TAG</span>
+                    <!-- ko foreach: getTags( viewModel.nexml ) -->
+                        <span class="tag label label-info" data-bind="text:
+                            $data"></span>
                     <!-- /ko -->
                     </div>
-                    <p class="static-form-value"
+                    <p class="static-form-value" style="display: none;"
                        data-bind="visible: getTags(viewModel.nexml).length === 0">
                        <em>None</em>
                     </p>
