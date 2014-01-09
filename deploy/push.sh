@@ -20,6 +20,8 @@ set -e
 
 # $0 -h <hostname> -u <username> -i <identityfile> -n <hostname>
 
+declare -A OPENTREE_BRANCHES
+
 # The host must always be specified
 # OPENTREE_HOST=dev.opentreeoflife.org
 # OPENTREE_NEO4J_HOST=dev.opentreeoflife.org
@@ -44,7 +46,9 @@ while [ $# -gt 0 ]; do
     shift
     if [ "x$flag" = "x-c" ]; then
 	# Config file overrides default parameter settings
-        source "$1"; shift
+	configfile=$1
+        source "$configfile"; shift
+	cp -p $configfile setup/CONFIG    # Will get copied during 'sync'
     elif [ "$flag" = "--dry-run" ]; then
 	DRYRUN=yes
     # The following are all legacy; do not add cases to this 'while'.

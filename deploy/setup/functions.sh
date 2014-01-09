@@ -67,6 +67,9 @@ mkdir -p $REPOS_DIR
 
 # ---------- SHELL FUNCTIONS ----------
 
+declare -A OPENTREE_BRANCHES
+. setup/CONFIG
+
 # Refresh a git repo
 
 # We clone via https instead of ssh, because ssh cloning fails with
@@ -78,6 +81,15 @@ function git_refresh() {
     guser=$1    # OpenTreeOfLife
     reponame=$2
     branch=$3
+
+    if [ x$branch = x ]; then
+	branch=${OPENTREE_BRANCHES[$reponame]}
+	if [ x$branch = x ]; then
+	    branch='master'
+	fi
+    fi
+    echo "Branch $branch of repo $repo"
+
     # Directory in which all local checkouts of git repos reside
     repo_dir=$REPOS_DIR/$reponame
     # Exit 0 (true) means has changed
@@ -86,6 +98,7 @@ function git_refresh() {
         (cd $REPOS_DIR; \
          git clone https://github.com/$guser/$reponame.git)
 	log Clone: $reponame `cd $repo_dir; git log | head -1`
+	git checkout $branch
     else
         before=`cd $repo_dir; git log | head -1`
         # What if branch doesn't exist locally, or doesn't track origin branch?
