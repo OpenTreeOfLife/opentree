@@ -6,7 +6,6 @@ OPENTREE_HOST=$1
 OPENTREE_PUBLIC_DOMAIN=$2
 NEO4JHOST=$3
 CONTROLLER=$4
-BRANCH=master
 
 . setup/functions.sh
 
@@ -60,7 +59,7 @@ APPROOT=repo/$WEBAPP
 # files inside of it below
 
 echo "...fetching $WEBAPP repo..."
-git_refresh OpenTreeOfLife $WEBAPP $BRANCH || true
+git_refresh OpenTreeOfLife $WEBAPP || true
 
 # Modify the requirements list
 cp -p $APPROOT/requirements.txt $APPROOT/requirements.txt.save

@@ -4,7 +4,6 @@
 
 CONTROLLER=$1
 WHICH_APP=$2
-BRANCH=master
 
 # tbd: maybe allow a different branch for each repo
 
@@ -28,15 +27,15 @@ fi
 # ---------- NEO4J WITH TREEMACHINE / TAXOMACHINE PLUGINS ----------
 # Set up neo4j services
 
-if git_refresh FePhyFoFum jade master || [ ! -d ~/.m2/repository/org/opentree/jade ]; then
+if git_refresh FePhyFoFum jade || [ ! -d ~/.m2/repository/org/opentree/jade ]; then
     (cd repo/jade; sh mvn_install.sh)
 fi
 
-if git_refresh OpenTreeOfLife ot-base master || [ ! -d ~/.m2/repository/org/opentree/ot-base ]; then
+if git_refresh OpenTreeOfLife ot-base || [ ! -d ~/.m2/repository/org/opentree/ot-base ]; then
     (cd repo/ot-base; sh mvn_install.sh)
 fi
 
-if git_refresh OpenTreeOfLife taxomachine master || [ ! -d ~/.m2/repository/org/opentree/taxomachine ]; then
+if git_refresh OpenTreeOfLife taxomachine || [ ! -d ~/.m2/repository/org/opentree/taxomachine ]; then
     (cd repo/taxomachine; sh mvn_install.sh)
 fi
 
@@ -59,7 +58,7 @@ function make_neo4j_instance {
     fi
 
     # Get plugin from git repository
-    if git_refresh OpenTreeOfLife $APP $BRANCH || [ ! -r neo4j-$APP/plugins/$jar ]; then
+    if git_refresh OpenTreeOfLife $APP || [ ! -r neo4j-$APP/plugins/$jar ]; then
     
         echo "attempting to recompile "$APP" plugins"
         # Create and install the plugins .jar file

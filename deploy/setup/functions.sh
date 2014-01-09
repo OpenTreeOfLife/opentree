@@ -68,6 +68,12 @@ mkdir -p $REPOS_DIR
 # ---------- SHELL FUNCTIONS ----------
 
 declare -A OPENTREE_BRANCHES
+
+function opentree_branch {
+    OPENTREE_BRANCHES[$1]=$2
+    echo Set branch for $1 to be ${OPENTREE_BRANCHES[$1]}
+}
+
 . setup/CONFIG
 
 # Refresh a git repo
@@ -75,7 +81,9 @@ declare -A OPENTREE_BRANCHES
 # We clone via https instead of ssh, because ssh cloning fails with
 # "Permission denied (publickey)".  This means we won't be able to
 # push changes very easily, which is OK because we don't expect to be
-# making any...
+# making any changes that need to be kept.
+
+# Returns true is any change was made.
 
 function git_refresh() {
     guser=$1    # OpenTreeOfLife
@@ -88,7 +96,7 @@ function git_refresh() {
 	    branch='master'
 	fi
     fi
-    echo "Branch $branch of repo $repo"
+    echo "Using branch $branch of repo $reponame"
 
     # Directory in which all local checkouts of git repos reside
     repo_dir=$REPOS_DIR/$reponame
@@ -96,9 +104,8 @@ function git_refresh() {
     changed=0
     if [ ! -d $repo_dir ] ; then
         (cd $REPOS_DIR; \
-         git clone https://github.com/$guser/$reponame.git)
+         git clone --branch $branch https://github.com/$guser/$reponame.git)
 	log Clone: $reponame `cd $repo_dir; git log | head -1`
-	git checkout $branch
     else
         before=`cd $repo_dir; git log | head -1`
         # What if branch doesn't exist locally, or doesn't track origin branch?

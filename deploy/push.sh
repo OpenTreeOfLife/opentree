@@ -20,14 +20,22 @@ set -e
 
 # $0 -h <hostname> -u <username> -i <identityfile> -n <hostname>
 
-declare -A OPENTREE_BRANCHES
+function opentree_branch {
+    # Ignore on this end, in case the currently executing bash doesn't
+    # have associative arrays.  See functions.sh for the 'real' definition.
+    true
+}
+
+# declare -A OPENTREE_BRANCHES  - doesn't work in bash 3.2.48
+#  but associative arrays seem to work without the declaration in
+#  3.2.48 and in 4.2.37, contrary to documentation on web
 
 # The host must always be specified
 # OPENTREE_HOST=dev.opentreeoflife.org
 # OPENTREE_NEO4J_HOST=dev.opentreeoflife.org
 OPENTREE_ADMIN=admin
 OPENTREE_IDENTITY=opentree.pem
-OPENTREE_DOCSTORE=treenexus
+OPENTREE_DOCSTORE=phylesystem
 OPENTREE_GH_IDENTITY=opentree-gh.pem
 OPENTREE_COMPONENTS=most
 DRYRUN=no
@@ -48,7 +56,7 @@ while [ $# -gt 0 ]; do
 	# Config file overrides default parameter settings
 	configfile=$1
         source "$configfile"; shift
-	cp -p $configfile setup/CONFIG    # Will get copied during 'sync'
+	cp -pf $configfile setup/CONFIG    # Will get copied during 'sync'
     elif [ "$flag" = "--dry-run" ]; then
 	DRYRUN=yes
     # The following are all legacy; do not add cases to this 'while'.
