@@ -18,7 +18,7 @@ fi
 APP=oti
 
 # setup oti database
-echo "attempting to index the current commit on treenexus master branch"
+echo "attempting to index the current commit on phylesystem master branch"
 
 # Stop neo4j!
 if ./neo4j-$APP/bin/neo4j status; then

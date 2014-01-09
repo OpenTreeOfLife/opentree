@@ -25,7 +25,7 @@ set -e
 # OPENTREE_NEO4J_HOST=dev.opentreeoflife.org
 OPENTREE_ADMIN=admin
 OPENTREE_IDENTITY=opentree.pem
-OPENTREE_DOCSTORE=treenexus
+OPENTREE_DOCSTORE=phylesystem
 OPENTREE_GH_IDENTITY=opentree-gh.pem
 OPENTREE_COMPONENTS=most
 DRYRUN=no
