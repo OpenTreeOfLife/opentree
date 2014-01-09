@@ -31,6 +31,18 @@ var studyMappingOptions = {  // modify default mapping options
     //copy: ['@property','@xsi:type']  // FAILS, see comment above
 }
 
+var tagsOptions = {
+    confirmKeys: [13, 9],  // ENTER, TAB for next tag
+    typeahead: {                  
+        source: ['eenie', 'meanie', 'minie', 'moe']
+        /*
+        source: function(query) {
+            return $.get('/oti/existing_tags');  // TODO
+        }
+        */
+    }
+};
+
 $(document).ready(function() {
     // auto-select first tab (Status)
     $('.nav-tabs a:first').tab('show');
@@ -112,6 +124,9 @@ $(document).ready(function() {
             .call(this, $.Event('done'), {result: result});
     });
 
+    // Customize the tags-input UI
+    $('#study-tags').tagsinput( tagsOptions );
+    ///$('#tree-tags').tagsinput( tagsOptions );
 });
 
 
@@ -1267,26 +1282,6 @@ function getBranchLengthDescriptionForTree( tree ) {
     return descAccessor();
 }
 
-function getTagDescriptionForTree( tree ) {
-    var tagsAccessor = getMetaTagAccessorByAtProperty(tree.meta, 'ot:tag');
-    if (typeof(tagsAccessor) !== 'function') {
-        return '<em'+'>None</em'+'>';
-    }
-    var tags = tagsAccessor();
-    if ($.trim(tags) === '') {
-        return '<em'+'>None</em'+'>';
-    }
-    var arr = tags.split(',');
-    var tagsHTML = '';
-    $.each(arr, function(i, item) {
-        if (i > 0) {
-            tagsHTML += ', ';
-        }
-        tagsHTML += '<a href="#"'+'>'+ $.trim(item) +'</a'+'>';
-    });
-    return tagsHTML;
-}
-
 function getInGroupCladeDescriptionForTree( tree ) {
     // return display-ready description ('Rooted', 'Unrooted', 'Multiply rooted') based on count
     if (!tree || !tree.meta || makeArray(tree.meta).length === 0) {
@@ -1827,11 +1822,12 @@ ko.dirtyFlag = function(root, isInitiallyDirty) {
     return result;
 };
 
+var treeTagsInitialized = false;
 function showTreeViewer( tree ) {
     if (viewOrEdit == 'EDIT') {
-        // TODO
-    } else {
-        // TODO
+        if (treeTagsInitialized) {
+            $('#tree-tags').tagsinput('destroy');
+        }
     }
     // quick test of modal
     $('#tree-viewer .modal-body').css({
@@ -1850,6 +1846,16 @@ function showTreeViewer( tree ) {
     ko.cleanNode(boundElement);
     ko.applyBindings(tree, boundElement);
     $('#tree-viewer').modal('show');
+
+    if (viewOrEdit == 'EDIT') {
+        /*
+        if (treeTagsInitialized) {
+            $('#tree-tags').tagsinput('destroy');
+        }
+        */
+        $('#tree-tags').tagsinput( tagsOptions );
+        treeTagsInitialized = true;
+    }
 
     updateEdgesInTree( tree );
     drawTree( tree );
@@ -3599,7 +3605,7 @@ function getMessagesForAnnotationEvent( annotationEvent, nexml ) {
     var matchingMessages = ko.utils.arrayFilter( 
         allMessages, 
         function(msg) {
-            console.dir(msg);
+            ///console.dir(msg);
             return ko.unwrap( msg['@wasGeneratedById'] ) === eventID;
         }
     );
@@ -3886,4 +3892,65 @@ function getAllAnnotationMessagesInStudy(nexml) {
         });
     });
     return allMessages;
+}
+
+
+/* 
+ * Manage free-form tags for a specified study or tree. This is somewhat
+ * complicated by the fact that these are stored as a set of zero or more
+ * metatags, with no duplicate values for the parent element.
+ */
+
+function getTags( parentElement ) {
+    var tags = [];
+    var tagAccessors = getMetaTagAccessorByAtProperty(parentElement.meta, 'ot:tag', { 'FIND_ALL': true });
+    $.each(tagAccessors, function(i, tagGetter) {
+        var tagText = $.trim(tagGetter());
+        switch(tagText) {  // non-empty points to a candidate tree
+            case '':
+                break;
+            default:
+                tags.push( tagText );
+        }
+    });
+    return tags;
+}
+function addTag( parentElement, newTagText ) {
+    addMetaTagToParent(parentElement, {
+        "$": newTagText,
+        "@property": "ot:tag",
+        "@xsi:type": "nex:LiteralMeta"
+    });
+}
+function removeTag( parentElement, oldTagText ) {
+    var tagElements = getNexsonChildByProperty(parentElement.meta, '@property', 'ot:tag', { 'FIND_ALL': true });
+    $.each(tagElements, function(i, tag) {
+        var tagText = $.trim(tag.$());
+        if (tagText === oldTagText) {
+            parentElement.meta.remove(tag);
+        }
+    });
+}
+function removeAllTags( parentElement ) {
+    var tagElements = getNexsonChildByProperty(parentElement.meta, '@property', 'ot:tag', { 'FIND_ALL': true });
+    $.each(tagElements, function(i, tag) {
+        parentElement.meta.remove(tag);
+    });
+}
+function updateElementTags( select ) {
+    var parentElement;
+    if ($(select).attr('id') === 'study-tags') {
+        parentElement = viewModel.nexml;
+    } else {
+        var treeID = $(select).attr('treeid');
+        parentElement = getTreeByID(treeID);
+    }
+    console.log("BEFORE: there were "+ getTags(parentElement).length +" tags");
+    removeAllTags( parentElement );
+    // read and apply the values in this tags-input SELECT element
+    var values = $(select).val();
+    $.each(values, function(i,v) {
+        addTag( parentElement, $.trim(v) );
+    });
+    console.log("AFTER: there are "+ getTags(parentElement).length +" tags");
 }
