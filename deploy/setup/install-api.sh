@@ -46,11 +46,11 @@ fi
 
 echo "...fetching $OPENTREE_DOCSTORE repo..."
 
-treenexus=repo/$OPENTREE_DOCSTORE
+phylesystem=repo/$OPENTREE_DOCSTORE
 git_refresh OpenTreeOfLife $OPENTREE_DOCSTORE $BRANCH || true
 
 pushd .
-    cd $treenexus
+    cd $phylesystem
     # All the repos above are cloned via https, but we need to push via
     # ssh to use our deploy keys
     if ! grep "originssh" .git/config ; then
