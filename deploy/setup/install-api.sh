@@ -5,7 +5,6 @@
 OPENTREE_HOST=$1
 OPENTREE_DOCSTORE=$2
 CONTROLLER=$3
-BRANCH=master
 
 . setup/functions.sh
 
@@ -28,7 +27,7 @@ git config --global user.name "OpenTree API"
 git config --global user.email api@opentreeoflife.org
 
 echo "...fetching $WEBAPP repo..."
-git_refresh OpenTreeOfLife $WEBAPP $BRANCH || true
+git_refresh OpenTreeOfLife $WEBAPP || true
 
 # Modify the requirements list
 cp -p $APPROOT/requirements.txt $APPROOT/requirements.txt.save

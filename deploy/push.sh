@@ -20,6 +20,16 @@ set -e
 
 # $0 -h <hostname> -u <username> -i <identityfile> -n <hostname>
 
+function opentree_branch {
+    # Ignore on this end, in case the currently executing bash doesn't
+    # have associative arrays.  See functions.sh for the 'real' definition.
+    true
+}
+
+# declare -A OPENTREE_BRANCHES  - doesn't work in bash 3.2.48
+#  but associative arrays seem to work without the declaration in
+#  3.2.48 and in 4.2.37, contrary to documentation on web
+
 # The host must always be specified
 # OPENTREE_HOST=dev.opentreeoflife.org
 # OPENTREE_NEO4J_HOST=dev.opentreeoflife.org
@@ -44,7 +54,9 @@ while [ $# -gt 0 ]; do
     shift
     if [ "x$flag" = "x-c" ]; then
 	# Config file overrides default parameter settings
-        source "$1"; shift
+	configfile=$1
+        source "$configfile"; shift
+	cp -pf $configfile setup/CONFIG    # Will get copied during 'sync'
     elif [ "$flag" = "--dry-run" ]; then
 	DRYRUN=yes
     # The following are all legacy; do not add cases to this 'while'.

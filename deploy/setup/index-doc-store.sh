@@ -4,7 +4,6 @@
 
 OPENTREE_DOCSTORE=$1
 CONTROLLER=$2
-BRANCH=master
 
 . setup/functions.sh
 
