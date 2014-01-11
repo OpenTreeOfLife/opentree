@@ -134,6 +134,9 @@ def to_nexml():
         raise HTTP(400, 'uploadid must be series of letters, numbers, dots or dashes between 5 and 85 characters long. "{u}" does not match this pattern'.format(u=unique_id))
     output = request.vars.output or 'ot:nexson'
     output = output.lower()
+    if output == 'ot%3anexson':
+        # handle unwanted encoding (happens if file submitted)
+        output = 'ot:nexson'
     output_choices = ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
     if output not in output_choices:
         raise HTTP(400, 'The "output" should be one of: "{c}"'.format(c='", "'.join(output_choices)))
