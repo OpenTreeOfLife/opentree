@@ -917,7 +917,7 @@ function showObjectProperties( objInfo, options ) {
                                 break;
 
                             case 'IF':
-                                displayVal = '<a href="http://www.indexfungorum.org/names/NamesRecord.asp?RecordID='+ sourceInfo.taxSourceId +'/" '
+                                displayVal = '<a href="http://www.indexfungorum.org/names/NamesRecord.asp?RecordID='+ sourceInfo.taxSourceId +'" '
                                               + 'title="Index Fungorum" target="_blank">Index Fungorum: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
