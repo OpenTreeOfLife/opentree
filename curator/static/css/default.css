@@ -338,6 +338,14 @@ a.full-ref-toggle {
     color: #999 !important;
     text-decoration: none;
 }
+a.full-ref-toggle:hover {
+    color: #333 !important;
+    text-decoration: underline;
+}
+.full-study-ref, 
+.compact-study-ref {
+    /* font-weight: bold; */
+}
 .full-ref {
     background-color: #fff;
     border: 1px solid #eee;

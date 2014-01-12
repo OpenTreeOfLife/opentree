@@ -35,6 +35,7 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
     var API_load_study_list_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
 </script>
 
+<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script src="{{=URL('static','js/curation-dashboard.js')}}"></script>
 
 <div class="row">
@@ -57,7 +58,8 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
       <div class="navbar">
        <div class="navbar-inner">
         <form class="navbar-search pull-left">
-            <input type="text" class="search-query" placeholder="Filter by author, title, journal"
+            <input type="text" class="search-query" style="widtH: 320px;"
+                   placeholder="Filter by author, title, journal, year, DOI, tag, curator&hellip;"
                    data-bind="value: viewModel.listFilters.STUDIES.match, valueUpdate: 'afterkeydown'">
         </form>
         <ul class="nav" style="padding-left: 1em;">
@@ -91,26 +93,52 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
         <table class="table table-condensed">
           <thead>
             <tr>
-                <th>First Author</th>
               {{ if viewOrEdit == 'EDIT': }}
-                <th>Study Title (click to edit study)</th>
+                <th>Reference (click to edit study)</th>
               {{ else: }}
-                <th>Study Title (click to view study)</th>
+                <th>Reference (click to view study)</th>
               {{ pass }}
+                <th>Focal clade</th>
+                <th>Curator</th>
+                <th>Completeness</th>
+                <!--
                 <th>Year</th>
                 <th>Journal</th>
-                <th>Completeness</th>
                 <th>Actions</th>
+                -->
             </tr>
           </thead>
           <tbody data-bind="foreach: { data: viewModel.filteredStudies().pagedItems(), as: 'study' }">
             <tr>
-                <td data-bind="html: getFirstAuthorLink(study)">?</td>
-                <td data-bind="html: getViewOrEditLink(study)">?</td>
+                <td data-bind="html: getViewOrEditLinks(study)">?</td>
+                <td data-bind="html: getFocalCladeLink(study)">?</td>
+                <td data-bind="html: getCuratorLink(study)">?</td>
+                <td data-bind="text: study.completeness">?</td>
+                <!--
                 <td data-bind="text: study.pubYear">?</td>
                 <td data-bind="html: getJournalLink(study)">?</td>
-                <td data-bind="text: study.completeness">?</td>
                 <td data-bind="html: getSuggestedActions(study)">?</td>
+                -->
+            </tr>
+            <tr>
+                <td colspan="4" style="border-top: none;">
+                    <!--<label class="pull-left">Tags:&nbsp;</label>-->
+                    <!-- TODO: make all tags clickable (search in new window?) -->
+                    <div class="bootstrap-tagsinput" 
+                         style="display: inline-block; border: none; margin-bottom: 0; padding: 0 0 4px 0;"
+                         data-bind="visible: study.tags().length > 0">
+                    <!-- ko foreach: study.tags() -->
+                        <a class="tag label label-info" href="#" data-bind="text: $data"
+                           onclick="filterByTag($(this).text()); return false;">TAG</a>
+                    <!-- /ko -->
+                    </div>
+                    <strong data-bind="visible: study.tags().length === 0">
+                       <em>No tags</em>
+                    </strong>
+
+                    <div class="pull-right" style="font-size: 85%" data-bind="html: getPubLink(study)">&nbsp;</div>
+                    <!--<label class="pull-right">Publication:&nbsp;</label>-->
+                </td>
             </tr>
           </tbody>
         </table>

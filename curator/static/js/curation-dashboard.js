@@ -24,36 +24,60 @@ function loadStudyList() {
       'studies': [
         {
             'id': 10,
+            /*
             'firstAuthorName': "Jansen, Robert K.",
             'firstAuthorLink': "#",
             'title': "Analysis of 81 genes from 64 plastid genomes resolves relationships in angiosperms and identifies genome-scale evolutionary patterns",
-            'pubYear': "2007",
             'pubJournalName': "Proceedings of the National Academy of Sciences",
             'pubJournalLink': "#",
+            */
+            'publicationReference': "Jansen, Robert K., Zhengqiu Cai, Linda A. Raubeson, Henry Daniell, Claude W. dePamphilis, James Leebens-Mack, Kai F. Müller, et al. 2007. Analysis of 81 genes from 64 plastid genomes resolves relationships in angiosperms and identifies genome-scale evolutionary patterns. Proceedings of the National Academy of Sciences 104, no. 49 (December 4): 19369 -19374. doi:10.1073/pnas.0709121104.",
+            'pubYear': "2007",
+            'pubURL': "http://dx.doi.org/10.1073/pnas.0709121104",
+            'tags': ["plastic", "angiosperms", "genes"],
+            //'curatorID': "jimallman",
+            'curatorName': "jarnold",
+            'cladeName': "Magnoliophyta",
             'completeness': "12%",
             'workflowState': "Draft study",
             'nextActions': ["upload data"]
         },
         {
             'id': 9,
+            /*
             'firstAuthorName': "Tank, David C.",
             'firstAuthorLink': "#",
             'title': "Phylogeny and Phylogenetic Nomenclature of the Campanulidae based on an Expanded Sample of Genes and Taxa",
-            'pubYear': "2010",
             'pubJournalName': "Systematic Botany",
             'pubJournalLink': "#",
+            */
+            'publicationReference': "Tank, David C., and Michael J. Donoghue. 2010. Phylogeny and Phylogenetic Nomenclature of the Campanulidae based on an Expanded Sample of Genes and Taxa. Systematic Botany 35, no. 2 (6): 425-441. doi:10.1600/036364410791638306.",
+            'pubYear': "2010",
+            'pubURL': "http://dx.doi.org/10.1600/036364410791638306",
+            'tags': ["genes", "botany", "Campanulidae"],
+            //'curatorID': "dctank",
+            'curatorName': "Dave Tank",
+            'cladeName': "Campanulidae",
             'completeness': "85%",
             'workflowState': "Draft study",
             'nextActions': ["upload data"]
         },
         {
-            'id': 1001,
+            'id': 11,
+            /*
             'firstAuthorName': "KHAN, S. A.",
             'firstAuthorLink': "#",
             'title': "Phylogeny and biogeography of the African genus Virectaria Bremek",
-            'pubYear': "2008",
             'pubJournalName': "Plant Systematics and Evolution",
             'pubJournalLink': "#",
+            */
+            'publicationReference': "Magallon, Susana, and Amanda Castillo. 2009. Angiosperm diversification through time. Am. J. Bot. 96, no. 1 (January 1): 349-365. doi:10.3732/ajb.0800060.",
+            'pubYear': "2008",
+            'pubURL': "http://dx.doi.org/10.3732/ajb.0800060",
+            'tags': ["eenie", "meanie", "minie", "Angiosperm"],
+            //'curatorID': "jarnold",
+            'curatorName': "jarnold",
+            'cladeName': "Magnoliophyta",
             'completeness': "55%",
             'workflowState': "Included in synthetic tree",
             'nextActions': ["upload data"]
@@ -90,14 +114,16 @@ function loadStudyList() {
         var filteredList = ko.utils.arrayFilter( 
             viewModel.studies(), 
             function(study) {
-                // match entered text against author, title, journal name
-                var authorName = study.firstAuthorName();
-                var studyTitle = study.title();
-                var journalName = study.pubJournalName();
-                if (!matchPattern.test(authorName) && !matchPattern.test(studyTitle) && !matchPattern.test(journalName)) {
+                // match entered text against pub reference (author, title, journal name, DOI)
+                var pubReference = study.publicationReference();
+                var pubURL = study.pubURL();
+                var pubYear = study.pubYear();
+                var tags = study.tags().join('|');
+                var curator = study.curatorName();
+                var clade = study.cladeName();
+                if (!matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
                     return false;
                 }
-
                 // check for filtered workflow state
                 switch (workflow) {
                     case 'Any workflow state':
@@ -179,22 +205,40 @@ function loadStudyList() {
     ko.applyBindings(viewModel);
 }
 
-function getFirstAuthorLink(study) {
-    return '<a href="'+ study.firstAuthorLink() +'"'+'>'+ study.firstAuthorName() +'</a'+'>';
-}
-function getViewOrEditLink(study) {
-    if (viewOrEdit === 'EDIT') {
-        return '<a href="/curator/study/edit/'+ study.id() +'">'+ (study.title() || 'Untitled') +'</a>';
+function getViewOrEditLinks(study) {
+    var html = "";
+
+    var viewOrEditURL = (viewOrEdit === 'EDIT') ?
+        '/curator/study/edit/'+ study.id() : 
+        '/curator/study/view/'+ study.id();
+
+    var fullRef = study.publicationReference();
+    if (fullRef) {
+        // toggle between compact (default) and full publication reference
+        html += '<a class="compact-study-ref" href="'+ viewOrEditURL +'">'+ fullToCompactReference(study.publicationReference()) +'</a>';
+        html += '<a class="full-study-ref" href="'+ viewOrEditURL +'" style="display: none;">'+ study.publicationReference() +'</a>';
+        html += '&nbsp; <a class="full-ref-toggle" href="#" onclick="toggleStudyReference(this); return false;">[full reference]</a>';
     } else {
-        return '<a href="/curator/study/view/'+ study.id() +'">'+ (study.title() || 'Untitled') +'</a>';
+        // nothing to toggle
+        html += '<a href="'+ viewOrEditURL +'">(Untitled study)</a>';
     }
+
+    return html;
 }
-function getJournalLink(study) {
-    return '<a href="'+ study.pubJournalLink() +'"'+'>'+ study.pubJournalName() +'</a'+'>';
+function getCuratorLink(study) {
+    return '<a href="#" onclick="filterByCurator(\''+ study.curatorName() +'\'); return false;"'+'>'+ study.curatorName() +'</a'+'>';
 }
+function getFocalCladeLink(study) {
+    return '<a href="#" onclick="filterByClade(\''+ study.cladeName() +'\'); return false;"'+'>'+ study.cladeName() +'</a'+'>';
+}
+function getPubLink(study) {
+    return '<a href="'+ study.pubURL() +'" target="_blank"'+'>'+ study.pubURL() +'</a'+'>';
+}
+/*
 function getSuggestedActions(study) {
     return '<a href="#"'+'>'+ study.nextActions()[0] +'</a'+'>';
 }
+*/
 
 function getPageNumbers( pagedArray ) {
     // Generates an array of display numbers (1-based) for use with Knockout's
@@ -205,4 +249,39 @@ function getPageNumbers( pagedArray ) {
         pageNumbers.push( i );
     }
     return pageNumbers;
+}
+
+function toggleStudyReference( clicked ) {
+    var $toggle = $(clicked);
+    var $compactRef = $toggle.prevAll('.compact-study-ref');
+    var $fullRef = $toggle.prevAll('.full-study-ref');
+    if ($compactRef.is(':visible')) {
+        $compactRef.hide();
+        $fullRef.show();
+        $toggle.text('[compact]');
+    } else {
+        $compactRef.show();
+        $fullRef.hide();
+        $toggle.text('[full reference]');
+    }
+}
+
+function filterByCurator( curatorID ) {
+    /* add their userid to the filter field
+    var oldFilterText = viewModel.listFilters.STUDIES.match();
+    if (oldFilterText.indexOf( curatorID ) === -1) {
+        var newFilterText = oldFilterText +' '+ curatorID;
+        viewModel.listFilters.STUDIES.match( newFilterText );
+    }
+    */
+    // replace the filter text with this curator's userid
+    viewModel.listFilters.STUDIES.match( curatorID );
+}
+function filterByClade( cladeName ) {
+    // replace the filter text with this clade name
+    viewModel.listFilters.STUDIES.match( cladeName );
+}
+function filterByTag( tag ) {
+    // replace the filter text with this clade name
+    viewModel.listFilters.STUDIES.match( tag );
 }
