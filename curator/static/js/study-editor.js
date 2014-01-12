@@ -564,14 +564,7 @@ function loadSelectedStudy(id) {
             ko.applyBindings(viewModel, mainPageArea);
 
             var studyFullReference = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:studyPublicationReference')();
-            var studyCompactReference = "(Untitled)";
-            if ($.trim(studyFullReference) !== "") {
-                // capture the first valid year in the reference
-                var compactYear = studyFullReference.match(/(\d{4})/)[0];  
-                // split on the year to get authors (before), and capture the first surname
-                var compactPrimaryAuthor = studyFullReference.split(compactYear)[0].split(',')[0];
-                var studyCompactReference = compactPrimaryAuthor +", "+ compactYear;    // eg, "Smith, 1999";
-            }
+            var studyCompactReference = fullToCompactReference(studyFullReference);
             $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
 
             var studyDOI = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:studyPublication')();
