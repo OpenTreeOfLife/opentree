@@ -216,7 +216,7 @@ function push_db {
     # E.g. ./push.sh push-db localnewdb.db.tgz taxomachine
     TARBALL=$1
     APP=$2
-    rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":downloads/$APP.db.tgz
+    time rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":downloads/$APP.db.tgz
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh "$OPENTREE_HOST" $APP $CONTROLLER
 }
 
