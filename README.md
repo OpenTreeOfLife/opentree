@@ -3,6 +3,9 @@ opentree
 
 Umbrella repo for opentree web site and services. Includes code for constructing the synthetic taxonomy.
 
+[![Visit our IRC channel](https://kiwiirc.com/buttons/irc.freenode.net/opentreeoflife.png)](https://kiwiirc.com/client/irc.freenode.net/?nick=guest|?#opentreeoflife)
+
+
 Installation
 ============
 Instructions coming soon. In the meantime, see the phylografter instructions for
