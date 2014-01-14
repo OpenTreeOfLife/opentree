@@ -22,7 +22,7 @@ prev=neo4j-$APP/data/graph.db.previous
 rm -rf $prev
 
 rm -rf $next
-mkdir $next
+mkdir -p $next
 tar --directory=$next -xzf downloads/$APP.db.tgz
 
 neo4j-$APP/bin/neo4j stop || true

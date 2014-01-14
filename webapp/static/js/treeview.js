@@ -907,12 +907,17 @@ function showObjectProperties( objInfo, options ) {
                                 break;
 
                             case 'GBIF':
-                                displayVal = '<a href="http://data.gbif.org/species/'+ sourceInfo.taxSourceId +'/" '
+                                displayVal = '<a href="http://www.gbif.org/species/'+ sourceInfo.taxSourceId +'/" '
                                               + 'title="GBIF Backbone Taxonomy" target="_blank">GBIF: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
+                            case 'SILVA':
+                                displayVal = '<a href="http://www.arb-silva.de/browser/ssu/silva/'+ sourceInfo.taxSourceId +'" '
+                                              + 'title="SILVA Taxonomy" target="_blank">SILVA: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
+
                             case 'IF':
-                                displayVal = '<a href="http://www.indexfungorum.org/names/NamesRecord.asp?RecordID='+ sourceInfo.taxSourceId +'/" '
+                                displayVal = '<a href="http://www.indexfungorum.org/names/NamesRecord.asp?RecordID='+ sourceInfo.taxSourceId +'" '
                                               + 'title="Index Fungorum" target="_blank">Index Fungorum: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
