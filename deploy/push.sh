@@ -78,6 +78,7 @@ while [ $# -gt 0 ]; do
 done
 
 [ "x$OPENTREE_HOST" != x ] || (echo "OPENTREE_HOST not specified"; exit 1)
+[ "x$OPENTREE_IDENTITY" != x ] || (echo "OPENTREE_IDENTITY not specified"; exit 1)
 [ -r $OPENTREE_IDENTITY ] || (echo "$OPENTREE_IDENTITY not found"; exit 1)
 [ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J=$OPENTREE_HOST
 [ "x$OPENTREE_PUBLIC_DOMAIN" != x ] || OPENTREE_PUBLIC_DOMAIN=$OPENTREE_HOST
@@ -198,6 +199,8 @@ function push_opentree {
 }
 
 function push_api {
+    [ "x$OPENTREE_GH_IDENTITY" != "x" ] || (echo "OPENTREE_GH_IDENTITY not specified"; exit 1)
+    [ -r $OPENTREE_GH_IDENTITY ] || (echo "$OPENTREE_GH_IDENTITY not found"; exit 1)
     echo "doc store is $OPENTREE_DOCSTORE"
     if [ $DRYRUN = "yes" ]; then echo "[api]"; return; fi
     rsync -pr -e "${SSH}" $OPENTREE_GH_IDENTITY "$OT_USER@$OPENTREE_HOST":.ssh/opentree
