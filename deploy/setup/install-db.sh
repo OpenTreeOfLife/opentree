@@ -23,6 +23,8 @@ rm -rf $prev
 
 rm -rf $next
 mkdir -p $next
+echo "Extracting database from downloads/$APP.db.tgz"
+# Can take a while
 tar --directory=$next -xzf downloads/$APP.db.tgz
 
 neo4j-$APP/bin/neo4j stop || true
