@@ -119,7 +119,7 @@ def fetch_current_synthetic_tree_ids():
         method_dict = get_opentree_services_method_urls(request)
         fetch_url = method_dict['getDraftTreeID_url']
 
-        fetch_args = {}
+        fetch_args = {'startingTaxonName': ""}
 
         # this needs to be a POST (pass fetch_args or ''); if GET, it just describes the API
         ids_response = fetch(fetch_url, data=fetch_args)
