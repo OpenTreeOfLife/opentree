@@ -129,9 +129,9 @@ def fetch_current_synthetic_tree_ids():
         # Try to be compatible with different versions of treemachine
         startNodeID = None
         if 'startingNodeID' in ids_json:
-            startNodeID = ids_json.get['startingNodeID'].encode('utf-8')
+            startNodeID = ids_json['startingNodeID'].encode('utf-8')
         elif 'startNodeID' in ids_json:
-            startNodeID = ids_json.get['startNodeID'].encode('utf-8')
+            startNodeID = ids_json['startNodeID'].encode('utf-8')
         return (draftTreeName, startNodeID)
 
     except Exception, e:
