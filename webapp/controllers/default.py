@@ -136,7 +136,7 @@ def fetch_current_synthetic_tree_ids():
 
     except Exception, e:
         # throw 403 or 500 or just leave it
-        return ('ERROR', e.message, 'NO_STARTING_NODE_ID')
+        return ('ERROR', e.message)
 
 def fetch_current_TNRS_context_names():
     try:
