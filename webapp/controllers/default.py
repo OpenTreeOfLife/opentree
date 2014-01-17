@@ -57,7 +57,7 @@ def index():
 
     # retrieve latest synthetic-tree ID (and its 'life' node ID)
     # TODO: Only refresh this periodically? Or only when needed for initial destination?
-    treeview_dict['draftTreeName'], treeview_dict['lifeNodeID'], treeview_dict['startingNodeID'] = fetch_current_synthetic_tree_ids()
+    treeview_dict['draftTreeName'], treeview_dict['startingNodeID'] = fetch_current_synthetic_tree_ids()
     treeview_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names()
 
     return treeview_dict
@@ -126,10 +126,13 @@ def fetch_current_synthetic_tree_ids():
 
         ids_json = simplejson.loads( ids_response )
         draftTreeName = ids_json['draftTreeName'].encode('utf-8')
-        lifeNodeID = ids_json['lifeNodeID'].encode('utf-8')
-        # IF we get a separate starting node ID, use it; else we'll start at 'life'
-        startingNodeID = ids_json.get('startingNodeID', lifeNodeID).encode('utf-8')
-        return (draftTreeName, lifeNodeID, startingNodeID)
+        # Try to be compatible with different versions of treemachine
+        startNodeID = None
+        if 'startingNodeID' in ids_json:
+            startNodeID = ids_json.get['startingNodeID'].encode('utf-8')
+        elif 'startNodeID' in ids_json:
+            startNodeID = ids_json.get['startNodeID'].encode('utf-8')
+        return (draftTreeName, startNodeID)
 
     except Exception, e:
         # throw 403 or 500 or just leave it
