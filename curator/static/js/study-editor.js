@@ -631,7 +631,6 @@ function updateQualityDisplay () {
     var cName, criterionScoreInfo, cPercentScore, criterionRules, rule, ruleScoreInfo;
     var nthPanel = 0, $cPanel, $cProgressBar, $cSuggestionsList, $cTabTally, $cTabSuggestionList, suggestionCount;
     for (cName in scoreInfo.scoredCriteria) {
-        console.log('cName: '+ cName);
         if (addingCriteriaPanels) {
             // generate criteria detail areas (once only!)
             $detailsPanel.append(
@@ -858,6 +857,15 @@ function saveFormDataToStudyJSON() {
 
     //// push changes back to storage
     var saveURL = API_update_study_PUT_url.replace('{STUDY_ID}', studyID);
+    // add non-Nexson values to the query string
+    var qsVars = $.param({
+        author_name: authorName,
+        author_email: authorEmail,
+        auth_token: authToken
+    });
+    console.log("BEFORE: "+ saveURL);
+    saveURL += ('?'+ qsVars);
+    console.log("AFTER: "+ saveURL);
 
     // strip any extraneous JS properties from study Nexson
     $.each( viewModel.nexml.trees.tree, function(i, tree) {
@@ -865,7 +873,7 @@ function saveFormDataToStudyJSON() {
     });
     
     $.ajax({
-        type: 'PUT',  // TODO: use POST for updates?
+        type: 'PUT',
         dataType: 'json',
         // crossdomain: true,
         contentType: "application/json; charset=utf-8",
