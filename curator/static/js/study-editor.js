@@ -376,6 +376,31 @@ function loadSelectedStudy(id) {
                 var scope = viewModel.listFilters.OTUS.scope();
                 var order = viewModel.listFilters.OTUS.order();
 
+                console.log("  filtering "+ viewModel.nexml.otus.otu.length +" otus...");
+
+                var chosenTrees;
+                switch(scope) {
+                    case 'In preferred trees':
+                        chosenTrees = getPreferredTrees()
+                        break;
+                    case 'In non-preferred trees':
+                        chosenTrees = getNonPreferredTrees()
+                        break;
+                    default:
+                        chosenTrees = [];
+                }
+
+                // pool all node IDs in chosen trees into a common object
+                var chosenTreeNodeIDs = {};
+                $.each( chosenTrees, function(i, tree) {
+                    // check this tree's nodes for this OTU id
+                    $.each( tree.node, function( i, node ) {
+                        if (node['@otu']) {
+                            chosenTreeNodeIDs[ node['@otu'] ] = true;
+                        }
+                    });
+                });
+
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
                     viewModel.nexml.otus.otu, 
@@ -399,18 +424,9 @@ function loadSelectedStudy(id) {
                                 var chosenTrees = (scope === 'In preferred trees') ?  getPreferredTrees() : getNonPreferredTrees(); 
                                 var foundInMatchingTree = false;
                                 var otuID = otu['@id'];
-                                $.each( chosenTrees, function(i, tree) {
-                                    // check this tree's nodes for this OTU id
-                                    $.each( tree.node, function( i, node ) {
-                                        if (node['@otu'] && node['@otu'] === otuID) {
-                                            foundInMatchingTree = true;
-                                            return false; // stop looping on nodes
-                                        }
-                                    });
-                                    if (foundInMatchingTree) { 
-                                        return false; // stop looping on trees
-                                    }
-                                });
+
+                                foundInMatchingTree = otuID in chosenTreeNodeIDs;
+
                                 if (!foundInMatchingTree) return false;
                                 break;
 
