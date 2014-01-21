@@ -239,7 +239,7 @@ body {
                 <label class="control-label" for="ot_studyPublication">Publication</label>
                 <div class="controls" data-bind="with: getMetaTagByProperty(nexml.meta, 'ot:studyPublication')">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: $data['@href'], valueUpdate: 'afterkeydown'" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
+                  <input data-bind="value: $data['@href'], valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
                 {{ else: }}
                   <p class="static-form-value"><a target="_blank" data-bind="text: $data['@href'], attr: { href: $data['@href'] }"></a></p>
                 {{ pass }}
@@ -249,8 +249,7 @@ body {
                 <label class="control-label" for="ot_studyYear">Study Year</label>
                 <div class="controls" data-bind="with: getMetaTagByProperty(nexml.meta, 'ot:studyYear')">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: $data.$, valueUpdate: 'afterkeydown', 
-  event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_studyYear" class="input-mini" placeholder="">
+                  <input data-bind="value: $data.$, valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_studyYear" class="input-mini" placeholder="">
                 {{ else: }}
                   <p class="static-form-value" data-bind="text: $data.$"></p>
                 {{ pass }}
@@ -260,7 +259,7 @@ body {
                 <label class="control-label" for="ot_focalClade">Focal clade</label>
                 <div class="controls" data-bind="with: getMetaTagByProperty(nexml.meta, 'ot:focalClade')">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: $data.$, valueUpdate: 'afterkeydown'" type="text" id="ot_focalClade" class="input-small" placeholder="">
+                  <input data-bind="value: $data.$, valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_focalClade" class="input-small" placeholder="">
                 {{ else: }}
                   <p class="static-form-value" data-bind="text: $data.$"></p>
                 {{ pass }}
@@ -271,7 +270,7 @@ body {
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
                     <select id="study-tags" multiple="multiple" placeholder="Add tags"
-                            onchange="updateElementTags(this);"
+                            onchange="updateElementTags(this); nudge.GENERAL_METADATA();"
                             data-bind="options: getTags(viewModel.nexml)">
                     </select>
                 {{ else: }}

@@ -580,20 +580,12 @@ function loadSelectedStudy(id) {
             */
             viewModel.ticklers.MAPPING_HINTS.subscribe(clearFailedOTUList);
 
+            // some changes to metadata will modify the page's headings
+            viewModel.ticklers.GENERAL_METADATA.subscribe(updatePageHeadings);
+            updatePageHeadings();
+
             var mainPageArea = $('#main .tab-content')[0];
             ko.applyBindings(viewModel, mainPageArea);
-
-            var studyFullReference = getMetaTagValue(viewModel.nexml.meta, 'ot:studyPublicationReference');
-            var studyCompactReference = fullToCompactReference(studyFullReference);
-            $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
-
-            var studyDOI = getMetaTagValue(viewModel.nexml.meta, 'ot:studyPublication');
-            studyDOI = $.trim(studyDOI);
-            if (studyDOI === "") {
-                $('a.main-title-DOI').hide();
-            } else {
-                $('a.main-title-DOI').text(studyDOI).attr('href', studyDOI).show();
-            }
 
             // update quality assessment whenever anything changes
             // TODO: throttle this back to handle larger studies?
@@ -610,6 +602,21 @@ function loadSelectedStudy(id) {
             showInfoMessage('Study data loaded.');
         }
     });
+}
+
+function updatePageHeadings() {
+    // page headings should reflect the latest metadata for the study
+    var studyFullReference = getMetaTagValue(viewModel.nexml.meta, 'ot:studyPublicationReference');
+    var studyCompactReference = fullToCompactReference(studyFullReference);
+    $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
+
+    var studyDOI = getMetaTagValue(viewModel.nexml.meta, 'ot:studyPublication');
+    studyDOI = $.trim(studyDOI);
+    if (studyDOI === "") {
+        $('a.main-title-DOI').hide();
+    } else {
+        $('a.main-title-DOI').text(studyDOI).attr('href', studyDOI).show();
+    }
 }
 
 function floatToPercent( dec ) {
@@ -629,11 +636,6 @@ function scoreToBarClasses( percentScore ) {
 
 function updateQualityDisplay () {
     // generate, then apply, fresh scoring information
-    console.log(">>> updateQualityDisplay() STARTING");
-    
-    ///var triggers = [ viewModel.ticklers.STUDY_HAS_CHANGED() ];
-    ///viewModel.ticklers.STUDY_HAS_CHANGED();
-
     var scoreInfo = scoreStudy(viewModel);
 
     // update "progress bar" with percentage and color
