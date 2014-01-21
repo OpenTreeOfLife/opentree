@@ -350,7 +350,7 @@ function loadSelectedStudy(id) {
                         // match entered text against old or new label
                         var fileName = file['@filename'];
                         var fileType = file['@type'];
-                        var fileDesc = file.description.$();
+                        var fileDesc = file.description.$;
                         if (!matchPattern.test(fileName) 
                          && !matchPattern.test(fileType) 
                          && !matchPattern.test(fileDesc)) {
@@ -552,6 +552,7 @@ function loadSelectedStudy(id) {
                         
                 viewModel._filteredAnnotations( filteredList );
                 viewModel._filteredAnnotations.goToPage(1);
+                console.log("DONE with filteredAnnotations");
                 return viewModel._filteredAnnotations;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredAnnotations
 
@@ -1258,10 +1259,10 @@ function getRootNodeDescriptionForTree( tree ) {
     // Apply our "business rules" for tree and/or ingroup rooting, based on
     // tree-level metadata.
     var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
+    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$ : null;
 
     var unrootedTreeFlag = getMetaTagByProperty(tree.meta, 'ot:unrootedTree');
-    var unrootedTree = unrootedTreeFlag ? unrootedTreeFlag.$() === 'true' : false;
+    var unrootedTree = unrootedTreeFlag ? unrootedTreeFlag.$ === 'true' : false;
 
     // if no specified root node, use the implicit root (first in nodes array)
     var rootNodeID = specifiedRoot ? specifiedRoot : tree.node[0]['@id'];
@@ -1270,9 +1271,8 @@ function getRootNodeDescriptionForTree( tree ) {
     $.each(tree.node, function(i, node) {
         // Find the node with this ID and see if it has an assigned OTU
         if (node['@id'] === rootNodeID) {
-            var nodeOTUAccessor = node['@otu'];
-            if (typeof(nodeOTUAccessor) === 'function') {
-                var nodeOTU = nodeOTUAccessor();
+            var nodeOTU = node['@otu'];
+            if (nodeOTU) {
                 // find the matching OTU and show its label
                 $.each(viewModel.nexml.otus.otu, function(i, otu) {
                     // Find the node with this ID and see if it has an assigned OTU
@@ -1306,11 +1306,10 @@ var branchLengthModeDescriptions = [
     { value: 'ot:undefined', text: "Undefined values" }
 ]
 function getBranchLengthModeDescriptionForTree( tree ) {
-    var modeAccessor = getMetaTagAccessorByAtProperty(tree.meta, 'ot:branchLengthMode');
-    if (typeof(modeAccessor) !== 'function') {
+    var rawModeValue = getMetaTagValue(tree.meta, 'ot:branchLengthMode');
+    if (!rawModeValue) {
         return 'Unspecified';
     }
-    var rawModeValue = modeAccessor();
     var description = rawModeValue;
     $.each( branchLengthModeDescriptions, function( i, item ) {
         if (item.value === rawModeValue) {
@@ -1514,7 +1513,6 @@ var studyScoringRules = {
             description: "The study year should match the one in its publication reference.",
             test: function(studyData) {
                 // compare metatags for study year and publication reference
-                debugger;
                 var ticklers = [viewModel.ticklers.GENERAL_METADATA()];
                 var studyMetatags = studyData.nexml.meta;
                 var studyYear = getMetaTagValue(studyMetatags, 'ot:studyYear');
@@ -1941,19 +1939,19 @@ function drawTree( treeOrID ) {
 
     /* load D3 tree view */
     var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
+    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$ : null;
 
     var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$() : null;
+    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$ : null;
 
     var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$() : null;
+    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$ : null;
 
     // we'll pass this along to helpers that choose node labels, classes, etc.
     var importantNodeIDs = {
         'specifiedRoot': specifiedRoot,
         'inGroupClade': inGroupClade,
-        'nearestOutGroupNeighbor': nearestOutGroupNeighbor,
+        'nearestOutGroupNeighbor': nearestOutGroupNeighbor
     }
 
     var root;  // find the root (if any) node for the visible tree
@@ -2002,7 +2000,7 @@ function drawTree( treeOrID ) {
     }
     */
 
-    var edges = tree.edge();
+    var edges = tree.edge;
 
     /* render the tree as a modified phylogram */
     
@@ -2187,13 +2185,13 @@ function drawTree( treeOrID ) {
     link.exit().remove();
 
     var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
+    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$ : null;
 
     var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$() : null;
+    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$ : null;
 
     var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$() : null;
+    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$ : null;
 
     // DATA JOIN
     var node = svg.selectAll(".node")
@@ -2375,13 +2373,13 @@ function updateEdgesInTree( tree ) {
     // Update the direction of all edges in this tree, based on its
     // designated root and/or ingroup nodes
     var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
+    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$ : null;
 
     var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$() : null;
+    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$ : null;
 
     var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$() : null;
+    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$ : null;
 
     if (specifiedRoot) {
         // root is defined, and possibly ingroup; set direction away from root for all edges
@@ -2481,7 +2479,7 @@ function getTreeEdgesByID(tree, id, sourceOrTarget) {
     //
     // 'sourceOrTarget' lets us filter, should be 'SOURCE', 'TARGET', 'ANY'
     var foundEdges = [];
-    $.each( tree.edge(), function( index, edge ) {
+    $.each( tree.edge, function( index, edge ) {
         switch (sourceOrTarget) {
             case 'SOURCE':
                 if (edge['@source'] === id) {
@@ -2533,15 +2531,15 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
         ///return "nearest outgroup neighbor";
     }
 
-    var itsOTUAccessor = node['@otu'];
-    if (!itsOTUAccessor) {
+    var itsOTU = node['@otu'];
+    if (!itsOTU) {
         if (node['@root'] && node['@root'] === 'true') {
             ///return "@root";
         }
         return node['@id'];
     }
 
-    var otu = getOTUByID( itsOTUAccessor() );
+    var otu = getOTUByID( itsOTU );
     return otu['@label'];
 }
 
@@ -2572,8 +2570,8 @@ function adjustedLabel(label) {
         if (!subst['@active']) {
             return true; // skip to next adjustment
         }
-        var oldText = subst.old.$();
-        var newText = subst.new.$();
+        var oldText = subst.old.$;
+        var newText = subst.new.$;
         if ($.trim(oldText) === $.trim(newText) === "") {
             return true; // skip to next adjustment
         }

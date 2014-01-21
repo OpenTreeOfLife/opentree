@@ -82,7 +82,7 @@ if (!d3) { throw "d3 wasn't included!"};
     }
     
     function diagonal(diagonalPath, i) {
-      ///console.log("calculating path "+ diagonalPath.target['@id']());
+      ///console.log("calculating path "+ diagonalPath.target['@id']);
       var source = diagonalPath.source,
           target = diagonalPath.target,
           midpointX = (source.x + target.x) / 2,
@@ -260,10 +260,10 @@ if (!d3) { throw "d3 wasn't included!"};
     ///console.log("NEW keys on timestamp: "+ timestamp);
 
     var path_links = vis.selectAll("path.link")
-        .data(tree.links(nodes), function(d) { return d.source['@id']() +'_'+ d.target['@id'](); });
+        .data(tree.links(nodes), function(d) { return d.source['@id'] +'_'+ d.target['@id']; });
 
     var g_nodes = vis.selectAll("g.node")
-        .data(nodes, function(d) { return d['@id'](); });
+        .data(nodes, function(d) { return d['@id']; });
 
 
     // UPDATE (only affects existing links)

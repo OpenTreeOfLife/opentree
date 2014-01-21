@@ -1269,13 +1269,13 @@ Please review and re-submit.</pre>
                     value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode'),
                     optionsCaption: 'Choose...'">TYPE</select>
 
-               <!-- ko if: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode')() === 'ot:time' -->
+               <!-- ko if: getMetaTagValue($data.meta, 'ot:branchLengthMode') === 'ot:time' -->
                 <label style="margin-left: 10px;">Time unit: </label>
                 <select data-bind="options: ['Myr'],
                     value: getMetaTagAccessorByAtProperty($data.meta, 'branchLengthTimeUnit')">TYPE</select>
                <!-- /ko -->
 
-               <!-- ko if: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode')() === 'ot:other' -->
+               <!-- ko if: getMetaTagValue($data.meta, 'ot:branchLengthMode') === 'ot:other' -->
                 <label style="margin-left: 10px;">&nbsp;</label>
                 <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthDescription'), valueUpdate: 'afterkeydown'" placeholder="Describe here"></input>
                <!-- /ko -->
