@@ -281,6 +281,14 @@ function loadSelectedStudy(id) {
             }     
 
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( updateQualityDisplay );
+
+            // support fast lookup of elements by ID, for largest trees
+            viewModel.fastLookups = {
+                'NODES_BY_ID': null,
+                'OTUS_BY_ID': null,
+                'EDGES_BY_SOURCE_ID': null,
+                'EDGES_BY_TARGET_ID': null
+            };
             
             // enable sorting and filtering for lists in the editor
             viewModel.filterDelay = 250; // ms to wait for changes before updating filter
@@ -960,8 +968,9 @@ function getMetaTagByProperty(array, prop) {
 }
 
 function getOTUByID(id) {
-    // fetch complete metatag in the specified list by matching the specified ID
-    return getNexsonChildByProperty(viewModel.nexml.otus.otu, '@id', id);
+    // return the matching otu, or null if not found
+    var lookup = getFastLookup('OTUS_BY_ID');
+    return lookup[ id ] || null;
 }
 
 function makeArray( val ) {
@@ -2001,6 +2010,7 @@ function drawTree( treeOrID ) {
     */
 
     var edges = tree.edge;
+console.log(">> preparing "+ edges.length +" edges in this tree...");
 
     /* render the tree as a modified phylogram */
     
@@ -2012,16 +2022,17 @@ function drawTree( treeOrID ) {
         node.length = 0;  // ie, branch length
         node.rootDist = 0;
     });
+console.log(">> default node properties in place...");
     $.each(edges, function(index, edge) {
         // transfer @length property (if any) to the child node
-        if (typeof( edge['@length'] ) === 'function') {
+        if ('@length' in edge) {
             var childID = edge['@target'];
             var childNode = getTreeNodeByID(tree, childID);
             childNode.length = edge['@length'];
             ///console.log("> reset length of node "+ childID+" to: "+ childNode.length);
         }
     });
-    ///console.log("> done sweeping edges");
+console.log("> done sweeping edges");
     
     //var currentWidth = $("#tree-viewer #dialog-data").width();
     //var currentWidth = $("#tree-viewer #dialog-data").css('width').split('px')[0];
@@ -2040,23 +2051,17 @@ function drawTree( treeOrID ) {
             children : function(d) {
                 var parentID = d['@id'];
                 var itsChildren = [];
-                $.each(edges, function(index, edge) {
-                    if (edge['@source'] === parentID) {
-                        var childID = edge['@target'];
-                        var childNode = getTreeNodeByID(tree, childID);
-                        itsChildren.push( childNode );
-                    }
+                var childEdges = getTreeEdgesByID(null, parentID, 'SOURCE');
+                $.each(childEdges, function(index, edge) {
+                    var childID = edge['@target'];
+                    var childNode = getTreeNodeByID(null, childID);
+                    itsChildren.push( childNode );
                 });
-                /*
-                console.log("> updated children for node "+ parentID +":");
-                $.each(itsChildren, function(i,n) {
-                    console.log("   > "+ n['@id']);
-                });
-                */
                 return itsChildren;
             }
         }
     );
+    console.log("> done drawing raw phylogram");
 
     // (re)assert proper classes for key nodes
     vizInfo.vis.selectAll('.node')
@@ -2080,6 +2085,7 @@ function drawTree( treeOrID ) {
             ///console.log("CLASS is now "+ itsClass);
             return itsClass;
         });
+    console.log("> done re-asserting classes");
 
     // (re)assert standard click behavior for all nodes
     vizInfo.vis.selectAll('.node circle')
@@ -2098,164 +2104,7 @@ function drawTree( treeOrID ) {
             hideNodeOptionsMenu( );
         });
 
-
-    /*
-    return;
-
-
-    var width = 960,
-        height = 2200;
-
-    var cluster = d3.layout.cluster()
-        .size([height, width - 160])
-        .children(function(d) {
-            var parentID = d['@id'];
-            var itsChildren = [];
-            $.each(edges, function(index, edge) {
-                if (edge['@source'] === parentID) {
-                    var childID = edge['@target'];
-                    var childNode = getTreeNodeByID(tree, childID);
-                    itsChildren.push( childNode );
-                }
-            });
-            **
-            console.log("> resetting children for node "+ parentID +":");
-            $.each(itsChildren, function(i,n) {
-                console.log("   > "+ n['@id']);
-            });
-            **
-            return itsChildren;
-        });
-
-    var diagonal = d3.svg.diagonal()
-        .projection(function(d) { return [d.y, d.x]; });
-
-    // some things should only happen once
-    var svg = d3.select("#tree-viewer svg > g");
-    if (svg[0][0] === null) {
-        svg = d3.select("#tree-viewer #dialog-data").append("svg")
-            .attr("width", width)
-            .attr("height", height)
-          .append("g")
-            .attr("transform", "translate(80,0)"); // make room for 'root' label
-    } else {
-        // clear special properties and visible tree elements, for a clean
-        // sweep. TODO: do something more graceful, perhaps a transition?
-        ///clearD3PropertiesFromTree(tree);
-        $('#tree-viewer #dialog-data svg > g > *').remove();
-    }
-
-    var startTime = new Date();
-    var nodes = cluster.nodes(root),
-        links = cluster.links(nodes);
-
-    ///var timestamp = new Date().getTime();
-    ///console.log("NEW timestamp: "+ timestamp);
-
-    // DATA JOIN
-    var link = svg.selectAll(".link")
-        .data(links);
-        ///.data(links, function(d) { return (timestamp + d.source['@id'] + d.target['@id']); });
-
-    // UPDATE (only affects existing links)
-    link
-        .attr('class','link update');
-
-
-    // ENTER (only affects new links; do one-time initialization here)
-    link.enter()
-        .insert("path")  // should add this alongside other paths (behind nodes)
-        .attr("class", "link enter");
-
-    // ENTER + UPDATE (affects all new AND existing links)
-    link
-        ///.transition().duration(750)
-        .attr("d", diagonal);  // smooth bezier curves between nodes/
-
-    ** ...or try simple lines between nodes
-    link.enter().append("line")
-        .attr("class", "link")
-        .attr("x1", function(d) { return d.source.y; })
-        .attr("y1", function(d) { return d.source.x; })
-        .attr("x2", function(d) { return d.target.y; })
-        .attr("y2", function(d) { return d.target.x; });
-    **
-
-    // EXIT
-    link.exit().remove();
-
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$ : null;
-
-    var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$ : null;
-
-    var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$ : null;
-
-    // DATA JOIN
-    var node = svg.selectAll(".node")
-        .data(nodes);
-        ///.data(nodes, function(d) { return (timestamp + d['@id']); }); // key function to bind elements
-
-    // UPDATE (only affects existing links)
-    
-
-
-    // ENTER (only affects new nodes; do one-time initialization here)
-    var newNodeG = node.enter()
-        .append("g");
-
-    // append more stuff to the 'g' element
-    newNodeG.append("circle")
-            .attr("r", 4.5)
-            .on('click', function(d) {
-                // show a menu with appropriate options for this node
-                var nodePageOffset = $(d3.event.target).offset();
-                showNodeOptionsMenu( tree, d, nodePageOffset );
-            })
-    newNodeG.append("text")
-            .attr("dx", function(d) { return d.children ? -8 : 8; })
-            .attr("dy", 3)
-            .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
-            //.style("stroke", function(d) { return (d['@root'] && d['@root'] === 'true') ? "#f55" : "black"; })
-            .text(function(d) { return getTreeNodeLabel(tree, d, importantNodeIDs); });
-
-
-    // ENTER + UPDATE (affects all new AND existing nodes)
-    node   
-        ///.transition().duration(750)
-        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-        .attr("class", function(d) {
-            var itsClass = "node";
-            if (!d.children) {
-                itsClass += " leaf";
-            }
-            if (d['@root'] && d['@root'] === 'true') {
-                itsClass += " atRoot";
-            }
-            if (d['@id'] === specifiedRoot) {
-                itsClass += " specifiedRoot";
-            }
-            if (d['@id'] === inGroupClade) {
-                itsClass += " inGroupClade";
-            }
-            if (d['@id'] === nearestOutGroupNeighbor) {
-                itsClass += " nearestOutGroupNeighbor";
-            }
-            ///console.log("CLASS is now "+ itsClass);
-            return itsClass;
-        });
-
-
-    // EXIT
-    node.exit().remove();
-
-
-    var rightNow = new Date() - startTime;
-    console.log(">> Drawing tree took "+ (rightNow / 1000.0).toFixed(2) +" seconds");
-    */
-
+    console.log("> done re-asserting click behaviors");
 }
 
 function setTreeRoot( treeOrID, rootNodeOrID ) {
@@ -2286,10 +2135,10 @@ function setTreeRoot( treeOrID, rootNodeOrID ) {
         specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
     }
     if (rootNodeID) {
-        specifiedRootTag.$( rootNodeID );
+        specifiedRootTag.$ = rootNodeID;
     } else {
         // clear the current root
-        specifiedRootTag.$( '' );
+        specifiedRootTag.$ = '';
     }
     updateEdgesInTree( tree );
     drawTree( tree );
@@ -2323,10 +2172,10 @@ function setTreeIngroup( treeOrID, ingroupNodeOrID ) {
         inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
     }
     if (ingroupNodeID) {
-        inGroupCladeTag.$( ingroupNodeID );
+        inGroupCladeTag.$ = ingroupNodeID;
     } else {
         // clear the current root
-        inGroupCladeTag.$( '' );
+        inGroupCladeTag.$ = '';
     }
     updateEdgesInTree( tree );
     drawTree( tree );
@@ -2360,10 +2209,10 @@ function setTreeOutgroup( treeOrID, outgroupNodeOrID ) {
         nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
     }
     if (outgroupNodeID) {
-        nearestOutGroupNeighborTag.$( outgroupNodeID );
+        nearestOutGroupNeighborTag.$ = outgroupNodeID;
     } else {
         // clear the current root
-        nearestOutGroupNeighborTag.$( '' );
+        nearestOutGroupNeighborTag.$ = '';
     }
     updateEdgesInTree( tree );
     drawTree( tree );
@@ -2386,6 +2235,8 @@ function updateEdgesInTree( tree ) {
         // NOTE that this polarity trumps any nearestOutGroupNeighbor
         ///console.log("sweeping all edges");
         sweepEdgePolarity( tree, specifiedRoot, null, inGroupClade );
+        clearFastLookup('EDGES_BY_SOURCE_ID');
+        clearFastLookup('EDGES_BY_TARGET_ID');
     } else if (inGroupClade) {
         // only ingroup clade is defined, set direction away from ingroup
         // ancestor within the ingroup clade; disregard other edges
@@ -2404,6 +2255,8 @@ function updateEdgesInTree( tree ) {
             ///console.log("...sweeping away from natural parent '"+ naturalParent +"'...");
         }
         sweepEdgePolarity( tree, inGroupClade, nearestOutGroupNeighbor || naturalParent, inGroupClade );
+        clearFastLookup('EDGES_BY_SOURCE_ID');
+        clearFastLookup('EDGES_BY_TARGET_ID');
     } else {
         // neither root node nor ingroup is defined; ignore all edges
         ///console.log("we'll ignore all polarity, so nothing to sweep");
@@ -2463,15 +2316,10 @@ function getTreeByID(id) {
     return foundTree;
 }
 function getTreeNodeByID(tree, id) {
-    // there should be only one matching (or none) within a tree
-    var foundNode = null;
-    $.each( tree.node, function( index, node ) {
-        if (node['@id'] === id) {
-            foundNode = node;
-            return false;
-        }
-    });
-    return foundNode;
+    // There should be only one matching (or none) within a tree
+    // (NOTE that we now use a flat collection across all trees, so disregard 'tree' argument)
+    var lookup = getFastLookup('NODES_BY_ID');
+    return lookup[ id ] || null;
 }
 function getTreeEdgesByID(tree, id, sourceOrTarget) {
     // look for any edges associated with the specified *node* ID; return
@@ -2479,31 +2327,32 @@ function getTreeEdgesByID(tree, id, sourceOrTarget) {
     //
     // 'sourceOrTarget' lets us filter, should be 'SOURCE', 'TARGET', 'ANY'
     var foundEdges = [];
-    $.each( tree.edge, function( index, edge ) {
-        switch (sourceOrTarget) {
-            case 'SOURCE':
-                if (edge['@source'] === id) {
-                    foundEdges.push( edge );
-                }
-                return;
-            case 'TARGET':
-                if (edge['@target'] === id) {
-                    foundEdges.push( edge );
-                }
-                return;
-            default:  // match on either node ID
-                if ((edge['@source'] === id) || (edge['@target'] === id)) {
-                    foundEdges.push( edge );
-                }
-                return;
+    var matchingEdges = null;
+
+    if ((sourceOrTarget === 'SOURCE') || (sourceOrTarget === 'ANY')) {
+        // fetch and add edges with this source node
+        var sourceLookup = getFastLookup('EDGES_BY_SOURCE_ID');
+        matchingEdges = sourceLookup[ id ];
+        if (matchingEdges) {
+            foundEdges = foundEdges.concat( matchingEdges );
         }
-    });
+    }
+
+    if ((sourceOrTarget === 'TARGET') || (sourceOrTarget === 'ANY')) {
+        // fetch and add edges with this target node
+        var targetLookup = getFastLookup('EDGES_BY_TARGET_ID');
+        matchingEdges = targetLookup[ id ];
+        if (matchingEdges) {
+            foundEdges = foundEdges.concat( matchingEdges );
+        }
+    }
+
     return foundEdges;
 }
 function reverseEdgeDirection( edge ) {
     var oldSource = edge['@source'];
-    edge['@source']( edge['@target'] );
-    edge['@target']( oldSource );
+    edge['@source'] = edge['@target'];
+    edge['@target'] = oldSource;
 }
 function getRootTreeNodes(tree) {
     // REMEMBER: trees can be unrooted, singly rooted, or multiply rooted
@@ -2898,12 +2747,12 @@ function addSupportingFileFromURL() {
             showSuccessMessage('File added.');
             // update the files list (and auto-save?)
             var file = cloneFromNexsonTemplate('single supporting file');
-            file['@filename']( data.filename || "" );
-            file['@url']( data.url || "" );
-            file['@type']( data.type || "" );
-            file.description.$( data.description || "" );
-            file['@sourceForTree']( data.sourceForTree || "" );
-            file['@size']( data.size || "" );
+            file['@filename'] = data.filename || "";
+            file['@url'] = data.url || "";
+            file['@type'] = data.type || "";
+            file.description.$ = data.description || "";
+            file['@sourceForTree'] = data.sourceForTree || "";
+            file['@size'] = data.size || "";
 
             getSupportingFiles().data.files.file.push(file);
         },
@@ -2995,10 +2844,10 @@ function addSubstitution( clicked ) {
         }
         // add the chosen subsitution
         var parts = chosenSub.split(' =:= ');
-        subst.old.$( parts[0] || '');
-        subst.new.$( parts[1] || '');
-        subst['@valid'](true);
-        subst['@active'](true);
+        subst.old.$ = parts[0] || '';
+        subst.new.$ = parts[1] || '';
+        subst['@valid'] = true;
+        subst['@active'] = true;
         // reset the SELECT widget to its prompt
         $(clicked).val('');
     }
@@ -3399,7 +3248,7 @@ function mapOTUToTaxon( otuID, mappingInfo ) {
 
     // TODO: add/update its original label?
     var originalLabel = getMetaTagValue(otu.meta, 'ot:originalLabel');
-    otu['@label']( mappingInfo.name || 'NAME MISSING!' );
+    otu['@label'] = mappingInfo.name || 'NAME MISSING!';
 
     // add (or update) a metatag mapping this to an OTT id
     var ottId = Number(mappingInfo.ottId);
@@ -3412,7 +3261,7 @@ function mapOTUToTaxon( otuID, mappingInfo ) {
         });
         ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
     }
-    ottMappingTag.$( ottId );
+    ottMappingTag.$ = ottId;
 }
 
 function unmapOTUFromTaxon( otuOrID ) {
@@ -4031,4 +3880,92 @@ function removeFromArray( doomedValue, theArray ) {
     if (index !== -1) {
         theArray.splice( index, 1 );
     }
+}
+
+function getFastLookup( lookupName ) {
+    // return (or build) a flat list of Nexson elements by ID
+    if (lookupName in viewModel.fastLookups) {
+        if (viewModel.fastLookups[ lookupName ] === null) {
+            buildFastLookup( lookupName );
+        }
+        return viewModel.fastLookups[ lookupName ];
+    }
+    console.error("No such lookup as '"+ lookupName +"'!");
+    return null;
+}
+function buildFastLookup( lookupName ) {
+    // (re)build and store a flat list of Nexson elements by ID
+    if (lookupName in viewModel.fastLookups) {
+        console.log("...(re)building '"+ lookupName +"' lookup...");
+        clearFastLookup( lookupName );
+        var newLookup = {};
+        switch( lookupName ) {
+
+            case 'NODES_BY_ID':
+                // assumes that all node ids are unique, across all trees
+                $.each(viewModel.nexml.trees.tree, function( i, tree ) {
+                    $.each(tree.node, function( i, node ) {
+                        var itsID = node['@id'];
+                        if (itsID in newLookup) {
+                            console.warning("Duplicate node ID '"+ itsID +"' found!");
+                        }
+                        newLookup[ itsID ] = node;
+                    });
+                });
+                break;
+
+            case 'OTUS_BY_ID':
+                // assumes that all node ids are unique, across all trees
+                $.each(viewModel.nexml.otus.otu, function( i, otu ) {
+                    var itsID = otu['@id'];
+                    if (itsID in newLookup) {
+                        console.warning("Duplicate otu ID '"+ itsID +"' found!");
+                    }
+                    newLookup[ itsID ] = otu;
+                });
+                break;
+
+            case 'EDGES_BY_SOURCE_ID':
+                // allow multiple values for each source (ie, multiple children)
+                $.each(viewModel.nexml.trees.tree, function( i, tree ) {
+                    $.each(tree.edge, function( i, edge ) {
+                        var sourceID = edge['@source'];
+                        if (sourceID in newLookup) {
+                            newLookup[ sourceID ].push( edge );
+                        } else {
+                            // create the array, if not found
+                            newLookup[ sourceID ] = [ edge ];
+                        }
+                    });
+                });
+                break;
+
+            case 'EDGES_BY_TARGET_ID':
+                // allow multiple values for each target (for conflicted trees)
+                $.each(viewModel.nexml.trees.tree, function( i, tree ) {
+                    $.each(tree.edge, function( i, edge ) {
+                        var targetID = edge['@target'];
+                        if (targetID in newLookup) {
+                            newLookup[ targetID ].push( edge );
+                        } else {
+                            // create the array, if not found
+                            newLookup[ targetID ] = [ edge ];
+                        }
+                    });
+                });
+                break;
+
+        }
+        viewModel.fastLookups[ lookupName ] = newLookup;
+    } else {
+        console.error("No such lookup as '"+ lookupName +"'!");
+    }
+}
+function clearFastLookup( lookupName ) {
+    // clear chosen lookup, on demand (eg, after merging in new OTUs)
+    if (lookupName in viewModel.fastLookups) {
+        viewModel.fastLookups[ lookupName ] = null;
+        return;
+    }
+    console.error("No such lookup as '"+ lookupName +"'!");
 }

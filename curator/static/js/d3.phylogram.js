@@ -321,7 +321,11 @@ if (!d3) { throw "d3 wasn't included!"};
     // any dynamic readjustments of non-CSS attributes
     d3.phylogram.styleTreeNodes(vis);
     
+
+    // TODO: why is this SUPER-SLOW with large trees? like MINUTES to run...
+    // Is there a faster/cruder way to clear the decks?
     vis.selectAll('g.node text').remove();
+
 
     if (!options.skipLabels) {
       // refresh all labels based on tree position
