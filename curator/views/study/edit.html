@@ -684,12 +684,14 @@ body {
                          <!-- ko if: (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
                             <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')), 
+                                           css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                            style: { 'color' : (otu['@label'] === '' && !proposedMapping(otu))?  '' : 'silver' }"
                                >WORKING?</em>
                         </td>
                         <td>
-                          <!-- ko if: otu['@label'] === '' && !proposedMapping(otu) -->
-                            <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel">
+                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS && otu['@label'] === '' && !proposedMapping(otu) -->
+                            <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+
                                 <i class="icon-edit"></i>
                             </button>
                           <!-- /ko -->
@@ -698,10 +700,10 @@ body {
                          <!-- ko if: (bogusEditedLabelCounter() > 0)  && editedLabelAccessor(otu) != null --> 
                         <td>
                             <input type="text" style="height: 14px; margin:
-                            0; width: 97%;" data-bind="value: editedLabelAccessor(otu)">
+                            0; width: 97%;" data-bind="value: editedLabelAccessor(otu), css: viewModel.ticklers.OTU_MAPPING_HINTS">
                         </td>
                         <td>
-                            <button class="btn btn-mini row-controls-ghosted" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel">
+                            <button class="btn btn-mini row-controls-ghosted" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <i class="icon-remove"></i>
                             </button>
                         </td>
@@ -719,22 +721,23 @@ body {
                       {{ if viewOrEdit == 'EDIT': }}
                           <!-- ko if: proposedMapping(otu) -->
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" data-bind="click: approveProposedOTULabel">
+                                <button class="btn btn-mini" data-bind="click: approveProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-ok"></i>
                                 </button>
-                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel">
+                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
                           <!-- /ko -->
-                          <!-- ko if: otu['@label'] -->
+                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS && otu['@label'] -->
                             <div class="btn-group pull-right row-controls-ghosted">
-                                <button class="btn btn-mini" data-bind="click: unmapOTUFromTaxon">
+                                <button class="btn btn-mini" data-bind="click: unmapOTUFromTaxon, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
                           <!-- /ko -->
                             <strong data-bind="text: proposedMapping(otu) ?  proposedMapping(otu).name : otu['@label'],
+                                               css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                                style:  {'color': proposedMapping(otu) ? 'red' :'' }"
                                 >MAPPED (OR PROPOSED) LABEL</strong>
                       {{ else: }}
@@ -793,7 +796,7 @@ body {
             <button class="btn btn-warning input-block-level" style="margin-bottom: 1em;"
                     onclick="clearVisibleMappings(); return false;">
                 <i class="icon-warning-sign icon-white"></i>
-                Clear visible mappings (please be patient)
+                Clear all visible mappings
             </button>
 
             <div id="mapping-status-panel" class="well">
@@ -901,7 +904,7 @@ body {
                             <th width="20">&nbsp;</th>
                         </tr>
                     </thead>
-                    <tbody id="mapping-adjustments" data-bind="foreach: { data: getOTUMappingHints().data.substitutions.substitution, as: 'substitution'}">
+                    <tbody id="mapping-adjustments" data-bind="foreach: { data: getOTUMappingHints().data.substitutions.substitution, as: 'substitution'}, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                         <tr>
                             <td align="center" valign="center">
                                 <input type="checkbox" data-bind="checked: substitution['@active']" 

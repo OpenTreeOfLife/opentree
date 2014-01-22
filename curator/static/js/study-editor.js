@@ -274,12 +274,13 @@ function loadSelectedStudy(id) {
             // related Nexson elements.
             // TODO: Is this a tickler? ratchet? whisker?
             viewModel.ticklers = {
-                'GENERAL_METADATA': ko.observable(0),
-                'EDGE_DIRECTIONS': ko.observable(0),
-                'SUPPORTING_FILES': ko.observable(0),
-                'MAPPING_HINTS': ko.observable(0),
+                'GENERAL_METADATA': ko.observable(1),
+                'EDGE_DIRECTIONS': ko.observable(1),
+                'SUPPORTING_FILES': ko.observable(1),
+                'OTU_MAPPING_HINTS': ko.observable(1),
+                'VISIBLE_OTU_MAPPINGS': ko.observable(1),
                 // TODO: add more as needed...
-                'STUDY_HAS_CHANGED': ko.observable(0)
+                'STUDY_HAS_CHANGED': ko.observable(1)
             }     
 
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( updateQualityDisplay );
@@ -382,6 +383,7 @@ function loadSelectedStudy(id) {
             viewModel.filteredOTUs = ko.computed(function() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
+                ///var ticklers = [ viewModel.ticklers.OTU_MAPPING_HINTS() ];
                 console.log(">>> computing filteredOTUs");
                 var match = viewModel.listFilters.OTUS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -582,7 +584,7 @@ function loadSelectedStudy(id) {
             var mappingHints = getOTUMappingHints();
             //var hintsMessage = getMessagesForAnnotationEvent( mappingHints )[0];
 
-            /* TODO: any edits in this area should nudge the MAPPING_HINTS tickler
+            /* TODO: any edits in this area should nudge the OTU_MAPPING_HINTS tickler
             mappingHints.data.searchContext.$.subscribe(clearFailedOTUList);
             mappingHints.data.substitutions.substitution.subscribe(clearFailedOTUList);
             $.each(mappingHints.data.substitutions.substitution, function(i, subst) {
@@ -591,7 +593,7 @@ function loadSelectedStudy(id) {
                 subst.old.$.subscribe(clearFailedOTUList);
             });
             */
-            viewModel.ticklers.MAPPING_HINTS.subscribe(clearFailedOTUList);
+            viewModel.ticklers.OTU_MAPPING_HINTS.subscribe(clearFailedOTUList);
 
             // some changes to metadata will modify the page's headings
             viewModel.ticklers.GENERAL_METADATA.subscribe(updatePageHeadings);
@@ -2616,7 +2618,7 @@ var nexsonTemplates = {
             //"@id": "",      // will be assigned via $.extend
             "@wasGeneratedById": "otu-mapping-hints",
             "@severity": "INFO",
-            "@code": "OTU_MAPPING_HINTS",
+            "@code": "OTU_MAPPING_HINTS",  // N.B. independent of the OTU_MAPPING_HINTS tickler
             "@humanMessageType": "NONE",
             "data": {
                 "searchContext": {"$": "All life"},
@@ -2848,7 +2850,7 @@ function getOTUMappingHints(nexml) {
         return null;
     }
     // return its message with the interesting parts
-    return getMessagesForAnnotationEvent( hintsAnnotation, nexml )[0]
+    return getMessagesForAnnotationEvent( hintsAnnotation, nexml )[0];
 }
 function addSubstitution( clicked ) {
     var subst = cloneFromNexsonTemplate('mapping substitution');
@@ -2869,13 +2871,16 @@ function addSubstitution( clicked ) {
         $(clicked).val('');
     }
     getOTUMappingHints().data.substitutions.substitution.push(subst);
+    nudgeTickler('OTU_MAPPING_HINTS');
 }
 function removeSubstitution( data ) {
     var subList = getOTUMappingHints().data.substitutions.substitution;
-    subList.remove(data);
-    if (subList().length === 0) {
+    removeFromArray( data, subList );
+    if (subList.length === 0) {
         // add an inactive substitution with prompts
         addSubstitution();
+    } else {
+        nudgeTickler('OTU_MAPPING_HINTS');
     }
 }
 
@@ -3108,7 +3113,7 @@ function requestTaxonMapping() {
     }
 
     // groom trimmed text based on our search rules
-    var searchContextName = getOTUMappingHints().data.searchContext.$();
+    var searchContextName = getOTUMappingHints().data.searchContext.$;
 
     // show spinner alongside this item...
     currentlyMappingOTUs.push( otuID );
@@ -3286,12 +3291,13 @@ function unmapOTUFromTaxon( otuOrID ) {
     var otu = (typeof otuOrID === 'object') ? otuOrID : getOTUByID( otuOrID );
     // restore its original label (versus mapped label)
     var originalLabel = getMetaTagValue(otu.meta, 'ot:originalLabel');
-    otu['@label'] = '';    // TODO: THIS IS TOO SLOW, what's up?
+    otu['@label'] = '';
     // strip any metatag mapping this to an OTT id
     var ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
     if (ottMappingTag) {
-        otu.meta.remove(ottMappingTag);    // TODO: THIS IS TOO SLOW, what's up?
+        removeFromArray( ottMappingTag, otu.meta );
     }
+    nudgeTickler('OTU_MAPPING_HINTS');
 }
 
 function addMetaTagToParent( parent, props ) {
@@ -3299,7 +3305,10 @@ function addMetaTagToParent( parent, props ) {
     var newTag = cloneFromSimpleObject( props );
     if (!parent.meta) {
         // add a meta collection here
-        parent['meta'] = ko.observableArray();
+        parent['meta'] = [ ];
+    } else if (!$.isArray(parent.meta)) {
+        // convert a Badgerfish "singleton" to a proper array
+        parent['meta'] = [ parent.meta ]; 
     }
     parent.meta.push( newTag );
 }
@@ -3311,6 +3320,7 @@ function clearVisibleMappings() {
         unmapOTUFromTaxon( otu );
     });
     clearFailedOTUList();
+    nudgeTickler('OTU_MAPPING_HINTS');
 }
 
 function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
