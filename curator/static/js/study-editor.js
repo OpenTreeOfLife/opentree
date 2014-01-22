@@ -72,14 +72,15 @@ $(document).ready(function() {
                 */
                 // update the files list (and auto-save?)
                 var fileNexson = cloneFromNexsonTemplate('single supporting file');
-                fileNexson['@filename']( file.name );
-                fileNexson['@url']( file.url );  // TODO: prepend current domain name, if missing?
-                fileNexson['@type']( "" );  // TODO: glean this from file extension?
-                fileNexson['@size']( file.size );  // convert byte count for display?
+                fileNexson['@filename'] = file.name;
+                fileNexson['@url'] = file.url;  // TODO: prepend current domain name, if missing?
+                fileNexson['@type'] = "";  // TODO: glean this from file extension?
+                fileNexson['@size'] = file.size;  // convert byte count for display?
                 // TODO: incorporate the delete URL provided? or generate as-needed?
                 // fileNexson.delete_url( file.delete_url );
 
                 getSupportingFiles().data.files.file.push(fileNexson);
+                nudgeTickler('SUPPORTING_FILES');
 
                 showSuccessMessage('File added.');
             } else if (file.error) {
@@ -275,6 +276,7 @@ function loadSelectedStudy(id) {
             viewModel.ticklers = {
                 'GENERAL_METADATA': ko.observable(0),
                 'EDGE_DIRECTIONS': ko.observable(0),
+                'SUPPORTING_FILES': ko.observable(0),
                 'MAPPING_HINTS': ko.observable(0),
                 // TODO: add more as needed...
                 'STUDY_HAS_CHANGED': ko.observable(0)
@@ -347,6 +349,8 @@ function loadSelectedStudy(id) {
             viewModel.filteredFiles = ko.computed(function() {
                 // filter raw file list, returning a
                 // new paged observableArray
+                var ticklers = [ viewModel.ticklers.SUPPORTING_FILES() ];
+
                 console.log(">>> computing filteredFiles");
                 var match = viewModel.listFilters.FILES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -2442,15 +2446,15 @@ function adjustedLabel(label) {
             adjusted = adjusted.replace(pattern, newText);
             // clear any stale invalid-regex marking on this field
             if (!subst['@valid']) {
-                subst['@valid'] = ko.observable(true);
+                subst['@valid'] = true;
             }
-            subst['@valid'](true);
+            subst['@valid'] = true;
         } catch(e) {
             // there's probably invalid regex in the field... mark it and skip
             if (!subst['@valid']) {
-                subst['@valid'] = ko.observable(false);
+                subst['@valid'] = false;
             }
-            subst['@valid'](false);
+            subst['@valid'] = false;
         }
     });
     return adjusted;
@@ -2766,6 +2770,7 @@ function addSupportingFileFromURL() {
             file['@size'] = data.size || "";
 
             getSupportingFiles().data.files.file.push(file);
+            nudgeTickler('SUPPORTING_FILES');
         },
         error: function( data, textStatus, jqXHR ) {
             showErrorMessage('Sorry, there was an error adding this file.');
@@ -2810,7 +2815,8 @@ function removeSupportingFile( fileInfo ) {
             showSuccessMessage('File removed.');
             // update the files list
             var fileList = getSupportingFiles().data.files.file;
-            fileList.remove(fileInfo);
+            removeFromArray( fileInfo, fileList );
+            nudgeTickler('SUPPORTING_FILES');
         },
         error: function( data, textStatus, jqXHR ) {
             showErrorMessage('Sorry, there was an error removing this file.');
@@ -3280,7 +3286,7 @@ function unmapOTUFromTaxon( otuOrID ) {
     var otu = (typeof otuOrID === 'object') ? otuOrID : getOTUByID( otuOrID );
     // restore its original label (versus mapped label)
     var originalLabel = getMetaTagValue(otu.meta, 'ot:originalLabel');
-    otu['@label']( '' );    // TODO: THIS IS TOO SLOW, what's up?
+    otu['@label'] = '';    // TODO: THIS IS TOO SLOW, what's up?
     // strip any metatag mapping this to an OTT id
     var ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
     if (ottMappingTag) {
