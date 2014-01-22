@@ -2033,10 +2033,21 @@ console.log(">> default node properties in place...");
         }
     });
 console.log("> done sweeping edges");
-    
+
     //var currentWidth = $("#tree-viewer #dialog-data").width();
     //var currentWidth = $("#tree-viewer #dialog-data").css('width').split('px')[0];
     var currentWidth = $("#tree-viewer").width() - 400;
+
+    // let's set the viewer height based on total number of nodes
+    // (in a bifurcating tree, perhaps half will be leaf nodes)
+    var viewHeight = tree.node.length * 20;
+    console.log("setting tree-view height to "+ viewHeight);
+    
+    var treeEdgesHaveLength = ('@length' in tree.edge[0]);
+
+    vizInfo.vis = null;
+    d3.selectAll('svg').remove();
+
     vizInfo = d3.phylogram.build(
         "#tree-viewer #dialog-data",   // selector
         root, // tree.node,      // nodes 
@@ -2044,10 +2055,10 @@ console.log("> done sweeping edges");
             vis: vizInfo.vis,
             // TODO: can we make the size "adaptive" based on vis contents?
             width: currentWidth,  // must be simple integers
-            height: '3000',
+            height: viewHeight,
             // simplify display by omitting scales or variable-length branches
             skipTicks: true,
-            skipBranchLengthScaling: false,
+            skipBranchLengthScaling: (treeEdgesHaveLength ? false : true),
             children : function(d) {
                 var parentID = d['@id'];
                 var itsChildren = [];

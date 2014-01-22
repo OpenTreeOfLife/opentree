@@ -180,6 +180,8 @@ if (!d3) { throw "d3 wasn't included!"};
       }
     }
     visitPreOrder(nodes[0], function(node) {
+      // TODO: if we have mixed trees (some edges with lengths), consider 1
+      // as default length versus 0?
       node.rootDist = (node.parent ? node.parent.rootDist : 0) + (node.length || 0)
     })
     var rootDists = nodes.map(function(n) { return n.rootDist; });
