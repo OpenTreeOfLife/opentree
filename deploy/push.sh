@@ -219,6 +219,10 @@ function push_db {
     # E.g. ./push.sh push-db localnewdb.db.tgz taxomachine
     TARBALL=$1
     APP=$2
+    if [ x$APP = x -o x$TARBALL = x ]; then
+	echo "Usage: $0 -c {configfile} push-db {tarball} {application}"
+	exit 1
+    fi
     time rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":downloads/$APP.db.tgz
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh "$OPENTREE_HOST" $APP $CONTROLLER
 }
