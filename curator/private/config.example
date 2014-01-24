@@ -23,11 +23,12 @@ API_load_file_GET_url = http://dev.opentreeoflife.org/api/v1/study/{STUDY_ID}/fi
 API_update_file_PUT_url = http://dev.opentreeoflife.org/api/v1/study/{STUDY_ID}/file/{FILE_ID}
 API_remove_file_DELETE_url = http://dev.opentreeoflife.org/api/v1/study/{STUDY_ID}/file/{FILE_ID}
 
-# List public-facing base URL for treemachine and taxomachine services
+# List public-facing base URL for supporting data services
 # (NOTE that these are used by both server- and client-side code)
 [domains]
 treemachine = http://dev.opentreeoflife.org/treemachine:7474
 taxomachine = http://dev.opentreeoflife.org/taxomachine:7476
+oti = http://dev.opentreeoflife.org/oti
 
 # Building on the URLs above, complete the public-facing URL for all methods
 # (again, these should work from both server- and client-side code)
@@ -46,3 +47,4 @@ doTNRSForNames_url = {taxomachine_domain}/ext/TNRS/graphdb/autocompleteBoxQuery
 getContextsJSON_url = {taxomachine_domain}/ext/TNRS/graphdb/getContextsJSON
 getNodeIDForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getNodeIDForottId
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
+findAllStudies_url = {oti_domain}/ext/QueryServices/graphdb/findAllStudies
