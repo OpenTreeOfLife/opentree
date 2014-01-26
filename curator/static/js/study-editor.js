@@ -891,7 +891,7 @@ function saveFormDataToStudyJSON() {
         contentType: "application/json; charset=utf-8",
         url: saveURL,
         processData: false,
-        data: JSON.stringify(viewModel.nexml),
+        data: JSON.stringify(viewModel),
         /* TODO: add non-nexson to query string!
         OLDdata: {
             // use JSON stringify (if available) for faster submission of JSON
