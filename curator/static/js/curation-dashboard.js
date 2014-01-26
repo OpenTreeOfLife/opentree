@@ -144,7 +144,10 @@ function loadStudyList() {
                         var pubYear = study['ot:studyYear'];
                         var tags = $.isArray(study['ot:tag']) ? study['ot:tag'].join('|') : study['ot:tag'];
                         var curator = study['ot:curatorName'];
-                        var clade = study.cladeName;
+                        var clade = ('ot:focalCladeOTTTaxonName' in study && 
+                                     ($.trim(study['ot:focalCladeOTTTaxonName']) !== "")) ?
+                                        study['ot:curatorName'] :
+                                        study['ot:focalClade'];
                         if (!matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
                             return false;
                         }
@@ -257,21 +260,41 @@ function getCuratorLink(study) {
     return '<a href="#" onclick="filterByCurator(\''+ study['ot:curatorName'] +'\'); return false;"'+'>'+ study['ot:curatorName'] +'</a'+'>';
 }
 function getFocalCladeLink(study) {
-    var cladeNotFound = false;
-    var cladeID;
+    var ottIdNotFound = false;
+    var ottID;
     if ('ot:focalClade' in study) {
-        cladeID = study['ot:focalClade'];
-        if ($.trim(cladeID) === "") {
-            cladeNotFound = true;
+        ottID = study['ot:focalClade'];
+        if ($.trim(ottID) === "") {
+            ottIdNotFound = true;
         }
     } else {
-        cladeNotFound = true;
+        ottIdNotFound = true;
     }
-    if (cladeNotFound) {
-        return '<span style="color: #ccc;">&mdash;</span>';
-        //return '<span style="color: #ccc;">[clade not found]</span>';
+
+    var cladeNameNotFound = false;
+    var cladeName;
+    if ('ot:focalCladeOTTTaxonName' in study) {
+        cladeName = study['ot:focalCladeOTTTaxonName'];
+        if ($.trim(cladeName) === "") {
+            cladeNameNotFound = true;
+        }
+    } else {
+        cladeNameNotFound = true;
     }
-    return '<a href="#" onclick="filterByClade(\''+ cladeID +'\'); return false;"'+'>'+ cladeID +'</a'+'>';
+    if (cladeNameNotFound) {
+        // use the best available placeholder
+        if (ottIdNotFound) {
+            cladeName = '&mdash;';
+        } else {
+            cladeName = ottID;
+        }
+    }
+
+    if (ottIdNotFound) {
+        return '<span style="color: #ccc;">'+ cladeName +'</span>';
+    }
+
+    return '<a href="#" onclick="filterByClade(\''+ ottID +'\'); return false;"'+'>'+ cladeName +'</a'+'>';
 }
 function getPubLink(study) {
     var urlNotFound = false;
