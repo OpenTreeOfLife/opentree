@@ -742,27 +742,6 @@ function toggleQualityDetails( hideOrShow ) {
     }
 }
 
-function showErrorMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-success')
-               .addClass('alert-error').slideDown();
-}
-
-function showInfoMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-error')
-               .removeClass('alert-success')
-               .addClass('alert-info').slideDown();
-}
-
-function showSuccessMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-error')
-               .addClass('alert-success').slideDown();
-}
-
 function updateMappingStatus() {
     // update mapping status+details based on the current state of things
     var detailsHTML, showBatchApprove, showBatchReject, needsAttention;
@@ -977,31 +956,6 @@ function getOTUByID(id) {
     // return the matching otu, or null if not found
     var lookup = getFastLookup('OTUS_BY_ID');
     return lookup[ id ] || null;
-}
-
-function makeArray( val ) {
-    // The caller expects an array, so we should coerce, wrap, or replace
-    // the specified value as needed.
-    if (typeof(val) === 'function') {
-        // unpack an observable value (from Knockout binding) and continue
-        val = val();
-    }
-
-    var arr;
-    if ((typeof(val) === 'undefined') || val === null) {
-        arr = [];
-    } else if (typeof(val) !== 'object') {
-        // other simple value types should be wrapped in an array
-        arr = [val]
-    } else if (typeof(val.length) === 'undefined') {
-        // it's a simple object, wrap it in an array
-        arr = [val];
-    } else {
-        // anything else is already proper array
-        arr = val;
-    }
-
-    return arr;
 }
 
 function getNexsonChildByProperty(children, property, value, options) {
