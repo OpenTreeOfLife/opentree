@@ -895,9 +895,7 @@ function saveFormDataToStudyJSON() {
         author_email: authorEmail,
         auth_token: authToken
     });
-    console.log("BEFORE: "+ saveURL);
     saveURL += ('?'+ qsVars);
-    console.log("AFTER: "+ saveURL);
 
     // strip any extraneous JS properties from study Nexson
     $.each( viewModel.nexml.trees.tree, function(i, tree) {
@@ -911,7 +909,7 @@ function saveFormDataToStudyJSON() {
         contentType: "application/json; charset=utf-8",
         url: saveURL,
         processData: false,
-        data: JSON.stringify(viewModel),
+        data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
         /* TODO: add non-nexson to query string!
         OLDdata: {
             // use JSON stringify (if available) for faster submission of JSON
@@ -2674,12 +2672,12 @@ var nexsonTemplates = {
     'notUsingRootedTrees': {
         "@property": "ot:notUsingRootedTrees", 
         "@xsi:type": "nex:LiteralMeta",
-        "$": true
+        "$": false
     },
     'notIntendedForSynthesis': {
         "@property": "ot:notIntendedForSynthesis", 
         "@xsi:type": "nex:LiteralMeta",
-        "$": true
+        "$": false
     } 
 
 } // END of nexsonTemplates
@@ -3914,7 +3912,6 @@ function nudgeTickler( name ) {
     }
     var oldValue = tickler.peek();
     tickler( oldValue + 1 );
-    console.log("nudged '"+ name +"', "+ oldValue +" => "+ tickler());
     
     // always nudge the main 'dirty flag' tickler
     viewModel.ticklers.STUDY_HAS_CHANGED( viewModel.ticklers.STUDY_HAS_CHANGED.peek() + 1 );
@@ -3942,7 +3939,6 @@ function getFastLookup( lookupName ) {
 function buildFastLookup( lookupName ) {
     // (re)build and store a flat list of Nexson elements by ID
     if (lookupName in viewModel.fastLookups) {
-        console.log("...(re)building '"+ lookupName +"' lookup...");
         clearFastLookup( lookupName );
         var newLookup = {};
         switch( lookupName ) {

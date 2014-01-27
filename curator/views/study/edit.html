@@ -688,7 +688,7 @@ body {
                     <tr data-bind="if: true">
                         <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')">ORIGINAL?</td>
                       {{ if viewOrEdit == 'EDIT': }}
-                         <!-- ko if: (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
+                         <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
                             <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')), 
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS,
@@ -704,7 +704,7 @@ body {
                           <!-- /ko -->
                         </td>
                          <!-- /ko -->
-                         <!-- ko if: (bogusEditedLabelCounter() > 0)  && editedLabelAccessor(otu) != null --> 
+                         <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0)  && editedLabelAccessor(otu) != null --> 
                         <td>
                             <input type="text" style="height: 14px; margin:
                             0; width: 97%;" data-bind="value: editedLabelAccessor(otu), css: viewModel.ticklers.OTU_MAPPING_HINTS">
