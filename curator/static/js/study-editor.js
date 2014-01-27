@@ -2965,15 +2965,17 @@ function approveProposedOTULabel(otu) {
     // undoes 'editOTULabel', releasing a label to use shared hints
     var OTUid = otu['@id'];
     var approvedMapping = proposedOTUMappings()[ OTUid ];
-    mapOTUToTaxon( OTUid, approvedMapping );
+    mapOTUToTaxon( OTUid, approvedMapping() );
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
+    nudgeTickler('OTU_MAPPING_HINTS');
 }
 function rejectProposedOTULabel(otu) {
     // undoes 'proposeOTULabel', clearing its value
     var OTUid = otu['@id'];
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
+    nudgeTickler('OTU_MAPPING_HINTS');
 }
 
 function getAllVisibleProposedMappings() {
@@ -2992,9 +2994,10 @@ function approveAllVisibleMappings() {
     $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
         var approvedMapping = proposedOTUMappings()[ OTUid ];
         delete proposedOTUMappings()[ OTUid ];
-        mapOTUToTaxon( OTUid, approvedMapping );
+        mapOTUToTaxon( OTUid, approvedMapping() );
     });
     proposedOTUMappings.valueHasMutated();
+    nudgeTickler('OTU_MAPPING_HINTS');
     startAutoMapping();
 }
 function rejectAllVisibleMappings() {
@@ -3264,9 +3267,9 @@ function requestTaxonMapping() {
 }
 
 function mapOTUToTaxon( otuID, mappingInfo ) {
-    // TODO: apply this mapping, creating Nexson elements as needed
+    // apply this mapping, creating Nexson elements as needed
 
-    /* mappingInfo should contain these attributes:
+    /* mappingInfo should be an object with these properties:
      * {
      *   "name" : "Centranthus",
      *   "ottId" : "759046",
@@ -3893,6 +3896,10 @@ function updateElementTags( select ) {
 var nudge = {
     'GENERAL_METADATA': function( data, event ) {
         nudgeTickler( 'GENERAL_METADATA');
+        return true;
+    },
+    'OTU_MAPPING_HINTS': function( data, event ) {
+        nudgeTickler( 'OTU_MAPPING_HINTS');
         return true;
     },
     'EDGE_DIRECTIONS': function( data, event ) {
