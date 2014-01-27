@@ -162,6 +162,27 @@ function loadSelectedStudy(id) {
                 showErrorMessage('Sorry, there is a problem with the study data.');
                 return;
             }
+            
+            // add study metadata tags, if missing
+            var requiredStudyMetatags = [
+                'studyPublicationReference',
+                'studyPublication',
+                'curatorName',
+                'studyId',
+                'studyYear',
+                'focalClade',
+                'focalCladeOTTTaxonName',
+                'notUsingRootedTrees',
+                'notIntendedForSynthesis'
+            ];
+            $.each(requiredStudyMetatags, function(i, tagName) {
+                if (getMetaTagByProperty(data.nexml.meta, 'ot:'+ tagName) === null) {
+                    console.log(">>> adding metatag for 'ot:"+ tagName +"'...");
+                    data.nexml.meta.push( 
+                        cloneFromNexsonTemplate(tagName)
+                    );
+                }
+            });
 
             // add study-level containers for annotations
             if (getStudyAnnotationEvents(data.nexml) === null) {
@@ -179,7 +200,6 @@ function loadSelectedStudy(id) {
                     cloneFromNexsonTemplate('annotation message collection', {applyKnockoutMapping: false}) 
                 );
             }
-
 
             // add agent singleton for this curation tool
             var curatorAgent;
@@ -1552,8 +1572,8 @@ var studyScoringRules = {
             description: "There should be at least one candidate tree (unless submitter has opted out).",
             test: function(studyData) {
                 // check for opt-out flag
-                var optOutFlag = getMetaTagAccessorByAtProperty(studyData.nexml.meta, 'ot:notIntendedForSynthesis');
-                if (optOutFlag && (optOutFlag() == true)) {
+                var optOutFlag = getMetaTagValue(studyData.nexml.meta, 'ot:notIntendedForSynthesis');
+                if (optOutFlag) {
                     // submitter has explicitly said this study is not intended for synthesis
                     return true;
                 }
@@ -1561,7 +1581,7 @@ var studyScoringRules = {
                 var candidateTreeFound = false;
                 var candidateTreeMarkers = getMetaTagAccessorByAtProperty(studyData.nexml.meta, 'ot:candidateTreeForSynthesis', { 'FIND_ALL': true });
                 $.each(candidateTreeMarkers, function(i, marker) {
-                    switch(marker()) {  // non-empty points to a candidate tree
+                    switch(marker) {  // non-empty points to a candidate tree
                         case '':
                         case null:
                         case undefined:
@@ -1583,8 +1603,8 @@ var studyScoringRules = {
             description: "Each tree should be rooted (unless submitter has opted out).",
             test: function(studyData) {
                 // check for opt-out flag
-                var optOutFlag = getMetaTagAccessorByAtProperty(studyData.nexml.meta, 'ot:notUsingRootedTrees');
-                if (optOutFlag && (optOutFlag() == true)) {
+                var optOutFlag = getMetaTagValue(studyData.nexml.meta, 'ot:notUsingRootedTrees');
+                if (optOutFlag) {
                     // submitter has explicitly said this study does not have rooted trees
                     return true;
                 }
@@ -1592,26 +1612,19 @@ var studyScoringRules = {
                 var unrootedTreeFound = false;
                 $.each(studyData.nexml.trees.tree, function(i, tree) {
                     // check for explicit tree-level marker (ot:inGroupClade) versus arbitrary root
-                    var rootNodeIDGetter = getMetaTagAccessorByAtProperty(tree.meta, 'ot:inGroupClade');
-                    if (typeof(rootNodeIDGetter) === 'function') {
-                        var rootNodeID = rootNodeIDGetter();
-                        ///console.log('>>> found this rootNodeID: '+ rootNodeID + '<'+ typeof(rootNodeID) +'>');
-                        switch(rootNodeID) {
-                            // TODO: Test live data to see what "none" or "empty" looks like in this field
-                            case '':
-                            case null:
-                            case undefined:
-                            case 0:
-                            case 'none':
-                                unrootedTreeFound = true;
-                                return false;  // done looping through trees
-                            default:
-                                return true; // try the next tree
-                        }
-                    } else {
-                        // no metadata on this tree, or no tag for inGroupClade
-                        unrootedTreeFound = true;
-                        return false;  // done looping through trees
+                    var rootNodeID = getMetaTagValue(tree.meta, 'ot:inGroupClade');
+                    ///console.log('>>> found this rootNodeID: '+ rootNodeID + '<'+ typeof(rootNodeID) +'>');
+                    switch(rootNodeID) {
+                        // TODO: Test live data to see what "none" or "empty" looks like in this field
+                        case '':
+                        case null:
+                        case undefined:
+                        case 0:
+                        case 'none':
+                            unrootedTreeFound = true;
+                            return false;  // done looping through trees
+                        default:
+                            return true; // try the next tree
                     }
                 });
                 // if no rootless trees were found, it passes the test
@@ -1644,8 +1657,8 @@ var studyScoringRules = {
             description: "All leaf nodes in candidate trees should be mapped to OTUs.",
             test: function(studyData) {
                 // check for opt-out flag
-                var optOutFlag = getMetaTagAccessorByAtProperty(studyData.nexml.meta, 'ot:notIntendedForSynthesis');
-                if (optOutFlag && (optOutFlag() == true)) {
+                var optOutFlag = getMetaTagValue(studyData.nexml.meta, 'ot:notIntendedForSynthesis');
+                if (optOutFlag) {
                     // submitter has explicitly said this study is not intended for synthesis
                     return true;
                 }
@@ -2622,6 +2635,53 @@ var nexsonTemplates = {
         ]
     }, // END of 'OTU entry' template
 
+    // study-level metadata tags 
+    'studyPublicationReference': {
+        "@property": "ot:studyPublicationReference", 
+        "@xsi:type": "nex:LiteralMeta",
+        "$": "" 
+    }, 
+    'studyPublication': {
+        "@property": "ot:studyPublication", 
+        "@xsi:type": "nex:ResourceMeta",
+        "@href": "" 
+    }, 
+    'curatorName': {
+        "@property": "ot:curatorName", 
+        "@xsi:type": "nex:LiteralMeta",
+        "$": ""
+    }, 
+    'studyId': {
+        "@property": "ot:studyId", 
+        "@xsi:type": "nex:LiteralMeta",
+        "$": "" 
+    }, 
+    'studyYear': {
+        "@property": "ot:studyYear", 
+        "@xsi:type": "nex:LiteralMeta",
+        "$": ""
+    }, 
+    'focalClade': {
+        "@property": "ot:focalClade", 
+        "@xsi:type": "nex:LiteralMeta",
+        "$": null
+    },
+    'focalCladeOTTTaxonName': {
+        "@property": "ot:focalCladeOTTTaxonName", 
+        "@xsi:type": "nex:LiteralMeta",
+        "$": ""
+    },
+    'notUsingRootedTrees': {
+        "@property": "ot:notUsingRootedTrees", 
+        "@xsi:type": "nex:LiteralMeta",
+        "$": true
+    },
+    'notIntendedForSynthesis': {
+        "@property": "ot:notIntendedForSynthesis", 
+        "@xsi:type": "nex:LiteralMeta",
+        "$": true
+    } 
+
 } // END of nexsonTemplates
 
 function cloneFromNexsonTemplate( templateName, options ) {
@@ -3517,16 +3577,12 @@ function createAnnotation( annotationBundle, nexml ) {
     // targetElement, annotationEvent, agent, messages ) {
     // RENAME to updateAnnotation, setAnnotation?
     // TODO: make sure we can handle "split" events that specify multiple elements
-    console.dir(annotationBundle, "bundle");
-
     if (!nexml) {
         nexml = viewModel.nexml;
     }
 
     // is the specified nexson already mapped to Knockout observables?
     var nexmlIsMapped = ko.isObservable( nexml.meta );
-    console.log("createAnnotation(): nexmlIsMapped = "+ nexmlIsMapped);
-
     var target = annotationBundle.targetElement;
     var annEvent = annotationBundle.annotationEvent;
     var agent = annotationBundle.agent;
@@ -3837,9 +3893,11 @@ function updateElementTags( select ) {
 var nudge = {
     'GENERAL_METADATA': function( data, event ) {
         nudgeTickler( 'GENERAL_METADATA');
+        return true;
     },
     'EDGE_DIRECTIONS': function( data, event ) {
         nudgeTickler( 'EDGE_DIRECTIONS');
+        return true;
     }
 }
 function nudgeTickler( name ) {
