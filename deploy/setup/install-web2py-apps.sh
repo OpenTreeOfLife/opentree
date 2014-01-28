@@ -124,31 +124,7 @@ mv tmp.tmp $configfile
 
 echo "Apache / web2py restart required (due to app configuration)"
 
-# ---------- CALLING OUT TO NEO4J FROM PYTHON AND JAVASCRIPT ----------
-
-# TBD: Need more fine-grained control so that different neo4j services
-# can live on different hosts.
-
-# Modify the web2py config file to point to the host that's running
-# treemachine and taxomachine.
-
-changed=no
-if [ x$NEO4JHOST != x ]; then
-    for APP in treemachine taxomachine oti; do
-        sed "s+$APP = .*+$APP = http://$NEO4JHOST/$APP+" < $configfile > tmp.tmp
-	if ! cmp -s tmp.tmp $configfile; then
-            mv tmp.tmp $configfile
-	    changed=yes
-	else
-	    echo "Sed failed !?"
-	fi
-    done
-else
-    echo "No NEO4JHOST !?"
-fi
-if [ $changed = yes ]; then
-    echo "Apache / web2py restart required (links to neo4j services)"
-fi
+# ---------- INSTALL PYTHON REQUIREMENTS, SYMLINK APPLICATIONS ----------
 
 (cd $APPROOT; pip install -r requirements.txt)
 
