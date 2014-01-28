@@ -80,7 +80,7 @@ done
 [ "x$OPENTREE_HOST" != x ] || (echo "OPENTREE_HOST not specified"; exit 1)
 [ "x$OPENTREE_IDENTITY" != x ] || (echo "OPENTREE_IDENTITY not specified"; exit 1)
 [ -r $OPENTREE_IDENTITY ] || (echo "$OPENTREE_IDENTITY not found"; exit 1)
-[ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J=$OPENTREE_HOST
+[ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J_HOST=$OPENTREE_HOST
 [ "x$OPENTREE_PUBLIC_DOMAIN" != x ] || OPENTREE_PUBLIC_DOMAIN=$OPENTREE_HOST
 [ "x$GITHUB_CLIENT_ID" != x ] || (echo "GITHUB_CLIENT_ID not specified"; exit 1)
 [ "x$GITHUB_CLIENT_SECRET" != x ] || (echo "GITHUB_CLIENT_SECRET not specified"; exit 1)
