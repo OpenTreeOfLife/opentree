@@ -1193,12 +1193,12 @@ Please review and re-submit.</pre>
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
     var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
-    var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
-    var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
-    var API_create_file_POST_url = '{{= conf.get("apis", "API_create_file_POST_url") }}';
-    var API_load_file_GET_url = '{{= conf.get("apis", "API_load_file_GET_url") }}';
-    var API_update_file_PUT_url = '{{= conf.get("apis", "API_update_file_PUT_url") }}';
-    var API_remove_file_DELETE_url = '{{= conf.get("apis", "API_remove_file_DELETE_url") }}';
+    var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
+    var API_update_study_PUT_url = '{{=API_update_study_PUT_url}}';
+    var API_create_file_POST_url = '{{=API_create_file_POST_url}}';
+    var API_load_file_GET_url = '{{=API_load_file_GET_url}}';
+    var API_update_file_PUT_url = '{{=API_update_file_PUT_url}}';
+    var API_remove_file_DELETE_url = '{{=API_remove_file_DELETE_url}}';
 
     var treemachine_domain = "{{=treemachine_domain}}";
     var taxomachine_domain = "{{=taxomachine_domain}}";
