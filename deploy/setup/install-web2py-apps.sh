@@ -4,7 +4,8 @@
 
 # Lots of arguments to make this work.. check to see if we have them all.
 if [ "$#" -ne 11 ]; then
-    echo "Illegal number of parameters (expecting 11)"
+    echo "install-web2py-apps.sh missing required parameters (expecting 11)"
+    exit 1
 fi
 
 OPENTREE_HOST=$1
