@@ -84,23 +84,26 @@ fi
 
 # ---------- WEB2PY CONFIGURATION ----------
 
-# ---- main webapp (opentree)
-configfile=repo/opentree/webapp/private/config
-
-# Config file pushed here using rsync, see push.sh
-cp -p setup/webapp-config $configfile
-
-# N.B. Another file 'janrain.key' with secret Janrain key was already placed via rsync (in push.sh)
-
 # The web2py apps need to know their own host names, for
 # authentication purposes.  'hostname' doesn't work on EC2 instances,
 # so it has to be passed in as a parameter.
 
-sed "s+hostdomain = .*+hostdomain = $OPENTREE_PUBLIC_DOMAIN+" < $configfile > tmp.tmp
-if ! cmp -s tmp.tmp $configfile; then
-    mv tmp.tmp $configfile
-    echo "Apache / web2py restart required (host name)"
-fi
+# N.B. Another file 'janrain.key' with secret Janrain key was already placed via rsync (in push.sh)
+
+# ---- main webapp (opentree)
+
+configdir=repo/opentree/webapp/private
+configtemplate=$configdir/config.example
+configfile=$configdir/config
+
+# Replace tokens in example config file to make the active config (assume this always changes)
+cp -p $configtemplate $configfile
+sed "s+hostdomain = .*+hostdomain = $OPENTREE_PUBLIC_DOMAIN+;
+     s+treemachine = .*+treemachine = $TREEMACHINE_BASE_URL+
+     s+taxomachine = .*+taxomachine = $TAXOMACHINE_BASE_URL+
+     s+oti = .*+oti = $OTI_BASE_URL+
+    " < $configfile > tmp.tmp
+mv tmp.tmp $configfile
 
 # ---- curator webapp
 configdir=repo/opentree/curator/private
@@ -119,7 +122,7 @@ sed "s+github_client_id = .*+github_client_id = $GITHUB_CLIENT_ID+;
     " < $configfile > tmp.tmp
 mv tmp.tmp $configfile
 
-echo "Apache / web2py restart required (curation config)"
+echo "Apache / web2py restart required (due to app configuration)"
 
 # ---------- CALLING OUT TO NEO4J FROM PYTHON AND JAVASCRIPT ----------
 
