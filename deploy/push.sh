@@ -82,15 +82,18 @@ done
 [ -r $OPENTREE_IDENTITY ] || (echo "$OPENTREE_IDENTITY not found"; exit 1)
 [ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J_HOST=$OPENTREE_HOST
 [ "x$OPENTREE_PUBLIC_DOMAIN" != x ] || OPENTREE_PUBLIC_DOMAIN=$OPENTREE_HOST
-[ "x$GITHUB_CLIENT_ID" != x ] || (echo "GITHUB_CLIENT_ID not specified"; exit 1)
-[ "x$GITHUB_CLIENT_SECRET" != x ] || (echo "GITHUB_CLIENT_SECRET not specified"; exit 1)
+[ "x$GITHUB_CLIENT_ID" != x ] || GITHUB_CLIENT_ID=ID_NOT_PROVIDED
+[ "x$GITHUB_CLIENT_SECRET" != x ] || GITHUB_CLIENT_SECRET=SECRET_NOT_PROVIDED
 [ "x$GITHUB_REDIRECT_URI" != x ] || GITHUB_REDIRECT_URI=$OPENTREE_PUBLIC_DOMAIN/curator/user/login
 [ "x$TREEMACHINE_BASE_URL" != x ] || TREEMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/treemachine
 [ "x$TAXOMACHINE_BASE_URL" != x ] || TAXOMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/taxomachine
 [ "x$OTI_BASE_URL" != x ] || OTI_BASE_URL=$OPENTREE_NEO4J_HOST/oti
 [ "x$OTOL_API_BASE_URL" != x ] || OTOL_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/api/v1
 
+if [ $GITHUB_CLIENT_ID = ID_NOT_PROVIDED ] || [ $GITHUB_CLIENT_SECRET = SECRET_NOT_PROVIDED ]; then echo "WARNING: Incomplete GitHub credentials! Curation UI will be disabled."; fi
+
 # abbreviations... no good reason for these, they just make the commands shorter
+
 ADMIN=$OPENTREE_ADMIN
 NEO4JHOST=$OPENTREE_NEO4J_HOST
 
