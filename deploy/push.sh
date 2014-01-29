@@ -215,7 +215,7 @@ function push_api {
     if [ $DRYRUN = "yes" ]; then echo "[api]"; return; fi
     rsync -pr -e "${SSH}" $OPENTREE_GH_IDENTITY "$OT_USER@$OPENTREE_HOST":.ssh/opentree
     ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" $OPENTREE_DOCSTORE $CONTROLLER
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" $OPENTREE_DOCSTORE $CONTROLLER $OTI_BASE_URL
 }
 
 function index {
