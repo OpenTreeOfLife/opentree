@@ -911,9 +911,9 @@ function showObjectProperties( objInfo, options ) {
                                               + 'title="GBIF Backbone Taxonomy" target="_blank">GBIF: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
-                            case 'SILVA':
-                                displayVal = '<a href="http://www.arb-silva.de/browser/ssu/silva/'+ sourceInfo.taxSourceId +'" '
-                                              + 'title="SILVA Taxonomy" target="_blank">SILVA: '+ sourceInfo.taxSourceId +'</a>';
+                            case 'H2007':
+                                displayVal = '<a href="http://dx.doi.org/10.6084/m9.figshare.915439#'+ sourceInfo.taxSourceId +'" '
+                                              + 'title="Hibbett 2007 updated" target="_blank">Hibbett et al. 2007 updated: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
                             case 'IF':
@@ -921,9 +921,24 @@ function showObjectProperties( objInfo, options ) {
                                               + 'title="Index Fungorum" target="_blank">Index Fungorum: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
+                            case 'IRMNG':
+                                displayVal = '<a href="http://www.marine.csiro.au/mirrorsearch/ir_search.list_species?gen_id='+ sourceInfo.taxSourceId +'" '
+                                              + 'title="Interim Register of Marine and Nonmarine Genera" target="_blank">IRMNG: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
+
                             case 'MB':
                                 displayVal = '<a href="http://www.mycobank.org/MB/'+ sourceInfo.taxSourceId +'/" '
                                               + 'title="Mycobank" target="_blank">Mycobank: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
+
+                            case 'SILVA':
+                                displayVal = '<a href="http://www.arb-silva.de/browser/ssu/silva/'+ sourceInfo.taxSourceId +'" '
+                                              + 'title="SILVA Taxonomy" target="_blank">SILVA: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
+
+                            case 'STUDY713':
+                                displayVal = '<a href="http://dx.doi.org/10.1186/1471-2148-10-352#'+ sourceInfo.taxSourceId +'" '
+                                              + 'title="Schäferhoff et al. 2010" target="_blank">Schäferhoff et al. 2010: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
                             case 'OTT': 
