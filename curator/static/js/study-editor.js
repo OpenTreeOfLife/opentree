@@ -342,7 +342,8 @@ function loadSelectedStudy(id) {
             viewModel.filteredTrees = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
-                console.log(">>> computing filteredTrees");
+                updateClearSearchWidget( '#tree-list-filter' );
+
                 var match = viewModel.listFilters.TREES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
 
@@ -372,7 +373,8 @@ function loadSelectedStudy(id) {
                 // new paged observableArray
                 var ticklers = [ viewModel.ticklers.SUPPORTING_FILES() ];
 
-                console.log(">>> computing filteredFiles");
+                updateClearSearchWidget( '#file-list-filter' );
+
                 var match = viewModel.listFilters.FILES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
 
@@ -404,7 +406,8 @@ function loadSelectedStudy(id) {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
                 ///var ticklers = [ viewModel.ticklers.OTU_MAPPING_HINTS() ];
-                console.log(">>> computing filteredOTUs");
+                updateClearSearchWidget( '#otu-list-filter' );
+
                 var match = viewModel.listFilters.OTUS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
                 var scope = viewModel.listFilters.OTUS.scope();
@@ -535,7 +538,8 @@ function loadSelectedStudy(id) {
             viewModel.filteredAnnotations = ko.computed(function() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
-                console.log(">>> computing filteredAnnotations");
+                updateClearSearchWidget( '#annotation-list-filter' );
+
                 var match = viewModel.listFilters.ANNOTATIONS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
                 var scope = viewModel.listFilters.ANNOTATIONS.scope();

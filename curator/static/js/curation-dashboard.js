@@ -119,7 +119,7 @@ function loadStudyList() {
                     // TODO: add 'pagesize'?
                     'match': ko.observable(""),
                     'workflow': ko.observable("Any workflow state"),
-                    'order': ko.observable("Newest first")
+                    'order': ko.observable("Newest publication first")
                 }
             };
             
@@ -128,7 +128,8 @@ function loadStudyList() {
             viewModel.filteredStudies = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
-                console.log(">>> computing filteredStudies");
+                updateClearSearchWidget( '#study-list-filter' );
+
                 var match = viewModel.listFilters.STUDIES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
                 var workflow = viewModel.listFilters.STUDIES.workflow();
@@ -183,14 +184,14 @@ function loadStudyList() {
                      *   0 = no change
                      *   1 = b comes before a
                      */
-                    case 'Newest first':
+                    case 'Newest publication first':
                         filteredList.sort(function(a,b) { 
                             if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
                             return (a['ot:studyYear'] > b['ot:studyYear'])? -1 : 1;
                         });
                         break;
 
-                    case 'Oldest first':
+                    case 'Oldest publication first':
                         filteredList.sort(function(a,b) { 
                             if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
                             return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
@@ -308,7 +309,7 @@ function getPubLink(study) {
         urlNotFound = true;
     }
     if (urlNotFound) {
-        return '<span style="color: #ccc;">&mdash;</span>';
+        return '<span style="color: #999;">No link to this publication.</span>';
         //return '<span style="color: #ccc;">[DOI not found]</span>';
     }
     return '<a href="'+ pubURL +'" target="_blank"'+'>'+ pubURL +'</a'+'>';

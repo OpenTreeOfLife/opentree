@@ -344,7 +344,7 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or ingroup clade"
+                    <input type="text" id="tree-list-filter" class="search-query" placeholder="Filter by name or ingroup clade"
                            data-bind="value: viewModel.listFilters.TREES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
@@ -488,7 +488,7 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or description"
+                    <input type="text" id="file-list-filter" class="search-query" placeholder="Filter by name or description"
                            data-bind="value: viewModel.listFilters.FILES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
@@ -639,7 +639,7 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by original or mapped label"
+                    <input type="text" id="otu-list-filter" class="search-query" placeholder="Filter by original or mapped label"
                            data-bind="value: viewModel.listFilters.OTUS.match, valueUpdate: 'afterkeydown'">
                 </form>
                 <ul class="nav" style="padding-left: 1em;">
@@ -974,7 +974,7 @@ body {
               <div class="navbar">
                  <div class="navbar-inner">
                   <form class="navbar-search pull-left">
-                      <input type="text" class="search-query input-xlarge" placeholder="Filter by type, location, submitter, message"
+                      <input type="text" id="annotation-list-filter" class="search-query input-xlarge" placeholder="Filter by type, location, submitter, message"
                              data-bind="value: viewModel.listFilters.ANNOTATIONS.match, valueUpdate: 'afterkeydown'">
                   </form>
                 <!-- TODO: Can we provide some kind of support for thes filters?
