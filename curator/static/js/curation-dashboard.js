@@ -249,7 +249,7 @@ function getViewOrEditLinks(study) {
     if (fullRef) {
         // hide/show full publication reference
         html += '<a class="compact-study-ref" href="'+ viewOrEditURL +'">'+ fullToCompactReference(fullRef) +'</a>';
-        html += '&nbsp; <a class="full-ref-toggle" href="#" onclick="toggleStudyReference(this); return false;">[show full reference]</a>';
+        html += '&nbsp; &nbsp; <a class="full-ref-toggle" href="#" onclick="toggleStudyDetails(this); return false;">[show details]</a>';
     } else {
         // nothing to toggle
         html += '<a href="'+ viewOrEditURL +'">(Untitled study)</a>';
@@ -331,18 +331,18 @@ function getPageNumbers( pagedArray ) {
     return pageNumbers;
 }
 
-function toggleStudyReference( clicked ) {
+function toggleStudyDetails( clicked ) {
     var $toggle = $(clicked);
-    var $compactRef = $toggle.prevAll('.compact-study-ref');
+    //var $compactRef = $toggle.prevAll('.compact-study-ref');
     var $fullRef = $toggle.closest('tr').next().find('.full-study-ref');
     if ($fullRef.is(':visible')) {
         //$compactRef.show();
         $fullRef.hide();
-        $toggle.text('[show full reference]');
+        $toggle.text('[show details]');
     } else {
         //$compactRef.hide();
         $fullRef.show();
-        $toggle.text('[hide full reference]');
+        $toggle.text('[hide details]');
     }
 }
 
