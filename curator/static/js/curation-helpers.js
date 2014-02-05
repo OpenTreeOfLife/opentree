@@ -61,6 +61,7 @@ function makeArray( val ) {
     return arr;
 }
 
+/*
 var cladeNameTimeoutID = null;
 function loadMissingFocalCladeNames() {
     // temporary behavior to AJAX-load missing taxon names wherever we
@@ -94,3 +95,4 @@ function loadMissingFocalCladeNames() {
         }
     }, 100);
 }
+*/
