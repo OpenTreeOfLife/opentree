@@ -308,7 +308,7 @@ function getPubLink(study) {
         urlNotFound = true;
     }
     if (urlNotFound) {
-        return '<span style="color: #ccc;">&mdash;</span>';
+        return '<span style="color: #999;">No link to this publication.</span>';
         //return '<span style="color: #ccc;">[DOI not found]</span>';
     }
     return '<a href="'+ pubURL +'" target="_blank"'+'>'+ pubURL +'</a'+'>';
