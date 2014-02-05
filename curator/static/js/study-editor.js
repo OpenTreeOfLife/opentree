@@ -1741,6 +1741,7 @@ var studyScoringRules = {
                                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
                         }
     ],
+/*
     'Tools': [
         // maybe just happy news here.. new tools available?
                         {
@@ -1755,6 +1756,7 @@ var studyScoringRules = {
                                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
                         }
     ],
+*/
     'Status': [
         // general validation problems... something that spans multiple tabs
                         {
