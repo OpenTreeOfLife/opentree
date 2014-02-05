@@ -505,14 +505,14 @@ function fixLoginLinks() {
 
 function historyStateToWindowTitle( stateObj ) {
     // show name if possible, else just source+ID
-    if (stateObj.nodeName.trim() === '') {
+    if ((!stateObj.nodeName) || stateObj.nodeName.trim() === '') {
         return (stateObj.domSource +':'+ stateObj.nodeID +' - opentree');
     }
     return (stateObj.nodeName +' - opentree');
 }
 function historyStateToPageHeading( stateObj ) {
     // show name if possible, else just source+ID
-    if (stateObj.nodeName.trim() === '') {
+    if ((!stateObj.nodeName) || stateObj.nodeName.trim() === '') {
         return ('Unnamed node '+ stateObj.domSource +'@'+ stateObj.nodeID);
     }
     //return ('Node \''+ stateObj.nodeName +'\' ('+ stateObj.domSource +'@'+ stateObj.nodeID +')');
@@ -648,7 +648,6 @@ function showObjectProperties( objInfo, options ) {
     var metaMap = {};  // this should be replaced in synthetic-tree views
 
     // examine incoming data to figure out what it is, and what to show
-
     if (typeof(objInfo.nodeID) !== 'undefined') {
         // this is minimal node info (nodeID, domSource, nodeName) from an argus node
         // OR it's an edge with metadata for it and its adjacent (child) node
@@ -661,8 +660,8 @@ function showObjectProperties( objInfo, options ) {
         // OR it's an edge with metadata for it and its adjacent (child) node
         objType = (objInfo.type) ? objInfo.type : 'node';
         objName = objInfo.name;
-        objID = objInfo.nodeiD;
-        objSource = '?';
+        objID = objInfo.nodeid;
+        objSource = objInfo.domSource || '?';
     } else {
         // what's this?
         debugger;
