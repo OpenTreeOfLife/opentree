@@ -119,7 +119,7 @@ function loadStudyList() {
                     // TODO: add 'pagesize'?
                     'match': ko.observable(""),
                     'workflow': ko.observable("Any workflow state"),
-                    'order': ko.observable("Newest first")
+                    'order': ko.observable("Newest publication first")
                 }
             };
             
@@ -184,14 +184,14 @@ function loadStudyList() {
                      *   0 = no change
                      *   1 = b comes before a
                      */
-                    case 'Newest first':
+                    case 'Newest publication first':
                         filteredList.sort(function(a,b) { 
                             if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
                             return (a['ot:studyYear'] > b['ot:studyYear'])? -1 : 1;
                         });
                         break;
 
-                    case 'Oldest first':
+                    case 'Oldest publication first':
                         filteredList.sort(function(a,b) { 
                             if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
                             return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
