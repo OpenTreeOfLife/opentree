@@ -43,6 +43,20 @@ if ( History && History.enabled && pageUsesHistory ) {
                     argus.displayNode({"nodeID": data,
                                        "domSource": syntheticTreeID});  // from main HTML view
                 },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    // NOTE that this won't fire in cross-domain requests! using complete (below) instead..
+                },
+                complete: function(jqXHR, textStatus) {
+                    // examine the error response and show a sensible message
+                    if (textStatus === 'error') {
+                        var errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
+                        if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
+                            // the requested OTT taxon is bogus, or not found in the target tree
+                            errMsg = "The requested taxon is not used in the current tree. Please double-check the URL, or search for another taxon,  or return to <a href='/'>Home</a>.";
+                        }
+                        showErrorInArgusViewer( errMsg, jqXHR.responseText );
+                    }
+                },
                 dataType: 'json'  // should return just the node ID (number)
             });
         } else {
@@ -1178,6 +1192,17 @@ if (false) {
     History.go(2); // this is *relative* to the current index (position) in history! ie, .go(-1) is the same at back()
 }
 
+function showErrorInArgusViewer( msg, details ) {
+    var errorHTML; 
+    if (!details) {
+        errorHTML = '<p style="margin: 8px 12px;">'+ msg +'</p>';
+    } else {
+        errorHTML = '<p style="margin: 8px 12px;">'+ msg +'&nbsp; &nbsp; '
+        + '<a href="#" onclick="$(\'#error-details\').show(); return false;">Show details</a></p>'
+        + '<p id="error-details" style="margin: 8px 12px; font-style: italic; display: none;">'+ details +'</p>';
+    }
+    $('#argusCanvasContainer').css('height','500px').html( errorHTML );
+}
 
 /* provide string-trimming functions in older browsers */
 if (!String.prototype.trim) {
