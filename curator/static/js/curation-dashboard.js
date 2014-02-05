@@ -128,7 +128,8 @@ function loadStudyList() {
             viewModel.filteredStudies = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
-                console.log(">>> computing filteredStudies");
+                updateClearSearchWidget( '#study-list-filter' );
+
                 var match = viewModel.listFilters.STUDIES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
                 var workflow = viewModel.listFilters.STUDIES.workflow();

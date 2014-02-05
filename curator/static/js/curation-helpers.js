@@ -61,6 +61,32 @@ function makeArray( val ) {
     return arr;
 }
 
+function updateClearSearchWidget( searchFieldSelector ) {
+    // add/remove clear widget based on field's contents
+    var $search = $(searchFieldSelector);
+    if ($search.length === 0) {
+        console.warn("updateClearSearchWidget: field '"+ searchFieldSelector +"' not found!");
+        return;
+    }
+    if ($.trim($search.val()) === '') {
+        // remove clear widget, if any
+        $search.next('.clear-search').remove();
+    } else {
+        // add and enable the clear widget
+        var $clear = $search.next('.clear-search');
+        if ($clear.length === 0) {
+            $search.after('<i class="clear-search icon-remove"></i>');
+            $clear = $search.next('.clear-search');
+            $clear.click(function() {
+               $(this).prev().val('').trigger('change'); 
+               return false;
+            });
+        }
+    }
+
+
+}
+
 /*
 var cladeNameTimeoutID = null;
 function loadMissingFocalCladeNames() {
