@@ -276,7 +276,6 @@ function loadSelectedStudy(id) {
                     '^ot:specifiedRoot',
                     '^ot:inGroupClade',
                     '^ot:outGroupEdge',
-                    '^ot:tag',
                     '^ot:branchLengthMode',
                     '^ot:branchLengthTimeUnit',
                     '^ot:branchLengthDescription'
@@ -3902,7 +3901,7 @@ function getAllAnnotationMessagesInStudy(nexml) {
 
 function getTags( parentElement ) {
     var tags = [];
-    var rawTagValues = getMetaTagValue(parentElement.meta, 'ot:tag', { 'FIND_ALL': true });
+    var rawTagValues = parentElement['^ot:tag'] || [];
     $.each(rawTagValues, function(i, tagText) {
         var tagText = $.trim(tagText);
         switch(tagText) {  // non-empty points to a candidate tree
@@ -3915,17 +3914,13 @@ function getTags( parentElement ) {
     return tags;
 }
 function addTag( parentElement, newTagText ) {
-    addMetaTagToParent(parentElement, {
-        "$": newTagText,
-        "@property": "ot:tag",
-        "@xsi:type": "nex:LiteralMeta"
-    });
+    if (!('^ot:tag' in parentElement)) {
+        parentElement['^ot:tag'] = [];
+    }
+    parentElement['^ot:tag'].push( newTagText );
 }
 function removeAllTags( parentElement ) {
-    var tagElements = getNexsonChildByProperty(parentElement.meta, '@property', 'ot:tag', { 'FIND_ALL': true });
-    $.each(tagElements, function(i, tag) {
-        removeFromArray( tag, parentElement.meta );
-    });
+    parentElement['^ot:tag'] = [];
 }
 function updateElementTags( select ) {
     var parentElement;
