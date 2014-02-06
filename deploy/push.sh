@@ -195,9 +195,6 @@ function restart_apache {
 
 function push_opentree {
     if [ $DRYRUN = "yes" ]; then echo "[opentree]"; return; fi
-
-    echo ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER "${GITHUB_CLIENT_ID}" "${GITHUB_CLIENT_SECRET}" "${GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OTOL_API_BASE_URL}"
-
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER "${GITHUB_CLIENT_ID}" "${GITHUB_CLIENT_SECRET}" "${GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OTOL_API_BASE_URL}"
     # place the file with secret Janrain key
     keyfile=../webapp/private/janrain.key
