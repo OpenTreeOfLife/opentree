@@ -77,13 +77,13 @@ while [ $# -gt 0 ]; do
     fi
 done
 
-[ "x$OPENTREE_HOST" != x ] || (echo "OPENTREE_HOST not specified"; exit 1)
-[ "x$OPENTREE_IDENTITY" != x ] || (echo "OPENTREE_IDENTITY not specified"; exit 1)
-[ -r $OPENTREE_IDENTITY ] || (echo "$OPENTREE_IDENTITY not found"; exit 1)
+if [ "x$OPENTREE_HOST" = x ] ; then echo "OPENTREE_HOST not specified"; exit 1; fi
+if [ "x$OPENTREE_IDENTITY" = x ]; then echo "OPENTREE_IDENTITY not specified"; exit 1; fi
+if [ ! -r $OPENTREE_IDENTITY ]; then echo "$OPENTREE_IDENTITY not found"; exit 1; fi
 [ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J_HOST=$OPENTREE_HOST
 [ "x$OPENTREE_PUBLIC_DOMAIN" != x ] || OPENTREE_PUBLIC_DOMAIN=$OPENTREE_HOST
-[ "x$GITHUB_CLIENT_ID" != x ] || (echo "GITHUB_CLIENT_ID not specified"; exit 1)
-[ "x$GITHUB_CLIENT_SECRET" != x ] || (echo "GITHUB_CLIENT_SECRET not specified"; exit 1)
+if [ "x$GITHUB_CLIENT_ID" = x ]; then echo "GITHUB_CLIENT_ID not specified"; GITHUB_CLIENT_ID=None; fi
+if [ "x$GITHUB_CLIENT_SECRET" = x ]; then echo "GITHUB_CLIENT_SECRET not specified"; GITHUB_CLIENT_SECRET=None; fi
 [ "x$GITHUB_REDIRECT_URI" != x ] || GITHUB_REDIRECT_URI=$OPENTREE_PUBLIC_DOMAIN/curator/user/login
 [ "x$TREEMACHINE_BASE_URL" != x ] || TREEMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/treemachine
 [ "x$TAXOMACHINE_BASE_URL" != x ] || TAXOMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/taxomachine
@@ -195,6 +195,9 @@ function restart_apache {
 
 function push_opentree {
     if [ $DRYRUN = "yes" ]; then echo "[opentree]"; return; fi
+
+    echo ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER "${GITHUB_CLIENT_ID}" "${GITHUB_CLIENT_SECRET}" "${GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OTOL_API_BASE_URL}"
+
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER "${GITHUB_CLIENT_ID}" "${GITHUB_CLIENT_SECRET}" "${GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OTOL_API_BASE_URL}"
     # place the file with secret Janrain key
     keyfile=../webapp/private/janrain.key
