@@ -182,7 +182,7 @@ body {
       <li><a href="#Files" data-toggle="tab">Files <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#OTU-Mapping" data-toggle="tab">OTU Mapping <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#Annotations" data-toggle="tab">Annotations <span class="badge badge-important" style="display: none;">?</span></a></li>
-      <li><a href="#Tools" data-toggle="tab">Tools <span class="badge badge-important" style="display: none;">?</span></a></li>
+  <!--<li><a href="#Tools" data-toggle="tab">Tools <span class="badge badge-important" style="display: none;">?</span></a></li>-->
       <li><a href="#Status" data-toggle="tab">Status <span class="badge badge-important" style="display: none;">?</span></a></li>
     </ul>
 
@@ -190,9 +190,9 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
           <button class="btn btn"
             onclick="if (validateFormData()) saveFormDataToStudyJSON(); return false;">Save Study</button>
-          <a class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
+          <a id="return-to-study-list" class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
           <button class="btn btn-danger pull-right"
-            onclick="confirm('Are you sure you want to delete this study?'); return false;">Delete Study</button>
+            onclick="removeStudy(); return false;">Delete Study</button>
         {{ else: }} 
           <a class="btn btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to study list</a>
          {{ if userCanEdit: }}
@@ -344,7 +344,7 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or ingroup clade"
+                    <input type="text" id="tree-list-filter" class="search-query" placeholder="Filter by name or ingroup clade"
                            data-bind="value: viewModel.listFilters.TREES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
@@ -488,7 +488,7 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or description"
+                    <input type="text" id="file-list-filter" class="search-query" placeholder="Filter by name or description"
                            data-bind="value: viewModel.listFilters.FILES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
@@ -639,7 +639,7 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by original or mapped label"
+                    <input type="text" id="otu-list-filter" class="search-query" placeholder="Filter by original or mapped label"
                            data-bind="value: viewModel.listFilters.OTUS.match, valueUpdate: 'afterkeydown'">
                 </form>
                 <ul class="nav" style="padding-left: 1em;">
@@ -974,7 +974,7 @@ body {
               <div class="navbar">
                  <div class="navbar-inner">
                   <form class="navbar-search pull-left">
-                      <input type="text" class="search-query input-xlarge" placeholder="Filter by type, location, submitter, message"
+                      <input type="text" id="annotation-list-filter" class="search-query input-xlarge" placeholder="Filter by type, location, submitter, message"
                              data-bind="value: viewModel.listFilters.ANNOTATIONS.match, valueUpdate: 'afterkeydown'">
                   </form>
                 <!-- TODO: Can we provide some kind of support for thes filters?
@@ -1195,6 +1195,7 @@ Please review and re-submit.</pre>
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
     var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
     var API_update_study_PUT_url = '{{=API_update_study_PUT_url}}';
+    var API_remove_study_DELETE_url = '{{=API_remove_study_DELETE_url}}';
     var API_create_file_POST_url = '{{=API_create_file_POST_url}}';
     var API_load_file_GET_url = '{{=API_load_file_GET_url}}';
     var API_update_file_PUT_url = '{{=API_update_file_PUT_url}}';

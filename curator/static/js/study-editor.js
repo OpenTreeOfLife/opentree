@@ -8,6 +8,7 @@
 var studyID;
 var API_load_study_GET_url;
 var API_update_study_PUT_url;
+var API_remove_study_DELETE_url;
 var viewOrEdit;
 var API_create_file_POST_url;
 var API_load_file_GET_url;
@@ -342,7 +343,8 @@ function loadSelectedStudy(id) {
             viewModel.filteredTrees = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
-                console.log(">>> computing filteredTrees");
+                updateClearSearchWidget( '#tree-list-filter' );
+
                 var match = viewModel.listFilters.TREES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
 
@@ -372,7 +374,8 @@ function loadSelectedStudy(id) {
                 // new paged observableArray
                 var ticklers = [ viewModel.ticklers.SUPPORTING_FILES() ];
 
-                console.log(">>> computing filteredFiles");
+                updateClearSearchWidget( '#file-list-filter' );
+
                 var match = viewModel.listFilters.FILES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
 
@@ -404,7 +407,8 @@ function loadSelectedStudy(id) {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
                 ///var ticklers = [ viewModel.ticklers.OTU_MAPPING_HINTS() ];
-                console.log(">>> computing filteredOTUs");
+                updateClearSearchWidget( '#otu-list-filter' );
+
                 var match = viewModel.listFilters.OTUS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
                 var scope = viewModel.listFilters.OTUS.scope();
@@ -535,7 +539,8 @@ function loadSelectedStudy(id) {
             viewModel.filteredAnnotations = ko.computed(function() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
-                console.log(">>> computing filteredAnnotations");
+                updateClearSearchWidget( '#annotation-list-filter' );
+
                 var match = viewModel.listFilters.ANNOTATIONS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
                 var scope = viewModel.listFilters.ANNOTATIONS.scope();
@@ -910,15 +915,6 @@ function saveFormDataToStudyJSON() {
         url: saveURL,
         processData: false,
         data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
-        /* TODO: add non-nexson to query string!
-        OLDdata: {
-            // use JSON stringify (if available) for faster submission of JSON
-            nexson: ko.mapping.toJSON(viewModel),
-            author_name: authorName,
-            author_email: authorEmail,
-            auth_token: authToken
-        },
-        */
         success: function( data, textStatus, jqXHR ) {
             // this should be properly parsed JSON
             ///console.log('saveFormDataToStudyJSON(): done! textStatus = '+ textStatus);
@@ -932,6 +928,59 @@ function saveFormDataToStudyJSON() {
             showSuccessMessage('Study saved to remote storage.');
 
             // TODO: should we expect fresh JSON to refresh the form?
+        }
+    });
+}
+
+function removeStudy() {
+    // let's be sure, since deletion will make a mess...
+    if (!confirm("Are you sure you want to delete this study?")) {
+        return;
+    }
+
+    var removeURL = API_remove_study_DELETE_url.replace('{STUDY_ID}', studyID);
+    // add auth-token to the query string (no body allowed!)
+    var qsVars = $.param({
+        author_name: authorName,
+        author_email: authorEmail,
+        auth_token: authToken
+    });
+    removeURL += ('?'+ qsVars);
+
+    // do the actual removal (from the remote file-store) via AJAX
+    $('#ajax-busy-bar').show();
+    
+    $.ajax({
+        type: 'DELETE',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: removeURL, // modified API call, see above
+        data: {},   // sadly not recognized for DELETE, using query-string instead 
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                showErrorMessage('Sorry, there was an error removing this study.');
+                console.log("ERROR: textStatus !== 'success', but "+ textStatus);
+                return;
+            }
+            /*
+            if (data.message !== 'File deleted') {
+                showErrorMessage('Sorry, there was an error removing this study.');
+                console.log("ERROR: message !== 'File deleted', but "+ data.message);
+                return;
+            }
+            */
+
+            $('#ajax-busy-bar').hide();
+            showSuccessMessage('Study removed, returning to study list...');
+            setTimeout(function() {
+                var studyListURL = $('#return-to-study-list').attr('href');
+                if (!studyListURL) {
+                    console.error("Missing studyListURL!");
+                }
+                window.location = studyListURL || '/curator';
+            }, 3000);
         }
     });
 }
@@ -1741,6 +1790,7 @@ var studyScoringRules = {
                                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
                         }
     ],
+/*
     'Tools': [
         // maybe just happy news here.. new tools available?
                         {
@@ -1755,6 +1805,7 @@ var studyScoringRules = {
                                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
                         }
     ],
+*/
     'Status': [
         // general validation problems... something that spans multiple tabs
                         {

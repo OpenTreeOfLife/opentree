@@ -82,15 +82,18 @@ if [ "x$OPENTREE_IDENTITY" = x ]; then echo "OPENTREE_IDENTITY not specified"; e
 if [ ! -r $OPENTREE_IDENTITY ]; then echo "$OPENTREE_IDENTITY not found"; exit 1; fi
 [ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J_HOST=$OPENTREE_HOST
 [ "x$OPENTREE_PUBLIC_DOMAIN" != x ] || OPENTREE_PUBLIC_DOMAIN=$OPENTREE_HOST
-if [ "x$GITHUB_CLIENT_ID" = x ]; then echo "GITHUB_CLIENT_ID not specified"; GITHUB_CLIENT_ID=None; fi
-if [ "x$GITHUB_CLIENT_SECRET" = x ]; then echo "GITHUB_CLIENT_SECRET not specified"; GITHUB_CLIENT_SECRET=None; fi
+[ "x$GITHUB_CLIENT_ID" != x ] || GITHUB_CLIENT_ID=ID_NOT_PROVIDED
+[ "x$GITHUB_CLIENT_SECRET" != x ] || GITHUB_CLIENT_SECRET=SECRET_NOT_PROVIDED
 [ "x$GITHUB_REDIRECT_URI" != x ] || GITHUB_REDIRECT_URI=$OPENTREE_PUBLIC_DOMAIN/curator/user/login
 [ "x$TREEMACHINE_BASE_URL" != x ] || TREEMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/treemachine
 [ "x$TAXOMACHINE_BASE_URL" != x ] || TAXOMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/taxomachine
 [ "x$OTI_BASE_URL" != x ] || OTI_BASE_URL=$OPENTREE_NEO4J_HOST/oti
 [ "x$OTOL_API_BASE_URL" != x ] || OTOL_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/api/v1
 
+if [ $GITHUB_CLIENT_ID = ID_NOT_PROVIDED ] || [ $GITHUB_CLIENT_SECRET = SECRET_NOT_PROVIDED ]; then echo "WARNING: Incomplete GitHub credentials! Curation UI will be disabled."; fi
+
 # abbreviations... no good reason for these, they just make the commands shorter
+
 ADMIN=$OPENTREE_ADMIN
 NEO4JHOST=$OPENTREE_NEO4J_HOST
 
@@ -212,7 +215,7 @@ function push_api {
     if [ $DRYRUN = "yes" ]; then echo "[api]"; return; fi
     rsync -pr -e "${SSH}" $OPENTREE_GH_IDENTITY "$OT_USER@$OPENTREE_HOST":.ssh/opentree
     ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" $OPENTREE_DOCSTORE $CONTROLLER
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" $OPENTREE_DOCSTORE $CONTROLLER $OTI_BASE_URL
 }
 
 function index {
