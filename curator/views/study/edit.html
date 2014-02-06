@@ -190,9 +190,9 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
           <button class="btn btn"
             onclick="if (validateFormData()) saveFormDataToStudyJSON(); return false;">Save Study</button>
-          <a class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
+          <a id="return-to-study-list" class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
           <button class="btn btn-danger pull-right"
-            onclick="confirm('Are you sure you want to delete this study?'); return false;">Delete Study</button>
+            onclick="removeStudy(); return false;">Delete Study</button>
         {{ else: }} 
           <a class="btn btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to study list</a>
          {{ if userCanEdit: }}
@@ -1195,6 +1195,7 @@ Please review and re-submit.</pre>
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
     var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
     var API_update_study_PUT_url = '{{=API_update_study_PUT_url}}';
+    var API_remove_study_DELETE_url = '{{=API_remove_study_DELETE_url}}';
     var API_create_file_POST_url = '{{=API_create_file_POST_url}}';
     var API_load_file_GET_url = '{{=API_load_file_GET_url}}';
     var API_update_file_PUT_url = '{{=API_update_file_PUT_url}}';
