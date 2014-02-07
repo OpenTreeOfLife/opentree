@@ -2160,20 +2160,11 @@ function setTreeRoot( treeOrID, rootNodeOrID ) {
         }
     }
 
-    var specifiedRootTag = tree['^ot:specifiedRoot'];
-    if (!specifiedRootTag) {
-        addMetaTagToParent(tree, {
-            "$": '',
-            "@property": "ot:specifiedRoot",
-            "@xsi:type": "nex:LiteralMeta"
-        });
-        specifiedRootTag = tree['^ot:specifiedRoot'];
-    }
     if (rootNodeID) {
-        specifiedRootTag.$ = rootNodeID;
+        tree['^ot:specifiedRoot'] = rootNodeID;
     } else {
         // clear the current root
-        specifiedRootTag.$ = '';
+        tree['^ot:specifiedRoot'] = '';
     }
     updateEdgesInTree( tree );
     drawTree( tree );
@@ -2197,20 +2188,11 @@ function setTreeIngroup( treeOrID, ingroupNodeOrID ) {
             ingroupNodeID = ingroupNodeOrID;
         }
     }
-    var inGroupCladeTag = tree['^ot:inGroupClade'];
-    if (!inGroupCladeTag) {
-        addMetaTagToParent(tree, {
-            "$": '',
-            "@property": "ot:inGroupClade",
-            "@xsi:type": "nex:LiteralMeta"
-        });
-        inGroupCladeTag = tree['^ot:inGroupClade'];
-    }
     if (ingroupNodeID) {
-        inGroupCladeTag.$ = ingroupNodeID;
+        tree['^ot:inGroupClade'] = ingroupNodeID;
     } else {
         // clear the current root
-        inGroupCladeTag.$ = '';
+        tree['^ot:inGroupClade'] = '';
     }
     updateEdgesInTree( tree );
     drawTree( tree );
@@ -2234,20 +2216,11 @@ function setTreeOutgroup( treeOrID, outgroupNodeOrID ) {
             outgroupNodeID = outgroupNodeOrID;
         }
     }
-    var nearestOutGroupNeighbor = tree['^ot:nearestOutGroupNeighbor'];
-    if (!nearestOutGroupNeighborTag) {
-        addMetaTagToParent(tree, {
-            "$": '',
-            "@property": "ot:nearestOutGroupNeighbor",
-            "@xsi:type": "nex:LiteralMeta"
-        });
-        nearestOutGroupNeighborTag = tree['^ot:nearestOutGroupNeighbor'];
-    }
     if (outgroupNodeID) {
-        nearestOutGroupNeighborTag.$ = outgroupNodeID;
+        tree['^ot:nearestOutGroupNeighbor'] = outgroupNodeID;
     } else {
         // clear the current root
-        nearestOutGroupNeighborTag.$ = '';
+        tree['^ot:nearestOutGroupNeighbor'] = '';
     }
     updateEdgesInTree( tree );
     drawTree( tree );
