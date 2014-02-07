@@ -174,8 +174,13 @@ function loadSelectedStudy(id) {
                     '@href': ""
                 }; 
             }
-            if (!(['^ot:curatorName'] in data.nexml)) {
-                data.nexml['^ot:curatorName'] = "";
+            if (['^ot:curatorName'] in data.nexml) {
+                // NOTE that this construction creates n metatags in NeXML,
+                // instead of a single metatag with an array as its value
+                data.nexml['^ot:curatorName'] = 
+                    makeArray(data.nexml['^ot:curatorName']);
+            } else {
+                data.nexml['^ot:curatorName'] = [ ];
             }
             if (!(['^ot:studyId'] in data.nexml)) {
                 data.nexml['^ot:studyId'] = "";
@@ -949,6 +954,12 @@ function saveFormDataToStudyJSON() {
         clearD3PropertiesFromTree(tree);
     });
     
+    // add this user to the curatorName list, if not found
+    var listPos = $.inArray( curatorDisplayName, viewModel.nexml['^ot:curatorName'] );
+    if (listPos === -1) {
+        viewModel.nexml['^ot:curatorName'].push( curatorDisplayName );
+    }
+  
     $.ajax({
         type: 'PUT',
         dataType: 'json',
