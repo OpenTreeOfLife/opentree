@@ -2052,7 +2052,7 @@ console.log(">> default node properties in place...");
         if ('@length' in edge) {
             var childID = edge['@target'];
             var childNode = getTreeNodeByID(tree, childID);
-            childNode.length = edge['@length'];
+            childNode.length = parseFloat(edge['@length']);
             ///console.log("> reset length of node "+ childID+" to: "+ childNode.length);
         }
     });
@@ -2138,7 +2138,7 @@ console.log("> done sweeping edges");
             // hide any node menu
             hideNodeOptionsMenu( );
         });
-
+    
     console.log("> done re-asserting click behaviors");
 }
 
