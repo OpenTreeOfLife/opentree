@@ -196,24 +196,37 @@ function loadSelectedStudy(id) {
                 data.nexml['^ot:notIntendedForSynthesis'] = false;
             }
 
-            if (!(['^ot:candidateTreeForSynthesis'] in data.nexml)) {
+            // NOTE that we should "pluralize" existing arrays, in case
+            // Badgerfish conversion has replaced it with a single item
+            if (['^ot:candidateTreeForSynthesis'] in data.nexml) {
+                data.nexml['^ot:candidateTreeForSynthesis'].candidate = 
+                    makeArray(data.nexml['^ot::candidateTreeForSynthesis'].candidate);
+            } else {
                 data.nexml['^ot:candidateTreeForSynthesis'] = {
                     'candidate': []
                 }
             }
 
             // add study-level containers for annotations
-            if (!(['^ot:annotationEvents'] in data.nexml)) {
+            if (['^ot:annotationEvents'] in data.nexml) {
+                data.nexml['^ot:annotationEvents'].annotation = 
+                    makeArray(data.nexml['^ot:annotationEvents'].annotation);
+            } else {
                 data.nexml['^ot:annotationEvents'] = {
                     'annotation': []
                 }
             }
-            if (!(['^ot:agents'] in data.nexml)) {
+            if (['^ot:agents'] in data.nexml) {
+                data.nexml['^ot:agents'].agent = 
+                    makeArray(data.nexml['^ot:agents'].agent);
+            } else {
                 data.nexml['^ot:agents'] = {
                     'agent': []
                 }
             }
-            if (!(['^ot:messages'] in data.nexml)) {
+            if (['^ot:messages'] in data.nexml) {
+                data.nexml['^ot:messages'].message = 
+                    makeArray(data.nexml['^ot:messages'].message);
                 data.nexml['^ot:messages'] = {
                     'message': []
                 }
