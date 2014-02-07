@@ -196,6 +196,12 @@ function loadSelectedStudy(id) {
                 data.nexml['^ot:notIntendedForSynthesis'] = false;
             }
 
+            if (!(['^ot:candidateTreeForSynthesis'] in data.nexml)) {
+                data.nexml['^ot:candidateTreeForSynthesis'] = {
+                    'candidate': []
+                }
+            }
+
             // add study-level containers for annotations
             if (!(['^ot:annotationEvents'] in data.nexml)) {
                 data.nexml['^ot:annotationEvents'] = {
@@ -418,7 +424,7 @@ function loadSelectedStudy(id) {
             viewModel.filteredOTUs = ko.computed(function() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
-                ///var ticklers = [ viewModel.ticklers.OTU_MAPPING_HINTS() ];
+                var ticklers = [ viewModel.ticklers.OTU_MAPPING_HINTS() ];
                 updateClearSearchWidget( '#otu-list-filter' );
 
                 var match = viewModel.listFilters.OTUS.match(),
@@ -462,7 +468,7 @@ function loadSelectedStudy(id) {
                     allOTUs, 
                     function(otu) {
                         // match entered text against old or new label
-                        var originalLabel = getMetaTagValue(otu.meta, 'ot:originalLabel');
+                        var originalLabel = otu['^ot:originalLabel'];
                         var mappedLabel = otu['@label'];
                         if (!matchPattern.test(originalLabel) && !matchPattern.test(mappedLabel)) {
                             return false;
@@ -524,8 +530,8 @@ function loadSelectedStudy(id) {
 
                     case 'Original label (A-Z)':
                         filteredList.sort(function(a,b) { 
-                            var aOriginal = getMetaTagValue(a.meta, 'ot:originalLabel');
-                            var bOriginal = getMetaTagValue(b.meta, 'ot:originalLabel');
+                            var aOriginal = a['^ot:originalLabel'];
+                            var bOriginal = b['^ot:originalLabel'];
                             if (aOriginal === bOriginal) return 0;
                             if (aOriginal < bOriginal) return -1;
                             return 1;
@@ -534,8 +540,8 @@ function loadSelectedStudy(id) {
 
                     case 'Original label (Z-A)':
                         filteredList.sort(function(a,b) { 
-                            var aOriginal = getMetaTagValue(a.meta, 'ot:originalLabel');
-                            var bOriginal = getMetaTagValue(b.meta, 'ot:originalLabel');
+                            var aOriginal = a['^ot:originalLabel'];
+                            var bOriginal = b['^ot:originalLabel'];
                             if (aOriginal === bOriginal) return 0;
                             if (aOriginal > bOriginal) return -1;
                             return 1;
@@ -663,11 +669,11 @@ function loadSelectedStudy(id) {
 
 function updatePageHeadings() {
     // page headings should reflect the latest metadata for the study
-    var studyFullReference = getMetaTagValue(viewModel.nexml.meta, 'ot:studyPublicationReference');
+    var studyFullReference = viewModel.nexml['^ot:studyPublicationReference'];
     var studyCompactReference = fullToCompactReference(studyFullReference);
     $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
 
-    var studyDOI = getMetaTagValue(viewModel.nexml.meta, 'ot:studyPublication');
+    var studyDOI = viewModel.nexml['^ot:studyPublication'];
     studyDOI = $.trim(studyDOI);
     if (studyDOI === "") {
         $('a.main-title-DOI').hide();
@@ -1162,7 +1168,9 @@ function getMetaTagAccessorByAtProperty(array, propertyName, options) {
 
 function getPreferredTreeIDs() {
     preferredTreeIDs = [];
-    var candidateTreeMarkers = makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'] );
+    var candidateTreeMarkers = ('^ot:candidateTreeForSynthesis' in viewModel.nexml) ? 
+        makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate ) : [];
+
     $.each(candidateTreeMarkers, function(i, marker) {
         var treeID = $.trim(marker);
         switch(treeID) {  // non-empty points to a candidate tree
@@ -1186,9 +1194,23 @@ function getPreferredTrees() {
     return ko.utils.arrayFilter( 
         allTrees, 
         function(tree) {
-            return $.inArray( tree['@id'], preferredTreeIDs );
+            var isPreferred = ($.inArray(tree['@id'], preferredTreeIDs) !== -1);
+            return isPreferred;
         }
     );
+}
+function togglePreferredTree( tree ) {
+    var treeID = tree['@id'];
+    var alreadyPreferred = ($.inArray( treeID, getPreferredTreeIDs()) !== -1);
+    if (alreadyPreferred) {
+        // remove it from the list of preferred trees
+        removeFromArray( treeID, viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate );
+    } else {
+        // add it to the list of preferred trees
+        viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( treeID ); 
+    }
+    nudgeTickler('OTU_MAPPING_HINTS');
+    return true;  // to allow checkbox updates
 }
 function getNonPreferredTrees() {
     var preferredTreeIDs = getPreferredTreeIDs();
@@ -1201,7 +1223,8 @@ function getNonPreferredTrees() {
     return ko.utils.arrayFilter( 
         allTrees, 
         function(tree) {
-            return ! $.inArray( tree['@id'], preferredTreeIDs );
+            var isPreferred = ($.inArray(tree['@id'], preferredTreeIDs) !== -1);
+            return !isPreferred;
         }
     );
 }
@@ -1231,7 +1254,6 @@ function getMappedTallyForTree(tree) {
         totalNodes++;
 
         // Is this a leaf node? If not, skip it
-        var isLeafAccessor = getMetaTagAccessorByAtProperty(node.meta, 'ot:isLeaf');
         //console.log(i +' is a leaf? '+ node['^ot:isLeaf']);
         if (node['^ot:isLeaf'] !== true) {
             // this is not a leaf node! skip to the next one
@@ -1317,12 +1339,8 @@ function getRootNodeDescriptionForTree( tree ) {
     
     // Apply our "business rules" for tree and/or ingroup rooting, based on
     // tree-level metadata.
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$ : null;
-
-    var unrootedTreeFlag = getMetaTagByProperty(tree.meta, 'ot:unrootedTree');
-    var unrootedTree = unrootedTreeFlag ? unrootedTreeFlag.$ === 'true' : false;
-
+    var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    var unrootedTree = tree['^ot:unrootedTree'] ? true : false;
     // if no specified root node, use the implicit root (first in nodes array)
     var rootNodeID = specifiedRoot ? specifiedRoot : tree.node[0]['@id'];
 
@@ -1367,7 +1385,7 @@ var branchLengthModeDescriptions = [
     { value: 'ot:undefined', text: "Undefined values" }
 ]
 function getBranchLengthModeDescriptionForTree( tree ) {
-    var rawModeValue = getMetaTagValue(tree.meta, 'ot:branchLengthMode');
+    var rawModeValue = tree['^ot:branchLengthMode'];
     if (!rawModeValue) {
         return 'Unspecified';
     }
@@ -1393,20 +1411,12 @@ function getBranchLengthModeDescriptionForTree( tree ) {
     }
 }
 function getBranchLengthUnitForTree( tree ) {
-    var unitAccessor = getMetaTagAccessorByAtProperty(tree.meta, 'ot:branchLengthTimeUnit');
-    if (typeof(unitAccessor) !== 'function') {
-        return 'Myr?';
-    }
-    return unitAccessor();
+    return tree['^ot:branchLengthTimeUnit'] || "Myr?";
 }
 function getBranchLengthDescriptionForTree( tree ) {
     // NOTE that this is an explicit description in its own field, for
     // use when 'ot:other' is specified for the branchLengthMode!
-    var descAccessor = getMetaTagAccessorByAtProperty(tree.meta, 'ot:branchLengthDescription');
-    if (typeof(descAccessor) !== 'function') {
-        return 'Undefined';
-    }
-    return descAccessor();
+    return tree['^ot:branchLengthDescription'] || "Undefined";
 }
 
 function getInGroupCladeDescriptionForTree( tree ) {
@@ -1572,9 +1582,8 @@ var studyScoringRules = {
             test: function(studyData) {
                 // compare metatags for study year and publication reference
                 var ticklers = [viewModel.ticklers.GENERAL_METADATA()];
-                var studyMetatags = studyData.nexml.meta;
-                var studyYear = getMetaTagValue(studyMetatags, 'ot:studyYear');
-                var pubRef = getMetaTagValue(studyMetatags, 'ot:studyPublicationReference');
+                var studyYear = studyData.nexml['^ot:studyYear'] || "";
+                var pubRef = studyData.nexml['^ot:studyPublicationReference'] || "";
                 if (($.trim(studyYear) === "") || ($.trim(pubRef) === "")) {
                     // one of these fields is empty, so it fails
                     return false;
@@ -1595,9 +1604,8 @@ var studyScoringRules = {
             description: "The study DOI should match the one in its publication reference.",
             test: function(studyData) {
                 // compare metatags for DOI and publication reference
-                var studyMetatags = studyData.nexml.meta;
-                var DOI = getMetaTagValue(studyMetatags, 'ot:studyPublication');
-                var pubRef = getMetaTagValue(studyMetatags, 'ot:studyPublicationReference');
+                var DOI = ('^ot:studyPublication' in studyData.nexml) ? studyData.nexml['^ot:studyPublication']['@href'] : "";
+                var pubRef = studyData.nexml['^ot:studyPublicationReference'];
                 if (($.trim(DOI) === "") || ($.trim(pubRef) === "")) {
                     // one of these fields is empty, so it fails
                     return false;
@@ -1647,26 +1655,13 @@ var studyScoringRules = {
             description: "There should be at least one candidate tree (unless submitter has opted out).",
             test: function(studyData) {
                 // check for opt-out flag
-                var optOutFlag = getMetaTagValue(studyData.nexml.meta, 'ot:notIntendedForSynthesis');
+                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
                 if (optOutFlag) {
                     // submitter has explicitly said this study is not intended for synthesis
                     return true;
                 }
                 // check for any candidate tree in the study
-                var candidateTreeFound = false;
-                var candidateTreeMarkers = makeArray( studyData.nexml['^ot:candidateTreeForSynthesis'] );
-                $.each(candidateTreeMarkers, function(i, marker) {
-                    switch(marker) {  // non-empty points to a candidate tree
-                        case '':
-                        case null:
-                        case undefined:
-                        case 0:
-                            break;
-                        default:
-                            candidateTreeFound = true;
-                    }
-                });
-                return candidateTreeFound;
+                return getPreferredTrees().length > 0;
             },
             weight: 0.3, 
             successMessage: "There is at least one candidate tree, or the submitter has opted out of synthesis.",
@@ -1678,7 +1673,7 @@ var studyScoringRules = {
             description: "Each tree should be rooted (unless submitter has opted out).",
             test: function(studyData) {
                 // check for opt-out flag
-                var optOutFlag = getMetaTagValue(studyData.nexml.meta, 'ot:notUsingRootedTrees');
+                var optOutFlag = studyData.nexml['^ot:notUsingRootedTrees'];
                 if (optOutFlag) {
                     // submitter has explicitly said this study does not have rooted trees
                     return true;
@@ -1693,7 +1688,7 @@ var studyScoringRules = {
                 });
                 $.each(allTrees, function(i, tree) {
                     // check for explicit tree-level marker (ot:inGroupClade) versus arbitrary root
-                    var rootNodeID = getMetaTagValue(tree.meta, 'ot:inGroupClade');
+                    var rootNodeID = tree['^ot:inGroupClade'];
                     ///console.log('>>> found this rootNodeID: '+ rootNodeID + '<'+ typeof(rootNodeID) +'>');
                     switch(rootNodeID) {
                         // TODO: Test live data to see what "none" or "empty" looks like in this field
@@ -1738,48 +1733,22 @@ var studyScoringRules = {
             description: "All leaf nodes in candidate trees should be mapped to OTUs.",
             test: function(studyData) {
                 // check for opt-out flag
-                var optOutFlag = getMetaTagValue(studyData.nexml.meta, 'ot:notIntendedForSynthesis');
+                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
                 if (optOutFlag) {
                     // submitter has explicitly said this study is not intended for synthesis
                     return true;
                 }
                
                 // find all the candidate trees by ID (on study metadata) and build a tally tree
-                var candidateTreeTallies = { };
-                var candidateTreeMarkers = makeArray( studyData.nexml['^ot:candidateTreeForSynthesis'] );
-                $.each(candidateTreeMarkers, function(i, marker) {
-                    var treeID = $.trim(marker);
-                    switch(treeID) {  // non-empty points to a candidate tree
-                        case '':
-                        case null:
-                        case undefined:
-                        case 0:
-                            break;
-                        default:
-                            candidateTreeTallies[ treeID ] = {};
-                    }
-                });
+                //var candidateTreeTallies = { };
                 
-                // check the proportion of mapped leaf nodes in all candidate trees
+                // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
                 var unmappedLeafNodesFound = false;
-                var allTrees = [];
-                $.each(viewModel.nexml.trees, function(i, treesCollection) {
-                    $.each(treesCollection.tree, function(i, tree) {
-                        allTrees.push( tree );
-                    });
-                });
-                $.each(allTrees, function(i, tree) {
-                    // skip any non-candidate trees
-                    treeID = tree['@id'];
-                    if (!candidateTreeTallies[ treeID ]) {
-                        // skip this tree (not a candidate)
-                        return true;
-                    }
-
+                $.each(getPreferredTrees(), function(i, tree) {
                     if (!tree.node || tree.node.length === 0) {
                         // skip this tree (no nodes yet, which is weird but not relevant to the test)
-                        //candidateTreeTalies[ treeID ].mappedNodes = 0;
-                        //candidateTreeTalies[ treeID ].totalNodes = 0;
+                        //candidateTreeTallies[ treeID ].mappedNodes = 0;
+                        //candidateTreeTallies[ treeID ].totalNodes = 0;
                         return true;
                     }
 
@@ -1792,8 +1761,7 @@ var studyScoringRules = {
                             // Simply check for the presence (or absence) of an @otu 'getter' function
                             // (so far, it doesn't seem to exist unless there's a mapped OTU)
                             totalNodes++;
-                            var nodeOTUAccessor = node['@otu'];
-                            if (typeof(nodeOTUAccessor) === 'function') {
+                            if ('@otu' in node) {
                                 mappedNodes++;
                             } else {
                                 unmappedLeafNodesFound = true;
@@ -1802,8 +1770,8 @@ var studyScoringRules = {
                         }
                     });
                     // TODO: actually count these, for a proportional score?
-                    //candidateTreeTalies[ treeID ].mappedNodes = mappedNodes;
-                    //candidateTreeTalies[ treeID ].totalNodes = totalNodes;
+                    //candidateTreeTallies[ treeID ].mappedNodes = mappedNodes;
+                    //candidateTreeTallies[ treeID ].totalNodes = totalNodes;
                 });
                 // if no unmapped leaf nodes were found, it passes the test
                 return !unmappedLeafNodesFound;
@@ -2008,14 +1976,9 @@ function drawTree( treeOrID ) {
     }
 
     /* load D3 tree view */
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$ : null;
-
-    var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$ : null;
-
-    var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$ : null;
+    var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    var inGroupClade = tree['^ot:inGroupClade'] || null;
+    var nearestOutGroupNeighbor = tree['^ot:nearestOutGroupNeighbor'] || null;
 
     // we'll pass this along to helpers that choose node labels, classes, etc.
     var importantNodeIDs = {
@@ -2197,14 +2160,14 @@ function setTreeRoot( treeOrID, rootNodeOrID ) {
         }
     }
 
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
+    var specifiedRootTag = tree['^ot:specifiedRoot'];
     if (!specifiedRootTag) {
         addMetaTagToParent(tree, {
             "$": '',
             "@property": "ot:specifiedRoot",
             "@xsi:type": "nex:LiteralMeta"
         });
-        specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
+        specifiedRootTag = tree['^ot:specifiedRoot'];
     }
     if (rootNodeID) {
         specifiedRootTag.$ = rootNodeID;
@@ -2234,14 +2197,14 @@ function setTreeIngroup( treeOrID, ingroupNodeOrID ) {
             ingroupNodeID = ingroupNodeOrID;
         }
     }
-    var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
+    var inGroupCladeTag = tree['^ot:inGroupClade'];
     if (!inGroupCladeTag) {
         addMetaTagToParent(tree, {
             "$": '',
             "@property": "ot:inGroupClade",
             "@xsi:type": "nex:LiteralMeta"
         });
-        inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
+        inGroupCladeTag = tree['^ot:inGroupClade'];
     }
     if (ingroupNodeID) {
         inGroupCladeTag.$ = ingroupNodeID;
@@ -2271,14 +2234,14 @@ function setTreeOutgroup( treeOrID, outgroupNodeOrID ) {
             outgroupNodeID = outgroupNodeOrID;
         }
     }
-    var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
+    var nearestOutGroupNeighbor = tree['^ot:nearestOutGroupNeighbor'];
     if (!nearestOutGroupNeighborTag) {
         addMetaTagToParent(tree, {
             "$": '',
             "@property": "ot:nearestOutGroupNeighbor",
             "@xsi:type": "nex:LiteralMeta"
         });
-        nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
+        nearestOutGroupNeighborTag = tree['^ot:nearestOutGroupNeighbor'];
     }
     if (outgroupNodeID) {
         nearestOutGroupNeighborTag.$ = outgroupNodeID;
@@ -2293,14 +2256,9 @@ function setTreeOutgroup( treeOrID, outgroupNodeOrID ) {
 function updateEdgesInTree( tree ) {
     // Update the direction of all edges in this tree, based on its
     // designated root and/or ingroup nodes
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$ : null;
-
-    var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$ : null;
-
-    var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$ : null;
+    var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    var inGroupClade = tree['^ot:inGroupClade'] || null;
+    var nearestOutGroupNeighbor = tree['^ot:nearestOutGroupNeighbor'] || null;
 
     if (specifiedRoot) {
         // root is defined, and possibly ingroup; set direction away from root for all edges
@@ -2936,7 +2894,7 @@ var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-e
 
 function editOTULabel(otu) {
     var OTUid = otu['@id'];
-    var originalLabel = getMetaTagValue(otu.meta, 'ot:originalLabel');
+    var originalLabel = otu['^ot:originalLabel'];
     editedOTULabels()[ OTUid ] = ko.observable( adjustedLabel(originalLabel) );
     // add a subscriber to remove this from failed-OTU list when user makes
     // changes
@@ -3117,7 +3075,7 @@ function getNextUnmappedOTU() {
     var unmappedOTU = null;
     var visibleOTUs = viewModel.filteredOTUs().pagedItems();
     $.each( visibleOTUs, function (i, otu) {
-        var ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
+        var ottMappingTag = otu['^ot:ottId'] || null;
         var proposedMappingInfo = proposedMapping(otu);
         if (!ottMappingTag && !proposedMappingInfo) {
             // this is an unmapped OTU!
@@ -3135,7 +3093,6 @@ function getNextUnmappedOTU() {
 function requestTaxonMapping() {
     // set spinner, make request, handle response, and daisy-chain the next request
     // TODO: send one at a time? or in a batch (5 items)?
-    
     var otuToMap = getNextUnmappedOTU();
     if (!otuToMap) {
         stopAutoMapping();
@@ -3144,7 +3101,7 @@ function requestTaxonMapping() {
 
     updateMappingStatus();
     var otuID = otuToMap['@id'];
-    var originalLabel = getMetaTagValue(otuToMap.meta, 'ot:originalLabel');
+    var originalLabel = otuToMap['^ot:originalLabel'] || null;
     // use the manually edited label (if any), or the hint-adjusted version
     var editedAcc = editedLabelAccessor(otuToMap);
     var searchText = editedAcc ? editedAcc() : adjustedLabel(originalLabel);
@@ -3314,19 +3271,19 @@ function mapOTUToTaxon( otuID, mappingInfo ) {
     var otu = getOTUByID( otuID );
 
     // TODO: add/update its original label?
-    var originalLabel = getMetaTagValue(otu.meta, 'ot:originalLabel');
+    var originalLabel = otu['^ot:originalLabel'] || null;
     otu['@label'] = mappingInfo.name || 'NAME MISSING!';
 
     // add (or update) a metatag mapping this to an OTT id
     var ottId = Number(mappingInfo.ottId);
-    var ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
+    var ottMappingTag = otu['^ot:ottId'] || null;
     if (!ottMappingTag) {
         addMetaTagToParent(otu, {
             "$": '',
             "@property": "ot:ottId",
             "@xsi:type": "nex:LiteralMeta"
         });
-        ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
+        ottMappingTag = otu['^ot:ottId'];
     }
     ottMappingTag.$ = ottId;
 }
@@ -3335,12 +3292,11 @@ function unmapOTUFromTaxon( otuOrID ) {
     // remove this mapping, removing any unneeded Nexson elements
     var otu = (typeof otuOrID === 'object') ? otuOrID : getOTUByID( otuOrID );
     // restore its original label (versus mapped label)
-    var originalLabel = getMetaTagValue(otu.meta, 'ot:originalLabel');
+    var originalLabel = otu['^ot:originalLabel'];
     otu['@label'] = '';
     // strip any metatag mapping this to an OTT id
-    var ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
-    if (ottMappingTag) {
-        removeFromArray( ottMappingTag, otu.meta );
+    if ('^ot:ottId' in otu) {
+        delete otu['^ot:ottId'];
     }
     nudgeTickler('OTU_MAPPING_HINTS');
 }
@@ -3752,7 +3708,8 @@ function getNextAvailableAnnotationEventID(nexml) {
             nexml = viewModel.nexml;
         }
         // do a one-time(?) scan for the highest ID currently in use
-        var allEvents = makeArray(getMetaTagAccessorByAtProperty(nexml.meta, 'ot:annotationEvents'));
+        var allEvents = makeArray(nexml['^ot:annotationEvents']);
+        var allEvents = ('^ot:annotationEvents' in nexml) ? makeArray(nexml['^ot:annotationEvents'].annotation) : [];
         if (allEvents.length === 0) {
             highestAnnotationEventID = 0;
         } else {
@@ -3783,7 +3740,7 @@ function getNextAvailableAnnotationAgentID(nexml) {
             nexml = viewModel.nexml;
         }
         // do a one-time(?) scan for the highest ID currently in use
-        var allAgents = makeArray(getMetaTagAccessorByAtProperty(nexml.meta, 'ot:agents'));
+        var allAgents = ('^ot:agents' in nexml) ? makeArray(nexml['^ot:agents'].agent) : [];
         if (allAgents.length === 0) {
             highestAnnotationAgentID = 0;
         } else {

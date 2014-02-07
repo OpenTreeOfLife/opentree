@@ -369,7 +369,10 @@ body {
                         <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
                         <td data-bind="html: getRootedDescriptionForTree(tree)">?/?? (?%)</td>
                       {{ if viewOrEdit == 'EDIT': }}
-                        <td><input type="checkbox" style="margin: 0px 20px;" data-bind="checked: false" /></td><!--checked="checked"--> 
+                        <td>
+                            <input type="checkbox" style="margin: 0px 20px;" 
+            data-bind="attr: {'checked': $.inArray(tree['@id'], getPreferredTreeIDs()) !== -1}, 
+                       click: togglePreferredTree" /></td>
                       {{ else: }}
                         <td data-bind="text: (true) ? 'NO' : 'YES'">?</td>
                       {{ pass }}
@@ -682,11 +685,11 @@ body {
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
-                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')">ORIGINAL?</td>
+                        <td data-bind="text: otu['^ot:originalLabel']">ORIGINAL?</td>
                       {{ if viewOrEdit == 'EDIT': }}
                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
-                            <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')), 
+                            <em data-bind="text: adjustedLabel(otu['^ot:originalLabel']), 
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                            style: { 'color' : (otu['@label'] === '' && !proposedMapping(otu))?  '' : 'silver' }"
                                >WORKING?</em>
@@ -1274,18 +1277,18 @@ Please review and re-submit.</pre>
                     optionsText: function(item) { 
                         return item.text;
                     },
-                    value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode'),
+                    value: $data['^ot:branchLengthMode'],
                     optionsCaption: 'Choose...'">TYPE</select>
 
-               <!-- ko if: getMetaTagValue($data.meta, 'ot:branchLengthMode') === 'ot:time' -->
+               <!-- ko if: $data['^ot:branchLengthMode'] === 'ot:time' -->
                 <label style="margin-left: 10px;">Time unit: </label>
                 <select data-bind="options: ['Myr'],
-                    value: getMetaTagAccessorByAtProperty($data.meta, 'branchLengthTimeUnit')">TYPE</select>
+                    value: $data['^ot:branchLengthTimeUnit']">TYPE</select>
                <!-- /ko -->
 
-               <!-- ko if: getMetaTagValue($data.meta, 'ot:branchLengthMode') === 'ot:other' -->
+               <!-- ko if: $data['^ot:branchLengthMode'] === 'ot:other' -->
                 <label style="margin-left: 10px;">&nbsp;</label>
-                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthDescription'), valueUpdate: 'afterkeydown'" placeholder="Describe here"></input>
+                <input type="text" data-bind="value: $data['^ot:branchLengthDescription'], valueUpdate: 'afterkeydown'" placeholder="Describe here"></input>
                <!-- /ko -->
               </div>
 
