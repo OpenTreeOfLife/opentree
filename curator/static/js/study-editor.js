@@ -267,7 +267,7 @@ function loadSelectedStudy(id) {
 
                 // editable display name for this tree
                 if ((tree['@label'] === undefined) || ($.trim(tree['@label']) === '')) {
-                    tree['@label'] = 'Untitled ('+ tree['@about'] +')';
+                    tree['@label'] = 'Untitled ('+ tree['@id'] +')';
                 }
 
                 // metadata fields (with empty default values)
@@ -1162,9 +1162,9 @@ function getMetaTagAccessorByAtProperty(array, propertyName, options) {
 
 function getPreferredTreeIDs() {
     preferredTreeIDs = [];
-    var candidateTreeMarkers = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:candidateTreeForSynthesis', { 'FIND_ALL': true });
+    var candidateTreeMarkers = makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'] );
     $.each(candidateTreeMarkers, function(i, marker) {
-        var treeID = $.trim(marker());
+        var treeID = $.trim(marker);
         switch(treeID) {  // non-empty points to a candidate tree
             case '':
             case '0':
@@ -1230,13 +1230,10 @@ function getMappedTallyForTree(tree) {
     $.each(tree.node, function(i, node) {
         totalNodes++;
 
-        if (!node.meta) {
-            // console.log("node has no meta, skipping it...");
-            return true;
-        }
         // Is this a leaf node? If not, skip it
         var isLeafAccessor = getMetaTagAccessorByAtProperty(node.meta, 'ot:isLeaf');
-        if ((typeof(isLeafAccessor) !== 'function') || (isLeafAccessor() !== 'true')) {
+        //console.log(i +' is a leaf? '+ node['^ot:isLeaf']);
+        if (node['^ot:isLeaf'] !== true) {
             // this is not a leaf node! skip to the next one
             return true;
         }
@@ -1244,12 +1241,10 @@ function getMappedTallyForTree(tree) {
 
         // Simply check for the presence (or absence) of an @otu 'getter' function
         // (so far, it doesn't seem to exist unless there's a mapped OTU)
-        var nodeOTUAccessor = node['@otu'];
-        if (typeof(nodeOTUAccessor) === 'function') {
+        if ('@otu' in node) {
             mappedLeafNodes++;
         } 
         return true;  // skip to next node
-
     });
     // console.log("total nodes? "+ totalNodes);
     // console.log("total leaf nodes? "+ totalLeafNodes);
@@ -1291,17 +1286,10 @@ function getRootedDescriptionForTree( tree ) {
     
     // Apply our "business rules" for tree and/or ingroup rooting, based on
     // tree-level metadata.
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$ : null;
-
-    var unrootedTreeFlag = getMetaTagByProperty(tree.meta, 'ot:unrootedTree');
-    var unrootedTree = unrootedTreeFlag ? unrootedTreeFlag.$ === 'true' : false;
-
-    var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$ : null;
-
-    var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$ : null;
+    var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    var unrootedTree = tree['^ot:unrootedTree'] ? true : false;
+    var inGroupClade = tree['^ot:inGroupClade'] || null;
+    var nearestOutGroupNeighbor = tree['^ot:nearestOutGroupNeighbor'] || null;
 
     if (specifiedRoot && inGroupClade) {
         return "Explicitly rooted tree, ingroup specified";
@@ -1423,16 +1411,11 @@ function getBranchLengthDescriptionForTree( tree ) {
 
 function getInGroupCladeDescriptionForTree( tree ) {
     // return display-ready description ('Rooted', 'Unrooted', 'Multiply rooted') based on count
-    if (!tree || !tree.meta || makeArray(tree.meta).length === 0) {
-        return 'Unspecified';
-    }
-
     // try to retrieve a recognizable taxon label for the ingroup clade's root
-    var nodeIDAccessor = getMetaTagAccessorByAtProperty(tree.meta, 'ot:inGroupClade');
-    if (typeof(nodeIDAccessor) !== 'function') {
+    var nodeID = tree['^ot:inGroupClade'];
+    if (!nodeID) {
         return 'Unspecified';
     }
-    var nodeID = nodeIDAccessor();
     var nodeName = ('Unmapped ('+ nodeID +')');
 
     $.each(tree.node, function(i, node) {
@@ -1671,7 +1654,7 @@ var studyScoringRules = {
                 }
                 // check for any candidate tree in the study
                 var candidateTreeFound = false;
-                var candidateTreeMarkers = getMetaTagAccessorByAtProperty(studyData.nexml.meta, 'ot:candidateTreeForSynthesis', { 'FIND_ALL': true });
+                var candidateTreeMarkers = makeArray( studyData.nexml['^ot:candidateTreeForSynthesis'] );
                 $.each(candidateTreeMarkers, function(i, marker) {
                     switch(marker) {  // non-empty points to a candidate tree
                         case '':
@@ -1731,7 +1714,7 @@ var studyScoringRules = {
             weight: 0.3, 
             successMessage: "All trees are properly rooted, or the submitter has specified unrooted trees.",
             failureMessage: "Every tree should be properly rooted, or the submitter should opt out of rooted trees.",
-            suggestedAction: "Designate a root node for each tree, or specified only unrooted trees in Metadata."
+            suggestedAction: "Designate a root node for each tree, or specify only unrooted trees in Metadata."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
     ],
@@ -1763,9 +1746,9 @@ var studyScoringRules = {
                
                 // find all the candidate trees by ID (on study metadata) and build a tally tree
                 var candidateTreeTallies = { };
-                var candidateTreeMarkers = getMetaTagAccessorByAtProperty(studyData.nexml.meta, 'ot:candidateTreeForSynthesis', { 'FIND_ALL': true });
+                var candidateTreeMarkers = makeArray( studyData.nexml['^ot:candidateTreeForSynthesis'] );
                 $.each(candidateTreeMarkers, function(i, marker) {
-                    var treeID = marker();
+                    var treeID = $.trim(marker);
                     switch(treeID) {  // non-empty points to a candidate tree
                         case '':
                         case null:
@@ -1805,8 +1788,7 @@ var studyScoringRules = {
                     var mappedNodes = 0;
                     $.each(tree.node, function(i, node) {
                         // is this a leaf? check for metatag .isLeaf
-                        var leafMarker = getMetaTagAccessorByAtProperty(node.meta, 'ot:isLeaf');
-                        if (leafMarker() == true) {
+                        if (node['^ot:isLeaf'] === true) {
                             // Simply check for the presence (or absence) of an @otu 'getter' function
                             // (so far, it doesn't seem to exist unless there's a mapped OTU)
                             totalNodes++;

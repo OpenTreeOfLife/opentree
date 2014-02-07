@@ -317,7 +317,7 @@ body {
                   </label>
                 {{ else: }}
                   <p class="static-form-value" data-bind="css: nexml['^ot:notIntendedForSynthesis'] ? 'interesting-value' : 'boring-value', 
-                                                          text: nexml[['^ot:notIntendedForSynthesis'] ? 'This study should not contribute to synthesis. (This is not typical.)' : 'This study should contribute to synthesis.'"></p>
+                                                          text: nexml['^ot:notIntendedForSynthesis'] ? 'This study should not contribute to synthesis. (This is not typical.)' : 'This study should contribute to synthesis.'"></p>
                 {{ pass }}
 
                 </div>
@@ -364,7 +364,7 @@ body {
                   <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
                         <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label']">?</a></td><!-- TODO: click to view/edit tree -->
-                        <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta, 'ot:curatedType') || 'Unspecified'">TYPE?</td>
+                        <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified'">TYPE?</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree)"></td>
                         <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
                         <td data-bind="html: getRootedDescriptionForTree(tree)">?/?? (?%)</td>
@@ -1237,7 +1237,7 @@ Please review and re-submit.</pre>
             <!-- editable tree properties here -->
               <div class="pull-left" style="width: 48%;">
                 <label>Tree type: </label>
-                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:curatedType'), valueUpdate: 'afterkeydown'"></input>
+                <input type="text" data-bind="value: $data['^ot:curatedType'], valueUpdate: 'afterkeydown'"></input>
               <br/>
                 <label for="testtest">Root node: </label>
                 <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
@@ -1293,7 +1293,7 @@ Please review and re-submit.</pre>
             <!-- read-only tree properties here -->
               <div class="pull-left" style="width: 48%;">
                 <label>Tree type: </label>
-                <strong data-bind="text: getMetaTagAccessorByAtProperty($data.meta, 'ot:curatedType') || 'Unspecified'">TYPE</strong>
+                <strong data-bind="text: $data['^ot:curatedType'] || 'Unspecified'">TYPE</strong>
               <br/>
                 <label for="testtest">Root node: </label>
                <!-- TODO: tag(s) for this tree? -->
