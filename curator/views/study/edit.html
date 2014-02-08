@@ -1348,7 +1348,11 @@ Please review and re-submit.</pre>
 
           <label style="margin-left: 20px;">Outgroup: </label> <em>blah</em>
 
-          <label style="margin-left: 20px;" for=""> <input type="checkbox"> Hide branch lengths</label>
+          <label style="margin-left: 20px;" for="branch-length-toggle"> 
+              <input type="checkbox" id="branch-length-toggle" 
+                     onclick="toggleBranchLengthsInViewer(this); return true;" />
+              Hide branch lengths
+          </label>
       </div>
       <a data-dismiss="modal" class="btn" >Close</a>
       <!-- <a class="btn btn-primary" id="btnSaveChanges">Save changes</a> -->

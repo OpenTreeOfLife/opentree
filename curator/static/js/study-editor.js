@@ -767,6 +767,21 @@ function toggleQualityDetails( hideOrShow ) {
     }
 }
 
+var hidingBranchLengths = false;
+function toggleBranchLengthsInViewer(cb) {
+    // checkbox enables/disables branch-length display (and labeling?) in
+    // tree-view popup
+    hidingBranchLengths = $(cb).is(':checked');
+    console.log('>>>>> CHECKED ? '+ hidingBranchLengths);
+    // fetch tree ID from popup's widgets
+    var currentTreeID = $('#tree-tags').attr('treeid');
+    if (currentTreeID) {
+        drawTree(currentTreeID)
+    } else {
+        console.warn("No tree in vizInfo!");
+    }
+}
+
 function updateMappingStatus() {
     // update mapping status+details based on the current state of things
     var detailsHTML, showBatchApprove, showBatchReject, needsAttention;
@@ -2080,7 +2095,7 @@ console.log("> done sweeping edges");
             height: viewHeight,
             // simplify display by omitting scales or variable-length branches
             skipTicks: true,
-            skipBranchLengthScaling: (treeEdgesHaveLength ? false : true),
+            skipBranchLengthScaling: (hidingBranchLengths || !(treeEdgesHaveLength)) ?  true : false,
             children : function(d) {
                 var parentID = d['@id'];
                 var itsChildren = [];
