@@ -45,7 +45,9 @@ def view():
 
 @auth.requires_login()
 def create():
-    return dict(message="study/create")
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict['message'] = "study/create"
+    return view_dict
 
 
 @auth.requires_login()

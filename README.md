@@ -3,6 +3,11 @@ opentree
 
 Umbrella repo for opentree web site and services. Includes code for constructing the synthetic taxonomy.
 
+[![Visit our IRC channel](https://kiwiirc.com/buttons/irc.freenode.net/opentreeoflife.png)](https://kiwiirc.com/client/irc.freenode.net/?nick=guest|?#opentreeoflife)
+
+We maintain the #opentreeoflife chat (IRC) channel on [Freenode](http://freenode.net/). Clicking the button above will join the channel as user __guest__, using the web-based [KiwiIRC](https://kiwiirc.com/) client. It is a [logged](http://irclog.perlgeek.de/opentreeoflife/today) channel.
+
+
 Installation
 ============
 Instructions coming soon. In the meantime, see the phylografter instructions for

@@ -181,7 +181,7 @@ class GitHubAccount(OAuthAccount):
 
         # remap to our chosen auth_user fields
         auth_user_fields = dict(name = user_json.get('name', user_json['login']),
-                                email = user_json['email'],
+                                email = user_json.get('email', 'EMAIL_NOT_PROVIDED'),
                                 github_login = user_json['login'],
                                 registration_id = user_json['login'],
                                 #   required? see https://groups.google.com/forum/#!topic/web2py/yd4_yExPwXg/discussion

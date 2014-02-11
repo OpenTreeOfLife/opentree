@@ -89,7 +89,8 @@ body {
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
     var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
-    var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
+    var API_create_study_POST_url = '{{=API_create_study_POST_url}}';
         // this can take a few possible POSTed arguments (DOI, or initial input)
 </script>
+<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script src="{{=URL('static','js/study-creation.js')}}"></script>

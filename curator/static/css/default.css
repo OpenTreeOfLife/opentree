@@ -338,6 +338,20 @@ a.full-ref-toggle {
     color: #999 !important;
     text-decoration: none;
 }
+a.full-ref-toggle:hover {
+    color: #333 !important;
+    text-decoration: underline;
+}
+.full-study-ref {
+    background-color: #f3f3f3;
+    padding: 3px 5px;
+    font-size: 90%;
+    margin-bottom: 4px;
+}
+.full-study-ref, 
+.compact-study-ref {
+    /* font-weight: bold; */
+}
 .full-ref {
     background-color: #fff;
     border: 1px solid #eee;
@@ -543,4 +557,13 @@ tr:hover .row-controls-ghosted {
 .mapping-batch-operations {
     margin: 0.75em 0 0;
     overflow: hidden;
+}
+.clear-search {
+    opacity: 0.5; 
+    margin-top: 2px; 
+    margin-left: -24px; 
+    cursor: pointer;
+}
+.clear-search:hover {
+    opacity: 1.0; 
 }

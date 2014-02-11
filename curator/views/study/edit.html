@@ -22,10 +22,6 @@ response.files.append(URL('static','js/knockout-2.3.0.js'))
 # KO plugin for paginated lists
 response.files.append(URL('static','js/knockout-paged-e4a5770702.js'))
 
-# Knockout plugin for easy declarative mapping 
-response.files.append(URL('static','js/knockout.mapping-2.4.1.js'))
-### response.files.append(URL('static','js/knockout.mapping.SRC.js'))
-
 # Knockout bindings for Twitter Bootstrap components
 response.files.append(URL('static','js/knockout-bootstrap.min.js'))
 
@@ -36,6 +32,10 @@ response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/vendor/jquery.ui
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.iframe-transport.js'))
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.fileupload.js'))
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/css/jquery.fileupload.css'))
+
+# minimal Bootstrap Tags Input (jQuery plugin)
+response.files.append(URL('static','js/bootstrap-tagsinput.min.js'))
+response.files.append(URL('static','css/bootstrap-tagsinput.css'))
 
 # D3 for tree viewer/editor
 response.files.append(URL('static','js/d3.v3.min.js'))
@@ -159,6 +159,15 @@ body {
   /* stroke: #f00; */
 }
 
+/* force proper styles for Bootstrap Tags Input */
+.bootstrap-tagsinput input {
+    border: none !important;
+    background-color: transparent !important;
+    padding: 0 !important;
+    -webkit-box-shadow: none !important;
+    box-shadow: none !important;
+}
+
 </style>
 
 <div class="row">
@@ -173,7 +182,7 @@ body {
       <li><a href="#Files" data-toggle="tab">Files <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#OTU-Mapping" data-toggle="tab">OTU Mapping <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#Annotations" data-toggle="tab">Annotations <span class="badge badge-important" style="display: none;">?</span></a></li>
-      <li><a href="#Tools" data-toggle="tab">Tools <span class="badge badge-important" style="display: none;">?</span></a></li>
+  <!--<li><a href="#Tools" data-toggle="tab">Tools <span class="badge badge-important" style="display: none;">?</span></a></li>-->
       <li><a href="#Status" data-toggle="tab">Status <span class="badge badge-important" style="display: none;">?</span></a></li>
     </ul>
 
@@ -181,9 +190,9 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
           <button class="btn btn"
             onclick="if (validateFormData()) saveFormDataToStudyJSON(); return false;">Save Study</button>
-          <a class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
+          <a id="return-to-study-list" class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
           <button class="btn btn-danger pull-right"
-            onclick="confirm('Are you sure you want to delete this study?'); return false;">Delete Study</button>
+            onclick="removeStudy(); return false;">Delete Study</button>
         {{ else: }} 
           <a class="btn btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to study list</a>
          {{ if userCanEdit: }}
@@ -218,69 +227,103 @@ body {
             <form class="form-horizontal wider-fields">
               <div class="control-group">
                 <label class="control-label" for="ot_studyPublicationReference">Publication reference</label>
-                <div class="controls">
+                <div class="controls" data-bind="with: getMetaTagByProperty(nexml.meta, 'ot:studyPublicationReference')">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <textarea data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublicationReference'), valueUpdate: 'afterkeydown'" id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder=""></textarea>
+                  <textarea data-bind="value: $data.$, valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder=""></textarea>
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublicationReference')"></p>
+                  <p class="static-form-value" data-bind="text: $data.$"></p>
                 {{ pass }}
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_studyPublication">Publication</label>
-                <div class="controls">
+                <div class="controls" data-bind="with: getMetaTagByProperty(nexml.meta, 'ot:studyPublication')">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublication'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
+                  <input data-bind="value: $data['@href'], valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value"><a target="_blank" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublication'), attr: { href: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyPublication') }"></a></p>
+                  <p class="static-form-value"><a target="_blank" data-bind="text: $data['@href'], attr: { href: $data['@href'] }"></a></p>
                 {{ pass }}
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_studyYear">Study Year</label>
-                <div class="controls">
+                <div class="controls" data-bind="with: getMetaTagByProperty(nexml.meta, 'ot:studyYear')">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyYear'), valueUpdate: 'afterkeydown'" type="text" id="ot_studyYear" class="input-mini" placeholder="">
+                  <input data-bind="value: $data.$, valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_studyYear" class="input-mini" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:studyYear')"></p>
+                  <p class="static-form-value" data-bind="text: $data.$"></p>
                 {{ pass }}
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_focalClade">Focal clade</label>
-                <div class="controls">
+                <div class="controls" data-bind="with: getMetaTagByProperty(nexml.meta, 'ot:focalClade')">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:focalClade'), valueUpdate: 'afterkeydown'" type="text" id="ot_focalClade" class="input-small" placeholder="">
+                  <input data-bind="value: $data.$, valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_focalClade" class="input-small" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:focalClade')"></p>
+                  <p class="static-form-value" data-bind="text: $data.$"></p>
                 {{ pass }}
                 </div>
               </div>
               <div class="control-group">
+                <label class="control-label">Tags</label>
+                <div class="controls">
+                {{ if viewOrEdit == 'EDIT': }}
+                    <select id="study-tags" multiple="multiple" placeholder="Add tags"
+                            onchange="updateElementTags(this); nudge.GENERAL_METADATA();"
+                            data-bind="options: getTags(viewModel.nexml)">
+                    </select>
+                {{ else: }}
+                    <!-- TODO: make all tags clickable (search in new window?) -->
+                    <div class="bootstrap-tagsinput" 
+                         style="border: none; margin-bottom: 0; padding: 4px 0; display: none;"
+                         data-bind="visible: getTags(viewModel.nexml).length > 0">
+                    <!-- ko foreach: getTags( viewModel.nexml ) -->
+                        <span class="tag label label-info" data-bind="text:
+                            $data"></span>
+                    <!-- /ko -->
+                    </div>
+                    <p class="static-form-value" style="display: none;"
+                       data-bind="visible: getTags(viewModel.nexml).length === 0">
+                       <em>None</em>
+                    </p>
+                {{ pass }}
+
+                </div>
+              </div>
+
+              <div class="control-group">
                 <label class="control-label" for="ot_curatorName">Submitted by</label>
                 <div class="controls">
-                  <p class="static-form-value" data-bind="text: getMetaTagAccessorByAtProperty(nexml.meta, 'ot:curatorName')"></p>
+                  <p class="static-form-value" data-bind="text: getMetaTagValue(nexml.meta, 'ot:curatorName')"></p>
                 </div>
               </div>
 
               <div class="control-group">
                 <div class="controls">
+
+                <!-- ko with: getMetaTagByProperty(nexml.meta, 'ot:notUsingRootedTrees') -->
                 {{ if viewOrEdit == 'EDIT': }}
                   <label class="checkbox">
-                    <input type="checkbox"> This study has no rooted trees. (This is not typical.)
+                    <input type="checkbox" data-bind="checked: $data.$, event: { click: nudge.GENERAL_METADATA }"> This study has no rooted trees. (This is not typical.)
                   </label>
                 {{ else: }}
-                  <p class="static-form-value" data-bind="css: (true) ? 'interesting-value' : 'boring-value', 
-                                                          text: (true) ? 'This study has no rooted trees. (This is not typical.)' : 'This study has rooted trees.'"></p>
+                  <p class="static-form-value" data-bind="css: $data.$ ? 'interesting-value' : 'boring-value', 
+                                                          text: $data.$ ? 'This study has no rooted trees. (This is not typical.)' : 'This study has rooted trees.'"></p>
                 {{ pass }}
+                <!-- /ko -->
+
+                <!-- ko with: getMetaTagByProperty(nexml.meta, 'ot:notIntendedForSynthesis') -->
                 {{ if viewOrEdit == 'EDIT': }}
                   <label class="checkbox">
-                    <input type="checkbox"> This study should not contribute to synthesis.
+                    <input type="checkbox" data-bind="checked: $data.$, event: { click: nudge.GENERAL_METADATA }"> This study should not contribute to synthesis.
                   </label>
                 {{ else: }}
-                  <p class="static-form-value" data-bind="css: (true) ? 'interesting-value' : 'boring-value', 
-                                                          text: (true) ? 'This study should not contribute to synthesis. (This is not typical.)' : 'This study should contribute to synthesis.'"></p>
+                  <p class="static-form-value" data-bind="css: $data.$ ? 'interesting-value' : 'boring-value', 
+                                                          text: $data.$ ? 'This study should not contribute to synthesis. (This is not typical.)' : 'This study should contribute to synthesis.'"></p>
                 {{ pass }}
+                <!-- /ko -->
+
                 </div>
               </div>
 
@@ -301,7 +344,7 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or ingroup clade"
+                    <input type="text" id="tree-list-filter" class="search-query" placeholder="Filter by name or ingroup clade"
                            data-bind="value: viewModel.listFilters.TREES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
@@ -445,7 +488,7 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by name or description"
+                    <input type="text" id="file-list-filter" class="search-query" placeholder="Filter by name or description"
                            data-bind="value: viewModel.listFilters.FILES.match, valueUpdate: 'afterkeydown'">
                 </form>
                </div>
@@ -463,34 +506,34 @@ body {
                     <tr>
                     {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <a href="#" target="_blank" data-bind="text: file['@filename']() || '?', attr: { href: file['@url']() || '#' }">
+                            <a href="#" target="_blank" data-bind="text: file['@filename'] || '?', attr: { href: file['@url'] || '#' }">
                                 Alignment data (urchins).xls
                             </a>
                         </td>
                         <td>
                             <div><textarea data-bind="value: file.description.$" placeholder="Describe this file's format and purpose." rows="2" class="input-block-level">?</textarea></div>
-                            <em data-bind="if: file['@sourceForTree']() !== '', text: file['@sourceForTree']()">SOURCE_FOR_TREE_ID</em>
+                            <em data-bind="if: file['@sourceForTree'] !== '', text: file['@sourceForTree']">SOURCE_FOR_TREE_ID</em>
                            <!-- TODO: make this directly editable?
-                            <input type="text" data-bind="value: file['@sourceForTree']()"
+                            <input type="text" data-bind="value: file['@sourceForTree']"
                                    placeholder="Tree ID (if source file for a tree)">OPTIONAL_TREE_ID</em>
                            -->
                         </td>
-                        <td><span data-bind="text: getHumanReadableFileSize(file['@size']()) || '?'">241 KB</span>
+                        <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
                             <button class="pull-right btn btn-mini row-controls-ghosted" data-bind="click: removeSupportingFile">
                                 <i class="icon-remove"></i>
                             </button>
                         </td>
                     {{ else: }}
                         <td>
-                            <a href="#" target="_blank" data-bind="text: file['@filename']() || '?', attr: { href: file['@url']() || '#' }">
+                            <a href="#" target="_blank" data-bind="text: file['@filename'] || '?', attr: { href: file['@url'] || '#' }">
                                 Alignment data (urchins).xls
                             </a>
                         </td>
                         <td>
                             <div data-bind="text: file.description.$">Microsoft Excel spreadsheet</div>
-                            <em data-bind="if: file['@sourceForTree']() !== '', text: file['@sourceForTree']()">SOURCE_FOR_TREE_ID</em>
+                            <em data-bind="if: file['@sourceForTree'] !== '', text: file['@sourceForTree']">SOURCE_FOR_TREE_ID</em>
                         </td>
-                        <td><span data-bind="text: getHumanReadableFileSize(file['@size']()) || '?'">241 KB</span></td>
+                        <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span></td>
                     {{ pass }}
                     </tr>
                   </tbody>
@@ -596,7 +639,7 @@ body {
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" class="search-query" placeholder="Filter by original or mapped label"
+                    <input type="text" id="otu-list-filter" class="search-query" placeholder="Filter by original or mapped label"
                            data-bind="value: viewModel.listFilters.OTUS.match, valueUpdate: 'afterkeydown'">
                 </form>
                 <ul class="nav" style="padding-left: 1em;">
@@ -645,60 +688,64 @@ body {
                     <tr data-bind="if: true">
                         <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')">ORIGINAL?</td>
                       {{ if viewOrEdit == 'EDIT': }}
-                         <!-- ko if: (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
+                         <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
                             <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')), 
-                                           style: { 'color' : (otu['@label']() === '' && !proposedMapping(otu))?  '' : 'silver' }"
+                                           css: viewModel.ticklers.OTU_MAPPING_HINTS,
+                                           style: { 'color' : (otu['@label'] === '' && !proposedMapping(otu))?  '' : 'silver' }"
                                >WORKING?</em>
                         </td>
                         <td>
-                          <!-- ko if: otu['@label']() === '' && !proposedMapping(otu) -->
-                            <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel">
+                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && otu['@label'] === '' && !proposedMapping(otu) -->
+                            <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+
                                 <i class="icon-edit"></i>
                             </button>
                           <!-- /ko -->
                         </td>
                          <!-- /ko -->
-                         <!-- ko if: (bogusEditedLabelCounter() > 0)  && editedLabelAccessor(otu) != null --> 
+                         <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0)  && editedLabelAccessor(otu) != null --> 
                         <td>
                             <input type="text" style="height: 14px; margin:
-                            0; width: 97%;" data-bind="value: editedLabelAccessor(otu)">
+                            0; width: 97%;" data-bind="value: editedLabelAccessor(otu), css: viewModel.ticklers.OTU_MAPPING_HINTS">
                         </td>
                         <td>
-                            <button class="btn btn-mini row-controls-ghosted" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel">
+                            <button class="btn btn-mini row-controls-ghosted" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <i class="icon-remove"></i>
                             </button>
                         </td>
                          <!-- /ko -->
                       {{ pass }}
                         <td>
-                         <!-- ko if: currentlyMappingOTUs.indexOf(otu['@id']()) !== -1 -->
+                         <!-- ko if: currentlyMappingOTUs.indexOf(otu['@id']) !== -1 -->
                             <strong style="color: red;"><em>...mapping now...</em></strong>
                          <!-- /ko -->
-                         <!-- ko if: failedMappingOTUs.indexOf(otu['@id']()) !== -1 -->
+                         <!-- ko if: failedMappingOTUs.indexOf(otu['@id']) !== -1 -->
                             <strong style="color: #999;"><em>Failed mapping (edit or add hints)</em></strong>
                          <!-- /ko -->
-                         <!-- ko if: (currentlyMappingOTUs.indexOf(otu['@id']()) === -1) && 
-                                     (failedMappingOTUs.indexOf(otu['@id']()) === -1) -->
+                         <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() &&
+                                     (currentlyMappingOTUs.indexOf(otu['@id']) === -1) && 
+                                     (failedMappingOTUs.indexOf(otu['@id']) === -1) -->
                       {{ if viewOrEdit == 'EDIT': }}
                           <!-- ko if: proposedMapping(otu) -->
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" data-bind="click: approveProposedOTULabel">
+                                <button class="btn btn-mini" data-bind="click: approveProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-ok"></i>
                                 </button>
-                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel">
+                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
                           <!-- /ko -->
-                          <!-- ko if: otu['@label'] -->
+                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && otu['@label'] -->
                             <div class="btn-group pull-right row-controls-ghosted">
-                                <button class="btn btn-mini" data-bind="click: unmapOTUFromTaxon">
+                                <button class="btn btn-mini" data-bind="click: unmapOTUFromTaxon, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
                           <!-- /ko -->
                             <strong data-bind="text: proposedMapping(otu) ?  proposedMapping(otu).name : otu['@label'],
+                                               css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                                style:  {'color': proposedMapping(otu) ? 'red' :'' }"
                                 >MAPPED (OR PROPOSED) LABEL</strong>
                       {{ else: }}
@@ -757,7 +804,7 @@ body {
             <button class="btn btn-warning input-block-level" style="margin-bottom: 1em;"
                     onclick="clearVisibleMappings(); return false;">
                 <i class="icon-warning-sign icon-white"></i>
-                Clear visible mappings (please be patient)
+                Clear all visible mappings
             </button>
 
             <div id="mapping-status-panel" class="well">
@@ -865,19 +912,19 @@ body {
                             <th width="20">&nbsp;</th>
                         </tr>
                     </thead>
-                    <tbody id="mapping-adjustments" data-bind="foreach: { data: getOTUMappingHints().data.substitutions.substitution(), as: 'substitution'}">
+                    <tbody id="mapping-adjustments" data-bind="foreach: { data: getOTUMappingHints().data.substitutions.substitution, as: 'substitution'}, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                         <tr>
                             <td align="center" valign="center">
-                                <input type="checkbox" data-bind="checked: substitution['@active']" 
+                                <input type="checkbox" data-bind="checked: substitution['@active'], event: { click: nudge.OTU_MAPPING_HINTS }" 
                                        title="If checked, this substitution will be used."/>
                             </td>
                             <td>
                                 <input type="text" class="input-block-level" 
-                                       data-bind="value: substitution.old.$, valueUpdate: 'afterkeydown', style: { 'background-color': substitution['@valid']() ? '' : '#fdd' }"/>
+                                       data-bind="value: substitution.old.$, valueUpdate: 'afterkeydown', event: { keyup: nudge.OTU_MAPPING_HINTS, change: nudge.OTU_MAPPING_HINTS }, style: { 'background-color': substitution['@valid'] ? '' : '#fdd' }"/>
                             </td>
                             <td>
                                 <input type="text"
-                                class="input-block-level" data-bind="value: substitution.new.$, valueUpdate: 'afterkeydown'"/>
+                                class="input-block-level" data-bind="value: substitution.new.$, valueUpdate: 'afterkeydown', event: { keyup: nudge.OTU_MAPPING_HINTS, change: nudge.OTU_MAPPING_HINTS }"/>
                             </td>
                             <td align="center" valign="center">
                                 <a href="#" title="Click to remove this substitution."
@@ -927,7 +974,7 @@ body {
               <div class="navbar">
                  <div class="navbar-inner">
                   <form class="navbar-search pull-left">
-                      <input type="text" class="search-query input-xlarge" placeholder="Filter by type, location, submitter, message"
+                      <input type="text" id="annotation-list-filter" class="search-query input-xlarge" placeholder="Filter by type, location, submitter, message"
                              data-bind="value: viewModel.listFilters.ANNOTATIONS.match, valueUpdate: 'afterkeydown'">
                   </form>
                 <!-- TODO: Can we provide some kind of support for thes filters?
@@ -972,7 +1019,7 @@ body {
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredAnnotations().pagedItems(), as: 'annotation' }">
                     <tr>
-                        <td data-bind="text: annotation['@description'](), style: { color: annotation['@passedChecks']() ? '' : 'red' }"></td><!-- general description (annotation type) -->
+                        <td data-bind="text: annotation['@description'], style: { color: annotation['@passedChecks'] ? '' : 'red' }"></td><!-- general description (annotation type) -->
                         <!-- <td><a href="#">Study</a></td> -->
                         <td data-bind="text: getAgentForAnnotationEvent( annotation )['@name']"></td>
                       <!-- ko if: getMessagesForAnnotationEvent( annotation ).length > 0 -->
@@ -1118,11 +1165,6 @@ Please review and re-submit.</pre>
                 </form>
             </div>
 
-        {{ if viewOrEdit == 'EDIT': }}
-            <i><a href="#" onclick="if ($('#formatted-nexson').is(':visible')) { $('#formatted-nexson').hide() } else { $('#formatted-nexson').show() }; return false;">current nexml</a> (remapped for return to server)</i>
-            <pre id="formatted-nexson" data-bind="text: ko.mapping.toJSON(nexml.meta)" style="color: #933; font-size: small; width: 90%; height: 500px; overflow: auto; display: none;">
-            </pre>
-        {{ pass }}
             <div style="height: 2em;">&nbsp;</div>
          </div><!-- end of main column... -->
          <div class="span4"><!-- right col -->
@@ -1151,12 +1193,13 @@ Please review and re-submit.</pre>
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
     var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
-    var API_load_study_GET_url = '{{= conf.get("apis", "API_load_study_GET_url") }}';
-    var API_update_study_PUT_url = '{{= conf.get("apis", "API_update_study_PUT_url") }}';
-    var API_create_file_POST_url = '{{= conf.get("apis", "API_create_file_POST_url") }}';
-    var API_load_file_GET_url = '{{= conf.get("apis", "API_load_file_GET_url") }}';
-    var API_update_file_PUT_url = '{{= conf.get("apis", "API_update_file_PUT_url") }}';
-    var API_remove_file_DELETE_url = '{{= conf.get("apis", "API_remove_file_DELETE_url") }}';
+    var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
+    var API_update_study_PUT_url = '{{=API_update_study_PUT_url}}';
+    var API_remove_study_DELETE_url = '{{=API_remove_study_DELETE_url}}';
+    var API_create_file_POST_url = '{{=API_create_file_POST_url}}';
+    var API_load_file_GET_url = '{{=API_load_file_GET_url}}';
+    var API_update_file_PUT_url = '{{=API_update_file_PUT_url}}';
+    var API_remove_file_DELETE_url = '{{=API_remove_file_DELETE_url}}';
 
     var treemachine_domain = "{{=treemachine_domain}}";
     var taxomachine_domain = "{{=taxomachine_domain}}";
@@ -1170,6 +1213,7 @@ Please review and re-submit.</pre>
     var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
     var getJSONFromNode_url = "{{=getJSONFromNode_url}}";
 </script>
+<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
 
 <!-- hidden template for the tree-viewer (editor) -->
@@ -1211,8 +1255,13 @@ Please review and re-submit.</pre>
               <br/>
                <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
 
-                <label for="testtest">Tags: </label>
-                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:tag'), valueUpdate: 'afterkeydown'"></input>
+                <label>Tags: </label>
+                <select id="tree-tags" multiple="multiple" placeholder="Add tags"
+                        onchange="updateElementTags(this);"
+                        data-bind="attr: {'treeid': $data['@id'] },
+                                   options: getTags( getTreeByID($data['@id']) )">
+                </select>
+
               <br/>
 
                <!-- todo: general statement of rooting (tree and ingroup)?
@@ -1232,13 +1281,13 @@ Please review and re-submit.</pre>
                     value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode'),
                     optionsCaption: 'Choose...'">TYPE</select>
 
-               <!-- ko if: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode')() === 'ot:time' -->
+               <!-- ko if: getMetaTagValue($data.meta, 'ot:branchLengthMode') === 'ot:time' -->
                 <label style="margin-left: 10px;">Time unit: </label>
                 <select data-bind="options: ['Myr'],
                     value: getMetaTagAccessorByAtProperty($data.meta, 'branchLengthTimeUnit')">TYPE</select>
                <!-- /ko -->
 
-               <!-- ko if: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode')() === 'ot:other' -->
+               <!-- ko if: getMetaTagValue($data.meta, 'ot:branchLengthMode') === 'ot:other' -->
                 <label style="margin-left: 10px;">&nbsp;</label>
                 <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthDescription'), valueUpdate: 'afterkeydown'" placeholder="Describe here"></input>
                <!-- /ko -->
@@ -1263,8 +1312,18 @@ Please review and re-submit.</pre>
               <br/>
                <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
 
-                <label for="testtest">Tags: </label>
-                <strong data-bind="html: getTagDescriptionForTree($data)">{TAGS}</strong>
+                <label>Tags: </label>
+                <!-- TODO: make all tags clickable (search in new window?) -->
+                <div class="bootstrap-tagsinput" 
+                     style="display: inline-block; border: none; margin-bottom: 0; padding: 0 0 4px 0;"
+                     data-bind="visible: getTags(getTreeByID($data['@id'])).length > 0">
+                <!-- ko foreach: getTags( getTreeByID($data['@id']) ) -->
+                    <span class="tag label label-info" data-bind="text: $data">TAG</span>
+                <!-- /ko -->
+                </div>
+                <strong data-bind="visible: getTags(getTreeByID($data['@id'])).length === 0">
+                   <em>None</em>
+                </strong>
               <br/>
 
                <!-- TODO: General statement of rooting (tree and ingroup)?
@@ -1289,7 +1348,11 @@ Please review and re-submit.</pre>
 
           <label style="margin-left: 20px;">Outgroup: </label> <em>blah</em>
 
-          <label style="margin-left: 20px;" for=""> <input type="checkbox"> Hide branch lengths</label>
+          <label style="margin-left: 20px;" for="branch-length-toggle"> 
+              <input type="checkbox" id="branch-length-toggle" 
+                     onclick="toggleBranchLengthsInViewer(this); return true;" />
+              Hide branch lengths
+          </label>
       </div>
       <a data-dismiss="modal" class="btn" >Close</a>
       <!-- <a class="btn btn-primary" id="btnSaveChanges">Save changes</a> -->
