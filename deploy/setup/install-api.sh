@@ -37,6 +37,9 @@ if grep --invert-match "distribute" \
     mv requirements.txt.new $APPROOT/requirements.txt
 fi
 
+git_refresh OpenTreeOfLife peyotl || true
+py_package_setup_install peyotl || true
+
 (cd $APPROOT; pip install -r requirements.txt)
 
 (cd web2py/applications; \
