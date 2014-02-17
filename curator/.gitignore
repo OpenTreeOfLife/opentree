@@ -9,3 +9,5 @@ tmp/
 *.class
 *~
 *.DS_Store
+build-ncl-static
+ncl

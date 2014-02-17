@@ -340,7 +340,13 @@ if (!d3) { throw "d3 wasn't included!"};
           .attr('font-size', '10px')
           .attr('fill', '#ccc')
           ///.text(function(d) { return d.length; });
-          .text(function(d) { return (d.name + ' ('+d.length+')'); });
+          .text(function(d) {
+              if (options.skipBranchLengthScaling) {
+                  return d.name; 
+              } else {
+                  return (d.name + ' ('+d.length+')'); 
+              }
+          });
 
       vis.selectAll('g.root.node text')
           .attr("dx", -8)
@@ -352,7 +358,13 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("dy", 3)
         .attr("text-anchor", "start")
         .attr('fill', 'black')
-        .text(function(d) { return d.name + ' ('+d.length+')'; });
+        .text(function(d) { 
+            if (options.skipBranchLengthScaling) {
+                return d.name; 
+            } else {
+                return (d.name + ' ('+d.length+')'); 
+            }
+        });
     }
     
     return {tree: tree, vis: vis}

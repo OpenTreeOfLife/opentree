@@ -77,9 +77,9 @@ while [ $# -gt 0 ]; do
     fi
 done
 
-[ "x$OPENTREE_HOST" != x ] || (echo "OPENTREE_HOST not specified"; exit 1)
-[ "x$OPENTREE_IDENTITY" != x ] || (echo "OPENTREE_IDENTITY not specified"; exit 1)
-[ -r $OPENTREE_IDENTITY ] || (echo "$OPENTREE_IDENTITY not found"; exit 1)
+if [ "x$OPENTREE_HOST" = x ] ; then echo "OPENTREE_HOST not specified"; exit 1; fi
+if [ "x$OPENTREE_IDENTITY" = x ]; then echo "OPENTREE_IDENTITY not specified"; exit 1; fi
+if [ ! -r $OPENTREE_IDENTITY ]; then echo "$OPENTREE_IDENTITY not found"; exit 1; fi
 [ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J_HOST=$OPENTREE_HOST
 [ "x$OPENTREE_PUBLIC_DOMAIN" != x ] || OPENTREE_PUBLIC_DOMAIN=$OPENTREE_HOST
 [ "x$GITHUB_CLIENT_ID" != x ] || GITHUB_CLIENT_ID=ID_NOT_PROVIDED
