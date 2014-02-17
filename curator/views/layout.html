@@ -94,7 +94,7 @@
       jQuery('div.error').addClass('alert').addClass('alert-error');
 
       // stash display name for possible attribution (in ot:curatorName list)
-      curatorDisplayName = "{{= auth.user.name or ('%s %s' % (auth.user.first_name, auth.user.last_name,)) }}";
+      curatorDisplayName = "{{= auth.user and (auth.user.name or '%s %s' % (auth.user.first_name, auth.user.last_name,)) or 'ANONYMOUS' }}";
 
     {{ pass }}
 

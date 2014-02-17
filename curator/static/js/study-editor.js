@@ -149,6 +149,7 @@ function loadSelectedStudy(id) {
         dataType: 'json',
         url: fetchURL,
         data: { 
+            'output_nexml2json': '1.0.0',
             'auth_token': authToken
         },
         success: function( data, textStatus, jqXHR ) {
@@ -3273,16 +3274,7 @@ function mapOTUToTaxon( otuID, mappingInfo ) {
 
     // add (or update) a metatag mapping this to an OTT id
     var ottId = Number(mappingInfo.ottId);
-    var ottMappingTag = otu['^ot:ottId'] || null;
-    if (!ottMappingTag) {
-        addMetaTagToParent(otu, {
-            "$": '',
-            "@property": "ot:ottId",
-            "@xsi:type": "nex:LiteralMeta"
-        });
-        ottMappingTag = otu['^ot:ottId'];
-    }
-    ottMappingTag.$ = ottId;
+    otu['^ot:ottId'] = ottId;
 }
 
 function unmapOTUFromTaxon( otuOrID ) {
