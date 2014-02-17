@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 from opentreewebapputil import get_opentree_services_method_urls
+import pdb
 
 # this file is released under public domain and you can use without limitations
 import re
@@ -292,5 +293,40 @@ def to_nexml():
             return HTTP(102, "Conversion to ot:NexSON still running")
     assert (output == 'ot:nexson')
     response.view = 'generic.json'
-    return json.load(codecs.open(OT_NEXSON_FILEPATH, 'rU', encoding='utf-8'))
-    
+    nexson = json.load(codecs.open(OT_NEXSON_FILEPATH, 'rU', encoding='utf-8'))
+    # pdb.set_trace()
+
+    # TODO: store input file (or string) alongside uploaded supporting files? or provide special fetch method?
+    imported_tree = nexson['nex:nexml']['trees']['tree']
+
+    #### create or replace the file information for this 
+    ###os.path.exists(INPUT_FILEPATH)
+
+    imported_tree[ u'^ot:messages' ] = [ { 
+        u'@id': "message{u}".format(u=unique_id),
+        u'@code': u'SUPPORTING_FILE_INFO',
+        u'@humanMessageType': u'NONE',
+        u'@severity': u'INFO',
+        u'@wasGeneratedBy': u'opentree.2nexml',
+        # TODO: Do we need to add this agent to the main study?
+        u'data': {
+            u'@movedToPermanentArchive': False,
+            u'files': {
+                u'file': [
+                    {
+                        u'@filename': INPUT_FILENAME,
+                        u'@size': shutil.os.path.getsize(INPUT_FILEPATH),
+                        u'@sourceForTree': imported_tree['@id'],
+                        u'@type': inp_format,
+                        u'@url': "/curator/default/to_nexml?output=input&uploadid={u}".format(u=unique_id),
+                        u'description': {
+                            u'$': "Source data for tree '{u}'".format(u=imported_tree['@id'])
+                        }
+                    }
+                ]
+            }
+        }
+    } ]
+
+    # add supporting-file annotation for this tree (for curation UI and eventual data deposition)
+    return nexson

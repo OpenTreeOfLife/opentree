@@ -431,32 +431,62 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
             <div class="well">
                 <h4 style="margin-top: 0;">Add a tree to this study</h4>
-                <form style="margin: 0;">
+                <form id="tree-import-form" 
+                      style="margin: 0;" 
+                      Xaction="{{= URL(a='curator', c='default', f='to_nexml')}}" 
+                      action="/curator/default/to_nexml" 
+                      method="POST" 
+                      onsubmit="submitNewTree(this); return false;"
+                      Xonsubmit="console.log('DEFAULT tree-import-form submit (suppressed)'); return false;">
                  <fieldset>
-                  <label for="new-tree-newick">Paste a Newick string&hellip;</label>
-                  <textarea id="new-tree-newick" rows="5" class="input-block-level" Xstyle="width: 95%;"></textarea>
+                 <input type="hidden" name="output" value="ot:nexson">
+                 <input type="hidden" name="author_name" 
+                   value="{{= auth.user and auth.user.name or 'ANONYMOUS' }}">
+                 <input type="hidden" name="author_email" 
+                   value="{{= auth.user and auth.user.email or 'ANONYMOUS' }}">
+                 <input type="hidden" name="auth_token" 
+                   value="{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}">
+                 <input type="hidden" name="uploadid" value="">
+                  <select id="tree-import-format" name="inputformat" 
+                          class="input-block-level"
+                          style="margin-bottom: 1em;"
+                          oninput="updateNewTreeUploadForm(); return true;"
+                          onchange="updateNewTreeUploadForm(); return true;">
+                      <option value="" selected="selected">What is the format of this tree?</option>
+                      <option value="nexus">NEXUS</option>
+                      <option value="newick">Newick</option>
+                      <option value="nexml">NeXML</option>
+                  </select>
+                  <label for="new-tree-text">Paste tree data (text)&hellip;</label>
+                  <textarea id="new-tree-text" name="content" rows="5"
+                            class="input-block-level"
+                            onkeyup="updateNewTreeUploadForm(); return true;"
+                            oninput="updateNewTreeUploadForm(); return true;"
+                            onchange="updateNewTreeUploadForm(); return true;"
+                            ></textarea>
                   
-                  <label for="new-tree-upload">&hellip;or upload a tree file</label>
-{{
-#                  <input id="new-tree-upload" type="file" class="Xinput-block-level">
-#
-#                    OK, that's hideous. Trying some more attractive styles as described here:
-#                        http://stackoverflow.com/questions/11235206/twitter-bootstrap-form-file-element-upload-button
-#                        http://duckranger.com/2012/06/pretty-file-input-field-in-bootstrap/
-#                        http://www.randomout.com/2012/07/hacking-more-visually-appealing-file.html
-}}
+                  <label for="treeupload">&hellip;or upload a tree file</label>
 
-                  <div style="position:relative; margin-bottom: 1em;">
-                    <a class="btn" href="javascript:;">
-                        Choose File...
-                        <input type="file" name="new-tree-upload" size="40" 
-                               style="position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';opacity:0;background-color:transparent;color:transparent;"
-                               onchange="$('#upload-tree-info').html( filenameFromFakePath($(this).val()) );">
-                    </a>
+
+                <div>
+                    <span class="btn fileinput-button">
+                        <i class="glyphicon glyphicon-plus"></i>
+                        <span>Select file to upload...</span>
+                        <!-- The file input field used as target for the file upload widget -->
+                        <input id="treeupload" 
+                               type="file" name="file"
+                               onchange="$('#upload-tree-info').html( filenameFromFakePath($(this).val()) ); updateNewTreeUploadForm(); return true;">
+                    </span>
                     &nbsp;
                     <span class='label label-info' id="upload-tree-info"></span>
+                </div>
+                <div id="tree-upload-progress" class="progress progress-info" 
+                     style="margin-top: 0.3em; margin-bottom: 1em; background-color: #333;">
+                  <div class="bar" style="text-align: center; width: 0%;">
+                      <span>&nbsp;</span>
                   </div>
-                  
+                </div>
+
 <!-- TODO: Enter a URL or DOI for the new tree?
                   <label for="new-tree-URL">&hellip;or paste an URL to the tree</label>
                   <input type="text" id="new-tree-URL" class="input-block-level" value="" placeholder="Paste URL here">
@@ -468,9 +498,13 @@ body {
                   </label>
 
                   <div Xclass="form-actions" style="margin-top: 1em;">
-                      <button type="submit" class="btn btn-primary btn-primary-disabled" disabled="disabled">Add new tree 
+                      <button name="new-tree-submit" type="submit" 
+                          class="btn btn-info btn-info-disabled" 
+                          disabled="disabled">Add new tree 
                         <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
-                      <button type="button" class="btn">Cancel</button>
+                      <button type="reset" class="btn" 
+                              onclick="clearNewTreeUploadWidget(); return true;"
+                      >Clear form</button>
                   </div>
                  </fieldset>
                 </form>
@@ -511,15 +545,31 @@ body {
                             </a>
                         </td>
                         <td>
-                            <div><textarea data-bind="value: file.description.$" placeholder="Describe this file's format and purpose." rows="2" class="input-block-level">?</textarea></div>
-                            <em data-bind="if: file['@sourceForTree'] !== '', text: file['@sourceForTree']">SOURCE_FOR_TREE_ID</em>
+                            <div><textarea data-bind="value: file.description.$"
+                            placeholder="Describe this file's format and purpose." 
+                            rows="2" 
+                            class="input-block-level"
+                            style="margin-bottom: 0px;">?</textarea></div>
+                            <em data-bind="if: file['@sourceForTree'] !== ''">
+                                Source for tree: 
+                                <strong data-bind="text: getTreeByID( file['@sourceForTree'] )['@label']">
+                                    SOURCE_FOR_TREE_ID
+                                </strong>
+                            </em>
                            <!-- TODO: make this directly editable?
                             <input type="text" data-bind="value: file['@sourceForTree']"
                                    placeholder="Tree ID (if source file for a tree)">OPTIONAL_TREE_ID</em>
                            -->
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
-                            <button class="pull-right btn btn-mini row-controls-ghosted" data-bind="click: removeSupportingFile">
+                            <button data-bind="visible: file['@sourceForTree'] !== ''"
+                                class="pull-right btn btn-mini" 
+                                style="opacity: 0.3 !important;"
+                                onclick="alert('You must delete the associated tree to remove this file.'); return false;">
+                                <i class="icon-remove"></i>
+                            </button>
+                            <button data-bind="visible: file['@sourceForTree'] === '', click: removeSupportingFile"
+                                class="pull-right btn btn-mini row-controls-ghosted">
                                 <i class="icon-remove"></i>
                             </button>
                         </td>
@@ -531,7 +581,12 @@ body {
                         </td>
                         <td>
                             <div data-bind="text: file.description.$">Microsoft Excel spreadsheet</div>
-                            <em data-bind="if: file['@sourceForTree'] !== '', text: file['@sourceForTree']">SOURCE_FOR_TREE_ID</em>
+                            <em data-bind="if: file['@sourceForTree'] !== ''">
+                                Source for tree: 
+                                <strong data-bind="text: getTreeByID( file['@sourceForTree'] )['@label']">
+                                    SOURCE_FOR_TREE_ID
+                                </strong>
+                            </em>
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span></td>
                     {{ pass }}
@@ -569,24 +624,6 @@ body {
                 <h4 style="margin-top: 0;">Add a file to this study</h4>
                 <form style="margin: 0;">
                  <fieldset>
-<!--
-                  <label for="new-file-newick">Paste file contents here&hellip;</label>
-                  <textarea id="new-file-newick" rows="5" class="input-block-level" Xstyle="width: 95%;"></textarea>
-                  
-                  <label for="new-file-upload">Upload a file &hellip;</label>
--->
-                  <!--
-                  <div style="position:relative; margin-bottom: 1em;">
-                    <a class="btn" href="javascript:;">
-                        Choose File...
-                        <input type="file" name="new-file-upload" size="40" 
-                               style="position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';opacity:0;background-color:transparent;color:transparent;"
-                               onchange="$('#upload-file-info').html( filenameFromFakePath($(this).val()) );">
-                    </a>
-                    &nbsp;
-                    <span class='label label-info' id="upload-file-info"></span>
-                  </div>
-                  -->
 
                 <div>
                     <span class="btn btn-info fileinput-button">
@@ -595,16 +632,6 @@ body {
                         <!-- The file input field used as target for the file upload widget -->
                         <input id="fileupload" type="file" name="files[]" multiple>
                     </span>
-
-
-                   <!--
-                   <span class="fileupload-process" 
-                         style="display: inline-block;
-                                width: 32px;
-                                height: 32px;
-                                background: url('/curator/static/jQuery-File-Upload-9.5.2/img/loading.gif') center no-repeat;
-                                background-size: contain;"></span> 
-                    -->
 
                 </div>
                 <div id="file-upload-progress" class="progress progress-info" 
@@ -902,7 +929,6 @@ body {
               <!-- ko if: getOTUMappingHints() !== null -->
                 <form class="form-inline" style="margin: 0;">
                  <fieldset>
-                  <!--<label for="new-tree-newick">Substitutions</label>-->
                   <table>
                     <thead>
                         <tr>

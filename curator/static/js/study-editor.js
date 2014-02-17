@@ -35,7 +35,7 @@ $(document).ready(function() {
     $('.nav-tabs a:first').tab('show');
     loadSelectedStudy(studyID);
 
-    // Initialize the jQuery File Upload widget:
+    // Initialize the jQuery File Upload widgets
     $('#fileupload').fileupload({
         disableImageResize: true,
         // maxNumberOfFiles: 5,
@@ -43,7 +43,7 @@ $(document).ready(function() {
         // acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i  // TODO: allow any
         url: '/curator/supporting_files/upload_file',
         dataType: 'json',
-        autoUpload: 'True',
+        autoUpload: true,
         done: function() {
             console.log('done!');
         }
@@ -97,20 +97,92 @@ $(document).ready(function() {
         });
     }) 
     
-    // Load existing files (?)
-    $('#fileupload').addClass('fileupload-processing');
-    $.ajax({
-        // Uncomment the following to send cross-domain cookies:
-        //xhrFields: {withCredentials: true},
-        url: $('#fileupload').fileupload('option', 'url'),
+    $('#treeupload').fileupload({
+        // NOTE that this should submit the same arguments (except for file
+        // data) as submitNewtree() below
+        disableImageResize: true,
+        // maxNumberOfFiles: 5,
+        // maxFileSize: 5000000,  // TODO: allow maximum
+        // acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i  // TODO: allow any
+        url: $('#tree-import-form').attr('action'),
         dataType: 'json',
-        context: $('#fileupload')[0]
-    }).always(function () {
-        $(this).removeClass('fileupload-processing');
-    }).done(function (result) {
-        $(this).fileupload('option', 'done')
-            .call(this, $.Event('done'), {result: result});
-    });
+        autoUpload: false,
+        add: function(e, data) {
+            console.log('*** treeupload - start ***');
+        },
+        formData: {
+            // these are ADDED to the form's native widgets
+            // https://github.com/blueimp/jQuery-File-Upload/wiki/How-to-submit-additional-Form-Data
+            author_name: authorName,
+            author_email: authorEmail,
+            auth_token: authToken
+        },
+        add: function(e, data) {
+            console.log('*** treeupload - add ***');
+            $('[name=new-tree-submit]').click(function() {
+                console.log('treeupload - submitting...');
+                debugger;
+                data.submit();
+                return false;
+            });
+        },
+        done: function(e, data) {
+            console.log('*** treeupload - done ***');
+            returnFromNewTreeSubmission();
+        }
+    }).on('fileuploadprogressall', function (e, data) {
+        console.log('tree - fileuploadprogressall');
+        var progress = parseInt(data.loaded / data.total * 100, 10);
+        $('#tree-upload-progress .bar').css(
+            'width',
+            progress + '%'
+        );
+        $('#tree-upload-progress .bar span').text(
+            progress + '%'
+        );
+    }).on('fileuploaddone', function (e, data) {
+        console.log('tree - fileuploaddone');
+        debugger;
+        /*
+        $.each(data.result.files, function (index, file) {
+            if (file.url) {
+                var link = $('<a>')
+                    .attr('target', '_blank')
+                    .prop('href', file.url);
+
+                * 'file' obj has these properties
+                    .delete_url: "/curator/supporting_files/delete_file/supporting_files.doc.96...3461.m4a"
+                    .name: "10_6_2011 6_03 PM.m4a"
+                    .size: 35036641
+                    .url: "/curator/supporting_files/download/supporting_files.doc.96acd92...3461.m4a"
+                *
+                // update the files list (and auto-save?)
+                var fileNexson = cloneFromNexsonTemplate('single supporting file');
+                fileNexson['@filename'] = file.name;
+                fileNexson['@url'] = file.url;  // TODO: prepend current domain name, if missing?
+                fileNexson['@type'] = "";  // TODO: glean this from file extension?
+                fileNexson['@size'] = file.size;  // convert byte count for display?
+                // TODO: incorporate the delete URL provided? or generate as-needed?
+                // fileNexson.delete_url( file.delete_url );
+
+                getSupportingFiles().data.files.file.push(fileNexson);
+                nudgeTickler('SUPPORTING_FILES');
+
+                showSuccessMessage('File added.');
+            } else if (file.error) {
+                var error = $('<span class="text-danger"/>').text(file.error);
+                *
+                $(data.context.children()[index])
+                    .append('<br>')
+                    .append(error);
+                *
+                debugger;
+                console.log( "FAILURE, msg = "+ error);
+            }
+        });
+        */
+    }) 
+    
 });
 
 
@@ -297,6 +369,7 @@ function loadSelectedStudy(id) {
             viewModel.ticklers = {
                 'GENERAL_METADATA': ko.observable(1),
                 'EDGE_DIRECTIONS': ko.observable(1),
+                'TREES': ko.observable(1),
                 'SUPPORTING_FILES': ko.observable(1),
                 'OTU_MAPPING_HINTS': ko.observable(1),
                 'VISIBLE_OTU_MAPPINGS': ko.observable(1),
@@ -343,6 +416,8 @@ function loadSelectedStudy(id) {
             viewModel.filteredTrees = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
+                var ticklers = [ viewModel.ticklers.TREES() ];
+
                 updateClearSearchWidget( '#tree-list-filter' );
 
                 var match = viewModel.listFilters.TREES.match(),
@@ -380,8 +455,24 @@ function loadSelectedStudy(id) {
                     matchPattern = new RegExp( $.trim(match), 'i' );
 
                 // map old array to new and return it
+                var fileDetails = [];
+                $.each(getSupportingFiles().data.files.file, function(i, fileInfo) {
+                    fileDetails.push(fileInfo);
+                });
+                $.each(viewModel.nexml.trees.tree, function(i, tree) {
+                    if ('^ot:messages' in tree) {
+                        $.each(tree['^ot:messages'], function(i, msg) {
+                            if (msg['@code'] === 'SUPPORTING_FILE_INFO') {
+                                $.each(msg.data.files.file, function(i, fileInfo) {
+                                    fileDetails.push(fileInfo);
+                                });
+                            }
+                        });
+                    }
+                });
+
                 var filteredList = ko.utils.arrayFilter( 
-                    getSupportingFiles().data.files.file,  // retrieve contents of observableArray
+                    fileDetails,  // retrieve contents of observableArray
                     function(file) {
                         // match entered text against old or new label
                         var fileName = file['@filename'];
@@ -2449,6 +2540,121 @@ function filenameFromFakePath( path ) {
         return path;
     }
     return parts[howManyParts-1];
+}
+function updateNewTreeUploadForm() {
+    // check all fields, enable/disable button
+    var readyToSubmit = true;
+
+    var chosenFormat = $.trim( $('#tree-import-format').val() );
+    console.log(chosenFormat);
+    if (chosenFormat === '') { 
+        readyToSubmit = false;
+    }
+
+    var chosenFile = $.trim( $('#new-tree-text[name=file]').val() );
+    var pastedText = $.trim( $('#new-tree-text').val() );
+    console.log("chosenFile: '"+ chosenFile +"'");
+    // either of these is acceptable
+    if (pastedText === '' && chosenFile === '') { 
+        readyToSubmit = false;
+    }
+
+    var $submitBtn = $('[name=new-tree-submit]');
+    if (readyToSubmit) {
+        console.log('READY');
+        $submitBtn.removeAttr('disabled');
+    } else {
+        console.log('NOT ready');
+        $submitBtn.attr('disabled', 'disabled');
+    }
+    return true;
+}
+function clearNewTreeUploadWidget() {
+    // un-bind fileupload submission
+    $('[name=new-tree-submit]').off('click');
+
+    var $widget = $('#treeupload');
+    $widget.val(''); 
+    $widget.trigger('change'); 
+}
+function submitNewTree( form ) {
+    // NOTE that this should submit the same arguments (except for file
+    // data) as the fileupload behavior for #treeupload
+    console.log("submitting tree...");
+    var submitURL = $(form).attr('action');
+    console.log(submitURL);
+    
+    $('#ajax-busy-bar').show();
+
+    // generate a new/unique upload ID for this attempt
+    var personalTimestamp = authToken +'.'+ new Date().getTime();
+    $('[name=uploadid]').val(personalTimestamp);
+    
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        // contentType: "application/json; charset=utf-8",
+        url: $('#tree-import-form').attr('action'),
+        data: $('#tree-import-form').serialize(),
+        complete: returnFromNewTreeSubmission
+    });
+}
+function returnFromNewTreeSubmission( jqXHR, textStatus ) {
+    // show results of tree submission, whether from submitNewTree() 
+    // or special (fileupload) behavior
+    
+    $('#ajax-busy-bar').hide();
+
+    console.log('submitNewTree(): done! textStatus = '+ textStatus);
+    // report errors or malformed data, if any
+    if (textStatus !== 'success') {
+        showErrorMessage('Sorry, there was an error adding this tree.');
+        return;
+    }
+
+    showSuccessMessage('Tree added.');
+    
+    // TODO: Add trees, nodes, otus and update UI
+
+    // TODO: Add supporting-file info for this tree's source file
+    console.log("status: "+ jqXHR.status);
+    console.log("statusText: "+ jqXHR.statusText);
+    // convert raw response to JSON
+    var data = $.parseJSON(jqXHR.responseText);
+    console.log("data: "+ data);
+
+    // move its collections into the view model Nexson
+    var itsOTUsCollection = data['nex:nexml']['otus'];
+    var itsTreesCollection = data['nex:nexml']['trees'];
+    try {
+        viewModel.nexml.otus.push( itsOTUsCollection );
+        viewModel.nexml.trees.push( itsTreesCollection );
+    } catch(e) {
+        console.error('Unable to push collections (needs Nexson upgrade)');
+        // try pushing just the tree
+        debugger;
+        viewModel.nexml.trees.tree.push( makeArray(itsTreesCollection.tree)[0] );
+    }
+
+    /*
+    // update the files list (and auto-save?)
+    var file = cloneFromNexsonTemplate('single supporting file');
+    file['@filename'] = data.filename || "";
+    file['@url'] = data.url || "";
+    file['@type'] = data.type || "";
+    file.description.$ = data.description || "";
+    file['@sourceForTree'] = data.sourceForTree || "";
+    file['@size'] = data.size || "";
+    getSupportingFiles().data.files.file.push(file);
+    */
+
+    // force update of curation UI in all relevant areas
+    nudgeTickler('TREES');
+    nudgeTickler('SUPPORTING_FILES');
+    nudgeTickler('GENERAL_METADATA');
+    nudgeTickler('VISIBLE_OTU_MAPPINGS');
+    nudgeTickler('STUDY_HAS_CHANGED');
 }
 
 function adjustedLabel(label) {
