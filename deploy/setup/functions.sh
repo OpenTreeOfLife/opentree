@@ -124,3 +124,26 @@ function git_refresh() {
 }
 
 # See http://stackoverflow.com/questions/1741143/git-pull-origin-mybranch-leaves-local-mybranch-n-commits-ahead-of-origin-why
+
+# Runs "python setup.py develop" from a git repo version of a 
+#   python package. Also runs pip install -r requirements.txt
+#   if there is a "requirements.txt" file at the top level of
+#   the repo. Used to install the peyotl dependency of the
+#   most recent branches of the api repo.
+function py_package_setup_install() {
+    reponame=$1
+    # Directory in which all local checkouts of git repos reside
+    repo_dir=$REPOS_DIR/$reponame
+    # returns true (0) if the installation was performed
+    installed=0
+    if [ ! -d $repo_dir ] ; then
+        log Install: $reponame "failed no parent"
+        installed=1
+    else
+        (cd $repo_dir; \
+         if test -f requirements.txt ; then pip install -r requirements.txt ; fi ; \
+         python setup.py develop)
+        log Install: $reponame "setup.py develop run"
+    fi
+    return $installed
+}
