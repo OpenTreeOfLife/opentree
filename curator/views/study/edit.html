@@ -371,7 +371,7 @@ body {
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
                             <input type="checkbox" style="margin: 0px 20px;" 
-            data-bind="attr: {'checked': $.inArray(tree['@id'], getPreferredTreeIDs()) !== -1}, 
+            data-bind="attr: {'checked': jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1}, 
                        click: togglePreferredTree" /></td>
                       {{ else: }}
                         <td data-bind="text: (true) ? 'NO' : 'YES'">?</td>
@@ -551,9 +551,7 @@ body {
                             style="margin-bottom: 0px;">?</textarea></div>
                             <em data-bind="if: file['@sourceForTree'] !== ''">
                                 Source for tree: 
-                                <strong data-bind="text: getTreeByID( file['@sourceForTree'] )['@label']">
-                                    SOURCE_FOR_TREE_ID
-                                </strong>
+                                <strong data-bind="text: getTreeByID( file['@sourceForTree'])['@label']">SOURCE_FOR_TREE_ID_B</strong>
                             </em>
                            <!-- TODO: make this directly editable?
                             <input type="text" data-bind="value: file['@sourceForTree']"
@@ -582,9 +580,7 @@ body {
                             <div data-bind="text: file.description.$">Microsoft Excel spreadsheet</div>
                             <em data-bind="if: file['@sourceForTree'] !== ''">
                                 Source for tree: 
-                                <strong data-bind="text: getTreeByID( file['@sourceForTree'] )['@label']">
-                                    SOURCE_FOR_TREE_ID
-                                </strong>
+                                <strong data-bind="text: getTreeByID( file['@sourceForTree'])['@label']">SOURCE_FOR_TREE_ID_A</strong>
                             </em>
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span></td>

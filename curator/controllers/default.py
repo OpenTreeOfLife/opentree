@@ -302,31 +302,33 @@ def to_nexml():
     #### create or replace the file information for this 
     ###os.path.exists(INPUT_FILEPATH)
 
-    imported_tree[ u'^ot:messages' ] = [ { 
-        u'@id': "message{u}".format(u=unique_id),
-        u'@code': u'SUPPORTING_FILE_INFO',
-        u'@humanMessageType': u'NONE',
-        u'@severity': u'INFO',
-        u'@wasGeneratedBy': u'opentree.2nexml',
-        # TODO: Do we need to add this agent to the main study?
-        u'data': {
-            u'@movedToPermanentArchive': False,
-            u'files': {
-                u'file': [
-                    {
-                        u'@filename': INPUT_FILENAME,
-                        u'@size': shutil.os.path.getsize(INPUT_FILEPATH),
-                        u'@sourceForTree': imported_tree['@id'],
-                        u'@type': inp_format,
-                        u'@url': "/curator/default/to_nexml?output=input&uploadid={u}".format(u=unique_id),
-                        u'description': {
-                            u'$': "Source data for tree '{u}'".format(u=imported_tree['@id'])
+    imported_tree[ u'^ot:messages' ] = { 
+        u'message': [ { 
+            u'@id': "message{u}".format(u=unique_id),
+            u'@code': u'SUPPORTING_FILE_INFO',
+            u'@humanMessageType': u'NONE',
+            u'@severity': u'INFO',
+            u'@wasGeneratedBy': u'opentree.2nexml',
+            # TODO: Do we need to add this agent to the main study?
+            u'data': {
+                u'@movedToPermanentArchive': False,
+                u'files': {
+                    u'file': [
+                        {
+                            u'@filename': INPUT_FILENAME,
+                            u'@size': shutil.os.path.getsize(INPUT_FILEPATH),
+                            u'@sourceForTree': imported_tree['@id'],
+                            u'@type': inp_format,
+                            u'@url': "/curator/default/to_nexml?output=input&uploadid={u}".format(u=unique_id),
+                            u'description': {
+                                u'$': "Source data for tree '{u}'".format(u=imported_tree['@id'])
+                            }
                         }
-                    }
-                ]
+                    ]
+                }
             }
-        }
-    } ]
+        } ]
+    }
 
     # add supporting-file annotation for this tree (for curation UI and eventual data deposition)
     return nexson

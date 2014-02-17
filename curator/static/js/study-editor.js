@@ -351,38 +351,10 @@ function loadSelectedStudy(id) {
             }
 
             // add expected tree properties and metadata, if missing
-            var allTrees = [];
             $.each(data.nexml.trees, function(i, treesCollection) {
                 $.each(treesCollection.tree, function(i, tree) {
-                    allTrees.push( tree );
+                    normalizeTree( tree );
                 });
-            });
-            $.each(allTrees, function( index, tree ) {
-                /*
-                 * NOTE that we haven't mapped this yet, so properties aren't functions!
-                 */
-
-                // editable display name for this tree
-                if ((tree['@label'] === undefined) || ($.trim(tree['@label']) === '')) {
-                    tree['@label'] = 'Untitled ('+ tree['@id'] +')';
-                }
-
-                // metadata fields (with empty default values)
-                var metatags = [
-                    '^ot:curatedType',
-                    '^ot:specifiedRoot',
-                    '^ot:inGroupClade',
-                    '^ot:outGroupEdge',
-                    '^ot:branchLengthMode',
-                    '^ot:branchLengthTimeUnit',
-                    '^ot:branchLengthDescription'
-                ];
-                $.each(metatags, function(i, tagName) {
-                    if (!(tagName in tree)) {
-                        tree[tagName] = "";
-                    }
-                });
-
             });
 
             viewModel = data;
@@ -455,7 +427,9 @@ function loadSelectedStudy(id) {
 
                 var allTrees = [];
                 $.each(viewModel.nexml.trees, function(i, treesCollection) {
-                    $.each(treesCollection.tree, function(i, tree) {
+                    // watch for single trees here!
+                    var treeList = makeArray(treesCollection.tree);
+                    $.each(treeList, function(i, tree) {
                         allTrees.push( tree );
                     });
                 });
@@ -496,16 +470,22 @@ function loadSelectedStudy(id) {
                 $.each(getSupportingFiles().data.files.file, function(i, fileInfo) {
                     fileDetails.push(fileInfo);
                 });
-                $.each(viewModel.nexml.trees.tree, function(i, tree) {
-                    if ('^ot:messages' in tree) {
-                        $.each(tree['^ot:messages'], function(i, msg) {
-                            if (msg['@code'] === 'SUPPORTING_FILE_INFO') {
-                                $.each(msg.data.files.file, function(i, fileInfo) {
-                                    fileDetails.push(fileInfo);
-                                });
-                            }
-                        });
-                    }
+
+                $.each(viewModel.nexml.trees, function(i, treesCollection) {
+                    // watch for a bare singleton here!
+                    var treeList = makeArray(treesCollection.tree);
+                    $.each(treeList, function(i, tree) {
+                        if ('^ot:messages' in tree) {
+                            var msgList = makeArray(tree['^ot:messages'].message);
+                            $.each(msgList, function(i, msg) {
+                                if (msg['@code'] === 'SUPPORTING_FILE_INFO') {
+                                    $.each(msg.data.files.file, function(i, fileInfo) {
+                                        fileDetails.push(fileInfo);
+                                    });
+                                }
+                            });
+                        }
+                    });
                 });
 
                 var filteredList = ko.utils.arrayFilter( 
@@ -1295,6 +1275,31 @@ function getMetaTagAccessorByAtProperty(array, propertyName, options) {
     } else {
         return null;
     }
+}
+
+function normalizeTree( tree ) {
+    // add expected tree properties and metadata, if missing
+
+    // editable display name for this tree
+    if ((tree['@label'] === undefined) || ($.trim(tree['@label']) === '')) {
+        tree['@label'] = 'Untitled ('+ tree['@id'] +')';
+    }
+
+    // metadata fields (with empty default values)
+    var metatags = [
+        '^ot:curatedType',
+        '^ot:specifiedRoot',
+        '^ot:inGroupClade',
+        '^ot:outGroupEdge',
+        '^ot:branchLengthMode',
+        '^ot:branchLengthTimeUnit',
+        '^ot:branchLengthDescription'
+    ];
+    $.each(metatags, function(i, tagName) {
+        if (!(tagName in tree)) {
+            tree[tagName] = "";
+        }
+    });
 }
 
 function getPreferredTreeIDs() {
@@ -2628,14 +2633,20 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     // move its collections into the view model Nexson
     var itsOTUsCollection = data['nex:nexml']['otus'];
     var itsTreesCollection = data['nex:nexml']['trees'];
+    // coerce the inner array of each collection into an array
+    // (override Badgerfish singletons)
+    itsOTUsCollection['otu'] = makeArray( itsOTUsCollection['otu'] );
+    itsTreesCollection['tree'] = makeArray( itsTreesCollection['tree'] );
+
+    $.each( itsTreesCollection.tree, function(i, tree) {
+        normalizeTree( tree );
+    });
+
     try {
         viewModel.nexml.otus.push( itsOTUsCollection );
         viewModel.nexml.trees.push( itsTreesCollection );
     } catch(e) {
         console.error('Unable to push collections (needs Nexson upgrade)');
-        // try pushing just the tree
-        debugger;
-        viewModel.nexml.trees.tree.push( makeArray(itsTreesCollection.tree)[0] );
     }
 
     /*
@@ -3679,7 +3690,8 @@ function getLocalMessages( element ) {
     var messages = [];
     if (localMessagesCollectionExists( element )) {
         var collection = getLocalMessagesCollection( element );
-        $.each(collection.message(), function(i, msg ) {
+        var msgList = makeArray(collection.message);
+        $.each(msgList, function(i, msg) {
             // TODO: iterate properly (child elements)?
             messages.push(msg);
         });
