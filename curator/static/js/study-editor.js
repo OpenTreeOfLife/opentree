@@ -4252,7 +4252,7 @@ function buildFastLookup( lookupName ) {
                     $.each(tree.node, function( i, node ) {
                         var itsID = node['@id'];
                         if (itsID in newLookup) {
-                            console.warning("Duplicate node ID '"+ itsID +"' found!");
+                            console.warn("Duplicate node ID '"+ itsID +"' found!");
                         }
                         newLookup[ itsID ] = node;
                     });
