@@ -1302,6 +1302,36 @@ function normalizeTree( tree ) {
             tree[tagName] = "";
         }
     });
+    
+}
+
+function normalizeOTUs( tree ) {
+    // modify this tree's OTUs (if needed) to support mapping OTUs to OTT taxa
+    var itsOTUs = [];
+    $.each( makeArray(tree.node), function(i, node) {
+        // work backward from nodes to get its OTUs
+        if ('@otu' in node) {
+            itsOTUs.push( getOTUByID( node['@otu'] ) );
+        }
+    });
+    console.log("found "+ itsOTUs.length +" OTUs for this tree");
+
+    $.each( itsOTUs, function(i, otu) {
+        // Our main concern is whether it's been mapped to an OTT taxon.
+        var itsOTTid =  otu['^ot:ottId'];
+        if (!itsOTTid || ($.trim(itsOTTid) === '')) {
+            // no OTT id found; shuffle properties as needed
+            var itsOriginalLabel = otu['^ot:originalLabel'];
+            var itsProposedLabel = otu['@label'];
+            if ($.trim(itsOriginalLabel) === '') {
+                // move "final" to original label
+                otu['^ot:originalLabel'] = itsProposedLabel;
+                delete otu['@label'];
+            } else {
+                // retain "final" label as proposed, use in mapping
+            }
+        }
+    });
 }
 
 function getPreferredTreeIDs() {
@@ -2671,6 +2701,12 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     buildFastLookup('OTUS_BY_ID');
     buildFastLookup('EDGES_BY_SOURCE_ID');
     buildFastLookup('EDGES_BY_TARGET_ID');
+
+    // Now that we can lookup quickly, make sure OTUs are ready for easy
+    // mapping to OTT taxa.
+    $.each( itsTreesCollection.tree, function(i, tree) {
+        normalizeOTUs( tree );
+    });
 
     // force update of curation UI in all relevant areas
     nudgeTickler('TREES');

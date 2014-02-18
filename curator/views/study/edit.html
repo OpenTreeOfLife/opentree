@@ -724,7 +724,7 @@ body {
                                >WORKING?</em>
                         </td>
                         <td>
-                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && otu['@label'] === '' && !proposedMapping(otu) -->
+                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['@label']) === '' && !proposedMapping(otu) -->
                             <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
 
                                 <i class="icon-edit"></i>
