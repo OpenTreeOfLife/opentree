@@ -567,3 +567,9 @@ tr:hover .row-controls-ghosted {
 .clear-search:hover {
     opacity: 1.0; 
 }
+.empty-list-prompt {
+    padding: 0.5em 1em;
+    background-color: #ffeedd;
+    font-style: italic;
+    border-radius: 4px;
+}
