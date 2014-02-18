@@ -3058,6 +3058,37 @@ function addSupportingFileFromURL() {
 
 }
 
+function removeTree( tree ) {
+    // let's be sure, since adding may be slow...
+    if (!confirm("Are you sure you want to delete this tree?")) {
+        return;
+    }
+
+    // remove this tree
+    $.each(viewModel.nexml.trees, function(i, treesCollection) {
+        if ($.inArray(tree, treesCollection.tree) !== -1) {
+            removeFromArray( tree, treesCollection.tree );
+        }
+    });
+
+    // TODO: remove any captive trees- and OTUs-collections
+    // TODO: remove any otus not used elsewhere?
+    // TODO: remove related annotation events and agents?
+
+    // force rebuild of all tree-related lookups
+    buildFastLookup('NODES_BY_ID');
+    buildFastLookup('OTUS_BY_ID');
+    buildFastLookup('EDGES_BY_SOURCE_ID');
+    buildFastLookup('EDGES_BY_TARGET_ID');
+
+    // force update of curation UI in all relevant areas
+    nudgeTickler('TREES');
+    nudgeTickler('SUPPORTING_FILES');
+    nudgeTickler('GENERAL_METADATA');
+    nudgeTickler('VISIBLE_OTU_MAPPINGS');
+    nudgeTickler('STUDY_HAS_CHANGED');
+}
+
 function removeSupportingFile( fileInfo ) {
     // let's be sure, since adding may be slow...
     if (!confirm("Are you sure you want to delete this file?")) {

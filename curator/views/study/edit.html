@@ -365,6 +365,9 @@ body {
                         <th>OTUs mapped</th>
                         <th>Rooted?</th>
                         <th>Preferred</th>
+                      {{ if viewOrEdit == 'EDIT': }}
+                        <th>Delete</th>
+                      {{ pass }}
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
@@ -387,6 +390,14 @@ body {
                        click: togglePreferredTree" /></td>
                       {{ else: }}
                         <td data-bind="text: (true) ? 'NO' : 'YES'">?</td>
+                      {{ pass }}
+                      {{ if viewOrEdit == 'EDIT': }}
+                        <td>
+                            <button data-bind="click: removeTree"
+                                class="pull-right btn btn-mini btn-danger Xrow-controls-ghosted">
+                                <i class="icon-remove icon-white"></i>
+                            </button>
+                        </td>
                       {{ pass }}
                     </tr>
                   </tbody>
