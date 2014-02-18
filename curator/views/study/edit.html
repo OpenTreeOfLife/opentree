@@ -351,7 +351,7 @@ body {
                     filter above to see trees in this study.
                 </div>
 
-                <table class="table table-condensed"
+                <table class="table table-condensed table-hover"
                     data-bind="visible: viewModel.filteredTrees().pagedItems().length &gt; 0">
                   <thead>
                     <tr>
@@ -366,7 +366,7 @@ body {
                         <th>Rooted?</th>
                         <th>Preferred</th>
                       {{ if viewOrEdit == 'EDIT': }}
-                        <th>Delete</th>
+                        <th>&nbsp;</th>
                       {{ pass }}
                     </tr>
                   </thead>
@@ -394,7 +394,7 @@ body {
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
                             <button data-bind="click: removeTree"
-                                class="pull-right btn btn-mini btn-danger Xrow-controls-ghosted">
+                                class="pull-right btn btn-mini btn-danger row-controls-ghosted">
                                 <i class="icon-remove icon-white"></i>
                             </button>
                         </td>
