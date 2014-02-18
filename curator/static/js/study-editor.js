@@ -434,6 +434,8 @@ function loadSelectedStudy(id) {
                     });
                 });
 
+                console.log("  filtering "+ allTrees.length +" trees...");
+
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
                     allTrees, 
@@ -2304,6 +2306,7 @@ function setTreeRoot( treeOrID, rootNodeOrID ) {
     }
     updateEdgesInTree( tree );
     drawTree( tree );
+    nudgeTickler('TREES');
 }
 
 function setTreeIngroup( treeOrID, ingroupNodeOrID ) {
@@ -2332,6 +2335,7 @@ function setTreeIngroup( treeOrID, ingroupNodeOrID ) {
     }
     updateEdgesInTree( tree );
     drawTree( tree );
+    nudgeTickler('TREES');
 }
 
 function setTreeOutgroup( treeOrID, outgroupNodeOrID ) {
@@ -2360,6 +2364,7 @@ function setTreeOutgroup( treeOrID, outgroupNodeOrID ) {
     }
     updateEdgesInTree( tree );
     drawTree( tree );
+    nudgeTickler('TREES');
 }
 
 function updateEdgesInTree( tree ) {
@@ -2660,6 +2665,12 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     file['@size'] = data.size || "";
     getSupportingFiles().data.files.file.push(file);
     */
+
+    // force rebuild of all tree-related lookups
+    buildFastLookup('NODES_BY_ID');
+    buildFastLookup('OTUS_BY_ID');
+    buildFastLookup('EDGES_BY_SOURCE_ID');
+    buildFastLookup('EDGES_BY_TARGET_ID');
 
     // force update of curation UI in all relevant areas
     nudgeTickler('TREES');
@@ -4109,6 +4120,10 @@ function updateElementTags( select ) {
 var nudge = {
     'GENERAL_METADATA': function( data, event ) {
         nudgeTickler( 'GENERAL_METADATA');
+        return true;
+    },
+    'TREES': function( data, event ) {
+        nudgeTickler( 'TREES');
         return true;
     },
     'OTU_MAPPING_HINTS': function( data, event ) {

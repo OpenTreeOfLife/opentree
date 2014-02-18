@@ -363,11 +363,17 @@ body {
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
-                        <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label']">?</a></td><!-- TODO: click to view/edit tree -->
-                        <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified'">TYPE?</td>
-                        <td data-bind="text: getInGroupCladeDescriptionForTree(tree)"></td>
-                        <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
-                        <td data-bind="html: getRootedDescriptionForTree(tree)">?/?? (?%)</td>
+                        <td><a href="#" data-bind="click: showTreeViewer,
+                                text: tree['@label'],
+                                css: viewModel.ticklers.TREES">?</a></td>
+                        <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
+                                css: viewModel.ticklers.TREES">TYPE?</td>
+                        <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
+                                css: viewModel.ticklers.TREES"></td>
+                        <td data-bind="html: getMappedTallyForTree(tree),
+                                css: viewModel.ticklers.TREES">?/?? (?%)</td>
+                        <td data-bind="html: getRootedDescriptionForTree(tree),
+                                css: viewModel.ticklers.TREES">?/?? (?%)</td>
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
                             <input type="checkbox" style="margin: 0px 20px;" 
@@ -1246,7 +1252,8 @@ Please review and re-submit.</pre>
         {{ if viewOrEdit == 'EDIT': }}
             Edit tree
             <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
-                   data-bind="value: $data['@label'], valueUpdate: 'afterkeydown'"
+                   data-bind="value: $data['@label'], valueUpdate:
+                   'afterkeydown', event: { keyup: nudge.TREES, change: nudge.TREES }"
             />
         {{ else: }}
             View tree
@@ -1262,7 +1269,7 @@ Please review and re-submit.</pre>
             <!-- editable tree properties here -->
               <div class="pull-left" style="width: 48%;">
                 <label>Tree type: </label>
-                <input type="text" data-bind="value: $data['^ot:curatedType'], valueUpdate: 'afterkeydown'"></input>
+                <input type="text" data-bind="value: $data['^ot:curatedType'], valueUpdate: 'afterkeydown', event: { keyup: nudge.TREES, change: nudge.TREES }"></input>
               <br/>
                 <label for="testtest">Root node: </label>
                 <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
@@ -1280,7 +1287,8 @@ Please review and re-submit.</pre>
                 <select id="tree-tags" multiple="multiple" placeholder="Add tags"
                         onchange="updateElementTags(this);"
                         data-bind="attr: {'treeid': $data['@id'] },
-                                   options: getTags( getTreeByID($data['@id']) )">
+                                   options: getTags( getTreeByID($data['@id']) ), 
+                                   event: { keyup: nudge.TREES, change: nudge.TREES }">
                 </select>
 
               <br/>
@@ -1300,17 +1308,23 @@ Please review and re-submit.</pre>
                         return item.text;
                     },
                     value: $data['^ot:branchLengthMode'],
+                    event: { keyup: nudge.TREES, change: nudge.TREES },
                     optionsCaption: 'Choose...'">TYPE</select>
 
                <!-- ko if: $data['^ot:branchLengthMode'] === 'ot:time' -->
                 <label style="margin-left: 10px;">Time unit: </label>
                 <select data-bind="options: ['Myr'],
-                    value: $data['^ot:branchLengthTimeUnit']">TYPE</select>
+                    value: $data['^ot:branchLengthTimeUnit'],
+                    event: { keyup: nudge.TREES, change: nudge.TREES }
+                    ">TYPE</select>
                <!-- /ko -->
 
                <!-- ko if: $data['^ot:branchLengthMode'] === 'ot:other' -->
                 <label style="margin-left: 10px;">&nbsp;</label>
-                <input type="text" data-bind="value: $data['^ot:branchLengthDescription'], valueUpdate: 'afterkeydown'" placeholder="Describe here"></input>
+                <input type="text" data-bind="value: $data['^ot:branchLengthDescription'],
+                    valueUpdate: 'afterkeydown',
+                    event: { keyup: nudge.TREES, change: nudge.TREES }
+                " placeholder="Describe here"></input>
                <!-- /ko -->
               </div>
 
