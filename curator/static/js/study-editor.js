@@ -276,7 +276,7 @@ function loadSelectedStudy(id) {
 
             // NOTE that we should "pluralize" existing arrays, in case
             // Badgerfish conversion has replaced it with a single item
-            if (['^ot:candidateTreeForSynthesis'] in data.nexml) {
+            if ('^ot:candidateTreeForSynthesis' in data.nexml) {
                 data.nexml['^ot:candidateTreeForSynthesis'].candidate = 
                     makeArray(data.nexml['^ot::candidateTreeForSynthesis'].candidate);
             } else {
@@ -2628,7 +2628,8 @@ function submitNewTree( form ) {
     $('#ajax-busy-bar').show();
 
     // generate a new/unique upload ID for this attempt
-    var personalTimestamp = authToken +'.'+ new Date().getTime();
+    var personalTimestamp = authorSafeID + '.'+ new Date().getTime();
+
     $('[name=uploadid]').val(personalTimestamp);
     
     $.ajax({
@@ -2695,6 +2696,16 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     file['@size'] = data.size || "";
     getSupportingFiles().data.files.file.push(file);
     */
+
+    if ($('[name=new-tree-preferred]').is(':checked')) {
+        // mark the new tree as preferred, eg, a candidate for synthesis
+        $.each( itsTreesCollection.tree, function(i, tree) {
+            viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( tree['@id'] );
+        });
+    }
+
+    // clear the import form (using Clear button to capture all behavior)
+    $('#tree-import-form :reset').click();
 
     // force rebuild of all tree-related lookups
     buildFastLookup('NODES_BY_ID');
@@ -4266,7 +4277,7 @@ function buildFastLookup( lookupName ) {
                     $.each(otusCollection.otu, function( i, otu ) {
                         var itsID = otu['@id'];
                         if (itsID in newLookup) {
-                            console.warning("Duplicate otu ID '"+ itsID +"' found!");
+                            console.warn("Duplicate otu ID '"+ itsID +"' found!");
                         }
                         newLookup[ itsID ] = otu;
                     });
