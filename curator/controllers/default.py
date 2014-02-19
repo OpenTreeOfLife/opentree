@@ -294,14 +294,12 @@ def to_nexml():
     assert (output == 'ot:nexson')
     response.view = 'generic.json'
     nexson = json.load(codecs.open(OT_NEXSON_FILEPATH, 'rU', encoding='utf-8'))
-    # pdb.set_trace()
 
-    # TODO: store input file (or string) alongside uploaded supporting files? or provide special fetch method?
+    ##pdb.set_trace()
+
+    # add supporting-file annotation for this tree (for curation UI and eventual data deposition)
     imported_tree = nexson['nex:nexml']['trees']['tree']
-
-    #### create or replace the file information for this 
-    ###os.path.exists(INPUT_FILEPATH)
-
+    # create (or replace) the file information for this imported tree
     imported_tree[ u'^ot:messages' ] = { 
         u'message': [ { 
             u'@id': "message{u}".format(u=unique_id),
@@ -330,5 +328,4 @@ def to_nexml():
         } ]
     }
 
-    # add supporting-file annotation for this tree (for curation UI and eventual data deposition)
     return nexson
