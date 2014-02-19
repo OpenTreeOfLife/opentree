@@ -515,7 +515,7 @@ body {
 -->
 
                   <label class="checkbox">
-                      <input name="new-tree-preferred" type="checkbox" value="">
+                      <input name="new-tree-preferred" type="checkbox" value="true">
                       Mark this tree as preferred for synthesis
                   </label>
 
@@ -1252,6 +1252,7 @@ Please review and re-submit.</pre>
     var studyID = '{{= studyID }}';
     var viewOrEdit = '{{= viewOrEdit }}';
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
+    var authorSafeID = '{{= auth.user and auth.user.username.encode('ascii', 'ignore') or 'ANONYMOUS' }}';
     var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
     var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
