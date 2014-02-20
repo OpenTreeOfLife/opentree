@@ -107,9 +107,10 @@ $(document).ready(function() {
         url: $('#tree-import-form').attr('action'),
         dataType: 'json',
         autoUpload: false,
-        add: function(e, data) {
+        start: function(e, data) {
             console.log('*** treeupload - start ***');
         },
+        /* use actual form widgets instead?
         formData: {
             // these are ADDED to the form's native widgets
             // https://github.com/blueimp/jQuery-File-Upload/wiki/How-to-submit-additional-Form-Data
@@ -117,18 +118,20 @@ $(document).ready(function() {
             author_email: authorEmail,
             auth_token: authToken
         },
+        */
         add: function(e, data) {
             console.log('*** treeupload - add ***');
             $('[name=new-tree-submit]').click(function() {
                 console.log('treeupload - submitting...');
-                debugger;
+                $('[name=uploadid]').val( generateTreeUploadID() );
+                $('#ajax-busy-bar').show();
                 data.submit();
-                return false;
+                return false; // suppress normal form submission!
             });
         },
         done: function(e, data) {
             console.log('*** treeupload - done ***');
-            returnFromNewTreeSubmission();
+            returnFromNewTreeSubmission( data.jqXHR, data.textStatus );
         }
     }).on('fileuploadprogressall', function (e, data) {
         console.log('tree - fileuploadprogressall');
@@ -142,45 +145,6 @@ $(document).ready(function() {
         );
     }).on('fileuploaddone', function (e, data) {
         console.log('tree - fileuploaddone');
-        debugger;
-        /*
-        $.each(data.result.files, function (index, file) {
-            if (file.url) {
-                var link = $('<a>')
-                    .attr('target', '_blank')
-                    .prop('href', file.url);
-
-                * 'file' obj has these properties
-                    .delete_url: "/curator/supporting_files/delete_file/supporting_files.doc.96...3461.m4a"
-                    .name: "10_6_2011 6_03 PM.m4a"
-                    .size: 35036641
-                    .url: "/curator/supporting_files/download/supporting_files.doc.96acd92...3461.m4a"
-                *
-                // update the files list (and auto-save?)
-                var fileNexson = cloneFromNexsonTemplate('single supporting file');
-                fileNexson['@filename'] = file.name;
-                fileNexson['@url'] = file.url;  // TODO: prepend current domain name, if missing?
-                fileNexson['@type'] = "";  // TODO: glean this from file extension?
-                fileNexson['@size'] = file.size;  // convert byte count for display?
-                // TODO: incorporate the delete URL provided? or generate as-needed?
-                // fileNexson.delete_url( file.delete_url );
-
-                getSupportingFiles().data.files.file.push(fileNexson);
-                nudgeTickler('SUPPORTING_FILES');
-
-                showSuccessMessage('File added.');
-            } else if (file.error) {
-                var error = $('<span class="text-danger"/>').text(file.error);
-                *
-                $(data.context.children()[index])
-                    .append('<br>')
-                    .append(error);
-                *
-                debugger;
-                console.log( "FAILURE, msg = "+ error);
-            }
-        });
-        */
     }) 
     
 });
@@ -2584,6 +2548,7 @@ function filenameFromFakePath( path ) {
 }
 function updateNewTreeUploadForm() {
     // check all fields, enable/disable button
+    console.log('...updateNewTreeUploadForm...');
     var readyToSubmit = true;
 
     var chosenFormat = $.trim( $('#tree-import-format').val() );
@@ -2592,7 +2557,7 @@ function updateNewTreeUploadForm() {
         readyToSubmit = false;
     }
 
-    var chosenFile = $.trim( $('#new-tree-text[name=file]').val() );
+    var chosenFile = $.trim( $('#treeupload').val() );
     var pastedText = $.trim( $('#new-tree-text').val() );
     console.log("chosenFile: '"+ chosenFile +"'");
     // either of these is acceptable
@@ -2617,6 +2582,17 @@ function clearNewTreeUploadWidget() {
     var $widget = $('#treeupload');
     $widget.val(''); 
     $widget.trigger('change'); 
+
+    // reset the progress bar
+    setTimeout( function() {
+        $('#tree-upload-progress .bar').css( 'width', '0%' );
+        $('#tree-upload-progress .bar span').text( '' );
+    }, 500);
+}
+function generateTreeUploadID() {
+    // generate a new/unique upload ID for this attempt
+    var personalTimestamp = authorSafeID + '.'+ new Date().getTime();
+    return personalTimestamp;
 }
 function submitNewTree( form ) {
     // NOTE that this should submit the same arguments (except for file
@@ -2627,10 +2603,7 @@ function submitNewTree( form ) {
     
     $('#ajax-busy-bar').show();
 
-    // generate a new/unique upload ID for this attempt
-    var personalTimestamp = authorSafeID + '.'+ new Date().getTime();
-
-    $('[name=uploadid]').val(personalTimestamp);
+    $('[name=uploadid]').val( generateTreeUploadID() );
     
     $.ajax({
         type: 'POST',
@@ -3085,6 +3058,11 @@ function removeTree( tree ) {
     // TODO: remove any captive trees- and OTUs-collections
     // TODO: remove any otus not used elsewhere?
     // TODO: remove related annotation events and agents?
+    
+    if ($.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) {
+        // remove its ID from list of preferred (candidate) trees
+        togglePreferredTree( tree );
+    }
 
     // force rebuild of all tree-related lookups
     buildFastLookup('NODES_BY_ID');

@@ -129,6 +129,9 @@ def to_nexml():
         
     '''
     _LOG = get_logger(request, 'to_nexml')
+
+    ##pdb.set_trace()
+
     try:
         unique_id = request.vars.uploadid
         assert unique_id is not None
@@ -294,8 +297,6 @@ def to_nexml():
     assert (output == 'ot:nexson')
     response.view = 'generic.json'
     nexson = json.load(codecs.open(OT_NEXSON_FILEPATH, 'rU', encoding='utf-8'))
-
-    ##pdb.set_trace()
 
     # add supporting-file annotation for this tree (for curation UI and eventual data deposition)
     imported_tree = nexson['nex:nexml']['trees']['tree']
