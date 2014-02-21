@@ -129,8 +129,9 @@ $(document).ready(function() {
                 return false; // suppress normal form submission!
             });
         },
-        done: function(e, data) {
-            console.log('*** treeupload - done ***');
+        always: function(e, data) {
+            // do this regardless of success or failure
+            console.log('*** treeupload - (always) done ***');
             returnFromNewTreeSubmission( data.jqXHR, data.textStatus );
         }
     }).on('fileuploadprogressall', function (e, data) {
@@ -2624,7 +2625,15 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     console.log('submitNewTree(): done! textStatus = '+ textStatus);
     // report errors or malformed data, if any
     if (textStatus !== 'success') {
-        showErrorMessage('Sorry, there was an error adding this tree.');
+        var errMsg; 
+        if ((jqXHR.status === 501) && (jqXHR.responseText.indexOf("Conversion") === 0)) {
+            errMsg = "Sorry, there was an error importing this tree. Please double-check its format and data.";
+        } else {
+            errMsg = "Sorry, there was an error adding this tree.";
+            console.warn("jqXHR.status: "+ jqXHR.status);
+            console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+        }
+        showErrorMessage(errMsg);
         return;
     }
 
@@ -2632,12 +2641,12 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     
     // TODO: Add trees, nodes, otus and update UI
 
-    // TODO: Add supporting-file info for this tree's source file
-    console.log("status: "+ jqXHR.status);
-    console.log("statusText: "+ jqXHR.statusText);
+    // Add supporting-file info for this tree's source file
+    //console.log("status: "+ jqXHR.status);
+    //console.log("statusText: "+ jqXHR.statusText);
     // convert raw response to JSON
     var data = $.parseJSON(jqXHR.responseText);
-    console.log("data: "+ data);
+    //console.log("data: "+ data);
 
     // move its collections into the view model Nexson
     var itsOTUsCollection = data['nex:nexml']['otus'];
