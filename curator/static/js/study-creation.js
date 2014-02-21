@@ -65,27 +65,6 @@ function updateCreationDetails() {
     });
 }
 
-function showErrorMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-success')
-               .addClass('alert-error').slideDown();
-}
-
-function showInfoMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-error')
-               .removeClass('alert-success')
-               .addClass('alert-info').slideDown();
-}
-
-function showSuccessMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-error')
-               .addClass('alert-success').slideDown();
-}
-
 function validateFormData() {
     // return success (t/f?), or a structure with validation errors
     // TODO: or use more typical jQuery machinery, or validation plugin?
