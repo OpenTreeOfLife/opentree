@@ -12,7 +12,7 @@ data = {'uploadid': str(uuid.uuid4()),
         'content': content,
         }
 r = requests.post(url, data=data)
-print 'status code =', r.status_code
+#print 'status code =', r.status_code
 try:
     print r.json()
 except:

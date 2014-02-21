@@ -94,7 +94,11 @@ def to_nexml():
     import codecs
     import locket
     import shutil
-    from xml2jsonbadgerfish import to_badgerfish_dict, cull_for_ot_nexson
+    from peyotl.nexson_syntax import can_convert_nexson_forms, \
+                                     get_ot_study_info_from_nexml, \
+                                     add_resource_meta, \
+                                     convert_nexson_format, \
+                                     BADGER_FISH_NEXSON_VERSION
     '''
     Controller for conversion of NEXUS, newick, or NeXML to NeXSON
     Required arguments:
@@ -122,6 +126,7 @@ def to_nexml():
             in the Open Tree NexSON object.
         "inputformat" should be "nexus", "newick", or "nexml"
             default is "nexus"
+        "nexml2json" should be "0.0.0", "1.0.0", or "1.2.0"
         
     '''
     _LOG = get_logger(request, 'to_nexml')
@@ -151,6 +156,9 @@ def to_nexml():
     NEXML_FILENAME = 'out.xml'
     ERR_FILENAME = 'err.txt'
     
+    NEXSON_VERSION = request.vars.nexml2json or '0.0.0'
+    if output_choices == 'ot:nexson' and (not can_convert_nexson_forms('nexml', NEXSON_VERSION)):
+        raise HTTP(400, 'The "nexml2json" argument be "0.0.0", "1.0.0", or "1.2.0"')
     INPUT_FILEPATH = os.path.join(working_dir, INPUT_FILENAME)
     INP_LOCKFILEPATH = os.path.join(working_dir, INPUT_FILENAME + '.lock')
     inpfp = os.path.join(working_dir, INPUT_FILENAME)
@@ -245,7 +253,7 @@ def to_nexml():
     if output == 'nexml':
         response.headers['Content-Type'] = 'text/xml'
         return open(NEXML_FILEPATH, 'rU').read()
-    NEXSON_FILENAME = 'nexson.json'
+    NEXSON_FILENAME = 'nexson' + NEXSON_VERSION + '.json'
     NEXSON_FILEPATH = os.path.join(working_dir, NEXSON_FILENAME)
     NEXSON_DONE_FILEPATH = NEXSON_FILEPATH + '.written'
     NEXSON_LOCKFILEPATH = NEXSON_FILEPATH+ '.lock'
@@ -253,7 +261,8 @@ def to_nexml():
         try:
             with locket.lock_file(NEXSON_LOCKFILEPATH, timeout=0):
                 if not os.path.exists(NEXSON_DONE_FILEPATH):
-                    dfj = to_badgerfish_dict(NEXML_FILEPATH)
+                    dfj = get_ot_study_info_from_nexml(NEXML_FILEPATH,
+                                                       nexson_syntax_version=NEXSON_VERSION)
                     out = codecs.open(NEXSON_FILEPATH, 'w', encoding='utf-8')
                     json.dump(dfj, out, indent=0, sort_keys=True)
                     out.write('\n')
@@ -263,31 +272,8 @@ def to_nexml():
                     out.close()
         except locket.LockError:
             return HTTP(102, "Conversion to NexSON still running")
-    if output == 'nexson':
+    if output in ['nexson', 'ot:nexson']:
         response.view = 'generic.json'
         return json.load(codecs.open(NEXSON_FILEPATH, 'rU', encoding='utf-8'))
-    # Open Tree NeXSON - cull characters
-    OT_NEXSON_FILENAME = 'ot_nexson.json'
-    OT_NEXSON_FILEPATH = os.path.join(working_dir, OT_NEXSON_FILENAME)
-    OT_NEXSON_DONE_FILEPATH = OT_NEXSON_FILEPATH + '.written'
-    OT_NEXSON_LOCKFILEPATH = OT_NEXSON_FILEPATH+ '.lock'
-    if not os.path.exists(OT_NEXSON_DONE_FILEPATH):
-        try:
-            with locket.lock_file(OT_NEXSON_LOCKFILEPATH, timeout=0):
-                if not os.path.exists(OT_NEXSON_DONE_FILEPATH):
-                    inf = codecs.open(NEXSON_FILEPATH, 'rU', encoding='utf-8')
-                    full_nexson = json.load(inf)
-                    cull_for_ot_nexson(full_nexson, data_deposit=request.vars.dataDeposit)
-                    out = codecs.open(OT_NEXSON_FILEPATH, 'w', encoding='utf-8')
-                    json.dump(full_nexson, out, indent=0, sort_keys=True)
-                    out.write('\n')
-                    out.close()
-                    out = open(OT_NEXSON_DONE_FILEPATH, 'w')
-                    out.write('0\n')
-                    out.close()
-        except locket.LockError:
-            return HTTP(102, "Conversion to ot:NexSON still running")
     assert (output == 'ot:nexson')
-    response.view = 'generic.json'
-    return json.load(codecs.open(OT_NEXSON_FILEPATH, 'rU', encoding='utf-8'))
-    
+
