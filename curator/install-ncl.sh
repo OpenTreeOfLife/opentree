@@ -19,7 +19,7 @@ if ! test -d build-ncl-static
 then
     mkdir build-ncl-static || exit
 fi
-cd ../build-ncl-static || exit
+cd build-ncl-static || exit
 make -j2 || exit
 make check || exit
 make install || exit
