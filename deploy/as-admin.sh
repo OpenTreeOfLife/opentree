@@ -48,6 +48,19 @@ fi
 if [ ! -r /usr/include/*/Python.h ]; then
     $APTGET install python-dev
 fi
+# -----G++ (for NCL, the nexus, newick converter used by the curation tool's import) -----
+if [ `which g++`x = x ]; then
+    $APTGET install g++
+fi
+# ---------- autoconf and automake for NCL (curation dependency) ----------
+if [ `which autoconf`x = x ]; then
+    $APTGET install autotools-dev
+fi
+# ---------- autoconf and automake for NCL (curation dependency) ----------
+if [ `which automake`x = x ]; then
+    $APTGET install automake
+fi
+
 
 # ---------- APACHE ----------
 if [ ! -r /etc/init.d/apache2 ]; then

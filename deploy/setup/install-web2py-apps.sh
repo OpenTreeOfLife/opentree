@@ -66,8 +66,8 @@ rm fragment.tmp
 # function may move to the API repo, but 
 # until it does the curator app needs to
 # install peyotl
-git_refresh OpenTreeOfLife peyotl
-py_package_setup_install peyotl
+git_refresh OpenTreeOfLife peyotl || true
+py_package_setup_install peyotl || true
 
 # ---------- BROWSER & CURATOR WEBAPPS ----------
 # Set up web2py apps as directed in the README.md file
