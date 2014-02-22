@@ -6,12 +6,13 @@ if len(sys.argv) > 3:
 else:
     inp = 'nexus'
 files = {'file':open(filepath, 'rU')}
-data = {'uploadid': str(uuid.uuid4()),
-        'inputformat': inp,
+data = {'inputformat': inp,
         'dataDeposit': 'http://example.org'}
 r = requests.post(url, files=files, data=data)
 #print 'status code =', r.status_code
 try:
-    print json.dumps(r.json(),indent=1, sort_keys=True)
+    blob = r.json()
+    print json.dumps(blob['data'],indent=1, sort_keys=True)
+    print 'uploadid =', blob['uploadid']
 except:
     print r.text

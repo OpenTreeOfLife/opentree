@@ -87,7 +87,7 @@ def data():
     return dict(form=crud())
 
 
-UPLOADID_PAT = re.compile(r'^[-_.a-zA-Z0-9]{5,85}$')
+UPLOADID_PAT = re.compile(r'^[a-zA-Z_][-_.a-zA-Z0-9]{4,84}$')
 def to_nexml():
     global UPLOADID_PAT
     from externalproc import get_external_proc_dir_for_upload, get_logger, invoc_status, \
@@ -97,6 +97,7 @@ def to_nexml():
     import codecs
     import locket
     import shutil
+    import uuid
     from peyotl.nexson_syntax import can_convert_nexson_forms, \
                                      get_ot_study_info_from_nexml, \
                                      add_resource_meta, \
@@ -105,20 +106,19 @@ def to_nexml():
     '''
     Controller for conversion of NEXUS, newick, or NeXML to NeXSON
     Required arguments:
-        "uploadid" - A unique string for this upload. It needs
-            to match the pattern '^[-_.a-zA-Z0-9]{5,85}$'
-            clash with a previously used ID will cause data from the
-            previous upload to be returned.
+        "uploadid" - A unique string for this upload.
         "file" should be a multipart-encoded file to be translated to NexSON
           OR
         "content" which is a string that contains the content of the file
             format. "content" is checked if "file" is not provided.
+    Required arguments for subsequent calls:
+        "uploadid" - The "uploadid" returned from the first invocation
     Optional arguments:
         "output" one of ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
             the default is ot:nexson. This specifies what is to be returned.
             Possible values are: 
             "ot:nexson" is the Open Tree NexSON (with character data culled).
-                This should be the first call to this uploadid. Subsequent
+                This should be the first call. Subsequent
                 calls can retrieve intermediates. JSON.
             "nexson" is the complete NexSON version of the data. JSON.
             "nexml" is the NeXML version of the file. This is an intermediate
@@ -135,7 +135,8 @@ def to_nexml():
     _LOG = get_logger(request, 'to_nexml')
     try:
         unique_id = request.vars.uploadid
-        assert unique_id is not None
+        if not unique_id:
+            unique_id = 'u' + str(uuid.uuid4())
     except:
         raise HTTP(400, 'Expecting an "uploadid" argument with a unique ID for this upload')
     if not UPLOADID_PAT.match(unique_id):
@@ -230,7 +231,10 @@ def to_nexml():
                 raise HTTP(501, T("Server is not configured to allow 2nexml conversion"))
             do_ext_proc_launch(request,
                                working_dir,
-                               [exe_path, '-f{f}'.format(f=inp_format),'in.nex'],
+                               [exe_path,
+                                '-f{f}'.format(f=inp_format),
+                                '-t{u}'.format(u=unique_id),
+                                'in.nex'],
                                NEXML_FILENAME,
                                ERR_FILENAME,
                                wait=block)
@@ -277,6 +281,7 @@ def to_nexml():
             return HTTP(102, "Conversion to NexSON still running")
     if output in ['nexson', 'ot:nexson']:
         response.view = 'generic.json'
-        return json.load(codecs.open(NEXSON_FILEPATH, 'rU', encoding='utf-8'))
+        nex = json.load(codecs.open(NEXSON_FILEPATH, 'rU', encoding='utf-8'))
+        return {'data': nex, 'uploadid': unique_id}
     assert (output == 'ot:nexson')
 
