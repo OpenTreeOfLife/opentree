@@ -67,24 +67,44 @@ mkdir -p $REPOS_DIR
 
 # ---------- SHELL FUNCTIONS ----------
 
+declare -A OPENTREE_BRANCHES
+
+function opentree_branch {
+    OPENTREE_BRANCHES[$1]=$2
+    echo Set branch for $1 to be ${OPENTREE_BRANCHES[$1]}
+}
+
+. setup/CONFIG
+
 # Refresh a git repo
 
 # We clone via https instead of ssh, because ssh cloning fails with
 # "Permission denied (publickey)".  This means we won't be able to
 # push changes very easily, which is OK because we don't expect to be
-# making any...
+# making any changes that need to be kept.
+
+# Returns true is any change was made.
 
 function git_refresh() {
     guser=$1    # OpenTreeOfLife
     reponame=$2
     branch=$3
+
+    if [ x$branch = x ]; then
+	branch=${OPENTREE_BRANCHES[$reponame]}
+	if [ x$branch = x ]; then
+	    branch='master'
+	fi
+    fi
+    echo "Using branch $branch of repo $reponame"
+
     # Directory in which all local checkouts of git repos reside
     repo_dir=$REPOS_DIR/$reponame
     # Exit 0 (true) means has changed
     changed=0
     if [ ! -d $repo_dir ] ; then
         (cd $REPOS_DIR; \
-         git clone https://github.com/$guser/$reponame.git)
+         git clone --branch $branch https://github.com/$guser/$reponame.git)
 	log Clone: $reponame `cd $repo_dir; git log | head -1`
     else
         before=`cd $repo_dir; git log | head -1`
@@ -104,3 +124,26 @@ function git_refresh() {
 }
 
 # See http://stackoverflow.com/questions/1741143/git-pull-origin-mybranch-leaves-local-mybranch-n-commits-ahead-of-origin-why
+
+# Runs "python setup.py develop" from a git repo version of a 
+#   python package. Also runs pip install -r requirements.txt
+#   if there is a "requirements.txt" file at the top level of
+#   the repo. Used to install the peyotl dependency of the
+#   most recent branches of the api repo.
+function py_package_setup_install() {
+    reponame=$1
+    # Directory in which all local checkouts of git repos reside
+    repo_dir=$REPOS_DIR/$reponame
+    # returns true (0) if the installation was performed
+    installed=0
+    if [ ! -d $repo_dir ] ; then
+        log Install: $reponame "failed no parent"
+        installed=1
+    else
+        (cd $repo_dir; \
+         if test -f requirements.txt ; then pip install -r requirements.txt ; fi ; \
+         python setup.py develop)
+        log Install: $reponame "setup.py develop run"
+    fi
+    return $installed
+}

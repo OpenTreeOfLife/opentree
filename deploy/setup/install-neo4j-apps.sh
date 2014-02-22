@@ -3,7 +3,7 @@
 . setup/functions.sh
 
 CONTROLLER=$1
-BRANCH=master
+WHICH_APP=$2
 
 # tbd: maybe allow a different branch for each repo
 
@@ -27,15 +27,15 @@ fi
 # ---------- NEO4J WITH TREEMACHINE / TAXOMACHINE PLUGINS ----------
 # Set up neo4j services
 
-if git_refresh FePhyFoFum jade master || [ ! -d ~/.m2/repository/org/opentree/jade ]; then
+if git_refresh FePhyFoFum jade || [ ! -d ~/.m2/repository/org/opentree/jade ]; then
     (cd repo/jade; sh mvn_install.sh)
 fi
 
-if git_refresh OpenTreeOfLife ot-base master || [ ! -d ~/.m2/repository/org/opentree/ot-base ]; then
+if git_refresh OpenTreeOfLife ot-base || [ ! -d ~/.m2/repository/org/opentree/ot-base ]; then
     (cd repo/ot-base; sh mvn_install.sh)
 fi
 
-if git_refresh OpenTreeOfLife taxomachine master || [ ! -d ~/.m2/repository/org/opentree/taxomachine ]; then
+if git_refresh OpenTreeOfLife taxomachine || [ ! -d ~/.m2/repository/org/opentree/taxomachine ]; then
     (cd repo/taxomachine; sh mvn_install.sh)
 fi
 
@@ -58,7 +58,7 @@ function make_neo4j_instance {
     fi
 
     # Get plugin from git repository
-    if git_refresh OpenTreeOfLife $APP $BRANCH || [ ! -r neo4j-$APP/plugins/$jar ]; then
+    if git_refresh OpenTreeOfLife $APP || [ ! -r neo4j-$APP/plugins/$jar ]; then
     
         echo "attempting to recompile "$APP" plugins"
         # Create and install the plugins .jar file
@@ -90,8 +90,6 @@ function make_neo4j_instance {
 
         # Move new plugin code into place
         cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
-        if [ running_before = yes ]; then ./neo4j-$APP/bin/neo4j start; fi
-
 
         # Replace defaults ports with ports appropriate for this application
         #org.neo4j.server.webserver.port=7474
@@ -113,9 +111,18 @@ function make_neo4j_instance {
 
 }
 
-make_neo4j_instance treemachine 7474 7473
-make_neo4j_instance taxomachine 7476 7475
-make_neo4j_instance oti         7478 7477
+if [ x$WHICH_APP = x ]; then
+    make_neo4j_instance treemachine 7474 7473
+    make_neo4j_instance taxomachine 7476 7475
+    make_neo4j_instance oti         7478 7477
+else
+    case $WHICH_APP in
+	oti) 	     make_neo4j_instance oti         7478 7477 ;;
+	treemachine) make_neo4j_instance treemachine 7474 7473 ;;
+	taxomachine) make_neo4j_instance taxomachine 7476 7475 ;;
+    esac
+fi
+
 
 log "Finished installing neo4j instances"
 

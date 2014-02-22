@@ -1,13 +1,20 @@
 #!/bin/bash
 
+# Some of this repeats what's found in install-web2py-apps.sh.  Keep in sync.
+
 OPENTREE_HOST=$1
 OPENTREE_DOCSTORE=$2
 CONTROLLER=$3
-BRANCH=master
+OTI_BASE_URL=$4
 
 . setup/functions.sh
 
 echo "Installing API"
+
+# Required from install-web2py-apps.sh:
+#  Fetch and set up web2py
+#  Virtualenv
+#  WSGI handler
 
 # ---------- API & TREE STORE ----------
 # Set up api web app
@@ -21,7 +28,7 @@ git config --global user.name "OpenTree API"
 git config --global user.email api@opentreeoflife.org
 
 echo "...fetching $WEBAPP repo..."
-git_refresh OpenTreeOfLife $WEBAPP $BRANCH || true
+git_refresh OpenTreeOfLife $WEBAPP || true
 
 # Modify the requirements list
 cp -p $APPROOT/requirements.txt $APPROOT/requirements.txt.save
@@ -29,6 +36,9 @@ if grep --invert-match "distribute" \
       $APPROOT/requirements.txt >requirements.txt.new ; then
     mv requirements.txt.new $APPROOT/requirements.txt
 fi
+
+git_refresh OpenTreeOfLife peyotl || true
+py_package_setup_install peyotl || true
 
 (cd $APPROOT; pip install -r requirements.txt)
 
@@ -39,11 +49,11 @@ fi
 
 echo "...fetching $OPENTREE_DOCSTORE repo..."
 
-treenexus=repo/$OPENTREE_DOCSTORE
+phylesystem=repo/$OPENTREE_DOCSTORE
 git_refresh OpenTreeOfLife $OPENTREE_DOCSTORE $BRANCH || true
 
 pushd .
-    cd $treenexus
+    cd $phylesystem
     # All the repos above are cloned via https, but we need to push via
     # ssh to use our deploy keys
     if ! grep "originssh" .git/config ; then
@@ -66,8 +76,8 @@ pushd .
     # This is the file location of the SSH key that is used in git.sh
     sed -i -e "s+PKEY+$OTHOME/.ssh/opentree+" config
 
-    # Access oti search from port 7478 on localhost
-    sed -i -e "s+7474+7478+" config
+    # Access oti search from shared server-config variable
+    sed -i -e "s+OTI_BASE_URL+$OTI_BASE_URL+" config
 popd
 
 echo "Apache needs to be restarted (API)"

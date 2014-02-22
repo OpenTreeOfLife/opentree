@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+from opentreewebapputil import get_opentree_services_method_urls
+
 # this file is released under public domain and you can use without limitations
 import re
 
@@ -16,13 +18,14 @@ def index():
     a logged-in user.
     """
     #response.flash = T("Welcome to web2py!")
+    view_dict = get_opentree_services_method_urls(request)
 
     if False:  ## auth.is_logged_in():
         # user is logged in, bounce to their personal dashboard
         redirect(URL('dashboard'))
     else:
         # anonymous visitor, show a general info page
-        return dict()
+        return view_dict
 
 def error():
     return dict()
