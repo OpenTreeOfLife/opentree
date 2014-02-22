@@ -30,6 +30,20 @@ if [ `which gcc`x = x ]; then
     $APTGET install gcc
 fi
 
+
+# ---------- G++ (for NCL, the nexus, newick converter used by the curation tool's import) ----------
+if [ `which g++`x = x ]; then
+    $APTGET install g++
+fi
+# ---------- autoconf and automake for NCL (curation dependency) ----------
+if [ `which autoconf`x = x ]; then
+    $APTGET install autotools-dev
+fi
+# ---------- autoconf and automake for NCL (curation dependency) ----------
+if [ `which automake`x = x ]; then
+    $APTGET install automake
+fi
+
 # ---------- PYTHON-DEV (for some python packages) ----------
 if [ ! -r /usr/include/*/Python.h ]; then
     $APTGET install python-dev
