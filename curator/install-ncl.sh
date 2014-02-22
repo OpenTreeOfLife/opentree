@@ -21,9 +21,9 @@ then
 fi
 cd build-ncl-static || exit
 make -j2 || exit
-make check || exit
+#make check || exit
 make install || exit
-make installcheck || exit
+#make installcheck || exit
 cd ..
 
 # If the config file does not appear to have been configured for 
