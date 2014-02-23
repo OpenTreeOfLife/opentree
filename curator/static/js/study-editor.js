@@ -2627,9 +2627,9 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     if (textStatus !== 'success') {
         var errMsg; 
         if ((jqXHR.status === 501) && (jqXHR.responseText.indexOf("Conversion") === 0)) {
-            errMsg = "Sorry, there was an error importing this tree. Please double-check its format and data.";
+            errMsg = 'Sorry, there was an error importing this tree. Please double-check its format and data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
         } else {
-            errMsg = "Sorry, there was an error adding this tree.";
+            errMsg = 'Sorry, there was an error adding this tree. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
             console.warn("jqXHR.status: "+ jqXHR.status);
             console.warn("jqXHR.responseText: "+ jqXHR.responseText);
         }

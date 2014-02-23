@@ -439,6 +439,7 @@ div.flash {
     right: 0;
     bottom: 0;
     margin-bottom: 0;
+    z-index: 10;
 }
 
 div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:pointer;}
