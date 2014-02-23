@@ -3,8 +3,8 @@
 # Some of this repeats what's found in install-api.sh.  Keep in sync.
 
 # Lots of arguments to make this work.. check to see if we have them all.
-if [ "$#" -ne 11 ]; then
-    echo "install-web2py-apps.sh missing required parameters (expecting 11)"
+if [ "$#" -ne 10 ]; then
+    echo "install-web2py-apps.sh missing required parameters (expecting 10)"
     exit 1
 fi
 
@@ -13,13 +13,12 @@ OPENTREE_PUBLIC_DOMAIN=$2
 NEO4JHOST=$3
 CONTROLLER=$4
 GITHUB_CLIENT_ID=$5
-GITHUB_CLIENT_SECRET=$6
-GITHUB_REDIRECT_URI=$7
-TREEMACHINE_BASE_URL=$8
-TAXOMACHINE_BASE_URL=$9
+GITHUB_REDIRECT_URI=$6
+TREEMACHINE_BASE_URL=$7
+TAXOMACHINE_BASE_URL=$8
+OTI_BASE_URL=$9
 # NOTE that args beyond nine must be referenced in curly braces
-OTI_BASE_URL=${10}
-OTOL_API_BASE_URL=${11}
+OTOL_API_BASE_URL=${10}
 
 . setup/functions.sh
 
@@ -89,6 +88,7 @@ fi
 # so it has to be passed in as a parameter.
 
 # N.B. Another file 'janrain.key' with secret Janrain key was already placed via rsync (in push.sh)
+# Also another file 'GITHUB_CLIENT_SECRET'
 
 # ---- main webapp (opentree)
 
@@ -113,7 +113,6 @@ configfile=$configdir/config
 # Replace tokens in example config file to make the active config (assume this always changes)
 cp -p $configtemplate $configfile
 sed "s+github_client_id = .*+github_client_id = $GITHUB_CLIENT_ID+;
-     s+github_client_secret = .*+github_client_secret = $GITHUB_CLIENT_SECRET+;
      s+github_redirect_uri = .*+github_redirect_uri = $GITHUB_REDIRECT_URI+
      s+treemachine = .*+treemachine = $TREEMACHINE_BASE_URL+
      s+taxomachine = .*+taxomachine = $TAXOMACHINE_BASE_URL+

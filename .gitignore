@@ -14,5 +14,6 @@ smasher/tax/prev_ott
 smasher/feed/*/in
 smasher/feed/*/out
 *.pem
+deploy/janrain.key
+deploy/GITHUB_CLIENT_SECRET
 smasher/lib/json-simple-1.1.1.jar
-
