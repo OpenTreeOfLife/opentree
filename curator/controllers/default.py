@@ -172,7 +172,7 @@ def to_nexson():
     _LOG.debug('created ' + working_dir)
     
     NEXSON_VERSION = request.vars.nexml2json or '0.0.0'
-    if output_choices == 'ot:nexson' and (not can_convert_nexson_forms('nexml', NEXSON_VERSION)):
+    if output.endswith('nexson') and (not can_convert_nexson_forms('nexml', NEXSON_VERSION)):
         raise HTTP(400, 'The "nexml2json" argument be "0.0", "1.0", or "1.2"')
     input_choices = ['nexus', 'newick', 'nexml']
     
@@ -184,8 +184,8 @@ def to_nexson():
         inp_format = inp_format.lower()
         if inp_format not in input_choices:
             raise HTTP(400, 'inputFormat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
-        if output != 'ot:nexson':
-            raise HTTP(400, 'The "output" argument should be "ot:nexson" in the first call with each "uploadId"')
+        if output not in ['ot:nexson', 'nexson']:
+            raise HTTP(400, 'The "output" argument should be "nexson" in the first call with each "uploadId"')
         orig_args['uploadId'] = unique_id
         orig_args['inputFormat'] = inp_format
         orig_args['idPrefix'] = idPrefix
@@ -356,6 +356,13 @@ def to_nexson():
         num_trees = count_num_trees(nex, NEXSON_VERSION)
         r = {'data': nex}
         bundle_properties = json.load(codecs.open(RETURN_ATT_FILEPATH, 'rU', encoding='utf-8'))
+        try:
+            dd = bundle_properties.get('dataDeposit')
+            if dd:
+                n = nex.get('nex:nexml') or nex['nex']
+                add_resource_meta(n, "ot:dataDeposit", dd, NEXSON_VERSION)
+        except:
+            pass
         r.update(bundle_properties)
         r['numberOfTrees'] = num_trees
         r['nexml2json'] = NEXSON_VERSION

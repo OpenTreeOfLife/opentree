@@ -8,7 +8,7 @@ from the NEXUS class library. That is a C++ tool by Paul Lewis and Mark Holder.
 
 See install-ncl.sh for details.
 
-If you do install NCL then you should have access to a web-service at .../curator/default/to_nexml
+If you do install NCL then you should have access to a web-service at .../curator/default/to_nexson
 
 You can POST to that URL for conversion of NEXUS, newick, or NeXML to NeXSON
 Required arguments:
@@ -18,15 +18,15 @@ Required arguments:
         format. "content" is checked if "file" is not provided.
 Required arguments for subsequent invocations
     "uploadId" - A unique string for this upload returned as 
-        the uploadid value in the original response.
+        the uploadid value in the original response. This should NOT be 
+        used in the invocation that uploads a file.
 Optional arguments:
-    "output" one of ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
-        the default is ot:nexson. This specifies what is to be returned.
+    "output" one of ['nexson', 'nexml', 'input', 'provenance']
+        the default is nexson. This specifies what is to be returned.
         Possible values are: 
-        "ot:nexson" is the Open Tree NexSON (with character data culled).
+        "nexson" is the Open Tree NexSON (with character data culled).
             This should be the first call to this uploadid. Subsequent
             calls can retrieve intermediates. JSON.
-        "nexson" is the complete NexSON version of the data. JSON.
         "nexml" is the NeXML version of the file. This is an intermediate
             for the NexSON. XML.
         "input" returns the uploaded file. text/plain.
