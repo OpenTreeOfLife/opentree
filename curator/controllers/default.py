@@ -88,7 +88,8 @@ def data():
 
 
 UPLOADID_PAT = re.compile(r'^[a-zA-Z_][-_.a-zA-Z0-9]{4,84}$')
-def to_nexml():
+ID_PREFIX_PAT = re.compile(r'^[a-zA-Z_][-_.a-zA-Z0-9]*$')
+def to_nexson():
     global UPLOADID_PAT
     from externalproc import get_external_proc_dir_for_upload, get_logger, invoc_status, \
             ExternalProcStatus, get_conf, write_input_files, write_ext_proc_content, do_ext_proc_launch
@@ -132,15 +133,27 @@ def to_nexml():
         "nexml2json" should be "0.0.0", "1.0.0", or "1.2.0"
         
     '''
-    _LOG = get_logger(request, 'to_nexml')
-    try:
-        unique_id = request.vars.uploadid
-        if not unique_id:
-            unique_id = 'u' + str(uuid.uuid4())
-    except:
-        raise HTTP(400, 'Expecting an "uploadid" argument with a unique ID for this upload')
+    _LOG = get_logger(request, 'to_nexson')
+    orig_args = {}
+    is_upload = False
+    if 'uploadid' in request.vars:
+        try:
+            unique_id = request.vars.uploadid
+            unique_id = str(unique_id)
+        except:
+            raise HTTP(400, T('Illegal uploadid "{u}"'.format(u=unique_id)))
+    else:
+        is_upload = True
+        unique_id = 'u' + str(uuid.uuid4())
     if not UPLOADID_PAT.match(unique_id):
-        raise HTTP(400, 'uploadid must be series of letters, numbers, dots or dashes between 5 and 85 characters long. "{u}" does not match this pattern'.format(u=unique_id))
+        raise HTTP(400, T('uploadid must be series of letters, numbers, dots or dashes between 5 and 85 characters long. "{u}" does not match this pattern'.format(u=unique_id)))
+    try:
+        idPrefix = request.vars.idPrefix.strip()
+    except:
+        idPrefix = unique_id
+    if idPrefix and (not ID_PREFIX_PAT.match(idPrefix)):
+        raise HTTP(400, 'idPrefix must be start with a letter. "{u}" does not match this pattern'.format(u=idPrefix))
+    
     output = request.vars.output or 'ot:nexson'
     output = output.lower()
     if output == 'ot%3anexson':
@@ -150,51 +163,90 @@ def to_nexml():
     if output not in output_choices:
         raise HTTP(400, 'The "output" should be one of: "{c}"'.format(c='", "'.join(output_choices)))
     try:
-        working_dir = get_external_proc_dir_for_upload(request, '2nexml', unique_id)
+        working_dir = get_external_proc_dir_for_upload(request, '2nexml', unique_id, is_upload)
     except Exception, x:
         raise HTTP(404)
-    if working_dir is None or not os.path.exists(working_dir):
+    if working_dir is None or (not os.path.exists(working_dir)):
         raise HTTP(404)
-    INPUT_FILENAME = 'in.nex'
-    PROV_FILENAME = 'provenance.json'
-    NEXML_FILENAME = 'out.xml'
-    ERR_FILENAME = 'err.txt'
+    _LOG.debug('created ' + working_dir)
     
     NEXSON_VERSION = request.vars.nexml2json or '0.0.0'
     if output_choices == 'ot:nexson' and (not can_convert_nexson_forms('nexml', NEXSON_VERSION)):
         raise HTTP(400, 'The "nexml2json" argument be "0.0.0", "1.0.0", or "1.2.0"')
+    input_choices = ['nexus', 'newick', 'nexml']
+    
+    first_tree_available_trees_id = 0
+    if is_upload:
+        inp_format = request.vars.inputformat or 'nexus'
+        inp_format = inp_format.lower()
+        if inp_format not in input_choices:
+            raise HTTP(400, 'inputformat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
+        if output != 'ot:nexson':
+            raise HTTP(400, 'The "output" argument should be "ot:nexson" in the first call with each "uploadid"')
+        orig_args['uploadid'] = unique_id
+        orig_args['inputformat'] = inp_format
+        orig_args['idPrefix'] = idPrefix
+        fa_tuples = [('first_tree_available_edge_id', 'firstAvailableEdgeID', 'e'), 
+                     ('first_tree_available_node_id', 'firstAvailableNodeID', 'n'),
+                     ('first_tree_available_otu_id', 'firstAvailableOTUID', 'o'),
+                     ('first_tree_available_otus_id', 'firstAvailableOTUsID', 'O'),
+                     ('first_tree_available_tree_id', 'firstAvailableTreeID', 't'),
+                     ('first_tree_available_trees_id', 'firstAvailableTreesID', 'T'),]
+        fa_dict = {}
+        fa_flag = {}
+        for t in fa_tuples:
+            fa_dict[t[0]] = 0
+            fa_flag[t[0]] = t[2]
+        if not idPrefix:
+            try:
+                for t in fa_tuples:
+                    p, h, c = t
+                    if h in request.vars:
+                        fa_dict[p] = int(request.vars[h])
+                        assert(fa_dict[p] >= 0)
+                        orig_args[h] = fa_dict[p]
+            except:
+                raise HTTP(400, T('firstAvailable***ID args must be non-negative integers'))
+    INPUT_FILENAME = 'in.nex'
+    PROV_FILENAME = 'provenance.json'
+    RETURN_ATT_FILENAME = 'bundle_properties.json'
+    NEXML_FILENAME = 'out.xml'
+    ERR_FILENAME = 'err.txt'
+    
     INPUT_FILEPATH = os.path.join(working_dir, INPUT_FILENAME)
     INP_LOCKFILEPATH = os.path.join(working_dir, INPUT_FILENAME + '.lock')
+    RETURN_ATT_FILEPATH = os.path.join(working_dir, RETURN_ATT_FILENAME)
     inpfp = os.path.join(working_dir, INPUT_FILENAME)
-    input_choices = ['nexus', 'newick', 'nexml']
-    with locket.lock_file(INP_LOCKFILEPATH):
-        if not os.path.exists(INPUT_FILEPATH):
-            if output != 'ot:nexson':
-                raise HTTP(400, 'The "output" argument should be "ot:nexson" in the first call with each "uploadid"')
-            if request.vars.file is not None:
-                upf = request.vars.file
-                upload_stream = upf.file
-                filename = upf.filename
-            elif request.vars.content is not None:
-                upload_stream = request.vars.content # stream is a bad name, but write_input_files does the write thing.
-                filename = '<content provided as a string in a "content" rather than a file upload>'
-            else:
-                raise HTTP(400, 'Expecting a "file" argument with an input file or a "content" argument with the contents of in input file')
-            inp_format = request.vars.inputformat or 'nexus'
-            inp_format = inp_format.lower()
-            if inp_format not in input_choices:
-                raise HTTP(400, 'inputformat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
-            write_input_files(request, working_dir, [(INPUT_FILENAME, upload_stream)])
-            prov_info = {
-                'filename' : filename,
-                'date-created': datetime.datetime.utcnow().isoformat(),
-            }
-            if request.vars.dataDeposit:
-                prov_info['data-deposit'] = request.vars.dataDeposit
-            write_ext_proc_content(request,
-                                   working_dir,
-                                   [(PROV_FILENAME, json.dumps(prov_info))],
-                                   encoding='utf-8')
+    
+    if is_upload:
+        with locket.lock_file(INP_LOCKFILEPATH):
+            if not os.path.exists(INPUT_FILEPATH):
+                if request.vars.file is not None:
+                    upf = request.vars.file
+                    upload_stream = upf.file
+                    filename = upf.filename
+                elif request.vars.content is not None:
+                    upload_stream = request.vars.content # stream is a bad name, but write_input_files does the write thing.
+                    filename = '<content provided as a string in a "content" rather than a file upload>'
+                else:
+                    raise HTTP(400, 'Expecting a "file" argument with an input file or a "content" argument with the contents of in input file')
+                write_input_files(request, working_dir, [(INPUT_FILENAME, upload_stream)])
+                prov_info = {
+                    'filename' : filename,
+                    'date-created': datetime.datetime.utcnow().isoformat(),
+                }
+                if request.vars.dataDeposit:
+                    prov_info['data-deposit'] = request.vars.dataDeposit
+                write_ext_proc_content(request,
+                                       working_dir,
+                                       [(PROV_FILENAME, json.dumps(prov_info))],
+                                       encoding='utf-8')
+                orig_args.update(prov_info)
+                write_ext_proc_content(request,
+                                       working_dir,
+                                       [(RETURN_ATT_FILENAME, json.dumps(orig_args))],
+                                       encoding='utf-8')
+
     if output == 'provenance':
         PROV_FILEPATH =  os.path.join(working_dir, PROV_FILENAME)
         response.view = 'generic.json'
@@ -208,41 +260,49 @@ def to_nexml():
     #@TEMPORARY could be refactored into a launch_or_get_status() call
     status = invoc_status(request, working_dir)
     launched_this_call = False
-    if status == ExternalProcStatus.NOT_FOUND:
-        inp_format = request.vars.inputformat or 'nexus'
-        inp_format = inp_format.lower()
-        if inp_format not in input_choices:
-            raise HTTP(400, 'inputformat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
-        if inp_format == 'newick':
-            inp_format = 'relaxedphyliptree'
-        if inp_format == 'nexml':
-            shutil.copyfile(INPUT_FILEPATH, NEXML_FILEPATH)
-        else:
-            try:
+    if is_upload:
+        if status == ExternalProcStatus.NOT_FOUND:
+            inp_format = request.vars.inputformat or 'nexus'
+            inp_format = inp_format.lower()
+            if inp_format not in input_choices:
+                raise HTTP(400, 'inputformat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
+            if inp_format == 'newick':
+                inp_format = 'relaxedphyliptree'
+            if inp_format == 'nexml':
+                shutil.copyfile(INPUT_FILEPATH, NEXML_FILEPATH)
+            else:
                 try:
-                    exe_path = get_conf(request).get("external", "2nexml")
+                    try:
+                        exe_path = get_conf(request).get("external", "2nexml")
+                    except:
+                        _LOG.warn("Config does not have external/2nexml setting")
+                        raise
+                    assert(os.path.exists(exe_path))
                 except:
-                    _LOG.warn("Config does not have external/2nexml setting")
-                    raise
-                assert(os.path.exists(exe_path))
-            except:
-                response.view = 'generic.json'; return {'hb':exe_path}
-                _LOG.warn("Could not find the 2nexml executable")
-                raise HTTP(501, T("Server is not configured to allow 2nexml conversion"))
-            do_ext_proc_launch(request,
-                               working_dir,
-                               [exe_path,
-                                '-f{f}'.format(f=inp_format),
-                                '-t{u}'.format(u=unique_id),
-                                'in.nex'],
-                               NEXML_FILENAME,
-                               ERR_FILENAME,
-                               wait=block)
-            if not block:
-                time.sleep(timeout_duration)
-            status = invoc_status(request, working_dir)
-            assert(status != ExternalProcStatus.NOT_FOUND)
-            launched_this_call = True
+                    response.view = 'generic.json'; return {'hb':exe_path}
+                    _LOG.warn("Could not find the 2nexml executable")
+                    raise HTTP(501, T("Server is not configured to allow 2nexml conversion"))
+                invoc = [exe_path, '-f{f}'.format(f=inp_format), ]
+                if idPrefix:
+                    invoc.append('-t{u}'.format(u=idPrefix))
+                else:
+                    invoc.append('-g')
+                    for k, v in fa_dict.items():
+                        if v > 0:
+                            f = fa_flag[k]
+                            invoc.append('-p{f}{v:d}'.format(f=f, v=v))
+                invoc.append('in.nex')
+                do_ext_proc_launch(request,
+                                   working_dir,
+                                   invoc,
+                                   NEXML_FILENAME,
+                                   ERR_FILENAME,
+                                   wait=block)
+                if not block:
+                    time.sleep(timeout_duration)
+                status = invoc_status(request, working_dir)
+                assert(status != ExternalProcStatus.NOT_FOUND)
+                launched_this_call = True
     if status == ExternalProcStatus.RUNNING:
         if not launched_this_call:
             time.sleep(timeout_duration)
@@ -282,6 +342,9 @@ def to_nexml():
     if output in ['nexson', 'ot:nexson']:
         response.view = 'generic.json'
         nex = json.load(codecs.open(NEXSON_FILEPATH, 'rU', encoding='utf-8'))
-        return {'data': nex, 'uploadid': unique_id}
+        r = {'data': nex}
+        bundle_properties = json.load(codecs.open(RETURN_ATT_FILEPATH, 'rU', encoding='utf-8'))
+        r.update(bundle_properties)
+        return r
     assert (output == 'ot:nexson')
 

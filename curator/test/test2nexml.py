@@ -7,12 +7,13 @@ else:
     inp = 'nexus'
 files = {'file':open(filepath, 'rU')}
 data = {'inputformat': inp,
+        'idPrefix':'',
         'dataDeposit': 'http://example.org'}
 r = requests.post(url, files=files, data=data)
-#print 'status code =', r.status_code
 try:
     blob = r.json()
-    print json.dumps(blob['data'],indent=1, sort_keys=True)
-    print 'uploadid =', blob['uploadid']
+    print json.dumps(blob,indent=1, sort_keys=True)
 except:
     print r.text
+if 200 != r.status_code:
+    sys.exit(r.status_code)
