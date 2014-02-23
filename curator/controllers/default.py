@@ -104,6 +104,7 @@ def to_nexson():
                                      add_resource_meta, \
                                      convert_nexson_format, \
                                      BADGER_FISH_NEXSON_VERSION
+    from peyotl.manip import count_num_trees
     '''
     Controller for conversion of NEXUS, newick, or NeXML to NeXSON
     Required arguments:
@@ -172,7 +173,7 @@ def to_nexson():
     
     NEXSON_VERSION = request.vars.nexml2json or '0.0.0'
     if output_choices == 'ot:nexson' and (not can_convert_nexson_forms('nexml', NEXSON_VERSION)):
-        raise HTTP(400, 'The "nexml2json" argument be "0.0.0", "1.0.0", or "1.2.0"')
+        raise HTTP(400, 'The "nexml2json" argument be "0.0", "1.0", or "1.2"')
     input_choices = ['nexus', 'newick', 'nexml']
     
     first_tree_available_trees_id = 0
@@ -188,6 +189,14 @@ def to_nexson():
         orig_args['uploadId'] = unique_id
         orig_args['inputFormat'] = inp_format
         orig_args['idPrefix'] = idPrefix
+        orig_args['newTreesPreferred'] = False
+        if 'newTreesPreferred' in request.args:
+            v = request.args.newTreesPreferred
+            if isinstance(v, str) or isinstance(v, unicode):
+                if v.lower() in ["true", "yes", "1"]:
+                    orig_args['newTreesPreferred'] = True
+            elif isinstance(v, bool) and v:
+                orig_args['newTreesPreferred'] = True
         fa_tuples = [('first_tree_available_edge_id', 'firstAvailableEdgeID', 'e'), 
                      ('first_tree_available_node_id', 'firstAvailableNodeID', 'n'),
                      ('first_tree_available_otu_id', 'firstAvailableOTUID', 'o'),
@@ -235,10 +244,10 @@ def to_nexson():
                 write_input_files(request, working_dir, [(INPUT_FILENAME, upload_stream)])
                 prov_info = {
                     'filename' : filename,
-                    'date-created': datetime.datetime.utcnow().isoformat(),
+                    'dateTranslated': datetime.datetime.utcnow().isoformat(),
                 }
                 if request.vars.dataDeposit:
-                    prov_info['data-deposit'] = request.vars.dataDeposit
+                    prov_info['dataDeposit'] = request.vars.dataDeposit
                 write_ext_proc_content(request,
                                        working_dir,
                                        [(PROV_FILENAME, json.dumps(prov_info))],
@@ -344,9 +353,12 @@ def to_nexson():
     if output in ['nexson', 'ot:nexson']:
         response.view = 'generic.json'
         nex = json.load(codecs.open(NEXSON_FILEPATH, 'rU', encoding='utf-8'))
+        num_trees = count_num_trees(nex, NEXSON_VERSION)
         r = {'data': nex}
         bundle_properties = json.load(codecs.open(RETURN_ATT_FILEPATH, 'rU', encoding='utf-8'))
         r.update(bundle_properties)
+        r['numberOfTrees'] = num_trees
+        r['nexml2json'] = NEXSON_VERSION
         return r
     assert (output == 'ot:nexson')
 

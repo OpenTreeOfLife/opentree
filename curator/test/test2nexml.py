@@ -7,8 +7,7 @@ else:
     inp = 'nexus'
 files = {'file':open(filepath, 'rU')}
 data = {'inputFormat': inp,
-        'idPrefix':'',
-        'dataDeposit': 'http://example.org'}
+        'idPrefix':''}
 r = requests.post(url, files=files, data=data)
 try:
     blob = r.json()
