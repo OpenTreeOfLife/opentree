@@ -17,7 +17,7 @@ Required arguments:
     "content" which is a string that contains the content of the file
         format. "content" is checked if "file" is not provided.
 Required arguments for subsequent invocations
-    "uploadid" - A unique string for this upload returned as 
+    "uploadId" - A unique string for this upload returned as 
         the uploadid value in the original response.
 Optional arguments:
     "output" one of ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
@@ -33,8 +33,20 @@ Optional arguments:
         "provenance" returns a simple, ad-hoc JSON with initial call details.
     "dataDeposit" should be a URL that should be added to the meta element
         in the Open Tree NexSON object.
-    "inputformat" should be "nexus", "newick", or "nexml"
+    "inputFormat" should be "nexus", "newick", or "nexml"
         default is "nexus"
+    "idPrefix" should be an empty string (or all whitespace) if you want 
+            to use the firstAvailableXXXID args:
+        firstAvailableEdgeID,
+        firstAvailableNodeID,
+        firstAvailableOTUID,
+        firstAvailableOTUsID,
+        firstAvailableTreeID,
+        firstAvailableTreesID
+      If idPrefix is not all whitespace it will be stripped, 
+        the NCLconverter default names are used
+      If idPrefix is not supplied, a uuid will be the prefix for the 
+        names and the names will follow the NCL converter defaults
 
 The service operates by:
     1. taking the input file and a unique string (could be a uuid).

@@ -6,8 +6,8 @@ if len(sys.argv) > 3:
 else:
     inp = 'nexus'
 content = open(filepath, 'rU').read()
-data = {'inputformat': inp,
-        'idprefix': '',
+data = {'inputFormat': inp,
+        'idPrefix': '',
         'dataDeposit': 'http://example.org',
         'content': content,
         }

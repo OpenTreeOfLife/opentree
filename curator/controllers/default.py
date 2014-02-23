@@ -107,13 +107,13 @@ def to_nexson():
     '''
     Controller for conversion of NEXUS, newick, or NeXML to NeXSON
     Required arguments:
-        "uploadid" - A unique string for this upload.
+        "uploadId" - A unique string for this upload.
         "file" should be a multipart-encoded file to be translated to NexSON
           OR
         "content" which is a string that contains the content of the file
             format. "content" is checked if "file" is not provided.
     Required arguments for subsequent calls:
-        "uploadid" - The "uploadid" returned from the first invocation
+        "uploadId" - The "uploadId" returned from the first invocation
     Optional arguments:
         "output" one of ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
             the default is ot:nexson. This specifies what is to be returned.
@@ -128,7 +128,7 @@ def to_nexson():
             "provenance" returns a simple, ad-hoc JSON with initial call details.
         "dataDeposit" should be a URL that should be added to the meta element
             in the Open Tree NexSON object.
-        "inputformat" should be "nexus", "newick", or "nexml"
+        "inputFormat" should be "nexus", "newick", or "nexml"
             default is "nexus"
         "nexml2json" should be "0.0.0", "1.0.0", or "1.2.0"
         
@@ -136,17 +136,17 @@ def to_nexson():
     _LOG = get_logger(request, 'to_nexson')
     orig_args = {}
     is_upload = False
-    if 'uploadid' in request.vars:
+    if 'uploadId' in request.vars:
         try:
-            unique_id = request.vars.uploadid
+            unique_id = request.vars.uploadId
             unique_id = str(unique_id)
         except:
-            raise HTTP(400, T('Illegal uploadid "{u}"'.format(u=unique_id)))
+            raise HTTP(400, T('Illegal uploadId "{u}"'.format(u=unique_id)))
     else:
         is_upload = True
         unique_id = 'u' + str(uuid.uuid4())
     if not UPLOADID_PAT.match(unique_id):
-        raise HTTP(400, T('uploadid must be series of letters, numbers, dots or dashes between 5 and 85 characters long. "{u}" does not match this pattern'.format(u=unique_id)))
+        raise HTTP(400, T('uploadId must be series of letters, numbers, dots or dashes between 5 and 85 characters long. "{u}" does not match this pattern'.format(u=unique_id)))
     try:
         idPrefix = request.vars.idPrefix.strip()
     except:
@@ -177,14 +177,16 @@ def to_nexson():
     
     first_tree_available_trees_id = 0
     if is_upload:
-        inp_format = request.vars.inputformat or 'nexus'
+        if 'inputFormat' not in request.vars:
+            raise HTTP(400, T('The "inputFormat" argument must be supplied.'))
+        inp_format = request.vars.inputFormat or 'nexus'
         inp_format = inp_format.lower()
         if inp_format not in input_choices:
-            raise HTTP(400, 'inputformat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
+            raise HTTP(400, 'inputFormat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
         if output != 'ot:nexson':
-            raise HTTP(400, 'The "output" argument should be "ot:nexson" in the first call with each "uploadid"')
-        orig_args['uploadid'] = unique_id
-        orig_args['inputformat'] = inp_format
+            raise HTTP(400, 'The "output" argument should be "ot:nexson" in the first call with each "uploadId"')
+        orig_args['uploadId'] = unique_id
+        orig_args['inputFormat'] = inp_format
         orig_args['idPrefix'] = idPrefix
         fa_tuples = [('first_tree_available_edge_id', 'firstAvailableEdgeID', 'e'), 
                      ('first_tree_available_node_id', 'firstAvailableNodeID', 'n'),
@@ -262,10 +264,10 @@ def to_nexson():
     launched_this_call = False
     if is_upload:
         if status == ExternalProcStatus.NOT_FOUND:
-            inp_format = request.vars.inputformat or 'nexus'
+            inp_format = request.vars.inputFormat or 'nexus'
             inp_format = inp_format.lower()
             if inp_format not in input_choices:
-                raise HTTP(400, 'inputformat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
+                raise HTTP(400, 'inputFormat should be one of: "{c}"'.format(c='", "'.join(input_choices)))
             if inp_format == 'newick':
                 inp_format = 'relaxedphyliptree'
             if inp_format == 'nexml':

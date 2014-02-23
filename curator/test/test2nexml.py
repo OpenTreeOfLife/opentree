@@ -6,7 +6,7 @@ if len(sys.argv) > 3:
 else:
     inp = 'nexus'
 files = {'file':open(filepath, 'rU')}
-data = {'inputformat': inp,
+data = {'inputFormat': inp,
         'idPrefix':'',
         'dataDeposit': 'http://example.org'}
 r = requests.post(url, files=files, data=data)
