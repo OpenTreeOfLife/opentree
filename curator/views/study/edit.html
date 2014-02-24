@@ -430,9 +430,14 @@ body {
                         <a href="#" onclick="viewModel.filteredTrees().prev(); return false;">&laquo;</a>
                     </li>
                    <!-- ko foreach: getPageNumbers( viewModel.filteredTrees() ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.filteredTrees() ) -->
                     <li data-bind="css: { 'active': (viewModel.filteredTrees().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredTrees().goToPage(parseInt($(this).text())); return false;">0</a>
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.filteredTrees().goToPage($data); return false; }">0</a>
                     </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.filteredTrees() ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredTrees().goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
                    <!-- /ko -->
                     <li data-bind="css: { 'disabled': !viewModel.filteredTrees().next.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.filteredTrees().next(); return false;">&raquo;</a>
@@ -625,9 +630,14 @@ body {
                         <a href="#" onclick="viewModel.filteredFiles().prev(); return false;">&laquo;</a>
                     </li>
                    <!-- ko foreach: getPageNumbers( viewModel.filteredFiles() ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.filteredFiles() ) -->
                     <li data-bind="css: { 'active': (viewModel.filteredFiles().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredFiles().goToPage(parseInt($(this).text())); return false;">0</a>
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.filteredFiles().goToPage($data); return false; }">0</a>
                     </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.filteredFiles() ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredFiles().goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
                    <!-- /ko -->
                     <li data-bind="css: { 'disabled': !viewModel.filteredFiles().next.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.filteredFiles().next(); return false;">&raquo;</a>
@@ -820,9 +830,14 @@ body {
                         <a href="#" onclick="viewModel.filteredOTUs().prev(); return false;">&laquo;</a>
                     </li>
                    <!-- ko foreach: getPageNumbers( viewModel.filteredOTUs() ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.filteredOTUs() ) -->
                     <li data-bind="css: { 'active': (viewModel.filteredOTUs().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredOTUs().goToPage(parseInt($(this).text())); return false;">0</a>
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.filteredOTUs().goToPage($data); return false; }">0</a>
                     </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.filteredOTUs() ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredOTUs().goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
                    <!-- /ko -->
                     <li data-bind="css: { 'disabled': !viewModel.filteredOTUs().next.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.filteredOTUs().next(); return false;">&raquo;</a>
@@ -1139,9 +1154,14 @@ body {
                         <a href="#" onclick="viewModel.filteredAnnotations().prev(); return false;">&laquo;</a>
                     </li>
                    <!-- ko foreach: getPageNumbers( viewModel.filteredAnnotations() ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.filteredAnnotations() ) -->
                     <li data-bind="css: { 'active': (viewModel.filteredAnnotations().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredAnnotations().goToPage(parseInt($(this).text())); return false;">0</a>
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.filteredAnnotations().goToPage($data); return false; }">0</a>
                     </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.filteredAnnotations() ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredAnnotations().goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
                    <!-- /ko -->
                     <li data-bind="css: { 'disabled': !viewModel.filteredAnnotations().next.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.filteredAnnotations().next(); return false;">&raquo;</a>
