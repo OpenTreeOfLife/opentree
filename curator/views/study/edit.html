@@ -1434,14 +1434,16 @@ Please review and re-submit.</pre>
     <div class="modal-footer">
       <div class="popup-legend pull-left form-inline">
           <strong>Legend: </strong>
-          <label style="margin-left: 20px;">Ingroup: </label> <em>blah</em>
+          <label style="margin-left: 20px;">Outgroup: </label> 
+          <img src="{{=URL('static','images/tree-viewer-legend-outgroup.png')}}" alt="outgroup style" />
 
-          <label style="margin-left: 20px;">Outgroup: </label> <em>blah</em>
+          <label style="margin-left: 20px;">Ingroup: </label>
+          <img src="{{=URL('static','images/tree-viewer-legend-ingroup.png')}}" alt="ingroup style" />
 
           <label style="margin-left: 20px;" for="branch-length-toggle"> 
-              <input type="checkbox" id="branch-length-toggle" 
+              <input type="checkbox" id="branch-length-toggle" style="margin-top: 0px; margin-bottom: 2px;" 
                      onclick="toggleBranchLengthsInViewer(this); return true;" />
-              Hide branch lengths
+              Cladogram (hide branch lengths)
           </label>
       </div>
       <a data-dismiss="modal" class="btn" >Close</a>
