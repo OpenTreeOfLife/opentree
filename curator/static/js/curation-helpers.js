@@ -139,9 +139,37 @@ function updateClearSearchWidget( searchFieldSelector ) {
         }
     }
 
-
 }
 
+function getPageNumbers( pagedArray ) {
+    // Generates an array of display numbers (1-based) for use with Knockout's
+    // foreach binding. Let's build this with one-based values for easy display.
+    var pageNumbers = [ ];
+    var howManyPages = Math.ceil(pagedArray().length / pagedArray.pageSize);
+    for (var i = 1; i <= howManyPages; i++) {
+        pageNumbers.push( i );
+    }
+    return pageNumbers;
+}
+
+function isVisiblePage( pageNum, pagedArray ) {
+    var howManyPages = Math.ceil(pagedArray().length / pagedArray.pageSize);
+    if (howManyPages <= 12) { 
+        return true; 
+    }
+    // show first, last, and nearby pages
+    if (pageNum < 3) {
+        return true;
+    }
+    if (pageNum > (howManyPages - 2)) {
+        return true;
+    }
+    var currentPage = pagedArray.current();
+    if (Math.abs(currentPage - pageNum) < 3) {
+        return true; 
+    }
+    return false;
+}
 /*
 var cladeNameTimeoutID = null;
 function loadMissingFocalCladeNames() {

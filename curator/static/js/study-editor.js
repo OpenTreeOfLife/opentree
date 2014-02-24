@@ -1362,17 +1362,6 @@ function getNonPreferredTrees() {
     );
 }
 
-function getPageNumbers( pagedArray ) {
-    // Generates an array of display numbers (1-based) for use with Knockout's
-    // foreach binding. Let's build this with one-based values for easy display.
-    var pageNumbers = [ ];
-    var howManyPages = Math.ceil(pagedArray().length / pagedArray.pageSize);
-    for (var i = 1; i <= howManyPages; i++) {
-        pageNumbers.push( i );
-    }
-    return pageNumbers;
-}
-
 function getMappedTallyForTree(tree) {
     // return display-ready tally (mapped/total ratio and percentage)
     if (!tree || !tree.node || tree.node.length === 0) {

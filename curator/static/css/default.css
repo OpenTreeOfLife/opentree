@@ -515,6 +515,15 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .navbar-inner .pagination {
     margin: 0.5em 0 0;
 }
+.pagination-small ul > li > a.pagination-spacer {
+    padding-left: 0;
+    padding-right: 0;
+    border-right-width: 0;
+    background-color: #ddd;
+}
+.pagination-small ul > li > a.pagination-spacer:hover {
+    background-color: #0088cc;
+}
 
 /* simplified table style with no headers */
 table.bare-top-row tr:first-child td {
