@@ -113,16 +113,17 @@ def download_subtree():
 def fetch_current_synthetic_tree_ids():
     try:
         # fetch the latest IDs as JSON from remote site
-        from gluon.tools import fetch
+        import urllib2
         import simplejson
 
         method_dict = get_opentree_services_method_urls(request)
         fetch_url = method_dict['getDraftTreeID_url']
 
         fetch_args = {'startingTaxonOTTId': ""}
-
         # this needs to be a POST (pass fetch_args or ''); if GET, it just describes the API
-        ids_response = fetch(fetch_url, data=fetch_args)
+        # N.B. that gluon.tools.fetch() can't be used here, since it won't send "raw" JSON data as treemachine expects
+        req = urllib2.Request(url=fetch_url, data=simplejson.dumps(fetch_args), headers={"Content-Type": "application/json"}) 
+        ids_response = urllib2.urlopen(req).read()
 
         ids_json = simplejson.loads( ids_response )
         draftTreeName = str(ids_json['draftTreeName']).encode('utf-8')
