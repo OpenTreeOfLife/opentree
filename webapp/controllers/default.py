@@ -92,7 +92,7 @@ def download_subtree():
         # apparently this needs to be a POST, or it just describes the API
         tree_response = fetch(fetch_url, data=fetch_args)
         tree_json = simplejson.loads( tree_response )
-        newick_text = tree_json['tree'].encode('utf-8');
+        newick_text = str(tree_json['tree']).encode('utf-8');
         s.write( newick_text )
 
     except Exception, e:
@@ -125,13 +125,13 @@ def fetch_current_synthetic_tree_ids():
         ids_response = fetch(fetch_url, data=fetch_args)
 
         ids_json = simplejson.loads( ids_response )
-        draftTreeName = ids_json['draftTreeName'].encode('utf-8')
+        draftTreeName = str(ids_json['draftTreeName']).encode('utf-8')
         # Try to be compatible with different versions of treemachine
         startNodeID = None
         if 'startingNodeID' in ids_json:
-            startNodeID = ids_json['startingNodeID'].encode('utf-8')
+            startNodeID = str(ids_json['startingNodeID']).encode('utf-8')
         elif 'startNodeID' in ids_json:
-            startNodeID = ids_json['startNodeID'].encode('utf-8')
+            startNodeID = str(ids_json['startNodeID']).encode('utf-8')
         return (draftTreeName, startNodeID)
 
     except Exception, e:
@@ -158,7 +158,7 @@ def fetch_current_TNRS_context_names():
             if gname in contextnames_json:
                 context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
 
-        # draftTreeName = ids_json['draftTreeName'].encode('utf-8')
+        # draftTreeName = str(ids_json['draftTreeName']).encode('utf-8')
         return (context_names)
 
     except Exception, e:
