@@ -577,6 +577,7 @@ tr:hover .row-controls-ghosted {
 .clear-search:hover {
     opacity: 1.0; 
 }
+.help-box, 
 .empty-list-prompt {
     padding: 0.5em 1em;
     background-color: #ffeedd;
