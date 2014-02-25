@@ -199,14 +199,15 @@ function push_opentree {
     if [ $DRYRUN = "yes" ]; then echo "[opentree]"; return; fi
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER "${GITHUB_CLIENT_ID}" "${GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OTOL_API_BASE_URL}"
     # place the file with secret Janrain key
-    keyfile=./janrain.key
+    keyfile=~/.ssh/opentree/janrain.key
     if [ -r $keyfile ]; then
         rsync -pr -e "${SSH}" $keyfile "$OT_USER@$OPENTREE_HOST":repo/opentree/webapp/private/janrain.key
     else
 	echo "Cannot find janrain key file $keyfile"
     fi
-    # place the file with secret GitHub API key
-    keyfile=./GITHUB_CLIENT_SECRET
+    # place the file with secret GitHub API key 
+    # N.B. This includes the final domain name, since we'll need different keys for dev.opentreeoflife.org, www.opentreeoflife.org, etc.
+    keyfile=~/.ssh/opentree/GITHUB_CLIENT_SECRET-$OPENTREE_PUBLIC_DOMAIN
     if [ -r $keyfile ]; then
         rsync -pr -e "${SSH}" $keyfile "$OT_USER@$OPENTREE_HOST":repo/opentree/curator/private/GITHUB_CLIENT_SECRET
     else
