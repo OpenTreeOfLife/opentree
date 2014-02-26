@@ -13,10 +13,14 @@ These can run on one server, or on five servers, or anything in between; it does
 
 Currently it's assumed that treemachine and taxomachine are running on the same server.
 
-The web2py applications don't need much memory, so an EC2 'micro' or 'small' server is probably fine.  For treemachine and taxomachine, you'll want a lot of RAM.  We've been using a 17G server for this purpose but are currently experiementing to see if 8G is enough.
+The web2py applications don't need much memory, so an EC2 'micro' or 'small' server is probably fine.  For treemachine and taxomachine, you'll want a lot of RAM.  We've been using a 17G server for this purpose but are currently experiementing to see if 8G is enough. 
+
+For more information about our current deployment practices, see the notes and configuration files in the [OpenTreeOfLife/deployed-systems](http://github.com/OpenTreeOfLife/deployed-systems) repo.
 
 How to deploy a new server
 --------------------------
+
+**Note: We're now using a single, common approach to managing sensitive files (private keys and API "secrets").** These files should be kept in directory ```~/.ssh/opentree/```, so that configuration can be shared easily among your team. See the [deployed-systems README](https://github.com/OpenTreeOfLife/deployed-servers/blob/master/README.md) for details.
 
 Got to Amazon or some other cloud provider, and reserve an instance
 running Debian GNU/Linux (version 7.1 has been working for us, but others ought to as well).  We've been using m1.small servers when
@@ -27,7 +31,7 @@ Set its file permissions to 600.
 
 If running the API, put the private key for the github account somewhere, so that the API can push changes to study files out to github.
 
-[What about Janrain?]
+The commenting feature in the main "tree explorer" web application uses [Janrain Social Login](http://janrain.com/product/social-login/) to support login via third parties like Facebook and Google. This requires another private file called 'janrain.key', which you can get by registering your app [here](https://dashboard.janrain.com/).
 
 Create one configuration file for each server.  A configuration is just a shell script that sets some variables.
 

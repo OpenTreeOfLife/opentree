@@ -19,7 +19,7 @@ github_redirect_uri = YOUR_REDIRECT_URI_HERE
 treemachine = http://dev.opentreeoflife.org/treemachine:7474
 taxomachine = http://dev.opentreeoflife.org/taxomachine:7476
 oti = http://dev.opentreeoflife.org/oti
-otol_api = http://dev.opentreeoflife.org/api/v1
+opentree_api = http://dev.opentreeoflife.org/api/v1
 
 # Building on the URLs above, complete the public-facing URL for all methods
 # (again, these should work from both server- and client-side code)
@@ -40,18 +40,18 @@ getNodeIDForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getNodeIDForottI
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
 findAllStudies_url = {oti_domain}/ext/QueryServices/graphdb/findAllStudies
 
-# OTOL API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
+# Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #
-# NOTE that we shouldn't need '?jsoncallback=?' on URLs for the OTOL API, since
+# NOTE that we shouldn't need '?jsoncallback=?' on URLs for the Open Tree API, since
 # it now supports cross-domain requests via CORS
 
-API_create_study_POST_url = {otol_api_domain}/study
-API_load_study_GET_url = {otol_api_domain}/study/{STUDY_ID}
-API_update_study_PUT_url = {otol_api_domain}/study/{STUDY_ID}
-API_remove_study_DELETE_url = {otol_api_domain}/study/{STUDY_ID}
+API_create_study_POST_url = {opentree_api_domain}/study
+API_load_study_GET_url = {opentree_api_domain}/study/{STUDY_ID}
+API_update_study_PUT_url = {opentree_api_domain}/study/{STUDY_ID}
+API_remove_study_DELETE_url = {opentree_api_domain}/study/{STUDY_ID}
 
-API_create_file_POST_url = {otol_api_domain}/study/{STUDY_ID}/file
-API_load_file_GET_url = {otol_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
-API_update_file_PUT_url = {otol_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
-API_remove_file_DELETE_url = {otol_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
+API_create_file_POST_url = {opentree_api_domain}/study/{STUDY_ID}/file
+API_load_file_GET_url = {opentree_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
+API_update_file_PUT_url = {opentree_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
+API_remove_file_DELETE_url = {opentree_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
 

@@ -1,7 +1,7 @@
 /*
  * Client-side behavior for the Open Tree curation UI
  *
- * This uses the OTOL API to fetch and store studies and trees remotely.
+ * This uses the Open Tree API to fetch and store studies and trees remotely.
  */
 
 // these variables should already be defined in the main HTML page
@@ -1622,7 +1622,7 @@ function TreeNode() {
 
 
 /*
- * Real-time quality assessment for OTOL study data, based on chosen criteria,
+ * Real-time quality assessment for Open Tree study data, based on chosen criteria,
  * tests, and rules. Generate a summary result (structured object) of the most
  * salient feedback for display.
  *
@@ -2761,7 +2761,7 @@ var nexsonTemplates = {
          * files and trees into a data repository. In the meantime, the
          * curation webapp should offer the ability to upload and manage these files.
          *
-         * Once the data has been safely migrated from the OTOL Nexson store,
+         * Once the data has been safely migrated from the Open Tree Nexson store,
          * we should drop all of this and populate the study's main
          * 'ot:dataDeposit' with the archival DOI or URL.
          *
