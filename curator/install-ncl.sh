@@ -2,15 +2,9 @@
 set -x
 if ! test -d ncl
 then
-    if ! test -d build-ncl-static
-    then
-        mkdir build-ncl-static || exit
-    fi
     git clone https://github.com/mtholder/ncl.git || exit
     cd ncl || exit 
     sh bootstrap.sh || exit
-    cd ../build-ncl-static || exit
-    ../ncl/configure --enable-static --disable-shared --prefix="${NCL_INSTALL_DIR}" --with-constfuncs=yes || exit
     cd ..
 else
     cd ncl || exit
@@ -24,6 +18,10 @@ then
     mkdir build-ncl-static || exit
 fi
 cd build-ncl-static || exit
+if ! test -f Makefile
+then
+    ../ncl/configure --enable-static --disable-shared --prefix="${NCL_INSTALL_DIR}" --with-constfuncs=yes || exit
+fi
 make -j2 || exit
 #make check || exit
 make install || exit
