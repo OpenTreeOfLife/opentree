@@ -87,7 +87,7 @@ if [ ! -r $OPENTREE_IDENTITY ]; then echo "$OPENTREE_IDENTITY not found"; exit 1
 [ "x$TREEMACHINE_BASE_URL" != x ] || TREEMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/treemachine
 [ "x$TAXOMACHINE_BASE_URL" != x ] || TAXOMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/taxomachine
 [ "x$OTI_BASE_URL" != x ] || OTI_BASE_URL=$OPENTREE_NEO4J_HOST/oti
-[ "x$OTOL_API_BASE_URL" != x ] || OTOL_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/api/v1
+[ "x$OPENTREE_API_BASE_URL" != x ] || OPENTREE_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/api/v1
 
 if [ $GITHUB_CLIENT_ID = ID_NOT_PROVIDED ]; then echo "WARNING: Missing GitHub client ID! Curation UI will be disabled."; fi
 
@@ -197,7 +197,7 @@ function restart_apache {
 
 function push_opentree {
     if [ $DRYRUN = "yes" ]; then echo "[opentree]"; return; fi
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER "${GITHUB_CLIENT_ID}" "${GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OTOL_API_BASE_URL}"
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER "${GITHUB_CLIENT_ID}" "${GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OPENTREE_API_BASE_URL}"
     # place the file with secret Janrain key
     keyfile=~/.ssh/opentree/janrain.key
     if [ -r $keyfile ]; then
