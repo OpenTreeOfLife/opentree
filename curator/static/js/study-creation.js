@@ -1,7 +1,7 @@
 /*
  * Client-side behavior for the Open Tree curation UI
  *
- * This uses the OTOL API to fetch and store studies and trees remotely.
+ * This uses the Open Tree API to fetch and store studies and trees remotely.
  */
 
 // these variables should already be defined in the main HTML page

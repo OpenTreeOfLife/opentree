@@ -1,7 +1,7 @@
 /*
  * Client-side behavior for the Open Tree curation home page and personalized dashboard
  *
- * This uses the OTOL API to fetch and store studies and trees remotely. In
+ * This uses the Open Tree API to fetch and store studies and trees remotely. In
  * this initial version, we'll load metadata for all studies in the system,
  * then use client-side code to filter and sort them.
  */
