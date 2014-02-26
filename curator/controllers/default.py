@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from opentreewebapputil import get_opentree_services_method_urls
-
+from peyotl.manip import merge_otus_and_trees
+import json
 # this file is released under public domain and you can use without limitations
 import re
 
@@ -86,6 +87,45 @@ def data():
     """
     return dict(form=crud())
 
+def merge_otus():
+    '''Takes a "nexson" arg that should be a NexSON blob.
+    Returns an object with a "data" property that will be the NexSON
+    with otus merged into the first otu group.
+
+        1. merges trees elements 2 - # trees into the first trees element.,
+        2. merges otus elements 2 - # otus into the first otus element.
+        3. if there is no ot:originalLabel field for any otu,
+            it sets that field based on @label and deletes @label
+        4. merges an otu elements using the rule:
+              A. treat (ottId, originalLabel) as a key
+              B. If otu objects in subsequent trees match originalLabel and
+                have a matching or absent ot:ottId, then they are merged into
+                the same OTUs (however see C)
+              C. No two leaves of a tree may share an otu (though otu should
+                be shared across different trees). It is important that 
+                each leaf node be mapped to a distinct OTU. Otherwise there
+                will be no way of separating them during OTU mapping. we
+                do this indirectly by assuring to no two otu objects in the
+                same otus object get merged with each other (or to a common
+                object)
+
+        5. correct object references to deleted entities.
+
+    This function is used to patch up NexSONs created by multiple imports, hence the 
+    substitution of '@label' for 'ot:originalLabel'. Ids are arbitrary for imports from
+    non-nexml tools, so matching is done based on names. This should mimic the behavior
+    of the analysis tools that produced the trees (for most/all such tools unique names
+    constitute unique OTUs).
+
+    '''
+    if 'nexson' not in request.vars:
+        raise HTTP(400, T('Expecting a "nexson" argument'))
+    nexson = request.vars.nexson
+    if not isinstance(nexson, dict):
+        nexson = json.loads(nexson)
+    o = merge_otus_and_trees(nexson)
+    response.view = 'generic.json'
+    return {'data': o}
 
 UPLOADID_PAT = re.compile(r'^[a-zA-Z_][-_.a-zA-Z0-9]{4,84}$')
 ID_PREFIX_PAT = re.compile(r'^[a-zA-Z_][-_.a-zA-Z0-9]*$')
