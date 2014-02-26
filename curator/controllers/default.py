@@ -131,7 +131,8 @@ def to_nexson():
             in the Open Tree NexSON object.
         "inputFormat" should be "nexus", "newick", or "nexml"
             default is "nexus"
-        "nexml2json" should be "0.0.0", "1.0.0", or "1.2.0"
+        "nexml2json" should be "0.0", "1.0", or "1.2". The more
+            specific forms: "0.0.0", "1.0.0", or "1.2.1" will also work.
         
     '''
     _LOG = get_logger(request, 'to_nexson')
