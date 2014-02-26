@@ -1496,6 +1496,23 @@ function getRootNodeDescriptionForTree( tree ) {
         return nodeName +" [implicit]";
     }
 }
+function getRootedStatusForTree( tree ) {
+    // return display-ready description ('<span class="caution">Tree root is arbitrary</span>', ...)
+    var biologicalRootMessage = 'Tree root is believed to be biologically correct.';
+    var arbitraryRootMessage = '<span class="interesting-value">Tree root is arbitrary (not biologically correct)</span>';
+
+    if (!tree || !tree.node || tree.node.length === 0) {
+        return '';
+    }
+    
+    // Apply our "business rules" for tree and/or ingroup rooting, based on
+    // tree-level metadata.
+    var unrootedTree = tree['^ot:unrootedTree'] ? true : false;
+    if (unrootedTree) {
+        return arbitraryRootMessage;
+    }
+    return biologicalRootMessage;
+}
 
 var branchLengthModeDescriptions = [
     { value: 'ot:substitutionCount', text: "Number of substitutions" }, 
@@ -1790,8 +1807,9 @@ var studyScoringRules = {
             failureMessage: "There should be at least one candidate tree, or the submitter should opt out of synthesis.",
             suggestedAction: "Mark a tree as candidate for synthesis, or opt out of synthesis in Metadata."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        },
-        {
+        }
+        /* We're now accepting "natural" root based on Nexson hierarchy, so this test is moot
+        ,{
             description: "Each tree should be rooted (unless submitter has opted out).",
             test: function(studyData) {
                 // check for opt-out flag
@@ -1800,7 +1818,7 @@ var studyScoringRules = {
                     // submitter has explicitly said this study does not have rooted trees
                     return true;
                 }
-                // check for a proper root node in each tree found (TODO: check 'candidates' only?)
+                // check for a proper root node in each tree found (check 'candidates' only)
                 var unrootedTreeFound = false;
                 var allTrees = [];
                 $.each(viewModel.nexml.trees, function(i, treesCollection) {
@@ -1809,8 +1827,8 @@ var studyScoringRules = {
                     });
                 });
                 $.each(allTrees, function(i, tree) {
-                    // check for explicit tree-level marker (ot:inGroupClade) versus arbitrary root
-                    var rootNodeID = tree['^ot:inGroupClade'];
+                    // check for explicit tree-level marker (ot:specifiedRoot) versus arbitrary root
+                    var rootNodeID = tree['^ot:specifiedRoot'];
                     ///console.log('>>> found this rootNodeID: '+ rootNodeID + '<'+ typeof(rootNodeID) +'>');
                     switch(rootNodeID) {
                         // TODO: Test live data to see what "none" or "empty" looks like in this field
@@ -1834,6 +1852,7 @@ var studyScoringRules = {
             suggestedAction: "Designate a root node for each tree, or specify only unrooted trees in Metadata."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
+        */
     ],
     'Files': [
         // problems with uploaded files (formats, missing, corrupt)
@@ -2291,6 +2310,18 @@ function setTreeRoot( treeOrID, rootNodeOrID ) {
     updateEdgesInTree( tree );
     drawTree( tree );
     nudgeTickler('TREES');
+}
+
+function toggleTreeRootStatus( tree ) {
+    // add (or remove) its ^ot:unrootedTree property
+    var unrootedTree = tree['^ot:unrootedTree'] ? true : false;
+    if (unrootedTree) {
+        delete tree['^ot:unrootedTree'];
+    } else {
+        tree['^ot:unrootedTree'] = true;
+    }
+    nudgeTickler('TREES');
+    return true; // update the checkbox
 }
 
 function setTreeIngroup( treeOrID, ingroupNodeOrID ) {

@@ -1329,6 +1329,13 @@ Please review and re-submit.</pre>
                 <label for="testtest">Root node: </label>
                 <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
               <br/>
+                <label for="arbitrary-tree-root" class="checkbox" style="padding-left: 12px; position: relative; top: -4px;">
+                    <input id="arbitrary-tree-root" type="checkbox" 
+                           data-bind="checked: $data['^ot:unrootedTree'] == true, 
+                                      click: toggleTreeRootStatus" />
+                    Tree root is arbitrary (not biologically correct) 
+                </label>
+              <br/>
                 <label for="testtest">Ingroup clade: </label>
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data)"></strong>
               </div>
@@ -1385,11 +1392,11 @@ Please review and re-submit.</pre>
               <div style="clear: left; height: 20px;">&nbsp;</div>
               <div class="help-box">
                   Click any node below to set a new root or ingroup clade.
-                  If <strong>Rooting is arbitrary</strong> is checked above,
-                  the root will be recognized as arbitrary (used only to
-                  draw the tree and correctly set the ingroup clade).
+                  If <strong>Rooting is arbitrary</strong> is checked (above),
+                  the root will only be used to draw the tree and correctly set
+                  the ingroup clade. It will not be considered biologically
+                  correct.
               </div>
-
 
           {{ else: }}
             <!-- read-only tree properties here -->
@@ -1400,6 +1407,10 @@ Please review and re-submit.</pre>
                 <label for="testtest">Root node: </label>
                <!-- TODO: tag(s) for this tree? -->
                 <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
+              <br/>
+                <label for="arbitrary-tree-root" class="checkbox" style="padding-left: 12px; position: relative; top: -4px;">
+                    <strong data-bind="html: getRootedStatusForTree($data)">Tree root is arbitrary (not biologically correct)</strong>
+                </label>
               <br/>
                 <label for="testtest">Ingroup clade: </label>
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data)"></strong>
@@ -1448,8 +1459,8 @@ Please review and re-submit.</pre>
           <label style="margin-left: 20px;">Ingroup: </label>
           <img src="{{=URL('static','images/tree-viewer-legend-ingroup.png')}}" alt="ingroup style" />
 
-          <label style="margin-left: 20px;" for="branch-length-toggle"> 
-              <input type="checkbox" id="branch-length-toggle" style="margin-top: 0px; margin-bottom: 2px;" 
+          <label class="checkbox" style="margin-left: 25px;" for="branch-length-toggle"> 
+              <input type="checkbox" id="branch-length-toggle"
                      onclick="toggleBranchLengthsInViewer(this); return true;" />
               Cladogram (hide branch lengths)
           </label>
