@@ -2,6 +2,10 @@
 set -x
 if ! test -d ncl
 then
+    if ! test -d build-ncl-static
+    then
+        mkdir build-ncl-static || exit
+    fi
     git clone https://github.com/mtholder/ncl.git || exit
     cd ncl || exit 
     sh bootstrap.sh || exit
