@@ -35,6 +35,12 @@ fi
 if [ `which g++`x = x ]; then
     $APTGET install g++
 fi
+
+# ---------- make (for NCL, the nexus, newick converter used by the curation tool's import) ----------
+if [ `which make`x = x ]; then
+    $APTGET install make
+fi
+
 # ---------- autoconf and automake for NCL (curation dependency) ----------
 if [ `which autoconf`x = x ]; then
     $APTGET install autotools-dev
