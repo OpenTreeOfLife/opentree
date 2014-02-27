@@ -1252,6 +1252,12 @@ function normalizeTree( tree ) {
         tree['@label'] = 'Untitled ('+ tree['@id'] +')';
     }
 
+    // metadata fields with other defaults
+    if (!(['^ot:unrootedTree'] in tree)) {
+        // safest value, forces the curator to assert correctness
+        tree['^ot:unrootedTree'] = true;
+    }
+
     // metadata fields (with empty default values)
     var metatags = [
         '^ot:curatedType',
@@ -1431,7 +1437,7 @@ function getRootedDescriptionForTree( tree ) {
     // Apply our "business rules" for tree and/or ingroup rooting, based on
     // tree-level metadata.
     var specifiedRoot = tree['^ot:specifiedRoot'] || null;
-    var unrootedTree = tree['^ot:unrootedTree'] ? true : false;
+    var unrootedTree = tree['^ot:unrootedTree'];
     var inGroupClade = tree['^ot:inGroupClade'] || null;
 
     if (specifiedRoot && inGroupClade) {
@@ -1461,7 +1467,7 @@ function getRootNodeDescriptionForTree( tree ) {
     // Apply our "business rules" for tree and/or ingroup rooting, based on
     // tree-level metadata.
     var specifiedRoot = tree['^ot:specifiedRoot'] || null;
-    var unrootedTree = tree['^ot:unrootedTree'] ? true : false;
+    var unrootedTree = tree['^ot:unrootedTree'];
     // if no specified root node, use the implicit root (first in nodes array)
     var rootNodeID = specifiedRoot ? specifiedRoot : tree.node[0]['@id'];
 
@@ -1506,7 +1512,7 @@ function getRootedStatusForTree( tree ) {
     
     // Apply our "business rules" for tree and/or ingroup rooting, based on
     // tree-level metadata.
-    var unrootedTree = tree['^ot:unrootedTree'] ? true : false;
+    var unrootedTree = tree['^ot:unrootedTree'];
     if (unrootedTree) {
         return arbitraryRootMessage;
     }
@@ -2307,13 +2313,9 @@ function setTreeRoot( treeOrID, rootNodeOrID ) {
 }
 
 function toggleTreeRootStatus( tree ) {
-    // add (or remove) its ^ot:unrootedTree property
-    var unrootedTree = tree['^ot:unrootedTree'] ? true : false;
-    if (unrootedTree) {
-        delete tree['^ot:unrootedTree'];
-    } else {
-        tree['^ot:unrootedTree'] = true;
-    }
+    // toggle its ^ot:unrootedTree property (should always be present)
+    var currentState = tree['^ot:unrootedTree'];
+    tree['^ot:unrootedTree'] = !(currentState);
     nudgeTickler('TREES');
     return true; // update the checkbox
 }

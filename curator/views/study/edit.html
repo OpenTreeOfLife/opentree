@@ -1320,9 +1320,9 @@ Please review and re-submit.</pre>
               <br/>
                 <label for="arbitrary-tree-root" class="checkbox" style="padding-left: 12px; position: relative; top: -4px;">
                     <input id="arbitrary-tree-root" type="checkbox" 
-                           data-bind="checked: $data['^ot:unrootedTree'] == true, 
+                           data-bind="checked: $data['^ot:unrootedTree'] !== true, 
                                       click: toggleTreeRootStatus" />
-                    Tree root is arbitrary (not biologically correct) 
+                    Tree root is biologically correct (not arbitrary) 
                 </label>
               <br/>
                 <label for="testtest">Ingroup clade: </label>
