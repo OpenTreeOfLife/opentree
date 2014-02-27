@@ -2187,21 +2187,36 @@ function setTreeRoot( treeOrID, rootNodeOrID ) {
         tree = getTreeByID(treeOrID);
     }
 
-    rootNodeID = null;
+    // make sure we have a proper node ID
+    var newRootNodeID = null;
     if (rootNodeOrID) {
         if (typeof(rootNodeOrID) === 'object') {
-            rootNodeID = rootNodeOrID['@id'];
+            newRootNodeID = rootNodeOrID['@id'];
         } else {
-            rootNodeID = rootNodeOrID;
+            newRootNodeID = rootNodeOrID;
         }
     }
-
-    if (rootNodeID) {
-        tree['^ot:specifiedRoot'] = rootNodeID;
-    } else {
-        // clear the current root
-        tree['^ot:specifiedRoot'] = '';
+    if (!newRootNodeID) {
+        console.error("setTreeRoot(): no new root-node ID specified: "+ rootNodeOrID 
+                +" <"+ (typeof rootNodeOrID) +">");
+        return;
     }
+    var newRootNode = getTreeNodeByID(tree, newRootNodeID);
+    if (!newRootNode) {
+        console.error("setTreeRoot(): couldn't find the new root node, ID = "+ newRootNodeID 
+                +" <"+ (typeof newRootNodeID) +">");
+        return;
+    }
+
+    // make any changes required to the old root node
+    var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    var oldRootNode = specifiedRoot ? getTreeNodeByID(tree, specifiedRoot) : tree.node[0];
+    delete oldRootNode['@root'];
+
+    // update tree and node properties
+    tree['^ot:specifiedRoot'] = newRootNodeID;
+    newRootNode['@root'] = true;
+
     updateEdgesInTree( tree );
     drawTree( tree );
     nudgeTickler('TREES');
@@ -3550,9 +3565,6 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
 
         nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
 
-        if (viewOrEdit === 'EDIT') {
-            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', null ); return false;">Un-mark as root of this tree</a></li>');
-        }
     } else {
         if (viewOrEdit === 'EDIT') {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as root of this tree</a></li>');
