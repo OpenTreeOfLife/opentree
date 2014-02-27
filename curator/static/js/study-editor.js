@@ -1433,7 +1433,6 @@ function getRootedDescriptionForTree( tree ) {
     var specifiedRoot = tree['^ot:specifiedRoot'] || null;
     var unrootedTree = tree['^ot:unrootedTree'] ? true : false;
     var inGroupClade = tree['^ot:inGroupClade'] || null;
-    var nearestOutGroupNeighbor = tree['^ot:nearestOutGroupNeighbor'] || null;
 
     if (specifiedRoot && inGroupClade) {
         return "Explicitly rooted tree, ingroup specified";
@@ -2119,13 +2118,11 @@ function drawTree( treeOrID ) {
     /* load D3 tree view */
     var specifiedRoot = tree['^ot:specifiedRoot'] || null;
     var inGroupClade = tree['^ot:inGroupClade'] || null;
-    var nearestOutGroupNeighbor = tree['^ot:nearestOutGroupNeighbor'] || null;
 
     // we'll pass this along to helpers that choose node labels, classes, etc.
     var importantNodeIDs = {
         'specifiedRoot': specifiedRoot,
-        'inGroupClade': inGroupClade,
-        'nearestOutGroupNeighbor': nearestOutGroupNeighbor
+        'inGroupClade': inGroupClade
     }
 
     var root;  // find the root (if any) node for the visible tree
@@ -2255,9 +2252,6 @@ console.log("> done sweeping edges");
             if (d['@id'] === inGroupClade) {
                 itsClass += " inGroupClade";
             }
-            if (d['@id'] === nearestOutGroupNeighbor) {
-                itsClass += " nearestOutGroupNeighbor";
-            }
             ///console.log("CLASS is now "+ itsClass);
             return itsClass;
         });
@@ -2353,6 +2347,7 @@ function setTreeIngroup( treeOrID, ingroupNodeOrID ) {
     nudgeTickler('TREES');
 }
 
+/*
 function setTreeOutgroup( treeOrID, outgroupNodeOrID ) {
     // (Re)set the node that defines the outgroup, i.e., which sets the
     // polarity (edge direction) used to delineate the ingroup clade
@@ -2381,17 +2376,16 @@ function setTreeOutgroup( treeOrID, outgroupNodeOrID ) {
     drawTree( tree );
     nudgeTickler('TREES');
 }
+*/
 
 function updateEdgesInTree( tree ) {
     // Update the direction of all edges in this tree, based on its
-    // designated root and/or ingroup nodes
+    // designated root (redefining ingroup if necessary)
     var specifiedRoot = tree['^ot:specifiedRoot'] || null;
     var inGroupClade = tree['^ot:inGroupClade'] || null;
-    var nearestOutGroupNeighbor = tree['^ot:nearestOutGroupNeighbor'] || null;
 
     if (specifiedRoot) {
         // root is defined, and possibly ingroup; set direction away from root for all edges
-        // NOTE that this polarity trumps any nearestOutGroupNeighbor
         ///console.log("sweeping all edges");
         sweepEdgePolarity( tree, specifiedRoot, null, inGroupClade );
         clearFastLookup('EDGES_BY_SOURCE_ID');
@@ -2401,19 +2395,17 @@ function updateEdgesInTree( tree ) {
         // ancestor within the ingroup clade; disregard other edges
         ///console.log("sweeping ingroup edges only");
         var naturalParent;
-        if (!nearestOutGroupNeighbor) {
-            // choose its parent based on current "upward" edge in tree
-            var edgeArray = getTreeEdgesByID(tree, inGroupClade, 'TARGET');
-            if (edgeArray.length === 0) {
-                // ingroup claded MRCA must also be the tree root
-                naturalParent = null;
-            } else {
-                edgeToParent = edgeArray[0];
-                naturalParent = edgeToParent['@source'];
-            }
-            ///console.log("...sweeping away from natural parent '"+ naturalParent +"'...");
+        // choose its parent based on current "upward" edge in tree
+        var edgeArray = getTreeEdgesByID(tree, inGroupClade, 'TARGET');
+        if (edgeArray.length === 0) {
+            // ingroup claded MRCA must also be the tree root
+            naturalParent = null;
+        } else {
+            edgeToParent = edgeArray[0];
+            naturalParent = edgeToParent['@source'];
         }
-        sweepEdgePolarity( tree, inGroupClade, nearestOutGroupNeighbor || naturalParent, inGroupClade );
+        console.log("...sweeping away from natural parent '"+ naturalParent +"'...");
+        sweepEdgePolarity( tree, inGroupClade, naturalParent, inGroupClade );
         clearFastLookup('EDGES_BY_SOURCE_ID');
         clearFastLookup('EDGES_BY_TARGET_ID');
     } else {
@@ -2539,10 +2531,6 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
 
     if (nodeID === importantNodeIDs.specifiedRoot) {
         ///return "specified root";
-    }
-
-    if (nodeID === importantNodeIDs.nearestOutGroupNeighbor) {
-        ///return "nearest outgroup neighbor";
     }
 
     var itsOTU = node['@otu'];
@@ -3684,20 +3672,6 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     } else {
         if (viewOrEdit === 'EDIT') {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade</a></li>');
-        }
-        
-        // this shouldn't be possible if it's already the ingroup clade
-        if (nodeID == importantNodeIDs.nearestOutGroupNeighbor) {
-
-            nodeInfoBox.append('<span class="node-type nearestOutGroupNeighbor">ingroup parent</span>');
-
-            if (viewOrEdit === 'EDIT') {
-                nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id'] +'\', null ); return false;">Un-mark as the ingroup clade\'s parent</a></li>');
-            }
-        } else {
-            if (viewOrEdit === 'EDIT') {
-                nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade\'s parent</a></li>');
-            }
         }
     }
 
