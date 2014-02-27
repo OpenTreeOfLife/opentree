@@ -1402,7 +1402,7 @@ function getMappedTallyForTree(tree) {
 }
 
 function getRootedDescriptionForTree( tree ) {
-    // return display-ready description ('Rooted', 'Unrooted', 'Multiply rooted') based on count
+    // return display-ready description of tree root (arbitrary vs. biologically correct)
     if (!tree || !tree.node || tree.node.length === 0) {
         return 'Unrooted (empty)';
     }
@@ -1524,34 +1524,22 @@ function getBranchLengthDescriptionForTree( tree ) {
 }
 
 function getInGroupCladeDescriptionForTree( tree ) {
-    // return display-ready description ('Rooted', 'Unrooted', 'Multiply rooted') based on count
-    // try to retrieve a recognizable taxon label for the ingroup clade's root
+    // Return display-ready description of a tree's ingroup clade (for tree list).
+    
     var nodeID = tree['^ot:inGroupClade'];
     if (!nodeID) {
         return 'Unspecified';
     }
-    var nodeName = ('Unmapped ('+ nodeID +')');
+    var nodeName = ('Unnamed internal node');
 
-    $.each(tree.node, function(i, node) {
-        // Find the node with this ID and see if it has an assigned OTU
-        if (node['@id'] === nodeID) {
-            var nodeOTUAccessor = node['@otu'];
-            if (typeof(nodeOTUAccessor) === 'function') {
-                var nodeOTU = nodeOTUAccessor();
-                // find the matching OTU and show its label
-                $.each(viewModel.nexml.otus, function( i, otusCollection ) {
-                    $.each(otusCollection.otu, function( i, otu ) {
-                        // Find the node with this ID and see if it has an assigned OTU
-                        if (otu['@id'] === nodeOTU) {
-                            nodeName = otu['@label'] || 'Unlabeled OTU';
-                        }
-                    });
-                });
-            } 
-            return false; // stop checking nodes
+    // try to retrieve a recognizable taxon label for the ingroup clade's root
+    var node = getTreeNodeByID( tree, nodeID );
+    if ('@otu' in node) {
+        var otu = getOTUByID( node['@otu'] );
+        if (otu) {
+            nodeName = otu['@label'] || 'Unlabeled OTU';
         }
-        return true;  // skip to next node
-    });
+    }
 
     return nodeName;
 }
@@ -2036,47 +2024,19 @@ function drawTree( treeOrID ) {
         tree = getTreeByID(treeOrID);
     }
 
-    // clear special properties (esp. parent, children) in case these have changed
-    clearD3PropertiesFromTree(tree);
-
     /* load D3 tree view */
     var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    var rootNodeID = specifiedRoot ? specifiedRoot : tree.node[0]['@id'];
+
     var inGroupClade = tree['^ot:inGroupClade'] || null;
 
     // we'll pass this along to helpers that choose node labels, classes, etc.
     var importantNodeIDs = {
-        'specifiedRoot': specifiedRoot,
+        'treeRoot': rootNodeID,         // may be arbitrary!
         'inGroupClade': inGroupClade
     }
 
-    var root;  // find the root (if any) node for the visible tree
-    if (specifiedRoot && inGroupClade) {
-        // both are defined, show a grayed-out dendrogram with a
-        // full-strength ingroup clade
-        ///console.log(">>> root AND ingroup specified");
-        root = getTreeNodeByID(tree, specifiedRoot);
-    } else if (specifiedRoot) {
-        // only root node is defined, show a grayed-out dendrogram
-        ///console.log(">>> root ONLY specified");
-        root = getTreeNodeByID(tree, specifiedRoot);
-    } else if (inGroupClade) {
-        // only ingroup clade is defined, show a partially-rooted tree
-        // (a dendrogram for the ingroup clade, force-directed graph for
-        // the outgroup)
-        ///console.log(">>> ingroup ONLY specified");
-        root = getTreeNodeByID(tree, inGroupClade);
-    } else {
-        // neither root node nor ingroup is defined, this is really an
-        // unrooted tree; show it with force-directed graph
-        ///console.log(">>> NOTHING specified, TODO: use force-directed graph!?");
-        root = tree.node[0];
-    }
-    /*
-    console.log(">>> building dendrogram from root node '"+ root['@id'] +"'...");
-    for (var prop in importantNodeIDs) {
-        console.log( "   "+ prop +" = "+ importantNodeIDs[prop] );
-    }
-    */
+    var rootNode = getTreeNodeByID(tree, rootNodeID);
 
     var edges = tree.edge;
 console.log(">> preparing "+ edges.length +" edges in this tree...");
@@ -2119,7 +2079,7 @@ console.log("> done sweeping edges");
 
     vizInfo = d3.phylogram.build(
         "#tree-viewer #dialog-data",   // selector
-        root, // tree.node,      // nodes 
+        rootNode,
         {           // options
             vis: vizInfo.vis,
             // TODO: can we make the size "adaptive" based on vis contents?
@@ -2219,6 +2179,8 @@ function setTreeRoot( treeOrID, rootNodeOrID ) {
     // update tree and node properties
     tree['^ot:specifiedRoot'] = newRootNodeID;
     newRootNode['@root'] = true;
+    // selective deletion of d3 parent
+    delete newRootNode['parent'];
 
     updateEdgesInTree( tree );
     drawTree( tree );
@@ -2427,8 +2389,8 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
         ///return "ingroup clade";
     }
 
-    if (nodeID === importantNodeIDs.specifiedRoot) {
-        ///return "specified root";
+    if (nodeID === importantNodeIDs.treeRoot) {
+        ///return "tree root";
     }
 
     var itsOTU = node['@otu'];
@@ -3544,7 +3506,7 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     var nodeInfoBox = nodeMenu.find('.node-information');
     nodeInfoBox.append('<span class="node-name">'+ getTreeNodeLabel(tree, node, importantNodeIDs) +'</span>');
 
-    if (nodeID == importantNodeIDs.specifiedRoot) {
+    if (nodeID == importantNodeIDs.treeRoot) {
 
         nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
 
