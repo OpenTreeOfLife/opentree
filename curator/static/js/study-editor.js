@@ -2036,6 +2036,9 @@ function drawTree( treeOrID ) {
         tree = getTreeByID(treeOrID);
     }
 
+    // clear special properties (esp. parent, children) in case these have changed
+    clearD3PropertiesFromTree(tree);
+
     /* load D3 tree view */
     var specifiedRoot = tree['^ot:specifiedRoot'] || null;
     var inGroupClade = tree['^ot:inGroupClade'] || null;
@@ -2305,47 +2308,27 @@ function setTreeOutgroup( treeOrID, outgroupNodeOrID ) {
 
 function updateEdgesInTree( tree ) {
     // Update the direction of all edges in this tree, based on its
-    // designated root (redefining ingroup if necessary)
+    // chosen or "natural" root (redefining ingroup in some cases)
     var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    // if no specified root node, use the implicit root (first in nodes array)
+    var rootNodeID = specifiedRoot ? specifiedRoot : tree.node[0]['@id'];
+
     var inGroupClade = tree['^ot:inGroupClade'] || null;
 
-    if (specifiedRoot) {
-        // root is defined, and possibly ingroup; set direction away from root for all edges
-        ///console.log("sweeping all edges");
-        sweepEdgePolarity( tree, specifiedRoot, null, inGroupClade );
-        clearFastLookup('EDGES_BY_SOURCE_ID');
-        clearFastLookup('EDGES_BY_TARGET_ID');
-    } else if (inGroupClade) {
-        // only ingroup clade is defined, set direction away from ingroup
-        // ancestor within the ingroup clade; disregard other edges
-        ///console.log("sweeping ingroup edges only");
-        var naturalParent;
-        // choose its parent based on current "upward" edge in tree
-        var edgeArray = getTreeEdgesByID(tree, inGroupClade, 'TARGET');
-        if (edgeArray.length === 0) {
-            // ingroup claded MRCA must also be the tree root
-            naturalParent = null;
-        } else {
-            edgeToParent = edgeArray[0];
-            naturalParent = edgeToParent['@source'];
-        }
-        console.log("...sweeping away from natural parent '"+ naturalParent +"'...");
-        sweepEdgePolarity( tree, inGroupClade, naturalParent, inGroupClade );
-        clearFastLookup('EDGES_BY_SOURCE_ID');
-        clearFastLookup('EDGES_BY_TARGET_ID');
-    } else {
-        // neither root node nor ingroup is defined; ignore all edges
-        ///console.log("we'll ignore all polarity, so nothing to sweep");
-    }
+    // root is defined, and possibly ingroup; set direction away from root for all edges
+    sweepEdgePolarity( tree, rootNodeID, null, inGroupClade );
+    clearFastLookup('EDGES_BY_SOURCE_ID');
+    clearFastLookup('EDGES_BY_TARGET_ID');
 }
 
 function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID, inGroupClade, insideInGroupClade ) {
-    // push all adjacent edges away from starting node, except for
-    // its upstream neighbor; this should recurse to sweep an entire tree (or
-    // subtree) until we reach the tips
+    // Push all adjacent edges away from the starting node, except for its
+    // upstream neighbor. This should recurse to sweep an entire tree (or
+    // subtree) until we reach the tips.
 
     // gather all adjacent edges, regardless of current direction
     var edges = getTreeEdgesByID(tree, startNodeID, 'ANY');
+
     $.each(edges, function(i, edge) {
         // test the "other" ID to see if it should be up- or downstream
         var sourceID = edge['@source'];
