@@ -342,8 +342,8 @@ body {
                       {{ pass }}
                         <th>Type</th>
                         <th>Ingroup clade</th>
+                        <th>Tree root</th>
                         <th>OTUs mapped</th>
-                        <th>Rooted?</th>
                         <th>Preferred</th>
                       {{ if viewOrEdit == 'EDIT': }}
                         <th>&nbsp;</th>
@@ -359,9 +359,9 @@ body {
                                 css: viewModel.ticklers.TREES">TYPE?</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
                                 css: viewModel.ticklers.TREES"></td>
-                        <td data-bind="html: getMappedTallyForTree(tree),
-                                css: viewModel.ticklers.TREES">?/?? (?%)</td>
                         <td data-bind="html: getRootedDescriptionForTree(tree),
+                                css: viewModel.ticklers.TREES">?/?? (?%)</td>
+                        <td data-bind="html: getMappedTallyForTree(tree),
                                 css: viewModel.ticklers.TREES">?/?? (?%)</td>
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
@@ -1323,7 +1323,6 @@ Please review and re-submit.</pre>
                 <label>Mapped leaf nodes: </label>
                 <span data-bind="html: getMappedTallyForTree($data)">?? / ??</span>
               <br/>
-               <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
 
                 <label>Tags: </label>
                 <select id="tree-tags" multiple="multiple" placeholder="Add tags"
@@ -1371,11 +1370,11 @@ Please review and re-submit.</pre>
               </div>
               <div style="clear: left; height: 20px;">&nbsp;</div>
               <div class="help-box">
-                  Click any node below to set a new root or ingroup clade.
-                  If <strong>Rooting is arbitrary</strong> is checked (above),
-                  the root will only be used to draw the tree and correctly set
-                  the ingroup clade. It will not be considered biologically
-                  correct.
+                  Click any node below to set the ingroup clade. Click any node
+                  <strong>or</strong> edge to re-root the entire tree. N.B. An
+                  arbitrary root (see checkbox above) will only be used to draw
+                  the tree and correctly set the ingroup clade. It will not be
+                  considered biologically correct.
               </div>
 
           {{ else: }}
@@ -1399,7 +1398,6 @@ Please review and re-submit.</pre>
                 <label>Mapped leaf nodes: </label>
                 <span data-bind="html: getMappedTallyForTree($data)">?? / ??</span>
               <br/>
-               <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
 
                 <label>Tags: </label>
                 <!-- TODO: make all tags clickable (search in new window?) -->

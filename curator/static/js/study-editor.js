@@ -1435,24 +1435,11 @@ function getRootedDescriptionForTree( tree ) {
     // tree-level metadata.
     var specifiedRoot = tree['^ot:specifiedRoot'] || null;
     var unrootedTree = tree['^ot:unrootedTree'];
-    var inGroupClade = tree['^ot:inGroupClade'] || null;
 
-    if (specifiedRoot && inGroupClade) {
-        return "Explicitly rooted tree, ingroup specified";
-    } 
-    if (specifiedRoot) {
-        return "Explicitly rooted tree, no ingroup";
-    } 
     if (unrootedTree) {
-        if (inGroupClade) {
-            return "Unrooted tree, ingroup specified";
-        }
-        return "Unrooted  tree, no ingroup";
+        return "Arbitrary (not biologically correct)";
     } else {
-        if (inGroupClade) {
-            return "Implicitly rooted tree, ingroup specified";
-        }
-        return "Implicitly rooted tree, no ingroup";
+        return "Biologically correct";
     }
 }
 function getRootNodeDescriptionForTree( tree ) {
@@ -2268,6 +2255,19 @@ function toggleTreeRootStatus( tree ) {
     // toggle its ^ot:unrootedTree property (should always be present)
     var currentState = tree['^ot:unrootedTree'];
     tree['^ot:unrootedTree'] = !(currentState);
+    
+    // choosing non-arbitrary (biologically correct) rooting should implicitly
+    // select the current root node, since this signals intent
+    var isBiologicallyCorrect = !(tree['^ot:unrootedTree']);
+    if (isBiologicallyCorrect) {
+        // if no specified root node, use the implicit root (first in nodes array)
+        var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+        if (!specifiedRoot) {
+            // use the implicit root (first in nodes array)
+            var rootNodeID = tree.node[0]['@id'];
+            tree['^ot:specifiedRoot'] = rootNodeID;
+        }
+    }
     nudgeTickler('TREES');
     return true; // update the checkbox
 }
