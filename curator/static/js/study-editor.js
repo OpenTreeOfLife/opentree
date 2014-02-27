@@ -1406,30 +1406,6 @@ function getRootedDescriptionForTree( tree ) {
     if (!tree || !tree.node || tree.node.length === 0) {
         return 'Unrooted (empty)';
     }
-
-    /* Old method, based on nodes marked with @root flag
-    var rootedNodes = 0;
-    $.each(tree.node, function(i, node) {
-        // Simply check for the presence (or absence) of a @root 'getter' function
-        // (so far, it doesn't seem to exist unless there's a mapped OTU)
-        
-        var rootAccessor = node['@root'];
-        if (typeof(rootAccessor) === 'function') {
-            //console.log('@root found, value = '+ rootAccessor() +' <'+ typeof(rootAccessor()) +'>');
-            rootedNodes++;
-        } 
-        return true;  // skip to next node
-    });
-
-    switch (rootedNodes)  {
-        case 0:
-            return 'Unrooted';
-        case 1:
-            return 'Singly'; // OR 'Rooted';
-        default:
-            return 'Multiply rooted';
-    }
-    */
     
     // Apply our "business rules" for tree and/or ingroup rooting, based on
     // tree-level metadata.
@@ -2071,23 +2047,6 @@ function drawTree( treeOrID ) {
     }
 
     var root;  // find the root (if any) node for the visible tree
-    /* original method was based on "naive" roots, checking node['@root'] === 'true'
-    var allRootNodes = getRootTreeNodes(tree);
-    switch(allRootNodes.length) {
-        case 0:
-            console.log("this tree is UNrooted");
-            root = tree.node[0];
-            break;
-        case 1:
-            console.log("this tree is SINGLY rooted");
-            root = allRootNodes[0];
-            break;
-        default:
-            console.log("this tree is MULTIPLY rooted ("+ allRootNodes.length +" root nodes found)");
-            root = allRootNodes[0];
-            break;
-    }
-    */
     if (specifiedRoot && inGroupClade) {
         // both are defined, show a grayed-out dendrogram with a
         // full-strength ingroup clade
@@ -2187,9 +2146,6 @@ console.log("> done sweeping edges");
             var itsClass = "node";
             if (!d.children) {
                 itsClass += " leaf";
-            }
-            if (d['@root'] && d['@root'] === 'true') {
-                itsClass += " atRoot";
             }
             if (d['@id'] === specifiedRoot) {
                 itsClass += " specifiedRoot";
@@ -2465,16 +2421,6 @@ function reverseEdgeDirection( edge ) {
     edge['@source'] = edge['@target'];
     edge['@target'] = oldSource;
 }
-function getRootTreeNodes(tree) {
-    // REMEMBER: trees can be unrooted, singly rooted, or multiply rooted
-    var rootNodes = [];
-    $.each( tree.node, function( index, node ) {
-        if (node['@root'] && node['@root'] === 'true') {
-            rootNodes.push( node );
-        }
-    });
-    return rootNodes;
-}
 function getTreeNodeLabel(tree, node, importantNodeIDs) {
     // TODO: centralize these IDs, no need to keep fetching for each node
     var nodeID = node['@id'];
@@ -2489,9 +2435,6 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
 
     var itsOTU = node['@otu'];
     if (!itsOTU) {
-        if (node['@root'] && node['@root'] === 'true') {
-            ///return "@root";
-        }
         return node['@id'];
     }
 
@@ -3596,7 +3539,6 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     }
     nodeMenu.hide();
     // show appropriate choices for this node
-    // if (node['@root'] === 'true') ?
     var nodeID = node['@id'];
 
     // general node information first, then actions
@@ -3629,11 +3571,6 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
         }
     }
 
-    if (nodeInfoBox.find('.node-type').length === 0) {
-        if (node['@root'] && node['@root'] === 'true') {
-            nodeInfoBox.append('<span class="node-type atRoot">marked as @root</span>');
-        }
-    }
     if (viewOrEdit === 'EDIT') {
         nodeInfoBox.after('<li class="divider"></li>');
     }
