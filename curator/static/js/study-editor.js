@@ -232,9 +232,6 @@ function loadSelectedStudy(id) {
             if (!(['^ot:focalCladeOTTTaxonName'] in data.nexml)) {
                 data.nexml['^ot:focalCladeOTTTaxonName'] = "";
             }
-            if (!(['^ot:notUsingRootedTrees'] in data.nexml)) {
-                data.nexml['^ot:notUsingRootedTrees'] = false;
-            }
             if (!(['^ot:notIntendedForSynthesis'] in data.nexml)) {
                 data.nexml['^ot:notIntendedForSynthesis'] = false;
             }
@@ -1813,51 +1810,6 @@ var studyScoringRules = {
             suggestedAction: "Mark a tree as candidate for synthesis, or opt out of synthesis in Metadata."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
-        /* We're now accepting "natural" root based on Nexson hierarchy, so this test is moot
-        ,{
-            description: "Each tree should be rooted (unless submitter has opted out).",
-            test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notUsingRootedTrees'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study does not have rooted trees
-                    return true;
-                }
-                // check for a proper root node in each tree found (check 'candidates' only)
-                var unrootedTreeFound = false;
-                var allTrees = [];
-                $.each(viewModel.nexml.trees, function(i, treesCollection) {
-                    $.each(treesCollection.tree, function(i, tree) {
-                        allTrees.push( tree );
-                    });
-                });
-                $.each(allTrees, function(i, tree) {
-                    // check for explicit tree-level marker (ot:specifiedRoot) versus arbitrary root
-                    var rootNodeID = tree['^ot:specifiedRoot'];
-                    ///console.log('>>> found this rootNodeID: '+ rootNodeID + '<'+ typeof(rootNodeID) +'>');
-                    switch(rootNodeID) {
-                        // TODO: Test live data to see what "none" or "empty" looks like in this field
-                        case '':
-                        case null:
-                        case undefined:
-                        case 0:
-                        case 'none':
-                            unrootedTreeFound = true;
-                            return false;  // done looping through trees
-                        default:
-                            return true; // try the next tree
-                    }
-                });
-                // if no rootless trees were found, it passes the test
-                return !unrootedTreeFound;
-            },
-            weight: 0.3, 
-            successMessage: "All trees are properly rooted, or the submitter has specified unrooted trees.",
-            failureMessage: "Every tree should be properly rooted, or the submitter should opt out of rooted trees.",
-            suggestedAction: "Designate a root node for each tree, or specify only unrooted trees in Metadata."
-                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        }
-        */
     ],
     'Files': [
         // problems with uploaded files (formats, missing, corrupt)
