@@ -1304,13 +1304,25 @@ Please review and re-submit.</pre>
                 <strong data-bind="text: getRootNodeDescriptionForTree($data), 
                                    css: viewModel.ticklers.TREES"></strong>
               <br/>
-                <label for="arbitrary-tree-root" class="checkbox" style="padding-left: 12px; position: relative; top: -4px;">
-                    <input id="arbitrary-tree-root" type="checkbox" 
-                           data-bind="checked: $data['^ot:unrootedTree'] !== true, 
+
+                <label>Tree root is </label>
+                <label for="tree-root-status-false" class="radio" style="padding-left: 10px;">
+                    <input id="tree-root-status-false" type="radio" 
+                           name="tree-root-status" value="false" 
+                           data-bind="checked: $data['^ot:unrootedTree'].toString(), 
                                       click: toggleTreeRootStatus, 
                                       css: viewModel.ticklers.TREES" />
-                    Tree root is biologically correct (not arbitrary) 
+                    biologically correct
                 </label>
+                <label for="tree-root-status-true" class="radio" style="padding-left: 10px;">
+                    <input id="tree-root-status-true" type="radio" 
+                           name="tree-root-status" value="true" 
+                           data-bind="checked: $data['^ot:unrootedTree'].toString(), 
+                                      click: toggleTreeRootStatus, 
+                                      css: viewModel.ticklers.TREES" />
+                    arbitrary (for display only)
+                </label>
+
               <br/>
                 <label for="testtest">Ingroup clade: </label>
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data), 

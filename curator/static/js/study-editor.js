@@ -1431,7 +1431,7 @@ function getRootNodeDescriptionForTree( tree ) {
     // if no specified root node, use the implicit root (first in nodes array)
     var rootNodeID = specifiedRoot ? specifiedRoot : tree.node[0]['@id'];
 
-    var nodeName = ('Unmapped ('+ rootNodeID +')');
+    var nodeName = ('Unnamed internal node');
     $.each(tree.node, function(i, node) {
         // Find the node with this ID and see if it has an assigned OTU
         if (node['@id'] === rootNodeID) {
@@ -1451,15 +1451,7 @@ function getRootNodeDescriptionForTree( tree ) {
         }
         return true;  // skip to next node
     });
-
-    if (specifiedRoot) {
-        return nodeName +" [explicit]";
-    } 
-    if (unrootedTree) {
-        return "No root [explicit]";
-    } else {
-        return nodeName +" [implicit]";
-    }
+    return nodeName;
 }
 function getRootedStatusForTree( tree ) {
     // return display-ready description ('<span class="caution">Tree root is arbitrary</span>', ...)
@@ -2187,10 +2179,12 @@ function setTreeRoot( treeOrID, rootNodeOrID ) {
     nudgeTickler('TREES');
 }
 
-function toggleTreeRootStatus( tree ) {
+function toggleTreeRootStatus( tree, event ) {
     // toggle its ^ot:unrootedTree property (should always be present)
+    // NOTE that radio-button values are strings, so we convert to boolean below
     var currentState = tree['^ot:unrootedTree'];
-    tree['^ot:unrootedTree'] = !(currentState);
+    var newState = $(event.target).val() === 'true';
+    tree['^ot:unrootedTree'] = newState;
     
     // choosing non-arbitrary (biologically correct) rooting should implicitly
     // select the current root node, since this signals intent
