@@ -1276,8 +1276,10 @@ Please review and re-submit.</pre>
         {{ if viewOrEdit == 'EDIT': }}
             Edit tree
             <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
-                   data-bind="value: $data['@label'], valueUpdate:
-                   'afterkeydown', event: { keyup: nudge.TREES, change: nudge.TREES }"
+                   data-bind="value: $data['@label'], 
+                              valueUpdate: 'afterkeydown', 
+                              event: { keyup: nudge.TREES, change: nudge.TREES }
+                              "
             />
         {{ else: }}
             View tree
@@ -1293,24 +1295,31 @@ Please review and re-submit.</pre>
             <!-- editable tree properties here -->
               <div class="pull-left" style="width: 48%;">
                 <label>Tree type: </label>
-                <input type="text" data-bind="value: $data['^ot:curatedType'], valueUpdate: 'afterkeydown', event: { keyup: nudge.TREES, change: nudge.TREES }"></input>
+                <input type="text" data-bind="value: $data['^ot:curatedType'], 
+                                              valueUpdate: 'afterkeydown', 
+                                              event: { keyup: nudge.TREES, change: nudge.TREES }, 
+                                              css: viewModel.ticklers.TREES"></input>
               <br/>
                 <label for="testtest">Root node: </label>
-                <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
+                <strong data-bind="text: getRootNodeDescriptionForTree($data), 
+                                   css: viewModel.ticklers.TREES"></strong>
               <br/>
                 <label for="arbitrary-tree-root" class="checkbox" style="padding-left: 12px; position: relative; top: -4px;">
                     <input id="arbitrary-tree-root" type="checkbox" 
                            data-bind="checked: $data['^ot:unrootedTree'] !== true, 
-                                      click: toggleTreeRootStatus" />
+                                      click: toggleTreeRootStatus, 
+                                      css: viewModel.ticklers.TREES" />
                     Tree root is biologically correct (not arbitrary) 
                 </label>
               <br/>
                 <label for="testtest">Ingroup clade: </label>
-                <strong data-bind="text: getInGroupCladeDescriptionForTree($data)"></strong>
+                <strong data-bind="text: getInGroupCladeDescriptionForTree($data), 
+                                   css: viewModel.ticklers.TREES"></strong>
               </div>
               <div class="pull-left" style="width: 48%;">
                 <label>Mapped leaf nodes: </label>
-                <span data-bind="html: getMappedTallyForTree($data)">?? / ??</span>
+                <span data-bind="html: getMappedTallyForTree($data), 
+                                 css: viewModel.ticklers.TREES">?? / ??</span>
               <br/>
 
                 <label>Tags: </label>
@@ -1318,7 +1327,8 @@ Please review and re-submit.</pre>
                         onchange="updateElementTags(this);"
                         data-bind="attr: {'treeid': $data['@id'] },
                                    options: getTags( getTreeByID($data['@id']) ), 
-                                   event: { keyup: nudge.TREES, change: nudge.TREES }">
+                                   event: { keyup: nudge.TREES, change: nudge.TREES }, 
+                                   css: viewModel.ticklers.TREES">
                 </select>
 
               <br/>
@@ -1339,13 +1349,16 @@ Please review and re-submit.</pre>
                     },
                     value: $data['^ot:branchLengthMode'],
                     event: { keyup: nudge.TREES, change: nudge.TREES },
-                    optionsCaption: 'Choose...'">TYPE</select>
+                    optionsCaption: 'Choose...', 
+                    css: viewModel.ticklers.TREES
+                    ">TYPE</select>
 
                <!-- ko if: $data['^ot:branchLengthMode'] === 'ot:time' -->
                 <label style="margin-left: 10px;">Time unit: </label>
                 <select data-bind="options: ['Myr'],
                     value: $data['^ot:branchLengthTimeUnit'],
-                    event: { keyup: nudge.TREES, change: nudge.TREES }
+                    event: { keyup: nudge.TREES, change: nudge.TREES }, 
+                    css: viewModel.ticklers.TREES
                     ">TYPE</select>
                <!-- /ko -->
 
@@ -1353,7 +1366,8 @@ Please review and re-submit.</pre>
                 <label style="margin-left: 10px;">&nbsp;</label>
                 <input type="text" data-bind="value: $data['^ot:branchLengthDescription'],
                     valueUpdate: 'afterkeydown',
-                    event: { keyup: nudge.TREES, change: nudge.TREES }
+                    event: { keyup: nudge.TREES, change: nudge.TREES },
+                    css: viewModel.ticklers.TREES
                 " placeholder="Describe here"></input>
                <!-- /ko -->
               </div>
