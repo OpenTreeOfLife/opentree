@@ -87,6 +87,7 @@ body {
 
 <script type='text/javascript'>
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
+    var authorSafeID = '{{= auth.user and auth.user.username.encode('ascii', 'ignore') or 'ANONYMOUS' }}';
     var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
     var API_create_study_POST_url = '{{=API_create_study_POST_url}}';

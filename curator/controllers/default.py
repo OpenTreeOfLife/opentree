@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
 from opentreewebapputil import get_opentree_services_method_urls
-from peyotl.manip import merge_otus_and_trees
+from peyotl.manip import merge_otus_and_trees, iter_trees
 import json
+#import pdb
 # this file is released under public domain and you can use without limitations
 import re
 
@@ -176,6 +177,7 @@ def to_nexson():
         
     '''
     _LOG = get_logger(request, 'to_nexson')
+    ##pdb.set_trace()
     orig_args = {}
     is_upload = False
     if 'uploadId' in request.vars:
@@ -407,6 +409,39 @@ def to_nexson():
         r.update(bundle_properties)
         r['numberOfTrees'] = num_trees
         r['nexml2json'] = NEXSON_VERSION
+        read_inp_format = bundle_properties.get('inputFormat', '')
+        read_filename = bundle_properties.get('filename', '')
+
+        for tree_tup in iter_trees(nex):
+            tree_group_id, tree_id, imported_tree = tree_tup
+            # create (or replace) the file information for this imported tree
+            imported_tree[ u'^ot:messages' ] = { 
+                u'message': [ { 
+                    u'@id': "message{u}".format(u=unique_id),
+                    u'@code': u'SUPPORTING_FILE_INFO',
+                    u'@humanMessageType': u'NONE',
+                    u'@severity': u'INFO',
+                    u'@wasGeneratedBy': u'opentree.2nexml',
+                    # TODO: Do we need to add this agent to the main study?
+                    u'data': {
+                        u'@movedToPermanentArchive': False,
+                        u'files': {
+                            u'file': [
+                                {
+                                    u'@filename': read_filename,
+                                    u'@size': shutil.os.path.getsize(INPUT_FILEPATH),
+                                    u'@sourceForTree': tree_id,
+                                    u'@type': read_inp_format,
+                                    u'@url': "/curator/default/to_nexson?output=input&uploadid={u}".format(u=unique_id),
+                                    u'description': {
+                                        u'$': "Source data for tree '{u}'".format(u=tree_id)
+                                    }
+                                }
+                            ]
+                        }
+                    }
+                }]
+            }
         return r
-    assert (output == 'ot:nexson')
+    assert (False)
 

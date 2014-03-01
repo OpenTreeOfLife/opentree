@@ -15,6 +15,10 @@ try:
 except:
     pass  #@TEMP probably should log this event...
 
+# add our GitHub client secret from a separate file (kept out of source repo)
+if os.path.isfile("applications/%s/private/GITHUB_CLIENT_SECRET" % request.application):
+    GITHUB_CLIENT_SECRET = open("applications/%s/private/GITHUB_CLIENT_SECRET" % request.application).read().strip()
+    conf.set("apis", "github_client_secret", GITHUB_CLIENT_SECRET)
 
 #########################################################################
 ## This scaffolding model makes your app work on Google App Engine too

@@ -16,24 +16,79 @@ function fullToCompactReference( fullReference ) {
 }
 
 function showErrorMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-success')
-               .addClass('alert-error').slideDown();
+    showFooterMessage(msg, 'error');
 }
 
 function showInfoMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-error')
-               .removeClass('alert-success')
-               .addClass('alert-info').slideDown();
+    showFooterMessage(msg, 'info');
 }
 
 function showSuccessMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-error')
-               .addClass('alert-success').slideDown();
+    showFooterMessage(msg, 'success');
+}
+
+var footerMessageCloseID = null;
+function showFooterMessage(msg, msgType) {
+    var $flashArea = $('.flash');  // should be just one
+    
+    // hide any previous message and clear its timeout
+    $flashArea.hide();
+    clearTimeout(footerMessageCloseID);
+    footerMessageCloseID = null;
+
+    // replace its contents (may include markup!)
+    $flashArea.find('.message').html(msg);
+
+    // incoming msgType should be one of the preset values below
+    var msgTypes = ['info', 'success', 'error'];
+    $.each(msgTypes, function(i, type) {
+        var className = ('alert-'+ type);
+        if (type === msgType) {
+            $flashArea.addClass( className );
+        } else {
+            $flashArea.removeClass( className );
+        }
+    });
+    
+    // enable the close widget
+    $flashArea.find('#closeflash')
+        .unbind('click')
+        .click( hideFooterMessage );
+        
+    // some message types should close automatically
+    switch( msgType ) {
+        case 'info':
+        case 'success':
+            footerMessageCloseID = setTimeout( hideFooterMessage, 5000 ); 
+            break;
+        case 'error':
+            // these should stay until user dismisses
+            break;
+    }
+
+    $flashArea.slideDown();
+}
+
+function hideFooterMessage( option ) {
+    if (option === 'FAST') {
+        $('.flash').hide();
+    } else {
+        $('.flash').fadeOut();
+    }
+}
+
+function toggleFlashErrorDetails( link ) {
+    var $clicked = $(link);
+    var $details = $clicked.nextAll('.error-details');
+    if ($details.is(':visible')) {
+        $details.slideUp(function() {
+            $clicked.text('Show details');
+        });
+    } else {
+        $details.slideDown(function() {
+            $clicked.text('Hide details');
+        });
+    }
 }
 
 function makeArray( val ) {
@@ -84,9 +139,37 @@ function updateClearSearchWidget( searchFieldSelector ) {
         }
     }
 
-
 }
 
+function getPageNumbers( pagedArray ) {
+    // Generates an array of display numbers (1-based) for use with Knockout's
+    // foreach binding. Let's build this with one-based values for easy display.
+    var pageNumbers = [ ];
+    var howManyPages = Math.ceil(pagedArray().length / pagedArray.pageSize);
+    for (var i = 1; i <= howManyPages; i++) {
+        pageNumbers.push( i );
+    }
+    return pageNumbers;
+}
+
+function isVisiblePage( pageNum, pagedArray ) {
+    var howManyPages = Math.ceil(pagedArray().length / pagedArray.pageSize);
+    if (howManyPages <= 12) { 
+        return true; 
+    }
+    // show first, last, and nearby pages
+    if (pageNum < 3) {
+        return true;
+    }
+    if (pageNum > (howManyPages - 2)) {
+        return true;
+    }
+    var currentPage = pagedArray.current();
+    if (Math.abs(currentPage - pageNum) < 3) {
+        return true; 
+    }
+    return false;
+}
 /*
 var cladeNameTimeoutID = null;
 function loadMissingFocalCladeNames() {

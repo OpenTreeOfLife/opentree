@@ -1,7 +1,7 @@
 /*
  * Client-side behavior for the Open Tree curation home page and personalized dashboard
  *
- * This uses the OTOL API to fetch and store studies and trees remotely. In
+ * This uses the Open Tree API to fetch and store studies and trees remotely. In
  * this initial version, we'll load metadata for all studies in the system,
  * then use client-side code to filter and sort them.
  */
@@ -319,17 +319,6 @@ function getSuggestedActions(study) {
     return '<a href="#"'+'>'+ study.nextActions()[0] +'</a'+'>';
 }
 */
-
-function getPageNumbers( pagedArray ) {
-    // Generates an array of display numbers (1-based) for use with Knockout's
-    // foreach binding. Let's build this with one-based values for easy display.
-    var pageNumbers = [ ];
-    var howManyPages = Math.ceil(pagedArray().length / pagedArray.pageSize);
-    for (var i = 1; i <= howManyPages; i++) {
-        pageNumbers.push( i );
-    }
-    return pageNumbers;
-}
 
 function toggleStudyDetails( clicked ) {
     var $toggle = $(clicked);
