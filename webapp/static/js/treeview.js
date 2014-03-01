@@ -835,6 +835,11 @@ function showObjectProperties( objInfo, options ) {
                         nodeSection.displayedProperties['Taxonomic rank'] = fullNode.taxRank;
                     }
 
+                    if (typeof fullNode.nleaves !== 'undefined') {
+                        nodeSection.displayedProperties['Organisms within this clade'] = fullNode.nleaves;
+                        // OR 'Clade members'? 'Leaf taxa'?
+                    }
+
                     // TODO: show ALL source trees (phylo-trees + IDs) for this node
 
                     objID = fullNode.sourceID ? fullNode.sourceID : fullNode.nodeid;
