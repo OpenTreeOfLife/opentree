@@ -240,10 +240,10 @@ function loadSelectedStudy(id) {
             // Badgerfish conversion has replaced it with a single item
             if ('^ot:candidateTreeForSynthesis' in data.nexml) {
                 data.nexml['^ot:candidateTreeForSynthesis'].candidate = 
-                    makeArray(data.nexml['^ot::candidateTreeForSynthesis'].candidate);
+                    makeArray(data.nexml['^ot:candidateTreeForSynthesis'].candidate);
             } else {
                 data.nexml['^ot:candidateTreeForSynthesis'] = {
-                    'candidate': []
+                    'candidate': [ ]
                 }
             }
 
@@ -633,14 +633,20 @@ function loadSelectedStudy(id) {
                         var itsAgent = getAgentForAnnotationEvent( annotation );
                         var itsMessages = getMessagesForAnnotationEvent( annotation );
 
-                        var itsType = itsMessages ? itsMessages[0]['@code'] : ""; // TODO: incorporate all messages?
+                        var itsType = itsMessages && (itsMessages.length > 0) ? 
+                                itsMessages[0]['@code'] : 
+                                ""; // TODO: incorporate all messages?
                         ///var itsLocation = "Study"; // TODO
                         var itsSubmitter = itsAgent['@name'];
-                        var itsMessageText = itsMessages ? 
-                            $.map(itsMessages, function(m) { return m['humanMessage'] ? m['@humanMessage'] : ""; }).join('|') :
-                            ""; 
+                        var itsMessageText = itsMessages && (itsMessages.length > 0) ? 
+                                $.map(itsMessages, function(m) { 
+                                    return m['humanMessage'] ? m['@humanMessage'] : ""; 
+                                }).join('|') :
+                                ""; 
                         var itsSortDate = annotation['@dateCreated'];
-                        if (!matchPattern.test(itsType) && !matchPattern.test(itsSubmitter) && !matchPattern.test(itsMessageText)) {
+                        if (!matchPattern.test(itsType) && 
+                            !matchPattern.test(itsSubmitter) && 
+                            !matchPattern.test(itsMessageText)) {
                             return false;
                         }
 
@@ -2852,8 +2858,13 @@ function getSupportingFiles(nexml) {
     if (!filesAnnotation) {
         return null;
     }
-    // return its message with the interesting parts
-    return getMessagesForAnnotationEvent( filesAnnotation, nexml )[0]
+
+    var filesMessages = getMessagesForAnnotationEvent( filesAnnotation, nexml );
+    if (filesMessages.length > 0) {
+        // return its message with the interesting parts
+        return filesMessages[0];
+    }
+    return null;
 }
 function addSupportingFileFromURL() {
     // TODO: support file upload from desktop
@@ -3014,8 +3025,13 @@ function getOTUMappingHints(nexml) {
     if (!hintsAnnotation) {
         return null;
     }
-    // return its message with the interesting parts
-    return getMessagesForAnnotationEvent( hintsAnnotation, nexml )[0];
+    
+    var hintsMessages = getMessagesForAnnotationEvent( hintsAnnotation, nexml );
+    if (hintsMessages.length > 0) {
+        // return its message with the interesting parts
+        return hintsMessages[0];
+    }
+    return null;
 }
 function addSubstitution( clicked ) {
     var subst = cloneFromNexsonTemplate('mapping substitution');
