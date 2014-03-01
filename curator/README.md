@@ -8,36 +8,45 @@ from the NEXUS class library. That is a C++ tool by Paul Lewis and Mark Holder.
 
 See install-ncl.sh for details.
 
-Note that the install-ncl.sh appends settings to the private/config file that controls the web2py configuration. So this script should NOT be run multiple times. 
-
-If you do install NCL then you should have access to a web-service at .../curator/default/to_nexml
+If you do install NCL then you should have access to a web-service at .../curator/default/to_nexson
 
 You can POST to that URL for conversion of NEXUS, newick, or NeXML to NeXSON
 Required arguments:
-    "uploadid" - A unique string for this upload. It needs
-        to match the pattern '^[-_.a-zA-Z0-9]{5,85}$'
-        clash with a previously used ID will cause data from the
-        previous upload to be returned.
     "file" should be a multipart-encoded file to be translated to NexSON
           OR
     "content" which is a string that contains the content of the file
         format. "content" is checked if "file" is not provided.
+Required arguments for subsequent invocations
+    "uploadId" - A unique string for this upload returned as 
+        the uploadid value in the original response. This should NOT be 
+        used in the invocation that uploads a file.
 Optional arguments:
-    "output" one of ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
-        the default is ot:nexson. This specifies what is to be returned.
+    "output" one of ['nexson', 'nexml', 'input', 'provenance']
+        the default is nexson. This specifies what is to be returned.
         Possible values are: 
-        "ot:nexson" is the Open Tree NexSON (with character data culled).
+        "nexson" is the Open Tree NexSON (with character data culled).
             This should be the first call to this uploadid. Subsequent
             calls can retrieve intermediates. JSON.
-        "nexson" is the complete NexSON version of the data. JSON.
         "nexml" is the NeXML version of the file. This is an intermediate
             for the NexSON. XML.
         "input" returns the uploaded file. text/plain.
         "provenance" returns a simple, ad-hoc JSON with initial call details.
     "dataDeposit" should be a URL that should be added to the meta element
         in the Open Tree NexSON object.
-    "inputformat" should be "nexus", "newick", or "nexml"
+    "inputFormat" should be "nexus", "newick", or "nexml"
         default is "nexus"
+    "idPrefix" should be an empty string (or all whitespace) if you want 
+            to use the firstAvailableXXXID args:
+        firstAvailableEdgeID,
+        firstAvailableNodeID,
+        firstAvailableOTUID,
+        firstAvailableOTUsID,
+        firstAvailableTreeID,
+        firstAvailableTreesID
+      If idPrefix is not all whitespace it will be stripped, 
+        the NCLconverter default names are used
+      If idPrefix is not supplied, a uuid will be the prefix for the 
+        names and the names will follow the NCL converter defaults
 
 The service operates by:
     1. taking the input file and a unique string (could be a uuid).
@@ -50,6 +59,23 @@ The service operates by:
         but does not add any open-tree specific fields to the NexSON.
     7. some more python code converts the NeXSON to "open tree NexSON". Currently this just deletes the "characters" element and adds a dataDeposit meta element. We probably need to do more to make the rest of the open tree tools happy with this file.
 
-Primarily for the sake of debugging, the intermediates can be fetched using the "output" argument.
+The returned object (for the any ot:nexson format invocation) will have 2 keys:
+    1. 'data' the nexson blob, and 
+    2. 'uploadId' the uploadid needed for subsequent calls to get the same data
+        or intermediates.
+    3. numberOfTrees which is a sum over all trees elements.
+    4. "dateTranslated": "2014-02-23T05:17:12.607189", 
+and several of the arguments that are sent in in the original invocation 
+are echoed back, including:
+    'newTreesPreferred': true/false
+    'dataDeposit': 'http://example.org', 
+    'filename': 'avian_ovomucoids.tre', 
+    'idPrefix': '', 
+    'inputFormat': 'newick', 
+    'nexml2json': '0.0.0', 
+Note that even if newTreesPreferred is True, no trees are flagged as
+being candidates for synthesis.
+
+Primarily for the sake of debugging, the intermediates can be fetched using the "output" argument. This can be one of: 'nexson', 'nexml', 'input', 'provenance'
 
 See test/test.sh for two example invocations of this web-service.

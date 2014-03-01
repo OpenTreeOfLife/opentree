@@ -100,7 +100,7 @@ def get_external_proc_parent(request):
             
 
 
-def get_external_proc_dir_for_upload(request, subdir, upload_id):
+def get_external_proc_dir_for_upload(request, subdir, upload_id, create_dir):
     '''
     Returns the absolute path to a directory that is can serve as the parent
     directory for external processes that pertain to particular uploaded_file.
@@ -118,12 +118,12 @@ def get_external_proc_dir_for_upload(request, subdir, upload_id):
     '''
     _LOG = None
     fp = get_external_proc_parent(request)
-    if not os.path.exists(fp):
+    if create_dir and (not os.path.exists(fp)):
         os.makedirs(fp)
         _LOG = get_logger(request, 'externalproc')
         _LOG.info('Created dir "%s"' % fp)
     working_dir = os.path.join(fp, subdir, upload_id)
-    if not os.path.exists(working_dir):
+    if create_dir and (not os.path.exists(working_dir)):
         os.makedirs(working_dir)
         if _LOG is None:
             _LOG = get_logger(request, 'externalproc')
