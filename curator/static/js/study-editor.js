@@ -2463,7 +2463,7 @@ function submitNewTree( form ) {
     
     $('#ajax-busy-bar').show();
 
-    $('[name=uploadid]').val( generateTreeUploadID() );
+    // @MTH:"no longer needed on upload"  $('[name=uploadid]').val( generateTreeUploadID() );
     
     $.ajax({
         type: 'POST',
@@ -2504,7 +2504,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     //console.log("status: "+ jqXHR.status);
     //console.log("statusText: "+ jqXHR.statusText);
     // convert raw response to JSON
-    var data = $.parseJSON(jqXHR.responseText);
+    var data = $.parseJSON(jqXHR.responseText)['data']; //@MTH:"returned nexson now inside a 'data' property" 
     //console.log("data: "+ data);
 
     // move its collections into the view model Nexson
