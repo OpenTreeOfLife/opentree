@@ -193,7 +193,7 @@ function loadSelectedStudy(id) {
             showErrorMessage('Sorry, there was an error loading this study.');
             return;
         },
-        success: function( data, textStatus, jqXHR ) {
+        success: function( response, textStatus, jqXHR ) {
             // this should be properly parsed JSON
 
             // report errors or malformed data, if any
@@ -201,6 +201,11 @@ function loadSelectedStudy(id) {
                 showErrorMessage('Sorry, there was an error loading this study.');
                 return;
             }
+            if (typeof response !== 'object' || typeof(response['data']) == 'undefined') {
+                showErrorMessage('Sorry, there is a problem with the study data.');
+                return;
+            }
+            var data = response['data'];
             if (typeof data !== 'object' || typeof(data['nexml']) == 'undefined') {
                 showErrorMessage('Sorry, there is a problem with the study data.');
                 return;
