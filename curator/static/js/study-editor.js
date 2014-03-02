@@ -189,6 +189,10 @@ function loadSelectedStudy(id) {
             'output_nexml2json': '1.0.0',
             'auth_token': authToken
         },
+        error: function(jqXHR, textStatus, errorThrown) {
+            showErrorMessage('Sorry, there was an error loading this study.');
+            return;
+        },
         success: function( data, textStatus, jqXHR ) {
             // this should be properly parsed JSON
 
