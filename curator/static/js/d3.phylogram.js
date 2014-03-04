@@ -212,7 +212,7 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("width", w + 300)
         .attr("height", h + 30)
       .append("svg:g")
-        .attr("transform", "translate(100, 20)");
+        .attr("transform", "translate(120, 20)");
     var nodes = tree(nodes);
     
     if (options.skipBranchLengthScaling) {
@@ -264,6 +264,9 @@ if (!d3) { throw "d3 wasn't included!"};
     var path_links = vis.selectAll("path.link")
         .data(tree.links(nodes), function(d) { return d.source['@id'] +'_'+ d.target['@id']; });
 
+    var path_link_triggers = vis.selectAll("path.link-trigger")
+        .data(tree.links(nodes), function(d) { return d.source['@id'] +'_'+ d.target['@id'] +'_trigger'; });
+
     var g_nodes = vis.selectAll("g.node")
         .data(nodes, function(d) { return d['@id']; });
 
@@ -272,15 +275,28 @@ if (!d3) { throw "d3 wasn't included!"};
     path_links
         .attr("stroke", "#aaa");
     
+    path_link_triggers
+        .attr("stroke", "orange");
+
     
     // ENTER (only affects new links; do one-time initialization here)
     path_links
-      .enter().append("svg:path")
-        .attr("class", "link")
-        .attr("fill", "none")
-        .attr("stroke", "#f33")
-        .attr("stroke-width", "4px");
+      .enter()
+          .append("svg:path")                   // styled (visible) edge
+            .attr("class", "link")
+            .attr("fill", "none")
+            .attr("stroke", "#f33")
+            .attr("stroke-width", "4px");
     
+    path_link_triggers
+      .enter()
+          .append("svg:path")                   // "hit area" for clicking edge
+            .attr("class", "link-trigger")
+            .attr("fill", "none")
+            .attr("stroke", "red")
+            .attr("stroke-width", "4px")
+            //.attr('pointer-events', 'all')
+
     g_nodes
       .enter()
         .append("svg:g")
@@ -297,6 +313,10 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("d", diagonal)
         .attr("class", function(d) { return "link "+ (d.source.ingroup ? "ingroup" : "outgroup"); });
         
+    path_link_triggers
+        .attr("d", diagonal)
+        .attr("class", function(d) { return "link-trigger "+ (d.source.ingroup ? "ingroup" : "outgroup"); });
+
     g_nodes
         .attr("class", function(n) {
           if (n.children) {
@@ -314,6 +334,10 @@ if (!d3) { throw "d3 wasn't included!"};
 
     // EXIT
     path_links
+      .exit()
+        .remove();
+
+    path_link_triggers
       .exit()
         .remove();
 
@@ -341,17 +365,17 @@ if (!d3) { throw "d3 wasn't included!"};
           .attr('fill', '#ccc')
           ///.text(function(d) { return d.length; });
           .text(function(d) {
-              if (options.skipBranchLengthScaling) {
-                  return d.name; 
-              } else {
-                  return (d.name + ' ('+d.length+')'); 
-              }
+              // return (d.name + ' ('+d.length+')'); 
+              return d.name; 
           });
 
       vis.selectAll('g.root.node text')
           .attr("dx", -8)
           .attr("dy", 3)
-          .text(function(d) { return (d.name + ' (root)'); });
+          .text(function(d) { 
+              //return (d.name + ' (root)'); 
+              return d.name; 
+          });
 
       vis.selectAll('g.leaf.node text')
         .attr("dx", 8)
@@ -359,11 +383,8 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("text-anchor", "start")
         .attr('fill', 'black')
         .text(function(d) { 
-            if (options.skipBranchLengthScaling) {
-                return d.name; 
-            } else {
-                return (d.name + ' ('+d.length+')'); 
-            }
+            // return (d.name + ' ('+d.length+')'); 
+            return d.name; 
         });
     }
     

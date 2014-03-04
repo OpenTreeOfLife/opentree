@@ -855,7 +855,6 @@ function toggleBranchLengthsInViewer(cb) {
     // checkbox enables/disables branch-length display (and labeling?) in
     // tree-view popup
     hidingBranchLengths = $(cb).is(':checked');
-    console.log('>>>>> CHECKED ? '+ hidingBranchLengths);
     // fetch tree ID from popup's widgets
     var currentTreeID = $('#tree-tags').attr('treeid');
     if (currentTreeID) {
@@ -2093,6 +2092,10 @@ console.log("> done sweeping edges");
                 $.each(childEdges, function(index, edge) {
                     var childID = edge['@target'];
                     var childNode = getTreeNodeByID(null, childID);
+                    if (!('@id' in childNode)) {
+                        console.error(">>>>>>> childNode is a <"+ typeof(childNode) +">");
+                        console.error(childNode);
+                    }
                     itsChildren.push( childNode );
                 });
                 return itsChildren;
@@ -2108,7 +2111,7 @@ console.log("> done sweeping edges");
             if (!d.children) {
                 itsClass += " leaf";
             }
-            if (d['@id'] === specifiedRoot) {
+            if (d['@id'] === rootNodeID) {
                 itsClass += " specifiedRoot";
             }
             if (d['@id'] === inGroupClade) {
@@ -2128,6 +2131,18 @@ console.log("> done sweeping edges");
             showNodeOptionsMenu( tree, d, nodePageOffset, importantNodeIDs );
         });
 
+    // (re)assert standard hover+click behavior for edges
+    vizInfo.vis.selectAll('path')
+        .on('click', function(d) {
+            d3.event.stopPropagation();
+            // show a menu with appropriate options for this node
+            var mousePageOffset = {
+                left: d3.event.pageX,
+                top: d3.event.pageY 
+            };
+            showEdgeOptionsMenu( tree, d, mousePageOffset, importantNodeIDs );
+        });
+
     // (re)assert standard click behavior for main vis background
     d3.select('#tree-viewer')  // div.modal-body')
         .on('click', function(d) {
@@ -2139,8 +2154,14 @@ console.log("> done sweeping edges");
     console.log("> done re-asserting click behaviors");
 }
 
-function setTreeRoot( treeOrID, rootNodeOrID ) {
+function setTreeRoot( treeOrID, rootingInfo ) {
     // (Re)set the node that is the primary root for this tree, if known
+    // 'rootingInfo' can be any of
+    //  - a single node (make this the new root)
+    //  - a single root-node ID (for the new root)
+    //  - an array of nodes or IDs (add a root between these)
+    //  - null (un-root this tree)
+    
     var tree = null;
     if (typeof(treeOrID) === 'object') {
         tree = treeOrID;
@@ -2150,16 +2171,30 @@ function setTreeRoot( treeOrID, rootNodeOrID ) {
 
     // make sure we have a proper node ID
     var newRootNodeID = null;
-    if (rootNodeOrID) {
-        if (typeof(rootNodeOrID) === 'object') {
-            newRootNodeID = rootNodeOrID['@id'];
+    if (!rootingInfo) {
+        // if null, we're un-rooting this tree
+    } else if (typeof rootingInfo === 'string') {
+        // assume this is the ID of the root node
+        newRootNodeID = rootingInfo;
+    } else if ($.isArray(rootingInfo)) {
+        // this is an array of sourceID, targetID
+        // TODO: check for an existing "latent" node between these two
+        var latentRootNode = getTreeNodeBetween( tree, rootingInfo[0], rootingInfo[1] );
+        if (latentRootNode) {
+            // re-root to the latent node
+            newRootNodeID = latentRootNode['@id'];
         } else {
-            newRootNodeID = rootNodeOrID;
+            // create a new node (and edge) to join these nodes
+            var newRootNode = addTreeNodeBetween( tree, rootingInfo[0], rootingInfo[1] );
+            newRootNodeID = newRootNode['@id'];
         }
+    } else {
+        // assume it's a node object
+        newRootNodeID = rootingInfo['@id'];
     }
     if (!newRootNodeID) {
-        console.error("setTreeRoot(): no new root-node ID specified: "+ rootNodeOrID 
-                +" <"+ (typeof rootNodeOrID) +">");
+        console.error("setTreeRoot(): no new root-node ID specified: "+ rootingInfo 
+                +" <"+ (typeof rootingInfo) +">");
         return;
     }
     var newRootNode = getTreeNodeByID(tree, newRootNodeID);
@@ -2206,6 +2241,196 @@ function toggleTreeRootStatus( tree, event ) {
     }
     nudgeTickler('TREES');
     return true; // update the checkbox
+}
+
+function getTreeNodeBetween( tree, nodeID_A, nodeID_B ) {
+    // mostly used to detect "latent" (unused) root nodes
+    var edgesFromA = getTreeEdgesByID( tree, nodeID_A, 'ANY' );
+    var edgesFromB = getTreeEdgesByID( tree, nodeID_B, 'ANY' );
+    
+    // gather the "other" node for each edge of A and B
+    var neighborNodes_A = $.map(edgesFromA, function(e) {
+        return (e['@source'] === nodeID_A) ? e['@target'] : e['@source'];
+    });
+    var neighborNodes_B = $.map(edgesFromB, function(e) {
+        return (e['@source'] === nodeID_B) ? e['@target'] : e['@source'];
+    });
+    var commonNeighbors = $.map(neighborNodes_A,function(n){
+        return $.inArray(n, neighborNodes_B) < 0 ? null : n;}
+    );
+    // we're looking for one common neighbor, possibly a latent root node
+    switch( commonNeighbors.length ) {
+        case 1:
+            return getTreeNodeByID( tree, commonNeighbors[0] );
+
+        case 0:
+            // no such node exists
+            return null;
+
+        default:
+            console.error('getTreeNodeBetween( '+ nodeID_A +', '+ nodeID_B +' ) reports multiple common neighbors!');
+            console.error( commonNeighbors );
+            return null;
+    }
+}
+function addTreeNodeBetween( tree, nodeID_A, nodeID_B ) {
+    // try to add such a node, using our ad-hoc node and edge, as needed
+    var adHocRootID = getAdHocRootID(tree);
+    if ((nodeID_A === adHocRootID) || (nodeID_B === adHocRootID)) {
+        console.warn('addTreeNodeBetween(): One of these nodes is already the ad-hoc root, bailing out now.');
+        return getAdHocRoot(tree);
+    }
+    var edgesFromA = getTreeEdgesByID( tree, nodeID_A, 'ANY' );
+    var edgesFromB = getTreeEdgesByID( tree, nodeID_B, 'ANY' );
+    
+    // if there's a common edge, insert a node there
+    var commonEdges = $.map(edgesFromA,function(n) {
+        return $.inArray(n, edgesFromB) < 0 ? null : n;
+    });
+
+    switch( commonEdges.length ) {
+        case 1:
+            // this is the expected case; retrieve (or create) this tree's ad-hoc root node
+            var adHocRootNode = getAdHocRoot(tree);
+            if (!adHocRootNode) {
+                // create the ad-hoc root node
+                adHocRootNode = {
+                    '@id': getAdHocRootID(tree)
+                };
+                tree.node.push(adHocRootNode);
+            }
+
+            // retrieve (or create) the ad-hoc edge we need
+            var adHocRootEdge = getAdHocEdge(tree);
+            if (!adHocRootEdge) {
+                // create the ad-hoc root edge
+                adHocRootEdge = {
+                    '@id': getAdHocEdgeID(tree),
+                    '@source': getAdHocRootID(tree),
+                    '@target': null  // we'll set this below
+                };
+                tree.edge.push(adHocRootEdge);
+            } else {
+                detachAdHocRootElements(tree);
+                // undo any reversals in the existing ad-hoc edge
+                adHocRootEdge['@source'] = getAdHocRootID(tree);
+            }
+
+            // re-wire the existing edge (and the new one) with minimal changes
+            var existingEdge = commonEdges[0];
+            existingEdge['@source'] = getAdHocRootID(tree);
+            if (existingEdge['@target'] === nodeID_A) {
+                adHocRootEdge['@target'] = nodeID_B;
+            } else {
+                // assume its target is B
+                adHocRootEdge['@target'] = nodeID_A;
+            }
+
+            // force rebuild of node+edge lookups
+            clearFastLookup('NODES_BY_ID');
+            clearFastLookup('EDGES_BY_SOURCE_ID');
+            clearFastLookup('EDGES_BY_TARGET_ID');
+
+            return adHocRootNode;
+
+        case 0:
+            // in principle we could add a node and two edges, but that's out of scope for now
+            console.error('addTreeNodeBetween( '+ nodeID_A +', '+ nodeID_B +' ) reports no common edges!');
+            return null;
+
+        default:
+            console.error('addTreeNodeBetween( '+ nodeID_A +', '+ nodeID_B +' ) reports multiple common edges!');
+            console.error( commonEdges );
+            return null;
+    }
+}
+
+// define special, tree-specific element IDs just once
+function getAdHocRootID(tree) {
+    return (tree['@id'] +'_ROOT');
+}
+function getAdHocEdgeID(tree) {
+    return (tree['@id'] +'_ROOT_EDGE');
+}
+
+// fetch the actual elements (per tree)
+function getAdHocRoot(tree) {
+    // return the node, or null if not found
+    return getTreeNodeByID(tree, getAdHocRootID(tree));
+}
+function getAdHocEdge(tree) {
+    // return the edge, or null if not found
+    var foundEdge = null;
+    $.each(getTreeEdgesByID(tree, getAdHocRootID(tree), 'ANY'), function(index, e) {
+        if (e['@id'] === getAdHocEdgeID(tree)) {
+            foundEdge = e;
+        }
+    });
+    return foundEdge;
+}
+
+// test and manipulate the ad-hoc elements
+function adHocRootInUse( tree ) {
+    return (tree['^ot:specifiedRoot'] === getAdHocRootID(tree));
+}
+function cleanupAdHocRoot( tree ) {
+    // call this before saving study data, to remove unused ad-hoc elements
+    if (!adHocRootInUse(tree)) {
+        removeAdHocRootElements(tree);
+    }
+}
+function detachAdHocRootElements( tree ) {
+    // detach the ad-hoc root node and/or its companion edge from the tree
+    var adHocRootNode = getAdHocRoot(tree);
+    if (adHocRootNode) {
+        var adHocRootEdge = getAdHocEdge(tree);
+        if (adHocRootEdge) {
+            var edgesFromRoot = getTreeEdgesByID( tree, getAdHocRootID(tree), 'ANY' );
+            $.each(edgesFromRoot, function(index, e) {
+                if (e !== adHocRootEdge) {
+                    // attach all "loose ends" to an existing node
+                    if (e['@source'] === getAdHocRootID(tree)) {
+                        e['@source'] = adHocRootEdge['@target'];
+                    } else {
+                        e['@target'] = adHocRootEdge['@target'];
+                    }
+                }
+            });
+
+            // detach the ad-hoc edge from all but the ad-hoc root
+            adHocRootEdge['@target'] = null;
+        }
+    }
+    
+    // force rebuild of edge lookups
+    clearFastLookup('EDGES_BY_SOURCE_ID');
+    clearFastLookup('EDGES_BY_TARGET_ID');
+      
+    // N.B. don't worry about study['^ot:specifiedRoot'] here, since we're
+    // actively re-rooting or doing final cleanup
+}
+function removeAdHocRootElements( tree ) {
+    // N.B. Assumes that the ad-hoc root is not in use, or that we're in the
+    // process of re-rooting
+    if (adHocRootInUse(tree)) {
+        console.warn('removeAdHocRootElements(): ad-hoc root is in use! detaching now...');
+        detachAdHocRootElements(tree);  // just in case
+    }
+    
+    // search and destroy the node and/or edge
+    var adHocRootNode = getAdHocRoot(tree);
+    if (adHocRootNode) {
+        removeFromArray( adHocRootNode, tree.node );
+    }
+    var adHocRootEdge = getAdHocEdge(tree);
+    if (adHocRootEdge) {
+        removeFromArray( adHocRootEdge, tree.edge );
+    }
+
+    // force rebuild of node+edge lookups
+    clearFastLookup('NODES_BY_ID');
+    clearFastLookup('EDGES_BY_SOURCE_ID');
+    clearFastLookup('EDGES_BY_TARGET_ID');
 }
 
 function setTreeIngroup( treeOrID, ingroupNodeOrID ) {
@@ -2382,7 +2607,6 @@ function reverseEdgeDirection( edge ) {
     edge['@target'] = oldSource;
 }
 function getTreeNodeLabel(tree, node, importantNodeIDs) {
-    // TODO: centralize these IDs, no need to keep fetching for each node
     var nodeID = node['@id'];
 
     if (nodeID === importantNodeIDs.inGroupClade) {
@@ -2414,18 +2638,15 @@ function filenameFromFakePath( path ) {
 }
 function updateNewTreeUploadForm() {
     // check all fields, enable/disable button
-    console.log('...updateNewTreeUploadForm...');
     var readyToSubmit = true;
 
     var chosenFormat = $.trim( $('#tree-import-format').val() );
-    console.log(chosenFormat);
     if (chosenFormat === '') { 
         readyToSubmit = false;
     }
 
     var chosenFile = $.trim( $('#treeupload').val() );
     var pastedText = $.trim( $('#new-tree-text').val() );
-    console.log("chosenFile: '"+ chosenFile +"'");
     // either of these is acceptable
     if (pastedText === '' && chosenFile === '') { 
         readyToSubmit = false;
@@ -2433,10 +2654,8 @@ function updateNewTreeUploadForm() {
 
     var $submitBtn = $('[name=new-tree-submit]');
     if (readyToSubmit) {
-        console.log('READY');
         $submitBtn.removeAttr('disabled');
     } else {
-        console.log('NOT ready');
         $submitBtn.attr('disabled', 'disabled');
     }
     return true;
@@ -2463,9 +2682,9 @@ function generateTreeUploadID() {
 function submitNewTree( form ) {
     // NOTE that this should submit the same arguments (except for file
     // data) as the fileupload behavior for #treeupload
-    console.log("submitting tree...");
+    ///console.log("submitting tree...");
     var submitURL = $(form).attr('action');
-    console.log(submitURL);
+    ///console.log(submitURL);
     
     $('#ajax-busy-bar').show();
 
@@ -2487,7 +2706,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     
     $('#ajax-busy-bar').hide();
 
-    console.log('submitNewTree(): done! textStatus = '+ textStatus);
+    ///console.log('submitNewTree(): done! textStatus = '+ textStatus);
     // report errors or malformed data, if any
     if (textStatus !== 'success') {
         var errMsg; 
@@ -2894,7 +3113,7 @@ function addSupportingFileFromURL() {
             // creation method should return either our JSON structure describing the new file, or an error
             $('#ajax-busy-bar').hide();
 
-            console.log('addSupportingFileFromURL(): done! textStatus = '+ textStatus);
+            ///console.log('addSupportingFileFromURL(): done! textStatus = '+ textStatus);
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
                 showErrorMessage('Sorry, there was an error adding this file.');
@@ -3560,6 +3779,56 @@ function hideNodeOptionsMenu( ) {
     if (nodeMenuHolder.length > 0) {
         nodeMenuHolder.remove();
     }
+}
+
+function showEdgeOptionsMenu( tree, edge, nodePageOffset, importantNodeIDs ) {
+    // This is a Bootstrap-style menu whose pointer is centered on the
+    // target edge. It borrows most style and some behavior from the
+    // node-options menu.
+    var nodeMenu = $('#node-menu');
+    if (nodeMenu.length === 0) {
+        // provide the needed ancestor classes, but minimize the surrounding "navbar"
+        $('body').append('<div id="node-menu-holder" class="navbar" style="height: 0; position: static;"><ul class="nav" style="height: 0; position: static;"><li class="dropdown-open"><ul id="node-menu" class="dropdown-menu"></ul></li></div>');
+        nodeMenu = $('#node-menu');
+    } else {
+        nodeMenu.empty(); // clear any prior menu items
+    }
+    nodeMenu.hide();
+    // show appropriate choices for this node
+    // if (node['@root'] === 'true') ?
+    var edgeID = edge['@id'];
+    // edge.source;
+    // edge.target;
+
+    // general node information first, then actions
+    nodeMenu.append('<li class="node-information"></li>');
+    var nodeInfoBox = nodeMenu.find('.node-information');
+    nodeInfoBox.append('<span class="node-name"><span style="font-weight: normal;">Source: </span>'+ getTreeNodeLabel(tree, edge.source, importantNodeIDs) +'</span>');
+    nodeInfoBox.append('<br/><span class="node-name"><span style="font-weight: normal;">Target: </span>'+ getTreeNodeLabel(tree, edge.target, importantNodeIDs) +'</span>');
+    if ('length' in edge.target) {
+        nodeInfoBox.append('<div>Edge length: '+ edge.target.length +'</div>');
+    }
+
+    var availableForRooting = (edge.source['@id'] !== importantNodeIDs.treeRoot) && (edge.target['@id'] !== importantNodeIDs.treeRoot);
+    if (availableForRooting && (viewOrEdit === 'EDIT')) {
+        nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', [\''+ edge.source['@id'] +'\', \''+ edge.target['@id'] +'\'] ); return false;">Re-root from this edge</a></li>');
+    }
+
+    if (viewOrEdit === 'EDIT') {
+        nodeInfoBox.after('<li class="divider"></li>');
+    }
+
+    // show the menu 
+    var pointerNudge = {x: -13, y: 8};
+    nodeMenu.css({
+        "left": (Math.round(nodePageOffset.left + pointerNudge.x) +"px"),
+        "top": (Math.round(nodePageOffset.top + pointerNudge.y) +"px"),
+        "z-index": 10000  // required to get above modal window
+    });
+    nodeMenu.show();
+    // hide this menu if we hide the modal tree viewer OR scroll the view
+    $('#tree-viewer *[data-dismiss=modal], .modal-backdrop').click( hideNodeOptionsMenu );
+    $('#tree-viewer .modal-body').scroll( hideNodeOptionsMenu );
 }
 
 function clearD3PropertiesFromTree(tree) {

@@ -72,18 +72,18 @@ body {
 }
 /* preferred ot:specifiedRoot */
 .node.specifiedRoot circle {
-  fill: #f55;
+  fill: steelblue;
 }
 .node.specifiedRoot text {
-  fill: #f77;
+  fill: steelblue;
   font-size: 1.3em;
 }
 /* even more preferred ot:specifiedRoot */
 .node.inGroupClade circle {
-  fill: #f5f;
+  fill: black;
 }
 .node.inGroupClade text {
-  fill: #f7f;
+  fill: black;
   font-size: 1.3em;
 }
 
@@ -111,10 +111,20 @@ body {
     color: #888;
 }
 .dropdown-menu > li.node-information .node-type.inGroupClade {
-    color: #f7f;
+    color: steelblue;
 }
 .dropdown-menu > li.node-information .node-type.specifiedRoot {
-    color: #f77;
+    color: steelblue;
+}
+
+.link-trigger {
+  fill: none;
+  stroke: red;
+  stroke-width: 6.0px;
+  stroke-opacity: 0;
+}
+.link-trigger:hover {
+  stroke-opacity: 0.5;
 }
 
 .link {
