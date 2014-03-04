@@ -2089,6 +2089,15 @@ console.log("> done sweeping edges");
                 var parentID = d['@id'];
                 var itsChildren = [];
                 var childEdges = getTreeEdgesByID(null, parentID, 'SOURCE');
+
+                // If this node has one child, it's a latent root-node that
+                // should be hidden in the tree view.
+                if (childEdges.length === 1) {
+                    // treat ITS child node as my immediate child in the displayed tree
+                    var onlyChildNodeID = childEdges[0]['@target'];
+                    childEdges = getTreeEdgesByID(null, onlyChildNodeID, 'SOURCE');
+                }
+
                 $.each(childEdges, function(index, edge) {
                     var childID = edge['@target'];
                     var childNode = getTreeNodeByID(null, childID);
