@@ -439,6 +439,7 @@ div.flash {
     right: 0;
     bottom: 0;
     margin-bottom: 0;
+    z-index: 10;
 }
 
 div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:pointer;}
@@ -514,6 +515,15 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .navbar-inner .pagination {
     margin: 0.5em 0 0;
 }
+.pagination-small ul > li > a.pagination-spacer {
+    padding-left: 0;
+    padding-right: 0;
+    border-right-width: 0;
+    background-color: #ddd;
+}
+.pagination-small ul > li > a.pagination-spacer:hover {
+    background-color: #0088cc;
+}
 
 /* simplified table style with no headers */
 table.bare-top-row tr:first-child td {
@@ -566,4 +576,11 @@ tr:hover .row-controls-ghosted {
 }
 .clear-search:hover {
     opacity: 1.0; 
+}
+.help-box, 
+.empty-list-prompt {
+    padding: 0.5em 1em;
+    background-color: #ffeedd;
+    font-style: italic;
+    border-radius: 4px;
 }

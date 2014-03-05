@@ -60,6 +60,13 @@ EOF
 
 rm fragment.tmp
 
+# the curator app's to_nexml import function
+# requires peyotl (after Feb 20). This
+# function may move to the API repo, but 
+# until it does the curator app needs to
+# install peyotl
+git_refresh OpenTreeOfLife peyotl || true
+py_package_setup_install peyotl || true
 
 # ---------- BROWSER & CURATOR WEBAPPS ----------
 # Set up web2py apps as directed in the README.md file
@@ -120,6 +127,9 @@ sed "s+github_client_id = .*+github_client_id = $GITHUB_CLIENT_ID+;
      s+opentree_api = .*+opentree_api = $OPENTREE_API_BASE_URL+
     " < $configfile > tmp.tmp
 mv tmp.tmp $configfile
+
+# install ncl a C++ app needed for NEXUS, newick, NeXML -->NexSON conversion
+(cd repo/opentree/curator ; ./install-ncl.sh) 
 
 echo "Apache / web2py restart required (due to app configuration)"
 

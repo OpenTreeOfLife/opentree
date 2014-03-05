@@ -70,36 +70,20 @@ body {
 .node.leaf text {
   fill: #333;
 }
-/* less-important @root marker on some nodes */
-.node.atRoot circle {
-  fill: #fa5;
-}
-.node.atRoot text {
-  fill: #fa5;
-  font-size: 1.3em;
-}
 /* preferred ot:specifiedRoot */
 .node.specifiedRoot circle {
-  fill: #f55;
+  fill: steelblue;
 }
 .node.specifiedRoot text {
-  fill: #f77;
-  font-size: 1.3em;
-}
-/* more preferred ot:nearestOutGroupNeighbor */
-.node.nearestOutGroupNeighbor circle {
-  fill: #5f5;
-}
-.node.nearestOutGroupNeighbor text {
-  fill: #5f5;
+  fill: steelblue;
   font-size: 1.3em;
 }
 /* even more preferred ot:specifiedRoot */
 .node.inGroupClade circle {
-  fill: #f5f;
+  fill: black;
 }
 .node.inGroupClade text {
-  fill: #f7f;
+  fill: black;
   font-size: 1.3em;
 }
 
@@ -127,16 +111,20 @@ body {
     color: #888;
 }
 .dropdown-menu > li.node-information .node-type.inGroupClade {
-    color: #f7f;
-}
-.dropdown-menu > li.node-information .node-type.nearestOutGroupNeighbor {
-    color: #5f5;
-}
-.dropdown-menu > li.node-information .node-type.atRoot {
-    color: #fa5;
+    color: steelblue;
 }
 .dropdown-menu > li.node-information .node-type.specifiedRoot {
-    color: #f77;
+    color: steelblue;
+}
+
+.link-trigger {
+  fill: none;
+  stroke: red;
+  stroke-width: 6.0px;
+  stroke-opacity: 0;
+}
+.link-trigger:hover {
+  stroke-opacity: 0.5;
 }
 
 .link {
@@ -227,41 +215,41 @@ body {
             <form class="form-horizontal wider-fields">
               <div class="control-group">
                 <label class="control-label" for="ot_studyPublicationReference">Publication reference</label>
-                <div class="controls" data-bind="with: getMetaTagByProperty(nexml.meta, 'ot:studyPublicationReference')">
+                <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <textarea data-bind="value: $data.$, valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder=""></textarea>
+                  <textarea data-bind="value: nexml['^ot:studyPublicationReference'], valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder=""></textarea>
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: $data.$"></p>
+                  <p class="static-form-value" data-bind="text: nexml['^ot:studyPublicationReference']"></p>
                 {{ pass }}
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_studyPublication">Publication</label>
-                <div class="controls" data-bind="with: getMetaTagByProperty(nexml.meta, 'ot:studyPublication')">
+                <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: $data['@href'], valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
+                  <input data-bind="value: nexml['^ot:studyPublication']['@href'], valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value"><a target="_blank" data-bind="text: $data['@href'], attr: { href: $data['@href'] }"></a></p>
+                  <p class="static-form-value"><a target="_blank" data-bind="text: nexml['^ot:studyPublication']['@href'], attr: { href: nexml['^ot:studyPublication']['@href'] }"></a></p>
                 {{ pass }}
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_studyYear">Study Year</label>
-                <div class="controls" data-bind="with: getMetaTagByProperty(nexml.meta, 'ot:studyYear')">
+                <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: $data.$, valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_studyYear" class="input-mini" placeholder="">
+                  <input data-bind="value: nexml['^ot:studyYear'], valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_studyYear" class="input-mini" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: $data.$"></p>
+                  <p class="static-form-value" data-bind="text: nexml['^ot:studyYear']"></p>
                 {{ pass }}
                 </div>
               </div>
               <div class="control-group">
                 <label class="control-label" for="ot_focalClade">Focal clade</label>
-                <div class="controls" data-bind="with: getMetaTagByProperty(nexml.meta, 'ot:focalClade')">
+                <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: $data.$, valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_focalClade" class="input-small" placeholder="">
+                  <input data-bind="value: nexml['^ot:focalClade'], valueUpdate: 'afterkeydown', event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_focalClade" class="input-small" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value" data-bind="text: $data.$"></p>
+                  <p class="static-form-value" data-bind="text: nexml['^ot:focalClade']"></p>
                 {{ pass }}
                 </div>
               </div>
@@ -295,34 +283,21 @@ body {
               <div class="control-group">
                 <label class="control-label" for="ot_curatorName">Submitted by</label>
                 <div class="controls">
-                  <p class="static-form-value" data-bind="text: getMetaTagValue(nexml.meta, 'ot:curatorName')"></p>
+                  <p class="static-form-value" data-bind="text: nexml['^ot:curatorName'].join(', ')"></p>
                 </div>
               </div>
 
               <div class="control-group">
                 <div class="controls">
 
-                <!-- ko with: getMetaTagByProperty(nexml.meta, 'ot:notUsingRootedTrees') -->
                 {{ if viewOrEdit == 'EDIT': }}
                   <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: $data.$, event: { click: nudge.GENERAL_METADATA }"> This study has no rooted trees. (This is not typical.)
+                    <input type="checkbox" data-bind="checked: nexml['^ot:notIntendedForSynthesis'], event: { click: nudge.GENERAL_METADATA }"> This study should not contribute to synthesis.
                   </label>
                 {{ else: }}
-                  <p class="static-form-value" data-bind="css: $data.$ ? 'interesting-value' : 'boring-value', 
-                                                          text: $data.$ ? 'This study has no rooted trees. (This is not typical.)' : 'This study has rooted trees.'"></p>
+                  <p class="static-form-value" data-bind="css: nexml['^ot:notIntendedForSynthesis'] ? 'interesting-value' : 'boring-value', 
+                                                          text: nexml['^ot:notIntendedForSynthesis'] ? 'This study should not contribute to synthesis. (This is not typical.)' : 'This study should contribute to synthesis.'"></p>
                 {{ pass }}
-                <!-- /ko -->
-
-                <!-- ko with: getMetaTagByProperty(nexml.meta, 'ot:notIntendedForSynthesis') -->
-                {{ if viewOrEdit == 'EDIT': }}
-                  <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: $data.$, event: { click: nudge.GENERAL_METADATA }"> This study should not contribute to synthesis.
-                  </label>
-                {{ else: }}
-                  <p class="static-form-value" data-bind="css: $data.$ ? 'interesting-value' : 'boring-value', 
-                                                          text: $data.$ ? 'This study should not contribute to synthesis. (This is not typical.)' : 'This study should contribute to synthesis.'"></p>
-                {{ pass }}
-                <!-- /ko -->
 
                 </div>
               </div>
@@ -350,7 +325,13 @@ body {
                </div>
               </div>
 
-                <table class="table table-condensed">
+                <div class="empty-list-prompt" data-bind="visible: viewModel.filteredTrees().pagedItems().length === 0">
+                    No matching trees found! Add new trees or clear the
+                    filter above to see trees in this study.
+                </div>
+
+                <table class="table table-condensed table-hover"
+                    data-bind="visible: viewModel.filteredTrees().pagedItems().length &gt; 0">
                   <thead>
                     <tr>
                       {{ if viewOrEdit == 'EDIT': }}
@@ -360,22 +341,42 @@ body {
                       {{ pass }}
                         <th>Type</th>
                         <th>Ingroup clade</th>
+                        <th>Tree root</th>
                         <th>OTUs mapped</th>
-                        <th>Rooted?</th>
                         <th>Preferred</th>
+                      {{ if viewOrEdit == 'EDIT': }}
+                        <th>&nbsp;</th>
+                      {{ pass }}
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
-                        <td><a href="#" data-bind="click: showTreeViewer, text: tree['@label']">?</a></td><!-- TODO: click to view/edit tree -->
-                        <td data-bind="text: getMetaTagAccessorByAtProperty(tree.meta, 'ot:curatedType') || 'Unspecified'">TYPE?</td>
-                        <td data-bind="text: getInGroupCladeDescriptionForTree(tree)"></td>
-                        <td data-bind="html: getMappedTallyForTree(tree)">?/?? (?%)</td>
-                        <td data-bind="html: getRootedDescriptionForTree(tree)">?/?? (?%)</td>
+                        <td><a href="#" data-bind="click: showTreeViewer,
+                                text: tree['@label'],
+                                css: viewModel.ticklers.TREES">?</a></td>
+                        <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
+                                css: viewModel.ticklers.TREES">TYPE?</td>
+                        <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
+                                css: viewModel.ticklers.TREES"></td>
+                        <td data-bind="html: getRootedDescriptionForTree(tree),
+                                css: viewModel.ticklers.TREES">?/?? (?%)</td>
+                        <td data-bind="html: getMappedTallyForTree(tree),
+                                css: viewModel.ticklers.TREES">?/?? (?%)</td>
                       {{ if viewOrEdit == 'EDIT': }}
-                        <td><input type="checkbox" style="margin: 0px 20px;" data-bind="checked: false" /></td><!--checked="checked"--> 
+                        <td>
+                            <input type="checkbox" style="margin: 0px 20px;" 
+            data-bind="attr: {'checked': jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1}, 
+                       click: togglePreferredTree" /></td>
                       {{ else: }}
                         <td data-bind="text: (true) ? 'NO' : 'YES'">?</td>
+                      {{ pass }}
+                      {{ if viewOrEdit == 'EDIT': }}
+                        <td>
+                            <button data-bind="click: removeTree"
+                                class="pull-right btn btn-mini btn-danger row-controls-ghosted">
+                                <i class="icon-remove icon-white"></i>
+                            </button>
+                        </td>
                       {{ pass }}
                     </tr>
                   </tbody>
@@ -408,9 +409,14 @@ body {
                         <a href="#" onclick="viewModel.filteredTrees().prev(); return false;">&laquo;</a>
                     </li>
                    <!-- ko foreach: getPageNumbers( viewModel.filteredTrees() ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.filteredTrees() ) -->
                     <li data-bind="css: { 'active': (viewModel.filteredTrees().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredTrees().goToPage(parseInt($(this).text())); return false;">0</a>
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.filteredTrees().goToPage($data); return false; }">0</a>
                     </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.filteredTrees() ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredTrees().goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
                    <!-- /ko -->
                     <li data-bind="css: { 'disabled': !viewModel.filteredTrees().next.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.filteredTrees().next(); return false;">&raquo;</a>
@@ -431,46 +437,80 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
             <div class="well">
                 <h4 style="margin-top: 0;">Add a tree to this study</h4>
-                <form style="margin: 0;">
+                <form id="tree-import-form" 
+                      style="margin: 0;" 
+                      Xaction="{{= URL(a='curator', c='default', f='to_nexson')}}" 
+                      action="/curator/default/to_nexson" 
+                      method="POST" 
+                      onsubmit="submitNewTree(this); return false;"
+                      Xonsubmit="console.log('DEFAULT tree-import-form submit (suppressed)'); return false;">
                  <fieldset>
-                  <label for="new-tree-newick">Paste a Newick string&hellip;</label>
-                  <textarea id="new-tree-newick" rows="5" class="input-block-level" Xstyle="width: 95%;"></textarea>
+                 <input type="hidden" name="output" value="ot:nexson">
+                 <input type="hidden" name="author_name" 
+                   value="{{= auth.user and auth.user.name or 'ANONYMOUS' }}">
+                 <input type="hidden" name="author_email" 
+                   value="{{= auth.user and auth.user.email or 'ANONYMOUS' }}">
+                 <input type="hidden" name="auth_token" 
+                   value="{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}">
+                 <!--@MTH:"no longer needed on upload" input type="hidden" name="uploadid" value=""-->
+                  <select id="tree-import-format" name="inputformat" 
+                          class="input-block-level"
+                          style="margin-bottom: 1em;"
+                          oninput="updateNewTreeUploadForm(); return true;"
+                          onchange="updateNewTreeUploadForm(); return true;">
+                      <option value="" selected="selected">What is the format of this tree?</option>
+                      <option value="nexus">NEXUS</option>
+                      <option value="newick">Newick</option>
+                      <option value="nexml">NeXML</option>
+                  </select>
+                  <label for="new-tree-text">Paste tree data (text)&hellip;</label>
+                  <textarea id="new-tree-text" name="content" rows="5"
+                            class="input-block-level"
+                            onkeyup="updateNewTreeUploadForm(); return true;"
+                            oninput="updateNewTreeUploadForm(); return true;"
+                            onchange="updateNewTreeUploadForm(); return true;"
+                            ></textarea>
                   
-                  <label for="new-tree-upload">&hellip;or upload a tree file</label>
-{{
-#                  <input id="new-tree-upload" type="file" class="Xinput-block-level">
-#
-#                    OK, that's hideous. Trying some more attractive styles as described here:
-#                        http://stackoverflow.com/questions/11235206/twitter-bootstrap-form-file-element-upload-button
-#                        http://duckranger.com/2012/06/pretty-file-input-field-in-bootstrap/
-#                        http://www.randomout.com/2012/07/hacking-more-visually-appealing-file.html
-}}
+                  <label for="treeupload">&hellip;or upload a tree file</label>
 
-                  <div style="position:relative; margin-bottom: 1em;">
-                    <a class="btn" href="javascript:;">
-                        Choose File...
-                        <input type="file" name="new-tree-upload" size="40" 
-                               style="position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';opacity:0;background-color:transparent;color:transparent;"
-                               onchange="$('#upload-tree-info').html( filenameFromFakePath($(this).val()) );">
-                    </a>
+
+                <div>
+                    <span class="btn fileinput-button">
+                        <i class="glyphicon glyphicon-plus"></i>
+                        <span>Select file to upload...</span>
+                        <!-- The file input field used as target for the file upload widget -->
+                        <input id="treeupload" 
+                               type="file" name="file"
+                               onchange="$('#upload-tree-info').html( filenameFromFakePath($(this).val()) ); updateNewTreeUploadForm(); return true;">
+                    </span>
                     &nbsp;
                     <span class='label label-info' id="upload-tree-info"></span>
+                </div>
+                <div id="tree-upload-progress" class="progress progress-info" 
+                     style="margin-top: 0.3em; margin-bottom: 1em; background-color: #333;">
+                  <div class="bar" style="text-align: center; width: 0%;">
+                      <span>&nbsp;</span>
                   </div>
-                  
+                </div>
+
 <!-- TODO: Enter a URL or DOI for the new tree?
                   <label for="new-tree-URL">&hellip;or paste an URL to the tree</label>
                   <input type="text" id="new-tree-URL" class="input-block-level" value="" placeholder="Paste URL here">
 -->
 
                   <label class="checkbox">
-                      <input name="new-tree-preferred" type="checkbox" value="">
+                      <input name="new-tree-preferred" type="checkbox" value="true">
                       Mark this tree as preferred for synthesis
                   </label>
 
                   <div Xclass="form-actions" style="margin-top: 1em;">
-                      <button type="submit" class="btn btn-primary btn-primary-disabled" disabled="disabled">Add new tree 
+                      <button name="new-tree-submit" type="submit" 
+                          class="btn btn-info btn-info-disabled" 
+                          disabled="disabled">Add new tree 
                         <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
-                      <button type="button" class="btn">Cancel</button>
+                      <button type="reset" class="btn" 
+                              onclick="clearNewTreeUploadWidget(); return true;"
+                      >Clear form</button>
                   </div>
                  </fieldset>
                 </form>
@@ -494,7 +534,13 @@ body {
                </div>
               </div>
 
-                <table class="table table-condensed table-hover">
+                <div class="empty-list-prompt" data-bind="visible: viewModel.filteredFiles().pagedItems().length === 0">
+                    No matching files found! Add files or use the filters
+                    above to see supporting files in this study.
+                </div>
+
+                <table class="table table-condensed table-hover"
+                    data-bind="visible: viewModel.filteredFiles().pagedItems().length &gt; 0">
                   <thead>
                     <tr>
                         <th width="35%">File name (click to download)</th>
@@ -511,15 +557,29 @@ body {
                             </a>
                         </td>
                         <td>
-                            <div><textarea data-bind="value: file.description.$" placeholder="Describe this file's format and purpose." rows="2" class="input-block-level">?</textarea></div>
-                            <em data-bind="if: file['@sourceForTree'] !== '', text: file['@sourceForTree']">SOURCE_FOR_TREE_ID</em>
+                            <div><textarea data-bind="value: file.description.$"
+                            placeholder="Describe this file's format and purpose." 
+                            rows="2" 
+                            class="input-block-level"
+                            style="margin-bottom: 0px;">?</textarea></div>
+                            <em data-bind="if: file['@sourceForTree'] !== ''">
+                                Source for tree: 
+                                <strong data-bind="text: getTreeByID( file['@sourceForTree'])['@label']">SOURCE_FOR_TREE_ID_B</strong>
+                            </em>
                            <!-- TODO: make this directly editable?
                             <input type="text" data-bind="value: file['@sourceForTree']"
                                    placeholder="Tree ID (if source file for a tree)">OPTIONAL_TREE_ID</em>
                            -->
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
-                            <button class="pull-right btn btn-mini row-controls-ghosted" data-bind="click: removeSupportingFile">
+                            <button data-bind="visible: file['@sourceForTree'] !== ''"
+                                class="pull-right btn btn-mini" 
+                                style="opacity: 0.3 !important;"
+                                onclick="alert('You must delete the associated tree to remove this file.'); return false;">
+                                <i class="icon-remove"></i>
+                            </button>
+                            <button data-bind="visible: file['@sourceForTree'] === '', click: removeSupportingFile"
+                                class="pull-right btn btn-mini row-controls-ghosted">
                                 <i class="icon-remove"></i>
                             </button>
                         </td>
@@ -531,7 +591,10 @@ body {
                         </td>
                         <td>
                             <div data-bind="text: file.description.$">Microsoft Excel spreadsheet</div>
-                            <em data-bind="if: file['@sourceForTree'] !== '', text: file['@sourceForTree']">SOURCE_FOR_TREE_ID</em>
+                            <em data-bind="if: file['@sourceForTree'] !== ''">
+                                Source for tree: 
+                                <strong data-bind="text: getTreeByID( file['@sourceForTree'])['@label']">SOURCE_FOR_TREE_ID_A</strong>
+                            </em>
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span></td>
                     {{ pass }}
@@ -546,9 +609,14 @@ body {
                         <a href="#" onclick="viewModel.filteredFiles().prev(); return false;">&laquo;</a>
                     </li>
                    <!-- ko foreach: getPageNumbers( viewModel.filteredFiles() ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.filteredFiles() ) -->
                     <li data-bind="css: { 'active': (viewModel.filteredFiles().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredFiles().goToPage(parseInt($(this).text())); return false;">0</a>
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.filteredFiles().goToPage($data); return false; }">0</a>
                     </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.filteredFiles() ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredFiles().goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
                    <!-- /ko -->
                     <li data-bind="css: { 'disabled': !viewModel.filteredFiles().next.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.filteredFiles().next(); return false;">&raquo;</a>
@@ -569,24 +637,6 @@ body {
                 <h4 style="margin-top: 0;">Add a file to this study</h4>
                 <form style="margin: 0;">
                  <fieldset>
-<!--
-                  <label for="new-file-newick">Paste file contents here&hellip;</label>
-                  <textarea id="new-file-newick" rows="5" class="input-block-level" Xstyle="width: 95%;"></textarea>
-                  
-                  <label for="new-file-upload">Upload a file &hellip;</label>
--->
-                  <!--
-                  <div style="position:relative; margin-bottom: 1em;">
-                    <a class="btn" href="javascript:;">
-                        Choose File...
-                        <input type="file" name="new-file-upload" size="40" 
-                               style="position:absolute;z-index:2;top:0;left:0;filter: alpha(opacity=0);-ms-filter:'progid:DXImageTransform.Microsoft.Alpha(Opacity=0)';opacity:0;background-color:transparent;color:transparent;"
-                               onchange="$('#upload-file-info').html( filenameFromFakePath($(this).val()) );">
-                    </a>
-                    &nbsp;
-                    <span class='label label-info' id="upload-file-info"></span>
-                  </div>
-                  -->
 
                 <div>
                     <span class="btn btn-info fileinput-button">
@@ -595,16 +645,6 @@ body {
                         <!-- The file input field used as target for the file upload widget -->
                         <input id="fileupload" type="file" name="files[]" multiple>
                     </span>
-
-
-                   <!--
-                   <span class="fileupload-process" 
-                         style="display: inline-block;
-                                width: 32px;
-                                height: 32px;
-                                background: url('/curator/static/jQuery-File-Upload-9.5.2/img/loading.gif') center no-repeat;
-                                background-size: contain;"></span> 
-                    -->
 
                 </div>
                 <div id="file-upload-progress" class="progress progress-info" 
@@ -672,8 +712,13 @@ body {
                </div>
               </div>
 
+                <div class="empty-list-prompt" data-bind="visible: viewModel.filteredOTUs().pagedItems().length === 0">
+                    No matching OTUs found! Use the filters above to see
+                    OTUs in this study.
+                </div>
 
-                <table class="table table-condensed table-hover">
+                <table class="table table-condensed table-hover"
+                    data-bind="visible: viewModel.filteredOTUs().pagedItems().length !== 0">
                   <thead>
                     <tr>
                         <th width="30%">Original label</th>
@@ -686,17 +731,17 @@ body {
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
-                        <td data-bind="text: getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')">ORIGINAL?</td>
+                        <td data-bind="text: otu['^ot:originalLabel']">ORIGINAL?</td>
                       {{ if viewOrEdit == 'EDIT': }}
                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
-                            <em data-bind="text: adjustedLabel(getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')), 
+                            <em data-bind="text: adjustedLabel(otu['^ot:originalLabel']), 
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                            style: { 'color' : (otu['@label'] === '' && !proposedMapping(otu))?  '' : 'silver' }"
                                >WORKING?</em>
                         </td>
                         <td>
-                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && otu['@label'] === '' && !proposedMapping(otu) -->
+                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['@label']) === '' && !proposedMapping(otu) -->
                             <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
 
                                 <i class="icon-edit"></i>
@@ -764,9 +809,14 @@ body {
                         <a href="#" onclick="viewModel.filteredOTUs().prev(); return false;">&laquo;</a>
                     </li>
                    <!-- ko foreach: getPageNumbers( viewModel.filteredOTUs() ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.filteredOTUs() ) -->
                     <li data-bind="css: { 'active': (viewModel.filteredOTUs().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredOTUs().goToPage(parseInt($(this).text())); return false;">0</a>
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.filteredOTUs().goToPage($data); return false; }">0</a>
                     </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.filteredOTUs() ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredOTUs().goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
                    <!-- /ko -->
                     <li data-bind="css: { 'disabled': !viewModel.filteredOTUs().next.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.filteredOTUs().next(); return false;">&raquo;</a>
@@ -902,7 +952,6 @@ body {
               <!-- ko if: getOTUMappingHints() !== null -->
                 <form class="form-inline" style="margin: 0;">
                  <fieldset>
-                  <!--<label for="new-tree-newick">Substitutions</label>-->
                   <table>
                     <thead>
                         <tr>
@@ -1008,7 +1057,13 @@ body {
                  </div>
               </div>
 
-                <table class="table table-condensed">
+                <div class="empty-list-prompt" data-bind="visible: viewModel.filteredAnnotations().pagedItems().length === 0">
+                    No matching annotations found! Clear the
+                    filter above to see annotations in this study.
+                </div>
+
+                <table class="table table-condensed"
+                    data-bind="visible: viewModel.filteredAnnotations().pagedItems().length &gt; 0">
                   <thead>
                     <tr>
                         <th>Type</th>
@@ -1078,9 +1133,14 @@ body {
                         <a href="#" onclick="viewModel.filteredAnnotations().prev(); return false;">&laquo;</a>
                     </li>
                    <!-- ko foreach: getPageNumbers( viewModel.filteredAnnotations() ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.filteredAnnotations() ) -->
                     <li data-bind="css: { 'active': (viewModel.filteredAnnotations().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data" onclick="viewModel.filteredAnnotations().goToPage(parseInt($(this).text())); return false;">0</a>
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.filteredAnnotations().goToPage($data); return false; }">0</a>
                     </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.filteredAnnotations() ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredAnnotations().goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
                    <!-- /ko -->
                     <li data-bind="css: { 'disabled': !viewModel.filteredAnnotations().next.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.filteredAnnotations().next(); return false;">&raquo;</a>
@@ -1191,6 +1251,7 @@ Please review and re-submit.</pre>
     var studyID = '{{= studyID }}';
     var viewOrEdit = '{{= viewOrEdit }}';
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
+    var authorSafeID = '{{= auth.user and auth.user.username.encode('ascii', 'ignore') or 'ANONYMOUS' }}';
     var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
     var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
@@ -1225,7 +1286,10 @@ Please review and re-submit.</pre>
         {{ if viewOrEdit == 'EDIT': }}
             Edit tree
             <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
-                   data-bind="value: $data['@label'], valueUpdate: 'afterkeydown'"
+                   data-bind="value: $data['@label'], 
+                              valueUpdate: 'afterkeydown', 
+                              event: { keyup: nudge.TREES, change: nudge.TREES }
+                              "
             />
         {{ else: }}
             View tree
@@ -1241,25 +1305,52 @@ Please review and re-submit.</pre>
             <!-- editable tree properties here -->
               <div class="pull-left" style="width: 48%;">
                 <label>Tree type: </label>
-                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:curatedType'), valueUpdate: 'afterkeydown'"></input>
+                <input type="text" data-bind="value: $data['^ot:curatedType'], 
+                                              valueUpdate: 'afterkeydown', 
+                                              event: { keyup: nudge.TREES, change: nudge.TREES }, 
+                                              css: viewModel.ticklers.TREES"></input>
               <br/>
                 <label for="testtest">Root node: </label>
-                <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
+                <strong data-bind="text: getRootNodeDescriptionForTree($data), 
+                                   css: viewModel.ticklers.TREES"></strong>
+              <br/>
+
+                <label>Tree root is </label>
+                <label for="tree-root-status-false" class="radio" style="padding-left: 10px;">
+                    <input id="tree-root-status-false" type="radio" 
+                           name="tree-root-status" value="false" 
+                           data-bind="checked: $data['^ot:unrootedTree'].toString(), 
+                                      click: toggleTreeRootStatus, 
+                                      css: viewModel.ticklers.TREES" />
+                    biologically correct
+                </label>
+                <label for="tree-root-status-true" class="radio" style="padding-left: 10px;">
+                    <input id="tree-root-status-true" type="radio" 
+                           name="tree-root-status" value="true" 
+                           data-bind="checked: $data['^ot:unrootedTree'].toString(), 
+                                      click: toggleTreeRootStatus, 
+                                      css: viewModel.ticklers.TREES" />
+                    arbitrary (for display only)
+                </label>
+
               <br/>
                 <label for="testtest">Ingroup clade: </label>
-                <strong data-bind="text: getInGroupCladeDescriptionForTree($data)"></strong>
+                <strong data-bind="text: getInGroupCladeDescriptionForTree($data), 
+                                   css: viewModel.ticklers.TREES"></strong>
               </div>
               <div class="pull-left" style="width: 48%;">
                 <label>Mapped leaf nodes: </label>
-                <span data-bind="html: getMappedTallyForTree($data)">?? / ??</span>
+                <span data-bind="html: getMappedTallyForTree($data), 
+                                 css: viewModel.ticklers.TREES">?? / ??</span>
               <br/>
-               <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
 
                 <label>Tags: </label>
                 <select id="tree-tags" multiple="multiple" placeholder="Add tags"
                         onchange="updateElementTags(this);"
                         data-bind="attr: {'treeid': $data['@id'] },
-                                   options: getTags( getTreeByID($data['@id']) )">
+                                   options: getTags( getTreeByID($data['@id']) ), 
+                                   event: { keyup: nudge.TREES, change: nudge.TREES }, 
+                                   css: viewModel.ticklers.TREES">
                 </select>
 
               <br/>
@@ -1278,30 +1369,52 @@ Please review and re-submit.</pre>
                     optionsText: function(item) { 
                         return item.text;
                     },
-                    value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthMode'),
-                    optionsCaption: 'Choose...'">TYPE</select>
+                    value: $data['^ot:branchLengthMode'],
+                    event: { keyup: nudge.TREES, change: nudge.TREES },
+                    optionsCaption: 'Choose...', 
+                    css: viewModel.ticklers.TREES
+                    ">TYPE</select>
 
-               <!-- ko if: getMetaTagValue($data.meta, 'ot:branchLengthMode') === 'ot:time' -->
+               <!-- ko if: $data['^ot:branchLengthMode'] === 'ot:time' -->
                 <label style="margin-left: 10px;">Time unit: </label>
                 <select data-bind="options: ['Myr'],
-                    value: getMetaTagAccessorByAtProperty($data.meta, 'branchLengthTimeUnit')">TYPE</select>
+                    value: $data['^ot:branchLengthTimeUnit'],
+                    event: { keyup: nudge.TREES, change: nudge.TREES }, 
+                    css: viewModel.ticklers.TREES
+                    ">TYPE</select>
                <!-- /ko -->
 
-               <!-- ko if: getMetaTagValue($data.meta, 'ot:branchLengthMode') === 'ot:other' -->
+               <!-- ko if: $data['^ot:branchLengthMode'] === 'ot:other' -->
                 <label style="margin-left: 10px;">&nbsp;</label>
-                <input type="text" data-bind="value: getMetaTagAccessorByAtProperty($data.meta, 'ot:branchLengthDescription'), valueUpdate: 'afterkeydown'" placeholder="Describe here"></input>
+                <input type="text" data-bind="value: $data['^ot:branchLengthDescription'],
+                    valueUpdate: 'afterkeydown',
+                    event: { keyup: nudge.TREES, change: nudge.TREES },
+                    css: viewModel.ticklers.TREES
+                " placeholder="Describe here"></input>
                <!-- /ko -->
+              </div>
+              <div style="clear: left; height: 20px;">&nbsp;</div>
+              <div class="help-box">
+                  Click any node below to set the ingroup clade. Click any node
+                  <strong>or</strong> edge to re-root the entire tree. N.B. An
+                  arbitrary root (see checkbox above) will only be used to draw
+                  the tree and correctly set the ingroup clade. It will not be
+                  considered biologically correct.
               </div>
 
           {{ else: }}
             <!-- read-only tree properties here -->
               <div class="pull-left" style="width: 48%;">
                 <label>Tree type: </label>
-                <strong data-bind="text: getMetaTagAccessorByAtProperty($data.meta, 'ot:curatedType') || 'Unspecified'">TYPE</strong>
+                <strong data-bind="text: $data['^ot:curatedType'] || 'Unspecified'">TYPE</strong>
               <br/>
                 <label for="testtest">Root node: </label>
                <!-- TODO: tag(s) for this tree? -->
                 <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
+              <br/>
+                <label for="arbitrary-tree-root" class="checkbox" style="padding-left: 12px; position: relative; top: -4px;">
+                    <strong data-bind="html: getRootedStatusForTree($data)">Tree root is arbitrary (not biologically correct)</strong>
+                </label>
               <br/>
                 <label for="testtest">Ingroup clade: </label>
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data)"></strong>
@@ -1310,7 +1423,6 @@ Please review and re-submit.</pre>
                 <label>Mapped leaf nodes: </label>
                 <span data-bind="html: getMappedTallyForTree($data)">?? / ??</span>
               <br/>
-               <!-- TODO: ot:outGroupEdge [ADD THIS] (explicit? or implicit? editable here via node label??) -->
 
                 <label>Tags: </label>
                 <!-- TODO: make all tags clickable (search in new window?) -->
@@ -1344,14 +1456,16 @@ Please review and re-submit.</pre>
     <div class="modal-footer">
       <div class="popup-legend pull-left form-inline">
           <strong>Legend: </strong>
-          <label style="margin-left: 20px;">Ingroup: </label> <em>blah</em>
+          <label style="margin-left: 20px;">Outgroup: </label> 
+          <img src="{{=URL('static','images/tree-viewer-legend-outgroup.png')}}" alt="outgroup style" />
 
-          <label style="margin-left: 20px;">Outgroup: </label> <em>blah</em>
+          <label style="margin-left: 20px;">Ingroup: </label>
+          <img src="{{=URL('static','images/tree-viewer-legend-ingroup.png')}}" alt="ingroup style" />
 
-          <label style="margin-left: 20px;" for="branch-length-toggle"> 
-              <input type="checkbox" id="branch-length-toggle" 
+          <label class="checkbox" style="margin-left: 25px;" for="branch-length-toggle"> 
+              <input type="checkbox" id="branch-length-toggle"
                      onclick="toggleBranchLengthsInViewer(this); return true;" />
-              Hide branch lengths
+              Cladogram (hide branch lengths)
           </label>
       </div>
       <a data-dismiss="modal" class="btn" >Close</a>

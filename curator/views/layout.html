@@ -73,9 +73,9 @@
     {{include 'web2py_ajax.html'}}
 
   <script type="text/javascript">
+  var curatorDisplayName;
   jQuery(document).ready(function(){ 
     {{ if 'auth' in globals(): }}
-
       // add marker classes to final nav link (for logged-in user)
       var $authNavbar = jQuery('ul#auth-navbar');
       var $authMenuLink = $authNavbar.find('ul.dropdown-menu li:has(a)');
@@ -92,6 +92,9 @@
       
       // tweak validation errors to show proper Bootstrap classes
       jQuery('div.error').addClass('alert').addClass('alert-error');
+
+      // stash display name for possible attribution (in ot:curatorName list)
+      curatorDisplayName = "{{= auth.user and (auth.user.name or '%s %s' % (auth.user.first_name, auth.user.last_name,)) or 'ANONYMOUS' }}";
 
     {{ pass }}
 

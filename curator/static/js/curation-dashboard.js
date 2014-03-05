@@ -320,17 +320,6 @@ function getSuggestedActions(study) {
 }
 */
 
-function getPageNumbers( pagedArray ) {
-    // Generates an array of display numbers (1-based) for use with Knockout's
-    // foreach binding. Let's build this with one-based values for easy display.
-    var pageNumbers = [ ];
-    var howManyPages = Math.ceil(pagedArray().length / pagedArray.pageSize);
-    for (var i = 1; i <= howManyPages; i++) {
-        pageNumbers.push( i );
-    }
-    return pageNumbers;
-}
-
 function toggleStudyDetails( clicked ) {
     var $toggle = $(clicked);
     //var $compactRef = $toggle.prevAll('.compact-study-ref');
