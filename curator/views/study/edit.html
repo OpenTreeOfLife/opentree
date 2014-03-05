@@ -439,8 +439,8 @@ body {
                 <h4 style="margin-top: 0;">Add a tree to this study</h4>
                 <form id="tree-import-form" 
                       style="margin: 0;" 
-                      Xaction="{{= URL(a='curator', c='default', f='to_nexml')}}" 
-                      action="/curator/default/to_nexml" 
+                      Xaction="{{= URL(a='curator', c='default', f='to_nexson')}}" 
+                      action="/curator/default/to_nexson" 
                       method="POST" 
                       onsubmit="submitNewTree(this); return false;"
                       Xonsubmit="console.log('DEFAULT tree-import-form submit (suppressed)'); return false;">
@@ -452,7 +452,7 @@ body {
                    value="{{= auth.user and auth.user.email or 'ANONYMOUS' }}">
                  <input type="hidden" name="auth_token" 
                    value="{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}">
-                 <input type="hidden" name="uploadid" value="">
+                 <!--@MTH:"no longer needed on upload" input type="hidden" name="uploadid" value=""-->
                   <select id="tree-import-format" name="inputformat" 
                           class="input-block-level"
                           style="margin-bottom: 1em;"
