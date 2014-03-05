@@ -57,7 +57,7 @@ def index():
 
     # retrieve latest synthetic-tree ID (and its 'life' node ID)
     # TODO: Only refresh this periodically? Or only when needed for initial destination?
-    treeview_dict['draftTreeName'], treeview_dict['lifeNodeID'], treeview_dict['startingNodeID'] = fetch_current_synthetic_tree_ids()
+    treeview_dict['draftTreeName'], treeview_dict['startingNodeID'] = fetch_current_synthetic_tree_ids()
     treeview_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names()
 
     return treeview_dict
@@ -92,7 +92,7 @@ def download_subtree():
         # apparently this needs to be a POST, or it just describes the API
         tree_response = fetch(fetch_url, data=fetch_args)
         tree_json = simplejson.loads( tree_response )
-        newick_text = tree_json['tree'].encode('utf-8');
+        newick_text = str(tree_json['tree']).encode('utf-8');
         s.write( newick_text )
 
     except Exception, e:
@@ -113,27 +113,31 @@ def download_subtree():
 def fetch_current_synthetic_tree_ids():
     try:
         # fetch the latest IDs as JSON from remote site
-        from gluon.tools import fetch
+        import urllib2
         import simplejson
 
         method_dict = get_opentree_services_method_urls(request)
         fetch_url = method_dict['getDraftTreeID_url']
 
-        fetch_args = {'startingTaxonName': "cellular organisms"}
-
+        fetch_args = {'startingTaxonOTTId': ""}
         # this needs to be a POST (pass fetch_args or ''); if GET, it just describes the API
-        ids_response = fetch(fetch_url, data=fetch_args)
+        # N.B. that gluon.tools.fetch() can't be used here, since it won't send "raw" JSON data as treemachine expects
+        req = urllib2.Request(url=fetch_url, data=simplejson.dumps(fetch_args), headers={"Content-Type": "application/json"}) 
+        ids_response = urllib2.urlopen(req).read()
 
         ids_json = simplejson.loads( ids_response )
-        draftTreeName = ids_json['draftTreeName'].encode('utf-8')
-        lifeNodeID = ids_json['lifeNodeID'].encode('utf-8')
-        # IF we get a separate starting node ID, use it; else we'll start at 'life'
-        startingNodeID = ids_json.get('startingNodeID', lifeNodeID).encode('utf-8')
-        return (draftTreeName, lifeNodeID, startingNodeID)
+        draftTreeName = str(ids_json['draftTreeName']).encode('utf-8')
+        # Try to be compatible with different versions of treemachine
+        startNodeID = None
+        if 'startingNodeID' in ids_json:
+            startNodeID = str(ids_json['startingNodeID']).encode('utf-8')
+        elif 'startNodeID' in ids_json:
+            startNodeID = str(ids_json['startNodeID']).encode('utf-8')
+        return (draftTreeName, startNodeID)
 
     except Exception, e:
         # throw 403 or 500 or just leave it
-        return ('ERROR', e.message, 'NO_STARTING_NODE_ID')
+        return ('ERROR', e.message)
 
 def fetch_current_TNRS_context_names():
     try:
@@ -155,7 +159,7 @@ def fetch_current_TNRS_context_names():
             if gname in contextnames_json:
                 context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
 
-        # draftTreeName = ids_json['draftTreeName'].encode('utf-8')
+        # draftTreeName = str(ids_json['draftTreeName']).encode('utf-8')
         return (context_names)
 
     except Exception, e:

@@ -80,4 +80,6 @@ pushd .
     sed -i -e "s+OTI_BASE_URL+$OTI_BASE_URL+" config
 popd
 
+# N.B. Another file 'GITHUB_CLIENT_SECRET' was already placed via rsync (in push.sh)
+
 echo "Apache needs to be restarted (API)"

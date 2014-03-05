@@ -1,5 +1,6 @@
 *.pyc
 private/
+private/GITHUB_CLIENT_SECRET
 cache/
 errors/
 sessions/

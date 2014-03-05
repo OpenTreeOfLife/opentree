@@ -1,7 +1,7 @@
 /*
  * Client-side behavior for the Open Tree curation UI
  *
- * This uses the OTOL API to fetch and store studies and trees remotely.
+ * This uses the Open Tree API to fetch and store studies and trees remotely.
  */
 
 // these variables should already be defined in the main HTML page
@@ -63,27 +63,6 @@ function updateCreationDetails() {
             $details.slideUp('fast');
         }
     });
-}
-
-function showErrorMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-success')
-               .addClass('alert-error').slideDown();
-}
-
-function showInfoMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-error')
-               .removeClass('alert-success')
-               .addClass('alert-info').slideDown();
-}
-
-function showSuccessMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-error')
-               .addClass('alert-success').slideDown();
 }
 
 function validateFormData() {

@@ -71,7 +71,7 @@ def get_opentree_services_domains(request):
             treemachine_domain
             taxomachine_domain
             oti_domain
-            otol_api_domain
+            opentree_api_domain
         the values of the domain will contain the port (when needed)
 
     This is mainly useful for debugging because it lets developers use local
@@ -82,7 +82,7 @@ def get_opentree_services_domains(request):
         'treemachine_domain' : 'http://opentree-dev.bio.ku.edu:7474',
         'taxomachine_domain' : 'http://opentree-dev.bio.ku.edu:7476',
         'oti_domain' : 'http://oti.opentreeoflife.org',
-        'otol_api_domain' : 'http://api.opentreeoflife.org',
+        'opentree_api_domain' : 'http://api.opentreeoflife.org',
     }
     if conf.has_section('domains'):
         try:
@@ -98,7 +98,7 @@ def get_opentree_services_domains(request):
         except:
             pass
         try:
-            ret['otol_api_domain'] = conf.get('domains', 'otol_api')
+            ret['opentree_api_domain'] = conf.get('domains', 'opentree_api')
         except:
             pass
     return ret
@@ -122,7 +122,7 @@ def get_opentree_services_method_urls(request):
         'treemachine_domain' : domains['treemachine_domain'],
         'taxomachine_domain' : domains['taxomachine_domain'],
         'oti_domain' : domains['oti_domain'],
-        'otol_api_domain' : domains['otol_api_domain'],
+        'opentree_api_domain' : domains['opentree_api_domain'],
         'getDraftTreeID_url' : conf.get('method_urls', 'getDraftTreeID_url'),
         'getSyntheticTree_url' : conf.get('method_urls', 'getSyntheticTree_url'),
         'getSourceTree_url' : conf.get('method_urls', 'getSourceTree_url'),
@@ -134,7 +134,7 @@ def get_opentree_services_method_urls(request):
         'getNodeIDForOttolID_url' : conf.get('method_urls', 'getNodeIDForOttolID_url'),
         'getJSONFromNode_url' : conf.get('method_urls', 'getJSONFromNode_url'),
         'findAllStudies_url' : conf.get('method_urls', 'findAllStudies_url'),
-        # OTOL API methods
+        # Open Tree API methods
         'API_create_study_POST_url' : conf.get('method_urls', 'API_create_study_POST_url'),
         'API_load_study_GET_url' : conf.get('method_urls', 'API_load_study_GET_url'),
         'API_update_study_PUT_url' : conf.get('method_urls', 'API_update_study_PUT_url'),
@@ -146,6 +146,6 @@ def get_opentree_services_method_urls(request):
     }
     # for property, value in vars(ret).iteritems():
     for k,v in ret.iteritems():
-        ret[k] = v.replace('{treemachine_domain}', domains['treemachine_domain']).replace('{taxomachine_domain}', domains['taxomachine_domain']).replace('{oti_domain}', domains['oti_domain']).replace('{otol_api_domain}', domains['otol_api_domain'])
+        ret[k] = v.replace('{treemachine_domain}', domains['treemachine_domain']).replace('{taxomachine_domain}', domains['taxomachine_domain']).replace('{oti_domain}', domains['oti_domain']).replace('{opentree_api_domain}', domains['opentree_api_domain'])
 
     return ret
