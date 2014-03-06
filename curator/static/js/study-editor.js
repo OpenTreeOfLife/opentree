@@ -1007,6 +1007,7 @@ function saveFormDataToStudyJSON() {
         });
     });
     $.each( allTrees, function(i, tree) {
+        cleanupAdHocRoot(tree);
         clearD3PropertiesFromTree(tree);
     });
     
