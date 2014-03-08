@@ -189,6 +189,22 @@ function loadSelectedStudy(id) {
             'output_nexml2json': '1.0.0',
             'auth_token': authToken
         },
+
+        error: function(jqXHR, textStatus, errorThrown) {
+            // report errors or malformed data, if any
+            console.warn("textStatus: "+ textStatus);
+            console.warn("jqXHR.status: "+ jqXHR.status);
+            console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+            
+            var errMsg; 
+            if (jqXHR.responseText.length === 0) {
+                errMsg = 'Sorry, there was an error loading this study. (No more information is available.)';
+            } else {
+                errMsg = 'Sorry, there was an error loading this study. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+            }
+            showErrorMessage(errMsg);
+        },
+
         success: function( data, textStatus, jqXHR ) {
             // this should be properly parsed JSON
 
