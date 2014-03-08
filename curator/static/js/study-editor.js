@@ -1532,7 +1532,7 @@ function getInGroupCladeDescriptionForTree( tree ) {
 
     // try to retrieve a recognizable taxon label for the ingroup clade's root
     var node = getTreeNodeByID( tree, nodeID );
-    if ('@otu' in node) {
+    if (node && '@otu' in node) {
         var otu = getOTUByID( node['@otu'] );
         if (otu) {
             nodeName = otu['@label'] || 'Unlabeled OTU';
@@ -2472,37 +2472,6 @@ function setTreeIngroup( treeOrID, ingroupNodeOrID ) {
     drawTree( tree );
     nudgeTickler('TREES');
 }
-
-/*
-function setTreeOutgroup( treeOrID, outgroupNodeOrID ) {
-    // (Re)set the node that defines the outgroup, i.e., which sets the
-    // polarity (edge direction) used to delineate the ingroup clade
-    var tree = null;
-    if (typeof(treeOrID) === 'object') {
-        tree = treeOrID;
-    } else {
-        tree = getTreeByID(treeOrID);
-    }
-
-    outgroupNodeID = null;
-    if (outgroupNodeOrID) {
-        if (typeof(outgroupNodeOrID) === 'object') {
-            outgroupNodeID = outgroupNodeOrID['@id'];
-        } else {
-            outgroupNodeID = outgroupNodeOrID;
-        }
-    }
-    if (outgroupNodeID) {
-        tree['^ot:nearestOutGroupNeighbor'] = outgroupNodeID;
-    } else {
-        // clear the current root
-        tree['^ot:nearestOutGroupNeighbor'] = '';
-    }
-    updateEdgesInTree( tree );
-    drawTree( tree );
-    nudgeTickler('TREES');
-}
-*/
 
 function updateEdgesInTree( tree ) {
     // Update the direction of all edges in this tree, based on its
