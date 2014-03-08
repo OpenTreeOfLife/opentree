@@ -341,7 +341,11 @@ function loadSelectedStudy(id) {
                 'STUDY_HAS_CHANGED': ko.observable(1)
             }     
 
-            viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( updateQualityDisplay );
+            viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
+                addPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
+                updateQualityDisplay();
+            });
+            
 
             // support fast lookup of elements by ID, for largest trees
             viewModel.fastLookups = {
@@ -1037,6 +1041,7 @@ function saveFormDataToStudyJSON() {
             $('#ajax-busy-bar').hide();
             showSuccessMessage('Study saved to remote storage.');
 
+            removePageExitWarning();
             // TODO: should we expect fresh JSON to refresh the form?
         }
     });
@@ -2771,6 +2776,8 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     nudgeTickler('GENERAL_METADATA');
     nudgeTickler('VISIBLE_OTU_MAPPINGS');
     nudgeTickler('STUDY_HAS_CHANGED');
+    // just this once, suppress the page-exit warning
+    removePageExitWarning();
 }
 
 function adjustedLabel(label) {

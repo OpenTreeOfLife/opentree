@@ -205,3 +205,46 @@ function loadMissingFocalCladeNames() {
     }, 100);
 }
 */
+
+/*
+ * Cross-browser (as of 2013) support for a "safety net" when trying to leave a
+ * page with unsaved changes. This should also protect against the Back button,
+ * swipe gestures in Chrome, etc.
+ *  
+ * Call addPageExitWarning(), removePageExitWarning() to add/remove this
+ * protection as needed.
+ *
+ * Adapted from  
+ * http://stackoverflow.com/questions/1119289/how-to-show-the-are-you-sure-you-want-to-navigate-away-from-this-page-when-ch/1119324#1119324
+ */
+
+var pageExitWarning = "WARNING: This page contains unsaved changes.";
+
+var confirmOnPageExit = function (e) 
+{
+    // If we haven't been passed the event get the window.event
+    e = e || window.event;
+
+    var message = pageExitWarning;
+
+    // For IE6-8 and Firefox prior to version 4
+    if (e) 
+    {
+        e.returnValue = message;
+    }
+
+    // For Chrome, Safari, IE8+ and Opera 12+
+    return message;
+};
+
+function addPageExitWarning( warningText ) {
+    // Turn it on - assign the function that returns the string
+    if (warningText) {
+        pageExitWarning = warningText;
+    }
+    window.onbeforeunload = confirmOnPageExit;
+}
+function removePageExitWarning() {
+    // Turn it off - remove the function entirely
+    window.onbeforeunload = null;
+}
