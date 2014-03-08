@@ -2005,6 +2005,7 @@ function showTreeViewer( tree ) {
             $('#tree-tags').tagsinput('destroy');
         }
         */
+        updateInferenceMethodWidgets( tree );
         $('#tree-tags').tagsinput( tagsOptions );
         treeTagsInitialized = true;
     }
@@ -4307,6 +4308,38 @@ function updateElementTags( select ) {
     });
 }
 
+function updateInferenceMethodWidgets( tree, event ) {
+    // This is a sort of indirect binding, since we want to offer both
+    // preset options and free-form text for inference methods.
+    var $selectWidget = $('#inference-method-select');
+    var $freeTextWidget = $('#inference-method-other');
+    if (event) {
+        // read from widgets and apply value
+        var selectValue = $selectWidget.val();
+        if (selectValue === 'Other (specify)') {
+            $freeTextWidget.show();
+            tree['^ot:curatedType'] = $freeTextWidget.val();
+        } else {
+            $('#inference-method-other').hide();
+            tree['^ot:curatedType'] = selectValue;
+        }
+    } else {
+        // read from model and update widget display
+        var modelValue = tree['^ot:curatedType'];
+        // check this value against SELECT options
+        if ($selectWidget.find("option[value='"+ modelValue +"']").length === 0) {
+            // not a preset option, use free-form text
+            $selectWidget.val('Other (specify)');
+            $freeTextWidget.val(modelValue);
+            $freeTextWidget.show();
+        } else {
+            // select the matching option, hide the field
+            $selectWidget.val(modelValue);
+            $freeTextWidget.hide();
+        }
+    }
+    nudgeTickler('TREES');
+}
 
 /* Define a registry of nudge methods, for use in KO data bindings. Calling
  * a nudge function will update one or more observables to trigger updates

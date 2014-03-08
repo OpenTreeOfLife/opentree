@@ -1304,11 +1304,28 @@ Please review and re-submit.</pre>
           {{ if viewOrEdit == 'EDIT': }}
             <!-- editable tree properties here -->
               <div class="pull-left" style="width: 48%;">
-                <label>Tree type: </label>
-                <input type="text" data-bind="value: $data['^ot:curatedType'], 
-                                              valueUpdate: 'afterkeydown', 
-                                              event: { keyup: nudge.TREES, change: nudge.TREES }, 
-                                              css: viewModel.ticklers.TREES"></input>
+                <label>Inference method: </label>
+                <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny --> 
+                <select id="inference-method-select"
+                        onchange="(this); return false;"
+                        data-bind="options: [
+                                       'Maximum parsimony ',
+                                       'Maximum likelihood ',
+                                       'Neighbor-joining ',
+                                       'UPGMA ',
+                                       'Bayesian inference ',
+                                       'Least squares ',
+                                       'Three-taxon analysis',
+                                       'Other (specify)'
+                                   ], 
+                                   optionsCaption: 'Choose a method...',
+                                   event: { change: updateInferenceMethodWidgets }, 
+                                   css: viewModel.ticklers.TREES">
+                </select>
+                <input type="text" id="inference-method-other" 
+                       placeholder="Other (specify)"
+                       data-bind="event: { change: updateInferenceMethodWidgets }, 
+                                  css: viewModel.ticklers.TREES"></input>
               <br/>
                 <label for="testtest">Root node: </label>
                 <strong data-bind="text: getRootNodeDescriptionForTree($data), 
