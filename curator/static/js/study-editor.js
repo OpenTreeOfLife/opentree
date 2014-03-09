@@ -31,6 +31,7 @@ var tagsOptions = {
 };
 
 $(document).ready(function() {
+    bindHelpPanels();
     // auto-select first tab (Status)
     $('.nav-tabs a:first').tab('show');
     loadSelectedStudy(studyID);
