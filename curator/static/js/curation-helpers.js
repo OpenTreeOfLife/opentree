@@ -248,3 +248,29 @@ function removePageExitWarning() {
     // Turn it off - remove the function entirely
     window.onbeforeunload = null;
 }
+
+function bindHelpPanels() {
+    // Enable toggling of help panels anywhere in the page.
+    var $helpToggles = $('.help-toggle');
+    
+    $.each($helpToggles, function(index, toggle) {
+        var $toggle = $(toggle);
+        var toggleType = $toggle.parent().is('.help-box') ? 'HIDE' : 'SHOW';
+        var $mainHelpBox, $outerToggle;
+        if (toggleType === 'HIDE') {
+            $toggle.unbind('click').click(function() {
+                $mainHelpBox = $toggle.parent('.help-box');
+                $outerToggle = $mainHelpBox.prevAll('.help-toggle');
+                $mainHelpBox.hide();
+                $outerToggle.show();
+            });
+        } else { // assumes 'SHOW'
+            $toggle.unbind('click').click(function() {
+                $outerToggle = $toggle;
+                $mainHelpBox = $outerToggle.nextAll('.help-box');
+                $outerToggle.hide();
+                $mainHelpBox.show();
+            });
+        }
+    });
+}
