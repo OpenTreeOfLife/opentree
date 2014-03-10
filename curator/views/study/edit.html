@@ -315,8 +315,23 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
               <p>
-                Here's a general introduction to the editor? Possibly tools to
-                import (overwrite?) data for this study.
+                This tool is a friendly visual editor for curating <a target="_blank" i
+                    href="https://github.com/OpenTreeOfLife/api.opentreeoflife.org/wiki/NexSON">NexSON files</a>. 
+                Like the NeXML and NEXUS formats from which it evolved, each NexSON file
+                contains information about a single published study, with a particular
+                focus on its trees and OTUs.
+              </p>
+              <p>
+                Each tab in this curation tool manages a different aspect of the
+                study data. Watch for prompts&mdash;they look like 
+                <span class="badge badge-important" style="">2</span>&mdash;in
+                each tab that point to areas ripe for improvement.
+              </p>
+              <p>
+                Here in the <strong>Metadata</strong> tab, we're primarily
+                concerned with clearly identifying this study and making it
+                easy to find using standard publication references, DOIs, and
+                free-form tags.
               </p>
             </div>
 
@@ -1178,7 +1193,7 @@ body {
                     </tr>
                   -->
 
-                <!-- TODO: respond to calculated notes, gathered from throughout study Nexson -->
+                <!-- TODO: respond to calculated notes, gathered from throughout study NexSON -->
                 <div class="pagination pagination-centered pagination-small" 
                      Xdata-bind="if: viewModel.filteredAnnotations()().length &gt; viewModel.filteredAnnotations().pagedItems().length">
                   <ul>
@@ -1479,7 +1494,7 @@ Please review and re-submit.</pre>
               <div class="help-box">
                   Click any node below to set the ingroup clade. Click any node
                   <strong>or</strong> edge to re-root the entire tree. N.B. An
-                  arbitrary root (see checkbox above) will only be used to draw
+                  <strong>arbitrary root</strong> (see options above) will only be used to draw
                   the tree and correctly set the ingroup clade. It will not be
                   considered biologically correct.
               </div>
