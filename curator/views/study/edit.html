@@ -72,18 +72,18 @@ body {
 }
 /* preferred ot:specifiedRoot */
 .node.specifiedRoot circle {
-  fill: #f55;
+  fill: steelblue;
 }
 .node.specifiedRoot text {
-  fill: #f77;
+  fill: steelblue;
   font-size: 1.3em;
 }
 /* even more preferred ot:specifiedRoot */
 .node.inGroupClade circle {
-  fill: #f5f;
+  fill: black;
 }
 .node.inGroupClade text {
-  fill: #f7f;
+  fill: black;
   font-size: 1.3em;
 }
 
@@ -111,10 +111,20 @@ body {
     color: #888;
 }
 .dropdown-menu > li.node-information .node-type.inGroupClade {
-    color: #f7f;
+    color: steelblue;
 }
 .dropdown-menu > li.node-information .node-type.specifiedRoot {
-    color: #f77;
+    color: steelblue;
+}
+
+.link-trigger {
+  fill: none;
+  stroke: red;
+  stroke-width: 6.0px;
+  stroke-opacity: 0;
+}
+.link-trigger:hover {
+  stroke-opacity: 0.5;
 }
 
 .link {
@@ -160,7 +170,7 @@ body {
       <li><a href="#Files" data-toggle="tab">Files <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#OTU-Mapping" data-toggle="tab">OTU Mapping <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#Annotations" data-toggle="tab">Annotations <span class="badge badge-important" style="display: none;">?</span></a></li>
-  <!--<li><a href="#Tools" data-toggle="tab">Tools <span class="badge badge-important" style="display: none;">?</span></a></li>-->
+      <li><a href="#Tools" data-toggle="tab">Tools <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#Status" data-toggle="tab">Status <span class="badge badge-important" style="display: none;">?</span></a></li>
     </ul>
 
@@ -296,9 +306,20 @@ body {
 
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
-            <p>
-            [TODO] Here's a general introduction to the editor? Possibly tools to import (overwrite?) data for this study.
-            </p>
+
+            <button class="help-toggle" style="display: none;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+              <p>
+                Here's a general introduction to the editor? Possibly tools to
+                import (overwrite?) data for this study.
+              </p>
+            </div>
+
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
@@ -418,14 +439,23 @@ body {
 
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
-            <p>
-            [TODO] Here's some text about trees in a study. For example, what do we mean by 
-            <strong>preferred</strong> trees? Plus tools for importing/adding new trees.
-            Clicking a tree name should open a modal tree view/editor (D3?).
-            </p>
+
+            <button class="help-toggle" style="display: none;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+              <p>
+                [TODO] Here's some text about trees in a study. For example, what do we mean by 
+                <strong>preferred</strong> trees? Plus tools for importing/adding new trees.
+                Clicking a tree name should open a modal tree view/editor (D3?).
+              </p>
+            </div>
 
         {{ if viewOrEdit == 'EDIT': }}
-            <div class="well">
+            <div class="well" style="clear: right;">
                 <h4 style="margin-top: 0;">Add a tree to this study</h4>
                 <form id="tree-import-form" 
                       style="margin: 0;" 
@@ -618,12 +648,22 @@ body {
 
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
-            <p>
-            [TODO] Here's some text about files in a study. Plus tools for
-            importing/adding new files. What about bulk imports?
-            </p>
+
+            <button class="help-toggle" style="display: none;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+              <p>
+                [TODO] Here's some text about files in a study. Plus tools for
+                importing/adding new files. What about bulk imports?
+              </p>
+            </div>
+
         {{ if viewOrEdit == 'EDIT': }}
-            <div class="well Xwell-large">
+            <div class="well" style="clear: right;">
                 <h4 style="margin-top: 0;">Add a file to this study</h4>
                 <form style="margin: 0;">
                  <fieldset>
@@ -817,21 +857,31 @@ body {
 
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
-            <p>
-            For a tree in your study to contribute to synthesis in the Open
-            Tree of Life project, its leaf nodes should correspond to taxa in 
-            the OTT (Open Tree Taxonomy). This list includes all the OTUs
-            (operating taxonomic units) in your study. Each OTU is a distinct
-            label used in one or more of your study's trees.
-            </p>
-            <p>
-            We use a TNRS (taxonomic name resolution service) to automate this
-            "mapping" process where possible. If you've used standard taxonomic
-            names for the nodes in your trees, mapping is fast and easy.
-            But most trees submitted have been labeled with institutional
-            shorthand, unrecognized taxa, or simple misspellings. The tools on
-            this page will help you adjust labels for faster mapping.
-            </p>
+
+            <button class="help-toggle" style="display: none;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+                <p>
+                For a tree in your study to contribute to synthesis in the Open
+                Tree of Life project, its leaf nodes should correspond to taxa in 
+                the OTT (Open Tree Taxonomy). This list includes all the OTUs
+                (operating taxonomic units) in your study. Each OTU is a distinct
+                label used in one or more of your study's trees.
+                </p>
+                <p>
+                We use a TNRS (taxonomic name resolution service) to automate this
+                "mapping" process where possible. If you've used standard taxonomic
+                names for the nodes in your trees, mapping is fast and easy.
+                But most trees submitted have been labeled with institutional
+                shorthand, unrecognized taxa, or simple misspellings. The tools on
+                this page will help you adjust labels for faster mapping.
+                </p>
+            </div>
+
 <!-- TODO: If we're doing independent server-side mapping, show a blanket message like this to avoid conflicts?
             <div class="alert alert-block">
                 <h4>Server-side mapping in progress</h4>
@@ -1007,7 +1057,20 @@ body {
 
           <div class="tab-pane" id="Annotations">
            <div class="span12"><!-- full width... -->
-            <ul class="suggestion-list"></ul>
+
+            <button class="help-toggle" style="display: none; margin-bottom: 0px;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+              <p>
+              TODO: Help for the Annotations tab.
+              </p>
+            </div>
+
+            <ul class="suggestion-list" style="clear: right;"></ul>
             <div style="margin-bottom: 100px;">
 
               <div class="navbar">
@@ -1180,10 +1243,22 @@ body {
             </div>
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
-            <p>
-            [TODO] Here's some text about the available tools and how to use them, add new ones, register a new tool..?
-            A collection of available tools for this study, and other (ghosted) tools that could become available. Space carrots!
-            </p>
+
+            <button class="help-toggle" style="display: none;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+                <p>
+                [TODO] Here's some text about the available tools and how to
+                use them, add new ones, register a new tool..? A collection of
+                available tools for this study, and other (ghosted) tools that
+                could become available. Space carrots!
+                </p>
+            </div>
+
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
@@ -1294,11 +1369,28 @@ Please review and re-submit.</pre>
           {{ if viewOrEdit == 'EDIT': }}
             <!-- editable tree properties here -->
               <div class="pull-left" style="width: 48%;">
-                <label>Tree type: </label>
-                <input type="text" data-bind="value: $data['^ot:curatedType'], 
-                                              valueUpdate: 'afterkeydown', 
-                                              event: { keyup: nudge.TREES, change: nudge.TREES }, 
-                                              css: viewModel.ticklers.TREES"></input>
+                <label>Inference method: </label>
+                <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny --> 
+                <select id="inference-method-select"
+                        onchange="(this); return false;"
+                        data-bind="options: [
+                                       'Maximum parsimony ',
+                                       'Maximum likelihood ',
+                                       'Neighbor-joining ',
+                                       'UPGMA ',
+                                       'Bayesian inference ',
+                                       'Least squares ',
+                                       'Three-taxon analysis',
+                                       'Other (specify)'
+                                   ], 
+                                   optionsCaption: 'Choose a method...',
+                                   event: { change: updateInferenceMethodWidgets }, 
+                                   css: viewModel.ticklers.TREES">
+                </select>
+                <input type="text" id="inference-method-other" 
+                       placeholder="Other (specify)"
+                       data-bind="event: { change: updateInferenceMethodWidgets }, 
+                                  css: viewModel.ticklers.TREES"></input>
               <br/>
                 <label for="testtest">Root node: </label>
                 <strong data-bind="text: getRootNodeDescriptionForTree($data), 

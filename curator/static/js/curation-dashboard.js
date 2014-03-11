@@ -14,6 +14,7 @@ var viewOrEdit;
 var viewModel;
 
 $(document).ready(function() {
+    bindHelpPanels();
     loadStudyList();
 });
 

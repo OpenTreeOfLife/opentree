@@ -577,10 +577,32 @@ tr:hover .row-controls-ghosted {
 .clear-search:hover {
     opacity: 1.0; 
 }
-.help-box, 
+.help-box,
+.help-toggle,
 .empty-list-prompt {
     padding: 0.5em 1em;
     background-color: #ffeedd;
     font-style: italic;
     border-radius: 4px;
+}
+.help-box {
+    margin-bottom: 1em;
+}
+.help-toggle {
+    float: right;
+    /* font-weight: bold; */
+    /* font-style: normal; */
+    color: #333;
+    border: 1px solid #db8;
+    padding: 4px 8px 4px 10px;
+    border-radius: 4px;
+    margin: 0px;
+    margin-bottom: 1em;
+}
+.help-toggle:hover {
+    background-color: #eca;
+}
+.help-box .help-toggle {
+    /* inner "Hide" toggle */
+    margin: -5px -12px 4px 8px;
 }
