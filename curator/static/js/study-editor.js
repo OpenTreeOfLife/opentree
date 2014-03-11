@@ -261,7 +261,12 @@ function loadSelectedStudy(id) {
             } else {
                 data.nexml['^ot:candidateTreeForSynthesis'] = {
                     'candidate': [ ]
-                }
+                };
+            }
+            if ('^ot:tag' in data.nexml) {
+                data.nexml['^ot:tag'] = makeArray(data.nexml['^ot:tag']);
+            } else {
+                data.nexml['^ot:tag'] = [ ];
             }
 
             // add study-level containers for annotations
@@ -1298,6 +1303,13 @@ function normalizeTree( tree ) {
             tree[tagName] = "";
         }
     });
+
+    // add array of tags (convert singleton tag)
+    if ('^ot:tag' in tree) {
+        tree['^ot:tag'] = makeArray(tree['^ot:tag']);
+    } else {
+        tree['^ot:tag'] = [ ];
+    }
     
 }
 
