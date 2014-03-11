@@ -205,7 +205,7 @@ function loadSelectedStudy(id) {
             showErrorMessage(errMsg);
         },
 
-        success: function( data, textStatus, jqXHR ) {
+        success: function( response, textStatus, jqXHR ) {
             // this should be properly parsed JSON
 
             // report errors or malformed data, if any
@@ -346,6 +346,9 @@ function loadSelectedStudy(id) {
             });
 
             viewModel = data;
+
+            // keep track of the SHA (git commit ID) that corresponds to this version of the study
+            viewModel.startingCommitSHA = response['sha'] || 'SHA_NOT_PROVIDED';
 
             /*
              * Add observable properties to the model to support the UI
@@ -1025,7 +1028,8 @@ function saveFormDataToStudyJSON() {
     var qsVars = $.param({
         author_name: authorName,
         author_email: authorEmail,
-        auth_token: authToken
+        auth_token: authToken,
+        starting_commit_SHA: viewModel.startingCommitSHA
     });
     saveURL += ('?'+ qsVars);
 
