@@ -754,7 +754,7 @@ function updatePageHeadings() {
     var studyCompactReference = fullToCompactReference(studyFullReference);
     $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
 
-    var studyDOI = viewModel.nexml['^ot:studyPublication'];
+    var studyDOI = ('^ot:studyPublication' in viewModel.nexml) ? viewModel.nexml['^ot:studyPublication']['@href'] : "";
     studyDOI = $.trim(studyDOI);
     if (studyDOI === "") {
         $('a.main-title-DOI').hide();
@@ -1642,6 +1642,10 @@ function TreeNode() {
  *
  * Let's try again, organizing by tab (Status, Metadata, etc)
  */
+
+var roughDOIpattern = new RegExp('(doi|DOI)[\\s\\.\\:]{0,2}\\b10[.\\d]{2,}\\b');
+// this checks for *attempts* to include a DOI, not necessarily valid
+
 var studyScoringRules = {
     'Metadata': [
         // problems with study metadata, DOIs, etc
@@ -1713,17 +1717,25 @@ var studyScoringRules = {
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         },
         {
-            description: "The study DOI should match the one in its publication reference.",
+            description: "The study publication URL should match the DOI in its publication reference string (if found).",
             test: function(studyData) {
                 // compare metatags for DOI and publication reference
+                /* NOTE that we no longer expect a DOI in the reference string, so this should only complain if
+                 *   - a DOI is found there, AND
+                 *   - it conflicts with the "real" DOI in ot:studyPublication.
+                 */
                 var DOI = ('^ot:studyPublication' in studyData.nexml) ? studyData.nexml['^ot:studyPublication']['@href'] : "";
                 var pubRef = studyData.nexml['^ot:studyPublicationReference'];
                 if (($.trim(DOI) === "") || ($.trim(pubRef) === "")) {
-                    // one of these fields is empty, so it fails
-                    return false;
+                    // one of these fields is empty, so it passes (no conflict)
+                    return true;
+                }
+                if (roughDOIpattern.test(pubRef) === false) {
+                    // there's no DOI in the reference string, so no conflict
+                    return true;
                 }
 
-                // compare the two, to see if the (minimal) DOI matches
+                // compare the two DOIs, to see if the (minimal) DOI matches
                 var DOIParts = $.trim(DOI).split('http://dx.doi.org/');
                 var strippedDOI;
                 if (DOIParts.length === 1) {
@@ -1736,9 +1748,9 @@ var studyScoringRules = {
                 return pattern.test(pubRef);
             },
             weight: 0.2, 
-            successMessage: "The study's DOI matches its publication reference.",
-            failureMessage: "The study's DOI (in metadata) doesn't match its publication reference.",
-            suggestedAction: "Check study's DOI against its publication reference."
+            successMessage: "The study's publication URL matches the DOI in its publication reference.",
+            failureMessage: "The study's publication URL doesn't match the DOI in its publication reference.",
+            suggestedAction: "Check study's publication URL against the DOI in its publication reference."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
 
         }
