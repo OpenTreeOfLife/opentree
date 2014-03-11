@@ -190,7 +190,6 @@ function loadSelectedStudy(id) {
             'output_nexml2json': '1.0.0',
             'auth_token': authToken
         },
-
         error: function(jqXHR, textStatus, errorThrown) {
             // report errors or malformed data, if any
             console.warn("textStatus: "+ textStatus);
@@ -206,7 +205,7 @@ function loadSelectedStudy(id) {
             showErrorMessage(errMsg);
         },
 
-        success: function( data, textStatus, jqXHR ) {
+        success: function( response, textStatus, jqXHR ) {
             // this should be properly parsed JSON
 
             // report errors or malformed data, if any
@@ -214,6 +213,11 @@ function loadSelectedStudy(id) {
                 showErrorMessage('Sorry, there was an error loading this study.');
                 return;
             }
+            if (typeof response !== 'object' || typeof(response['data']) == 'undefined') {
+                showErrorMessage('Sorry, there is a problem with the study data.');
+                return;
+            }
+            var data = response['data'];
             if (typeof data !== 'object' || typeof(data['nexml']) == 'undefined') {
                 showErrorMessage('Sorry, there is a problem with the study data.');
                 return;
@@ -342,6 +346,9 @@ function loadSelectedStudy(id) {
             });
 
             viewModel = data;
+
+            // keep track of the SHA (git commit ID) that corresponds to this version of the study
+            viewModel.startingCommitSHA = response['sha'] || 'SHA_NOT_PROVIDED';
 
             /*
              * Add observable properties to the model to support the UI
@@ -1021,7 +1028,8 @@ function saveFormDataToStudyJSON() {
     var qsVars = $.param({
         author_name: authorName,
         author_email: authorEmail,
-        auth_token: authToken
+        auth_token: authToken,
+        starting_commit_SHA: viewModel.startingCommitSHA
     });
     saveURL += ('?'+ qsVars);
 
