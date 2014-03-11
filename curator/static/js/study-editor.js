@@ -213,13 +213,19 @@ function loadSelectedStudy(id) {
                 showErrorMessage('Sorry, there was an error loading this study.');
                 return;
             }
-            if (typeof response !== 'object' || typeof(response['data']) == 'undefined') {
-                showErrorMessage('Sorry, there is a problem with the study data.');
+            if (typeof response !== 'object') {
+                showErrorMessage('Sorry, there is a problem with the study data (no response).');
                 return;
             }
-            var data = response['data'];
+            // pull data from bare NexSON repsonse or compound object (data + sha)
+            if (response['data']) {
+                console.log("FOUND inner data (compound response)...");
+            } else {
+                console.log("inner data NOT found (bare NexSON)...");
+            }
+            var data = response['data'] || response;
             if (typeof data !== 'object' || typeof(data['nexml']) == 'undefined') {
-                showErrorMessage('Sorry, there is a problem with the study data.');
+                showErrorMessage('Sorry, there is a problem with the study data (missing NexSON).');
                 return;
             }
             
