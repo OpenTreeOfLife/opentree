@@ -102,7 +102,8 @@ function createStudyFromForm( clicked ) {
         },
         success: function( data, textStatus, jqXHR ) {
             // creation method should return either a redirect URL to the new study, or an error
-            debugger;
+            $('#ajax-busy-bar').hide();
+
             console.log('createStudyFromForm(): done! textStatus = '+ textStatus);
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
@@ -110,9 +111,9 @@ function createStudyFromForm( clicked ) {
                 return;
             }
 
-            $('#ajax-busy-bar').hide();
             showSuccessMessage('Study created, redirecting now....');
-            // TODO: bounce to the new location
+            // bounce to the new study in the study editor
+            window.location = "/curator/study/edit/"+ data['resource_id'];
         },
         error: function( data, textStatus, jqXHR ) {
             debugger;
