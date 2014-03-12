@@ -34,7 +34,7 @@ $(document).ready(function() {
     bindHelpPanels();
     // auto-select first tab (Status)
     $('.nav-tabs a:first').tab('show');
-    loadSelectedStudy(studyID);
+    loadSelectedStudy();
 
     // Initialize the jQuery File Upload widgets
     $('#fileupload').fileupload({
@@ -158,7 +158,7 @@ function goToTab( tabName ) {
 }
 
 var studyTagsInitialized = false;
-function loadSelectedStudy(id) {
+function loadSelectedStudy() {
     /* Use REST API to pull study data from datastore
      * :EXAMPLE: GET http://api.opentreeoflife.org/1/study/{23}.json
      * 
@@ -227,6 +227,12 @@ function loadSelectedStudy(id) {
             if (typeof data !== 'object' || typeof(data['nexml']) == 'undefined') {
                 showErrorMessage('Sorry, there is a problem with the study data (missing NexSON).');
                 return;
+            }
+            
+            // a new study might now have its ID assigned yet; if so, do it now
+            if (data.nexml['^ot:studyId'] === "") {
+                console.log(">>> adding study ID to a new NexSON document");
+                data.nexml['^ot:studyId'] = studyID;
             }
             
             // add missing study metadata tags (with default values)
