@@ -1733,8 +1733,8 @@ var studyScoringRules = {
                 var studyYear = studyData.nexml['^ot:studyYear'] || "";
                 var pubRef = studyData.nexml['^ot:studyPublicationReference'] || "";
                 if (($.trim(studyYear) === "") || ($.trim(pubRef) === "")) {
-                    // one of these fields is empty, so it fails
-                    return false;
+                    // one of these fields is empty, so ignore (pass) this test
+                    return true;
                 }
 
                 // compare the two, to see if the year is found (anywhere) in the reference
