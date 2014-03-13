@@ -95,6 +95,7 @@ function createStudyFromForm( clicked ) {
             'import_option': $('[name=import-option]:checked').val() || '',
             'treebase_id': $('[name=treebase-id]').val() || '',
             'publication_DOI': $('[name=publication-DOI]').val() || '',
+            'publication_reference': $('[name=publication-reference]').val() || '',
             // misc identifying information
             'author_name': authorName,
             'author_email': authorEmail,
