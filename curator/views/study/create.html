@@ -1,4 +1,4 @@
-{{response.title = "Create Study"}}
+{{response.title = "Add Study"}}
 
 {{left_sidebar_enabled,right_sidebar_enabled=False,False}}
 {{response.subtitle = "license and import options"}}
@@ -50,23 +50,26 @@ body {
         My study is published and has a DOI. 
     </label>
     <p class="featured-label-description">
-        The DOI allows us to retrieve some study metadata automatically, then you can upload your data files. 
+        The DOI, or digital object identifier, is assigned by the publisher and
+        usually looks like <strong>10.123/4567</strong>. The DOI allows us to
+        retrieve some study metadata automatically, then you can upload your data
+        files. 
     </p>
     <div id="import-details-PUBLICATION_DOI" class="featured-label-child">
-        <input class="span4" type="text" name="publication-DOI" placeholder="Enter the publication DOI"></input>
-        <button class="btn btn-info">Import using publication DOI</button>
+        <input class="span4" type="text" name="publication-DOI" placeholder="Enter the publication DOI" style="margin-bottom: 12px;"></input>
+        <button class="btn btn-info" style="margin-bottom: 12px;">Import using publication DOI</button>
     </div>
 
     <label for="import-option-PUBLICATION_REFERENCE" class="featured-label">
         <input type="radio" id="import-option-PUBLICATION_REFERENCE" name="import-option" value="IMPORT_FROM_PUBLICATION_REFERENCE" />
-        My study is published and I have its reference string (or most of it). 
+        My study is published and I have a reference string (or most of it). 
     </label>
     <p class="featured-label-description">
         Enter a reference string to retrieve study metadata automatically, then you can upload your data files. 
     </p>
     <div id="import-details-PUBLICATION_REFERENCE" class="featured-label-child">
-        <input class="span4" type="text" name="publication-reference" placeholder="Enter the reference string"></input>
-        <button class="btn btn-info">Import using reference string</button>
+        <textarea class="span4" name="publication-reference" placeholder="Enter the reference string" rows="4" style="margin-bottom: 12px;"></textarea>
+        <button class="btn btn-info" style="vertical-align: bottom; margin-bottom: 12px;">Import using reference string</button>
     </div>
 
     <label for="import-option-MANUAL_ENTRY" class="featured-label">
