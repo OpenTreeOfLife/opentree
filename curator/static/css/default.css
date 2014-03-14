@@ -606,3 +606,11 @@ tr:hover .row-controls-ghosted {
     /* inner "Hide" toggle */
     margin: -5px -12px 4px 8px;
 }
+
+/* modal event blocker */
+#modal-screen-message {
+    padding: 12px;
+    text-align: center;
+    font-size: 1.6em;
+    color: #888;
+}

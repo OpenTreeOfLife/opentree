@@ -274,3 +274,23 @@ function bindHelpPanels() {
         }
     });
 }
+
+function showModalScreen( messageHTMLorElement, options ) {
+    // NOTE that this can be called repeatedly to update its message
+    $('#modal-screen').modal('show');
+    if ( messageHTMLorElement ) {
+        $('#modal-screen-message').empty().append(messageHTMLorElement).show();
+    } else {
+        $('#modal-screen-message').hide();
+    }
+    // show the barber-pole spinner if there's no message, or if specified
+    var showBusyBar = options ? options.SHOW_BUSY_BAR : messageHTMLorElement ? false : true;
+    if (showBusyBar) {
+        $('#modal-screen-busy-bar').show();
+    } else {
+        $('#modal-screen-busy-bar').hide();
+    }
+}
+function hideModalScreen() {
+    $('#modal-screen').modal('hide');
+}
