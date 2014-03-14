@@ -90,7 +90,7 @@ function loadStudyList() {
     */
 
     // use oti (study indexing service) to get the complete list
-    $('#ajax-busy-bar').show();
+    showModalScreen("Loading study list...", {SHOW_BUSY_BAR:true});
 
     $.ajax({
         type: 'POST',
@@ -233,7 +233,7 @@ function loadStudyList() {
                     
             ko.applyBindings(viewModel);
 
-            $('#ajax-busy-bar').hide();
+            hideModalScreen();
         }
     });
 }

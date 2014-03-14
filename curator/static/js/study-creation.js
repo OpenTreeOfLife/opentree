@@ -81,7 +81,7 @@ function createStudyFromForm( clicked ) {
     //
     // TODO: support ENTER key vs explicit button click?
 
-    $('#ajax-busy-bar').show();
+    showModalScreen("Adding study...", {SHOW_BUSY_BAR:true});
     
     $.ajax({
         type: 'POST',
@@ -103,7 +103,7 @@ function createStudyFromForm( clicked ) {
         },
         success: function( data, textStatus, jqXHR ) {
             // creation method should return either a redirect URL to the new study, or an error
-            $('#ajax-busy-bar').hide();
+            hideModalScreen();
 
             console.log('createStudyFromForm(): done! textStatus = '+ textStatus);
             // report errors or malformed data, if any

@@ -125,7 +125,7 @@ $(document).ready(function() {
             $('[name=new-tree-submit]').click(function() {
                 console.log('treeupload - submitting...');
                 $('[name=uploadid]').val( generateTreeUploadID() );
-                $('#ajax-busy-bar').show();
+                showModalScreen("Adding tree...", {SHOW_BUSY_BAR:true});
                 data.submit();
                 return false; // suppress normal form submission!
             });
@@ -179,8 +179,7 @@ function loadSelectedStudy() {
 
     // TODO: try an alternate URL, pulling directly from GitHub?
 
-    // TODO: show/hide spinner during all AJAX requests?
-    $('#ajax-busy-bar').show();
+    showModalScreen("Loading study data...", {SHOW_BUSY_BAR:true});
 
     $.ajax({
         type: 'GET',
@@ -766,7 +765,7 @@ function loadSelectedStudy() {
             $('#study-tags').tagsinput( tagsOptions );
             studyTagsInitialized = true;
 
-            $('#ajax-busy-bar').hide();
+            hideModalScreen();
             showInfoMessage('Study data loaded.');
         }
     });
@@ -1032,7 +1031,7 @@ function validateFormData() {
 
 function saveFormDataToStudyJSON() {
     // save all populated fields; clear others, or remove from JSON(?)
-    $('#ajax-busy-bar').show();
+    showModalScreen("Saving study data...", {SHOW_BUSY_BAR:true});
 
     //// push changes back to storage
     var saveURL = API_update_study_PUT_url.replace('{STUDY_ID}', studyID);
@@ -1080,7 +1079,7 @@ function saveFormDataToStudyJSON() {
                 return;
             }
 
-            $('#ajax-busy-bar').hide();
+            hideModalScreen();
             showSuccessMessage('Study saved to remote storage.');
 
             removePageExitWarning();
@@ -1105,7 +1104,7 @@ function removeStudy() {
     removeURL += ('?'+ qsVars);
 
     // do the actual removal (from the remote file-store) via AJAX
-    $('#ajax-busy-bar').show();
+    showModalScreen("Deleting study...", {SHOW_BUSY_BAR:true});
     
     $.ajax({
         type: 'DELETE',
@@ -1129,7 +1128,7 @@ function removeStudy() {
             }
             */
 
-            $('#ajax-busy-bar').hide();
+            hideModalScreen();
             showSuccessMessage('Study removed, returning to study list...');
             setTimeout(function() {
                 var studyListURL = $('#return-to-study-list').attr('href');
@@ -2065,19 +2064,25 @@ function showTreeViewer( tree ) {
     ko.applyBindings(tree, boundElement);
     $('#tree-viewer').modal('show');
 
-    if (viewOrEdit == 'EDIT') {
-        /*
-        if (treeTagsInitialized) {
-            $('#tree-tags').tagsinput('destroy');
-        }
-        */
-        updateInferenceMethodWidgets( tree );
-        $('#tree-tags').tagsinput( tagsOptions );
-        treeTagsInitialized = true;
-    }
+    showModalScreen("Launching tree viewer...", {SHOW_BUSY_BAR:true});
 
-    updateEdgesInTree( tree );
-    drawTree( tree );
+    setTimeout(function() {
+        if (viewOrEdit == 'EDIT') {
+            /*
+            if (treeTagsInitialized) {
+                $('#tree-tags').tagsinput('destroy');
+            }
+            */
+            updateInferenceMethodWidgets( tree );
+            $('#tree-tags').tagsinput( tagsOptions );
+            treeTagsInitialized = true;
+        }
+
+        //showModalScreen("Rendering tree...", {SHOW_BUSY_BAR:true});
+        updateEdgesInTree( tree );
+        drawTree( tree );
+        hideModalScreen();
+    }, 1000);
 }
 
 var vizInfo = { tree: null, vis: null };
@@ -2732,7 +2737,7 @@ function submitNewTree( form ) {
     var submitURL = $(form).attr('action');
     ///console.log(submitURL);
     
-    $('#ajax-busy-bar').show();
+    showModalScreen("Adding tree...", {SHOW_BUSY_BAR:true});
 
     // @MTH:"no longer needed on upload"  $('[name=uploadid]').val( generateTreeUploadID() );
     
@@ -2750,7 +2755,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     // show results of tree submission, whether from submitNewTree() 
     // or special (fileupload) behavior
     
-    $('#ajax-busy-bar').hide();
+    hideModalScreen();
 
     ///console.log('submitNewTree(): done! textStatus = '+ textStatus);
     // report errors or malformed data, if any
@@ -3145,7 +3150,7 @@ function addSupportingFileFromURL() {
     }
 
     // TODO: support import-from-URL via AJAX
-    $('#ajax-busy-bar').show();
+    showModalScreen("Adding supporting file...", {SHOW_BUSY_BAR:true});
     
     $.ajax({
         type: 'POST',
@@ -3159,7 +3164,7 @@ function addSupportingFileFromURL() {
         },
         success: function( data, textStatus, jqXHR ) {
             // creation method should return either our JSON structure describing the new file, or an error
-            $('#ajax-busy-bar').hide();
+            hideModalScreen();
 
             ///console.log('addSupportingFileFromURL(): done! textStatus = '+ textStatus);
             // report errors or malformed data, if any
@@ -3233,7 +3238,7 @@ function removeSupportingFile( fileInfo ) {
     ///var removeURL = API_remove_file_DELETE_url.replace('STUDY_ID', 'TODO').replace('FILE_ID', 'TODO');
 
     // TODO: do the actual removal (from the remote file-store) via AJAX
-    $('#ajax-busy-bar').show();
+    showModalScreen("Removing supporting file...", {SHOW_BUSY_BAR:true});
     
     $.ajax({
         // type: 'DELETE',
@@ -3256,7 +3261,7 @@ function removeSupportingFile( fileInfo ) {
                 return;
             }
 
-            $('#ajax-busy-bar').hide();
+            hideModalScreen();
             showSuccessMessage('File removed.');
             // update the files list
             var fileList = getSupportingFiles().data.files.file;
