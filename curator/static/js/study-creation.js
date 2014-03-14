@@ -20,12 +20,6 @@ $(document).ready(function() {
         updateCreationDetails();
     });
 
-    // enable all submit buttons
-    $('#import-options button').click(function() {
-        createStudyFromForm();
-        return false;
-    });
-
     // set initial state for all details
     updateCreationDetails();
 });
@@ -38,28 +32,28 @@ function updateCreationDetails() {
         $('input:radio[name=import-option]').removeAttr('disabled');
         $('#import-options').css('opacity', 1.0);
         $('#import-options').unbind('click');
+        $('#import-options button').click(function() {
+            createStudyFromForm();
+            return false;
+        });
     } else {
         $('input:radio[name=import-option]').attr('disabled','disabled');
         $('#import-options').css('opacity', 0.5);
-        $('#import-options').click(function() {
+        $('#import-options').click(function(e) {
             showErrorMessage('You must accept CC-0 licensing to import a study.');
+            return false;
         });
+        $('#import-options button').unbind('click');
     }
 
     $.each($('[id^=import-details-]'), function(index, details) {
         var $details = $(details);
         var matchingRadioID = $details.attr('id').split('details').join('option');
         var $radio = $('#'+ matchingRadioID);
-
-
-        console.log( $radio.attr('id') + "...");
-        console.log( "~"+ $details.attr('id') + "...");
         // hide or show details based on checked status
         if ($radio.is(':checked')) {
-            console.log( "  CHECKED" );
             $details.slideDown('fast');
         } else {
-            console.log( "  NOT-CHECKED" );
             $details.slideUp('fast');
         }
     });
