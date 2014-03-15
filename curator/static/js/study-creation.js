@@ -32,7 +32,7 @@ function updateCreationDetails() {
         $('input:radio[name=import-option]').removeAttr('disabled');
         $('#import-options').css('opacity', 1.0);
         $('#import-options').unbind('click');
-        $('#import-options button').click(function() {
+        $('#import-options button').unbind('click').click(function() {
             createStudyFromForm();
             return false;
         });
