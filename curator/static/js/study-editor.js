@@ -1155,6 +1155,9 @@ function StudyViewModel() {
         // fetch from a list by @property value
         for (var i = 0; i < array.length; i++) {
             var testItem = array[i];
+            if (!('@property' in testItem)) {
+                continue
+            };
             if (testItem['@property'] === prop) {
                 return testItem.value; // assumes value is stored here
             }

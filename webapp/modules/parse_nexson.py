@@ -15,17 +15,17 @@ def debug(m):
             pass
 
 def _get_ottol_id_from_meta_dict(m):
-    if m['@property'] == 'ot:ottolid':
+    if m.get('@property') == 'ot:ottolid':
         return m.get('$')
     return None
 
 def _get_original_name_from_meta_dict(m):
-    if m['@property'] == 'ot:originalLabel':
+    if m.get('@property') == 'ot:originalLabel':
         return m.get('$')
     return None
 
 def _get_el_from_meta_from_meta_dict(m, k, t):
-    if m['@property'] == k:
+    if m.get('@property') == k:
         if m.get("@xsi:type") != t:
             warn('found property "%s", but it was not of xsi:type "%s"' % (k, t))
             return None
