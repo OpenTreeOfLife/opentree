@@ -73,7 +73,7 @@ How to push the neo4j databases
 If the server is to run treemachine or taxomachine (optional; ordinarily this requires a 'big' server), the appropriate database has to be pushed out to the server and installed, as a separate step.  Create a compressed tar file of the neo4j database directory (which by default is called 'graph.db' although you can call it whatever you like locally).  Then copy it to the server using rsync.  Suppose the neo4j .db directory is data/newlocaldb.db. The you would say:
 
     tar -C {txxxmachine}/data/newlocaldb.db -czf newlocaldb.db.tgz .
-    ./push.sh push-db -c {configfile} newlocaldb.db.tgz {app}
+    ./push.sh -c {configfile} pushdb newlocaldb.db.tgz {app}
 
 where {txxxmachine} is the neo4j directory for the application and {app} is taxomachine or treemachine.
 
