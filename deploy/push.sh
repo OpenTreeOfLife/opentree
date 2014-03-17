@@ -77,13 +77,22 @@ while [ $# -gt 0 ]; do
     fi
 done
 
-[ "x$OPENTREE_HOST" != x ] || (echo "OPENTREE_HOST not specified"; exit 1)
-[ "x$OPENTREE_IDENTITY" != x ] || (echo "OPENTREE_IDENTITY not specified"; exit 1)
-[ -r $OPENTREE_IDENTITY ] || (echo "$OPENTREE_IDENTITY not found"; exit 1)
-[ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J=$OPENTREE_HOST
+if [ "x$OPENTREE_HOST" = x ] ; then echo "OPENTREE_HOST not specified"; exit 1; fi
+if [ "x$OPENTREE_IDENTITY" = x ]; then echo "OPENTREE_IDENTITY not specified"; exit 1; fi
+if [ ! -r $OPENTREE_IDENTITY ]; then echo "$OPENTREE_IDENTITY not found"; exit 1; fi
+[ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J_HOST=$OPENTREE_HOST
 [ "x$OPENTREE_PUBLIC_DOMAIN" != x ] || OPENTREE_PUBLIC_DOMAIN=$OPENTREE_HOST
+[ "x$GITHUB_CLIENT_ID" != x ] || GITHUB_CLIENT_ID=ID_NOT_PROVIDED
+[ "x$GITHUB_REDIRECT_URI" != x ] || GITHUB_REDIRECT_URI=$OPENTREE_PUBLIC_DOMAIN/curator/user/login
+[ "x$TREEMACHINE_BASE_URL" != x ] || TREEMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/treemachine
+[ "x$TAXOMACHINE_BASE_URL" != x ] || TAXOMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/taxomachine
+[ "x$OTI_BASE_URL" != x ] || OTI_BASE_URL=$OPENTREE_NEO4J_HOST/oti
+[ "x$OPENTREE_API_BASE_URL" != x ] || OPENTREE_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/api/v1
+
+if [ $GITHUB_CLIENT_ID = ID_NOT_PROVIDED ]; then echo "WARNING: Missing GitHub client ID! Curation UI will be disabled."; fi
 
 # abbreviations... no good reason for these, they just make the commands shorter
+
 ADMIN=$OPENTREE_ADMIN
 NEO4JHOST=$OPENTREE_NEO4J_HOST
 
@@ -188,13 +197,21 @@ function restart_apache {
 
 function push_opentree {
     if [ $DRYRUN = "yes" ]; then echo "[opentree]"; return; fi
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" $CONTROLLER "${GITHUB_CLIENT_ID}" "${GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OPENTREE_API_BASE_URL}"
     # place the file with secret Janrain key
-    keyfile=../webapp/private/janrain.key
+    keyfile=~/.ssh/opentree/janrain.key
     if [ -r $keyfile ]; then
         rsync -pr -e "${SSH}" $keyfile "$OT_USER@$OPENTREE_HOST":repo/opentree/webapp/private/janrain.key
     else
 	echo "Cannot find janrain key file $keyfile"
+    fi
+    # place the file with secret GitHub API key 
+    # N.B. This includes the final domain name, since we'll need different keys for dev.opentreeoflife.org, www.opentreeoflife.org, etc.
+    keyfile=~/.ssh/opentree/GITHUB_CLIENT_SECRET-$OPENTREE_PUBLIC_DOMAIN
+    if [ -r $keyfile ]; then
+        rsync -pr -e "${SSH}" $keyfile "$OT_USER@$OPENTREE_HOST":repo/opentree/curator/private/GITHUB_CLIENT_SECRET
+    else
+	echo "Cannot find GITHUB_CLIENT_SECRET file $keyfile"
     fi
 }
 
@@ -205,7 +222,7 @@ function push_api {
     if [ $DRYRUN = "yes" ]; then echo "[api]"; return; fi
     rsync -pr -e "${SSH}" $OPENTREE_GH_IDENTITY "$OT_USER@$OPENTREE_HOST":.ssh/opentree
     ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" $OPENTREE_DOCSTORE $CONTROLLER
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" $OPENTREE_DOCSTORE $CONTROLLER $OTI_BASE_URL
 }
 
 function index {
@@ -219,6 +236,10 @@ function push_db {
     # E.g. ./push.sh push-db localnewdb.db.tgz taxomachine
     TARBALL=$1
     APP=$2
+    if [ x$APP = x -o x$TARBALL = x ]; then
+	echo "Usage: $0 -c {configfile} push-db {tarball} {application}"
+	exit 1
+    fi
     time rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":downloads/$APP.db.tgz
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh "$OPENTREE_HOST" $APP $CONTROLLER
 }

@@ -2,7 +2,7 @@
 from opentreewebapputil import get_opentree_services_method_urls
 
 #########################################################################
-## Manages and manipulates studies in the OToL curation tool
+## Manages and manipulates studies in the Open Tree curation tool
 ## - index()    lists all studies in the system? or just mine?
 ## - create()   makes a new study (incl. one-time imports, etc)
 ## - edit()     manages an existing study
@@ -45,7 +45,9 @@ def view():
 
 @auth.requires_login()
 def create():
-    return dict(message="study/create")
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict['message'] = "study/create"
+    return view_dict
 
 
 @auth.requires_login()

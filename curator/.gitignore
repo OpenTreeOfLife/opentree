@@ -1,5 +1,6 @@
 *.pyc
 private/
+private/GITHUB_CLIENT_SECRET
 cache/
 errors/
 sessions/
@@ -9,3 +10,5 @@ tmp/
 *.class
 *~
 *.DS_Store
+build-ncl-static
+ncl

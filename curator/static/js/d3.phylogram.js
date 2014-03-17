@@ -82,7 +82,7 @@ if (!d3) { throw "d3 wasn't included!"};
     }
     
     function diagonal(diagonalPath, i) {
-      ///console.log("calculating path "+ diagonalPath.target['@id']());
+      ///console.log("calculating path "+ diagonalPath.target['@id']);
       var source = diagonalPath.source,
           target = diagonalPath.target,
           midpointX = (source.x + target.x) / 2,
@@ -180,6 +180,8 @@ if (!d3) { throw "d3 wasn't included!"};
       }
     }
     visitPreOrder(nodes[0], function(node) {
+      // TODO: if we have mixed trees (some edges with lengths), consider 1
+      // as default length versus 0?
       node.rootDist = (node.parent ? node.parent.rootDist : 0) + (node.length || 0)
     })
     var rootDists = nodes.map(function(n) { return n.rootDist; });
@@ -210,7 +212,7 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("width", w + 300)
         .attr("height", h + 30)
       .append("svg:g")
-        .attr("transform", "translate(100, 20)");
+        .attr("transform", "translate(120, 20)");
     var nodes = tree(nodes);
     
     if (options.skipBranchLengthScaling) {
@@ -260,25 +262,41 @@ if (!d3) { throw "d3 wasn't included!"};
     ///console.log("NEW keys on timestamp: "+ timestamp);
 
     var path_links = vis.selectAll("path.link")
-        .data(tree.links(nodes), function(d) { return d.source['@id']() +'_'+ d.target['@id'](); });
+        .data(tree.links(nodes), function(d) { return d.source['@id'] +'_'+ d.target['@id']; });
+
+    var path_link_triggers = vis.selectAll("path.link-trigger")
+        .data(tree.links(nodes), function(d) { return d.source['@id'] +'_'+ d.target['@id'] +'_trigger'; });
 
     var g_nodes = vis.selectAll("g.node")
-        .data(nodes, function(d) { return d['@id'](); });
+        .data(nodes, function(d) { return d['@id']; });
 
 
     // UPDATE (only affects existing links)
     path_links
         .attr("stroke", "#aaa");
     
+    path_link_triggers
+        .attr("stroke", "orange");
+
     
     // ENTER (only affects new links; do one-time initialization here)
     path_links
-      .enter().append("svg:path")
-        .attr("class", "link")
-        .attr("fill", "none")
-        .attr("stroke", "#f33")
-        .attr("stroke-width", "4px");
+      .enter()
+          .append("svg:path")                   // styled (visible) edge
+            .attr("class", "link")
+            .attr("fill", "none")
+            .attr("stroke", "#f33")
+            .attr("stroke-width", "4px");
     
+    path_link_triggers
+      .enter()
+          .append("svg:path")                   // "hit area" for clicking edge
+            .attr("class", "link-trigger")
+            .attr("fill", "none")
+            .attr("stroke", "red")
+            .attr("stroke-width", "4px")
+            //.attr('pointer-events', 'all')
+
     g_nodes
       .enter()
         .append("svg:g")
@@ -295,6 +313,10 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("d", diagonal)
         .attr("class", function(d) { return "link "+ (d.source.ingroup ? "ingroup" : "outgroup"); });
         
+    path_link_triggers
+        .attr("d", diagonal)
+        .attr("class", function(d) { return "link-trigger "+ (d.source.ingroup ? "ingroup" : "outgroup"); });
+
     g_nodes
         .attr("class", function(n) {
           if (n.children) {
@@ -315,13 +337,21 @@ if (!d3) { throw "d3 wasn't included!"};
       .exit()
         .remove();
 
+    path_link_triggers
+      .exit()
+        .remove();
+
     g_nodes
       .exit().remove();
 
     // any dynamic readjustments of non-CSS attributes
     d3.phylogram.styleTreeNodes(vis);
     
+
+    // TODO: why is this SUPER-SLOW with large trees? like MINUTES to run...
+    // Is there a faster/cruder way to clear the decks?
     vis.selectAll('g.node text').remove();
+
 
     if (!options.skipLabels) {
       // refresh all labels based on tree position
@@ -334,19 +364,28 @@ if (!d3) { throw "d3 wasn't included!"};
           .attr('font-size', '10px')
           .attr('fill', '#ccc')
           ///.text(function(d) { return d.length; });
-          .text(function(d) { return (d.name + ' ('+d.length+')'); });
+          .text(function(d) {
+              // return (d.name + ' ('+d.length+')'); 
+              return d.name; 
+          });
 
       vis.selectAll('g.root.node text')
           .attr("dx", -8)
           .attr("dy", 3)
-          .text(function(d) { return (d.name + ' (root)'); });
+          .text(function(d) { 
+              //return (d.name + ' (root)'); 
+              return d.name; 
+          });
 
       vis.selectAll('g.leaf.node text')
         .attr("dx", 8)
         .attr("dy", 3)
         .attr("text-anchor", "start")
         .attr('fill', 'black')
-        .text(function(d) { return d.name + ' ('+d.length+')'; });
+        .text(function(d) { 
+            // return (d.name + ' ('+d.length+')'); 
+            return d.name; 
+        });
     }
     
     return {tree: tree, vis: vis}

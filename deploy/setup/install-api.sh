@@ -5,6 +5,7 @@
 OPENTREE_HOST=$1
 OPENTREE_DOCSTORE=$2
 CONTROLLER=$3
+OTI_BASE_URL=$4
 
 . setup/functions.sh
 
@@ -35,6 +36,9 @@ if grep --invert-match "distribute" \
       $APPROOT/requirements.txt >requirements.txt.new ; then
     mv requirements.txt.new $APPROOT/requirements.txt
 fi
+
+git_refresh OpenTreeOfLife peyotl || true
+py_package_setup_install peyotl || true
 
 (cd $APPROOT; pip install -r requirements.txt)
 
@@ -72,8 +76,10 @@ pushd .
     # This is the file location of the SSH key that is used in git.sh
     sed -i -e "s+PKEY+$OTHOME/.ssh/opentree+" config
 
-    # Access oti search from port 7478 on localhost
-    sed -i -e "s+7474+7478+" config
+    # Access oti search from shared server-config variable
+    sed -i -e "s+OTI_BASE_URL+$OTI_BASE_URL+" config
 popd
+
+# N.B. Another file 'GITHUB_CLIENT_SECRET' was already placed via rsync (in push.sh)
 
 echo "Apache needs to be restarted (API)"

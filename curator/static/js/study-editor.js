@@ -1,13 +1,14 @@
 /*
  * Client-side behavior for the Open Tree curation UI
  *
- * This uses the OTOL API to fetch and store studies and trees remotely.
+ * This uses the Open Tree API to fetch and store studies and trees remotely.
  */
 
 // these variables should already be defined in the main HTML page
 var studyID;
 var API_load_study_GET_url;
 var API_update_study_PUT_url;
+var API_remove_study_DELETE_url;
 var viewOrEdit;
 var API_create_file_POST_url;
 var API_load_file_GET_url;
@@ -16,20 +17,6 @@ var API_remove_file_DELETE_url;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
-var checkForModelChanges;
-// declarative mapping of raw JS obj to view-model, using mapping plugin
-var studyMappingOptions = {  // modify default mapping options
-    // specify an (all-purpose?) function for determine a key property on some types
-    key: function(item) {
-        // what happens if no @id is found on some items?
-        return ko.utils.unwrapObservable(item['@id']);
-    }
-         
-    // some properties should never changes; these can be copied as-is, avoiding the overhead of making them "observable"
-    // NOTE that this is not being applied properly, since the mapping plugin expects a "full path", eg 'nexml.study.node.@property'
-    //   TODO: Fixing this will require a pull request (and some regex magic) in the main mapping plugin project on GitHub.
-    //copy: ['@property','@xsi:type']  // FAILS, see comment above
-}
 
 var tagsOptions = {
     confirmKeys: [13, 9],  // ENTER, TAB for next tag
@@ -44,11 +31,12 @@ var tagsOptions = {
 };
 
 $(document).ready(function() {
+    bindHelpPanels();
     // auto-select first tab (Status)
     $('.nav-tabs a:first').tab('show');
-    loadSelectedStudy(studyID);
+    loadSelectedStudy();
 
-    // Initialize the jQuery File Upload widget:
+    // Initialize the jQuery File Upload widgets
     $('#fileupload').fileupload({
         disableImageResize: true,
         // maxNumberOfFiles: 5,
@@ -56,7 +44,7 @@ $(document).ready(function() {
         // acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i  // TODO: allow any
         url: '/curator/supporting_files/upload_file',
         dataType: 'json',
-        autoUpload: 'True',
+        autoUpload: true,
         done: function() {
             console.log('done!');
         }
@@ -86,14 +74,15 @@ $(document).ready(function() {
                 */
                 // update the files list (and auto-save?)
                 var fileNexson = cloneFromNexsonTemplate('single supporting file');
-                fileNexson['@filename']( file.name );
-                fileNexson['@url']( file.url );  // TODO: prepend current domain name, if missing?
-                fileNexson['@type']( "" );  // TODO: glean this from file extension?
-                fileNexson['@size']( file.size );  // convert byte count for display?
+                fileNexson['@filename'] = file.name;
+                fileNexson['@url'] = file.url;  // TODO: prepend current domain name, if missing?
+                fileNexson['@type'] = "";  // TODO: glean this from file extension?
+                fileNexson['@size'] = file.size;  // convert byte count for display?
                 // TODO: incorporate the delete URL provided? or generate as-needed?
                 // fileNexson.delete_url( file.delete_url );
 
                 getSupportingFiles().data.files.file.push(fileNexson);
+                nudgeTickler('SUPPORTING_FILES');
 
                 showSuccessMessage('File added.');
             } else if (file.error) {
@@ -109,20 +98,57 @@ $(document).ready(function() {
         });
     }) 
     
-    // Load existing files (?)
-    $('#fileupload').addClass('fileupload-processing');
-    $.ajax({
-        // Uncomment the following to send cross-domain cookies:
-        //xhrFields: {withCredentials: true},
-        url: $('#fileupload').fileupload('option', 'url'),
+    $('#treeupload').fileupload({
+        // NOTE that this should submit the same arguments (except for file
+        // data) as submitNewtree() below
+        disableImageResize: true,
+        // maxNumberOfFiles: 5,
+        // maxFileSize: 5000000,  // TODO: allow maximum
+        // acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i  // TODO: allow any
+        url: $('#tree-import-form').attr('action'),
         dataType: 'json',
-        context: $('#fileupload')[0]
-    }).always(function () {
-        $(this).removeClass('fileupload-processing');
-    }).done(function (result) {
-        $(this).fileupload('option', 'done')
-            .call(this, $.Event('done'), {result: result});
-    });
+        autoUpload: false,
+        start: function(e, data) {
+            console.log('*** treeupload - start ***');
+        },
+        /* use actual form widgets instead?
+        formData: {
+            // these are ADDED to the form's native widgets
+            // https://github.com/blueimp/jQuery-File-Upload/wiki/How-to-submit-additional-Form-Data
+            author_name: authorName,
+            author_email: authorEmail,
+            auth_token: authToken
+        },
+        */
+        add: function(e, data) {
+            console.log('*** treeupload - add ***');
+            $('[name=new-tree-submit]').click(function() {
+                console.log('treeupload - submitting...');
+                $('[name=uploadid]').val( generateTreeUploadID() );
+                showModalScreen("Adding tree...", {SHOW_BUSY_BAR:true});
+                data.submit();
+                return false; // suppress normal form submission!
+            });
+        },
+        always: function(e, data) {
+            // do this regardless of success or failure
+            console.log('*** treeupload - (always) done ***');
+            returnFromNewTreeSubmission( data.jqXHR, data.textStatus );
+        }
+    }).on('fileuploadprogressall', function (e, data) {
+        console.log('tree - fileuploadprogressall');
+        var progress = parseInt(data.loaded / data.total * 100, 10);
+        $('#tree-upload-progress .bar').css(
+            'width',
+            progress + '%'
+        );
+        $('#tree-upload-progress .bar span').text(
+            progress + '%'
+        );
+    }).on('fileuploaddone', function (e, data) {
+        console.log('tree - fileuploaddone');
+    }) 
+    
 });
 
 
@@ -132,7 +158,7 @@ function goToTab( tabName ) {
 }
 
 var studyTagsInitialized = false;
-function loadSelectedStudy(id) {
+function loadSelectedStudy() {
     /* Use REST API to pull study data from datastore
      * :EXAMPLE: GET http://api.opentreeoflife.org/1/study/{23}.json
      * 
@@ -153,17 +179,32 @@ function loadSelectedStudy(id) {
 
     // TODO: try an alternate URL, pulling directly from GitHub?
 
-    // TODO: show/hide spinner during all AJAX requests?
-    $('#ajax-busy-bar').show();
+    showModalScreen("Loading study data...", {SHOW_BUSY_BAR:true});
 
     $.ajax({
         type: 'GET',
         dataType: 'json',
         url: fetchURL,
         data: { 
+            'output_nexml2json': '1.0.0',
             'auth_token': authToken
         },
-        success: function( data, textStatus, jqXHR ) {
+        error: function(jqXHR, textStatus, errorThrown) {
+            // report errors or malformed data, if any
+            console.warn("textStatus: "+ textStatus);
+            console.warn("jqXHR.status: "+ jqXHR.status);
+            console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+            
+            var errMsg; 
+            if (jqXHR.responseText.length === 0) {
+                errMsg = 'Sorry, there was an error loading this study. (No more information is available.)';
+            } else {
+                errMsg = 'Sorry, there was an error loading this study. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+            }
+            showErrorMessage(errMsg);
+        },
+
+        success: function( response, textStatus, jqXHR ) {
             // this should be properly parsed JSON
 
             // report errors or malformed data, if any
@@ -171,28 +212,102 @@ function loadSelectedStudy(id) {
                 showErrorMessage('Sorry, there was an error loading this study.');
                 return;
             }
-            if (typeof data !== 'object' || typeof(data['nexml']) == 'undefined') {
-                showErrorMessage('Sorry, there is a problem with the study data.');
+            if (typeof response !== 'object') {
+                showErrorMessage('Sorry, there is a problem with the study data (no response).');
                 return;
+            }
+            // pull data from bare NexSON repsonse or compound object (data + sha)
+            if (response['data']) {
+                console.log("FOUND inner data (compound response)...");
+            } else {
+                console.log("inner data NOT found (bare NexSON)...");
+            }
+            var data = response['data'] || response;
+            if (typeof data !== 'object' || typeof(data['nexml']) == 'undefined') {
+                showErrorMessage('Sorry, there is a problem with the study data (missing NexSON).');
+                return;
+            }
+            
+            // a new study might now have its ID assigned yet; if so, do it now
+            if (data.nexml['^ot:studyId'] === "") {
+                console.log(">>> adding study ID to a new NexSON document");
+                data.nexml['^ot:studyId'] = studyID;
+            }
+            
+            // add missing study metadata tags (with default values)
+            if (!(['^ot:studyPublicationReference'] in data.nexml)) {
+                data.nexml['^ot:studyPublicationReference'] = "";
+            }
+            if (!(['^ot:studyPublication'] in data.nexml)) {
+                console.log(">>> adding complex metatag for 'ot:studyPublication'...");
+                data.nexml['^ot:studyPublication'] = {
+                    '@href': ""
+                }; 
+            }
+            if (['^ot:curatorName'] in data.nexml) {
+                // NOTE that this construction creates n metatags in NeXML,
+                // instead of a single metatag with an array as its value
+                data.nexml['^ot:curatorName'] = 
+                    makeArray(data.nexml['^ot:curatorName']);
+            } else {
+                data.nexml['^ot:curatorName'] = [ ];
+            }
+            if (!(['^ot:studyId'] in data.nexml)) {
+                data.nexml['^ot:studyId'] = "";
+            }
+            if (!(['^ot:studyYear'] in data.nexml)) {
+                data.nexml['^ot:studyYear'] = "";
+            }
+            if (!(['^ot:focalClade'] in data.nexml)) {
+                data.nexml['^ot:focalClade'] = null // OR ""?
+            }
+            if (!(['^ot:focalCladeOTTTaxonName'] in data.nexml)) {
+                data.nexml['^ot:focalCladeOTTTaxonName'] = "";
+            }
+            if (!(['^ot:notIntendedForSynthesis'] in data.nexml)) {
+                data.nexml['^ot:notIntendedForSynthesis'] = false;
+            }
+
+            // NOTE that we should "pluralize" existing arrays, in case
+            // Badgerfish conversion has replaced it with a single item
+            if ('^ot:candidateTreeForSynthesis' in data.nexml) {
+                data.nexml['^ot:candidateTreeForSynthesis'].candidate = 
+                    makeArray(data.nexml['^ot:candidateTreeForSynthesis'].candidate);
+            } else {
+                data.nexml['^ot:candidateTreeForSynthesis'] = {
+                    'candidate': [ ]
+                };
+            }
+            if ('^ot:tag' in data.nexml) {
+                data.nexml['^ot:tag'] = makeArray(data.nexml['^ot:tag']);
+            } else {
+                data.nexml['^ot:tag'] = [ ];
             }
 
             // add study-level containers for annotations
-            if (getStudyAnnotationEvents(data.nexml) === null) {
-                data.nexml.meta.push( 
-                    cloneFromNexsonTemplate('study annotation events', {applyKnockoutMapping: false})
-                );
+            if (['^ot:annotationEvents'] in data.nexml) {
+                data.nexml['^ot:annotationEvents'].annotation = 
+                    makeArray(data.nexml['^ot:annotationEvents'].annotation);
+            } else {
+                data.nexml['^ot:annotationEvents'] = {
+                    'annotation': []
+                }
             }
-            if (getStudyAnnotationAgents(data.nexml) === null) {
-                data.nexml.meta.push( 
-                    cloneFromNexsonTemplate('study annotation agents', {applyKnockoutMapping: false}) 
-                );
+            if (['^ot:agents'] in data.nexml) {
+                data.nexml['^ot:agents'].agent = 
+                    makeArray(data.nexml['^ot:agents'].agent);
+            } else {
+                data.nexml['^ot:agents'] = {
+                    'agent': []
+                }
             }
-            if (getStudyAnnotationMessages(data.nexml) === null) {
-                data.nexml.meta.push( 
-                    cloneFromNexsonTemplate('annotation message collection', {applyKnockoutMapping: false}) 
-                );
+            if (['^ot:messages'] in data.nexml) {
+                data.nexml['^ot:messages'].message = 
+                    makeArray(data.nexml['^ot:messages'].message);
+                data.nexml['^ot:messages'] = {
+                    'message': []
+                }
             }
-
 
             // add agent singleton for this curation tool
             var curatorAgent;
@@ -203,7 +318,7 @@ function loadSelectedStudy(id) {
             }
             if (!agentExists( isCurrentCurationTool, data.nexml )) {
                 addAgent( 
-                    cloneFromNexsonTemplate('curator annotation agent', {applyKnockoutMapping: false}), 
+                    cloneFromNexsonTemplate('curator annotation agent'), 
                     data.nexml 
                 );
             }
@@ -235,52 +350,51 @@ function loadSelectedStudy(id) {
             }
 
             // add expected tree properties and metadata, if missing
-            $.each(makeArray(data.nexml.trees.tree), function(index, tree) {
-                /*
-                 * NOTE that we haven't mapped this yet, so properties aren't functions!
-                 */
-
-                // editable display name for this tree
-                if ((tree['@label'] === undefined) || ($.trim(tree['@label']) === '')) {
-                    tree['@label'] = 'Untitled ('+ tree['@about'] +')';
-                }
-
-                // metadata fields (with empty default values)
-                var metatags = [
-                    'ot:curatedType',
-                    'ot:specifiedRoot',
-                    'ot:inGroupClade',
-                    'ot:outGroupEdge',
-                    'ot:tag',
-                    'ot:branchLengthMode',
-                    'ot:branchLengthTimeUnit',
-                    'ot:branchLengthDescription'
-                ];
-                $.each(metatags, function(i, tagName) {
-                    var foundTag = false;
-                    $.each(tree.meta, function(i, existingTag) {
-                        if (existingTag['@property'] == tagName) {
-                            foundTag = true;
-                            return false;
-                        }
-                    });
-                    if (!foundTag) {
-                        tree.meta.push({
-                            '@property': tagName,
-                            '@xsi:type': 'nex:LiteralMeta',
-                            '$': ""
-                        });
-                    }
+            $.each(data.nexml.trees, function(i, treesCollection) {
+                $.each(treesCollection.tree, function(i, tree) {
+                    normalizeTree( tree );
                 });
-
             });
 
-            viewModel = ko.mapping.fromJS(data, studyMappingOptions);
+            viewModel = data;
+
+            // keep track of the SHA (git commit ID) that corresponds to this version of the study
+            viewModel.startingCommitSHA = response['sha'] || 'SHA_NOT_PROVIDED';
 
             /*
              * Add observable properties to the model to support the UI
              */
 
+            // Add a series of observable "ticklers" to signal changes in 
+            // the model without observable Nexson properties. Each is an
+            // integer that creeps up by 1 to signal a change somewhere in
+            // related Nexson elements.
+            // TODO: Is this a tickler? ratchet? whisker?
+            viewModel.ticklers = {
+                'GENERAL_METADATA': ko.observable(1),
+                'EDGE_DIRECTIONS': ko.observable(1),
+                'TREES': ko.observable(1),
+                'SUPPORTING_FILES': ko.observable(1),
+                'OTU_MAPPING_HINTS': ko.observable(1),
+                'VISIBLE_OTU_MAPPINGS': ko.observable(1),
+                // TODO: add more as needed...
+                'STUDY_HAS_CHANGED': ko.observable(1)
+            }     
+
+            viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
+                addPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
+                updateQualityDisplay();
+            });
+            
+
+            // support fast lookup of elements by ID, for largest trees
+            viewModel.fastLookups = {
+                'NODES_BY_ID': null,
+                'OTUS_BY_ID': null,
+                'EDGES_BY_SOURCE_ID': null,
+                'EDGES_BY_TARGET_ID': null
+            };
+            
             // enable sorting and filtering for lists in the editor
             viewModel.filterDelay = 250; // ms to wait for changes before updating filter
             viewModel.listFilters = {
@@ -310,16 +424,30 @@ function loadSelectedStudy(id) {
             viewModel.filteredTrees = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
-                console.log(">>> computing filteredTrees");
+                var ticklers = [ viewModel.ticklers.TREES() ];
+
+                updateClearSearchWidget( '#tree-list-filter' );
+
                 var match = viewModel.listFilters.TREES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
 
+                var allTrees = [];
+                $.each(viewModel.nexml.trees, function(i, treesCollection) {
+                    // watch for single trees here!
+                    var treeList = makeArray(treesCollection.tree);
+                    $.each(treeList, function(i, tree) {
+                        allTrees.push( tree );
+                    });
+                });
+
+                console.log("  filtering "+ allTrees.length +" trees...");
+
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
-                    viewModel.nexml.trees.tree(), 
+                    allTrees, 
                     function(tree) {
                         // match entered text against old or new label
-                        var treeName = tree['@label']();
+                        var treeName = tree['@label'];
                         var inGroupName = getInGroupCladeDescriptionForTree(tree);
                         if (!matchPattern.test(treeName) && !matchPattern.test(inGroupName)) {
                             return false;
@@ -338,18 +466,43 @@ function loadSelectedStudy(id) {
             viewModel.filteredFiles = ko.computed(function() {
                 // filter raw file list, returning a
                 // new paged observableArray
-                console.log(">>> computing filteredFiles");
+                var ticklers = [ viewModel.ticklers.SUPPORTING_FILES() ];
+
+                updateClearSearchWidget( '#file-list-filter' );
+
                 var match = viewModel.listFilters.FILES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
 
                 // map old array to new and return it
+                var fileDetails = [];
+                $.each(getSupportingFiles().data.files.file, function(i, fileInfo) {
+                    fileDetails.push(fileInfo);
+                });
+
+                $.each(viewModel.nexml.trees, function(i, treesCollection) {
+                    // watch for a bare singleton here!
+                    var treeList = makeArray(treesCollection.tree);
+                    $.each(treeList, function(i, tree) {
+                        if ('^ot:messages' in tree) {
+                            var msgList = makeArray(tree['^ot:messages'].message);
+                            $.each(msgList, function(i, msg) {
+                                if (msg['@code'] === 'SUPPORTING_FILE_INFO') {
+                                    $.each(msg.data.files.file, function(i, fileInfo) {
+                                        fileDetails.push(fileInfo);
+                                    });
+                                }
+                            });
+                        }
+                    });
+                });
+
                 var filteredList = ko.utils.arrayFilter( 
-                    getSupportingFiles().data.files.file(),  // retrieve contents of observableArray
+                    fileDetails,  // retrieve contents of observableArray
                     function(file) {
                         // match entered text against old or new label
-                        var fileName = file['@filename']();
-                        var fileType = file['@type']();
-                        var fileDesc = file.description.$();
+                        var fileName = file['@filename'];
+                        var fileType = file['@type'];
+                        var fileDesc = file.description.$;
                         if (!matchPattern.test(fileName) 
                          && !matchPattern.test(fileType) 
                          && !matchPattern.test(fileDesc)) {
@@ -369,19 +522,52 @@ function loadSelectedStudy(id) {
             viewModel.filteredOTUs = ko.computed(function() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
-                console.log(">>> computing filteredOTUs");
+                var ticklers = [ viewModel.ticklers.OTU_MAPPING_HINTS() ];
+                updateClearSearchWidget( '#otu-list-filter' );
+
                 var match = viewModel.listFilters.OTUS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
                 var scope = viewModel.listFilters.OTUS.scope();
                 var order = viewModel.listFilters.OTUS.order();
 
+                // gather all OTUs from all 'otus' collections
+                var allOTUs = [];
+                $.each(viewModel.nexml.otus, function( i, otusCollection ) {
+                    $.merge(allOTUs, otusCollection.otu );
+                });
+
+                console.log("  filtering "+ allOTUs.length +" otus...");
+
+                var chosenTrees;
+                switch(scope) {
+                    case 'In preferred trees':
+                        chosenTrees = getPreferredTrees()
+                        break;
+                    case 'In non-preferred trees':
+                        chosenTrees = getNonPreferredTrees()
+                        break;
+                    default:
+                        chosenTrees = [];
+                }
+
+                // pool all node IDs in chosen trees into a common object
+                var chosenTreeNodeIDs = {};
+                $.each( chosenTrees, function(i, tree) {
+                    // check this tree's nodes for this OTU id
+                    $.each( tree.node, function( i, node ) {
+                        if (node['@otu']) {
+                            chosenTreeNodeIDs[ node['@otu'] ] = true;
+                        }
+                    });
+                });
+
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
-                    viewModel.nexml.otus.otu(), 
+                    allOTUs, 
                     function(otu) {
                         // match entered text against old or new label
-                        var originalLabel = getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')();
-                        var mappedLabel = otu['@label']();
+                        var originalLabel = otu['^ot:originalLabel'];
+                        var mappedLabel = otu['@label'];
                         if (!matchPattern.test(originalLabel) && !matchPattern.test(mappedLabel)) {
                             return false;
                         }
@@ -397,19 +583,10 @@ function loadSelectedStudy(id) {
                                 // check selected trees for this node
                                 var chosenTrees = (scope === 'In preferred trees') ?  getPreferredTrees() : getNonPreferredTrees(); 
                                 var foundInMatchingTree = false;
-                                var otuID = otu['@id']();
-                                $.each( chosenTrees, function(i, tree) {
-                                    // check this tree's nodes for this OTU id
-                                    $.each( tree.node(), function( i, node ) {
-                                        if (node['@otu'] && node['@otu']() === otuID) {
-                                            foundInMatchingTree = true;
-                                            return false; // stop looping on nodes
-                                        }
-                                    });
-                                    if (foundInMatchingTree) { 
-                                        return false; // stop looping on trees
-                                    }
-                                });
+                                var otuID = otu['@id'];
+
+                                foundInMatchingTree = otuID in chosenTreeNodeIDs;
+
                                 if (!foundInMatchingTree) return false;
                                 break;
 
@@ -431,8 +608,8 @@ function loadSelectedStudy(id) {
                      */
                     case 'Unmapped OTUs first':
                         filteredList.sort(function(a,b) { 
-                            var aMapStatus = $.trim(a['@label']()) !== '';
-                            var bMapStatus = $.trim(b['@label']()) !== '';
+                            var aMapStatus = $.trim(a['@label']) !== '';
+                            var bMapStatus = $.trim(b['@label']) !== '';
                             if (aMapStatus === bMapStatus) return 0;
                             if (aMapStatus) return 1;
                             if (bMapStatus) return -1;
@@ -441,8 +618,8 @@ function loadSelectedStudy(id) {
 
                     case 'Mapped OTUs first':
                         filteredList.sort(function(a,b) { 
-                            var aMapStatus = $.trim(a['@label']()) !== '';
-                            var bMapStatus = $.trim(b['@label']()) !== '';
+                            var aMapStatus = $.trim(a['@label']) !== '';
+                            var bMapStatus = $.trim(b['@label']) !== '';
                             if (aMapStatus === bMapStatus) return 0;
                             if (aMapStatus) return -1;
                             return 1;
@@ -451,8 +628,8 @@ function loadSelectedStudy(id) {
 
                     case 'Original label (A-Z)':
                         filteredList.sort(function(a,b) { 
-                            var aOriginal = getMetaTagAccessorByAtProperty(a.meta, 'ot:originalLabel')();
-                            var bOriginal = getMetaTagAccessorByAtProperty(b.meta, 'ot:originalLabel')();
+                            var aOriginal = a['^ot:originalLabel'];
+                            var bOriginal = b['^ot:originalLabel'];
                             if (aOriginal === bOriginal) return 0;
                             if (aOriginal < bOriginal) return -1;
                             return 1;
@@ -461,8 +638,8 @@ function loadSelectedStudy(id) {
 
                     case 'Original label (Z-A)':
                         filteredList.sort(function(a,b) { 
-                            var aOriginal = getMetaTagAccessorByAtProperty(a.meta, 'ot:originalLabel')();
-                            var bOriginal = getMetaTagAccessorByAtProperty(b.meta, 'ot:originalLabel')();
+                            var aOriginal = a['^ot:originalLabel'];
+                            var bOriginal = b['^ot:originalLabel'];
                             if (aOriginal === bOriginal) return 0;
                             if (aOriginal > bOriginal) return -1;
                             return 1;
@@ -484,29 +661,36 @@ function loadSelectedStudy(id) {
             viewModel.filteredAnnotations = ko.computed(function() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
-                console.log(">>> computing filteredAnnotations");
+                updateClearSearchWidget( '#annotation-list-filter' );
+
                 var match = viewModel.listFilters.ANNOTATIONS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
                 var scope = viewModel.listFilters.ANNOTATIONS.scope();
                 var submitter = viewModel.listFilters.ANNOTATIONS.submitter();
 
                 // filter study metadata, build new array to new and return it
-                var annotationsCollection = getMetaTagByProperty(viewModel.nexml.meta, 'ot:annotationEvents');
+                var annotationsCollection = viewModel.nexml['^ot:annotationEvents'];
                 var filteredList = ko.utils.arrayFilter( 
-                    annotationsCollection.annotation(),
+                    annotationsCollection.annotation,
                     function(annotation) {
                         // match entered text against type, location, submitter name, message text
                         var itsAgent = getAgentForAnnotationEvent( annotation );
                         var itsMessages = getMessagesForAnnotationEvent( annotation );
 
-                        var itsType = itsMessages ? itsMessages[0]['@code']() : ""; // TODO: incorporate all messages?
+                        var itsType = itsMessages && (itsMessages.length > 0) ? 
+                                itsMessages[0]['@code'] : 
+                                ""; // TODO: incorporate all messages?
                         ///var itsLocation = "Study"; // TODO
-                        var itsSubmitter = itsAgent['@name']();
-                        var itsMessageText = itsMessages ? 
-                            $.map(itsMessages, function(m) { return m['humanMessage'] ? m['@humanMessage']() : ""; }).join('|') :
-                            ""; 
-                        var itsSortDate = annotation['@dateCreated']();
-                        if (!matchPattern.test(itsType) && !matchPattern.test(itsSubmitter) && !matchPattern.test(itsMessageText)) {
+                        var itsSubmitter = itsAgent['@name'];
+                        var itsMessageText = itsMessages && (itsMessages.length > 0) ? 
+                                $.map(itsMessages, function(m) { 
+                                    return m['humanMessage'] ? m['@humanMessage'] : ""; 
+                                }).join('|') :
+                                ""; 
+                        var itsSortDate = annotation['@dateCreated'];
+                        if (!matchPattern.test(itsType) && 
+                            !matchPattern.test(itsSubmitter) && 
+                            !matchPattern.test(itsMessageText)) {
                             return false;
                         }
 
@@ -552,38 +736,27 @@ function loadSelectedStudy(id) {
             var mappingHints = getOTUMappingHints();
             //var hintsMessage = getMessagesForAnnotationEvent( mappingHints )[0];
 
+            /* TODO: any edits in this area should nudge the OTU_MAPPING_HINTS tickler
             mappingHints.data.searchContext.$.subscribe(clearFailedOTUList);
             mappingHints.data.substitutions.substitution.subscribe(clearFailedOTUList);
-            $.each(mappingHints.data.substitutions.substitution(), function(i, subst) {
+            $.each(mappingHints.data.substitutions.substitution, function(i, subst) {
                 subst['@active'].subscribe(clearFailedOTUList);
                 subst.new.$.subscribe(clearFailedOTUList);
                 subst.old.$.subscribe(clearFailedOTUList);
             });
+            */
+            viewModel.ticklers.OTU_MAPPING_HINTS.subscribe(clearFailedOTUList);
+
+            // some changes to metadata will modify the page's headings
+            viewModel.ticklers.GENERAL_METADATA.subscribe(updatePageHeadings);
+            updatePageHeadings();
 
             var mainPageArea = $('#main .tab-content')[0];
             ko.applyBindings(viewModel, mainPageArea);
 
-            var studyFullReference = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:studyPublicationReference')();
-            var studyCompactReference = fullToCompactReference(studyFullReference);
-            $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
-
-            var studyDOI = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:studyPublication')();
-            studyDOI = $.trim(studyDOI);
-            if (studyDOI === "") {
-                $('a.main-title-DOI').hide();
-            } else {
-                $('a.main-title-DOI').text(studyDOI).attr('href', studyDOI).show();
-            }
-
-            updateQualityDisplay();
-
             // update quality assessment whenever anything changes
             // TODO: throttle this back to handle larger studies?
-            checkForModelChanges = ko.dirtyFlag(viewModel);
-            checkForModelChanges.isDirty.subscribe(function() {
-                ///console.log("something changed!");
-                updateQualityDisplay();
-            });
+            updateQualityDisplay();
 
             // init (or refresh) the study tags
             if (studyTagsInitialized) {
@@ -592,10 +765,25 @@ function loadSelectedStudy(id) {
             $('#study-tags').tagsinput( tagsOptions );
             studyTagsInitialized = true;
 
-            $('#ajax-busy-bar').hide();
+            hideModalScreen();
             showInfoMessage('Study data loaded.');
         }
     });
+}
+
+function updatePageHeadings() {
+    // page headings should reflect the latest metadata for the study
+    var studyFullReference = viewModel.nexml['^ot:studyPublicationReference'];
+    var studyCompactReference = fullToCompactReference(studyFullReference);
+    $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
+
+    var studyDOI = ('^ot:studyPublication' in viewModel.nexml) ? viewModel.nexml['^ot:studyPublication']['@href'] : "";
+    studyDOI = $.trim(studyDOI);
+    if (studyDOI === "") {
+        $('a.main-title-DOI').hide();
+    } else {
+        $('a.main-title-DOI').text(studyDOI).attr('href', studyDOI).show();
+    }
 }
 
 function floatToPercent( dec ) {
@@ -613,7 +801,7 @@ function scoreToBarClasses( percentScore ) {
     }
 }
 
-function updateQualityDisplay() {
+function updateQualityDisplay () {
     // generate, then apply, fresh scoring information
     var scoreInfo = scoreStudy(viewModel);
 
@@ -706,25 +894,18 @@ function toggleQualityDetails( hideOrShow ) {
     }
 }
 
-function showErrorMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-success')
-               .addClass('alert-error').slideDown();
-}
-
-function showInfoMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-error')
-               .removeClass('alert-success')
-               .addClass('alert-info').slideDown();
-}
-
-function showSuccessMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-error')
-               .addClass('alert-success').slideDown();
+var hidingBranchLengths = false;
+function toggleBranchLengthsInViewer(cb) {
+    // checkbox enables/disables branch-length display (and labeling?) in
+    // tree-view popup
+    hidingBranchLengths = $(cb).is(':checked');
+    // fetch tree ID from popup's widgets
+    var currentTreeID = $('#tree-tags').attr('treeid');
+    if (currentTreeID) {
+        drawTree(currentTreeID)
+    } else {
+        console.warn("No tree in vizInfo!");
+    }
 }
 
 function updateMappingStatus() {
@@ -850,29 +1031,45 @@ function validateFormData() {
 
 function saveFormDataToStudyJSON() {
     // save all populated fields; clear others, or remove from JSON(?)
-    $('#ajax-busy-bar').show();
+    showModalScreen("Saving study data...", {SHOW_BUSY_BAR:true});
 
     //// push changes back to storage
     var saveURL = API_update_study_PUT_url.replace('{STUDY_ID}', studyID);
+    // add non-Nexson values to the query string
+    var qsVars = $.param({
+        author_name: authorName,
+        author_email: authorEmail,
+        auth_token: authToken,
+        starting_commit_SHA: viewModel.startingCommitSHA
+    });
+    saveURL += ('?'+ qsVars);
 
     // strip any extraneous JS properties from study Nexson
-    $.each( viewModel.nexml.trees.tree(), function(i, tree) {
+    var allTrees = [];
+    $.each(viewModel.nexml.trees, function(i, treesCollection) {
+        $.each(treesCollection.tree, function(i, tree) {
+            allTrees.push( tree );
+        });
+    });
+    $.each( allTrees, function(i, tree) {
+        cleanupAdHocRoot(tree);
         clearD3PropertiesFromTree(tree);
     });
     
+    // add this user to the curatorName list, if not found
+    var listPos = $.inArray( curatorDisplayName, viewModel.nexml['^ot:curatorName'] );
+    if (listPos === -1) {
+        viewModel.nexml['^ot:curatorName'].push( curatorDisplayName );
+    }
+  
     $.ajax({
-        type: 'PUT',  // TODO: use POST for updates?
+        type: 'PUT',
         dataType: 'json',
         // crossdomain: true,
-        // contentType: "application/json; charset=utf-8",
+        contentType: "application/json; charset=utf-8",
         url: saveURL,
-        data: {
-            // use JSON stringify (if available) for faster submission of JSON
-            nexson: ko.mapping.toJSON(viewModel),
-            author_name: authorName,
-            author_email: authorEmail,
-            auth_token: authToken
-        },
+        processData: false,
+        data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
         success: function( data, textStatus, jqXHR ) {
             // this should be properly parsed JSON
             ///console.log('saveFormDataToStudyJSON(): done! textStatus = '+ textStatus);
@@ -882,10 +1079,64 @@ function saveFormDataToStudyJSON() {
                 return;
             }
 
-            $('#ajax-busy-bar').hide();
+            hideModalScreen();
             showSuccessMessage('Study saved to remote storage.');
 
+            removePageExitWarning();
             // TODO: should we expect fresh JSON to refresh the form?
+        }
+    });
+}
+
+function removeStudy() {
+    // let's be sure, since deletion will make a mess...
+    if (!confirm("Are you sure you want to delete this study?")) {
+        return;
+    }
+
+    var removeURL = API_remove_study_DELETE_url.replace('{STUDY_ID}', studyID);
+    // add auth-token to the query string (no body allowed!)
+    var qsVars = $.param({
+        author_name: authorName,
+        author_email: authorEmail,
+        auth_token: authToken
+    });
+    removeURL += ('?'+ qsVars);
+
+    // do the actual removal (from the remote file-store) via AJAX
+    showModalScreen("Deleting study...", {SHOW_BUSY_BAR:true});
+    
+    $.ajax({
+        type: 'DELETE',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: removeURL, // modified API call, see above
+        data: {},   // sadly not recognized for DELETE, using query-string instead 
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                showErrorMessage('Sorry, there was an error removing this study.');
+                console.log("ERROR: textStatus !== 'success', but "+ textStatus);
+                return;
+            }
+            /*
+            if (data.message !== 'File deleted') {
+                showErrorMessage('Sorry, there was an error removing this study.');
+                console.log("ERROR: message !== 'File deleted', but "+ data.message);
+                return;
+            }
+            */
+
+            hideModalScreen();
+            showSuccessMessage('Study removed, returning to study list...');
+            setTimeout(function() {
+                var studyListURL = $('#return-to-study-list').attr('href');
+                if (!studyListURL) {
+                    console.error("Missing studyListURL!");
+                }
+                window.location = studyListURL || '/curator';
+            }, 3000);
         }
     });
 }
@@ -904,6 +1155,9 @@ function StudyViewModel() {
         // fetch from a list by @property value
         for (var i = 0; i < array.length; i++) {
             var testItem = array[i];
+            if (!('@property' in testItem)) {
+                continue
+            };
             if (testItem['@property'] === prop) {
                 return testItem.value; // assumes value is stored here
             }
@@ -925,33 +1179,9 @@ function getMetaTagByProperty(array, prop) {
 }
 
 function getOTUByID(id) {
-    // fetch complete metatag in the specified list by matching the specified ID
-    return getNexsonChildByProperty(viewModel.nexml.otus.otu(), '@id', id);
-}
-
-function makeArray( val ) {
-    // The caller expects an array, so we should coerce, wrap, or replace
-    // the specified value as needed.
-    if (typeof(val) === 'function') {
-        // unpack an observable value (from Knockout binding) and continue
-        val = val();
-    }
-
-    var arr;
-    if ((typeof(val) === 'undefined') || val === null) {
-        arr = [];
-    } else if (typeof(val) !== 'object') {
-        // other simple value types should be wrapped in an array
-        arr = [val]
-    } else if (typeof(val.length) === 'undefined') {
-        // it's a simple object, wrap it in an array
-        arr = [val];
-    } else {
-        // anything else is already proper array
-        arr = val;
-    }
-
-    return arr;
+    // return the matching otu, or null if not found
+    var lookup = getFastLookup('OTUS_BY_ID');
+    return lookup[ id ] || null;
 }
 
 function getNexsonChildByProperty(children, property, value, options) {
@@ -972,7 +1202,7 @@ function getNexsonChildByProperty(children, property, value, options) {
             case 'object':
                 continue;
             case 'function':
-                if (testItem[ property ]() === value) {
+                if (testItem[ property ] === value) {
                     foundMatch = testItem;
                     break;
                 }
@@ -995,6 +1225,42 @@ function getNexsonChildByProperty(children, property, value, options) {
         return allMatches;
     } else {
         return null;
+    }
+}
+
+function getMetaTagValue(array, propertyName, options) {
+    // fetch current value(s) for a metatag in the specified list, using its @property value
+    var foundValue = null;
+    var returnAll = (typeof(options) === 'object' && options.FIND_ALL); // else return first match found
+    var allValues = [ ];
+
+    // adjust matchingTags to ensure uniform handling below
+    var matchingTags = getNexsonChildByProperty(array, '@property', propertyName, options);
+    matchingTags = makeArray( matchingTags );
+
+    $.each(matchingTags, function(i, testItem) {
+        foundValue = testItem[ valueFieldForMetaTag( testItem ) ];
+        if (returnAll) {
+            allValues.push(foundValue);
+        } else {
+            return false;
+        }
+    });
+    if (returnAll) {
+        return allValues;
+    } else {
+        return foundValue;
+    }
+}
+
+function valueFieldForMetaTag( metatag ) {
+    // where does this metatag hold its main value?
+    switch( metatag['@xsi:type']) {
+        case 'nex:ResourceMeta':
+            return '@href';  // uses special attribute
+        case 'nex:LiteralMeta':
+        default: 
+            return '$'; // assumes value is stored here
     }
 }
 
@@ -1030,11 +1296,81 @@ function getMetaTagAccessorByAtProperty(array, propertyName, options) {
     }
 }
 
+function normalizeTree( tree ) {
+    // add expected tree properties and metadata, if missing
+
+    // editable display name for this tree
+    if ((tree['@label'] === undefined) || ($.trim(tree['@label']) === '')) {
+        tree['@label'] = 'Untitled ('+ tree['@id'] +')';
+    }
+
+    // metadata fields with other defaults
+    if (!(['^ot:unrootedTree'] in tree)) {
+        // safest value, forces the curator to assert correctness
+        tree['^ot:unrootedTree'] = true;
+    }
+
+    // metadata fields (with empty default values)
+    var metatags = [
+        '^ot:curatedType',
+        '^ot:specifiedRoot',
+        '^ot:inGroupClade',
+        '^ot:outGroupEdge',
+        '^ot:branchLengthMode',
+        '^ot:branchLengthTimeUnit',
+        '^ot:branchLengthDescription'
+    ];
+    $.each(metatags, function(i, tagName) {
+        if (!(tagName in tree)) {
+            tree[tagName] = "";
+        }
+    });
+
+    // add array of tags (convert singleton tag)
+    if ('^ot:tag' in tree) {
+        tree['^ot:tag'] = makeArray(tree['^ot:tag']);
+    } else {
+        tree['^ot:tag'] = [ ];
+    }
+    
+}
+
+function normalizeOTUs( tree ) {
+    // modify this tree's OTUs (if needed) to support mapping OTUs to OTT taxa
+    var itsOTUs = [];
+    $.each( makeArray(tree.node), function(i, node) {
+        // work backward from nodes to get its OTUs
+        if ('@otu' in node) {
+            itsOTUs.push( getOTUByID( node['@otu'] ) );
+        }
+    });
+    console.log("found "+ itsOTUs.length +" OTUs for this tree");
+
+    $.each( itsOTUs, function(i, otu) {
+        // Our main concern is whether it's been mapped to an OTT taxon.
+        var itsOTTid =  otu['^ot:ottId'];
+        if (!itsOTTid || ($.trim(itsOTTid) === '')) {
+            // no OTT id found; shuffle properties as needed
+            var itsOriginalLabel = otu['^ot:originalLabel'];
+            var itsProposedLabel = otu['@label'];
+            if ($.trim(itsOriginalLabel) === '') {
+                // move "final" to original label
+                otu['^ot:originalLabel'] = itsProposedLabel;
+                delete otu['@label'];
+            } else {
+                // retain "final" label as proposed, use in mapping
+            }
+        }
+    });
+}
+
 function getPreferredTreeIDs() {
     preferredTreeIDs = [];
-    var candidateTreeMarkers = getMetaTagAccessorByAtProperty(viewModel.nexml.meta, 'ot:candidateTreeForSynthesis', { 'FIND_ALL': true });
+    var candidateTreeMarkers = ('^ot:candidateTreeForSynthesis' in viewModel.nexml) ? 
+        makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate ) : [];
+
     $.each(candidateTreeMarkers, function(i, marker) {
-        var treeID = $.trim(marker());
+        var treeID = $.trim(marker);
         switch(treeID) {  // non-empty points to a candidate tree
             case '':
             case '0':
@@ -1047,37 +1383,53 @@ function getPreferredTreeIDs() {
 }
 function getPreferredTrees() {
     var preferredTreeIDs = getPreferredTreeIDs();
+    var allTrees = [];
+    $.each(viewModel.nexml.trees, function(i, treesCollection) {
+        $.each(treesCollection.tree, function(i, tree) {
+            allTrees.push( tree );
+        });
+    });
     return ko.utils.arrayFilter( 
-        viewModel.nexml.trees.tree(), 
+        allTrees, 
         function(tree) {
-            return $.inArray( tree['@id'], preferredTreeIDs );
+            var isPreferred = ($.inArray(tree['@id'], preferredTreeIDs) !== -1);
+            return isPreferred;
         }
     );
+}
+function togglePreferredTree( tree ) {
+    var treeID = tree['@id'];
+    var alreadyPreferred = ($.inArray( treeID, getPreferredTreeIDs()) !== -1);
+    if (alreadyPreferred) {
+        // remove it from the list of preferred trees
+        removeFromArray( treeID, viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate );
+    } else {
+        // add it to the list of preferred trees
+        viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( treeID ); 
+    }
+    nudgeTickler('OTU_MAPPING_HINTS');
+    return true;  // to allow checkbox updates
 }
 function getNonPreferredTrees() {
     var preferredTreeIDs = getPreferredTreeIDs();
+    var allTrees = [];
+    $.each(viewModel.nexml.trees, function(i, treesCollection) {
+        $.each(treesCollection.tree, function(i, tree) {
+            allTrees.push( tree );
+        });
+    });
     return ko.utils.arrayFilter( 
-        viewModel.nexml.trees.tree(), 
+        allTrees, 
         function(tree) {
-            return ! $.inArray( tree['@id'], preferredTreeIDs );
+            var isPreferred = ($.inArray(tree['@id'], preferredTreeIDs) !== -1);
+            return !isPreferred;
         }
     );
-}
-
-function getPageNumbers( pagedArray ) {
-    // Generates an array of display numbers (1-based) for use with Knockout's
-    // foreach binding. Let's build this with one-based values for easy display.
-    var pageNumbers = [ ];
-    var howManyPages = Math.ceil(pagedArray().length / pagedArray.pageSize);
-    for (var i = 1; i <= howManyPages; i++) {
-        pageNumbers.push( i );
-    }
-    return pageNumbers;
 }
 
 function getMappedTallyForTree(tree) {
     // return display-ready tally (mapped/total ratio and percentage)
-    if (!tree || !tree.node || tree.node().length === 0) {
+    if (!tree || !tree.node || tree.node.length === 0) {
         return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
     }
 
@@ -1085,16 +1437,12 @@ function getMappedTallyForTree(tree) {
     var totalLeafNodes = 0;
     var mappedLeafNodes = 0;
     ///console.log("Testing "+ totalLeafNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
-    $.each(tree.node(), function(i, node) {
+    $.each(tree.node, function(i, node) {
         totalNodes++;
 
-        if (!node.meta) {
-            // console.log("node has no meta, skipping it...");
-            return true;
-        }
         // Is this a leaf node? If not, skip it
-        var isLeafAccessor = getMetaTagAccessorByAtProperty(node.meta, 'ot:isLeaf');
-        if ((typeof(isLeafAccessor) !== 'function') || (isLeafAccessor() !== 'true')) {
+        //console.log(i +' is a leaf? '+ node['^ot:isLeaf']);
+        if (node['^ot:isLeaf'] !== true) {
             // this is not a leaf node! skip to the next one
             return true;
         }
@@ -1102,12 +1450,10 @@ function getMappedTallyForTree(tree) {
 
         // Simply check for the presence (or absence) of an @otu 'getter' function
         // (so far, it doesn't seem to exist unless there's a mapped OTU)
-        var nodeOTUAccessor = node['@otu'];
-        if (typeof(nodeOTUAccessor) === 'function') {
+        if ('@otu' in node) {
             mappedLeafNodes++;
         } 
         return true;  // skip to next node
-
     });
     // console.log("total nodes? "+ totalNodes);
     // console.log("total leaf nodes? "+ totalLeafNodes);
@@ -1118,112 +1464,73 @@ function getMappedTallyForTree(tree) {
 }
 
 function getRootedDescriptionForTree( tree ) {
-    // return display-ready description ('Rooted', 'Unrooted', 'Multiply rooted') based on count
-    if (!tree || !tree.node || tree.node().length === 0) {
+    // return display-ready description of tree root (arbitrary vs. biologically correct)
+    if (!tree || !tree.node || tree.node.length === 0) {
         return 'Unrooted (empty)';
     }
-
-    /* Old method, based on nodes marked with @root flag
-    var rootedNodes = 0;
-    $.each(tree.node(), function(i, node) {
-        // Simply check for the presence (or absence) of a @root 'getter' function
-        // (so far, it doesn't seem to exist unless there's a mapped OTU)
-        
-        var rootAccessor = node['@root'];
-        if (typeof(rootAccessor) === 'function') {
-            //console.log('@root found, value = '+ rootAccessor() +' <'+ typeof(rootAccessor()) +'>');
-            rootedNodes++;
-        } 
-        return true;  // skip to next node
-    });
-
-    switch (rootedNodes)  {
-        case 0:
-            return 'Unrooted';
-        case 1:
-            return 'Singly'; // OR 'Rooted';
-        default:
-            return 'Multiply rooted';
-    }
-    */
     
     // Apply our "business rules" for tree and/or ingroup rooting, based on
     // tree-level metadata.
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
+    var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    var unrootedTree = tree['^ot:unrootedTree'];
 
-    var unrootedTreeFlag = getMetaTagByProperty(tree.meta, 'ot:unrootedTree');
-    var unrootedTree = unrootedTreeFlag ? unrootedTreeFlag.$() === 'true' : false;
-
-    var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$() : null;
-
-    var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$() : null;
-
-    if (specifiedRoot && inGroupClade) {
-        return "Explicitly rooted tree, ingroup specified";
-    } 
-    if (specifiedRoot) {
-        return "Explicitly rooted tree, no ingroup";
-    } 
     if (unrootedTree) {
-        if (inGroupClade) {
-            return "Unrooted tree, ingroup specified";
-        }
-        return "Unrooted  tree, no ingroup";
+        return "Arbitrary (not biologically correct)";
     } else {
-        if (inGroupClade) {
-            return "Implicitly rooted tree, ingroup specified";
-        }
-        return "Implicitly rooted tree, no ingroup";
+        return "Biologically correct";
     }
 }
 function getRootNodeDescriptionForTree( tree ) {
     // return display-ready description ('node123 [implicit]', 'node234 [explicit]', 'No root', ...)
-    if (!tree || !tree.node || tree.node().length === 0) {
+    if (!tree || !tree.node || tree.node.length === 0) {
         return 'No root (empty tree)';
     }
     
     // Apply our "business rules" for tree and/or ingroup rooting, based on
     // tree-level metadata.
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
-
-    var unrootedTreeFlag = getMetaTagByProperty(tree.meta, 'ot:unrootedTree');
-    var unrootedTree = unrootedTreeFlag ? unrootedTreeFlag.$() === 'true' : false;
-
+    var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    var unrootedTree = tree['^ot:unrootedTree'];
     // if no specified root node, use the implicit root (first in nodes array)
-    var rootNodeID = specifiedRoot ? specifiedRoot : tree.node()[0]['@id']();
+    var rootNodeID = specifiedRoot ? specifiedRoot : tree.node[0]['@id'];
 
-    var nodeName = ('Unmapped ('+ rootNodeID +')');
-    $.each(tree.node(), function(i, node) {
+    var nodeName = ('Unnamed internal node');
+    $.each(tree.node, function(i, node) {
         // Find the node with this ID and see if it has an assigned OTU
-        if (node['@id']() === rootNodeID) {
-            var nodeOTUAccessor = node['@otu'];
-            if (typeof(nodeOTUAccessor) === 'function') {
-                var nodeOTU = nodeOTUAccessor();
+        if (node['@id'] === rootNodeID) {
+            var nodeOTU = node['@otu'];
+            if (nodeOTU) {
                 // find the matching OTU and show its label
-                $.each(viewModel.nexml.otus.otu(), function(i, otu) {
-                    // Find the node with this ID and see if it has an assigned OTU
-                    if (otu['@id']() === nodeOTU) {
-                        nodeName = otu['@label']() || 'Unlabeled OTU';
-                    }
+                $.each(viewModel.nexml.otus, function( i, otusCollection ) {
+                    $.each(otusCollection.otu, function( i, otu ) {
+                        // Find the node with this ID and see if it has an assigned OTU
+                        if (otu['@id'] === nodeOTU) {
+                            nodeName = otu['@label'] || 'Unlabeled OTU';
+                        }
+                    });
                 });
             } 
             return false; // stop checking nodes
         }
         return true;  // skip to next node
     });
+    return nodeName;
+}
+function getRootedStatusForTree( tree ) {
+    // return display-ready description ('<span class="caution">Tree root is arbitrary</span>', ...)
+    var biologicalRootMessage = 'Tree root is believed to be biologically correct.';
+    var arbitraryRootMessage = '<span class="interesting-value">Tree root is arbitrary (not biologically correct)</span>';
 
-    if (specifiedRoot) {
-        return nodeName +" [explicit]";
-    } 
-    if (unrootedTree) {
-        return "No root [explicit]";
-    } else {
-        return nodeName +" [implicit]";
+    if (!tree || !tree.node || tree.node.length === 0) {
+        return '';
     }
+    
+    // Apply our "business rules" for tree and/or ingroup rooting, based on
+    // tree-level metadata.
+    var unrootedTree = tree['^ot:unrootedTree'];
+    if (unrootedTree) {
+        return arbitraryRootMessage;
+    }
+    return biologicalRootMessage;
 }
 
 var branchLengthModeDescriptions = [
@@ -1236,11 +1543,10 @@ var branchLengthModeDescriptions = [
     { value: 'ot:undefined', text: "Undefined values" }
 ]
 function getBranchLengthModeDescriptionForTree( tree ) {
-    var modeAccessor = getMetaTagAccessorByAtProperty(tree.meta, 'ot:branchLengthMode');
-    if (typeof(modeAccessor) !== 'function') {
+    var rawModeValue = tree['^ot:branchLengthMode'];
+    if (!rawModeValue) {
         return 'Unspecified';
     }
-    var rawModeValue = modeAccessor();
     var description = rawModeValue;
     $.each( branchLengthModeDescriptions, function( i, item ) {
         if (item.value === rawModeValue) {
@@ -1263,54 +1569,31 @@ function getBranchLengthModeDescriptionForTree( tree ) {
     }
 }
 function getBranchLengthUnitForTree( tree ) {
-    var unitAccessor = getMetaTagAccessorByAtProperty(tree.meta, 'ot:branchLengthTimeUnit');
-    if (typeof(unitAccessor) !== 'function') {
-        return 'Myr?';
-    }
-    return unitAccessor();
+    return tree['^ot:branchLengthTimeUnit'] || "Myr?";
 }
 function getBranchLengthDescriptionForTree( tree ) {
     // NOTE that this is an explicit description in its own field, for
     // use when 'ot:other' is specified for the branchLengthMode!
-    var descAccessor = getMetaTagAccessorByAtProperty(tree.meta, 'ot:branchLengthDescription');
-    if (typeof(descAccessor) !== 'function') {
-        return 'Undefined';
-    }
-    return descAccessor();
+    return tree['^ot:branchLengthDescription'] || "Undefined";
 }
 
 function getInGroupCladeDescriptionForTree( tree ) {
-    // return display-ready description ('Rooted', 'Unrooted', 'Multiply rooted') based on count
-    if (!tree || !tree.meta || makeArray(tree.meta).length === 0) {
+    // Return display-ready description of a tree's ingroup clade (for tree list).
+    
+    var nodeID = tree['^ot:inGroupClade'];
+    if (!nodeID) {
         return 'Unspecified';
     }
+    var nodeName = ('Unnamed internal node');
 
     // try to retrieve a recognizable taxon label for the ingroup clade's root
-    var nodeIDAccessor = getMetaTagAccessorByAtProperty(tree.meta, 'ot:inGroupClade');
-    if (typeof(nodeIDAccessor) !== 'function') {
-        return 'Unspecified';
-    }
-    var nodeID = nodeIDAccessor();
-    var nodeName = ('Unmapped ('+ nodeID +')');
-
-    $.each(tree.node(), function(i, node) {
-        // Find the node with this ID and see if it has an assigned OTU
-        if (node['@id']() === nodeID) {
-            var nodeOTUAccessor = node['@otu'];
-            if (typeof(nodeOTUAccessor) === 'function') {
-                var nodeOTU = nodeOTUAccessor();
-                // find the matching OTU and show its label
-                $.each(viewModel.nexml.otus.otu(), function(i, otu) {
-                    // Find the node with this ID and see if it has an assigned OTU
-                    if (otu['@id']() === nodeOTU) {
-                        nodeName = otu['@label']() || 'Unlabeled OTU';
-                    }
-                });
-            } 
-            return false; // stop checking nodes
+    var node = getTreeNodeByID( tree, nodeID );
+    if (node && '@otu' in node) {
+        var otu = getOTUByID( node['@otu'] );
+        if (otu) {
+            nodeName = otu['@label'] || 'Unlabeled OTU';
         }
-        return true;  // skip to next node
-    });
+    }
 
     return nodeName;
 }
@@ -1363,7 +1646,7 @@ function TreeNode() {
 
 
 /*
- * Real-time quality assessment for OTOL study data, based on chosen criteria,
+ * Real-time quality assessment for Open Tree study data, based on chosen criteria,
  * tests, and rules. Generate a summary result (structured object) of the most
  * salient feedback for display.
  *
@@ -1393,6 +1676,10 @@ function TreeNode() {
  *
  * Let's try again, organizing by tab (Status, Metadata, etc)
  */
+
+var roughDOIpattern = new RegExp('(doi|DOI)[\\s\\.\\:]{0,2}\\b10[.\\d]{2,}\\b');
+// this checks for *attempts* to include a DOI, not necessarily valid
+
 var studyScoringRules = {
     'Metadata': [
         // problems with study metadata, DOIs, etc
@@ -1403,7 +1690,7 @@ var studyScoringRules = {
                 var studyMetatags = makeArray(studyData.nexml.meta);
                 for (var i = 0; i < studyMetatags.length; i++) {
                     var testMeta = studyMetatags[i];
-                    var testProperty = testMeta['@property']();
+                    var testProperty = testMeta['@property'];
                     switch(testProperty) {
                         case 'ot:studyPublicationReference':
                         case 'ot:studyPublication':
@@ -1412,15 +1699,15 @@ var studyScoringRules = {
                         case 'ot:focalClade':
                         case 'ot:curatorName':
                             var testValue;
-                            switch(testMeta['@xsi:type']()) {
+                            switch(testMeta['@xsi:type']) {
                                 case 'nex:ResourceMeta':
-                                    testValue = testMeta['@href']();  // uses special attribute
+                                    testValue = testMeta['@href'];  // uses special attribute
                                     break;
                                 default: 
-                                    testValue = testMeta['$'](); // assumes value is stored here
+                                    testValue = testMeta['$']; // assumes value is stored here
                             }
                             if ($.trim(testValue) === "") {
-                                ///console.log(">>> metatag '"+ testMeta['@property']() +"' is empty!");
+                                ///console.log(">>> metatag '"+ testMeta['@property'] +"' is empty!");
                                 return false;
                             }
                             break;
@@ -1444,12 +1731,12 @@ var studyScoringRules = {
             description: "The study year should match the one in its publication reference.",
             test: function(studyData) {
                 // compare metatags for study year and publication reference
-                var studyMetatags = studyData.nexml.meta;
-                var studyYear = getMetaTagAccessorByAtProperty(studyMetatags, 'ot:studyYear')();
-                var pubRef = getMetaTagAccessorByAtProperty(studyMetatags, 'ot:studyPublicationReference')();
+                var ticklers = [viewModel.ticklers.GENERAL_METADATA()];
+                var studyYear = studyData.nexml['^ot:studyYear'] || "";
+                var pubRef = studyData.nexml['^ot:studyPublicationReference'] || "";
                 if (($.trim(studyYear) === "") || ($.trim(pubRef) === "")) {
-                    // one of these fields is empty, so it fails
-                    return false;
+                    // one of these fields is empty, so ignore (pass) this test
+                    return true;
                 }
 
                 // compare the two, to see if the year is found (anywhere) in the reference
@@ -1464,18 +1751,25 @@ var studyScoringRules = {
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         },
         {
-            description: "The study DOI should match the one in its publication reference.",
+            description: "The study publication URL should match the DOI in its publication reference string (if found).",
             test: function(studyData) {
                 // compare metatags for DOI and publication reference
-                var studyMetatags = studyData.nexml.meta;
-                var DOI = getMetaTagAccessorByAtProperty(studyMetatags, 'ot:studyPublication')();
-                var pubRef = getMetaTagAccessorByAtProperty(studyMetatags, 'ot:studyPublicationReference')();
+                /* NOTE that we no longer expect a DOI in the reference string, so this should only complain if
+                 *   - a DOI is found there, AND
+                 *   - it conflicts with the "real" DOI in ot:studyPublication.
+                 */
+                var DOI = ('^ot:studyPublication' in studyData.nexml) ? studyData.nexml['^ot:studyPublication']['@href'] : "";
+                var pubRef = studyData.nexml['^ot:studyPublicationReference'];
                 if (($.trim(DOI) === "") || ($.trim(pubRef) === "")) {
-                    // one of these fields is empty, so it fails
-                    return false;
+                    // one of these fields is empty, so it passes (no conflict)
+                    return true;
+                }
+                if (roughDOIpattern.test(pubRef) === false) {
+                    // there's no DOI in the reference string, so no conflict
+                    return true;
                 }
 
-                // compare the two, to see if the (minimal) DOI matches
+                // compare the two DOIs, to see if the (minimal) DOI matches
                 var DOIParts = $.trim(DOI).split('http://dx.doi.org/');
                 var strippedDOI;
                 if (DOIParts.length === 1) {
@@ -1488,9 +1782,9 @@ var studyScoringRules = {
                 return pattern.test(pubRef);
             },
             weight: 0.2, 
-            successMessage: "The study's DOI matches its publication reference.",
-            failureMessage: "The study's DOI (in metadata) doesn't match its publication reference.",
-            suggestedAction: "Check study's DOI against its publication reference."
+            successMessage: "The study's publication URL matches the DOI in its publication reference.",
+            failureMessage: "The study's publication URL doesn't match the DOI in its publication reference.",
+            suggestedAction: "Check study's publication URL against the DOI in its publication reference."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
 
         }
@@ -1501,7 +1795,13 @@ var studyScoringRules = {
             description: "The study should contain at least one tree.",
             test: function(studyData) {
                 // check for a tree in this study
-                return (viewModel.nexml.trees.tree().length > 0);
+                var allTrees = [];
+                $.each(viewModel.nexml.trees, function(i, treesCollection) {
+                    $.each(treesCollection.tree, function(i, tree) {
+                        allTrees.push( tree );
+                    });
+                });
+                return (allTrees.length > 0);
             },
             weight: 0.5, 
             successMessage: "The study contains at least one tree.",
@@ -1513,75 +1813,18 @@ var studyScoringRules = {
             description: "There should be at least one candidate tree (unless submitter has opted out).",
             test: function(studyData) {
                 // check for opt-out flag
-                var optOutFlag = getMetaTagAccessorByAtProperty(studyData.nexml.meta, 'ot:notIntendedForSynthesis');
-                if (optOutFlag && (optOutFlag() == true)) {
+                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
+                if (optOutFlag) {
                     // submitter has explicitly said this study is not intended for synthesis
                     return true;
                 }
                 // check for any candidate tree in the study
-                var candidateTreeFound = false;
-                var candidateTreeMarkers = getMetaTagAccessorByAtProperty(studyData.nexml.meta, 'ot:candidateTreeForSynthesis', { 'FIND_ALL': true });
-                $.each(candidateTreeMarkers, function(i, marker) {
-                    switch(marker()) {  // non-empty points to a candidate tree
-                        case '':
-                        case null:
-                        case undefined:
-                        case 0:
-                            break;
-                        default:
-                            candidateTreeFound = true;
-                    }
-                });
-                return candidateTreeFound;
+                return getPreferredTrees().length > 0;
             },
             weight: 0.3, 
             successMessage: "There is at least one candidate tree, or the submitter has opted out of synthesis.",
             failureMessage: "There should be at least one candidate tree, or the submitter should opt out of synthesis.",
             suggestedAction: "Mark a tree as candidate for synthesis, or opt out of synthesis in Metadata."
-                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        },
-        {
-            description: "Each tree should be rooted (unless submitter has opted out).",
-            test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = getMetaTagAccessorByAtProperty(studyData.nexml.meta, 'ot:notUsingRootedTrees');
-                if (optOutFlag && (optOutFlag() == true)) {
-                    // submitter has explicitly said this study does not have rooted trees
-                    return true;
-                }
-                // check for a proper root node in each tree found (TODO: check 'candidates' only?)
-                var unrootedTreeFound = false;
-                $.each(studyData.nexml.trees.tree(), function(i, tree) {
-                    // check for explicit tree-level marker (ot:inGroupClade) versus arbitrary root
-                    var rootNodeIDGetter = getMetaTagAccessorByAtProperty(tree.meta, 'ot:inGroupClade');
-                    if (typeof(rootNodeIDGetter) === 'function') {
-                        var rootNodeID = rootNodeIDGetter();
-                        ///console.log('>>> found this rootNodeID: '+ rootNodeID + '<'+ typeof(rootNodeID) +'>');
-                        switch(rootNodeID) {
-                            // TODO: Test live data to see what "none" or "empty" looks like in this field
-                            case '':
-                            case null:
-                            case undefined:
-                            case 0:
-                            case 'none':
-                                unrootedTreeFound = true;
-                                return false;  // done looping through trees
-                            default:
-                                return true; // try the next tree
-                        }
-                    } else {
-                        // no metadata on this tree, or no tag for inGroupClade
-                        unrootedTreeFound = true;
-                        return false;  // done looping through trees
-                    }
-                });
-                // if no rootless trees were found, it passes the test
-                return !unrootedTreeFound;
-            },
-            weight: 0.3, 
-            successMessage: "All trees are properly rooted, or the submitter has specified unrooted trees.",
-            failureMessage: "Every tree should be properly rooted, or the submitter should opt out of rooted trees.",
-            suggestedAction: "Designate a root node for each tree, or specified only unrooted trees in Metadata."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
     ],
@@ -1605,57 +1848,35 @@ var studyScoringRules = {
             description: "All leaf nodes in candidate trees should be mapped to OTUs.",
             test: function(studyData) {
                 // check for opt-out flag
-                var optOutFlag = getMetaTagAccessorByAtProperty(studyData.nexml.meta, 'ot:notIntendedForSynthesis');
-                if (optOutFlag && (optOutFlag() == true)) {
+                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
+                if (optOutFlag) {
                     // submitter has explicitly said this study is not intended for synthesis
                     return true;
                 }
                
                 // find all the candidate trees by ID (on study metadata) and build a tally tree
-                var candidateTreeTallies = { };
-                var candidateTreeMarkers = getMetaTagAccessorByAtProperty(studyData.nexml.meta, 'ot:candidateTreeForSynthesis', { 'FIND_ALL': true });
-                $.each(candidateTreeMarkers, function(i, marker) {
-                    var treeID = marker();
-                    switch(treeID) {  // non-empty points to a candidate tree
-                        case '':
-                        case null:
-                        case undefined:
-                        case 0:
-                            break;
-                        default:
-                            candidateTreeTallies[ treeID ] = {};
-                    }
-                });
+                //var candidateTreeTallies = { };
                 
-                // check the proportion of mapped leaf nodes in all candidate trees
+                // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
                 var unmappedLeafNodesFound = false;
-                $.each(studyData.nexml.trees.tree(), function(i, tree) {
-                    // skip any non-candidate trees
-                    treeID = tree['@id']();
-                    if (!candidateTreeTallies[ treeID ]) {
-                        // skip this tree (not a candidate)
-                        return true;
-                    }
-
-                    if (!tree.node || tree.node().length === 0) {
+                $.each(getPreferredTrees(), function(i, tree) {
+                    if (!tree.node || tree.node.length === 0) {
                         // skip this tree (no nodes yet, which is weird but not relevant to the test)
-                        //candidateTreeTalies[ treeID ].mappedNodes = 0;
-                        //candidateTreeTalies[ treeID ].totalNodes = 0;
+                        //candidateTreeTallies[ treeID ].mappedNodes = 0;
+                        //candidateTreeTallies[ treeID ].totalNodes = 0;
                         return true;
                     }
 
                     // only check the leaf nodes on the tree
                     var totalNodes = 0;
                     var mappedNodes = 0;
-                    $.each(tree.node(), function(i, node) {
+                    $.each(tree.node, function(i, node) {
                         // is this a leaf? check for metatag .isLeaf
-                        var leafMarker = getMetaTagAccessorByAtProperty(node.meta, 'ot:isLeaf');
-                        if (leafMarker() == true) {
+                        if (node['^ot:isLeaf'] === true) {
                             // Simply check for the presence (or absence) of an @otu 'getter' function
                             // (so far, it doesn't seem to exist unless there's a mapped OTU)
                             totalNodes++;
-                            var nodeOTUAccessor = node['@otu'];
-                            if (typeof(nodeOTUAccessor) === 'function') {
+                            if ('@otu' in node) {
                                 mappedNodes++;
                             } else {
                                 unmappedLeafNodesFound = true;
@@ -1664,8 +1885,8 @@ var studyScoringRules = {
                         }
                     });
                     // TODO: actually count these, for a proportional score?
-                    //candidateTreeTalies[ treeID ].mappedNodes = mappedNodes;
-                    //candidateTreeTalies[ treeID ].totalNodes = totalNodes;
+                    //candidateTreeTallies[ treeID ].mappedNodes = mappedNodes;
+                    //candidateTreeTallies[ treeID ].totalNodes = totalNodes;
                 });
                 // if no unmapped leaf nodes were found, it passes the test
                 return !unmappedLeafNodesFound;
@@ -1691,6 +1912,7 @@ var studyScoringRules = {
                                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
                         }
     ],
+/*
     'Tools': [
         // maybe just happy news here.. new tools available?
                         {
@@ -1705,6 +1927,7 @@ var studyScoringRules = {
                                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
                         }
     ],
+*/
     'Status': [
         // general validation problems... something that spans multiple tabs
                         {
@@ -1844,18 +2067,25 @@ function showTreeViewer( tree ) {
     ko.applyBindings(tree, boundElement);
     $('#tree-viewer').modal('show');
 
-    if (viewOrEdit == 'EDIT') {
-        /*
-        if (treeTagsInitialized) {
-            $('#tree-tags').tagsinput('destroy');
-        }
-        */
-        $('#tree-tags').tagsinput( tagsOptions );
-        treeTagsInitialized = true;
-    }
+    showModalScreen("Launching tree viewer...", {SHOW_BUSY_BAR:true});
 
-    updateEdgesInTree( tree );
-    drawTree( tree );
+    setTimeout(function() {
+        if (viewOrEdit == 'EDIT') {
+            /*
+            if (treeTagsInitialized) {
+                $('#tree-tags').tagsinput('destroy');
+            }
+            */
+            updateInferenceMethodWidgets( tree );
+            $('#tree-tags').tagsinput( tagsOptions );
+            treeTagsInitialized = true;
+        }
+
+        //showModalScreen("Rendering tree...", {SHOW_BUSY_BAR:true});
+        updateEdgesInTree( tree );
+        drawTree( tree );
+        hideModalScreen();
+    }, 1000);
 }
 
 var vizInfo = { tree: null, vis: null };
@@ -1868,125 +2098,96 @@ function drawTree( treeOrID ) {
     }
 
     /* load D3 tree view */
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
+    var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    var rootNodeID = specifiedRoot ? specifiedRoot : tree.node[0]['@id'];
 
-    var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$() : null;
-
-    var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$() : null;
+    var inGroupClade = tree['^ot:inGroupClade'] || null;
 
     // we'll pass this along to helpers that choose node labels, classes, etc.
     var importantNodeIDs = {
-        'specifiedRoot': specifiedRoot,
-        'inGroupClade': inGroupClade,
-        'nearestOutGroupNeighbor': nearestOutGroupNeighbor,
+        'treeRoot': rootNodeID,         // may be arbitrary!
+        'inGroupClade': inGroupClade
     }
 
-    var root;  // find the root (if any) node for the visible tree
-    /* original method was based on "naive" roots, checking node['@root']() === 'true'
-    var allRootNodes = getRootTreeNodes(tree);
-    switch(allRootNodes.length) {
-        case 0:
-            console.log("this tree is UNrooted");
-            root = tree.node()[0];
-            break;
-        case 1:
-            console.log("this tree is SINGLY rooted");
-            root = allRootNodes[0];
-            break;
-        default:
-            console.log("this tree is MULTIPLY rooted ("+ allRootNodes.length +" root nodes found)");
-            root = allRootNodes[0];
-            break;
-    }
-    */
-    if (specifiedRoot && inGroupClade) {
-        // both are defined, show a grayed-out dendrogram with a
-        // full-strength ingroup clade
-        ///console.log(">>> root AND ingroup specified");
-        root = getTreeNodeByID(tree, specifiedRoot);
-    } else if (specifiedRoot) {
-        // only root node is defined, show a grayed-out dendrogram
-        ///console.log(">>> root ONLY specified");
-        root = getTreeNodeByID(tree, specifiedRoot);
-    } else if (inGroupClade) {
-        // only ingroup clade is defined, show a partially-rooted tree
-        // (a dendrogram for the ingroup clade, force-directed graph for
-        // the outgroup)
-        ///console.log(">>> ingroup ONLY specified");
-        root = getTreeNodeByID(tree, inGroupClade);
-    } else {
-        // neither root node nor ingroup is defined, this is really an
-        // unrooted tree; show it with force-directed graph
-        ///console.log(">>> NOTHING specified, TODO: use force-directed graph!?");
-        root = tree.node()[0];
-    }
-    /*
-    console.log(">>> building dendrogram from root node '"+ root['@id']() +"'...");
-    for (var prop in importantNodeIDs) {
-        console.log( "   "+ prop +" = "+ importantNodeIDs[prop] );
-    }
-    */
+    var rootNode = getTreeNodeByID(tree, rootNodeID);
 
-    var edges = tree.edge();
+    var edges = tree.edge;
+console.log(">> preparing "+ edges.length +" edges in this tree...");
 
     /* render the tree as a modified phylogram */
     
     // preload nodes with proper labels and branch lengths
-    $.each(tree.node(), function(index, node) {
+    $.each(tree.node, function(index, node) {
         node.name = getTreeNodeLabel(tree, node, importantNodeIDs);
         // reset x of all nodes, to avoid gradual "creeping" to the right
         node.x = 0;
         node.length = 0;  // ie, branch length
         node.rootDist = 0;
     });
+console.log(">> default node properties in place...");
     $.each(edges, function(index, edge) {
         // transfer @length property (if any) to the child node
-        if (typeof( edge['@length'] ) === 'function') {
-            var childID = edge['@target']();
+        if ('@length' in edge) {
+            var childID = edge['@target'];
             var childNode = getTreeNodeByID(tree, childID);
-            childNode.length = edge['@length']();
+            childNode.length = parseFloat(edge['@length']);
             ///console.log("> reset length of node "+ childID+" to: "+ childNode.length);
         }
     });
-    ///console.log("> done sweeping edges");
-    
+console.log("> done sweeping edges");
+
     //var currentWidth = $("#tree-viewer #dialog-data").width();
     //var currentWidth = $("#tree-viewer #dialog-data").css('width').split('px')[0];
     var currentWidth = $("#tree-viewer").width() - 400;
+
+    // let's set the viewer height based on total number of nodes
+    // (in a bifurcating tree, perhaps half will be leaf nodes)
+    var viewHeight = tree.node.length * 20;
+    console.log("setting tree-view height to "+ viewHeight);
+    
+    var treeEdgesHaveLength = ('@length' in tree.edge[0]);
+
+    vizInfo.vis = null;
+    d3.selectAll('svg').remove();
+
     vizInfo = d3.phylogram.build(
         "#tree-viewer #dialog-data",   // selector
-        root, // tree.node(),      // nodes 
+        rootNode,
         {           // options
             vis: vizInfo.vis,
             // TODO: can we make the size "adaptive" based on vis contents?
             width: currentWidth,  // must be simple integers
-            height: '3000',
+            height: viewHeight,
             // simplify display by omitting scales or variable-length branches
             skipTicks: true,
-            skipBranchLengthScaling: false,
+            skipBranchLengthScaling: (hidingBranchLengths || !(treeEdgesHaveLength)) ?  true : false,
             children : function(d) {
-                var parentID = d['@id']();
+                var parentID = d['@id'];
                 var itsChildren = [];
-                $.each(edges, function(index, edge) {
-                    if (edge['@source']() === parentID) {
-                        var childID = edge['@target']();
-                        var childNode = getTreeNodeByID(tree, childID);
-                        itsChildren.push( childNode );
+                var childEdges = getTreeEdgesByID(null, parentID, 'SOURCE');
+
+                // If this node has one child, it's a latent root-node that
+                // should be hidden in the tree view.
+                if (childEdges.length === 1) {
+                    // treat ITS child node as my immediate child in the displayed tree
+                    var onlyChildNodeID = childEdges[0]['@target'];
+                    childEdges = getTreeEdgesByID(null, onlyChildNodeID, 'SOURCE');
+                }
+
+                $.each(childEdges, function(index, edge) {
+                    var childID = edge['@target'];
+                    var childNode = getTreeNodeByID(null, childID);
+                    if (!('@id' in childNode)) {
+                        console.error(">>>>>>> childNode is a <"+ typeof(childNode) +">");
+                        console.error(childNode);
                     }
+                    itsChildren.push( childNode );
                 });
-                /*
-                console.log("> updated children for node "+ parentID +":");
-                $.each(itsChildren, function(i,n) {
-                    console.log("   > "+ n['@id']());
-                });
-                */
                 return itsChildren;
             }
         }
     );
+    console.log("> done drawing raw phylogram");
 
     // (re)assert proper classes for key nodes
     vizInfo.vis.selectAll('.node')
@@ -1995,21 +2196,16 @@ function drawTree( treeOrID ) {
             if (!d.children) {
                 itsClass += " leaf";
             }
-            if (d['@root'] && d['@root']() === 'true') {
-                itsClass += " atRoot";
-            }
-            if (d['@id']() === specifiedRoot) {
+            if (d['@id'] === rootNodeID) {
                 itsClass += " specifiedRoot";
             }
-            if (d['@id']() === inGroupClade) {
+            if (d['@id'] === inGroupClade) {
                 itsClass += " inGroupClade";
-            }
-            if (d['@id']() === nearestOutGroupNeighbor) {
-                itsClass += " nearestOutGroupNeighbor";
             }
             ///console.log("CLASS is now "+ itsClass);
             return itsClass;
         });
+    console.log("> done re-asserting classes");
 
     // (re)assert standard click behavior for all nodes
     vizInfo.vis.selectAll('.node circle')
@@ -2020,6 +2216,18 @@ function drawTree( treeOrID ) {
             showNodeOptionsMenu( tree, d, nodePageOffset, importantNodeIDs );
         });
 
+    // (re)assert standard hover+click behavior for edges
+    vizInfo.vis.selectAll('path')
+        .on('click', function(d) {
+            d3.event.stopPropagation();
+            // show a menu with appropriate options for this node
+            var mousePageOffset = {
+                left: d3.event.pageX,
+                top: d3.event.pageY 
+            };
+            showEdgeOptionsMenu( tree, d, mousePageOffset, importantNodeIDs );
+        });
+
     // (re)assert standard click behavior for main vis background
     d3.select('#tree-viewer')  // div.modal-body')
         .on('click', function(d) {
@@ -2027,169 +2235,18 @@ function drawTree( treeOrID ) {
             // hide any node menu
             hideNodeOptionsMenu( );
         });
-
-
-    /*
-    return;
-
-
-    var width = 960,
-        height = 2200;
-
-    var cluster = d3.layout.cluster()
-        .size([height, width - 160])
-        .children(function(d) {
-            var parentID = d['@id']();
-            var itsChildren = [];
-            $.each(edges, function(index, edge) {
-                if (edge['@source']() === parentID) {
-                    var childID = edge['@target']();
-                    var childNode = getTreeNodeByID(tree, childID);
-                    itsChildren.push( childNode );
-                }
-            });
-            **
-            console.log("> resetting children for node "+ parentID +":");
-            $.each(itsChildren, function(i,n) {
-                console.log("   > "+ n['@id']());
-            });
-            **
-            return itsChildren;
-        });
-
-    var diagonal = d3.svg.diagonal()
-        .projection(function(d) { return [d.y, d.x]; });
-
-    // some things should only happen once
-    var svg = d3.select("#tree-viewer svg > g");
-    if (svg[0][0] === null) {
-        svg = d3.select("#tree-viewer #dialog-data").append("svg")
-            .attr("width", width)
-            .attr("height", height)
-          .append("g")
-            .attr("transform", "translate(80,0)"); // make room for 'root' label
-    } else {
-        // clear special properties and visible tree elements, for a clean
-        // sweep. TODO: do something more graceful, perhaps a transition?
-        ///clearD3PropertiesFromTree(tree);
-        $('#tree-viewer #dialog-data svg > g > *').remove();
-    }
-
-    var startTime = new Date();
-    var nodes = cluster.nodes(root),
-        links = cluster.links(nodes);
-
-    ///var timestamp = new Date().getTime();
-    ///console.log("NEW timestamp: "+ timestamp);
-
-    // DATA JOIN
-    var link = svg.selectAll(".link")
-        .data(links);
-        ///.data(links, function(d) { return (timestamp + d.source['@id']() + d.target['@id']()); });
-
-    // UPDATE (only affects existing links)
-    link
-        .attr('class','link update');
-
-
-    // ENTER (only affects new links; do one-time initialization here)
-    link.enter()
-        .insert("path")  // should add this alongside other paths (behind nodes)
-        .attr("class", "link enter");
-
-    // ENTER + UPDATE (affects all new AND existing links)
-    link
-        ///.transition().duration(750)
-        .attr("d", diagonal);  // smooth bezier curves between nodes/
-
-    ** ...or try simple lines between nodes
-    link.enter().append("line")
-        .attr("class", "link")
-        .attr("x1", function(d) { return d.source.y; })
-        .attr("y1", function(d) { return d.source.x; })
-        .attr("x2", function(d) { return d.target.y; })
-        .attr("y2", function(d) { return d.target.x; });
-    **
-
-    // EXIT
-    link.exit().remove();
-
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
-
-    var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$() : null;
-
-    var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$() : null;
-
-    // DATA JOIN
-    var node = svg.selectAll(".node")
-        .data(nodes);
-        ///.data(nodes, function(d) { return (timestamp + d['@id']()); }); // key function to bind elements
-
-    // UPDATE (only affects existing links)
     
-
-
-    // ENTER (only affects new nodes; do one-time initialization here)
-    var newNodeG = node.enter()
-        .append("g");
-
-    // append more stuff to the 'g' element
-    newNodeG.append("circle")
-            .attr("r", 4.5)
-            .on('click', function(d) {
-                // show a menu with appropriate options for this node
-                var nodePageOffset = $(d3.event.target).offset();
-                showNodeOptionsMenu( tree, d, nodePageOffset );
-            })
-    newNodeG.append("text")
-            .attr("dx", function(d) { return d.children ? -8 : 8; })
-            .attr("dy", 3)
-            .style("text-anchor", function(d) { return d.children ? "end" : "start"; })
-            //.style("stroke", function(d) { return (d['@root'] && d['@root']() === 'true') ? "#f55" : "black"; })
-            .text(function(d) { return getTreeNodeLabel(tree, d, importantNodeIDs); });
-
-
-    // ENTER + UPDATE (affects all new AND existing nodes)
-    node   
-        ///.transition().duration(750)
-        .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-        .attr("class", function(d) {
-            var itsClass = "node";
-            if (!d.children) {
-                itsClass += " leaf";
-            }
-            if (d['@root'] && d['@root']() === 'true') {
-                itsClass += " atRoot";
-            }
-            if (d['@id']() === specifiedRoot) {
-                itsClass += " specifiedRoot";
-            }
-            if (d['@id']() === inGroupClade) {
-                itsClass += " inGroupClade";
-            }
-            if (d['@id']() === nearestOutGroupNeighbor) {
-                itsClass += " nearestOutGroupNeighbor";
-            }
-            ///console.log("CLASS is now "+ itsClass);
-            return itsClass;
-        });
-
-
-    // EXIT
-    node.exit().remove();
-
-
-    var rightNow = new Date() - startTime;
-    console.log(">> Drawing tree took "+ (rightNow / 1000.0).toFixed(2) +" seconds");
-    */
-
+    console.log("> done re-asserting click behaviors");
 }
 
-function setTreeRoot( treeOrID, rootNodeOrID ) {
+function setTreeRoot( treeOrID, rootingInfo ) {
     // (Re)set the node that is the primary root for this tree, if known
+    // 'rootingInfo' can be any of
+    //  - a single node (make this the new root)
+    //  - a single root-node ID (for the new root)
+    //  - an array of nodes or IDs (add a root between these)
+    //  - null (un-root this tree)
+    
     var tree = null;
     if (typeof(treeOrID) === 'object') {
         tree = treeOrID;
@@ -2197,32 +2254,268 @@ function setTreeRoot( treeOrID, rootNodeOrID ) {
         tree = getTreeByID(treeOrID);
     }
 
-    rootNodeID = null;
-    if (rootNodeOrID) {
-        if (typeof(rootNodeOrID) === 'object') {
-            rootNodeID = rootNodeOrID['@id']();
+    // make sure we have a proper node ID
+    var newRootNodeID = null;
+    if (!rootingInfo) {
+        // if null, we're un-rooting this tree
+    } else if (typeof rootingInfo === 'string') {
+        // assume this is the ID of the root node
+        newRootNodeID = rootingInfo;
+    } else if ($.isArray(rootingInfo)) {
+        // this is an array of sourceID, targetID
+        // TODO: check for an existing "latent" node between these two
+        var latentRootNode = getTreeNodeBetween( tree, rootingInfo[0], rootingInfo[1] );
+        if (latentRootNode) {
+            // re-root to the latent node
+            newRootNodeID = latentRootNode['@id'];
         } else {
-            rootNodeID = rootNodeOrID;
+            // create a new node (and edge) to join these nodes
+            var newRootNode = addTreeNodeBetween( tree, rootingInfo[0], rootingInfo[1] );
+            newRootNodeID = newRootNode['@id'];
         }
+    } else {
+        // assume it's a node object
+        newRootNodeID = rootingInfo['@id'];
+    }
+    if (!newRootNodeID) {
+        console.error("setTreeRoot(): no new root-node ID specified: "+ rootingInfo 
+                +" <"+ (typeof rootingInfo) +">");
+        return;
+    }
+    var newRootNode = getTreeNodeByID(tree, newRootNodeID);
+    if (!newRootNode) {
+        console.error("setTreeRoot(): couldn't find the new root node, ID = "+ newRootNodeID 
+                +" <"+ (typeof newRootNodeID) +">");
+        return;
     }
 
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    if (!specifiedRootTag) {
-        addMetaTagToParent(tree, {
-            "$": '',
-            "@property": "ot:specifiedRoot",
-            "@xsi:type": "nex:LiteralMeta"
-        });
-        specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    }
-    if (rootNodeID) {
-        specifiedRootTag.$( rootNodeID );
-    } else {
-        // clear the current root
-        specifiedRootTag.$( '' );
-    }
+    // make any changes required to the old root node
+    var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    var oldRootNode = specifiedRoot ? getTreeNodeByID(tree, specifiedRoot) : tree.node[0];
+    delete oldRootNode['@root'];
+
+    // update tree and node properties
+    tree['^ot:specifiedRoot'] = newRootNodeID;
+    newRootNode['@root'] = true;
+    // selective deletion of d3 parent
+    delete newRootNode['parent'];
+
     updateEdgesInTree( tree );
     drawTree( tree );
+    nudgeTickler('TREES');
+}
+
+function toggleTreeRootStatus( tree, event ) {
+    // toggle its ^ot:unrootedTree property (should always be present)
+    // NOTE that radio-button values are strings, so we convert to boolean below
+    var currentState = tree['^ot:unrootedTree'];
+    var newState = $(event.target).val() === 'true';
+    tree['^ot:unrootedTree'] = newState;
+    
+    // choosing non-arbitrary (biologically correct) rooting should implicitly
+    // select the current root node, since this signals intent
+    var isBiologicallyCorrect = !(tree['^ot:unrootedTree']);
+    if (isBiologicallyCorrect) {
+        // if no specified root node, use the implicit root (first in nodes array)
+        var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+        if (!specifiedRoot) {
+            // use the implicit root (first in nodes array)
+            var rootNodeID = tree.node[0]['@id'];
+            tree['^ot:specifiedRoot'] = rootNodeID;
+        }
+    }
+    nudgeTickler('TREES');
+    return true; // update the checkbox
+}
+
+function getTreeNodeBetween( tree, nodeID_A, nodeID_B ) {
+    // mostly used to detect "latent" (unused) root nodes
+    var edgesFromA = getTreeEdgesByID( tree, nodeID_A, 'ANY' );
+    var edgesFromB = getTreeEdgesByID( tree, nodeID_B, 'ANY' );
+    
+    // gather the "other" node for each edge of A and B
+    var neighborNodes_A = $.map(edgesFromA, function(e) {
+        return (e['@source'] === nodeID_A) ? e['@target'] : e['@source'];
+    });
+    var neighborNodes_B = $.map(edgesFromB, function(e) {
+        return (e['@source'] === nodeID_B) ? e['@target'] : e['@source'];
+    });
+    var commonNeighbors = $.map(neighborNodes_A,function(n){
+        return $.inArray(n, neighborNodes_B) < 0 ? null : n;}
+    );
+    // we're looking for one common neighbor, possibly a latent root node
+    switch( commonNeighbors.length ) {
+        case 1:
+            return getTreeNodeByID( tree, commonNeighbors[0] );
+
+        case 0:
+            // no such node exists
+            return null;
+
+        default:
+            console.error('getTreeNodeBetween( '+ nodeID_A +', '+ nodeID_B +' ) reports multiple common neighbors!');
+            console.error( commonNeighbors );
+            return null;
+    }
+}
+function addTreeNodeBetween( tree, nodeID_A, nodeID_B ) {
+    // try to add such a node, using our ad-hoc node and edge, as needed
+    var adHocRootID = getAdHocRootID(tree);
+    if ((nodeID_A === adHocRootID) || (nodeID_B === adHocRootID)) {
+        console.warn('addTreeNodeBetween(): One of these nodes is already the ad-hoc root, bailing out now.');
+        return getAdHocRoot(tree);
+    }
+    var edgesFromA = getTreeEdgesByID( tree, nodeID_A, 'ANY' );
+    var edgesFromB = getTreeEdgesByID( tree, nodeID_B, 'ANY' );
+    
+    // if there's a common edge, insert a node there
+    var commonEdges = $.map(edgesFromA,function(n) {
+        return $.inArray(n, edgesFromB) < 0 ? null : n;
+    });
+
+    switch( commonEdges.length ) {
+        case 1:
+            // this is the expected case; retrieve (or create) this tree's ad-hoc root node
+            var adHocRootNode = getAdHocRoot(tree);
+            if (!adHocRootNode) {
+                // create the ad-hoc root node
+                adHocRootNode = {
+                    '@id': getAdHocRootID(tree)
+                };
+                tree.node.push(adHocRootNode);
+            }
+
+            // retrieve (or create) the ad-hoc edge we need
+            var adHocRootEdge = getAdHocEdge(tree);
+            if (!adHocRootEdge) {
+                // create the ad-hoc root edge
+                adHocRootEdge = {
+                    '@id': getAdHocEdgeID(tree),
+                    '@source': getAdHocRootID(tree),
+                    '@target': null  // we'll set this below
+                };
+                tree.edge.push(adHocRootEdge);
+            } else {
+                detachAdHocRootElements(tree);
+                // undo any reversals in the existing ad-hoc edge
+                adHocRootEdge['@source'] = getAdHocRootID(tree);
+            }
+
+            // re-wire the existing edge (and the new one) with minimal changes
+            var existingEdge = commonEdges[0];
+            existingEdge['@source'] = getAdHocRootID(tree);
+            if (existingEdge['@target'] === nodeID_A) {
+                adHocRootEdge['@target'] = nodeID_B;
+            } else {
+                // assume its target is B
+                adHocRootEdge['@target'] = nodeID_A;
+            }
+
+            // force rebuild of node+edge lookups
+            clearFastLookup('NODES_BY_ID');
+            clearFastLookup('EDGES_BY_SOURCE_ID');
+            clearFastLookup('EDGES_BY_TARGET_ID');
+
+            return adHocRootNode;
+
+        case 0:
+            // in principle we could add a node and two edges, but that's out of scope for now
+            console.error('addTreeNodeBetween( '+ nodeID_A +', '+ nodeID_B +' ) reports no common edges!');
+            return null;
+
+        default:
+            console.error('addTreeNodeBetween( '+ nodeID_A +', '+ nodeID_B +' ) reports multiple common edges!');
+            console.error( commonEdges );
+            return null;
+    }
+}
+
+// define special, tree-specific element IDs just once
+function getAdHocRootID(tree) {
+    return (tree['@id'] +'_ROOT');
+}
+function getAdHocEdgeID(tree) {
+    return (tree['@id'] +'_ROOT_EDGE');
+}
+
+// fetch the actual elements (per tree)
+function getAdHocRoot(tree) {
+    // return the node, or null if not found
+    return getTreeNodeByID(tree, getAdHocRootID(tree));
+}
+function getAdHocEdge(tree) {
+    // return the edge, or null if not found
+    var foundEdge = null;
+    $.each(getTreeEdgesByID(tree, getAdHocRootID(tree), 'ANY'), function(index, e) {
+        if (e['@id'] === getAdHocEdgeID(tree)) {
+            foundEdge = e;
+        }
+    });
+    return foundEdge;
+}
+
+// test and manipulate the ad-hoc elements
+function adHocRootInUse( tree ) {
+    return (tree['^ot:specifiedRoot'] === getAdHocRootID(tree));
+}
+function cleanupAdHocRoot( tree ) {
+    // call this before saving study data, to remove unused ad-hoc elements
+    if (!adHocRootInUse(tree)) {
+        removeAdHocRootElements(tree);
+    }
+}
+function detachAdHocRootElements( tree ) {
+    // detach the ad-hoc root node and/or its companion edge from the tree
+    var adHocRootNode = getAdHocRoot(tree);
+    if (adHocRootNode) {
+        var adHocRootEdge = getAdHocEdge(tree);
+        if (adHocRootEdge) {
+            var edgesFromRoot = getTreeEdgesByID( tree, getAdHocRootID(tree), 'ANY' );
+            $.each(edgesFromRoot, function(index, e) {
+                if (e !== adHocRootEdge) {
+                    // attach all "loose ends" to an existing node
+                    if (e['@source'] === getAdHocRootID(tree)) {
+                        e['@source'] = adHocRootEdge['@target'];
+                    } else {
+                        e['@target'] = adHocRootEdge['@target'];
+                    }
+                }
+            });
+
+            // detach the ad-hoc edge from all but the ad-hoc root
+            adHocRootEdge['@target'] = null;
+        }
+    }
+    
+    // force rebuild of edge lookups
+    clearFastLookup('EDGES_BY_SOURCE_ID');
+    clearFastLookup('EDGES_BY_TARGET_ID');
+      
+    // N.B. don't worry about study['^ot:specifiedRoot'] here, since we're
+    // actively re-rooting or doing final cleanup
+}
+function removeAdHocRootElements( tree ) {
+    // N.B. Assumes that the ad-hoc root is not in use, or that we're in the
+    // process of re-rooting
+    if (adHocRootInUse(tree)) {
+        console.warn('removeAdHocRootElements(): ad-hoc root is in use! detaching now...');
+        detachAdHocRootElements(tree);  // just in case
+    }
+    
+    // search and destroy the node and/or edge
+    var adHocRootNode = getAdHocRoot(tree);
+    if (adHocRootNode) {
+        removeFromArray( adHocRootNode, tree.node );
+    }
+    var adHocRootEdge = getAdHocEdge(tree);
+    if (adHocRootEdge) {
+        removeFromArray( adHocRootEdge, tree.edge );
+    }
+
+    // force rebuild of node+edge lookups
+    clearFastLookup('NODES_BY_ID');
+    clearFastLookup('EDGES_BY_SOURCE_ID');
+    clearFastLookup('EDGES_BY_TARGET_ID');
 }
 
 function setTreeIngroup( treeOrID, ingroupNodeOrID ) {
@@ -2238,119 +2531,49 @@ function setTreeIngroup( treeOrID, ingroupNodeOrID ) {
     ingroupNodeID = null;
     if (ingroupNodeOrID) {
         if (typeof(ingroupNodeOrID) === 'object') {
-            ingroupNodeID = ingroupNodeOrID['@id']();
+            ingroupNodeID = ingroupNodeOrID['@id'];
         } else {
             ingroupNodeID = ingroupNodeOrID;
         }
     }
-    var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    if (!inGroupCladeTag) {
-        addMetaTagToParent(tree, {
-            "$": '',
-            "@property": "ot:inGroupClade",
-            "@xsi:type": "nex:LiteralMeta"
-        });
-        inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    }
     if (ingroupNodeID) {
-        inGroupCladeTag.$( ingroupNodeID );
+        tree['^ot:inGroupClade'] = ingroupNodeID;
     } else {
         // clear the current root
-        inGroupCladeTag.$( '' );
+        tree['^ot:inGroupClade'] = '';
     }
     updateEdgesInTree( tree );
     drawTree( tree );
-}
-
-function setTreeOutgroup( treeOrID, outgroupNodeOrID ) {
-    // (Re)set the node that defines the outgroup, i.e., which sets the
-    // polarity (edge direction) used to delineate the ingroup clade
-    var tree = null;
-    if (typeof(treeOrID) === 'object') {
-        tree = treeOrID;
-    } else {
-        tree = getTreeByID(treeOrID);
-    }
-
-    outgroupNodeID = null;
-    if (outgroupNodeOrID) {
-        if (typeof(outgroupNodeOrID) === 'object') {
-            outgroupNodeID = outgroupNodeOrID['@id']();
-        } else {
-            outgroupNodeID = outgroupNodeOrID;
-        }
-    }
-    var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    if (!nearestOutGroupNeighborTag) {
-        addMetaTagToParent(tree, {
-            "$": '',
-            "@property": "ot:nearestOutGroupNeighbor",
-            "@xsi:type": "nex:LiteralMeta"
-        });
-        nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    }
-    if (outgroupNodeID) {
-        nearestOutGroupNeighborTag.$( outgroupNodeID );
-    } else {
-        // clear the current root
-        nearestOutGroupNeighborTag.$( '' );
-    }
-    updateEdgesInTree( tree );
-    drawTree( tree );
+    nudgeTickler('TREES');
 }
 
 function updateEdgesInTree( tree ) {
     // Update the direction of all edges in this tree, based on its
-    // designated root and/or ingroup nodes
-    var specifiedRootTag = getMetaTagByProperty(tree.meta, 'ot:specifiedRoot');
-    var specifiedRoot = specifiedRootTag ? specifiedRootTag.$() : null;
+    // chosen or "natural" root (redefining ingroup in some cases)
+    var specifiedRoot = tree['^ot:specifiedRoot'] || null;
+    // if no specified root node, use the implicit root (first in nodes array)
+    var rootNodeID = specifiedRoot ? specifiedRoot : tree.node[0]['@id'];
 
-    var inGroupCladeTag = getMetaTagByProperty(tree.meta, 'ot:inGroupClade');
-    var inGroupClade = inGroupCladeTag ? inGroupCladeTag.$() : null;
+    var inGroupClade = tree['^ot:inGroupClade'] || null;
 
-    var nearestOutGroupNeighborTag = getMetaTagByProperty(tree.meta, 'ot:nearestOutGroupNeighbor');
-    var nearestOutGroupNeighbor = nearestOutGroupNeighborTag ? nearestOutGroupNeighborTag.$() : null;
-
-    if (specifiedRoot) {
-        // root is defined, and possibly ingroup; set direction away from root for all edges
-        // NOTE that this polarity trumps any nearestOutGroupNeighbor
-        ///console.log("sweeping all edges");
-        sweepEdgePolarity( tree, specifiedRoot, null, inGroupClade );
-    } else if (inGroupClade) {
-        // only ingroup clade is defined, set direction away from ingroup
-        // ancestor within the ingroup clade; disregard other edges
-        ///console.log("sweeping ingroup edges only");
-        var naturalParent;
-        if (!nearestOutGroupNeighbor) {
-            // choose its parent based on current "upward" edge in tree
-            var edgeArray = getTreeEdgesByID(tree, inGroupClade, 'TARGET');
-            if (edgeArray.length === 0) {
-                // ingroup claded MRCA must also be the tree root
-                naturalParent = null;
-            } else {
-                edgeToParent = edgeArray[0];
-                naturalParent = edgeToParent['@source']();
-            }
-            ///console.log("...sweeping away from natural parent '"+ naturalParent +"'...");
-        }
-        sweepEdgePolarity( tree, inGroupClade, nearestOutGroupNeighbor || naturalParent, inGroupClade );
-    } else {
-        // neither root node nor ingroup is defined; ignore all edges
-        ///console.log("we'll ignore all polarity, so nothing to sweep");
-    }
+    // root is defined, and possibly ingroup; set direction away from root for all edges
+    sweepEdgePolarity( tree, rootNodeID, null, inGroupClade );
+    clearFastLookup('EDGES_BY_SOURCE_ID');
+    clearFastLookup('EDGES_BY_TARGET_ID');
 }
 
 function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID, inGroupClade, insideInGroupClade ) {
-    // push all adjacent edges away from starting node, except for
-    // its upstream neighbor; this should recurse to sweep an entire tree (or
-    // subtree) until we reach the tips
+    // Push all adjacent edges away from the starting node, except for its
+    // upstream neighbor. This should recurse to sweep an entire tree (or
+    // subtree) until we reach the tips.
 
     // gather all adjacent edges, regardless of current direction
     var edges = getTreeEdgesByID(tree, startNodeID, 'ANY');
+
     $.each(edges, function(i, edge) {
         // test the "other" ID to see if it should be up- or downstream
-        var sourceID = edge['@source']();
-        var targetID = edge['@target']();
+        var sourceID = edge['@source'];
+        var targetID = edge['@target'];
         var otherID = sourceID === startNodeID ? targetID : sourceID;
 
         if (upstreamNeighborID && otherID === upstreamNeighborID) {
@@ -2383,9 +2606,15 @@ function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID, inGroupClade,
 
 
 function getTreeByID(id) {
+    var allTrees = [];
+    $.each(viewModel.nexml.trees, function(i, treesCollection) {
+        $.each(treesCollection.tree, function(i, tree) {
+            allTrees.push( tree );
+        });
+    });
     var foundTree = null;
-    $.each( viewModel.nexml.trees.tree(), function(i, tree) {
-        if (tree['@id']() === id) {
+    $.each( allTrees, function(i, tree) {
+        if (tree['@id'] === id) {
             foundTree = tree;
             return false;
         }
@@ -2393,15 +2622,10 @@ function getTreeByID(id) {
     return foundTree;
 }
 function getTreeNodeByID(tree, id) {
-    // there should be only one matching (or none) within a tree
-    var foundNode = null;
-    $.each( tree.node(), function( index, node ) {
-        if (node['@id']() === id) {
-            foundNode = node;
-            return false;
-        }
-    });
-    return foundNode;
+    // There should be only one matching (or none) within a tree
+    // (NOTE that we now use a flat collection across all trees, so disregard 'tree' argument)
+    var lookup = getFastLookup('NODES_BY_ID');
+    return lookup[ id ] || null;
 }
 function getTreeEdgesByID(tree, id, sourceOrTarget) {
     // look for any edges associated with the specified *node* ID; return
@@ -2409,68 +2633,51 @@ function getTreeEdgesByID(tree, id, sourceOrTarget) {
     //
     // 'sourceOrTarget' lets us filter, should be 'SOURCE', 'TARGET', 'ANY'
     var foundEdges = [];
-    $.each( tree.edge(), function( index, edge ) {
-        switch (sourceOrTarget) {
-            case 'SOURCE':
-                if (edge['@source']() === id) {
-                    foundEdges.push( edge );
-                }
-                return;
-            case 'TARGET':
-                if (edge['@target']() === id) {
-                    foundEdges.push( edge );
-                }
-                return;
-            default:  // match on either node ID
-                if ((edge['@source']() === id) || (edge['@target']() === id)) {
-                    foundEdges.push( edge );
-                }
-                return;
+    var matchingEdges = null;
+
+    if ((sourceOrTarget === 'SOURCE') || (sourceOrTarget === 'ANY')) {
+        // fetch and add edges with this source node
+        var sourceLookup = getFastLookup('EDGES_BY_SOURCE_ID');
+        matchingEdges = sourceLookup[ id ];
+        if (matchingEdges) {
+            foundEdges = foundEdges.concat( matchingEdges );
         }
-    });
+    }
+
+    if ((sourceOrTarget === 'TARGET') || (sourceOrTarget === 'ANY')) {
+        // fetch and add edges with this target node
+        var targetLookup = getFastLookup('EDGES_BY_TARGET_ID');
+        matchingEdges = targetLookup[ id ];
+        if (matchingEdges) {
+            foundEdges = foundEdges.concat( matchingEdges );
+        }
+    }
+
     return foundEdges;
 }
 function reverseEdgeDirection( edge ) {
-    var oldSource = edge['@source']();
-    edge['@source']( edge['@target']() );
-    edge['@target']( oldSource );
-}
-function getRootTreeNodes(tree) {
-    // REMEMBER: trees can be unrooted, singly rooted, or multiply rooted
-    var rootNodes = [];
-    $.each( tree.node(), function( index, node ) {
-        if (node['@root'] && node['@root']() === 'true') {
-            rootNodes.push( node );
-        }
-    });
-    return rootNodes;
+    var oldSource = edge['@source'];
+    edge['@source'] = edge['@target'];
+    edge['@target'] = oldSource;
 }
 function getTreeNodeLabel(tree, node, importantNodeIDs) {
-    // TODO: centralize these IDs, no need to keep fetching for each node
-    var nodeID = node['@id']();
+    var nodeID = node['@id'];
 
     if (nodeID === importantNodeIDs.inGroupClade) {
         ///return "ingroup clade";
     }
 
-    if (nodeID === importantNodeIDs.specifiedRoot) {
-        ///return "specified root";
+    if (nodeID === importantNodeIDs.treeRoot) {
+        ///return "tree root";
     }
 
-    if (nodeID === importantNodeIDs.nearestOutGroupNeighbor) {
-        ///return "nearest outgroup neighbor";
+    var itsOTU = node['@otu'];
+    if (!itsOTU) {
+        return node['@id'];
     }
 
-    var itsOTUAccessor = node['@otu'];
-    if (!itsOTUAccessor) {
-        if (node['@root'] && node['@root']() === 'true') {
-            ///return "@root";
-        }
-        return node['@id']();
-    }
-
-    var otu = getOTUByID( itsOTUAccessor() );
-    return otu['@label']();
+    var otu = getOTUByID( itsOTU );
+    return otu['@label'];
 }
 
 function filenameFromFakePath( path ) {
@@ -2482,6 +2689,164 @@ function filenameFromFakePath( path ) {
         return path;
     }
     return parts[howManyParts-1];
+}
+function updateNewTreeUploadForm() {
+    // check all fields, enable/disable button
+    var readyToSubmit = true;
+
+    var chosenFormat = $.trim( $('#tree-import-format').val() );
+    if (chosenFormat === '') { 
+        readyToSubmit = false;
+    }
+
+    var chosenFile = $.trim( $('#treeupload').val() );
+    var pastedText = $.trim( $('#new-tree-text').val() );
+    // either of these is acceptable
+    if (pastedText === '' && chosenFile === '') { 
+        readyToSubmit = false;
+    }
+
+    var $submitBtn = $('[name=new-tree-submit]');
+    if (readyToSubmit) {
+        $submitBtn.removeAttr('disabled');
+    } else {
+        $submitBtn.attr('disabled', 'disabled');
+    }
+    return true;
+}
+function clearNewTreeUploadWidget() {
+    // un-bind fileupload submission
+    $('[name=new-tree-submit]').off('click');
+
+    var $widget = $('#treeupload');
+    $widget.val(''); 
+    $widget.trigger('change'); 
+
+    // reset the progress bar
+    setTimeout( function() {
+        $('#tree-upload-progress .bar').css( 'width', '0%' );
+        $('#tree-upload-progress .bar span').text( '' );
+    }, 500);
+}
+function generateTreeUploadID() {
+    // generate a new/unique upload ID for this attempt
+    var personalTimestamp = authorSafeID + '.'+ new Date().getTime();
+    return personalTimestamp;
+}
+function submitNewTree( form ) {
+    // NOTE that this should submit the same arguments (except for file
+    // data) as the fileupload behavior for #treeupload
+    ///console.log("submitting tree...");
+    var submitURL = $(form).attr('action');
+    ///console.log(submitURL);
+    
+    showModalScreen("Adding tree...", {SHOW_BUSY_BAR:true});
+
+    // @MTH:"no longer needed on upload"  $('[name=uploadid]').val( generateTreeUploadID() );
+    
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        // contentType: "application/json; charset=utf-8",
+        url: $('#tree-import-form').attr('action'),
+        data: $('#tree-import-form').serialize(),
+        complete: returnFromNewTreeSubmission
+    });
+}
+function returnFromNewTreeSubmission( jqXHR, textStatus ) {
+    // show results of tree submission, whether from submitNewTree() 
+    // or special (fileupload) behavior
+    
+    hideModalScreen();
+
+    ///console.log('submitNewTree(): done! textStatus = '+ textStatus);
+    // report errors or malformed data, if any
+    if (textStatus !== 'success') {
+        var errMsg; 
+        if ((jqXHR.status === 501) && (jqXHR.responseText.indexOf("Conversion") === 0)) {
+            errMsg = 'Sorry, there was an error importing this tree. Please double-check its format and data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+        } else {
+            errMsg = 'Sorry, there was an error adding this tree. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+            console.warn("jqXHR.status: "+ jqXHR.status);
+            console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+        }
+        showErrorMessage(errMsg);
+        return;
+    }
+
+    showSuccessMessage('Tree added.');
+    
+    // TODO: Add trees, nodes, otus and update UI
+
+    // Add supporting-file info for this tree's source file
+    //console.log("status: "+ jqXHR.status);
+    //console.log("statusText: "+ jqXHR.statusText);
+    // convert raw response to JSON
+    var data = $.parseJSON(jqXHR.responseText)['data']; //@MTH:"returned nexson now inside a 'data' property" 
+    //console.log("data: "+ data);
+
+    // move its collections into the view model Nexson
+    var itsOTUsCollection = data['nex:nexml']['otus'];
+    var itsTreesCollection = data['nex:nexml']['trees'];
+    // coerce the inner array of each collection into an array
+    // (override Badgerfish singletons)
+    itsOTUsCollection['otu'] = makeArray( itsOTUsCollection['otu'] );
+    itsTreesCollection['tree'] = makeArray( itsTreesCollection['tree'] );
+
+    $.each( itsTreesCollection.tree, function(i, tree) {
+        normalizeTree( tree );
+    });
+
+    try {
+        viewModel.nexml.otus.push( itsOTUsCollection );
+        viewModel.nexml.trees.push( itsTreesCollection );
+    } catch(e) {
+        console.error('Unable to push collections (needs Nexson upgrade)');
+    }
+
+    /*
+    // update the files list (and auto-save?)
+    var file = cloneFromNexsonTemplate('single supporting file');
+    file['@filename'] = data.filename || "";
+    file['@url'] = data.url || "";
+    file['@type'] = data.type || "";
+    file.description.$ = data.description || "";
+    file['@sourceForTree'] = data.sourceForTree || "";
+    file['@size'] = data.size || "";
+    getSupportingFiles().data.files.file.push(file);
+    */
+
+    if ($('[name=new-tree-preferred]').is(':checked')) {
+        // mark the new tree as preferred, eg, a candidate for synthesis
+        $.each( itsTreesCollection.tree, function(i, tree) {
+            viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( tree['@id'] );
+        });
+    }
+
+    // clear the import form (using Clear button to capture all behavior)
+    $('#tree-import-form :reset').click();
+
+    // force rebuild of all tree-related lookups
+    buildFastLookup('NODES_BY_ID');
+    buildFastLookup('OTUS_BY_ID');
+    buildFastLookup('EDGES_BY_SOURCE_ID');
+    buildFastLookup('EDGES_BY_TARGET_ID');
+
+    // Now that we can lookup quickly, make sure OTUs are ready for easy
+    // mapping to OTT taxa.
+    $.each( itsTreesCollection.tree, function(i, tree) {
+        normalizeOTUs( tree );
+    });
+
+    // force update of curation UI in all relevant areas
+    nudgeTickler('TREES');
+    nudgeTickler('SUPPORTING_FILES');
+    nudgeTickler('GENERAL_METADATA');
+    nudgeTickler('VISIBLE_OTU_MAPPINGS');
+    nudgeTickler('STUDY_HAS_CHANGED');
+    // just this once, suppress the page-exit warning
+    removePageExitWarning();
 }
 
 function adjustedLabel(label) {
@@ -2495,13 +2860,13 @@ function adjustedLabel(label) {
     }
     var adjusted = label;
     // apply any active subsitutions in the viewMdel
-    var subList = getOTUMappingHints().data.substitutions.substitution();
+    var subList = getOTUMappingHints().data.substitutions.substitution;
     $.each(subList, function(i, subst) {
-        if (!subst['@active']()) {
+        if (!subst['@active']) {
             return true; // skip to next adjustment
         }
-        var oldText = subst.old.$();
-        var newText = subst.new.$();
+        var oldText = subst.old.$;
+        var newText = subst.new.$;
         if ($.trim(oldText) === $.trim(newText) === "") {
             return true; // skip to next adjustment
         }
@@ -2512,15 +2877,15 @@ function adjustedLabel(label) {
             adjusted = adjusted.replace(pattern, newText);
             // clear any stale invalid-regex marking on this field
             if (!subst['@valid']) {
-                subst['@valid'] = ko.observable(true);
+                subst['@valid'] = true;
             }
-            subst['@valid'](true);
+            subst['@valid'] = true;
         } catch(e) {
             // there's probably invalid regex in the field... mark it and skip
             if (!subst['@valid']) {
-                subst['@valid'] = ko.observable(false);
+                subst['@valid'] = false;
             }
-            subst['@valid'](false);
+            subst['@valid'] = false;
         }
     });
     return adjusted;
@@ -2547,7 +2912,7 @@ var nexsonTemplates = {
          * files and trees into a data repository. In the meantime, the
          * curation webapp should offer the ability to upload and manage these files.
          *
-         * Once the data has been safely migrated from the OTOL Nexson store,
+         * Once the data has been safely migrated from the Open Tree Nexson store,
          * we should drop all of this and populate the study's main
          * 'ot:dataDeposit' with the archival DOI or URL.
          *
@@ -2600,25 +2965,6 @@ var nexsonTemplates = {
         "@sourceForTree": "",  // used IF this file was the original data for a tree
         "@size": ""   // eg, '241 KB'
     }, // END of 'single supporting file' template
-
-    'study annotation events': {
-        // a singleton, on the study only
-        "@property": "ot:annotationEvents", 
-        "@xsi:type": "nex:ResourceMeta", 
-        "annotation": []
-    },
-    'study annotation agents': {
-        // a singleton, on the study only
-        "@property": "ot:agents", 
-        "@xsi:type": "nex:ResourceMeta", 
-        "agent": []
-    },
-    'annotation message collection': {
-        // can be on the study, or some other element
-        "@property": "ot:messages", 
-        "@xsi:type": "nex:ResourceMeta", 
-        "message": []
-    },
 
     'single annotation event': {
         // "@id": "",
@@ -2682,7 +3028,7 @@ var nexsonTemplates = {
             //"@id": "",      // will be assigned via $.extend
             "@wasGeneratedById": "otu-mapping-hints",
             "@severity": "INFO",
-            "@code": "OTU_MAPPING_HINTS",
+            "@code": "OTU_MAPPING_HINTS",  // N.B. independent of the OTU_MAPPING_HINTS tickler
             "@humanMessageType": "NONE",
             "data": {
                 "searchContext": {"$": "All life"},
@@ -2730,28 +3076,17 @@ var nexsonTemplates = {
                 "@xsi:type": "nex:LiteralMeta"
             }
         ]
-    }, // END of 'OTU entry' template
+    } // END of 'OTU entry' template
 
 } // END of nexsonTemplates
 
-function cloneFromNexsonTemplate( templateName, options ) {
-    // NOTE that we can use the same KO-mapping settings in piecemeal fashion
-    var applyKnockoutMapping = options && (options.applyKnockoutMapping === false) ? false : true;
-    if (applyKnockoutMapping) {
-        return ko.mapping.fromJS(nexsonTemplates[ templateName ], studyMappingOptions);
-    } else {
-        return $.extend( true, {}, nexsonTemplates[ templateName ]);
-    }
+function cloneFromNexsonTemplate( templateName ) {
+    return $.extend( true, {}, nexsonTemplates[ templateName ]);
 }
 
 function cloneFromSimpleObject( obj, options ) {
     // use this to create simple, observable objects (eg, metatags)
-    var applyKnockoutMapping = options && (options.applyKnockoutMapping === false) ? false : true;
-    if (applyKnockoutMapping) {
-        return ko.mapping.fromJS(obj, studyMappingOptions);
-    } else {
-        return $.extend( true, {}, obj);
-    }
+    return $.extend( true, {}, obj);
 }
 
 // For older browsers (IE <=8), provide Date.toISOString if not defined
@@ -2798,8 +3133,13 @@ function getSupportingFiles(nexml) {
     if (!filesAnnotation) {
         return null;
     }
-    // return its message with the interesting parts
-    return getMessagesForAnnotationEvent( filesAnnotation, nexml )[0]
+
+    var filesMessages = getMessagesForAnnotationEvent( filesAnnotation, nexml );
+    if (filesMessages.length > 0) {
+        // return its message with the interesting parts
+        return filesMessages[0];
+    }
+    return null;
 }
 function addSupportingFileFromURL() {
     // TODO: support file upload from desktop
@@ -2813,7 +3153,7 @@ function addSupportingFileFromURL() {
     }
 
     // TODO: support import-from-URL via AJAX
-    $('#ajax-busy-bar').show();
+    showModalScreen("Adding supporting file...", {SHOW_BUSY_BAR:true});
     
     $.ajax({
         type: 'POST',
@@ -2827,9 +3167,9 @@ function addSupportingFileFromURL() {
         },
         success: function( data, textStatus, jqXHR ) {
             // creation method should return either our JSON structure describing the new file, or an error
-            $('#ajax-busy-bar').hide();
+            hideModalScreen();
 
-            console.log('addSupportingFileFromURL(): done! textStatus = '+ textStatus);
+            ///console.log('addSupportingFileFromURL(): done! textStatus = '+ textStatus);
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
                 showErrorMessage('Sorry, there was an error adding this file.');
@@ -2839,20 +3179,57 @@ function addSupportingFileFromURL() {
             showSuccessMessage('File added.');
             // update the files list (and auto-save?)
             var file = cloneFromNexsonTemplate('single supporting file');
-            file['@filename']( data.filename || "" );
-            file['@url']( data.url || "" );
-            file['@type']( data.type || "" );
-            file.description.$( data.description || "" );
-            file['@sourceForTree']( data.sourceForTree || "" );
-            file['@size']( data.size || "" );
+            file['@filename'] = data.filename || "";
+            file['@url'] = data.url || "";
+            file['@type'] = data.type || "";
+            file.description.$ = data.description || "";
+            file['@sourceForTree'] = data.sourceForTree || "";
+            file['@size'] = data.size || "";
 
             getSupportingFiles().data.files.file.push(file);
+            nudgeTickler('SUPPORTING_FILES');
         },
         error: function( data, textStatus, jqXHR ) {
             showErrorMessage('Sorry, there was an error adding this file.');
         }
     });
 
+}
+
+function removeTree( tree ) {
+    // let's be sure, since adding may be slow...
+    if (!confirm("Are you sure you want to delete this tree?")) {
+        return;
+    }
+
+    // remove this tree
+    $.each(viewModel.nexml.trees, function(i, treesCollection) {
+        if ($.inArray(tree, treesCollection.tree) !== -1) {
+            removeFromArray( tree, treesCollection.tree );
+        }
+    });
+
+    // TODO: remove any captive trees- and OTUs-collections
+    // TODO: remove any otus not used elsewhere?
+    // TODO: remove related annotation events and agents?
+    
+    if ($.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) {
+        // remove its ID from list of preferred (candidate) trees
+        togglePreferredTree( tree );
+    }
+
+    // force rebuild of all tree-related lookups
+    buildFastLookup('NODES_BY_ID');
+    buildFastLookup('OTUS_BY_ID');
+    buildFastLookup('EDGES_BY_SOURCE_ID');
+    buildFastLookup('EDGES_BY_TARGET_ID');
+
+    // force update of curation UI in all relevant areas
+    nudgeTickler('TREES');
+    nudgeTickler('SUPPORTING_FILES');
+    nudgeTickler('GENERAL_METADATA');
+    nudgeTickler('VISIBLE_OTU_MAPPINGS');
+    nudgeTickler('STUDY_HAS_CHANGED');
 }
 
 function removeSupportingFile( fileInfo ) {
@@ -2864,7 +3241,7 @@ function removeSupportingFile( fileInfo ) {
     ///var removeURL = API_remove_file_DELETE_url.replace('STUDY_ID', 'TODO').replace('FILE_ID', 'TODO');
 
     // TODO: do the actual removal (from the remote file-store) via AJAX
-    $('#ajax-busy-bar').show();
+    showModalScreen("Removing supporting file...", {SHOW_BUSY_BAR:true});
     
     $.ajax({
         // type: 'DELETE',
@@ -2872,7 +3249,7 @@ function removeSupportingFile( fileInfo ) {
         // crossdomain: true,
         // contentType: "application/json; charset=utf-8",
         //url: removeURL // modified API call, see above
-        url: '/curator/supporting_files/delete_file/'+ fileInfo['@filename'](),
+        url: '/curator/supporting_files/delete_file/'+ fileInfo['@filename'],
         data: { },
         success: function( data, textStatus, jqXHR ) {
             // report errors or malformed data, if any
@@ -2887,11 +3264,12 @@ function removeSupportingFile( fileInfo ) {
                 return;
             }
 
-            $('#ajax-busy-bar').hide();
+            hideModalScreen();
             showSuccessMessage('File removed.');
             // update the files list
             var fileList = getSupportingFiles().data.files.file;
-            fileList.remove(fileInfo);
+            removeFromArray( fileInfo, fileList );
+            nudgeTickler('SUPPORTING_FILES');
         },
         error: function( data, textStatus, jqXHR ) {
             showErrorMessage('Sorry, there was an error removing this file.');
@@ -2922,14 +3300,16 @@ function getOTUMappingHints(nexml) {
     if (!hintsAnnotation) {
         return null;
     }
-    // return its message with the interesting parts
-    return getMessagesForAnnotationEvent( hintsAnnotation, nexml )[0]
+    
+    var hintsMessages = getMessagesForAnnotationEvent( hintsAnnotation, nexml );
+    if (hintsMessages.length > 0) {
+        // return its message with the interesting parts
+        return hintsMessages[0];
+    }
+    return null;
 }
 function addSubstitution( clicked ) {
     var subst = cloneFromNexsonTemplate('mapping substitution');
-    subst['@active'].subscribe(clearFailedOTUList);
-    subst.new.$.subscribe(clearFailedOTUList);
-    subst.old.$.subscribe(clearFailedOTUList);
 
     if ($(clicked).is('select')) {
         var chosenSub = $(clicked).val();
@@ -2939,21 +3319,24 @@ function addSubstitution( clicked ) {
         }
         // add the chosen subsitution
         var parts = chosenSub.split(' =:= ');
-        subst.old.$( parts[0] || '');
-        subst.new.$( parts[1] || '');
-        subst['@valid'](true);
-        subst['@active'](true);
+        subst.old.$ = parts[0] || '';
+        subst.new.$ = parts[1] || '';
+        subst['@valid'] = true;
+        subst['@active'] = true;
         // reset the SELECT widget to its prompt
         $(clicked).val('');
     }
     getOTUMappingHints().data.substitutions.substitution.push(subst);
+    nudgeTickler('OTU_MAPPING_HINTS');
 }
 function removeSubstitution( data ) {
     var subList = getOTUMappingHints().data.substitutions.substitution;
-    subList.remove(data);
-    if (subList().length === 0) {
+    removeFromArray( data, subList );
+    if (subList.length === 0) {
         // add an inactive substitution with prompts
         addSubstitution();
+    } else {
+        nudgeTickler('OTU_MAPPING_HINTS');
     }
 }
 
@@ -2966,8 +3349,8 @@ var proposedOTUMappings = ko.observable({}); // stored any labels proposed by se
 var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-editing UI to refresh!
 
 function editOTULabel(otu) {
-    var OTUid = otu['@id']();
-    var originalLabel = getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')();
+    var OTUid = otu['@id'];
+    var originalLabel = otu['^ot:originalLabel'];
     editedOTULabels()[ OTUid ] = ko.observable( adjustedLabel(originalLabel) );
     // add a subscriber to remove this from failed-OTU list when user makes
     // changes
@@ -2987,13 +3370,13 @@ function editOTULabel(otu) {
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
 }
 function editedLabelAccessor(otu) {
-    var OTUid = otu['@id']();
+    var OTUid = otu['@id'];
     var acc = editedOTULabels()[ OTUid ] || null;
     return acc;
 }
 function revertOTULabel(otu) {
     // undoes 'editOTULabel', releasing a label to use shared hints
-    var OTUid = otu['@id']();
+    var OTUid = otu['@id'];
     delete editedOTULabels()[ OTUid ];
     failedMappingOTUs.remove(OTUid );
     if (editedOTULabelSubscriptions[ OTUid ]) {
@@ -3016,23 +3399,25 @@ function proposedMapping( otu ) {
         console.log("proposedMapping() failed");
         return null;
     }
-    var OTUid = otu['@id']();
+    var OTUid = otu['@id'];
     var acc = proposedOTUMappings()[ OTUid ];
     return acc ? acc() : null;
 }
 function approveProposedOTULabel(otu) {
     // undoes 'editOTULabel', releasing a label to use shared hints
-    var OTUid = otu['@id']();
-    var approvedMapping = proposedOTUMappings()[ OTUid ]();
-    mapOTUToTaxon( OTUid, approvedMapping );
+    var OTUid = otu['@id'];
+    var approvedMapping = proposedOTUMappings()[ OTUid ];
+    mapOTUToTaxon( OTUid, approvedMapping() );
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
+    nudgeTickler('OTU_MAPPING_HINTS');
 }
 function rejectProposedOTULabel(otu) {
     // undoes 'proposeOTULabel', clearing its value
-    var OTUid = otu['@id']();
+    var OTUid = otu['@id'];
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
+    nudgeTickler('OTU_MAPPING_HINTS');
 }
 
 function getAllVisibleProposedMappings() {
@@ -3042,18 +3427,19 @@ function getAllVisibleProposedMappings() {
     $.each( visibleOTUs, function (i, otu) {
         if (proposedMapping(otu)) {
             // we have a proposed mapping for this OTU!
-            visibleProposedMappings.push( otu['@id']() );
+            visibleProposedMappings.push( otu['@id'] );
         }
     });
     return visibleProposedMappings; // return a series of IDs
 }
 function approveAllVisibleMappings() {
     $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
-        var approvedMapping = proposedOTUMappings()[ OTUid ]();
+        var approvedMapping = proposedOTUMappings()[ OTUid ];
         delete proposedOTUMappings()[ OTUid ];
-        mapOTUToTaxon( OTUid, approvedMapping );
+        mapOTUToTaxon( OTUid, approvedMapping() );
     });
     proposedOTUMappings.valueHasMutated();
+    nudgeTickler('OTU_MAPPING_HINTS');
     startAutoMapping();
 }
 function rejectAllVisibleMappings() {
@@ -3145,11 +3531,11 @@ function getNextUnmappedOTU() {
     var unmappedOTU = null;
     var visibleOTUs = viewModel.filteredOTUs().pagedItems();
     $.each( visibleOTUs, function (i, otu) {
-        var ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
+        var ottMappingTag = otu['^ot:ottId'] || null;
         var proposedMappingInfo = proposedMapping(otu);
         if (!ottMappingTag && !proposedMappingInfo) {
             // this is an unmapped OTU!
-            if (failedMappingOTUs.indexOf(otu['@id']()) === -1) {
+            if (failedMappingOTUs.indexOf(otu['@id']) === -1) {
                 // it hasn't failed mapping (at least not yet)
                 unmappedOTU = otu;
                 return false;
@@ -3163,7 +3549,6 @@ function getNextUnmappedOTU() {
 function requestTaxonMapping() {
     // set spinner, make request, handle response, and daisy-chain the next request
     // TODO: send one at a time? or in a batch (5 items)?
-    
     var otuToMap = getNextUnmappedOTU();
     if (!otuToMap) {
         stopAutoMapping();
@@ -3171,8 +3556,8 @@ function requestTaxonMapping() {
     }
 
     updateMappingStatus();
-    var otuID = otuToMap['@id']();
-    var originalLabel = getMetaTagAccessorByAtProperty(otuToMap.meta, 'ot:originalLabel')();
+    var otuID = otuToMap['@id'];
+    var originalLabel = otuToMap['^ot:originalLabel'] || null;
     // use the manually edited label (if any), or the hint-adjusted version
     var editedAcc = editedLabelAccessor(otuToMap);
     var searchText = editedAcc ? editedAcc() : adjustedLabel(originalLabel);
@@ -3186,7 +3571,7 @@ function requestTaxonMapping() {
     }
 
     // groom trimmed text based on our search rules
-    var searchContextName = getOTUMappingHints().data.searchContext.$();
+    var searchContextName = getOTUMappingHints().data.searchContext.$;
 
     // show spinner alongside this item...
     currentlyMappingOTUs.push( otuID );
@@ -3323,9 +3708,9 @@ function requestTaxonMapping() {
 }
 
 function mapOTUToTaxon( otuID, mappingInfo ) {
-    // TODO: apply this mapping, creating Nexson elements as needed
+    // apply this mapping, creating Nexson elements as needed
 
-    /* mappingInfo should contain these attributes:
+    /* mappingInfo should be an object with these properties:
      * {
      *   "name" : "Centranthus",
      *   "ottId" : "759046",
@@ -3342,34 +3727,25 @@ function mapOTUToTaxon( otuID, mappingInfo ) {
     var otu = getOTUByID( otuID );
 
     // TODO: add/update its original label?
-    var originalLabel = getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')();
-    otu['@label']( mappingInfo.name || 'NAME MISSING!' );
+    var originalLabel = otu['^ot:originalLabel'] || null;
+    otu['@label'] = mappingInfo.name || 'NAME MISSING!';
 
     // add (or update) a metatag mapping this to an OTT id
     var ottId = Number(mappingInfo.ottId);
-    var ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
-    if (!ottMappingTag) {
-        addMetaTagToParent(otu, {
-            "$": '',
-            "@property": "ot:ottId",
-            "@xsi:type": "nex:LiteralMeta"
-        });
-        ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
-    }
-    ottMappingTag.$( ottId );
+    otu['^ot:ottId'] = ottId;
 }
 
 function unmapOTUFromTaxon( otuOrID ) {
     // remove this mapping, removing any unneeded Nexson elements
     var otu = (typeof otuOrID === 'object') ? otuOrID : getOTUByID( otuOrID );
     // restore its original label (versus mapped label)
-    var originalLabel = getMetaTagAccessorByAtProperty(otu.meta, 'ot:originalLabel')();
-    otu['@label']( '' );    // TODO: THIS IS TOO SLOW, what's up?
+    var originalLabel = otu['^ot:originalLabel'];
+    otu['@label'] = '';
     // strip any metatag mapping this to an OTT id
-    var ottMappingTag = getMetaTagByProperty(otu.meta, 'ot:ottId');
-    if (ottMappingTag) {
-        otu.meta.remove(ottMappingTag);    // TODO: THIS IS TOO SLOW, what's up?
+    if ('^ot:ottId' in otu) {
+        delete otu['^ot:ottId'];
     }
+    nudgeTickler('OTU_MAPPING_HINTS');
 }
 
 function addMetaTagToParent( parent, props ) {
@@ -3377,7 +3753,10 @@ function addMetaTagToParent( parent, props ) {
     var newTag = cloneFromSimpleObject( props );
     if (!parent.meta) {
         // add a meta collection here
-        parent['meta'] = ko.observableArray();
+        parent['meta'] = [ ];
+    } else if (!$.isArray(parent.meta)) {
+        // convert a Badgerfish "singleton" to a proper array
+        parent['meta'] = [ parent.meta ]; 
     }
     parent.meta.push( newTag );
 }
@@ -3389,6 +3768,7 @@ function clearVisibleMappings() {
         unmapOTUFromTaxon( otu );
     });
     clearFailedOTUList();
+    nudgeTickler('OTU_MAPPING_HINTS');
 }
 
 function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
@@ -3404,24 +3784,20 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     }
     nodeMenu.hide();
     // show appropriate choices for this node
-    // if (node['@root']() === 'true') ?
-    var nodeID = node['@id']();
+    var nodeID = node['@id'];
 
     // general node information first, then actions
     nodeMenu.append('<li class="node-information"></li>');
     var nodeInfoBox = nodeMenu.find('.node-information');
     nodeInfoBox.append('<span class="node-name">'+ getTreeNodeLabel(tree, node, importantNodeIDs) +'</span>');
 
-    if (nodeID == importantNodeIDs.specifiedRoot) {
+    if (nodeID == importantNodeIDs.treeRoot) {
 
         nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
 
-        if (viewOrEdit === 'EDIT') {
-            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id']() +'\', null ); return false;">Un-mark as root of this tree</a></li>');
-        }
     } else {
         if (viewOrEdit === 'EDIT') {
-            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id']() +'\', \''+ nodeID +'\' ); return false;">Mark as root of this tree</a></li>');
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as root of this tree</a></li>');
         }
     }
     if (nodeID == importantNodeIDs.inGroupClade) {
@@ -3429,33 +3805,14 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
         nodeInfoBox.append('<span class="node-type inGroupClade">ingroup clade</span>');
 
         if (viewOrEdit === 'EDIT') {
-            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id']() +'\', null ); return false;">Un-mark as the ingroup clade</a></li>');
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id'] +'\', null ); return false;">Un-mark as the ingroup clade</a></li>');
         }
     } else {
         if (viewOrEdit === 'EDIT') {
-            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id']() +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade</a></li>');
-        }
-        
-        // this shouldn't be possible if it's already the ingroup clade
-        if (nodeID == importantNodeIDs.nearestOutGroupNeighbor) {
-
-            nodeInfoBox.append('<span class="node-type nearestOutGroupNeighbor">ingroup parent</span>');
-
-            if (viewOrEdit === 'EDIT') {
-                nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id']() +'\', null ); return false;">Un-mark as the ingroup clade\'s parent</a></li>');
-            }
-        } else {
-            if (viewOrEdit === 'EDIT') {
-                nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeOutgroup( \''+ tree['@id']() +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade\'s parent</a></li>');
-            }
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade</a></li>');
         }
     }
 
-    if (nodeInfoBox.find('.node-type').length === 0) {
-        if (node['@root'] && node['@root']() === 'true') {
-            nodeInfoBox.append('<span class="node-type atRoot">marked as @root</span>');
-        }
-    }
     if (viewOrEdit === 'EDIT') {
         nodeInfoBox.after('<li class="divider"></li>');
     }
@@ -3480,8 +3837,58 @@ function hideNodeOptionsMenu( ) {
     }
 }
 
+function showEdgeOptionsMenu( tree, edge, nodePageOffset, importantNodeIDs ) {
+    // This is a Bootstrap-style menu whose pointer is centered on the
+    // target edge. It borrows most style and some behavior from the
+    // node-options menu.
+    var nodeMenu = $('#node-menu');
+    if (nodeMenu.length === 0) {
+        // provide the needed ancestor classes, but minimize the surrounding "navbar"
+        $('body').append('<div id="node-menu-holder" class="navbar" style="height: 0; position: static;"><ul class="nav" style="height: 0; position: static;"><li class="dropdown-open"><ul id="node-menu" class="dropdown-menu"></ul></li></div>');
+        nodeMenu = $('#node-menu');
+    } else {
+        nodeMenu.empty(); // clear any prior menu items
+    }
+    nodeMenu.hide();
+    // show appropriate choices for this node
+    // if (node['@root'] === 'true') ?
+    var edgeID = edge['@id'];
+    // edge.source;
+    // edge.target;
+
+    // general node information first, then actions
+    nodeMenu.append('<li class="node-information"></li>');
+    var nodeInfoBox = nodeMenu.find('.node-information');
+    nodeInfoBox.append('<span class="node-name"><span style="font-weight: normal;">Source: </span>'+ getTreeNodeLabel(tree, edge.source, importantNodeIDs) +'</span>');
+    nodeInfoBox.append('<br/><span class="node-name"><span style="font-weight: normal;">Target: </span>'+ getTreeNodeLabel(tree, edge.target, importantNodeIDs) +'</span>');
+    if ('length' in edge.target) {
+        nodeInfoBox.append('<div>Edge length: '+ edge.target.length +'</div>');
+    }
+
+    var availableForRooting = (edge.source['@id'] !== importantNodeIDs.treeRoot) && (edge.target['@id'] !== importantNodeIDs.treeRoot);
+    if (availableForRooting && (viewOrEdit === 'EDIT')) {
+        nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', [\''+ edge.source['@id'] +'\', \''+ edge.target['@id'] +'\'] ); return false;">Re-root from this edge</a></li>');
+    }
+
+    if (viewOrEdit === 'EDIT') {
+        nodeInfoBox.after('<li class="divider"></li>');
+    }
+
+    // show the menu 
+    var pointerNudge = {x: -13, y: 8};
+    nodeMenu.css({
+        "left": (Math.round(nodePageOffset.left + pointerNudge.x) +"px"),
+        "top": (Math.round(nodePageOffset.top + pointerNudge.y) +"px"),
+        "z-index": 10000  // required to get above modal window
+    });
+    nodeMenu.show();
+    // hide this menu if we hide the modal tree viewer OR scroll the view
+    $('#tree-viewer *[data-dismiss=modal], .modal-backdrop').click( hideNodeOptionsMenu );
+    $('#tree-viewer .modal-body').scroll( hideNodeOptionsMenu );
+}
+
 function clearD3PropertiesFromTree(tree) {
-    $.each( tree.node(), function( i, node ) {
+    $.each( tree.node, function( i, node ) {
         delete node.x;
         delete node.y;
         delete node.depth;
@@ -3513,21 +3920,21 @@ function getStudyAnnotationEvents( nexml ) {
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    return getMetaTagByProperty(nexml.meta, 'ot:annotationEvents');
+    return nexml['^ot:annotationEvents'] || null;
 }
 function getStudyAnnotationAgents( nexml ) {
     // returns an array (OR observableArray?), possibly empty
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    return getMetaTagByProperty(nexml.meta, 'ot:agents');
+    return nexml['^ot:agents'] || null;
 }
 function getStudyAnnotationMessages( nexml ) {
     // returns an array (OR observableArray?), possibly empty
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    return getMetaTagByProperty(nexml.meta, 'ot:messages');
+    return nexml['^ot:messages'] || null;
 }
 
 // manage "local" messages collection for any element
@@ -3536,7 +3943,8 @@ function getLocalMessages( element ) {
     var messages = [];
     if (localMessagesCollectionExists( element )) {
         var collection = getLocalMessagesCollection( element );
-        $.each(collection.message(), function(i, msg ) {
+        var msgList = makeArray(collection.message);
+        $.each(msgList, function(i, msg) {
             // TODO: iterate properly (child elements)?
             messages.push(msg);
         });
@@ -3545,7 +3953,7 @@ function getLocalMessages( element ) {
 }
 function getLocalMessagesCollection( element ) {
     // returns the actual collection accessor, or null
-    return getMetaTagByProperty(element.meta, 'ot:messages');
+    return element['^ot:messages'] || null;
 ;
 }
 function localMessagesCollectionExists( element ) {
@@ -3560,14 +3968,15 @@ function localMessagesCollectionIsBeingUsed( element ) {
 function addLocalMessagesCollection( element ) {
     // TODO: RESTRICT to these elements: nexml, tree, node, edge, otu
     // return the new collection
-    var newCollection = cloneFromNexsonTemplate('annotation message collection');
-    element.meta.push( newCollection );
-    return newCollection;
+    element['^ot:messages'] ={
+        'message': []
+    };
+    return element['^ot:messages'];
 }
 function removeLocalMessagesCollection( element ) {
     var testCollection = getLocalMessagesCollection( element );
     if (testCollection) {
-        element.meta.remove(testCollection);
+        delete element['^ot:messages'];
     }
 }
 
@@ -3585,10 +3994,10 @@ function getAnnotationsRelatedToElement( element ) {
 }
 function getAgentForAnnotationEvent( annotationEvent ) {
     // returns an agent object, or null if not found
-    var agentID = annotationEvent['@wasAssociatedWithAgentId']();
+    var agentID = annotationEvent['@wasAssociatedWithAgentId'];
     var matchingAgent = null;
     if (agentID) {
-        matchingAgent = getAgent( function(a) { return a['@id']() === agentID; }, viewModel.nexml );
+        matchingAgent = getAgent( function(a) { return a['@id'] === agentID; }, viewModel.nexml );
     }
     return matchingAgent;
 }
@@ -3631,16 +4040,12 @@ function createAnnotation( annotationBundle, nexml ) {
     // targetElement, annotationEvent, agent, messages ) {
     // RENAME to updateAnnotation, setAnnotation?
     // TODO: make sure we can handle "split" events that specify multiple elements
-    console.dir(annotationBundle, "bundle");
-
     if (!nexml) {
         nexml = viewModel.nexml;
     }
 
     // is the specified nexson already mapped to Knockout observables?
-    var nexmlIsMapped = ko.isObservable( nexml.meta );
-    console.log("createAnnotation(): nexmlIsMapped = "+ nexmlIsMapped);
-
+    var nexmlIsMapped = ko.isObservable( nexml ); // TODO? WAS nexml.meta
     var target = annotationBundle.targetElement;
     var annEvent = annotationBundle.annotationEvent;
     var agent = annotationBundle.agent;
@@ -3669,7 +4074,7 @@ function createAnnotation( annotationBundle, nexml ) {
     
     // add (or confirm) the specified agent and assign to event
     var hasMatchingID = function(a) { 
-        var testID = ko.unwrap( a['@id'] );
+        var testID = ko.unwrap( agent['@id'] );
         return ko.unwrap( a['@id'] ) === testID; 
     }
     if (!agentExists( hasMatchingID, nexml)) {
@@ -3707,7 +4112,8 @@ function getAgent( testFunc, nexml ) {
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    var agentList = makeArray(getStudyAnnotationAgents( nexml ).agent);
+    var agentsCollection = getStudyAnnotationAgents( nexml );
+    var agentList = agentsCollection ? makeArray(agentsCollection.agent) : [];
     var foundAgent = null;
     $.each(agentList, function(i, agent) {
         if (testFunc(agent)) {
@@ -3730,7 +4136,7 @@ function addAgent( props, nexml ) {
     }
 
     // is the specified nexson already mapped to Knockout observables?
-    var nexmlIsMapped = ko.isObservable( nexml.meta );
+    var nexmlIsMapped = ko.isObservable( nexml ); // TODO? WAS nexml.meta
     var agentInfo = $.extend(
         { '@id': getNextAvailableAnnotationAgentID( nexml ) }, 
         props
@@ -3777,7 +4183,8 @@ function getNextAvailableAnnotationEventID(nexml) {
             nexml = viewModel.nexml;
         }
         // do a one-time(?) scan for the highest ID currently in use
-        var allEvents = makeArray(getMetaTagAccessorByAtProperty(nexml.meta, 'ot:annotationEvents'));
+        var allEvents = makeArray(nexml['^ot:annotationEvents']);
+        var allEvents = ('^ot:annotationEvents' in nexml) ? makeArray(nexml['^ot:annotationEvents'].annotation) : [];
         if (allEvents.length === 0) {
             highestAnnotationEventID = 0;
         } else {
@@ -3808,7 +4215,7 @@ function getNextAvailableAnnotationAgentID(nexml) {
             nexml = viewModel.nexml;
         }
         // do a one-time(?) scan for the highest ID currently in use
-        var allAgents = makeArray(getMetaTagAccessorByAtProperty(nexml.meta, 'ot:agents'));
+        var allAgents = ('^ot:agents' in nexml) ? makeArray(nexml['^ot:agents'].agent) : [];
         if (allAgents.length === 0) {
             highestAnnotationAgentID = 0;
         } else {
@@ -3866,25 +4273,33 @@ function getAllAnnotationMessagesInStudy(nexml) {
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    var allMessages = makeArray(getMetaTagByProperty(nexml.meta, 'ot:messages').message);
+    var allMessages = makeArray(getStudyAnnotationMessages(nexml).message);
     // gather "local" messages from all other elements!
     // NOTE: Add any new target elements here to avoid duplication!
-    $.each(makeArray(nexml.otus.otu), function(i, otu) {
-        var localMessages = getMetaTagByProperty(otu.meta, 'ot:messages');
-        if (localMessages) {
-            allMessages += makeArray(localMessages.message);
-        }
+    $.each(nexml.otus, function( i, otusCollection ) {
+        $.each(otusCollection.otu, function( i, otu ) {
+            var localMessages = getLocalMessages(otu);
+            if (localMessages.length > 0) {
+                $.merge(allMessages, makeArray(localMessages.message));
+            }
+        });
     });
-    $.each(makeArray(nexml.trees.tree), function(i, tree) {
-        var localMessages = getMetaTagByProperty(tree.meta, 'ot:messages');
-        if (localMessages) {
-            allMessages += makeArray(localMessages.message);
+    var allTrees = [];
+    $.each(nexml.trees, function(i, treesCollection) {
+        $.each(treesCollection.tree, function(i, tree) {
+            allTrees.push( tree );
+        });
+    });
+    $.each(allTrees, function(i, tree) {
+        var localMessages = getLocalMessages(tree);
+        if (localMessages.length > 0) {
+            $.merge(allMessages, makeArray(localMessages.message));
         }
         // look again at all nodes in the tree
         $.each(makeArray(tree.node), function(i, node) {
-            var localMessages = getMetaTagByProperty(node.meta, 'ot:messages');
-            if (localMessages) {
-                allMessages += makeArray(localMessages.message);
+            var localMessages = getLocalMessages(node);
+            if (localMessages.length > 0) {
+                $.merge(allMessages, makeArray(localMessages.message));
             }
         });
     });
@@ -3900,9 +4315,9 @@ function getAllAnnotationMessagesInStudy(nexml) {
 
 function getTags( parentElement ) {
     var tags = [];
-    var tagAccessors = getMetaTagAccessorByAtProperty(parentElement.meta, 'ot:tag', { 'FIND_ALL': true });
-    $.each(tagAccessors, function(i, tagGetter) {
-        var tagText = $.trim(tagGetter());
+    var rawTagValues = parentElement['^ot:tag'] || [];
+    $.each(rawTagValues, function(i, tagText) {
+        var tagText = $.trim(tagText);
         switch(tagText) {  // non-empty points to a candidate tree
             case '':
                 break;
@@ -3913,26 +4328,13 @@ function getTags( parentElement ) {
     return tags;
 }
 function addTag( parentElement, newTagText ) {
-    addMetaTagToParent(parentElement, {
-        "$": newTagText,
-        "@property": "ot:tag",
-        "@xsi:type": "nex:LiteralMeta"
-    });
-}
-function removeTag( parentElement, oldTagText ) {
-    var tagElements = getNexsonChildByProperty(parentElement.meta, '@property', 'ot:tag', { 'FIND_ALL': true });
-    $.each(tagElements, function(i, tag) {
-        var tagText = $.trim(tag.$());
-        if (tagText === oldTagText) {
-            parentElement.meta.remove(tag);
-        }
-    });
+    if (!('^ot:tag' in parentElement)) {
+        parentElement['^ot:tag'] = [];
+    }
+    parentElement['^ot:tag'].push( newTagText );
 }
 function removeAllTags( parentElement ) {
-    var tagElements = getNexsonChildByProperty(parentElement.meta, '@property', 'ot:tag', { 'FIND_ALL': true });
-    $.each(tagElements, function(i, tag) {
-        parentElement.meta.remove(tag);
-    });
+    parentElement['^ot:tag'] = [];
 }
 function updateElementTags( select ) {
     var parentElement;
@@ -3942,7 +4344,6 @@ function updateElementTags( select ) {
         var treeID = $(select).attr('treeid');
         parentElement = getTreeByID(treeID);
     }
-    console.log("BEFORE: there were "+ getTags(parentElement).length +" tags");
     removeAllTags( parentElement );
     // read and apply the values in this tags-input SELECT element
     // N.B. multiple-value select returns null if no values selected!
@@ -3950,5 +4351,188 @@ function updateElementTags( select ) {
     $.each(values, function(i,v) {
         addTag( parentElement, $.trim(v) );
     });
-    console.log("AFTER: there are "+ getTags(parentElement).length +" tags");
+}
+
+function updateInferenceMethodWidgets( tree, event ) {
+    // This is a sort of indirect binding, since we want to offer both
+    // preset options and free-form text for inference methods.
+    var $selectWidget = $('#inference-method-select');
+    var $freeTextWidget = $('#inference-method-other');
+    if (event) {
+        // read from widgets and apply value
+        var selectValue = $selectWidget.val();
+        if (selectValue === 'Other (specify)') {
+            $freeTextWidget.show();
+            tree['^ot:curatedType'] = $freeTextWidget.val();
+        } else {
+            $('#inference-method-other').hide();
+            tree['^ot:curatedType'] = selectValue;
+        }
+    } else {
+        // read from model and update widget display
+        var modelValue = tree['^ot:curatedType'];
+        // check this value against SELECT options
+        if ($selectWidget.find("option[value='"+ modelValue +"']").length === 0) {
+            // not a preset option, use free-form text
+            $selectWidget.val('Other (specify)');
+            $freeTextWidget.val(modelValue);
+            $freeTextWidget.show();
+        } else {
+            // select the matching option, hide the field
+            $selectWidget.val(modelValue);
+            $freeTextWidget.hide();
+        }
+    }
+    nudgeTickler('TREES');
+}
+
+/* Define a registry of nudge methods, for use in KO data bindings. Calling
+ * a nudge function will update one or more observables to trigger updates
+ * in the curation UI. This approach allows us to work without observables,
+ * which in turn means we can edit enormous viewmodels.
+ */
+var nudge = {
+    'GENERAL_METADATA': function( data, event ) {
+        nudgeTickler( 'GENERAL_METADATA');
+        return true;
+    },
+    'TREES': function( data, event ) {
+        nudgeTickler( 'TREES');
+        return true;
+    },
+    'OTU_MAPPING_HINTS': function( data, event ) {
+        nudgeTickler( 'OTU_MAPPING_HINTS');
+        return true;
+    },
+    'EDGE_DIRECTIONS': function( data, event ) {
+        nudgeTickler( 'EDGE_DIRECTIONS');
+        return true;
+    }
+}
+function nudgeTickler( name ) {
+    var tickler = viewModel.ticklers[ name ];
+    if (!tickler) {
+        console.error("No such tickler: '"+ name +"'!");
+    }
+    var oldValue = tickler.peek();
+    tickler( oldValue + 1 );
+    
+    // always nudge the main 'dirty flag' tickler
+    viewModel.ticklers.STUDY_HAS_CHANGED( viewModel.ticklers.STUDY_HAS_CHANGED.peek() + 1 );
+}
+
+function removeFromArray( doomedValue, theArray ) {
+    // removes just one matching value, if found
+    var index = $.inArray( doomedValue, theArray );
+    if (index !== -1) {
+        theArray.splice( index, 1 );
+    }
+}
+
+function getFastLookup( lookupName ) {
+    // return (or build) a flat list of Nexson elements by ID
+    if (lookupName in viewModel.fastLookups) {
+        if (viewModel.fastLookups[ lookupName ] === null) {
+            buildFastLookup( lookupName );
+        }
+        return viewModel.fastLookups[ lookupName ];
+    }
+    console.error("No such lookup as '"+ lookupName +"'!");
+    return null;
+}
+function buildFastLookup( lookupName ) {
+    // (re)build and store a flat list of Nexson elements by ID
+    if (lookupName in viewModel.fastLookups) {
+        clearFastLookup( lookupName );
+        var newLookup = {};
+        switch( lookupName ) {
+
+            case 'NODES_BY_ID':
+                // assumes that all node ids are unique, across all trees
+                var allTrees = [];
+                $.each(viewModel.nexml.trees, function(i, treesCollection) {
+                    $.each(treesCollection.tree, function(i, tree) {
+                        allTrees.push( tree );
+                    });
+                });
+                $.each(allTrees, function( i, tree ) {
+                    $.each(tree.node, function( i, node ) {
+                        var itsID = node['@id'];
+                        if (itsID in newLookup) {
+                            console.warn("Duplicate node ID '"+ itsID +"' found!");
+                        }
+                        newLookup[ itsID ] = node;
+                    });
+                });
+                break;
+
+            case 'OTUS_BY_ID':
+                // assumes that all node ids are unique, across all trees
+                // AND 'otus' collections!
+                $.each(viewModel.nexml.otus, function( i, otusCollection ) {
+                    $.each(otusCollection.otu, function( i, otu ) {
+                        var itsID = otu['@id'];
+                        if (itsID in newLookup) {
+                            console.warn("Duplicate otu ID '"+ itsID +"' found!");
+                        }
+                        newLookup[ itsID ] = otu;
+                    });
+                });
+                break;
+
+            case 'EDGES_BY_SOURCE_ID':
+                // allow multiple values for each source (ie, multiple children)
+                var allTrees = [];
+                $.each(viewModel.nexml.trees, function(i, treesCollection) {
+                    $.each(treesCollection.tree, function(i, tree) {
+                        allTrees.push( tree );
+                    });
+                });
+                $.each(allTrees, function( i, tree ) {
+                    $.each(tree.edge, function( i, edge ) {
+                        var sourceID = edge['@source'];
+                        if (sourceID in newLookup) {
+                            newLookup[ sourceID ].push( edge );
+                        } else {
+                            // create the array, if not found
+                            newLookup[ sourceID ] = [ edge ];
+                        }
+                    });
+                });
+                break;
+
+            case 'EDGES_BY_TARGET_ID':
+                // allow multiple values for each target (for conflicted trees)
+                var allTrees = [];
+                $.each(viewModel.nexml.trees, function(i, treesCollection) {
+                    $.each(treesCollection.tree, function(i, tree) {
+                        allTrees.push( tree );
+                    });
+                });
+                $.each(allTrees, function( i, tree ) {
+                    $.each(tree.edge, function( i, edge ) {
+                        var targetID = edge['@target'];
+                        if (targetID in newLookup) {
+                            newLookup[ targetID ].push( edge );
+                        } else {
+                            // create the array, if not found
+                            newLookup[ targetID ] = [ edge ];
+                        }
+                    });
+                });
+                break;
+
+        }
+        viewModel.fastLookups[ lookupName ] = newLookup;
+    } else {
+        console.error("No such lookup as '"+ lookupName +"'!");
+    }
+}
+function clearFastLookup( lookupName ) {
+    // clear chosen lookup, on demand (eg, after merging in new OTUs)
+    if (lookupName in viewModel.fastLookups) {
+        viewModel.fastLookups[ lookupName ] = null;
+        return;
+    }
+    console.error("No such lookup as '"+ lookupName +"'!");
 }

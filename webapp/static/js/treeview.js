@@ -43,6 +43,20 @@ if ( History && History.enabled && pageUsesHistory ) {
                     argus.displayNode({"nodeID": data,
                                        "domSource": syntheticTreeID});  // from main HTML view
                 },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    // NOTE that this won't fire in cross-domain requests! using complete (below) instead..
+                },
+                complete: function(jqXHR, textStatus) {
+                    // examine the error response and show a sensible message
+                    if (textStatus === 'error') {
+                        var errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
+                        if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
+                            // the requested OTT taxon is bogus, or not found in the target tree
+                            errMsg = "The requested taxon is not used in the current tree. Please double-check the URL, or search for another taxon,  or return to <a href='/'>Home</a>.";
+                        }
+                        showErrorInArgusViewer( errMsg, jqXHR.responseText );
+                    }
+                },
                 dataType: 'json'  // should return just the node ID (number)
             });
         } else {
@@ -505,14 +519,14 @@ function fixLoginLinks() {
 
 function historyStateToWindowTitle( stateObj ) {
     // show name if possible, else just source+ID
-    if (stateObj.nodeName.trim() === '') {
+    if ((!stateObj.nodeName) || stateObj.nodeName.trim() === '') {
         return (stateObj.domSource +':'+ stateObj.nodeID +' - opentree');
     }
     return (stateObj.nodeName +' - opentree');
 }
 function historyStateToPageHeading( stateObj ) {
     // show name if possible, else just source+ID
-    if (stateObj.nodeName.trim() === '') {
+    if ((!stateObj.nodeName) || stateObj.nodeName.trim() === '') {
         return ('Unnamed node '+ stateObj.domSource +'@'+ stateObj.nodeID);
     }
     //return ('Node \''+ stateObj.nodeName +'\' ('+ stateObj.domSource +'@'+ stateObj.nodeID +')');
@@ -648,7 +662,6 @@ function showObjectProperties( objInfo, options ) {
     var metaMap = {};  // this should be replaced in synthetic-tree views
 
     // examine incoming data to figure out what it is, and what to show
-
     if (typeof(objInfo.nodeID) !== 'undefined') {
         // this is minimal node info (nodeID, domSource, nodeName) from an argus node
         // OR it's an edge with metadata for it and its adjacent (child) node
@@ -661,8 +674,8 @@ function showObjectProperties( objInfo, options ) {
         // OR it's an edge with metadata for it and its adjacent (child) node
         objType = (objInfo.type) ? objInfo.type : 'node';
         objName = objInfo.name;
-        objID = objInfo.nodeiD;
-        objSource = '?';
+        objID = objInfo.nodeid;
+        objSource = objInfo.domSource || '?';
     } else {
         // what's this?
         debugger;
@@ -822,6 +835,11 @@ function showObjectProperties( objInfo, options ) {
                         nodeSection.displayedProperties['Taxonomic rank'] = fullNode.taxRank;
                     }
 
+                    if (typeof fullNode.nleaves !== 'undefined') {
+                        nodeSection.displayedProperties['Species within this clade'] = fullNode.nleaves;
+                        // OR 'Clade members'? 'Leaf taxa'?
+                    }
+
                     // TODO: show ALL source trees (phylo-trees + IDs) for this node
 
                     objID = fullNode.sourceID ? fullNode.sourceID : fullNode.nodeid;
@@ -911,9 +929,9 @@ function showObjectProperties( objInfo, options ) {
                                               + 'title="GBIF Backbone Taxonomy" target="_blank">GBIF: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
-                            case 'SILVA':
-                                displayVal = '<a href="http://www.arb-silva.de/browser/ssu/silva/'+ sourceInfo.taxSourceId +'" '
-                                              + 'title="SILVA Taxonomy" target="_blank">SILVA: '+ sourceInfo.taxSourceId +'</a>';
+                            case 'H2007':
+                                displayVal = '<a href="http://dx.doi.org/10.6084/m9.figshare.915439#'+ sourceInfo.taxSourceId +'" '
+                                              + 'title="Hibbett 2007 updated" target="_blank">Hibbett et al. 2007 updated: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
                             case 'IF':
@@ -921,9 +939,24 @@ function showObjectProperties( objInfo, options ) {
                                               + 'title="Index Fungorum" target="_blank">Index Fungorum: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
+                            case 'IRMNG':
+                                displayVal = '<a href="http://www.marine.csiro.au/mirrorsearch/ir_search.list_species?gen_id='+ sourceInfo.taxSourceId +'" '
+                                              + 'title="Interim Register of Marine and Nonmarine Genera" target="_blank">IRMNG: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
+
                             case 'MB':
                                 displayVal = '<a href="http://www.mycobank.org/MB/'+ sourceInfo.taxSourceId +'/" '
                                               + 'title="Mycobank" target="_blank">Mycobank: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
+
+                            case 'SILVA':
+                                displayVal = '<a href="http://www.arb-silva.de/browser/ssu/silva/'+ sourceInfo.taxSourceId +'" '
+                                              + 'title="SILVA Taxonomy" target="_blank">SILVA: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
+
+                            case 'STUDY713':
+                                displayVal = '<a href="http://dx.doi.org/10.1186/1471-2148-10-352#'+ sourceInfo.taxSourceId +'" '
+                                              + 'title="Schäferhoff et al. 2010" target="_blank">Schäferhoff et al. 2010: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
                             case 'OTT': 
@@ -1179,6 +1212,17 @@ if (false) {
     History.go(2); // this is *relative* to the current index (position) in history! ie, .go(-1) is the same at back()
 }
 
+function showErrorInArgusViewer( msg, details ) {
+    var errorHTML; 
+    if (!details) {
+        errorHTML = '<p style="margin: 8px 12px;">'+ msg +'</p>';
+    } else {
+        errorHTML = '<p style="margin: 8px 12px;">'+ msg +'&nbsp; &nbsp; '
+        + '<a href="#" onclick="$(\'#error-details\').show(); return false;">Show details</a></p>'
+        + '<p id="error-details" style="margin: 8px 12px; font-style: italic; display: none;">'+ details +'</p>';
+    }
+    $('#argusCanvasContainer').css('height','500px').html( errorHTML );
+}
 
 /* provide string-trimming functions in older browsers */
 if (!String.prototype.trim) {

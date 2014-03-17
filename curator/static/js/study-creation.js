@@ -1,7 +1,7 @@
 /*
  * Client-side behavior for the Open Tree curation UI
  *
- * This uses the OTOL API to fetch and store studies and trees remotely.
+ * This uses the Open Tree API to fetch and store studies and trees remotely.
  */
 
 // these variables should already be defined in the main HTML page
@@ -20,12 +20,6 @@ $(document).ready(function() {
         updateCreationDetails();
     });
 
-    // enable all submit buttons
-    $('#import-options button').click(function() {
-        createStudyFromForm();
-        return false;
-    });
-
     // set initial state for all details
     updateCreationDetails();
 });
@@ -38,52 +32,31 @@ function updateCreationDetails() {
         $('input:radio[name=import-option]').removeAttr('disabled');
         $('#import-options').css('opacity', 1.0);
         $('#import-options').unbind('click');
+        $('#import-options button').unbind('click').click(function() {
+            createStudyFromForm();
+            return false;
+        });
     } else {
         $('input:radio[name=import-option]').attr('disabled','disabled');
         $('#import-options').css('opacity', 0.5);
-        $('#import-options').click(function() {
+        $('#import-options').click(function(e) {
             showErrorMessage('You must accept CC-0 licensing to import a study.');
+            return false;
         });
+        $('#import-options button').unbind('click');
     }
 
     $.each($('[id^=import-details-]'), function(index, details) {
         var $details = $(details);
         var matchingRadioID = $details.attr('id').split('details').join('option');
         var $radio = $('#'+ matchingRadioID);
-
-
-        console.log( $radio.attr('id') + "...");
-        console.log( "~"+ $details.attr('id') + "...");
         // hide or show details based on checked status
         if ($radio.is(':checked')) {
-            console.log( "  CHECKED" );
             $details.slideDown('fast');
         } else {
-            console.log( "  NOT-CHECKED" );
             $details.slideUp('fast');
         }
     });
-}
-
-function showErrorMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-success')
-               .addClass('alert-error').slideDown();
-}
-
-function showInfoMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-error')
-               .removeClass('alert-success')
-               .addClass('alert-info').slideDown();
-}
-
-function showSuccessMessage(msg) {
-    $('.flash .message').html(msg);
-    $('.flash').removeClass('alert-info')
-               .removeClass('alert-error')
-               .addClass('alert-success').slideDown();
 }
 
 function validateFormData() {
@@ -102,7 +75,7 @@ function createStudyFromForm( clicked ) {
     //
     // TODO: support ENTER key vs explicit button click?
 
-    $('#ajax-busy-bar').show();
+    showModalScreen("Adding study...", {SHOW_BUSY_BAR:true});
     
     $.ajax({
         type: 'POST',
@@ -116,6 +89,7 @@ function createStudyFromForm( clicked ) {
             'import_option': $('[name=import-option]:checked').val() || '',
             'treebase_id': $('[name=treebase-id]').val() || '',
             'publication_DOI': $('[name=publication-DOI]').val() || '',
+            'publication_reference': $('[name=publication-reference]').val() || '',
             // misc identifying information
             'author_name': authorName,
             'author_email': authorEmail,
@@ -123,7 +97,8 @@ function createStudyFromForm( clicked ) {
         },
         success: function( data, textStatus, jqXHR ) {
             // creation method should return either a redirect URL to the new study, or an error
-            debugger;
+            hideModalScreen();
+
             console.log('createStudyFromForm(): done! textStatus = '+ textStatus);
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
@@ -131,9 +106,9 @@ function createStudyFromForm( clicked ) {
                 return;
             }
 
-            $('#ajax-busy-bar').hide();
             showSuccessMessage('Study created, redirecting now....');
-            // TODO: bounce to the new location
+            // bounce to the new study in the study editor
+            window.location = "/curator/study/edit/"+ data['resource_id'];
         },
         error: function( data, textStatus, jqXHR ) {
             debugger;

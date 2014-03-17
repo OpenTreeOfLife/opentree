@@ -439,6 +439,7 @@ div.flash {
     right: 0;
     bottom: 0;
     margin-bottom: 0;
+    z-index: 10;
 }
 
 div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:pointer;}
@@ -514,6 +515,15 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .navbar-inner .pagination {
     margin: 0.5em 0 0;
 }
+.pagination-small ul > li > a.pagination-spacer {
+    padding-left: 0;
+    padding-right: 0;
+    border-right-width: 0;
+    background-color: #ddd;
+}
+.pagination-small ul > li > a.pagination-spacer:hover {
+    background-color: #0088cc;
+}
 
 /* simplified table style with no headers */
 table.bare-top-row tr:first-child td {
@@ -557,4 +567,50 @@ tr:hover .row-controls-ghosted {
 .mapping-batch-operations {
     margin: 0.75em 0 0;
     overflow: hidden;
+}
+.clear-search {
+    opacity: 0.5; 
+    margin-top: 2px; 
+    margin-left: -24px; 
+    cursor: pointer;
+}
+.clear-search:hover {
+    opacity: 1.0; 
+}
+.help-box,
+.help-toggle,
+.empty-list-prompt {
+    padding: 0.5em 1em;
+    background-color: #ffeedd;
+    font-style: italic;
+    border-radius: 4px;
+}
+.help-box {
+    margin-bottom: 1em;
+}
+.help-toggle {
+    float: right;
+    /* font-weight: bold; */
+    /* font-style: normal; */
+    color: #333;
+    border: 1px solid #db8;
+    padding: 4px 8px 4px 10px;
+    border-radius: 4px;
+    margin: 0px;
+    margin-bottom: 1em;
+}
+.help-toggle:hover {
+    background-color: #eca;
+}
+.help-box .help-toggle {
+    /* inner "Hide" toggle */
+    margin: -5px -12px 4px 8px;
+}
+
+/* modal event blocker */
+#modal-screen-message {
+    padding: 12px;
+    text-align: center;
+    font-size: 1.6em;
+    color: #888;
 }

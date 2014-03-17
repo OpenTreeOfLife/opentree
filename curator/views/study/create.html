@@ -1,4 +1,4 @@
-{{response.title = "Create Study"}}
+{{response.title = "Add Study"}}
 
 {{left_sidebar_enabled,right_sidebar_enabled=False,False}}
 {{response.subtitle = "license and import options"}}
@@ -34,8 +34,8 @@ body {
     </p>
 
     <label for="import-option-TREEBASE" class="featured-label">
-        <input type="radio" id="import-option-TREEBASE" name="import-option" value="IMPORT_FROM_TREEBASE" />
-        My tree already exists in TreeBASE
+        <input type="radio" id="import-option-TREEBASE" name="DISABLED-import-option" value="IMPORT_FROM_TREEBASE" disabled="disabled" onclick="return false;"/>
+        My tree already exists in TreeBASE <strong style="color: #c33;">[coming soon]</strong>
     </label>
     <p class="featured-label-description">
         Importing from TreeBASE is fast, and requires only minimal curation post-import. 
@@ -50,13 +50,27 @@ body {
         My study is published and has a DOI. 
     </label>
     <p class="featured-label-description">
-        The DOI allows us to retrieve citation data automatically, then you can upload your data files. 
+        The DOI, or digital object identifier, is assigned by the publisher and
+        usually looks like <strong>10.123/4567</strong>. The DOI allows us to
+        retrieve some study metadata automatically, then you can upload your data
+        files. 
     </p>
     <div id="import-details-PUBLICATION_DOI" class="featured-label-child">
-        <input class="span4" type="text" name="publication-DOI" placeholder="Enter the publication DOI"></input>
-        <button class="btn btn-info">Import using publication DOI</button>
+        <input class="span4" type="text" name="publication-DOI" placeholder="Enter the publication DOI" style="margin-bottom: 12px;"></input>
+        <button class="btn btn-info" style="margin-bottom: 12px;">Import using publication DOI</button>
     </div>
 
+    <label for="import-option-PUBLICATION_REFERENCE" class="featured-label">
+        <input type="radio" id="import-option-PUBLICATION_REFERENCE" name="import-option" value="IMPORT_FROM_PUBLICATION_REFERENCE" />
+        My study is published and I have a reference string (or most of it). 
+    </label>
+    <p class="featured-label-description">
+        Enter a reference string to retrieve study metadata automatically, then you can upload your data files. 
+    </p>
+    <div id="import-details-PUBLICATION_REFERENCE" class="featured-label-child">
+        <textarea class="span4" name="publication-reference" placeholder="Enter the reference string" rows="4" style="margin-bottom: 12px;"></textarea>
+        <button class="btn btn-info" style="vertical-align: bottom; margin-bottom: 12px;">Import using reference string</button>
+    </div>
 
     <label for="import-option-MANUAL_ENTRY" class="featured-label">
         <input type="radio" id="import-option-MANUAL_ENTRY" name="import-option" value="IMPORT_FROM_MANUAL_ENTRY" />
@@ -87,9 +101,10 @@ body {
 
 <script type='text/javascript'>
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
+    var authorSafeID = '{{= auth.user and auth.user.username.encode('ascii', 'ignore') or 'ANONYMOUS' }}';
     var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
-    var API_create_study_POST_url = '{{= conf.get("apis", "API_create_study_POST_url") }}';
+    var API_create_study_POST_url = '{{=API_create_study_POST_url}}';
         // this can take a few possible POSTed arguments (DOI, or initial input)
 </script>
 <script src="{{=URL('static','js/curation-helpers.js')}}"></script>
