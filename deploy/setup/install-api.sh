@@ -67,6 +67,7 @@ pushd .
     cd $APPROOT/private
     cp config.example config
     sed -i -e "s+REPO_PATH+$OTHOME/repo/$OPENTREE_DOCSTORE+" config
+
     # Specify our remote to push to, which is added to local repo above
     sed -i -e "s+REPO_REMOTE+originssh+" config
 
@@ -78,6 +79,11 @@ pushd .
 
     # Access oti search from shared server-config variable
     sed -i -e "s+OTI_BASE_URL+$OTI_BASE_URL+" config
+
+    # Define the public URL of the docstore repo (used for updating oti)
+    # N.B. Because of limitations oti's index_current_repo.py, this is
+    # always one of our public repos on GitHub.
+    sed -i -e "s+OPENTREE_DOCSTORE_URL+https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE+" config
 popd
 
 # N.B. Another file 'GITHUB_CLIENT_SECRET' was already placed via rsync (in push.sh)
