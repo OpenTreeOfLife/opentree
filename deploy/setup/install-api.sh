@@ -6,6 +6,7 @@ OPENTREE_HOST=$1
 OPENTREE_DOCSTORE=$2
 CONTROLLER=$3
 OTI_BASE_URL=$4
+OPENTREE_API_BASE_URL=$5
 
 . setup/functions.sh
 
@@ -87,5 +88,12 @@ pushd .
 popd
 
 # N.B. Another file 'GITHUB_CLIENT_SECRET' was already placed via rsync (in push.sh)
+
+# prompt to add a GitHub webhook (if it's not already there) to nudge my oti service as studies change
+pushd .
+    # TODO: Pass in credentials for bot user 'opentree' on GitHub, to use the GitHub API for this:
+    cd $OTHOME/repo/$WEBAPP/bin
+    python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL
+popd
 
 echo "Apache needs to be restarted (API)"
