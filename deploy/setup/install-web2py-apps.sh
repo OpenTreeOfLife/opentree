@@ -27,13 +27,22 @@ echo "Installing web2py applications.  Hostname = $OPENTREE_HOST. Neo4j host = $
 # **** Begin setup that is common to opentree/curator and api
 
 # ---------- WEB2PY ----------
-if [ ! -d web2py ]; then
-    if [ ! -r downloads/web2py_src.zip ]; then
-	wget --no-verbose -O downloads/web2py_src.zip \
-	  http://www.web2py.com/examples/static/web2py_src.zip
-    fi
-    unzip downloads/web2py_src.zip
-    log "Installed web2py"
+
+# Install or upgrade web2py, based on a pinned release. (See
+# https://github.com/web2py/web2py/releases for all available releases.)
+WEB2PY_RELEASE='2.8.2'
+# N.B. We should only change WEB2PY_RELEASE after updating the modified web2py files
+# listed in the section 'ROUTES AND WEB2PY PATCHES' below, and thorough testing!
+
+if [ ! -d web2py -o  ! -r downloads/web2py_${WEB2PY_RELEASE}_src.zip ]; then
+	wget --no-verbose -O downloads/web2py_${WEB2PY_RELEASE}_src.zip \
+      https://github.com/web2py/web2py/archive/R-${WEB2PY_RELEASE}.zip
+    # clobber any existing web2py installation
+    rm -rf ./web2py
+    unzip downloads/web2py_${WEB2PY_RELEASE}_src.zip
+    # rename to expected 'web2py'
+    mv web2py-R-${WEB2PY_RELEASE}/ web2py
+    log "Installed web2py R-${WEB2PY_RELEASE}"
 fi
 
 # ---------- VIRTUALENV + WEB2PY + WSGI ----------
