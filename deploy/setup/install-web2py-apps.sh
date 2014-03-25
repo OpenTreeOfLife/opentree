@@ -43,6 +43,13 @@ if [ ! -d web2py -o  ! -r downloads/web2py_${WEB2PY_RELEASE}_src.zip ]; then
     # rename to expected 'web2py'
     mv web2py-R-${WEB2PY_RELEASE}/ web2py
     log "Installed web2py R-${WEB2PY_RELEASE}"
+
+    # clear old sessions in all web2py applications (these can cause heisenbugs in web2py upgrades)
+    rm -rf repo/opentree/curator/sessions/*
+    rm -rf repo/opentree/webapp/sessions/*
+    rm -rf repo/opentree/admin/sessions/*
+    rm -rf repo/api.opentreeoflife.org/sessions/*
+    log "Cleared old sessions in all web2py apps"
 fi
 
 # ---------- VIRTUALENV + WEB2PY + WSGI ----------
