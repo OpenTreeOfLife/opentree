@@ -101,30 +101,21 @@ server for requests.  It can be used for the optional"scope" parameters for Face
         the client back to the page originating the auth request.
         Appends the _next action to the generated url so the flows continues.
         """
+
         r = current.request
+        http_host = r.env.http_host
 
-        if 'redirect_uri' in self.args and self.args['redirect_uri']:
-            # avoid problems with proxied servers ('localhost:8000')
-            uri = self.args['redirect_uri']
-
+        if r.env.https == 'on':
+            url_scheme = 'https'
         else:
-            # no preset redirect_uri, try to construct one
-
-            http_host = r.env.http_host
-
-            if r.env.https == 'on':
-                url_scheme = 'https'
-            else:
-                url_scheme = r.env.wsgi_url_scheme
-            if next:
-                path_info = next
-            else:
-                path_info = r.env.path_info
-            uri = '%s://%s%s' % (url_scheme, http_host, path_info)
-
+            url_scheme = r.env.wsgi_url_scheme
+        if next:
+            path_info = next
+        else:
+            path_info = r.env.path_info
+        uri = '%s://%s%s' % (url_scheme, http_host, path_info)
         if r.get_vars and not next:
             uri += '?' + urlencode(r.get_vars)
-
         return uri
 
 
@@ -156,7 +147,7 @@ server for requests.  It can be used for the optional"scope" parameters for Face
             # reuse token until expiration
             if expires == 0 or expires > time.time():
                         return current.session.token['access_token']
-            
+
         code = current.request.vars.code
 
         if code:
@@ -208,12 +199,7 @@ server for requests.  It can be used for the optional"scope" parameters for Face
                         time.time()
                 finally:
                     opener.close()
-
-                try:
-                    return current.session.token['access_token']
-                except Exception, e:
-                    raise Exception("No access_token found in data: %s %s" % (current.session.token, e))
-                    return None
+                return current.session.token['access_token']
 
         current.session.token = None
         return None
@@ -299,7 +285,7 @@ server for requests.  It can be used for the optional"scope" parameters for Face
             if self.args:
                 data.update(self.args)
             auth_request_url = self.auth_url + "?" + urlencode(data)
-            raise HTTP(307,
+            raise HTTP(302,
                        "You are not authenticated: you are being redirected to the <a href='" + auth_request_url + "'> authentication server</a>",
                        Location=auth_request_url)
         return
