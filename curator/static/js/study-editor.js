@@ -4310,6 +4310,21 @@ function getAllAnnotationMessagesInStudy(nexml) {
     return allMessages;
 }
 
+function relocateLocalAnnotationMessages( nexml ) {
+    /* Update deprecated storage for annotation messages from "in situ" and
+     * separate messages container to storage within each parent annotation event.
+     */
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
+    if ('^ot:messages' in nexml) {
+        console.warn(">>> Now I'd relocate old annotation messages...");
+    } else {
+        // no messages stored in the old system
+        return;
+    }
+}
+
 
 /* 
  * Manage free-form tags for a specified study or tree. This is somewhat
