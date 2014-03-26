@@ -186,11 +186,13 @@ function loadSelectedStudy() {
         dataType: 'json',
         url: fetchURL,
         data: { 
-            'output_nexml2json': '1.0.0',
+            'output_nexml2json': '1.0.0',  // '0.0', '1.0', '1.2', '1.2.1'
             'auth_token': authToken
         },
         error: function(jqXHR, textStatus, errorThrown) {
             // report errors or malformed data, if any
+            hideModalScreen();
+
             console.warn("textStatus: "+ textStatus);
             console.warn("jqXHR.status: "+ jqXHR.status);
             console.warn("jqXHR.responseText: "+ jqXHR.responseText);
@@ -3190,6 +3192,7 @@ function addSupportingFileFromURL() {
             nudgeTickler('SUPPORTING_FILES');
         },
         error: function( data, textStatus, jqXHR ) {
+            hideModalScreen();
             showErrorMessage('Sorry, there was an error adding this file.');
         }
     });
@@ -3272,6 +3275,7 @@ function removeSupportingFile( fileInfo ) {
             nudgeTickler('SUPPORTING_FILES');
         },
         error: function( data, textStatus, jqXHR ) {
+            hideModalScreen();
             showErrorMessage('Sorry, there was an error removing this file.');
             console.log("ERROR: textStatus: "+ textStatus);
             return;
