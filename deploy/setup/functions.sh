@@ -89,6 +89,7 @@ function git_refresh() {
     guser=$1    # OpenTreeOfLife
     reponame=$2
     branch=$3
+    repos_par_arg=$4
 
     if [ x$branch = x ]; then
 	branch=${OPENTREE_BRANCHES[$reponame]}
@@ -99,11 +100,16 @@ function git_refresh() {
     echo "Using branch $branch of repo $reponame"
 
     # Directory in which all local checkouts of git repos reside
-    repo_dir=$REPOS_DIR/$reponame
+    if [ x${repos_par_arg} = x ]; then
+        repo_par=${REPOS_DIR}
+    else
+        repo_par=${repos_par_arg}
+    fi
+    repo_dir=$repo_par/$reponame
     # Exit 0 (true) means has changed
     changed=0
     if [ ! -d $repo_dir ] ; then
-        (cd $REPOS_DIR; \
+        (cd $repo_par; \
          git clone --branch $branch https://github.com/$guser/$reponame.git)
 	log Clone: $reponame `cd $repo_dir; git log | head -1`
     else

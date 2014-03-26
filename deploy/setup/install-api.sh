@@ -50,8 +50,9 @@ py_package_setup_install peyotl || true
 
 echo "...fetching $OPENTREE_DOCSTORE repo..."
 
-phylesystem=repo/$OPENTREE_DOCSTORE
-git_refresh OpenTreeOfLife $OPENTREE_DOCSTORE $BRANCH || true
+phylesystem=repo/${OPENTREE_DOCSTORE}_par/$OPENTREE_DOCSTORE
+mkdir -p repo/${OPENTREE_DOCSTORE}_par
+git_refresh OpenTreeOfLife $OPENTREE_DOCSTORE "$BRANCH" repo/${OPENTREE_DOCSTORE}_par || true
 
 pushd .
     cd $phylesystem
@@ -67,7 +68,8 @@ pushd .
 
     cd $APPROOT/private
     cp config.example config
-    sed -i -e "s+REPO_PATH+$OTHOME/repo/$OPENTREE_DOCSTORE+" config
+    sed -i -e "s+REPO_PATH+$OTHOME/repo/${OPENTREE_DOCSTORE}_par/$OPENTREE_DOCSTORE+" config
+    sed -i -e "s+REPO_PAR+$OTHOME/repo/${OPENTREE_DOCSTORE}_par+" config
 
     # Specify our remote to push to, which is added to local repo above
     sed -i -e "s+REPO_REMOTE+originssh+" config
