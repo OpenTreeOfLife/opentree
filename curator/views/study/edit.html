@@ -1127,10 +1127,10 @@ body {
                         <td data-bind="text: annotation['@description'], style: { color: annotation['@passedChecks'] ? '' : 'red' }"></td><!-- general description (annotation type) -->
                         <!-- <td><a href="#">Study</a></td> -->
                         <td data-bind="text: getAgentForAnnotationEvent( annotation )['@name']"></td>
-                      <!-- ko if: getMessagesForAnnotationEvent( annotation ).length > 0 -->
-                        <td data-bind="if: getMessagesForAnnotationEvent( annotation ).length > 0">
+                      <!-- ko if: makeArray( annotation.message ).length > 0 -->
+                        <td data-bind="if: makeArray( annotation.message ).length > 0">
                             <ul style="list-style: none; margin: 0 0 8px 0;"
-                            data-bind="foreach: getMessagesForAnnotationEvent( annotation )">
+                            data-bind="foreach: makeArray( annotation.message )">
                                 <li style="border-bottom: 1px solid #ccc; padding: 2px 0;">
                                 <!-- data-bind="text: code" is SHOUTY_UPPERCASE -->
                                 <span data-bind="text: $data['@comment']"></span>
@@ -1140,7 +1140,7 @@ body {
                             </ul>
                         </td>
                       <!-- /ko -->
-                      <!-- ko if: getMessagesForAnnotationEvent( annotation).length === 0 -->
+                      <!-- ko if: makeArray( annotation.message ).length === 0 -->
                         <td>
                             NO MESSAGES HERE
                         </td>
