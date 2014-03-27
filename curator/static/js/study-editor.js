@@ -2959,7 +2959,7 @@ var nexsonTemplates = {
                     ]}
                 },
                 "refersTo": {
-                    "top": {"$": "meta"}
+                    "@top": {"$": "meta"}
                 }
             }]
             // "otherProperty": [ ]  // SKIP THIS, use messages for details
@@ -3051,7 +3051,7 @@ var nexsonTemplates = {
                     ]}
                 },
                 "refersTo": {
-                    "top": {"$": "meta"}
+                    "@top": {"$": "meta"}
                 }
             }]
             // "otherProperty": [ ]  // SKIP THIS, use messages for details
@@ -4049,7 +4049,7 @@ function createAnnotation( annotationBundle, nexml ) {
         alert("ERROR: target element not found: "+ target +" <"+ typeof(target) +">");
         return;
     }
-    $.each( annEvent.messages, function( i, msg ) {
+    $.each( annEvent.message, function( i, msg ) {
         var messageInfo = $.extend(
             { '@id': getNextAvailableAnnotationMessageID( nexml ) }, 
             msg
@@ -4181,7 +4181,11 @@ function getNextAvailableAnnotationEventID(nexml) {
             for (var i = 0; i < sortedEvents.length; i++) {
                 // ignore agents with special IDs, eg, 'opentree-curation-webapp'
                 var testEvent = sortedEvents[i];
-                var testID = ko.unwrap(testEvent['@id']);
+                var testID = ko.unwrap(testEvent['@id']) || '';
+                if (testID === '') {
+                    console.error("MISSING ID for this annotation event:");
+                    console.error(testEvent);
+                }
                 if (testID.indexOf(annotationEventIDPrefix) === 0) {
                     highestAnnotationEventID = testID.split( annotationEventIDPrefix )[1];
                     break;
@@ -4241,7 +4245,7 @@ function getNextAvailableAnnotationMessageID(nexml) {
             for (var i = 0; i < sortedMessages.length; i++) {
                 // ignore agents with special IDs, eg, 'opentree-curation-webapp'
                 var testMessage = sortedMessages[i];
-                var testID = ko.unwrap(testMessage['@id']) || '';  // TODO: allow missing/empty IDs?
+                var testID = ko.unwrap(testMessage['@id']) || '';
                 if (testID === '') {
                     console.error("MISSING ID for this annotation message:");
                     console.error(testMessage);

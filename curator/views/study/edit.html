@@ -1135,7 +1135,7 @@ body {
                                 <!-- data-bind="text: code" is SHOUTY_UPPERCASE -->
                                 <span data-bind="text: $data['@comment']"></span>
                                 <!-- data-bind="text: data" can be object or function or ... -->
-                                in <span data-bind="text: $data.refersTo.top.$"></span>
+                                in <span data-bind="text: ('@top' in $data.refersTo) ? $data.refersTo['@top'].$ : '??'"></span>
                                 [<span data-bind="text: $data['@severity']"></span>]
                             </ul>
                         </td>
