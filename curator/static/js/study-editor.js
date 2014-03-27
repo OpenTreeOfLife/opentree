@@ -493,21 +493,12 @@ function loadSelectedStudy() {
                     fileDetails.push(fileInfo);
                 });
 
-                $.each(viewModel.nexml.trees, function(i, treesCollection) {
-                    // watch for a bare singleton here!
-                    var treeList = makeArray(treesCollection.tree);
-                    $.each(treeList, function(i, tree) {
-                        if ('^ot:messages' in tree) {
-                            var msgList = makeArray(tree['^ot:messages'].message);
-                            $.each(msgList, function(i, msg) {
-                                if (msg['@code'] === 'SUPPORTING_FILE_INFO') {
-                                    $.each(msg.data.files.file, function(i, fileInfo) {
-                                        fileDetails.push(fileInfo);
-                                    });
-                                }
-                            });
-                        }
-                    });
+                $.each(getAllAnnotationMessagesInStudy(), function(i, msg) {
+                    if (msg['@code'] === 'SUPPORTING_FILE_INFO') {
+                        $.each(msg.data.files.file, function(i, fileInfo) {
+                            fileDetails.push(fileInfo);
+                        });
+                    }
                 });
 
                 var filteredList = ko.utils.arrayFilter( 
@@ -2963,9 +2954,8 @@ var nexsonTemplates = {
                 }
             }]
             // "otherProperty": [ ]  // SKIP THIS, use messages for details
-        },
+        }
         // 'agent': null,      // will be provided by template consumer
-        'messages': null
     }, // END of 'supporting files' template
 
     'single supporting file': {
@@ -2983,10 +2973,11 @@ var nexsonTemplates = {
         // "@id": "",
         "@description": "",
         "@wasAssociatedWithAgentId": "",
-        "@dateCreated": ""
+        "@dateCreated": "",
         //"@passedChecks": true,
         //"@preserve": true,
         //"@otherProperty": []
+        "message": []
     },
     'single annotation agent': {
         // "@id": "",
@@ -3055,9 +3046,8 @@ var nexsonTemplates = {
                 }
             }]
             // "otherProperty": [ ]  // SKIP THIS, use messages for details
-        },
+        }
         // 'agent': null,      // will be provided by template consumer
-        'messages': null
     }, // END of 'OTU mapping hints' template
 
     'mapping substitution': {
