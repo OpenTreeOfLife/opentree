@@ -470,7 +470,7 @@ body {
                  <input type="hidden" name="auth_token" 
                    value="{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}">
                  <!--@MTH:"no longer needed on upload" input type="hidden" name="uploadid" value=""-->
-                  <select id="tree-import-format" name="inputformat" 
+                  <select id="tree-import-format" name="inputFormat" 
                           class="input-block-level"
                           style="margin-bottom: 1em;"
                           oninput="updateNewTreeUploadForm(); return true;"
@@ -592,7 +592,7 @@ body {
                             <button data-bind="visible: file['@sourceForTree'] !== ''"
                                 class="pull-right btn btn-mini" 
                                 style="opacity: 0.3 !important;"
-                                onclick="alert('You must delete the associated tree to remove this file.'); return false;">
+                                onclick="alert('You must delete the associated tree(s) to remove this file.'); return false;">
                                 <i class="icon-remove"></i>
                             </button>
                             <button data-bind="visible: file['@sourceForTree'] === '', click: removeSupportingFile"
@@ -1126,7 +1126,7 @@ body {
                     <tr>
                         <td data-bind="text: annotation['@description'], style: { color: annotation['@passedChecks'] ? '' : 'red' }"></td><!-- general description (annotation type) -->
                         <!-- <td><a href="#">Study</a></td> -->
-                        <td data-bind="text: getAgentForAnnotationEvent( annotation )['@name']"></td>
+                        <td data-bind="text: getAgentForAnnotationEvent( annotation ) ? getAgentForAnnotationEvent( annotation )['@name'] : '??'"></td>
                       <!-- ko if: makeArray( annotation.message ).length > 0 -->
                         <td data-bind="if: makeArray( annotation.message ).length > 0">
                             <ul style="list-style: none; margin: 0 0 8px 0;"

@@ -73,6 +73,7 @@ $(document).ready(function() {
                     .url: "/curator/supporting_files/download/supporting_files.doc.96acd92...3461.m4a"
                 */
                 // update the files list (and auto-save?)
+                console.log('@@@ update the files list - A');
                 var fileNexson = cloneFromNexsonTemplate('single supporting file');
                 fileNexson['@filename'] = file.name;
                 fileNexson['@url'] = file.url;  // TODO: prepend current domain name, if missing?
@@ -493,14 +494,6 @@ function loadSelectedStudy() {
                     fileDetails.push(fileInfo);
                 });
 
-                $.each(getAllAnnotationMessagesInStudy(), function(i, msg) {
-                    if (msg['@code'] === 'SUPPORTING_FILE_INFO') {
-                        $.each(msg.data.files.file, function(i, fileInfo) {
-                            fileDetails.push(fileInfo);
-                        });
-                    }
-                });
-
                 var filteredList = ko.utils.arrayFilter( 
                     fileDetails,  // retrieve contents of observableArray
                     function(file) {
@@ -686,7 +679,11 @@ function loadSelectedStudy() {
                                 itsMessages[0]['@code'] : 
                                 ""; // TODO: incorporate all messages?
                         ///var itsLocation = "Study"; // TODO
-                        var itsSubmitter = itsAgent['@name'];
+                        var itsSubmitter = itsAgent ? itsAgent['@name'] : '??';
+                        if (!itsAgent) { 
+                            console.error("MISSING AGENT for this annotation event:");
+                            console.error(annotation);
+                        }
                         var itsMessageText = itsMessages && (itsMessages.length > 0) ? 
                                 $.map(itsMessages, function(m) { 
                                     return m['humanMessage'] ? m['@humanMessage'] : ""; 
@@ -2787,46 +2784,50 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     //console.log("status: "+ jqXHR.status);
     //console.log("statusText: "+ jqXHR.statusText);
     // convert raw response to JSON
-    var data = $.parseJSON(jqXHR.responseText)['data']; //@MTH:"returned nexson now inside a 'data' property" 
+    var responseJSON = $.parseJSON(jqXHR.responseText);
+    var data = responseJSON['data']; //@MTH:"returned nexson now inside a 'data' property" 
     //console.log("data: "+ data);
 
     // move its collections into the view model Nexson
-    var itsOTUsCollection = data['nex:nexml']['otus'];
-    var itsTreesCollection = data['nex:nexml']['trees'];
+    var nexmlName = ('nex:nexml' in data) ? 'nex:nexml' : 'nexml';
+ 
     // coerce the inner array of each collection into an array
     // (override Badgerfish singletons)
-    itsOTUsCollection['otu'] = makeArray( itsOTUsCollection['otu'] );
-    itsTreesCollection['tree'] = makeArray( itsTreesCollection['tree'] );
+    // NOTE that there may be multiple trees elements, otus elements
+    var itsOTUsCollection =  data[nexmlName]['otus'];
+    $.each(itsOTUsCollection, function(i, otusElement) {
+        otusElement['otu'] = makeArray( otusElement['otu'] );
+    });
 
-    $.each( itsTreesCollection.tree, function(i, tree) {
-        normalizeTree( tree );
+    var itsTreesCollection = data[nexmlName]['trees'];
+    $.each(itsTreesCollection, function(i, treesElement) {
+        treesElement['tree'] = makeArray( treesElement['tree'] );
+        $.each( treesElement.tree, function(i, tree) {
+            normalizeTree( tree );
+            if (responseJSON.newTreesPreferred) {
+                // mark all new tree(s) as preferred, eg, a candidate for synthesis
+                viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( tree['@id'] );
+            }
+        });
     });
 
     try {
-        viewModel.nexml.otus.push( itsOTUsCollection );
-        viewModel.nexml.trees.push( itsTreesCollection );
+        $.merge(viewModel.nexml.otus, itsOTUsCollection);
+        $.merge(viewModel.nexml.trees, itsTreesCollection);
     } catch(e) {
         console.error('Unable to push collections (needs Nexson upgrade)');
     }
 
-    /*
+    console.log('@@@ update the files list - B');
     // update the files list (and auto-save?)
     var file = cloneFromNexsonTemplate('single supporting file');
-    file['@filename'] = data.filename || "";
-    file['@url'] = data.url || "";
-    file['@type'] = data.type || "";
-    file.description.$ = data.description || "";
-    file['@sourceForTree'] = data.sourceForTree || "";
-    file['@size'] = data.size || "";
+    file['@filename'] = responseJSON.filename || "";
+    file['@url'] = responseJSON.url || "";
+    file['@type'] = responseJSON.inputFormat || "";
+    file.description.$ = responseJSON.description || "";
+    file['@sourceForTree'] = responseJSON.sourceForTree || "";
+    file['@size'] = responseJSON.size || "";
     getSupportingFiles().data.files.file.push(file);
-    */
-
-    if ($('[name=new-tree-preferred]').is(':checked')) {
-        // mark the new tree as preferred, eg, a candidate for synthesis
-        $.each( itsTreesCollection.tree, function(i, tree) {
-            viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( tree['@id'] );
-        });
-    }
 
     // clear the import form (using Clear button to capture all behavior)
     $('#tree-import-form :reset').click();
@@ -2839,8 +2840,10 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
 
     // Now that we can lookup quickly, make sure OTUs are ready for easy
     // mapping to OTT taxa.
-    $.each( itsTreesCollection.tree, function(i, tree) {
-        normalizeOTUs( tree );
+    $.each(itsTreesCollection, function(i, treesElement) {
+        $.each( treesElement.tree, function(i, tree) {
+            normalizeOTUs( tree );
+        });
     });
 
     // force update of curation UI in all relevant areas
@@ -3180,6 +3183,7 @@ function addSupportingFileFromURL() {
 
             showSuccessMessage('File added.');
             // update the files list (and auto-save?)
+            console.log('@@@ update the files list - C');
             var file = cloneFromNexsonTemplate('single supporting file');
             file['@filename'] = data.filename || "";
             file['@url'] = data.url || "";
@@ -3270,6 +3274,7 @@ function removeSupportingFile( fileInfo ) {
             hideModalScreen();
             showSuccessMessage('File removed.');
             // update the files list
+            console.log('@@@ update the files list - D');
             var fileList = getSupportingFiles().data.files.file;
             removeFromArray( fileInfo, fileList );
             nudgeTickler('SUPPORTING_FILES');
