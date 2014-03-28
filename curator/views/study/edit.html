@@ -312,8 +312,23 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
               <p>
-                Here's a general introduction to the editor? Possibly tools to
-                import (overwrite?) data for this study.
+                This tool is a friendly visual editor for curating <a target="_blank" i
+                    href="https://github.com/OpenTreeOfLife/api.opentreeoflife.org/wiki/NexSON">NexSON files</a>. 
+                Like the NeXML and NEXUS formats from which it evolved, each NexSON file
+                contains information about a single published study, with a particular
+                focus on its trees and OTUs.
+              </p>
+              <p>
+                Each tab in this curation tool manages a different aspect of the
+                study data. Watch for prompts&mdash;they look like 
+                <span class="badge badge-important" style="">2</span>&mdash;in
+                each tab that list areas ripe for improvement.
+              </p>
+              <p>
+                Here in the <strong>Metadata</strong> tab, we're primarily
+                concerned with clearly identifying this study and making it
+                easy to find using standard publication references, DOIs, and
+                free-form tags.
               </p>
             </div>
 
@@ -445,9 +460,27 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
               <p>
-                [TODO] Here's some text about trees in a study. For example, what do we mean by 
-                <strong>preferred</strong> trees? Plus tools for importing/adding new trees.
-                Clicking a tree name should open a modal tree view/editor (D3?).
+                The <strong>Trees</strong> tab provides an overview of
+                phylogenetic trees in the current study. Well-groomed trees can
+                be used by shared tools like the Open Tree project's
+                <a href="https://github.com/OpenTreeOfLife/treemachine/wiki" target="_blank">treemachine</a>
+                (see the <strong>Tools</strong> tab for details).
+              </p>
+              <p>
+                Use the tools below to add new trees from a file or pasted text.
+                <strong>Note:</strong> Adding trees and OTUs can quickly
+                generate lots of cleanup chores! 
+                Marking a tree as <strong>preferred</strong> in this list will
+                prompt for full OTU mapping and other quality checks.
+                We recommend adding
+                only the most interesting and useful trees. 
+                Precursor trees can be ignored here or added in the
+                <strong>Files</strong> tab. 
+              </p>
+              <p>
+                Click on the name of a tree to edit it using an interactive
+                cladogram. You can re-root the tree, define its ingroup clade,
+                and manage all of its properties in NexSON.
               </p>
             </div>
 
@@ -654,8 +687,27 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
               <p>
-                [TODO] Here's some text about files in a study. Plus tools for
-                importing/adding new files. What about bulk imports?
+                The <strong>Files</strong> tab is a list of supporting files
+                for this study. This can include character matrices, precursor
+                trees, images&mdash;anything that would normally be submitted
+                to a permanent data repository.
+              </p>
+              <p>
+                Use the <strong>upload tool</strong> below to add one or more files from your
+                local filesystem. Once uploaded, they will appear in the list
+                at left, where you can add a short description of each. Tree
+                data imported from the <strong>Trees</strong> tab will
+                also appear here in its original form.
+              </p>
+              <p>
+                Note that these files won't be added to the NexSON document
+                itself; instead, they're stored on our servers pending transfer
+                to a permanent data repository. (This feature is not yet complete.)
+              </p>
+              <p>
+                <strong>[TODO]</strong> Describe how we interoperate with data repositories, and
+                what the curator can do here if the permanent deposit of this study's
+                data has already taken place.
               </p>
             </div>
 
@@ -863,11 +915,13 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
                 <p>
-                For a tree in your study to contribute to synthesis in the Open
-                Tree of Life project, its leaf nodes should correspond to taxa in 
-                the OTT (Open Tree Taxonomy). This list includes all the OTUs
-                (operating taxonomic units) in your study. Each OTU is a distinct
-                label used in one or more of your study's trees.
+                For a tree in your study to contribute to synthesis in the 
+                <a href="http://blog.opentreeoflife.org/what-is-the-tree-of-life/" target="_blank">Open Tree of Life project</a>, 
+                its leaf nodes should correspond to taxa in the 
+                <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/General-information" target="_blank">OTT (Open Tree Taxonomy)</a>. 
+                This list includes all the OTUs (operating taxonomic units) in
+                your study. Each OTU is a distinct label used in one or more of
+                your study's trees.
                 </p>
                 <p>
                 We use a TNRS (taxonomic name resolution service) to automate this
@@ -1063,7 +1117,18 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
               <p>
-              TODO: Help for the Annotations tab.
+                <strong>Annotations</strong> are used to store comments and
+                validation results related to this study. They can be added by
+                a human curator or reviewer (coming soon), or by online validators
+                and other programs like those listed in the
+                <strong>Tools</strong> tab.
+              </p>
+              <p>
+                Annotations that refer to a particular element (like a tree or
+                OTU) will often appear in context. You can read these by
+                clicking on a marker like <span class="badge badge-info">2 <i class="icon-comment icon-white"></i></span> 
+                (coming soon), but the list below gathers all the study's
+                annotations in a single place.
               </p>
             </div>
 
@@ -1175,7 +1240,7 @@ body {
                     </tr>
                   -->
 
-                <!-- TODO: respond to calculated notes, gathered from throughout study Nexson -->
+                <!-- TODO: respond to calculated notes, gathered from throughout study NexSON -->
                 <div class="pagination pagination-centered pagination-small" 
                      Xdata-bind="if: viewModel.filteredAnnotations()().length &gt; viewModel.filteredAnnotations().pagedItems().length">
                   <ul>
@@ -1215,7 +1280,7 @@ body {
                             <img class="tool-icon" alt="treemachine" src="" 
                                  style=""/>
                         </td>
-                        <td width="125"><a href="#">Open Tree of Life (treemachine)</a></td>
+                        <td width="125"><a href="http://blog.opentreeoflife.org/what-is-the-tree-of-life/" target="_blank">Open Tree of Life (treemachine)</a></td>
                         <td>
                             This runs automatically for any study in the
                             system. <strong>This study fails</strong>, possibly
@@ -1229,7 +1294,7 @@ body {
                             <img alt="MIAPA validator" src="" 
                                  style="width: 100px; height: 100px; background-color: #eee; Xborder: 1px solid #ccc; Xborder-radius: 8px;"/>
                         </td>
-                        <td><a href="#">MIAPA Validator</a></td>
+                        <td><a href="https://github.com/miapa/miapa/blob/master/checklist/MIAPA-checklist.md" target="_blank">MIAPA Validator</a></td>
                         <td>
                             This runs automatically against any study in the system. <strong>This study passes!</strong>
                         </td>
@@ -1249,10 +1314,16 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
                 <p>
-                [TODO] Here's some text about the available tools and how to
-                use them, add new ones, register a new tool..? A collection of
-                available tools for this study, and other (ghosted) tools that
-                could become available. Space carrots!
+                  The <strong>Tools</strong> listed here can modify your NexSON
+                  files or use them in powerful ways. 
+                </p>
+                <p>
+                  Each tool will explain whether it applies to this NexSON
+                  file; if not, it will suggest additions or improvements that
+                  would make it compatible.
+                </p>
+                <p>
+                  [TODO] Suggest how to use tools, add new ones, register a new tool..? 
                 </p>
             </div>
 
@@ -1476,7 +1547,7 @@ Please review and re-submit.</pre>
               <div class="help-box">
                   Click any node below to set the ingroup clade. Click any node
                   <strong>or</strong> edge to re-root the entire tree. N.B. An
-                  arbitrary root (see checkbox above) will only be used to draw
+                  <strong>arbitrary root</strong> (see options above) will only be used to draw
                   the tree and correctly set the ingroup clade. It will not be
                   considered biologically correct.
               </div>

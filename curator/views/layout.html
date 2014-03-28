@@ -156,12 +156,14 @@
             <!-- TODO: replace this STATIC HTML with proper dynamic menus! -->
             <ul class="nav">
                 <li class="Xweb2py-menu-first"><a href="/curator">Curator Home</a></li><!-- personal dashboard or welcome page -->
+                <!--
                 <li><a href="/curator/default/quickstart">Instructions</a></li>
+                -->
                 <li class="dropdown">
                     <a href="/curator/study" class="dropdown-toggle" data-toggle="dropdown">Studies  <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                         <li><a href="/curator">Browse all studies</a></li><!-- TODO: point to /curator/study once we have a full list -->
-                        <li><a href="/curator/study/create">New study</a></li>
+                        <li><a href="/curator/study/create">Add new study</a></li>
                         <li><a href="/curator/study/create">Import from TreeBASE</a></li><!-- just an alias, to encourage imports -->
                     </ul>
                 </li>
@@ -173,8 +175,8 @@
                         <li><a href="/curator/stree/otus_within">Taxon search</a></li>
                     </ul>
                 </li>
+                <li><a href="http://dev.opentreeoflife.org/opentree">Open Tree Browser</a></li>
                 -->
-                <li><a href="http://dev.opentreeoflife.org/opentree">OpenTree Browser</a></li>
             </ul>
               {{ if 'auth' in globals(): }}
             <ul id="auth-navbar" class="nav pull-right">
