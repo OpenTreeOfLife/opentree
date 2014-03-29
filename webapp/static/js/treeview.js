@@ -537,13 +537,15 @@ function historyStateToURL( stateObj ) {
     var safeNodeName = null;
     if (stateObj.nodeName) {
         // replace characters considered unsafe (blocked) by web2py
-        safeNodeName = stateObj.nodeName.replace(/[:(), ]+/g, '-');
+        safeNodeName = stateObj.nodeName.replace(/[:(), ]+/g, '-').replace(/[\[\]\+]+/g,'');
     }
     return '/opentree'+ (stateObj.viewer ? '/'+stateObj.viewer : '') +'/'+ stateObj.domSource +'@'+ stateObj.nodeID + (safeNodeName ? '/'+ safeNodeName : '');
 }
 
 function buildNodeNameFromTreeData( node ) {
-    var compoundNodeNameDelimiter = ', ';
+    var compoundNodeNameDelimiter = ' + ';
+    var compoundNodeNamePrefix = '[';
+    var compoundNodeNameSuffix = ']';
     if (node.name) {
         // easy, name was provided
         return node.name;
@@ -551,7 +553,7 @@ function buildNodeNameFromTreeData( node ) {
     // unnamed nodes should show two descendant names as tip taxa (eg, 'dog, cat')
     if (node.descendantNameList) {
         // children aren't in view, but their names are here
-        return node.descendantNameList.slice(0,2).join(compoundNodeNameDelimiter);
+        return (compoundNodeNamePrefix + node.descendantNameList.slice(0,2).join(compoundNodeNameDelimiter) + compoundNodeNameSuffix);
     }
     // we'll need to build a name from visible children and/or their descendantNamesList
     if (node.children === undefined || node.children.length < 2) {
@@ -561,11 +563,19 @@ function buildNodeNameFromTreeData( node ) {
     // recurse as needed to build child names, then prune as needed
     var firstChildName = buildNodeNameFromTreeData(node.children[0]);
     var nameParts = firstChildName.split(compoundNodeNameDelimiter);
+    console.log(nameParts);
     firstChildName = nameParts[0];
+    if(firstChildName.indexOf(compoundNodeNamePrefix) !== -1) {
+        firstChildName = firstChildName.split(compoundNodeNamePrefix)[1];
+    }
     var lastChildName = buildNodeNameFromTreeData(node.children[ node.children.length-1 ]);
     nameParts = lastChildName.split(compoundNodeNameDelimiter);
+    console.log(nameParts);
     lastChildName = nameParts[nameParts.length - 1];
-    return firstChildName + compoundNodeNameDelimiter + lastChildName;
+    if(lastChildName.indexOf(compoundNodeNameSuffix) !== -1) {
+        lastChildName = lastChildName.split(compoundNodeNameSuffix)[0];
+    }
+    return (compoundNodeNamePrefix + firstChildName + compoundNodeNameDelimiter + lastChildName + compoundNodeNameSuffix);
 };
   
 // recursively populate any missing (implied) node names (called immediately after argus loads treeData)
