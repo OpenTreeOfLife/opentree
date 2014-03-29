@@ -1063,7 +1063,22 @@ function createArgus(spec) {
             });
         } else {
             // create the new label
-            label = paper.text(labelX, labelY, node.name).attr({
+            var displayLabel;
+            if (node.isLocalLeafNode()) {
+                // always show labels for leaf nodes (in this view)
+                displayLabel = node.name;
+            } else {
+                // hide synthetic/compound node labels for internal (in this view) nodes
+                var compoundNodeNameDelimiter = ' + ';
+                var compoundNodeNamePrefix = '[';
+                var compoundNodeNameSuffix = ']';
+                // N.B. this is determined using vars above, COPIED from treeview.js!
+                var isCompoundNodeName = ((node.name.indexOf(compoundNodeNameDelimiter) !== -1) &&
+                                          (node.name.indexOf(compoundNodeNamePrefix) === 0) && 
+                                          (node.name.indexOf(compoundNodeNameSuffix) === (node.name.length -1)));
+                displayLabel = (isCompoundNodeName ? '' : node.name);
+            }
+            label = paper.text(labelX, labelY, displayLabel).attr({
                 'text-anchor': labelAnchor,
                 "fill": this.labelColor,
                 "font-size": fontSize
@@ -1220,7 +1235,7 @@ function createArgus(spec) {
                             }).insertBefore(dividerBeforeAnchoredUI);
                             circle.id = (nodeCircleElementID);
 
-                            label = paper.text(labelX, labelY, ancestorNode.name || "unnamed").attr({
+                            label = paper.text(labelX, labelY, ancestorNode.name || "").attr({
                                 'text-anchor': 'end',
                                 "fill": this.labelColor,
                                 "font-size": fontSize
