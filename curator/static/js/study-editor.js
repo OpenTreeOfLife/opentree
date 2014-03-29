@@ -290,6 +290,11 @@ function loadSelectedStudy() {
             if (['^ot:annotationEvents'] in data.nexml) {
                 data.nexml['^ot:annotationEvents'].annotation = 
                     makeArray(data.nexml['^ot:annotationEvents'].annotation);
+                
+                // pluralize the messages of any annotations found
+                $.each( data.nexml['^ot:annotationEvents'].annotation, function(i, annotation) {
+                    annotation.message = makeArray( annotation.message );
+                });
             } else {
                 data.nexml['^ot:annotationEvents'] = {
                     'annotation': []
@@ -303,13 +308,20 @@ function loadSelectedStudy() {
                     'agent': []
                 }
             }
+            // pluralize messages in old locations (if any)
             if (['^ot:messages'] in data.nexml) {
                 data.nexml['^ot:messages'].message = 
                     makeArray(data.nexml['^ot:messages'].message);
+            } else {
                 data.nexml['^ot:messages'] = {
                     'message': []
                 }
             }
+
+            // move any old-style messages to new location
+            relocateLocalAnnotationMessages( data.nexml );
+            // NOW initialize the next-available message ID
+            getNextAvailableAnnotationMessageID( data.nexml );
 
             // add agent singleton for this curation tool
             var curatorAgent;
@@ -349,8 +361,23 @@ function loadSelectedStudy() {
                     nexsonTemplates['supporting files']
                 );
                 createAnnotation( filesAnnotationBundle, data.nexml );
+            } else {
+                // update old @sourceForTree properties, if found
+                $.each(getSupportingFiles(data.nexml).data.files.file, function(i, fileInfo) {
+                    if ('@sourceForTree' in fileInfo) {
+                        fileInfo['sourceForTree'] = [ ];
+                        var foundName = $.trim(fileInfo['@sourceForTree']);
+                        if (foundName !== '') {
+                            // move simple string to new array of BadgerFish elements
+                            fileInfo['sourceForTree'].push({
+                                "$": foundName
+                            });
+                        }
+                        delete fileInfo['@sourceForTree'];
+                    }
+                });
             }
-
+            
             // add expected tree properties and metadata, if missing
             $.each(data.nexml.trees, function(i, treesCollection) {
                 $.each(treesCollection.tree, function(i, tree) {
@@ -479,23 +506,6 @@ function loadSelectedStudy() {
                 var fileDetails = [];
                 $.each(getSupportingFiles().data.files.file, function(i, fileInfo) {
                     fileDetails.push(fileInfo);
-                });
-
-                $.each(viewModel.nexml.trees, function(i, treesCollection) {
-                    // watch for a bare singleton here!
-                    var treeList = makeArray(treesCollection.tree);
-                    $.each(treeList, function(i, tree) {
-                        if ('^ot:messages' in tree) {
-                            var msgList = makeArray(tree['^ot:messages'].message);
-                            $.each(msgList, function(i, msg) {
-                                if (msg['@code'] === 'SUPPORTING_FILE_INFO') {
-                                    $.each(msg.data.files.file, function(i, fileInfo) {
-                                        fileDetails.push(fileInfo);
-                                    });
-                                }
-                            });
-                        }
-                    });
                 });
 
                 var filteredList = ko.utils.arrayFilter( 
@@ -677,13 +687,17 @@ function loadSelectedStudy() {
                     function(annotation) {
                         // match entered text against type, location, submitter name, message text
                         var itsAgent = getAgentForAnnotationEvent( annotation );
-                        var itsMessages = getMessagesForAnnotationEvent( annotation );
+                        var itsMessages = makeArray( annotation.message );
 
                         var itsType = itsMessages && (itsMessages.length > 0) ? 
                                 itsMessages[0]['@code'] : 
                                 ""; // TODO: incorporate all messages?
                         ///var itsLocation = "Study"; // TODO
-                        var itsSubmitter = itsAgent['@name'];
+                        var itsSubmitter = itsAgent ? itsAgent['@name'] : '??';
+                        if (!itsAgent) { 
+                            console.error("MISSING AGENT for this annotation event:");
+                            console.error(annotation);
+                        }
                         var itsMessageText = itsMessages && (itsMessages.length > 0) ? 
                                 $.map(itsMessages, function(m) { 
                                     return m['humanMessage'] ? m['@humanMessage'] : ""; 
@@ -736,7 +750,6 @@ function loadSelectedStudy() {
 
             // keep a very tentative list of failed OTU mappings (any change in hints should clear it)
             var mappingHints = getOTUMappingHints();
-            //var hintsMessage = getMessagesForAnnotationEvent( mappingHints )[0];
 
             /* TODO: any edits in this area should nudge the OTU_MAPPING_HINTS tickler
             mappingHints.data.searchContext.$.subscribe(clearFailedOTUList);
@@ -2785,46 +2798,52 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     //console.log("status: "+ jqXHR.status);
     //console.log("statusText: "+ jqXHR.statusText);
     // convert raw response to JSON
-    var data = $.parseJSON(jqXHR.responseText)['data']; //@MTH:"returned nexson now inside a 'data' property" 
+    var responseJSON = $.parseJSON(jqXHR.responseText);
+    var data = responseJSON['data']; //@MTH:"returned nexson now inside a 'data' property" 
     //console.log("data: "+ data);
 
     // move its collections into the view model Nexson
-    var itsOTUsCollection = data['nex:nexml']['otus'];
-    var itsTreesCollection = data['nex:nexml']['trees'];
+    var nexmlName = ('nex:nexml' in data) ? 'nex:nexml' : 'nexml';
+ 
     // coerce the inner array of each collection into an array
     // (override Badgerfish singletons)
-    itsOTUsCollection['otu'] = makeArray( itsOTUsCollection['otu'] );
-    itsTreesCollection['tree'] = makeArray( itsTreesCollection['tree'] );
+    // NOTE that there may be multiple trees elements, otus elements
+    var itsOTUsCollection =  data[nexmlName]['otus'];
+    $.each(itsOTUsCollection, function(i, otusElement) {
+        otusElement['otu'] = makeArray( otusElement['otu'] );
+    });
 
-    $.each( itsTreesCollection.tree, function(i, tree) {
-        normalizeTree( tree );
+    var importedTreeElements = [ ];
+    var itsTreesCollection = data[nexmlName]['trees'];
+    $.each(itsTreesCollection, function(i, treesElement) {
+        treesElement['tree'] = makeArray( treesElement['tree'] );
+        $.each( treesElement.tree, function(i, tree) {
+            normalizeTree( tree );
+            if (responseJSON.newTreesPreferred) {
+                // mark all new tree(s) as preferred, eg, a candidate for synthesis
+                viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( tree['@id'] );
+            }
+            // build proper NexSON elements for imported tree IDs
+            importedTreeElements.push( {"$": tree['@id']} );
+        });
     });
 
     try {
-        viewModel.nexml.otus.push( itsOTUsCollection );
-        viewModel.nexml.trees.push( itsTreesCollection );
+        $.merge(viewModel.nexml.otus, itsOTUsCollection);
+        $.merge(viewModel.nexml.trees, itsTreesCollection);
     } catch(e) {
         console.error('Unable to push collections (needs Nexson upgrade)');
     }
 
-    /*
     // update the files list (and auto-save?)
     var file = cloneFromNexsonTemplate('single supporting file');
-    file['@filename'] = data.filename || "";
-    file['@url'] = data.url || "";
-    file['@type'] = data.type || "";
-    file.description.$ = data.description || "";
-    file['@sourceForTree'] = data.sourceForTree || "";
-    file['@size'] = data.size || "";
+    file['@filename'] = responseJSON.filename || "";
+    file['@url'] = responseJSON.url || "";
+    file['@type'] = responseJSON.inputFormat || "";
+    file.description.$ = responseJSON.description || "";
+    file['sourceForTree'] = importedTreeElements;
+    file['@size'] = responseJSON.size || "";
     getSupportingFiles().data.files.file.push(file);
-    */
-
-    if ($('[name=new-tree-preferred]').is(':checked')) {
-        // mark the new tree as preferred, eg, a candidate for synthesis
-        $.each( itsTreesCollection.tree, function(i, tree) {
-            viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( tree['@id'] );
-        });
-    }
 
     // clear the import form (using Clear button to capture all behavior)
     $('#tree-import-form :reset').click();
@@ -2837,8 +2856,10 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
 
     // Now that we can lookup quickly, make sure OTUs are ready for easy
     // mapping to OTT taxa.
-    $.each( itsTreesCollection.tree, function(i, tree) {
-        normalizeOTUs( tree );
+    $.each(itsTreesCollection, function(i, treesElement) {
+        $.each( treesElement.tree, function(i, tree) {
+            normalizeOTUs( tree );
+        });
     });
 
     // force update of curation UI in all relevant areas
@@ -2934,27 +2955,26 @@ var nexsonTemplates = {
             // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
             "@dateCreated": new Date().toISOString(), 
             "@passedChecks": true,  // this is moot
-            "@preserve": true
+            "@preserve": true,
+            "message": [{
+                //"@id": "",      // will be assigned via $.extend
+                "@severity": "INFO",
+                "@code": "SUPPORTING_FILE_INFO",
+                "@humanMessageType": "NONE",
+                "data": {
+                    "@movedToPermanentArchive": false,   
+                        // OR check for ot:dataDeposit?
+                    "files": { "file": [
+                        /* an array of objects based on 'single supporting file' below */
+                    ]}
+                },
+                "refersTo": {
+                    "@top": {"$": "meta"}
+                }
+            }]
             // "otherProperty": [ ]  // SKIP THIS, use messages for details
-        },
+        }
         // 'agent': null,      // will be provided by template consumer
-        'messages': [{
-            //"@id": "",      // will be assigned via $.extend
-            "@wasGeneratedById": "supporting-files-metadata",
-            "@severity": "INFO",
-            "@code": "SUPPORTING_FILE_INFO",
-            "@humanMessageType": "NONE",
-            "data": {
-                "@movedToPermanentArchive": false,   
-                    // OR check for ot:dataDeposit?
-                "files": { "file": [
-                    /* an array of objects based on 'single supporting file' below */
-                ]}
-            },
-            "refersTo": {
-                "top": {"$": "meta"}
-            }
-        }]
     }, // END of 'supporting files' template
 
     'single supporting file': {
@@ -2964,7 +2984,7 @@ var nexsonTemplates = {
         "@url": "",
         "@type": "",  // eg, 'Microsoft Excel spreadsheet'
         "description": {"$": ""},  // eg, "Alignment data for tree #3"
-        "@sourceForTree": "",  // used IF this file was the original data for a tree
+        "sourceForTree": [ ],  // used IF this file was the original data for one or more trees
         "@size": ""   // eg, '241 KB'
     }, // END of 'single supporting file' template
 
@@ -2972,10 +2992,11 @@ var nexsonTemplates = {
         // "@id": "",
         "@description": "",
         "@wasAssociatedWithAgentId": "",
-        "@dateCreated": ""
+        "@dateCreated": "",
         //"@passedChecks": true,
         //"@preserve": true,
         //"@otherProperty": []
+        "message": []
     },
     'single annotation agent': {
         // "@id": "",
@@ -2987,7 +3008,6 @@ var nexsonTemplates = {
     },
     'single annotation message': {
         // "@id": "",
-        "@wasGeneratedById": "",
         //"@wasAttributedToId": "",
         "@severity": "",
         "@code": "",
@@ -3022,32 +3042,31 @@ var nexsonTemplates = {
             // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
             "@dateCreated": new Date().toISOString(), 
             "@passedChecks": true,  // this is moot
-            "@preserve": true
+            "@preserve": true,
+            "message": [{
+                //"@id": "",      // will be assigned via $.extend
+                "@severity": "INFO",
+                "@code": "OTU_MAPPING_HINTS",  // N.B. independent of the OTU_MAPPING_HINTS tickler
+                "@humanMessageType": "NONE",
+                "data": {
+                    "searchContext": {"$": "All life"},
+                    "substitutions": {"substitution": [
+                        // always one default (empty) substitution
+                        { 
+                            "old": {"$": ""},
+                            "new": {"$": ""},
+                            "@valid": true,
+                            "@active": false
+                        }
+                    ]}
+                },
+                "refersTo": {
+                    "@top": {"$": "meta"}
+                }
+            }]
             // "otherProperty": [ ]  // SKIP THIS, use messages for details
-        },
+        }
         // 'agent': null,      // will be provided by template consumer
-        'messages': [{
-            //"@id": "",      // will be assigned via $.extend
-            "@wasGeneratedById": "otu-mapping-hints",
-            "@severity": "INFO",
-            "@code": "OTU_MAPPING_HINTS",  // N.B. independent of the OTU_MAPPING_HINTS tickler
-            "@humanMessageType": "NONE",
-            "data": {
-                "searchContext": {"$": "All life"},
-                "substitutions": {"substitution": [
-                    // always one default (empty) substitution
-                    { 
-                        "old": {"$": ""},
-                        "new": {"$": ""},
-                        "@valid": true,
-                        "@active": false
-                    }
-                ]}
-            },
-            "refersTo": {
-                "top": {"$": "meta"}
-            }
-        }],
     }, // END of 'OTU mapping hints' template
 
     'mapping substitution': {
@@ -3136,7 +3155,7 @@ function getSupportingFiles(nexml) {
         return null;
     }
 
-    var filesMessages = getMessagesForAnnotationEvent( filesAnnotation, nexml );
+    var filesMessages = makeArray( filesAnnotation.message );
     if (filesMessages.length > 0) {
         // return its message with the interesting parts
         return filesMessages[0];
@@ -3185,7 +3204,7 @@ function addSupportingFileFromURL() {
             file['@url'] = data.url || "";
             file['@type'] = data.type || "";
             file.description.$ = data.description || "";
-            file['@sourceForTree'] = data.sourceForTree || "";
+            file['sourceForTree'] = data.sourceForTree || [ ];
             file['@size'] = data.size || "";
 
             getSupportingFiles().data.files.file.push(file);
@@ -3305,7 +3324,7 @@ function getOTUMappingHints(nexml) {
         return null;
     }
     
-    var hintsMessages = getMessagesForAnnotationEvent( hintsAnnotation, nexml );
+    var hintsMessages = makeArray( hintsAnnotation.message );
     if (hintsMessages.length > 0) {
         // return its message with the interesting parts
         return hintsMessages[0];
@@ -3933,15 +3952,12 @@ function getStudyAnnotationAgents( nexml ) {
     }
     return nexml['^ot:agents'] || null;
 }
-function getStudyAnnotationMessages( nexml ) {
-    // returns an array (OR observableArray?), possibly empty
-    if (!nexml) {
-        nexml = viewModel.nexml;
-    }
-    return nexml['^ot:messages'] || null;
-}
 
 // manage "local" messages collection for any element
+/* NOTE that all these functions are deprecated in favor of storing
+ * messages inside their respective annotation events! Now we just use them
+ * to clean up and relocate old messages in existing studies.
+ */
 function getLocalMessages( element ) {
     // returns an array (OR observableArray?), possibly empty
     var messages = [];
@@ -4005,22 +4021,6 @@ function getAgentForAnnotationEvent( annotationEvent ) {
     }
     return matchingAgent;
 }
-function getMessagesForAnnotationEvent( annotationEvent, nexml ) {
-    // returns an array, possibly empty
-    if (!nexml) {
-        nexml = viewModel.nexml;
-    }
-    var allMessages = getAllAnnotationMessagesInStudy(nexml);
-    var eventID = ko.unwrap( annotationEvent['@id'] );
-    var matchingMessages = ko.utils.arrayFilter( 
-        allMessages, 
-        function(msg) {
-            ///console.dir(msg);
-            return ko.unwrap( msg['@wasGeneratedById'] ) === eventID;
-        }
-    );
-    return matchingMessages;
-}
 function getAnnotationEventsForAgent( agent ) {
     // TODO: returns an array, possibly empty
 }
@@ -4030,18 +4030,16 @@ function getAnnotationEventForMessage( message ) {
 
 // fetch bundled annotationEvent, agent(s), and message(s)?
 function getAnnotationBundle( annotationEvent ) {
-    // returns an object with event, agents, messages
+    // returns an object with event and agent
     var bundle = {
         'event' : annotationEvent,
-        'agent' : 'TODO',
-        'messages' : []
+        'agent' : 'TODO'
     };
     return bundle;
 }
 
 // create/update/delete annotations, managing collections as needed
 function createAnnotation( annotationBundle, nexml ) {
-    // targetElement, annotationEvent, agent, messages ) {
     // RENAME to updateAnnotation, setAnnotation?
     // TODO: make sure we can handle "split" events that specify multiple elements
     if (!nexml) {
@@ -4053,7 +4051,6 @@ function createAnnotation( annotationBundle, nexml ) {
     var target = annotationBundle.targetElement;
     var annEvent = annotationBundle.annotationEvent;
     var agent = annotationBundle.agent;
-    var messages = annotationBundle.messages;
 
     // add message(s) to its target element, building a local message 
     // collection if not found
@@ -4061,19 +4058,13 @@ function createAnnotation( annotationBundle, nexml ) {
         alert("ERROR: target element not found: "+ target +" <"+ typeof(target) +">");
         return;
     }
-    var collection = null;
-    if (localMessagesCollectionExists( target )) {
-        collection = getLocalMessagesCollection( target );
-    } else {
-        collection = addLocalMessagesCollection( target );
-    }
-    $.each( messages, function( i, msg ) {
+    $.each( annEvent.message, function( i, msg ) {
         var messageInfo = $.extend(
             { '@id': getNextAvailableAnnotationMessageID( nexml ) }, 
             msg
         );
         var properMsg = cloneFromSimpleObject( messageInfo, {applyKnockoutMapping: nexmlIsMapped} );
-        collection.message.push( properMsg );
+        msg = properMsg;
     });
     
     // add (or confirm) the specified agent and assign to event
@@ -4101,10 +4092,7 @@ function createAnnotation( annotationBundle, nexml ) {
     // return something interesting here?
 }
 function deleteAnnotationEvent( annotationEvent ) {
-    // TODO: clear related messages and agents (if no longer used)
-
-    cleanupMessagesCollection( element );
-    var localMessages = getElementAnnotationMessages( element );
+    // TODO: clear related agent (if no longer used)
 }
 
 // manage agents (each is a singleton that disappears if unused)
@@ -4202,7 +4190,11 @@ function getNextAvailableAnnotationEventID(nexml) {
             for (var i = 0; i < sortedEvents.length; i++) {
                 // ignore agents with special IDs, eg, 'opentree-curation-webapp'
                 var testEvent = sortedEvents[i];
-                var testID = ko.unwrap(testEvent['@id']);
+                var testID = ko.unwrap(testEvent['@id']) || '';
+                if (testID === '') {
+                    console.error("MISSING ID for this annotation event:");
+                    console.error(testEvent);
+                }
                 if (testID.indexOf(annotationEventIDPrefix) === 0) {
                     highestAnnotationEventID = testID.split( annotationEventIDPrefix )[1];
                     break;
@@ -4262,7 +4254,11 @@ function getNextAvailableAnnotationMessageID(nexml) {
             for (var i = 0; i < sortedMessages.length; i++) {
                 // ignore agents with special IDs, eg, 'opentree-curation-webapp'
                 var testMessage = sortedMessages[i];
-                var testID = ko.unwrap(testMessage['@id']);
+                var testID = ko.unwrap(testMessage['@id']) || '';
+                if (testID === '') {
+                    console.error("MISSING ID for this annotation message:");
+                    console.error(testMessage);
+                }
                 if (testID.indexOf(annotationMessageIDPrefix) === 0) {
                     highestAnnotationMessageID = testID.split( annotationMessageIDPrefix )[1];
                     break;
@@ -4277,7 +4273,34 @@ function getAllAnnotationMessagesInStudy(nexml) {
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    var allMessages = makeArray(getStudyAnnotationMessages(nexml).message);
+    var allMessages = [];
+    var annotations = getStudyAnnotationEvents( nexml );
+    $.each(makeArray(annotations.annotation), function(i, annotation) {
+        allMessages = allMessages.concat( makeArray(annotation.message) );
+    });
+    return allMessages;
+}
+
+function relocateLocalAnnotationMessages( nexml ) {
+    /* Update deprecated storage for annotation messages from "in situ" and
+     * separate messages container to storage within each parent annotation event.
+     */
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
+    if ('^ot:messages' in nexml) {
+        console.warn(">>> Now I'd relocate old annotation messages...");
+    } else {
+        // no messages stored in the old system
+        return;
+    }
+
+    // TODO: walk the entire nexml structure, looking for old messages
+    // TODO: relocate each to the new home (in its annotationEvent)
+    //    eventID = ko.unwrap( msg['@wasGeneratedById'] )
+    // TODO: remove deprecated '@wasGeneratedById' property
+    // TODO: delete the old local collections as we go?
+    var allMessages = makeArray(nexml['^ot:messages']);
     // gather "local" messages from all other elements!
     // NOTE: Add any new target elements here to avoid duplication!
     $.each(nexml.otus, function( i, otusCollection ) {
@@ -4307,7 +4330,8 @@ function getAllAnnotationMessagesInStudy(nexml) {
             }
         });
     });
-    return allMessages;
+    console.warn(">>> found "+ allMessages.length +" messages throughout this study");
+        
 }
 
 
@@ -4539,4 +4563,25 @@ function clearFastLookup( lookupName ) {
         return;
     }
     console.error("No such lookup as '"+ lookupName +"'!");
+}
+function getAssociatedTrees( fileInfo ) {
+    var trees = [ ];
+    if ('sourceForTree' in fileInfo) {
+        // check to make sure each tree still around
+        $.each(fileInfo['sourceForTree'], function(i, idHolder) {
+            var id = idHolder.$;
+            var foundTree = getTreeByID(id);
+            if (foundTree) {
+                trees.push(foundTree);
+            }
+        });
+    }
+    return trees;
+}
+function getAssociatedTreeLabels( fileInfo ) {
+    var trees = getAssociatedTrees( fileInfo );
+    var treeLabels = $.map(trees, function(tree) {
+        return tree['@label'] || '';
+    });
+    return treeLabels;
 }

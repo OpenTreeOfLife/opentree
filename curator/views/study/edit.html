@@ -503,7 +503,7 @@ body {
                  <input type="hidden" name="auth_token" 
                    value="{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}">
                  <!--@MTH:"no longer needed on upload" input type="hidden" name="uploadid" value=""-->
-                  <select id="tree-import-format" name="inputformat" 
+                  <select id="tree-import-format" name="inputFormat" 
                           class="input-block-level"
                           style="margin-bottom: 1em;"
                           oninput="updateNewTreeUploadForm(); return true;"
@@ -612,9 +612,9 @@ body {
                             rows="2" 
                             class="input-block-level"
                             style="margin-bottom: 0px;">?</textarea></div>
-                            <em data-bind="if: file['@sourceForTree'] !== ''">
-                                Source for tree: 
-                                <strong data-bind="text: getTreeByID( file['@sourceForTree'])['@label']">SOURCE_FOR_TREE_ID_B</strong>
+                            <em data-bind="if: getAssociatedTrees(file).length > 0">
+                                Source for tree(s):
+                                <strong data-bind="text: getAssociatedTreeLabels(file).join(', ')">&nbsp;</strong>
                             </em>
                            <!-- TODO: make this directly editable?
                             <input type="text" data-bind="value: file['@sourceForTree']"
@@ -622,13 +622,13 @@ body {
                            -->
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
-                            <button data-bind="visible: file['@sourceForTree'] !== ''"
+                            <button data-bind="visible: getAssociatedTrees(file).length > 0"
                                 class="pull-right btn btn-mini" 
                                 style="opacity: 0.3 !important;"
-                                onclick="alert('You must delete the associated tree to remove this file.'); return false;">
+                                onclick="alert('You must delete the associated tree(s) to remove this file.'); return false;">
                                 <i class="icon-remove"></i>
                             </button>
-                            <button data-bind="visible: file['@sourceForTree'] === '', click: removeSupportingFile"
+                            <button data-bind="visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
                                 class="pull-right btn btn-mini row-controls-ghosted">
                                 <i class="icon-remove"></i>
                             </button>
@@ -641,9 +641,9 @@ body {
                         </td>
                         <td>
                             <div data-bind="text: file.description.$">Microsoft Excel spreadsheet</div>
-                            <em data-bind="if: file['@sourceForTree'] !== ''">
-                                Source for tree: 
-                                <strong data-bind="text: getTreeByID( file['@sourceForTree'])['@label']">SOURCE_FOR_TREE_ID_A</strong>
+                            <em data-bind="if: getAssociatedTrees(file).length > 0">
+                                Source for tree(s):
+                                <strong data-bind="text: getAssociatedTreeLabels(file).join(', ')">&nbsp;</strong>
                             </em>
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span></td>
@@ -1191,21 +1191,21 @@ body {
                     <tr>
                         <td data-bind="text: annotation['@description'], style: { color: annotation['@passedChecks'] ? '' : 'red' }"></td><!-- general description (annotation type) -->
                         <!-- <td><a href="#">Study</a></td> -->
-                        <td data-bind="text: getAgentForAnnotationEvent( annotation )['@name']"></td>
-                      <!-- ko if: getMessagesForAnnotationEvent( annotation ).length > 0 -->
-                        <td data-bind="if: getMessagesForAnnotationEvent( annotation ).length > 0">
+                        <td data-bind="text: getAgentForAnnotationEvent( annotation ) ? getAgentForAnnotationEvent( annotation )['@name'] : '??'"></td>
+                      <!-- ko if: makeArray( annotation.message ).length > 0 -->
+                        <td data-bind="if: makeArray( annotation.message ).length > 0">
                             <ul style="list-style: none; margin: 0 0 8px 0;"
-                            data-bind="foreach: getMessagesForAnnotationEvent( annotation )">
+                            data-bind="foreach: makeArray( annotation.message )">
                                 <li style="border-bottom: 1px solid #ccc; padding: 2px 0;">
                                 <!-- data-bind="text: code" is SHOUTY_UPPERCASE -->
                                 <span data-bind="text: $data['@comment']"></span>
                                 <!-- data-bind="text: data" can be object or function or ... -->
-                                in <span data-bind="text: $data.refersTo.top.$"></span>
+                                in <span data-bind="text: ('@top' in $data.refersTo) ? $data.refersTo['@top'].$ : '??'"></span>
                                 [<span data-bind="text: $data['@severity']"></span>]
                             </ul>
                         </td>
                       <!-- /ko -->
-                      <!-- ko if: getMessagesForAnnotationEvent( annotation).length === 0 -->
+                      <!-- ko if: makeArray( annotation.message ).length === 0 -->
                         <td>
                             NO MESSAGES HERE
                         </td>
