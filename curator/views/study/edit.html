@@ -579,9 +579,9 @@ body {
                             rows="2" 
                             class="input-block-level"
                             style="margin-bottom: 0px;">?</textarea></div>
-                            <em data-bind="if: file['@sourceForTree'] !== ''">
-                                Source for tree: 
-                                <strong data-bind="text: getTreeByID( file['@sourceForTree'])['@label']">SOURCE_FOR_TREE_ID_B</strong>
+                            <em data-bind="if: getAssociatedTrees(file).length > 0">
+                                Source for tree(s):
+                                <strong data-bind="text: getAssociatedTreeLabels(file).join(', ')">&nbsp;</strong>
                             </em>
                            <!-- TODO: make this directly editable?
                             <input type="text" data-bind="value: file['@sourceForTree']"
@@ -589,13 +589,13 @@ body {
                            -->
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
-                            <button data-bind="visible: file['@sourceForTree'] !== ''"
+                            <button data-bind="visible: getAssociatedTrees(file).length > 0"
                                 class="pull-right btn btn-mini" 
                                 style="opacity: 0.3 !important;"
                                 onclick="alert('You must delete the associated tree(s) to remove this file.'); return false;">
                                 <i class="icon-remove"></i>
                             </button>
-                            <button data-bind="visible: file['@sourceForTree'] === '', click: removeSupportingFile"
+                            <button data-bind="visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
                                 class="pull-right btn btn-mini row-controls-ghosted">
                                 <i class="icon-remove"></i>
                             </button>
@@ -608,9 +608,9 @@ body {
                         </td>
                         <td>
                             <div data-bind="text: file.description.$">Microsoft Excel spreadsheet</div>
-                            <em data-bind="if: file['@sourceForTree'] !== ''">
-                                Source for tree: 
-                                <strong data-bind="text: getTreeByID( file['@sourceForTree'])['@label']">SOURCE_FOR_TREE_ID_A</strong>
+                            <em data-bind="if: getAssociatedTrees(file).length > 0">
+                                Source for tree(s):
+                                <strong data-bind="text: getAssociatedTreeLabels(file).join(', ')">&nbsp;</strong>
                             </em>
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span></td>

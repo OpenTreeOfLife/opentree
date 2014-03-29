@@ -362,8 +362,23 @@ function loadSelectedStudy() {
                     nexsonTemplates['supporting files']
                 );
                 createAnnotation( filesAnnotationBundle, data.nexml );
+            } else {
+                // update old @sourceForTree properties, if found
+                $.each(getSupportingFiles(data.nexml).data.files.file, function(i, fileInfo) {
+                    if ('@sourceForTree' in fileInfo) {
+                        fileInfo['sourceForTree'] = [ ];
+                        var foundName = $.trim(fileInfo['@sourceForTree']);
+                        if (foundName !== '') {
+                            // move simple string to new array of BadgerFish elements
+                            fileInfo['sourceForTree'].push({
+                                "$": foundName
+                            });
+                        }
+                        delete fileInfo['@sourceForTree'];
+                    }
+                });
             }
-
+            
             // add expected tree properties and metadata, if missing
             $.each(data.nexml.trees, function(i, treesCollection) {
                 $.each(treesCollection.tree, function(i, tree) {
@@ -2799,6 +2814,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         otusElement['otu'] = makeArray( otusElement['otu'] );
     });
 
+    var importedTreeElements = [ ];
     var itsTreesCollection = data[nexmlName]['trees'];
     $.each(itsTreesCollection, function(i, treesElement) {
         treesElement['tree'] = makeArray( treesElement['tree'] );
@@ -2808,6 +2824,8 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
                 // mark all new tree(s) as preferred, eg, a candidate for synthesis
                 viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( tree['@id'] );
             }
+            // build proper NexSON elements for imported tree IDs
+            importedTreeElements.push( {"$": tree['@id']} );
         });
     });
 
@@ -2825,7 +2843,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     file['@url'] = responseJSON.url || "";
     file['@type'] = responseJSON.inputFormat || "";
     file.description.$ = responseJSON.description || "";
-    file['@sourceForTree'] = responseJSON.sourceForTree || "";
+    file['sourceForTree'] = importedTreeElements;
     file['@size'] = responseJSON.size || "";
     getSupportingFiles().data.files.file.push(file);
 
@@ -2968,7 +2986,7 @@ var nexsonTemplates = {
         "@url": "",
         "@type": "",  // eg, 'Microsoft Excel spreadsheet'
         "description": {"$": ""},  // eg, "Alignment data for tree #3"
-        "@sourceForTree": "",  // used IF this file was the original data for a tree
+        "sourceForTree": [ ],  // used IF this file was the original data for one or more trees
         "@size": ""   // eg, '241 KB'
     }, // END of 'single supporting file' template
 
@@ -3189,7 +3207,7 @@ function addSupportingFileFromURL() {
             file['@url'] = data.url || "";
             file['@type'] = data.type || "";
             file.description.$ = data.description || "";
-            file['@sourceForTree'] = data.sourceForTree || "";
+            file['sourceForTree'] = data.sourceForTree || [ ];
             file['@size'] = data.size || "";
 
             getSupportingFiles().data.files.file.push(file);
@@ -4549,4 +4567,25 @@ function clearFastLookup( lookupName ) {
         return;
     }
     console.error("No such lookup as '"+ lookupName +"'!");
+}
+function getAssociatedTrees( fileInfo ) {
+    var trees = [ ];
+    if ('sourceForTree' in fileInfo) {
+        // check to make sure each tree still around
+        $.each(fileInfo['sourceForTree'], function(i, idHolder) {
+            var id = idHolder.$;
+            var foundTree = getTreeByID(id);
+            if (foundTree) {
+                trees.push(foundTree);
+            }
+        });
+    }
+    return trees;
+}
+function getAssociatedTreeLabels( fileInfo ) {
+    var trees = getAssociatedTrees( fileInfo );
+    var treeLabels = $.map(trees, function(tree) {
+        return tree['@label'] || '';
+    });
+    return treeLabels;
 }
