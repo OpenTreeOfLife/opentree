@@ -88,6 +88,8 @@ function createStudyFromForm( clicked ) {
             'cc0_agreement': $('#cc0-agreement').is(':checked'),
             'import_option': $('[name=import-option]:checked').val() || '',
             'treebase_id': $('[name=treebase-id]').val() || '',
+            'nexml_fetch_url': $('[name=nexml-fetch-url]').val() || '',
+            'nexml_pasted_string': $('[name=nexml-pasted-string]').val() || '',
             'publication_DOI': $('[name=publication-DOI]').val() || '',
             'publication_reference': $('[name=publication-reference]').val() || '',
             // misc identifying information

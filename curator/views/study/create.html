@@ -34,15 +34,29 @@ body {
     </p>
 
     <label for="import-option-TREEBASE" class="featured-label">
-        <input type="radio" id="import-option-TREEBASE" name="DISABLED-import-option" value="IMPORT_FROM_TREEBASE" disabled="disabled" onclick="return false;"/>
-        My tree already exists in TreeBASE <strong style="color: #c33;">[coming soon]</strong>
+        <input type="radio" id="import-option-TREEBASE" name="import-option" value="IMPORT_FROM_TREEBASE" />
+        My study already exists in TreeBASE
     </label>
     <p class="featured-label-description">
-        Importing from TreeBASE is fast, and requires only minimal curation post-import. 
+        Importing from TreeBASE is fast and requires only minimal curation post-import. 
     </p>
     <div id="import-details-TREEBASE" class="featured-label-child">
         <input class="span4" type="text" name="treebase-id" placeholder="Enter the TreeBASE ID for this study"></input>
         <button class="btn btn-info">Import from TreeBASE</button>
+    </div>
+
+    <label for="import-option-NEXML" class="featured-label">
+        <input type="radio" id="import-option-NEXML" name="import-option" value="IMPORT_FROM_NEXML" />
+        My study already exists as NeXML 
+        <!-- <strong style="color: #c33;">[coming soon]</strong> -->
+    </label>
+    <p class="featured-label-description">
+        Importing from a NeXML file is quick and also saves time in curation.
+    </p>
+    <div id="import-details-NEXML" class="featured-label-child">
+        <input class="span4" style="margin-bottom: 12px;" type="text" name="nexml-fetch-url" placeholder="Enter a URL where we can fetch this NeXML"></input>
+        <textarea class="span4" name="nexml-pasted-string" placeholder="...or past the complete NeXML here" rows="4" style="display: block; margin-bottom: 12px;"></textarea>
+        <button class="btn btn-info" style="margin-bottom: 12px;">Import from NeXML</button>
     </div>
 
     <label for="import-option-PUBLICATION_DOI" class="featured-label">
