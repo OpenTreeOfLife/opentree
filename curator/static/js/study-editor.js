@@ -73,7 +73,6 @@ $(document).ready(function() {
                     .url: "/curator/supporting_files/download/supporting_files.doc.96acd92...3461.m4a"
                 */
                 // update the files list (and auto-save?)
-                console.log('@@@ update the files list - A');
                 var fileNexson = cloneFromNexsonTemplate('single supporting file');
                 fileNexson['@filename'] = file.name;
                 fileNexson['@url'] = file.url;  // TODO: prepend current domain name, if missing?
@@ -2836,7 +2835,6 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         console.error('Unable to push collections (needs Nexson upgrade)');
     }
 
-    console.log('@@@ update the files list - B');
     // update the files list (and auto-save?)
     var file = cloneFromNexsonTemplate('single supporting file');
     file['@filename'] = responseJSON.filename || "";
@@ -3201,7 +3199,6 @@ function addSupportingFileFromURL() {
 
             showSuccessMessage('File added.');
             // update the files list (and auto-save?)
-            console.log('@@@ update the files list - C');
             var file = cloneFromNexsonTemplate('single supporting file');
             file['@filename'] = data.filename || "";
             file['@url'] = data.url || "";
@@ -3292,7 +3289,6 @@ function removeSupportingFile( fileInfo ) {
             hideModalScreen();
             showSuccessMessage('File removed.');
             // update the files list
-            console.log('@@@ update the files list - D');
             var fileList = getSupportingFiles().data.files.file;
             removeFromArray( fileInfo, fileList );
             nudgeTickler('SUPPORTING_FILES');
