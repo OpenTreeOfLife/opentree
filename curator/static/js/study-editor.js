@@ -149,6 +149,9 @@ $(document).ready(function() {
         console.log('tree - fileuploaddone');
     }) 
     
+    // enable taxon search
+    $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
+    $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
 });
 
 
@@ -4564,6 +4567,7 @@ function clearFastLookup( lookupName ) {
     }
     console.error("No such lookup as '"+ lookupName +"'!");
 }
+
 function getAssociatedTrees( fileInfo ) {
     var trees = [ ];
     if ('sourceForTree' in fileInfo) {
@@ -4584,4 +4588,142 @@ function getAssociatedTreeLabels( fileInfo ) {
         return tree['@label'] || '';
     });
     return treeLabels;
+}
+
+/* Sensible autocomplete behavior requires the use of timeouts
+ * and sanity checks for unchanged content, etc.
+ */
+clearTimeout(searchTimeoutID);  // in case there's a lingering search from last page!
+var searchTimeoutID = null;
+var searchDelay = 1000; // milliseconds
+function setTaxaSearchFuse() {
+    if (searchTimeoutID) {
+        // kill any pending search, apparently we're still typing
+        clearTimeout(searchTimeoutID);
+    }
+    // reset the timeout for another n milliseconds
+    searchTimeoutID = setTimeout(searchForMatchingTaxa, searchDelay);
+}
+
+var showingResultsForSearchText = '';
+var showingResultsForSearchContextName = '';
+function searchForMatchingTaxa() {
+    // clear any pending search timeout and ID
+    clearTimeout(searchTimeoutID);
+    searchTimeoutID = null;
+
+    var $input = $('input[name=taxon-search]');
+    var searchText = $input.val().trimLeft();
+
+    if (searchText.length === 0) {
+        $('#search-results').html('');
+        return false;
+    } else if (searchText.length < 2) {
+        $('#search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+        $('#search-results').dropdown('toggle');
+        return false;
+    }
+
+    // groom trimmed text based on our search rules
+    var searchContextName = $('select[name=taxon-search-context]').val();
+
+    // is this unchanged from last time? no need to search again..
+    if ((searchText == showingResultsForSearchText) && (searchContextName == showingResultsForSearchContextName)) {
+        ///console.log("Search text and context UNCHANGED!");
+        return false; 
+    }
+
+    // stash these to use for later comparison (to avoid redundant searches)
+    var queryText = searchText; // trimmed above
+    var queryContextName = searchContextName;
+
+    // proper version queries treemachine API
+    // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
+    $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
+    $('#search-results').show();
+    $('#search-results').dropdown('toggle');
+    
+    $.ajax({
+        url: doTNRSForNames_url,  // NOTE that actual server-side method name might be quite different!
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({ 
+            "queryString": searchText,
+            "contextName": searchContextName
+        }),  // data (asterisk required for completion suggestions)
+        crossDomain: true,
+        contentType: 'application/json',
+        success: function(data) {    // JSONP callback
+            // stash the search-text used to generate these results
+            showingResultsForSearchText = queryText;
+            showingResultsForSearchContextName = queryContextName;
+
+            $('#search-results').html('');
+            var maxResults = 100;
+            var visibleResults = 0;
+            /*
+             * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
+             * with these properties:
+             *      ottId   // taxon ID in OTT taxonomic tree
+             *      nodeId  // ie, neo4j node ID
+             *      exact   // matches the entered text exactly? T/F
+             *      name    // taxon name
+             *      higher  // points to a genus or higher taxon? T/F
+             */
+            if (data && data.length && data.length > 0) {
+                // sort results to show exact match(es) first, then higher taxa, then others
+                // initial sort on higher taxa (will be overridden by exact matches)
+                data.sort(function(a,b) {
+                    if (a.higher === b.higher) return 0;
+                    if (a.higher) return -1;
+                    if (b.higher) return 1;
+                });
+                // final sort on exact matches (overrides higher taxa)
+                data.sort(function(a,b) {
+                    if (a.exact === b.exact) return 0;
+                    if (a.exact) return -1;
+                    if (b.exact) return 1;
+                });
+
+                // show all sorted results, up to our preset maximum
+                var matchingNodeIDs = [ ];  // ignore any duplicate results (point to the same taxon)
+                for (var mpos = 0; mpos < data.length; mpos++) {
+                    if (visibleResults >= maxResults) {
+                        break;
+                    }
+                    var match = data[mpos];
+                    var matchingName = match.name;
+                    // 
+                    var matchingID = match.ottId;
+                    if ($.inArray(matchingID, matchingNodeIDs) === -1) {
+                        // we're not showing this yet; add it now
+                        $('#search-results').append(
+                            '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
+                        );
+                        matchingNodeIDs.push(matchingID);
+                        visibleResults++;
+                    }
+                }
+                
+                $('#search-results a')
+                    .click(function(e) {
+                        var $link = $(this);
+                        // modify focal clade name and ottid
+                        viewModel.nexml['^ot:focalCladeOTTTaxonName'] = $link.text();
+                        viewModel.nexml['^ot:focalClade'] = $link.attr('href');
+                        // hide menu and reset search field
+                        $('#search-results').html('');
+                        $('#search-results').hide();
+                        $('input[name=taxon-search]').val('');
+                        nudgeTickler('GENERAL_METADATA');
+                    });
+                $('#search-results').dropdown('toggle');
+            } else {
+                $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+                $('#search-results').dropdown('toggle');
+            }
+        }
+    });
+
+    return false;
 }

@@ -37,7 +37,7 @@ def view():
     """
     response.view = 'study/edit.html'
     view_dict = get_opentree_services_method_urls(request)
-    view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names()
+    #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names()
     view_dict['studyID'] = request.args[0]
     view_dict['viewOrEdit'] = 'VIEW'
     view_dict['userCanEdit'] = auth.is_logged_in() and True or False;
@@ -55,6 +55,7 @@ def edit():
     # TODO: fetch a fresh list of search contexts for TNRS? see working example in
     # the header search of the main opentree webapp
     view_dict = get_opentree_services_method_urls(request)
+    view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names()
     view_dict['studyID'] = request.args[0]
     view_dict['viewOrEdit'] = 'EDIT'
     return view_dict
