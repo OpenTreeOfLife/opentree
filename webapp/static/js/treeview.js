@@ -553,7 +553,9 @@ function buildNodeNameFromTreeData( node ) {
     // unnamed nodes should show two descendant names as tip taxa (eg, 'dog, cat')
     if (node.descendantNameList) {
         // children aren't in view, but their names are here
-        return (compoundNodeNamePrefix + node.descendantNameList.slice(0,2).join(compoundNodeNameDelimiter) + compoundNodeNameSuffix);
+        return (compoundNodeNamePrefix + node.descendantNameList.slice(0,2).join(compoundNodeNameDelimiter)
+                + (node.descendantNameList.length > 2 ? ' + ...' : '')   // hint at additional descendants
+                + compoundNodeNameSuffix);
     }
     // we'll need to build a name from visible children and/or their descendantNamesList
     if (node.children === undefined || node.children.length < 2) {
@@ -561,21 +563,29 @@ function buildNodeNameFromTreeData( node ) {
         return null;
     }
     // recurse as needed to build child names, then prune as needed
+    var moreThanTwoDescendants = false;
     var firstChildName = buildNodeNameFromTreeData(node.children[0]);
     var nameParts = firstChildName.split(compoundNodeNameDelimiter);
     console.log(nameParts);
     firstChildName = nameParts[0];
     if(firstChildName.indexOf(compoundNodeNamePrefix) !== -1) {
+        moreThanTwoDescendants = true;
         firstChildName = firstChildName.split(compoundNodeNamePrefix)[1];
     }
     var lastChildName = buildNodeNameFromTreeData(node.children[ node.children.length-1 ]);
     nameParts = lastChildName.split(compoundNodeNameDelimiter);
     console.log(nameParts);
     lastChildName = nameParts[nameParts.length - 1];
+    if (lastChildName === '...]') {
+        // sidestep any ellipsis found here
+        lastChildName = nameParts[nameParts.length - 2];
+    }
     if(lastChildName.indexOf(compoundNodeNameSuffix) !== -1) {
         lastChildName = lastChildName.split(compoundNodeNameSuffix)[0];
     }
-    return (compoundNodeNamePrefix + firstChildName + compoundNodeNameDelimiter + lastChildName + compoundNodeNameSuffix);
+    return (compoundNodeNamePrefix + firstChildName + compoundNodeNameDelimiter + lastChildName
+            + (moreThanTwoDescendants ? ' + ...' : '')   // hint at additional descendants
+            + compoundNodeNameSuffix);
 };
   
 // recursively populate any missing (implied) node names (called immediately after argus loads treeData)
