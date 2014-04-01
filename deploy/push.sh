@@ -86,7 +86,7 @@ if [ ! -r $OPENTREE_IDENTITY ]; then echo "$OPENTREE_IDENTITY not found"; exit 1
 [ "x$GITHUB_REDIRECT_URI" != x ] || GITHUB_REDIRECT_URI=$OPENTREE_PUBLIC_DOMAIN/curator/user/login
 [ "x$TREEMACHINE_BASE_URL" != x ] || TREEMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/treemachine
 [ "x$TAXOMACHINE_BASE_URL" != x ] || TAXOMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/taxomachine
-[ "x$OTI_BASE_URL" != x ] || OTI_BASE_URL=$OPENTREE_NEO4J_HOST/oti
+[ "x$OTI_BASE_URL" != x ] || OTI_BASE_URL=http://$OPENTREE_NEO4J_HOST/oti
 [ "x$OPENTREE_API_BASE_URL" != x ] || OPENTREE_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/api/v1
 
 if [ $GITHUB_CLIENT_ID = ID_NOT_PROVIDED ]; then echo "WARNING: Missing GitHub client ID! Curation UI will be disabled."; fi
