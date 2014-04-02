@@ -101,7 +101,7 @@ def get_opentree_services_method_urls(request):
 
     conf = get_conf(request)
     url_pairs = conf.items('method_urls')
-    method_urls = dict()
+    method_urls = domains.copy()
     for mname, murl in url_pairs:
         # replace any domain tokens, eg, 'treemachine_domain'
         for dname, durl in domains.items():
