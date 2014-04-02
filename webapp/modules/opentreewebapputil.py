@@ -12,6 +12,9 @@ def get_conf(request):
     if c is None:
         from ConfigParser import SafeConfigParser
         c = SafeConfigParser({})
+        # DON'T convert property names to lower-case!
+        c.optionxform = str        
+
         lcp = "applications/%s/private/localconfig" % app_name
         if os.path.isfile(lcp):
             c.read(lcp)
@@ -76,20 +79,11 @@ def get_opentree_services_domains(request):
         instances of the service by tweaking private/conf (see private/conf.example)
     '''
     conf = get_conf(request)
-    ret = {
-        'treemachine_domain' : 'http://opentree-dev.bio.ku.edu:7474',
-        'taxomachine_domain' : 'http://opentree-dev.bio.ku.edu:7476'
-    }
-    if conf.has_section('domains'):
-        try:
-            ret['treemachine_domain'] = conf.get('domains', 'treemachine')
-        except:
-            pass
-        try:
-            ret['taxomachine_domain'] = conf.get('domains', 'taxomachine')
-        except:
-            pass
-    return ret
+    domain_pairs = conf.items('domains')
+    domains = dict()
+    for name, url in domain_pairs:
+        domains[ "%s_domain" % name ] = url
+    return domains
 
 def get_opentree_services_method_urls(request):
     '''
@@ -106,22 +100,12 @@ def get_opentree_services_method_urls(request):
     domains = get_opentree_services_domains(request)
 
     conf = get_conf(request)
-    ret = {
-        'treemachine_domain' : domains['treemachine_domain'],
-        'taxomachine_domain' : domains['taxomachine_domain'],
-        'getDraftTreeID_url' : conf.get('method_urls', 'getDraftTreeID_url'),
-        'getSyntheticTree_url' : conf.get('method_urls', 'getSyntheticTree_url'),
-        'getSourceTree_url' : conf.get('method_urls', 'getSourceTree_url'),
-        'getConflictTaxJsonAltRel_url' :conf.get('method_urls', 'getConflictTaxJsonAltRel_url'),
-        'getDraftTreeForOttolID_url' : conf.get('method_urls', 'getDraftTreeForOttolID_url'),
-        'getDraftTreeForNodeID_url' : conf.get('method_urls', 'getDraftTreeForNodeID_url'),
-        'doTNRSForNames_url' : conf.get('method_urls', 'doTNRSForNames_url'),
-        'getContextsJSON_url' : conf.get('method_urls', 'getContextsJSON_url'),  # current contextName values for TNRS
-        'getNodeIDForOttolID_url' : conf.get('method_urls', 'getNodeIDForOttolID_url'),
-        'getJSONFromNode_url' : conf.get('method_urls', 'getJSONFromNode_url'),
-    }
-    # for property, value in vars(ret).iteritems():
-    for k,v in ret.iteritems():
-        ret[k] = v.replace('{treemachine_domain}', domains['treemachine_domain']).replace('{taxomachine_domain}', domains['taxomachine_domain'])
+    url_pairs = conf.items('method_urls')
+    method_urls = dict()
+    for mname, murl in url_pairs:
+        # replace any domain tokens, eg, 'treemachine_domain'
+        for dname, durl in domains.items():
+            murl = murl.replace('{%s}' % dname, durl)
+        method_urls[ mname ] = murl
 
-    return ret
+    return method_urls
