@@ -73,6 +73,8 @@ def get_opentree_services_domains(request):
         with keys:
             treemachine_domain
             taxomachine_domain
+            oti_domain
+            opentree_api_domain
         the values of the domain will contain the port (when needed)
 
     This is mainly useful for debugging because it lets developers use local
@@ -88,10 +90,8 @@ def get_opentree_services_domains(request):
 def get_opentree_services_method_urls(request):
     '''
     Reads the local configuration to build on domains and return a dictionary
-        with keys:
-            treemachine_domain
-            taxomachine_domain
-        whose values are URLs combining domain and partial paths
+        with keys for all domains AND their service methods, whose values are
+        URLs combining domain and partial paths
 
     This is useful for debugging and for adapting to different ways of 
         configuring services, eg, proxied through a single domain 

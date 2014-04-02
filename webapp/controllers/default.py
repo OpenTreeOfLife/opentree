@@ -1,7 +1,6 @@
 # -*- coding: utf-8 -*-
 from opentreewebapputil import (get_opentree_services_method_urls, 
-                                fetch_current_TNRS_context_names, 
-                                unique_ordered_list)
+                                fetch_current_TNRS_context_names)
 
 default_view_dict = get_opentree_services_method_urls(request)
 default_view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
