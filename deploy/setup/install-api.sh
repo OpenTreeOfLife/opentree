@@ -17,6 +17,23 @@ echo "Installing API"
 #  Virtualenv
 #  WSGI handler
 
+# ---------- Redis for caching ---------
+REDIS_WITH_VERSION="redis-2.8.8"
+if ! test -f redis/bin/redis-server ; then
+    if ! test -d "downloads/${REDIS_WITH_VERSION}" ; then
+        if ! test -f downloads/"${REDIS_WITH_VERSION}.tar.gz" ; then
+            wget --no-verbose -O downloads/"${REDIS_WITH_VERSION}.tar.gz" http://download.redis.io/releases/"${REDIS_WITH_VERSION}".tar.gz
+        fi
+        (cd downloads; \
+            tar xfvz "${REDIS_WITH_VERSION}.tar.gz")
+    fi
+    if ! test -d redis/work ; then
+        mkdir -p redis/work
+        (cd downloads/${REDIS_WITH_VERSION} ; \
+            make && make PREFIX="${HOME}/redis" install)
+    fi
+fi
+
 # ---------- API & TREE STORE ----------
 # Set up api web app
 # Compare install-web2py-apps.sh
@@ -97,5 +114,12 @@ pushd .
     cd $OTHOME/repo/$WEBAPP/bin
     python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL
 popd
+
+echo "copy redis config and start redis"
+# Make sure that redis has the up-to-date config from the api repo...
+cp $APPROOT/private/ot-redis.config redis/ot-redis.config
+# somewhat hacky shutdown and restart redis
+echo 'shutdown' | redis/bin/redis-cli
+nohup redis/bin/redis-server redis/ot-redis.config &
 
 echo "Apache needs to be restarted (API)"
