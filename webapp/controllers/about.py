@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+from opentreewebapputil import get_opentree_services_method_urls
 
 ### required - do no delete
 def user(): return dict(form=auth())
@@ -28,4 +29,39 @@ def developer_resources():
     return dict()
 
 def credits():
-    return dict()
+    ordered_metadata = fetch_current_synthesis_source_data()
+    return dict(contributing_studies=ordered_metadata)
+
+def fetch_current_synthesis_source_data():
+    try:
+        from gluon.tools import fetch
+        import simplejson
+        method_dict = get_opentree_services_method_urls(request)
+
+        # fetch a list of all studies that contribute to synthesis
+        fetch_url = method_dict['getSynthesisSourceList_url']
+        # as usual, this needs to be a POST (pass empty fetch_args)
+        source_list_response = fetch(fetch_url, data='')
+        source_list = simplejson.loads( source_list_response )
+        # split these IDs, which are in the form '{STUDY_ID}_{TREE_ID}'
+        contributing_study_ids = [id.split('_')[0] for id in source_list if id != "taxonomy"]
+
+        # fetch the oti metadata (esp. DOI and full reference text) for each
+        fetch_url = method_dict['findAllStudies_url']
+
+        # as usual, this needs to be a POST (pass empty fetch_args)
+        study_metadata_response = fetch(fetch_url, data={"verbose": True})
+        study_metadata = simplejson.loads( study_metadata_response )
+
+        # filter just the metadata for studies contributing to synthesis
+        contributing_studies = [study for study in study_metadata if study['ot:studyId'] in contributing_study_ids]
+        # sort these alphabetically(?) and render in the page
+        contributing_studies.sort(key = lambda x: x.get('ot:studyPublicationReference'))
+        # TODO: encode data to utf-8?
+        ## context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
+        
+        return contributing_studies
+
+    except Exception, e:
+        # throw 403 or 500 or just leave it
+        return ('ERROR', e.message)
