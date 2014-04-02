@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-from opentreewebapputil import get_opentree_services_method_urls
+from applications.opentree.modules.opentreewebapputil import(
+    get_opentree_services_method_urls)
+# N.B. This module is shared with tree-browser app, which is aliased as
+# 'opentree'. Any name changes will be needed here as well!
+
 from peyotl.manip import merge_otus_and_trees, iter_trees
 import json
 #import pdb

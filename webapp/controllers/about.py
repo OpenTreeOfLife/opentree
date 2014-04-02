@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
-from opentreewebapputil import get_opentree_services_method_urls
+from opentreewebapputil import (get_opentree_services_method_urls, 
+                                fetch_current_TNRS_context_names)
 
 ### required - do no delete
 def user(): return dict(form=auth())
@@ -11,26 +12,34 @@ def index():
     # bump to first About page in menu
     redirect(URL('about', 'open-tree-of-life'))
 
+# try grabbing shared data just once
+default_view_dict = get_opentree_services_method_urls(request)
+default_view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
+
 # NOTE that web2py should attempt to convert hyphens (dashes) in URLs into underscores
 
 def open_tree_of_life():
     # URL is /opentree/about/open-tree-of-life
-    return dict()
+    return default_view_dict
 
 def the_synthetic_tree():
     # URL is /opentree/about/the-synthetic-tree
-    return dict()
+    return default_view_dict
 
 def the_source_tree_manager():
     # URL is /opentree/about/the-source-tree-manager
-    return dict()
+    return default_view_dict
 
 def developer_resources():
-    return dict()
+    return default_view_dict
 
 def credits():
-    ordered_metadata = fetch_current_synthesis_source_data()
-    return dict(contributing_studies=ordered_metadata)
+    return default_view_dict
+
+def references():
+    view_dict = default_view_dict.copy()
+    view_dict['contributing_studies'] = fetch_current_synthesis_source_data()
+    return view_dict
 
 def fetch_current_synthesis_source_data():
     try:
