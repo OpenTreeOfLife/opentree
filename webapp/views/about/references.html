@@ -1,9 +1,35 @@
 {{extend 'layout.html'}}
 <style type="text/css">
 <!--
-div.contributing-studies div {
-    width: 400px;
-    margin: 1em 0em 1.5em 2em;
+div.contributing-studies div.row {
+    margin: 1em 0 1em 2em;
+    border-bottom: 1px solid #eee;
+}
+div.contributing-studies div.reference,
+div.contributing-studies div.links {
+    margin-bottom: 1em;
+}
+div.contributing-studies div.reference {
+    margin-left: 0px;
+    line-height: 1.25em;
+    /* background-color: #ffeeee; */
+}
+div.contributing-studies div.reference a,
+div.contributing-studies div.reference em {
+    display: block;
+    margin-top: 0.25em;
+}
+div.contributing-studies div.links {
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    margin-left: 2em;
+    padding: 0.3em 0 0.25em 1em;
+    font-size: 0.9em;
+    line-height: 1.2em;
+}
+div.contributing-studies div.links a {
+    display: block;
+    margin-bottom: 0.25em;
 }
 //-->
 </style>
@@ -39,11 +65,27 @@ div.contributing-studies div {
               <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
               <p>The following studies have contributed to the current synthetic tree:</p>
              {{for study in contributing_studies:}}
-              <div>
+             <div class="row">
+              <div class="span4 reference">
                   {{= study.get('ot:studyPublicationReference') }}
-                  <br/>
-                  <a href="{{= study.get('ot:studyPublication') }}">{{= study.get('ot:studyPublication') }}</a>
+                  {{ if study.get('ot:studyPublication'): }}
+                    <a target="_blank" href="{{= study.get('ot:studyPublication') }}">{{= study.get('ot:studyPublication') }}</a>
+                  {{ else: }}
+                    <em style="color: #aaa;">No link provided</em>
+                  {{ pass }}
               </div>
+              <div class="span3 links">
+                  <a target="_blank" href="{{= URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ]) }}">Open in study curator</a>
+                  <a target="_blank" href="http://www.reelab.net/phylografter/study/view/{{= study.get('ot:studyId')}}">Open in phylografter</a>
+                  <a target="_blank" href="{{= oti_domain[:-4] }}/api/v1/study/{{= study.get('ot:studyId')}}">Fetch study NexSON</a>
+                 {{ if study.get('ot:dataDeposit'): }}
+                  <a target="_blank" href="{{= study.get('ot:dataDeposit') }}">Study data archive</a>
+                 {{ pass }}
+                 <a target="_blank" 
+                    href="{{= URL(a='default', c='default', f='argus', args=['ottol@{}/{}'.format( study.get('ot:focalClade'), study.get('ot:focalCladeOTTTaxonName') ) ] ) }}"
+                    >Browse focal clade</a>
+              </div>
+             </div>
              {{pass}}
           </div>
 

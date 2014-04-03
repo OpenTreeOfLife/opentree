@@ -69,8 +69,10 @@ def fetch_current_synthesis_source_data():
 
         NON_contributing_studies = [study for study in study_metadata if study['ot:studyId'] not in contributing_study_ids]
 
-        # sort these alphabetically(?) and render in the page
-        contributing_studies.sort(key = lambda x: x.get('ot:studyPublicationReference'))
+        # TODO: sort these alphabetically(?) and render in the page
+        ## contributing_studies.sort(key = lambda x: x.get('ot:studyPublicationReference'))
+        # NO, apparently they're pre-sorted to reflect the importance of each study
+
         # TODO: encode data to utf-8?
         ## context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
         
