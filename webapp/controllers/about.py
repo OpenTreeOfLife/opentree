@@ -47,51 +47,27 @@ def fetch_current_synthesis_source_data():
         import simplejson
         method_dict = get_opentree_services_method_urls(request)
 
-        from pprint import pprint
-
         # fetch a list of all studies that contribute to synthesis
         fetch_url = method_dict['getSynthesisSourceList_url']
-        ##pprint('==== getSynthesisSourceList_url ====')
-        ##pprint(fetch_url)
         # as usual, this needs to be a POST (pass empty fetch_args)
         source_list_response = fetch(fetch_url, data='')
         source_list = simplejson.loads( source_list_response )
-        ##pprint('==== source_list ====')
-        ##pprint(source_list)
         # split these IDs, which are in the form '{STUDY_ID}_{TREE_ID}'
         contributing_study_ids = [id.split('_')[0] for id in source_list if id != "taxonomy"]
-        pprint('==== len(contributing_study_ids) ====')
-        pprint(len(contributing_study_ids))
-        ##pprint('==== contributing_study_ids ====')
-        ##pprint(contributing_study_ids)
         # remove duplicate study ID (due to multiple '{STUDY_ID}_{TREE_ID}' entries)
         contributing_study_ids = list(set(contributing_study_ids))
-        pprint('==== DEDUPED len(contributing_study_ids) ====')
-        pprint(len(contributing_study_ids))
-        ##pprint('==== DEDUPED contributing_study_ids ====')
-        ##pprint(contributing_study_ids)
 
         # fetch the oti metadata (esp. DOI and full reference text) for each
         fetch_url = method_dict['findAllStudies_url']
-        ##pprint('==== findAllStudies_url ====')
-        ##pprint(fetch_url)
 
         # as usual, this needs to be a POST (pass empty fetch_args)
         study_metadata_response = fetch(fetch_url, data={"verbose": True})
         study_metadata = simplejson.loads( study_metadata_response )
-        pprint('==== len(study_metadata) ====')
-        pprint(len(study_metadata))
-        ##pprint('==== study_metadata ====')
-        ##pprint(study_metadata)
 
         # filter just the metadata for studies contributing to synthesis
         contributing_studies = [study for study in study_metadata if study['ot:studyId'] in contributing_study_ids]
-        pprint('==== len(contributing_studies) ====')
-        pprint(len(contributing_studies))
 
         NON_contributing_studies = [study for study in study_metadata if study['ot:studyId'] not in contributing_study_ids]
-        pprint('==== len(NON_contributing_studies) ====')
-        pprint(len(NON_contributing_studies))
 
         # sort these alphabetically(?) and render in the page
         contributing_studies.sort(key = lambda x: x.get('ot:studyPublicationReference'))
