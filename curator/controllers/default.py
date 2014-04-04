@@ -1,6 +1,8 @@
 # -*- coding: utf-8 -*-
 from applications.opentree.modules.opentreewebapputil import(
-    get_opentree_services_method_urls)
+    get_opentree_services_method_urls,
+    extract_nexson_from_http_call)
+
 # N.B. This module is shared with tree-browser app, which is aliased as
 # 'opentree'. Any name changes will be needed here as well!
 
@@ -92,7 +94,7 @@ def data():
     """
     return dict(form=crud())
 
-def merge_otus():
+def merge_otus(**kwargs):
     '''Takes a "nexson" arg that should be a NexSON blob.
     Returns an object with a "data" property that will be the NexSON
     with otus merged into the first otu group.
@@ -123,11 +125,8 @@ def merge_otus():
     constitute unique OTUs).
 
     '''
-    if 'nexson' not in request.vars:
-        raise HTTP(400, T('Expecting a "nexson" argument'))
-    nexson = request.vars.nexson
-    if not isinstance(nexson, dict):
-        nexson = json.loads(nexson)
+    # read NexSON from 'nexson' arg or (more likely) the request body
+    nexson = extract_nexson_from_http_call(request, **kwargs)
     o = merge_otus_and_trees(nexson)
     response.view = 'generic.json'
     return {'data': o}
