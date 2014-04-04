@@ -2,6 +2,8 @@
 import logging
 import os
 import sys
+import json
+from gluon.http import HTTP
 
 _CONF_OBJ_DICT = {}
 
@@ -141,3 +143,22 @@ def unique_ordered_list(seq):
     seen = set()
     seen_add = seen.add
     return [ x for x in seq if x not in seen and not seen_add(x)]
+
+# adapted from api.opentreeoflife.org/controllers/default.py (__extract_nexson_from_http_call)
+def extract_nexson_from_http_call(request, **kwargs):
+    """Returns the nexson blob from `kwargs` or the request.body"""
+    try:
+        # check for kwarg 'nexson', or load the full request body
+        if 'nexson' in kwargs:
+            nexson = kwargs.get('nexson', {})
+        else:
+            nexson = request.body.read()
+
+        if not isinstance(nexson, dict):
+            nexson = json.loads(nexson)
+        if 'nexson' in nexson:
+            nexson = nexson['nexson']
+    except:
+        # TODO: _LOG.exception('Exception getting nexson content in extract_nexson_from_http_call')
+        raise HTTP(400, json.dumps({"error": 1, "description": 'NexSON must be valid JSON'}))
+    return nexson
