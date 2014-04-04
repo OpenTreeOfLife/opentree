@@ -31,7 +31,7 @@ routes_onerror=[
   # ('curator/*', '/opentree/static/fail.html'),
   # ('*/404', '/opentree/static/cantfind.html'),
   # ('opentree/*', '/opentree/static/fail.html'),
-  ('curator/404', '/opentree/default/error'),  # let other codes "flow through" as ugly-but-accurate responses
+  ('curator/404', '/curator/default/error'),  # let other codes "flow through" as ugly-but-accurate responses
   # this catch-all captures errors in 'curator', so we need to spell out all apps below :-/
   # ('*/*', '/opentree/default/error'),
   ('opentree/*', '/opentree/default/error'),
