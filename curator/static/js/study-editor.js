@@ -1047,6 +1047,23 @@ function validateFormData() {
     return true;
 }
 
+function scrubNexsonForTransport( nexml ) {
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
+    // strip any extraneous JS properties from study Nexson
+    var allTrees = [];
+    $.each(nexml.trees, function(i, treesCollection) {
+        $.each(treesCollection.tree, function(i, tree) {
+            allTrees.push( tree );
+        });
+    });
+    $.each( allTrees, function(i, tree) {
+        cleanupAdHocRoot(tree);
+        clearD3PropertiesFromTree(tree);
+    });
+}
+
 function saveFormDataToStudyJSON() {
     // save all populated fields; clear others, or remove from JSON(?)
     showModalScreen("Saving study data...", {SHOW_BUSY_BAR:true});
@@ -1062,18 +1079,8 @@ function saveFormDataToStudyJSON() {
     });
     saveURL += ('?'+ qsVars);
 
-    // strip any extraneous JS properties from study Nexson
-    var allTrees = [];
-    $.each(viewModel.nexml.trees, function(i, treesCollection) {
-        $.each(treesCollection.tree, function(i, tree) {
-            allTrees.push( tree );
-        });
-    });
-    $.each( allTrees, function(i, tree) {
-        cleanupAdHocRoot(tree);
-        clearD3PropertiesFromTree(tree);
-    });
-    
+    scrubNexsonForTransport();
+
     // add this user to the curatorName list, if not found
     var listPos = $.inArray( curatorDisplayName, viewModel.nexml['^ot:curatorName'] );
     if (listPos === -1) {
@@ -1353,6 +1360,7 @@ function normalizeTree( tree ) {
     
 }
 
+/* DEPRECATED - This is not handled on the server's 'merge_otus' method!
 function normalizeOTUs( tree ) {
     // modify this tree's OTUs (if needed) to support mapping OTUs to OTT taxa
     var itsOTUs = [];
@@ -1381,6 +1389,7 @@ function normalizeOTUs( tree ) {
         }
     });
 }
+*/
 
 function getPreferredTreeIDs() {
     preferredTreeIDs = [];
@@ -2776,8 +2785,6 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     // show results of tree submission, whether from submitNewTree() 
     // or special (fileupload) behavior
     
-    hideModalScreen();
-
     ///console.log('submitNewTree(): done! textStatus = '+ textStatus);
     // report errors or malformed data, if any
     if (textStatus !== 'success') {
@@ -2789,12 +2796,11 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
             console.warn("jqXHR.status: "+ jqXHR.status);
             console.warn("jqXHR.responseText: "+ jqXHR.responseText);
         }
+        hideModalScreen();
         showErrorMessage(errMsg);
         return;
     }
 
-    showSuccessMessage('Tree added.');
-    
     // TODO: Add trees, nodes, otus and update UI
 
     // Add supporting-file info for this tree's source file
@@ -2851,6 +2857,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     // clear the import form (using Clear button to capture all behavior)
     $('#tree-import-form :reset').click();
 
+    /*
     // force rebuild of all tree-related lookups
     buildFastLookup('NODES_BY_ID');
     buildFastLookup('OTUS_BY_ID');
@@ -2864,15 +2871,61 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
             normalizeOTUs( tree );
         });
     });
+    */
 
-    // force update of curation UI in all relevant areas
-    nudgeTickler('TREES');
-    nudgeTickler('SUPPORTING_FILES');
-    nudgeTickler('GENERAL_METADATA');
-    nudgeTickler('VISIBLE_OTU_MAPPINGS');
-    nudgeTickler('STUDY_HAS_CHANGED');
-    // just this once, suppress the page-exit warning
-    removePageExitWarning();
+    showModalScreen("Merging trees and OTUs...", {SHOW_BUSY_BAR:true});
+
+    // clean any client-side junk from the study
+    scrubNexsonForTransport();
+
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: '/curator/default/merge_otus',
+        processData: false,
+        data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
+        error: returnFromOTUMerge,  // to suppress web2py's unhelpful error msg
+        complete: returnFromOTUMerge
+    });
+}
+function returnFromOTUMerge( jqXHR, textStatus ) {
+    console.log('returnFromOTUMerge(), textStatus = '+ textStatus);
+    // report errors or malformed data, if any
+    if (textStatus !== 'success') {
+        console.warn("jqXHR.status: "+ jqXHR.status);
+        console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+        hideModalScreen();
+        // TODO: This is going to leave a mess! Should we force a reload of the page at this point?
+        showErrorMessage(
+            'Sorry, there was an error merging trees and OTUs. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">' +
+            'Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>'
+        );
+        return;
+    }
+
+    // convert raw response to JSON
+    var responseJSON = $.parseJSON(jqXHR.responseText);
+    var data = responseJSON['data'];
+
+    // replace the data in the viewmodel (but keep the rest)
+    debugger;
+    replaceViewModelNexson( nexml );
+
+    hideModalScreen();
+    showSuccessMessage('Tree(s) added and merged.');
+}
+
+function replaceViewModelNexson( nexml ) {
+    // gently replace our live study NexSON and refresh the UI
+    viewModel.nexml = nexml;
+
+    // "lookups" should be purged of all stale ids
+    clearFastLookup('ALL');
+
+    // refresh the complete curation UI, via ticklers
+    nudgeTickler('ALL');
 }
 
 function adjustedLabel(label) {
@@ -4441,9 +4494,17 @@ var nudge = {
     }
 }
 function nudgeTickler( name ) {
+    if (name === 'ALL') {
+        for (var aName in viewModel.ticklers) {
+            nudgeTickler( aName );
+        }
+        return;
+    }
+
     var tickler = viewModel.ticklers[ name ];
     if (!tickler) {
         console.error("No such tickler: '"+ name +"'!");
+        return;
     }
     var oldValue = tickler.peek();
     tickler( oldValue + 1 );
@@ -4561,7 +4622,12 @@ function buildFastLookup( lookupName ) {
 }
 function clearFastLookup( lookupName ) {
     // clear chosen lookup, on demand (eg, after merging in new OTUs)
-    if (lookupName in viewModel.fastLookups) {
+    if (lookupName === 'ALL') {
+        for (var aName in viewModel.fastLookups) {
+            viewModel.fastLookups[ aName ] = null;
+        }
+        return;
+    } else if (lookupName in viewModel.fastLookups) {
         viewModel.fastLookups[ lookupName ] = null;
         return;
     }
