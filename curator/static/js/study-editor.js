@@ -1360,7 +1360,7 @@ function normalizeTree( tree ) {
     
 }
 
-/* DEPRECATED - This is not handled on the server's 'merge_otus' method!
+/* DEPRECATED - This is now handled on the server's 'merge_otus' method!
 function normalizeOTUs( tree ) {
     // modify this tree's OTUs (if needed) to support mapping OTUs to OTT taxa
     var itsOTUs = [];

@@ -94,7 +94,7 @@ def data():
     """
     return dict(form=crud())
 
-def merge_otus(**kwargs):
+def merge_otus():
     '''Takes a "nexson" arg that should be a NexSON blob.
     Returns an object with a "data" property that will be the NexSON
     with otus merged into the first otu group.
@@ -125,10 +125,10 @@ def merge_otus(**kwargs):
     constitute unique OTUs).
 
     '''
-    # read NexSON from 'nexson' arg or (more likely) the request body
-    nexson = extract_nexson_from_http_call(request, **kwargs)
-    o = merge_otus_and_trees(nexson)
     response.view = 'generic.json'
+    # read NexSON from 'nexson' arg or (more likely) the request body
+    nexson = extract_nexson_from_http_call(request)  # no kwargs to pass here
+    o = merge_otus_and_trees(nexson)
     return {'data': o}
 
 UPLOADID_PAT = re.compile(r'^[a-zA-Z_][-_.a-zA-Z0-9]{4,84}$')
