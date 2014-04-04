@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import json
+from gluon.http import HTTP
 
 _CONF_OBJ_DICT = {}
 
