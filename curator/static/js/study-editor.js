@@ -2910,8 +2910,7 @@ function returnFromOTUMerge( jqXHR, textStatus ) {
     var data = responseJSON['data'];
 
     // replace the data in the viewmodel (but keep the rest)
-    debugger;
-    replaceViewModelNexson( nexml );
+    replaceViewModelNexson( data.nexml );
 
     hideModalScreen();
     showSuccessMessage('Tree(s) added and merged.');
