@@ -9,7 +9,7 @@ from the NEXUS class library. That is a C++ tool by Paul Lewis and Mark Holder.
 See install-ncl.sh for details.
 
 If you do install NCL then you should have access to a web-service at .../curator/default/to_nexson
-
+```
 You can POST to that URL for conversion of NEXUS, newick, or NeXML to NeXSON
 Required arguments:
     "file" should be a multipart-encoded file to be translated to NexSON
@@ -35,6 +35,8 @@ Optional arguments:
         in the Open Tree NexSON object.
     "inputFormat" should be "nexus", "newick", or "nexml"
         default is "nexus"
+    "nexml2json" should be "0.0", "1.0", or "1.2". The more
+        specific forms: "0.0.0", "1.0.0", or "1.2.1" will also work.
     "idPrefix" should be an empty string (or all whitespace) if you want 
             to use the firstAvailableXXXID args:
         firstAvailableEdgeID,
@@ -75,7 +77,7 @@ are echoed back, including:
     'nexml2json': '0.0.0', 
 Note that even if newTreesPreferred is True, no trees are flagged as
 being candidates for synthesis.
-
+```
 Primarily for the sake of debugging, the intermediates can be fetched using the "output" argument. This can be one of: 'nexson', 'nexml', 'input', 'provenance'
 
 See test/test.sh for two example invocations of this web-service.

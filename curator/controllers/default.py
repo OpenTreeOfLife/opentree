@@ -127,7 +127,7 @@ def merge_otus():
     '''
     response.view = 'generic.json'
     # read NexSON from 'nexson' arg or (more likely) the request body
-    nexson = extract_nexson_from_http_call(request)  # no kwargs to pass here
+    nexson = extract_nexson_from_http_call(request, **request.vars)  # web2py equivalent to **kwargs
     o = merge_otus_and_trees(nexson)
     return {'data': o}
 
@@ -152,7 +152,6 @@ def to_nexson():
     '''
     Controller for conversion of NEXUS, newick, or NeXML to NeXSON
     Required arguments:
-        "uploadId" - A unique string for this upload.
         "file" should be a multipart-encoded file to be translated to NexSON
           OR
         "content" which is a string that contains the content of the file
@@ -160,6 +159,8 @@ def to_nexson():
     Required arguments for subsequent calls:
         "uploadId" - The "uploadId" returned from the first invocation
     Optional arguments:
+        "uploadId" - A unique string for this upload (optional for *first* call
+            only). This is no longer encouraged, since a uuid will be provided.
         "output" one of ['ot:nexson', 'nexson', 'nexml', 'input', 'provenance']
             the default is ot:nexson. This specifies what is to be returned.
             Possible values are: 
@@ -177,7 +178,20 @@ def to_nexson():
             default is "nexus"
         "nexml2json" should be "0.0", "1.0", or "1.2". The more
             specific forms: "0.0.0", "1.0.0", or "1.2.1" will also work.
-        
+        "idPrefix" should be an empty string (or all whitespace) if you want 
+                to use the firstAvailableXXXID args:
+            firstAvailableEdgeID,
+            firstAvailableNodeID,
+            firstAvailableOTUID,
+            firstAvailableOTUsID,
+            firstAvailableTreeID,
+            firstAvailableTreesID
+          If idPrefix is not all whitespace it will be stripped, 
+            the NCLconverter default names are used
+          If idPrefix is not supplied, a uuid will be the prefix for the 
+            names and the names will follow the NCL converter defaults
+
+    N.B. Further documentation is available in curator/README.md
     '''
     _LOG = get_logger(request, 'to_nexson')
     ##pdb.set_trace()

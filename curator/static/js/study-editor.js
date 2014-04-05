@@ -122,6 +122,9 @@ $(document).ready(function() {
         */
         add: function(e, data) {
             console.log('*** treeupload - add ***');
+            // add hints for nicer element IDs to the form
+            setElementIDHints();
+
             $('[name=new-tree-submit]').click(function() {
                 console.log('treeupload - submitting...');
                 $('[name=uploadid]').val( generateTreeUploadID() );
@@ -239,6 +242,101 @@ function loadSelectedStudy() {
                 data.nexml['^ot:studyId'] = studyID;
             }
             
+            viewModel = data;
+
+            /* To help in creating new elements, Keep track of the highest ID
+             * currently in use for each element type, as well as its preferred
+             * ID prefix and a function to gather all instances.
+             *
+             * Note that in each case, we expect text IDs (eg, "message987") but keep
+             * simple integer tallies to show determine the next available ID in the
+             * current study.
+             *
+             * N.B. Unless otherwise specified with a 'prefix' property, the
+             * key in each case is also the preferred prefix.
+             */
+            viewModel.elementTypes = {
+                'edge': {
+                    highestOrdinalNumber: null,
+                    gatherAll: function(nexml) {
+                        // return an array of all matching elements
+                        var allEdges = [];
+                        var allTrees = viewModel.elementTypes.tree.gatherAll(nexml);
+                        $.each(allTrees, function( i, tree ) {
+                            $.merge(allEdges, tree.edge );
+                        });
+                        return allEdges;
+                    }
+                },
+                'node': {
+                    highestOrdinalNumber: null,
+                    gatherAll: function(nexml) {
+                        // return an array of all matching elements
+                        var allNodes = [];
+                        var allTrees = viewModel.elementTypes.tree.gatherAll(nexml);
+                        $.each(allTrees, function( i, tree ) {
+                            $.merge(allNodes, tree.node );
+                        });
+                        return allNodes;
+                    }
+                },
+                'otu': {
+                    highestOrdinalNumber: null,
+                    gatherAll: function(nexml) {
+                        // return an array of all matching elements
+                        var allOTUs = [];
+                        $.each(nexml.otus, function( i, otusCollection ) {
+                            $.merge(allOTUs, otusCollection.otu );
+                        });
+                        return allOTUs;
+                    }
+                },
+                'otus': {   // a collection of otu elements
+                    highestOrdinalNumber: null,
+                    gatherAll: function(nexml) {
+                        // return an array of all matching elements
+                        return makeArray(nexml.otus);
+                    }
+                },
+                'tree': {
+                    highestOrdinalNumber: null,
+                    gatherAll: function(nexml) {
+                        // return an array of all matching elements
+                        var allTrees = [];
+                        $.each(nexml.trees, function(i, treesCollection) {
+                            $.each(treesCollection.tree, function(i, tree) {
+                                allTrees.push( tree );
+                            });
+                        });
+                        return allTrees;
+                    }
+                },
+                'trees': {   // a collection of tree elements
+                    highestOrdinalNumber: null,
+                    gatherAll: function(nexml) {
+                        // return an array of all matching elements
+                        return makeArray(nexml.trees);
+                    }
+                },
+                'annotation': {  // an annotation event
+                    highestOrdinalNumber: null,
+                    gatherAll: function(nexml) {
+                        return makeArray(nexml['^ot:annotationEvents']);
+                    }
+                },
+                'agent': {  // an annotation agent
+                    highestOrdinalNumber: null,
+                    gatherAll: function(nexml) {
+                        return makeArray(nexml['^ot:agents']);
+                    }
+                },
+                'message': {  // an annotation message
+                    highestOrdinalNumber: null,
+                    gatherAll: getAllAnnotationMessagesInStudy
+                },
+
+            }
+
             // add missing study metadata tags (with default values)
             if (!(['^ot:studyPublicationReference'] in data.nexml)) {
                 data.nexml['^ot:studyPublicationReference'] = "";
@@ -324,7 +422,7 @@ function loadSelectedStudy() {
             // move any old-style messages to new location
             relocateLocalAnnotationMessages( data.nexml );
             // NOW initialize the next-available message ID
-            getNextAvailableAnnotationMessageID( data.nexml );
+            getNextAvailableElementID( 'message', data.nexml );
 
             // add agent singleton for this curation tool
             var curatorAgent;
@@ -388,8 +486,6 @@ function loadSelectedStudy() {
                 });
             });
 
-            viewModel = data;
-
             // keep track of the SHA (git commit ID) that corresponds to this version of the study
             viewModel.startingCommitSHA = response['sha'] || 'SHA_NOT_PROVIDED';
 
@@ -418,7 +514,6 @@ function loadSelectedStudy() {
                 updateQualityDisplay();
             });
             
-
             // support fast lookup of elements by ID, for largest trees
             viewModel.fastLookups = {
                 'NODES_BY_ID': null,
@@ -2764,12 +2859,13 @@ function submitNewTree( form ) {
     // NOTE that this should submit the same arguments (except for file
     // data) as the fileupload behavior for #treeupload
     ///console.log("submitting tree...");
-    var submitURL = $(form).attr('action');
-    ///console.log(submitURL);
     
     showModalScreen("Adding tree...", {SHOW_BUSY_BAR:true});
 
     // @MTH:"no longer needed on upload"  $('[name=uploadid]').val( generateTreeUploadID() );
+    
+    // add hints for nicer element IDs to the form
+    setElementIDHints();
     
     $.ajax({
         type: 'POST',
@@ -2781,6 +2877,23 @@ function submitNewTree( form ) {
         complete: returnFromNewTreeSubmission
     });
 }
+
+function setElementIDHints() {
+    // Populate these form values befor importing new elements, to guide the
+    // creation of new NexSON elements on the server.
+    var $form = $('#tree-import-form');
+    $form.find('[name=idPrefix]').val('');  // clear this field
+    $form.find('[name=firstAvailableEdgeID]').val( getNextElementOrdinalNumber('edge') );
+    $form.find('[name=firstAvailableNodeID]').val( getNextElementOrdinalNumber('node') );
+    $form.find('[name=firstAvailableOTUID]').val( getNextElementOrdinalNumber('otu') );
+    $form.find('[name=firstAvailableOTUsID]').val( getNextElementOrdinalNumber('otus') );
+    $form.find('[name=firstAvailableTreeID]').val( getNextElementOrdinalNumber('tree') );
+    $form.find('[name=firstAvailableTreesID]').val( getNextElementOrdinalNumber('trees') );
+    $form.find('[name=firstAvailableAnnotationID]').val( getNextElementOrdinalNumber('annotation') );
+    $form.find('[name=firstAvailableAgentID]').val( getNextElementOrdinalNumber('agent') );
+    $form.find('[name=firstAvailableMessageID]').val( getNextElementOrdinalNumber('message') );
+}
+
 function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     // show results of tree submission, whether from submitNewTree() 
     // or special (fileupload) behavior
@@ -2800,8 +2913,6 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         showErrorMessage(errMsg);
         return;
     }
-
-    // TODO: Add trees, nodes, otus and update UI
 
     // Add supporting-file info for this tree's source file
     //console.log("status: "+ jqXHR.status);
@@ -2857,22 +2968,6 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     // clear the import form (using Clear button to capture all behavior)
     $('#tree-import-form :reset').click();
 
-    /*
-    // force rebuild of all tree-related lookups
-    buildFastLookup('NODES_BY_ID');
-    buildFastLookup('OTUS_BY_ID');
-    buildFastLookup('EDGES_BY_SOURCE_ID');
-    buildFastLookup('EDGES_BY_TARGET_ID');
-
-    // Now that we can lookup quickly, make sure OTUs are ready for easy
-    // mapping to OTT taxa.
-    $.each(itsTreesCollection, function(i, treesElement) {
-        $.each( treesElement.tree, function(i, tree) {
-            normalizeOTUs( tree );
-        });
-    });
-    */
-
     showModalScreen("Merging trees and OTUs...", {SHOW_BUSY_BAR:true});
 
     // clean any client-side junk from the study
@@ -2922,6 +3017,9 @@ function replaceViewModelNexson( nexml ) {
 
     // "lookups" should be purged of all stale ids
     clearFastLookup('ALL');
+
+    // reset highest-ID markers (these might have changed)
+    clearAllHighestIDs();
 
     // refresh the complete curation UI, via ticklers
     nudgeTickler('ALL');
@@ -4115,7 +4213,7 @@ function createAnnotation( annotationBundle, nexml ) {
     }
     $.each( annEvent.message, function( i, msg ) {
         var messageInfo = $.extend(
-            { '@id': getNextAvailableAnnotationMessageID( nexml ) }, 
+            { '@id': getNextAvailableElementID( 'message', nexml ) }, 
             msg
         );
         var properMsg = cloneFromSimpleObject( messageInfo, {applyKnockoutMapping: nexmlIsMapped} );
@@ -4138,7 +4236,7 @@ function createAnnotation( annotationBundle, nexml ) {
     // apply a unique annotation event ID, if there's not one baked in
     // already
     eventInfo = $.extend(
-        { '@id': getNextAvailableAnnotationEventID( nexml ) }, 
+        { '@id': getNextAvailableElementID( 'annotation', nexml ) }, 
         annEvent
     );
     var properEvent = cloneFromSimpleObject( eventInfo, {applyKnockoutMapping: nexmlIsMapped} );
@@ -4185,7 +4283,7 @@ function addAgent( props, nexml ) {
     // is the specified nexson already mapped to Knockout observables?
     var nexmlIsMapped = ko.isObservable( nexml ); // TODO? WAS nexml.meta
     var agentInfo = $.extend(
-        { '@id': getNextAvailableAnnotationAgentID( nexml ) }, 
+        { '@id': getNextAvailableElementID( 'agent', nexml ) }, 
         props
     );
     var properAgent = cloneFromSimpleObject(agentInfo, {applyKnockoutMapping: nexmlIsMapped});
@@ -4210,11 +4308,6 @@ function removeAgent( testFunc, nexml ) {
 }
 
 /*
- * Manage unique (study-wide) IDs for annotation types. Note that in
- * each case, we're using text IDs (eg, "message987") but keeping simple
- * integer tallies to show determine the next available ID in the current
- * study.
- */
 var highestAnnotationEventID = null;
 var annotationEventIDPrefix = 'annotation';
 
@@ -4223,107 +4316,73 @@ var annotationAgentIDPrefix = 'agent';
 
 var highestAnnotationMessageID = null;
 var annotationMessageIDPrefix = 'message';
+*/
 
-function getNextAvailableAnnotationEventID(nexml) {
-    if (highestAnnotationEventID === null) {
-        if (!nexml) {
-            nexml = viewModel.nexml;
+function getNextAvailableElementID( elementType, nexml ) {
+    if (!(elementType in viewModel.elementTypes)) {
+        console.error('getNextAvailableElementID(): type "'+ elementType +'" not found!');
+        return;
+    }
+    var typeInfo = viewModel.elementTypes[elementType];
+    var typePrefix = typeInfo.prefix || elementType;
+    var nextAvailableNumber = getNextElementOrdinalNumber( elementType, nexml );
+    return (typePrefix + nextAvailableNumber);
+}
+function getNextElementOrdinalNumber( elementType, nexml ) {
+    // increment and returns the next available ordinal number for this type
+    if (!(elementType in viewModel.elementTypes)) {
+        console.error('getNextElementOrdinalNumber(): type "'+ elementType +'" not found!');
+        return;
+    }
+    var typeInfo = viewModel.elementTypes[elementType];
+    var typePrefix = typeInfo.prefix || elementType;
+    if (typeInfo.highestOrdinalNumber === null) {
+        typeInfo.highestOrdinalNumber = findHighestElementOrdinalNumber(
+            nexml,
+            typePrefix,
+            typeInfo.gatherAll
+        );
+    }
+    // increment the highest ID for faster assignment next time
+    typeInfo.highestOrdinalNumber++;
+    return typeInfo.highestOrdinalNumber;
+}
+function findHighestElementOrdinalNumber( nexml, prefix, gatherAllFunc ) {
+    // Return the numeric component of the highest element ID matching
+    // these specs, eg, 'node2336' => 2336
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
+    // do a one-time(?) scan for the highest ID currently in use
+    var allElements = gatherAllFunc( nexml );
+    var highestOrdinalNumber = 0;
+    for (var i = 0; i < allElements.length; i++) {
+        // ignore agents with non-standard IDs, eg, 'opentree-curation-webapp'
+        var testElement = allElements[i];
+        var testID = ko.unwrap(testElement['@id']) || '';
+        if (testID === '') {
+            console.error("MISSING ID for this "+ prefix +":");
+            console.error(testElement);
+            continue;  // skip to next element
         }
-        // do a one-time(?) scan for the highest ID currently in use
-        var allEvents = makeArray(nexml['^ot:annotationEvents']);
-        var allEvents = ('^ot:annotationEvents' in nexml) ? makeArray(nexml['^ot:annotationEvents'].annotation) : [];
-        if (allEvents.length === 0) {
-            highestAnnotationEventID = 0;
-        } else {
-            var sortedEvents = allEvents.sort(function(a,b) {
-                if (ko.unwrap( a['@id'] ) > ko.unwrap( b['@id'] )) {
-                    return -1;
-                }
-                return 1;
-            });
-            highestAnnotationEventID = 0;
-            for (var i = 0; i < sortedEvents.length; i++) {
-                // ignore agents with special IDs, eg, 'opentree-curation-webapp'
-                var testEvent = sortedEvents[i];
-                var testID = ko.unwrap(testEvent['@id']) || '';
-                if (testID === '') {
-                    console.error("MISSING ID for this annotation event:");
-                    console.error(testEvent);
-                }
-                if (testID.indexOf(annotationEventIDPrefix) === 0) {
-                    highestAnnotationEventID = testID.split( annotationEventIDPrefix )[1];
-                    break;
-                }
+        if (testID.indexOf(prefix) === 0) {
+            // compare this to the highest ID found so far
+            var itsNumber = testID.split( prefix )[1];
+            if ($.isNumeric( itsNumber )) {
+                highestOrdinalNumber = Math.max( highestOrdinalNumber, itsNumber );
             }
         }
     }
-    highestAnnotationEventID++;
-    return annotationEventIDPrefix + highestAnnotationEventID;
+    return highestOrdinalNumber;
 }
-function getNextAvailableAnnotationAgentID(nexml) {
-    if (highestAnnotationAgentID === null) {
-        if (!nexml) {
-            nexml = viewModel.nexml;
-        }
-        // do a one-time(?) scan for the highest ID currently in use
-        var allAgents = ('^ot:agents' in nexml) ? makeArray(nexml['^ot:agents'].agent) : [];
-        if (allAgents.length === 0) {
-            highestAnnotationAgentID = 0;
-        } else {
-            var sortedAgents = allAgents.sort(function(a,b) {
-                if (ko.unwrap( a['@id'] ) > ko.unwrap( b['@id'] )) return -1;
-                return 1;
-            });
-            highestAnnotationAgentID = 0;
-            for (var i = 0; i < sortedAgents.length; i++) {
-                // ignore agents with special IDs, eg, 'opentree-curation-webapp'
-                var testAgent = sortedAgents[i];
-                var testID = ko.unwrap(testAgent['@id']);
-                if (testID.indexOf(annotationAgentIDPrefix) === 0) {
-                    highestAnnotationAgentID = testID.split( annotationAgentIDPrefix )[1];
-                    break;
-                }
-            }
-        }
+function clearAllHighestIDs() {
+    // reset these counters, as after an import+merge
+    for (var aType in viewModel.elementTypes) {
+        viewModel.elementTypes.highestOrdinalNumber = null;
     }
-    highestAnnotationAgentID++;
-    return annotationAgentIDPrefix + highestAnnotationAgentID;
 }
-function getNextAvailableAnnotationMessageID(nexml) {
-    if (highestAnnotationMessageID === null) {
-        // do a one-time(?) scan for the highest ID currently in use
-        if (!nexml) {
-            nexml = viewModel.nexml;
-        }
-        var allMessages = getAllAnnotationMessagesInStudy(nexml);
-        if (allMessages.length === 0) {
-            highestAnnotationMessageID = 0;
-        } else {
-            var sortedMessages = allMessages.sort(function(a,b) {
-                if (ko.unwrap(a['@id']) > ko.unwrap(b['@id'])) {
-                    return -1;
-                }
-                return 1;
-            });
-            highestAnnotationMessageID = 0;
-            for (var i = 0; i < sortedMessages.length; i++) {
-                // ignore agents with special IDs, eg, 'opentree-curation-webapp'
-                var testMessage = sortedMessages[i];
-                var testID = ko.unwrap(testMessage['@id']) || '';
-                if (testID === '') {
-                    console.error("MISSING ID for this annotation message:");
-                    console.error(testMessage);
-                }
-                if (testID.indexOf(annotationMessageIDPrefix) === 0) {
-                    highestAnnotationMessageID = testID.split( annotationMessageIDPrefix )[1];
-                    break;
-                }
-            }
-        }
-    }
-    highestAnnotationMessageID++;
-    return annotationMessageIDPrefix + highestAnnotationMessageID;
-}
+
+
 function getAllAnnotationMessagesInStudy(nexml) {
     if (!nexml) {
         nexml = viewModel.nexml;
