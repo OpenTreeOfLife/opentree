@@ -257,7 +257,7 @@ function loadSelectedStudy() {
              */
             viewModel.elementTypes = {
                 'edge': {
-                    highestElementID: null,
+                    highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         var allEdges = [];
@@ -269,7 +269,7 @@ function loadSelectedStudy() {
                     }
                 },
                 'node': {
-                    highestElementID: null,
+                    highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         var allNodes = [];
@@ -281,7 +281,7 @@ function loadSelectedStudy() {
                     }
                 },
                 'otu': {
-                    highestElementID: null,
+                    highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         var allOTUs = [];
@@ -292,14 +292,14 @@ function loadSelectedStudy() {
                     }
                 },
                 'otus': {   // a collection of otu elements
-                    highestElementID: null,
+                    highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         return makeArray(nexml.otus);
                     }
                 },
                 'tree': {
-                    highestElementID: null,
+                    highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         var allTrees = [];
@@ -312,26 +312,26 @@ function loadSelectedStudy() {
                     }
                 },
                 'trees': {   // a collection of tree elements
-                    highestElementID: null,
+                    highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         return makeArray(nexml.trees);
                     }
                 },
                 'annotation': {  // an annotation event
-                    highestElementID: null,
+                    highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
                         return makeArray(nexml['^ot:annotationEvents']);
                     }
                 },
                 'agent': {  // an annotation agent
-                    highestElementID: null,
+                    highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
                         return makeArray(nexml['^ot:agents']);
                     }
                 },
                 'message': {  // an annotation message
-                    highestElementID: null,
+                    highestOrdinalNumber: null,
                     gatherAll: getAllAnnotationMessagesInStudy
                 },
 
@@ -422,7 +422,7 @@ function loadSelectedStudy() {
             // move any old-style messages to new location
             relocateLocalAnnotationMessages( data.nexml );
             // NOW initialize the next-available message ID
-            getNextAvailableID( 'message', data.nexml );
+            getNextAvailableElementID( 'message', data.nexml );
 
             // add agent singleton for this curation tool
             var curatorAgent;
@@ -2883,15 +2883,15 @@ function setElementIDHints() {
     // creation of new NexSON elements on the server.
     var $form = $('#tree-import-form');
     $form.find('[name=idPrefix]').val('');  // clear this field
-    $form.find('[name=firstAvailableEdgeID]').val( getNextAvailableID('edge') );
-    $form.find('[name=firstAvailableNodeID]').val( getNextAvailableID('node') );
-    $form.find('[name=firstAvailableOTUID]').val( getNextAvailableID('otu') );
-    $form.find('[name=firstAvailableOTUsID]').val( getNextAvailableID('otus') );
-    $form.find('[name=firstAvailableTreeID]').val( getNextAvailableID('tree') );
-    $form.find('[name=firstAvailableTreesID]').val( getNextAvailableID('trees') );
-    $form.find('[name=firstAvailableAnnotationID]').val( getNextAvailableID('annotation') );
-    $form.find('[name=firstAvailableAgentID]').val( getNextAvailableID('agent') );
-    $form.find('[name=firstAvailableMessageID]').val( getNextAvailableID('message') );
+    $form.find('[name=firstAvailableEdgeID]').val( getNextElementOrdinalNumber('edge') );
+    $form.find('[name=firstAvailableNodeID]').val( getNextElementOrdinalNumber('node') );
+    $form.find('[name=firstAvailableOTUID]').val( getNextElementOrdinalNumber('otu') );
+    $form.find('[name=firstAvailableOTUsID]').val( getNextElementOrdinalNumber('otus') );
+    $form.find('[name=firstAvailableTreeID]').val( getNextElementOrdinalNumber('tree') );
+    $form.find('[name=firstAvailableTreesID]').val( getNextElementOrdinalNumber('trees') );
+    $form.find('[name=firstAvailableAnnotationID]').val( getNextElementOrdinalNumber('annotation') );
+    $form.find('[name=firstAvailableAgentID]').val( getNextElementOrdinalNumber('agent') );
+    $form.find('[name=firstAvailableMessageID]').val( getNextElementOrdinalNumber('message') );
 }
 
 function returnFromNewTreeSubmission( jqXHR, textStatus ) {
@@ -4213,7 +4213,7 @@ function createAnnotation( annotationBundle, nexml ) {
     }
     $.each( annEvent.message, function( i, msg ) {
         var messageInfo = $.extend(
-            { '@id': getNextAvailableID( 'message', nexml ) }, 
+            { '@id': getNextAvailableElementID( 'message', nexml ) }, 
             msg
         );
         var properMsg = cloneFromSimpleObject( messageInfo, {applyKnockoutMapping: nexmlIsMapped} );
@@ -4236,7 +4236,7 @@ function createAnnotation( annotationBundle, nexml ) {
     // apply a unique annotation event ID, if there's not one baked in
     // already
     eventInfo = $.extend(
-        { '@id': getNextAvailableID( 'annotation', nexml ) }, 
+        { '@id': getNextAvailableElementID( 'annotation', nexml ) }, 
         annEvent
     );
     var properEvent = cloneFromSimpleObject( eventInfo, {applyKnockoutMapping: nexmlIsMapped} );
@@ -4283,7 +4283,7 @@ function addAgent( props, nexml ) {
     // is the specified nexson already mapped to Knockout observables?
     var nexmlIsMapped = ko.isObservable( nexml ); // TODO? WAS nexml.meta
     var agentInfo = $.extend(
-        { '@id': getNextAvailableID( 'agent', nexml ) }, 
+        { '@id': getNextAvailableElementID( 'agent', nexml ) }, 
         props
     );
     var properAgent = cloneFromSimpleObject(agentInfo, {applyKnockoutMapping: nexmlIsMapped});
@@ -4318,25 +4318,36 @@ var highestAnnotationMessageID = null;
 var annotationMessageIDPrefix = 'message';
 */
 
-function getNextAvailableID( elementType, nexml ) {
+function getNextAvailableElementID( elementType, nexml ) {
     if (!(elementType in viewModel.elementTypes)) {
-        console.error('getNextAvailableID(): type "'+ elementType +'" not found!');
+        console.error('getNextAvailableElementID(): type "'+ elementType +'" not found!');
         return;
     }
     var typeInfo = viewModel.elementTypes[elementType];
     var typePrefix = typeInfo.prefix || elementType;
-    if (typeInfo.highestElementID === null) {
-        typeInfo.highestElementID = findHighestElementID(
+    var nextAvailableNumber = getNextElementOrdinalNumber( elementType, nexml );
+    return (typePrefix + nextAvailableNumber);
+}
+function getNextElementOrdinalNumber( elementType, nexml ) {
+    // increment and returns the next available ordinal number for this type
+    if (!(elementType in viewModel.elementTypes)) {
+        console.error('getNextElementOrdinalNumber(): type "'+ elementType +'" not found!');
+        return;
+    }
+    var typeInfo = viewModel.elementTypes[elementType];
+    var typePrefix = typeInfo.prefix || elementType;
+    if (typeInfo.highestOrdinalNumber === null) {
+        typeInfo.highestOrdinalNumber = findHighestElementOrdinalNumber(
             nexml,
             typePrefix,
             typeInfo.gatherAll
         );
     }
     // increment the highest ID for faster assignment next time
-    typeInfo.highestElementID++;
-    return (typePrefix + typeInfo.highestElementID);
+    typeInfo.highestOrdinalNumber++;
+    return typeInfo.highestOrdinalNumber;
 }
-function findHighestElementID( nexml, prefix, gatherAllFunc ) {
+function findHighestElementOrdinalNumber( nexml, prefix, gatherAllFunc ) {
     // Return the numeric component of the highest element ID matching
     // these specs, eg, 'node2336' => 2336
     if (!nexml) {
@@ -4344,7 +4355,7 @@ function findHighestElementID( nexml, prefix, gatherAllFunc ) {
     }
     // do a one-time(?) scan for the highest ID currently in use
     var allElements = gatherAllFunc( nexml );
-    highestElementID = 0;
+    var highestOrdinalNumber = 0;
     for (var i = 0; i < allElements.length; i++) {
         // ignore agents with non-standard IDs, eg, 'opentree-curation-webapp'
         var testElement = allElements[i];
@@ -4358,16 +4369,16 @@ function findHighestElementID( nexml, prefix, gatherAllFunc ) {
             // compare this to the highest ID found so far
             var itsNumber = testID.split( prefix )[1];
             if ($.isNumeric( itsNumber )) {
-                highestElementID = Math.max( highestElementID, itsNumber );
+                highestOrdinalNumber = Math.max( highestOrdinalNumber, itsNumber );
             }
         }
     }
-    return highestElementID;
+    return highestOrdinalNumber;
 }
 function clearAllHighestIDs() {
     // reset these counters, as after an import+merge
     for (var aType in viewModel.elementTypes) {
-        viewModel.elementTypes.highestElementID = null;
+        viewModel.elementTypes.highestOrdinalNumber = null;
     }
 }
 
