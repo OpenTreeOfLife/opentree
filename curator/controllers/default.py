@@ -127,7 +127,7 @@ def merge_otus():
     '''
     response.view = 'generic.json'
     # read NexSON from 'nexson' arg or (more likely) the request body
-    nexson = extract_nexson_from_http_call(request, **request.args)  # web2py equivalent to **kwargs
+    nexson = extract_nexson_from_http_call(request, **request.vars)  # web2py equivalent to **kwargs
     o = merge_otus_and_trees(nexson)
     return {'data': o}
 

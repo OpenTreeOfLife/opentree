@@ -542,6 +542,18 @@ body {
                  <input type="hidden" name="auth_token" 
                    value="{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}">
                  <!--@MTH:"no longer needed on upload" input type="hidden" name="uploadid" value=""-->
+                 <!-- hints for new element IDs -->
+                 <input type="hidden" name="idPrefix" value="">
+                 <input type="hidden" name="firstAvailableEdgeID" value="">
+                 <input type="hidden" name="firstAvailableNodeID" value="">
+                 <input type="hidden" name="firstAvailableOTUID" value="">
+                 <input type="hidden" name="firstAvailableOTUsID" value="">
+                 <input type="hidden" name="firstAvailableTreeID" value="">
+                 <input type="hidden" name="firstAvailableTreesID" value="">
+                 <input type="hidden" name="firstAvailableAnnotationID" value="">
+                 <input type="hidden" name="firstAvailableAgentID" value="">
+                 <input type="hidden" name="firstAvailableMessageID" value="">
+
                   <select id="tree-import-format" name="inputFormat" 
                           class="input-block-level"
                           style="margin-bottom: 1em;"
