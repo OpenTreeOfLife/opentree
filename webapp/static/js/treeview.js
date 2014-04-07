@@ -960,7 +960,7 @@ function showObjectProperties( objInfo, options ) {
                                 break;
 
                             case 'IRMNG':
-                                displayVal = '<a href="http://www.marine.csiro.au/mirrorsearch/ir_search.list_species?gen_id='+ sourceInfo.taxSourceId +'" '
+                                displayVal = '<a href="http://www.marine.csiro.au/mirrorsearch/ir_search.taxon_info?id='+ sourceInfo.taxSourceId +'" '
                                               + 'title="Interim Register of Marine and Nonmarine Genera" target="_blank">IRMNG: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
