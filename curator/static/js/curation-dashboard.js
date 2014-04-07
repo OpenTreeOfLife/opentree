@@ -242,9 +242,12 @@ function loadStudyList() {
 function getViewOrEditLinks(study) {
     var html = "";
 
+    /* Send authorized users straight to Edit page?
     var viewOrEditURL = (viewOrEdit === 'EDIT') ?
         '/curator/study/edit/'+ study['ot:studyId'] : 
         '/curator/study/view/'+ study['ot:studyId'];
+    */
+    var viewOrEditURL = '/curator/study/view/'+ study['ot:studyId'];
 
     var fullRef = study['ot:studyPublicationReference'];
     if (fullRef) {
