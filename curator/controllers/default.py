@@ -250,8 +250,8 @@ def to_nexson():
         orig_args['inputFormat'] = inp_format
         orig_args['idPrefix'] = idPrefix
         orig_args['newTreesPreferred'] = False
-        if 'newTreesPreferred' in request.args:
-            v = request.args.newTreesPreferred
+        if 'newTreesPreferred' in request.vars:
+            v = request.vars.newTreesPreferred
             if isinstance(v, str) or isinstance(v, unicode):
                 if v.lower() in ["true", "yes", "1"]:
                     orig_args['newTreesPreferred'] = True
