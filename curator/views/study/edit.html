@@ -182,7 +182,7 @@ body {
           <button class="btn btn-danger pull-right"
             onclick="removeStudy(); return false;">Delete Study</button>
         {{ else: }} 
-          <a class="btn btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to study list</a>
+          <a class="btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to study list</a>
          {{ if userCanEdit: }}
           <a class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
             onclick="return confirm('Are you sure you want to edit this study?');">Edit Study</a>
@@ -369,6 +369,26 @@ body {
                 easy to find using standard publication references, DOIs, and
                 free-form tags.
               </p>
+            </div>
+            <div class="well" style="clear: right;">
+                <h4 style="margin-top: 0;">Working with study data in other tools</h4>
+
+                <p>
+                You can <strong>download this study</strong> in different forms:
+                </p>
+                <div class="btn-group" style="position: relative; top: -5px; margin-bottom: 10px;">
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=1.2' }}" target="_blank">NexSON</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=nexml' }}" target="_blank">NeXML</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=?' }}" target="_blank">NEXUS</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=?' }}" target="_blank">Trees as Newick</a>
+                </div>
+
+                <p>
+                You can also <strong>use the 
+                <a href="https://github.com/OpenTreeOfLife/api.opentreeoflife.org/blob/master/docs/README.md" target="_blank">Open Tree API</a>
+                </strong> (the same one the powers this editor) to retrieve and make changes to study data.
+                </p>
+
             </div>
 
            </div><!-- end of right col -->
