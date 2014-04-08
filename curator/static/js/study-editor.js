@@ -4851,3 +4851,87 @@ function searchForMatchingTaxa() {
 
     return false;
 }
+
+function lookUpDOI() {
+    // try to find a match, based on existing metadata
+    var referenceText = $.trim( $('#ot_studyPublicationReference').val() );
+    var lookupURL;
+    if (referenceText === '') {
+        // try a generic search in a new window
+        lookupURL = 'http://search.crossref.org/';
+        console.log(lookupURL);
+        window.open(lookupURL,'lookup');
+    } else {
+        // see if we get lucky..
+        lookupURL = 'http://search.crossref.org/dois?q=' + encodeURIComponent(referenceText);
+        // TODO: show potential matches in popup? or new frame?
+        showModalScreen("Looking up DOI...", {SHOW_BUSY_BAR:true});
+        $.ajax({
+            type: 'GET',
+            dataType: 'json',
+            // crossdomain: true,
+            // contentType: "application/json; charset=utf-8",
+            url: lookupURL,
+            //data: {'q': referenceText},
+            complete: function( jqXHR, textStatus ) {
+                hideModalScreen();
+
+                console.warn("jqXHR.status: "+ jqXHR.status);
+                console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+
+                if (textStatus !== 'success') {
+                    var errMsg = 'Sorry, there was an error looking up this study\'s DOI. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                    showErrorMessage(errMsg);
+                    return;
+                }
+                // Show best guesses for this DOI
+                // convert raw response to JSON
+                var resultsJSON = $.parseJSON(jqXHR.responseText);
+                if (resultsJSON.length === 0) {
+                    alert('No matches found, please check your publication reference text.')
+                } else {
+                    $('#DOI-lookup ul.found-matches').empty();
+                    $.each(resultsJSON, function(i, match) {
+                        var $matchInfo = $('<div class="match"><div class="full-citation"></div><div class="doi"></div></div>');
+                        $matchInfo.find('.full-citation').html(
+                            match.fullCitation || '<em>No citation found.</em>');
+                        $matchInfo.find('.doi').html( match.doi 
+                            ? '<a href="'+ match.doi +'" target="_blank">'+ match.doi +'</a>'
+                            : '<em>No DOI found.</em>'
+                        );
+                        if (match.fullCitation) {
+                            var $btn = $('<button class="btn btn-info">Update reference text</button>');
+                            $btn.click( updateRefTextFromLookup );
+                            $matchInfo.append($btn);
+                        }
+                        if (match.doi) {
+                            var $btn = $('<button class="btn btn-info pull-right">Update DOI</button>');
+                            $btn.click( updateDOIFromLookup );
+                            $matchInfo.append($btn);
+                        }
+                        $('#DOI-lookup ul.found-matches').append($matchInfo);
+                    });
+                    $('#DOI-lookup').modal('show');
+                }
+            }
+        });
+    }
+}
+
+function updateRefTextFromLookup(evt) {
+    var $clicked = $(evt.target);
+    var chosenRefText = $clicked.closest('.match').find('.full-citation').text();
+    console.log(chosenRefText);
+    //$('#ot_studyPublicationReference').val(chosenRefText);
+    viewModel.nexml['^ot:studyPublicationReference'] = chosenRefText;
+    nudgeTickler('GENERAL_METADATA');
+}
+function updateDOIFromLookup(evt) {
+    var $clicked = $(evt.target);
+    var chosenDOI = $clicked.closest('.match').find('.doi').text();
+    console.log(chosenDOI);
+    //$('#ot_studyPublication').val(chosenDOI);
+    viewModel.nexml['^ot:studyPublication']['@href'] = chosenDOI;
+    nudgeTickler('GENERAL_METADATA');
+}
+

@@ -614,3 +614,17 @@ tr:hover .row-controls-ghosted {
     font-size: 1.6em;
     color: #888;
 }
+
+/* DOI lookup window */
+.found-matches {
+    margin-right: 20px;
+}
+.found-matches .match {
+    border-top: 1px solid #ddd;
+    padding-top: 0.5em;
+    padding-bottom: 1em;
+}
+.found-matches .doi {
+    font-weight: bold;
+    margin: 0.5em 0;
+}
