@@ -2988,7 +2988,19 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
 function returnFromOTUMerge( jqXHR, textStatus ) {
     console.log('returnFromOTUMerge(), textStatus = '+ textStatus);
     // report errors or malformed data, if any
+    var badResponse = false;
+    var responseJSON = null;
     if (textStatus !== 'success') {
+        badResponse = true;
+    } else {
+        // convert raw response to JSON
+        responseJSON = $.parseJSON(jqXHR.responseText);
+        if (responseJSON['error'] === 1) {
+            badResponse = true;
+        }
+    }
+
+    if (badResponse) {
         console.warn("jqXHR.status: "+ jqXHR.status);
         console.warn("jqXHR.responseText: "+ jqXHR.responseText);
         hideModalScreen();
@@ -3000,12 +3012,8 @@ function returnFromOTUMerge( jqXHR, textStatus ) {
         return;
     }
 
-    // convert raw response to JSON
-    var responseJSON = $.parseJSON(jqXHR.responseText);
-    var data = responseJSON['data'];
-
-    // replace the data in the viewmodel (but keep the rest)
-    replaceViewModelNexson( data.nexml );
+    // replace the nexson in the viewmodel, but keep the rest
+    replaceViewModelNexson( responseJSON.data.nexml );
 
     hideModalScreen();
     showSuccessMessage('Tree(s) added and merged.');
@@ -4378,10 +4386,9 @@ function findHighestElementOrdinalNumber( nexml, prefix, gatherAllFunc ) {
 function clearAllHighestIDs() {
     // reset these counters, as after an import+merge
     for (var aType in viewModel.elementTypes) {
-        viewModel.elementTypes.highestOrdinalNumber = null;
+        viewModel.elementTypes[ aType ].highestOrdinalNumber = null;
     }
 }
-
 
 function getAllAnnotationMessagesInStudy(nexml) {
     if (!nexml) {
