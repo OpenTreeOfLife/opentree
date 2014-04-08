@@ -1219,7 +1219,8 @@ function removeStudy() {
     var qsVars = $.param({
         author_name: authorName,
         author_email: authorEmail,
-        auth_token: authToken
+        auth_token: authToken,
+        starting_commit_SHA: viewModel.startingCommitSHA
     });
     removeURL += ('?'+ qsVars);
 
