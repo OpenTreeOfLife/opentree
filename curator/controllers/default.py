@@ -128,8 +128,15 @@ def merge_otus():
     response.view = 'generic.json'
     # read NexSON from 'nexson' arg or (more likely) the request body
     nexson = extract_nexson_from_http_call(request, **request.vars)  # web2py equivalent to **kwargs
-    o = merge_otus_and_trees(nexson)
-    return {'data': o}
+    
+    try:
+        o = merge_otus_and_trees(nexson)
+        return {'data': o,
+                'error': 0}
+    except Exception, x:
+        s = str(x)
+        return {'error': 1,
+                'description': s}
 
 UPLOADID_PAT = re.compile(r'^[a-zA-Z_][-_.a-zA-Z0-9]{4,84}$')
 ID_PREFIX_PAT = re.compile(r'^[a-zA-Z_][-_.a-zA-Z0-9]*$')
