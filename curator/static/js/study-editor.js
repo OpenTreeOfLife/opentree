@@ -4859,7 +4859,6 @@ function lookUpDOI() {
     if (referenceText === '') {
         // try a generic search in a new window
         lookupURL = 'http://search.crossref.org/';
-        console.log(lookupURL);
         window.open(lookupURL,'lookup');
     } else {
         // see if we get lucky..
@@ -4875,10 +4874,6 @@ function lookUpDOI() {
             //data: {'q': referenceText},
             complete: function( jqXHR, textStatus ) {
                 hideModalScreen();
-
-                console.warn("jqXHR.status: "+ jqXHR.status);
-                console.warn("jqXHR.responseText: "+ jqXHR.responseText);
-
                 if (textStatus !== 'success') {
                     var errMsg = 'Sorry, there was an error looking up this study\'s DOI. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
                     showErrorMessage(errMsg);
@@ -4921,7 +4916,6 @@ function lookUpDOI() {
 function updateRefTextFromLookup(evt) {
     var $clicked = $(evt.target);
     var chosenRefText = $clicked.closest('.match').find('.full-citation').text();
-    console.log(chosenRefText);
     //$('#ot_studyPublicationReference').val(chosenRefText);
     viewModel.nexml['^ot:studyPublicationReference'] = chosenRefText;
     nudgeTickler('GENERAL_METADATA');
@@ -4929,7 +4923,6 @@ function updateRefTextFromLookup(evt) {
 function updateDOIFromLookup(evt) {
     var $clicked = $(evt.target);
     var chosenDOI = $clicked.closest('.match').find('.doi').text();
-    console.log(chosenDOI);
     //$('#ot_studyPublication').val(chosenDOI);
     viewModel.nexml['^ot:studyPublication']['@href'] = chosenDOI;
     nudgeTickler('GENERAL_METADATA');
