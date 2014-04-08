@@ -97,8 +97,12 @@ pushd .
     # TODO: Pass in credentials for bot user 'opentree' on GitHub, to use the GitHub API for this:
     cd $OTHOME/repo/$WEBAPP/bin
     tokenfile=~/.ssh/OPENTREEAPI_OAUTH_TOKEN
-    [ -r $tokenfile ] || (echo "OPENTREEAPI_OAUTH_TOKEN not found (install-api.sh)"; exit 1)
+    if [ -r $tokenfile ]; then
     python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL $tokenfile
+    else
+    echo "OPENTREEAPI_OAUTH_TOKEN not found (install-api.sh), prompting for manual handling of webhooks."
+    python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL
+    fi
 popd
 
 echo "Apache needs to be restarted (API)"
