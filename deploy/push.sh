@@ -216,11 +216,17 @@ function push_opentree {
 }
 
 function push_api {
+    # place private key for GitHub access 
     [ "x$OPENTREE_GH_IDENTITY" != "x" ] || (echo "OPENTREE_GH_IDENTITY not specified"; exit 1)
     [ -r $OPENTREE_GH_IDENTITY ] || (echo "$OPENTREE_GH_IDENTITY not found"; exit 1)
     echo "doc store is $OPENTREE_DOCSTORE"
+    ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
+    # place an OAuth token for GitHub API by bot user 'opentreeapi'
+    tokenfile=~/.ssh/opentree/OPENTREEAPI_OAUTH_TOKEN
+    [ -r $tokenfile ] || (echo "OPENTREEAPI_OAUTH_TOKEN not found"; exit 1)
     if [ $DRYRUN = "yes" ]; then echo "[api]"; return; fi
     rsync -pr -e "${SSH}" $OPENTREE_GH_IDENTITY "$OT_USER@$OPENTREE_HOST":.ssh/opentree
+    rsync -pr -e "${SSH}" $tokenfile "$OT_USER@$OPENTREE_HOST":.ssh/OPENTREEAPI_OAUTH_TOKEN
     ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" $OPENTREE_DOCSTORE $CONTROLLER $OTI_BASE_URL $OPENTREE_API_BASE_URL
 }

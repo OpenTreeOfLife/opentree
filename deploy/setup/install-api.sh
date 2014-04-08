@@ -90,12 +90,15 @@ pushd .
 popd
 
 # N.B. Another file 'GITHUB_CLIENT_SECRET' was already placed via rsync (in push.sh)
+# Also 'OPENTREEAPI_OAUTH_TOKEN'
 
 # prompt to add a GitHub webhook (if it's not already there) to nudge my oti service as studies change
 pushd .
     # TODO: Pass in credentials for bot user 'opentree' on GitHub, to use the GitHub API for this:
     cd $OTHOME/repo/$WEBAPP/bin
-    python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL
+    tokenfile=~/.ssh/OPENTREEAPI_OAUTH_TOKEN
+    [ -r $tokenfile ] || (echo "OPENTREEAPI_OAUTH_TOKEN not found (install-api.sh)"; exit 1)
+    python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL $tokenfile
 popd
 
 echo "Apache needs to be restarted (API)"
