@@ -72,9 +72,17 @@ div.contributing-studies div.links a {
                   {{ if study.get('ot:studyPublication'): }}
                     <a target="_blank" href="{{= study.get('ot:studyPublication') }}">{{= study.get('ot:studyPublication') }}</a>
                   {{ else: }}
-                    <em style="color: #aaa;">No link provided</em> 
-                    <a href="http://scholar.google.com/scholar?q={{= urllib.quote(study.get('ot:studyPublicationReference').encode('utf-8')) }}"
-                       target="_blank">Search on Google Scholar</a>
+                    <div style="color: #c33; background-color: #fdd; font-weight: bold; margin-top: 2px; padding: 1px 4px 3px;">
+                        <em>
+                            No link provided! Try 
+                          <a href="http://scholar.google.com/scholar?q={{= urllib.quote(study.get('ot:studyPublicationReference').encode('utf-8')) }}"
+                            target="_blank" style="margin-top: 0; display: inline;">
+                            Google Scholar</a> or 
+                          <a href="http://search.crossref.org/?q={{= urllib.quote(study.get('ot:studyPublicationReference').encode('utf-8')) }}"
+                            target="_blank" style=" margin-top: 0; display: inline;">
+                            CrossRef.org</a>
+                        </em> 
+                    </div>
                   {{ pass }}
               </div>
               <div class="span3 links">
