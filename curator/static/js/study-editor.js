@@ -2206,13 +2206,15 @@ function showTreeViewer( tree ) {
 
         //showModalScreen("Rendering tree...", {SHOW_BUSY_BAR:true});
         updateEdgesInTree( tree );
-        drawTree( tree );
+        
+        drawTree( tree, {'INITIAL_DRAWING':true} );
         hideModalScreen();
     }, 1000);
 }
 
 var vizInfo = { tree: null, vis: null };
-function drawTree( treeOrID ) {
+function drawTree( treeOrID, options ) {
+    options = options || {};
     var tree = null;
     if (typeof(treeOrID) === 'object') {
         tree = treeOrID;
@@ -2235,7 +2237,7 @@ function drawTree( treeOrID ) {
     var rootNode = getTreeNodeByID(tree, rootNodeID);
 
     var edges = tree.edge;
-console.log(">> preparing "+ edges.length +" edges in this tree...");
+    ///console.log(">> preparing "+ edges.length +" edges in this tree...");
 
     /* render the tree as a modified phylogram */
     
@@ -2247,17 +2249,42 @@ console.log(">> preparing "+ edges.length +" edges in this tree...");
         node.length = 0;  // ie, branch length
         node.rootDist = 0;
     });
-console.log(">> default node properties in place...");
+    ///console.log(">> default node properties in place...");
+    var shortestEdge = null;
+    var longestEdge = null;
     $.each(edges, function(index, edge) {
         // transfer @length property (if any) to the child node
         if ('@length' in edge) {
             var childID = edge['@target'];
             var childNode = getTreeNodeByID(tree, childID);
-            childNode.length = parseFloat(edge['@length']);
+            childNode.length = parseFloat(edge['@length'] || '0');
             ///console.log("> reset length of node "+ childID+" to: "+ childNode.length);
+            if (options.INITIAL_DRAWING) {
+                if (shortestEdge === null) {
+                    shortestEdge = childNode.length;
+                } else {
+                    shortestEdge = Math.min(shortestEdge, childNode.length);
+                }
+                if (longestEdge === null) {
+                    longestEdge = childNode.length;
+                } else {
+                    longestEdge = Math.max(longestEdge, childNode.length);
+                }
+            }
         }
     });
-console.log("> done sweeping edges");
+    ///console.log("> done sweeping edges");
+
+    if (options.INITIAL_DRAWING) {
+        var proportion = longestEdge / shortestEdge;
+        ///console.log('branch-length proportions = 1:'+ proportion);
+        if (proportion > 100.0) {
+            // The shortest edges will be illegible! Let's force the Cladogram
+            // option to suppress branch lengths consistently.
+            $('#branch-length-toggle')[0].checked = true;
+            hidingBranchLengths = true;
+        }
+    }
 
     //var currentWidth = $("#tree-viewer #dialog-data").width();
     //var currentWidth = $("#tree-viewer #dialog-data").css('width').split('px')[0];
@@ -2266,7 +2293,7 @@ console.log("> done sweeping edges");
     // let's set the viewer height based on total number of nodes
     // (in a bifurcating tree, perhaps half will be leaf nodes)
     var viewHeight = tree.node.length * 20;
-    console.log("setting tree-view height to "+ viewHeight);
+    ///console.log("setting tree-view height to "+ viewHeight);
     
     var treeEdgesHaveLength = ('@length' in tree.edge[0]);
 
@@ -2310,7 +2337,7 @@ console.log("> done sweeping edges");
             }
         }
     );
-    console.log("> done drawing raw phylogram");
+    ///console.log("> done drawing raw phylogram");
 
     // (re)assert proper classes for key nodes
     vizInfo.vis.selectAll('.node')
@@ -2328,7 +2355,7 @@ console.log("> done sweeping edges");
             ///console.log("CLASS is now "+ itsClass);
             return itsClass;
         });
-    console.log("> done re-asserting classes");
+    ///console.log("> done re-asserting classes");
 
     // (re)assert standard click behavior for all nodes
     vizInfo.vis.selectAll('.node circle')
@@ -2359,7 +2386,7 @@ console.log("> done sweeping edges");
             hideNodeOptionsMenu( );
         });
     
-    console.log("> done re-asserting click behaviors");
+    ///console.log("> done re-asserting click behaviors");
 }
 
 function setTreeRoot( treeOrID, rootingInfo ) {
