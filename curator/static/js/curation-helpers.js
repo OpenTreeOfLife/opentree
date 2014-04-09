@@ -277,6 +277,7 @@ function bindHelpPanels() {
 
 function showModalScreen( messageHTMLorElement, options ) {
     // NOTE that this can be called repeatedly to update its message
+    suspendModalEnforcedFocus();
     $('#modal-screen').modal('show');
     if ( messageHTMLorElement ) {
         $('#modal-screen-message').empty().append(messageHTMLorElement).show();
@@ -293,4 +294,22 @@ function showModalScreen( messageHTMLorElement, options ) {
 }
 function hideModalScreen() {
     $('#modal-screen').modal('hide');
+    restoreModalEnforcedFocus();
+}
+
+/* NOTE that Bootstrap modals are somewhat limited; in particular, the
+ * expectation is that only one will appear at a time, vs. chained or nested
+ * modals. Since our event-blocking screen sometimes overlaps with other
+ * modals, we should suspend some behavior to avoid runaway JS as they fight
+ * for input focus. See discussion at:
+ *   https://github.com/twbs/bootstrap/issues/4781 
+ *   http://stackoverflow.com/questions/13649459/twitter-bootstrap-multiple-modal-error
+ */
+var activeEnforceFocus = $.fn.modal.Constructor.prototype.enforceFocus;
+var noopEnforceFocus = function() { };
+function suspendModalEnforcedFocus() {
+    $.fn.modal.Constructor.prototype.enforceFocus = noopEnforceFocus;
+}
+function restoreModalEnforcedFocus() {
+    $.fn.modal.Constructor.prototype.enforceFocus = activeEnforceFocus;
 }
