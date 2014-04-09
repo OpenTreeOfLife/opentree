@@ -4936,3 +4936,25 @@ function updateDOIFromLookup(evt) {
     nudgeTickler('GENERAL_METADATA');
 }
 
+var minimalDOIPattern = new RegExp('10\\..+')
+//var urlDOIPattern = new RegExp('http://dx.doi.org/10[.\\d]{2,}\\b')
+var urlPattern = new RegExp('http(s?)://\.*')
+function formatDOIAsURL() {
+    var oldValue = viewModel.nexml['^ot:studyPublication']['@href'];
+    // IF it's already in the form of a URL, do nothing
+    if (urlPattern.test(oldValue) === true) {
+        return;
+    }
+    // IF it's a reasonable "naked" DOI, do nothing
+    var possibleDOIs = oldValue.match(minimalDOIPattern);
+    if( possibleDOIs === null ) {
+        // no possible DOI found
+        return;
+    }
+    
+    // this is a candidate; try to convert it to URL form
+    var bareDOI = $.trim( possibleDOIs[0] );
+    var newValue = 'http://dx.doi.org/'+ bareDOI;
+    viewModel.nexml['^ot:studyPublication']['@href'] = newValue;
+    nudgeTickler('GENERAL_METADATA');
+}
