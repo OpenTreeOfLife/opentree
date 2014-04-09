@@ -14,11 +14,12 @@ $(document).ready(function() {
         .attr('disabled','disabled')
         .click(updateCreationDetails);
 
-    // CC0 checkbox should enable/disable radios on click
-    $('input:checkbox[name=cc0-agreement]').click(function() {
-        var $cb = $(this);
-        updateCreationDetails();
-    });
+    // CC0 radio buttons should enable options below when selected
+    $('input:radio[name=cc0-agreement]')
+        .removeAttr('checked')
+        .click(function() {
+            updateCreationDetails();
+        });
 
     // set initial state for all details
     updateCreationDetails();
@@ -28,7 +29,7 @@ function updateCreationDetails() {
     // update the visibility and (in)active state of panels, based on the
     // state of their respective radio buttons
 
-    if ($('input:checkbox[name=cc0-agreement]').is(':checked')) {
+    if ($('input:radio[name=cc0-agreement]').is(':checked')) {
         $('input:radio[name=import-option]').removeAttr('disabled');
         $('#import-options').css('opacity', 1.0);
         $('#import-options').unbind('click');
@@ -85,7 +86,7 @@ function createStudyFromForm( clicked ) {
         url: API_create_study_POST_url,
         data: {
             // gather chosen study-creation options
-            'cc0_agreement': $('#cc0-agreement').is(':checked'),
+            'cc0_agreement': $('#agreed-to-CC0').is(':checked'),
             'import_option': $('[name=import-option]:checked').val() || '',
             'treebase_id': $('[name=treebase-id]').val() || '',
             'nexml_fetch_url': $('[name=nexml-fetch-url]').val() || '',

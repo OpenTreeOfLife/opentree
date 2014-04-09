@@ -17,13 +17,21 @@ body {
  <div class="span8 wireframe">
   <form class="form-inline" style="padding-bottom: 24px;" action=".">
     <p>
-    First things first. All data in the Open Tree of Life project must be freely shared.
+        <strong>First things first.</strong> Open Tree of Life requires that data underlying the
+        tree be <strong>publicly available</strong>. While we believe that this is generally
+        true for scientific data, we'd also prefer to mark each study with the
+        <a href="http://creativecommons.org/about/cc0" target="_blank">Creative
+        Commons Zero (CC0) waiver</a> to emphasizse that it's in the public domain.
     </p>
 
     <div>
-        <label for="cc0-agreement" class="featured-label">
-            <input type="checkbox" id="cc0-agreement" name="cc0-agreement"/>
-            First things first. Open Tree of Life requires that data underlying the tree be publicly available. By clicking this checkbox, I am agreeing to release this data under the Creative Commons Zero (CC0) waiver. <strong style="color: #c33;">(required)</strong>.
+        <label for="agreed-to-CC0" class="featured-label">
+            <input type="radio" id="agreed-to-CC0" name="cc0-agreement" value="agreed-to-CC0"/>
+             By choosing this option, I am agreeing to release this data under the Creative Commons Zero (CC0) waiver.
+        </label>
+        <label for="submit-without-CC0" class="featured-label">
+            <input type="radio" id="submit-without-CC0" name="cc0-agreement" value="submit-without-CC0"/>
+            I'm unable to secure the authors' permission for the CC0 waiver, but would like to contribute this study anyway.
         </label>
     </div>
   </form>
