@@ -2,6 +2,8 @@
 import re
 from gluon.tools import prettydate
 from gluon.contrib.markdown.markdown2 import markdown
+import requests
+import os.path
 
 dbco = db.plugin_localcomments_comment
 
@@ -341,3 +343,112 @@ def index():
                         A(T('close'),_class='close',_href='#',_style='float:right; padding-right: 6px'),
                         _method='post',_action=URL(r=request,args=[])),_class='reply'),
                SUL(*[node(comment) for comment in thread[0]]),_class='plugin_localcomments')
+
+#
+# Perform basic CRUD for local comments, using GitHub Issues API
+#
+GH_BASE_URL = 'https://api.github.com'
+oauth_token_path = os.path.expanduser('~/.ssh/OPENTREEAPI_OAUTH_TOKEN')
+try:
+    OPENTREEAPI_AUTH_TOKEN = open(oauth_token_path).read().strip()
+except:
+    OPENTREEAPI_AUTH_TOKEN = ''
+    print("OAuth token (%s) not found!" % oauth_token_path)
+GH_AUTH_HEADERS = {'Authorization': ('token %s' % OPENTREEAPI_AUTH_TOKEN)}
+GH_POST_HEADERS = {'Content-Type': 'application/json"'}
+
+def add_or_update_comment():
+    # new issue, or comment on an existing one (based on args)
+    # WATCH for accidental creation of bogus labels!
+    url = '{}/repos/OpenTreeOfLife/feedback/issues' 
+    comment_data = {
+        "title": "Test issue from API",
+        "body":"I assume __markdown__ is OK here...?", 
+        "labels": ["invalid", "bug report"]
+    }
+    requests.post(url)
+
+def delete_comment():
+    # delete a comment on GitHub, or close a thread (issue)
+    pass
+
+def get_local_comments():
+    # Use the Search API to get all comments for this location. 
+    # See https://developer.github.com/v3/search/#search-issues
+    search_text = 'test' # TODO: build and encode this?
+    url = ('{}/search/issues?q={}repo:OpenTreeOfLife%2Ffeedback&sort=created&order=asc'
+            % (GH_BASE_URL, search_text and (search_text+'+') or '',))
+    # TODO: sort out some API issues here (adding search text makes zero results!?)
+    print(url)
+
+# Build and parse metadata for comments (stored as markdown in GitHub). 
+# The full footer is used for a thread starter (GitHub issue), while replies
+# (appended GitHub comments) use an abbreviated version.
+
+full_footer = """
+================================================
+Metadata   |   Do not edit below this line
+:------------|:----------
+Author   |   %(Author)s
+Claimed Expertise   |   %(Claimed Expertise)s
+Upvotes   |   %(Upvotes)d
+URL   |   %(URL)s  
+Target node label   |   %(Target node label)s
+Synthetic tree id   |   %(Synthetic tree id)s
+Synthetic tree node id   |   %(Synthetic tree node id)s
+Source tree id   |   %(Source tree id)s
+Source tree node id   |   %(Source tree node id)s
+Open Tree Taxonomy id   |   %(Open Tree Taxonomy id)s
+Intended scope   |   %(Intended scope)s
+"""
+reply_footer = """
+================================================
+Metadata   |   Do not edit below this line
+:------------|:----------
+Author   |   %(Author)s
+Claimed Expertise   |   %(Claimed Expertise)s
+Upvotes   |   %(Upvotes)s
+"""
+
+def build_comment_metadata_footer(metadata={}):
+    # build full footer (for starter) or abbreviated (for replies), 
+    # and return the string
+    if 'Intended scope' in metadata:
+        # it's a thread starter (a proper GitHub issue)
+        footer_template = full_footer
+    else:
+        # it's a reply (GitHub comment)
+        footer_template = reply_footer
+    footer = footer_template % metadata
+
+def parse_comment_metadata(comment_body):
+    # extract metadata from comment body, return as dict
+    metadata = { }
+    looking_for_footer = True
+    for line in comment_body.split('\n'):
+        if looking_for_footer:
+            if line.startswith('Metadata   |   '):
+                looking_for_footer = False
+        else:
+            try:
+                key, value = line.split('|')
+            except ValueError:
+                # we're past the footer?
+                break
+            key = key.strip()
+            value = value.strip()
+            if key.startswith(':---'):
+                # skip this divider row
+                continue
+            metadata[key] = value
+    return metadata
+
+def get_visible_comment_body(comment_body):
+    # discard the footer (starting at line '=========...')
+    visible_lines = [ ]
+    for line in comment_body.split('\n'):
+        if line.startswith('======='):
+            break
+        visible_lines.append(line)
+    return '\n'.join(visible_lines)
+    

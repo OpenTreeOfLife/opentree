@@ -203,7 +203,7 @@ function push_opentree {
     if [ -r $keyfile ]; then
         rsync -pr -e "${SSH}" $keyfile "$OT_USER@$OPENTREE_HOST":repo/opentree/webapp/private/janrain.key
     else
-	echo "Cannot find janrain key file $keyfile"
+        echo "Cannot find janrain key file $keyfile"
     fi
     # place the file with secret GitHub API key 
     # N.B. This includes the final domain name, since we'll need different keys for dev.opentreeoflife.org, www.opentreeoflife.org, etc.
@@ -211,7 +211,16 @@ function push_opentree {
     if [ -r $keyfile ]; then
         rsync -pr -e "${SSH}" $keyfile "$OT_USER@$OPENTREE_HOST":repo/opentree/curator/private/GITHUB_CLIENT_SECRET
     else
-	echo "Cannot find GITHUB_CLIENT_SECRET file $keyfile"
+        echo "Cannot find GITHUB_CLIENT_SECRET file $keyfile"
+    fi
+    # place an OAuth token for GitHub API by bot user 'opentreeapi'
+    # TODO: refactor to share this with push_api?
+    tokenfile=~/.ssh/opentree/OPENTREEAPI_OAUTH_TOKEN
+    if [ -r $tokenfile ]; then
+        rsync -pr -e "${SSH}" $tokenfile "$OT_USER@$OPENTREE_HOST":.ssh/OPENTREEAPI_OAUTH_TOKEN
+        ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/OPENTREEAPI_OAUTH_TOKEN
+    else
+        echo "Cannot find OPENTREEAPI_OAUTH_TOKEN file $tokenfile"
     fi
 }
 
