@@ -4,6 +4,7 @@ from gluon.tools import prettydate
 from gluon.contrib.markdown.markdown2 import markdown
 import requests
 import os.path
+import urllib
 
 dbco = db.plugin_localcomments_comment
 
@@ -24,7 +25,7 @@ function plugin_localcomments_init() {
        return false;
      });
 
-     // adjust UI for thread starters versus replies
+     // adjust UI for issues versus comments
      var threadParentID = $('.plugin_localcomments form').parent().prev().attr('id').split('r')[1];
      console.log('threadParentID:'+ threadParentID);
      var isThreadStarter = threadParentID == 0;
@@ -229,43 +230,56 @@ def index():
     feedback_type = request.vars['feedback_type'] # used for new comments
     intended_scope = request.vars['intended_scope'] # used for new comments
     claims_expertise = request.vars['claimed_expertise'] # used for new comments
-    thread = {0:[]}
+    threads = [ ]
     def node(comment):
-        if not comment.deleted:
-            #return T('COMMENT')
-            return LI(
-                DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
+        print("building node for comment id={0}...".format(comment['id']))
+
+        # preload its comments (a separate API call)
+        child_comments = [ ]
+        if comment.get('comments') and comment.get('comments') > 0:
+            get_children_url = comment['comments_url']
+            resp = requests.get( get_children_url, headers=GH_AUTH_HEADERS)
+            # print(resp)
+            resp.raise_for_status()
+            try:
+                child_comments = resp.json()
+            except:
+                child_comments = resp.json
+            print("found {0} child comments".format(len(child_comments)))
+
+        metadata = parse_comment_metadata(comment['body'])
+        try:   # TODO: if not comment.deleted:
+            markup = LI(
+                    DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
-                    DIV( XML(markdown(comment.body or ''), sanitize=True),_class='body'),
-                    DIV(T('%s ',comment.created_by.first_name),T('%s',comment.created_by.last_name), 
+                    DIV( XML(markdown(comment['body'] or '').encode('utf-8'), sanitize=True),_class='body'),
+                    DIV(
+                        A(T(comment['user']['login'].encode('utf-8')), _href=comment['user']['html_url'].encode('utf-8'), _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
-                        SPAN(' ',comment.feedback_type,' ',_class='badge') if comment.feedback_type else '',
-                        SPAN(' ',comment.intended_scope,' ',_class='badge') if comment.intended_scope else '',
-                        T(' - %s',prettydate(comment.created_on,T)),
+                        SPAN(' ',metadata.get('Feedback type').encode('utf-8'),' ',_class='badge') if metadata.get('Feedback type') else '',
+                        SPAN(' ',metadata.get('Intended scope').encode('utf-8'),' ',_class='badge') if metadata.get('Intended scope') else '',
+                        T(' - %s',prettydate(comment['created_at'],T)),
                         SPAN(
                             A(T('hide replies'),_class='toggle',_href='#'),
                             SPAN(' | ') if auth.user_id else '',
                             A(T('reply'),_class='reply',_href='#') if auth.user_id else '',
-                            SPAN(' | ') if comment.created_by == auth.user_id else '',
-                            A(T('delete'),_class='delete',_href='#') if comment.created_by == auth.user_id else '',
+                            SPAN(' | ') if comment['user']['login'] == auth.user_id else '',
+                            A(T('delete'),_class='delete',_href='#') if comment['user']['login'].encode('utf-8') == auth.user_id else '',
                         _class='controls'),
                     _class='byline'),
-                    _id='r%s' % comment.id),
+                    _id='r%s' % comment['id']),
                 DIV(_class='reply'),
                 # child messages (toggle hides/shows these)
-                SUL(*[node(comment) for comment in thread.get(comment.id,[])])
+                SUL(*[node(comment) for comment in child_comments])
                 )
-        elif comment.id in thread:
-            return LI(
-                DIV(SPAN(T('[deleted comment]'),_class='body'),' ',
-                    SPAN(
-                        A(T('hide replies'),_class='toggle',_href='#'),
-                    _class='controls'),
-                _class='deleted'),
-                DIV(_class='reply'),
-                SUL(*[node(comment) for comment in thread.get(comment.id,[])]))
-        else: 
-            return None
+            print('generated this markup:')
+            from pprint import pprint
+            pprint(markup)
+            return markup
+        except:
+            import sys
+            print "Unexpected error:", sys.exc_info()[0]
+            raise
 
     if thread_parent_id == 'delete':
         # delete the specified comment ... ADD(dbco.url==url)?
@@ -296,8 +310,15 @@ def index():
         return node(item)                
 
     # retrieve related comments, based on the chosen filter
+    print("retrieving local comments using this filter:")
+    print(filter)
     if filter == 'synthtree_id,synthtree_node_id':
-        comments = db((dbco.synthtree_id==synthtree_id) & (dbco.synthtree_node_id==synthtree_node_id)).select(orderby=~dbco.created_on)
+        #comments = db((dbco.synthtree_id==synthtree_id) & (dbco.synthtree_node_id==synthtree_node_id)).select(orderby=~dbco.created_on)
+        comments = get_local_comments({})
+        ##TODO: 
+        ##comments = get_local_comments({
+        ##    "Synthetic tree id": synthtree_id, 
+        ##    "Synthetic tree node id": synthtree_node_id})
     elif filter == 'sourcetree_id,sourcetree_node_id':
         comments = db((dbco.sourcetree_id==sourcetree_id) & (dbco.sourcetree_node_id==sourcetree_node_id)).select(orderby=~dbco.created_on)
     elif filter == 'ottol_id':
@@ -306,7 +327,10 @@ def index():
         comments = db(dbco.url==url).select(orderby=~dbco.created_on)
 
     for comment in comments:
-        thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
+        #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
+        threads.append(comment)
+    from pprint import pprint
+    pprint('{0} threads loaded'.format(len(threads)))
     return DIV(script,
                DIV(
                    A(T('Add a comment'),_class='reply',_href='#') if auth.user_id \
@@ -342,7 +366,7 @@ def index():
                         SPAN(' | ',_style='float:right; padding-right: 6px'),
                         A(T('close'),_class='close',_href='#',_style='float:right; padding-right: 6px'),
                         _method='post',_action=URL(r=request,args=[])),_class='reply'),
-               SUL(*[node(comment) for comment in thread[0]]),_class='plugin_localcomments')
+               SUL(*[node(comment) for comment in threads]),_class='plugin_localcomments')
 
 #
 # Perform basic CRUD for local comments, using GitHub Issues API
@@ -372,14 +396,37 @@ def delete_comment():
     # delete a comment on GitHub, or close a thread (issue)
     pass
 
-def get_local_comments():
+def get_local_comments(location={}):
     # Use the Search API to get all comments for this location. 
     # See https://developer.github.com/v3/search/#search-issues
-    search_text = 'test' # TODO: build and encode this?
-    url = ('{}/search/issues?q={}repo:OpenTreeOfLife%2Ffeedback&sort=created&order=asc'
-            % (GH_BASE_URL, search_text and (search_text+'+') or '',))
+    print('get_local_comments! building search_text:')
+    search_text = '' # TODO: build and encode this?
+    for k,v in location.items():
+        search_text = '{0}"{1} | {2} " '.format( search_text, k, v )
+        print search_text
+    search_text = urllib.quote_plus(search_text.encode('utf-8'), safe='~')
+    print("FINAL search_text (UTF-8, encoded):")
+    print search_text
+    url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback&sort=created&order=asc'
+    ##TODO: search only within body, and return only open issues
+    ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
+    url = url.format(GH_BASE_URL, search_text)
     # TODO: sort out some API issues here (adding search text makes zero results!?)
     print(url)
+    resp = requests.get( url, headers=GH_AUTH_HEADERS)
+    print(resp)
+    resp.raise_for_status()
+    try:
+        results = resp.json()
+    except:
+        results = resp.json
+    from pprint import pprint
+    pprint(results)
+    print("Returned {0} issues ({1})".format(
+        results["total_count"],
+        results["incomplete_results"] and 'INCOMPLETE' or 'COMPLETE'
+        ))
+    return results['items']
 
 # Build and parse metadata for comments (stored as markdown in GitHub). 
 # The full footer is used for a thread starter (GitHub issue), while replies
@@ -389,25 +436,26 @@ full_footer = """
 ================================================
 Metadata   |   Do not edit below this line
 :------------|:----------
-Author   |   %(Author)s
-Claimed Expertise   |   %(Claimed Expertise)s
-Upvotes   |   %(Upvotes)d
-URL   |   %(URL)s  
-Target node label   |   %(Target node label)s
-Synthetic tree id   |   %(Synthetic tree id)s
-Synthetic tree node id   |   %(Synthetic tree node id)s
-Source tree id   |   %(Source tree id)s
-Source tree node id   |   %(Source tree node id)s
-Open Tree Taxonomy id   |   %(Open Tree Taxonomy id)s
-Intended scope   |   %(Intended scope)s
+Author   |   %(Author)s 
+Claimed Expertise   |   %(Claimed Expertise)s 
+Upvotes   |   %(Upvotes)d 
+Feedback type   |   %(Feedback type)s 
+URL   |   %(URL)s 
+Target node label   |   %(Target node label)s 
+Synthetic tree id   |   %(Synthetic tree id)s 
+Synthetic tree node id   |   %(Synthetic tree node id)s 
+Source tree id   |   %(Source tree id)s 
+Source tree node id   |   %(Source tree node id)s 
+Open Tree Taxonomy id   |   %(Open Tree Taxonomy id)s 
+Intended scope   |   %(Intended scope)s 
 """
 reply_footer = """
 ================================================
 Metadata   |   Do not edit below this line
 :------------|:----------
-Author   |   %(Author)s
-Claimed Expertise   |   %(Claimed Expertise)s
-Upvotes   |   %(Upvotes)s
+Author   |   %(Author)s 
+Claimed Expertise   |   %(Claimed Expertise)s 
+Upvotes   |   %(Upvotes)s 
 """
 
 def build_comment_metadata_footer(metadata={}):
