@@ -5,6 +5,7 @@ from gluon.contrib.markdown.markdown2 import markdown
 import requests
 import os.path
 import urllib
+from datetime import datetime
 
 dbco = db.plugin_localcomments_comment
 
@@ -232,33 +233,31 @@ def index():
     claims_expertise = request.vars['claimed_expertise'] # used for new comments
     threads = [ ]
     def node(comment):
-        print("building node for comment id={0}...".format(comment['id']))
-
+        ##print("building node for comment id={0}...".format(comment['id']))
         # preload its comments (a separate API call)
         child_comments = [ ]
         if comment.get('comments') and comment.get('comments') > 0:
             get_children_url = comment['comments_url']
             resp = requests.get( get_children_url, headers=GH_AUTH_HEADERS)
-            # print(resp)
             resp.raise_for_status()
             try:
                 child_comments = resp.json()
             except:
                 child_comments = resp.json
-            print("found {0} child comments".format(len(child_comments)))
+            ##print("found {0} child comments".format(len(child_comments)))
 
         metadata = parse_comment_metadata(comment['body'])
         try:   # TODO: if not comment.deleted:
             markup = LI(
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
-                    DIV( XML(markdown(comment['body'] or '').encode('utf-8'), sanitize=True),_class='body'),
+                    DIV( XML(markdown(get_visible_comment_body(comment['body'] or '')).encode('utf-8'), sanitize=False),_class='body'),
                     DIV(
                         A(T(comment['user']['login'].encode('utf-8')), _href=comment['user']['html_url'].encode('utf-8'), _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
                         SPAN(' ',metadata.get('Feedback type').encode('utf-8'),' ',_class='badge') if metadata.get('Feedback type') else '',
                         SPAN(' ',metadata.get('Intended scope').encode('utf-8'),' ',_class='badge') if metadata.get('Intended scope') else '',
-                        T(' - %s',prettydate(comment['created_at'],T)),
+                        T(' - %s',prettydate(datetime.strptime(comment['created_at'],'%Y-%m-%dT%H:%M:%SZ'),T)),
                         SPAN(
                             A(T('hide replies'),_class='toggle',_href='#'),
                             SPAN(' | ') if auth.user_id else '',
@@ -272,9 +271,6 @@ def index():
                 # child messages (toggle hides/shows these)
                 SUL(*[node(comment) for comment in child_comments])
                 )
-            print('generated this markup:')
-            from pprint import pprint
-            pprint(markup)
             return markup
         except:
             import sys
@@ -329,8 +325,8 @@ def index():
     for comment in comments:
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
         threads.append(comment)
-    from pprint import pprint
-    pprint('{0} threads loaded'.format(len(threads)))
+    ##from pprint import pprint
+    ##pprint('{0} threads loaded'.format(len(threads)))
     return DIV(script,
                DIV(
                    A(T('Add a comment'),_class='reply',_href='#') if auth.user_id \
@@ -399,14 +395,14 @@ def delete_comment():
 def get_local_comments(location={}):
     # Use the Search API to get all comments for this location. 
     # See https://developer.github.com/v3/search/#search-issues
-    print('get_local_comments! building search_text:')
-    search_text = '' # TODO: build and encode this?
+    # build and encode search text (location "filter")
+    search_text = '' 
     for k,v in location.items():
         search_text = '{0}"{1} | {2} " '.format( search_text, k, v )
         print search_text
     search_text = urllib.quote_plus(search_text.encode('utf-8'), safe='~')
-    print("FINAL search_text (UTF-8, encoded):")
-    print search_text
+    ## print("FINAL search_text (UTF-8, encoded):")
+    ## print search_text
     url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback&sort=created&order=asc'
     ##TODO: search only within body, and return only open issues
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
@@ -414,14 +410,14 @@ def get_local_comments(location={}):
     # TODO: sort out some API issues here (adding search text makes zero results!?)
     print(url)
     resp = requests.get( url, headers=GH_AUTH_HEADERS)
-    print(resp)
+    ##print(resp)
     resp.raise_for_status()
     try:
         results = resp.json()
     except:
         results = resp.json
-    from pprint import pprint
-    pprint(results)
+    ##from pprint import pprint
+    ##pprint(results)
     print("Returned {0} issues ({1})".format(
         results["total_count"],
         results["incomplete_results"] and 'INCOMPLETE' or 'COMPLETE'
