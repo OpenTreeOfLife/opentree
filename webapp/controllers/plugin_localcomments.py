@@ -6,6 +6,7 @@ import requests
 import os.path
 import urllib
 from datetime import datetime
+import json
 
 dbco = db.plugin_localcomments_comment
 
@@ -27,17 +28,23 @@ function plugin_localcomments_init() {
      });
 
      // adjust UI for issues versus comments
-     var threadParentID = $('.plugin_localcomments form').parent().prev().attr('id').split('r')[1];
+     var threadParentID = 0;
+     var $parentIssueContainer = $('.plugin_localcomments form').closest('li.issue');
+     if ($parentIssueContainer.length > 0) {
+         threadParentID = $parentIssueContainer.find('div:eq(0)').attr('id').split('r')[1];
+     }
      console.log('threadParentID:'+ threadParentID);
      var isThreadStarter = threadParentID == 0;
      if (isThreadStarter) {
          //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'General comment' );
          jQuery('div.plugin_localcomments select[name=feedback_type]').show();
          jQuery('div.plugin_localcomments select[name=intended_scope]').show();
+         jQuery('div.plugin_localcomments select[name=issue_title]').show();
      } else {
          //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'Reply or general comment' );
          jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
          jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
+         jQuery('div.plugin_localcomments select[name=issue_title]').hide();
      }
      // always hide expertise checkbox and surrounding label (not currently needed)
      jQuery('div.plugin_localcomments label.expertise-option').hide();
@@ -54,6 +61,7 @@ function plugin_localcomments_init() {
                'sourcetree_node_id': $form.find('input[name="sourcetree_node_id"]').val(),
                'ottol_id': $form.find('input[name="ottol_id"]').val(),
                'url': $form.find('input[name="url"]').val(),
+               'title': $form.find('input[name="issue_title"]').val(),
                'body': $form.find('textarea[name="body"]').val(),
                'feedback_type': $form.find('select[name="feedback_type"]').val(),
                'intended_scope': $form.find('select[name="intended_scope"]').val(),
@@ -230,47 +238,54 @@ def index():
     comment_id = request.vars['comment_id'] # used for some operations (eg, delete)
     feedback_type = request.vars['feedback_type'] # used for new comments
     intended_scope = request.vars['intended_scope'] # used for new comments
+    issue_title = request.vars['title'] # used for new issues (threads)
     claims_expertise = request.vars['claimed_expertise'] # used for new comments
     threads = [ ]
     def node(comment):
-        ##print("building node for comment id={0}...".format(comment['id']))
+        print("building node for comment id={0}...".format(comment.get('number', comment['id'])))
         # preload its comments (a separate API call)
         child_comments = [ ]
         if comment.get('comments') and comment.get('comments') > 0:
             get_children_url = comment['comments_url']
-            resp = requests.get( get_children_url, headers=GH_AUTH_HEADERS)
+            resp = requests.get( get_children_url, headers=GH_GET_HEADERS)
             resp.raise_for_status()
             try:
                 child_comments = resp.json()
             except:
                 child_comments = resp.json
-            ##print("found {0} child comments".format(len(child_comments)))
+            print("found {0} child comments".format(len(child_comments)))
 
         metadata = parse_comment_metadata(comment['body'])
+        print(metadata)
         try:   # TODO: if not comment.deleted:
+            # Is this node for an issue (thread starter) or a comment (reply)?
+            issue_node = 'number' in comment
+            #import pdb; pdb.set_trace()
             markup = LI(
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
+                    ('title' in comment) and DIV( comment['title'], A(T('on GitHub'), _href=comment['html_url'], _target='_blank'), _class='topic-title') or '',
                     DIV( XML(markdown(get_visible_comment_body(comment['body'] or '')).encode('utf-8'), sanitize=False),_class='body'),
                     DIV(
-                        A(T(comment['user']['login'].encode('utf-8')), _href=comment['user']['html_url'].encode('utf-8'), _target='_blank'),
+                        A(T(comment['user']['login']), _href=comment['user']['html_url'], _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
-                        SPAN(' ',metadata.get('Feedback type').encode('utf-8'),' ',_class='badge') if metadata.get('Feedback type') else '',
-                        SPAN(' ',metadata.get('Intended scope').encode('utf-8'),' ',_class='badge') if metadata.get('Intended scope') else '',
-                        T(' - %s',prettydate(datetime.strptime(comment['created_at'],'%Y-%m-%dT%H:%M:%SZ'),T)),
+                        SPAN(' ',metadata.get('Feedback type'),' ',_class='badge') if metadata.get('Feedback type') else '',
+                        SPAN(' ',metadata.get('Intended scope'),' ',_class='badge') if metadata.get('Intended scope') else '',
+                        T(' - %s',prettydate(utc_to_local(datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)),T)),
                         SPAN(
                             A(T('hide replies'),_class='toggle',_href='#'),
                             SPAN(' | ') if auth.user_id else '',
                             A(T('reply'),_class='reply',_href='#') if auth.user_id else '',
                             SPAN(' | ') if comment['user']['login'] == auth.user_id else '',
-                            A(T('delete'),_class='delete',_href='#') if comment['user']['login'].encode('utf-8') == auth.user_id else '',
+                            A(T('delete'),_class='delete',_href='#') if comment['user']['login'] == auth.user_id else '',
                         _class='controls'),
                     _class='byline'),
-                    _id='r%s' % comment['id']),
+                    _id='r%s' % comment.get('number', comment['id']),
+                    _class='msg-wrapper'),
                 DIV(_class='reply'),
                 # child messages (toggle hides/shows these)
-                SUL(*[node(comment) for comment in child_comments])
-                )
+                child_comments and SUL(*[node(comment) for comment in child_comments]) or '',
+                _class=(issue_node and 'issue' or 'comment'))
             return markup
         except:
             import sys
@@ -279,6 +294,8 @@ def index():
 
     if thread_parent_id == 'delete':
         # delete the specified comment ... ADD(dbco.url==url)?
+        print("DELETE ISSUE? or COMMENT?")
+        print(thread_parent_id)
         if db(dbco.created_by==auth.user_id)\
                 (dbco.id==comment_id).update(deleted=True):
             return 'deleted'
@@ -286,24 +303,85 @@ def index():
             return error()
     elif thread_parent_id:
         # add a new comment using the submitted vars
+        print("thread_parent_id, ADD ISSUE? or COMMENT?")
+        print(thread_parent_id)
         if not request.vars.body or not auth.user_id:
+            print('BODY:')
+            print(request.vars.body)
+            print('USER_ID:')
+            print(auth.user_id)
+            print('MISSING BODY OR USER_ID')
             return error()
-        dbco.thread_parent_id.default = thread_parent_id
-        dbco.synthtree_id.default = synthtree_id
-        dbco.synthtree_node_id.default = synthtree_node_id
-        dbco.sourcetree_id.default = sourcetree_id
-        dbco.sourcetree_node_id.default = sourcetree_node_id
-        dbco.ottol_id.default = ottol_id
-        # TODO: normalize URLs to handle trailing '/', fragments, etc.
-        dbco.url.default = url.strip()
-        dbco.created_by.default = auth.user_id
-        dbco.feedback_type.default = feedback_type
-        dbco.intended_scope.default = intended_scope
-        dbco.claimed_expertise.default = claims_expertise
-        if len(re.compile('\s+').sub('',request.vars.body))<1:
-            return ''
-        item = dbco.insert(body=request.vars.body.strip())
-        return node(item)                
+
+        if (thread_parent_id == '0'):
+            # create a new issue (thread starter)
+            print("ADD AN ISSUE")
+            msg_body = request.vars.body
+            if len(re.compile('\s+').sub('',msg_body))<1:
+                return ''
+            # add full metadata for an issue 
+            print("BUILDING FOOTER:")
+            footer = build_comment_metadata_footer(metadata={
+                "Author": auth.user_id,
+                "Upvotes": 0,
+                "URL": url.strip(),
+                "Target node label": '',
+                "Synthetic tree id": synthtree_id,
+                "Synthetic tree node id": synthtree_node_id,
+                "Source tree id": sourcetree_id,
+                "Source tree node id": sourcetree_node_id,
+                "Open Tree Taxonomy id": ottol_id,
+                "Intended scope": intended_scope
+            })
+            print("DONE BUILDING FOOTER:")
+            msg_data = {
+                "title": issue_title,
+                "body": "{0}\n{1}".format(msg_body, footer),
+                "labels": [ ]
+            }
+            if feedback_type:
+                # omit an empty value here!
+                msg_data['labels'].append(feedback_type)
+                
+            print("DONE BUILDING MSG_DATA, calling add_or_update")
+            new_msg = add_or_update_issue(msg_data)
+            print("BACK FROM add_or_update")
+        else:
+            # attach this comment to an existing issue
+            print("ADD A COMMENT")
+            msg_body = request.vars.body
+            if len(re.compile('\s+').sub('',msg_body))<1:
+                return ''
+            # add abbreviated metadata for a comment
+            print("BUILDING FOOTER:")
+            footer = build_comment_metadata_footer(metadata={
+                "Author" : auth.user,
+                "Upvotes" : 0,
+            })
+            msg_data = {
+                "body": "{0}\n{1}".format(msg_body, footer)
+            }
+            new_msg = add_or_update_comment(msg_data, parent_issue_id=thread_parent_id)
+
+        #dbco.thread_parent_id.default = thread_parent_id
+        #dbco.synthtree_id.default = synthtree_id
+        #dbco.synthtree_node_id.default = synthtree_node_id
+        #dbco.sourcetree_id.default = sourcetree_id
+        #dbco.sourcetree_node_id.default = sourcetree_node_id
+        #dbco.ottol_id.default = ottol_id
+        ## TODO: normalize URLs to handle trailing '/', fragments, etc.
+        #dbco.url.default = url.strip()
+        #dbco.created_by.default = auth.user_id
+        #dbco.feedback_type.default = feedback_type
+        #dbco.intended_scope.default = intended_scope
+        #dbco.claimed_expertise.default = claims_expertise
+        #if len(re.compile('\s+').sub('',request.vars.body))<1:
+        #    return ''
+        #item = dbco.insert(body=request.vars.body.strip())
+        # submit for rendering as a "node" in comment list
+        print("TODO: BUILD A NODE...")
+        print(new_msg)
+        return node(new_msg)                
 
     # retrieve related comments, based on the chosen filter
     print("retrieving local comments using this filter:")
@@ -329,8 +407,8 @@ def index():
     ##pprint('{0} threads loaded'.format(len(threads)))
     return DIV(script,
                DIV(
-                   A(T('Add a comment'),_class='reply',_href='#') if auth.user_id \
-                   else A(T('Add a comment'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
+                   A(T('Add a new topic'),_class='reply',_href='#') if auth.user_id \
+                   else A(T('Add a new topic'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
                _id='r0'),
                DIV(FORM(SELECT(
                             OPTION('What kind of feedback is this?', _value=''),
@@ -347,7 +425,8 @@ def index():
                             OPTION('general feedback (none of the above)', _value=''),
                         _name='intended_scope', value='synthtree'),
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
-                        TEXTAREA(_name='body'),
+                        INPUT(_type='text',_name='issue_title',_value='',_placeholder="Give this topic a title"),   # should appear for proper issues only
+                        TEXTAREA(_name='body',_placeholder="Add more text on this topic, using Markdown (click 'help' below to learn more)."),
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
                         INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
@@ -357,7 +436,7 @@ def index():
                         # INPUT(_type='text',_name='thread_parent_id',_value=0),   # we'll get this from a nearby id, eg 'r8'
                         BR(),
                         INPUT(_type='submit',_value=T('post'),_style='float:right'), 
-                        A(T('help'),_href='http://daringfireball.net/projects/markdown/',
+                        A(T('help'),_href='https://help.github.com/articles/markdown-basics',
                           _target='_blank',_style='float:right; padding-right: 10px'),
                         SPAN(' | ',_style='float:right; padding-right: 6px'),
                         A(T('close'),_class='close',_href='#',_style='float:right; padding-right: 6px'),
@@ -374,19 +453,75 @@ try:
 except:
     OPENTREEAPI_AUTH_TOKEN = ''
     print("OAuth token (%s) not found!" % oauth_token_path)
-GH_AUTH_HEADERS = {'Authorization': ('token %s' % OPENTREEAPI_AUTH_TOKEN)}
-GH_POST_HEADERS = {'Content-Type': 'application/json"'}
 
-def add_or_update_comment():
-    # new issue, or comment on an existing one (based on args)
+# Specify the media-type from GitHub, to freeze v3 API responses and get
+# the comment body as markdown (vs. plaintext or HTML)
+PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json'
+# to get markdown AND html body, use 'application/vnd.github.v3.full+json'
+
+GH_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+GH_GET_HEADERS = {'Authorization': ('token %s' % OPENTREEAPI_AUTH_TOKEN),
+                  'Accept': PREFERRED_MEDIA_TYPE}
+GH_POST_HEADERS = {'Authorization': ('token %s' % OPENTREEAPI_AUTH_TOKEN),
+                   'Content-Type': 'application/json',
+                   'Accept': PREFERRED_MEDIA_TYPE}
+
+def add_or_update_issue(msg_data, issue_id=None):
     # WATCH for accidental creation of bogus labels!
-    url = '{}/repos/OpenTreeOfLife/feedback/issues' 
-    comment_data = {
-        "title": "Test issue from API",
-        "body":"I assume __markdown__ is OK here...?", 
-        "labels": ["invalid", "bug report"]
-    }
-    requests.post(url)
+    from pprint import pprint
+    pprint(msg_data)
+    if issue_id:
+        # edit an existing issue via the GitHub API
+        url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}'.format(GH_BASE_URL)
+        resp = requests.patch( url, 
+            headers=GH_POST_HEADERS,
+            data=json.dumps(msg_data)
+        )
+    else:
+        # create a new issue
+        url = '{0}/repos/OpenTreeOfLife/feedback/issues'.format(GH_BASE_URL)
+        resp = requests.post( url, 
+            headers=GH_POST_HEADERS,
+            data=json.dumps(msg_data)
+        )
+    pprint(resp)
+    try:
+        new_msg = resp.json()
+    except:
+        new_msg = resp.json
+    pprint(new_msg)
+    resp.raise_for_status()
+    return new_msg
+
+
+def add_or_update_comment(msg_data, comment_id=None, parent_issue_id=None ):
+    # comment on an existing issue via the GitHub API
+    if comment_id:
+        # edit an existing comment
+        url = '{0}/repos/OpenTreeOfLife/feedback/issues/comments/{1}'.format(GH_BASE_URL, comment_id)
+        print('URL for editing an existing comment:')
+        print(url)
+        resp = requests.patch( url, 
+            headers=GH_POST_HEADERS,
+            data=json.dumps(msg_data)
+        )
+    else:
+        # create a new comment
+        url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}/comments'.format(GH_BASE_URL, parent_issue_id)
+        print('URL for adding a new comment:')
+        print(url)
+        resp = requests.post( url, 
+            headers=GH_POST_HEADERS,
+            data=json.dumps(msg_data)
+        )
+    from pprint import pprint
+    pprint(resp)
+    resp.raise_for_status()
+    try:
+        new_msg = resp.json()
+    except:
+        new_msg = resp.json
+    return new_msg
 
 def delete_comment():
     # delete a comment on GitHub, or close a thread (issue)
@@ -409,7 +544,7 @@ def get_local_comments(location={}):
     url = url.format(GH_BASE_URL, search_text)
     # TODO: sort out some API issues here (adding search text makes zero results!?)
     print(url)
-    resp = requests.get( url, headers=GH_AUTH_HEADERS)
+    resp = requests.get( url, headers=GH_GET_HEADERS)
     ##print(resp)
     resp.raise_for_status()
     try:
@@ -433,9 +568,7 @@ full_footer = """
 Metadata   |   Do not edit below this line
 :------------|:----------
 Author   |   %(Author)s 
-Claimed Expertise   |   %(Claimed Expertise)s 
 Upvotes   |   %(Upvotes)d 
-Feedback type   |   %(Feedback type)s 
 URL   |   %(URL)s 
 Target node label   |   %(Target node label)s 
 Synthetic tree id   |   %(Synthetic tree id)s 
@@ -450,9 +583,13 @@ reply_footer = """
 Metadata   |   Do not edit below this line
 :------------|:----------
 Author   |   %(Author)s 
-Claimed Expertise   |   %(Claimed Expertise)s 
 Upvotes   |   %(Upvotes)s 
 """
+
+# TODO: Restore the expertise flag to both footers?
+#   Claimed Expertise   |   %(Claimed Expertise)s 
+# TODO: Move 'Feedback type' from labels to footer?
+#   Feedback type   |   %(Feedback type)s 
 
 def build_comment_metadata_footer(metadata={}):
     # build full footer (for starter) or abbreviated (for replies), 
@@ -463,7 +600,7 @@ def build_comment_metadata_footer(metadata={}):
     else:
         # it's a reply (GitHub comment)
         footer_template = reply_footer
-    footer = footer_template % metadata
+    return footer_template % metadata
 
 def parse_comment_metadata(comment_body):
     # extract metadata from comment body, return as dict
@@ -496,3 +633,13 @@ def get_visible_comment_body(comment_body):
         visible_lines.append(line)
     return '\n'.join(visible_lines)
     
+# Time-zone converstion from UTC to local time (needed for GitHub date-strings),
+# adapted from code found here: http://stackoverflow.com/a/13287083
+import calendar
+from datetime import datetime, timedelta
+def utc_to_local(utc_dt):
+    # get integer timestamp to avoid precision lost
+    timestamp = calendar.timegm(utc_dt.timetuple())
+    local_dt = datetime.fromtimestamp(timestamp)
+    assert utc_dt.resolution >= timedelta(microseconds=1)
+    return local_dt.replace(microsecond=utc_dt.microsecond)
