@@ -20,6 +20,7 @@ div.plugin_localcomments .byline .controls {
 }
 .plugin_localcomments form {
     /* border: 1px dashed mint; */
+    margin-bottom: 12px;
 }
 .plugin_localcomments ul {
     list-style: none;
@@ -47,6 +48,10 @@ div.plugin_localcomments .byline .controls {
     font-weight: bold;
     font-size: 120%;
     overflow: hidden;
+}
+.plugin_localcomments .msg-footer {
+    padding: 4px;
+    text-align: right;
 }
 .plugin_localcomments ul .issue .topic-title a {
     font-weight: normal;
@@ -85,10 +90,18 @@ div.plugin_localcomments .byline .controls {
     margin: 4px 0 4px -10px;
 }
 .plugin_localcomments div.reply input[type='text'] {
+    width: 38%;
+    vertical-align: baseline;
+}
+/*
+.plugin_localcomments ul div.reply input[type='text'] {
+}
+*/
+.plugin_localcomments div.reply #issue_title {
     display: block;
     width: 98%;
 }
-.plugin_localcomments ul div.reply input[type='text'] {
+.plugin_localcomments ul div.reply #issue_title {
     display: none;
 }
 div.localcomments_moderation {

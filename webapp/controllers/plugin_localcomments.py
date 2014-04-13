@@ -22,7 +22,7 @@ var formhtml = null;
 function plugin_localcomments_init() {
   function delete_all_forms() { jQuery('div.plugin_localcomments div.reply').html(''); }
   function capture_form() {
-     jQuery('div.plugin_localcomments a.close').unbind('click').click(function(){
+     jQuery('div.plugin_localcomments a.msg-close').unbind('click').click(function(){
        delete_all_forms();
        return false;
      });
@@ -275,7 +275,7 @@ def index():
                         SPAN(
                             A(T('hide replies'),_class='toggle',_href='#'),
                             SPAN(' | ') if auth.user_id else '',
-                            A(T('reply'),_class='reply',_href='#') if auth.user_id else '',
+                            A(T('reply'),_class='reply',_href='#'),
                             SPAN(' | ') if comment['user']['login'] == auth.user_id else '',
                             A(T('delete'),_class='delete',_href='#') if comment['user']['login'] == auth.user_id else '',
                         _class='controls'),
@@ -404,10 +404,18 @@ def index():
     ##pprint('{0} threads loaded'.format(len(threads)))
     return DIV(script,
                DIV(
-                   A(T('Add a new topic'),_class='reply',_href='#') if auth.user_id \
+                   # disabling login requirement, at least for now..
+                   A(T('Add a new topic'),_class='reply',_href='#') if (True or auth.user_id) \
                    else A(T('Add a new topic'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
                _id='r0'),
-               DIV(FORM(SELECT(
+               DIV(FORM(# anonymous users should see be encouraged to login or add a name-or-email to their comments
+                        '' if auth.user_id else A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
+                        '' if auth.user_id else T(' or '),
+                        '' if auth.user_id else INPUT(_type='text',_id='anon_name',_name='anon_name',_value='',_placeholder="Enter your name"),
+                        '' if auth.user_id else T(' '),
+                        '' if auth.user_id else INPUT(_type='text',_id='anon_email',_name='anon_email',_value='',_placeholder="Your email (will be public)"),
+                        '' if auth.user_id else BR(),
+                        SELECT(
                             OPTION('What kind of feedback is this?', _value=''),
                             OPTION('Reply or general comment', _value=''),
                             OPTION('Reporting an error in phylogeny', _value='Error in phylogeny'),
@@ -422,8 +430,8 @@ def index():
                             OPTION('general feedback (none of the above)', _value=''),
                         _name='intended_scope', value='synthtree'),
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
-                        INPUT(_type='text',_name='issue_title',_value='',_placeholder="Give this topic a title"),   # should appear for proper issues only
-                        TEXTAREA(_name='body',_placeholder="Add more text on this topic, using Markdown (click 'help' below to learn more)."),
+                        INPUT(_type='text',_id='issue_title',_name='issue_title',_value='',_placeholder="Give this topic a title"),   # should appear for proper issues only
+                        TEXTAREA(_name='body',_placeholder="Add more text on this topic, using Markdown (click 'Markdown help' below to learn more)."),
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
                         INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
@@ -431,12 +439,12 @@ def index():
                         INPUT(_type='hidden',_name='ottol_id',_value=ottol_id),
                         INPUT(_type='hidden',_name='url',_value=url),
                         # INPUT(_type='text',_name='thread_parent_id',_value=0),   # we'll get this from a nearby id, eg 'r8'
-                        BR(),
-                        INPUT(_type='submit',_value=T('post'),_style='float:right'), 
-                        A(T('help'),_href='https://help.github.com/articles/markdown-basics',
-                          _target='_blank',_style='float:right; padding-right: 10px'),
-                        SPAN(' | ',_style='float:right; padding-right: 6px'),
-                        A(T('close'),_class='close',_href='#',_style='float:right; padding-right: 6px'),
+                        DIV(A(T('Close'),_class='msg-close',_href='#',_style='margin-right: 6px'),
+                            SPAN(' | ',_style='margin-right: 6px'),
+                            A(T('Markdown help'),_href='https://help.github.com/articles/markdown-basics',
+                              _target='_blank',_style='margin-right: 10px'),
+                            INPUT(_type='submit',_value=T('Post'),_class='btn',_style=''), 
+                            _class='msg-footer'),
                         _method='post',_action=URL(r=request,args=[])),_class='reply'),
                SUL(*[node(comment) for comment in threads]),_class='plugin_localcomments')
 
