@@ -88,6 +88,9 @@ div.plugin_localcomments .byline .controls {
     display: block;
     width: 98%;
 }
+.plugin_localcomments ul div.reply input[type='text'] {
+    display: none;
+}
 div.localcomments_moderation {
 }
 div.localcomments_moderation #moderation-header {

@@ -242,7 +242,7 @@ def index():
     claims_expertise = request.vars['claimed_expertise'] # used for new comments
     threads = [ ]
     def node(comment):
-        print("building node for comment id={0}...".format(comment.get('number', comment['id'])))
+        ##print("building node for comment id={0}...".format(comment.get('number', comment['id'])))
         # preload its comments (a separate API call)
         child_comments = [ ]
         if comment.get('comments') and comment.get('comments') > 0:
@@ -256,7 +256,7 @@ def index():
             print("found {0} child comments".format(len(child_comments)))
 
         metadata = parse_comment_metadata(comment['body'])
-        print(metadata)
+        ##print(metadata)
         try:   # TODO: if not comment.deleted:
             # Is this node for an issue (thread starter) or a comment (reply)?
             issue_node = 'number' in comment
@@ -303,24 +303,21 @@ def index():
             return error()
     elif thread_parent_id:
         # add a new comment using the submitted vars
-        print("thread_parent_id, ADD ISSUE? or COMMENT?")
-        print(thread_parent_id)
         if not request.vars.body or not auth.user_id:
-            print('BODY:')
-            print(request.vars.body)
-            print('USER_ID:')
-            print(auth.user_id)
             print('MISSING BODY OR USER_ID')
+            print('  BODY:')
+            print(request.vars.body)
+            print('  USER_ID:')
+            print(auth.user_id)
             return error()
 
         if (thread_parent_id == '0'):
             # create a new issue (thread starter)
-            print("ADD AN ISSUE")
+            ##print("ADD AN ISSUE")
             msg_body = request.vars.body
             if len(re.compile('\s+').sub('',msg_body))<1:
                 return ''
             # add full metadata for an issue 
-            print("BUILDING FOOTER:")
             footer = build_comment_metadata_footer(metadata={
                 "Author": auth.user_id,
                 "Upvotes": 0,
@@ -333,7 +330,6 @@ def index():
                 "Open Tree Taxonomy id": ottol_id,
                 "Intended scope": intended_scope
             })
-            print("DONE BUILDING FOOTER:")
             msg_data = {
                 "title": issue_title,
                 "body": "{0}\n{1}".format(msg_body, footer),
@@ -343,17 +339,15 @@ def index():
                 # omit an empty value here!
                 msg_data['labels'].append(feedback_type)
                 
-            print("DONE BUILDING MSG_DATA, calling add_or_update")
             new_msg = add_or_update_issue(msg_data)
-            print("BACK FROM add_or_update")
+            ##print("BACK FROM add_or_update")
         else:
             # attach this comment to an existing issue
-            print("ADD A COMMENT")
+            ##print("ADD A COMMENT")
             msg_body = request.vars.body
             if len(re.compile('\s+').sub('',msg_body))<1:
                 return ''
             # add abbreviated metadata for a comment
-            print("BUILDING FOOTER:")
             footer = build_comment_metadata_footer(metadata={
                 "Author" : auth.user,
                 "Upvotes" : 0,
@@ -379,8 +373,8 @@ def index():
         #    return ''
         #item = dbco.insert(body=request.vars.body.strip())
         # submit for rendering as a "node" in comment list
-        print("TODO: BUILD A NODE...")
-        print(new_msg)
+        ##print("TODO: BUILD A NODE...")
+        ##print(new_msg)
         return node(new_msg)                
 
     # retrieve related comments, based on the chosen filter
@@ -388,17 +382,20 @@ def index():
     print(filter)
     if filter == 'synthtree_id,synthtree_node_id':
         #comments = db((dbco.synthtree_id==synthtree_id) & (dbco.synthtree_node_id==synthtree_node_id)).select(orderby=~dbco.created_on)
-        comments = get_local_comments({})
-        ##TODO: 
-        ##comments = get_local_comments({
-        ##    "Synthetic tree id": synthtree_id, 
-        ##    "Synthetic tree node id": synthtree_node_id})
+        comments = get_local_comments({
+            "Synthetic tree id": synthtree_id, 
+            "Synthetic tree node id": synthtree_node_id})
     elif filter == 'sourcetree_id,sourcetree_node_id':
-        comments = db((dbco.sourcetree_id==sourcetree_id) & (dbco.sourcetree_node_id==sourcetree_node_id)).select(orderby=~dbco.created_on)
+        #comments = db((dbco.sourcetree_id==sourcetree_id) & (dbco.sourcetree_node_id==sourcetree_node_id)).select(orderby=~dbco.created_on)
+        comments = get_local_comments({
+            "Source tree id": sourcetree_id, 
+            "Source tree node id": sourcetree_node_id})
     elif filter == 'ottol_id':
-        comments = db(dbco.ottol_id==ottol_id).select(orderby=~dbco.created_on)
+        #comments = db(dbco.ottol_id==ottol_id).select(orderby=~dbco.created_on)
+        comments = get_local_comments({"Open Tree Taxonomy id": ottol_id})
     else:   # fall back to url
-        comments = db(dbco.url==url).select(orderby=~dbco.created_on)
+        #comments = db(dbco.url==url).select(orderby=~dbco.created_on)
+        comments = get_local_comments({"URL": url})
 
     for comment in comments:
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
