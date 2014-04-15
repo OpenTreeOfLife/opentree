@@ -31,8 +31,6 @@ Set its file permissions to 600.
 
 If running the API, put the private key for the github account somewhere, so that the API can push changes to study files out to github.
 
-The commenting feature in the main "tree explorer" web application uses [Janrain Social Login](http://janrain.com/product/social-login/) to support login via third parties like Facebook and Google. This requires another private file called 'janrain.key', which you can get by registering your app [here](https://dashboard.janrain.com/).
-
 Create one configuration file for each server.  A configuration is just a shell script that sets some variables.
 
 Run the setup script, which is called 'push.sh', as

@@ -110,8 +110,9 @@ fi
 # authentication purposes.  'hostname' doesn't work on EC2 instances,
 # so it has to be passed in as a parameter.
 
-# N.B. Another file 'janrain.key' with secret Janrain key was already placed via rsync (in push.sh)
-# Also another file 'GITHUB_CLIENT_SECRET'
+# N.B. Two other files with were already placed via rsync (in push.sh):
+#   curator/private/GITHUB_CLIENT_SECRET
+#   webapp/private/GITHUB_CLIENT_SECRET
 
 # ---- main webapp (opentree)
 
