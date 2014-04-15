@@ -153,8 +153,9 @@ function loadLocalComments( chosenFilter ) {
     }
 
     // update comment header (maybe again in the callback, when we have a name)
-    $('#comments-panel .provenance-intro').html('Comments for');
-    $('#comments-panel .provenance-title').html(commentLabel);
+    $('#comments-panel .provenance-intro').html('Comments');
+    // simplify this (since label is already prominent)
+    $('#comments-panel .provenance-title').html(commentLabel).hide();
     $('.plugin_localcomments').parent().load(
         '/opentree/plugin_localcomments',
         fetchArgs,  // determined above
@@ -163,11 +164,15 @@ function loadLocalComments( chosenFilter ) {
             fixLoginLinks();
             // update the comment count at the top of the page
             var howManyComments = $('.plugin_localcomments .body').length;
+            var howManyTopics = $('.plugin_localcomments .issue-body').length;
             $('#links-to-local-comments a:eq(0)').html(
                 'Comments on this node ('+ howManyComments +')'
             );
             $('#comment-count').html( howManyComments );;
-            $('#comments-panel .provenance-intro').html(howManyComments + ' comment'+ (howManyComments === 1 ? '' : 's') +' for');
+            // build a label like "12 comments in 1 topic"
+            var label = howManyComments + ' comment'+ (howManyComments === 1 ? '' : 's')
+                        +' in '+ howManyTopics +' topic'+ (howManyTopics === 1 ? '' : 's');
+            $('#comments-panel .provenance-intro').html(label);
         }
     );
 }

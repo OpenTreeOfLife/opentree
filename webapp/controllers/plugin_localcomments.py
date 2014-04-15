@@ -50,7 +50,7 @@ function plugin_localcomments_init() {
      jQuery('div.plugin_localcomments label.expertise-option').hide();
 
      jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
-      var $form = jQuery(this).parent();
+      var $form = jQuery(this).closest('form');
       jQuery.post(action,
            {
                ////$'thread_parent_id': form.find('input[name="thread_parent_id"]').val(),
@@ -96,10 +96,10 @@ function plugin_localcomments_init() {
      var $toggle = $(this);
      var $replyHolder = $toggle.closest('li').find('ul').eq(0);
      $replyHolder.slideToggle();
-     if ($toggle.text().indexOf('show') == -1) {
-        $toggle.text('show replies');
+     if ($toggle.text().indexOf('Show') == -1) {
+        $toggle.text('Show comments');
      } else {
-        $toggle.text('hide replies');
+        $toggle.text('Hide comments');
      }
      return false;
   });
@@ -265,7 +265,7 @@ def index():
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
                     ('title' in comment) and DIV( comment['title'], A(T('on GitHub'), _href=comment['html_url'], _target='_blank'), _class='topic-title') or '',
-                    DIV( XML(markdown(get_visible_comment_body(comment['body'] or '')).encode('utf-8'), sanitize=False),_class='body'),
+                    DIV( XML(markdown(get_visible_comment_body(comment['body'] or '')).encode('utf-8'), sanitize=False),_class=(issue_node and 'body issue-body' or 'body comment-body')),
                     DIV(
                         A(T(comment['user']['login']), _href=comment['user']['html_url'], _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
@@ -273,9 +273,9 @@ def index():
                         SPAN(' ',metadata.get('Intended scope'),' ',_class='badge') if metadata.get('Intended scope') else '',
                         T(' - %s',prettydate(utc_to_local(datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)),T)),
                         SPAN(
-                            A(T('hide replies'),_class='toggle',_href='#'),
+                            A(T('Hide comments'),_class='toggle',_href='#'),
                             SPAN(' | ') if auth.user_id else '',
-                            A(T('reply'),_class='reply',_href='#'),
+                            A(T('Add a comment'),_class='reply',_href='#'),
                             SPAN(' | ') if comment['user']['login'] == auth.user_id else '',
                             A(T('delete'),_class='delete',_href='#') if comment['user']['login'] == auth.user_id else '',
                         _class='controls'),
@@ -431,7 +431,7 @@ def index():
                         _name='intended_scope', value='synthtree'),
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
                         INPUT(_type='text',_id='issue_title',_name='issue_title',_value='',_placeholder="Give this topic a title"),   # should appear for proper issues only
-                        TEXTAREA(_name='body',_placeholder="Add more text on this topic, using Markdown (click 'Markdown help' below to learn more)."),
+                        TEXTAREA(_name='body',_placeholder="Add more to this topic, using Markdown (click 'Markdown help' below to learn more)."),
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
                         INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
@@ -459,15 +459,18 @@ except:
     OPENTREEAPI_AUTH_TOKEN = ''
     print("OAuth token (%s) not found!" % oauth_token_path)
 
+# if the current user is logged in, use their auth token instead
+USER_AUTH_TOKEN = auth.user and auth.user.github_auth_token or None
+
 # Specify the media-type from GitHub, to freeze v3 API responses and get
 # the comment body as markdown (vs. plaintext or HTML)
 PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json'
 # to get markdown AND html body, use 'application/vnd.github.v3.full+json'
 
 GH_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
-GH_GET_HEADERS = {'Authorization': ('token %s' % OPENTREEAPI_AUTH_TOKEN),
+GH_GET_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
                   'Accept': PREFERRED_MEDIA_TYPE}
-GH_POST_HEADERS = {'Authorization': ('token %s' % OPENTREEAPI_AUTH_TOKEN),
+GH_POST_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
                    'Content-Type': 'application/json',
                    'Accept': PREFERRED_MEDIA_TYPE}
 
