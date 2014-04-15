@@ -69,8 +69,10 @@ function plugin_localcomments_init() {
            },
            function(data,r){ 
                if(data) { 
-                   var $refreshArea = $form.parent().next();
-                   $refreshArea.prepend(data);
+                   var $refreshArea = $form.parent().prevAll('ul');
+                   // add the new comment (LI) to the end of the list
+                   debugger;
+                   $refreshArea.append(data);
                    $form.find('textarea[name="body"]').val('');
                    //$form.find('input[name="thread_parent_id"]').val('0');
                    delete_all_forms();
