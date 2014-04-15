@@ -78,19 +78,6 @@ plugins.wiki.level = 3
 plugins.wiki.mode = 'html' # OR 'markmin', others?
 # plugins.wiki.theme = 'ui-darkness'
 
-## if you need to use OpenID, Facebook, MySpace, Twitter, Linkedin, etc.
-## register with janrain.com, write your domain:api_key in private/janrain.key
-#from gluon.contrib.login_methods.rpx_account import use_janrain
-#use_janrain(auth, filename='private/janrain.key')
-try:
-    janrain_api_key = open("applications/%s/private/janrain.key" % request.application).read().strip();
-except:
-    janrain_api_key=''
-try:
-    host = conf.get("hosting", "hostdomain")
-except:
-    host = "localhost:8000"
-
 #
 # OAuth2 for Github (API v3), based on the FB sample provided in gluon/contrib/login_methods/oauth20_account.py
 # 

@@ -163,7 +163,6 @@ echo "Apache / web2py restart required (due to app configuration)"
 # These require a fresh pull of the opentree repo (above)
 
 cp -p repo/opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
-cp -p repo/opentree/rpx_account.py web2py/gluon/contrib/login_methods/
 cp -p repo/opentree/rewrite.py web2py/gluon/
 cp -p repo/opentree/SITE.routes.py web2py/routes.py
 
