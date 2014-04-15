@@ -19,40 +19,49 @@ def SUL(*a,**b): return UL(*[u for u in a if u],**b)
 script=SCRIPT("""
 var action = null;
 var formhtml = null;
-function plugin_localcomments_init() {
-  function delete_all_forms() { jQuery('div.plugin_localcomments div.reply').html(''); }
-  function capture_form() {
-     jQuery('div.plugin_localcomments a.msg-close').unbind('click').click(function(){
-       delete_all_forms();
-       return false;
-     });
+function delete_all_forms() { 
+    jQuery('div.plugin_localcomments div.reply').each(function() {
+        if ($(this).closest('.issue').length === 0) {
+            // this is the space for new topics, with a separate link
+            $(this).html('');
+        } else {
+            // this is the prompt to add comments to an existing topic
+            $(this).html('<a class="reply" href="#">Add a comment</a>').show(); 
+        }
+    });
+}
+function capture_form() {
+    jQuery('div.plugin_localcomments a.msg-close').unbind('click').click(function(){
+        delete_all_forms();
+        return false;
+    });
 
-     // adjust UI for issues versus comments
-     var threadParentID = 0;
-     var $parentIssueContainer = $('.plugin_localcomments form').closest('li.issue');
-     if ($parentIssueContainer.length > 0) {
-         threadParentID = $parentIssueContainer.find('div:eq(0)').attr('id').split('r')[1];
-     }
-     console.log('threadParentID:'+ threadParentID);
-     var isThreadStarter = threadParentID == 0;
-     if (isThreadStarter) {
-         //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'General comment' );
-         jQuery('div.plugin_localcomments select[name=feedback_type]').show();
-         jQuery('div.plugin_localcomments select[name=intended_scope]').show();
-         jQuery('div.plugin_localcomments select[name=issue_title]').show();
-     } else {
-         //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'Reply or general comment' );
-         jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
-         jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
-         jQuery('div.plugin_localcomments select[name=issue_title]').hide();
-     }
-     // always hide expertise checkbox and surrounding label (not currently needed)
-     jQuery('div.plugin_localcomments label.expertise-option').hide();
+    // adjust UI for issues versus comments
+    var threadParentID = 0;
+    var $parentIssueContainer = $('.plugin_localcomments form').closest('li.issue');
+    if ($parentIssueContainer.length > 0) {
+        threadParentID = $parentIssueContainer.find('div:eq(0)').attr('id').split('r')[1];
+    }
+    console.log('threadParentID:'+ threadParentID);
+    var isThreadStarter = threadParentID == 0;
+    if (isThreadStarter) {
+        //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'General comment' );
+        jQuery('div.plugin_localcomments select[name=feedback_type]').show();
+        jQuery('div.plugin_localcomments select[name=intended_scope]').show();
+        jQuery('div.plugin_localcomments select[name=issue_title]').show();
+    } else {
+        //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'Reply or general comment' );
+        jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
+        jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
+        jQuery('div.plugin_localcomments select[name=issue_title]').hide();
+    }
+    // always hide expertise checkbox and surrounding label (not currently needed)
+    jQuery('div.plugin_localcomments label.expertise-option').hide();
 
-     jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
-      var $form = jQuery(this).closest('form');
-      jQuery.post(action,
-           {
+    jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
+        var $form = jQuery(this).closest('form');
+        jQuery.post(action,
+            {
                ////$'thread_parent_id': form.find('input[name="thread_parent_id"]').val(),
                'thread_parent_id': threadParentID,    ///$form.parent().prev().attr('id').split('r')[1], 
                'synthtree_id': $form.find('input[name="synthtree_id"]').val(),
@@ -66,8 +75,8 @@ function plugin_localcomments_init() {
                'feedback_type': $form.find('select[name="feedback_type"]').val(),
                'intended_scope': $form.find('select[name="intended_scope"]').val(),
                'claimed_expertise': $form.find(':checkbox[name="claimed_expertise"]').is(':checked')
-           },
-           function(data,r){ 
+            },
+            function(data,r){ 
                if(data) { 
                    var $refreshArea = $form.parent().prevAll('ul');
                    // add the new comment (LI) to the end of the list
@@ -75,15 +84,17 @@ function plugin_localcomments_init() {
                    $refreshArea.append(data);
                    $form.find('textarea[name="body"]').val('');
                    //$form.find('input[name="thread_parent_id"]').val('0');
-                   delete_all_forms();
                    plugin_localcomments_init(); 
+                   delete_all_forms();
                }
-           },
-           'html'
-       );
-      return false;
+            },
+            'html'
+        );
+        return false;
     });
-  }
+}
+
+function plugin_localcomments_init() {
   // hide unwanted toggles (for comments with no reply)
   jQuery('div.plugin_localcomments .toggle').each(function() {
      var $toggle = $(this);
@@ -109,9 +120,9 @@ function plugin_localcomments_init() {
      delete_all_forms();
      if ($(this).closest('.controls').length > 0) {
         // this is a typical Reply link
-        $formHolder = $(this).parent().parent().parent().next();
+        $formHolder = $(this).closest('.issue').find('div.reply').eq(0);
      } else {
-        // this is the initial 'Add a comment' link
+        // this is the initial 'Add a new topic' link
         $formHolder = $(this).parent().next();
      }
      $formFollower = $formHolder.next();
@@ -140,9 +151,9 @@ jQuery(document).ready(function() {
   action = jQuery('div.plugin_localcomments form').attr('action');  
   formhtml = jQuery('div.plugin_localcomments form').parent().html();
   ///jQuery('div.plugin_localcomments .toggle').parent().next().next().hide();
-  jQuery('div.plugin_localcomments div.reply').html('');
-  plugin_localcomments_init()}
-);
+  plugin_localcomments_init();
+  delete_all_forms();
+});
 """)
 
 def moderation():
@@ -276,17 +287,15 @@ def index():
                         T(' - %s',prettydate(utc_to_local(datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)),T)),
                         SPAN(
                             A(T('Hide comments'),_class='toggle',_href='#'),
-                            SPAN(' | ') if auth.user_id else '',
-                            A(T('Add a comment'),_class='reply',_href='#'),
-                            SPAN(' | ') if comment['user']['login'] == auth.user_id else '',
-                            A(T('delete'),_class='delete',_href='#') if comment['user']['login'] == auth.user_id else '',
+                            SPAN(' | ') if comment['user']['login'] == auth.user.github_login else '',
+                            A(T('Delete'),_class='delete',_href='#') if comment['user']['login'] == auth.user.github_login else '',
                         _class='controls'),
                     _class='byline'),
                     _id='r%s' % comment.get('number', comment['id']),
                     _class='msg-wrapper'),
-                DIV(_class='reply'),
                 # child messages (toggle hides/shows these)
                 child_comments and SUL(*[node(comment) for comment in child_comments]) or '',
+                issue_node and DIV(_class='reply') or '',
                 _class=(issue_node and 'issue' or 'comment'))
             return markup
         except:
