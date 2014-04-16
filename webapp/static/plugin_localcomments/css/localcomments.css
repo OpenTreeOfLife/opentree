@@ -86,8 +86,8 @@ div.plugin_localcomments .byline .controls {
     margin: 0 0 4px 0;
 }
 .plugin_localcomments ul div.reply textarea {
-    width: 100%;
-    margin: 4px 0 4px -10px;
+    width: 97%;
+    margin: 4px 0;
 }
 .plugin_localcomments div.reply input[type='text'] {
     width: 38%;

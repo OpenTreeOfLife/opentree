@@ -28,6 +28,13 @@ function delete_all_forms() {
             // this is the prompt to add comments to an existing topic
             $(this).html('<a class="btn btn-small reply" href="#">Add a comment</a>');
         }
+        $(this).find('a.reply').unbind('click').click(function() {
+            $formHolder = $(this).parent();
+            delete_all_forms();
+            $formHolder.html(formhtml); 
+            capture_form(); 
+            return false;
+        });
     });
 }
 function capture_form() {
@@ -78,10 +85,16 @@ function capture_form() {
             },
             function(data,r){ 
                if(data) { 
-                   var $refreshArea = $form.parent().prevAll('ul');
-                   // add the new comment (LI) to the end of the list
-                   debugger;
-                   $refreshArea.append(data);
+                   var $refreshArea;
+                   if (isThreadStarter) {
+                       $refreshArea = $form.parent().nextAll('ul');
+                       // add the new comment (LI) to the top of the list
+                       $refreshArea.prepend(data);
+                   } else {
+                       $refreshArea = $form.parent().prevAll('ul');
+                       // add the new comment (LI) to the end of the list
+                       $refreshArea.append(data);
+                   } 
                    $form.find('textarea[name="body"]').val('');
                    //$form.find('input[name="thread_parent_id"]').val('0');
                    plugin_localcomments_init(); 
@@ -107,21 +120,6 @@ function plugin_localcomments_init() {
      }
      return false;
   });
-  jQuery('div.plugin_localcomments a.reply:not(.login-logout)').unbind('click').click(function(){
-     delete_all_forms();
-     if ($(this).closest('.controls').length > 0) {
-        // this is a typical Reply link
-        $formHolder = $(this).closest('.issue').find('div.reply').eq(0);
-     } else {
-        // this is the initial 'Add a new topic' link
-        $formHolder = $(this).parent().next();
-     }
-     $formFollower = $formHolder.next();
-     $formFollower.slideDown();
-     $formHolder.html(formhtml); 
-     capture_form(); 
-     return false;
-  });
   jQuery('div.plugin_localcomments .delete').unbind('click').click(function(){
     delete_all_forms();
     var $commentDiv = jQuery(this).parent().parent().parent();
@@ -141,9 +139,8 @@ function plugin_localcomments_init() {
 jQuery(document).ready(function() {
   action = jQuery('div.plugin_localcomments form').attr('action');  
   formhtml = jQuery('div.plugin_localcomments form').parent().html();
-  ///jQuery('div.plugin_localcomments .toggle').parent().next().next().hide();
+  delete_all_forms();  // important! creates .reply buttons before init() below
   plugin_localcomments_init();
-  delete_all_forms();
 });
 """)
 
@@ -291,7 +288,7 @@ def index():
                     _class='msg-wrapper'),
                 # child messages (toggle hides/shows these)
                 issue_node and SUL(*[node(comment) for comment in child_comments], _style=("" if child_comments else "display: none;")) or '',
-                issue_node and DIV(_class='reply testA', _style=("" if child_comments else "display: none;")) or '',
+                issue_node and DIV(_class='reply', _style=("" if child_comments else "display: none;")) or '',
                 _class=(issue_node and 'issue' or 'comment'))
             return markup
         except:
@@ -548,7 +545,7 @@ def get_local_comments(location={}):
     search_text = urllib.quote_plus(search_text.encode('utf-8'), safe='~')
     ## print("FINAL search_text (UTF-8, encoded):")
     ## print search_text
-    url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback&sort=created&order=asc'
+    url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback&sort=created&order=desc'
     ##TODO: search only within body, and return only open issues
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
     url = url.format(GH_BASE_URL, search_text)
