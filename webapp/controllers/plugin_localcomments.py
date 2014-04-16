@@ -348,7 +348,6 @@ def index():
 
         if (thread_parent_id == '0'):
             # create a new issue (thread starter)
-            ##print("ADD AN ISSUE")
             msg_body = request.vars.body
             if len(re.compile('\s+').sub('',msg_body))<1:
                 return ''
@@ -369,7 +368,7 @@ def index():
                 "Target node label": target_node_label,
                 "Synthetic tree id": synthtree_id,
                 "Synthetic tree node id": synthtree_node_id,
-                "Source tree id(s)": sourcetree_id,
+                "Source tree id": sourcetree_id,
                 "Open Tree Taxonomy id": ottol_id,
                 "Intended scope": intended_scope
             })
@@ -408,7 +407,7 @@ def index():
             "Synthetic tree id": synthtree_id, 
             "Synthetic tree node id": synthtree_node_id})
     elif filter == 'sourcetree_id':
-        comments = get_local_comments({"Source tree id": sourcetree_id})
+        comments = get_local_comments({"Source tree id(s)": sourcetree_id})
     elif filter == 'ottol_id':
         comments = get_local_comments({"Open Tree Taxonomy id": ottol_id})
     else:   # fall back to url
@@ -487,7 +486,6 @@ GH_POST_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAP
 
 def add_or_update_issue(msg_data, issue_id=None):
     # WATCH for accidental creation of bogus labels!
-    ##pprint(msg_data)
     if issue_id:
         # edit an existing issue via the GitHub API
         url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}'.format(GH_BASE_URL)
@@ -502,12 +500,10 @@ def add_or_update_issue(msg_data, issue_id=None):
             headers=GH_POST_HEADERS,
             data=json.dumps(msg_data)
         )
-    ##pprint(resp)
     try:
         new_msg = resp.json()
     except:
         new_msg = resp.json
-    ##pprint(new_msg)
     resp.raise_for_status()
     return new_msg
 
@@ -615,8 +611,7 @@ URL   |   %(URL)s
 Target node label   |   %(Target node label)s 
 Synthetic tree id   |   %(Synthetic tree id)s 
 Synthetic tree node id   |   %(Synthetic tree node id)s 
-Source tree id   |   %(Source tree id)s 
-Source tree node id   |   %(Source tree node id)s 
+Source tree id(s)   |   %(Source tree id)s 
 Open Tree Taxonomy id   |   %(Open Tree Taxonomy id)s 
 Intended scope   |   %(Intended scope)s 
 """
