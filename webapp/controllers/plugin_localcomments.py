@@ -8,7 +8,6 @@ import urllib
 from datetime import datetime
 import json
 
-dbco = db.plugin_localcomments_comment
 
 def error(): raise HTTP(404)
 
@@ -302,8 +301,7 @@ def index():
             raise
 
     if thread_parent_id == 'delete':
-        # delete the specified comment ... ADD(dbco.url==url)?
-        # import pdb; pdb.set_trace()
+        # delete the specified comment or close an issue...
         try:
             if issue_or_comment == 'issue':
                 print("CLOSING ISSUE: ")
@@ -370,45 +368,22 @@ def index():
                 "body": "{0}\n{1}".format(msg_body, footer)
             }
             new_msg = add_or_update_comment(msg_data, parent_issue_id=thread_parent_id)
-
-        #dbco.thread_parent_id.default = thread_parent_id
-        #dbco.synthtree_id.default = synthtree_id
-        #dbco.synthtree_node_id.default = synthtree_node_id
-        #dbco.sourcetree_id.default = sourcetree_id
-        #dbco.sourcetree_node_id.default = sourcetree_node_id
-        #dbco.ottol_id.default = ottol_id
-        ## TODO: normalize URLs to handle trailing '/', fragments, etc.
-        #dbco.url.default = url.strip()
-        #dbco.created_by.default = auth.user_id
-        #dbco.feedback_type.default = feedback_type
-        #dbco.intended_scope.default = intended_scope
-        #dbco.claimed_expertise.default = claims_expertise
-        #if len(re.compile('\s+').sub('',request.vars.body))<1:
-        #    return ''
-        #item = dbco.insert(body=request.vars.body.strip())
-        # submit for rendering as a "node" in comment list
-        ##print("TODO: BUILD A NODE...")
-        ##print(new_msg)
         return node(new_msg)                
 
     # retrieve related comments, based on the chosen filter
     print("retrieving local comments using this filter:")
     print(filter)
     if filter == 'synthtree_id,synthtree_node_id':
-        #comments = db((dbco.synthtree_id==synthtree_id) & (dbco.synthtree_node_id==synthtree_node_id)).select(orderby=~dbco.created_on)
         comments = get_local_comments({
             "Synthetic tree id": synthtree_id, 
             "Synthetic tree node id": synthtree_node_id})
     elif filter == 'sourcetree_id,sourcetree_node_id':
-        #comments = db((dbco.sourcetree_id==sourcetree_id) & (dbco.sourcetree_node_id==sourcetree_node_id)).select(orderby=~dbco.created_on)
         comments = get_local_comments({
             "Source tree id": sourcetree_id, 
             "Source tree node id": sourcetree_node_id})
     elif filter == 'ottol_id':
-        #comments = db(dbco.ottol_id==ottol_id).select(orderby=~dbco.created_on)
         comments = get_local_comments({"Open Tree Taxonomy id": ottol_id})
     else:   # fall back to url
-        #comments = db(dbco.url==url).select(orderby=~dbco.created_on)
         comments = get_local_comments({"URL": url})
 
     for comment in comments:
