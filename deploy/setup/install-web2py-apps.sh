@@ -3,8 +3,8 @@
 # Some of this repeats what's found in install-api.sh.  Keep in sync.
 
 # Lots of arguments to make this work.. check to see if we have them all.
-if [ "$#" -ne 10 ]; then
-    echo "install-web2py-apps.sh missing required parameters (expecting 10)"
+if [ "$#" -ne 12 ]; then
+    echo "install-web2py-apps.sh missing required parameters (expecting 12)"
     exit 1
 fi
 
@@ -12,13 +12,15 @@ OPENTREE_HOST=$1
 OPENTREE_PUBLIC_DOMAIN=$2
 NEO4JHOST=$3
 CONTROLLER=$4
-GITHUB_CLIENT_ID=$5
-GITHUB_REDIRECT_URI=$6
-TREEMACHINE_BASE_URL=$7
-TAXOMACHINE_BASE_URL=$8
-OTI_BASE_URL=$9
+CURATION_GITHUB_CLIENT_ID=$5
+CURATION_GITHUB_REDIRECT_URI=$6
+TREEVIEW_GITHUB_CLIENT_ID=$7
+TREEVIEW_GITHUB_REDIRECT_URI=$8
+TREEMACHINE_BASE_URL=$9
 # NOTE that args beyond nine must be referenced in curly braces
-OPENTREE_API_BASE_URL=${10}
+TAXOMACHINE_BASE_URL=${10}
+OTI_BASE_URL=${11}
+OPENTREE_API_BASE_URL=${12}
 
 . setup/functions.sh
 
@@ -122,7 +124,9 @@ configfile=$configdir/config
 
 # Replace tokens in example config file to make the active config (assume this always changes)
 cp -p $configtemplate $configfile
-sed "s+hostdomain = .*+hostdomain = $OPENTREE_PUBLIC_DOMAIN+;
+sed "s+github_client_id = .*+github_client_id = $TREEVIEW_GITHUB_CLIENT_ID+;
+     s+github_redirect_uri = .*+github_redirect_uri = $TREEVIEW_GITHUB_REDIRECT_URI+
+     s+hostdomain = .*+hostdomain = $OPENTREE_PUBLIC_DOMAIN+;
      s+treemachine = .*+treemachine = $TREEMACHINE_BASE_URL+
      s+taxomachine = .*+taxomachine = $TAXOMACHINE_BASE_URL+
      s+oti = .*+oti = $OTI_BASE_URL+
@@ -136,8 +140,8 @@ configfile=$configdir/config
 
 # Replace tokens in example config file to make the active config (assume this always changes)
 cp -p $configtemplate $configfile
-sed "s+github_client_id = .*+github_client_id = $GITHUB_CLIENT_ID+;
-     s+github_redirect_uri = .*+github_redirect_uri = $GITHUB_REDIRECT_URI+
+sed "s+github_client_id = .*+github_client_id = $CURATION_GITHUB_CLIENT_ID+;
+     s+github_redirect_uri = .*+github_redirect_uri = $CURATION_GITHUB_REDIRECT_URI+
      s+treemachine = .*+treemachine = $TREEMACHINE_BASE_URL+
      s+taxomachine = .*+taxomachine = $TAXOMACHINE_BASE_URL+
      s+oti = .*+oti = $OTI_BASE_URL+
