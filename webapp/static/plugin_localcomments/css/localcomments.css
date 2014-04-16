@@ -19,7 +19,6 @@ div.plugin_localcomments .byline .controls {
     padding-left: 20px;
 }
 .plugin_localcomments form {
-    /* border: 1px dashed mint; */
     margin-bottom: 12px;
 }
 .plugin_localcomments ul {
@@ -32,7 +31,9 @@ div.plugin_localcomments .byline .controls {
     border: 1px solid #ddd;
     border-radius: 10px;
     overflow: hidden;
-    margin-bottom: 8px;
+    margin-top: 10px;
+}
+.plugin_localcomments ul .issue > .msg-wrapper {
 }
 .plugin_localcomments .body {
     font-size: 110%;
@@ -62,15 +63,14 @@ div.plugin_localcomments .byline .controls {
 .plugin_localcomments ul .issue .topic-title a:hover {
     color: #fff;
 }
-.plugin_localcomments ul .issue > ul {
-    padding-left: 20px;
-    border-left: 6px dotted #ddd;
+
+.plugin_localcomments ul .issue > ul,
+.plugin_localcomments ul .issue > div.reply {
+    padding-left: 10px;
+    border-left: 6px solid #ddd;
     margin-top: -6px;
     padding-top: 6px;
     margin-bottom: 6px;
-}
-.plugin_localcomments ul li {
-    /* border: 1px dashed silver; */
 }
 .plugin_localcomments ul div.deleted {
     color: #933;
@@ -93,10 +93,6 @@ div.plugin_localcomments .byline .controls {
     width: 38%;
     vertical-align: baseline;
 }
-/*
-.plugin_localcomments ul div.reply input[type='text'] {
-}
-*/
 .plugin_localcomments div.reply #issue_title {
     display: block;
     width: 98%;

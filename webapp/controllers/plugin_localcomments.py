@@ -23,10 +23,10 @@ function delete_all_forms() {
     jQuery('div.plugin_localcomments div.reply').each(function() {
         if ($(this).closest('.issue').length === 0) {
             // this is the space for new topics, with a separate link
-            $(this).html('');
+            $(this).html('<a class="btn btn-small reply" href="#">Add a new topic</a>');
         } else {
             // this is the prompt to add comments to an existing topic
-            $(this).html('<a class="reply" href="#">Add a comment</a>').show(); 
+            $(this).html('<a class="btn btn-small reply" href="#">Add a comment</a>');
         }
     });
 }
@@ -95,22 +95,13 @@ function capture_form() {
 }
 
 function plugin_localcomments_init() {
-  // hide unwanted toggles (for comments with no reply)
-  jQuery('div.plugin_localcomments .toggle').each(function() {
-     var $toggle = $(this);
-     var $replyHolder = $toggle.closest('li').find('ul');
-     if ($replyHolder.find('li').length === 0) {
-        $toggle.next('span').andSelf().hide();
-     } else {
-        $toggle.next('span').andSelf().show();
-     }
-  });
   jQuery('div.plugin_localcomments .toggle').unbind('click').click(function(){
      var $toggle = $(this);
-     var $replyHolder = $toggle.closest('li').find('ul').eq(0);
-     $replyHolder.slideToggle();
+     var $parentIssue = $toggle.closest('li.issue');
+     var $collapsibleTargets = $parentIssue.find('ul').eq(0).add($parentIssue.find('div.reply'));
+     $collapsibleTargets.slideToggle(250);  // duration in ms
      if ($toggle.text().indexOf('Show') == -1) {
-        $toggle.text('Show comments');
+        $toggle.text('Show/add comments');
      } else {
         $toggle.text('Hide comments');
      }
@@ -270,9 +261,14 @@ def index():
 
         metadata = parse_comment_metadata(comment['body'])
         ##print(metadata)
+
+        # Is this node for an issue (thread starter) or a comment (reply)?
+        issue_node = 'number' in comment
+
+        # Is the current user logged in? If so, what is their GitHub ID (login)?
+        current_user_id = auth.user and auth.user.github_login or None
+
         try:   # TODO: if not comment.deleted:
-            # Is this node for an issue (thread starter) or a comment (reply)?
-            issue_node = 'number' in comment
             #import pdb; pdb.set_trace()
             markup = LI(
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
@@ -286,16 +282,16 @@ def index():
                         SPAN(' ',metadata.get('Intended scope'),' ',_class='badge') if metadata.get('Intended scope') else '',
                         T(' - %s',prettydate(utc_to_local(datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)),T)),
                         SPAN(
-                            A(T('Hide comments'),_class='toggle',_href='#'),
-                            SPAN(' | ') if comment['user']['login'] == auth.user.github_login else '',
-                            A(T('Delete'),_class='delete',_href='#') if comment['user']['login'] == auth.user.github_login else '',
+                            issue_node and A(T(child_comments and 'Hide comments' or 'Show/add comments'),_class='toggle',_href='#') or '',
+                            issue_node and comment['user']['login'] == current_user_id and SPAN(' | ') or '',
+                            A(T('Delete'),_class='delete',_href='#') if comment['user']['login'] == current_user_id else '',
                         _class='controls'),
                     _class='byline'),
                     _id='r%s' % comment.get('number', comment['id']),
                     _class='msg-wrapper'),
                 # child messages (toggle hides/shows these)
-                child_comments and SUL(*[node(comment) for comment in child_comments]) or '',
-                issue_node and DIV(_class='reply') or '',
+                issue_node and SUL(*[node(comment) for comment in child_comments], _style=("" if child_comments else "display: none;")) or '',
+                issue_node and DIV(_class='reply testA', _style=("" if child_comments else "display: none;")) or '',
                 _class=(issue_node and 'issue' or 'comment'))
             return markup
         except:
@@ -414,11 +410,6 @@ def index():
     ##from pprint import pprint
     ##pprint('{0} threads loaded'.format(len(threads)))
     return DIV(script,
-               DIV(
-                   # disabling login requirement, at least for now..
-                   A(T('Add a new topic'),_class='reply',_href='#') if (True or auth.user_id) \
-                   else A(T('Add a new topic'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
-               _id='r0'),
                DIV(FORM(# anonymous users should see be encouraged to login or add a name-or-email to their comments
                         '' if auth.user_id else A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
                         '' if auth.user_id else T(' or '),
@@ -454,7 +445,7 @@ def index():
                             SPAN(' | ',_style='margin-right: 6px'),
                             A(T('Markdown help'),_href='https://help.github.com/articles/markdown-basics',
                               _target='_blank',_style='margin-right: 10px'),
-                            INPUT(_type='submit',_value=T('Post'),_class='btn',_style=''), 
+                            INPUT(_type='submit',_value=T('Post'),_class='btn btn-small',_style=''), 
                             _class='msg-footer'),
                         _method='post',_action=URL(r=request,args=[])),_class='reply'),
                SUL(*[node(comment) for comment in threads]),_class='plugin_localcomments')
