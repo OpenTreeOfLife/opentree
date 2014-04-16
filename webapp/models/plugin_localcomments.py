@@ -42,13 +42,13 @@ db.plugin_localcomments_comment.created_by.requires = IS_NOT_EMPTY()
 #db.plugin_localcomments_comment.email.requires = IS_EMAIL()
 
 # simplify embedding in a page template
-def plugin_localcomments(filter='synthtree_id,synthtree_node',url='',synthtree_id='',synthtree_node_id='',sourcetree_id='',sourcetree_node_id='',ottol_id='',parent_id=None):
+def plugin_localcomments(filter='synthtree_id,synthtree_node',url='',synthtree_id='',synthtree_node_id='',sourcetree_id='',ottol_id='',target_node_label='',parent_id=None):
     return LOAD('plugin_localcomments',vars=dict(
         filter=filter,  # show messages matching on these fields
         url=url, 
         synthtree_id=synthtree_id, 
         synthtree_node_id=synthtree_node_id, 
         sourcetree_id=sourcetree_id, 
-        sourcetree_node_id=sourcetree_node_id, 
         ottol_id=ottol_id, 
+        target_node_label=target_node_label, 
         thread_parent_id=parent_id))

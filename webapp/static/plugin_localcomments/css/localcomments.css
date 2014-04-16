@@ -6,8 +6,8 @@ div.plugin_localcomments {
 div.plugin_localcomments .byline {
     background-color: #ddd;
     color: #777;
-    margin: 0px -4px 6px;
-    padding: 2px 4px;
+    margin: 0px;
+    padding: 2px 8px;
 }
 div.plugin_localcomments .byline .badge {
     background-color: #999;
@@ -19,23 +19,58 @@ div.plugin_localcomments .byline .controls {
     padding-left: 20px;
 }
 .plugin_localcomments form {
-    /* border: 1px dashed mint; */
+    margin-bottom: 12px;
 }
 .plugin_localcomments ul {
     list-style: none;
     padding-left: 5px;
     margin: 0;
 }
+.plugin_localcomments div.msg-wrapper {
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    overflow: hidden;
+    margin-top: 10px;
+}
+.plugin_localcomments ul .issue > .msg-wrapper {
+}
 .plugin_localcomments .body {
+    font-size: 110%;
+    padding: 4px 8px 0;
+}
+.plugin_localcomments ul .issue {
+    margin-bottom: 4px;
+}
+.plugin_localcomments ul .issue .topic-title {
+    padding: 4px 10px;
+    color: #fff;
+    background-color: #444;
+    font-weight: bold;
     font-size: 120%;
-    padding: 3px 0 0;
+    overflow: hidden;
 }
-.plugin_localcomments ul ul {
-    padding-left: 20px;
-    border-left: 2px dotted #ccc;
+.plugin_localcomments .msg-footer {
+    padding: 4px;
+    text-align: right;
 }
-.plugin_localcomments ul li {
-    /* border: 1px dashed silver; */
+.plugin_localcomments ul .issue .topic-title a {
+    font-weight: normal;
+    font-size: 90%;
+    float: right;
+    color: #fff;
+}
+.plugin_localcomments ul .issue .topic-title a:hover {
+    color: #fff;
+}
+
+.plugin_localcomments ul .issue > ul,
+.plugin_localcomments ul .issue > div.reply {
+    padding-left: 10px;
+    border-left: 6px solid #ddd;
+    margin-top: -6px;
+    padding-top: 6px;
+    margin-bottom: 6px;
 }
 .plugin_localcomments ul div.deleted {
     color: #933;
@@ -51,12 +86,21 @@ div.plugin_localcomments .byline .controls {
     margin: 0 0 4px 0;
 }
 .plugin_localcomments ul div.reply textarea {
-    width: 100%;
-    margin: 4px 0 4px -10px;
+    width: 97%;
+    margin: 4px 0;
 }
-
+.plugin_localcomments div.reply input[type='text'] {
+    width: 38%;
+    vertical-align: baseline;
+}
+.plugin_localcomments div.reply #issue_title {
+    display: block;
+    width: 98%;
+}
+.plugin_localcomments ul div.reply #issue_title {
+    display: none;
+}
 div.localcomments_moderation {
-
 }
 div.localcomments_moderation #moderation-header {
 }

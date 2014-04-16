@@ -104,8 +104,8 @@ function loadLocalComments( chosenFilter ) {
         synthtree_id: '',
         synthtree_node_id: '',
         sourcetree_id: '',
-        sourcetree_node_id: '',
-        ottol_id: ''
+        ottol_id: '',
+        target_node_label: ''
     };
     // add a mnemonic to the comment header (for this page? which node?)
     var commentLabel = '';
@@ -119,8 +119,7 @@ function loadLocalComments( chosenFilter ) {
         fetchArgs.synthtree_id = argus.domSource;
         fetchArgs.synthtree_node_id = targetNode.nodeid;
         fetchArgs.sourcetree_id = targetNode.taxSource;
-        fetchArgs.sourcetree_node_id = targetNode.taxSourceId;
-        fetchArgs.ottol_id = targetNode.ottolId
+        fetchArgs.ottol_id = targetNode.ottId;
 
         commentLabel = buildNodeNameFromTreeData( targetNode );
         /* OR should comment label reflect the current filter?
@@ -130,8 +129,8 @@ function loadLocalComments( chosenFilter ) {
                 commentLabel = fetchArgs.synthtree_id +'@'+ fetchArgs.synthtree_node_id;
                 break;
 
-            case 'sourcetree_id,sourcetree_node_id':
-                commentLabel = fetchArgs.sourcetree_id +'@'+ fetchArgs.sourcetree_node_id;
+            case 'sourcetree_id':
+                commentLabel = fetchArgs.sourcetree_id;
                 break;
 
             case 'ottol_id':
@@ -139,6 +138,7 @@ function loadLocalComments( chosenFilter ) {
                 break;
         }
         */
+        fetchArgs.target_node_label = commentLabel;
     } else {
         // use the fallback 'url' index (apparently there's no tree-view here)
         console.log("loadLocalComments() - Loading comments based on 'url' (no argus.treeData!)");
@@ -153,8 +153,9 @@ function loadLocalComments( chosenFilter ) {
     }
 
     // update comment header (maybe again in the callback, when we have a name)
-    $('#comments-panel .provenance-intro').html('Comments for');
-    $('#comments-panel .provenance-title').html(commentLabel);
+    $('#comments-panel .provenance-intro').html('Comments');
+    // simplify this (since label is already prominent)
+    $('#comments-panel .provenance-title').html(commentLabel).hide();
     $('.plugin_localcomments').parent().load(
         '/opentree/plugin_localcomments',
         fetchArgs,  // determined above
@@ -163,11 +164,15 @@ function loadLocalComments( chosenFilter ) {
             fixLoginLinks();
             // update the comment count at the top of the page
             var howManyComments = $('.plugin_localcomments .body').length;
+            var howManyTopics = $('.plugin_localcomments .issue-body').length;
             $('#links-to-local-comments a:eq(0)').html(
                 'Comments on this node ('+ howManyComments +')'
             );
             $('#comment-count').html( howManyComments );;
-            $('#comments-panel .provenance-intro').html(howManyComments + ' comment'+ (howManyComments === 1 ? '' : 's') +' for');
+            // build a label like "12 comments in 1 topic"
+            var label = howManyComments + ' comment'+ (howManyComments === 1 ? '' : 's')
+                        +' in '+ howManyTopics +' topic'+ (howManyTopics === 1 ? '' : 's');
+            $('#comments-panel .provenance-intro').html(label);
         }
     );
 }
