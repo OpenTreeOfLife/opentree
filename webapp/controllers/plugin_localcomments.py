@@ -70,6 +70,7 @@ function capture_form() {
         jQuery.post(action,
             {
                ////$'thread_parent_id': form.find('input[name="thread_parent_id"]').val(),
+               'issue_or_comment': (isThreadStarter ? 'issue' : 'comment'),
                'thread_parent_id': threadParentID,    ///$form.parent().prev().attr('id').split('r')[1], 
                'synthtree_id': $form.find('input[name="synthtree_id"]').val(),
                'synthtree_node_id': $form.find('input[name="synthtree_node_id"]').val(),
@@ -122,15 +123,18 @@ function plugin_localcomments_init() {
   });
   jQuery('div.plugin_localcomments .delete').unbind('click').click(function(){
     delete_all_forms();
-    var $commentDiv = jQuery(this).parent().parent().parent();
+    var $commentDiv = jQuery(this).closest('.msg-wrapper');
+    var $msgItem = $commentDiv.closest('li');
+    var issueOrComment = ($msgItem.is('.issue') ? 'issue' : 'comment');
     jQuery.post(
         action,    // WAS: action+'/delete',
         {
             'thread_parent_id': 'delete',
-            'comment_id': $commentDiv.attr('id').split('r')[1]
+            'comment_id': $commentDiv.attr('id').split('r')[1],
+            'issue_or_comment': issueOrComment
         },
         function(data,r){
-            $commentDiv.addClass('deleted').find('.body').html('[deleted comment]');
+            $msgItem.fadeOut(function() {$(this).remove();});
         }
     );
     return false;
@@ -235,6 +239,7 @@ def index():
     url = request.vars['url']
 
     filter = request.vars['filter']
+    issue_or_comment = request.vars['issue_or_comment']
     thread_parent_id = request.vars['thread_parent_id'] # can be None
     comment_id = request.vars['comment_id'] # used for some operations (eg, delete)
     feedback_type = request.vars['feedback_type'] # used for new comments
@@ -298,12 +303,19 @@ def index():
 
     if thread_parent_id == 'delete':
         # delete the specified comment ... ADD(dbco.url==url)?
-        print("DELETE ISSUE? or COMMENT?")
-        print(thread_parent_id)
-        if db(dbco.created_by==auth.user_id)\
-                (dbco.id==comment_id).update(deleted=True):
-            return 'deleted'
-        else:
+        # import pdb; pdb.set_trace()
+        try:
+            if issue_or_comment == 'issue':
+                print("CLOSING ISSUE: ")
+                print(comment_id)
+                close_issue(comment_id)
+                return 'closed'
+            else:
+                print("DELETING COMMENT: ")
+                print(comment_id)
+                delete_comment(comment_id)
+                return 'deleted'
+        except:
             return error()
     elif thread_parent_id:
         # add a new comment using the submitted vars
@@ -314,7 +326,6 @@ def index():
             print('  USER_ID:')
             print(auth.user_id)
             return error()
-
         if (thread_parent_id == '0'):
             # create a new issue (thread starter)
             ##print("ADD AN ISSUE")
@@ -342,7 +353,6 @@ def index():
             if feedback_type:
                 # omit an empty value here!
                 msg_data['labels'].append(feedback_type)
-                
             new_msg = add_or_update_issue(msg_data)
             ##print("BACK FROM add_or_update")
         else:
@@ -530,9 +540,40 @@ def add_or_update_comment(msg_data, comment_id=None, parent_issue_id=None ):
         new_msg = resp.json
     return new_msg
 
-def delete_comment():
-    # delete a comment on GitHub, or close a thread (issue)
-    pass
+def close_issue(issue_id):
+    # close a thread (issue) on GitHub
+    url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}'.format(GH_BASE_URL, issue_id)
+    print('URL for closing an existing issue:')
+    print(url)
+    resp = requests.patch( url, 
+        headers=GH_POST_HEADERS,
+        data=json.dumps({"state":"closed"})
+    )
+    from pprint import pprint
+    pprint(resp)
+    resp.raise_for_status()
+    try:
+        resp_json = resp.json()
+    except:
+        resp_json = resp.json
+    return resp_json
+
+def delete_comment(comment_id):
+    # delete a comment on GitHub
+    url = '{0}/repos/OpenTreeOfLife/feedback/issues/comments/{1}'.format(GH_BASE_URL, comment_id)
+    print('URL for deleting an existing comment:')
+    print(url)
+    resp = requests.delete( url, 
+        headers=GH_GET_HEADERS
+    )
+    from pprint import pprint
+    pprint(resp)
+    resp.raise_for_status()
+    try:
+        resp_json = resp.json()
+    except:
+        resp_json = resp.json
+    return resp_json
 
 def get_local_comments(location={}):
     # Use the Search API to get all comments for this location. 
@@ -543,13 +584,10 @@ def get_local_comments(location={}):
         search_text = '{0}"{1} | {2} " '.format( search_text, k, v )
         print search_text
     search_text = urllib.quote_plus(search_text.encode('utf-8'), safe='~')
-    ## print("FINAL search_text (UTF-8, encoded):")
-    ## print search_text
-    url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback&sort=created&order=desc'
-    ##TODO: search only within body, and return only open issues
+    url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+state:open&sort=created&order=desc'
+    ##TODO: search only within body?
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
     url = url.format(GH_BASE_URL, search_text)
-    # TODO: sort out some API issues here (adding search text makes zero results!?)
     print(url)
     resp = requests.get( url, headers=GH_GET_HEADERS)
     ##print(resp)
