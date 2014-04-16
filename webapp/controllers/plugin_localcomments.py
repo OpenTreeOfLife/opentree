@@ -7,6 +7,7 @@ import os.path
 import urllib
 from datetime import datetime
 import json
+from pprint import pprint
 
 
 def error(): raise HTTP(404)
@@ -74,14 +75,16 @@ function capture_form() {
                'synthtree_id': $form.find('input[name="synthtree_id"]').val(),
                'synthtree_node_id': $form.find('input[name="synthtree_node_id"]').val(),
                'sourcetree_id': $form.find('input[name="sourcetree_id"]').val(),
-               'sourcetree_node_id': $form.find('input[name="sourcetree_node_id"]').val(),
                'ottol_id': $form.find('input[name="ottol_id"]').val(),
+               'target_node_label': $form.find('input[name="target_node_label"]').val(),
                'url': $form.find('input[name="url"]').val(),
                'title': $form.find('input[name="issue_title"]').val(),
                'body': $form.find('textarea[name="body"]').val(),
                'feedback_type': $form.find('select[name="feedback_type"]').val(),
                'intended_scope': $form.find('select[name="intended_scope"]').val(),
-               'claimed_expertise': $form.find(':checkbox[name="claimed_expertise"]').is(':checked')
+               'claimed_expertise': $form.find(':checkbox[name="claimed_expertise"]').is(':checked'),
+               'visitor_name': $form.find('input[name="visitor_name"]').val(),
+               'visitor_email': $form.find('input[name="visitor_email"]').val()
             },
             function(data,r){ 
                if(data) { 
@@ -192,7 +195,6 @@ def grid():
         deletable=False,  # we'll flip the hidden flag, but not truly delete..?
         orderby=~db.plugin_localcomments_comment.created_on,
 
-
         fields=[ 
             #db.plugin_localcomments_comment.id, 
             db.plugin_localcomments_comment.feedback_type, 
@@ -233,11 +235,20 @@ def index():
     synthtree_id = request.vars['synthtree_id']
     synthtree_node_id = request.vars['synthtree_node_id']
     sourcetree_id = request.vars['sourcetree_id']
-    sourcetree_node_id = request.vars['sourcetree_node_id']
     ottol_id = request.vars['ottol_id']
-    url = request.vars['url']
+    target_node_label = request.vars['target_node_label']
+    url = request.vars['url'] or request.get('env').get('http_referer')
 
     filter = request.vars['filter']
+
+    # if anonymous user submitted identifying information, remember it
+    visitor_name = request.vars['visitor_name'] 
+    if visitor_name:
+        session['visitor_name'] = visitor_name
+    visitor_email = request.vars['visitor_email']
+    if visitor_email:
+        session['visitor_email'] = visitor_email
+
     issue_or_comment = request.vars['issue_or_comment']
     thread_parent_id = request.vars['thread_parent_id'] # can be None
     comment_id = request.vars['comment_id'] # used for some operations (eg, delete)
@@ -270,7 +281,6 @@ def index():
         current_user_id = auth.user and auth.user.github_login or None
 
         try:   # TODO: if not comment.deleted:
-            #import pdb; pdb.set_trace()
             markup = LI(
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
@@ -317,29 +327,49 @@ def index():
             return error()
     elif thread_parent_id:
         # add a new comment using the submitted vars
-        if not request.vars.body or not auth.user_id:
-            print('MISSING BODY OR USER_ID')
-            print('  BODY:')
+        if not request.vars.body:
+            print('MISSING BODY:')
             print(request.vars.body)
-            print('  USER_ID:')
-            print(auth.user_id)
             return error()
+
+        if not (visitor_name or auth.user):
+            print('MISSING USER-ID:')
+            print('  visitor_name:')
+            print(visitor_name)
+            print('  auth.user:')
+            print(auth.user)
+            return error()
+
+        # build useful links for some footer fields
+        if auth.user:
+            author_link = '[{0}]({1})'.format(auth.user.name, auth.user.github_url)
+        else: 
+            author_link = '[{0}](mailto:{1})'.format(visitor_name, visitor_email)
+
         if (thread_parent_id == '0'):
             # create a new issue (thread starter)
             ##print("ADD AN ISSUE")
             msg_body = request.vars.body
             if len(re.compile('\s+').sub('',msg_body))<1:
                 return ''
+
+            # more useful links for some footer fields
+            if url.startswith('http'):
+                # truncate visible link
+                url_link = '[{0}]({1})'.format(url.split('//')[1], url)
+            else:
+                # expand hidden link
+                url_link = '[{0}]({1}{2})'.format(url, request.get('env').get('http_origin'), url)
+
             # add full metadata for an issue 
             footer = build_comment_metadata_footer(metadata={
-                "Author": auth.user_id,
+                "Author": author_link,
                 "Upvotes": 0,
-                "URL": url.strip(),
-                "Target node label": '',
+                "URL": url_link,
+                "Target node label": target_node_label,
                 "Synthetic tree id": synthtree_id,
                 "Synthetic tree node id": synthtree_node_id,
-                "Source tree id": sourcetree_id,
-                "Source tree node id": sourcetree_node_id,
+                "Source tree id(s)": sourcetree_id,
                 "Open Tree Taxonomy id": ottol_id,
                 "Intended scope": intended_scope
             })
@@ -352,7 +382,6 @@ def index():
                 # omit an empty value here!
                 msg_data['labels'].append(feedback_type)
             new_msg = add_or_update_issue(msg_data)
-            ##print("BACK FROM add_or_update")
         else:
             # attach this comment to an existing issue
             ##print("ADD A COMMENT")
@@ -361,9 +390,10 @@ def index():
                 return ''
             # add abbreviated metadata for a comment
             footer = build_comment_metadata_footer(metadata={
-                "Author" : auth.user,
+                "Author" : author_link,
                 "Upvotes" : 0,
             })
+            print(footer)
             msg_data = {
                 "body": "{0}\n{1}".format(msg_body, footer)
             }
@@ -377,10 +407,8 @@ def index():
         comments = get_local_comments({
             "Synthetic tree id": synthtree_id, 
             "Synthetic tree node id": synthtree_node_id})
-    elif filter == 'sourcetree_id,sourcetree_node_id':
-        comments = get_local_comments({
-            "Source tree id": sourcetree_id, 
-            "Source tree node id": sourcetree_node_id})
+    elif filter == 'sourcetree_id':
+        comments = get_local_comments({"Source tree id": sourcetree_id})
     elif filter == 'ottol_id':
         comments = get_local_comments({"Open Tree Taxonomy id": ottol_id})
     else:   # fall back to url
@@ -389,15 +417,14 @@ def index():
     for comment in comments:
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
         threads.append(comment)
-    ##from pprint import pprint
     ##pprint('{0} threads loaded'.format(len(threads)))
     return DIV(script,
                DIV(FORM(# anonymous users should see be encouraged to login or add a name-or-email to their comments
                         '' if auth.user_id else A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
                         '' if auth.user_id else T(' or '),
-                        '' if auth.user_id else INPUT(_type='text',_id='anon_name',_name='anon_name',_value='',_placeholder="Enter your name"),
+                        '' if auth.user_id else INPUT(_type='text',_id='visitor_name',_name='visitor_name',_value=session.get('visitor_name',''),_placeholder="Enter your name"),
                         '' if auth.user_id else T(' '),
-                        '' if auth.user_id else INPUT(_type='text',_id='anon_email',_name='anon_email',_value='',_placeholder="Your email (will be public)"),
+                        '' if auth.user_id else INPUT(_type='text',_id='visitor_email',_name='visitor_email',_value=session.get('visitor_email',''),_placeholder="Your email (visible on GitHub)"),
                         '' if auth.user_id else BR(),
                         SELECT(
                             OPTION('What kind of feedback is this?', _value=''),
@@ -419,8 +446,8 @@ def index():
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
                         INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
-                        INPUT(_type='hidden',_name='sourcetree_node_id',_value=sourcetree_node_id),
                         INPUT(_type='hidden',_name='ottol_id',_value=ottol_id),
+                        INPUT(_type='hidden',_name='target_node_label',_value=target_node_label),
                         INPUT(_type='hidden',_name='url',_value=url),
                         # INPUT(_type='text',_name='thread_parent_id',_value=0),   # we'll get this from a nearby id, eg 'r8'
                         DIV(A(T('Close'),_class='msg-close',_href='#',_style='margin-right: 6px'),
@@ -460,8 +487,7 @@ GH_POST_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAP
 
 def add_or_update_issue(msg_data, issue_id=None):
     # WATCH for accidental creation of bogus labels!
-    from pprint import pprint
-    pprint(msg_data)
+    ##pprint(msg_data)
     if issue_id:
         # edit an existing issue via the GitHub API
         url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}'.format(GH_BASE_URL)
@@ -476,12 +502,12 @@ def add_or_update_issue(msg_data, issue_id=None):
             headers=GH_POST_HEADERS,
             data=json.dumps(msg_data)
         )
-    pprint(resp)
+    ##pprint(resp)
     try:
         new_msg = resp.json()
     except:
         new_msg = resp.json
-    pprint(new_msg)
+    ##pprint(new_msg)
     resp.raise_for_status()
     return new_msg
 
@@ -506,8 +532,7 @@ def add_or_update_comment(msg_data, comment_id=None, parent_issue_id=None ):
             headers=GH_POST_HEADERS,
             data=json.dumps(msg_data)
         )
-    from pprint import pprint
-    pprint(resp)
+    ##pprint(resp)
     resp.raise_for_status()
     try:
         new_msg = resp.json()
@@ -524,8 +549,7 @@ def close_issue(issue_id):
         headers=GH_POST_HEADERS,
         data=json.dumps({"state":"closed"})
     )
-    from pprint import pprint
-    pprint(resp)
+    ##pprint(resp)
     resp.raise_for_status()
     try:
         resp_json = resp.json()
@@ -541,8 +565,7 @@ def delete_comment(comment_id):
     resp = requests.delete( url, 
         headers=GH_GET_HEADERS
     )
-    from pprint import pprint
-    pprint(resp)
+    ##pprint(resp)
     resp.raise_for_status()
     try:
         resp_json = resp.json()
@@ -571,7 +594,6 @@ def get_local_comments(location={}):
         results = resp.json()
     except:
         results = resp.json
-    ##from pprint import pprint
     ##pprint(results)
     print("Returned {0} issues ({1})".format(
         results["total_count"],

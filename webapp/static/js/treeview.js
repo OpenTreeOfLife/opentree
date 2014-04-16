@@ -104,8 +104,8 @@ function loadLocalComments( chosenFilter ) {
         synthtree_id: '',
         synthtree_node_id: '',
         sourcetree_id: '',
-        sourcetree_node_id: '',
-        ottol_id: ''
+        ottol_id: '',
+        target_node_label: ''
     };
     // add a mnemonic to the comment header (for this page? which node?)
     var commentLabel = '';
@@ -119,8 +119,7 @@ function loadLocalComments( chosenFilter ) {
         fetchArgs.synthtree_id = argus.domSource;
         fetchArgs.synthtree_node_id = targetNode.nodeid;
         fetchArgs.sourcetree_id = targetNode.taxSource;
-        fetchArgs.sourcetree_node_id = targetNode.taxSourceId;
-        fetchArgs.ottol_id = targetNode.ottolId
+        fetchArgs.ottol_id = targetNode.ottId;
 
         commentLabel = buildNodeNameFromTreeData( targetNode );
         /* OR should comment label reflect the current filter?
@@ -130,8 +129,8 @@ function loadLocalComments( chosenFilter ) {
                 commentLabel = fetchArgs.synthtree_id +'@'+ fetchArgs.synthtree_node_id;
                 break;
 
-            case 'sourcetree_id,sourcetree_node_id':
-                commentLabel = fetchArgs.sourcetree_id +'@'+ fetchArgs.sourcetree_node_id;
+            case 'sourcetree_id':
+                commentLabel = fetchArgs.sourcetree_id;
                 break;
 
             case 'ottol_id':
@@ -139,6 +138,7 @@ function loadLocalComments( chosenFilter ) {
                 break;
         }
         */
+        fetchArgs.target_node_label = commentLabel;
     } else {
         // use the fallback 'url' index (apparently there's no tree-view here)
         console.log("loadLocalComments() - Loading comments based on 'url' (no argus.treeData!)");

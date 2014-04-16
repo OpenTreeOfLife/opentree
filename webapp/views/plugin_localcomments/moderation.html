@@ -215,7 +215,7 @@ from gluon.contrib.markdown.markdown2 import markdown
                 -
             {{ pass }}</td>
         <td>{{ if comment.sourcetree_id: }}
-                <strong title="{{= comment.sourcetree_id }}@{{= comment.sourcetree_node_id }}">SRC</strong>
+                <strong title="{{= comment.sourcetree_id }}">SRC</strong>
             {{ else: }}
                 -
             {{ pass }}</td>
@@ -281,7 +281,7 @@ from gluon.contrib.markdown.markdown2 import markdown
         {{ pass }}
         {{ if comment.sourcetree_id: }}
             <br/>
-             &nbsp; &nbsp; <strong>Source tree IDs</strong>: {{= comment.sourcetree_id }}@{{= comment.sourcetree_node_id }}
+             &nbsp; &nbsp; <strong>Source tree IDs</strong>: {{= comment.sourcetree_id }}
         {{ pass }}
         {{ if comment.ottol_id: }}
             <br/>
