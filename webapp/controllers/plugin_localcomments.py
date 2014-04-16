@@ -67,6 +67,29 @@ function capture_form() {
 
     jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
         var $form = jQuery(this).closest('form');
+
+        // validate form fields
+        var $visitorNameField = $form.find('input[name="visitor_name"]'); 
+        if ($visitorNameField.is(':visible') && ($.trim($visitorNameField.val()) === '')) {
+            alert("Please enter your name (and preferably an email address) so we can stay in touch.");
+            return false;
+        }
+        var $fbTypeField = $form.find('select[name="feedback_type"]'); 
+        if ($fbTypeField.is(':visible') && ($.trim($fbTypeField.val()) === '')) {
+            alert("Please choose a feedback type for this topic.");
+            return false;
+        }
+        var $titleField = $form.find('input[name="issue_title"]'); 
+        if ($titleField.is(':visible') && ($.trim($titleField.val()) === '')) {
+            alert("Please give this topic a title.");
+            return false;
+        }
+        var $bodyField = $form.find('textarea[name="body"]'); 
+        if ($.trim($bodyField.val()) === '') {
+            alert("Please enter some text for this "+ (isThreadStarter ? 'issue' : 'comment') +".");
+            return false;
+        }
+
         jQuery.post(action,
             {
                ////$'thread_parent_id': form.find('input[name="thread_parent_id"]').val(),
@@ -343,8 +366,17 @@ def index():
         # build useful links for some footer fields
         if auth.user:
             author_link = '[{0}]({1})'.format(auth.user.name, auth.user.github_url)
-        else: 
+        elif visitor_name and visitor_email: 
             author_link = '[{0}](mailto:{1})'.format(visitor_name, visitor_email)
+        elif visitor_name: 
+            # no email provided
+            author_link = visitor_name
+        elif visitor_email:
+            # no name provided
+            author_link = '[{0}](mailto:{1})'.format(visitor_email, visitor_email)
+        else:
+            # no identifying information provided
+            author_link = 'Anonymous'
 
         if (thread_parent_id == '0'):
             # create a new issue (thread starter)
@@ -427,18 +459,18 @@ def index():
                         '' if auth.user_id else BR(),
                         SELECT(
                             OPTION('What kind of feedback is this?', _value=''),
-                            OPTION('Reply or general comment', _value=''),
+                            OPTION('General comment', _value='General comment'),
                             OPTION('Reporting an error in phylogeny', _value='Error in phylogeny'),
                             OPTION('Bug report (website behavior)', _value='Bug report'),
                             OPTION('New feature request', _value='Feature request'),
-                        _name='feedback_type', value=''),
+                        _name='feedback_type',value='',_style='width: auto;'),
                         T(' '),
                         SELECT(
                             OPTION('about node placement in the synthetic tree', _value='Re: synthetic tree'),
                             OPTION('about node placement in the source tree', _value='Re: source tree'),
                             OPTION('about taxon data in OTT', _value='Re: OTT taxon'),
                             OPTION('general feedback (none of the above)', _value=''),
-                        _name='intended_scope', value='synthtree'),
+                        _name='intended_scope',value='',_style='width: auto;'),
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
                         INPUT(_type='text',_id='issue_title',_name='issue_title',_value='',_placeholder="Give this topic a title"),   # should appear for proper issues only
                         TEXTAREA(_name='body',_placeholder="Add more to this topic, using Markdown (click 'Markdown help' below to learn more)."),
