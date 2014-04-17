@@ -2033,6 +2033,7 @@ var studyScoringRules = {
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
     ],
+/*
     'Annotations': [
         // pending or unanswered questions, etc.
                         {
@@ -2047,7 +2048,6 @@ var studyScoringRules = {
                                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
                         }
     ],
-/*
     'Tools': [
         // maybe just happy news here.. new tools available?
                         {
