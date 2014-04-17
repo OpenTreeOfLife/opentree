@@ -63,6 +63,10 @@ function showFooterMessage(msg, msgType) {
             break;
         case 'error':
             // these should stay until user dismisses
+            $flashArea.unbind('click').click(function() {
+                // suppress normal hide-me behavior!
+                return false;
+            });
             break;
     }
 

@@ -1195,6 +1195,7 @@ function saveFormDataToStudyJSON() {
     }
   
     $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
         type: 'PUT',
         dataType: 'json',
         // crossdomain: true,
@@ -1202,15 +1203,26 @@ function saveFormDataToStudyJSON() {
         url: saveURL,
         processData: false,
         data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
-        success: function( data, textStatus, jqXHR ) {
-            // this should be properly parsed JSON
-            ///console.log('saveFormDataToStudyJSON(): done! textStatus = '+ textStatus);
+        complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
-                showErrorMessage('Sorry, there was an error saving this study.');
+                if (jqXHR.status >= 500) {
+                    // major server-side error, just show raw response for tech support
+                    var errMsg = 'Sorry, there was an error saving this study. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                    hideModalScreen();
+                    showErrorMessage(errMsg);
+                    return;
+                }
+                // Server blocked the save due to major validation errors!
+                var data = $.parseJSON(jqXHR.responseText);
+                // TODO: this should be properly parsed JSON, show it more sensibly
+                // (but for now, repeat the crude feedback used above)
+                var errMsg = 'Sorry, there was an error in the study data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
                 return;
             }
-
+            // presume success from here on
             hideModalScreen();
             showSuccessMessage('Study saved to remote storage.');
 
@@ -4983,3 +4995,4 @@ function formatDOIAsURL() {
     viewModel.nexml['^ot:studyPublication']['@href'] = newValue;
     nudgeTickler('GENERAL_METADATA');
 }
+
