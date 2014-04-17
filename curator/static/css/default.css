@@ -373,7 +373,7 @@ p#tree-description {
 h1#main-title {
     font-size: 32px;
     margin-bottom: 0;
-    padding: 2px 0 26px;
+    padding: 2px 0 5px;
     line-height: 1.2em;
 }
 h1#main-title .comments-indicator,

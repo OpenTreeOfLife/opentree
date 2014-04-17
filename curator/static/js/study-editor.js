@@ -32,7 +32,7 @@ var tagsOptions = {
 
 $(document).ready(function() {
     bindHelpPanels();
-    // auto-select first tab (Status)
+    // auto-select first tab (Metadata)
     $('.nav-tabs a:first').tab('show');
     loadSelectedStudy();
 
@@ -866,6 +866,10 @@ function loadSelectedStudy() {
 
             var mainPageArea = $('#main .tab-content')[0];
             ko.applyBindings(viewModel, mainPageArea);
+            var headerQualityPanel = $('#main .header-quality-panel')[0];
+            ko.applyBindings(viewModel, headerQualityPanel);
+            var qualityDetailsViewer = $('#quality-details-viewer')[0];
+            ko.applyBindings(viewModel, qualityDetailsViewer);
 
             // update quality assessment whenever anything changes
             // TODO: throttle this back to handle larger studies?
@@ -932,7 +936,7 @@ function updateQualityDisplay () {
         if (addingCriteriaPanels) {
             // generate criteria detail areas (once only!)
             $detailsPanel.append(
-                '<div class="criterion-details" onclick="goToTab(\''+ cName +'\'); return false;">'
+                '<div class="criterion-details" onclick="hideQualityDetailsPopup(); goToTab(\''+ cName +'\'); return false;">'
                   + '<strong>'+ cName +'</strong>'
                   + '<span class="criterion-score">50%</span>'
                   + '<div class="progress progress-info criterion-score-bar">'
@@ -1005,6 +1009,14 @@ function toggleQualityDetails( hideOrShow ) {
         $detailsPanel.slideDown();
         $toggle.text('(hide details)');
     }
+}
+
+function showQualityDetailsPopup() {
+    // show details in a popup (already bound)
+    $('#quality-details-viewer').modal('show');
+}
+function hideQualityDetailsPopup() {
+    $('#quality-details-viewer').modal('hide');
 }
 
 var hidingBranchLengths = false;
@@ -1797,7 +1809,7 @@ function TreeNode() {
  *
  * validity? or should we make it "impossible" to build invalid data here?
  *
- * Let's try again, organizing by tab (Status, Metadata, etc)
+ * Let's try again, organizing by tab (Metadata, Trees, etc)
  */
 
 var roughDOIpattern = new RegExp('(doi|DOI)[\\s\\.\\:]{0,2}\\b10[.\\d]{2,}\\b');
@@ -2051,20 +2063,6 @@ var studyScoringRules = {
                         }
     ],
 */
-    'Status': [
-        // general validation problems... something that spans multiple tabs
-                        {
-                            description: "placeholder to fake happy data",
-                            test: function() {
-                                return true;
-                            },
-                            weight: 0.4, 
-                            successMessage: "",
-                            failureMessage: "",
-                            suggestedAction: ""
-                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-                        }
-    ]
 }
 
 
