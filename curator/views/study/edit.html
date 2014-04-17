@@ -46,7 +46,23 @@ response.files.append(URL('static','js/d3.phylogram.js'))
 
 {{extend 'layout.html'}}
 
-<a class="main-title-DOI" style="display: none; position: relative; top: -24px;" href="#" target="_blank">{DOI}</a>
+<a class="main-title-DOI" style="display: none; position: relative; top: -4px;" href="#" target="_blank">{DOI}</a>
+
+<div class="header-quality-panel" style="margin-bottom: 8px; overflow: hidden;">
+    <div style="float: left;">
+        Study quality &nbsp;
+    </div>
+
+    <div style="float: right;">
+        &nbsp; 
+        <strong><span data-bind="text: studyQualityPercent"></span>%</strong>
+        <a id="quality-details-toggle" onclick="showQualityDetailsPopup(); return false;" href="#">(show details)</a>
+    </div>
+
+    <div data-bind="css: studyQualityBarClass" style="height: 0.5em; margin: 0.5em 0 0;">
+      <div class="bar" data-bind="style: { width: studyQualityPercentStyle }">&nbsp;</div>
+    </div>
+</div>
 
 <style type="text/css">
 body {
@@ -171,7 +187,6 @@ body {
       <li><a href="#OTU-Mapping" data-toggle="tab">OTU Mapping <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#Annotations" data-toggle="tab">Annotations <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#Tools" data-toggle="tab">Tools <span class="badge badge-important" style="display: none;">?</span></a></li>
-      <li><a href="#Status" data-toggle="tab">Status <span class="badge badge-important" style="display: none;">?</span></a></li>
     </ul>
 
     <div class="span4 Xbtn-group" style="float: right; margin-top: -56px;">
@@ -1409,51 +1424,6 @@ body {
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
-          <div class="tab-pane" id="Status">
-           <div class="span8"><!-- main column... -->
-            <ul class="suggestion-list"></ul>
-            <div style="margin-bottom: 100px;">
-
-                <img src="{{=URL('static','images/study-status-under-revision.png')}}" alt="Under Revision" />
-
-                  <p>
-                    <strong style="color: #c33;">There is an active hold on this study (details below).</strong>
-                  </p>
-                  <pre style="border: 1px solid #c33; color: #c33;">Validation suggests that the preferred tree's rooting is dubious. 
-Please review and re-submit.</pre>
-
-                  <p>
-                    There are <a href="#">5 open issues</a> in this study's annotations.
-                  </p>
-
-                <form>
-                {{ if viewOrEdit == 'EDIT': }}
-                  <div class="control-group">
-                    <div class="controls">
-                      <button class="btn btn-disabled" disabled="disabled">Submit study for synthesis</button>
-                    </div>
-                  </div>
-                {{ pass }}
-                </form>
-            </div>
-
-            <div style="height: 2em;">&nbsp;</div>
-         </div><!-- end of main column... -->
-         <div class="span4"><!-- right col -->
-            <strong>Study quality</strong> <a id="quality-details-toggle" onclick="toggleQualityDetails(); return false;" href="#">(hide details)</a>
-            
-            <div data-bind="css: studyQualityBarClass">
-              <div class="bar" data-bind="style: { width: studyQualityPercentStyle }">
-                  <span data-bind="text: studyQualityPercent"></span>%
-              </div>
-            </div>
-
-            <div id="study-quality-details" class="well" style="display: block; margin-top: -6px; padding: 11px 15px 0px;">
-                <!-- details for score criteria will appear here -->
-            </div>
-         </div><!-- end of right col -->
-       </div><!-- /.tab-pane -->
-
     </div><!-- /.tab-content -->
 
 
@@ -1504,6 +1474,41 @@ Please review and re-submit.</pre>
             returned these matching records (best matches first).
         </p>
         <ul class="found-matches"></ul>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>
+
+<!-- hidden template for study-quality details -->
+<div class="modal hide fade" id="quality-details-viewer" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Study quality scores
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Based on the tools currently chosen, this study has an overall score of
+            <strong><span data-bind="text: studyQualityPercent"></span>%</strong>
+        </p>
+        <div data-bind="css: studyQualityBarClass">
+          <div class="bar" data-bind="style: { width: studyQualityPercentStyle }">
+              <span data-bind="text: studyQualityPercent"></span>%
+          </div>
+        </div>
+        <p>
+            This score combines lots of different quality measurements.  Some
+            of these check for internal consistency and completeness, while
+            others are only relevant when using your study data with particular
+            applications (listed in the Tools tab).  Here's a breakdown of
+            which tests failed and may need attention. Click any section or
+            message below to go to the source of the error.
+        </p>
+        <div id="study-quality-details">
+            <!-- details for score criteria will appear here -->
+        </div>
     </div>
     <div class="modal-footer">
       <a data-dismiss="modal" class="btn" >Close</a>
