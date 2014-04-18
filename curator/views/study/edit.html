@@ -1491,24 +1491,32 @@ body {
       </h3>
     </div>
     <div class="modal-body">
-        <p>
-            Based on the tools currently chosen, this study has an overall score of
-            <strong><span data-bind="text: studyQualityPercent"></span>%</strong>
-        </p>
-        <div data-bind="css: studyQualityBarClass">
+        <div data-bind="css: studyQualityBarClass" style="margin-bottom: 5px;">
           <div class="bar" data-bind="style: { width: studyQualityPercentStyle }">
               <span data-bind="text: studyQualityPercent"></span>%
           </div>
         </div>
+        <button class="help-toggle" style="display: none;">
+            Show help <i class="icon-chevron-down Xicon-white"></i>
+        </button>
         <p>
-            This score combines lots of different quality measurements.  Some
-            of these check for internal consistency and completeness, while
-            others are only relevant when using your study data with particular
-            applications (listed in the Tools tab).  Here's a breakdown of
-            which tests failed and may need attention. Click any section or
-            message below to go to the source of the error.
+            Based on the tools currently chosen, this study has an overall score of
+            <strong><span data-bind="text: studyQualityPercent"></span>%</strong>
         </p>
-        <div id="study-quality-details">
+        <div class="help-box" style="display: block;">
+            <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+            </button>
+            <p>
+                This score is composed of many different tests in several
+                categories. Some of these check for internal consistency and completeness,
+                while others are only relevant when using your study data with particular
+                applications (listed in the Tools tab).  Here's a breakdown of which tests
+                failed and may need attention. Click any category or message below to go to the
+                source of the error.
+            </p>
+        </div>
+        <div id="study-quality-details" style="margin-top: 5px;">
             <!-- details for score criteria will appear here -->
         </div>
     </div>
