@@ -488,6 +488,12 @@ function loadSelectedStudy() {
 
             // keep track of the SHA (git commit ID) that corresponds to this version of the study
             viewModel.startingCommitSHA = response['sha'] || 'SHA_NOT_PROVIDED';
+            
+            // we should also now have the full commit history of this NexSON
+            // study in the docstore repo
+            viewModel.versions = ko.observableArray(
+                response['versionHistory'] || [ ]
+            ).asPaged(20);
 
             /*
              * Add observable properties to the model to support the UI
