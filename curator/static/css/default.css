@@ -628,3 +628,24 @@ tr:hover .row-controls-ghosted {
     font-weight: bold;
     margin: 0.5em 0;
 }
+
+/* Wrap long lines in pre-formatted commit messages (History tab).
+ * Adapted from http://css-tricks.com/snippets/css/make-pre-text-wrap/
+ */
+#History pre {
+    border: 0px solid transparent;
+    background-color: transparent;
+    box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    webkit-box-sizing: border-box;
+    display: block; 
+    white-space: pre-wrap;  
+    white-space: -moz-pre-wrap; 
+    white-space: -pre-wrap; 
+    white-space: -o-pre-wrap; 
+    word-wrap: break-word; 
+    word-break: break-word; 
+    width: 100%; 
+    padding: 0px;
+    overflow-x: auto;
+}

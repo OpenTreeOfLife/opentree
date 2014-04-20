@@ -1456,16 +1456,16 @@ body {
                     data-bind="visible: viewModel.versions.pagedItems().length &gt; 0">
                   <thead>
                     <tr>
-                        <th>Date</th>
-                        <th>Curated by</th>
-                        <th>Comment</th>
+                        <th width="20%">Date</th>
+                        <th width="20%">Curated by</th>
+                        <th width="60%">Comment</th>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.versions.pagedItems(), as: 'version' }">
                     <tr>
                         <td><span data-bind="text: version['relative_date'], attr: {'title': version['date']}">?</span></td>
                         <td data-bind="text: version['author_name']">?</td>
-                        <td><pre data-bind="text: version['message_subject'] +'\n\n'+ version['message_body']">?</pre></td>
+                        <td><pre data-bind="text: version['message_subject'] + (version['message_body'] ? '\n\n'+ version['message_body'] : '')">?</pre></td>
                     </tr>
                   </tbody>
                 </table>
