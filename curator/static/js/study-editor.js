@@ -488,6 +488,12 @@ function loadSelectedStudy() {
 
             // keep track of the SHA (git commit ID) that corresponds to this version of the study
             viewModel.startingCommitSHA = response['sha'] || 'SHA_NOT_PROVIDED';
+            
+            // we should also now have the full commit history of this NexSON
+            // study in the docstore repo
+            viewModel.versions = ko.observableArray(
+                response['versionHistory'] || [ ]
+            ).asPaged(20);
 
             /*
              * Add observable properties to the model to support the UI
@@ -1154,6 +1160,13 @@ function validateFormData() {
     return true;
 }
 
+function promptForSaveComments() {
+    // show a modal popup to gather comments (or cancel)
+    $('#save-comments-popup').modal('show');
+    // buttons there do the remaining work
+}
+
+
 function scrubNexsonForTransport( nexml ) {
     if (!nexml) {
         nexml = viewModel.nexml;
@@ -1175,14 +1188,27 @@ function saveFormDataToStudyJSON() {
     // save all populated fields; clear others, or remove from JSON(?)
     showModalScreen("Saving study data...", {SHOW_BUSY_BAR:true});
 
-    //// push changes back to storage
+    // push changes back to storage
     var saveURL = API_update_study_PUT_url.replace('{STUDY_ID}', studyID);
+    // gather commit message (if any) from pre-save popup
+    var commitMessage;
+    var firstLine = $('#save-comment-first-line').val();
+    var moreLines = $('#save-comment-more-lines').val();
+    if ($.trim(firstLine) === '') {
+        commitMessage = $.trim(moreLines);
+    } else if ($.trim(moreLines) === ''){
+        commitMessage = $.trim(firstLine);
+    } else {
+        commitMessage = $.trim(firstLine) +"\n\n"+ $.trim(moreLines);
+    }
+    
     // add non-Nexson values to the query string
     var qsVars = $.param({
         author_name: authorName,
         author_email: authorEmail,
         auth_token: authToken,
-        starting_commit_SHA: viewModel.startingCommitSHA
+        starting_commit_SHA: viewModel.startingCommitSHA,
+        commit_msg: commitMessage
     });
     saveURL += ('?'+ qsVars);
 

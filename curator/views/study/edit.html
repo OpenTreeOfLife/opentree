@@ -189,12 +189,13 @@ body {
       <li><a href="#Annotations" data-toggle="tab">Annotations <span class="badge badge-important" style="display: none;">?</span></a></li>
     -->
       <li><a href="#Tools" data-toggle="tab">Tools <span class="badge badge-important" style="display: none;">?</span></a></li>
+      <li><a href="#History" data-toggle="tab">History <span class="badge badge-important" style="display: none;">?</span></a></li>
     </ul>
 
     <div class="span4 Xbtn-group" style="float: right; margin-top: -56px;">
         {{ if viewOrEdit == 'EDIT': }}
           <button class="btn btn"
-            onclick="if (validateFormData()) saveFormDataToStudyJSON(); return false;">Save Study</button>
+            onclick="if (validateFormData()) promptForSaveComments(); return false;">Save Study</button>
           <a id="return-to-study-list" class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
           <button class="btn btn-danger pull-right"
             onclick="removeStudy(); return false;">Delete Study</button>
@@ -1426,6 +1427,74 @@ body {
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
+          <div class="tab-pane" id="History">
+           <div class="span12"><!-- full width... -->
+
+            <button class="help-toggle" style="display: none; margin-bottom: 0px;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+              <p>
+                This tab shows the <strong>edit history</strong> for this study:
+                each saved version of the data, who submitted the changes, and
+                a comment added each time. Note that this might include edits
+                made in other tools, or by automated software.
+              </p>
+            </div>
+
+            <ul class="suggestion-list" style="clear: right;"></ul>
+            <div style="margin-bottom: 100px;">
+
+                <div class="empty-list-prompt" data-bind="visible: viewModel.versions.pagedItems().length === 0">
+                    No previous versions found! (This is a new study.)
+                </div>
+
+                <table class="table table-condensed"
+                    data-bind="visible: viewModel.versions.pagedItems().length &gt; 0">
+                  <thead>
+                    <tr>
+                        <th width="20%">Date</th>
+                        <th width="20%">Curated by</th>
+                        <th width="60%">Comment</th>
+                    </tr>
+                  </thead>
+                  <tbody data-bind="foreach: { data: viewModel.versions.pagedItems(), as: 'version' }">
+                    <tr>
+                        <td><span data-bind="text: version['relative_date'], attr: {'title': version['date']}">?</span></td>
+                        <td data-bind="text: version['author_name']">?</td>
+                        <td><pre data-bind="text: version['message_subject'] + (version['message_body'] ? '\n\n'+ version['message_body'] : '')">?</pre></td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="pagination pagination-centered pagination-small" 
+                     Xdata-bind="if: viewModel.versions()().length &gt; viewModel.versions().pagedItems().length">
+                  <ul>
+                    <li data-bind="css: { 'disabled': !viewModel.versions.prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.versions.prev(); return false;">&laquo;</a>
+                    </li>
+                   <!-- ko foreach: getPageNumbers( viewModel.versions ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.versions ) -->
+                    <li data-bind="css: { 'active': (viewModel.versions.current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.versions.goToPage($data); return false; }">0</a>
+                    </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.versions ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.versions.goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
+                   <!-- /ko -->
+                    <li data-bind="css: { 'disabled': !viewModel.versions.next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.versions.next(); return false;">&raquo;</a>
+                    </li>
+                  </ul>
+                </div>
+
+            </div>
+           </div><!-- end of full-width column... -->
+          </div><!-- /.tab-pane -->
     </div><!-- /.tab-content -->
 
 
@@ -1479,6 +1548,29 @@ body {
     </div>
     <div class="modal-footer">
       <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>
+
+<!-- hidden template for gathering comments when saving the study -->
+<div class="modal hide fade modal-save-comments" id="save-comments-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Add a comment for these changes
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Add a brief description of the work you've done.
+            This will appear in the History tab.
+        </p>
+        <input type="text" id="save-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
+        <textarea id="save-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-info pull-right" style="margin-left: 20px;" 
+              onclick="$('#save-comments-popup').modal('hide'); saveFormDataToStudyJSON(); return false;">Save Study</button>
+      <a data-dismiss="modal" class="btn" >Cancel</a>
     </div>
 </div>
 
