@@ -1465,7 +1465,7 @@ body {
                     <tr>
                         <td><span data-bind="text: version['relative_date'], attr: {'title': version['date']}">?</span></td>
                         <td data-bind="text: version['author_name']">?</td>
-                        <td data-bind="text: version['message']">?</td>
+                        <td><pre data-bind="text: version['message_subject'] +'\n\n'+ version['message_body']">?</pre></td>
                     </tr>
                   </tbody>
                 </table>
