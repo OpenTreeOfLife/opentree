@@ -2202,7 +2202,8 @@ ko.dirtyFlag = function(root, isInitiallyDirty) {
 };
 
 var treeTagsInitialized = false;
-function showTreeViewer( tree ) {
+function showTreeViewer( tree, options ) {
+    // if options.HIGHLIGHT_NODE_ID exists, try to scroll to this node
     if (viewOrEdit == 'EDIT') {
         if (treeTagsInitialized) {
             $('#tree-tags').tagsinput('destroy');
@@ -2244,8 +2245,87 @@ function showTreeViewer( tree ) {
         updateEdgesInTree( tree );
         
         drawTree( tree, {'INITIAL_DRAWING':true} );
+
+        var highlightNodeID = options.HIGHLIGHT_NODE_ID || null;
+        // clear any prior stepwise UI for showing highlights
+        $('#tree-viewer').find('.stepwise-highlights').remove();
+        if (options.HIGHLIGHT_PLAYLIST) {
+            // use this to find the highlight node and show stepwise UI
+            var currentStep = options.HIGHLIGHT_PLAYLIST[ options.HIGHLIGHT_POSITION ];
+            highlightNodeID = currentStep.nodeID;
+            $('#tree-viewer .modal-header').append(
+                '<div class="stepwise-highlights">prev - '+ 
+                options.HIGHLIGHT_PROMPT +' - next</div>'
+            );
+        }
+        if (highlightNodeID) {
+            // scroll this node into view (once popup is properly place in the DOM)
+            setTimeout(function() {
+                scrollToTreeNode(tree['@id'], highlightNodeID);
+            }, 250);
+        }
+
         hideModalScreen();
     }, 1000);
+}
+
+function findOTUInTrees( otu, trees ) {
+    // return an array of otu-context objects; each has a tree ID and node ID
+    //
+    // N.B. It's possible for a single tree to have the same OTU in multiple
+    // nodes; in this case, expect to add multiple context objects with the 
+    // same tree ID.
+    var otuID = otu['@id'];
+    var otuContexts = [ ];
+    $.each( trees, function(i, tree) {
+        // check this tree's nodes for this OTU id
+        $.each( tree.node, function( i, node ) {
+            if (node['@otu'] === otuID) {
+                otuContexts.push({ 'treeID': tree['@id'], 'nodeID': node['@id'] });
+            }
+        });
+    });
+    return otuContexts;
+}
+function showOTUInContext() {
+    // use the popup tree viewer to show this node in place (to clarify OTU mapping, etc)
+    var otu = this;
+    // start with preferred trees (show best-quality results first)
+    var otuContextsToShow = findOTUInTrees( otu, getPreferredTrees() );
+    $.merge( otuContextsToShow, findOTUInTrees( otu, getNonPreferredTrees() ) );
+    // if this OTU is unused, something's very wrong; bail out now
+    if (otuContextsToShow.length === 0) {
+        alert("This OTU doesn't appear in any tree. (This is not expected.)");
+        return;
+    }
+    // otherwise show the tree viewer with first result highlighted, UI to show more
+    var itsTree = getTreeByID('u10991628-99c2-46de-aa3f-67747c700213g0n0');
+    showTreeViewer(itsTree, {
+        HIGHLIGHT_PLAYLIST: otuContextsToShow,
+        HIGHLIGHT_PROMPT: "Showing the chosen OTU in context",
+        HIGHLIGHT_POSITION: 0
+    })
+}
+
+function scrollToTreeNode( treeID, nodeID ) {
+    // assumes that tree viewer is visibe (TODO: force this if not?)
+    var node = getTreeNodeByID(treeID, nodeID);
+    var $treeView = $('#tree-viewer svg:eq(0)');
+    var $scrollingPane = $treeView.closest('.modal-body');
+    var offsetTop = $treeView.offset().top - $scrollingPane.offset().top;
+    var offsetLeft = $treeView.offset().left - $scrollingPane.offset().left;
+    $scrollingPane.scrollTop( node.y + offsetTop );
+    $scrollingPane.scrollLeft( node.x + offsetLeft );
+    highlightTreeNode( treeID, nodeID );
+}
+
+function highlightTreeNode( treeID, nodeID ) {
+    // assumes that tree viewer is visibe (TODO: force this if not?)
+    var node = getTreeNodeByID(treeID, nodeID);
+    var $treeView = $('#tree-viewer svg:eq(0)');
+    var $itsLabelElement = $('#nodebox-'+ nodeID);
+    $itsLabelElement.css('filter', 'url(#highlight)');   
+    // this effect was defined in an SVG 'filter' element
 }
 
 var vizInfo = { tree: null, vis: null };

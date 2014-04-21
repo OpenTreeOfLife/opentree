@@ -899,15 +899,22 @@ body {
                     <tr>
                         <th width="30%">Original label</th>
                       {{ if viewOrEdit == 'EDIT': }}
+                        <th width="5%">&nbsp;</th>
                         <th width="30%">Modified for mapping</th>
                         <th width="5%">&nbsp;</th>
                       {{ pass }}
-                        <th width="35%">Taxon label in OTT</th>
+                        <th width="30%">Taxon label in OTT</th>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
                         <td data-bind="text: otu['^ot:originalLabel']">ORIGINAL?</td>
+                        <td>
+                            <button class="btn btn-mini row-controls-ghosted" title="Show this OTU in all trees"
+                                     data-bind="click: showOTUInContext, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                                <i class="icon-list"></i>
+                            </button>
+                        </td>
                       {{ if viewOrEdit == 'EDIT': }}
                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
@@ -918,8 +925,8 @@ body {
                         </td>
                         <td>
                           <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['@label']) === '' && !proposedMapping(otu) -->
-                            <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
-
+                            <button class="btn btn-mini row-controls-ghosted" title="Edit this label manually" 
+                                    data-bind="click: editOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <i class="icon-edit"></i>
                             </button>
                           <!-- /ko -->

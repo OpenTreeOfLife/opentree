@@ -213,6 +213,31 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("height", h + 30)
       .append("svg:g")
         .attr("transform", "translate(120, 20)");
+
+    if (!options.vis) {
+      // add any special filters (once only)
+      d3.select(selector).selectAll('svg')
+       .append('defs')
+         .append("svg:filter")
+           .attr("id", "highlight")
+           .each(function(d) {
+               // add multiple elements to this parent
+               d3.select(this).append("svg:feFlood")
+                 .attr("flood-color", "#ff0")  // yellow
+                 .attr("flood-opacity", "0.6")
+                 .attr("result", "tint");
+               d3.select(this).append("svg:feBlend")
+                 .attr("mode", "multiply")
+                 .attr("in", "SourceGraphic")
+                 .attr("in2", "tint")
+                 .attr("in3", "BackgroundImage");
+               /* ALTERNATIVE SOLUTION, using feComposite
+               d3.select(this).append("svg:feComposite")
+                 .attr("in", "SourceGraphic");
+                */
+           });
+    }
+
     var nodes = tree(nodes);
     
     if (options.skipBranchLengthScaling) {
@@ -329,8 +354,8 @@ if (!d3) { throw "d3 wasn't included!"};
             return "leaf node"
           }
         })
+        .attr("id", function(d) { return ("nodebox-"+ d['@id']); })
         .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; })
-
 
     // EXIT
     path_links
