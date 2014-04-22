@@ -17,6 +17,38 @@ echo "Installing API"
 #  Virtualenv
 #  WSGI handler
 
+# ---------- Redis for caching ---------
+REDIS_WITH_VERSION="redis-2.8.8"
+if ! test -f redis/bin/redis-server ; then
+    if ! test -d "downloads/${REDIS_WITH_VERSION}" ; then
+        if ! test -f downloads/"${REDIS_WITH_VERSION}.tar.gz" ; then
+            wget --no-verbose -O downloads/"${REDIS_WITH_VERSION}.tar.gz" http://download.redis.io/releases/"${REDIS_WITH_VERSION}".tar.gz
+        fi
+        (cd downloads; \
+            tar xfvz "${REDIS_WITH_VERSION}.tar.gz")
+    fi
+    if ! test -d redis/work ; then
+        mkdir -p redis/work
+        (cd downloads/${REDIS_WITH_VERSION} ; \
+            make && make PREFIX="${HOME}/redis" install)
+    fi
+fi
+# ---------- Celery for task queue for deferred tasks ------
+if ! which celery
+then
+    CELERY_VERSION="3.0.20"
+    if ! test -d celery-${CELERY_VERSION} ; then
+        if ! test -d "downloads/v${CELERY_VERSION}.zip" ; then
+            wget --no-verbose -O downloads/v${CELERY_VERSION}.zip https://github.com/celery/celery/archive/v${CELERY_VERSION}.zip
+        fi
+        (cd downloads; \
+            unzip v${CELERY_VERSION}.zip)
+        mv downloads/celery-${CELERY_VERSION} celery-${CELERY_VERSION}
+    fi
+    (cd celery-${CELERY_VERSION} ; \
+            python setup.py build ; python setup.py install)
+fi
+
 # ---------- API & TREE STORE ----------
 # Set up api web app
 # Compare install-web2py-apps.sh
@@ -42,6 +74,7 @@ git_refresh OpenTreeOfLife peyotl || true
 py_package_setup_install peyotl || true
 
 (cd $APPROOT; pip install -r requirements.txt)
+(cd $APPROOT/ot-celery; pip install -r requirements.txt ; python setup.py develop)
 
 (cd web2py/applications; \
     ln -sf ../../repo/$WEBAPP ./api)
@@ -104,5 +137,15 @@ pushd .
     python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL
     fi
 popd
+
+echo "copy redis config and start redis"
+# Make sure that redis has the up-to-date config from the api repo...
+cp $APPROOT/private/ot-redis.config redis/ot-redis.config
+# somewhat hacky shutdown and restart redis
+echo 'shutdown' | redis/bin/redis-cli
+nohup redis/bin/redis-server redis/ot-redis.config &
+
+echo "restarting a celery worker"
+celery multi restart worker -A open_tree_tasks -l info
 
 echo "Apache needs to be restarted (API)"
