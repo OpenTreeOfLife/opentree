@@ -223,8 +223,9 @@ if (!d3) { throw "d3 wasn't included!"};
            .each(function(d) {
                // add multiple elements to this parent
                d3.select(this).append("svg:feFlood")
-                 .attr("flood-color", "#ff0")  // yellow
-                 .attr("flood-opacity", "0.6")
+                 //.attr("flood-color", "#ffeedd")  // matches .help-box bg color!
+                 .attr("flood-color", "#ffb265")    // darkened to allow tint
+                 .attr("flood-opacity", "0.5")
                  .attr("result", "tint");
                d3.select(this).append("svg:feBlend")
                  .attr("mode", "multiply")
@@ -377,6 +378,8 @@ if (!d3) { throw "d3 wasn't included!"};
     // Is there a faster/cruder way to clear the decks?
     vis.selectAll('g.node text').remove();
 
+    // provide an empty label as last resort, so we can see highlights
+    var defaultNodeLabel = "unnamed";
 
     if (!options.skipLabels) {
       // refresh all labels based on tree position
@@ -389,28 +392,26 @@ if (!d3) { throw "d3 wasn't included!"};
           .attr('font-size', '10px')
           .attr('fill', '#ccc')
           ///.text(function(d) { return d.length; });
+          .attr('font-style', function(d) {
+              return (d.labelType === 'mapped label' ? 'inherit' : 'italic');
+          })
           .text(function(d) {
               // return (d.name + ' ('+d.length+')'); 
-              return d.name; 
+              if (d.labelType === 'node id') {
+                  return '';
+              }
+              return d.name || defaultNodeLabel; 
           });
 
       vis.selectAll('g.root.node text')
           .attr("dx", -8)
-          .attr("dy", 3)
-          .text(function(d) { 
-              //return (d.name + ' (root)'); 
-              return d.name; 
-          });
+          .attr("dy", 3);
 
       vis.selectAll('g.leaf.node text')
         .attr("dx", 8)
         .attr("dy", 3)
         .attr("text-anchor", "start")
-        .attr('fill', 'black')
-        .text(function(d) { 
-            // return (d.name + ' ('+d.length+')'); 
-            return d.name; 
-        });
+        .attr('fill', 'black');
     }
     
     return {tree: tree, vis: vis}
@@ -455,8 +456,7 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; })
         .attr('font-family', 'Helvetica Neue, Helvetica, sans-serif')
         .attr('font-size', '10px')
-        .attr('fill', 'black')
-        .text(function(d) { return d.name; });
+        .attr('fill', 'black');
 
       vis.selectAll('g.inner.node text')
         .attr("dx", function(d) { return d.x < 180 ? -6 : 6; })

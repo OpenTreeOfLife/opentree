@@ -2201,72 +2201,141 @@ ko.dirtyFlag = function(root, isInitiallyDirty) {
     return result;
 };
 
+// Keep track of when the tree viewer is already showing, so we
+// can hold it open and step through nodes or trees.
+var treeViewerIsInUse = false;
 var treeTagsInitialized = false;
 function showTreeViewer( tree, options ) {
     // if options.HIGHLIGHT_NODE_ID exists, try to scroll to this node
+    var highlightNodeID = options.HIGHLIGHT_NODE_ID || null;
+
+    if (!tree) {
+        // if tree is not specified, check for options.HIGHLIGHT_PLAYLIST
+        // and show the specified node (in its proper tree)
+        if (options.HIGHLIGHT_PLAYLIST) {
+            var currentPos = options.HIGHLIGHT_POSITION || 0;
+            var currentHighlight = options.HIGHLIGHT_PLAYLIST[ currentPos ];
+            tree = getTreeByID(currentHighlight.treeID);
+            highlightNodeID = currentHighlight.nodeID;
+        } 
+        if (!tree) {
+            // this should *never* happen
+            alert("showTreeViewer(): No tree specified!");
+            return;
+        }
+    }
+
     if (viewOrEdit == 'EDIT') {
         if (treeTagsInitialized) {
             $('#tree-tags').tagsinput('destroy');
+            treeTagsInitialized = false;
         }
     }
-    // quick test of modal
-    $('#tree-viewer .modal-body').css({
-        'height': '75%',
-        //'border': '1px dashed red',
-        'margin-left': '8px'
-    });
-    $('#tree-viewer').css({
-        'width': '90%',
-        'margin': 'auto -45%'
-    });
 
     // bind just the selected tree to the modal HTML 
-    var boundElement = $('#tree-viewer')[0];
-    // NOTE that we must call cleanNode first, to allow "re-binding" with KO
-    ko.cleanNode(boundElement);
-    ko.applyBindings(tree, boundElement);
-    $('#tree-viewer').modal('show');
+    // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
+    var $boundElements = $('#tree-viewer').find('.modal-body, .modal-header h3');
+    // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
+    $.each($boundElements, function(i, el) {
+        ko.cleanNode(el);
+        ko.applyBindings(tree,el);
+    });
 
-    showModalScreen("Launching tree viewer...", {SHOW_BUSY_BAR:true});
-
-    setTimeout(function() {
+    var updateTreeDisplay = function() {
         if (viewOrEdit == 'EDIT') {
-            /*
             if (treeTagsInitialized) {
                 $('#tree-tags').tagsinput('destroy');
+                treeTagsInitialized = false;
             }
-            */
             updateInferenceMethodWidgets( tree );
             $('#tree-tags').tagsinput( tagsOptions );
             treeTagsInitialized = true;
         }
 
-        //showModalScreen("Rendering tree...", {SHOW_BUSY_BAR:true});
         updateEdgesInTree( tree );
         
         drawTree( tree, {'INITIAL_DRAWING':true} );
 
-        var highlightNodeID = options.HIGHLIGHT_NODE_ID || null;
         // clear any prior stepwise UI for showing highlights
         $('#tree-viewer').find('.stepwise-highlights').remove();
         if (options.HIGHLIGHT_PLAYLIST) {
             // use this to find the highlight node and show stepwise UI
             var currentStep = options.HIGHLIGHT_PLAYLIST[ options.HIGHLIGHT_POSITION ];
             highlightNodeID = currentStep.nodeID;
+            var isFirstStep = options.HIGHLIGHT_POSITION === 0;
+            var isLastStep = options.HIGHLIGHT_POSITION === (options.HIGHLIGHT_PLAYLIST.length - 1);
             $('#tree-viewer .modal-header').append(
-                '<div class="stepwise-highlights">prev - '+ 
-                options.HIGHLIGHT_PROMPT +' - next</div>'
+                '<div class="stepwise-highlights help-box">'
+              +      options.HIGHLIGHT_PROMPT 
+              + (options.HIGHLIGHT_PLAYLIST.length < 2 ? '' :
+                    ' ('+ (options.HIGHLIGHT_POSITION + 1) +' of '+ options.HIGHLIGHT_PLAYLIST.length +') &nbsp; '
+                  + '  <div class="btn-group">'
+                  + '    <a class="btn btn-small'+ (isFirstStep ? ' disabled' : '') +'" href="#" onclick="return false;">Previous</a>'
+                  + '    <a class="btn btn-small'+ (isLastStep ? ' disabled' : '') +'" href="#" onclick="return false;">Next</a>'
+                  + '  </div>'
+                )
+              + '</div>'
             );
+            if (!isFirstStep) {
+                $('#tree-viewer').find('.stepwise-highlights .btn-group a.btn:first').click(function() {
+                    // step to the previous highlight (close + re-open the popup as needed)
+                    var newPosition = (options.HIGHLIGHT_POSITION - 1 + options.HIGHLIGHT_PLAYLIST.length) % options.HIGHLIGHT_PLAYLIST.length;
+                    // "wrap around" if we're already on the first item
+                    var newStep = options.HIGHLIGHT_PLAYLIST[ newPosition ];
+                    if (false) { /// if (newStep.treeID === tree['@id']) ...
+                        // TODO: just scroll in the current view (and update stepwise UI)?
+                        return;
+                    }
+                    // close and re-open this window with in new tree and show new node
+                    options.HIGHLIGHT_POSITION = newPosition;
+                    showTreeViewer(null, options);
+                });
+            }
+            if (!isLastStep) {
+                $('#tree-viewer').find('.stepwise-highlights .btn-group a.btn:last').click(function() {
+                    // step to the next highlight (close + re-open the popup as needed)
+                    var newPosition = (options.HIGHLIGHT_POSITION + 1 + options.HIGHLIGHT_PLAYLIST.length) % options.HIGHLIGHT_PLAYLIST.length;
+                    // "wrap around" if we're already on the last item
+                    var newStep = options.HIGHLIGHT_PLAYLIST[ newPosition ];
+                    if (false) { /// if (newStep.treeID === tree['@id'])...
+                        // TODO: just scroll in the current view (and update stepwise UI)?
+                        return;
+                    }
+                    // close and re-open this window with in new tree and show new node
+                    options.HIGHLIGHT_POSITION = newPosition;
+                    showTreeViewer(null, options);
+                });
+            }
         }
         if (highlightNodeID) {
             // scroll this node into view (once popup is properly place in the DOM)
-            setTimeout(function() {
-                scrollToTreeNode(tree['@id'], highlightNodeID);
-            }, 250);
+            ///setTimeout(function() {
+            scrollToTreeNode(tree['@id'], highlightNodeID);
+            ///}, 250);
         }
 
-        hideModalScreen();
-    }, 1000);
+        ///hideModalScreen();
+    }
+
+    if (treeViewerIsInUse) {
+        // trigger its 'shown' event to 
+        updateTreeDisplay();
+    } else {
+        $('#tree-viewer').off('show').on('show', function () {
+            treeViewerIsInUse = true;
+        });
+        $('#tree-viewer').off('shown').on('shown', function () {
+            updateTreeDisplay();
+        });
+        $('#tree-viewer').off('hide').on('hide', function () {
+            treeViewerIsInUse = false;
+        });
+        $('#tree-viewer').off('hidden').on('hidden', function () {
+            ///console.log('@@@@@ hidden');
+        });
+
+        $('#tree-viewer').modal('show');
+    }
 }
 
 function findOTUInTrees( otu, trees ) {
@@ -2299,10 +2368,11 @@ function showOTUInContext() {
         return;
     }
     // otherwise show the tree viewer with first result highlighted, UI to show more
-    var itsTree = getTreeByID('u10991628-99c2-46de-aa3f-67747c700213g0n0');
-    showTreeViewer(itsTree, {
+    //var itsTree = getTreeByID('u10991628-99c2-46de-aa3f-67747c700213g0n0');
+    var promptLabel = otu['@label'] || otu['^ot:originalLabel'];
+    showTreeViewer(null, {
         HIGHLIGHT_PLAYLIST: otuContextsToShow,
-        HIGHLIGHT_PROMPT: "Showing the chosen OTU in context",
+        HIGHLIGHT_PROMPT: ("Showing the chosen OTU '<strong>"+ promptLabel +"</strong>' in context"),
         HIGHLIGHT_POSITION: 0
     })
 }
@@ -2312,10 +2382,13 @@ function scrollToTreeNode( treeID, nodeID ) {
     var node = getTreeNodeByID(treeID, nodeID);
     var $treeView = $('#tree-viewer svg:eq(0)');
     var $scrollingPane = $treeView.closest('.modal-body');
-    var offsetTop = $treeView.offset().top - $scrollingPane.offset().top;
-    var offsetLeft = $treeView.offset().left - $scrollingPane.offset().left;
-    $scrollingPane.scrollTop( node.y + offsetTop );
-    $scrollingPane.scrollLeft( node.x + offsetLeft );
+    var $nodeBox = $('#nodebox-'+ nodeID);
+    if ($nodeBox.length === 0) {
+        console.error("scrollToTreeNode: MISSING expected $('#nodebox-"+ nodeID +"') !");
+        return;
+    }
+    $scrollingPane.scrollTop( $nodeBox.position().top );
+    $scrollingPane.scrollLeft( $nodeBox.position().left );
     highlightTreeNode( treeID, nodeID );
 }
 
@@ -2359,7 +2432,9 @@ function drawTree( treeOrID, options ) {
     
     // preload nodes with proper labels and branch lengths
     $.each(tree.node, function(index, node) {
-        node.name = getTreeNodeLabel(tree, node, importantNodeIDs);
+        var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
+        node.name = labelInfo.label;
+        node.labelType = labelInfo.labelType;
         // reset x of all nodes, to avoid gradual "creeping" to the right
         node.x = 0;
         node.length = 0;  // ie, branch length
@@ -2927,23 +3002,36 @@ function reverseEdgeDirection( edge ) {
     edge['@target'] = oldSource;
 }
 function getTreeNodeLabel(tree, node, importantNodeIDs) {
+    // Return the best available label for this node, and its type:
+    //   'mapped label'         (mapped to OT taxonomy, preferred)
+    //   'original label'
+    //   'positional label'     (eg, "tree root")
+    //   'node id'              (a last resort, rarely useful)
     var nodeID = node['@id'];
 
+    /* apply positional labels?
     if (nodeID === importantNodeIDs.inGroupClade) {
-        ///return "ingroup clade";
+        return {label: "ingroup clade", labelType: 'positional label'};
     }
-
     if (nodeID === importantNodeIDs.treeRoot) {
-        ///return "tree root";
+        return {label: "tree root", labelType: 'positional label'};
     }
+    */
 
     var itsOTU = node['@otu'];
-    if (!itsOTU) {
-        return node['@id'];
+    if (itsOTU) {
+        var otu = getOTUByID( itsOTU );
+        var itsMappedLabel = otu['@label'];
+        if (itsMappedLabel) {
+            return {label: itsMappedLabel, labelType: 'mapped label'};
+        }
+        var itsOriginalLabel = otu['^ot:originalLabel'];
+        if (itsOriginalLabel) {
+            return {label: itsOriginalLabel, labelType: 'original label'};
+        }
     }
 
-    var otu = getOTUByID( itsOTU );
-    return otu['@label'];
+    return {label: nodeID, labelType: 'node id'};
 }
 
 function filenameFromFakePath( path ) {
@@ -4117,7 +4205,8 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     // general node information first, then actions
     nodeMenu.append('<li class="node-information"></li>');
     var nodeInfoBox = nodeMenu.find('.node-information');
-    nodeInfoBox.append('<span class="node-name">'+ getTreeNodeLabel(tree, node, importantNodeIDs) +'</span>');
+    var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
+    nodeInfoBox.append('<span class="node-name">'+ labelInfo.label +'</span>');
 
     if (nodeID == importantNodeIDs.treeRoot) {
 
@@ -4187,8 +4276,8 @@ function showEdgeOptionsMenu( tree, edge, nodePageOffset, importantNodeIDs ) {
     // general node information first, then actions
     nodeMenu.append('<li class="node-information"></li>');
     var nodeInfoBox = nodeMenu.find('.node-information');
-    nodeInfoBox.append('<span class="node-name"><span style="font-weight: normal;">Source: </span>'+ getTreeNodeLabel(tree, edge.source, importantNodeIDs) +'</span>');
-    nodeInfoBox.append('<br/><span class="node-name"><span style="font-weight: normal;">Target: </span>'+ getTreeNodeLabel(tree, edge.target, importantNodeIDs) +'</span>');
+    nodeInfoBox.append('<span class="node-name"><span style="font-weight: normal;">Source: </span>'+ getTreeNodeLabel(tree, edge.source, importantNodeIDs).label +'</span>');
+    nodeInfoBox.append('<br/><span class="node-name"><span style="font-weight: normal;">Target: </span>'+ getTreeNodeLabel(tree, edge.target, importantNodeIDs).label +'</span>');
     if ('length' in edge.target) {
         nodeInfoBox.append('<div>Edge length: '+ edge.target.length +'</div>');
     }

@@ -588,6 +588,9 @@ tr:hover .row-controls-ghosted {
 .help-box {
     margin-bottom: 1em;
 }
+.help-box .btn {
+    font-style: normal;
+}
 .help-toggle {
     float: right;
     /* font-weight: bold; */
@@ -648,4 +651,17 @@ tr:hover .row-controls-ghosted {
     width: 100%; 
     padding: 0px;
     overflow-x: auto;
+}
+
+#tree-viewer {
+    width: 90%;
+    margin: auto -45%;
+}
+#tree-viewer .modal-body {
+    height: 75%;
+    margin-left: 8px;
+}
+#tree-viewer .modal-body svg {
+    /* try to make this offsetParent to all its contents */
+    position: relative;
 }
