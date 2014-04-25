@@ -77,14 +77,8 @@ body {
 .node circle:hover {
   stroke-opacity: 0.5;
 }
-.node text {
-  fill: #ccc;
-}
 .node.leaf circle {
   fill: #777;
-}
-.node.leaf text {
-  fill: #333;
 }
 /* preferred ot:specifiedRoot */
 .node.specifiedRoot circle {
@@ -131,6 +125,12 @@ body {
 }
 .dropdown-menu > li.node-information .node-type.specifiedRoot {
     color: steelblue;
+}
+.dropdown-menu > li.node-information .node-label-type {
+    color: #888;
+    font-style: italic;
+    font-size: 0.85em;
+    line-height: 1.2em;
 }
 
 .link-trigger {
@@ -899,15 +899,22 @@ body {
                     <tr>
                         <th width="30%">Original label</th>
                       {{ if viewOrEdit == 'EDIT': }}
+                        <th width="5%">&nbsp;</th>
                         <th width="30%">Modified for mapping</th>
                         <th width="5%">&nbsp;</th>
                       {{ pass }}
-                        <th width="35%">Taxon label in OTT</th>
+                        <th width="30%">Taxon label in OTT</th>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
                         <td data-bind="text: otu['^ot:originalLabel']">ORIGINAL?</td>
+                        <td>
+                            <button class="btn btn-mini row-controls-ghosted" title="Show this OTU in all trees"
+                                     data-bind="click: showOTUInContext, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                                <i class="icon-search"></i>
+                            </button>
+                        </td>
                       {{ if viewOrEdit == 'EDIT': }}
                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
@@ -918,8 +925,8 @@ body {
                         </td>
                         <td>
                           <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['@label']) === '' && !proposedMapping(otu) -->
-                            <button class="btn btn-mini row-controls-ghosted" data-bind="click: editOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
-
+                            <button class="btn btn-mini row-controls-ghosted" title="Edit this label manually" 
+                                    data-bind="click: editOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <i class="icon-edit"></i>
                             </button>
                           <!-- /ko -->
@@ -1621,7 +1628,7 @@ body {
 <div class="modal hide fade modal-tree-viewer" id="tree-viewer" style="display: none;">
   <!-- KO binding here to 'tree' (as $data below) -->
     <div class="modal-header">
-      <a data-dismiss="modal" class="close">×</a>
+      <a class="close" onclick="$('#tree-viewer').modal('hide'); false;">×</a>
       <h3 id='dialog-heading'>
         {{ if viewOrEdit == 'EDIT': }}
             Edit tree
@@ -1783,9 +1790,10 @@ body {
 
                 <label>Tags: </label>
                 <!-- TODO: make all tags clickable (search in new window?) -->
-                <div class="bootstrap-tagsinput" 
+                <div id="tree-tags" class="bootstrap-tagsinput" 
                      style="display: inline-block; border: none; margin-bottom: 0; padding: 0 0 4px 0;"
-                     data-bind="visible: getTags(getTreeByID($data['@id'])).length > 0">
+                     data-bind="attr: {'treeid': $data['@id'] },
+                                visible: getTags(getTreeByID($data['@id'])).length > 0">
                 <!-- ko foreach: getTags( getTreeByID($data['@id']) ) -->
                     <span class="tag label label-info" data-bind="text: $data">TAG</span>
                 <!-- /ko -->
@@ -1825,7 +1833,7 @@ body {
               Cladogram (hide branch lengths)
           </label>
       </div>
-      <a data-dismiss="modal" class="btn" >Close</a>
+      <a class="btn" onclick="$('#tree-viewer').modal('hide'); false;">Close</a>
       <!-- <a class="btn btn-primary" id="btnSaveChanges">Save changes</a> -->
     </div>
 </div>
