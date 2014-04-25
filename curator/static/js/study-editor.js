@@ -4207,11 +4207,8 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     var nodeInfoBox = nodeMenu.find('.node-information');
     var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
     nodeInfoBox.append('<span class="node-name">'+ labelInfo.label +'</span>');
-
     if (nodeID == importantNodeIDs.treeRoot) {
-
         nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
-
     } else {
         if (viewOrEdit === 'EDIT') {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as root of this tree</a></li>');
@@ -4229,6 +4226,22 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade</a></li>');
         }
     }
+    // clarify which type of label 
+    var labelTypeDescription;
+    switch(labelInfo.labelType) {
+        case('mapped label'):
+            labelTypeDescription = 'mapped to OpenTree taxonomy';
+            break;
+        case('original label'):
+            labelTypeDescription = 'original OTU label';
+            break;
+        case('node id'):
+            labelTypeDescription = 'unnamed node';
+            break;
+        default:
+            labelTypeDescription = labelInfo.labelType;
+    }
+    nodeInfoBox.append('<div class="node-label-type">'+ labelTypeDescription +'</div>');
 
     if (viewOrEdit === 'EDIT') {
         nodeInfoBox.after('<li class="divider"></li>');

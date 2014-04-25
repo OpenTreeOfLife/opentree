@@ -390,7 +390,16 @@ if (!d3) { throw "d3 wasn't included!"};
           .attr("dy", -6)
           .attr("text-anchor", 'end')
           .attr('font-size', '10px')
-          .attr('fill', '#ccc')
+          .attr('fill', function(d) {
+              switch(d.labelType) {
+                  case ('mapped label'):
+                      return '#000';
+                  case ('node id'):
+                      return '#ccc';
+                  default:
+                      return '#888';
+              }
+          })
           ///.text(function(d) { return d.length; });
           .attr('font-style', function(d) {
               return (d.labelType === 'mapped label' ? 'inherit' : 'italic');
@@ -410,8 +419,7 @@ if (!d3) { throw "d3 wasn't included!"};
       vis.selectAll('g.leaf.node text')
         .attr("dx", 8)
         .attr("dy", 3)
-        .attr("text-anchor", "start")
-        .attr('fill', 'black');
+        .attr("text-anchor", "start");
     }
     
     return {tree: tree, vis: vis}

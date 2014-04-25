@@ -77,14 +77,8 @@ body {
 .node circle:hover {
   stroke-opacity: 0.5;
 }
-.node text {
-  fill: #ccc;
-}
 .node.leaf circle {
   fill: #777;
-}
-.node.leaf text {
-  fill: #333;
 }
 /* preferred ot:specifiedRoot */
 .node.specifiedRoot circle {
@@ -131,6 +125,12 @@ body {
 }
 .dropdown-menu > li.node-information .node-type.specifiedRoot {
     color: steelblue;
+}
+.dropdown-menu > li.node-information .node-label-type {
+    color: #888;
+    font-style: italic;
+    font-size: 0.85em;
+    line-height: 1.2em;
 }
 
 .link-trigger {
