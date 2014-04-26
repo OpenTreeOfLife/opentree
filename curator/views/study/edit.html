@@ -459,9 +459,18 @@ body {
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
-                        <td><a href="#" data-bind="click: showTreeViewer,
+                        <td>
+                            <a href="#" data-bind="click: showConflictingNodesInTreeViewer,
                                 text: tree['@label'],
-                                css: viewModel.ticklers.TREES">?</a></td>
+                                css: viewModel.ticklers.TREES">?</a>
+                            <a data-bind="if: conflictingNodesFoundInTree( tree ), 
+                                          css: viewModel.ticklers.TREES,
+                                          click: showConflictingNodesInTreeViewer" 
+                               class="suggestion-prompt" style="display: block;"
+                               href="#">
+                                Conflicts found!
+                            </a> 
+                        </td>
                         <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
                                 css: viewModel.ticklers.TREES">TYPE?</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree),

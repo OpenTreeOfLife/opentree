@@ -478,6 +478,9 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .suggestion-list span.label {
     padding: 0.3em 0.7em 0.4em;
 }
+.suggestion-prompt {
+    color: #b94a48;
+}
 
 .static-form-value {
     padding-top: 5px;
