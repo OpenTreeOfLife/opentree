@@ -2018,7 +2018,7 @@ var studyScoringRules = {
                 var conflictingNodesFound = false;
                 ///var startTime = new Date();
                 $.each(getPreferredTrees(), function(i, tree) {
-                    var conflictData = getConflictingNodesInTree(tree);
+                    var conflictData = getUnresolvedConflictsInTree(tree);
                     ///console.log(">>> looking for conflicts in tree '"+ tree['@id'] +"'...");
                     ///console.log(conflictData);
                     // keep true value, once this is set!
@@ -2419,7 +2419,7 @@ function showOTUInContext() {
 
 function showConflictingNodesInTreeViewer(tree) {
     // If there are no conflicts, fall back to simple tree view
-    var conflictData = getConflictingNodesInTree( tree );
+    var conflictData = getUnresolvedConflictsInTree( tree );
     if (!isPreferredTree(tree) || $.isEmptyObject(conflictData)) {
         showTreeViewer(tree);
         return;
@@ -4274,6 +4274,14 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     var nodeInfoBox = nodeMenu.find('.node-information');
     var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
     nodeInfoBox.append('<span class="node-name">'+ labelInfo.label +'</span>');
+    if (isConflictingNode( tree, node )) {
+        if (node['^ot:isTaxonExemplar'] === true) {
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); clearTaxonExemplar( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Clear exemplar for mapped taxon</a></li>');
+        } else {
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); markTaxonExemplar( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as exemplar for mapped taxon</a></li>');
+        }
+    }
+
     if (nodeID == importantNodeIDs.treeRoot) {
         nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
     } else {
@@ -5271,11 +5279,46 @@ function formatDOIAsURL() {
     nudgeTickler('GENERAL_METADATA');
 }
 
-function conflictingNodesFoundInTree( tree ) {
-    var conflictData = getConflictingNodesInTree( tree );
+function unresolvedConflictsFoundInTree( tree ) {
+    // N.B. This checks for UNRESOLVED conflicts
+    var conflictData = getUnresolvedConflictsInTree( tree );
     return $.isEmptyObject(conflictData) ? false : true;
 }
-
+function isConflictingNode( tree, node ) {
+    ///console.log("isConflictingNode( "+ tree['@id'] +", "+ node['@id'] +")...");
+    // N.B. This checks for ALL conflicts (incl. resolved)
+    var conflictInfo = getConflictingNodesInTree( tree );
+    var foundNodeInConflictData = false;
+    for (var taxonID in conflictInfo) {
+        $.each(conflictInfo[taxonID], function(i, mapping) {
+            if (mapping.nodeID === node['@id']) {
+                foundNodeInConflictData = true;
+                return false;
+            }
+        });
+    }
+    return foundNodeInConflictData;
+}
+function getUnresolvedConflictsInTree( tree ) {
+    // Filter from full conflict data to include just those node-sets that
+    // have't been resolved, ie, curator has not chosen an exemplar.
+    var unresolvedConflicts = {};
+    var allConflicts = getConflictingNodesInTree( tree );
+    for (var taxonID in allConflicts) {
+        var allNodesAlreadyMarked = true; // we can disprove this from any node
+        var itsMappings = allConflicts[taxonID];
+        $.each(itsMappings, function(i, mapping) {
+            if (!(mapping.curatorHasMarkedNode)) {
+                allNodesAlreadyMarked = false;
+                return false;
+            }
+        });
+        if (!(allNodesAlreadyMarked)) {
+            unresolvedConflicts[ taxonID ] = itsMappings;
+        }
+    }
+    return unresolvedConflicts;
+}
 function getConflictingNodesInTree( tree ) {
     // Return sets of nodes that ultimately map to a single OT taxon (via 
     // multiple OTUs) and are not siblings. A curator should choose the
@@ -5303,7 +5346,8 @@ function getConflictingNodesInTree( tree ) {
                     }
                     taxonMappings[taxonID].push({
                         nodeID: node['@id'],
-                        otuID: otuID
+                        otuID: otuID,
+                        curatorHasMarkedNode: ('^ot:isTaxonExemplar' in node)
                     });
                 }
             }
@@ -5339,4 +5383,41 @@ function getConflictingNodesInTree( tree ) {
     }
     
     return conflictingNodes;
+}
+function markTaxonExemplar( treeID, chosenNodeID ) {
+    // find all conflicting nodes and set flag for each
+    var chosenNode = getTreeNodeByID(treeID, chosenNodeID);
+    if (!chosenNode) {
+        console.error("markTaxonExemplar("+ treeID +","+ chosenNodeID +"): Chosen node not found!");
+        return;  // do nothing (this is not good)
+    }
+    var otuID = chosenNode['@otu'];
+    var otu = getOTUByID(otuID);
+    if (otu && '^ot:ottId' in otu) {
+        var taxonID = otu['^ot:ottId'];
+    } else {
+        console.error("markTaxonExemplar("+ treeID +","+ chosenNodeID +"): No mapped taxon found!");
+        return;  // do nothing (this is not good)
+    }
+    var tree = getTreeByID(treeID);
+    var conflictData = getConflictingNodesInTree(tree);
+    var itsMappings = conflictData[taxonID];
+    if (!itsMappings) {
+        console.error("markTaxonExemplar("+ treeID +","+ chosenNodeID +"): No mappings list found!");
+        return;  // do nothing (this is not good)
+    }
+    $.each(itsMappings, function(i, mapping) {
+        var mappedNode = getTreeNodeByID(treeID, mapping.nodeID);
+        mappedNode['^ot:isTaxonExemplar'] = (mapping.nodeID === chosenNodeID) ? true : false;
+    });
+    // TODO: nudgeTickler(  ?
+    // TODO: what happens now? 
+    //      - move to next conflicting taxon, if any?
+    //      - remove this set of mappings, or regenerate conflictData?
+    //      - update the prompt in tree popup to say DONE, or MOVING ON...?
+}
+function clearTaxonExemplar( treeID, nodeID ) {
+    // remove choice of exemplar (will trigger UI and prompts to choose again)
+    var node = getTreeNodeByID(treeID, nodeID);
+    delete node['^ot:isTaxonExemplar'];
 }

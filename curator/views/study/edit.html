@@ -463,7 +463,7 @@ body {
                             <a href="#" data-bind="click: showConflictingNodesInTreeViewer,
                                 text: tree['@label'],
                                 css: viewModel.ticklers.TREES">?</a>
-                            <a data-bind="if: conflictingNodesFoundInTree( tree ), 
+                            <a data-bind="if: unresolvedConflictsFoundInTree( tree ), 
                                           css: viewModel.ticklers.TREES,
                                           click: showConflictingNodesInTreeViewer" 
                                class="suggestion-prompt" style="display: block;"
