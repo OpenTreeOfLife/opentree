@@ -303,7 +303,8 @@ function loadSelectedStudy() {
                     gatherAll: function(nexml) {
                         // return an array of all matching elements
                         var allTrees = [];
-                        $.each(nexml.trees, function(i, treesCollection) {
+                        var allTreesCollections = viewModel.elementTypes.trees.gatherAll(nexml);
+                        $.each(allTreesCollections, function(i, treesCollection) {
                             $.each(treesCollection.tree, function(i, tree) {
                                 allTrees.push( tree );
                             });
@@ -1001,7 +1002,6 @@ function updateQualityDisplay () {
 
         nthPanel++;
     };
-
 }
 
 function toggleQualityDetails( hideOrShow ) {
@@ -1564,11 +1564,14 @@ function getPreferredTrees() {
     });
     return ko.utils.arrayFilter( 
         allTrees, 
-        function(tree) {
-            var isPreferred = ($.inArray(tree['@id'], preferredTreeIDs) !== -1);
-            return isPreferred;
-        }
+        isPreferredTree
     );
+}
+function isPreferredTree(treeOrID) {
+    var treeID = ('@id' in treeOrID) ? treeOrID['@id'] : treeOrID;
+    var preferredTreeIDs = getPreferredTreeIDs();
+    var isPreferred = ($.inArray(treeID, preferredTreeIDs) !== -1);
+    return isPreferred;
 }
 function togglePreferredTree( tree ) {
     var treeID = tree['@id'];
@@ -1999,6 +2002,35 @@ var studyScoringRules = {
             failureMessage: "There should be at least one candidate tree, or the submitter should opt out of synthesis.",
             suggestedAction: "Mark a tree as candidate for synthesis, or opt out of synthesis in Metadata."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+        },
+        {
+            description: "Candidate trees should not have scattered nodes mapped to a single taxon.",
+            test: function(studyData) {
+                // check for opt-out flag
+                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
+                if (optOutFlag) {
+                    // submitter has explicitly said this study is not intended for synthesis
+                    return true;
+                }
+
+                // check preferred trees (synthesis candidates) only
+                //var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+                var conflictingNodesFound = false;
+                ///var startTime = new Date();
+                $.each(getPreferredTrees(), function(i, tree) {
+                    var conflictData = getUnresolvedConflictsInTree(tree);
+                    ///console.log(">>> looking for conflicts in tree '"+ tree['@id'] +"'...");
+                    ///console.log(conflictData);
+                    // keep true value, once this is set!
+                    conflictingNodesFound = conflictingNodesFound || !($.isEmptyObject(conflictData));
+                });
+                ///console.log("total elapsed: "+ (new Date() - startTime) +" ms");
+                return !(conflictingNodesFound);
+            },
+            weight: 0.5, 
+            successMessage: "No conflicting nodes (mapped to same taxon) found in candidate trees.",
+            failureMessage: "The submitter should choose an 'exemplar' for each mapped taxon in a candidate tree.",
+            suggestedAction: "Review all conflicting instances of a mapped taxon and choose an exemplar."
         }
     ],
     'Files': [
@@ -2207,6 +2239,7 @@ var treeViewerIsInUse = false;
 var treeTagsInitialized = false;
 function showTreeViewer( tree, options ) {
     // if options.HIGHLIGHT_NODE_ID exists, try to scroll to this node
+    options = options || {};
     var highlightNodeID = options.HIGHLIGHT_NODE_ID || null;
 
     if (!tree) {
@@ -2264,9 +2297,16 @@ function showTreeViewer( tree, options ) {
             highlightNodeID = currentStep.nodeID;
             var isFirstStep = options.HIGHLIGHT_POSITION === 0;
             var isLastStep = options.HIGHLIGHT_POSITION === (options.HIGHLIGHT_PLAYLIST.length - 1);
+            var displayPrompt;
+            if ('otuID' in currentStep) {
+                var nodeLabel = getTreeNodeLabel(tree, getTreeNodeByID(tree, highlightNodeID)).label;
+                displayPrompt = options.HIGHLIGHT_PROMPT.replace('MAPPED_TAXON', nodeLabel);
+            } else {
+                displayPrompt = options.HIGHLIGHT_PROMPT;
+            }
             $('#tree-viewer .modal-header').append(
                 '<div class="stepwise-highlights help-box">'
-              +      options.HIGHLIGHT_PROMPT 
+              +      displayPrompt 
               + (options.HIGHLIGHT_PLAYLIST.length < 2 ? '' :
                     ' ('+ (options.HIGHLIGHT_POSITION + 1) +' of '+ options.HIGHLIGHT_PLAYLIST.length +') &nbsp; '
                   + '  <div class="btn-group">'
@@ -2375,6 +2415,30 @@ function showOTUInContext() {
         HIGHLIGHT_PROMPT: ("Showing the chosen OTU '<strong>"+ promptLabel +"</strong>' in context"),
         HIGHLIGHT_POSITION: 0
     })
+}
+
+function showConflictingNodesInTreeViewer(tree) {
+    // If there are no conflicts, fall back to simple tree view
+    var conflictData = getUnresolvedConflictsInTree( tree );
+    if (!isPreferredTree(tree) || $.isEmptyObject(conflictData)) {
+        showTreeViewer(tree);
+        return;
+    }
+    // Convert conflict object to standard node playlist?
+    var treeID = tree['@id'];
+    var conflictPlaylist = $.map(conflictData, function(taxonInstances, taxonID) {
+        // convert this taxon to a series of simple objects
+        return $.map(taxonInstances, function(instance) {
+            return $.extend( { treeID: treeID }, instance );
+        });
+    });
+    showTreeViewer(null, {
+        HIGHLIGHT_PLAYLIST: conflictPlaylist,
+        HIGHLIGHT_PROMPT: ("Showing all nodes mapped to '<strong>MAPPED_TAXON</strong>'. Choose the exemplar node."),
+        HIGHLIGHT_POSITION: 0
+    });
+    // TODO: Modify prompt text as we move through conflicting taxa?
+    // TODO: Prune conflicting taxa from this playlist as curator chooses exemplar nodes?
 }
 
 function scrollToTreeNode( treeID, nodeID ) {
@@ -4149,6 +4213,8 @@ function mapOTUToTaxon( otuID, mappingInfo ) {
     // add (or update) a metatag mapping this to an OTT id
     var ottId = Number(mappingInfo.ottId);
     otu['^ot:ottId'] = ottId;
+    nudgeTickler('OTU_MAPPING_HINTS');
+    nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
 }
 
 function unmapOTUFromTaxon( otuOrID ) {
@@ -4162,6 +4228,7 @@ function unmapOTUFromTaxon( otuOrID ) {
         delete otu['^ot:ottId'];
     }
     nudgeTickler('OTU_MAPPING_HINTS');
+    nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
 }
 
 function addMetaTagToParent( parent, props ) {
@@ -4207,6 +4274,14 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     var nodeInfoBox = nodeMenu.find('.node-information');
     var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
     nodeInfoBox.append('<span class="node-name">'+ labelInfo.label +'</span>');
+    if (isConflictingNode( tree, node )) {
+        if (node['^ot:isTaxonExemplar'] === true) {
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); clearTaxonExemplar( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Clear exemplar for mapped taxon</a></li>');
+        } else {
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); markTaxonExemplar( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as exemplar for mapped taxon</a></li>');
+        }
+    }
+
     if (nodeID == importantNodeIDs.treeRoot) {
         nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
     } else {
@@ -5204,3 +5279,146 @@ function formatDOIAsURL() {
     nudgeTickler('GENERAL_METADATA');
 }
 
+function unresolvedConflictsFoundInTree( tree ) {
+    // N.B. This checks for UNRESOLVED conflicts
+    var conflictData = getUnresolvedConflictsInTree( tree );
+    return $.isEmptyObject(conflictData) ? false : true;
+}
+function isConflictingNode( tree, node ) {
+    ///console.log("isConflictingNode( "+ tree['@id'] +", "+ node['@id'] +")...");
+    // N.B. This checks for ALL conflicts (incl. resolved)
+    var conflictInfo = getConflictingNodesInTree( tree );
+    var foundNodeInConflictData = false;
+    for (var taxonID in conflictInfo) {
+        $.each(conflictInfo[taxonID], function(i, mapping) {
+            if (mapping.nodeID === node['@id']) {
+                foundNodeInConflictData = true;
+                return false;
+            }
+        });
+    }
+    return foundNodeInConflictData;
+}
+function getUnresolvedConflictsInTree( tree ) {
+    // Filter from full conflict data to include just those node-sets that
+    // have't been resolved, ie, curator has not chosen an exemplar.
+    var unresolvedConflicts = {};
+    var allConflicts = getConflictingNodesInTree( tree );
+    for (var taxonID in allConflicts) {
+        var allNodesAlreadyMarked = true; // we can disprove this from any node
+        var itsMappings = allConflicts[taxonID];
+        $.each(itsMappings, function(i, mapping) {
+            if (!(mapping.curatorHasMarkedNode)) {
+                allNodesAlreadyMarked = false;
+                return false;
+            }
+        });
+        if (!(allNodesAlreadyMarked)) {
+            unresolvedConflicts[ taxonID ] = itsMappings;
+        }
+    }
+    return unresolvedConflicts;
+}
+function getConflictingNodesInTree( tree ) {
+    // Return sets of nodes that ultimately map to a single OT taxon (via 
+    // multiple OTUs) and are not siblings. A curator should choose the
+    // 'exemplar' node to avoid problems in synthesis.
+    var conflictingNodes = { };
+    // N.B. OTUs should be unique within a tree. We're looking for OTUs that
+    // are mapped to the same OTT taxon id.
+    
+    if (!isPreferredTree(tree)) {
+        // ignoring these for now...
+        return conflictingNodes;
+    }
+
+    var taxonMappings = { };
+    $.each(tree.node, function( i, node ) {
+        if ('@otu' in node) {
+            var otuID = node['@otu'];
+            var otu = getOTUByID(otuID);
+            if (otu && '^ot:ottId' in otu) {
+                var taxonID = otu['^ot:ottId'];
+                if (taxonID) {
+                    // add or extend the entry for this OTT taxon
+                    if (!(taxonID in taxonMappings)) {
+                        taxonMappings[taxonID] = [ ];
+                    }
+                    taxonMappings[taxonID].push({
+                        nodeID: node['@id'],
+                        otuID: otuID,
+                        curatorHasMarkedNode: ('^ot:isTaxonExemplar' in node)
+                    });
+                }
+            }
+        }
+    });
+
+    // Gather all mappings that have multiple *non-sibling* appearances.
+    // N.B. We could see siblings as part of a larger set; any choice will be fine.
+    for (taxonID in taxonMappings) {
+        // is there more than one node for this taxon?
+        var itsMappings = taxonMappings[taxonID];
+        var foundConflicts = false;
+        if (itsMappings.length > 1) {
+            // are all of the nodes siblings? use fast edge lookup!
+            var matchParent;
+            $.each(itsMappings, function(i, item) {
+                var upwardEdge = getTreeEdgesByID(tree, item.nodeID, 'TARGET')[0];
+                // N.B. Due to NexSON constraints, assume exactly one upward edge!
+                var itsParentID = upwardEdge['@source'];
+                if (!matchParent) {
+                    matchParent = itsParentID;
+                } else {
+                    if (itsParentID !== matchParent) {
+                        foundConflicts = true;
+                        return false;  // no need to check remaining mappings
+                    }
+                }
+            });
+        }
+        if (foundConflicts) {
+            conflictingNodes[ taxonID ] = itsMappings;
+        }
+    }
+    
+    return conflictingNodes;
+}
+function markTaxonExemplar( treeID, chosenNodeID ) {
+    // find all conflicting nodes and set flag for each
+    var chosenNode = getTreeNodeByID(treeID, chosenNodeID);
+    if (!chosenNode) {
+        console.error("markTaxonExemplar("+ treeID +","+ chosenNodeID +"): Chosen node not found!");
+        return;  // do nothing (this is not good)
+    }
+    var otuID = chosenNode['@otu'];
+    var otu = getOTUByID(otuID);
+    if (otu && '^ot:ottId' in otu) {
+        var taxonID = otu['^ot:ottId'];
+    } else {
+        console.error("markTaxonExemplar("+ treeID +","+ chosenNodeID +"): No mapped taxon found!");
+        return;  // do nothing (this is not good)
+    }
+    var tree = getTreeByID(treeID);
+    var conflictData = getConflictingNodesInTree(tree);
+    var itsMappings = conflictData[taxonID];
+    if (!itsMappings) {
+        console.error("markTaxonExemplar("+ treeID +","+ chosenNodeID +"): No mappings list found!");
+        return;  // do nothing (this is not good)
+    }
+    $.each(itsMappings, function(i, mapping) {
+        var mappedNode = getTreeNodeByID(treeID, mapping.nodeID);
+        mappedNode['^ot:isTaxonExemplar'] = (mapping.nodeID === chosenNodeID) ? true : false;
+    });
+    nudgeTickler('TREES');
+    // TODO: what happens now? 
+    //      - move to next conflicting taxon, if any?
+    //      - remove this set of mappings, or regenerate conflictData?
+    //      - update the prompt in tree popup to say DONE, or MOVING ON...?
+}
+function clearTaxonExemplar( treeID, nodeID ) {
+    // remove choice of exemplar (will trigger UI and prompts to choose again)
+    var node = getTreeNodeByID(treeID, nodeID);
+    delete node['^ot:isTaxonExemplar'];
+    nudgeTickler('TREES');
+}
