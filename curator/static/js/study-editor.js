@@ -5410,7 +5410,7 @@ function markTaxonExemplar( treeID, chosenNodeID ) {
         var mappedNode = getTreeNodeByID(treeID, mapping.nodeID);
         mappedNode['^ot:isTaxonExemplar'] = (mapping.nodeID === chosenNodeID) ? true : false;
     });
-    // TODO: nudgeTickler(  ?
+    nudgeTickler('TREES');
     // TODO: what happens now? 
     //      - move to next conflicting taxon, if any?
     //      - remove this set of mappings, or regenerate conflictData?
@@ -5420,4 +5420,5 @@ function clearTaxonExemplar( treeID, nodeID ) {
     // remove choice of exemplar (will trigger UI and prompts to choose again)
     var node = getTreeNodeByID(treeID, nodeID);
     delete node['^ot:isTaxonExemplar'];
+    nudgeTickler('TREES');
 }
