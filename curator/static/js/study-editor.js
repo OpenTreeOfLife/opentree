@@ -4305,7 +4305,7 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     var labelTypeDescription;
     switch(labelInfo.labelType) {
         case('mapped label'):
-            labelTypeDescription = 'mapped to OpenTree taxonomy';
+            labelTypeDescription = 'mapped to Open Tree taxonomy';
             break;
         case('original label'):
             labelTypeDescription = 'original OTU label';
