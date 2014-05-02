@@ -120,6 +120,11 @@ pushd .
     # N.B. Because of limitations oti's index_current_repo.py, this is
     # always one of our public repos on GitHub.
     sed -i -e "s+OPENTREE_DOCSTORE_URL+https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE+" config
+
+    #logging stuff
+    sed -i -e "s+OPEN_TREE_API_LOGGING_LEVEL+${OPEN_TREE_API_LOGGING_LEVEL}+" config
+    sed -i -e "s+OPEN_TREE_API_LOGGING_FORMATTER+${OPEN_TREE_API_LOGGING_FORMATTER}+" config
+    sed -i -e "s+OPEN_TREE_API_LOGGING_FILEPATH+${OPEN_TREE_API_LOGGING_FILEPATH}+" config
 popd
 
 # N.B. Another file 'GITHUB_CLIENT_SECRET' was already placed via rsync (in push.sh)
