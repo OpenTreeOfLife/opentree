@@ -1,7 +1,7 @@
 {{response.title = "Add Study"}}
 
 {{left_sidebar_enabled,right_sidebar_enabled=False,False}}
-{{response.subtitle = "license and import options"}}
+{{response.subtitle = "import options and licensing"}}
 
 {{### Add support scripts as in single-page editor?}}
 
@@ -15,13 +15,105 @@ body {
 
 <div class="row">
  <div class="span8 wireframe">
-  <form class="form-inline" style="padding-bottom: 24px;" action=".">
+  <p>
+    We may be able to import the study and tree data automatically. Select its
+    current location, then choose an appropriate import method. These are listed
+    in order of the required amount of curation, with the easiest methods first. 
+  </p>
+
+  <form id="import-options" class="form-inline" style="padding-bottom: 24px;" action=".">
+    <h3>Data location</h3>
+
+    <!-- WAS import-option-TREEBASE -->
+    <label for="import-from-TREEBASE" class="featured-label">
+        <input type="radio" id="import-from-TREEBASE" name="import-option" value="IMPORT_FROM_TREEBASE" />
+        The data exists in TreeBASE
+    </label>
+    <!-- WAS import-option-PUBLICATION_DOI -->
+    <label for="import-from-ANOTHER_ARCHIVE" class="featured-label">
+        <input type="radio" id="import-from-ANOTHER_ARCHIVE" name="import-option" value="IMPORT_FROM_PUBLICATION_DOI" />
+        The data exists in another data archive
+    </label>
+    <!-- WAS import-option-NEXML -->
+    <label for="import-from-UPLOAD" class="featured-label">
+        <input type="radio" id="import-from-UPLOAD" name="import-option" value="IMPORT_FROM_NEXML" />
+        The data only exists on my local machine and I will upload it
+    </label>
+    <div id="import-method-UPLOAD_WARNING" class="featured-label-child" 
+         style="padding-top: 0px; padding-bottom: 0px;">
+        <em class="suggestion-prompt">Please choose a <strong>data licensing</strong> option below.</em>
+    </div>
+
+  <div style="margin-top: 14px;">
+    <div id="import-method-TREEBASE_ID" class="featured-label-child">
+        <p class="featured-label-description">
+            <strong>Importing from TreeBASE</strong> is fast and requires only minimal curation post-import. 
+        </p>
+        <input class="span4" type="text" name="treebase-id" placeholder="Enter the TreeBASE ID for this study" 
+               style="margin-bottom: 12px;"></input>
+        <button class="btn btn-info"
+               style="margin-bottom: 12px;">Import from TreeBASE</button>
+    </div>
+    <div id="import-method-NEXML" class="featured-label-child">
+        <p class="featured-label-description">
+            <strong>Importing from NeXML</strong> is quick and also saves time in curation.
+        </p>
+        <input class="span4" style="margin-bottom: 12px;" type="text" name="nexml-fetch-url" placeholder="Enter a URL where we can fetch this NeXML"></input>
+        <textarea class="span4" name="nexml-pasted-string" placeholder="...or past the complete NeXML here" rows="4" style="display: block; margin-bottom: 12px;"></textarea>
+        <button class="btn btn-info" style="margin-bottom: 12px;">Import from NeXML</button>
+    </div>
+    <div id="import-method-PUBLICATION_DOI" class="featured-label-child">
+        <p class="featured-label-description">
+            <strong>Importing from a DOI</strong> allows us to retrieve some
+            study metadata automatically, then you can upload your data files. 
+            The DOI, or digital object identifier, is assigned by the publisher and
+            usually looks like <span style="font-weight: bold;">10.123/4567</span>. 
+        </p>
+        <input class="span4" type="text" name="publication-DOI" placeholder="Enter the publication DOI" style="margin-bottom: 12px;"></input>
+        <button class="btn btn-info" style="margin-bottom: 12px;">Import using publication DOI</button>
+    </div>
+    <div id="import-method-PUBLICATION_REFERENCE" class="featured-label-child">
+        <p class="featured-label-description">
+            <strong>Enter a reference string</strong> (complete or partial) to
+            retrieve study metadata automatically, then you can upload your
+            data files. 
+        </p>
+        <textarea class="span4" name="publication-reference" placeholder="Enter the reference string" rows="4" style="margin-bottom: 12px;"></textarea>
+        <button class="btn btn-info" style="vertical-align: bottom; margin-bottom: 12px;">Import using reference string</button>
+    </div>
+    <div id="import-method-MANUAL_ENTRY" class="featured-label-child">
+        <p class="featured-label-description">
+            <strong>Entering all data manually</strong> is a last resort.
+            This rarely needed for recently-published papers.
+        </p>
+        <button class="btn btn-info">Enter study data manually</button>
+    </div>
+  </div>
+
+<!--
+    <label for="import-option-PUBLICATION_REFERENCE" class="featured-label">
+        <input type="radio" id="import-option-PUBLICATION_REFERENCE" name="import-option" value="IMPORT_FROM_PUBLICATION_REFERENCE" />
+        My study is published and I have a reference string (or most of it). 
+    </label>
+-->
+
+<!--
+    <label for="import-option-MANUAL_ENTRY" class="featured-label">
+        <input type="radio" id="import-option-MANUAL_ENTRY" name="import-option" value="IMPORT_FROM_MANUAL_ENTRY" />
+        My study does not have a DOI
+    </label>
+-->
+  </form>
+
+  <form id="import-method-UPLOAD_LICENSE" class="form-inline" 
+        style="padding-bottom: 24px;" action=".">
+    <h3>Data licensing</h3>
     <p>
-        <strong>First things first.</strong> Open Tree of Life requires that data underlying the
-        tree be <strong>publicly available</strong>. While we believe that this is generally
-        true for scientific data, we'd also prefer to mark each study with the
+        Open Tree of Life requires that data underlying the tree be 
+        <strong>publicly available</strong>. While we believe that this is generally
+        true for scientific data, we'd prefer to mark each study's data with the
         <a href="http://creativecommons.org/about/cc0" target="_blank">Creative
-        Commons Zero (CC0) waiver</a> to emphasizse that it's in the public domain.
+        Commons Zero (CC0) waiver</a> to affirm that it's in the public domain.
     </p>
 
     <div>
@@ -33,76 +125,6 @@ body {
             <input type="radio" id="submit-without-CC0" name="cc0-agreement" value="submit-without-CC0"/>
             I'm unable to secure the authors' permission for a CC0 waiver, but I would like to contribute this study anyway.
         </label>
-    </div>
-  </form>
-
-  <form id="import-options" class="form-inline" style="padding-bottom: 24px;" action=".">
-    <p>
-    Select an import method (noting that these are roughly ordered in terms of required amount of curation). Note that Open Tree of Life only accepts published phylogenetic trees. `
-    </p>
-
-    <label for="import-option-TREEBASE" class="featured-label">
-        <input type="radio" id="import-option-TREEBASE" name="import-option" value="IMPORT_FROM_TREEBASE" />
-        My study already exists in TreeBASE
-    </label>
-    <p class="featured-label-description">
-        Importing from TreeBASE is fast and requires only minimal curation post-import. 
-    </p>
-    <div id="import-details-TREEBASE" class="featured-label-child">
-        <input class="span4" type="text" name="treebase-id" placeholder="Enter the TreeBASE ID for this study"></input>
-        <button class="btn btn-info">Import from TreeBASE</button>
-    </div>
-
-    <label for="import-option-NEXML" class="featured-label">
-        <input type="radio" id="import-option-NEXML" name="import-option" value="IMPORT_FROM_NEXML" />
-        My study already exists as NeXML 
-        <!-- <strong style="color: #c33;">[coming soon]</strong> -->
-    </label>
-    <p class="featured-label-description">
-        Importing from a NeXML file is quick and also saves time in curation.
-    </p>
-    <div id="import-details-NEXML" class="featured-label-child">
-        <input class="span4" style="margin-bottom: 12px;" type="text" name="nexml-fetch-url" placeholder="Enter a URL where we can fetch this NeXML"></input>
-        <textarea class="span4" name="nexml-pasted-string" placeholder="...or past the complete NeXML here" rows="4" style="display: block; margin-bottom: 12px;"></textarea>
-        <button class="btn btn-info" style="margin-bottom: 12px;">Import from NeXML</button>
-    </div>
-
-    <label for="import-option-PUBLICATION_DOI" class="featured-label">
-        <input type="radio" id="import-option-PUBLICATION_DOI" name="import-option" value="IMPORT_FROM_PUBLICATION_DOI" />
-        My study is published and has a DOI. 
-    </label>
-    <p class="featured-label-description">
-        The DOI, or digital object identifier, is assigned by the publisher and
-        usually looks like <strong>10.123/4567</strong>. The DOI allows us to
-        retrieve some study metadata automatically, then you can upload your data
-        files. 
-    </p>
-    <div id="import-details-PUBLICATION_DOI" class="featured-label-child">
-        <input class="span4" type="text" name="publication-DOI" placeholder="Enter the publication DOI" style="margin-bottom: 12px;"></input>
-        <button class="btn btn-info" style="margin-bottom: 12px;">Import using publication DOI</button>
-    </div>
-
-    <label for="import-option-PUBLICATION_REFERENCE" class="featured-label">
-        <input type="radio" id="import-option-PUBLICATION_REFERENCE" name="import-option" value="IMPORT_FROM_PUBLICATION_REFERENCE" />
-        My study is published and I have a reference string (or most of it). 
-    </label>
-    <p class="featured-label-description">
-        Enter a reference string to retrieve study metadata automatically, then you can upload your data files. 
-    </p>
-    <div id="import-details-PUBLICATION_REFERENCE" class="featured-label-child">
-        <textarea class="span4" name="publication-reference" placeholder="Enter the reference string" rows="4" style="margin-bottom: 12px;"></textarea>
-        <button class="btn btn-info" style="vertical-align: bottom; margin-bottom: 12px;">Import using reference string</button>
-    </div>
-
-    <label for="import-option-MANUAL_ENTRY" class="featured-label">
-        <input type="radio" id="import-option-MANUAL_ENTRY" name="import-option" value="IMPORT_FROM_MANUAL_ENTRY" />
-        My study does not have a DOI
-    </label>
-    <p class="featured-label-description">
-        This is rare for recently-published papers.
-    </p>
-    <div id="import-details-MANUAL_ENTRY" class="featured-label-child">
-        <button class="btn btn-info">Enter study data manually</button>
     </div>
   </form>
 

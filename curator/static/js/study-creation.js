@@ -11,53 +11,84 @@ $(document).ready(function() {
     // disable radio buttons, pending acceptance of CC0
     $('input:radio[name=import-option]')
         .removeAttr('checked')
-        .attr('disabled','disabled')
-        .click(updateCreationDetails);
+        //.attr('disabled','disabled')
+        .click(updateImportMethods);
 
     // CC0 radio buttons should enable options below when selected
     $('input:radio[name=cc0-agreement]')
         .removeAttr('checked')
         .click(function() {
-            updateCreationDetails();
+            updateImportMethods();
         });
 
     // set initial state for all details
-    updateCreationDetails();
+    updateImportMethods();
 });
 
-function updateCreationDetails() {
-    // update the visibility and (in)active state of panels, based on the
+var locationToMethodMapping = {
+    'import-from-TREEBASE' : [
+        'import-method-TREEBASE_ID'
+    ],
+    'import-from-ANOTHER_ARCHIVE' : [ 
+        'import-method-PUBLICATION_DOI',
+        'import-method-PUBLICATION_REFERENCE',
+        'import-method-NEXML',
+        'import-method-MANUAL_ENTRY'
+    ],
+    'import-from-UPLOAD' : [ 
+        'import-method-UPLOAD_WARNING',
+        'import-method-NEXML',
+        'import-method-MANUAL_ENTRY',
+        'import-method-UPLOAD_LICENSE'
+    ]
+};
+function updateImportMethods() {
+    // update the visibility and (in)active state of methods, based on the
     // state of their respective radio buttons
+    var licenseChoiceRequired = false;
 
-    if ($('input:radio[name=cc0-agreement]').is(':checked')) {
-        $('input:radio[name=import-option]').removeAttr('disabled');
-        $('#import-options').css('opacity', 1.0);
-        $('#import-options').unbind('click');
-        $('#import-options button').unbind('click').click(function() {
-            createStudyFromForm();
+    var $chosenLocationRadio = $('input[name=import-option]:checked');
+    if ($chosenLocationRadio.length === 0) {
+        // hide all methods
+        $('[id^=import-method-]').hide();
+    } else {
+        var chosenLocation = $chosenLocationRadio.eq(0).attr('id');
+        if (chosenLocation === 'import-from-UPLOAD') {
+            licenseChoiceRequired = true;
+        }
+        var itsMethods = locationToMethodMapping[ chosenLocation ];
+        $('[id^=import-method-]').each(function() {
+            var $methodPanel = $(this);
+            var panelID = $methodPanel.attr('id');
+            if ($.inArray(panelID, itsMethods) === -1) {
+                // ie, not a listed  method for the current location
+                $methodPanel.slideUp('fast');
+            } else {
+                // show this method (matches location)
+                $methodPanel.slideDown('fast');
+            }
+        });
+    }
+
+    // Have they chosen a valid licensing option?
+    var uploadMethods = locationToMethodMapping[ 'import-from-UPLOAD' ];
+    var $uploadImportButtons = $( '#'+ uploadMethods.join(', #') ).find('button');
+    var licenseChoiceMade = $('input:radio[name=cc0-agreement]').is(':checked');
+    if (licenseChoiceRequired && !(licenseChoiceMade)) {
+        // block all import options for upload
+        $uploadImportButtons.css('opacity', 0.5);
+        $uploadImportButtons.unbind('click').click(function(e) {
+            showErrorMessage('You must choose a data licensing option to upload a study.');
             return false;
         });
     } else {
-        $('input:radio[name=import-option]').attr('disabled','disabled');
-        $('#import-options').css('opacity', 0.5);
-        $('#import-options').click(function(e) {
-            showErrorMessage('You must accept CC-0 licensing to import a study.');
+        // enable all import options for upload
+        $uploadImportButtons.css('opacity', 1.0);
+        $uploadImportButtons.unbind('click').click(function() {
+            createStudyFromForm();
             return false;
         });
-        $('#import-options button').unbind('click');
     }
-
-    $.each($('[id^=import-details-]'), function(index, details) {
-        var $details = $(details);
-        var matchingRadioID = $details.attr('id').split('details').join('option');
-        var $radio = $('#'+ matchingRadioID);
-        // hide or show details based on checked status
-        if ($radio.is(':checked')) {
-            $details.slideDown('fast');
-        } else {
-            $details.slideUp('fast');
-        }
-    });
 }
 
 function validateFormData() {
