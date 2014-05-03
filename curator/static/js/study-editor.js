@@ -1184,6 +1184,13 @@ function scrubNexsonForTransport( nexml ) {
     });
 }
 
+function createNexSON(obj) {
+    if ("string" === typeof obj.nexml['^ot:studyYear']) {
+        obj.nexml['^ot:studyYear'] = parseInt(obj.nexml['^ot:studyYear']);
+    }
+    return '{"nexml":'+ JSON.stringify(obj.nexml) +'}';
+}
+
 function saveFormDataToStudyJSON() {
     // save all populated fields; clear others, or remove from JSON(?)
     showModalScreen("Saving study data...", {SHOW_BUSY_BAR:true});
@@ -1228,7 +1235,7 @@ function saveFormDataToStudyJSON() {
         contentType: "application/json; charset=utf-8",
         url: saveURL,
         processData: false,
-        data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
+        data: (createNexSON(viewModel)),
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
@@ -1244,6 +1251,14 @@ function saveFormDataToStudyJSON() {
                 // TODO: this should be properly parsed JSON, show it more sensibly
                 // (but for now, repeat the crude feedback used above)
                 var errMsg = 'Sorry, there was an error in the study data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            var putResponse = $.parseJSON(jqXHR.responseText);
+            viewModel.startingCommitSHA = putResponse['sha'] || viewModel.startingCommitSHA;
+            if (putResponse['merge_needed']) {
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please report this error Open Tree of Life software team';
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 return;
