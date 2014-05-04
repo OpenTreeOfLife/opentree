@@ -9,7 +9,7 @@ var API_create_study_POST_url;
 
 $(document).ready(function() {
     // disable radio buttons, pending acceptance of CC0
-    $('input:radio[name=import-option]')
+    $('input:radio[name=import-from-location]')
         .removeAttr('checked')
         //.attr('disabled','disabled')
         .click(updateImportMethods);
@@ -47,7 +47,7 @@ function updateImportMethods() {
     // state of their respective radio buttons
     var licenseChoiceRequired = false;
 
-    var $chosenLocationRadio = $('input[name=import-option]:checked');
+    var $chosenLocationRadio = $('input[name=import-from-location]:checked');
     if ($chosenLocationRadio.length === 0) {
         // hide all methods
         $('[id^=import-method-]').hide();
@@ -64,6 +64,11 @@ function updateImportMethods() {
                 // ie, not a listed  method for the current location
                 $methodPanel.slideUp('fast');
             } else {
+                // enable all buttons in this panel
+                $methodPanel.find('button').unbind('click').click(function(evt) {
+                    createStudyFromForm(this, evt);
+                    return false;
+                });
                 // show this method (matches location)
                 $methodPanel.slideDown('fast');
             }
@@ -84,8 +89,8 @@ function updateImportMethods() {
     } else {
         // enable all import options for upload
         $uploadImportButtons.css('opacity', 1.0);
-        $uploadImportButtons.unbind('click').click(function() {
-            createStudyFromForm();
+        $uploadImportButtons.unbind('click').click(function(evt) {
+            createStudyFromForm(this, evt);
             return false;
         });
     }
@@ -97,18 +102,32 @@ function validateFormData() {
     return true;
 }
 
-function createStudyFromForm( clicked ) {
+function createStudyFromForm( clicked, evt ) {
     // Gather current create/import options and trigger study cration.
     // Server should create a new study (from JSON "template") and try to
     // import data based on user input. Major errors (eg, import failure)
     // should keep us here; otherwise, we should redirect to the new study in
     // the full edit page. (Minor problems with imported data might appear
     // there in a popup.)
-    //
-    // TODO: support ENTER key vs explicit button click?
+      
+    // Don't respond to ENTER key, just explicit button clicks (so we can
+    // determine the chosen import method)
+    evt.preventDefault();
 
     showModalScreen("Adding study...", {SHOW_BUSY_BAR:true});
     
+    var importMethod = '';
+    var $clicked = $(clicked);
+    var $methodPanel = $clicked.closest('div[id^=import-method-]');
+    if ($methodPanel.length === 1) {
+        importMethod = $methodPanel.attr('id');
+        console.log("importMethod: ["+ importMethod +"]");
+    } else {
+        // insist on a proper button click for this form
+        console.warn("Expected a button or input:button, bailing out now!");
+        return false;
+    }
+
     $.ajax({
         type: 'POST',
         dataType: 'json',
@@ -117,8 +136,9 @@ function createStudyFromForm( clicked ) {
         url: API_create_study_POST_url,
         data: {
             // gather chosen study-creation options
+            'import_method': importMethod,
             'cc0_agreement': $('#agreed-to-CC0').is(':checked'),
-            'import_option': $('[name=import-option]:checked').val() || '',
+            'import_from_location': $('[name=import-from-location]:checked').val() || '',
             'treebase_id': $('[name=treebase-id]').val() || '',
             'nexml_fetch_url': $('[name=nexml-fetch-url]').val() || '',
             'nexml_pasted_string': $('[name=nexml-pasted-string]').val() || '',

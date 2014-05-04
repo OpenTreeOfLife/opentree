@@ -21,22 +21,22 @@ body {
     in order of the required amount of curation, with the easiest methods first. 
   </p>
 
-  <form id="import-options" class="form-inline" style="padding-bottom: 24px;" action=".">
+  <form id="import-from-locations" class="form-inline" style="padding-bottom: 24px;" action=".">
     <h3>Data location</h3>
 
     <!-- WAS import-option-TREEBASE -->
     <label for="import-from-TREEBASE" class="featured-label">
-        <input type="radio" id="import-from-TREEBASE" name="import-option" value="IMPORT_FROM_TREEBASE" />
+        <input type="radio" id="import-from-TREEBASE" name="import-from-location" value="IMPORT_FROM_TREEBASE" />
         The data exists in TreeBASE
     </label>
     <!-- WAS import-option-PUBLICATION_DOI -->
     <label for="import-from-ANOTHER_ARCHIVE" class="featured-label">
-        <input type="radio" id="import-from-ANOTHER_ARCHIVE" name="import-option" value="IMPORT_FROM_PUBLICATION_DOI" />
+        <input type="radio" id="import-from-ANOTHER_ARCHIVE" name="import-from-location" value="IMPORT_FROM_ANOTHER_ARCHIVE" />
         The data exists in another data archive
     </label>
     <!-- WAS import-option-NEXML -->
     <label for="import-from-UPLOAD" class="featured-label">
-        <input type="radio" id="import-from-UPLOAD" name="import-option" value="IMPORT_FROM_NEXML" />
+        <input type="radio" id="import-from-UPLOAD" name="import-from-location" value="IMPORT_FROM_UPLOAD" />
         The data only exists on my local machine and I will upload it
     </label>
     <div id="import-method-UPLOAD_WARNING" class="featured-label-child" 
@@ -51,7 +51,7 @@ body {
         </p>
         <input class="span4" type="text" name="treebase-id" placeholder="Enter the TreeBASE ID for this study" 
                style="margin-bottom: 12px;"></input>
-        <button class="btn btn-info"
+        <button class="btn btn-info" onclick="return false;"
                style="margin-bottom: 12px;">Import from TreeBASE</button>
     </div>
     <div id="import-method-NEXML" class="featured-label-child">
@@ -90,19 +90,6 @@ body {
     </div>
   </div>
 
-<!--
-    <label for="import-option-PUBLICATION_REFERENCE" class="featured-label">
-        <input type="radio" id="import-option-PUBLICATION_REFERENCE" name="import-option" value="IMPORT_FROM_PUBLICATION_REFERENCE" />
-        My study is published and I have a reference string (or most of it). 
-    </label>
--->
-
-<!--
-    <label for="import-option-MANUAL_ENTRY" class="featured-label">
-        <input type="radio" id="import-option-MANUAL_ENTRY" name="import-option" value="IMPORT_FROM_MANUAL_ENTRY" />
-        My study does not have a DOI
-    </label>
--->
   </form>
 
   <form id="import-method-UPLOAD_LICENSE" class="form-inline" 
