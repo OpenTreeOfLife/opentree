@@ -346,6 +346,11 @@ body {
                 <label class="control-label" for="ot_curatorName">Submitted by</label>
                 <div class="controls">
                   <p class="static-form-value" data-bind="text: nexml['^ot:curatorName'].join(', ')"></p>
+                 <!-- ko if: studyHasCC0Waiver( nexml ) -->
+                  <a target="_blank" href="http://creativecommons.org/publicdomain/zero/1.0/">
+                      <img alt="CC0 (opens a new window)" src="{{=URL('static','images/cc-zero.png')}}">
+                  </a> 
+                 <!-- /ko -->
                 </div>
               </div>
 
