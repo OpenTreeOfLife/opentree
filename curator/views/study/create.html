@@ -59,7 +59,11 @@ body {
             <strong>Importing from NeXML</strong> is quick and also saves time in curation.
         </p>
         <input class="span4" style="margin-bottom: 12px;" type="text" name="nexml-fetch-url" placeholder="Enter a URL where we can fetch this NeXML"></input>
-        <textarea class="span4" name="nexml-pasted-string" placeholder="...or past the complete NeXML here" rows="4" style="display: block; margin-bottom: 12px;"></textarea>
+        {{
+          # To add a proper upload-file widget, see #tree-import-form in views/study/edit.html 
+          # and the supporting logic in static/js/study-editor.js
+        }}
+        <textarea class="span4" name="nexml-pasted-string" placeholder="...or paste the complete NeXML string here" rows="4" style="display: block; margin-bottom: 12px;"></textarea>
         <button class="btn btn-info" style="margin-bottom: 12px;">Import from NeXML</button>
     </div>
     <div id="import-method-PUBLICATION_DOI" class="featured-label-child">

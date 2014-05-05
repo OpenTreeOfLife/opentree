@@ -69,6 +69,27 @@ function updateImportMethods() {
                     createStudyFromForm(this, evt);
                     return false;
                 });
+                // modify some panels based on data location
+                switch (panelID) {
+                    case 'import-method-NEXML':
+                        var $urlFetchWidget = $methodPanel.find('input[name=nexml-fetch-url]');
+                        var $pastedStringWidget = $methodPanel.find('textarea[name=nexml-pasted-string]');
+                        switch(chosenLocation) {
+                            case 'import-from-UPLOAD':
+                                $urlFetchWidget.slideUp('fast');
+                                $pastedStringWidget.attr('placeholder', 
+                                    "Paste the complete NeXML string here"
+                                );
+                                break;
+                            default:
+                                $urlFetchWidget.slideDown('fast');
+                                $pastedStringWidget.attr('placeholder', 
+                                    "...or paste the complete NeXML string here"
+                                );
+                                break;
+                        }
+                        break;
+                }
                 // show this method (matches location)
                 $methodPanel.slideDown('fast');
             }
