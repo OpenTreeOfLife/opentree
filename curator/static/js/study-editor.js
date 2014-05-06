@@ -375,12 +375,10 @@ function loadSelectedStudy() {
             // NOTE that we should "pluralize" existing arrays, in case
             // Badgerfish conversion has replaced it with a single item
             if ('^ot:candidateTreeForSynthesis' in data.nexml) {
-                data.nexml['^ot:candidateTreeForSynthesis'].candidate = 
-                    makeArray(data.nexml['^ot:candidateTreeForSynthesis'].candidate);
+                data.nexml['^ot:candidateTreeForSynthesis'] = 
+                    makeArray(data.nexml['^ot:candidateTreeForSynthesis']);
             } else {
-                data.nexml['^ot:candidateTreeForSynthesis'] = {
-                    'candidate': [ ]
-                };
+                data.nexml['^ot:candidateTreeForSynthesis'] = [ ];
             }
             if ('^ot:tag' in data.nexml) {
                 data.nexml['^ot:tag'] = makeArray(data.nexml['^ot:tag']);
@@ -1184,6 +1182,23 @@ function scrubNexsonForTransport( nexml ) {
     });
 }
 
+function createNexSON(obj) {
+    var deletedfocalClade = false;
+    var r;
+    if ("string" === typeof obj.nexml['^ot:studyYear']) {
+        obj.nexml['^ot:studyYear'] = parseInt(obj.nexml['^ot:studyYear']);
+    }
+    if (null == obj.nexml['^ot:focalClade']) {
+        delete obj.nexml['^ot:focalClade'];
+        deletedfocalClade = true;
+    }
+    r = '{"nexml":'+ JSON.stringify(obj.nexml) +'}';
+    if (deletedfocalClade) {
+        obj.nexml['^ot:focalClade'] = null;
+    }
+    return r;
+}
+
 function saveFormDataToStudyJSON() {
     // save all populated fields; clear others, or remove from JSON(?)
     showModalScreen("Saving study data...", {SHOW_BUSY_BAR:true});
@@ -1228,7 +1243,7 @@ function saveFormDataToStudyJSON() {
         contentType: "application/json; charset=utf-8",
         url: saveURL,
         processData: false,
-        data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
+        data: (createNexSON(viewModel)),
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
@@ -1244,6 +1259,14 @@ function saveFormDataToStudyJSON() {
                 // TODO: this should be properly parsed JSON, show it more sensibly
                 // (but for now, repeat the crude feedback used above)
                 var errMsg = 'Sorry, there was an error in the study data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            var putResponse = $.parseJSON(jqXHR.responseText);
+            viewModel.startingCommitSHA = putResponse['sha'] || viewModel.startingCommitSHA;
+            if (putResponse['merge_needed']) {
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please report this error Open Tree of Life software team';
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 return;
@@ -1540,7 +1563,7 @@ function normalizeOTUs( tree ) {
 function getPreferredTreeIDs() {
     preferredTreeIDs = [];
     var candidateTreeMarkers = ('^ot:candidateTreeForSynthesis' in viewModel.nexml) ? 
-        makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate ) : [];
+        makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'] ) : [];
 
     $.each(candidateTreeMarkers, function(i, marker) {
         var treeID = $.trim(marker);
@@ -1578,10 +1601,10 @@ function togglePreferredTree( tree ) {
     var alreadyPreferred = ($.inArray( treeID, getPreferredTreeIDs()) !== -1);
     if (alreadyPreferred) {
         // remove it from the list of preferred trees
-        removeFromArray( treeID, viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate );
+        removeFromArray( treeID, viewModel.nexml['^ot:candidateTreeForSynthesis'] );
     } else {
         // add it to the list of preferred trees
-        viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( treeID ); 
+        viewModel.nexml['^ot:candidateTreeForSynthesis'].push( treeID ); 
     }
     nudgeTickler('OTU_MAPPING_HINTS');
     return true;  // to allow checkbox updates
@@ -3237,7 +3260,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
             normalizeTree( tree );
             if (responseJSON.newTreesPreferred) {
                 // mark all new tree(s) as preferred, eg, a candidate for synthesis
-                viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( tree['@id'] );
+                viewModel.nexml['^ot:candidateTreeForSynthesis'].push( tree['@id'] );
             }
             // build proper NexSON elements for imported tree IDs
             importedTreeElements.push( {"$": tree['@id']} );
