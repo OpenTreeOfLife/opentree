@@ -37,8 +37,8 @@ function updateImportOptions() {
     var $altLicenseDetails = $('#alternate-license-details'); // set of widgets
     var $altOtherLicenseInfo = $('#other-license-info');  // subset, used only if "Other license' chosen
     var $chosenLicense = $('input[name=data-license]:checked');
-    var authorChoosingToApplyCC0 = ($chosenLicense.attr('id') === 'treebase-data-has-CC0');
-    var altLicenseDetailsRequired = ($chosenLicense.attr('id') === 'tree-data-has-another-license');
+    var authorChoosingToApplyCC0 = ($chosenLicense.attr('id') === 'apply-new-CC0-waiver');
+    var altLicenseDetailsRequired = ($chosenLicense.attr('id') === 'study-data-has-existing-license');
     var chosenAltLicense = $('select[name=alternate-license]').val();
     var altOtherLicenseInfoRequired = altLicenseDetailsRequired && (chosenAltLicense === 'OTHER');
     // adjust main cc0 widgets
@@ -80,6 +80,12 @@ function updateImportOptions() {
             if ($.trim($('input[name=treebase-id]').val()) === '') {
                 creationAllowed = false;
                 errMsg = 'You must enter a TreeBASE ID to continue.';
+            } else {
+                var testForInt = $.trim($('input[name=treebase-id]').val());
+                if (isNaN(testForInt) || parseInt(testForInt) != testForInt) {
+                    creationAllowed = false;
+                    errMsg = 'TreeBASE ID should be an integer.';
+                }
             }
 
             // Licensing is assumed to be covered by CC0 waiver
@@ -137,7 +143,7 @@ function updateImportOptions() {
         hideFooterMessage('FAST');
         $continueButton.css('opacity', 1.0);
         $continueButton.unbind('click').click(function(evt) {
-            createStudyFromForm(this, evt);
+            createStudyFromForm(evt);
             return false;
         });
     } else {
@@ -156,7 +162,7 @@ function validateFormData() {
     return true;
 }
 
-function createStudyFromForm( clicked, evt ) {
+function createStudyFromForm( evt ) {
     // Gather current create/import options and trigger study cration.
     // Server should create a new study (from JSON "template") and try to
     // import data based on user input. Major errors (eg, import failure)
@@ -168,21 +174,14 @@ function createStudyFromForm( clicked, evt ) {
     // determine the chosen import method)
     evt.preventDefault();
 
-alert('TODO: Jump to study-edit page...'); return false;
-
     showModalScreen("Adding study...", {SHOW_BUSY_BAR:true});
     
-    var importMethod = '';
-    var $clicked = $(clicked);
-    var $methodPanel = $clicked.closest('div[id^=import-method-]');
-    if ($methodPanel.length === 1) {
-        importMethod = $methodPanel.attr('id');
-        console.log("importMethod: ["+ importMethod +"]");
-    } else {
-        // insist on a proper button click for this form
-        console.warn("Expected a button or input:button, bailing out now!");
-        return false;
-    }
+    // Map the chosen location (data source) to an import method. (This is now
+    // a simple mapping, whereas we previously had multiple methods per location.)
+    var chosenImportLocation = $('[name=import-from-location]:checked').val();
+    var importMethod = (chosenImportLocation === 'IMPORT_FROM_TREEBASE') ?
+        'import-method-TREEBASE_ID' : 'import-method-PUBLICATION_DOI';
+    console.log("importMethod: ["+ importMethod +"]");
 
     $.ajax({
         type: 'POST',
@@ -191,15 +190,23 @@ alert('TODO: Jump to study-edit page...'); return false;
         // contentType: "application/json; charset=utf-8",
         url: API_create_study_POST_url,
         data: {
-            // gather chosen study-creation options
+            // Gather chosen study-creation options. NOTE that we send all variables and
+            // depend on the server to discern which ones really matter.
             'import_method': importMethod,
-            'cc0_agreement': $('#agreed-to-CC0').is(':checked'),
             'import_from_location': $('[name=import-from-location]:checked').val() || '',
             'treebase_id': $('[name=treebase-id]').val() || '',
-            'nexml_fetch_url': $('[name=nexml-fetch-url]').val() || '',
-            'nexml_pasted_string': $('[name=nexml-pasted-string]').val() || '',
             'publication_DOI': $('[name=publication-DOI]').val() || '',
-            'publication_reference': $('[name=publication-reference]').val() || '',
+            //'publication_reference': $('[name=publication-reference]').val() || '',
+            //'nexml_fetch_url': $('[name=nexml-fetch-url]').val() || '',
+            //'nexml_pasted_string': $('[name=nexml-pasted-string]').val() || '',
+            //
+            // CC0 and alternate license info
+            'chosen_license': $('input[name=data-license]:checked').val(),
+            'cc0_agreement': $('#agreed-to-CC0').is(':checked'),
+            'alternate_license': $('select[name=alternate-license]').val(),
+            'alt_license_name': $.trim($('input[name=data-license-name]').val()),
+            'alt_license_URL': $.trim($('input[name=data-license-url]').val()),
+            //
             // misc identifying information
             'author_name': authorName,
             'author_email': authorEmail,
