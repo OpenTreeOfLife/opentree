@@ -13,7 +13,23 @@ $(document).ready(function() {
 
     // any change in widgets should (potentially) update all
     $('input, textarea, select').unbind('change').change(updateImportOptions);
+    $('input, textarea').unbind('keyup').keyup(updateImportOptions);
 });
+
+function enableDetails($panel) {
+    var $widgets = $panel.find('input, textarea');
+    $panel.css('opacity','1.0');
+    $widgets.removeAttr('disabled');
+    $panel.unbind('click');
+}
+function disableDetails($panel) {
+    var $widgets = $panel.find('input, textarea');
+    $panel.css('opacity','0.5');
+    $widgets.attr('disabled', 'disabled');
+    $panel.unbind('click').click(function() {
+        showErrorMessage('Please choose this study creation method (radio button above) to edit these settings.');
+    });
+}
 
 function updateImportOptions() {
     // Show license detail fields IF "another license" is chosen, else hide it.
@@ -53,21 +69,32 @@ function updateImportOptions() {
     var creationAllowed = true;
     var chosenImportLocation = $('[name=import-from-location]:checked').val();
     var errMsg;
+    var $treebaseDetailPanel = $('#import-method-TREEBASE_ID');
+    var $uploadDetailPanel = $('#import-method-PUBLICATION_DOI');
     switch(chosenImportLocation) {
         case 'IMPORT_FROM_TREEBASE':
+            enableDetails( $treebaseDetailPanel );
+            disableDetails( $uploadDetailPanel );
+
+            // Are we ready to continue?
             if ($.trim($('input[name=treebase-id]').val()) === '') {
                 creationAllowed = false;
                 errMsg = 'You must enter a TreeBASE ID to continue.';
             }
-            // licensing is assumed to be covered by CC0 waiver
+
+            // Licensing is assumed to be covered by CC0 waiver
             break;
 
         case 'IMPORT_FROM_UPLOAD':
+            disableDetails( $treebaseDetailPanel );
+            enableDetails( $uploadDetailPanel );
+            
+            // Are we ready to continue?
             if ($.trim($('input[name=publication-DOI]').val()) === '') {
                 creationAllowed = false;
                 errMsg = 'You must enter a DOI (preferred) or URL to continue.';
             } else {
-                // check for a compliant license or waiver
+                // Check for a compliant license or waiver
                 if ($chosenLicense.length === 0) {
                     creationAllowed = false;
                     errMsg = 'You must select an appropriate waiver or license for these data.';
@@ -91,6 +118,9 @@ function updateImportOptions() {
             break;
 
         case undefined:
+            disableDetails( $treebaseDetailPanel );
+            disableDetails( $uploadDetailPanel );
+
             creationAllowed = false;
             errMsg = 'You must choose a study creation method (import from TreeBASE, or upload from your computer).';
             break;
