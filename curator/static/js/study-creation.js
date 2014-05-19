@@ -8,114 +8,153 @@
 var API_create_study_POST_url;
 
 $(document).ready(function() {
-    // disable radio buttons, pending acceptance of CC0
-    $('input:radio[name=import-from-location]')
-        .removeAttr('checked')
-        //.attr('disabled','disabled')
-        .click(updateImportMethods);
-
-    // CC0 radio buttons should enable options below when selected
-    $('input:radio[name=cc0-agreement]')
-        .removeAttr('checked')
-        .click(function() {
-            updateImportMethods();
-        });
-
     // set initial state for all details
-    updateImportMethods();
+    updateImportOptions();
+
+    // any change in widgets should (potentially) update all
+    $('input, textarea, select').unbind('change').change(updateImportOptions);
+    $('input, textarea').unbind('keyup').keyup(updateImportOptions);
 });
 
-var locationToMethodMapping = {
-    'import-from-TREEBASE' : [
-        'import-method-TREEBASE_ID'
-    ],
-    'import-from-ANOTHER_ARCHIVE' : [ 
-        'import-method-PUBLICATION_DOI',
-        'import-method-PUBLICATION_REFERENCE',
-        'import-method-NEXML',
-        'import-method-MANUAL_ENTRY'
-    ],
-    'import-from-UPLOAD' : [ 
-        'import-method-UPLOAD_WARNING',
-        'import-method-NEXML',
-        'import-method-MANUAL_ENTRY',
-        'import-method-UPLOAD_LICENSE'
-    ]
-};
-function updateImportMethods() {
-    // update the visibility and (in)active state of methods, based on the
-    // state of their respective radio buttons
-    var licenseChoiceRequired = false;
+function enableDetails($panel) {
+    var $widgets = $panel.find('input, textarea');
+    $panel.css('opacity','1.0');
+    $widgets.removeAttr('disabled');
+    $panel.unbind('click');
+}
+function disableDetails($panel) {
+    var $widgets = $panel.find('input, textarea');
+    $panel.css('opacity','0.5');
+    $widgets.attr('disabled', 'disabled');
+    $panel.unbind('click').click(function() {
+        showErrorMessage('Please choose this study creation method (radio button above) to edit these settings.');
+    });
+}
 
-    var $chosenLocationRadio = $('input[name=import-from-location]:checked');
-    if ($chosenLocationRadio.length === 0) {
-        // hide all methods
-        $('[id^=import-method-]').hide();
+function updateImportOptions() {
+    // Show license detail fields IF "another license" is chosen, else hide it.
+    var $cc0Details = $('#applying-cc0-details'); // set of widgets
+    var $altLicenseDetails = $('#alternate-license-details'); // set of widgets
+    var $altOtherLicenseInfo = $('#other-license-info');  // subset, used only if "Other license' chosen
+    var $chosenLicense = $('input[name=data-license]:checked');
+    var authorChoosingToApplyCC0 = ($chosenLicense.attr('id') === 'apply-new-CC0-waiver');
+    var altLicenseDetailsRequired = ($chosenLicense.attr('id') === 'study-data-has-existing-license');
+    var chosenAltLicense = $('select[name=alternate-license]').val();
+    var altOtherLicenseInfoRequired = altLicenseDetailsRequired && (chosenAltLicense === 'OTHER');
+    // adjust main cc0 widgets
+    if (authorChoosingToApplyCC0) {
+        $cc0Details.slideDown('fast');
     } else {
-        var chosenLocation = $chosenLocationRadio.eq(0).attr('id');
-        if (chosenLocation === 'import-from-UPLOAD') {
-            licenseChoiceRequired = true;
-        }
-        var itsMethods = locationToMethodMapping[ chosenLocation ];
-        $('[id^=import-method-]').each(function() {
-            var $methodPanel = $(this);
-            var panelID = $methodPanel.attr('id');
-            if ($.inArray(panelID, itsMethods) === -1) {
-                // ie, not a listed  method for the current location
-                $methodPanel.slideUp('fast');
-            } else {
-                // enable all buttons in this panel
-                $methodPanel.find('button').unbind('click').click(function(evt) {
-                    createStudyFromForm(this, evt);
-                    return false;
-                });
-                // modify some panels based on data location
-                switch (panelID) {
-                    case 'import-method-NEXML':
-                        var $urlFetchWidget = $methodPanel.find('input[name=nexml-fetch-url]');
-                        var $pastedStringWidget = $methodPanel.find('textarea[name=nexml-pasted-string]');
-                        switch(chosenLocation) {
-                            case 'import-from-UPLOAD':
-                                $urlFetchWidget.slideUp('fast');
-                                $pastedStringWidget.attr('placeholder', 
-                                    "Paste the complete NeXML string here"
-                                );
-                                break;
-                            default:
-                                $urlFetchWidget.slideDown('fast');
-                                $pastedStringWidget.attr('placeholder', 
-                                    "...or paste the complete NeXML string here"
-                                );
-                                break;
-                        }
-                        break;
-                }
-                // show this method (matches location)
-                $methodPanel.slideDown('fast');
-            }
-        });
+        $cc0Details.slideUp('fast');
     }
+    
+    // adjust the innermost license widgets first
+    if (altOtherLicenseInfoRequired) {
+        $altOtherLicenseInfo.slideDown('fast');
+    } else {
+        $altOtherLicenseInfo.slideUp('fast');
+    }
+    // ... then the main alt-license selector + friends
+    if (altLicenseDetailsRequired) {
+        $altLicenseDetails.slideDown('fast');
+    } else {
+        $altLicenseDetails.slideUp('fast');
+    }
+    
+    // Enable Continue button IF we have a working set of choices, else disable it.
+    //  * user is importing from TreeBASE and has  entered a TreeBASE ID
+    //    OR
+    //  * user is uploading data and has  entered a DOI/URL
+    //  * license option is chosen and (if "another license") complete
+    var creationAllowed = true;
+    var chosenImportLocation = $('[name=import-from-location]:checked').val();
+    var errMsg;
+    var $treebaseDetailPanel = $('#import-method-TREEBASE_ID');
+    var $uploadDetailPanel = $('#import-method-PUBLICATION_DOI');
+    switch(chosenImportLocation) {
+        case 'IMPORT_FROM_TREEBASE':
+            enableDetails( $treebaseDetailPanel );
+            disableDetails( $uploadDetailPanel );
 
-    // Have they chosen a valid licensing option?
-    var uploadMethods = locationToMethodMapping[ 'import-from-UPLOAD' ];
-    var $uploadImportButtons = $( '#'+ uploadMethods.join(', #') ).find('button');
-    var licenseChoiceMade = $('input:radio[name=cc0-agreement]').is(':checked');
-    if (licenseChoiceRequired && !(licenseChoiceMade)) {
-        // block all import options for upload
-        $uploadImportButtons.css('opacity', 0.5);
-        $uploadImportButtons.unbind('click').click(function(e) {
-            showErrorMessage('You must choose a data licensing option to upload a study.');
+            // Are we ready to continue?
+            if ($.trim($('input[name=treebase-id]').val()) === '') {
+                creationAllowed = false;
+                errMsg = 'You must enter a TreeBASE ID to continue.';
+            } else {
+                var testForInt = $.trim($('input[name=treebase-id]').val());
+                if (isNaN(testForInt) || parseInt(testForInt) != testForInt) {
+                    creationAllowed = false;
+                    errMsg = 'TreeBASE ID should be an integer.';
+                }
+            }
+
+            // Licensing is assumed to be covered by CC0 waiver
+            break;
+
+        case 'IMPORT_FROM_UPLOAD':
+            disableDetails( $treebaseDetailPanel );
+            enableDetails( $uploadDetailPanel );
+            
+            // Are we ready to continue?
+            if ($.trim($('input[name=publication-DOI]').val()) === '') {
+                creationAllowed = false;
+                errMsg = 'You must enter a DOI (preferred) or URL to continue.';
+            } else {
+                // Check for a compliant license or waiver
+                if ($chosenLicense.length === 0) {
+                    creationAllowed = false;
+                    errMsg = 'You must select an appropriate waiver or license for these data.';
+                } else if (authorChoosingToApplyCC0 && !($('#agreed-to-CC0').is(':checked'))) {
+                    creationAllowed = false;
+                    errMsg = 'You must agree to release the data under the terms of the CC0 waiver.';
+                } else if (altLicenseDetailsRequired && (chosenAltLicense === '')) {
+                    creationAllowed = false;
+                    errMsg = 'You must select an appropriate waiver or license for these data.';
+                } else if (altOtherLicenseInfoRequired) {
+                    if ($.trim($('input[name=data-license-name]').val()) === '') {
+                        creationAllowed = false;
+                        errMsg = 'You must specify the name and URL of the current data license for these data.';
+                    }
+                    if ($.trim($('input[name=data-license-url]').val()) === '') {
+                        creationAllowed = false;
+                        errMsg = 'You must specify the name and URL of the current data license for these data.';
+                    }
+                }
+            }
+            break;
+
+        case undefined:
+            disableDetails( $treebaseDetailPanel );
+            disableDetails( $uploadDetailPanel );
+
+            creationAllowed = false;
+            errMsg = 'You must choose a study creation method (import from TreeBASE, or upload from your computer).';
+            break;
+
+        default:
+            console.log('UNEXPECTED chosenImportLocation:');
+            console.log(chosenImportLocation);
+            console.log(typeof(chosenImportLocation));
+    } 
+
+    
+    var $continueButton = $('#continue-button');
+    if (creationAllowed) {
+        hideFooterMessage('FAST');
+        $continueButton.css('opacity', 1.0);
+        $continueButton.unbind('click').click(function(evt) {
+            createStudyFromForm(evt);
             return false;
         });
     } else {
-        // enable all import options for upload
-        $uploadImportButtons.css('opacity', 1.0);
-        $uploadImportButtons.unbind('click').click(function(evt) {
-            createStudyFromForm(this, evt);
+        $continueButton.css('opacity', 0.5);
+        $continueButton.unbind('click').click(function(e) {
+            showErrorMessage(errMsg);
             return false;
         });
     }
 }
+
 
 function validateFormData() {
     // return success (t/f?), or a structure with validation errors
@@ -123,7 +162,7 @@ function validateFormData() {
     return true;
 }
 
-function createStudyFromForm( clicked, evt ) {
+function createStudyFromForm( evt ) {
     // Gather current create/import options and trigger study cration.
     // Server should create a new study (from JSON "template") and try to
     // import data based on user input. Major errors (eg, import failure)
@@ -137,17 +176,12 @@ function createStudyFromForm( clicked, evt ) {
 
     showModalScreen("Adding study...", {SHOW_BUSY_BAR:true});
     
-    var importMethod = '';
-    var $clicked = $(clicked);
-    var $methodPanel = $clicked.closest('div[id^=import-method-]');
-    if ($methodPanel.length === 1) {
-        importMethod = $methodPanel.attr('id');
-        console.log("importMethod: ["+ importMethod +"]");
-    } else {
-        // insist on a proper button click for this form
-        console.warn("Expected a button or input:button, bailing out now!");
-        return false;
-    }
+    // Map the chosen location (data source) to an import method. (This is now
+    // a simple mapping, whereas we previously had multiple methods per location.)
+    var chosenImportLocation = $('[name=import-from-location]:checked').val();
+    var importMethod = (chosenImportLocation === 'IMPORT_FROM_TREEBASE') ?
+        'import-method-TREEBASE_ID' : 'import-method-PUBLICATION_DOI';
+    console.log("importMethod: ["+ importMethod +"]");
 
     $.ajax({
         type: 'POST',
@@ -156,15 +190,23 @@ function createStudyFromForm( clicked, evt ) {
         // contentType: "application/json; charset=utf-8",
         url: API_create_study_POST_url,
         data: {
-            // gather chosen study-creation options
+            // Gather chosen study-creation options. NOTE that we send all variables and
+            // depend on the server to discern which ones really matter.
             'import_method': importMethod,
-            'cc0_agreement': $('#agreed-to-CC0').is(':checked'),
             'import_from_location': $('[name=import-from-location]:checked').val() || '',
             'treebase_id': $('[name=treebase-id]').val() || '',
-            'nexml_fetch_url': $('[name=nexml-fetch-url]').val() || '',
-            'nexml_pasted_string': $('[name=nexml-pasted-string]').val() || '',
             'publication_DOI': $('[name=publication-DOI]').val() || '',
-            'publication_reference': $('[name=publication-reference]').val() || '',
+            //'publication_reference': $('[name=publication-reference]').val() || '',
+            //'nexml_fetch_url': $('[name=nexml-fetch-url]').val() || '',
+            //'nexml_pasted_string': $('[name=nexml-pasted-string]').val() || '',
+            //
+            // CC0 and alternate license info
+            'chosen_license': $('input[name=data-license]:checked').val(),
+            'cc0_agreement': $('#agreed-to-CC0').is(':checked'),
+            'alternate_license': $('select[name=alternate-license]').val(),
+            'alt_license_name': $.trim($('input[name=data-license-name]').val()),
+            'alt_license_URL': $.trim($('input[name=data-license-url]').val()),
+            //
             // misc identifying information
             'author_name': authorName,
             'author_email': authorEmail,
