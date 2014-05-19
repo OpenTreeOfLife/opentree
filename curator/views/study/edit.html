@@ -202,10 +202,10 @@ body {
         {{ else: }} 
           <a class="btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to study list</a>
          {{ if userCanEdit: }}
-          <a class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
+          <a id="edit-study-button" class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
             onclick="return confirm('Are you sure you want to edit this study?');">Edit Study</a>
          {{ else: }}
-          <a class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
+          <a id="edit-study-button" class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
             onclick="return confirm('Are you sure you want to edit this study?');">Login to Edit Study</a>
          {{ pass }}
         {{ pass }}

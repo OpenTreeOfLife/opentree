@@ -60,6 +60,9 @@ def edit():
     view_dict = get_opentree_services_method_urls(request)
     view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['studyID'] = request.args[0]
+    #if view_dict['studyID'].startswith('pg'):
+    #    # block editing these for now (show read-only view with explanation)
+    #    redirect(URL('view', vars=dict(send=URL(args=request.args, vars=request.vars))))
     view_dict['viewOrEdit'] = 'EDIT'
     return view_dict
 
