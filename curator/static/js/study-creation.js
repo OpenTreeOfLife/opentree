@@ -17,13 +17,22 @@ $(document).ready(function() {
 
 function updateImportOptions() {
     // Show license detail fields IF "another license" is chosen, else hide it.
+    var $cc0Details = $('#applying-cc0-details'); // set of widgets
     var $altLicenseDetails = $('#alternate-license-details'); // set of widgets
     var $altOtherLicenseInfo = $('#other-license-info');  // subset, used only if "Other license' chosen
     var $chosenLicense = $('input[name=data-license]:checked');
+    var authorChoosingToApplyCC0 = ($chosenLicense.attr('id') === 'treebase-data-has-CC0');
     var altLicenseDetailsRequired = ($chosenLicense.attr('id') === 'tree-data-has-another-license');
     var chosenAltLicense = $('select[name=alternate-license]').val();
     var altOtherLicenseInfoRequired = altLicenseDetailsRequired && (chosenAltLicense === 'OTHER');
-    // adjust the innermost widgets first
+    // adjust main cc0 widgets
+    if (authorChoosingToApplyCC0) {
+        $cc0Details.slideDown('fast');
+    } else {
+        $cc0Details.slideUp('fast');
+    }
+    
+    // adjust the innermost license widgets first
     if (altOtherLicenseInfoRequired) {
         $altOtherLicenseInfo.slideDown('fast');
     } else {
@@ -37,34 +46,61 @@ function updateImportOptions() {
     }
     
     // Enable Continue button IF we have a working set of choices, else disable it.
-    //  * user has entered a TreeBASE ID, a DOI, or a reference string
+    //  * user is importing from TreeBASE and has  entered a TreeBASE ID
+    //    OR
+    //  * user is uploading data and has  entered a DOI/URL
     //  * license option is chosen and (if "another license") complete
     var creationAllowed = true;
-    var $oneRequiredFields = $('input[name=treebase-id], input[name=publication-DOI], textarea[name=publication-reference]');
-    var populatedFieldFound = false;
-    $oneRequiredFields.each(function() {
-        if ($.trim($(this).val()) !== '') {
-            populatedFieldFound = true;
-            console.log("FOUND POP!");
-            return false;
-        }
-    });
-    if (!populatedFieldFound) {
-        creationAllowed = false;
-    }
+    var chosenImportLocation = $('[name=import-from-location]:checked').val();
+    var errMsg;
+    switch(chosenImportLocation) {
+        case 'IMPORT_FROM_TREEBASE':
+            if ($.trim($('input[name=treebase-id]').val()) === '') {
+                creationAllowed = false;
+                errMsg = 'You must enter a TreeBASE ID to continue.';
+            }
+            // licensing is assumed to be covered by CC0 waiver
+            break;
 
-    if ($chosenLicense.length === 0) {
-        creationAllowed = false;
-    } else if (altLicenseDetailsRequired && (chosenAltLicense === '')) {
-        creationAllowed = false;
-    } else if (altOtherLicenseInfoRequired) {
-        if ($.trim($('input[name=data-license-name]').val()) === '') {
+        case 'IMPORT_FROM_UPLOAD':
+            if ($.trim($('input[name=publication-DOI]').val()) === '') {
+                creationAllowed = false;
+                errMsg = 'You must enter a DOI (preferred) or URL to continue.';
+            } else {
+                // check for a compliant license or waiver
+                if ($chosenLicense.length === 0) {
+                    creationAllowed = false;
+                    errMsg = 'You must select an appropriate waiver or license for these data.';
+                } else if (authorChoosingToApplyCC0 && !($('#agreed-to-CC0').is(':checked'))) {
+                    creationAllowed = false;
+                    errMsg = 'You must agree to release the data under the terms of the CC0 waiver.';
+                } else if (altLicenseDetailsRequired && (chosenAltLicense === '')) {
+                    creationAllowed = false;
+                    errMsg = 'You must select an appropriate waiver or license for these data.';
+                } else if (altOtherLicenseInfoRequired) {
+                    if ($.trim($('input[name=data-license-name]').val()) === '') {
+                        creationAllowed = false;
+                        errMsg = 'You must specify the name and URL of the current data license for these data.';
+                    }
+                    if ($.trim($('input[name=data-license-url]').val()) === '') {
+                        creationAllowed = false;
+                        errMsg = 'You must specify the name and URL of the current data license for these data.';
+                    }
+                }
+            }
+            break;
+
+        case undefined:
             creationAllowed = false;
-        }
-        if ($.trim($('input[name=data-license-url]').val()) === '') {
-            creationAllowed = false;
-        }
-    }
+            errMsg = 'You must choose a study creation method (import from TreeBASE, or upload from your computer).';
+            break;
+
+        default:
+            console.log('UNEXPECTED chosenImportLocation:');
+            console.log(chosenImportLocation);
+            console.log(typeof(chosenImportLocation));
+    } 
+
     
     var $continueButton = $('#continue-button');
     if (creationAllowed) {
@@ -75,14 +111,6 @@ function updateImportOptions() {
             return false;
         });
     } else {
-        var errMsg;
-        if (!populatedFieldFound) {
-            errMsg = 'You must enter a TreeBASE ID, a DOI/URL, or a reference string to continue.';
-        } else if (altOtherLicenseInfoRequired) {
-            errMsg = 'You must specify the name and URL of the current data license for this study.';
-        } else {
-            errMsg = 'You must select the appropriate data license for this study.';
-        }
         $continueButton.css('opacity', 0.5);
         $continueButton.unbind('click').click(function(e) {
             showErrorMessage(errMsg);

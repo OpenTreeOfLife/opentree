@@ -500,11 +500,7 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
      */
 }
 .featured-label {
-    /*
-    font-size: 1.3em;
-    */
     display: block !important;
-    margin-top: 20px;
 }
 .featured-label input[type="radio"] {
     vertical-align: baseline;
