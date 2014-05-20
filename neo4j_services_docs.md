@@ -216,3 +216,115 @@ Return a JSON with alternative parents presented
 Update the graph studies that should be added from phylografter
 
 
+# oti
+OTI is an indexing service for the NEXSoN studies available through the Open Tree of Life phylesystem. For more information on neo4j services for this database, execute this line in a terminal:
+
+	curl -v http://dev.opentreeoflife.org/oti/ 
+
+### Available oti service extensions:
+#### execute_query
+
+	http://dev.opentreeoflife.org/oti/ext/CypherPlugin/graphdb/execute_query
+
+execute a query
+
+*	query: The query string
+*	*format*: The return format. Default is Neo4j REST. Allowed: 'json-data-table' to return Google Data Table JSON.
+*	*params*: The query parameters
+
+#### getSearchablePropertiesForStudies
+
+	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/getSearchablePropertiesForStudies
+
+Get a list of properties that can be used to search for studies
+
+
+#### singlePropertySearchForTreeNodes
+
+	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/singlePropertySearchForTreeNodes
+
+Perform a simple search for trees nodes (currently only supports tip nodes) in indexed studies
+
+*	property: The property to be searched on. A list of searchable properties is available from the getSearchablePropertiesForTrees service.
+*	value: The value to be searched. This must be passed as a string, but will be converted to the datatype corresponding to the specified searchable value.
+*	*exact*: Whether to perform exact matching ONLY. Defaults to false, i.e. fuzzy matching is enabled. Only applicable for some string properties.
+*	*verbose*: Whether or not to include all metadata. By default, only the nexson ids of elements will be returned.
+
+#### getSearchablePropertiesForTreeNodes
+
+	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/getSearchablePropertiesForTreeNodes
+
+Get a list of properties that can be used to search for tree nodes
+
+
+#### singlePropertySearchForStudies
+
+	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/singlePropertySearchForStudies
+
+Perform a simple search for indexed studies
+
+*	property: The property to be searched on. A list of searchable properties is available from the getSearchablePropertiesForStudies service.
+*	value: The value to be searched. This must be passed as a string, but will be converted to the datatype corresponding to the specified searchable value.
+*	*exact*: Whether to perform exact matching ONLY. Defaults to false, i.e. fuzzy matching is enabled. Only applicable for some string properties.
+*	*verbose*: Whether or not to include all metadata. By default, only the nexson ids of elements will be returned.
+
+#### findAllStudies
+
+	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/findAllStudies
+
+Returns information about all studies in the database.
+
+*	*includeTreeMetadata*: The property to be searched on. A list of searchable properties is available from the getSearchablePropertiesForStudies service.
+*	*verbose*: Whether or not to include all metadata. By default, only the nexson ids of elements will be returned.
+
+#### singlePropertySearchForTrees
+
+	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/singlePropertySearchForTrees
+
+Perform a simple search for trees in indexed studies
+
+*	property: The property to be searched on. A list of searchable properties is available from the getSearchablePropertiesForTrees service.
+*	value: The value to be searched. This must be passed as a string, but will be converted to the datatype corresponding to the specified searchable value.
+*	*exact*: Whether to perform exact matching ONLY. Defaults to false, i.e. fuzzy matching is enabled. Only applicable for some string properties.
+*	*verbose*: Whether or not to include all metadata. By default, only the nexson ids of elements will be returned.
+
+#### getSearchablePropertiesForTrees
+
+	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/getSearchablePropertiesForTrees
+
+Get a list of properties that can be used to search for trees
+
+
+#### execute_script
+
+	http://dev.opentreeoflife.org/oti/ext/GremlinPlugin/graphdb/execute_script
+
+execute a Gremlin script with 'g' set to the Neo4jGraph and 'results' containing the results. Only results of one object type is supported.
+
+*	script: The Gremlin script
+*	*params*: JSON Map of additional parameters for script variables
+
+#### unindexNexsons
+
+	http://dev.opentreeoflife.org/oti/ext/IndexServices/graphdb/unindexNexsons
+
+Unindex (remove) the nexson data for these study ids. If no matching study is found, do nothing. Returns arrays containing the study ids for the studies that were successfully removed from the index, and those that could not be found (and throws exceptions for those whose removal failed.
+
+*	ids: doomed nexson ids
+
+#### indexSingleNexson
+
+	http://dev.opentreeoflife.org/oti/ext/IndexServices/graphdb/indexSingleNexson
+
+DEPRECATED. Use `indexNexsons` instead. For compatibility, this *ALWAYS RETURNS* true. indexNexsons will provide more meaningful results.
+
+*	url: remote nexson url
+
+#### indexNexsons
+
+	http://dev.opentreeoflife.org/oti/ext/IndexServices/graphdb/indexNexsons
+
+Index the nexson data at the provided urls. If a nexson study to be indexed has an identical ot:studyId value to a previously indexed study, then the previous information for that study will be replaced by the incoming nexson. Returns an array containing the study ids for the studies that were successfully read and indexed.
+
+*	urls: remote nexson urls
+
