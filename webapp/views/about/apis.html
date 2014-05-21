@@ -1,0 +1,49 @@
+{{extend 'layout.html'}}
+
+<div class="container">
+      <h1 id="main-title">API documentation</h1>
+
+      <div class="row">
+          <div class="span3">
+              <ul class="nav nav-pills nav-stacked">
+                  <li class="nav=header">Learn more about&hellip;</li>
+                  <li>
+                      <a href="{{= URL('about', 'open-tree-of-life') }}">Open Tree of Life</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'the-synthetic-tree') }}">The synthetic tree</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'references') }}">Bibliographic references</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'the-source-tree-manager') }}">The source tree manager</a>
+                  </li>
+                  <li class="active">
+                      <a href="{{= URL('about', 'apis') }}">API documentation</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'developer-resources') }}">Developer resources</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'credits') }}">Credits</a>
+                  </li>
+              </ul>
+          </div>
+          <div class="span8 offset1">
+
+            <p>
+            TODO
+            </p>
+
+          </div>
+      </div>
+
+      <h3 id="comment-header">Comments <i></i></h3>
+      {{=plugin_localcomments(filter=('url',),url=request.url)}}
+
+</div><!-- end of .container -->
+
+<script type="text/javascript">
+    // add any page-specific behavior here
+</script>

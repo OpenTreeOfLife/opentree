@@ -242,24 +242,6 @@ function loadSelectedStudy() {
                 data.nexml['^ot:studyId'] = studyID;
             }
             
-            // Special handling of studies created in phylografter (TEMPORARY)
-            if (data.nexml['@generator'] === "Phylografter nexml-json exporter") {
-                if (viewOrEdit === 'EDIT') {
-                    // Block editing of pg studies in curation tool, since we can't safely round-trip them.
-                    window.location = window.location.href.replace('/study/edit/', '/study/view/');
-                } else {
-                    // Disable Edit button(s) and post a notice
-                    $('#edit-study-button')
-                        .css('opacity', '0.3 !important')
-                        .attr('disabled','disabled')
-                        .attr('onclick','')
-                        .unbind('click').click(function(e) {
-                            showErrorMessage('This study was created using phylografter and cannot (currently) be edited with this tool.');
-                            return false; // block default button behaviors
-                        });
-                }
-            }
-
             viewModel = data;
 
             /* To help in creating new elements, Keep track of the highest ID
