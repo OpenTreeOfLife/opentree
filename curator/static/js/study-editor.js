@@ -543,7 +543,7 @@ function loadSelectedStudy() {
                 'OTUS': {
                     // TODO: add 'pagesize'?
                     'match': ko.observable(""),
-                    'scope': ko.observable("In preferred trees"),
+                    'scope': ko.observable("In all trees"),
                     'order': ko.observable("Unmapped OTUs first")
                 },
                 'ANNOTATIONS': {
