@@ -375,12 +375,14 @@ function loadSelectedStudy() {
             // NOTE that we should "pluralize" existing arrays, in case
             // Badgerfish conversion has replaced it with a single item
             if ('^ot:candidateTreeForSynthesis' in data.nexml) {
-                data.nexml['^ot:candidateTreeForSynthesis'].candidate = 
-                    makeArray(data.nexml['^ot:candidateTreeForSynthesis'].candidate);
+                // remove legacy (inner) 'candidate' array, if found!
+                if ('candidate' in data.nexml['^ot:candidateTreeForSynthesis']) {
+                    data.nexml['^ot:candidateTreeForSynthesis'] = data.nexml['^ot:candidateTreeForSynthesis'].candidate;
+                }
+                data.nexml['^ot:candidateTreeForSynthesis'] = 
+                    makeArray(data.nexml['^ot:candidateTreeForSynthesis']);
             } else {
-                data.nexml['^ot:candidateTreeForSynthesis'] = {
-                    'candidate': [ ]
-                };
+                data.nexml['^ot:candidateTreeForSynthesis'] = [ ];
             }
             if ('^ot:tag' in data.nexml) {
                 data.nexml['^ot:tag'] = makeArray(data.nexml['^ot:tag']);
@@ -1168,10 +1170,16 @@ function promptForSaveComments() {
 
 
 function scrubNexsonForTransport( nexml ) {
+    /* Groom client-side Nexson for storage on server (details below)
+     *   - strip client-side-only d3 properties (and similar)
+     *   - coerce some KO string values to numeric types
+     *   - remove unused rooting elements
+     *   - remove "empty" elements if server doesn't expect them
+     */
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    // strip any extraneous JS properties from study Nexson
+
     var allTrees = [];
     $.each(nexml.trees, function(i, treesCollection) {
         $.each(treesCollection.tree, function(i, tree) {
@@ -1182,6 +1190,19 @@ function scrubNexsonForTransport( nexml ) {
         cleanupAdHocRoot(tree);
         clearD3PropertiesFromTree(tree);
     });
+
+    // coerce some non-string values
+    if ("string" === typeof nexml['^ot:studyYear']) {
+        // this should be an integer (or null if empty/invalid)
+        var intYear = parseInt(nexml['^ot:studyYear']);
+        nexml['^ot:studyYear'] = isNaN(intYear) ? null : intYear;
+    }
+
+    // remove some unused elements
+    if (null == nexml['^ot:focalClade']) {
+        delete nexml['^ot:focalClade'];
+    }
+
 }
 
 function saveFormDataToStudyJSON() {
@@ -1212,14 +1233,14 @@ function saveFormDataToStudyJSON() {
     });
     saveURL += ('?'+ qsVars);
 
-    scrubNexsonForTransport();
-
     // add this user to the curatorName list, if not found
     var listPos = $.inArray( curatorDisplayName, viewModel.nexml['^ot:curatorName'] );
     if (listPos === -1) {
         viewModel.nexml['^ot:curatorName'].push( curatorDisplayName );
     }
   
+    scrubNexsonForTransport();
+
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: 'PUT',
@@ -1244,6 +1265,14 @@ function saveFormDataToStudyJSON() {
                 // TODO: this should be properly parsed JSON, show it more sensibly
                 // (but for now, repeat the crude feedback used above)
                 var errMsg = 'Sorry, there was an error in the study data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            var putResponse = $.parseJSON(jqXHR.responseText);
+            viewModel.startingCommitSHA = putResponse['sha'] || viewModel.startingCommitSHA;
+            if (putResponse['merge_needed']) {
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 return;
@@ -1540,7 +1569,7 @@ function normalizeOTUs( tree ) {
 function getPreferredTreeIDs() {
     preferredTreeIDs = [];
     var candidateTreeMarkers = ('^ot:candidateTreeForSynthesis' in viewModel.nexml) ? 
-        makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate ) : [];
+        makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'] ) : [];
 
     $.each(candidateTreeMarkers, function(i, marker) {
         var treeID = $.trim(marker);
@@ -1578,10 +1607,10 @@ function togglePreferredTree( tree ) {
     var alreadyPreferred = ($.inArray( treeID, getPreferredTreeIDs()) !== -1);
     if (alreadyPreferred) {
         // remove it from the list of preferred trees
-        removeFromArray( treeID, viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate );
+        removeFromArray( treeID, viewModel.nexml['^ot:candidateTreeForSynthesis'] );
     } else {
         // add it to the list of preferred trees
-        viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( treeID ); 
+        viewModel.nexml['^ot:candidateTreeForSynthesis'].push( treeID ); 
     }
     nudgeTickler('OTU_MAPPING_HINTS');
     return true;  // to allow checkbox updates
@@ -3237,7 +3266,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
             normalizeTree( tree );
             if (responseJSON.newTreesPreferred) {
                 // mark all new tree(s) as preferred, eg, a candidate for synthesis
-                viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( tree['@id'] );
+                viewModel.nexml['^ot:candidateTreeForSynthesis'].push( tree['@id'] );
             }
             // build proper NexSON elements for imported tree IDs
             importedTreeElements.push( {"$": tree['@id']} );
