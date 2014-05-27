@@ -375,6 +375,10 @@ function loadSelectedStudy() {
             // NOTE that we should "pluralize" existing arrays, in case
             // Badgerfish conversion has replaced it with a single item
             if ('^ot:candidateTreeForSynthesis' in data.nexml) {
+                // remove legacy (inner) 'candidate' array, if found!
+                if ('candidate' in data.nexml['^ot:candidateTreeForSynthesis']) {
+                    data.nexml['^ot:candidateTreeForSynthesis'] = data.nexml['^ot:candidateTreeForSynthesis'].candidate;
+                }
                 data.nexml['^ot:candidateTreeForSynthesis'] = 
                     makeArray(data.nexml['^ot:candidateTreeForSynthesis']);
             } else {
@@ -1166,10 +1170,16 @@ function promptForSaveComments() {
 
 
 function scrubNexsonForTransport( nexml ) {
+    /* Groom client-side Nexson for storage on server (details below)
+     *   - strip client-side-only d3 properties (and similar)
+     *   - coerce some KO string values to numeric types
+     *   - remove unused rooting elements
+     *   - remove "empty" elements if server doesn't expect them
+     */
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    // strip any extraneous JS properties from study Nexson
+
     var allTrees = [];
     $.each(nexml.trees, function(i, treesCollection) {
         $.each(treesCollection.tree, function(i, tree) {
@@ -1180,23 +1190,19 @@ function scrubNexsonForTransport( nexml ) {
         cleanupAdHocRoot(tree);
         clearD3PropertiesFromTree(tree);
     });
-}
 
-function createNexSON(obj) {
-    var deletedfocalClade = false;
-    var r;
-    if ("string" === typeof obj.nexml['^ot:studyYear']) {
-        obj.nexml['^ot:studyYear'] = parseInt(obj.nexml['^ot:studyYear']);
+    // coerce some non-string values
+    if ("string" === typeof nexml['^ot:studyYear']) {
+        // this should be an integer (or null if empty/invalid)
+        var intYear = parseInt(nexml['^ot:studyYear']);
+        nexml['^ot:studyYear'] = isNaN(intYear) ? null : intYear;
     }
-    if (null == obj.nexml['^ot:focalClade']) {
-        delete obj.nexml['^ot:focalClade'];
-        deletedfocalClade = true;
+
+    // remove some unused elements
+    if (null == nexml['^ot:focalClade']) {
+        delete nexml['^ot:focalClade'];
     }
-    r = '{"nexml":'+ JSON.stringify(obj.nexml) +'}';
-    if (deletedfocalClade) {
-        obj.nexml['^ot:focalClade'] = null;
-    }
-    return r;
+
 }
 
 function saveFormDataToStudyJSON() {
@@ -1227,14 +1233,14 @@ function saveFormDataToStudyJSON() {
     });
     saveURL += ('?'+ qsVars);
 
-    scrubNexsonForTransport();
-
     // add this user to the curatorName list, if not found
     var listPos = $.inArray( curatorDisplayName, viewModel.nexml['^ot:curatorName'] );
     if (listPos === -1) {
         viewModel.nexml['^ot:curatorName'].push( curatorDisplayName );
     }
   
+    scrubNexsonForTransport();
+
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: 'PUT',
@@ -1243,7 +1249,7 @@ function saveFormDataToStudyJSON() {
         contentType: "application/json; charset=utf-8",
         url: saveURL,
         processData: false,
-        data: (createNexSON(viewModel)),
+        data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
@@ -1266,7 +1272,7 @@ function saveFormDataToStudyJSON() {
             var putResponse = $.parseJSON(jqXHR.responseText);
             viewModel.startingCommitSHA = putResponse['sha'] || viewModel.startingCommitSHA;
             if (putResponse['merge_needed']) {
-                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please report this error Open Tree of Life software team';
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 return;
