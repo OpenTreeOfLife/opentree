@@ -1197,6 +1197,10 @@ function scrubNexsonForTransport( nexml ) {
         var intYear = parseInt(nexml['^ot:studyYear']);
         nexml['^ot:studyYear'] = isNaN(intYear) ? null : intYear;
     }
+    // force edge lengths from integers to floats
+    $.each( allTrees, function(i, tree) {
+        coerceEdgeLengthsToFloats(tree);
+    });
 
     // remove some unused elements
     if (null == nexml['^ot:focalClade']) {
@@ -4432,6 +4436,32 @@ function clearD3PropertiesFromTree(tree) {
         delete node.length;
         delete node.ingroup;
         delete node.rootDist;
+    });
+}
+
+function coerceEdgeLengthsToFloats(tree) {
+    // N.B. True floating-point precision is not reliable in Javascript, which
+    // uses binary floating point numbers. So our groomed result will be in the
+    // form of a string that reliably freezes a fixed-precision decimal float.
+    $.each( tree.edge, function( i, edge ) {
+        if ('@length' in edge) {
+            console.log('OLD @length: '+ edge['@length'] +' <'+ typeof(edge['@length']) +'>');
+            // keep precise floats where found; convert integers to minimal floats (4 => '4.0')
+            var floatEdgeLength = parseFloat( edge['@length'] );
+            var strEdgeLength;  // groomed value
+            if (isNaN(floatEdgeLength)) {
+                strEdgeLength = '0.0';
+            } else if (floatEdgeLength.toString().indexOf('.') === -1) {
+                strEdgeLength = floatEdgeLength.toFixed(1);
+            } else {
+                // keep current float precision!
+                strEdgeLength = floatEdgeLength;
+            }
+            edge['@length'] = strEdgeLength;
+            console.log('NEW @length: '+ edge['@length'] +' <'+ typeof(edge['@length']) +'>');
+        } else {
+            console.log('@length NOT FOUND');
+        }
     });
 }
 
