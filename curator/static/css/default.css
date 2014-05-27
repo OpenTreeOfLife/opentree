@@ -500,8 +500,10 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
      */
 }
 .featured-label {
-    font-size: 1.3em;
-    margin-top: 20px;
+    display: block !important;
+}
+.featured-label input[type="radio"] {
+    vertical-align: baseline;
 }
 .featured-label input[type="radio"],
 .featured-label input[type="checkbox"] {
@@ -510,10 +512,12 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
 .featured-label-description {
     color: #999;
     font-style: italic;
-    padding: 2px 0 0 20px;
+}
+.featured-label-description strong {
+    color: #333;
 }
 .featured-label-child {
-    padding-left: 20px;
+    padding: 6px 0 6px 20px;
 }
 .navbar-inner .pagination {
     margin: 0.5em 0 0;

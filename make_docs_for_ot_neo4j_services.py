@@ -95,6 +95,26 @@ for ext, services in treemachine_services_info["extensions"].iteritems():
         service_url = service_url.replace(":7474/db/data", "/treemachine")        
         print_description(service_url)
 
+# reset the curl output buffer
+storage.truncate(0)
+
+##### next, oti
+
+print "# oti"
+print "OTI is an indexing service for the NEXSoN studies available through the Open Tree of Life phylesystem. For more information on neo4j services for this database, execute this line in a terminal:"
+print "\n\tcurl -v " + oti_url + " \n"
+
+simple_curl_call(c, oti_url, storage.write)
+oti_services_info = json.loads(storage.getvalue())
+
+print "### Available oti service extensions:"
+
+for ext, services in oti_services_info["extensions"].iteritems():
+    
+    for service_name, service_url in services.iteritems():
+        
+        service_url = service_url.replace(":7478/db/data", "/oti")        
+        print_description(service_url)
 
 # close buffers
 c.close()

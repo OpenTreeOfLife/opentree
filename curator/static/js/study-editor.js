@@ -541,7 +541,7 @@ function loadSelectedStudy() {
                 'OTUS': {
                     // TODO: add 'pagesize'?
                     'match': ko.observable(""),
-                    'scope': ko.observable("In preferred trees"),
+                    'scope': ko.observable("In all trees"),
                     'order': ko.observable("Unmapped OTUs first")
                 },
                 'ANNOTATIONS': {
@@ -5444,4 +5444,19 @@ function clearTaxonExemplar( treeID, nodeID ) {
     var node = getTreeNodeByID(treeID, nodeID);
     delete node['^ot:isTaxonExemplar'];
     nudgeTickler('TREES');
+}
+
+function studyHasCC0Waiver( nexml ) {
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
+    //  nexml['^xhtml:license'] = {'@href': 'http://creativecommons.org/publicdomain/zero/1.0/'}
+    if ('^xhtml:license' in nexml) {
+        var itsLicense = nexml['^xhtml:license'];
+        if (itsLicense && '@href' in itsLicense) {
+            var licenseURL = itsLicense['@href'];
+            return licenseURL === 'http://creativecommons.org/publicdomain/zero/1.0/';
+        }
+    }
+    return false;
 }

@@ -861,7 +861,7 @@ function showObjectProperties( objInfo, options ) {
                     }
 
                     if (typeof fullNode.nleaves !== 'undefined') {
-                        nodeSection.displayedProperties['Species within this clade'] = fullNode.nleaves;
+                        nodeSection.displayedProperties['Terminal taxa within this clade'] = fullNode.nleaves;
                         // OR 'Clade members'? 'Leaf taxa'?
                     }
 

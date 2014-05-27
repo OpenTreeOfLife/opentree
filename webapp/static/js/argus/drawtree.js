@@ -1073,10 +1073,11 @@ function createArgus(spec) {
                 var compoundNodeNamePrefix = '[';
                 var compoundNodeNameSuffix = ']';
                 // N.B. this is determined using vars above, COPIED from treeview.js!
-                var isCompoundNodeName = ((node.name.indexOf(compoundNodeNameDelimiter) !== -1) &&
+                var isCompoundNodeName = ((typeof node.name === 'string') &&
+                                          (node.name.indexOf(compoundNodeNameDelimiter) !== -1) &&
                                           (node.name.indexOf(compoundNodeNamePrefix) === 0) && 
                                           (node.name.indexOf(compoundNodeNameSuffix) === (node.name.length -1)));
-                displayLabel = (isCompoundNodeName ? '' : node.name);
+                displayLabel = (isCompoundNodeName ? '' : node.name || '');
             }
             label = paper.text(labelX, labelY, displayLabel).attr({
                 'text-anchor': labelAnchor,

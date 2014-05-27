@@ -1,7 +1,7 @@
 {{response.title = "Add Study"}}
 
 {{left_sidebar_enabled,right_sidebar_enabled=False,False}}
-{{response.subtitle = "license and import options"}}
+{{response.subtitle = "import options and licensing"}}
 
 {{### Add support scripts as in single-page editor?}}
 
@@ -15,95 +15,67 @@ body {
 
 <div class="row">
  <div class="span8 wireframe">
-  <form class="form-inline" style="padding-bottom: 24px;" action=".">
-    <p>
-        <strong>First things first.</strong> Open Tree of Life requires that data underlying the
-        tree be <strong>publicly available</strong>. While we believe that this is generally
-        true for scientific data, we'd also prefer to mark each study with the
-        <a href="http://creativecommons.org/about/cc0" target="_blank">Creative
-        Commons Zero (CC0) waiver</a> to emphasizse that it's in the public domain.
-    </p>
+  <form id="import-from-locations" class="form-inline" style="padding: 12px 0;" action=".">
 
-    <div>
-        <label for="agreed-to-CC0" class="featured-label">
-            <input type="radio" id="agreed-to-CC0" name="cc0-agreement" value="agreed-to-CC0"/>
-             By choosing this option, I am agreeing to release this data under the Creative Commons Zero (CC0) waiver.
+    <!-- WAS import-option-TREEBASE -->
+    <label for="import-from-TREEBASE" class="featured-label">
+        <input type="radio" id="import-from-TREEBASE" name="import-from-location" value="IMPORT_FROM_TREEBASE" />
+        Data for this study exists in TreeBASE
+    </label>
+    <div id="import-method-TREEBASE_ID" class="featured-label-child">
+        <input class="span4" type="text" name="treebase-id" placeholder="Enter its TreeBASE ID" 
+               style="margin-bottom: 12px;"></input>
+    </div>
+
+    <!-- WAS import-option-NEXML -->
+    <label for="import-from-UPLOAD" class="featured-label">
+        <input type="radio" id="import-from-UPLOAD" name="import-from-location" value="IMPORT_FROM_UPLOAD" />
+        I will upload tree data from my computer
+    </label>
+    <div id="import-method-PUBLICATION_DOI" class="featured-label-child">
+        <h4>Publication information</h4>
+        <input class="span4" type="text" name="publication-DOI" placeholder="DOI (preferred) or permanent URL for study" style="margin-bottom: 12px;"></input>
+
+        <h4>License information</h4>
+        <label for="apply-new-CC0-waiver" class="featured-label" style="margin-top: 0px;">
+            <input type="radio" id="apply-new-CC0-waiver" name="data-license" value="apply-new-CC0-waiver"/>
+             I am an author, or can act on behalf of the authors, to apply a CC0 waiver to these data
         </label>
+            <div id="applying-cc0-details" class="featured-label-child" Xstyle="display: none;">
+                <label for="agreed-to-CC0" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
+                    <input type="checkbox" id="agreed-to-CC0" name="cc0_agreement" style="width: 20px;"/>By
+                    clicking this checkbox, I hereby release these data under the terms of the Creative Commons Zero (CC0) waiver.
+                </label>
+            </div>
+
+        <label for="study-data-has-existing-license" class="featured-label">
+            <input type="radio" id="study-data-has-existing-license" name="data-license" 
+                   value="study-data-has-existing-license"/>
+             These data are already licensed
+        </label>
+            <div id="alternate-license-details" class="featured-label-child" style="display: none;">
+                <select id="alternate-license" name="alternate-license" style="margin-bottom: 12px;">
+                    <option value="">Select the existing license</option>
+                    <option value="CC-0">CC-0</option>
+                    <option value="CC-BY">CC-BY</option>
+                    <option value="OTHER">Other</option>
+                </select>
+                <div id="other-license-info">
+                    <input class="span3" type="text" name="data-license-name" 
+                           placeholder="Enter the name of this license"></input>
+                    <input class="span3" type="text" name="data-license-url" 
+                           placeholder="Enter the preferred URL for this license"></input>
+                </div>
+            </div>
+
         <label for="submit-without-CC0" class="featured-label">
-            <input type="radio" id="submit-without-CC0" name="cc0-agreement" value="submit-without-CC0"/>
-            I'm unable to secure the authors' permission for a CC0 waiver, but I would like to contribute this study anyway.
+            <input type="radio" id="submit-without-CC0" name="data-license" value="submit-without-CC0"/>
+            These data have no existing license or waiver, and I have no authority to apply a waiver
         </label>
     </div>
-  </form>
 
-  <form id="import-options" class="form-inline" style="padding-bottom: 24px;" action=".">
-    <p>
-    Select an import method (noting that these are roughly ordered in terms of required amount of curation). Note that Open Tree of Life only accepts published phylogenetic trees. `
-    </p>
-
-    <label for="import-option-TREEBASE" class="featured-label">
-        <input type="radio" id="import-option-TREEBASE" name="import-option" value="IMPORT_FROM_TREEBASE" />
-        My study already exists in TreeBASE
-    </label>
-    <p class="featured-label-description">
-        Importing from TreeBASE is fast and requires only minimal curation post-import. 
-    </p>
-    <div id="import-details-TREEBASE" class="featured-label-child">
-        <input class="span4" type="text" name="treebase-id" placeholder="Enter the TreeBASE ID for this study"></input>
-        <button class="btn btn-info">Import from TreeBASE</button>
-    </div>
-
-    <label for="import-option-NEXML" class="featured-label">
-        <input type="radio" id="import-option-NEXML" name="import-option" value="IMPORT_FROM_NEXML" />
-        My study already exists as NeXML 
-        <!-- <strong style="color: #c33;">[coming soon]</strong> -->
-    </label>
-    <p class="featured-label-description">
-        Importing from a NeXML file is quick and also saves time in curation.
-    </p>
-    <div id="import-details-NEXML" class="featured-label-child">
-        <input class="span4" style="margin-bottom: 12px;" type="text" name="nexml-fetch-url" placeholder="Enter a URL where we can fetch this NeXML"></input>
-        <textarea class="span4" name="nexml-pasted-string" placeholder="...or past the complete NeXML here" rows="4" style="display: block; margin-bottom: 12px;"></textarea>
-        <button class="btn btn-info" style="margin-bottom: 12px;">Import from NeXML</button>
-    </div>
-
-    <label for="import-option-PUBLICATION_DOI" class="featured-label">
-        <input type="radio" id="import-option-PUBLICATION_DOI" name="import-option" value="IMPORT_FROM_PUBLICATION_DOI" />
-        My study is published and has a DOI. 
-    </label>
-    <p class="featured-label-description">
-        The DOI, or digital object identifier, is assigned by the publisher and
-        usually looks like <strong>10.123/4567</strong>. The DOI allows us to
-        retrieve some study metadata automatically, then you can upload your data
-        files. 
-    </p>
-    <div id="import-details-PUBLICATION_DOI" class="featured-label-child">
-        <input class="span4" type="text" name="publication-DOI" placeholder="Enter the publication DOI" style="margin-bottom: 12px;"></input>
-        <button class="btn btn-info" style="margin-bottom: 12px;">Import using publication DOI</button>
-    </div>
-
-    <label for="import-option-PUBLICATION_REFERENCE" class="featured-label">
-        <input type="radio" id="import-option-PUBLICATION_REFERENCE" name="import-option" value="IMPORT_FROM_PUBLICATION_REFERENCE" />
-        My study is published and I have a reference string (or most of it). 
-    </label>
-    <p class="featured-label-description">
-        Enter a reference string to retrieve study metadata automatically, then you can upload your data files. 
-    </p>
-    <div id="import-details-PUBLICATION_REFERENCE" class="featured-label-child">
-        <textarea class="span4" name="publication-reference" placeholder="Enter the reference string" rows="4" style="margin-bottom: 12px;"></textarea>
-        <button class="btn btn-info" style="vertical-align: bottom; margin-bottom: 12px;">Import using reference string</button>
-    </div>
-
-    <label for="import-option-MANUAL_ENTRY" class="featured-label">
-        <input type="radio" id="import-option-MANUAL_ENTRY" name="import-option" value="IMPORT_FROM_MANUAL_ENTRY" />
-        My study does not have a DOI
-    </label>
-    <p class="featured-label-description">
-        This is rare for recently-published papers.
-    </p>
-    <div id="import-details-MANUAL_ENTRY" class="featured-label-child">
-        <button class="btn btn-info">Enter study data manually</button>
-    </div>
+    <button id="continue-button" class="btn btn-info pull-right" 
+            style="margin-bottom: 12px;">Continue</button>
   </form>
 
  </div>
