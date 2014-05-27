@@ -913,6 +913,14 @@ function showObjectProperties( objInfo, options ) {
                     options: 'icon illustrated' // uid? string?
                 },
                 function(data) {    // JSONP callback
+                    /*
+                    if (data.result) {
+                        console.log("HOW MANY results from phylopic? "+ data.result.length);
+                        console.log(data.result);
+                    } else {
+                        console.log("NO results from phylopic!");
+                    }
+                    */
                     if (data.result && (data.result.length > 0) && data.result[0].icon && data.result[0].icon.uid) {
                         $('#provenance-panel .provenance-title').after(
                             '<img class="taxon-image" src="http://phylopic.org/assets/images/submissions/'+ data.result[0].icon.uid 
