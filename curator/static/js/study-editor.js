@@ -4450,13 +4450,9 @@ function coerceEdgeLengthsToNumbers(tree) {
     // precision.
     $.each( tree.edge, function( i, edge ) {
         if ('@length' in edge) {
-            console.log('>> OLD @length: '+ edge['@length'] +' <'+ typeof(edge['@length']) +'>');
             // keep precise floats where found; convert integers to minimal floats (4 => '4.0')
             var floatEdgeLength = parseFloat( edge['@length'] );
             edge['@length'] = isNaN(floatEdgeLength) ? 0 : floatEdgeLength;
-            console.log('>> NEW @length: '+ edge['@length'] +' <'+ typeof(edge['@length']) +'>');
-        } else {
-            console.log('@length NOT FOUND');
         }
     });
 }
