@@ -4067,7 +4067,7 @@ function requestTaxonMapping() {
             "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
-        contentType: 'application/json',
+        contentType: "application/json; charset=utf-8",
         error: function(jqXHR, textStatus, errorThrown) {
 
             console.log("!!! something went terribly wrong");
@@ -5104,7 +5104,7 @@ function searchForMatchingTaxa() {
             "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
-        contentType: 'application/json',
+        contentType: "application/json; charset=utf-8",
         success: function(data) {    // JSONP callback
             // stash the search-text used to generate these results
             showingResultsForSearchText = queryText;
