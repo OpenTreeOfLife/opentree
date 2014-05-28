@@ -1197,6 +1197,10 @@ function scrubNexsonForTransport( nexml ) {
         var intYear = parseInt(nexml['^ot:studyYear']);
         nexml['^ot:studyYear'] = isNaN(intYear) ? null : intYear;
     }
+    // force edge lengths from integers to floats
+    $.each( allTrees, function(i, tree) {
+        coerceEdgeLengthsToNumbers(tree);
+    });
 
     // remove some unused elements
     if (null == nexml['^ot:focalClade']) {
@@ -4432,6 +4436,28 @@ function clearD3PropertiesFromTree(tree) {
         delete node.length;
         delete node.ingroup;
         delete node.rootDist;
+    });
+}
+
+function coerceEdgeLengthsToNumbers(tree) {
+    // Convert any string values to JS numbers, which look like integers if
+    // there's no fractional part. (For example, we might see 3.05 or 3, which
+    // should be recognized by the validator as equal to 3.0).
+    //
+    // N.B. True floating-point precision is not reliable in Javascript, which
+    // uses binary floating point numbers. Still, since we're not operating on
+    // length values, any incoming numbers should be preserved with full
+    // precision.
+    $.each( tree.edge, function( i, edge ) {
+        if ('@length' in edge) {
+            console.log('>> OLD @length: '+ edge['@length'] +' <'+ typeof(edge['@length']) +'>');
+            // keep precise floats where found; convert integers to minimal floats (4 => '4.0')
+            var floatEdgeLength = parseFloat( edge['@length'] );
+            edge['@length'] = isNaN(floatEdgeLength) ? 0 : floatEdgeLength;
+            console.log('>> NEW @length: '+ edge['@length'] +' <'+ typeof(edge['@length']) +'>');
+        } else {
+            console.log('@length NOT FOUND');
+        }
     });
 }
 
