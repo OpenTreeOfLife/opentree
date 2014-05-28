@@ -30,9 +30,6 @@ def the_source_tree_manager():
     # URL is /opentree/about/the-source-tree-manager
     return default_view_dict
 
-def apis():
-    return default_view_dict
-
 def developer_resources():
     return default_view_dict
 
