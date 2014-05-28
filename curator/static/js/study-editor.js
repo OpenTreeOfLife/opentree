@@ -1199,7 +1199,7 @@ function scrubNexsonForTransport( nexml ) {
     }
     // force edge lengths from integers to floats
     $.each( allTrees, function(i, tree) {
-        coerceEdgeLengthsToFloats(tree);
+        coerceEdgeLengthsToNumbers(tree);
     });
 
     // remove some unused elements
@@ -4439,26 +4439,22 @@ function clearD3PropertiesFromTree(tree) {
     });
 }
 
-function coerceEdgeLengthsToFloats(tree) {
+function coerceEdgeLengthsToNumbers(tree) {
+    // Convert any string values to JS numbers, which look like integers if
+    // there's no fractional part. (For example, we might see 3.05 or 3, which
+    // should be recognized by the validator as equal to 3.0).
+    //
     // N.B. True floating-point precision is not reliable in Javascript, which
-    // uses binary floating point numbers. So our groomed result will be in the
-    // form of a string that reliably freezes a fixed-precision decimal float.
+    // uses binary floating point numbers. Still, since we're not operating on
+    // length values, any incoming numbers should be preserved with full
+    // precision.
     $.each( tree.edge, function( i, edge ) {
         if ('@length' in edge) {
-            console.log('OLD @length: '+ edge['@length'] +' <'+ typeof(edge['@length']) +'>');
+            console.log('>> OLD @length: '+ edge['@length'] +' <'+ typeof(edge['@length']) +'>');
             // keep precise floats where found; convert integers to minimal floats (4 => '4.0')
             var floatEdgeLength = parseFloat( edge['@length'] );
-            var strEdgeLength;  // groomed value
-            if (isNaN(floatEdgeLength)) {
-                strEdgeLength = '0.0';
-            } else if (floatEdgeLength.toString().indexOf('.') === -1) {
-                strEdgeLength = floatEdgeLength.toFixed(1);
-            } else {
-                // keep current float precision!
-                strEdgeLength = floatEdgeLength;
-            }
-            edge['@length'] = strEdgeLength;
-            console.log('NEW @length: '+ edge['@length'] +' <'+ typeof(edge['@length']) +'>');
+            edge['@length'] = isNaN(floatEdgeLength) ? 0 : floatEdgeLength;
+            console.log('>> NEW @length: '+ edge['@length'] +' <'+ typeof(edge['@length']) +'>');
         } else {
             console.log('@length NOT FOUND');
         }
