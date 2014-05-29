@@ -932,13 +932,15 @@ body {
                       {{ if viewOrEdit == 'EDIT': }}
                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
                         <td>
-                            <em data-bind="text: adjustedLabel(otu['^ot:originalLabel']), 
+                            <em data-bind="text: otu['^ot:altLabel'] || '', 
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS,
-                                           style: { 'color' : (otu['@label'] === '' && !proposedMapping(otu))?  '' : 'silver' }"
+                                           style: { 'color' : ($.trim(otu['^ot:ottTaxonName']) === '' && !proposedMapping(otu)) ?  '' : 'silver' }"
                                >WORKING?</em>
+{{ if False: }}
+{{ pass }}
                         </td>
                         <td>
-                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['@label']) === '' && !proposedMapping(otu) -->
+                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['^ot:ottTaxonName']) === '' && !proposedMapping(otu) -->
                             <button class="btn btn-mini row-controls-ghosted" title="Edit this label manually" 
                                     data-bind="click: editOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <i class="icon-edit"></i>
@@ -979,19 +981,19 @@ body {
                                 </button>
                             </div>
                           <!-- /ko -->
-                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && otu['@label'] -->
+                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['^ot:ottTaxonName']) -->
                             <div class="btn-group pull-right row-controls-ghosted">
                                 <button class="btn btn-mini" data-bind="click: unmapOTUFromTaxon, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
                           <!-- /ko -->
-                            <strong data-bind="text: proposedMapping(otu) ?  proposedMapping(otu).name : otu['@label'],
+                            <strong data-bind="text: proposedMapping(otu) ?  proposedMapping(otu).name : $.trim(otu['^ot:ottTaxonName']),
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                                style:  {'color': proposedMapping(otu) ? 'red' :'' }"
                                 >MAPPED (OR PROPOSED) LABEL</strong>
                       {{ else: }}
-                            <strong data-bind="text: otu['@label']">MAPPED LABEL</strong>
+                            <strong data-bind="text: $.trim(otu['^ot:ottTaxonName'])">MAPPED LABEL</strong>
                       {{ pass }}
                          <!-- /ko -->
                         </td>

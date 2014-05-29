@@ -686,7 +686,7 @@ function loadSelectedStudy() {
                     function(otu) {
                         // match entered text against old or new label
                         var originalLabel = otu['^ot:originalLabel'];
-                        var mappedLabel = otu['@label'];
+                        var mappedLabel = otu['^ot:ottTaxonName'];
                         if (!matchPattern.test(originalLabel) && !matchPattern.test(mappedLabel)) {
                             return false;
                         }
@@ -727,8 +727,9 @@ function loadSelectedStudy() {
                      */
                     case 'Unmapped OTUs first':
                         filteredList.sort(function(a,b) { 
-                            var aMapStatus = $.trim(a['@label']) !== '';
-                            var bMapStatus = $.trim(b['@label']) !== '';
+                            // N.B. This works even if there's no such property.
+                            var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
+                            var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
                             if (aMapStatus === bMapStatus) return 0;
                             if (aMapStatus) return 1;
                             if (bMapStatus) return -1;
@@ -737,8 +738,8 @@ function loadSelectedStudy() {
 
                     case 'Mapped OTUs first':
                         filteredList.sort(function(a,b) { 
-                            var aMapStatus = $.trim(a['@label']) !== '';
-                            var bMapStatus = $.trim(b['@label']) !== '';
+                            var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
+                            var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
                             if (aMapStatus === bMapStatus) return 0;
                             if (aMapStatus) return -1;
                             return 1;
@@ -1539,37 +1540,6 @@ function normalizeTree( tree ) {
     
 }
 
-/* DEPRECATED - This is now handled on the server's 'merge_otus' method!
-function normalizeOTUs( tree ) {
-    // modify this tree's OTUs (if needed) to support mapping OTUs to OTT taxa
-    var itsOTUs = [];
-    $.each( makeArray(tree.node), function(i, node) {
-        // work backward from nodes to get its OTUs
-        if ('@otu' in node) {
-            itsOTUs.push( getOTUByID( node['@otu'] ) );
-        }
-    });
-    console.log("found "+ itsOTUs.length +" OTUs for this tree");
-
-    $.each( itsOTUs, function(i, otu) {
-        // Our main concern is whether it's been mapped to an OTT taxon.
-        var itsOTTid =  otu['^ot:ottId'];
-        if (!itsOTTid || ($.trim(itsOTTid) === '')) {
-            // no OTT id found; shuffle properties as needed
-            var itsOriginalLabel = otu['^ot:originalLabel'];
-            var itsProposedLabel = otu['@label'];
-            if ($.trim(itsOriginalLabel) === '') {
-                // move "final" to original label
-                otu['^ot:originalLabel'] = itsProposedLabel;
-                delete otu['@label'];
-            } else {
-                // retain "final" label as proposed, use in mapping
-            }
-        }
-    });
-}
-*/
-
 function getPreferredTreeIDs() {
     preferredTreeIDs = [];
     var candidateTreeMarkers = ('^ot:candidateTreeForSynthesis' in viewModel.nexml) ? 
@@ -1713,7 +1683,7 @@ function getRootNodeDescriptionForTree( tree ) {
                     $.each(otusCollection.otu, function( i, otu ) {
                         // Find the node with this ID and see if it has an assigned OTU
                         if (otu['@id'] === nodeOTU) {
-                            nodeName = otu['@label'] || 'Unlabeled OTU';
+                            nodeName = $.trim(otu['^ot:ottTaxonName']) || 'Unlabeled OTU';
                         }
                     });
                 });
@@ -1800,7 +1770,7 @@ function getInGroupCladeDescriptionForTree( tree ) {
     if (node && '@otu' in node) {
         var otu = getOTUByID( node['@otu'] );
         if (otu) {
-            nodeName = otu['@label'] || 'Unlabeled OTU';
+            nodeName = $.trim(otu['^ot:ottTaxonName']) || 'Unlabeled OTU';
         }
     }
 
@@ -2442,7 +2412,7 @@ function showOTUInContext() {
     }
     // otherwise show the tree viewer with first result highlighted, UI to show more
     //var itsTree = getTreeByID('u10991628-99c2-46de-aa3f-67747c700213g0n0');
-    var promptLabel = otu['@label'] || otu['^ot:originalLabel'];
+    var promptLabel = $.trim(otu['^ot:ottTaxonName']) || otu['^ot:originalLabel'];
     showTreeViewer(null, {
         HIGHLIGHT_PLAYLIST: otuContextsToShow,
         HIGHLIGHT_PROMPT: ("Showing the chosen OTU '<strong>"+ promptLabel +"</strong>' in context"),
@@ -3118,7 +3088,7 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
     var itsOTU = node['@otu'];
     if (itsOTU) {
         var otu = getOTUByID( itsOTU );
-        var itsMappedLabel = otu['@label'];
+        var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
         if (itsMappedLabel) {
             return {label: itsMappedLabel, labelType: 'mapped label'};
         }
@@ -3566,28 +3536,7 @@ var nexsonTemplates = {
         "new": {"$": ""},
         "@valid": true,
         "@active": false
-    }, // END of 'mapping substitution' template
-
-
-    'OTU entry': {
-        /* An OTU entry for newly-mapped nodes (do we need this?)
-         */
-        "@about": "#otu{otuID}",
-        "@id": "otu{otuID}", 
-        "@label": "{otuMappedName}",    // as mapped
-        "meta": [
-            {
-                "$": null,  // integer
-                "@property": "ot:ottId", 
-                "@xsi:type": "nex:LiteralMeta"
-            }, 
-            {
-                "$": "{otuOriginalName}",   // as submitted
-                "@property": "ot:originalLabel", 
-                "@xsi:type": "nex:LiteralMeta"
-            }
-        ]
-    } // END of 'OTU entry' template
+    } // END of 'mapping substitution' template
 
 } // END of nexsonTemplates
 
@@ -4221,9 +4170,9 @@ function requestTaxonMapping() {
 }
 
 function mapOTUToTaxon( otuID, mappingInfo ) {
-    // apply this mapping, creating Nexson elements as needed
-
-    /* mappingInfo should be an object with these properties:
+    /* Apply this mapping, creating Nexson elements as needed
+     *
+     * mappingInfo should be an object with these properties:
      * {
      *   "name" : "Centranthus",
      *   "ottId" : "759046",
@@ -4233,19 +4182,26 @@ function mapOTUToTaxon( otuID, mappingInfo ) {
      *     "exact" : false,
      *     "higher" : true
      * }
+     *
+     * N.B. We *always* add/change/remove these properties in tandem!
+     *    ot:ottId
+     *    ot:ottTaxonName
      */
 
     // FOR NOW, assume that any leaf node will have a corresponding otu entry;
     // otherwise, we can't have name for the node!
     var otu = getOTUByID( otuID );
 
-    // TODO: add/update its original label?
-    var originalLabel = otu['^ot:originalLabel'] || null;
-    otu['@label'] = mappingInfo.name || 'NAME MISSING!';
-
     // add (or update) a metatag mapping this to an OTT id
-    var ottId = Number(mappingInfo.ottId);
-    otu['^ot:ottId'] = ottId;
+    otu['^ot:ottId'] = Number(mappingInfo.ottId);
+
+    // Add/update the OTT name (cached here for performance) 
+    otu['^ot:ottTaxonName'] = mappingInfo.name || 'OTT NAME MISSING!';
+    // N.B. We always preserve ^ot:originalLabel for reference
+
+    // Clear any proposed/adjusted label (this is trumped by mapping to OTT)
+    delete otu['^ot:altLabel'];
+    
     nudgeTickler('OTU_MAPPING_HINTS');
     nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
 }
@@ -4255,11 +4211,15 @@ function unmapOTUFromTaxon( otuOrID ) {
     var otu = (typeof otuOrID === 'object') ? otuOrID : getOTUByID( otuOrID );
     // restore its original label (versus mapped label)
     var originalLabel = otu['^ot:originalLabel'];
-    otu['@label'] = '';
+
     // strip any metatag mapping this to an OTT id
     if ('^ot:ottId' in otu) {
         delete otu['^ot:ottId'];
     }
+    if ('^ot:ottTaxonName' in otu) {
+        delete otu['^ot:ottTaxonName'];
+    }
+
     nudgeTickler('OTU_MAPPING_HINTS');
     nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
 }
