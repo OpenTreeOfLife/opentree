@@ -3809,7 +3809,6 @@ var autoMappingInProgress = ko.observable(false);
 var currentlyMappingOTUs = ko.observableArray([]); // drives spinners, etc.
 var failedMappingOTUs = ko.observableArray([]); // ignore these until we have new mapping hints
 var editedOTULabels = ko.observable({}); // stored any labels edited by hand, keyed by OTU id
-var editedOTULabelSubscriptions = {}; // KO subscriptions for each, to enable mapping when a label is edited
 var proposedOTUMappings = ko.observable({}); // stored any labels proposed by server, keyed by OTU id
 var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-editing UI to refresh!
 
@@ -3817,38 +3816,26 @@ function editOTULabel(otu) {
     var OTUid = otu['@id'];
     var originalLabel = otu['^ot:originalLabel'];
     editedOTULabels()[ OTUid ] = ko.observable( adjustedLabel(originalLabel) );
-    // add a subscriber to remove this from failed-OTU list when user makes
-    // changes
-    var sub = editedOTULabels()[ OTUid ].subscribe(function() {
-        failedMappingOTUs.remove(OTUid);
-        // nudge to update OTU list immediately
-        bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
-        nudgeAutoMapping();
-    });
-    if (editedOTULabelSubscriptions[ OTUid ]) {
-        // clear any errant (old) subscriber for this OTU
-        editedOTULabelSubscriptions[ OTUid ].dispose();
-        delete editedOTULabelSubscriptions[ OTUid ];
-    }
-    editedOTULabelSubscriptions[ OTUid ] = sub;
+    otu['^ot:altLabel'] = adjustedLabel(originalLabel);
     // this should make the editor appear
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
 }
-function editedLabelAccessor(otu) {
+function modifyEditedLabel(otu) {
+    // remove its otu-id from failed-OTU list when user makes changes
     var OTUid = otu['@id'];
-    var acc = editedOTULabels()[ OTUid ] || null;
-    return acc;
+    failedMappingOTUs.remove(OTUid);
+    // nudge to update OTU list immediately
+    bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+    nudgeAutoMapping();
+    
+    nudgeTickler( 'OTU_MAPPING_HINTS');
 }
 function revertOTULabel(otu) {
     // undoes 'editOTULabel', releasing a label to use shared hints
     var OTUid = otu['@id'];
     delete editedOTULabels()[ OTUid ];
+    delete otu['^ot:altLabel'];
     failedMappingOTUs.remove(OTUid );
-    if (editedOTULabelSubscriptions[ OTUid ]) {
-        // dispose, then remove, the subscriber for this OTU
-        editedOTULabelSubscriptions[ OTUid ].dispose();
-        delete editedOTULabelSubscriptions[ OTUid ];
-    }
     // this should make the editor disappear and revert its adjusted label
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
     nudgeAutoMapping();
@@ -4024,8 +4011,8 @@ function requestTaxonMapping() {
     var otuID = otuToMap['@id'];
     var originalLabel = otuToMap['^ot:originalLabel'] || null;
     // use the manually edited label (if any), or the hint-adjusted version
-    var editedAcc = editedLabelAccessor(otuToMap);
-    var searchText = editedAcc ? editedAcc() : adjustedLabel(originalLabel);
+    var editedLabel = $.trim(otuToMap['^ot:altLabel']);
+    var searchText = (editedLabel !== '') ? editedLabel : adjustedLabel(originalLabel);
 
     if (searchText.length === 0) {
         console.log("No name to match!"); // TODO

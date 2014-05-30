@@ -930,7 +930,7 @@ body {
                             </button>
                         </td>
                       {{ if viewOrEdit == 'EDIT': }}
-                         <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && editedLabelAccessor(otu) == null -->
+                         <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && !('^ot:altLabel' in otu) -->
                         <td>
                             <em data-bind="text: otu['^ot:altLabel'] || '', 
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS,
@@ -948,10 +948,10 @@ body {
                           <!-- /ko -->
                         </td>
                          <!-- /ko -->
-                         <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0)  && editedLabelAccessor(otu) != null --> 
+                         <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0)  && ('^ot:altLabel' in otu) --> 
                         <td>
                             <input type="text" style="height: 14px; margin:
-                            0; width: 97%;" data-bind="value: editedLabelAccessor(otu), css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                            0; width: 97%;" data-bind="value: otu['^ot:altLabel'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: modifyEditedLabel, change: modifyEditedLabel }, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                         </td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
