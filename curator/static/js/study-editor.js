@@ -1627,11 +1627,13 @@ function getMappedTallyForTree(tree) {
         }
         totalLeafNodes++;
 
-        // Simply check for the presence (or absence) of an @otu 'getter' function
-        // (so far, it doesn't seem to exist unless there's a mapped OTU)
         if ('@otu' in node) {
-            mappedLeafNodes++;
-        } 
+            var otu = getOTUByID( node['@otu'] );
+            var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
+            if (('^ot:ottId' in otu) && (itsMappedLabel !== '')) {
+                mappedLeafNodes++;
+            } 
+        }
         return true;  // skip to next node
     });
     // console.log("total nodes? "+ totalNodes);
@@ -2076,16 +2078,17 @@ var studyScoringRules = {
                     }
 
                     // only check the leaf nodes on the tree
-                    var totalNodes = 0;
-                    var mappedNodes = 0;
                     $.each(tree.node, function(i, node) {
-                        // is this a leaf? check for metatag .isLeaf
-                        if (node['^ot:isLeaf'] === true) {
-                            // Simply check for the presence (or absence) of an @otu 'getter' function
-                            // (so far, it doesn't seem to exist unless there's a mapped OTU)
-                            totalNodes++;
-                            if ('@otu' in node) {
-                                mappedNodes++;
+                        // Is this a leaf node? If not, skip it
+                        if (node['^ot:isLeaf'] !== true) {
+                            // this is not a leaf node! skip to the next one
+                            return true;
+                        }
+                        if ('@otu' in node) {
+                            var otu = getOTUByID( node['@otu'] );
+                            var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
+                            if (('^ot:ottId' in otu) && (itsMappedLabel !== '')) {
+                                return true;  // skip to next node
                             } else {
                                 unmappedLeafNodesFound = true;
                                 return false;   // bail out of loop
