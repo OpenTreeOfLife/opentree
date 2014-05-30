@@ -3833,14 +3833,12 @@ function removeSubstitution( data ) {
 var autoMappingInProgress = ko.observable(false);
 var currentlyMappingOTUs = ko.observableArray([]); // drives spinners, etc.
 var failedMappingOTUs = ko.observableArray([]); // ignore these until we have new mapping hints
-var editedOTULabels = ko.observable({}); // stored any labels edited by hand, keyed by OTU id
 var proposedOTUMappings = ko.observable({}); // stored any labels proposed by server, keyed by OTU id
 var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-editing UI to refresh!
 
 function editOTULabel(otu) {
     var OTUid = otu['@id'];
     var originalLabel = otu['^ot:originalLabel'];
-    editedOTULabels()[ OTUid ] = ko.observable( adjustedLabel(originalLabel) );
     otu['^ot:altLabel'] = adjustedLabel(originalLabel);
     // this should make the editor appear
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
@@ -3858,7 +3856,6 @@ function modifyEditedLabel(otu) {
 function revertOTULabel(otu) {
     // undoes 'editOTULabel', releasing a label to use shared hints
     var OTUid = otu['@id'];
-    delete editedOTULabels()[ OTUid ];
     delete otu['^ot:altLabel'];
     failedMappingOTUs.remove(OTUid );
     // this should make the editor disappear and revert its adjusted label
