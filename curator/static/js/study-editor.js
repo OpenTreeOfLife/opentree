@@ -1176,6 +1176,7 @@ function scrubNexsonForTransport( nexml ) {
      *   - coerce some KO string values to numeric types
      *   - remove unused rooting elements
      *   - remove "empty" elements if server doesn't expect them
+     *   - clean up empty/unused OTU alt-labels
      */
     if (!nexml) {
         nexml = viewModel.nexml;
@@ -1208,6 +1209,30 @@ function scrubNexsonForTransport( nexml ) {
         delete nexml['^ot:focalClade'];
     }
 
+    // scrub otu altLabel properties
+    var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+    $.each( allOTUs, function(i, otu) {
+        if ('^ot:altLabel' in otu) {
+            var ottId = $.trim(otu['^ot:ottId']);
+            if (ottId !== '') {
+                // this otu is already mapped to OTT (trumps alt label)
+                delete otu['^ot:altLabel'];
+                return true; // skip to next otu
+            }
+            var altLabel = $.trim(otu['^ot:altLabel']);
+            if (altLabel === '') {
+                // the alt-label is empty
+                delete otu['^ot:altLabel'];
+                return true; // skip to next otu
+            }
+            var originalLabel = $.trim(otu['^ot:originalLabel']);
+            if (altLabel === originalLabel) {
+                // no changes from original (pointless)
+                delete otu['^ot:altLabel'];
+                return true; // skip to next otu
+            }
+        }
+    });
 }
 
 function saveFormDataToStudyJSON() {
