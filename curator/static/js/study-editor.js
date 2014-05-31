@@ -29,6 +29,23 @@ var tagsOptions = {
         */
     }
 };
+function captureTagTextOnBlur( $tagsSelect ) {
+    /* Add any "loose" text in a tags widget as a new tag, e.g., if someone
+     * types a word and immediately tries to save the study. Adapted from this
+     * pull request by https://github.com/kubanka-peter:
+     *   https://github.com/TimSchlechter/bootstrap-tagsinput/pull/99
+     */
+    $tagsSelect.tagsinput('input').on('blur', function(event){
+        var $input = $(event.target);
+        var $select = $input.closest('.bootstrap-tagsinput').prev('select');
+        if ($select.length === 0) {
+            console.warn("captureTagTextOnBlur(): No SELECT widget found!");
+        } else {
+            $select.tagsinput('add', $input.val());
+            $input.val('');
+        }
+    });
+}
 
 $(document).ready(function() {
     bindHelpPanels();
@@ -890,6 +907,7 @@ function loadSelectedStudy() {
                 $('#study-tags').tagsinput('destroy');
             }
             $('#study-tags').tagsinput( tagsOptions );
+            captureTagTextOnBlur( $('#study-tags') );
             studyTagsInitialized = true;
 
             hideModalScreen();
@@ -2313,6 +2331,7 @@ function showTreeViewer( tree, options ) {
             }
             updateInferenceMethodWidgets( tree );
             $('#tree-tags').tagsinput( tagsOptions );
+            captureTagTextOnBlur( $('#tree-tags') );
             treeTagsInitialized = true;
         }
 
