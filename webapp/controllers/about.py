@@ -36,6 +36,9 @@ def developer_resources():
 def credits():
     return default_view_dict
 
+def materials_and_methods():
+    return default_view_dict
+
 def references():
     view_dict = default_view_dict.copy()
     view_dict['contributing_studies'] = fetch_current_synthesis_source_data()
