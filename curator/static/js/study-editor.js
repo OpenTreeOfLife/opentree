@@ -4408,6 +4408,7 @@ function clearD3PropertiesFromTree(tree) {
         delete node.length;
         delete node.ingroup;
         delete node.rootDist;
+        delete node.labelType;
     });
 }
 
