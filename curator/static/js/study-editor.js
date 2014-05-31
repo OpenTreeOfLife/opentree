@@ -4398,6 +4398,7 @@ function showEdgeOptionsMenu( tree, edge, nodePageOffset, importantNodeIDs ) {
 }
 
 function clearD3PropertiesFromTree(tree) {
+    // these are display-only properties that shouldn't save to the docstore
     $.each( tree.node, function( i, node ) {
         delete node.x;
         delete node.y;
