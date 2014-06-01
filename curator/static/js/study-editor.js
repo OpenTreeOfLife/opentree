@@ -902,13 +902,15 @@ function loadSelectedStudy() {
             // TODO: throttle this back to handle larger studies?
             updateQualityDisplay();
 
-            // init (or refresh) the study tags
-            if (studyTagsInitialized) {
-                $('#study-tags').tagsinput('destroy');
+            if (viewOrEdit == 'EDIT') {
+                // init (or refresh) the study tags
+                if (studyTagsInitialized) {
+                    $('#study-tags').tagsinput('destroy');
+                }
+                $('#study-tags').tagsinput( tagsOptions );
+                captureTagTextOnBlur( $('#study-tags') );
+                studyTagsInitialized = true;
             }
-            $('#study-tags').tagsinput( tagsOptions );
-            captureTagTextOnBlur( $('#study-tags') );
-            studyTagsInitialized = true;
 
             hideModalScreen();
             showInfoMessage('Study data loaded.');
