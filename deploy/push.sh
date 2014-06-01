@@ -16,6 +16,11 @@
 # letter or digit, and you use "" to protect against the possibility
 # of there being a space in the variable value.
 
+function err {
+    echo "Error: $@" 1>&2
+    exit 1
+}
+
 set -e
 
 # $0 -h <hostname> -u <username> -i <identityfile> -n <hostname>
@@ -72,14 +77,13 @@ while [ $# -gt 0 ]; do
     elif [ "x$flag" = "x-n" ]; then
 	OPENTREE_NEO4J_HOST="$1"; shift
     else
-	echo 1>&2 "Unrecognized flag: $flag"
-	exit 1
+	err "Unrecognized flag: $flag"
     fi
 done
 
-if [ "x$OPENTREE_HOST" = x ] ; then echo "OPENTREE_HOST not specified"; exit 1; fi
-if [ "x$OPENTREE_IDENTITY" = x ]; then echo "OPENTREE_IDENTITY not specified"; exit 1; fi
-if [ ! -r $OPENTREE_IDENTITY ]; then echo "$OPENTREE_IDENTITY not found"; exit 1; fi
+if [ "x$OPENTREE_HOST" = x ] ; then err "OPENTREE_HOST not specified"; fi
+if [ "x$OPENTREE_IDENTITY" = x ]; then err "OPENTREE_IDENTITY not specified"; fi
+if [ ! -r $OPENTREE_IDENTITY ]; then err "$OPENTREE_IDENTITY not found"; fi
 [ "x$OPENTREE_NEO4J_HOST" != x ] || OPENTREE_NEO4J_HOST=$OPENTREE_HOST
 [ "x$OPENTREE_PUBLIC_DOMAIN" != x ] || OPENTREE_PUBLIC_DOMAIN=$OPENTREE_HOST
 
@@ -229,21 +233,29 @@ function push_opentree {
 }
 
 function push_api {
-    # place private key for GitHub access 
-    [ "x$OPENTREE_GH_IDENTITY" != "x" ] || (echo "OPENTREE_GH_IDENTITY not specified"; exit 1)
-    [ -r $OPENTREE_GH_IDENTITY ] || (echo "$OPENTREE_GH_IDENTITY not found"; exit 1)
-    echo "doc store is $OPENTREE_DOCSTORE"
-    # try to place an OAuth token for GitHub API by bot user 'opentreeapi'
-    tokenfile=~/.ssh/opentree/OPENTREEAPI_OAUTH_TOKEN
-    [ -r $tokenfile ] || (echo "****************************\n  OAuth token file (${tokenfile}) not found!\n  Falling back to any existing token on the server, OR a prompt for manual creation of webhooks.\n****************************")
     if [ $DRYRUN = "yes" ]; then echo "[api]"; return; fi
-    rsync -pr -e "${SSH}" $OPENTREE_GH_IDENTITY "$OT_USER@$OPENTREE_HOST":.ssh/opentree
-    ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
-    if [ -r $tokenfile ]; then
-    rsync -pr -e "${SSH}" $tokenfile "$OT_USER@$OPENTREE_HOST":.ssh/OPENTREEAPI_OAUTH_TOKEN
-    ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/OPENTREEAPI_OAUTH_TOKEN
+
+    # Place private key for GitHub access 
+    [ "x$OPENTREE_GH_IDENTITY" != "x" ] || err "OPENTREE_GH_IDENTITY not specified"
+    if [ -r $OPENTREE_GH_IDENTITY ]; then
+	rsync -p -e "${SSH}" "$OPENTREE_GH_IDENTITY" "$OT_USER@$OPENTREE_HOST":.ssh/opentree
+	${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
+    else
+	echo "Warning: $OPENTREE_GH_IDENTITY not found"
     fi
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" $OPENTREE_DOCSTORE $CONTROLLER $OTI_BASE_URL $OPENTREE_API_BASE_URL
+
+    # Try to place an OAuth token for GitHub API by bot user 'opentreeapi'
+    tokenfile=~/.ssh/opentree/OPENTREEAPI_OAUTH_TOKEN
+    if [ -r $tokenfile ]; then
+	rsync -p -e "${SSH}" $tokenfile "$OT_USER@$OPENTREE_HOST":.ssh/OPENTREEAPI_OAUTH_TOKEN
+	${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/OPENTREEAPI_OAUTH_TOKEN
+    else
+	echo "****************************\n  OAuth token file (${tokenfile}) not found!\n  Falling back to any existing token on the server, OR a prompt for manual creation of webhooks.\n****************************"
+    fi
+
+    echo "Doc store is $OPENTREE_DOCSTORE"
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" \
+    	   $OPENTREE_DOCSTORE $CONTROLLER $OTI_BASE_URL $OPENTREE_API_BASE_URL
 }
 
 function index {
@@ -253,13 +265,11 @@ function index {
 
 function push_db {
     if [ $DRYRUN = "yes" ]; then echo "[push_db]"; return; fi
-    # Work in progress - code not yet enabled
     # E.g. ./push.sh push-db localnewdb.db.tgz taxomachine
     TARBALL=$1
     APP=$2
     if [ x$APP = x -o x$TARBALL = x ]; then
-	echo "Usage: $0 -c {configfile} push-db {tarball} {application}"
-	exit 1
+	err "Usage: $0 -c {configfile} push-db {tarball} {application}"
     fi
     time rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":downloads/$APP.db.tgz
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh "$OPENTREE_HOST" $APP $CONTROLLER
