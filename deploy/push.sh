@@ -236,12 +236,13 @@ function push_api {
     if [ $DRYRUN = "yes" ]; then echo "[api]"; return; fi
 
     # Place private key for GitHub access 
-    [ "x$OPENTREE_GH_IDENTITY" != "x" ] || err "OPENTREE_GH_IDENTITY not specified"
-    if [ -r $OPENTREE_GH_IDENTITY ]; then
+    if [ "x$OPENTREE_GH_IDENTITY" = "x" ]; then
+        echo "Warning: OPENTREE_GH_IDENTITY not specified"
+    elif [ ! -r $OPENTREE_GH_IDENTITY ]; then
+	echo "Warning: $OPENTREE_GH_IDENTITY not found"
+    else
 	rsync -p -e "${SSH}" "$OPENTREE_GH_IDENTITY" "$OT_USER@$OPENTREE_HOST":.ssh/opentree
 	${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
-    else
-	echo "Warning: $OPENTREE_GH_IDENTITY not found"
     fi
 
     # Try to place an OAuth token for GitHub API by bot user 'opentreeapi'
