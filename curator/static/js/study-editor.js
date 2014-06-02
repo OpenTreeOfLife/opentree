@@ -2623,7 +2623,7 @@ function drawTree( treeOrID, options ) {
                 var itsChildren = [];
                 var childEdges = getTreeEdgesByID(null, parentID, 'SOURCE');
 
-                // If this node has one child, it's a latent root-node that
+                // If this node has one child, it's probably a latent root-node that
                 // should be hidden in the tree view.
                 if (childEdges.length === 1) {
                     // treat ITS child node as my immediate child in the displayed tree
@@ -2720,7 +2720,7 @@ function setTreeRoot( treeOrID, rootingInfo ) {
         newRootNodeID = rootingInfo;
     } else if ($.isArray(rootingInfo)) {
         // this is an array of sourceID, targetID
-        // TODO: check for an existing "latent" node between these two
+        // check for an existing "latent" node between these two (unlikely)
         var latentRootNode = getTreeNodeBetween( tree, rootingInfo[0], rootingInfo[1] );
         if (latentRootNode) {
             // re-root to the latent node
@@ -2750,6 +2750,7 @@ function setTreeRoot( treeOrID, rootingInfo ) {
     var specifiedRoot = tree['^ot:specifiedRoot'] || null;
     var oldRootNode = specifiedRoot ? getTreeNodeByID(tree, specifiedRoot) : tree.node[0];
     delete oldRootNode['@root'];
+    // TODO: if this node has just two neighbors, remove it and one adjacent edge..?
 
     // update tree and node properties
     tree['^ot:specifiedRoot'] = newRootNodeID;
