@@ -12,10 +12,7 @@ OPENTREE_API_BASE_URL=$5
 
 echo "Installing API"
 
-# Required from install-web2py-apps.sh:
-#  Fetch and set up web2py
-#  Virtualenv
-#  WSGI handler
+bash setup/install-web2py.sh
 
 # ---------- Redis for caching ---------
 REDIS_WITH_VERSION="redis-2.8.8"
@@ -53,7 +50,7 @@ fi
 # Set up api web app
 # Compare install-web2py-apps.sh
 
-WEBAPP=api.opentreeoflife.org
+WEBAPP=phylesystem-api
 APPROOT=repo/$WEBAPP
 
 # This is required to make "git pull" work correctly

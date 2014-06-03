@@ -97,9 +97,6 @@ if [ ! -r $OPENTREE_IDENTITY ]; then err "$OPENTREE_IDENTITY not found"; fi
 [ "x$OTI_BASE_URL" != x ] || OTI_BASE_URL=http://$OPENTREE_NEO4J_HOST/oti
 [ "x$OPENTREE_API_BASE_URL" != x ] || OPENTREE_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/api/v1
 
-if [ $CURATION_GITHUB_CLIENT_ID = ID_NOT_PROVIDED ]; then echo "WARNING: Missing GitHub client ID! Curation UI will be disabled."; fi
-if [ $TREEVIEW_GITHUB_CLIENT_ID = ID_NOT_PROVIDED ]; then echo "WARNING: Missing GitHub client ID! Tree-view feedback will be disabled."; fi
-
 # abbreviations... no good reason for these, they just make the commands shorter
 
 ADMIN=$OPENTREE_ADMIN
@@ -127,13 +124,6 @@ function docommand {
     command="$1"
     shift
     case $command in
-	# Legacy default
-        most  | all | push | pushmost)
-	    if [ $DRYRUN = yes ]; then echo "[all]"; fi
-    	    push_opentree
-    	    push_all_neo4j
-	    restart_apache=yes
-    	    ;;
 	# Components
 	opentree  | push-web2py)
             push_opentree
@@ -205,6 +195,10 @@ function restart_apache {
 }
 
 function push_opentree {
+
+    if [ $CURATION_GITHUB_CLIENT_ID = ID_NOT_PROVIDED ]; then echo "WARNING: Missing GitHub client ID! Curation UI will be disabled."; fi
+    if [ $TREEVIEW_GITHUB_CLIENT_ID = ID_NOT_PROVIDED ]; then echo "WARNING: Missing GitHub client ID! Tree-view feedback will be disabled."; fi
+
     if [ $DRYRUN = "yes" ]; then echo "[opentree]"; return; fi
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" "$CONTROLLER" "${CURATION_GITHUB_CLIENT_ID}" "${CURATION_GITHUB_REDIRECT_URI}" "${TREEVIEW_GITHUB_CLIENT_ID}" "${TREEVIEW_GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OPENTREE_API_BASE_URL}"
     # place the files with secret GitHub API keys for curator and webapp (tree browser feedback) apps
