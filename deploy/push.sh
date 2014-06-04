@@ -175,14 +175,9 @@ function sync_system {
     rsync -pr -e "${SSH}" "--exclude=*~" "--exclude=#*" setup "$OT_USER@$OPENTREE_HOST":
     }
 
-function push_all_neo4j {
-    if [ $DRYRUN = "yes" ]; then echo "[all neo4j apps]"; return; fi
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-apps.sh $CONTROLLER
-}
-
 function push_neo4j {
     if [ $DRYRUN = "yes" ]; then echo "[neo4j app: $1]"; return; fi
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-apps.sh $CONTROLLER $1
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-app.sh $CONTROLLER $1
 }
 
 function restart_apache {
@@ -267,7 +262,7 @@ function push_db {
 	err "Usage: $0 -c {configfile} push-db {tarball} {application}"
     fi
     time rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":downloads/$APP.db.tgz
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh "$OPENTREE_HOST" $APP $CONTROLLER
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh $APP $CONTROLLER
 }
 
 sync_system

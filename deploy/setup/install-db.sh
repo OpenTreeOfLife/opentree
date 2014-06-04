@@ -1,15 +1,18 @@
 #!/bin/bash
 
-OPENTREE_HOST=$1
-APP=$2
-CONTROLLER=$3
+# For usage see README.md under 'How to push the neo4j databases'
+#
+# APP is treemachine, taxomachine, or oti
+# CONTROLLER is username of person doing install, e.g. jar
+# Database tarball is assumed to be in downloads/$APP.db.tgz
+
+APP=$1
+CONTROLLER=$2
 
 . setup/functions.sh
 
 # You might want to check out
 #  http://stackoverflow.com/questions/16572066/resuming-rsync-partial-p-partial-on-a-interrupted-transfer
-
-# For usage see sample.config
 
 # Come here after the tarball has been copied to downloads/$APP.db.tgz
 # where APP = treemachine or taxomachine
