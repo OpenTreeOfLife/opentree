@@ -157,6 +157,9 @@ function docommand {
 	index  | indexoti | index-db)
 	    index
     	    ;;
+	apache)
+	    restart_apache
+    	    ;;
 	echo)
 	    # Test ability to do remote commands inline...
 	    ${SSH} "$OT_USER@$OPENTREE_HOST" bash <<EOF
@@ -251,6 +254,10 @@ function push_api {
     echo "Doc store is $OPENTREE_DOCSTORE"
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" \
     	   $OPENTREE_DOCSTORE $CONTROLLER $OTI_BASE_URL $OPENTREE_API_BASE_URL
+
+    # Kludge for web2py routing.  Ideally api would be self-contained
+    # and not need anything from the opentree repo.
+    rsync -p -e "${SSH}" ../SITE.routes.py "$OT_USER@$OPENTREE_HOST":web2py/routes.py
 }
 
 function index {
