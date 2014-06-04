@@ -255,7 +255,7 @@ function push_api {
 
 function index {
     if [ $DRYRUN = "yes" ]; then echo "[index]"; return; fi
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/index-doc-store.sh $OPENTREE_DOCSTORE $CONTROLLER
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/index-doc-store.sh $OPENTREE_API_BASE_URL $CONTROLLER
 }
 
 function push_db {

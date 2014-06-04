@@ -97,12 +97,16 @@ if [ `which pip`x = x ]; then
     $APTGET install python-pip
 fi
 
-# ---------- LIBCURL + PYCURL ---------- # only needed on debian, may cause problems on ubunutu
-# used by oti indexing script (make sure we have SSL support)
-if [ `which curl`x = x ] || [ `curl-config --feature | grep SSL`x = x ]; then
-#    sudo apt-cache search libcurl-dev
-    $APTGET install libcurl4-openssl-dev
-    # NOTE that we'll pip-install pycurl inside our venv (in index-doc-store.sh)
+# ---------- LIBCURL + PYCURL ---------- 
+# oti no longer uses this.
+if false; then
+    # only needed on debian, may cause problems on ubunutu
+    # used by oti indexing script (make sure we have SSL support)
+    if [ `which curl`x = x ] || [ `curl-config --feature | grep SSL`x = x ]; then
+    #    sudo apt-cache search libcurl-dev
+	$APTGET install libcurl4-openssl-dev
+	# NOTE that we'll pip-install pycurl inside our venv (in index-doc-store.sh)
+    fi
 fi
 
 # ---------- GIT ----------

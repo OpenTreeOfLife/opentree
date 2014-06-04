@@ -82,6 +82,9 @@
       Allow from 127.0.0.1
     </LocationMatch>
 
+    AliasMatch /phylesystem/v0/study/(.*) /api/v1/study/$1
+    Alias /phylesystem/v0/study_list /api/study_list
+
     <Location /treemachine/v0>
       Order allow,deny
       Allow from all
