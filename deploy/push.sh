@@ -146,9 +146,14 @@ function docommand {
 	none)
 	    echo "No components specified.  Try configuring OPENTREE_COMPONENTS"
 	    ;;
+
+	# Commands
 	push-db | pushdb)
 	    push_db $*
     	    ;;
+	install-db)
+	    install_db $*
+	    ;;
 	index  | indexoti | index-db)
 	    index
     	    ;;
@@ -261,8 +266,15 @@ function push_db {
     if [ x$APP = x -o x$TARBALL = x ]; then
 	err "Usage: $0 -c {configfile} push-db {tarball} {application}"
     fi
-    time rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":downloads/$APP.db.tgz
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh $APP $CONTROLLER
+    HEREBALL=downloads/$APP.db.tgz
+    time rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":$HEREBALL
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh $HEREBALL $APP $CONTROLLER
+}
+
+function install_db {
+    HEREBALL=$1
+    APP=$2
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh $HEREBALL $APP $CONTROLLER
 }
 
 sync_system
