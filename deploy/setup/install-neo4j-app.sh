@@ -103,20 +103,13 @@ function make_neo4j_instance {
 	./neo4j-$APP/bin/neo4j start
 	log "Started $APP"
     fi
-
 }
 
-if [ x$WHICH_APP = x ]; then
-    make_neo4j_instance treemachine 7474 7473
-    make_neo4j_instance taxomachine 7476 7475
-    make_neo4j_instance oti         7478 7477
-else
-    case $WHICH_APP in
-	oti) 	     make_neo4j_instance oti         7478 7477 ;;
-	treemachine) make_neo4j_instance treemachine 7474 7473 ;;
-	taxomachine) make_neo4j_instance taxomachine 7476 7475 ;;
-    esac
-fi
+case $WHICH_APP in
+    oti) 	 make_neo4j_instance oti         7478 7477 ;;
+    treemachine) make_neo4j_instance treemachine 7474 7473 ;;
+    taxomachine) make_neo4j_instance taxomachine 7476 7475 ;;
+esac
 
 
 log "Finished installing neo4j instances"

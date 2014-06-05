@@ -45,6 +45,11 @@
 
     # OPENTREE STUFF INSERTED HERE
 
+    <Location /phylesystem>
+      RedirectMatch temp /phylesystem/v0/study/(.*) /api/v1/study/$1
+      Redirect temp /phylesystem/v0/study_list /api/study_list
+    </Location>
+
     # See http://stackoverflow.com/questions/13216837/install-web2py-in-virtual-hosting
     # Had: user=opentree group=opentree
     WSGIDaemonProcess web2py user=opentree group=opentree display-name=%{GROUP}
@@ -82,25 +87,43 @@
       Allow from 127.0.0.1
     </LocationMatch>
 
+    <Location /treemachine/v0>
+      Order allow,deny
+      Allow from all
+      ProxyPass  http://localhost:7474/db/data/ext/GoLS/graphdb
+      ProxyPassReverse  http://localhost:7474/db/data/ext/GoLS/graphdb
+    </Location>
+
     <Location /treemachine/ext>
       Order allow,deny
       Allow from all
       ProxyPass  http://localhost:7474/db/data/ext
-      ProxyPassReverse  http://localhost:7474/db/data/ext
+    </Location>
+
+    <Location /taxomachine/v0>
+      Order allow,deny
+      Allow from all
+      ProxyPass  http://localhost:7476/db/data/ext/TNRS/graphdb
+      ProxyPassReverse  http://localhost:7476/db/data/ext/TNRS/graphdb
     </Location>
 
     <Location /taxomachine/ext>
       Order allow,deny
       Allow from all
       ProxyPass  http://localhost:7476/db/data/ext
-      ProxyPassReverse  http://localhost:7476/db/data/ext
     </Location>
     
+    <Location /oti/v0>
+      Order allow,deny
+      Allow from all
+      ProxyPass  http://localhost:7478/db/data/ext/QueryServices/graphdb
+      ProxyPassReverse  http://localhost:7478/db/data/ext/QueryServices/graphdb
+    </Location>
+
     <Location /oti/ext>
       Order allow,deny
       Allow from all
       ProxyPass  http://localhost:7478/db/data/ext
-      ProxyPassReverse  http://localhost:7478/db/data/ext
     </Location>
 
     # END OPENTREE STUFF

@@ -1,6 +1,13 @@
 #!/bin/bash
 
-OPENTREE_HOST=$1
+# For usage see README.md under 'How to push the neo4j databases'
+#
+# TARBALL is name of .tgz file for database (root = graph.db)
+# APP is treemachine, taxomachine, or oti
+# CONTROLLER is username of person doing install, e.g. jar
+# Database tarball is assumed to be in downloads/$APP.db.tgz
+
+TARBALL=$1
 APP=$2
 CONTROLLER=$3
 
@@ -9,9 +16,7 @@ CONTROLLER=$3
 # You might want to check out
 #  http://stackoverflow.com/questions/16572066/resuming-rsync-partial-p-partial-on-a-interrupted-transfer
 
-# For usage see sample.config
-
-# Come here after the tarball has been copied to downloads/$APP.db.tgz
+# Come here after the tarball has been copied to $TARBALL
 # where APP = treemachine or taxomachine
 
 next=neo4j-$APP/data/graph.db.new
@@ -23,9 +28,9 @@ rm -rf $prev
 
 rm -rf $next
 mkdir -p $next
-echo "Extracting database from downloads/$APP.db.tgz"
+echo "Extracting database from $TARBALL"
 # Can take a while
-tar --directory=$next -xzf downloads/$APP.db.tgz
+tar --directory=$next -xzf $TARBALL
 
 neo4j-$APP/bin/neo4j stop || true
 

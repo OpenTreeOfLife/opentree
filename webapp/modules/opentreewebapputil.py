@@ -144,7 +144,7 @@ def unique_ordered_list(seq):
     seen_add = seen.add
     return [ x for x in seq if x not in seen and not seen_add(x)]
 
-# adapted from api.opentreeoflife.org/controllers/default.py (__extract_nexson_from_http_call)
+# adapted from phylesystem-api/controllers/default.py (__extract_nexson_from_http_call)
 def extract_nexson_from_http_call(request, **kwargs):
     """Returns the nexson blob from `kwargs` or the request.body"""
     try:

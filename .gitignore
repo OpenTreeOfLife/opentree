@@ -17,3 +17,4 @@ smasher/feed/*/out
 deploy/janrain.key
 deploy/GITHUB_CLIENT_SECRET
 smasher/lib/json-simple-1.1.1.jar
+deploy/setup/CONFIG
