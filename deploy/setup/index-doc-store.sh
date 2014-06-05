@@ -24,7 +24,9 @@ if ./neo4j-$APP/bin/neo4j status; then
     ./neo4j-$APP/bin/neo4j stop
 fi
 
-rm -rf neo4j-$APP/data/graph.db
+# See https://github.com/OpenTreeOfLife/oti/issues/18
+# When an oti service to flush all studies exists, we will call it here.
+# rm -rf neo4j-$APP/data/graph.db
 
 # Restart neo4j!
 ./neo4j-$APP/bin/neo4j start

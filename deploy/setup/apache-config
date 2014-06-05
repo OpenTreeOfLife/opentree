@@ -82,46 +82,25 @@
       Allow from 127.0.0.1
     </LocationMatch>
 
-#     <Location /opentree>
-#       Order allow,deny
-#       Allow from all
-#       ProxyPass  http://localhost:8000/opentree
-#       ProxyPassReverse  http://localhost:8000/opentree
-#     </Location>
-
-#     <Location /curator>
-#       Order allow,deny
-#       Allow from all
-#       ProxyPass  http://localhost:8000/curator
-#       ProxyPassReverse  http://localhost:8000/curator
-#     </Location>
-
-#     <Location /api>
-#       Order allow,deny
-#       Allow from all
-#       ProxyPass  http://localhost:8000/api
-#       ProxyPassReverse  http://localhost:8000/api
-#     </Location>
-
-    <Location /treemachine>
+    <Location /treemachine/ext>
       Order allow,deny
       Allow from all
-      ProxyPass  http://localhost:7474/db/data
-      ProxyPassReverse  http://localhost:7474/db/data
+      ProxyPass  http://localhost:7474/db/data/ext
+      ProxyPassReverse  http://localhost:7474/db/data/ext
     </Location>
 
-    <Location /taxomachine>
+    <Location /taxomachine/ext>
       Order allow,deny
       Allow from all
-      ProxyPass  http://localhost:7476/db/data
-      ProxyPassReverse  http://localhost:7476/db/data
+      ProxyPass  http://localhost:7476/db/data/ext
+      ProxyPassReverse  http://localhost:7476/db/data/ext
     </Location>
     
-    <Location /oti>
+    <Location /oti/ext>
       Order allow,deny
       Allow from all
-      ProxyPass  http://localhost:7478/db/data
-      ProxyPassReverse  http://localhost:7478/db/data
+      ProxyPass  http://localhost:7478/db/data/ext
+      ProxyPassReverse  http://localhost:7478/db/data/ext
     </Location>
 
     # END OPENTREE STUFF

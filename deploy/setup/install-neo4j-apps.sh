@@ -21,7 +21,7 @@ echo JAVA_HOME is $JAVA_HOME
 
 # ---------- NEO4J ----------
 if [ ! -r downloads/neo4j.tgz ]; then
-    wget --no-verbose -O downloads/neo4j.tgz http://dist.neo4j.org/neo4j-community-1.9.5-unix.tar.gz?edition=community&version=1.9.5&distribution=tarball&dlid=2824963
+    wget --no-verbose -O downloads/neo4j.tgz "http://dist.neo4j.org/neo4j-community-1.9.5-unix.tar.gz?edition=community&version=1.9.5&distribution=tarball&dlid=2824963"
 fi
 
 # ---------- NEO4J WITH TREEMACHINE / TAXOMACHINE PLUGINS ----------
@@ -66,11 +66,6 @@ function make_neo4j_instance {
         (cd repo/$APP; ./mvn_serverplugins.sh)
 
 	if true; then
-	    if ./neo4j-$APP/bin/neo4j status; then
-		./neo4j-$APP/bin/neo4j stop
-	    fi
-	    cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
-
 	    # Stop any running server.  There may or may not be a database.
 	    if ./neo4j-$APP/bin/neo4j status; then
 		./neo4j-$APP/bin/neo4j stop
