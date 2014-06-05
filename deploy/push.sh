@@ -206,20 +206,25 @@ function push_opentree {
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${NEO4JHOST}" "$CONTROLLER" "${CURATION_GITHUB_CLIENT_ID}" "${CURATION_GITHUB_REDIRECT_URI}" "${TREEVIEW_GITHUB_CLIENT_ID}" "${TREEVIEW_GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OPENTREE_API_BASE_URL}"
     # place the files with secret GitHub API keys for curator and webapp (tree browser feedback) apps
     # N.B. This includes the final domain name, since we'll need different keys for dev.opentreeoflife.org, www.opentreeoflife.org, etc.
-    keyfile=~/.ssh/opentree/curation-GITHUB_CLIENT_SECRET-$OPENTREE_PUBLIC_DOMAIN
-    if [ -r $keyfile ]; then
-        rsync -pr -e "${SSH}" $keyfile "$OT_USER@$OPENTREE_HOST":repo/opentree/curator/private/GITHUB_CLIENT_SECRET
-    else
-        echo "Cannot find GITHUB_CLIENT_SECRET file $keyfile"
-    fi
     keyfile=~/.ssh/opentree/treeview-GITHUB_CLIENT_SECRET-$OPENTREE_PUBLIC_DOMAIN
     if [ -r $keyfile ]; then
         rsync -pr -e "${SSH}" $keyfile "$OT_USER@$OPENTREE_HOST":repo/opentree/webapp/private/GITHUB_CLIENT_SECRET
     else
         echo "Cannot find GITHUB_CLIENT_SECRET file $keyfile"
     fi
+    keyfile=~/.ssh/opentree/curation-GITHUB_CLIENT_SECRET-$OPENTREE_PUBLIC_DOMAIN
+    if [ -r $keyfile ]; then
+        rsync -pr -e "${SSH}" $keyfile "$OT_USER@$OPENTREE_HOST":repo/opentree/curator/private/GITHUB_CLIENT_SECRET
+    else
+        echo "Cannot find GITHUB_CLIENT_SECRET file $keyfile"
+    fi
+
+    # we’re using the bot for “anonymous” comments in the synth-tree explorer
+    push_bot_identity
+}
+
+function push_bot_identity {
     # place an OAuth token for GitHub API by bot user 'opentreeapi'
-    # TODO: refactor to share this with push_api?
     tokenfile=~/.ssh/opentree/OPENTREEAPI_OAUTH_TOKEN
     if [ -r $tokenfile ]; then
         rsync -pr -e "${SSH}" $tokenfile "$OT_USER@$OPENTREE_HOST":.ssh/OPENTREEAPI_OAUTH_TOKEN
@@ -231,6 +236,8 @@ function push_opentree {
 
 function push_api {
     if [ $DRYRUN = "yes" ]; then echo "[api]"; return; fi
+
+    push_bot_identity
 
     # Place private key for GitHub access 
     if [ "x$OPENTREE_GH_IDENTITY" = "x" ]; then
