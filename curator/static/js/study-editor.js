@@ -29,6 +29,23 @@ var tagsOptions = {
         */
     }
 };
+function captureTagTextOnBlur( $tagsSelect ) {
+    /* Add any "loose" text in a tags widget as a new tag, e.g., if someone
+     * types a word and immediately tries to save the study. Adapted from this
+     * pull request by https://github.com/kubanka-peter:
+     *   https://github.com/TimSchlechter/bootstrap-tagsinput/pull/99
+     */
+    $tagsSelect.tagsinput('input').on('blur', function(event){
+        var $input = $(event.target);
+        var $select = $input.closest('.bootstrap-tagsinput').prev('select');
+        if ($select.length === 0) {
+            console.warn("captureTagTextOnBlur(): No SELECT widget found!");
+        } else {
+            $select.tagsinput('add', $input.val());
+            $input.val('');
+        }
+    });
+}
 
 $(document).ready(function() {
     bindHelpPanels();
@@ -375,12 +392,14 @@ function loadSelectedStudy() {
             // NOTE that we should "pluralize" existing arrays, in case
             // Badgerfish conversion has replaced it with a single item
             if ('^ot:candidateTreeForSynthesis' in data.nexml) {
-                data.nexml['^ot:candidateTreeForSynthesis'].candidate = 
-                    makeArray(data.nexml['^ot:candidateTreeForSynthesis'].candidate);
+                // remove legacy (inner) 'candidate' array, if found!
+                if ('candidate' in data.nexml['^ot:candidateTreeForSynthesis']) {
+                    data.nexml['^ot:candidateTreeForSynthesis'] = data.nexml['^ot:candidateTreeForSynthesis'].candidate;
+                }
+                data.nexml['^ot:candidateTreeForSynthesis'] = 
+                    makeArray(data.nexml['^ot:candidateTreeForSynthesis']);
             } else {
-                data.nexml['^ot:candidateTreeForSynthesis'] = {
-                    'candidate': [ ]
-                };
+                data.nexml['^ot:candidateTreeForSynthesis'] = [ ];
             }
             if ('^ot:tag' in data.nexml) {
                 data.nexml['^ot:tag'] = makeArray(data.nexml['^ot:tag']);
@@ -684,7 +703,7 @@ function loadSelectedStudy() {
                     function(otu) {
                         // match entered text against old or new label
                         var originalLabel = otu['^ot:originalLabel'];
-                        var mappedLabel = otu['@label'];
+                        var mappedLabel = otu['^ot:ottTaxonName'];
                         if (!matchPattern.test(originalLabel) && !matchPattern.test(mappedLabel)) {
                             return false;
                         }
@@ -725,8 +744,9 @@ function loadSelectedStudy() {
                      */
                     case 'Unmapped OTUs first':
                         filteredList.sort(function(a,b) { 
-                            var aMapStatus = $.trim(a['@label']) !== '';
-                            var bMapStatus = $.trim(b['@label']) !== '';
+                            // N.B. This works even if there's no such property.
+                            var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
+                            var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
                             if (aMapStatus === bMapStatus) return 0;
                             if (aMapStatus) return 1;
                             if (bMapStatus) return -1;
@@ -735,8 +755,8 @@ function loadSelectedStudy() {
 
                     case 'Mapped OTUs first':
                         filteredList.sort(function(a,b) { 
-                            var aMapStatus = $.trim(a['@label']) !== '';
-                            var bMapStatus = $.trim(b['@label']) !== '';
+                            var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
+                            var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
                             if (aMapStatus === bMapStatus) return 0;
                             if (aMapStatus) return -1;
                             return 1;
@@ -882,12 +902,15 @@ function loadSelectedStudy() {
             // TODO: throttle this back to handle larger studies?
             updateQualityDisplay();
 
-            // init (or refresh) the study tags
-            if (studyTagsInitialized) {
-                $('#study-tags').tagsinput('destroy');
+            if (viewOrEdit == 'EDIT') {
+                // init (or refresh) the study tags
+                if (studyTagsInitialized) {
+                    $('#study-tags').tagsinput('destroy');
+                }
+                $('#study-tags').tagsinput( tagsOptions );
+                captureTagTextOnBlur( $('#study-tags') );
+                studyTagsInitialized = true;
             }
-            $('#study-tags').tagsinput( tagsOptions );
-            studyTagsInitialized = true;
 
             hideModalScreen();
             showInfoMessage('Study data loaded.');
@@ -1168,10 +1191,17 @@ function promptForSaveComments() {
 
 
 function scrubNexsonForTransport( nexml ) {
+    /* Groom client-side Nexson for storage on server (details below)
+     *   - strip client-side-only d3 properties (and similar)
+     *   - coerce some KO string values to numeric types
+     *   - remove unused rooting elements
+     *   - remove "empty" elements if server doesn't expect them
+     *   - clean up empty/unused OTU alt-labels
+     */
     if (!nexml) {
         nexml = viewModel.nexml;
     }
-    // strip any extraneous JS properties from study Nexson
+
     var allTrees = [];
     $.each(nexml.trees, function(i, treesCollection) {
         $.each(treesCollection.tree, function(i, tree) {
@@ -1181,6 +1211,47 @@ function scrubNexsonForTransport( nexml ) {
     $.each( allTrees, function(i, tree) {
         cleanupAdHocRoot(tree);
         clearD3PropertiesFromTree(tree);
+    });
+
+    // coerce some non-string values
+    if ("string" === typeof nexml['^ot:studyYear']) {
+        // this should be an integer (or null if empty/invalid)
+        var intYear = parseInt(nexml['^ot:studyYear']);
+        nexml['^ot:studyYear'] = isNaN(intYear) ? null : intYear;
+    }
+    // force edge lengths from integers to floats
+    $.each( allTrees, function(i, tree) {
+        coerceEdgeLengthsToNumbers(tree);
+    });
+
+    // remove some unused elements
+    if (null == nexml['^ot:focalClade']) {
+        delete nexml['^ot:focalClade'];
+    }
+
+    // scrub otu altLabel properties
+    var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+    $.each( allOTUs, function(i, otu) {
+        if ('^ot:altLabel' in otu) {
+            var ottId = $.trim(otu['^ot:ottId']);
+            if (ottId !== '') {
+                // this otu is already mapped to OTT (trumps alt label)
+                delete otu['^ot:altLabel'];
+                return true; // skip to next otu
+            }
+            var altLabel = $.trim(otu['^ot:altLabel']);
+            if (altLabel === '') {
+                // the alt-label is empty
+                delete otu['^ot:altLabel'];
+                return true; // skip to next otu
+            }
+            var originalLabel = $.trim(otu['^ot:originalLabel']);
+            if (altLabel === originalLabel) {
+                // no changes from original (pointless)
+                delete otu['^ot:altLabel'];
+                return true; // skip to next otu
+            }
+        }
     });
 }
 
@@ -1212,14 +1283,14 @@ function saveFormDataToStudyJSON() {
     });
     saveURL += ('?'+ qsVars);
 
-    scrubNexsonForTransport();
-
     // add this user to the curatorName list, if not found
     var listPos = $.inArray( curatorDisplayName, viewModel.nexml['^ot:curatorName'] );
     if (listPos === -1) {
         viewModel.nexml['^ot:curatorName'].push( curatorDisplayName );
     }
   
+    scrubNexsonForTransport();
+
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: 'PUT',
@@ -1244,6 +1315,14 @@ function saveFormDataToStudyJSON() {
                 // TODO: this should be properly parsed JSON, show it more sensibly
                 // (but for now, repeat the crude feedback used above)
                 var errMsg = 'Sorry, there was an error in the study data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            var putResponse = $.parseJSON(jqXHR.responseText);
+            viewModel.startingCommitSHA = putResponse['sha'] || viewModel.startingCommitSHA;
+            if (putResponse['merge_needed']) {
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 return;
@@ -1506,41 +1585,10 @@ function normalizeTree( tree ) {
     
 }
 
-/* DEPRECATED - This is now handled on the server's 'merge_otus' method!
-function normalizeOTUs( tree ) {
-    // modify this tree's OTUs (if needed) to support mapping OTUs to OTT taxa
-    var itsOTUs = [];
-    $.each( makeArray(tree.node), function(i, node) {
-        // work backward from nodes to get its OTUs
-        if ('@otu' in node) {
-            itsOTUs.push( getOTUByID( node['@otu'] ) );
-        }
-    });
-    console.log("found "+ itsOTUs.length +" OTUs for this tree");
-
-    $.each( itsOTUs, function(i, otu) {
-        // Our main concern is whether it's been mapped to an OTT taxon.
-        var itsOTTid =  otu['^ot:ottId'];
-        if (!itsOTTid || ($.trim(itsOTTid) === '')) {
-            // no OTT id found; shuffle properties as needed
-            var itsOriginalLabel = otu['^ot:originalLabel'];
-            var itsProposedLabel = otu['@label'];
-            if ($.trim(itsOriginalLabel) === '') {
-                // move "final" to original label
-                otu['^ot:originalLabel'] = itsProposedLabel;
-                delete otu['@label'];
-            } else {
-                // retain "final" label as proposed, use in mapping
-            }
-        }
-    });
-}
-*/
-
 function getPreferredTreeIDs() {
     preferredTreeIDs = [];
     var candidateTreeMarkers = ('^ot:candidateTreeForSynthesis' in viewModel.nexml) ? 
-        makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate ) : [];
+        makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'] ) : [];
 
     $.each(candidateTreeMarkers, function(i, marker) {
         var treeID = $.trim(marker);
@@ -1578,10 +1626,10 @@ function togglePreferredTree( tree ) {
     var alreadyPreferred = ($.inArray( treeID, getPreferredTreeIDs()) !== -1);
     if (alreadyPreferred) {
         // remove it from the list of preferred trees
-        removeFromArray( treeID, viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate );
+        removeFromArray( treeID, viewModel.nexml['^ot:candidateTreeForSynthesis'] );
     } else {
         // add it to the list of preferred trees
-        viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( treeID ); 
+        viewModel.nexml['^ot:candidateTreeForSynthesis'].push( treeID ); 
     }
     nudgeTickler('OTU_MAPPING_HINTS');
     return true;  // to allow checkbox updates
@@ -1624,11 +1672,13 @@ function getMappedTallyForTree(tree) {
         }
         totalLeafNodes++;
 
-        // Simply check for the presence (or absence) of an @otu 'getter' function
-        // (so far, it doesn't seem to exist unless there's a mapped OTU)
         if ('@otu' in node) {
-            mappedLeafNodes++;
-        } 
+            var otu = getOTUByID( node['@otu'] );
+            var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
+            if (('^ot:ottId' in otu) && (itsMappedLabel !== '')) {
+                mappedLeafNodes++;
+            } 
+        }
         return true;  // skip to next node
     });
     // console.log("total nodes? "+ totalNodes);
@@ -1680,7 +1730,7 @@ function getRootNodeDescriptionForTree( tree ) {
                     $.each(otusCollection.otu, function( i, otu ) {
                         // Find the node with this ID and see if it has an assigned OTU
                         if (otu['@id'] === nodeOTU) {
-                            nodeName = otu['@label'] || 'Unlabeled OTU';
+                            nodeName = $.trim(otu['^ot:ottTaxonName']) || 'Unlabeled OTU';
                         }
                     });
                 });
@@ -1767,7 +1817,7 @@ function getInGroupCladeDescriptionForTree( tree ) {
     if (node && '@otu' in node) {
         var otu = getOTUByID( node['@otu'] );
         if (otu) {
-            nodeName = otu['@label'] || 'Unlabeled OTU';
+            nodeName = $.trim(otu['^ot:ottTaxonName']) || 'Unlabeled OTU';
         }
     }
 
@@ -2073,16 +2123,17 @@ var studyScoringRules = {
                     }
 
                     // only check the leaf nodes on the tree
-                    var totalNodes = 0;
-                    var mappedNodes = 0;
                     $.each(tree.node, function(i, node) {
-                        // is this a leaf? check for metatag .isLeaf
-                        if (node['^ot:isLeaf'] === true) {
-                            // Simply check for the presence (or absence) of an @otu 'getter' function
-                            // (so far, it doesn't seem to exist unless there's a mapped OTU)
-                            totalNodes++;
-                            if ('@otu' in node) {
-                                mappedNodes++;
+                        // Is this a leaf node? If not, skip it
+                        if (node['^ot:isLeaf'] !== true) {
+                            // this is not a leaf node! skip to the next one
+                            return true;
+                        }
+                        if ('@otu' in node) {
+                            var otu = getOTUByID( node['@otu'] );
+                            var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
+                            if (('^ot:ottId' in otu) && (itsMappedLabel !== '')) {
+                                return true;  // skip to next node
                             } else {
                                 unmappedLeafNodesFound = true;
                                 return false;   // bail out of loop
@@ -2282,6 +2333,7 @@ function showTreeViewer( tree, options ) {
             }
             updateInferenceMethodWidgets( tree );
             $('#tree-tags').tagsinput( tagsOptions );
+            captureTagTextOnBlur( $('#tree-tags') );
             treeTagsInitialized = true;
         }
 
@@ -2409,7 +2461,7 @@ function showOTUInContext() {
     }
     // otherwise show the tree viewer with first result highlighted, UI to show more
     //var itsTree = getTreeByID('u10991628-99c2-46de-aa3f-67747c700213g0n0');
-    var promptLabel = otu['@label'] || otu['^ot:originalLabel'];
+    var promptLabel = $.trim(otu['^ot:ottTaxonName']) || otu['^ot:originalLabel'];
     showTreeViewer(null, {
         HIGHLIGHT_PLAYLIST: otuContextsToShow,
         HIGHLIGHT_PROMPT: ("Showing the chosen OTU '<strong>"+ promptLabel +"</strong>' in context"),
@@ -3085,7 +3137,7 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
     var itsOTU = node['@otu'];
     if (itsOTU) {
         var otu = getOTUByID( itsOTU );
-        var itsMappedLabel = otu['@label'];
+        var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
         if (itsMappedLabel) {
             return {label: itsMappedLabel, labelType: 'mapped label'};
         }
@@ -3237,7 +3289,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
             normalizeTree( tree );
             if (responseJSON.newTreesPreferred) {
                 // mark all new tree(s) as preferred, eg, a candidate for synthesis
-                viewModel.nexml['^ot:candidateTreeForSynthesis'].candidate.push( tree['@id'] );
+                viewModel.nexml['^ot:candidateTreeForSynthesis'].push( tree['@id'] );
             }
             // build proper NexSON elements for imported tree IDs
             importedTreeElements.push( {"$": tree['@id']} );
@@ -3533,28 +3585,7 @@ var nexsonTemplates = {
         "new": {"$": ""},
         "@valid": true,
         "@active": false
-    }, // END of 'mapping substitution' template
-
-
-    'OTU entry': {
-        /* An OTU entry for newly-mapped nodes (do we need this?)
-         */
-        "@about": "#otu{otuID}",
-        "@id": "otu{otuID}", 
-        "@label": "{otuMappedName}",    // as mapped
-        "meta": [
-            {
-                "$": null,  // integer
-                "@property": "ot:ottId", 
-                "@xsi:type": "nex:LiteralMeta"
-            }, 
-            {
-                "$": "{otuOriginalName}",   // as submitted
-                "@property": "ot:originalLabel", 
-                "@xsi:type": "nex:LiteralMeta"
-            }
-        ]
-    } // END of 'OTU entry' template
+    } // END of 'mapping substitution' template
 
 } // END of nexsonTemplates
 
@@ -3823,47 +3854,31 @@ function removeSubstitution( data ) {
 var autoMappingInProgress = ko.observable(false);
 var currentlyMappingOTUs = ko.observableArray([]); // drives spinners, etc.
 var failedMappingOTUs = ko.observableArray([]); // ignore these until we have new mapping hints
-var editedOTULabels = ko.observable({}); // stored any labels edited by hand, keyed by OTU id
-var editedOTULabelSubscriptions = {}; // KO subscriptions for each, to enable mapping when a label is edited
 var proposedOTUMappings = ko.observable({}); // stored any labels proposed by server, keyed by OTU id
 var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-editing UI to refresh!
 
 function editOTULabel(otu) {
     var OTUid = otu['@id'];
     var originalLabel = otu['^ot:originalLabel'];
-    editedOTULabels()[ OTUid ] = ko.observable( adjustedLabel(originalLabel) );
-    // add a subscriber to remove this from failed-OTU list when user makes
-    // changes
-    var sub = editedOTULabels()[ OTUid ].subscribe(function() {
-        failedMappingOTUs.remove(OTUid);
-        // nudge to update OTU list immediately
-        bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
-        nudgeAutoMapping();
-    });
-    if (editedOTULabelSubscriptions[ OTUid ]) {
-        // clear any errant (old) subscriber for this OTU
-        editedOTULabelSubscriptions[ OTUid ].dispose();
-        delete editedOTULabelSubscriptions[ OTUid ];
-    }
-    editedOTULabelSubscriptions[ OTUid ] = sub;
+    otu['^ot:altLabel'] = adjustedLabel(originalLabel);
     // this should make the editor appear
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
 }
-function editedLabelAccessor(otu) {
+function modifyEditedLabel(otu) {
+    // remove its otu-id from failed-OTU list when user makes changes
     var OTUid = otu['@id'];
-    var acc = editedOTULabels()[ OTUid ] || null;
-    return acc;
+    failedMappingOTUs.remove(OTUid);
+    // nudge to update OTU list immediately
+    bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+    nudgeAutoMapping();
+    
+    nudgeTickler( 'OTU_MAPPING_HINTS');
 }
 function revertOTULabel(otu) {
     // undoes 'editOTULabel', releasing a label to use shared hints
     var OTUid = otu['@id'];
-    delete editedOTULabels()[ OTUid ];
+    delete otu['^ot:altLabel'];
     failedMappingOTUs.remove(OTUid );
-    if (editedOTULabelSubscriptions[ OTUid ]) {
-        // dispose, then remove, the subscriber for this OTU
-        editedOTULabelSubscriptions[ OTUid ].dispose();
-        delete editedOTULabelSubscriptions[ OTUid ];
-    }
     // this should make the editor disappear and revert its adjusted label
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
     nudgeAutoMapping();
@@ -4039,8 +4054,8 @@ function requestTaxonMapping() {
     var otuID = otuToMap['@id'];
     var originalLabel = otuToMap['^ot:originalLabel'] || null;
     // use the manually edited label (if any), or the hint-adjusted version
-    var editedAcc = editedLabelAccessor(otuToMap);
-    var searchText = editedAcc ? editedAcc() : adjustedLabel(originalLabel);
+    var editedLabel = $.trim(otuToMap['^ot:altLabel']);
+    var searchText = (editedLabel !== '') ? editedLabel : adjustedLabel(originalLabel);
 
     if (searchText.length === 0) {
         console.log("No name to match!"); // TODO
@@ -4067,7 +4082,7 @@ function requestTaxonMapping() {
             "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
-        contentType: 'application/json',
+        contentType: "application/json; charset=utf-8",
         error: function(jqXHR, textStatus, errorThrown) {
 
             console.log("!!! something went terribly wrong");
@@ -4188,9 +4203,9 @@ function requestTaxonMapping() {
 }
 
 function mapOTUToTaxon( otuID, mappingInfo ) {
-    // apply this mapping, creating Nexson elements as needed
-
-    /* mappingInfo should be an object with these properties:
+    /* Apply this mapping, creating Nexson elements as needed
+     *
+     * mappingInfo should be an object with these properties:
      * {
      *   "name" : "Centranthus",
      *   "ottId" : "759046",
@@ -4200,19 +4215,26 @@ function mapOTUToTaxon( otuID, mappingInfo ) {
      *     "exact" : false,
      *     "higher" : true
      * }
+     *
+     * N.B. We *always* add/change/remove these properties in tandem!
+     *    ot:ottId
+     *    ot:ottTaxonName
      */
 
     // FOR NOW, assume that any leaf node will have a corresponding otu entry;
     // otherwise, we can't have name for the node!
     var otu = getOTUByID( otuID );
 
-    // TODO: add/update its original label?
-    var originalLabel = otu['^ot:originalLabel'] || null;
-    otu['@label'] = mappingInfo.name || 'NAME MISSING!';
-
     // add (or update) a metatag mapping this to an OTT id
-    var ottId = Number(mappingInfo.ottId);
-    otu['^ot:ottId'] = ottId;
+    otu['^ot:ottId'] = Number(mappingInfo.ottId);
+
+    // Add/update the OTT name (cached here for performance) 
+    otu['^ot:ottTaxonName'] = mappingInfo.name || 'OTT NAME MISSING!';
+    // N.B. We always preserve ^ot:originalLabel for reference
+
+    // Clear any proposed/adjusted label (this is trumped by mapping to OTT)
+    delete otu['^ot:altLabel'];
+    
     nudgeTickler('OTU_MAPPING_HINTS');
     nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
 }
@@ -4222,11 +4244,15 @@ function unmapOTUFromTaxon( otuOrID ) {
     var otu = (typeof otuOrID === 'object') ? otuOrID : getOTUByID( otuOrID );
     // restore its original label (versus mapped label)
     var originalLabel = otu['^ot:originalLabel'];
-    otu['@label'] = '';
+
     // strip any metatag mapping this to an OTT id
     if ('^ot:ottId' in otu) {
         delete otu['^ot:ottId'];
     }
+    if ('^ot:ottTaxonName' in otu) {
+        delete otu['^ot:ottTaxonName'];
+    }
+
     nudgeTickler('OTU_MAPPING_HINTS');
     nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
 }
@@ -4393,6 +4419,7 @@ function showEdgeOptionsMenu( tree, edge, nodePageOffset, importantNodeIDs ) {
 }
 
 function clearD3PropertiesFromTree(tree) {
+    // these are display-only properties that shouldn't save to the docstore
     $.each( tree.node, function( i, node ) {
         delete node.x;
         delete node.y;
@@ -4403,6 +4430,25 @@ function clearD3PropertiesFromTree(tree) {
         delete node.length;
         delete node.ingroup;
         delete node.rootDist;
+        delete node.labelType;
+    });
+}
+
+function coerceEdgeLengthsToNumbers(tree) {
+    // Convert any string values to JS numbers, which look like integers if
+    // there's no fractional part. (For example, we might see 3.05 or 3, which
+    // should be recognized by the validator as equal to 3.0).
+    //
+    // N.B. True floating-point precision is not reliable in Javascript, which
+    // uses binary floating point numbers. Still, since we're not operating on
+    // length values, any incoming numbers should be preserved with full
+    // precision.
+    $.each( tree.edge, function( i, edge ) {
+        if ('@length' in edge) {
+            // keep precise floats where found; convert integers to minimal floats (4 => '4.0')
+            var floatEdgeLength = parseFloat( edge['@length'] );
+            edge['@length'] = isNaN(floatEdgeLength) ? 0 : floatEdgeLength;
+        }
     });
 }
 
@@ -5104,7 +5150,7 @@ function searchForMatchingTaxa() {
             "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
-        contentType: 'application/json',
+        contentType: "application/json; charset=utf-8",
         success: function(data) {    // JSONP callback
             // stash the search-text used to generate these results
             showingResultsForSearchText = queryText;

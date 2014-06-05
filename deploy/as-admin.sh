@@ -150,6 +150,12 @@ if [ `which lsof`x = x ]; then
     $APTGET install lsof
 fi
 
+# ---------- NTP ----------
+if [ ! -r /etc/ntp.conf ]; then
+    $APTGET install ntp
+fi
+
+
 # ---------- APACHE VHOST ----------
 
 # Set up apache so that web2py takes over the vhost

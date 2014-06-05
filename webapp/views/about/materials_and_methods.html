@@ -1,7 +1,10 @@
 {{extend 'layout.html'}}
+{{import urllib}}
+<style type="text/css">
+</style>
 
 <div class="container">
-      <h1 id="main-title">About Phylografter, the source tree manager</h1>
+      <h1 id="main-title">Materials and methods</h1>
 
       <div class="row">
           <div class="span3">
@@ -13,13 +16,13 @@
                   <li>
                       <a href="{{= URL('about', 'the-synthetic-tree') }}">The synthetic tree</a>
                   </li>
-                  <li>
+                  <li class="active">
                       <a href="{{= URL('about', 'materials-and-methods') }}">Materials and methods</a>
                   </li>
                   <li>
                       <a href="{{= URL('about', 'references') }}">Bibliographic references</a>
                   </li>
-                  <li class="active">
+                  <li>
                       <a href="{{= URL('about', 'the-source-tree-manager') }}">The source tree manager</a>
                   </li>
                   <li>
@@ -34,11 +37,18 @@
               </ul>
           </div>
           <div class="span8 offset1">
+              <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
               <p>
               TODO: What else goes here? Lorem ipsum dolor sit amet,
               consectetur adipiscing elit. In bibendum, magna et viverra
               tincidunt, nisi leo dapibus massa, sit amet fermentum dui magna a
               nunc. Maecenas a ligula libero. Cras id tempus dui. 
+              </p>
+              <p>
+              Nam at vehicula augue. Vestibulum varius ligula ante, sit amet
+              gravida mi semper non. Nunc ornare bibendum ultrices. Ut nec
+              porttitor enim. Vivamus luctus semper risus, ac imperdiet ante
+              pulvinar in.
               </p>
               <p>
               Vivamus urna lectus, rutrum nec odio ac, ullamcorper sagittis
@@ -48,24 +58,8 @@
               at felis et, condimentum bibendum tellus. In vitae ante ut elit
               mollis auctor sed a tortor.
               </p>
-              <p>
-              Ut magna dolor, ultricies nec leo sed, tempor iaculis orci.
-              Integer dignissim odio nec odio imperdiet, ac ultrices sapien
-              tristique. In a urna ut eros hendrerit fringilla nec ut ligula.
-              Sed pulvinar sem vel turpis dapibus mattis. Etiam pretium nibh
-              quis turpis vulputate suscipit. Suspendisse consequat, dolor
-              vitae aliquet rhoncus, ipsum nisi tincidunt odio, non pretium
-              felis erat nec elit. Nullam quis mi lobortis orci volutpat
-              commodo in iaculis nulla. Mauris sit amet ante quis lectus
-              vestibulum varius sed vel nisi. 
-              </p>
-              <p>
-              Nam at vehicula augue. Vestibulum varius ligula ante, sit amet
-              gravida mi semper non. Nunc ornare bibendum ultrices. Ut nec
-              porttitor enim. Vivamus luctus semper risus, ac imperdiet ante
-              pulvinar in.
-              </p>
           </div>
+
       </div>
 
       <h3 id="comment-header">Comments <i></i></h3>
