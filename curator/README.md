@@ -1,5 +1,10 @@
 This is the new submission/curation tool for studies and trees in the Open Tree of Life project. Making this a separate web2py app ('curator') should make it easier to modify this separately from the main 'opentree' app.
 
+Dependencies
+============
+Because of the to_nexson function, the curator currently requires the peyotl library:
+ https://github.com/OpenTreeOfLife/peyotl
+
 
 Dependencies for external file-format conversion
 ================================================
