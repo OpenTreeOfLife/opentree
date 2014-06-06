@@ -46,8 +46,8 @@
     # OPENTREE STUFF INSERTED HERE
 
     <Location /phylesystem>
-      RedirectMatch temp /phylesystem/v0/study/(.*) /api/v1/study/$1
-      Redirect temp /phylesystem/v0/study_list /api/study_list
+      RedirectMatch temp /phylesystem/v1/study/(.*) /api/v1/study/$1
+      Redirect temp /phylesystem/v1/study_list /api/study_list
     </Location>
 
     # See http://stackoverflow.com/questions/13216837/install-web2py-in-virtual-hosting
@@ -87,7 +87,7 @@
       Allow from 127.0.0.1
     </LocationMatch>
 
-    <Location /treemachine/v0>
+    <Location /treemachine/v1>
       Order allow,deny
       Allow from all
       ProxyPass  http://localhost:7474/db/data/ext/GoLS/graphdb
@@ -100,7 +100,7 @@
       ProxyPass  http://localhost:7474/db/data/ext
     </Location>
 
-    <Location /taxomachine/v0>
+    <Location /taxomachine/v1>
       Order allow,deny
       Allow from all
       ProxyPass  http://localhost:7476/db/data/ext/TNRS/graphdb
@@ -113,7 +113,7 @@
       ProxyPass  http://localhost:7476/db/data/ext
     </Location>
     
-    <Location /oti/v0>
+    <Location /oti/v1>
       Order allow,deny
       Allow from all
       ProxyPass  http://localhost:7478/db/data/ext/QueryServices/graphdb
