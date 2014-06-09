@@ -490,7 +490,7 @@ body {
             data-bind="attr: {'checked': jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1}, 
                        click: togglePreferredTree" /></td>
                       {{ else: }}
-                        <td data-bind="text: (true) ? 'NO' : 'YES'">?</td>
+                        <td data-bind="text: (jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) ? 'YES' : 'NO'">?</td>
                       {{ pass }}
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
