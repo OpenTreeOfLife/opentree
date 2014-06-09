@@ -1123,7 +1123,12 @@ function showObjectProperties( objInfo, options ) {
                 return false;
             });
         $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
-
+      
+        // Attempt to find a page for this taxon in the Encyclopedia of Life website
+        // (prefer '+' to '%20', but carefully encode other characters)
+        var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');  
+        // N.B. This 'external-links' list can hold similar entries.
+        $details.after('<ul class="external-links"><li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">Search EOL for \''+ displayName +'\'</a></li></ul>');
     }
 
 }

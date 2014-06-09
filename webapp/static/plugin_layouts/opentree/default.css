@@ -316,6 +316,10 @@ div.viewer-frame {
     background-color: #eee;
     padding: 0 0.25em;
 }
+#provenance-panel .properties-section ul.external-links {
+    margin: 6px 0 12px 8px;
+    list-style: none;
+}
 #provenance-panel .properties-section.selected {
     border: 2px solid #d33;
 }
