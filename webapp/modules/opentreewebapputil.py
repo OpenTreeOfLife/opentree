@@ -112,6 +112,26 @@ def get_opentree_services_method_urls(request):
 
     return method_urls
 
+def get_user_display_name():
+    # Determine the best possible name to show for the current logged-in user.
+    # This is for display purposes and credit in study Nexson. It's a bit
+    # convoluted due to GitHub's various and optional name fields.
+    from gluon import current
+    auth = current.session.auth or None
+    if (not auth) or (not auth.get('user', None)):
+        return 'ANONYMOUS'
+    if auth.user.name:
+        # this is a preset display name
+        return auth.user.name
+    if auth.user.first_name and auth.user.last_name:
+        # combined first and last is also good
+        return '%s %s' % (auth.user.first_name, auth.user.last_name,)
+    if auth.user.username:
+        # compact userid is our last resort
+        return auth.user.username
+    # no name or id found (this should never happen)
+    return 'UNKNOWN'
+
 def fetch_current_TNRS_context_names(request):
     try:
         # fetch the latest contextName values as JSON from remote site

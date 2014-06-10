@@ -1284,9 +1284,9 @@ function saveFormDataToStudyJSON() {
     saveURL += ('?'+ qsVars);
 
     // add this user to the curatorName list, if not found
-    var listPos = $.inArray( curatorDisplayName, viewModel.nexml['^ot:curatorName'] );
+    var listPos = $.inArray( userDisplayName, viewModel.nexml['^ot:curatorName'] );
     if (listPos === -1) {
-        viewModel.nexml['^ot:curatorName'].push( curatorDisplayName );
+        viewModel.nexml['^ot:curatorName'].push( userDisplayName );
     }
   
     scrubNexsonForTransport();
