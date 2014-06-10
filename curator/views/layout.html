@@ -180,7 +180,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
               {{ if 'auth' in globals(): }}
             <ul id="auth-navbar" class="nav pull-right">
                 {{#-- this creates an LI.dropdown > A structure --}}
-                {{= auth.navbar(separators=(' ',' | ',''), mode="dropdown", )}}
+                {{= auth.navbar(separators=(' ',' | ',''), mode="dropdown", user_identifier=lambda x: get_user_display_name())}}
             </ul>
               {{ pass }}
         </div><!-- /.nav-collapse.collapse -->
