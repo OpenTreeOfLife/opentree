@@ -6,6 +6,12 @@
 <VirtualHost *:80>
 	ServerAdmin webmaster@localhost
 
+	## Simple redirect to development server
+	## RedirectMatch temp ^/curator http://devtree.opentreeoflife.org/curator
+
+	# Bounce to development server via a simple information page
+	RedirectMatch temp ^/curator /opentree/static/bounce-to-devtree-curator.html
+
 #         DocumentRoot /var/www
 #         <Directory />
 #                 Options FollowSymLinks
