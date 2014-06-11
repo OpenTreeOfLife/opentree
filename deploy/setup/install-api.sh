@@ -74,6 +74,7 @@ py_package_setup_install peyotl || true
 (cd $APPROOT/ot-celery; pip install -r requirements.txt ; python setup.py develop)
 
 (cd web2py/applications; \
+    rm -f ./api ; \
     ln -sf ../../repo/$WEBAPP ./api)
 
 # ---------- DOC STORE ----------
