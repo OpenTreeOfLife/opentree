@@ -297,6 +297,40 @@ def index():
         metadata = parse_comment_metadata(comment['body'])
         ##print(metadata)
 
+        # Examine the comment metadata (if any) to get the best display name
+        # and URL for its author. Guests should appear here as the name and
+        # email address they entered when creating a comment, rather than the
+        # 'opentreeapi' bot user.
+        #
+        # Default values are what we can fetch from the issues API
+        author_display_name = comment['user']['login']
+        author_link = comment['user']['html_url']
+        # Now let's try for something more friendly...
+        pprint('checking for metadata...')
+        if metadata:
+            meta_author_info = metadata.get('Author', None)
+            pprint(meta_author_info)
+            if meta_author_info:
+                # Try to parse this fron a Markdown hyperlink. Typical values include:
+                #   u'opentreeapi'
+                #   u'11'
+                #   u'[Jim Allman](https://github.com/jimallman)'
+                #   u'[John Smith](mailto:example.guest@gmail.com)'
+                import re
+                regex = re.compile(r'\[(.*)\]\((.*)\)')
+                markdown_fields = regex.findall(meta_author_info)
+                pprint(markdown_fields)
+                if len(markdown_fields) > 0:
+                    # look for parts of a markdown link
+                    author_display_name, author_link = markdown_fields[0]
+                else:
+                    # it's not a markdown link, just a bare name or numeric userid
+                    if meta_author_info.isdigit():
+                        # ignore ugly userid (login is better)
+                        pass
+                    else:
+                        author_display_name = meta_author_info
+
         # Is this node for an issue (thread starter) or a comment (reply)?
         issue_node = 'number' in comment
 
@@ -310,7 +344,7 @@ def index():
                     ('title' in comment) and DIV( comment['title'], A(T('on GitHub'), _href=comment['html_url'], _target='_blank'), _class='topic-title') or '',
                     DIV( XML(markdown(get_visible_comment_body(comment['body'] or '')).encode('utf-8'), sanitize=False),_class=(issue_node and 'body issue-body' or 'body comment-body')),
                     DIV(
-                        A(T(comment['user']['login']), _href=comment['user']['html_url'], _target='_blank'),
+                        A(T(author_display_name), _href=author_link, _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
                         SPAN(' ',metadata.get('Feedback type'),' ',_class='badge') if metadata.get('Feedback type') else '',
                         SPAN(' ',metadata.get('Intended scope'),' ',_class='badge') if metadata.get('Intended scope') else '',

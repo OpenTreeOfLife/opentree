@@ -1,4 +1,7 @@
 <!DOCTYPE html>
+{{ 
+from applications.opentree.modules.opentreewebapputil import get_user_display_name
+}}
 <html lang="{{=T.accepted_language or 'en'}}" class="no-js"><!-- no-js need it for modernzr -->
   <head>
     
@@ -73,7 +76,7 @@
     {{include 'web2py_ajax.html'}}
 
   <script type="text/javascript">
-  var curatorDisplayName;
+  var userDisplayName = "{{= get_user_display_name() }}";
   jQuery(document).ready(function(){ 
     {{ if 'auth' in globals(): }}
       // add marker classes to final nav link (for logged-in user)
@@ -92,10 +95,6 @@
       
       // tweak validation errors to show proper Bootstrap classes
       jQuery('div.error').addClass('alert').addClass('alert-error');
-
-      // stash display name for possible attribution (in ot:curatorName list)
-      curatorDisplayName = "{{= auth.user and (auth.user.name or '%s %s' % (auth.user.first_name, auth.user.last_name,)) or 'ANONYMOUS' }}";
-
     {{ pass }}
 
   });
@@ -181,7 +180,7 @@
               {{ if 'auth' in globals(): }}
             <ul id="auth-navbar" class="nav pull-right">
                 {{#-- this creates an LI.dropdown > A structure --}}
-                {{= auth.navbar(separators=(' ',' | ',''), mode="dropdown", )}}
+                {{= auth.navbar(separators=(' ',' | ',''), mode="dropdown", user_identifier=lambda x: get_user_display_name())}}
             </ul>
               {{ pass }}
         </div><!-- /.nav-collapse.collapse -->
