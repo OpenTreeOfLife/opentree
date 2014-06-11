@@ -223,6 +223,8 @@ function push_opentree {
     push_bot_identity
 }
 
+# See "getting a github oauth token" in the phylesystem-api documentation.
+
 function push_bot_identity {
     # place an OAuth token for GitHub API by bot user 'opentreeapi'
     tokenfile=~/.ssh/opentree/OPENTREEAPI_OAUTH_TOKEN
