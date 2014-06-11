@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {{ 
-from applications.opentree.modules.opentreewebapputil import get_user_display_name
+from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf
 }}
 <html lang="{{=T.accepted_language or 'en'}}" class="no-js"><!-- no-js need it for modernzr -->
   <head>
@@ -76,6 +76,44 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
     {{include 'web2py_ajax.html'}}
 
   <script type="text/javascript">
+  // some behavior should be on *every* page
+  function toggleServerDetailsPopup() {
+      var $detailsBox = $('#server-details');
+      $detailsBox.toggle();
+      if ($detailsBox.is(':visible')) {
+          if ($('.shard-name').length === 0) {
+            // populate the shard-name list via AJAX
+            var phylesystemAPIBaseURL = API_load_study_GET_url.split('api')[0];
+            var phylesystemConfigURL = phylesystemAPIBaseURL+'api/phylesystem_config';
+            $.ajax({
+                datatype: 'json',
+                crossdomain: true,
+                contenttype: "application/json; charset=utf-8",
+                url: phylesystemConfigURL,
+                data: { },
+                success: function( data, textstatus, jqxhr ) {
+                    // report errors or malformed data, if any
+                    //var jsonResponse = $.parseJSON(jqXHR.responseText);
+                    var jsonResponse = $.parseJSON(data);
+                    if ('shards' in jsonResponse) {
+                        var shards = jsonResponse.shards;
+                        if (shards.length === 0) {
+                            $('#shard-list').after('<dd><em>No shards found for this API instance</em></dd>');
+                        } else {
+                            $.each(shards, function(index, shardInfo) {
+                                $('#shard-list').after('<dd><strong style="color: #888;">'+ shardInfo.name +'</strong> ('+ shardInfo['number of studies']  +' studies)</dd>');
+                            });
+                        }
+                    } else {
+                        $('#shard-list').after('<dd><em>Shard list failed to load!</em></dd>');
+                    }
+                }
+            });
+          }
+          $('body').animate({scrollTop: parseInt($detailsBox.offset().top) });
+      }
+  }
+
   var userDisplayName = "{{= get_user_display_name() }}";
   jQuery(document).ready(function(){ 
     {{ if 'auth' in globals(): }}
@@ -268,8 +306,26 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
             {{=T('Open Tree of Life is funded by NSF (AVAToL)')}}
             </div>
         <div id="poweredBy" class="pull-right">
+            <a href="#" onclick="toggleServerDetailsPopup(); return false;">Show/hide server details</a>
+            &bull;
             {{=T('Powered by')}}
             <a href="http://www.web2py.com/" target="_blank" >web2py</a>
+        </div>
+        <div id="server-details" style="display: none; clear: both; margin: 4px 0; background-color: #f5f5f5; padding: 6px 8px; border-radius: 8px;">
+            Configuration for the <strong>{{= request.application }}</strong> web2py app: 
+            <dl>
+               <dt id="shard-list">phylesystem shard(s):</dt>
+            {{ # N.B. This list will be populated by AJAX only when shown }} 
+            
+            {{ # format non-sensitive config data for display
+               conf = get_conf(request)
+               for sec in conf.sections(): }}
+               <dt>{{= sec }}</dt>
+                   {{ for itm in conf.items(sec): }}
+                   <dd><strong style="color: #888;">{{= itm[0] }}</strong>: {{= itm[1] }}</dd>
+                   {{ pass }}
+            {{ pass }}
+            </dl>
         </div>
         {{end}}
     </div>
