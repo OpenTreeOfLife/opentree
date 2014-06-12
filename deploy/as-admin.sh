@@ -84,6 +84,10 @@ if [ ! -r /etc/apache2/mods-enabled/proxy_http.load ]; then
     sudo a2enmod proxy_http
 fi
 
+# Enable the apache ssl module
+# TODO: Should we check first for the presence of SSL cert and private keys?
+sudo a2enmod ssl
+
 # ---------- UNZIP ----------
 # unzip is needed for unpacking web2py.  Somebody broke the 'which' program -
 # you can't just check the status code any more.
@@ -169,6 +173,10 @@ fi
 # (000-default) from a fresh EC2 instance, then modified it to make
 # web2py work, per instructions found on the web.  See
 # /etc/apache2/sites-available/default .
+# 
+# After adding a second VirtualHost for HTTPS, we moved all common
+# configuration to a second file '{apache|opentree}-config-shared', which is
+# used in both vhosts via the Include directive.
 
 # The purpose here (of clobbering the default vhost) is to avoid
 # having to know all of our own vhost names.  Instead we make opentree
