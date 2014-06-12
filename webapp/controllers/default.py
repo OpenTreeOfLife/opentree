@@ -121,6 +121,9 @@ def fetch_current_synthetic_tree_ids():
 
         method_dict = get_opentree_services_method_urls(request)
         fetch_url = method_dict['getDraftTreeID_url']
+        if fetch_url.startswith('//'):
+            # Prepend scheme to a scheme-relative URL
+            fetch_url = "http:%s" % fetch_url
 
         fetch_args = {'startingTaxonOTTId': ""}
         # this needs to be a POST (pass fetch_args or ''); if GET, it just describes the API
