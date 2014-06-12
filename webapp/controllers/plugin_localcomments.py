@@ -306,10 +306,8 @@ def index():
         author_display_name = comment['user']['login']
         author_link = comment['user']['html_url']
         # Now let's try for something more friendly...
-        pprint('checking for metadata...')
         if metadata:
             meta_author_info = metadata.get('Author', None)
-            pprint(meta_author_info)
             if meta_author_info:
                 # Try to parse this fron a Markdown hyperlink. Typical values include:
                 #   u'opentreeapi'
@@ -319,7 +317,6 @@ def index():
                 import re
                 regex = re.compile(r'\[(.*)\]\((.*)\)')
                 markdown_fields = regex.findall(meta_author_info)
-                pprint(markdown_fields)
                 if len(markdown_fields) > 0:
                     # look for parts of a markdown link
                     author_display_name, author_link = markdown_fields[0]
