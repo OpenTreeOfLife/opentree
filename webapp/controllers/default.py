@@ -91,6 +91,9 @@ def download_subtree():
         else:
             fetch_url = method_dict['getDraftTreeForNodeID_url']
             fetch_args = {'nodeID': node_or_ottol_id, 'maxDepth': max_depth}
+        if fetch_url.startswith('//'):
+            # Prepend scheme to a scheme-relative URL
+            fetch_url = "http:%s" % fetch_url
 
         # apparently this needs to be a POST, or it just describes the API
         tree_response = fetch(fetch_url, data=fetch_args)
