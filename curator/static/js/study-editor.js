@@ -1219,6 +1219,11 @@ function scrubNexsonForTransport( nexml ) {
         var intYear = parseInt(nexml['^ot:studyYear']);
         nexml['^ot:studyYear'] = isNaN(intYear) ? null : intYear;
     }
+    if ("string" === typeof nexml['^ot:focalClade']) {
+        // this should be an integer (or null if empty/invalid)
+        var intOttID = parseInt(nexml['^ot:focalClade']);
+        nexml['^ot:focalClade'] = isNaN(intOttID) ? null : intOttID;
+    }
     // force edge lengths from integers to floats
     $.each( allTrees, function(i, tree) {
         coerceEdgeLengthsToNumbers(tree);
