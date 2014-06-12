@@ -88,3 +88,22 @@ The following causes the oti application to index all of the studies in the stud
 
     ./push.sh -c {configfile} index-db
 
+Restarting apache
+-----------------
+
+If all you've done is to update the apache configuration, just do
+
+    ./push.sh -c {configfile} apache
+
+to restart apache.
+
+Updating the files.opentreeoflife.org web site
+----------------------------------------------
+
+    ./push.sh -c {configfile} files
+
+This just copies the contents of the files.opentreeoflife.org
+directory out to the web root for the files.opentreeoflife.org vhost.
+The location is determined by the value of FILES_HOST, which defaults
+to ot10.opentreeoflife.org but can be overridden in the configuration
+file if desired.
