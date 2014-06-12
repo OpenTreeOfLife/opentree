@@ -52,6 +52,9 @@ def fetch_current_synthesis_source_data():
 
         # fetch a list of all studies that contribute to synthesis
         fetch_url = method_dict['getSynthesisSourceList_url']
+        if fetch_url.startswith('//'):
+            # Prepend scheme to a scheme-relative URL
+            fetch_url = "http:%s" % fetch_url
         # as usual, this needs to be a POST (pass empty fetch_args)
         source_list_response = fetch(fetch_url, data='')
         source_list = simplejson.loads( source_list_response )
@@ -62,6 +65,9 @@ def fetch_current_synthesis_source_data():
 
         # fetch the oti metadata (esp. DOI and full reference text) for each
         fetch_url = method_dict['findAllStudies_url']
+        if fetch_url.startswith('//'):
+            # Prepend scheme to a scheme-relative URL
+            fetch_url = "http:%s" % fetch_url
 
         # as usual, this needs to be a POST (pass empty fetch_args)
         study_metadata_response = fetch(fetch_url, data={"verbose": True})
