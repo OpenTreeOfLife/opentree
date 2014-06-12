@@ -157,6 +157,9 @@ function docommand {
 	index  | indexoti | index-db)
 	    index
     	    ;;
+	files)
+	    install_files
+	    ;;
 	apache)
 	    restart_apache
     	    ;;
@@ -291,6 +294,12 @@ function install_db {
     HEREBALL=$1
     APP=$2
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh $HEREBALL $APP $CONTROLLER
+}
+
+function install_files {
+    if [ x$FILES_HOST = x ]; then FILES_HOST=ot10.opentreeoflife.org; fi
+    # Transfer content
+    rsync -prv -e "${SSH}" "--exclude=*~" "--exclude=#*" files.opentreeoflife.org "$OT_USER@$FILES_HOST":
 }
 
 sync_system
