@@ -138,7 +138,7 @@
 # http://serverfault.com/questions/83669/apache2-with-ssl-do-i-have-to-copy-virtualhost-blocks
  
 <IfModule mod_ssl.c>
-<VirtualHost _default_:443>
+<VirtualHost *:443>
 	ServerAdmin webmaster@localhost
 
 	ErrorLog ${APACHE_LOG_DIR}/ssl_error.log
@@ -286,7 +286,7 @@
 
     # See http://stackoverflow.com/questions/13216837/install-web2py-in-virtual-hosting
     # Had: user=opentree group=opentree
-    WSGIDaemonProcess web2py user=opentree group=opentree display-name=%{GROUP}
+    #WSGIDaemonProcess web2py user=opentree group=opentree display-name=%{GROUP}
     WSGIProcessGroup web2py
     WSGIScriptAlias / /home/opentree/web2py/wsgihandler.py
 
