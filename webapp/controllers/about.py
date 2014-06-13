@@ -74,9 +74,17 @@ def fetch_current_synthesis_source_data():
         study_metadata = simplejson.loads( study_metadata_response )
 
         # filter just the metadata for studies contributing to synthesis
-        contributing_studies = [study for study in study_metadata if study['ot:studyId'] in contributing_study_ids]
-
-        NON_contributing_studies = [study for study in study_metadata if study['ot:studyId'] not in contributing_study_ids]
+        contributing_studies = [ ]
+        for study in study_metadata:
+            # Strip any prefixed ids so we can compare just the numeric id 
+            # (as provided by getSynthesisSourceList).
+            id_parts = study['ot:studyId'].split('_')
+            if len(id_parts) == 1:
+                numeric_study_id = study['ot:studyId']
+            else:
+                numeric_study_id = id_parts[1]
+            if numeric_study_id in contributing_study_ids:
+                contributing_studies.append( study )
 
         # TODO: sort these alphabetically(?) and render in the page
         ## contributing_studies.sort(key = lambda x: x.get('ot:studyPublicationReference'))
