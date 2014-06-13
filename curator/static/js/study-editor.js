@@ -3937,10 +3937,11 @@ function approveAllVisibleMappings() {
     $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
         var approvedMapping = proposedOTUMappings()[ OTUid ];
         delete proposedOTUMappings()[ OTUid ];
-        mapOTUToTaxon( OTUid, approvedMapping() );
+        mapOTUToTaxon( OTUid, approvedMapping(), {POSTPONE_UI_CHANGES: true} );
     });
     proposedOTUMappings.valueHasMutated();
     nudgeTickler('OTU_MAPPING_HINTS');
+    nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
     startAutoMapping();
 }
 function rejectAllVisibleMappings() {
@@ -4198,7 +4199,7 @@ function requestTaxonMapping() {
 
             // after a brief pause, try for the next available OTU...
             if (autoMappingInProgress()) {
-                setTimeout(requestTaxonMapping, 100);
+                setTimeout(requestTaxonMapping, 10);
             }
 
             return false;
@@ -4208,7 +4209,7 @@ function requestTaxonMapping() {
     return false;
 }
 
-function mapOTUToTaxon( otuID, mappingInfo ) {
+function mapOTUToTaxon( otuID, mappingInfo, options ) {
     /* Apply this mapping, creating Nexson elements as needed
      *
      * mappingInfo should be an object with these properties:
@@ -4226,6 +4227,10 @@ function mapOTUToTaxon( otuID, mappingInfo ) {
      *    ot:ottId
      *    ot:ottTaxonName
      */
+    
+    // If options.POSTPONE_UI_CHANGES, please do so (else we crawl when
+    // approving hundreds of mappings)
+    options = options || {};
 
     // FOR NOW, assume that any leaf node will have a corresponding otu entry;
     // otherwise, we can't have name for the node!
@@ -4241,12 +4246,19 @@ function mapOTUToTaxon( otuID, mappingInfo ) {
     // Clear any proposed/adjusted label (this is trumped by mapping to OTT)
     delete otu['^ot:altLabel'];
     
-    nudgeTickler('OTU_MAPPING_HINTS');
-    nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
+    if (!options.POSTPONE_UI_CHANGES) {
+        nudgeTickler('OTU_MAPPING_HINTS');
+        nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
+    }
 }
 
-function unmapOTUFromTaxon( otuOrID ) {
+function unmapOTUFromTaxon( otuOrID, options ) {
     // remove this mapping, removing any unneeded Nexson elements
+    
+    // If options.POSTPONE_UI_CHANGES, please do so (else we crawl when
+    // clearing hundreds of mappings)
+    options = options || {};
+
     var otu = (typeof otuOrID === 'object') ? otuOrID : getOTUByID( otuOrID );
     // restore its original label (versus mapped label)
     var originalLabel = otu['^ot:originalLabel'];
@@ -4259,8 +4271,10 @@ function unmapOTUFromTaxon( otuOrID ) {
         delete otu['^ot:ottTaxonName'];
     }
 
-    nudgeTickler('OTU_MAPPING_HINTS');
-    nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
+    if (!options.POSTPONE_UI_CHANGES) {
+        nudgeTickler('OTU_MAPPING_HINTS');
+        nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
+    }
 }
 
 function addMetaTagToParent( parent, props ) {
@@ -4280,10 +4294,11 @@ function clearVisibleMappings() {
     // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) OTUs.
     var visibleOTUs = viewModel.filteredOTUs().pagedItems();
     $.each( visibleOTUs, function (i, otu) {
-        unmapOTUFromTaxon( otu );
+        unmapOTUFromTaxon( otu, {POSTPONE_UI_CHANGES: true} );
     });
     clearFailedOTUList();
     nudgeTickler('OTU_MAPPING_HINTS');
+    nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
 }
 
 function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
