@@ -1,49 +1,16 @@
 # This file derives from the file /etc/apache2/sites-available/default
 # in apache2 as installed in ubuntu 12.04.
+#
+# Now that we're supporting both HTTP and HTTPS, this file contains all the
+# shared configuration from both VirtualHosts on 'apache-config-vhosts'. See
+# http://serverfault.com/questions/83669/apache2-with-ssl-do-i-have-to-copy-virtualhost-blocks
+#
 # This file should be periodically reviewed as apache versions advance and
-#  'best practice' for virtual host configurations changes.
+# 'best practice' for virtual host configurations changes.
 
-<VirtualHost *:80>
-	ServerAdmin webmaster@localhost
+    ServerAdmin webmaster@localhost
 
-#         DocumentRoot /var/www
-#         <Directory />
-#                 Options FollowSymLinks
-#                 AllowOverride None
-#         </Directory>
-#         <Directory /var/www/>
-#                 Options Indexes FollowSymLinks MultiViews
-#                 AllowOverride None
-#                 Order allow,deny
-#                 allow from all
-#         </Directory>
-
-#         ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
-#         <Directory "/usr/lib/cgi-bin">
-#                 AllowOverride None
-#                 Options +ExecCGI -MultiViews +SymLinksIfOwnerMatch
-#                 Order allow,deny
-#                 Allow from all
-#         </Directory>
-
-	ErrorLog ${APACHE_LOG_DIR}/error.log
-
-	# Possible values include: debug, info, notice, warn, error, crit,
-	# alert, emerg.
-	LogLevel warn
-
-	CustomLog ${APACHE_LOG_DIR}/access.log combined
-
-#     Alias /doc/ "/usr/share/doc/"
-#     <Directory "/usr/share/doc/">
-#         Options Indexes MultiViews FollowSymLinks
-#         AllowOverride None
-#         Order deny,allow
-#         Deny from all
-#         Allow from 127.0.0.0/255.0.0.0 ::1/128
-#     </Directory>
-
-    # OPENTREE STUFF INSERTED HERE
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
 
     <Location /phylesystem>
       RedirectMatch temp /phylesystem/v1/study/(.*) /api/v1/study/$1
@@ -51,8 +18,9 @@
     </Location>
 
     # See http://stackoverflow.com/questions/13216837/install-web2py-in-virtual-hosting
-    # Had: user=opentree group=opentree
-    WSGIDaemonProcess web2py user=opentree group=opentree display-name=%{GROUP}
+    # NOTE that we can only specify WSGIDaemonProcess once, so this has been
+    # retained in 'apache-config-vhosts', in the first VirtualHost section!
+    #WSGIDaemonProcess web2py user=opentree group=opentree display-name=%{GROUP}
     WSGIProcessGroup web2py
     WSGIScriptAlias / /home/opentree/web2py/wsgihandler.py
 
@@ -64,7 +32,7 @@
       Order Allow,Deny
       Deny from all
       <Files wsgihandler.py>
-	Allow from all
+        Allow from all
       </Files>
     </Directory>
 
@@ -73,19 +41,6 @@
       Order Allow,Deny
       Allow from all
     </Directory>
-
-    # Restrict web2py admin pages to admin users on localhost (SSH tunnel)
-    <Location /admin>
-      Order deny,allow
-      Deny from all
-      Allow from 127.0.0.1
-    </Location>
-
-    <LocationMatch ^/([^/]+)/appadmin>
-      Order deny,allow
-      Deny from all
-      Allow from 127.0.0.1
-    </LocationMatch>
 
     <Location /treemachine/v1>
       Order allow,deny
@@ -112,7 +67,7 @@
       Allow from all
       ProxyPass  http://localhost:7476/db/data/ext
     </Location>
-    
+
     <Location /oti/v1>
       Order allow,deny
       Allow from all
@@ -125,7 +80,3 @@
       Allow from all
       ProxyPass  http://localhost:7478/db/data/ext
     </Location>
-
-    # END OPENTREE STUFF
-
-</VirtualHost>
