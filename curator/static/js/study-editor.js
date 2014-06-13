@@ -5242,7 +5242,7 @@ function lookUpDOI() {
         window.open(lookupURL,'lookup');
     } else {
         // see if we get lucky..
-        lookupURL = 'http://search.crossref.org/dois?q=' + encodeURIComponent(referenceText);
+        lookupURL = '//search.crossref.org/dois?q=' + encodeURIComponent(referenceText);
         // TODO: show potential matches in popup? or new frame?
         showModalScreen("Looking up DOI...", {SHOW_BUSY_BAR:true});
         $.ajax({
