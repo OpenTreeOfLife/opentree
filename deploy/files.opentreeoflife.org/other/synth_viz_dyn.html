@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<meta charset="utf-8">
+<style>
+
+.node {
+  cursor: pointer;
+}
+
+.node circle {
+  fill: #fff;
+  stroke: steelblue;
+  stroke-width: 1.5px;
+}
+
+.node text {
+  font: 10px sans-serif;
+}
+
+.link {
+  fill: none;
+  stroke: #ccc;
+  stroke-width: 1.5px;
+}
+
+</style>
+<body>
+<script language="javascript" type="text/javascript">
+function popitup(url) {
+	newwindow=window.open(url,'name','height=400,width=760');
+	if (window.focus) {newwindow.focus()}
+	return false;
+}
+</script>
+<a href="info.html" onclick="return popitup('info.html')">click for viz info</a>
+<script src="d3.v3.min.js" charset="utf-8"></script>
+<script>
+
+var margin = {top: 20, right: 120, bottom: 20, left: 120},
+    width = 4000 - margin.right - margin.left,
+    height = 5000 - margin.top - margin.bottom;
+    
+var i = 0,
+    duration = 750,
+    root;
+
+var tree = d3.layout.tree()
+    .size([height, width]);
+
+var diagonal = d3.svg.diagonal()
+    .projection(function(d) { return [d.y, d.x]; });
+
+var svg = d3.select("body").append("svg")
+    .attr("width", width + margin.right + margin.left)
+    .attr("height", height + margin.top + margin.bottom)
+  .append("g")
+    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+
+function loadData(argsobj) {
+    
+    /* accepts three named arguments:
+     *    url               the address to which the HTTP request is sent
+     *    jsonquerystring   a json string containing query information
+     *    method            e.g. GET or POST; POST is required for queries to the Neo4J REST service*/
+
+    var url = argsobj.url;
+    var jsonquerystr = argsobj.jsonquerystring;
+    var method = argsobj.method;
+
+    var xobjPost = new XMLHttpRequest();
+    xobjPost.open(method, url, false);
+    xobjPost.setRequestHeader("Accept", "");
+    
+    /* NOTE: we pass parameters to the REST service by encoding them in a JSON string
+     * and sending it through the XMLHttpRequest.send() method. We must specify the
+     * format of the incoming data (in this case JSON) with a call to
+     * XMLHttpRequest.SetRequestHeader() before we issue the send. */
+    xobjPost.setRequestHeader("Content-Type","application/json");
+//   alert (xobjPost);
+ //   xobjPost.onload =
+//      function() {
+	xobjPost.send(jsonquerystr);
+	var jsonrespstr = xobjPost.responseText;
+    //alert(eval(jsonrespstr));
+	var evjson = eval(jsonrespstr);
+	
+d3.json("", function(error, flare) {
+  root = JSON.parse(evjson);
+  root.x0 = height / 2;
+  root.y0 = 0;
+
+  function collapse(d) {
+    if (d.children) {
+      d._children = d.children;
+      d._children.forEach(collapse);
+      d.children = null;
+    }
+  }
+  //uncomment to have them collapsed to start
+  //root.children.forEach(collapse);
+  update(root);
+});
+//}
+}
+
+function setup(node){
+	var nodeid = "{\"nodeID\":"+node+"}";
+	var url = "http://ot9.opentreeoflife.org/treemachine/ext/GetSASJsons/graphdb/getSynthJson";
+	var argsobj = {"url":url,"method":"POST","jsonquerystring":nodeid};
+	loadData(argsobj);
+}
+
+/*
+ * Used to get the nodeid from a start ottol id
+ */
+function getNodeIDFromOttolID(oid){
+	var url = "http://ot9.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getNodeIDForottId";
+    var jsonquerystr = "{\"ottId\":\""+oid+"\"}";
+    var method = "POST";
+
+    var xobjPost = new XMLHttpRequest();
+    xobjPost.open(method, url, false);
+    xobjPost.setRequestHeader("Accept", "");
+    
+    /* NOTE: we pass parameters to the REST service by encoding them in a JSON string
+     * and sending it through the XMLHttpRequest.send() method. We must specify the
+     * format of the incoming data (in this case JSON) with a call to
+     * XMLHttpRequest.SetRequestHeader() before we issue the send. */
+    xobjPost.setRequestHeader("Content-Type","application/json");
+	xobjPost.send(jsonquerystr);
+	var jsonrespstr = xobjPost.responseText;
+	var evjson = eval(jsonrespstr);
+	return evjson;
+}
+
+/*
+ * used for grabbing the ottol id from the url string
+ */
+function getQueryVariable(variable){
+  var query = window.location.search.substring(1);
+  var vars = query.split("&");
+  for (var i=0;i<vars.length;i++) {
+    var pair = vars[i].split("=");
+    if(pair[0] == variable){return pair[1];}
+  }
+  return(false);
+}
+
+/*
+ * This is what happens when the page is first loaded
+ */
+var id = getQueryVariable('ottolID');
+var start;
+if(id != false){
+	start = getNodeIDFromOttolID(id);
+}else{
+	start = getNodeIDFromOttolID("229558");
+}
+//do it twice to get the height right
+setup(start);
+setup(start);
+
+d3.select(self.frameElement).style("height", "800px");
+
+function update(source) {
+  
+  // Compute the new tree layout.
+  var nodes = tree.nodes(root).reverse(),
+      links = tree.links(nodes);
+
+var nheight;// = nodes.length * 10;
+  //alert(nodes.length);
+ if(nodes.length < 100){
+	nheight = 1000 - 40;  
+  }else if(nodes.length < 200){
+	nheight = 1600 - -40;  
+  }else if(nodes.length < 400){
+	nheight = 2800 - 40;  
+  }else if (nodes.length < 500){
+	nheight = 4000 - 40;  
+  }else{
+	nheight = 5000 -40;
+  }
+ // alert(nheight);
+  tree.size([nheight, 1760]);
+
+  // Normalize for fixed-depth.
+//  nodes.forEach(function(d) { d.y = d.depth * 180; });
+  nodes.forEach(function(d) { d.y = d.depth * 80; });
+
+  // Update the nodes…
+  var node = svg.selectAll("g.node")
+      .data(nodes, function(d) { return d.id || (d.id = ++i); });
+
+  // Enter any new nodes at the parent's previous position.
+  var nodeEnter = node.enter().append("g")
+      .attr("class", "node")
+      .attr("transform", function(d) { return "translate(" + source.y0 + "," + source.x0 + ")"; })
+      .on("click", click);
+
+  nodeEnter.append("circle")
+      .attr("r", 1e-6)
+      .style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+  nodeEnter.append("text")
+      .attr("x", function(d) { return d.children || d._children ? -10 : 10; })
+      .attr("dy", ".35em")
+      .attr("text-anchor", function(d) { return d.children || d._children ? "end" : "start"; })
+      .text(function(d) { return d.size ? d.name+" ("+d.size+")": d.name;})
+      .style("font-size","10px") 
+      .style("font-family","Arial")
+      .style("fill-opacity", 1e-6);
+
+  // Transition nodes to their new position.
+  var nodeUpdate = node.transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + d.y + "," + d.x + ")"; });
+
+  nodeUpdate.select("circle")
+      //.attr("r", 4.5)
+      .attr("r", function(d) { return d.size ? d.size/2+3 : 3;})
+      .style("stroke",function(d) { return d.size ? "green" : "grey";})
+      .style("fill",function(d) { return d.notcomplete ? "lightgreen" : "#fff";});
+      //.style("fill", function(d) { return d._children ? "lightsteelblue" : "#fff"; });
+
+  nodeUpdate.select("text")
+      .style("fill-opacity", 1);
+
+  // Transition exiting nodes to the parent's new position.
+  var nodeExit = node.exit().transition()
+      .duration(duration)
+      .attr("transform", function(d) { return "translate(" + source.y + "," + source.x + ")"; })
+      .remove();
+
+  nodeExit.select("circle")
+      .attr("r", 1e-6);
+
+  nodeExit.select("text")
+      .style("fill-opacity", 1e-6);
+
+  // Update the links…
+  var link = svg.selectAll("path.link")
+      .data(links, function(d) { return d.target.id; });
+
+  // Enter any new links at the parent's previous position.
+  link.enter().insert("path", "g")
+      .attr("class", "link")
+      .style("fill","none")
+      .style("stroke","#ccc")
+      .style("stroke-width",1.5)
+      .attr("d", function(d) {
+        var o = {x: source.x0, y: source.y0};
+        return diagonal({source: o, target: o});
+      });
+
+  // Transition links to their new position.
+  link.transition()
+      .duration(duration)
+      .attr("d", diagonal);
+
+  // Transition exiting nodes to the parent's new position.
+  link.exit().transition()
+      .duration(duration)
+      .attr("d", function(d) {
+        var o = {x: source.x, y: source.y};
+        return diagonal({source: o, target: o});
+      })
+      .remove();
+
+  // Stash the old positions for transition.
+  nodes.forEach(function(d) {
+    d.x0 = d.x;
+    d.y0 = d.y;
+  });
+}
+
+// Toggle children on click.
+/*function click(d) {
+  if (d.children) {
+    d._children = d.children;
+    d.children = null;
+  } else {
+    d.children = d._children;
+    d._children = null;
+  }
+  update(d);
+}*/
+
+// Toggle children on click.
+function click(d) {
+	//alert(d);
+  setup(d.id);
+}
+</script>
+</body>
+</html>

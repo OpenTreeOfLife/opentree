@@ -1,0 +1,18 @@
+# Vhost config file for files.opentreeoflife.org
+
+<VirtualHost *:80>
+
+    ServerName files.opentreeoflife.org
+    ErrorLog /var/log/apache2/files-error_log
+    LogLevel warn
+    CustomLog /var/log/apache2/files-access_log combined
+
+    DocumentRoot /home/opentree/files.opentreeoflife.org
+    <Directory />
+        Options FollowSymLinks
+ 	AllowOverride None
+    </Directory>
+
+    Redirect temp /index.html http://dev.opentreeoflife.org/about/developer-resources
+
+</VirtualHost>
