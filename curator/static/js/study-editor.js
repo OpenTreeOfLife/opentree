@@ -654,7 +654,7 @@ function loadSelectedStudy() {
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredFiles
 
             // maintain a persistent array to preserve pagination (reset when computed)
-            viewModel._filteredOTUs = ko.observableArray( ).asPaged(20);
+            viewModel._filteredOTUs = ko.observableArray( ).asPaged(1000);
             viewModel.filteredOTUs = ko.computed(function() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
