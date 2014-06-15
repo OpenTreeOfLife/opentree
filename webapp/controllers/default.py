@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import urllib2
 from opentreewebapputil import (get_opentree_services_method_urls, 
                                 fetch_current_TNRS_context_names)
 
@@ -119,7 +120,6 @@ def download_subtree():
 def fetch_current_synthetic_tree_ids():
     try:
         # fetch the latest IDs as JSON from remote site
-        import urllib2
         import simplejson
 
         method_dict = get_opentree_services_method_urls(request)
@@ -147,3 +147,13 @@ def fetch_current_synthetic_tree_ids():
     except Exception, e:
         # throw 403 or 500 or just leave it
         return ('ERROR', e.message)
+
+# provide support for phylopic searches and image display via HTTPS
+def phylopic_proxy():
+    phylopic_url = request.env.web2py_original_uri.split('phylopic_proxy')[1]
+    # prepend the real domain, using HTTP, and return the response
+    phylopic_url = 'http://phylopic.org/%s' % phylopic_url
+    req = urllib2.Request(url=phylopic_url) 
+    resp = urllib2.urlopen(req).read()
+    return resp
+

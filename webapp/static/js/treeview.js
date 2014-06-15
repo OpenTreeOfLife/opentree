@@ -907,7 +907,7 @@ function showObjectProperties( objInfo, options ) {
         case 'node':
         case 'edge':
             $.getJSON(
-                '//phylopic.org/api/a/name/search?callback=?',  // JSONP fetch URL
+                '/phylopic_proxy/api/a/name/search?callback=?',  // JSONP fetch URL
                 {   // GET data
                     text: objName,
                     options: 'icon illustrated' // uid? string?
@@ -915,7 +915,7 @@ function showObjectProperties( objInfo, options ) {
                 function(data) {    // JSONP callback
                     if (data.result && (data.result.length > 0) && data.result[0].icon && data.result[0].icon.uid) {
                         $('#provenance-panel .provenance-title').after(
-                            '<img class="taxon-image" src="//phylopic.org/assets/images/submissions/'+ data.result[0].icon.uid 
+                            '<img class="taxon-image" src="/phylopic_proxy/assets/images/submissions/'+ data.result[0].icon.uid 
                             +'.icon.png" title="Click for image credits"/>'       // 'thumb.png' = 64px, 'icon.png' = 32px and blue
                         );
                         $('#provenance-panel .taxon-image').unbind('click').click(function() {
