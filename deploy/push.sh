@@ -299,9 +299,12 @@ function install_db {
 }
 
 function install_files {
-    if [ x$FILES_HOST = x ]; then FILES_HOST=ot10.opentreeoflife.org; fi
-    # Transfer content
-    rsync -prv -e "${SSH}" "--exclude=*~" "--exclude=#*" files.opentreeoflife.org "$OT_USER@$FILES_HOST":
+    if [ x$FILES_HOST = x ]; then 
+	echo "FILES_HOST not defined"
+    else
+        # Transfer content
+    	rsync -prv -e "${SSH}" "--exclude=*~" "--exclude=#*" files.opentreeoflife.org "$OT_USER@$FILES_HOST":
+    fi
 }
 
 sync_system
