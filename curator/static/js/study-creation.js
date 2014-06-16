@@ -184,6 +184,7 @@ function createStudyFromForm( evt ) {
     console.log("importMethod: ["+ importMethod +"]");
 
     $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
         type: 'POST',
         dataType: 'json',
         // crossdomain: true,
@@ -228,7 +229,14 @@ function createStudyFromForm( evt ) {
             window.location = "/curator/study/edit/"+ data['resource_id'];
         },
         error: function( data, textStatus, jqXHR ) {
-            debugger;
+            hideModalScreen();
+            var errMsg; 
+            if ((typeof(jqXHR.responseText) !== 'string') || jqXHR.responseText.length === 0) {
+                errMsg = 'Sorry, there was an error creating this study. (No more information is available.)';
+            } else {
+                errMsg = 'Sorry, there was an error creating this study. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+            }
+            showErrorMessage(errMsg);
         }
     });
 }
