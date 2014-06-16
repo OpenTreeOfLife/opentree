@@ -5257,7 +5257,7 @@ function lookUpDOI() {
         window.open(lookupURL,'lookup');
     } else {
         // see if we get lucky..
-        lookupURL = '//search.crossref.org/dois?q=' + encodeURIComponent(referenceText);
+        lookupURL = '/curator/search_crossref_proxy/dois?q=' + encodeURIComponent(referenceText);
         // TODO: show potential matches in popup? or new frame?
         showModalScreen("Looking up DOI...", {SHOW_BUSY_BAR:true});
         $.ajax({

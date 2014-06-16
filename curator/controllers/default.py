@@ -469,3 +469,12 @@ def to_nexson():
         return r
     assert (False)
 
+# provide support for CrossRef.org URLs via HTTPS
+def search_crossref_proxy():
+    search_crossref_url = request.env.web2py_original_uri.split('search_crossref_proxy')[1]
+    # prepend the real domain, using HTTP, and return the response
+    search_crossref_url = 'http://search.crossref.org/%s' % search_crossref_url
+    req = urllib2.Request(url=search_crossref_url) 
+    resp = urllib2.urlopen(req).read()
+    return resp
+

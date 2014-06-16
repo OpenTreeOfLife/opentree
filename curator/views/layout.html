@@ -101,7 +101,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                             $('#shard-list').after('<dd><em>No shards found for this API instance</em></dd>');
                         } else {
                             $.each(shards, function(index, shardInfo) {
-                                $('#shard-list').after('<dd><strong style="color: #888;">'+ shardInfo.name +'</strong> ('+ shardInfo['number of studies']  +' studies)</dd>');
+                                $('#shard-list').after('<dd><strong class="shard-name">'+ shardInfo.name +'</strong> ('+ shardInfo['number of studies']  +' studies)</dd>');
                             });
                         }
                     } else {
@@ -110,7 +110,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                 }
             });
           }
-          $('body').animate({scrollTop: parseInt($detailsBox.offset().top) });
+          $('html,body').animate({scrollTop: parseInt($detailsBox.offset().top) });
       }
   }
 
@@ -311,7 +311,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
             {{=T('Powered by')}}
             <a href="http://www.web2py.com/" target="_blank" >web2py</a>
         </div>
-        <div id="server-details" style="display: none; clear: both; margin: 4px 0; background-color: #f5f5f5; padding: 6px 8px; border-radius: 8px;">
+        <div id="server-details">
             Configuration for the <strong>{{= request.application }}</strong> web2py app: 
             <dl>
                <dt id="shard-list">phylesystem shard(s):</dt>
@@ -322,7 +322,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                for sec in conf.sections(): }}
                <dt>{{= sec }}</dt>
                    {{ for itm in conf.items(sec): }}
-                   <dd><strong style="color: #888;">{{= itm[0] }}</strong>: {{= itm[1] }}</dd>
+                   <dd><strong class="setting-name">{{= itm[0] }}</strong>: {{= itm[1] }}</dd>
                    {{ pass }}
             {{ pass }}
             </dl>

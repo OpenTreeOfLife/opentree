@@ -672,3 +672,15 @@ tr:hover .row-controls-ghosted {
     /* try to make this offsetParent to all its contents */
     position: relative;
 }
+#server-details {
+    display: none; 
+    clear: both; 
+    margin: 4px 0; 
+    background-color: #f5f5f5; 
+    padding: 6px 8px; 
+    border-radius: 8px;
+}
+#server-details .shard-name, 
+#server-details .setting-name {
+    color: #888;
+}

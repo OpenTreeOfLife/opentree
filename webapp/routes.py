@@ -29,6 +29,7 @@ routers = dict(
             'download_subtree',
             'fetch_current_synthetic_tree_ids',
             'fetch_current_TNRS_context_name',
+            'phylopic_proxy',
             'user',     # implicit? inherited? and needed for login, logout, etc
         ],
 

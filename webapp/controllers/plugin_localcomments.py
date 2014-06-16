@@ -314,7 +314,6 @@ def index():
                 #   u'11'
                 #   u'[Jim Allman](https://github.com/jimallman)'
                 #   u'[John Smith](mailto:example.guest@gmail.com)'
-                import re
                 regex = re.compile(r'\[(.*)\]\((.*)\)')
                 markdown_fields = regex.findall(meta_author_info)
                 if len(markdown_fields) > 0:
@@ -334,12 +333,31 @@ def index():
         # Is the current user logged in? If so, what is their GitHub ID (login)?
         current_user_id = auth.user and auth.user.github_login or None
 
+        # Cook up some reasonably strong regular expressions to detect bare
+        # URLs and wrap them in hyperlinks. Adapted from 
+        # http://stackoverflow.com/questions/1071191/detect-urls-in-a-string-and-wrap-with-a-href-tag
+        link_regex = re.compile(  r'''
+                             (?x)( # verbose identify URLs within text
+                      (http|https) # make sure we find a resource type
+                               :// # ...needs to be followed by colon-slash-slash
+                    (\w+[:.]?){2,} # at least two domain groups, e.g. (gnosis.)(cx)
+                              (/?| # could be just the domain name (maybe w/ slash)
+                        [^ \n\r"]+ # or stuff then space, newline, tab, quote
+                            [\w/]) # resource name ends in alphanumeric or slash
+             (?=([\s\.,>)'"\]]|$)) # assert: followed by white or clause ending OR end of line
+                                 ) # end of match group
+                                   ''')
+        # link_replace = r'<a href="\1" />\1</a>'
+        # let's try this do-nothing version
+        link_replace = r'\1'
+        # NOTE the funky constructor required to use this below
+
         try:   # TODO: if not comment.deleted:
             markup = LI(
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
                     ('title' in comment) and DIV( comment['title'], A(T('on GitHub'), _href=comment['html_url'], _target='_blank'), _class='topic-title') or '',
-                    DIV( XML(markdown(get_visible_comment_body(comment['body'] or '')).encode('utf-8'), sanitize=False),_class=(issue_node and 'body issue-body' or 'body comment-body')),
+                    DIV( XML(markdown(get_visible_comment_body(comment['body'] or ''), extras={'link-patterns':None}, link_patterns=[(link_regex, link_replace)]).encode('utf-8'), sanitize=False),_class=(issue_node and 'body issue-body' or 'body comment-body')),
                     DIV(
                         A(T(author_display_name), _href=author_link, _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
