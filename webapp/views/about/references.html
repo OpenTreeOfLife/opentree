@@ -3,7 +3,7 @@
 <style type="text/css">
 <!--
 div.contributing-studies div.row {
-    margin: 1em 0 1em 2em;
+    margin: 1em 0;
     border-bottom: 1px solid #eee;
 }
 div.contributing-studies div.reference,
@@ -23,14 +23,14 @@ div.contributing-studies div.reference em {
 div.contributing-studies div.links {
     background-color: #f5f5f5;
     border-radius: 4px;
-    margin-left: 2em;
-    padding: 0.3em 0 0.25em 1em;
+    padding: 0.3em 0 0.25em;
     font-size: 0.9em;
     line-height: 1.2em;
 }
 div.contributing-studies div.links a {
     display: block;
     margin-bottom: 0.25em;
+    margin-left: 1em;
 }
 //-->
 </style>
@@ -72,10 +72,17 @@ div.contributing-studies div.links a {
           </div>
           <div class="contributing-studies span8 offset1">
               <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
-              <p>The following studies have contributed to the current synthetic tree:</p>
-             {{for study in contributing_studies:}}
-             <div class="row">
-              <div class="span4 reference">
+              <p>The following studies have contributed to the current synthetic tree.</p>
+
+              <div class="btn-group">
+                <button id="priority-sort-button" class="btn active" onclick="sortReferences(sortByPriority); return false;">&nbsp; Sort by priority in synthesis &nbsp;</button>
+                <button id="alpha-sort-button" class="btn" onclick="sortReferences(sortByPrimaryAuthor); return false;">&nbsp; Sort alphabetically &nbsp;</button>
+              </div>
+
+             {{ priority = 1 }}
+             {{ for study in contributing_studies: }}
+             <div class="row synthesis-priority-{{= "{0:0>6}".format(priority) }}">
+              <div class="span5 reference">
                   {{= study.get('ot:studyPublicationReference') }}
                   {{ if study.get('ot:studyPublication'): }}
                     <a target="_blank" href="{{= study.get('ot:studyPublication') }}">{{= study.get('ot:studyPublication') }}</a>
@@ -105,6 +112,7 @@ div.contributing-studies div.links a {
                     >Browse focal clade</a>
               </div>
              </div>
+                {{ priority += 1 }}
              {{pass}}
           </div>
 
@@ -116,5 +124,44 @@ div.contributing-studies div.links a {
 </div><!-- end of .container -->
 
 <script type="text/javascript">
-    // add any page-specific behavior here
+    function sortByPriority(a, b) {
+        // Assumes DOM elements with numerically sortable classnames, eg
+        //  class="row synthesis-priority-00001"
+        //  class="row synthesis-priority-00234"
+        //  ...
+        var aOrderedClass = $(a).attr('class');
+        var bOrderedClass = $(b).attr('class');
+        if (aOrderedClass > bOrderedClass) {
+            return 1;
+        } else if (aOrderedClass < bOrderedClass) {
+            return -1;
+        } 
+        return 0;
+    }
+    function sortByPrimaryAuthor(a, b) {
+        // Assumes reference text with lead author's surname as first word
+        var aRefText = $.trim( $(a).find('.reference').text() );
+        var bRefText = $.trim( $(b).find('.reference').text() );
+        if (aRefText > bRefText) {
+            return 1;
+        } else if (aRefText < bRefText) {
+            return -1;
+        } 
+        return 0;
+    }
+    function sortReferences( sortFunction ) {
+        if (sortFunction === sortByPrimaryAuthor) {
+            $('#priority-sort-button').removeClass('active');
+            $('#alpha-sort-button').addClass('active');
+        } else {
+            $('#alpha-sort-button').removeClass('active');
+            $('#priority-sort-button').addClass('active');
+        }
+        var $refContainer = $('.contributing-studies');
+        var $refs = $refContainer.children('.row');
+        var sortedRefs = $refs.get().sort( sortFunction );
+        $.each(sortedRefs, function(pos, ref) {
+            $refContainer.append(ref);
+        });
+    }
 </script>
