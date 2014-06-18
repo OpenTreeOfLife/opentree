@@ -12,11 +12,6 @@
 
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 
-    <Location /phylesystem>
-      RedirectMatch temp /phylesystem/v1/study/(.*) /api/v1/study/$1
-      Redirect temp /phylesystem/v1/study_list /api/study_list
-    </Location>
-
     # See http://stackoverflow.com/questions/13216837/install-web2py-in-virtual-hosting
     # NOTE that we can only specify WSGIDaemonProcess once, so this has been
     # retained in 'apache-config-vhosts', in the first VirtualHost section!
