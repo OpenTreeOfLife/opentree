@@ -131,6 +131,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                       <li><a href="https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs" target="_blank">API documentation</a></li>
                       <li><a href="{{= URL('about','developer-resources') }}">Developer resources</a></li>
                       <li><a href="{{= URL('about','credits') }}">Credits</a></li>
+                      <li><a href="{{= URL('about','licenses') }}">Licenses</a></li>
                   </ul>
               </li>
               <li class="dropdown">
@@ -229,6 +230,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
             </div>
         <div id="poweredBy" class="pull-right">
             <a href="#" onclick="toggleServerDetailsPopup(); return false;">Show/hide server details</a>
+            &bull;
+           <a href="{{ = URL('opentree', 'about','licenses') }}" rel="jslicense">License information</a>
             &bull;
             {{=T('Powered by')}}
             <a href="http://www.web2py.com/" target="_blank" >web2py</a>

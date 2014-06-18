@@ -36,6 +36,9 @@ def developer_resources():
 def credits():
     return default_view_dict
 
+def licenses():
+    return default_view_dict
+
 def materials_and_methods():
     return default_view_dict
 
