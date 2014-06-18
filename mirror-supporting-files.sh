@@ -2,7 +2,6 @@
 
 # This script can be run periodically (cronjob, etc) to capture a remote copy
 # of the supporting files folder in any instance(s) of the Open Tree of Life curation app.
-# rsync from any hostname found in the subfolders of ot-supporting-files-mirror/
 
 # sensible defaults for hostname, path to local mirror, etc.
 [ "x$CURATION_HOST" != x ] || CURATION_HOST=devtree.opentreeoflife.org
