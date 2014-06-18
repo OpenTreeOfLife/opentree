@@ -860,10 +860,13 @@ function showObjectProperties( objInfo, options ) {
                         nodeSection.displayedProperties['Taxonomic rank'] = fullNode.taxRank;
                     }
 
+                    /* TODO: Restore this once we have proper leaf count, as described here:
+                     * https://github.com/OpenTreeOfLife/treemachine/issues/63
                     if (typeof fullNode.nleaves !== 'undefined') {
                         nodeSection.displayedProperties['Terminal taxa within this clade'] = fullNode.nleaves;
                         // OR 'Clade members'? 'Leaf taxa'?
                     }
+                    */
 
                     // TODO: show ALL source trees (phylo-trees + IDs) for this node
 
