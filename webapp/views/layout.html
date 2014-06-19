@@ -270,7 +270,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         <div id="poweredBy" class="pull-right">
             <a href="#" onclick="toggleServerDetailsPopup(); return false;">Show/hide server details</a>
             &bull;
-            <a href="{{ = URL('opentree', 'about','licenses') }}" rel="jslicense">License information</a>
+            <a href="/opentree/about/licenses" IGNOREME="{{ = URL('opentree', 'about','licenses') }}" rel="jslicense">License information</a>
             &bull;
             {{=T('Powered by')}}
             <a href="http://www.web2py.com/" target="_blank" >web2py</a>

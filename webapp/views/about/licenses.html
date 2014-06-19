@@ -1,0 +1,166 @@
+{{extend 'layout.html'}}
+
+<div class="container">
+      <h1 id="main-title">Software licenses</h1>
+
+      <div class="row">
+          <div class="span3">
+              <ul class="nav nav-pills nav-stacked">
+                  <li class="nav=header">Learn more about&hellip;</li>
+                  <li>
+                      <a href="{{= URL('about', 'open-tree-of-life') }}">Open Tree of Life</a>
+                  </li>
+<!--
+					<li>
+                      <a href="{{= URL('about', 'the-synthetic-tree') }}">The synthetic tree</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'materials-and-methods') }}">Materials and methods</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'the-source-tree-manager') }}">The source tree manager</a>
+                  </li>
+-->
+                  <li>
+                      <a href="{{= URL('about', 'references') }}">Bibliographic references</a>
+                  </li>
+                  <li>
+                      <a href="https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs" target="_blank">API documentation</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'developer-resources') }}">Developer resources</a>
+                  </li>
+                  <li>
+                      <a href="{{= URL('about', 'credits') }}">Credits</a>
+                  </li>
+                  <li class="active">
+                      <a href="{{= URL('about', 'licenses') }}">Licenses</a>
+                  </li>
+              </ul>
+          </div>
+          <div class="span8 offset1">
+              <p>
+                  Open Tree of Life uses free and open-source software where possible. Here are the components used, licensing and source information for each.
+              </p>
+
+              <h4>JavaScript license information</h4>
+              <p>
+                  All inline JavaScript in the Open Tree of Life web applications is licensed under the 
+                  <a href="https://github.com/OpenTreeOfLife/opentree/blob/master/LICENSE.txt" target="_blank">BSD 2-clause (FreeBSD) license</a>.
+                  Linked and external JavaScript files are licensed as described in the 
+                  <a href="http://www.gnu.org/licenses/javascript-labels.html" title="Learn about JavaScript license web labels" target="_blank">web labels</a> 
+                  below.
+              </p>
+
+              <!-- 
+                    NOTE that this table is in a strictly-defined format, to conform with automated license testing as defined here:
+                    http://www.gnu.org/licenses/javascript-labels.html
+              -->
+              <table id="jslicense-labels1" class="table table-condensed">
+                  <tr>
+                      <th>File used in site</th>
+                      <th>License</th>
+                      <th>Un-minified source code</th>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/html5shiv.js') }}">html5shiv.js</a></td>
+                      <td><a href="http://www.gnu.org/licenses/gpl-2.0.html">GPL 2</a></td>
+                      <td><a href="https://github.com/aFarkas/html5shiv/blob/master/src/html5shiv.js">html5shiv.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','plugin_layouts/superfish.js') }}">superfish.js</a></td>
+                      <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
+                      <td><a href="{{= URL('static','plugin_layouts/superfish.js') }}">superfish.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/argus/raphael-min.js') }}">raphael-min.js</a></td>
+                      <td><a href="http://www.jclark.com/xml/copying.txt">Expat (as MIT)</a></td>
+                      <td><a href="https://raw.githubusercontent.com/DmitryBaranovskiy/raphael/7ba1a8258be64fdb517bc78fde44ff0e6188ca05/raphael.js">raphael.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/argus/drawtree.js') }}">drawtree.js</a></td>
+                      <td><a href="http://www.freebsd.org/copyright/freebsd-license.html">FreeBSD (as BSD 2-Clause)</a></td>
+                      <td><a href="{{= URL('static','js/argus/drawtree.js') }}">drawtree.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/jquery.history.js') }}">jquery.history.js</a></td>
+                      <td><a href="magnet:?xt=urn:btih:c80d50af7d3db9be66a4d0a86db0286e4fd33292&dn=bsd-3-clause.txt">BSD 3-Clause (as New BSD)</a></td>
+                      <td><a href="https://github.com/browserstate/history.js/blob/master/scripts/bundled-uncompressed/html5/jquery.history.js">jquery.history.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/jquery.splitter-0.6.js') }}">jquery.splitter-0.6.js</a></td>
+                      <td><a href="http://www.gnu.org/licenses/gpl-3.0.html">GPL 3</a></td>
+                      <td><a href="{{= URL('static','js/jquery.splitter-0.6.js') }}">jquery.splitter-0.6.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-transition.js') }}">bootstrap-transition.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-transition.js') }}">bootstrap-transition.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-alert.js') }}">bootstrap-alert.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-alert.js') }}">bootstrap-alert.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-modal.js') }}">bootstrap-modal.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-modal.js') }}">bootstrap-modal.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-dropdown.js') }}">bootstrap-dropdown.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-dropdown.js') }}">bootstrap-dropdown.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-scrollspy.js') }}">bootstrap-scrollspy.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-scrollspy.js') }}">bootstrap-scrollspy.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-tab.js') }}">bootstrap-tab.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-tab.js') }}">bootstrap-tab.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-tooltip.js') }}">bootstrap-tooltip.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-tooltip.js') }}">bootstrap-tooltip.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-popover.js') }}">bootstrap-popover.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-popover.js') }}">bootstrap-popover.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-button.js') }}">bootstrap-button.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-button.js') }}">bootstrap-button.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-collapse.js') }}">bootstrap-collapse.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-collapse.js') }}">bootstrap-collapse.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-carousel.js') }}">bootstrap-carousel.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-carousel.js') }}">bootstrap-carousel.js</a></td>
+                  </tr>
+                  <tr>
+                      <td><a href="{{= URL('static','js/bootstrap-typeahead.js') }}">bootstrap-typeahead.js</a></td>
+                      <td><a href="http://www.apache.org/licenses/LICENSE-2.0">Apache 2</a></td>
+                      <td><a href="{{= URL('static','js/bootstrap-typeahead.js') }}">bootstrap-typeahead.js</a></td>
+                  </tr>
+              </table>
+          </div>
+      </div>
+
+      <h3 id="comment-header">Comments <i></i></h3>
+      {{=plugin_localcomments(filter=('url',),url=request.url)}}
+
+</div><!-- end of .container -->
+
+<script type="text/javascript">
+    // add any page-specific behavior here
+</script>
