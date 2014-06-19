@@ -16,7 +16,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  * ============================================================ */
-
+/* 
+ * Contains minor modifications by Jim Allman (see 'jimA' below)
+ */
 
 !function ($) {
 
@@ -123,7 +125,7 @@
       selector = selector && /#/.test(selector) && selector.replace(/.*(?=#[^\s]*$)/, '') //strip for ie7
     }
 
-    // hack to suppress warnings in Firefox (see https://github.com/twitter/bootstrap/issues/5566)
+    // jimA: Add hack to suppress warnings in Firefox (see https://github.com/twitter/bootstrap/issues/5566)
     if(selector == '#') {
         selector = '#-';
     }

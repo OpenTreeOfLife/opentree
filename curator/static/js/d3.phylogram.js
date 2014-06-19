@@ -4,7 +4,12 @@
   Also includes a radial dendrogram visualization (branch lengths not scaled)
   along with some helper methods for building angled-branch trees.
 
+  Contains extensive modifications to styles and mouse-responsive behaviors,
+  detailed here:
+  https://github.com/OpenTreeOfLife/opentree/commits/master/curator/static/js/d3.phylogram.js
+
   Copyright (c) 2013, Ken-ichi Ueda
+  Copyright (c) 2014, Jim Allman
 
   All rights reserved.
 
