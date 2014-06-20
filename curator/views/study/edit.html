@@ -369,6 +369,39 @@ body {
                 </div>
               </div>
 
+              <div class="control-group">
+                <label class="control-label">Curator notes</label>
+                <div class="controls">
+                {{ if viewOrEdit == 'EDIT': }}
+                  <!-- markdown editor w/ preview option -->
+                    <div class="btn-group" style="margin-bottom: 8px;">
+                      <button id="edit-comment-button" class="btn active" onclick="showStudyCommentEditor(); return false;">&nbsp; Edit (as markdown) &nbsp;</button>
+                      <button id="preview-comment-button" class="btn" onclick="showStudyCommentPreview(); return false;">&nbsp; Preview (as HTML) &nbsp;</button>
+                    </div>
+<!--
+                    <textarea id="save-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
+-->
+                    <div id="comment-editor"><textarea data-bind="value: viewModel.nexml['^ot:comment']"
+                            placeholder="Enter notes for viewers and other curators here (as markdown)." 
+                            rows="8" 
+                            class="input-block-level">?</textarea></div>
+                    <div id="comment-preview" class="rendered-comment" style="display: none;">
+                    </div>
+                {{ else: }}
+                  <!-- render existing comment as markdown -->
+                    <div class="rendered-comment" style="display: none;"
+                         data-bind="visible: $.trim(viewModel.nexml['^ot:comment']) !== '', html: viewModel['commentHTML']" >
+                       {comments appear here}
+                    </div>
+                    <p class="static-form-value" style="display: none;"
+                       data-bind="visible: $.trim(viewModel.nexml['^ot:comment']) === ''">
+                       <em>None</em>
+                    </p>
+                {{ pass }}
+
+                </div>
+              </div>
+
             </form>
 
            </div><!-- end of main column... -->
@@ -1491,7 +1524,7 @@ body {
                     <tr>
                         <td><span data-bind="text: version['relative_date'], attr: {'title': version['date']}">?</span></td>
                         <td data-bind="text: version['author_name']">?</td>
-                        <td><pre data-bind="text: version['message_subject'] + (version['message_body'] ? '\n\n'+ version['message_body'] : '')">?</pre></td>
+                        <td><pre class="rendered-comment" data-bind="text: version['message_subject'] + (version['message_body'] ? '\n\n'+ version['message_body'] : '')">?</pre></td>
                     </tr>
                   </tbody>
                 </table>

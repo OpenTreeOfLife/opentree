@@ -388,6 +388,9 @@ function loadSelectedStudy() {
             if (!(['^ot:notIntendedForSynthesis'] in data.nexml)) {
                 data.nexml['^ot:notIntendedForSynthesis'] = false;
             }
+            if (!(['^ot:comment'] in data.nexml)) {
+                data.nexml['^ot:comment'] = "";
+            }
 
             // NOTE that we should "pluralize" existing arrays, in case
             // Badgerfish conversion has replaced it with a single item
@@ -508,6 +511,9 @@ function loadSelectedStudy() {
 
             // keep track of the SHA (git commit ID) that corresponds to this version of the study
             viewModel.startingCommitSHA = response['sha'] || 'SHA_NOT_PROVIDED';
+
+            // get initial rendered HTML for study comment (from markdown)
+            viewModel.commentHTML = response['commentHTML'] || 'COMMENT_HTML_NOT_PROVIDED';
             
             // we should also now have the full commit history of this NexSON
             // study in the docstore repo
@@ -5503,4 +5509,47 @@ function studyHasCC0Waiver( nexml ) {
         }
     }
     return false;
+}
+
+function showStudyCommentEditor() {
+    $('#edit-comment-button').addClass('active');
+    $('#preview-comment-button').removeClass('active');
+    $('#comment-preview').hide();
+    $('#comment-editor').show();
+}
+function showStudyCommentPreview() {
+    // show spinner? no, it's really quick
+    $('#edit-comment-button').removeClass('active');
+    $('#preview-comment-button').addClass('active');
+    // stash and restore the current scroll position, lest it jump
+    var savedPageScroll = $('body').scrollTop();
+    var phylesystemAPIBaseURL = API_load_study_GET_url.split('/api')[0];
+    var renderMarkdownURL = phylesystemAPIBaseURL+'/api/render_markdown';
+    $.ajax({
+        crossdomain: true,
+        type: 'POST',
+        url: renderMarkdownURL,
+        data: viewModel.nexml['^ot:comment'],
+        success: function( data, textstatus, jqxhr ) {
+            $('#comment-preview').show();
+        },
+        success: function( data, textstatus, jqxhr ) {
+            $('#comment-preview').html(data);
+            $('#comment-preview').show();
+            //setTimeout(function() {
+                $('body').scrollTop(savedPageScroll);
+            //}, 10);
+            $('#comment-editor').hide();
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            // report errors or malformed data, if any
+            var errMsg; 
+            if (jqXHR.responseText.length === 0) {
+                errMsg = 'Sorry, there was an error rendering this Markdown. (No more information is available.)';
+            } else {
+                errMsg = 'Sorry, there was an error rendering this Markdown. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+            }
+            showErrorMessage(errMsg);
+        }
+    });
 }
