@@ -1,14 +1,59 @@
 {{extend 'layout.html'}}
 
 <div class="container">
-      <h1 id="main-title">Contact Us</h1>
+    <h1 id="main-title">Contact Us</h1>
 
-              <p>
-			  You can contact us through our two public google groups: <a href="https://groups.google.com/forum/#!forum/opentreeoflife">opentreeoflife</a> and <a href="https://groups.google.com/forum/#!forum/opentreeoflife-software">opentreeoflife-software</a>. All of our software is on <a href="http://github.com/opentreeoflife">GitHub</a>, and you can leave bug reports and feature request as an <a href="https://github.com/OpenTreeOfLife/feedback/issues">issue in our feedback repo</a>. The developer team hangs out at IRC: #opentreeoflife on freenode.
-			   </p>
+    <div class="row">
+        <div class="span9 offset1">
+            <table style="width: 100%;">
+                <tr>
+                    <td width="200" align="right">
+                        <a href="https://groups.google.com/forum/#!forum/opentreeoflife" target="_blank">
+                            <img src="{{= URL('static', 'images/Logo_Google_groups.png') }}" alt="Google Groups logo" />
+                        </a>
+                    </td>
+                    <td width="*" style="padding: 2em;">
+                        You can contact us through our two public google groups: 
+                        <a href="https://groups.google.com/forum/#!forum/opentreeoflife">opentreeoflife</a>
+                        and 
+                        <a href="https://groups.google.com/forum/#!forum/opentreeoflife-software">opentreeoflife-software</a>.
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right">
+                        <a href="http://github.com/opentreeoflife" target="_blank">
+                            <img src="{{= URL('static', 'images/Github.png') }}" alt="GitHub logo" />
+                        </a>
+                    </td>
+                    <td style="padding: 2em;">
+                        All of our software is on 
+                        <a href="http://github.com/opentreeoflife">GitHub</a>, 
+                        and you can leave bug reports and feature request as an 
+                        <a href="https://github.com/OpenTreeOfLife/feedback/issues">issue in our feedback repo</a>.
+                    </td>
+                </tr>
+                <tr>
+                    <td align="right">
+                        <a href="https://kiwiirc.com/client/irc.freenode.net/?nick=guest%7C?#opentreeoflife" target="_blank">
+                            <img src="https://kiwiirc.com/buttons/irc.freenode.net/opentreeoflife.png" alt="Visit our IRC channel" style="max-width:100%;">
+                        </a> 
+                    </td>
+                    <td style="padding: 2em;">
+                        The developer team hangs out at IRC: <strong>#opentreeoflife</strong> on
+                        <a href="http://freenode.net/">Freenode</a>. Clicking
+                        the button at left will join the channel as user
+                        <strong>guest</strong>, using the web-based <a
+                        href="https://kiwiirc.com/">KiwiIRC</a> client. This is a
+                        <a href="http://irclog.perlgeek.de/opentreeoflife/today">logged</a> channel.
+                    </td>
+                </tr>
+            </table>
 
-      <h3 id="comment-header">Comments <i></i></h3>
-      {{=plugin_localcomments(filter=('url',),url=request.url)}}
+            <h3 id="comment-header">Comments <i></i></h3>
+            {{=plugin_localcomments(filter=('url',),url=request.url)}}
+
+        </div>
+    </div>
 
 </div><!-- end of .container -->
 
