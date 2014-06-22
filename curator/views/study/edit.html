@@ -731,6 +731,11 @@ body {
                </div>
               </div>
 
+                {{ #TODO: IF a dataDeposit URL is found, should we hide the files list? block editing and addition of files/trees? }}
+                <div class="empty-list-prompt" data-bind="visible: $.trim(viewModel.nexml['^ot:dataDeposit']['@href']) !== ''" style="margin-bottom: 1em;">
+                    Data for this study is permanently archived here:<br/> 
+                    <a data-bind="text: $.trim(viewModel.nexml['^ot:dataDeposit']['@href']), attr: { href: $.trim(viewModel.nexml['^ot:dataDeposit']['@href']) }" target="_blank"></a>
+                </div>
                 <div class="empty-list-prompt" data-bind="visible: viewModel.filteredFiles().pagedItems().length === 0">
                     No matching files found! Add files or use the filters
                     above to see supporting files in this study.
