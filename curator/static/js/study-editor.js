@@ -360,7 +360,6 @@ function loadSelectedStudy() {
                 data.nexml['^ot:studyPublicationReference'] = "";
             }
             if (!(['^ot:studyPublication'] in data.nexml)) {
-                console.log(">>> adding complex metatag for 'ot:studyPublication'...");
                 data.nexml['^ot:studyPublication'] = {
                     '@href': ""
                 }; 
@@ -390,6 +389,11 @@ function loadSelectedStudy() {
             }
             if (!(['^ot:comment'] in data.nexml)) {
                 data.nexml['^ot:comment'] = "";
+            }
+            if (!(['^ot:dataDeposit'] in data.nexml)) {
+                data.nexml['^ot:dataDeposit'] = {
+                    '@href': ""
+                }; 
             }
 
             // NOTE that we should "pluralize" existing arrays, in case
