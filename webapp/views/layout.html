@@ -10,10 +10,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
     {{response.files.append(URL('static','css/bootstrap.css'))}}
     {{response.files.append(URL('static','css/bootstrap-responsive.css'))}}
     <style type="text/css">
-        /* TODO: add page-specific styles here */
+        // Fix for broken submenus on mobile devices
         .dropdown-backdrop{
             position: static !important;
-            border: 4px solid green;
         }
     </style>
 
