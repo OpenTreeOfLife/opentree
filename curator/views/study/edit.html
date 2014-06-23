@@ -777,21 +777,33 @@ body {
 
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
-            <p>
-            For a tree in your study to contribute to synthesis in the Open
-            Tree of Life project, its leaf nodes should correspond to taxa in 
-            the OTT (Open Tree Taxonomy). This list includes all the OTUs
-            (operating taxonomic units) in your study. Each OTU is a distinct
-            label used in one or more of your study's trees.
-            </p>
-            <p>
-            We use a TNRS (taxonomic name resolution service) to automate this
-            "mapping" process where possible. If you've used standard taxonomic
-            names for the nodes in your trees, mapping is fast and easy.
-            But most trees submitted have been labeled with institutional
-            shorthand, unrecognized taxa, or simple misspellings. The tools on
-            this page will help you adjust labels for faster mapping.
-            </p>
+
+            <button class="help-toggle" style="display: none;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+                <p>
+                For a tree in your study to contribute to the synthetic tree,
+                the labels on leaf nodes (tips)  should map to taxa in 
+                <a href="http://files.opentreeoflife.org/ott" target="_blank">OTT (Open Tree Taxonomy)</a>. 
+                
+				Not all tips need to be mapped in order to contibute to synthesis
+				- we simply prune off unmapped nodes when importing trees in to 
+				he graph database. 
+                </p>
+                <p>
+                We use a TNRS (taxonomic name resolution service) to automate this
+                mapping process. If you've used standard taxonomic
+                names for the nodes in your trees, mapping is fast and easy.
+                If your labels contain abbreviations, unrecognized codes or
+				unknown taxa, the tools below can help to modify labels for faster
+				and more accurate mapping. 
+                </p>
+            </div>
+
 <!-- TODO: If we're doing independent server-side mapping, show a blanket message like this to avoid conflicts?
             <div class="alert alert-block">
                 <h4>Server-side mapping in progress</h4>
