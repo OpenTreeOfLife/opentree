@@ -61,8 +61,22 @@ def fetch_current_synthesis_source_data():
         # as usual, this needs to be a POST (pass empty fetch_args)
         source_list_response = fetch(fetch_url, data='')
         source_list = simplejson.loads( source_list_response )
-        # split these IDs, which are in the form '{STUDY_ID}_{TREE_ID}'
-        contributing_study_ids = [id.split('_')[0] for id in source_list if id != "taxonomy"]
+
+        # split these source descriptions, which are in the form '{STUDY_ID_PREFIX}_{STUDY_NUMERIC_ID}_{TREE_ID}_{COMMIT_SHA}'
+        contributing_study_ids = [ ]
+
+        for source_desc in source_list:
+            if source_desc == 'taxonomy':
+                continue
+            source_parts = source_desc.split('_')
+            # add default prefix 'pg' to study ID, if not found
+            if source_parts[0].isdigit():
+                # prepend with default namespace 'pg'
+                study_id = '_'.join('pg', source_parts[0])
+            else:
+                study_id = '_'.join(source_parts[0:2])
+            contributing_study_ids.append( study_id )
+
         # remove duplicate study ID (due to multiple '{STUDY_ID}_{TREE_ID}' entries)
         contributing_study_ids = list(set(contributing_study_ids))
 
@@ -79,14 +93,14 @@ def fetch_current_synthesis_source_data():
         # filter just the metadata for studies contributing to synthesis
         contributing_studies = [ ]
         for study in study_metadata:
-            # Strip any prefixed ids so we can compare just the numeric id 
-            # (as provided by getSynthesisSourceList).
+            # Add any missing study-ID prefixes (assume 'pg') so we can compare
+            # with the prefixed IDs provided by getSynthesisSourceList.
             id_parts = study['ot:studyId'].split('_')
             if len(id_parts) == 1:
-                numeric_study_id = study['ot:studyId']
+                prefixed_study_id = '_'.join('pg', study['ot:studyId'])
             else:
-                numeric_study_id = id_parts[1]
-            if numeric_study_id in contributing_study_ids:
+                prefixed_study_id = study['ot:studyId']
+            if prefixed_study_id in contributing_study_ids:
                 contributing_studies.append( study )
 
         # TODO: sort these alphabetically(?) and render in the page
