@@ -63,7 +63,7 @@ def fetch_current_synthesis_source_data():
         source_list = simplejson.loads( source_list_response )
 
         # split these source descriptions, which are in the form '{STUDY_ID_PREFIX}_{STUDY_NUMERIC_ID}_{TREE_ID}_{COMMIT_SHA}'
-        contributing_study_ids = [ ]
+        contributing_study_info = { }   # store (unique) study IDs as keys, commit SHAs as values
 
         for source_desc in source_list:
             if source_desc == 'taxonomy':
@@ -75,10 +75,11 @@ def fetch_current_synthesis_source_data():
                 study_id = '_'.join('pg', source_parts[0])
             else:
                 study_id = '_'.join(source_parts[0:2])
-            contributing_study_ids.append( study_id )
-
-        # remove duplicate study ID (due to multiple '{STUDY_ID}_{TREE_ID}' entries)
-        contributing_study_ids = list(set(contributing_study_ids))
+            if len(source_parts) == 4:
+                commit_SHA_in_synthesis = source_parts[3]
+            else:
+                commit_SHA_in_synthesis = None
+            contributing_study_info[ study_id ] = commit_SHA_in_synthesis
 
         # fetch the oti metadata (esp. DOI and full reference text) for each
         fetch_url = method_dict['findAllStudies_url']
@@ -100,7 +101,9 @@ def fetch_current_synthesis_source_data():
                 prefixed_study_id = '_'.join('pg', study['ot:studyId'])
             else:
                 prefixed_study_id = study['ot:studyId']
-            if prefixed_study_id in contributing_study_ids:
+            if prefixed_study_id in contributing_study_info.keys():
+                # add commit SHA to support retrieval of *exact* Nexson from synthesis
+                study['commit_SHA_in_synthesis'] = contributing_study_info[ prefixed_study_id ];
                 contributing_studies.append( study )
 
         # TODO: sort these alphabetically(?) and render in the page

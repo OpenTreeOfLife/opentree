@@ -104,9 +104,12 @@ div.contributing-studies div.links a {
                   {{ pass }}
               </div>
               <div class="span3 links">
-                  <a target="_blank" href="{{= URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ]) }}">Open in study curator</a>
+                  <a target="_blank" href="{{= URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ]) }}">Open in study curator (<strong>latest</strong>)</a>
                   <a target="_blank" href="http://www.reelab.net/phylografter/study/view/{{= study.get('ot:studyId')}}">Open in phylografter</a>
-                  <a target="_blank" href="{{= oti_domain[:-4] }}/api/v1/study/{{= study.get('ot:studyId')}}">Fetch study NexSON</a>
+                  {{ if study.get('commit_SHA_in_synthesis', None): }}
+                  <a target="_blank" href="{{= oti_domain[:-4] }}/api/v1/study/{{= study.get('ot:studyId')}}?starting_commit_SHA={{= study.get('commit_SHA_in_synthesis') }}">Fetch NexSON <strong>used in synthesis</strong></a>
+                  {{ pass }}
+                  <a target="_blank" href="{{= oti_domain[:-4] }}/api/v1/study/{{= study.get('ot:studyId')}}">Fetch <strong>latest</strong> study NexSON</a>
                  {{ if study.get('ot:dataDeposit'): }}
                   <a target="_blank" href="{{= study.get('ot:dataDeposit') }}">Study data archive</a>
                  {{ pass }}
