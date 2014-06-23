@@ -292,13 +292,6 @@ $(document).ready(function() {
         return false;
     });
 
-    // bind widget prompts to trigger their respective links (badges)
-    $('#argus-controls .widget-prompt').unbind('click').click(function() {
-        var $clicked = $(this);
-        $clicked.parent().find('a:eq(0)').click();
-        return false;
-    });
-
     // taxon search on remote site (using JSONP to overcome the same-origin policy)
     $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
     $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
@@ -1125,6 +1118,12 @@ function showObjectProperties( objInfo, options ) {
             }
         }
     }
+    $sections.append(
+        '<a class="badge" style="position: relative; top: -1em;" '
+      +  'onclick="toggleCommentsPanel(\'SHOW\'); return false;">'
+      +   '<i class="icon-comment icon-white"></i> Add a comment'
+      +'</a>');
+    // OR ('Add a comment on this '+ objType), IF we can target that object
 
     // offer subtree extraction, if available for this target
     // we can restrict the depth, if needed to avoid monster trees

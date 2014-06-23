@@ -203,13 +203,6 @@ div.viewer-frame {
 .zoom-widget a:hover {
     text-decoration: none;
 }
-.widget-prompt {
-    font-size: 0.9em;
-    color: #bbb;
-    line-height: 1.5em;
-    cursor: pointer;
-}
-
 #argus-controls .comments-indicator,
 #argus-controls .properties-indicator {
     width: 25%;
@@ -221,8 +214,8 @@ div.viewer-frame {
     text-align: right;
 }
 
-#argus-controls span:hover .widget-prompt {
-    color: #999;
+#argus-controls .widget-prompt {
+    color: #fff;
 }
 #argus-controls span:hover .badge {
     background-color: #333;

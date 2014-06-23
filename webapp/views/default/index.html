@@ -95,18 +95,18 @@
                   onclick="toggleCommentsPanel(); $(this).blur(); return false;">
                    <span id="comment-count">0</span>
                    <i class="icon-comment icon-white"></i>
+                   <span class="hidden-phone widget-prompt"> Show comments</span>
                </a>
-               <span class="hidden-phone widget-prompt"> Show comments</span>
               </span><!-- .comments-indicator -->
               
               <span class="zoom-widget">
-               <span class="hidden-phone widget-prompt">Zoom tree view </span>
                <span class="badge"
                    title="Magnify tree view"
                    onclick="return false;"
                    >
                    <a href="#"
                       onclick="(argus.getZoomInHandler())(); $(this).blur(); return false;" >
+                      <span class="hidden-phone widget-prompt">Zoom tree view &nbsp;</span>
                       <i class="icon-plus icon-white" style="margin-right: 8px;" ></i>
                    </a>
                    <span style="color: #ccc;">|</span>
@@ -127,11 +127,11 @@
 
               <span class="properties-indicator"
                     style="float: right; margin-right: 4px;">
-               <span class="hidden-phone widget-prompt">Show properties </span>
                <a class="badge" href="#" 
                   title="Show properties for the current selection"
                   onclick="togglePropertiesPanel(); $(this).blur(); return false;">
                    <i class="icon-info-sign icon-white"></i>
+                   <span class="hidden-phone widget-prompt">Show properties </span>
                </a>
               </span><!-- .properties-indicator -->
            </div>
