@@ -366,7 +366,10 @@ body {
                                                           text: nexml['^ot:notIntendedForSynthesis'] ? 'This study should not contribute to synthesis. (This is not typical.)' : 'This study should contribute to synthesis.'"></p>
                 {{ pass }}
 
+                  <p class="static-form-value interesting-value" data-bind="text: studyContributedToLatestSynthesis() ? (currentStudyVersionContributedToLatestSynthesis() ? 'This version was used to build the latest synthetic tree' : 'This study has changed since building the last synthetic tree.') : 'This study was not used in the latest synthesis.'"></p>
+
                 </div>
+
               </div>
 
               <div class="control-group">
@@ -1569,6 +1572,7 @@ body {
 
 <script type='text/javascript'>
     var studyID = '{{= studyID }}';
+    var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
     var viewOrEdit = '{{= viewOrEdit }}';
     var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
     var authorSafeID = '{{= auth.user and auth.user.username.encode('ascii', 'ignore') or 'ANONYMOUS' }}';
@@ -1593,6 +1597,7 @@ body {
     var doTNRSForNames_url = "{{=doTNRSForNames_url}}";
     var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
     var getJSONFromNode_url = "{{=getJSONFromNode_url}}";
+    var phylesystem_config_url = "{{=phylesystem_config_url}}";
 </script>
 <script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>

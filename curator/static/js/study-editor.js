@@ -6,6 +6,7 @@
 
 // these variables should already be defined in the main HTML page
 var studyID;
+var latestSynthesisSHA;   // the SHA for this study (if any) that was last used in synthesis
 var API_load_study_GET_url;
 var API_update_study_PUT_url;
 var API_remove_study_DELETE_url;
@@ -5556,4 +5557,13 @@ function showStudyCommentPreview() {
             showErrorMessage(errMsg);
         }
     });
+}
+
+function studyContributedToLatestSynthesis() {
+    // check for a valid SHA from last synthesis
+    return ($.trim(latestSynthesisSHA) !== '');
+}
+function currentStudyVersionContributedToLatestSynthesis() {
+    // compare SHA values and return true if they match
+    return (viewModel.startingCommitSHA === latestSynthesisSHA);
 }

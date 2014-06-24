@@ -122,13 +122,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
       if ($detailsBox.is(':visible')) {
           if ($('.shard-name').length === 0) {
             // populate the shard-name list via AJAX
-            var phylesystemAPIBaseURL = API_load_study_GET_url.split('/api')[0];
-            var phylesystemConfigURL = phylesystemAPIBaseURL+'/api/phylesystem_config';
             $.ajax({
                 datatype: 'json',
                 crossdomain: true,
                 contenttype: "application/json; charset=utf-8",
-                url: phylesystemConfigURL,
+                url: phylesystem_config_url,
                 data: { },
                 success: function( data, textstatus, jqxhr ) {
                     // report errors or malformed data, if any
