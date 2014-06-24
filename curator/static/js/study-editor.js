@@ -5567,3 +5567,23 @@ function currentStudyVersionContributedToLatestSynthesis() {
     // compare SHA values and return true if they match
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
 }
+
+function getDataDepositURL() {
+    // returns the URL, or empty string if none found
+    return $.trim(viewModel.nexml['^ot:dataDeposit']['@href']);
+}
+function getFriendlyDepositURL() {
+    // Modify some cryptic dataDeposit URLs to be more friendly
+    
+    // TreeBASE URLs should point to a web page (vs RDF)
+    // EXAMPLE: http://purl.org/phylo/treebase/phylows/study/TB2:S13451
+    //    => http://treebase.org/treebase-web/search/study/summary.html?id=13451
+    var url = getDataDepositURL();
+    url = url.replace(
+        '//purl.org/phylo/treebase/phylows/study/TB2:S',
+        '//treebase.org/treebase-web/search/study/summary.html?id='
+    );
+
+    // TODO: Add other substitutions?
+    return url;
+}
