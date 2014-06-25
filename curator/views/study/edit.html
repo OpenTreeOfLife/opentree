@@ -735,13 +735,10 @@ body {
               </div>
 
                 {{ #TODO: IF a dataDeposit URL is found, should we hide the files list? block editing and addition of files/trees? }}
-                <div class="empty-list-prompt" data-bind="visible: getDataDepositURL() !== ''" style="margin-bottom: 1em;">
-                    Data for this study is permanently archived here<!-- ko if: getFriendlyDepositURL() !== getDataDepositURL() -->
-                    (modified from 
-                    <a data-bind="attr: { href: getDataDepositURL() }" target="_blank">original URL</a>)<!-- /ko -->:<br/> 
-                    <a data-bind="text: getFriendlyDepositURL(), attr: { href: getFriendlyDepositURL() }" 
-                       target="_blank"></a>
-                </div>
+               <!-- ko if: getDataDepositMessage() !== '' -->
+                <div class="empty-list-prompt" data-bind="html: getDataDepositMessage()" style="margin-bottom: 1em;">{deposit message} </div>
+               <!-- /ko -->
+
                 <div class="empty-list-prompt" data-bind="visible: viewModel.filteredFiles().pagedItems().length === 0">
                     No matching files found! Add files or use the filters
                     above to see supporting files in this study.

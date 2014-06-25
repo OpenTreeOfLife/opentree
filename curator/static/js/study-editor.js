@@ -5568,22 +5568,32 @@ function currentStudyVersionContributedToLatestSynthesis() {
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
 }
 
-function getDataDepositURL() {
-    // returns the URL, or empty string if none found
-    return $.trim(viewModel.nexml['^ot:dataDeposit']['@href']);
-}
-function getFriendlyDepositURL() {
-    // Modify some cryptic dataDeposit URLs to be more friendly
+function getDataDepositMessage() {
+    // Returns HTML explaining where to find this study's data, or an empty
+    // string if no URL is found. Some cryptic dataDeposit URLs may require
+    // more explanation or a modified URL to be more web-friendly.
+    var url = $.trim(viewModel.nexml['^ot:dataDeposit']['@href']);
+    // If there's no URL, we have nothing to say
+    if (url === '') {
+        return '';  
+    }
     
     // TreeBASE URLs should point to a web page (vs RDF)
     // EXAMPLE: http://purl.org/phylo/treebase/phylows/study/TB2:S13451
     //    => http://treebase.org/treebase-web/search/study/summary.html?id=13451
-    var url = getDataDepositURL();
-    url = url.replace(
-        '//purl.org/phylo/treebase/phylows/study/TB2:S',
-        '//treebase.org/treebase-web/search/study/summary.html?id='
-    );
+    var regex = new RegExp('//purl.org/phylo/treebase/phylows/study/TB2:S(\\d+)');
+    var matches = regex.exec(url);
+    if (matches && matches.length === 2) {
+        var treebaseStudyID = matches[1];
+        url = url.replace(
+            regex,
+            '//treebase.org/treebase-web/search/study/summary.html?id=$1'
+        );
+        return 'Data for this study is archived as <a href="'+ url +'" target="_blank">Treebase study '+ treebaseStudyID +'</a>';
+    }
 
     // TODO: Add other substitutions?
-    return url;
+    
+    // default message simply repeats the dataDeposit URL
+    return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
 }
