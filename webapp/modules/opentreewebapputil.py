@@ -141,6 +141,15 @@ def get_domain_banner_class(request):
         return 'banner-staging'
     return ''
 
+def get_domain_banner_hovertext(request):
+    # Return optional hover-text for test domains, or none if
+    # we're on a production server.
+    if request.env.http_host == 'devtree.opentreeoflife.org':
+        return 'This is the development site for Open Tree of Life. Data and services may not be up to date, or may be untested. Production version at tree.opentreeoflife.org'
+    elif request.env.http_host == 'stagingtree.opentreeoflife.org':
+        return 'This is the staging site for Open Tree of Life. Data and services may not be up to date, or may be untested. Production version at tree.opentreeoflife.org'
+    return ''
+
 def fetch_current_TNRS_context_names(request):
     try:
         # fetch the latest contextName values as JSON from remote site
