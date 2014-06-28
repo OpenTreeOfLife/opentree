@@ -693,10 +693,26 @@ tr:hover .row-controls-ghosted {
 #server-details .setting-name {
     color: #888;
 }
-/* backgrounds for top navbar, to show DEVELOPMENT, STAGING, ETC */
-.navbar-inner.banner-dev {
-    background: url(/opentree/static/images/banner-dev.gif) center repeat;
-}
-.navbar-inner.banner-staging {
-    background: url(/opentree/static/images/banner-staging.gif) center repeat;
+/* Warning banners appear when using DEVELOPMENT, STAGING servers */
+.ribbon-banner {
+    display: block;
+    position: absolute;
+    top: 40px;
+    left: -90px;
+    width: 300px;
+    height: 30px;
+    line-height: 30px;
+    text-align: center;
+    opacity: 0.7;
+    -webkit-transform: rotate(-45deg);
+    -moz-transform:    rotate(-45deg);
+    -ms-transform:     rotate(-45deg);
+    transform:         rotate(-45deg);
+    font-size: 18px;
+    font-weight: 900;
+    color: #fff;
+    background-color: #c00;
+    border: 1px solid white;
+    z-index: 500;
+    cursor: pointer;
 }
