@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {{ 
-from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf
+from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_class
 }}
 <html lang="{{=T.accepted_language or 'en'}}" class="no-js"><!-- no-js need it for modernzr -->
   <head>
@@ -210,7 +210,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
   <!--[if (gt IE 9)|!(IE)]><!--> <body> <!--<![endif]-->
     
   <div class="navbar navbar-inverse navbar-static-top">
-    <div class="navbar-inner">
+    <div class="navbar-inner {{= get_domain_banner_class(request) }}">
       <div class="container">
 
         <!-- .btn-navbar is used as the toggle for collapsed navbar content -->

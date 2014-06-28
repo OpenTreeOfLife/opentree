@@ -132,6 +132,15 @@ def get_user_display_name():
     # no name or id found (this should never happen)
     return 'UNKNOWN'
 
+def get_domain_banner_class(request):
+    # Return an optional CSS classname to indicate a test domain, or none if
+    # we're on a production server. Current values are 'banner-dev', 'banner-staging'
+    if request.env.http_host.startswith('dev'):
+        return 'banner-dev'
+    elif request.env.http_host.startswith('staging'):
+        return 'banner-staging'
+    return ''
+
 def fetch_current_TNRS_context_names(request):
     try:
         # fetch the latest contextName values as JSON from remote site
