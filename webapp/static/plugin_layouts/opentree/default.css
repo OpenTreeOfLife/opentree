@@ -414,3 +414,10 @@ div#r0 {
     background: red; 
     color: white;
 }
+/* backgrounds for top navbar, to show DEVELOPMENT, STAGING, ETC */
+.navbar-inner.banner-dev {
+    background: url(/opentree/static/images/banner-dev.gif) center repeat;
+}
+.navbar-inner.banner-staging {
+    background: url(/opentree/static/images/banner-staging.gif) center repeat;
+}
