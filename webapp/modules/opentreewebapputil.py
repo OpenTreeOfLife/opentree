@@ -135,10 +135,19 @@ def get_user_display_name():
 def get_domain_banner_class(request):
     # Return an optional CSS classname to indicate a test domain, or none if
     # we're on a production server. Current values are 'banner-dev', 'banner-staging'
-    if request.env.http_host.startswith('dev'):
+    if request.env.http_host == 'devtree.opentreeoflife.org':
         return 'banner-dev'
-    elif request.env.http_host.startswith('staging'):
+    elif request.env.http_host == 'stagingtree.opentreeoflife.org':
         return 'banner-staging'
+    return ''
+
+def get_domain_banner_hovertext(request):
+    # Return optional hover-text for test domains, or none if
+    # we're on a production server.
+    if request.env.http_host == 'devtree.opentreeoflife.org':
+        return 'This is the development site for Open Tree of Life. Data and services may not be up to date, or may be untested. Production version at tree.opentreeoflife.org'
+    elif request.env.http_host == 'stagingtree.opentreeoflife.org':
+        return 'This is the staging site for Open Tree of Life. Data and services may not be up to date, or may be untested. Production version at tree.opentreeoflife.org'
     return ''
 
 def fetch_current_TNRS_context_names(request):
