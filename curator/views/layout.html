@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {{ 
-from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_class, get_domain_banner_hovertext
+from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext
 }}
 <html lang="{{=T.accepted_language or 'en'}}" class="no-js"><!-- no-js need it for modernzr -->
   <head>
@@ -209,8 +209,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
   <!--[if IE 9 ]>    <body class="ie9"> <![endif]-->
   <!--[if (gt IE 9)|!(IE)]><!--> <body> <!--<![endif]-->
     
+{{ if get_domain_banner_text(request): }}
+  <div class="ribbon-banner" title="{{= get_domain_banner_hovertext(request) }}">{{= get_domain_banner_text(request) }}</div>
+{{ pass }}
   <div class="navbar navbar-inverse navbar-static-top">
-    <div class="navbar-inner {{= get_domain_banner_class(request) }}" title="{{= get_domain_banner_hovertext(request) }}">
+    <div class="navbar-inner">
       <div class="container">
 
         <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
