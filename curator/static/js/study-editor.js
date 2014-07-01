@@ -149,6 +149,11 @@ if ( History && History.enabled ) {
                 showInfoMessage(errMsg);
             }
             delete initialState;  // clear this to avoid repeat viewing
+        } else {
+            // hide any active tree viewer
+            if (treeViewerIsInUse) {
+                $('#tree-viewer').modal('hide');
+            }
         }
 
         // TODO: update all login links to use the new URL?
@@ -220,8 +225,21 @@ function showTreeWithHistory(tree) {
         // OR showTreeViewer(tree, options) ??
     }
 }
-function hideTreeWithHistory(o) {
+function hideTreeWithHistory() {
     // remove tree from history (if available) and hide it
+    // N.B. This is triggered whenever the tree viewer is closed/hidden
+    if (History && History.enabled) {
+        // push tree view onto history (if available) and show it
+        var oldState = History.getState().data;
+        if (!oldState.tree) {
+            // it wasn't added to history, so no change needed
+            return;
+        }
+        var newState = {
+            'tab': 'Trees'
+        };
+        History.pushState( newState, (window.document.title), '?tab=trees' );
+    }
 }
 
 if (false) {  // TODO: move this to $(document).ready and adapt...
@@ -2699,6 +2717,7 @@ function showTreeViewer( tree, options ) {
         });
         $('#tree-viewer').off('hide').on('hide', function () {
             treeViewerIsInUse = false;
+            hideTreeWithHistory(tree);
         });
         $('#tree-viewer').off('hidden').on('hidden', function () {
             ///console.log('@@@@@ hidden');
