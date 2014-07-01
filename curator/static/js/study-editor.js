@@ -100,6 +100,13 @@ if ( History && History.enabled ) {
         // TODO: hide/show elements as needed
         // Extract our state vars from State.url (not from State.data) for equal
         // treatment of initial URLs.
+        var currentTab = State.data.tab;
+        var currentTree = State.data.tree;
+        
+/*
+        // TODO: hide/show elements as needed
+        // Extract our state vars from State.url (not from State.data) for equal
+        // treatment of initial URLs.
         var urlParts = State.url.split('?');
         if (urlParts.length > 1) {
             var qs = urlParts[1];
@@ -124,7 +131,25 @@ if ( History && History.enabled ) {
                 }
             }
         }
+*/
+        console.log('currentTab='+ currentTab);
+        console.log('currentTree='+ currentTree);
         console.log('<<<');
+
+        if (currentTab) {
+            goToTab( currentTab );
+        }
+        if (currentTree) {
+            var tree = getTreeByID(currentTree);
+            if (tree) {
+                showTreeViewer(tree);
+            } else {
+                var errMsg = 'The requested tree (\''+ currentTree +'\') was not found. It has probably been deleted from this study.';
+                hideModalScreen();
+                showInfoMessage(errMsg);
+            }
+            delete initialState;  // clear this to avoid repeat viewing
+        }
 
         // TODO: update all login links to use the new URL?
         fixLoginLinks();
@@ -178,16 +203,26 @@ function changeTab(o) {
         History.pushState(o, '', '?tab='+ slugify(newTabName));  // TODO: change title and URL?
     } else {
         // click tab normally (ignore browser history)
-        $('.nav-tabs a:contains('+ tabName +')').tab('show');
+        goToTab( newTabName );
     }
 }
-function showTree(o) {
-    // TODO: Copy technique above, OR add that code to existing showTreeViewer()
+function showTreeWithHistory(tree) {
+    if (History && History.enabled) {
+        // push tree view onto history (if available) and show it
+        var newState = {
+            'tab': 'Trees',
+            'tree': tree['@id']
+        };
+        History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree) );
+    } else {
+        // show tree normally (ignore browser history)
+        showTreeViewer(tree);
+        // OR showTreeViewer(tree, options) ??
+    }
 }
-
-
-
-
+function hideTreeWithHistory(o) {
+    // remove tree from history (if available) and hide it
+}
 
 if (false) {  // TODO: move this to $(document).ready and adapt...
     if ( History && History.enabled ) {
@@ -240,17 +275,18 @@ $(document).ready(function() {
     bindHistoryAwareWidgets();
     bindHelpPanels();
 
-    // set default starting tab, if the URL doesn't specify
-    // NOTE that we override this (using $.extend) with values set in the 
-    // main page template, so we can build it from incoming URL in web2py.
-    initialState = $.extend({
-        tab: 'metadata', 
-    }, urlState); // urlState should been defined in the main HTML view
-    goToTab( initialState.tab );
+    // NOTE that our initial state is set in the main page template, so we 
+    // can build it from incoming URL in web2py. Try to recapture this state,
+    // ideally through manipulating history.
+    if (History && History.enabled) {
+        // "formalize" the current state with an object
+        initialState.nudge = new Date().getTime();
+        History.replaceState(initialState, window.document.title, window.location.href);
+    } else {
+        goToTab( initialState.tab );
+    }
     // N.B. We'll check this again once we've loaded the selected study, then clear it
 
-    // auto-select first tab (Metadata)  // TODO: use history instead!
-    $('.nav-tabs a:first').tab('show');
     loadSelectedStudy();
     
     // Initialize the jQuery File Upload widgets
@@ -376,8 +412,22 @@ $(document).ready(function() {
 
 
 function goToTab( tabName ) {
-    // click the corresponding tab, if found
-    $('.nav-tabs a:contains('+ tabName +')').tab('show');
+    // Click the corresponding tab, if found. If the tab name is not found, it
+    // might be a "slug" version, so compare these too.
+console.log("GOING TO TAB '"+ tabName +"'...");
+    var $matchingTab = $('.nav-tabs a').filter(function() {
+        var $tab = $(this);
+        var itsName = $.trim( $tab.html().split('<')[0] );
+        if (itsName === tabName) {
+            return true;
+        }
+        if (slugify(itsName) === tabName) {
+            return true;
+        }
+        return false;
+    })
+console.log("  found "+ $matchingTab.length +" matching tabs");
+    $matchingTab.tab('show');
 }
 
 var studyTagsInitialized = false;
@@ -1134,6 +1184,7 @@ function loadSelectedStudy() {
                     hideModalScreen();
                     showInfoMessage(errMsg);
                 }
+                delete initialState;  // clear this to avoid repeat viewing
             }
 
         }
@@ -2263,7 +2314,7 @@ var studyScoringRules = {
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         },
         {
-            description: "There should be at least one candidate tree (unless submitter has opted out).",
+            description: "There should be at least one candidate tree (unless curator has opted out).",
             test: function(studyData) {
                 // check for opt-out flag
                 var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
@@ -2275,8 +2326,8 @@ var studyScoringRules = {
                 return getPreferredTrees().length > 0;
             },
             weight: 0.3, 
-            successMessage: "There is at least one candidate tree, or the submitter has opted out of synthesis.",
-            failureMessage: "There should be at least one candidate tree, or the submitter should opt out of synthesis.",
+            successMessage: "There is at least one candidate tree, or the curator has opted out of synthesis.",
+            failureMessage: "There should be at least one candidate tree, or the curator should opt out of synthesis.",
             suggestedAction: "Mark a tree as candidate for synthesis, or opt out of synthesis in Metadata."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         },
@@ -2306,7 +2357,7 @@ var studyScoringRules = {
             },
             weight: 0.5, 
             successMessage: "No conflicting nodes (mapped to same taxon) found in candidate trees.",
-            failureMessage: "The submitter should choose an 'exemplar' for each mapped taxon in a candidate tree.",
+            failureMessage: "Conflicting nodes found! The curator should choose an 'exemplar' for each mapped taxon in a candidate tree.",
             suggestedAction: "Review all conflicting instances of a mapped taxon and choose an exemplar."
         }
     ],
@@ -2700,7 +2751,7 @@ function showConflictingNodesInTreeViewer(tree) {
     // If there are no conflicts, fall back to simple tree view
     var conflictData = getUnresolvedConflictsInTree( tree );
     if (!isPreferredTree(tree) || $.isEmptyObject(conflictData)) {
-        showTreeViewer(tree);
+        showTreeWithHistory(tree);
         return;
     }
     // Convert conflict object to standard node playlist?
@@ -3292,6 +3343,9 @@ function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID, inGroupClade,
 
 function getTreeByID(id) {
     var allTrees = [];
+    if (!viewModel) {
+        return null;
+    }
     $.each(viewModel.nexml.trees, function(i, treesCollection) {
         $.each(treesCollection.tree, function(i, tree) {
             allTrees.push( tree );

@@ -504,7 +504,7 @@ body {
                   <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
                         <td>
-                            <a href="#" data-bind="click: showConflictingNodesInTreeViewer,
+                            <a href="#" data-bind="click: showTreeWithHistory,
                                 text: tree['@label'],
                                 css: viewModel.ticklers.TREES">?</a>
                             <a data-bind="if: unresolvedConflictsFoundInTree( tree ), 
@@ -512,7 +512,7 @@ body {
                                           click: showConflictingNodesInTreeViewer" 
                                class="suggestion-prompt" style="display: block;"
                                href="#">
-                                Conflicts found!
+                                Show conflicting nodes
                             </a> 
                         </td>
                         <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
@@ -1587,12 +1587,12 @@ body {
     var API_remove_file_DELETE_url = '{{=API_remove_file_DELETE_url}}';
 
     // if inbound URL specifies a particular tab or tree, record it here
-    var urlState = {
+    var initialState = {
      {{ if request.vars.get('tree',None): }}
-      tab: 'trees',
+      tab: 'Trees',
       tree: '{{= request.vars['tree'] }}'
-     {{ elif request.vars.get('tab',None): }}
-      tab: '{{= request.vars['tab'] }}',
+     {{ else: }}
+      tab: '{{= request.vars.get('tab','Metadata') }}',
      {{ pass }}
     };
 
