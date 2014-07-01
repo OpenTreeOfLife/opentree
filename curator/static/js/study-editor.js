@@ -31,6 +31,14 @@
 */
 
 /*
+ * Subscribe to history changes (adapted from History.js boilerplate) 
+ */
+
+var History = window.History; // Note: capital H refers to History.js!
+// History.js can be disabled for HTML4 browsers, but this should not be the case for opentree!
+
+
+/*
  * Client-side behavior for the Open Tree curation UI
  *
  * This uses the Open Tree API to fetch and store studies and trees remotely.
@@ -80,12 +88,171 @@ function captureTagTextOnBlur( $tagsSelect ) {
     });
 }
 
+/* Use history plugin to track moves from tab to tab, single-tree popup, others? */
+
+if ( History && History.enabled ) {
+    // bind to statechange event
+    History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
+        var State = History.getState(); // Note: We are using History.getState() instead of event.state
+        console.log('>>>');
+        History.log(State.data, State.title, State.url);
+
+        // TODO: hide/show elements as needed
+        // Extract our state vars from State.url (not from State.data) for equal
+        // treatment of initial URLs.
+        var urlParts = State.url.split('?');
+        if (urlParts.length > 1) {
+            var qs = urlParts[1];
+            var qsVars = deparam( qs );
+            var tabName = qsVars['tab'];
+            var treeID = qsVars['tree'];
+
+            console.log('tabName='+ tabName);
+            console.log('treeID='+ treeID);
+
+            if (tabName) {
+                goToTab( tabName );
+            }
+            if (treeID) {
+                var tree = getTreeByID(treeID);
+                if (tree) {
+                    showTreeViewer(tree);
+                } else {
+                    var errMsg = 'The requested tree (\''+ treeID +'\') was not found. It has probably been deleted from this study.';
+                    hideModalScreen();
+                    showInfoMessage(errMsg);
+                }
+            }
+        }
+        console.log('<<<');
+
+        // TODO: update all login links to use the new URL?
+        fixLoginLinks();
+    });
+}
+
+function deparam( querystring ) {
+    // "inverse" of jQuery's $.param(), this should convert a query-string
+    // to a simple object w/ values
+    var objResult = {};
+    $.each( querystring.split("&"), function() {
+        var prm=this.split("=");
+        objResult[prm[0]] = prm[1]; 
+    });
+    return objResult;
+}
+
+function bindHistoryAwareWidgets() {
+    // TODO: set first event handlers on tabs, tree popups, etc.
+    var $tabBar = $('ul.nav-tabs:eq(0)');
+    $tabBar.find('li > a').click(function() {
+        console.log('INITIAL CLICK on tab');
+        var $tab = $(this);
+        var tabName = $.trim( $tab.html().split('<')[0] );
+        changeTab( {'tab': tabName } );
+        // this drives history (if possible) and changes tab
+        return false;  // skip tab's default click-handler!
+    });
+}
+
+// call this FIRST when clicking tabs (or changing tabs via script)...
+function changeTab(o) {
+    // if we're using History.js, all tab changes should should be driven from history
+    var newTabName = $.trim('tab' in o ? o.tab : '');
+    if (newTabName === '') {
+        alert('changeTab(): No tab name specified!');
+        return;
+    }
+    var $tabBar = $('ul.nav-tabs:eq(0)');
+    var oldTabName = $.trim($tabBar.find('li.active a').text());
+    if (newTabName === oldTabName) {
+        alert('changeTab(): Same tab specified, nothing to change...');
+        return;
+    }
+    if (History && History.enabled) {
+        /* TODO: add expected values for minimal history entry?
+        var stateObj = $.extend(true, {'foo': ''}, o); 
+        // deep copy of o, with default values if none supplied
+        //History.pushState(o, historyStateToWindowTitle(o), historyStateToURL(o));
+        */
+        History.pushState(o, '', '?tab='+ slugify(newTabName));  // TODO: change title and URL?
+    } else {
+        // click tab normally (ignore browser history)
+        $('.nav-tabs a:contains('+ tabName +')').tab('show');
+    }
+}
+function showTree(o) {
+    // TODO: Copy technique above, OR add that code to existing showTreeViewer()
+}
+
+
+
+
+
+if (false) {  // TODO: move this to $(document).ready and adapt...
+    if ( History && History.enabled ) {
+        // if there's no prior state, go to the initial target node in the synthetic tree
+        var priorState = History.getState();
+       
+        // Check first for incoming URL that might override prior history
+        if (initialState.forcedByURL || !(priorState.data.nodeID)) {
+            // apply the state as specified in the URL (or defaults, if prior history is incomplete)
+            console.log("Applying state from incoming URL...");
+            initialState.nudge = new Date().getTime();
+            History.pushState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
+        } else {
+            // nudge the (existing) browser state to view it again
+            console.log("Nudging state (and hopefully initial view)...");
+            priorState.data.nudge = new Date().getTime();
+            History.replaceState( priorState.data, priorState.title, priorState.url );
+        }
+    } else {
+        // force initial argus view using defaults above
+        // NOTE: forcing even this through history, to get possible remapping of node IDs
+        argus.moveToNode({"nodeID": initialState.nodeID,
+                           "domSource": initialState.domSource});
+    }
+}
+
+
+function fixLoginLinks() {
+    // Update all login links to return directly to the current URL (NOTE that this 
+    // doesn't seem to work for Logout)
+    var currentURL;
+    try {
+        var State = History.getState();
+        currentURL = State.url;
+    } catch(e) {
+        currentURL = window.location.href;
+    }
+
+    // TODO: mark and mutate links on this page
+    $('a.login-logout').each(function() {
+        var $link = $(this);
+        var itsHref = $link.attr('href');
+        itsHref = itsHref.split('?')[0];
+        itsHref += ('?_next='+ currentURL);
+        $link.attr('href', itsHref);
+    });
+}
+var initialState;
 $(document).ready(function() {
+    bindHistoryAwareWidgets();
     bindHelpPanels();
-    // auto-select first tab (Metadata)
+
+    // set default starting tab, if the URL doesn't specify
+    // NOTE that we override this (using $.extend) with values set in the 
+    // main page template, so we can build it from incoming URL in web2py.
+    initialState = $.extend({
+        tab: 'metadata', 
+    }, urlState); // urlState should been defined in the main HTML view
+    goToTab( initialState.tab );
+    // N.B. We'll check this again once we've loaded the selected study, then clear it
+
+    // auto-select first tab (Metadata)  // TODO: use history instead!
     $('.nav-tabs a:first').tab('show');
     loadSelectedStudy();
-
+    
     // Initialize the jQuery File Upload widgets
     $('#fileupload').fileupload({
         disableImageResize: true,
@@ -957,6 +1124,18 @@ function loadSelectedStudy() {
 
             hideModalScreen();
             showInfoMessage('Study data loaded.');
+
+            if (initialState.tree) {
+                var tree = getTreeByID(initialState.tree);
+                if (tree) {
+                    showTreeViewer(tree);
+                } else {
+                    var errMsg = 'The requested tree (\''+ initialState.tree +'\') was not found. It has probably been deleted from this study.';
+                    hideModalScreen();
+                    showInfoMessage(errMsg);
+                }
+            }
+
         }
     });
 }
@@ -5628,4 +5807,12 @@ function getDataDepositMessage() {
     
     // default message simply repeats the dataDeposit URL
     return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
+}
+
+function slugify(str) {
+    // Convert any string into a simplified "slug" suitable for use in URL or query-string
+    return str.toLowerCase()
+              .replace(/[^a-z0-9 -]/g, '')  // remove invalid chars
+              .replace(/\s+/g, '-')         // collapse whitespace and replace by -
+              .replace(/-+/g, '-');         // collapse dashes
 }

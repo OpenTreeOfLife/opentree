@@ -1586,6 +1586,16 @@ body {
     var API_update_file_PUT_url = '{{=API_update_file_PUT_url}}';
     var API_remove_file_DELETE_url = '{{=API_remove_file_DELETE_url}}';
 
+    // if inbound URL specifies a particular tab or tree, record it here
+    var urlState = {
+     {{ if request.vars.get('tree',None): }}
+      tab: 'trees',
+      tree: '{{= request.vars['tree'] }}'
+     {{ elif request.vars.get('tab',None): }}
+      tab: '{{= request.vars['tab'] }}',
+     {{ pass }}
+    };
+
     var treemachine_domain = "{{=treemachine_domain}}";
     var taxomachine_domain = "{{=taxomachine_domain}}";
     var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
