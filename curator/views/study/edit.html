@@ -504,7 +504,7 @@ body {
                   <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
                         <td>
-                            <a href="#" data-bind="click: showConflictingNodesInTreeViewer,
+                            <a href="#" data-bind="click: showTreeWithHistory,
                                 text: tree['@label'],
                                 css: viewModel.ticklers.TREES">?</a>
                             <a data-bind="if: unresolvedConflictsFoundInTree( tree ), 
@@ -512,7 +512,7 @@ body {
                                           click: showConflictingNodesInTreeViewer" 
                                class="suggestion-prompt" style="display: block;"
                                href="#">
-                                Conflicts found!
+                                Show conflicting nodes
                             </a> 
                         </td>
                         <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
@@ -1585,6 +1585,16 @@ body {
     var API_load_file_GET_url = '{{=API_load_file_GET_url}}';
     var API_update_file_PUT_url = '{{=API_update_file_PUT_url}}';
     var API_remove_file_DELETE_url = '{{=API_remove_file_DELETE_url}}';
+
+    // if inbound URL specifies a particular tab or tree, record it here
+    var initialState = {
+     {{ if request.vars.get('tree',None): }}
+      tab: 'Trees',
+      tree: '{{= request.vars['tree'] }}'
+     {{ else: }}
+      tab: '{{= request.vars.get('tab','Metadata') }}',
+     {{ pass }}
+    };
 
     var treemachine_domain = "{{=treemachine_domain}}";
     var taxomachine_domain = "{{=taxomachine_domain}}";
