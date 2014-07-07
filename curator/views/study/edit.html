@@ -975,13 +975,11 @@ body {
                         </td>
                       {{ if viewOrEdit == 'EDIT': }}
                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && !('^ot:altLabel' in otu) -->
-                        <td>
-                            <em data-bind="text: otu['^ot:altLabel'] || '', 
+                         <td>
+                            <em data-bind="text: adjustedLabel(otu['^ot:originalLabel']) || '?', 
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                            style: { 'color' : ($.trim(otu['^ot:ottTaxonName']) === '' && !proposedMapping(otu)) ?  '' : 'silver' }"
                                >WORKING?</em>
-{{ if False: }}
-{{ pass }}
                         </td>
                         <td>
                           <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['^ot:ottTaxonName']) === '' && !proposedMapping(otu) -->
