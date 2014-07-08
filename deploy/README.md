@@ -20,31 +20,32 @@ For more information about our current deployment practices, see the notes and c
 How to deploy a new server
 --------------------------
 
-**Note: We're now using a single, common approach to managing sensitive files (private keys and API "secrets").** These files should be kept in directory ```~/.ssh/opentree/```, so that configuration can be shared easily among your team. See the [deployed-systems README](https://github.com/OpenTreeOfLife/deployed-servers/blob/master/README.md) for details.
+**Note: We're now using a single, common approach to managing sensitive files (private keys and API "secrets").
+** These files should be kept in directory ```~/.ssh/opentree/```, so that configuration can be shared easily among your team. See the [deployed-systems README](https://github.com/OpenTreeOfLife/deployed-servers/blob/master/README.md) for details.
 
-Got to Amazon or some other cloud provider, and reserve an instance
-running Debian GNU/Linux (version 7.1 has been working for us, but others ought to as well).  We've been using m1.small servers when
-running without big neo4j instances, m2.xlarge for those running with (taxomachine/treemachine).
+Go to Amazon or some other cloud provider, and reserve one or more instances
+running Debian GNU/Linux (version 7.5 has been working for us, but others ought to as well).  As of 2014-07-08 we're using m3.medium servers that don't
+run big neo4j databases (e.g. browser/curator only), 
+m3.large for those that do (taxomachine/treemachine).
 
-Put the ssh private key somewhere, e.g. 'opentree.pem' in your ~/.ssh directory.
+Put the ssh private key somewhere, e.g. in ~/.ssh/opentree/opentree.pem (on your own machine, 
+not the server).
 Set its file permissions to 600.
 
-If running the API, put the private key for the github account somewhere, so that the API can push changes to study files out to github.
+If running the API, put the private key for the github account somewhere (e.g. in ~/.ssh/opentree/), so that the API can push changes to study files out to github.
 
-Create one configuration file for each server.  A configuration is just a shell script that sets some variables.
+Create one configuration file for each server.  A configuration is just a shell script that sets some variables.  See sample.config in this directory for documentation on how to prepare a configuration file.
 
 Run the setup script, which is called 'push.sh', as
 
      ./push.sh -c {configfile}
 
-See sample.config in this directory for documentation on how to prepare a configuration file.
+All manipulation of the server, other than ad hoc temporary patches and debugging, should be done through the push script.  If you find you need functionality that it doesn't provide, please create a github issue.
 
-All manipulation of the server, other than ad hoc temporary patches and debugging, should be done through the push script.  If you find you need functionality that it doesn't provide please contact JAR.
-
-The push.sh script starts by pushing out a script to be run as the admin user (setup/as_admin.sh).  This script installs prerequisite software and sets up an unprivileged 'opentree' user.  Then further scripts are run as user 'opentree'.  The only privileged operation thereafter is restarting Apache.
+The push.sh script starts by pushing out a script to be run as the admin user (setup/as_admin.sh).  This script installs prerequisite software and creates an unprivileged 'opentree' user.  Then further scripts run as user 'opentree'.  The only privileged operation thereafter is restarting Apache.
 
 After this, on each invocation of push.sh, the contents of the setup/
-directory are synchronized from setup/ in the current directory.
+directory are synchronized from setup/ in the current directory - not from github. All other software is fetched from specified branches on github.
 
 The script may be re-run, and it tries to save time by avoiding reexecution of steps it has already performed based on sources that haven't changed.  If you're debugging you can re-run it repeatedly every time you want to try a change. (Unfortunately, at present it always reads from master branches of repos, but this is supposed to change soon.)
 
@@ -58,9 +59,9 @@ the 'push.sh' command.  For example:
 
     ./push.sh -c {configfile} treemachine
 
-updates the treemachine plugin and starts its neo4j instance.
+stops treemachine's neo4j instance, updates its treemachine plugin, and restarts the instance.
 
-For a list of components, see sample.config.
+For a list of components, see [sample.config](sample.config).
 
 Setting up the API and studies repo
 -----------------------------------
@@ -81,10 +82,42 @@ where {txxxmachine} is the neo4j directory for the application and {app} is taxo
 
 New versions of the database can be pushed out in this way as desired, replacing the previous version each time.  The previous version is kept for disaster recovery, but if it needs to be reinstalled, that has to be done manually.
 
-Indexing the store
-------------------
+Installing a new database version
+---------------------------------
 
-The following causes the oti application to index all of the studies in the study store [which one?].  WORK IN PROGRESS, not yet functional as of 2013-12-20.
+WORK IN PROGRESS
+
+As an optimization, instead of doing pushdb as above you can copy a
+.db.tgz file from another server (AWS), something like this:
+
+    ssh -i ~/.ssh/opentree/opentree.pem opentree@ot83.opentreeoflife.org
+    scp ot74.opentreeoflife.org:downloads/treemachine.db.tgz downloads/
+    exit
+    ./push.sh -c {configfile} install-db downloads/treemachine.db.tgz treemachine
+
+(ssh / command / exit could be done with ssh with command on command line.)
+
+Before you can do the scp it will be necessary for the machine running
+scp to have a .ssh/id_rsa, and the one delivering the bits to have a
+.ssh/authorized_keys that contains the corresponding public key.
+Run ssh_keygen if necessary to create keys.
+
+Following this, do 
+
+Initializing the OTI database
+-----------------------------
+
+WORK IN PROGRESS
+
+OTI's neo4j database needs to be initialized as a copy of the
+taxomachine database.  Set up taxomachine and copy over its database, then:
+
+    ./push.sh -c {configfile} install-db downloads/taxomachine.db.tgz oti
+
+Indexing all the studies (OTI database)
+---------------------------------------
+
+The following causes the oti application to index all of the studies in the study store.
 
     ./push.sh -c {configfile} index-db
 
@@ -107,3 +140,7 @@ directory out to the web root for the files.opentreeoflife.org vhost.
 The location is determined by the value of FILES_HOST, which defaults
 to ot10.opentreeoflife.org but can be overridden in the configuration
 file if desired.
+
+This operation leaves in place any files that are already there.  The
+large files (such as the synthetic tree) are not in github and are
+at present (2014-07-08) managed manually.
