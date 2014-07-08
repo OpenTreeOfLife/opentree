@@ -1021,13 +1021,29 @@ function loadSelectedStudy() {
                      *   1 = b comes before a
                      */
                     case 'Unmapped OTUs first':
+                        // Capture prior position first (for a more stable list during bulk mapping)
+                        $.each(filteredList, function(i, otu) {
+                            otu.priorPosition = i;
+                        });
                         filteredList.sort(function(a,b) { 
                             // N.B. This works even if there's no such property.
                             var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
                             var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
-                            if (aMapStatus === bMapStatus) return 0;
+                            if (aMapStatus === bMapStatus) {
+                                if (!aMapStatus) { // not yet mapped
+                                    // Try to retain their prior precedence in
+                                    // the list (avoid items jumping around)
+                                    return (a.priorPosition < b.priorPosition) ? -1:1;
+                                } else {
+                                    return 0;
+                                }
+                            }
                             if (aMapStatus) return 1;
                             if (bMapStatus) return -1;
+                        });
+                        // Toss the outdated prior positions
+                        $.each(filteredList, function(i, otu) {
+                            delete otu.priorPosition;
                         });
                         break;
 
