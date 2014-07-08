@@ -1031,79 +1031,100 @@ function showObjectProperties( objInfo, options ) {
                     break;
 
                 case 'Supported by':
-                default:
-                    // general approach
-                    var supportingStudyIDs = [ ];  // don't repeat studies under 'Supported by'
+
+                    //var supportingStudyIDs = [ ];  // don't repeat studies under 'Supported by', but gather trees for each!
+                    var supportedByTaxonomy = false;
+                    var supportingStudyInfo = { };  // don't repeat studies under 'Supported by', but gather trees for each *then* generate output
                     dValues = String(aSection.displayedProperties[dLabel]).split(',');
                     for (i = 0; i < dValues.length; i++) {
                         rawVal = dValues[i];
-                        switch(rawVal) {
-                            // some values are simply displayed as-is, or slightly groomed
-                            case ('taxonomy'):
-                                displayVal = 'Taxonomy';
-                                break;
-
-                            default:
-                                // other values might have more information in the metaMap
-                                // EXAMPLE rawVal = 'WangEtAl2009-studyid-15' (a study)
-                                var studyID = rawVal.split('_')[0];
-                                if ($.inArray(studyID, supportingStudyIDs) !== -1) {
-                                    // skip this study, we've already shown it
-                                    continue;
-                                }
-                                supportingStudyIDs.push( studyID );
-                                if (metaMap) {
-                                    moreInfo = metaMap[ rawVal ];
-                                }
-                                if (typeof moreInfo === 'object') {
-                                    if (moreInfo['study']) {
-                                        var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pURL, pID, pCurator;
-                                        // assemble and display study info
-                                        pRef = moreInfo.study['ot:studyPublicationReference'];
-                                        // be careful, in case we have an incomplete or badly-formatted reference
-                                        if (pRef) {
-                                            // we'll show full (vs. compact) reference for each study
-                                            displayVal = '<div class="full-ref">'+ pRef +'</div>';
-
-                                            /* compact ref logic, if needed later
-                                            pCompactYear = pRef.match(/(\d{4})/)[0];  
-                                                // capture the first valid year
-                                            pCompactPrimaryAuthor = pRef.split(pCompactYear)[0].split(',')[0];
-                                                // split on the year to get authors (before), and capture the first surname
-                                            pRefCompact = pCompactPrimaryAuthor +", "+ pCompactYear;    // eg, "Smith, 1999";
-                                            displayVal += pRefCompact;
-                                            */
-                                        }
-
-                                        // publication URL should always be present, non-empty, and a valid URL
-                                        pURL = moreInfo.study['ot:studyPublication'];
-                                        if (pURL) {
-                                            displayVal += 'Full publication: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pURL +'</a><br/>';
-                                        }
-                                        
-                                        pID = moreInfo.study['ot:studyId'];
-                                        if (pID) {
-                                            displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
-                                        }
-
-                                        pCurator = moreInfo.study['ot:curatorName'];
-                                        if (pCurator) {
-                                            displayVal += ('<div class="full-ref-curator">Curator: '+ pCurator +'</div>');
-                                        }
-
-                                    } else {
-                                        console.log("! expected a study, but found mysterious stuff in metaMap:");
-                                        for (p2 in moreInfo) {
-                                            console.log("  "+ p2 +" = "+ moreInfo[p2]);
-                                        }
-                                    }
-                                } else {
-                                    // when in doubt, just show the raw value
-                                    displayVal = rawVal;
-                                }
+                        if (rawVal === 'taxonomy') {
+                            // this will be added below any supporting studies+trees
+                            supportedByTaxonomy = true;
+                            continue;
                         }
+
+                        // look for study information in the metaMap
+                        if (metaMap) {
+                            moreInfo = metaMap[ rawVal ];
+                        }
+                        if (typeof moreInfo === 'object' && 'study' in moreInfo) {
+                            // EXAMPLE rawVal = 'WangEtAl2009-studyid-15' (a study)
+                            
+                            // adapt to various forms of meta-map key
+                            var metaMapValues = parseMetaMapKey( rawVal );
+                            if (!(metaMapValues.studyID in supportingStudyInfo)) {
+                                // add this study now, plus an empty trees collection
+                                supportingStudyInfo[ metaMapValues.studyID ] = $.extend({ supportingTrees: {} }, moreInfo.study);
+                            }
+                            // add the current tree 
+                            supportingStudyInfo[ metaMapValues.studyID ].supportingTrees[ metaMapValues.treeID ] = {};
+                            // TODO: add more info in data objects, e.g., a descriptive tree label
+
+                        } else if (moreInfo && !('study' in moreInfo)) {
+                            console.error("! expected a study, but found mysterious stuff in metaMap:");
+                            for (p2 in moreInfo) {
+                                console.error("  "+ p2 +" = "+ moreInfo[p2]);
+                            }
+                        } else {
+                            // when in doubt, just show the raw value
+                            console.error("! Expecting to find moreInfo and a study (dLabel="+ dLabel +", rawVal="+ rawVal +")");
+                        }
+                    }
+                    // Now that we've gathered all trees for all studies, show organized results by study, with taxonomy LAST if found
+                    for (studyID in supportingStudyInfo) { 
+                        var studyInfo = supportingStudyInfo[ studyID ]; 
+                        var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pURL, pID, pCurator;
+                        // assemble and display study info
+                        pRef = studyInfo['ot:studyPublicationReference'];
+                        // be careful, in case we have an incomplete or badly-formatted reference
+                        if (pRef) {
+                            // we'll show full (vs. compact) reference for each study
+                            displayVal = '<div class="full-ref">'+ pRef +'</div>';
+
+                            /* compact ref logic, if needed later
+                            pCompactYear = pRef.match(/(\d{4})/)[0];  
+                                // capture the first valid year
+                            pCompactPrimaryAuthor = pRef.split(pCompactYear)[0].split(',')[0];
+                                // split on the year to get authors (before), and capture the first surname
+                            pRefCompact = pCompactPrimaryAuthor +", "+ pCompactYear;    // eg, "Smith, 1999";
+                            displayVal += pRefCompact;
+                            */
+                        }
+
+                        // publication URL should always be present, non-empty, and a valid URL
+                        pURL = studyInfo['ot:studyPublication'];
+                        if (pURL) {
+                            displayVal += 'Full publication: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pURL +'</a><br/>';
+                        }
+                        
+                        pID = studyInfo['ot:studyId'];
+                        if (pID) {
+                            /* Phylografter link
+                            displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
+                            */
+                            displayVal += (
+                                'Open Tree curation of this study: <a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pID +'</a><br/>'
+                              + 'Supporting '+ (studyInfo.supportingTrees.length > 1 ? 'trees:' : 'tree:')
+                            );
+                            for (var treeID in studyInfo.supportingTrees) {
+                                displayVal += (
+                                    '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree=tree'+ treeID +'" '
+                                  + 'target="_blank" title="Link to this supporting tree in curation app">tree'+ treeID +'</a>'
+                                );
+                            }
+                        }
+
+                        pCurator = studyInfo['ot:curatorName'];
+                        if (pCurator) {
+                            displayVal += ('<div class="full-ref-curator">Curated by: '+ pCurator +'</div>');
+                        }
+
                         $details.append('<dt>'+ dLabel +'</dt>');
                         $details.append('<dd>'+ displayVal +'</dd>');
+                    }
+                    if (supportedByTaxonomy) {
+                        $details.append('<dt>Supported by taxonomy</dt>');
                     }
                     $details.find('.full-ref-toggle').unbind('click').click(function() {
                         var $itsReference = $(this).nextAll('.full-ref, .full-ref-curator');
@@ -1114,7 +1135,15 @@ function showObjectProperties( objInfo, options ) {
                         }
                         return false;
                     });
+                    break;
             
+                default:
+                    // general approach, just show the raw value
+                    ///console.log("showing raw value for '"+ dLabel +"'");
+                    ///console.log(aSection.displayedProperties);
+                    displayVal = aSection.displayedProperties[dLabel];
+                    $details.append('<dt>'+ dLabel +'</dt>');
+                    $details.append('<dd>'+ displayVal +'</dd>');
             }
         }
     }
@@ -1288,6 +1317,42 @@ function showErrorInArgusViewer( msg, details ) {
         + '<p id="error-details" style="margin: 8px 12px; font-style: italic; display: none;">'+ details +'</p>';
     }
     $('#argusCanvasContainer').css('height','500px').html( errorHTML );
+}
+
+function parseMetaMapKey( key ) {
+    // Adapt to various forms of meta-map key and return any components found as an object
+    // EXAMPLE: '1234_987' is '{STUDY-ID}_{TREE-ID}'
+    // EXAMPLE: 'pg_1144_5800_ba25a3fef742afd8cf52459e8d054737d062fe37' is '{STUDY-ID-WITH-PREFIX}_{TREE-ID}_{COMMIT-SHA}'
+    var props = {
+        studyID: null,
+        treeID: null,
+        commitSHA: null
+    };
+    
+    var keyParts = key.split('_');
+    // N.B. Study ID might have a prefix!
+    if (isNaN( parseInt( keyParts[0] ) )) {
+        // remove and concatenate the first TWO parts
+        props.studyID = keyParts.shift() +'_'+ keyParts.shift();
+    } else {
+        // remove just the FIRST part
+        props.studyID = keyParts.shift();
+    }
+    // Next value should be the supporting tree id
+    props.treeID = keyParts.shift();
+    // Any remaining part should be a commit SHA
+    switch( keyParts.length ) {
+        case 0:
+            // no commit SHA was found
+            break;
+        case 1:
+            props.commitSHA = keyParts[0];
+            break;
+        default:
+        console.error('Expected just one more part (or none) in this key: ['+ key +']');
+    }
+
+    return props;
 }
 
 /* provide string-trimming functions in older browsers */

@@ -1,2 +1,7 @@
 User-agent: *
-Disallow: /
+# Block dynamic visualizations of taxonomy and synthetic tree
+Disallow: /other/
+# Block downloadable .tgz archives
+Disallow: /ott/
+Disallow: /trees/
+Crawl-delay: 60

@@ -1,3 +1,43 @@
+/*    
+@licstart  The following is the entire license notice for the JavaScript code in this page. 
+
+    Copyright (c) 2013, Jim Allman
+    Copyright (c) 2013, Mark Holder
+
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    Redistributions of source code must retain the above copyright notice, this
+    list of conditions and the following disclaimer.
+
+    Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+@licend  The above is the entire license notice for the JavaScript code in this page.
+*/
+
+/*
+ * Subscribe to history changes (adapted from History.js boilerplate) 
+ */
+
+var History = window.History; // Note: capital H refers to History.js!
+// History.js can be disabled for HTML4 browsers, but this should not be the case for opentree!
+
+
 /*
  * Client-side behavior for the Open Tree curation UI
  *
@@ -48,12 +88,225 @@ function captureTagTextOnBlur( $tagsSelect ) {
     });
 }
 
-$(document).ready(function() {
-    bindHelpPanels();
-    // auto-select first tab (Metadata)
-    $('.nav-tabs a:first').tab('show');
-    loadSelectedStudy();
+/* Use history plugin to track moves from tab to tab, single-tree popup, others? */
 
+if ( History && History.enabled ) {
+    // bind to statechange event
+    History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
+        var State = History.getState(); // Note: We are using History.getState() instead of event.state
+        console.log('>>>');
+        History.log(State.data, State.title, State.url);
+
+        // TODO: hide/show elements as needed
+        // Extract our state vars from State.url (not from State.data) for equal
+        // treatment of initial URLs.
+        var currentTab = State.data.tab;
+        var currentTree = State.data.tree;
+        
+/*
+        // TODO: hide/show elements as needed
+        // Extract our state vars from State.url (not from State.data) for equal
+        // treatment of initial URLs.
+        var urlParts = State.url.split('?');
+        if (urlParts.length > 1) {
+            var qs = urlParts[1];
+            var qsVars = deparam( qs );
+            var tabName = qsVars['tab'];
+            var treeID = qsVars['tree'];
+
+            console.log('tabName='+ tabName);
+            console.log('treeID='+ treeID);
+
+            if (tabName) {
+                goToTab( tabName );
+            }
+            if (treeID) {
+                var tree = getTreeByID(treeID);
+                if (tree) {
+                    showTreeViewer(tree);
+                } else {
+                    var errMsg = 'The requested tree (\''+ treeID +'\') was not found. It has probably been deleted from this study.';
+                    hideModalScreen();
+                    showInfoMessage(errMsg);
+                }
+            }
+        }
+*/
+        console.log('currentTab='+ currentTab);
+        console.log('currentTree='+ currentTree);
+        console.log('<<<');
+
+        if (currentTab) {
+            goToTab( currentTab );
+        }
+        if (currentTree) {
+            var tree = getTreeByID(currentTree);
+            if (tree) {
+                showTreeViewer(tree);
+            } else {
+                var errMsg = 'The requested tree (\''+ currentTree +'\') was not found. It has probably been deleted from this study.';
+                hideModalScreen();
+                showInfoMessage(errMsg);
+            }
+            delete initialState;  // clear this to avoid repeat viewing
+        } else {
+            // hide any active tree viewer
+            if (treeViewerIsInUse) {
+                $('#tree-viewer').modal('hide');
+            }
+        }
+
+        // TODO: update all login links to use the new URL?
+        fixLoginLinks();
+    });
+}
+
+function deparam( querystring ) {
+    // "inverse" of jQuery's $.param(), this should convert a query-string
+    // to a simple object w/ values
+    var objResult = {};
+    $.each( querystring.split("&"), function() {
+        var prm=this.split("=");
+        objResult[prm[0]] = prm[1]; 
+    });
+    return objResult;
+}
+
+function bindHistoryAwareWidgets() {
+    // TODO: set first event handlers on tabs, tree popups, etc.
+    var $tabBar = $('ul.nav-tabs:eq(0)');
+    $tabBar.find('li > a').click(function() {
+        console.log('INITIAL CLICK on tab');
+        var $tab = $(this);
+        var tabName = $.trim( $tab.html().split('<')[0] );
+        changeTab( {'tab': tabName } );
+        // this drives history (if possible) and changes tab
+        return false;  // skip tab's default click-handler!
+    });
+}
+
+// call this FIRST when clicking tabs (or changing tabs via script)...
+function changeTab(o) {
+    // if we're using History.js, all tab changes should should be driven from history
+    var newTabName = $.trim('tab' in o ? o.tab : '');
+    if (newTabName === '') {
+        alert('changeTab(): No tab name specified!');
+        return;
+    }
+    var $tabBar = $('ul.nav-tabs:eq(0)');
+    var oldTabName = $.trim($tabBar.find('li.active a').text());
+    if (newTabName === oldTabName) {
+        alert('changeTab(): Same tab specified, nothing to change...');
+        return;
+    }
+    if (History && History.enabled) {
+        /* TODO: add expected values for minimal history entry?
+        var stateObj = $.extend(true, {'foo': ''}, o); 
+        // deep copy of o, with default values if none supplied
+        //History.pushState(o, historyStateToWindowTitle(o), historyStateToURL(o));
+        */
+        History.pushState(o, '', '?tab='+ slugify(newTabName));  // TODO: change title and URL?
+    } else {
+        // click tab normally (ignore browser history)
+        goToTab( newTabName );
+    }
+}
+function showTreeWithHistory(tree) {
+    if (History && History.enabled) {
+        // push tree view onto history (if available) and show it
+        var newState = {
+            'tab': 'Trees',
+            'tree': tree['@id']
+        };
+        History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree) );
+    } else {
+        // show tree normally (ignore browser history)
+        showTreeViewer(tree);
+        // OR showTreeViewer(tree, options) ??
+    }
+}
+function hideTreeWithHistory() {
+    // remove tree from history (if available) and hide it
+    // N.B. This is triggered whenever the tree viewer is closed/hidden
+    if (History && History.enabled) {
+        // push tree view onto history (if available) and show it
+        var oldState = History.getState().data;
+        if (!oldState.tree) {
+            // it wasn't added to history, so no change needed
+            return;
+        }
+        var newState = {
+            'tab': 'Trees'
+        };
+        History.pushState( newState, (window.document.title), '?tab=trees' );
+    }
+}
+
+if (false) {  // TODO: move this to $(document).ready and adapt...
+    if ( History && History.enabled ) {
+        // if there's no prior state, go to the initial target node in the synthetic tree
+        var priorState = History.getState();
+       
+        // Check first for incoming URL that might override prior history
+        if (initialState.forcedByURL || !(priorState.data.nodeID)) {
+            // apply the state as specified in the URL (or defaults, if prior history is incomplete)
+            console.log("Applying state from incoming URL...");
+            initialState.nudge = new Date().getTime();
+            History.pushState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
+        } else {
+            // nudge the (existing) browser state to view it again
+            console.log("Nudging state (and hopefully initial view)...");
+            priorState.data.nudge = new Date().getTime();
+            History.replaceState( priorState.data, priorState.title, priorState.url );
+        }
+    } else {
+        // force initial argus view using defaults above
+        // NOTE: forcing even this through history, to get possible remapping of node IDs
+        argus.moveToNode({"nodeID": initialState.nodeID,
+                           "domSource": initialState.domSource});
+    }
+}
+
+
+function fixLoginLinks() {
+    // Update all login links to return directly to the current URL (NOTE that this 
+    // doesn't seem to work for Logout)
+    var currentURL;
+    try {
+        var State = History.getState();
+        currentURL = State.url;
+    } catch(e) {
+        currentURL = window.location.href;
+    }
+
+    // TODO: mark and mutate links on this page
+    $('a.login-logout').each(function() {
+        var $link = $(this);
+        var itsHref = $link.attr('href');
+        itsHref = itsHref.split('?')[0];
+        itsHref += ('?_next='+ currentURL);
+        $link.attr('href', itsHref);
+    });
+}
+var initialState;
+$(document).ready(function() {
+    bindHistoryAwareWidgets();
+    bindHelpPanels();
+
+    // NOTE that our initial state is set in the main page template, so we 
+    // can build it from incoming URL in web2py. Try to recapture this state,
+    // ideally through manipulating history.
+    if (History && History.enabled) {
+        // "formalize" the current state with an object
+        initialState.nudge = new Date().getTime();
+        History.replaceState(initialState, window.document.title, window.location.href);
+    } else {
+        goToTab( initialState.tab );
+    }
+    // N.B. We'll check this again once we've loaded the selected study, then clear it
+
+    loadSelectedStudy();
+    
     // Initialize the jQuery File Upload widgets
     $('#fileupload').fileupload({
         disableImageResize: true,
@@ -177,8 +430,22 @@ $(document).ready(function() {
 
 
 function goToTab( tabName ) {
-    // click the corresponding tab, if found
-    $('.nav-tabs a:contains('+ tabName +')').tab('show');
+    // Click the corresponding tab, if found. If the tab name is not found, it
+    // might be a "slug" version, so compare these too.
+console.log("GOING TO TAB '"+ tabName +"'...");
+    var $matchingTab = $('.nav-tabs a').filter(function() {
+        var $tab = $(this);
+        var itsName = $.trim( $tab.html().split('<')[0] );
+        if (itsName === tabName) {
+            return true;
+        }
+        if (slugify(itsName) === tabName) {
+            return true;
+        }
+        return false;
+    })
+console.log("  found "+ $matchingTab.length +" matching tabs");
+    $matchingTab.tab('show');
 }
 
 var studyTagsInitialized = false;
@@ -754,13 +1021,29 @@ function loadSelectedStudy() {
                      *   1 = b comes before a
                      */
                     case 'Unmapped OTUs first':
+                        // Capture prior position first (for a more stable list during bulk mapping)
+                        $.each(filteredList, function(i, otu) {
+                            otu.priorPosition = i;
+                        });
                         filteredList.sort(function(a,b) { 
                             // N.B. This works even if there's no such property.
                             var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
                             var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
-                            if (aMapStatus === bMapStatus) return 0;
+                            if (aMapStatus === bMapStatus) {
+                                if (!aMapStatus) { // not yet mapped
+                                    // Try to retain their prior precedence in
+                                    // the list (avoid items jumping around)
+                                    return (a.priorPosition < b.priorPosition) ? -1:1;
+                                } else {
+                                    return 0;
+                                }
+                            }
                             if (aMapStatus) return 1;
                             if (bMapStatus) return -1;
+                        });
+                        // Toss the outdated prior positions
+                        $.each(filteredList, function(i, otu) {
+                            delete otu.priorPosition;
                         });
                         break;
 
@@ -896,7 +1179,9 @@ function loadSelectedStudy() {
                 subst.old.$.subscribe(clearFailedOTUList);
             });
             */
-            viewModel.ticklers.OTU_MAPPING_HINTS.subscribe(clearFailedOTUList);
+            
+            //viewModel.ticklers.OTU_MAPPING_HINTS.subscribe(clearFailedOTUList);
+            // NO, this forces frequent retries of doomed OTU mapping!
 
             // some changes to metadata will modify the page's headings
             viewModel.ticklers.GENERAL_METADATA.subscribe(updatePageHeadings);
@@ -925,6 +1210,19 @@ function loadSelectedStudy() {
 
             hideModalScreen();
             showInfoMessage('Study data loaded.');
+
+            if (initialState.tree) {
+                var tree = getTreeByID(initialState.tree);
+                if (tree) {
+                    showTreeViewer(tree);
+                } else {
+                    var errMsg = 'The requested tree (\''+ initialState.tree +'\') was not found. It has probably been deleted from this study.';
+                    hideModalScreen();
+                    showInfoMessage(errMsg);
+                }
+                delete initialState;  // clear this to avoid repeat viewing
+            }
+
         }
     });
 }
@@ -2052,7 +2350,7 @@ var studyScoringRules = {
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         },
         {
-            description: "There should be at least one candidate tree (unless submitter has opted out).",
+            description: "There should be at least one candidate tree (unless curator has opted out).",
             test: function(studyData) {
                 // check for opt-out flag
                 var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
@@ -2064,8 +2362,8 @@ var studyScoringRules = {
                 return getPreferredTrees().length > 0;
             },
             weight: 0.3, 
-            successMessage: "There is at least one candidate tree, or the submitter has opted out of synthesis.",
-            failureMessage: "There should be at least one candidate tree, or the submitter should opt out of synthesis.",
+            successMessage: "There is at least one candidate tree, or the curator has opted out of synthesis.",
+            failureMessage: "There should be at least one candidate tree, or the curator should opt out of synthesis.",
             suggestedAction: "Mark a tree as candidate for synthesis, or opt out of synthesis in Metadata."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         },
@@ -2095,7 +2393,7 @@ var studyScoringRules = {
             },
             weight: 0.5, 
             successMessage: "No conflicting nodes (mapped to same taxon) found in candidate trees.",
-            failureMessage: "The submitter should choose an 'exemplar' for each mapped taxon in a candidate tree.",
+            failureMessage: "Conflicting nodes found! The curator should choose an 'exemplar' for each mapped taxon in a candidate tree.",
             suggestedAction: "Review all conflicting instances of a mapped taxon and choose an exemplar."
         }
     ],
@@ -2437,6 +2735,7 @@ function showTreeViewer( tree, options ) {
         });
         $('#tree-viewer').off('hide').on('hide', function () {
             treeViewerIsInUse = false;
+            hideTreeWithHistory(tree);
         });
         $('#tree-viewer').off('hidden').on('hidden', function () {
             ///console.log('@@@@@ hidden');
@@ -2489,7 +2788,7 @@ function showConflictingNodesInTreeViewer(tree) {
     // If there are no conflicts, fall back to simple tree view
     var conflictData = getUnresolvedConflictsInTree( tree );
     if (!isPreferredTree(tree) || $.isEmptyObject(conflictData)) {
-        showTreeViewer(tree);
+        showTreeWithHistory(tree);
         return;
     }
     // Convert conflict object to standard node playlist?
@@ -3081,6 +3380,9 @@ function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID, inGroupClade,
 
 function getTreeByID(id) {
     var allTrees = [];
+    if (!viewModel) {
+        return null;
+    }
     $.each(viewModel.nexml.trees, function(i, treesCollection) {
         $.each(treesCollection.tree, function(i, tree) {
             allTrees.push( tree );
@@ -3855,6 +4157,7 @@ function addSubstitution( clicked ) {
         $(clicked).val('');
     }
     getOTUMappingHints().data.substitutions.substitution.push(subst);
+    clearFailedOTUList();
     nudgeTickler('OTU_MAPPING_HINTS');
 }
 function removeSubstitution( data ) {
@@ -3864,8 +4167,15 @@ function removeSubstitution( data ) {
         // add an inactive substitution with prompts
         addSubstitution();
     } else {
+        clearFailedOTUList();
         nudgeTickler('OTU_MAPPING_HINTS');
     }
+}
+function updateMappingHints( data ) {
+    // after-effects of changes to search context or any substitution
+    clearFailedOTUList();
+    nudgeTickler('OTU_MAPPING_HINTS');
+    return true;
 }
 
 var autoMappingInProgress = ko.observable(false);
@@ -5596,4 +5906,12 @@ function getDataDepositMessage() {
     
     // default message simply repeats the dataDeposit URL
     return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
+}
+
+function slugify(str) {
+    // Convert any string into a simplified "slug" suitable for use in URL or query-string
+    return str.toLowerCase()
+              .replace(/[^a-z0-9 -]/g, '')  // remove invalid chars
+              .replace(/\s+/g, '-')         // collapse whitespace and replace by -
+              .replace(/-+/g, '-');         // collapse dashes
 }
