@@ -534,10 +534,13 @@ function createArgus(spec) {
                 getHoverHandlerNodeHighlight('OVER', argusObj.nodeProvenanceHighlight, {}), 
                 getHoverHandlerNodeHighlight('OUT', argusObj.nodeProvenanceHighlight, { })
             );
-            argusObj.nodeProvenanceHighlight.click(
-                // note that the target node's info is available as argusObj.highlightedNodeInfo
-                getClickHandlerNodeHighlight()
-            );
+            var handler = getClickHandlerNodeHighlight(); // just once!
+            // note that the target node's info is available as argusObj.highlightedNodeInfo
+            $.each(argusObj.nodeProvenanceHighlight.items, function(i, item) {
+                // we need to dig into the actual nodes to use jQuery binding
+                $(item.node).on('click contextmenu', handler);
+            });
+            
 
             argusObj.edgeProvenanceHighlight = paper.set();
             // rect to allow scaling (vs path)
@@ -845,10 +848,30 @@ function createArgus(spec) {
         };
     }
     getClickHandlerNode = function (nodeID, domSource, nodeName) {
-        return function () {
-            argusObj.moveToNode({"nodeID": nodeID,
-                                 "domSource": domSource,
-                                 "nodeName": nodeName});
+        return function (e) {
+            /* Right-click ('contextmenu' event) should open a new window focused
+             * on this node; otherwise re-center the argus view in this window.
+             *
+             * N.B. Details on how a new window or tab appears depend on each browser,
+             * as well as popup blockers and user preferences!
+             */
+            switch (e.type) {
+                case 'contextmenu':
+                    var urlSafeNodeName = encodeURIComponent(nodeName);  
+                    var nodeURL = '/opentree/'+ domSource +'@'+ nodeID +'/'+ urlSafeNodeName;
+                    var newWindow = window.open( nodeURL, '_blank' );
+                    if (newWindow) {
+                        // if blocked by popup blocker, this is undefined
+                        newWindow.focus();
+                    }
+                    break;
+
+                case 'click':
+                default:
+                    argusObj.moveToNode({"nodeID": nodeID,
+                                         "domSource": domSource,
+                                         "nodeName": nodeName});
+            }
         };
     };
     getClickHandlerCluster = function (minimizedClusterParts, parentNodeID, clusterPosition, depthFromTargetNode, domSource, currentYoffset) {
@@ -937,9 +960,30 @@ function createArgus(spec) {
         };
     };
     getClickHandlerNodeHighlight = function () {
-        return function () {
-            // use source-node values copied from the target node
-            showObjectProperties( argusObj.highlightedNodeInfo );
+        return function (e) {
+            /* Right-click ('contextmenu' event) should open a new window focused
+             * on this node; otherwise show this node's properties in the inspector.
+             * We'll use source-node values copied from the target node
+             *
+             * N.B. Details on how a new window or tab appears depend on each browser,
+             * as well as popup blockers and user preferences!
+             */
+            switch (e.type) {
+                case 'contextmenu':
+                    var info = argusObj.highlightedNodeInfo;
+                    var urlSafeNodeName = encodeURIComponent(info.nodeName);  
+                    var nodeURL = '/opentree/'+ info.domSource +'@'+ info.nodeID +'/'+ urlSafeNodeName;
+                    var newWindow = window.open( nodeURL, '_blank' );
+                    if (newWindow) {
+                        // if blocked by popup blocker, this is undefined
+                        newWindow.focus();
+                    }
+                    break;
+
+                case 'click':
+                default:
+                    showObjectProperties( argusObj.highlightedNodeInfo );
+            }
         };
     };
     getClickHandlerEdgeHighlight = function () {
@@ -1059,7 +1103,7 @@ function createArgus(spec) {
                 "fill": nodeFill
             }));
 
-            circle.click(getClickHandlerNode(node.nodeid, domSource, node.name));
+            $(circle.node).on('click contextmenu', getClickHandlerNode(node.nodeid, domSource, node.name));
             // copy source data into the circle element (for use by highlight)
             circle.data('sourceNodeInfo', {
                 'nodeID': node.nodeid,
@@ -1278,7 +1322,7 @@ function createArgus(spec) {
                             label.id = (nodeLabelElementID);
 
                             // add handlers and metadata
-                            circle.click(getClickHandlerNode(ancestorNode.nodeid, domSource, ancestorNode.name));
+                            $(circle.node).bind('click contextmenu', getClickHandlerNode(ancestorNode.nodeid, domSource, ancestorNode.name));
                             // copy source data into the circle element (for use by highlight)
                             circle.data('sourceNodeInfo', {
                                 'nodeID': ancestorNode.nodeid,
@@ -1588,6 +1632,12 @@ function createArgus(spec) {
         });
         // center the view on the target node
         $argusContainer.scrollTop((this.targetNodeY) - ($argusContainer.height() / 2));
+
+        // disable default right-click behavior in the argus view
+        $argusContainer.bind("contextmenu", function (e) { 
+            e.preventDefault();
+            return false; 
+        });
 
         // for each node found to have more than one parent
         for (i = 0; i < this.nodesWithCycles.length; i++) {
