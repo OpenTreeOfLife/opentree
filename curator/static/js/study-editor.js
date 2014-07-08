@@ -1163,7 +1163,9 @@ function loadSelectedStudy() {
                 subst.old.$.subscribe(clearFailedOTUList);
             });
             */
-            viewModel.ticklers.OTU_MAPPING_HINTS.subscribe(clearFailedOTUList);
+            
+            //viewModel.ticklers.OTU_MAPPING_HINTS.subscribe(clearFailedOTUList);
+            // NO, this forces frequent retries of doomed OTU mapping!
 
             // some changes to metadata will modify the page's headings
             viewModel.ticklers.GENERAL_METADATA.subscribe(updatePageHeadings);
@@ -4139,6 +4141,7 @@ function addSubstitution( clicked ) {
         $(clicked).val('');
     }
     getOTUMappingHints().data.substitutions.substitution.push(subst);
+    clearFailedOTUList();
     nudgeTickler('OTU_MAPPING_HINTS');
 }
 function removeSubstitution( data ) {
@@ -4148,8 +4151,15 @@ function removeSubstitution( data ) {
         // add an inactive substitution with prompts
         addSubstitution();
     } else {
+        clearFailedOTUList();
         nudgeTickler('OTU_MAPPING_HINTS');
     }
+}
+function updateMappingHints( data ) {
+    // after-effects of changes to search context or any substitution
+    clearFailedOTUList();
+    nudgeTickler('OTU_MAPPING_HINTS');
+    return true;
 }
 
 var autoMappingInProgress = ko.observable(false);
