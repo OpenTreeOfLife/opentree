@@ -107,6 +107,8 @@ Following this, do
 Initializing the OTI database
 -----------------------------
 
+WORK IN PROGRESS
+
 OTI's neo4j database needs to be initialized as a copy of the
 taxomachine database.  Set up taxomachine and copy over its database, then:
 
@@ -138,3 +140,7 @@ directory out to the web root for the files.opentreeoflife.org vhost.
 The location is determined by the value of FILES_HOST, which defaults
 to ot10.opentreeoflife.org but can be overridden in the configuration
 file if desired.
+
+This operation leaves in place any files that are already there.  The
+large files (such as the synthetic tree) are not in github and are
+at present (2014-07-08) managed manually.
