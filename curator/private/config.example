@@ -31,12 +31,12 @@ opentree_api = http://dev.opentreeoflife.org/api/v1
 getDraftTreeID_url = {treemachine_domain}/getDraftTreeID
 getSyntheticTree_url = {treemachine_domain}/getSyntheticTree  
 getSourceTree_url = {treemachine_domain}/getSourceTree  
-getConflictTaxJsonAltRel_url = {taxomachine_domain}/ext/GetJsons/node/{nodeID}/getConflictTaxJsonAltRel
+getConflictTaxJsonAltRel_url = {taxomachine_domain}/../ext/GetJsons/node/{nodeID}/getConflictTaxJsonAltRel
 getDraftTreeForOttolID_url = {treemachine_domain}/getDraftTreeForottId
 # N.B. This doesn't match the capitalization conventions used elsewhere.
 getDraftTreeForNodeID_url = {treemachine_domain}/getDraftTreeForNodeID
-doTNRSForNames_url = {taxomachine_domain}/ext/TNRS/graphdb/autocompleteBoxQuery
-getContextsJSON_url = {taxomachine_domain}/ext/TNRS/graphdb/getContextsJSON
+doTNRSForNames_url = {taxomachine_domain}/autocompleteBoxQuery
+getContextsJSON_url = {taxomachine_domain}/getContextsJSON
 getNodeIDForOttolID_url = {treemachine_domain}/getNodeIDForottId
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
 phylesystem_config_url = {opentree_api_domain}/phylesystem_config
