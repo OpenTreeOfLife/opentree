@@ -28,20 +28,20 @@ opentree_api = http://dev.opentreeoflife.org/api/v1
 # URLs within the main opentree site. So we assume that partial paths '/db/data/' 
 # are handled in the ProxyPass statement.
 [method_urls]
-getDraftTreeID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeID
-getSyntheticTree_url = {treemachine_domain}/ext/GoLS/graphdb/getSyntheticTree  
-getSourceTree_url = {treemachine_domain}/ext/GoLS/graphdb/getSourceTree  
-getConflictTaxJsonAltRel_url = {taxomachine_domain}/ext/GetJsons/node/{nodeID}/getConflictTaxJsonAltRel
-getDraftTreeForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeForOttolID  
-getDraftTreeForNodeID_url = {treemachine_domain}/ext/GoLS/graphdb/getDraftTreeForNodeID
-doTNRSForNames_url = {taxomachine_domain}/ext/TNRS/graphdb/autocompleteBoxQuery
-getContextsJSON_url = {taxomachine_domain}/ext/TNRS/graphdb/getContextsJSON
-getNodeIDForOttolID_url = {treemachine_domain}/ext/GoLS/graphdb/getNodeIDForottId
+getDraftTreeID_url = {treemachine_domain}/getDraftTreeID
+getSyntheticTree_url = {treemachine_domain}/getSyntheticTree  
+getSourceTree_url = {treemachine_domain}/getSourceTree  
+getConflictTaxJsonAltRel_url = {taxomachine_domain}/../ext/GetJsons/node/{nodeID}/getConflictTaxJsonAltRel
+getDraftTreeForOttolID_url = {treemachine_domain}/getDraftTreeForottId
+# N.B. getDraftTreeForottId doesn't match the capitalization conventions used elsewhere.
+getDraftTreeForNodeID_url = {treemachine_domain}/getDraftTreeForNodeID
+doTNRSForNames_url = {taxomachine_domain}/autocompleteBoxQuery
+getContextsJSON_url = {taxomachine_domain}/getContextsJSON
+getNodeIDForOttolID_url = {treemachine_domain}/getNodeIDForottId
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
-# NOTE that the phylesystem_config method lives *above* the usual v1/ path
-phylesystem_config_url = {opentree_api_domain}/../phylesystem_config
-getSynthesisSourceList_url = {treemachine_domain}/ext/GoLS/graphdb/getSynthesisSourceList
-findAllStudies_url = {oti_domain}/ext/QueryServices/graphdb/findAllStudies
+phylesystem_config_url = {opentree_api_domain}/phylesystem_config
+getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
+findAllStudies_url = {oti_domain}/findAllStudies
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #
