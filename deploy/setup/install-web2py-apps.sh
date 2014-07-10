@@ -82,6 +82,7 @@ sed "s+github_client_id = .*+github_client_id = $TREEVIEW_GITHUB_CLIENT_ID+;
      s+treemachine = .*+treemachine = $TREEMACHINE_BASE_URL+
      s+taxomachine = .*+taxomachine = $TAXOMACHINE_BASE_URL+
      s+oti = .*+oti = $OTI_BASE_URL+
+     s+opentree_api = .*+opentree_api = $OPENTREE_API_BASE_URL+
     " < $configfile > tmp.tmp
 mv tmp.tmp $configfile
 
