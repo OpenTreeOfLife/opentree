@@ -98,7 +98,7 @@ def fetch_current_synthesis_source_data():
             # with the prefixed IDs provided by getSynthesisSourceList.
             id_parts = study['ot:studyId'].split('_')
             if len(id_parts) == 1:
-                prefixed_study_id = '_'.join('pg', study['ot:studyId'])
+                prefixed_study_id = 'pg_%s' % study['ot:studyId']
             else:
                 prefixed_study_id = study['ot:studyId']
             if prefixed_study_id in contributing_study_info.keys():
