@@ -109,10 +109,10 @@ div.contributing-studies div.links a {
                   <a target="_blank" 
                     href="{{= URL(a='default', c='default', f='argus', args=['ottol@{}/{}'.format( study.get('ot:focalClade'), study.get('ot:focalCladeOTTTaxonName') ) ] ) }}"
                     >Browse focal clade in synthetic tree</a>
-                  <a target="_blank" href="{{= oti_domain[:-4] }}/api/v1/study/{{= study.get('ot:studyId')}}"
+                  <a target="_blank" href="{{= oti_domain[:-4] }}/phylesystem/v1/study/{{= study.get('ot:studyId')}}"
                     >Download current NexSON</a>
                   {{ if study.get('commit_SHA_in_synthesis', None): }}
-                  <a target="_blank" href="{{= oti_domain[:-4] }}/api/v1/study/{{= study.get('ot:studyId')}}?starting_commit_SHA={{= study.get('commit_SHA_in_synthesis') }}"
+                  <a target="_blank" href="{{= oti_domain[:-4] }}/phylesystem/v1/study/{{= study.get('ot:studyId')}}?starting_commit_SHA={{= study.get('commit_SHA_in_synthesis') }}"
                     >Download version used in synthesis</a>
                   {{ pass }}
                 <!--
