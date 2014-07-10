@@ -24,6 +24,7 @@ github_redirect_uri = YOUR_REDIRECT_URI_HERE
 treemachine = http://opentree.myserver.org/treemachine
 taxomachine = http://opentree.myserver.org/taxomachine
 oti = http://opentree.myserver.org/oti
+opentree_api = http://opentree.myserver.org/phylesystem/v1
  
 
 # Building on the URLs above, complete the public-facing URL for all methods
@@ -46,4 +47,5 @@ getNodeIDForOttolID_url = {treemachine_domain}/getNodeIDForottId
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
 getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
 findAllStudies_url = {oti_domain}/findAllStudies
-
+# Include one phylesystem-api method to download NexSON from Bibliographic References page
+API_load_study_GET_url = {opentree_api_domain}/study/{STUDY_ID}
