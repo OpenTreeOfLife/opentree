@@ -72,7 +72,7 @@ def fetch_current_synthesis_source_data():
             # add default prefix 'pg' to study ID, if not found
             if source_parts[0].isdigit():
                 # prepend with default namespace 'pg'
-                study_id = '_'.join('pg', source_parts[0])
+                study_id = 'pg_%s' % source_parts[0]
             else:
                 study_id = '_'.join(source_parts[0:2])
             if len(source_parts) == 4:
