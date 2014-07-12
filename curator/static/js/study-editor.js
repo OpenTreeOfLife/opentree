@@ -2914,7 +2914,7 @@ function drawTree( treeOrID, options ) {
 
     // let's set the viewer height based on total number of nodes
     // (in a bifurcating tree, perhaps half will be leaf nodes)
-    var viewHeight = tree.node.length * 20;
+    var viewHeight = tree.node.length * 12;
     ///console.log("setting tree-view height to "+ viewHeight);
     
     var treeEdgesHaveLength = ('@length' in tree.edge[0]);
