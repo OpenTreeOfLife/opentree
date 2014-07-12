@@ -8,7 +8,7 @@ response.subtitle = ""
    # TODO: Customize messages for other codes? see http://en.wikipedia.org/wiki/List_of_HTTP_status_codes
 
    msg = "Sorry, something went wrong."
-   suggestion = 'Please try the links or search above. If you still can\'t find what you\'re looking for, <a href="mailto:info@opentreeoflife.org">contact us [TODO: what\'s the link here?]</a> and we\'ll help to sort things out.'
+   suggestion = 'Please try the links or search above. If you still can\'t find what you\'re looking for, <a href="/contact">contact us</a> and we\'ll help to sort things out.'
 
    if response.status == 404:
        msg = "Sorry, we couldn't find this page."
@@ -16,7 +16,7 @@ response.subtitle = ""
        msg = "Sorry, there was a server error."
    elif response.status == 403:
        msg = "Sorry, you're not allowed to see that."
-       suggestion = 'Please log into the site and try again. If you still can\'t find what you\'re looking for, <a href="mailto:info@opentreeoflife.org">contact us [TODO: what\'s the link here?]</a> and we\'ll help to sort things out.'
+       suggestion = 'Please log into the site and try again. If you still can\'t find what you\'re looking for, <a href="/contact">contact us</a> and we\'ll help to sort things out.'
    pass
  }}
 
