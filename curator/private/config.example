@@ -5,6 +5,18 @@
 # build the final config for each web2py app. Changes here might keep it
 # from being built properly.
 
+[maintenance]
+# During system migration and other scheduled maintenance, we should allow
+# viewing of existing studies but block study creation and editing.
+# Boolean values here should be 'true' or 'false'. Use indents to define a long (multi-line) notice.
+maintenance_in_progress = false
+maintenance_notice = Study creation and editing are disabled while we upgrade to
+                   the latest code and features. Please pardon the
+                   inconvenience. We expect to be back online for editing
+                   studies later this evening (Thursday, July 10).
+## upcoming_maintenance_scheduled = true
+## upcoming_maintenance_notice = Note that we've scheduled an upgrade for Saturday...
+
 [apis]
 # These values can be obtained by registering your instance as an
 # application with GitHub, at https://github.com/settings/applications/new

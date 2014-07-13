@@ -12,7 +12,9 @@
 #########################################################################
 
 from applications.opentree.modules.opentreewebapputil import(
-    get_opentree_services_method_urls, fetch_current_TNRS_context_names)
+    get_opentree_services_method_urls, 
+    fetch_current_TNRS_context_names,
+    get_maintenance_info)
 # N.B. This module is shared with tree-browser app, which is aliased as
 # 'opentree'. Any name changes will be needed here as well!
 
@@ -40,6 +42,7 @@ def view():
     """
     response.view = 'study/edit.html'
     view_dict = get_opentree_services_method_urls(request)
+    view_dict['maintenance_info'] = get_maintenance_info(request)
     #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['studyID'] = request.args[0]
     view_dict['latestSynthesisSHA'] = _get_latest_synthesis_sha_for_study_id(view_dict['studyID'])
@@ -49,6 +52,11 @@ def view():
 
 @auth.requires_login()
 def create():
+    # Block (redirect) if we've suspended study editing
+    maintenance_info = get_maintenance_info(request)
+    if maintenance_info.get('maintenance_in_progress', False):
+        redirect(URL('curator', 'default', 'index', vars={"maintenance_notice":"true"}))
+        pass
     view_dict = get_opentree_services_method_urls(request)
     view_dict['message'] = "study/create"
     return view_dict
@@ -56,7 +64,13 @@ def create():
 
 @auth.requires_login()
 def edit():
-    # TODO: fetch a fresh list of search contexts for TNRS? see working example in
+    # Block (redirect) if we've suspended study editing
+    maintenance_info = get_maintenance_info(request)
+    if maintenance_info.get('maintenance_in_progress', False):
+        redirect(URL('curator', 'study', 'view', 
+            vars={"maintenance_notice":"true"}, 
+            args=request.args))
+    # Fetch a fresh list of search contexts for TNRS? see working example in
     # the header search of the main opentree webapp
     view_dict = get_opentree_services_method_urls(request)
     view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)

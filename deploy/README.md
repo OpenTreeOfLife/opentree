@@ -144,3 +144,46 @@ file if desired.
 This operation leaves in place any files that are already there.  The
 large files (such as the synthetic tree) are not in github and are
 at present (2014-07-08) managed manually.
+
+Notifying users of scheduled downtime
+-------------------------------------
+
+For system migrations or other extended periods of downtime, we should take
+special care to avoid lost work, particularly in the study curation app. We
+currently have two means of notifying users before and during scheduled
+maintenance windows.
+
+While any Open Tree websites(s) are unavailable, their respective webservers
+should redirect all traffic to the editable 
+[maintenance page](http://opentreeoflife.github.io/maintenance.html) in our
+github-pages sites. This should be done with a **302 Temporary** redirect.
+Be sure to edit the text of this page to reflect the current situation and
+expected downtime.
+
+To avoid lost work in the [study curation app](http://tree.opentreeoflife.org/curator), 
+we should also disable the creation and editing of studies in the hours before any 
+scheduled downtime. This can be done by modifying the `[maintenance]` section of the 
+curation app's `private/config` file:
+
+```config
+[maintenance]
+# During system migration and other scheduled maintenance, we should allow
+# viewing of existing studies but block study creation and editing.
+# Boolean values here should be 'true' or 'false'. Use indents to define a long (multi-line) notice.
+maintenance_in_progress = true
+maintenance_notice = Study creation and editing are disabled while we upgrade to
+                   the latest code and features. Please pardon the
+                   inconvenience. We expect to be back online for editing
+                   studies later this evening (Thursday, July 10).
+```
+An hour or two before disabling the server, set the `maintenance_in_progress`
+value to `true`, edit the message text below (preserving indentation as
+above!), then restart the web2py server. Now users who attempt to create or
+edit a study will be blocked from doing so, and will see the HTML in
+`maintenance_notice' in a popup. (The intent is to avoid someone starting an
+edit session, then having their changes locked out of the system.)
+
+Of course, once you're ready to restore the sites, remove/disable the apache
+redirects above and reset `maintenance_in_progress` to `false` in the curation
+app's `private/config` file. (Or just clobber it by pushing fresh code and
+configuration to the web2py server.)

@@ -154,6 +154,18 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
       }
   }
 
+  // Under some circumstances, we'll want to show the maintenance noticed when the page loads
+  var immediateMaintenanceNotice = {{= (request.vars['maintenance_notice']) and 'true' or 'false' }};
+  $(document).ready(function() {
+      if (immediateMaintenanceNotice) {
+        showMaintenancePopup();
+      }
+  });
+  function showMaintenancePopup() {
+      // show details in a popup (already bound)
+      $('#maintenance-notice').modal('show');
+  }
+
   var userDisplayName = "{{= get_user_display_name() }}";
   jQuery(document).ready(function(){ 
     {{ if 'auth' in globals(): }}
@@ -402,5 +414,23 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
           <div class="bar" style="width: 100%;"></div>
         </div>
     </div>
+
+{{ if ('maintenance_info' in locals()) and maintenance_info.get('maintenance_notice', None):
+   # N.b. Check to make sure it's in the view-dict, or error pages etc. will fail }}
+    <div id="maintenance-notice" class="modal hide fade" 
+         Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel">Maintenance notice</h3>
+      </div>
+      <div class="modal-body">
+        {{= ('maintenance_info' in locals()) and maintenance_info['maintenance_notice'] }}
+      </div>
+      <div class="modal-footer">
+        <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+      </div>
+    </div>
+{{ pass }}
+
   </body>
 </html>

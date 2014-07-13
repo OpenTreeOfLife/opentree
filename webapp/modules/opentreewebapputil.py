@@ -89,6 +89,23 @@ def get_opentree_services_domains(request):
         domains[ "%s_domain" % name ] = url
     return domains
 
+def get_maintenance_info(request):
+    '''
+    Reads the local configuration to determine whether we're doing scheduled
+    maintenance tasks that might interrupt some editing.
+    to a newer system . In this case, we should block study editing and show a message 
+    to the user.
+    '''
+    conf = get_conf(request)
+    minfo = dict()
+    try:
+        minfo['maintenance_in_progress' ] = conf.getboolean("maintenance", "maintenance_in_progress")
+        minfo['maintenance_notice' ] = conf.get("maintenance", "maintenance_notice")
+    except: 
+        minfo['maintenance_in_progress' ] = False
+        minfo['maintenance_notice'] = ""
+    return minfo
+
 def get_opentree_services_method_urls(request):
     '''
     Reads the local configuration to build on domains and return a dictionary

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 from applications.opentree.modules.opentreewebapputil import(
     get_opentree_services_method_urls,
-    extract_nexson_from_http_call)
-
+    extract_nexson_from_http_call,
+    get_maintenance_info)
 # N.B. This module is shared with tree-browser app, which is aliased as
 # 'opentree'. Any name changes will be needed here as well!
 
@@ -27,6 +27,7 @@ def index():
     """
     #response.flash = T("Welcome to web2py!")
     view_dict = get_opentree_services_method_urls(request)
+    view_dict['maintenance_info'] = get_maintenance_info(request)
 
     if False:  ## auth.is_logged_in():
         # user is logged in, bounce to their personal dashboard
