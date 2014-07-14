@@ -12,12 +12,9 @@ else
     cd ..
 fi
 
-if test -f ../../../setup/functions.sh
-then
-    . ../../../setup/functions.sh 
-    # record the current SHA for ncl
-    log  Installing NCL at commit SHA: `cd ncl; git log | head -1`
-fi
+source ../../../setup/functions.sh 
+# record the current SHA for ncl
+log  Installing NCL at commit SHA: `cd ncl; git log | head -1`
 
 export NCL_INSTALL_DIR="${PWD}/private"
 if ! test -d build-ncl-static
