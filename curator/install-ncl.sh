@@ -12,8 +12,8 @@ else
     cd ..
 fi
 
-pwd
-source ../../../setup/functions.sh 
+echo `pwd`
+. ../../../setup/functions.sh 
 # record the current SHA for ncl
 log  Installing NCL at commit SHA: `cd ncl; git log | head -1`
 
