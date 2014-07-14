@@ -105,6 +105,9 @@ mv tmp.tmp $configfile
 # install ncl a C++ app needed for NEXUS, newick, NeXML -->NexSON conversion
 (cd repo/opentree/curator ; ./install-ncl.sh) 
 
+# record the current SHA for ncl
+log  Installing NCL at `cd repo/opentree/curator/ncl; git log | head -1`
+
 echo "Apache / web2py restart required (due to app configuration)"
 
 # ---------- INSTALL PYTHON REQUIREMENTS, SYMLINK APPLICATIONS ----------
