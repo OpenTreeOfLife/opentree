@@ -242,32 +242,6 @@ function hideTreeWithHistory() {
     }
 }
 
-if (false) {  // TODO: move this to $(document).ready and adapt...
-    if ( History && History.enabled ) {
-        // if there's no prior state, go to the initial target node in the synthetic tree
-        var priorState = History.getState();
-       
-        // Check first for incoming URL that might override prior history
-        if (initialState.forcedByURL || !(priorState.data.nodeID)) {
-            // apply the state as specified in the URL (or defaults, if prior history is incomplete)
-            console.log("Applying state from incoming URL...");
-            initialState.nudge = new Date().getTime();
-            History.pushState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
-        } else {
-            // nudge the (existing) browser state to view it again
-            console.log("Nudging state (and hopefully initial view)...");
-            priorState.data.nudge = new Date().getTime();
-            History.replaceState( priorState.data, priorState.title, priorState.url );
-        }
-    } else {
-        // force initial argus view using defaults above
-        // NOTE: forcing even this through history, to get possible remapping of node IDs
-        argus.moveToNode({"nodeID": initialState.nodeID,
-                           "domSource": initialState.domSource});
-    }
-}
-
-
 function fixLoginLinks() {
     // Update all login links to return directly to the current URL (NOTE that this 
     // doesn't seem to work for Logout)
@@ -5242,6 +5216,56 @@ function updateInferenceMethodWidgets( tree, event ) {
         }
     }
     nudgeTickler('TREES');
+}
+
+function updateMRCAForTree(tree) {  // TODO? (tree, options) {
+    // presumably this only works for tips already mapped to the OT taxonomy
+    // TODO: should this apply only to mapped tips in the chosen ingroup?
+    var mappedOttIds = [ ];
+    var mappedIngroupOttIds = [ ];
+    $.each(tree.node, function(i, node) {
+        if (node['^ot:isLeaf'] === true) {
+            if ('@otu' in node) {
+                var otu = getOTUByID( node['@otu'] );
+                // var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
+                if ('^ot:ottId' in otu) {
+                    mappedOttIds.push(otu['^ot:ottId']);
+                    if (node.ingroup) {
+                        mappedIngroupOttIds.push(otu['^ot:ottId']);
+                    }
+                } 
+            }
+        }
+    });
+
+    console.log("How many mapped nodes? "+ mappedOttIds.length);
+    console.log("How many mapped INGROUP nodes? "+ mappedIngroupOttIds.length);
+
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        // TODO: url: getDraftTreeMRCAForNodes_url,
+        url: getDraftTreeSubtreeForNodes_url,
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({ 
+            //"nodeIds": [ ]
+            "ottIds": mappedOttIds
+        }),  // data (asterisk required for completion suggestions)
+        crossDomain: true,
+        contentType: "application/json; charset=utf-8",
+        complete: function( jqXHR, textStatus ) {
+            hideModalScreen();
+            if (textStatus !== 'success') {
+                var errMsg = 'Sorry, there was an error updating this tree\'s MRCA. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                showErrorMessage(errMsg);
+                return;
+            }
+            debugger;
+            // TODO: Analyse the response and try to show a sensible taxon name
+            // TODO: store the result in one or more NexSON properties?
+        }
+    });
+    return false;
 }
 
 /* Define a registry of nudge methods, for use in KO data bindings. Calling

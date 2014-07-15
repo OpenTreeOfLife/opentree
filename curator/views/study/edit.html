@@ -1619,6 +1619,8 @@ body {
     var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
     var getJSONFromNode_url = "{{=getJSONFromNode_url}}";
     var phylesystem_config_url = "{{=phylesystem_config_url}}";
+    var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
+    var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
 </script>
 <script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
@@ -1787,6 +1789,13 @@ body {
                 <label for="testtest">Ingroup clade: </label>
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data), 
                                    css: viewModel.ticklers.TREES"></strong>
+              <br/>
+                <label>MRCA for this tree:</label> 
+                <strong data-bind="html: $data['^ot:MRCA'] || '<'+'em>Unknown (click button to test)<'+'/em>', 
+                                   css: viewModel.ticklers.TREES"></strong> &nbsp;
+                   <a class="btn btn-small btn-info Xbtn-info-disabled"
+                      data-bind="click: updateMRCAForTree">Update MRCA</a>
+
               </div>
               <div class="pull-left" style="width: 48%;">
                 <label>Mapped leaf nodes: </label>
@@ -1825,7 +1834,8 @@ body {
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
 
-               <!-- ko if: $data['^ot:branchLengthMode'] === 'ot:time' -->
+               <!-- ko if: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:time' -->
+                <br/>
                 <label style="margin-left: 10px;">Time unit: </label>
                 <select data-bind="options: ['Myr'],
                     value: $data['^ot:branchLengthTimeUnit'],
@@ -1834,7 +1844,8 @@ body {
                     ">TYPE</select>
                <!-- /ko -->
 
-               <!-- ko if: $data['^ot:branchLengthMode'] === 'ot:other' -->
+               <!-- ko if: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:other' -->
+                <br/>
                 <label style="margin-left: 10px;">&nbsp;</label>
                 <input type="text" data-bind="value: $data['^ot:branchLengthDescription'],
                     valueUpdate: ['afterkeydown', 'input'],
@@ -1842,6 +1853,7 @@ body {
                     css: viewModel.ticklers.TREES
                 " placeholder="Describe here"></input>
                <!-- /ko -->
+
               </div>
               <div style="clear: left; height: 20px;">&nbsp;</div>
               <div class="help-box">
