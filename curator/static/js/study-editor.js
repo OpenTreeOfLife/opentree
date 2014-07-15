@@ -5218,11 +5218,51 @@ function updateInferenceMethodWidgets( tree, event ) {
     nudgeTickler('TREES');
 }
 
+function getTreeChildNodes(parentNode, options) {
+    // Gather all immediate child nodes (in a tree) for a given parent node.
+    var parentID = parentNode['@id'];
+    var itsChildren = [];
+    var childEdges = getTreeEdgesByID(null, parentID, 'SOURCE');
+
+    $.each(childEdges, function(index, edge) {
+        var childID = edge['@target'];
+        var childNode = getTreeNodeByID(null, childID);
+        if (!('@id' in childNode)) {
+            console.error(">>>>>>> childNode is a <"+ typeof(childNode) +">");
+            console.error(childNode);
+        }
+        itsChildren.push( childNode );
+        if (options && options.RECURSIVE) {
+            // recurse into each child's children, and so on
+            var ancestors = getTreeChildNodes(childNode, options);
+            // add all ancestors to the main group
+            $.merge(itsChildren, ancestors);
+        }
+    });
+    return itsChildren;
+}
+function getSubtreeNodes(subtreeRootNode) {
+    // Gather all descendant nodes in a tree.
+    var itsDescendants = getTreeChildNodes(subtreeRootNode, {RECURSIVE: true});
+    return itsDescendants;
+}
+function getIngroupNodes(tree) {
+    // Gather all nodes in the designated ingroup, if any. If there's no
+    // ingroup, return an empty array. TODO: or should we return null?
+    var nodeID = tree['^ot:inGroupClade'];
+    if (!nodeID) {
+        return [ ];
+    }
+    var ingroupRootNode = getTreeNodeByID( tree, nodeID );
+    return getSubtreeNodes(ingroupRootNode); 
+}
+
 function updateMRCAForTree(tree) {  // TODO? (tree, options) {
-    // presumably this only works for tips already mapped to the OT taxonomy
+    // Presumably this only works for tips already mapped to the OT taxonomy
     // TODO: should this apply only to mapped tips in the chosen ingroup?
+
+    /* Include all mapped nodes, regardless of ingroup
     var mappedOttIds = [ ];
-    var mappedIngroupOttIds = [ ];
     $.each(tree.node, function(i, node) {
         if (node['^ot:isLeaf'] === true) {
             if ('@otu' in node) {
@@ -5230,16 +5270,34 @@ function updateMRCAForTree(tree) {  // TODO? (tree, options) {
                 // var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
                 if ('^ot:ottId' in otu) {
                     mappedOttIds.push(otu['^ot:ottId']);
-                    if (node.ingroup) {
-                        mappedIngroupOttIds.push(otu['^ot:ottId']);
-                    }
                 } 
             }
         }
     });
-
     console.log("How many mapped nodes? "+ mappedOttIds.length);
-    console.log("How many mapped INGROUP nodes? "+ mappedIngroupOttIds.length);
+    */
+    var mappedIngroupOttIds = [ ];
+    var ingroupNodes = getIngroupNodes(tree);
+    ///console.log("How many ingroup nodes? "+ ingroupNodes.length);
+    $.each(ingroupNodes, function(i, node) {
+        if (node['^ot:isLeaf'] === true) {
+            if ('@otu' in node) {
+                var otu = getOTUByID( node['@otu'] );
+                // var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
+                if ('^ot:ottId' in otu) {
+                    mappedIngroupOttIds.push(otu['^ot:ottId']);
+                } 
+            }
+        }
+    });
+    ///console.log("How many MAPPED INGROUP TIP-IDs? "+ mappedIngroupOttIds.length);
+
+    if (mappedIngroupOttIds.length === 0) {
+        // Prompt the curator for required prerequisites.
+        showErrorMessage('You must click a node to choose the ingroup clade, '
+           + 'and map some of its OTUs using the tools in the OTU Mapping tab.');
+        return false;
+    }
 
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
@@ -5249,7 +5307,7 @@ function updateMRCAForTree(tree) {  // TODO? (tree, options) {
         dataType: 'json',
         data: JSON.stringify({ 
             //"nodeIds": [ ]
-            "ottIds": mappedOttIds
+            "ottIds": mappedIngroupOttIds
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
         contentType: "application/json; charset=utf-8",
