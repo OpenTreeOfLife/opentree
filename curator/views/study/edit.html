@@ -1790,8 +1790,8 @@ body {
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data), 
                                    css: viewModel.ticklers.TREES"></strong>
               <br/>
-                <label>MRCA for this tree:</label> 
-                <strong data-bind="html: $data['^ot:MRCA'] || '<'+'em>Unknown (click button to test)<'+'/em>', 
+                <label>MRCA for this tree's ingroup:</label> 
+                <strong data-bind="html: $data['^ot:MRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:MRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:MRCAName'] +'<'+'/a>' : '<'+'em>Unknown (click button to test)<'+'/em>', 
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
                    <a class="btn btn-small btn-info Xbtn-info-disabled"
                       data-bind="click: updateMRCAForTree">Update MRCA</a>

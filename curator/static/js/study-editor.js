@@ -5243,8 +5243,8 @@ function updateMRCAForTree(tree) {  // TODO? (tree, options) {
 
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
-        // TODO: url: getDraftTreeMRCAForNodes_url,
-        url: getDraftTreeSubtreeForNodes_url,
+        url: getDraftTreeMRCAForNodes_url,
+        // TODO: url: getDraftTreeSubtreeForNodes_url,
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({ 
@@ -5260,9 +5260,14 @@ function updateMRCAForTree(tree) {  // TODO? (tree, options) {
                 showErrorMessage(errMsg);
                 return;
             }
-            debugger;
-            // TODO: Analyse the response and try to show a sensible taxon name
-            // TODO: store the result in one or more NexSON properties?
+            // Analyse the response and try to show a sensible taxon name, then
+            // Store the result in one or more NexSON properties? 
+            // TODO: CONFIRM these property names!
+            var responseJSON = $.parseJSON(jqXHR.responseText);
+            tree['^ot:MRCAName'] = responseJSON['mrca_name_unique'] || responseJSON['mrca_name'] || '???';
+            tree['^ot:MRCAOttId'] = responseJSON['mrca_ott_id'] || null;
+            // var taxonRank = responseJSON['mrca_rank'] || null;
+            nudgeTickler('TREES');
         }
     });
     return false;
