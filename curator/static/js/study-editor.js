@@ -2048,8 +2048,8 @@ function getRootedStatusForTree( tree ) {
 }
 
 var branchLengthModeDescriptions = [
-    { value: 'ot:substitutionCount', text: "Number of substitutions" }, 
-    { value: 'ot:changesCount', text: "Number of changes" },
+    { value: 'ot:substitutionCount', text: "Expected number of changes per site" }, 
+    { value: 'ot:changesCount', text: "Estimated number of changes" },
     { value: 'ot:time', text: "Time" },  //  TODO: add units from ot:branchLengthTimeUnit
     { value: 'ot:bootstrapValues', text: "Bootstrap values" },
     { value: 'ot:posteriorSupport', text: "Posterior support values" },
