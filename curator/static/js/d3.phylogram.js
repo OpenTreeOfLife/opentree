@@ -350,14 +350,15 @@ if (!d3) { throw "d3 wasn't included!"};
 
     g_nodes
         .attr("class", function(n) {
+          // N.B. These classes are overridden by study-editor.js!
           if (n.children) {
             if (n.depth == 0) {
-              return "root node"
+              return "root node";
             } else {
-              return "inner node"
+              return "inner node";
             }
           } else {
-            return "leaf node"
+            return "leaf node";
           }
         })
         .attr("id", function(d) { return ("nodebox-"+ d['@id']); })

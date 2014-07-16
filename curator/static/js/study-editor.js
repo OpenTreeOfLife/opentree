@@ -94,8 +94,7 @@ if ( History && History.enabled ) {
     // bind to statechange event
     History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
-        console.log('>>>');
-        History.log(State.data, State.title, State.url);
+        ///History.log(State.data, State.title, State.url);
 
         // TODO: hide/show elements as needed
         // Extract our state vars from State.url (not from State.data) for equal
@@ -103,39 +102,6 @@ if ( History && History.enabled ) {
         var currentTab = State.data.tab;
         var currentTree = State.data.tree;
         
-/*
-        // TODO: hide/show elements as needed
-        // Extract our state vars from State.url (not from State.data) for equal
-        // treatment of initial URLs.
-        var urlParts = State.url.split('?');
-        if (urlParts.length > 1) {
-            var qs = urlParts[1];
-            var qsVars = deparam( qs );
-            var tabName = qsVars['tab'];
-            var treeID = qsVars['tree'];
-
-            console.log('tabName='+ tabName);
-            console.log('treeID='+ treeID);
-
-            if (tabName) {
-                goToTab( tabName );
-            }
-            if (treeID) {
-                var tree = getTreeByID(treeID);
-                if (tree) {
-                    showTreeViewer(tree);
-                } else {
-                    var errMsg = 'The requested tree (\''+ treeID +'\') was not found. It has probably been deleted from this study.';
-                    hideModalScreen();
-                    showInfoMessage(errMsg);
-                }
-            }
-        }
-*/
-        console.log('currentTab='+ currentTab);
-        console.log('currentTree='+ currentTree);
-        console.log('<<<');
-
         if (currentTab) {
             goToTab( currentTab );
         }
@@ -222,7 +188,6 @@ function showTreeWithHistory(tree) {
     } else {
         // show tree normally (ignore browser history)
         showTreeViewer(tree);
-        // OR showTreeViewer(tree, options) ??
     }
 }
 function hideTreeWithHistory() {
@@ -406,7 +371,6 @@ $(document).ready(function() {
 function goToTab( tabName ) {
     // Click the corresponding tab, if found. If the tab name is not found, it
     // might be a "slug" version, so compare these too.
-console.log("GOING TO TAB '"+ tabName +"'...");
     var $matchingTab = $('.nav-tabs a').filter(function() {
         var $tab = $(this);
         var itsName = $.trim( $tab.html().split('<')[0] );
@@ -418,7 +382,6 @@ console.log("GOING TO TAB '"+ tabName +"'...");
         }
         return false;
     })
-console.log("  found "+ $matchingTab.length +" matching tabs");
     $matchingTab.tab('show');
 }
 
@@ -484,11 +447,13 @@ function loadSelectedStudy() {
                 return;
             }
             // pull data from bare NexSON repsonse or compound object (data + sha)
+            /*
             if (response['data']) {
                 console.log("FOUND inner data (compound response)...");
             } else {
                 console.log("inner data NOT found (bare NexSON)...");
             }
+            */
             var data = response['data'] || response;
             if (typeof data !== 'object' || typeof(data['nexml']) == 'undefined') {
                 showErrorMessage('Sorry, there is a problem with the study data (missing NexSON).');
@@ -1870,7 +1835,9 @@ function normalizeTree( tree ) {
     } else {
         tree['^ot:tag'] = [ ];
     }
-    
+
+    // pre-select first node among conflicting siblings
+    resolveSiblingOnlyConflictsInTree(tree);
 }
 
 function getPreferredTreeIDs() {
@@ -1919,6 +1886,7 @@ function togglePreferredTree( tree ) {
         // add it to the list of preferred trees
         viewModel.nexml['^ot:candidateTreeForSynthesis'].push( treeID ); 
     }
+    nudgeTickler('TREES');
     nudgeTickler('OTU_MAPPING_HINTS');
     return true;  // to allow checkbox updates
 }
@@ -2356,11 +2324,12 @@ var studyScoringRules = {
                 var conflictingNodesFound = false;
                 ///var startTime = new Date();
                 $.each(getPreferredTrees(), function(i, tree) {
-                    var conflictData = getUnresolvedConflictsInTree(tree);
-                    ///console.log(">>> looking for conflicts in tree '"+ tree['@id'] +"'...");
-                    ///console.log(conflictData);
-                    // keep true value, once this is set!
-                    conflictingNodesFound = conflictingNodesFound || !($.isEmptyObject(conflictData));
+                    // disregard sibling-only conflicts (will be resolved on the server)
+                    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_SIBLINGS_ONLY: false} );
+                    if ( !($.isEmptyObject(conflictData)) ) {
+                        conflictingNodesFound = true;
+                        return false;
+                    }
                 });
                 ///console.log("total elapsed: "+ (new Date() - startTime) +" ms");
                 return !(conflictingNodesFound);
@@ -2581,6 +2550,13 @@ function showTreeViewer( tree, options ) {
     options = options || {};
     var highlightNodeID = options.HIGHLIGHT_NODE_ID || null;
 
+    if (tree) {
+        // Clean up sibling-only conflicts before annoying the user. (We do
+        // this here since OTU mapping or other changes may have introduced new
+        // conflicts, and we don't want to waste the curator's time with them.)
+        resolveSiblingOnlyConflictsInTree(tree);
+    }
+
     if (!tree) {
         // if tree is not specified, check for options.HIGHLIGHT_PLAYLIST
         // and show the specified node (in its proper tree)
@@ -2760,7 +2736,7 @@ function showOTUInContext() {
 
 function showConflictingNodesInTreeViewer(tree) {
     // If there are no conflicts, fall back to simple tree view
-    var conflictData = getUnresolvedConflictsInTree( tree );
+    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_SIBLINGS_ONLY: false} );
     if (!isPreferredTree(tree) || $.isEmptyObject(conflictData)) {
         showTreeWithHistory(tree);
         return;
@@ -2948,7 +2924,20 @@ function drawTree( treeOrID, options ) {
             if (d['@id'] === inGroupClade) {
                 itsClass += " inGroupClade";
             }
-            ///console.log("CLASS is now "+ itsClass);
+            if (isConflictingNode(tree, d)) {
+                switch(d['^ot:isTaxonExemplar']) {
+                    case true:
+                        itsClass += ' exemplar';
+                        break;
+
+                    case false:
+                        itsClass += ' non-exemplar';
+                        break;
+
+                    default:
+                        itsClass += ' unresolved-exemplar';
+                }
+            }
             return itsClass;
         });
     ///console.log("> done re-asserting classes");
@@ -5755,13 +5744,13 @@ function formatDOIAsURL() {
 }
 
 function unresolvedConflictsFoundInTree( tree ) {
-    // N.B. This checks for UNRESOLVED conflicts
-    var conflictData = getUnresolvedConflictsInTree( tree );
+    // N.B. This checks for UNRESOLVED and INTERESTING (non-sibling) conflicts
+    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_SIBLINGS_ONLY: false} );
     return $.isEmptyObject(conflictData) ? false : true;
 }
 function isConflictingNode( tree, node ) {
     ///console.log("isConflictingNode( "+ tree['@id'] +", "+ node['@id'] +")...");
-    // N.B. This checks for ALL conflicts (incl. resolved)
+    // N.B. This checks for ALL conflicts (incl. resolved and sibling-only)
     var conflictInfo = getConflictingNodesInTree( tree );
     var foundNodeInConflictData = false;
     for (var taxonID in conflictInfo) {
@@ -5774,9 +5763,10 @@ function isConflictingNode( tree, node ) {
     }
     return foundNodeInConflictData;
 }
-function getUnresolvedConflictsInTree( tree ) {
+function getUnresolvedConflictsInTree( tree, options ) {
     // Filter from full conflict data to include just those node-sets that
     // have't been resolved, ie, curator has not chosen an exemplar.
+    var includeSiblingOnlyConflicts = options && ('INCLUDE_SIBLINGS_ONLY' in options) ? options.INCLUDE_SIBLINGS_ONLY : false;
     var unresolvedConflicts = {};
     var allConflicts = getConflictingNodesInTree( tree );
     for (var taxonID in allConflicts) {
@@ -5789,7 +5779,12 @@ function getUnresolvedConflictsInTree( tree ) {
             }
         });
         if (!(allNodesAlreadyMarked)) {
-            unresolvedConflicts[ taxonID ] = itsMappings;
+            if (includeSiblingOnlyConflicts) {
+                unresolvedConflicts[ taxonID ] = itsMappings;
+            } else if (!(itsMappings.siblingsOnly)) {
+                // ignore conflicts just between siblings
+                unresolvedConflicts[ taxonID ] = itsMappings;
+            }
         }
     }
     return unresolvedConflicts;
@@ -5829,15 +5824,18 @@ function getConflictingNodesInTree( tree ) {
         }
     });
 
-    // Gather all mappings that have multiple *non-sibling* appearances.
-    // N.B. We could see siblings as part of a larger set; any choice will be fine.
+    // Gather all mappings that have multiple appearances, but mark them to
+    // distinguish siblings-only from more interesting conflicts.
+    // N.B. Siblings will be reconciled on the server in any case, but this
+    // will help us to show consistent UI when siblings are obviously in conflict.
     for (taxonID in taxonMappings) {
         // is there more than one node for this taxon?
         var itsMappings = taxonMappings[taxonID];
-        var foundConflicts = false;
+        var foundSiblingConflicts = false;
+        var foundInterestingConflicts = false;  // interesting == not just siblings
         if (itsMappings.length > 1) {
             // are all of the nodes siblings? use fast edge lookup!
-            var matchParent;
+            var matchParent = null;
             $.each(itsMappings, function(i, item) {
                 var upwardEdge = getTreeEdgesByID(tree, item.nodeID, 'TARGET')[0];
                 // N.B. Due to NexSON constraints, assume exactly one upward edge!
@@ -5845,22 +5843,29 @@ function getConflictingNodesInTree( tree ) {
                 if (!matchParent) {
                     matchParent = itsParentID;
                 } else {
-                    if (itsParentID !== matchParent) {
-                        foundConflicts = true;
+                    if (itsParentID === matchParent) {
+                        foundSiblingConflicts = true;
+                    } else {
+                        foundInterestingConflicts = true;
                         return false;  // no need to check remaining mappings
                     }
                 }
             });
         }
-        if (foundConflicts) {
+        if (foundInterestingConflicts) {
+            itsMappings['siblingsOnly'] = false;
+            conflictingNodes[ taxonID ] = itsMappings;
+        } else if (foundSiblingConflicts) {
+            itsMappings['siblingsOnly'] = true;
             conflictingNodes[ taxonID ] = itsMappings;
         }
     }
     
     return conflictingNodes;
 }
-function markTaxonExemplar( treeID, chosenNodeID ) {
+function markTaxonExemplar( treeID, chosenNodeID, options ) {
     // find all conflicting nodes and set flag for each
+    options = options || {REDRAW_TREE: true};
     var chosenNode = getTreeNodeByID(treeID, chosenNodeID);
     if (!chosenNode) {
         console.error("markTaxonExemplar("+ treeID +","+ chosenNodeID +"): Chosen node not found!");
@@ -5886,16 +5891,59 @@ function markTaxonExemplar( treeID, chosenNodeID ) {
         mappedNode['^ot:isTaxonExemplar'] = (mapping.nodeID === chosenNodeID) ? true : false;
     });
     nudgeTickler('TREES');
+    if (options.REDRAW_TREE) {
+        // update color of conflicting nodes (exemplars vs. others)
+        drawTree(treeID);
+    }
     // TODO: what happens now? 
     //      - move to next conflicting taxon, if any?
     //      - remove this set of mappings, or regenerate conflictData?
     //      - update the prompt in tree popup to say DONE, or MOVING ON...?
 }
-function clearTaxonExemplar( treeID, nodeID ) {
+function clearTaxonExemplar( treeID, chosenNodeID, options ) {
     // remove choice of exemplar (will trigger UI and prompts to choose again)
-    var node = getTreeNodeByID(treeID, nodeID);
-    delete node['^ot:isTaxonExemplar'];
+    options = options || {REDRAW_TREE: true};
+    var chosenNode = getTreeNodeByID(treeID, chosenNodeID);
+    if (!chosenNode) {
+        console.error("clearTaxonExemplar("+ treeID +","+ chosenNodeID +"): Chosen node not found!");
+        return;  // do nothing (this is not good)
+    }
+    var otuID = chosenNode['@otu'];
+    var otu = getOTUByID(otuID);
+    if (otu && '^ot:ottId' in otu) {
+        var taxonID = otu['^ot:ottId'];
+    } else {
+        console.error("clearTaxonExemplar("+ treeID +","+ chosenNodeID +"): No mapped taxon found!");
+        return;  // do nothing (this is not good)
+    }
+    var tree = getTreeByID(treeID);
+    var conflictData = getConflictingNodesInTree(tree);
+    var itsMappings = conflictData[taxonID];
+    if (!itsMappings) {
+        console.error("clearTaxonExemplar("+ treeID +","+ chosenNodeID +"): No mappings list found!");
+        return;  // do nothing (this is not good)
+    }
+    $.each(itsMappings, function(i, mapping) {
+        var mappedNode = getTreeNodeByID(treeID, mapping.nodeID);
+        delete mappedNode['^ot:isTaxonExemplar'];
+    });
     nudgeTickler('TREES');
+    if (options.REDRAW_TREE) {
+        // update color of conflicting nodes (exemplars vs. others)
+        drawTree(treeID);
+    }
+}
+function resolveSiblingOnlyConflictsInTree(tree) {
+    // Find and resolve all simple conflicts between sibling nodes (select the
+    // first as exemplar).
+    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_SIBLINGS_ONLY: true} );
+    for (var taxonID in conflictData) {
+        var conflictInfo = conflictData[taxonID];
+        if (conflictInfo.siblingsOnly) {
+            var firstConflictingNodeID = conflictInfo[0].nodeID;
+            markTaxonExemplar( tree['@id'], firstConflictingNodeID, {REDRAW_TREE: false});
+        }
+    }
 }
 
 function studyHasCC0Waiver( nexml ) {
