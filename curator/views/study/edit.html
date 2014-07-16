@@ -1774,7 +1774,7 @@ body {
                            data-bind="checked: $data['^ot:unrootedTree'].toString(), 
                                       click: toggleTreeRootStatus, 
                                       css: viewModel.ticklers.TREES" />
-                    biologically correct
+                    confirmed by curator
                 </label>
                 <label for="tree-root-status-true" class="radio" style="padding-left: 10px;">
                     <input id="tree-root-status-true" type="radio" 
@@ -1860,8 +1860,7 @@ body {
                   Click any node below to set the ingroup clade. Click any node
                   <strong>or</strong> edge to re-root the entire tree. N.B. An
                   <strong>arbitrary root</strong> (see options above) will only be used to draw
-                  the tree and correctly set the ingroup clade. It will not be
-                  considered biologically correct.
+                  the tree and correctly set the ingroup clade. The tree itself might be unrooted.
               </div>
 
           {{ else: }}
@@ -1875,7 +1874,7 @@ body {
                 <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
               <br/>
                 <label for="arbitrary-tree-root" class="checkbox" style="padding-left: 12px; position: relative; top: -4px;">
-                    <strong data-bind="html: getRootedStatusForTree($data)">Tree root is arbitrary (not biologically correct)</strong>
+                    <strong data-bind="html: getRootedStatusForTree($data)">Tree root is arbitrary (for display only)</strong>
                 </label>
               <br/>
                 <label for="testtest">Ingroup clade: </label>

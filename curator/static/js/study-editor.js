@@ -1991,7 +1991,7 @@ function getRootedDescriptionForTree( tree ) {
     if (unrootedTree) {
         return "Arbitrary (not biologically correct)";
     } else {
-        return "Biologically correct";
+        return "Confirmed by curator";
     }
 }
 function getRootNodeDescriptionForTree( tree ) {
@@ -2031,8 +2031,8 @@ function getRootNodeDescriptionForTree( tree ) {
 }
 function getRootedStatusForTree( tree ) {
     // return display-ready description ('<span class="caution">Tree root is arbitrary</span>', ...)
-    var biologicalRootMessage = 'Tree root is believed to be biologically correct.';
-    var arbitraryRootMessage = '<span class="interesting-value">Tree root is arbitrary (not biologically correct)</span>';
+    var biologicalRootMessage = 'Tree root has been confirmed by the curator.';
+    var arbitraryRootMessage = '<span class="interesting-value">Tree root is arbitrary (for display only)</span>';
 
     if (!tree || !tree.node || tree.node.length === 0) {
         return '';
@@ -3059,7 +3059,7 @@ function toggleTreeRootStatus( tree, event ) {
     var newState = $(event.target).val() === 'true';
     tree['^ot:unrootedTree'] = newState;
     
-    // choosing non-arbitrary (biologically correct) rooting should implicitly
+    // choosing non-arbitrary (biologically "correct") rooting should implicitly
     // select the current root node, since this signals intent
     var isBiologicallyCorrect = !(tree['^ot:unrootedTree']);
     if (isBiologicallyCorrect) {
