@@ -362,6 +362,8 @@ def to_nexson():
                     _LOG.warn("Could not find the 2nexml executable")
                     raise HTTP(501, T("Server is not configured to allow 2nexml conversion"))
                 invoc = [exe_path, '-f{f}'.format(f=inp_format), ]
+                if inp_format == 'relaxedphyliptree':
+                    invoc.extend(['-X', '-x'])
                 if idPrefix:
                     invoc.append('-t{u}'.format(u=idPrefix))
                 else:
