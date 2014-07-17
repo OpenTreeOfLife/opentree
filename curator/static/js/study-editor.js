@@ -5973,12 +5973,10 @@ function showStudyCommentPreview() {
     $('#preview-comment-button').addClass('active');
     // stash and restore the current scroll position, lest it jump
     var savedPageScroll = $('body').scrollTop();
-    var phylesystemAPIBaseURL = API_load_study_GET_url.split('/api')[0];
-    var renderMarkdownURL = phylesystemAPIBaseURL+'/api/render_markdown';
     $.ajax({
         crossdomain: true,
         type: 'POST',
-        url: renderMarkdownURL,
+        url: render_markdown_url,
         data: viewModel.nexml['^ot:comment'],
         success: function( data, textstatus, jqxhr ) {
             $('#comment-preview').show();

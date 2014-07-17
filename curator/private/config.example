@@ -52,6 +52,7 @@ getContextsJSON_url = {taxomachine_domain}/getContextsJSON
 getNodeIDForOttolID_url = {treemachine_domain}/getNodeIDForottId
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
 phylesystem_config_url = {opentree_api_domain}/phylesystem_config
+render_markdown_url = {opentree_api_domain}/render_markdown
 getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
 getDraftTreeMRCAForNodes_url = {treemachine_domain}/getDraftTreeMRCAForNodes
 getDraftTreeSubtreeForNodes_url = {treemachine_domain}/getDraftTreeSubtreeForNodes
