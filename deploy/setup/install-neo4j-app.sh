@@ -37,6 +37,8 @@ fi
 
 if git_refresh OpenTreeOfLife taxomachine || [ ! -d ~/.m2/repository/org/opentree/taxomachine ]; then
     (cd repo/taxomachine; sh mvn_install.sh)
+    # Kludge. It would be better to handle dependencies using 'make' or something like that.
+    rm -f neo4j-taxomachine/plugins/$jar
 fi
 
 #jar=opentree-neo4j-plugins-0.0.1-SNAPSHOT.jar
