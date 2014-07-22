@@ -57,7 +57,7 @@ function make_neo4j_instance {
         mv neo4j-community-* neo4j-$APP
     fi
 
-    # Stop any running server.  There may or may not be a database.
+    # Stop any running server.  (The database may be empty at this point.)
     # N.B. We do this regardless of whether there has been a change in its
     # repo, since otherwise apache may fail to proxy requests to this app.
     if ./neo4j-$APP/bin/neo4j status; then
@@ -73,9 +73,9 @@ function make_neo4j_instance {
         (cd repo/$APP; ./mvn_serverplugins.sh)
 
 	if false; then
-            # There was some question as to whether the above code worked.
+        # There was some question as to whether the above code worked.
 	    # I'm keeping the following replacement code for a while, just in case.
-	    # Stop any running server.  There may or may not be a database.
+	    # Stop any running server.  (The database may be empty at this point.)
 	    # N.B. Theo 'neo4j status' command returns a phrase like this (for a stopped instance):
 	    #    Neo4j Server is not running
 	    # ... or this (for a running instance):
