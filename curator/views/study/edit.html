@@ -1801,7 +1801,7 @@ body {
                                    css: viewModel.ticklers.TREES"></strong>
               <br/>
                 <label>MRCA for this tree's ingroup:</label> 
-                <strong data-bind="html: $data['^ot:MRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:MRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:MRCAName'] +'<'+'/a>' : '<'+'em>Unknown (click button to test)<'+'/em>', 
+                <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown (click button to test)<'+'/em>', 
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
                    <a class="btn btn-small btn-info Xbtn-info-disabled"
                       data-bind="click: updateMRCAForTree">Update MRCA</a>

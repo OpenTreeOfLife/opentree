@@ -5311,9 +5311,17 @@ function updateMRCAForTree(tree) {  // TODO? (tree, options) {
             // Store the result in one or more NexSON properties? 
             // TODO: CONFIRM these property names!
             var responseJSON = $.parseJSON(jqXHR.responseText);
-            tree['^ot:MRCAName'] = responseJSON['mrca_name_unique'] || responseJSON['mrca_name'] || '???';
-            tree['^ot:MRCAOttId'] = responseJSON['mrca_ott_id'] || null;
-            // var taxonRank = responseJSON['mrca_rank'] || null;
+            /* Returns these properties:
+                found_nodes: [ "Node[1889641]", "Node[1889650]", ... ]
+                mrca_node_id: 1889368
+                nearest_taxon_mrca_name: "campanulids"
+                nearest_taxon_mrca_node_id: 1889368
+                nearest_taxon_mrca_ott_id: "596121"
+                nearest_taxon_mrca_rank: "no rank"
+                nearest_taxon_mrca_unique_name: ""
+            */
+            tree['^ot:nearestTaxonMRCAName'] = responseJSON['nearest_taxon_mrca_unique_name'] || responseJSON['nearest_taxon_mrca_name'] || '???';
+            tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['nearest_taxon_mrca_ott_id'] || null;
             nudgeTickler('TREES');
         }
     });
