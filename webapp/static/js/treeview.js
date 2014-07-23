@@ -445,6 +445,8 @@ function searchForMatchingTaxa() {
         dataType: 'json',
         data: JSON.stringify({ 
             "queryString": searchText,
+            "includeDubious": false,
+            "includeDeprecated": false,
             "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
@@ -466,35 +468,41 @@ function searchForMatchingTaxa() {
              *      name    // taxon name
              *      higher  // points to a genus or higher taxon? T/F
              */
-            if (data && data.length && data.length > 0) {
+            if (data && ('results' in data) && data['results'].length > 0) {
                 // sort results to show exact match(es) first, then higher taxa, then others
-                // initial sort on higher taxa (will be overridden by exact matches)
-                data.sort(function(a,b) {
+                if (data['results'].length > 1) {
+                    console.warn('MULTIPLE SEARCH RESULT SETS!');
+                    console.warn(data['results']);
+                }
+                var results = data.results[0].matches; // ASSUME we only get one result, with n matches
+                /* initial sort on higher taxa (will be overridden by exact matches)
+                results.sort(function(a,b) {
                     if (a.higher === b.higher) return 0;
                     if (a.higher) return -1;
                     if (b.higher) return 1;
                 });
+                */
                 // final sort on exact matches (overrides higher taxa)
-                data.sort(function(a,b) {
-                    if (a.exact === b.exact) return 0;
-                    if (a.exact) return -1;
-                    if (b.exact) return 1;
+                results.sort(function(a,b) {
+                    if (a.is_perfect_match === b.is_perfect_match) return 0;
+                    if (a.is_perfect_match) return -1;
+                    if (b.is_perfect_match) return 1;
                 });
 
                 // show all sorted results, up to our preset maximum
                 var matchingNodeIDs = [ ];  // ignore any duplicate results (point to the same taxon)
-                for (var mpos = 0; mpos < data.length; mpos++) {
+                for (var mpos = 0; mpos < results.length; mpos++) {
                     if (visibleResults >= maxResults) {
                         break;
                     }
-                    var match = data[mpos];
-                    var matchingName = match.name;
-                    // 
-                    var matchingID = match.ottId;
+                    var match = results[mpos];
+                    var matchingName = match.matched_name;
+                    var uniqueName = match.unique_name;
+                    var matchingID = match.matched_ott_id;
                     if ($.inArray(matchingID, matchingNodeIDs) === -1) {
                         // we're not showing this yet; add it now
                         $('#search-results').append(
-                            '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
+                            '<li><a href="'+ matchingID +'" title="'+ uniqueName +'">'+ matchingName +'</a></li>'
                         );
                         matchingNodeIDs.push(matchingID);
                         visibleResults++;
