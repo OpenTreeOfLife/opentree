@@ -4370,6 +4370,8 @@ function requestTaxonMapping() {
         dataType: 'json',
         data: JSON.stringify({ 
             "queryString": searchText,
+            "includeDubious": false,
+            "includeDeprecated": false,
             "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
@@ -4413,39 +4415,39 @@ function requestTaxonMapping() {
 
             var maxResults = 100;
             var visibleResults = 0;
-            /*
-             * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
-             * with these properties:
-             *      ottId   // taxon ID in OTT taxonomic tree
-             *      nodeId  // ie, neo4j node ID
-             *      exact   // matches the entered text exactly? T/F
-             *      name    // taxon name
-             *      higher  // points to a genus or higher taxon? T/F
-             */
-            if (data && data.length && data.length > 0) {
+            if (data && ('results' in data) && data['results'].length > 0) {
                 // sort results to show exact match(es) first, then more precise (lower) taxa, then others
-                // initial sort on lower taxa (will be overridden by exact matches)
-                data.sort(function(a,b) {
+                if (data['results'].length > 1) {
+                    console.warn('MULTIPLE SEARCH RESULT SETS!');
+                    console.warn(data['results']);
+                }
+                var results = data.results[0].matches; // ASSUME we only get one result, with n matches
+                /* initial sort on lower taxa (will be overridden by exact matches)
+                results.sort(function(a,b) {
                     if (a.higher === b.higher) return 0;
                     if (a.higher) return 1;
                     if (b.higher) return -1;
                 });
+                */
                 // final sort on exact matches (overrides lower taxa)
-                data.sort(function(a,b) {
-                    if (a.exact === b.exact) return 0;
-                    if (a.exact) return -1;
-                    if (b.exact) return 1;
+                results.sort(function(a,b) {
+                    if (a.is_perfect_match === b.is_perfect_match) return 0;
+                    if (a.is_perfect_match) return -1;
+                    if (b.is_perfect_match) return 1;
                 });
+                // TODO: sort on explicit score?
 
                 // for now, let's immediately apply the top name
-                var otuMapping = data[0];
-                // NOTE that this is an object with several properties:
-                // .name   
-                // .ottId   // number-as-string
-                // .nodeId  // number
-                // .exact   // boolean
-                // .higher  // boolean
-
+                var resultToMap = results[0];
+                // convert to expected structure for proposed mappings
+                var otuMapping = {
+                    name: resultToMap.matched_name,   
+                    ottid: String(resultToMap.matched_ott_id),  // number-as-string
+                    nodeid: resultToMap.matched_node_id,        // number
+                    exact: resultToMap.is_perfect_match,        // boolean
+                    higher: false                               // boolean
+                    // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
+                };
                 proposeOTULabel(otuID, otuMapping);
                 // postpone actual mapping until user approves
                 
@@ -5573,6 +5575,8 @@ function searchForMatchingTaxa() {
         dataType: 'json',
         data: JSON.stringify({ 
             "queryString": searchText,
+            "includeDubious": false,
+            "includeDeprecated": false,
             "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,

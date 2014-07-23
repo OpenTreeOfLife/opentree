@@ -459,15 +459,6 @@ function searchForMatchingTaxa() {
             $('#search-results').html('');
             var maxResults = 100;
             var visibleResults = 0;
-            /*
-             * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
-             * with these properties:
-             *      ottId   // taxon ID in OTT taxonomic tree
-             *      nodeId  // ie, neo4j node ID
-             *      exact   // matches the entered text exactly? T/F
-             *      name    // taxon name
-             *      higher  // points to a genus or higher taxon? T/F
-             */
             if (data && ('results' in data) && data['results'].length > 0) {
                 // sort results to show exact match(es) first, then higher taxa, then others
                 if (data['results'].length > 1) {
