@@ -59,6 +59,13 @@ function make_neo4j_instance {
         mv neo4j-community-* neo4j-$APP
     fi
 
+    # Stop any running server.  (The database may be empty at this point.)
+    # N.B. We do this regardless of whether there has been a change in its
+    # repo, since otherwise apache may fail to proxy requests to this app.
+    if ./neo4j-$APP/bin/neo4j status; then
+        ./neo4j-$APP/bin/neo4j stop
+    fi
+
     # Get plugin from git repository
     if git_refresh OpenTreeOfLife $APP || [ ! -r neo4j-$APP/plugins/$jar ]; then
     
@@ -67,15 +74,10 @@ function make_neo4j_instance {
         # Compilation takes about 4 minutes... ugh
         (cd repo/$APP; ./mvn_serverplugins.sh)
 
-	if true; then
-	    # Stop any running server.  There may or may not be a database.
-	    if ./neo4j-$APP/bin/neo4j status; then
-		./neo4j-$APP/bin/neo4j stop
-            fi
-	else
-            # There was some question as to whether the above code worked.
+	if false; then
+        # There was some question as to whether the above code worked.
 	    # I'm keeping the following replacement code for a while, just in case.
-	    # Stop any running server.  There may or may not be a database.
+	    # Stop any running server.  (The database may be empty at this point.)
 	    # N.B. Theo 'neo4j status' command returns a phrase like this (for a stopped instance):
 	    #    Neo4j Server is not running
 	    # ... or this (for a running instance):
@@ -99,12 +101,10 @@ function make_neo4j_instance {
         mv props.tmp neo4j-$APP/conf/neo4j-server.properties
     fi
 
-    if ! ./neo4j-$APP/bin/neo4j status; then
-	# Start or restart the server
-	echo "Starting $APP neo4j server"
-	./neo4j-$APP/bin/neo4j start
-	log "Started $APP"
-    fi
+    # Start or restart the server
+    echo "Starting $APP neo4j server"
+    ./neo4j-$APP/bin/neo4j start
+    log "Started $APP"
 }
 
 case $WHICH_APP in
