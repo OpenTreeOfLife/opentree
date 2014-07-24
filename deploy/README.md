@@ -135,11 +135,10 @@ Updating the files.opentreeoflife.org web site
 
     ./push.sh -c {configfile} files
 
-This just copies the contents of the files.opentreeoflife.org
+This copies the contents of the files.opentreeoflife.org
 directory out to the web root for the files.opentreeoflife.org vhost.
-The location is determined by the value of FILES_HOST, which defaults
-to ot10.opentreeoflife.org but can be overridden in the configuration
-file if desired.
+The location is determined by the value of FILES_HOST, which can be
+set in the configuration file if desired.
 
 This operation leaves in place any files that are already there.  The
 large files (such as the synthetic tree) are not in github and are
