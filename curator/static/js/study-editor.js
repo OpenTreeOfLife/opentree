@@ -745,11 +745,6 @@ function loadSelectedStudy() {
                 'STUDY_HAS_CHANGED': ko.observable(1)
             }     
 
-            viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
-                addPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
-                updateQualityDisplay();
-            });
-            
             // support fast lookup of elements by ID, for largest trees
             viewModel.fastLookups = {
                 'NODES_BY_ID': null,
@@ -1133,6 +1128,12 @@ function loadSelectedStudy() {
                 $.each(treesCollection.tree, function(i, tree) {
                     normalizeTree( tree );
                 });
+            });
+
+            // Any further changes (*after* tree normalization) should prompt for a save before leaving
+            viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
+                addPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
+                updateQualityDisplay();
             });
 
             // update quality assessment whenever anything changes
