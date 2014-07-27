@@ -713,13 +713,6 @@ function loadSelectedStudy() {
                 });
             }
             
-            // add expected tree properties and metadata, if missing
-            $.each(data.nexml.trees, function(i, treesCollection) {
-                $.each(treesCollection.tree, function(i, tree) {
-                    normalizeTree( tree );
-                });
-            });
-
             // keep track of the SHA (git commit ID) that corresponds to this version of the study
             viewModel.startingCommitSHA = response['sha'] || 'SHA_NOT_PROVIDED';
 
@@ -1021,6 +1014,15 @@ function loadSelectedStudy() {
                         return false;
 
                 }
+                
+                // "Normalize" trees by adding any missing tree properties and metadata.
+                // (this depends on some of the "fast lookups" added above) 
+                $.each(data.nexml.trees, function(i, treesCollection) {
+                    $.each(treesCollection.tree, function(i, tree) {
+                        normalizeTree( tree );
+                    });
+                });
+
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
