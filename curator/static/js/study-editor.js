@@ -1015,14 +1015,6 @@ function loadSelectedStudy() {
 
                 }
                 
-                // "Normalize" trees by adding any missing tree properties and metadata.
-                // (this depends on some of the "fast lookups" added above) 
-                $.each(data.nexml.trees, function(i, treesCollection) {
-                    $.each(treesCollection.tree, function(i, tree) {
-                        normalizeTree( tree );
-                    });
-                });
-
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
@@ -1134,6 +1126,14 @@ function loadSelectedStudy() {
             ko.applyBindings(viewModel, headerQualityPanel);
             var qualityDetailsViewer = $('#quality-details-viewer')[0];
             ko.applyBindings(viewModel, qualityDetailsViewer);
+
+            // "Normalize" trees by adding any missing tree properties and metadata.
+            // (this depends on some of the "fast lookups" added above) 
+            $.each(data.nexml.trees, function(i, treesCollection) {
+                $.each(treesCollection.tree, function(i, tree) {
+                    normalizeTree( tree );
+                });
+            });
 
             // update quality assessment whenever anything changes
             // TODO: throttle this back to handle larger studies?
