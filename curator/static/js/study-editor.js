@@ -745,11 +745,6 @@ function loadSelectedStudy() {
                 'STUDY_HAS_CHANGED': ko.observable(1)
             }     
 
-            viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
-                addPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
-                updateQualityDisplay();
-            });
-            
             // support fast lookup of elements by ID, for largest trees
             viewModel.fastLookups = {
                 'NODES_BY_ID': null,
@@ -1015,14 +1010,6 @@ function loadSelectedStudy() {
 
                 }
                 
-                // "Normalize" trees by adding any missing tree properties and metadata.
-                // (this depends on some of the "fast lookups" added above) 
-                $.each(data.nexml.trees, function(i, treesCollection) {
-                    $.each(treesCollection.tree, function(i, tree) {
-                        normalizeTree( tree );
-                    });
-                });
-
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
@@ -1134,6 +1121,20 @@ function loadSelectedStudy() {
             ko.applyBindings(viewModel, headerQualityPanel);
             var qualityDetailsViewer = $('#quality-details-viewer')[0];
             ko.applyBindings(viewModel, qualityDetailsViewer);
+
+            // "Normalize" trees by adding any missing tree properties and metadata.
+            // (this depends on some of the "fast lookups" added above) 
+            $.each(data.nexml.trees, function(i, treesCollection) {
+                $.each(treesCollection.tree, function(i, tree) {
+                    normalizeTree( tree );
+                });
+            });
+
+            // Any further changes (*after* tree normalization) should prompt for a save before leaving
+            viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
+                addPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
+                updateQualityDisplay();
+            });
 
             // update quality assessment whenever anything changes
             // TODO: throttle this back to handle larger studies?
