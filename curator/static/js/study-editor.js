@@ -4445,8 +4445,8 @@ function requestTaxonMapping() {
                 // convert to expected structure for proposed mappings
                 var otuMapping = {
                     name: resultToMap.matched_name,   
-                    ottid: String(resultToMap.matched_ott_id),  // number-as-string
-                    nodeid: resultToMap.matched_node_id,        // number
+                    ottId: String(resultToMap.matched_ott_id),  // number-as-string
+                    nodeId: resultToMap.matched_node_id,        // number
                     exact: resultToMap.is_perfect_match,        // boolean
                     higher: false                               // boolean
                     // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
