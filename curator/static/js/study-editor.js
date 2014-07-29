@@ -5671,6 +5671,7 @@ function lookUpDOI() {
         // TODO: show potential matches in popup? or new frame?
         showModalScreen("Looking up DOI...", {SHOW_BUSY_BAR:true});
         $.ajax({
+            global: false,  // suppress web2py's aggressive error handling
             type: 'GET',
             dataType: 'json',
             // crossdomain: true,
