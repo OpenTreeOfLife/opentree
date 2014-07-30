@@ -478,6 +478,9 @@ def search_crossref_proxy():
     # prepend the real domain, using HTTP, and return the response
     search_crossref_url = 'http://search.crossref.org/%s' % search_crossref_url
     req = urllib2.Request(url=search_crossref_url) 
-    resp = urllib2.urlopen(req).read()
+    try:
+        resp = urllib2.urlopen(req).read()
+    except:
+        raise HTTP(501, "DOI lookup service failed. Please try again in a few minutes.")
     return resp
 
