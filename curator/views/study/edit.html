@@ -310,8 +310,9 @@ body {
                             <option>{{= context_name }}</option>
                        {{ pass }}
                     {{ pass }}
-                    {{ except:
-                        pass}}
+                    {{ except: }}
+                            <option selected="selected">ERROR loading context values</option>
+                       {{ pass }}
                 <!-- 
                 NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted 
                 by the server, ie, there's no distinction between visible and occult values.
@@ -1171,47 +1172,23 @@ body {
                 </p>
                 <form class="form-inline" style="margin: 0;">
                  <fieldset>
-                    <!-- scraped from header search in main opentree webapp -->
-                    <!-- TODO: fetch a live list, as we do there? -->
                     <select class="input-block-level" style="margin-bottom: 1em;" name="mapping-search-context" 
                             data-bind="value: getOTUMappingHints().data.searchContext.$, 
                               valueUpdate: ['afterkeydown', 'input'], 
                               event: { keyup: updateMappingHints, change: updateMappingHints }
                               ">
-                            <option selected="selected">All life</option>
-                            <option>Land plants</option>
-                            <option>Hornworts</option>
-                            <option>Mosses</option>
-                            <option>Liverworts</option>
-                            <option>Vascular plants</option>
-                            <option>Club mosses</option>
-                            <option>Ferns</option>
-                            <option>Seed plants</option>
-                            <option>Flowering plants</option>
-                            <option>Magnoliids</option>
-                            <option>Monocots</option>
-                            <option>Eudicots</option>
-                            <option>Asterids</option>
-                            <option>Rosids</option>
-                            <option>Animals</option>
-                            <option>Birds</option>
-                            <option>Tetrapods</option>
-                            <option>Mammals</option>
-                            <option>Amphibians</option>
-                            <option>Vertebrates</option>
-                            <option>Arthropods</option>
-                            <option>Molluscs</option>
-                            <option>Platyhelminthes</option>
-                            <option>Annelids</option>
-                            <option>Cnidarians</option>
-                            <option>Arachnides</option>
-                            <option>Insects</option>
-                            <option>Bacteria</option>
-                            <option>Fungi</option>
-                    <!-- 
-                    NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted 
-                    by the server, ie, there's no distinction between visible and occult values.
-                    -->
+                    {{ # generate our contextNames list based on newly fetched names
+                      try:
+                       for context_name in taxonSearchContextNames:
+                          if context_name == 'All life': }}
+                            <option selected="selected">{{= context_name }}</option>
+                       {{ else: }}
+                            <option>{{= context_name }}</option>
+                       {{ pass }}
+                    {{ pass }}
+                    {{ except: }}
+                            <option selected="selected">ERROR loading context values</option>
+                       {{ pass }}
                     </select>
                  </fieldset>
                 </form>

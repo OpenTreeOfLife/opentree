@@ -206,8 +206,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                             <option>{{= context_name }}</option>
                        {{ pass }}
                     {{ pass }}
-                    {{ except:
-                        pass}}
+                    {{ except: }}
+                            <option selected="selected">ERROR loading context values</option>
+                       {{ pass }}
                 <!-- 
                 NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted 
                 by the server, ie, there's no distinction between visible and occult values.
