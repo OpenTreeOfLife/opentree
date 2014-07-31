@@ -468,9 +468,9 @@ body {
                 </p>
                 <div class="btn-group" style="position: relative; top: -5px; margin-bottom: 10px;">
                     <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=1.2' }}" target="_blank">NexSON</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=nexml' }}" target="_blank">NeXML</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=?' }}" target="_blank">NEXUS</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=?' }}" target="_blank">Trees as Newick</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.nexml' }}" target="_blank">NeXML</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.nex' }}" target="_blank">NEXUS</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.tre' }}" target="_blank">Trees as Newick</a>
                 </div>
 
                 <p>
