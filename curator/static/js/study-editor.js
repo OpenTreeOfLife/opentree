@@ -6062,3 +6062,8 @@ function slugify(str) {
               .replace(/\s+/g, '-')         // collapse whitespace and replace by -
               .replace(/-+/g, '-');         // collapse dashes
 }
+
+function showDownloadFormatDetails() {
+  // show details in a popup (already bound)
+  $('#download-formats-popup').modal('show');
+}

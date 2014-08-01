@@ -464,7 +464,10 @@ body {
                 <h4 style="margin-top: 0;">Working with study data in other tools</h4>
 
                 <p>
-                You can <strong>download this study</strong> in different forms:
+                You can <strong>download this study</strong> in 
+                <a href="#" onclick="showDownloadFormatDetails(); return false;"
+                   title="Click for details on how these differ">
+                    several formats</a>:
                 </p>
                 <div class="btn-group" style="position: relative; top: -5px; margin-bottom: 10px;">
                     <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=1.2' }}" target="_blank">NexSON</a>
@@ -1653,6 +1656,33 @@ body {
       <button class="btn btn-info pull-right" style="margin-left: 20px;" 
               onclick="$('#save-comments-popup').modal('hide'); saveFormDataToStudyJSON(); return false;">Save Study</button>
       <a data-dismiss="modal" class="btn" >Cancel</a>
+    </div>
+</div>
+
+<!-- hidden template describing dowload formats -->
+<div class="modal hide fade modal-save-comments" id="download-formats-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         About study download formats
+      </h3>
+    </div>
+    <div class="modal-body">
+      <p>
+        <a href="http://opentree.wikispaces.com/NexSON" target="_blank"><strong>NexSON</strong></a> is a format used extensively in the Open Tree project. It's based on the <a href="http://badgerfish.ning.com/" target="_blank">Badgerfish</a> convention for converting NeXML to JSON, with additional improvement for faster processing. It includes both original and mapped OTU labels.
+      </p>
+      <p style="margin-top: 1.5em;">
+        <a href="http://nexml.org/" target="_blank"><strong>NeXML</strong></a> is an XML serialization of the older NEXUS format. It retains some of NexSON's richness but is compatible with more third-party software. NeXML includes both original and mapped OTU labels, with the original labels repeated in <code>label</code> attributes.
+      </p>
+      <p style="margin-top: 1.5em;">
+        <a href="http://en.wikipedia.org/wiki/Nexus_file" target="_blank"><strong>NEXUS</strong></a> is a common format from which NeXML and NexSON were derived. It includes original OTU labels only.
+      </p>
+      <p style="margin-top: 1.5em;">
+      <a href="http://en.wikipedia.org/wiki/Newick_format" target="_blank"><strong> Newick</strong></a> is a format commonly used in tree visualization. It captures <em>tree information only</em> and includes just the original OTU labels.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
     </div>
 </div>
 
