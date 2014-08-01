@@ -51,13 +51,16 @@ body {
         <label for="study-data-has-existing-license" class="featured-label">
             <input type="radio" id="study-data-has-existing-license" name="data-license" 
                    value="study-data-has-existing-license"/>
-             These data are already licensed
+             These data already have an applied waiver or license
         </label>
             <div id="alternate-license-details" class="featured-label-child" style="display: none;">
-                <select id="alternate-license" name="alternate-license" style="margin-bottom: 12px;">
-                    <option value="">Select the existing license</option>
-                    <option value="CC-0">CC-0</option>
-                    <option value="CC-BY">CC-BY</option>
+                <select id="alternate-license" name="alternate-license" 
+                        style="width: auto; margin-bottom: 12px;">
+                    <option value="">Select the applicable waiver or license</option>
+                    <option value="CC-0">CC0</option>
+                    <option value="CC-BY 2.0">CC-BY-2.0</option>
+                    <option value="CC-BY 2.5">CC-BY-2.5</option>
+                    <option value="CC-BY 3.0">CC-BY-3.0</option>
                     <option value="OTHER">Other</option>
                 </select>
                 <div id="other-license-info">
@@ -70,7 +73,7 @@ body {
 
         <label for="submit-without-CC0" class="featured-label">
             <input type="radio" id="submit-without-CC0" name="data-license" value="submit-without-CC0"/>
-            These data have no existing license or waiver, and I have no authority to apply a waiver
+            These data have no applied waiver or license, and I have no authority to apply a waiver
         </label>
     </div>
 
