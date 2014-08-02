@@ -366,11 +366,63 @@ body {
                 <label class="control-label" for="ot_curatorName">Submitted by</label>
                 <div class="controls">
                   <p class="static-form-value" data-bind="text: nexml['^ot:curatorName'].join(', ')"></p>
-                 <!-- ko if: studyHasCC0Waiver( nexml ) -->
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label class="control-label">Waiver or license</label>
+                <div class="controls">
+                {{ if viewOrEdit == 'EDIT': 
+                   # treat this as read-only once it's been chosen! }}
+                 <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && studyHasCC0Waiver( nexml ) --> 
+                 <p class="static-form-value" data-bind="css:viewModel.ticklers.GENERAL_METADATA">
                   <a target="_blank" href="http://creativecommons.org/publicdomain/zero/1.0/">
                       <img alt="CC0 (opens a new window)" src="{{=URL('static','images/cc-zero.png')}}">
                   </a> 
+                 </p>
                  <!-- /ko -->
+                 <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && !studyHasCC0Waiver( nexml ) -->
+                 <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && getStudyLicenseInfo( nexml ) -->
+                     <p class="static-form-value">
+                      <a target="_blank" href="#"
+                         data-bind="text: getStudyLicenseInfo( nexml )['@name'] || '???',
+                                    attr: {'href': getStudyLicenseInfo( nexml )['@href'] || '#'}">&nbsp;</a>
+                     </p>
+                     <!-- /ko -->
+                     <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && !getStudyLicenseInfo( nexml ) -->
+                     <p class="static-form-value">
+                      <em>None</em>
+                     </p>
+                     <div id="applying-cc0-details" Xclass="featured-label-child">
+                            <label for="agreed-to-CC0" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
+                                <input type="checkbox" id="agreed-to-CC0" name="cc0_agreement" 
+                                       style="width: 20px;"
+                                       onclick="applyCC0Waiver(); return false;"/>I am an author, or can act on behalf of the authors, to apply a CC0 waiver to these data. By clicking this checkbox, I hereby release these data under the terms of the <a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank">Creative Commons Zero (CC0) waiver</a>.
+                            </label>
+                     </div>
+                     <!-- /ko -->
+                 <!-- /ko -->
+                {{ else: }}
+                 <!-- ko if: studyHasCC0Waiver( nexml ) -->
+                 <p class="static-form-value">
+                  <a target="_blank" href="http://creativecommons.org/publicdomain/zero/1.0/">
+                      <img alt="CC0 (opens a new window)" src="{{=URL('static','images/cc-zero.png')}}">
+                  </a> 
+                 </p>
+                 <!-- /ko -->
+                 <!-- ko if: !studyHasCC0Waiver( nexml ) -->
+                 <p class="static-form-value">
+                     <!-- ko if: getStudyLicenseInfo( nexml ) -->
+                      <a target="_blank" href="#"
+                         data-bind="text: getStudyLicenseInfo( nexml )['@name'] || '???',
+                                    attr: {'href': getStudyLicenseInfo( nexml )['@href'] || '#'}">&nbsp;</a>
+                     <!-- /ko -->
+                     <!-- ko if: !getStudyLicenseInfo( nexml ) -->
+                      <em>None</em>
+                     <!-- /ko -->
+                 </p>
+                 <!-- /ko -->
+                {{ pass }}
                 </div>
               </div>
 
@@ -464,19 +516,22 @@ body {
                 <h4 style="margin-top: 0;">Working with study data in other tools</h4>
 
                 <p>
-                You can <strong>download this study</strong> in different forms:
+                You can <strong>download this study</strong> in 
+                <a href="#" onclick="showDownloadFormatDetails(); return false;"
+                   title="Click for details on how these differ">
+                    several formats</a>:
                 </p>
                 <div class="btn-group" style="position: relative; top: -5px; margin-bottom: 10px;">
                     <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=1.2' }}" target="_blank">NexSON</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=nexml' }}" target="_blank">NeXML</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=?' }}" target="_blank">NEXUS</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=?' }}" target="_blank">Trees as Newick</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.nexml' }}" target="_blank">NeXML</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.nex' }}" target="_blank">NEXUS</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.tre' }}" target="_blank">Trees as Newick</a>
                 </div>
 
                 <p>
                 You can also <strong>use the 
                 <a href="https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs" target="_blank">Open Tree API</a>
-                </strong> (the same one the powers this editor) to retrieve and make changes to study data.
+                </strong> (the same one that powers this editor) to retrieve and make changes to study data.
                 </p>
 
             </div>
@@ -1653,6 +1708,33 @@ body {
       <button class="btn btn-info pull-right" style="margin-left: 20px;" 
               onclick="$('#save-comments-popup').modal('hide'); saveFormDataToStudyJSON(); return false;">Save Study</button>
       <a data-dismiss="modal" class="btn" >Cancel</a>
+    </div>
+</div>
+
+<!-- hidden template describing dowload formats -->
+<div class="modal hide fade modal-save-comments" id="download-formats-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         About study download formats
+      </h3>
+    </div>
+    <div class="modal-body">
+      <p>
+        <a href="http://opentree.wikispaces.com/NexSON" target="_blank"><strong>NexSON</strong></a> is a format used extensively in the Open Tree project. It's based on the <a href="http://badgerfish.ning.com/" target="_blank">Badgerfish</a> convention for converting NeXML to JSON, with additional improvement for faster processing. It includes both original and mapped OTU labels.
+      </p>
+      <p style="margin-top: 1.5em;">
+        <a href="http://nexml.org/" target="_blank"><strong>NeXML</strong></a> is an XML serialization of the older NEXUS format. It retains some of NexSON's richness but is compatible with more third-party software. NeXML includes both original and mapped OTU labels, with the original labels repeated in <code>label</code> attributes.
+      </p>
+      <p style="margin-top: 1.5em;">
+        <a href="http://en.wikipedia.org/wiki/Nexus_file" target="_blank"><strong>NEXUS</strong></a> is a common format from which NeXML and NexSON were derived. It includes original OTU labels only.
+      </p>
+      <p style="margin-top: 1.5em;">
+      <a href="http://en.wikipedia.org/wiki/Newick_format" target="_blank"><strong> Newick</strong></a> is a format commonly used in tree visualization. It captures <em>tree information only</em> and includes just the original OTU labels.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
     </div>
 </div>
 

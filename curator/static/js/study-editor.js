@@ -5960,17 +5960,22 @@ function resolveSiblingOnlyConflictsInTree(tree) {
     }
 }
 
-function studyHasCC0Waiver( nexml ) {
+function getStudyLicenseInfo( nexml ) {
     if (!nexml) {
         nexml = viewModel.nexml;
     }
     //  nexml['^xhtml:license'] = {'@href': 'http://creativecommons.org/publicdomain/zero/1.0/'}
     if ('^xhtml:license' in nexml) {
-        var itsLicense = nexml['^xhtml:license'];
-        if (itsLicense && '@href' in itsLicense) {
-            var licenseURL = itsLicense['@href'];
-            return licenseURL === 'http://creativecommons.org/publicdomain/zero/1.0/';
-        }
+        return nexml['^xhtml:license'];
+    }
+    return null;
+}
+
+function studyHasCC0Waiver( nexml ) {
+    var licenseInfo = getStudyLicenseInfo( nexml );
+    if (licenseInfo && '@href' in licenseInfo) {
+        var licenseURL = licenseInfo['@href'];
+        return licenseURL === 'http://creativecommons.org/publicdomain/zero/1.0/';
     }
     return false;
 }
@@ -6061,4 +6066,17 @@ function slugify(str) {
               .replace(/[^a-z0-9 -]/g, '')  // remove invalid chars
               .replace(/\s+/g, '-')         // collapse whitespace and replace by -
               .replace(/-+/g, '-');         // collapse dashes
+}
+
+function showDownloadFormatDetails() {
+  // show details in a popup (already bound)
+  $('#download-formats-popup').modal('show');
+}
+
+function applyCC0Waiver() {
+    viewModel.nexml['^xhtml:license'] = {
+        '@name': 'CC0',
+        '@href': 'http://creativecommons.org/publicdomain/zero/1.0/'
+    }
+    nudgeTickler('GENERAL_METADATA');
 }
