@@ -366,11 +366,63 @@ body {
                 <label class="control-label" for="ot_curatorName">Submitted by</label>
                 <div class="controls">
                   <p class="static-form-value" data-bind="text: nexml['^ot:curatorName'].join(', ')"></p>
-                 <!-- ko if: studyHasCC0Waiver( nexml ) -->
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label class="control-label">Waiver or license</label>
+                <div class="controls">
+                {{ if viewOrEdit == 'EDIT': 
+                   # treat this as read-only once it's been chosen! }}
+                 <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && studyHasCC0Waiver( nexml ) --> 
+                 <p class="static-form-value" data-bind="css:viewModel.ticklers.GENERAL_METADATA">
                   <a target="_blank" href="http://creativecommons.org/publicdomain/zero/1.0/">
                       <img alt="CC0 (opens a new window)" src="{{=URL('static','images/cc-zero.png')}}">
                   </a> 
+                 </p>
                  <!-- /ko -->
+                 <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && !studyHasCC0Waiver( nexml ) -->
+                 <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && getStudyLicenseInfo( nexml ) -->
+                     <p class="static-form-value">
+                      <a target="_blank" href="#"
+                         data-bind="text: getStudyLicenseInfo( nexml )['@name'] || '???',
+                                    attr: {'href': getStudyLicenseInfo( nexml )['@href'] || '#'}">&nbsp;</a>
+                     </p>
+                     <!-- /ko -->
+                     <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && !getStudyLicenseInfo( nexml ) -->
+                     <p class="static-form-value">
+                      <em>None</em>
+                     </p>
+                     <div id="applying-cc0-details" Xclass="featured-label-child">
+                            <label for="agreed-to-CC0" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
+                                <input type="checkbox" id="agreed-to-CC0" name="cc0_agreement" 
+                                       style="width: 20px;"
+                                       onclick="applyCC0Waiver(); return false;"/>I am an author, or can act on behalf of the authors, to apply a CC0 waiver to these data. By clicking this checkbox, I hereby release these data under the terms of the <a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank">Creative Commons Zero (CC0) waiver</a>.
+                            </label>
+                     </div>
+                     <!-- /ko -->
+                 <!-- /ko -->
+                {{ else: }}
+                 <!-- ko if: studyHasCC0Waiver( nexml ) -->
+                 <p class="static-form-value">
+                  <a target="_blank" href="http://creativecommons.org/publicdomain/zero/1.0/">
+                      <img alt="CC0 (opens a new window)" src="{{=URL('static','images/cc-zero.png')}}">
+                  </a> 
+                 </p>
+                 <!-- /ko -->
+                 <!-- ko if: !studyHasCC0Waiver( nexml ) -->
+                 <p class="static-form-value">
+                     <!-- ko if: getStudyLicenseInfo( nexml ) -->
+                      <a target="_blank" href="#"
+                         data-bind="text: getStudyLicenseInfo( nexml )['@name'] || '???',
+                                    attr: {'href': getStudyLicenseInfo( nexml )['@href'] || '#'}">&nbsp;</a>
+                     <!-- /ko -->
+                     <!-- ko if: !getStudyLicenseInfo( nexml ) -->
+                      <em>None</em>
+                     <!-- /ko -->
+                 </p>
+                 <!-- /ko -->
+                {{ pass }}
                 </div>
               </div>
 
