@@ -488,12 +488,12 @@ function searchForMatchingTaxa() {
                     }
                     var match = results[mpos];
                     var matchingName = match.matched_name;
-                    var uniqueName = match.unique_name;
+                    var uniqueName = match.unique_name; // add as 'title' attribute? or main text?
                     var matchingID = match.matched_ott_id;
                     if ($.inArray(matchingID, matchingNodeIDs) === -1) {
                         // we're not showing this yet; add it now
                         $('#search-results').append(
-                            '<li><a href="'+ matchingID +'" title="'+ uniqueName +'">'+ matchingName +'</a></li>'
+                            '<li><a href="'+ matchingID +'">'+ uniqueName +'</a></li>'
                         );
                         matchingNodeIDs.push(matchingID);
                         visibleResults++;
