@@ -589,6 +589,13 @@ body {
                                href="#">
                                 Show conflicting nodes
                             </a> 
+                            <a data-bind="if: ambiguousLabelsFoundInTree( tree ), 
+                                          css: viewModel.ticklers.TREES,
+                                          click: showAmbiguousLabelsInTreeViewer" 
+                               class="suggestion-prompt" style="display: block;"
+                               href="#">
+                                Review ambiguous labels
+                            </a> 
                         </td>
                         <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
                                 css: viewModel.ticklers.TREES">TYPE?</td>
@@ -1899,7 +1906,6 @@ body {
                     },
                     value: $data['^ot:branchLengthMode'],
                     event: { keyup: nudge.TREES, change: nudge.TREES },
-                    optionsCaption: 'Choose...', 
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
 
@@ -1921,6 +1927,32 @@ body {
                     event: { keyup: nudge.TREES, change: nudge.TREES },
                     css: viewModel.ticklers.TREES
                 " placeholder="Describe here"></input>
+               <!-- /ko -->
+
+                <br/>
+                <label data-bind="style: {'color': (viewModel.ticklers.TREES() && $data['^ot:nodeLabelMode'] === null || $data['^ot:nodeLabelMode'] === 'ot:undefined') ? '#b94a48':'' }">Internal node labels represent:</label>
+                <!-- TODO: show these as static value (once set) or adjustable -->
+                <select data-bind="options: nodeLabelModes,
+                    optionsValue: 'value',
+                    optionsText: 'text',
+                    value: $data['^ot:nodeLabelMode'],
+                    event: { keyup: nudge.TREES, change: nudge.TREES }, 
+                    css: viewModel.ticklers.TREES
+                    ">TYPE</select>
+               <!-- ko if: viewModel.ticklers.TREES() && $data['^ot:nodeLabelMode'] === 'ot:other' -->
+                <br/>
+                <label style="margin-left: 10px;">&nbsp;</label>
+                <input type="text" data-bind="value: $data['^ot:nodeLabelDescription'],
+                    valueUpdate: ['afterkeydown', 'input'],
+                    event: { keyup: nudge.TREES, change: nudge.TREES },
+                    css: viewModel.ticklers.TREES
+                " placeholder="Describe here"></input>
+               <!-- /ko -->
+               <!-- ko if: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree($data) -->
+                 <br/>
+                 <label style="margin-left: 10px;">&nbsp;</label>
+                 <button class="btn btn-warning" data-bind="click: function() { if (confirm('Warning: This will shift all ambiguous node labels to their adjacent edges. Check rooting carefully! OK to proceed?')) shiftAmbiguousLabels($data); return false; }"
+                    >Freeze internal node labels (move to edges)</button>
                <!-- /ko -->
 
               </div>

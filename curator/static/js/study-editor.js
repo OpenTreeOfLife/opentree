@@ -1824,7 +1824,9 @@ function normalizeTree( tree ) {
         '^ot:outGroupEdge',
         '^ot:branchLengthMode',
         '^ot:branchLengthTimeUnit',
-        '^ot:branchLengthDescription'
+        '^ot:branchLengthDescription',
+        '^ot:nodeLabelMode',
+        '^ot:nodeLabelTimeUnit'
     ];
     $.each(metatags, function(i, tagName) {
         if (!(tagName in tree)) {
@@ -2019,13 +2021,13 @@ function getRootedStatusForTree( tree ) {
 }
 
 var branchLengthModeDescriptions = [
+    { value: 'ot:undefined', text: "Choose one..." },
     { value: 'ot:substitutionCount', text: "Expected number of changes per site" }, 
     { value: 'ot:changesCount', text: "Estimated number of changes" },
     { value: 'ot:time', text: "Time" },  //  TODO: add units from ot:branchLengthTimeUnit
     { value: 'ot:bootstrapValues', text: "Bootstrap values" },
     { value: 'ot:posteriorSupport', text: "Posterior support values" },
-    { value: 'ot:other', text: "Other" },  // TODO: refer ot:branchLengthDescription
-    { value: 'ot:undefined', text: "Undefined values" }
+    { value: 'ot:other', text: "Other (describe below)" }  // TODO: refer ot:branchLengthDescription
 ]
 function getBranchLengthModeDescriptionForTree( tree ) {
     var rawModeValue = tree['^ot:branchLengthMode'];
@@ -2341,6 +2343,31 @@ var studyScoringRules = {
             successMessage: "No conflicting nodes (mapped to same taxon) found in candidate trees.",
             failureMessage: "Conflicting nodes found! The curator should choose an 'exemplar' for each mapped taxon in a candidate tree.",
             suggestedAction: "Review all conflicting instances of a mapped taxon and choose an exemplar."
+        },
+        {
+            description: "Trees should not have ambiguous labels (no defined meaning) on internal nodes.",
+            test: function(studyData) {
+                // TODO: opt-out if study not intended for synthesis?
+                // TODO: skip non-preferred trees?
+                // check all trees
+                var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+                var ambiguousLabelsFound = false;
+var startTime = new Date();
+                $.each(allTrees, function(i, tree) {
+                    // disregard sibling-only conflicts (will be resolved on the server)
+                    var ambiguousLabelData = getAmbiguousLabelsInTree( tree );
+                    if ( !($.isEmptyObject(ambiguousLabelData)) ) {
+                        ambiguousLabelsFound = true;
+                        return false;
+                    }
+                });
+console.log("ambiguoug label test... total elapsed: "+ (new Date() - startTime) +" ms");
+                return !(ambiguousLabelsFound);
+            },
+            weight: 0.75, 
+            successMessage: "No trees found with ambiguous labels on internal nodes.",
+            failureMessage: "Ambiguous internal-node labels found! The curator should root the tree(s), then assign a meaning to these labels.",
+            suggestedAction: "Review all trees with ambiguous labeling and assign their meaning."
         }
     ],
     'Files': [
@@ -2606,7 +2633,7 @@ function showTreeViewer( tree, options ) {
 
         updateEdgesInTree( tree );
         
-        drawTree( tree, {'INITIAL_DRAWING':true} );
+        drawTree( tree, {'INITIAL_DRAWING':true, 'HIGHLIGHT_AMBIGUOUS_LABELS':(options.HIGHLIGHT_AMBIGUOUS_LABELS || false)} );
 
         // clear any prior stepwise UI for showing highlights
         $('#tree-viewer').find('.stepwise-highlights').remove();
@@ -2671,6 +2698,10 @@ function showTreeViewer( tree, options ) {
             ///setTimeout(function() {
             scrollToTreeNode(tree['@id'], highlightNodeID);
             ///}, 250);
+        }
+        if (options.HIGHLIGHT_AMBIGUOUS_LABELS) {
+            // TODO: visibly mark the Label Types widget, and show internal labels in red
+            console.warn(">>>> Now I'd highlight the LabelTypes widget!");
         }
 
         ///hideModalScreen();
@@ -2819,6 +2850,8 @@ function drawTree( treeOrID, options ) {
         var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
         node.name = labelInfo.label;
         node.labelType = labelInfo.labelType;
+        node.ambiguousLabel = labelInfo['ambiguousLabel'] || null;
+        console.log(">> node's ambiguous label: "+ node.ambiguousLabel);
         // reset x of all nodes, to avoid gradual "creeping" to the right
         node.x = 0;
         node.length = 0;  // ie, branch length
@@ -2828,23 +2861,32 @@ function drawTree( treeOrID, options ) {
     var shortestEdge = null;
     var longestEdge = null;
     $.each(edges, function(index, edge) {
-        // transfer @length property (if any) to the child node
-        if ('@length' in edge) {
+        if (('@length' in edge) || ('@label' in edge)) {
+            // transfer @length property (if any) to the child node
             var childID = edge['@target'];
             var childNode = getTreeNodeByID(tree, childID);
-            childNode.length = parseFloat(edge['@length'] || '0');
-            ///console.log("> reset length of node "+ childID+" to: "+ childNode.length);
-            if (options.INITIAL_DRAWING) {
-                if (shortestEdge === null) {
-                    shortestEdge = childNode.length;
-                } else {
-                    shortestEdge = Math.min(shortestEdge, childNode.length);
+            if ('@length' in edge) {
+                childNode.length = parseFloat(edge['@length'] || '0');
+                ///console.log("> reset length of node "+ childID+" to: "+ childNode.length);
+                if (options.INITIAL_DRAWING) {
+                    if (shortestEdge === null) {
+                        shortestEdge = childNode.length;
+                    } else {
+                        shortestEdge = Math.min(shortestEdge, childNode.length);
+                    }
+                    if (longestEdge === null) {
+                        longestEdge = childNode.length;
+                    } else {
+                        longestEdge = Math.max(longestEdge, childNode.length);
+                    }
                 }
-                if (longestEdge === null) {
-                    longestEdge = childNode.length;
-                } else {
-                    longestEdge = Math.max(longestEdge, childNode.length);
-                }
+            }
+            // share @label property (if any) with the child node
+            console.log("TESTING for edge['@label']...");
+            if ('@label' in edge) {
+                console.log("SHARING edge label with childNode");
+                childNode.adjacentEdgeLabel = edge['@label'];
+                console.log(childNode);
             }
         }
     });
@@ -3408,31 +3450,44 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
     //   'original label'
     //   'positional label'     (eg, "tree root")
     //   'node id'              (a last resort, rarely useful)
+    var labelInfo = {};
+    if ('@label' in node) {
+        // add any ambiguous label (unresolved type) for display
+        // TODO: *or* just call getAmbiguousLabelsInTree(tree) once?
+        labelInfo.ambiguousLabel = node['@label'] || null;
+    }
     var nodeID = node['@id'];
 
-    /* apply positional labels?
+    /* apply simple positional labels?
     if (nodeID === importantNodeIDs.inGroupClade) {
-        return {label: "ingroup clade", labelType: 'positional label'};
+        labelInfo.label = "ingroup clade";
+        labelInfo.labelType = 'positional label';
+        return labelInfo;
     }
     if (nodeID === importantNodeIDs.treeRoot) {
-        return {label: "tree root", labelType: 'positional label'};
+        labelInfo.label = "tree root";
+        labelInfo.labelType = 'positional label';
+        return labelInfo;
     }
     */
-
     var itsOTU = node['@otu'];
     if (itsOTU) {
         var otu = getOTUByID( itsOTU );
         var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
         if (itsMappedLabel) {
-            return {label: itsMappedLabel, labelType: 'mapped label'};
+            labelInfo.label = itsMappedLabel;
+            labelInfo.labelType = 'mapped label';
+        } else {
+            var itsOriginalLabel = otu['^ot:originalLabel'];
+            labelInfo.label = itsOriginalLabel;
+            labelInfo.labelType = 'original label';
         }
-        var itsOriginalLabel = otu['^ot:originalLabel'];
-        if (itsOriginalLabel) {
-            return {label: itsOriginalLabel, labelType: 'original label'};
-        }
+    } else {
+        labelInfo.label = nodeID;
+        labelInfo.labelType = 'node id';
     }
 
-    return {label: nodeID, labelType: 'node id'};
+    return labelInfo;
 }
 
 function filenameFromFakePath( path ) {
@@ -5958,6 +6013,70 @@ function resolveSiblingOnlyConflictsInTree(tree) {
             markTaxonExemplar( tree['@id'], firstConflictingNodeID, {REDRAW_TREE: false});
         }
     }
+}
+
+var nodeLabelModes = [
+    // based on NexSON wiki (http://opentree.wikispaces.com/NexSON)
+    {value: 'ot:undefined', text: 'Choose one...'},
+    {value: 'ot:taxonNames', text: 'Taxon names'},
+    {value: 'ot:bootstrapValues', text: 'Bootstrap values'},
+    {value: 'ot:posteriorSupport', text: 'Posterior support'},
+    {value: 'ot:other', text: 'Other (describe below)'}
+];
+function ambiguousLabelsFoundInTree( tree ) {
+    // N.B. This checks for UNRESOLVED and INTERESTING (non-sibling) conflicts
+    var labelData = getAmbiguousLabelsInTree( tree );
+    return $.isEmptyObject(labelData) ? false : true;
+}
+function getAmbiguousLabelsInTree(tree) {
+    // gather all labels, keyed by node ID
+    // TODO: Should this be just for internal nodes?
+    var labelData = {};
+    /*
+    var rawModeValue = tree['^ot:nodeLabelMode'];
+    var treeHasLabelInterpretation = rawModeValue && (rawModeValue !== 'ot:undefined') ;
+    if (treeHasLabelInterpretation) {
+        return labelData;
+    }
+    */
+    console.log(">> looking for ambiguous internal labels in tree '"+ tree['@id'] +"'...");
+    $.each( tree.node, function(i, node) { 
+        if ('@label' in node) {
+            var nodeID = node['@id'];
+            labelData[ nodeID ] = node['@label'];
+        }
+    });
+    return labelData;
+}
+function showAmbiguousLabelsInTreeViewer(tree) {
+    // If there are no ambiguous labels, fall back to simple tree view
+    var ambiguousLabelData = getAmbiguousLabelsInTree(tree);
+    if ($.isEmptyObject(ambiguousLabelData)) {
+        showTreeWithHistory(tree);
+        return;
+    }
+    // hint to tree viewer that we're focused on these labels
+    showTreeViewer(tree, {
+        HIGHLIGHT_AMBIGUOUS_LABELS: true  // TODO
+    });
+}
+function shiftAmbiguousLabels(tree) {
+    // move the @label values to the adjacent edges
+    $.each( tree.node, function(i, node) { 
+        var targetLookup = getFastLookup('EDGES_BY_TARGET_ID');
+        if ($.trim(node['@label']) !== '') {
+            var nodeID = node['@id'];
+            var rootwardEdge = targetLookup[ nodeID ][0];
+            if (rootwardEdge) {
+                rootwardEdge['@label'] = node['@label'];
+                delete node['@label'];
+            } else {
+                console.warn("shiftAmbiguousLabels(): node has no adjacent edge! possibly a new root?");
+            }
+        }
+    });
+    drawTree( tree );
+    nudgeTickler('TREES'); 
 }
 
 function getStudyLicenseInfo( nexml ) {
