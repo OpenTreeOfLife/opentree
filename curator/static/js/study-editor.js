@@ -1119,13 +1119,6 @@ function loadSelectedStudy() {
             viewModel.ticklers.GENERAL_METADATA.subscribe(updatePageHeadings);
             updatePageHeadings();
 
-            var mainPageArea = $('#main .tab-content')[0];
-            ko.applyBindings(viewModel, mainPageArea);
-            var headerQualityPanel = $('#main .header-quality-panel')[0];
-            ko.applyBindings(viewModel, headerQualityPanel);
-            var qualityDetailsViewer = $('#quality-details-viewer')[0];
-            ko.applyBindings(viewModel, qualityDetailsViewer);
-
             // "Normalize" trees by adding any missing tree properties and metadata.
             // (this depends on some of the "fast lookups" added above) 
             $.each(data.nexml.trees, function(i, treesCollection) {
@@ -1133,6 +1126,13 @@ function loadSelectedStudy() {
                     normalizeTree( tree );
                 });
             });
+
+            var mainPageArea = $('#main .tab-content')[0];
+            ko.applyBindings(viewModel, mainPageArea);
+            var headerQualityPanel = $('#main .header-quality-panel')[0];
+            ko.applyBindings(viewModel, headerQualityPanel);
+            var qualityDetailsViewer = $('#quality-details-viewer')[0];
+            ko.applyBindings(viewModel, qualityDetailsViewer);
 
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
@@ -6140,8 +6140,9 @@ function updateNodeLabelMode(tree) {
             } else {
                 // shift the modified value to its final home
                 var nodeID = node['@id'];
-                var rootwardEdge = targetLookup[ nodeID ][0];
-                if (rootwardEdge) {
+                var matchingEdges = targetLookup[ nodeID ];
+                if (matchingEdges && matchingEdges.length > 0) {
+                    var rootwardEdge = matchingEdges[0];
                     rootwardEdge[ '^'+ viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode ] = modifiedValue;
                     delete node['@label'];
                     if (viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode === 'ot:otherSupport') {
