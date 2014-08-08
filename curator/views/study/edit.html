@@ -1929,31 +1929,42 @@ body {
                 " placeholder="Describe here"></input>
                <!-- /ko -->
 
-                <br/>
-                <label data-bind="style: {'color': (viewModel.ticklers.TREES() && $data['^ot:nodeLabelMode'] === null || $data['^ot:nodeLabelMode'] === 'ot:undefined') ? '#b94a48':'' }">Internal node labels represent:</label>
-                <!-- TODO: show these as static value (once set) or adjustable -->
-                <select data-bind="options: nodeLabelModes,
-                    optionsValue: 'value',
+           <!-- NOTE that a virtual element with 'ko if: ...' didn't work here! -->
+            <div data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree( $data )" class="needs-attention">
+                <label>Internal node labels represent:</label>
+                <!-- N.B. By not specifying 'optionsValue', we'll stash the
+                     complete modeInfo object into viewModel.chosenNodeLabelModeInfo -->
+                <select style="width: auto;" data-bind="options: nodeLabelModes,
+                    XXoptionsValue: 'nodeLabelMode',
                     optionsText: 'text',
-                    value: $data['^ot:nodeLabelMode'],
+                    value: viewModel.chosenNodeLabelModeInfo,
+                    XXevent: { keyup: updateNodeLabelMode, change: updateNodeLabelMode }, 
                     event: { keyup: nudge.TREES, change: nudge.TREES }, 
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
-               <!-- ko if: viewModel.ticklers.TREES() && $data['^ot:nodeLabelMode'] === 'ot:other' -->
-                <br/>
+
+               <div class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && chosenLabelModeRequiresDescription()">
                 <label style="margin-left: 10px;">&nbsp;</label>
-                <input type="text" data-bind="value: $data['^ot:nodeLabelDescription'],
+                <input type="text" data-bind="value: viewModel.nodeLabelModeDescription,
                     valueUpdate: ['afterkeydown', 'input'],
                     event: { keyup: nudge.TREES, change: nudge.TREES },
                     css: viewModel.ticklers.TREES
                 " placeholder="Describe here"></input>
-               <!-- /ko -->
-               <!-- ko if: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree($data) -->
-                 <br/>
+               </div>
+
+               <div class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree($data)">
                  <label style="margin-left: 10px;">&nbsp;</label>
-                 <button class="btn btn-warning" data-bind="click: function() { if (confirm('Warning: This will shift all ambiguous node labels to their adjacent edges. Check rooting carefully! OK to proceed?')) shiftAmbiguousLabels($data); return false; }"
-                    >Freeze internal node labels (move to edges)</button>
-               <!-- /ko -->
+                 <button class="btn btn-info" data-bind="click: function() { if (confirm('Warning: This can shift ambiguous node labels to their adjacent edges. Check rooting carefully! OK to proceed?')) updateNodeLabelMode($data); return false; }, enable: readyToCaptureInternalNodeLabels()"
+                    >Capture internal node labels</button>
+               </div>
+
+            </div>
+
+           <!-- NOTE that a virtual element with 'ko if: ...' didn't work here! -->
+            <div style="margin-top: 6px;" data-bind="visible: viewModel.ticklers.TREES() && !ambiguousLabelsFoundInTree( $data )">
+                <label>Internal node labels represent:</label>
+                <strong data-bind="css: viewModel.ticklers.TREES(), text: getNodeLabelModeDescription($data)"></strong>
+            </div>
 
               </div>
               <div style="clear: left; height: 20px;">&nbsp;</div>

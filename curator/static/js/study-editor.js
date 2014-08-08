@@ -1085,6 +1085,10 @@ function loadSelectedStudy() {
                 return viewModel._filteredAnnotations;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredAnnotations
 
+            // store tentative decisions about internal node labels
+            viewModel.chosenNodeLabelModeInfo = ko.observable(null);
+            viewModel.nodeLabelModeDescription = ko.observable('');
+
             viewModel.studyQualityPercent = ko.observable(0);
             viewModel.studyQualityPercentStyle = ko.computed(function() {
                 // NOTE that we impose a minimum width, so the score is legible
@@ -2361,7 +2365,7 @@ var startTime = new Date();
                         return false;
                     }
                 });
-console.log("ambiguoug label test... total elapsed: "+ (new Date() - startTime) +" ms");
+console.log("ambiguous label test... total elapsed: "+ (new Date() - startTime) +" ms");
                 return !(ambiguousLabelsFound);
             },
             weight: 0.75, 
@@ -2608,6 +2612,9 @@ function showTreeViewer( tree, options ) {
             $('#tree-tags').tagsinput('destroy');
             treeTagsInitialized = false;
         }
+        // reset observables for tentative label-mode options
+        viewModel.chosenNodeLabelModeInfo = ko.observable(null);
+        viewModel.nodeLabelModeDescription = ko.observable('');
     }
 
     // bind just the selected tree to the modal HTML 
@@ -2850,8 +2857,18 @@ function drawTree( treeOrID, options ) {
         var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
         node.name = labelInfo.label;
         node.labelType = labelInfo.labelType;
-        node.ambiguousLabel = labelInfo['ambiguousLabel'] || null;
-        console.log(">> node's ambiguous label: "+ node.ambiguousLabel);
+
+        if (labelInfo['internalNodeLabel']) {
+            node.internalNodeLabel = labelInfo['internalNodeLabel'];
+        } else {
+            delete node.internalNodeLabel; 
+        }
+        if (labelInfo['ambiguousLabel']) {
+            node.ambiguousLabel = labelInfo['ambiguousLabel'];
+        } else {
+            delete node.ambiguousLabel;
+        }
+
         // reset x of all nodes, to avoid gradual "creeping" to the right
         node.x = 0;
         node.length = 0;  // ie, branch length
@@ -2881,13 +2898,15 @@ function drawTree( treeOrID, options ) {
                     }
                 }
             }
-            // share @label property (if any) with the child node
-            console.log("TESTING for edge['@label']...");
-            if ('@label' in edge) {
-                console.log("SHARING edge label with childNode");
-                childNode.adjacentEdgeLabel = edge['@label'];
-                console.log(childNode);
-            }
+            // share certain edge predicates (usu. support values) with the child node
+            $.each(nodeLabelModes, function(i, modeInfo) {
+                // check the edge property set by each option
+                var edgeProp = modeInfo.edgePredicate; // eg, '^ot:bootstrapValues'
+                if (edgeProp in edge) {
+                    childNode.adjacentEdgeLabel = edge[ edgeProp ];
+                    return false;  // use first one found
+                }
+            });
         }
     });
     ///console.log("> done sweeping edges");
@@ -3451,11 +3470,6 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
     //   'positional label'     (eg, "tree root")
     //   'node id'              (a last resort, rarely useful)
     var labelInfo = {};
-    if ('@label' in node) {
-        // add any ambiguous label (unresolved type) for display
-        // TODO: *or* just call getAmbiguousLabelsInTree(tree) once?
-        labelInfo.ambiguousLabel = node['@label'] || null;
-    }
     var nodeID = node['@id'];
 
     /* apply simple positional labels?
@@ -3483,8 +3497,22 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
             labelInfo.labelType = 'original label';
         }
     } else {
-        labelInfo.label = nodeID;
-        labelInfo.labelType = 'node id';
+        if ('@label' in node) {
+            if (tree['^ot:nodeLabelMode'] === 'ot:other') {
+                // add any internal label (eg, taxon name) for display
+                labelInfo.label = node['@label'];
+                labelInfo.labelType = 'internal node label ('+ tree['^ot:nodeLabelDescription'] +')';
+            } else {
+                // add any ambiguous label (unresolved type) for display
+                // TODO: *or* just call getAmbiguousLabelsInTree(tree) once?
+                labelInfo.ambiguousLabel = node['@label'];
+                labelInfo.label = nodeID;
+                labelInfo.labelType = 'node id';
+            }
+        } else {
+            labelInfo.label = nodeID;
+            labelInfo.labelType = 'node id';
+        }
     }
 
     return labelInfo;
@@ -4796,6 +4824,8 @@ function clearD3PropertiesFromTree(tree) {
         delete node.ingroup;
         delete node.rootDist;
         delete node.labelType;
+        delete node.ambiguousLabel;
+        delete node.adjacentEdgeLabel;
     });
 }
 
@@ -6016,13 +6046,116 @@ function resolveSiblingOnlyConflictsInTree(tree) {
 }
 
 var nodeLabelModes = [
-    // based on NexSON wiki (http://opentree.wikispaces.com/NexSON)
-    {value: 'ot:undefined', text: 'Choose one...'},
-    {value: 'ot:taxonNames', text: 'Taxon names'},
-    {value: 'ot:bootstrapValues', text: 'Bootstrap values'},
-    {value: 'ot:posteriorSupport', text: 'Posterior support'},
-    {value: 'ot:other', text: 'Other (describe below)'}
+    {
+        text: 'Choose one...', 
+        treeNodeLabelMode: 'ot:undefined', 
+        edgePredicate: null,
+        captureValue: function(val) {
+            return null;  // do nothing
+        }
+    },
+    {
+        text: 'Bootstrap proportion (0-1)', 
+        treeNodeLabelMode: 'ot:bootstrapValues', 
+        edgePredicate: '^ot:bootstrapValues',
+        captureValue: function(val) {
+            var numericVal = Number(val);
+            return isNaN(numericVal) ? null : numericVal * 100.0;
+        }
+    },
+    {
+        text: 'Bootstrap percentage (0-100)', 
+        treeNodeLabelMode: 'ot:bootstrapValues', 
+        edgePredicate: '^ot:bootstrapValues',
+        captureValue: function(val) {
+            var numericVal = Number(val);
+            return isNaN(numericVal) ? null : numericVal;
+        }
+    },
+    {
+        text: 'Posterior prob (0-1)', 
+        treeNodeLabelMode: 'ot:posteriorSupport', 
+        edgePredicate: '^ot:posteriorSupport',
+        captureValue: function(val) {
+            var numericVal = Number(val);
+            return isNaN(numericVal) ? null : numericVal;
+        }
+    },
+    {
+        text: 'Posterior percentage (0-100)', 
+        treeNodeLabelMode: 'ot:posteriorSupport', 
+        edgePredicate: '^ot:posteriorSupport',
+        captureValue: function(val) {
+            var numericVal = Number(val);
+            return isNaN(numericVal) ? null : numericVal / 100.0;
+        }
+    },
+    {
+        text: 'Other support (describe below)', 
+        treeNodeLabelMode: 'ot:otherSupport', 
+        edgePredicate: '^ot:otherSupport',
+        captureValue: function(val) {
+            return val;  // move value as-is
+        }
+    },
+ /* {
+        text: 'Taxon names',
+        treeNodeLabelMode: 'ot:taxonNames', 
+        edgePredicate: null,
+        captureValue: function(val) {
+            return null;  // do nothing
+        }
+    }, */
+    {
+        text: 'Not a support statement (e.g., taxon names)',  // eg, ot:taxonNames
+        treeNodeLabelMode: 'ot:other', 
+        edgePredicate: null,
+        captureValue: function(val) {
+            return null;  // do nothing
+        }
+    }
 ];
+function updateNodeLabelMode(tree) {
+    /* Translate the choices in nodeLabelModes into action:
+         - update the tree's nodeLabelMode
+         - transform the node @label properties and shift them to their new
+           locations (or not)
+   */
+    tree['^ot:nodeLabelMode'] = viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode;
+    switch(viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode) {
+        case 'ot:otherSupport':
+        case 'ot:other':
+            tree['^ot:nodeLabelDescription'] = viewModel.nodeLabelModeDescription();
+            break;
+        default:
+            tree['^ot:nodeLabelDescription'] = '';
+    }
+
+    $.each( tree.node, function(i, node) { 
+        var targetLookup = getFastLookup('EDGES_BY_TARGET_ID');
+        if ($.trim(node['@label']) !== '') {
+            var modifiedValue = viewModel.chosenNodeLabelModeInfo().captureValue(node['@label']);
+            if (modifiedValue === null) {
+                // do nothing; value wasn't accepted
+            } else {
+                // shift the modified value to its final home
+                var nodeID = node['@id'];
+                var rootwardEdge = targetLookup[ nodeID ][0];
+                if (rootwardEdge) {
+                    rootwardEdge[ '^'+ viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode ] = modifiedValue;
+                    delete node['@label'];
+                    if (viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode === 'ot:otherSupport') {
+                        rootwardEdge['^ot:otherSupportType'] = tree['^ot:nodeLabelDescription'];
+                    }
+                } else {
+                    console.warn("shiftAmbiguousLabels(): node has no adjacent edge! possibly a new root?");
+                }
+            }
+        }
+    });
+    drawTree( tree );
+    nudgeTickler('TREES'); 
+}
 function ambiguousLabelsFoundInTree( tree ) {
     // N.B. This checks for UNRESOLVED and INTERESTING (non-sibling) conflicts
     var labelData = getAmbiguousLabelsInTree( tree );
@@ -6032,14 +6165,13 @@ function getAmbiguousLabelsInTree(tree) {
     // gather all labels, keyed by node ID
     // TODO: Should this be just for internal nodes?
     var labelData = {};
-    /*
+
     var rawModeValue = tree['^ot:nodeLabelMode'];
     var treeHasLabelInterpretation = rawModeValue && (rawModeValue !== 'ot:undefined') ;
     if (treeHasLabelInterpretation) {
         return labelData;
     }
-    */
-    console.log(">> looking for ambiguous internal labels in tree '"+ tree['@id'] +"'...");
+
     $.each( tree.node, function(i, node) { 
         if ('@label' in node) {
             var nodeID = node['@id'];
@@ -6060,23 +6192,52 @@ function showAmbiguousLabelsInTreeViewer(tree) {
         HIGHLIGHT_AMBIGUOUS_LABELS: true  // TODO
     });
 }
-function shiftAmbiguousLabels(tree) {
-    // move the @label values to the adjacent edges
-    $.each( tree.node, function(i, node) { 
-        var targetLookup = getFastLookup('EDGES_BY_TARGET_ID');
-        if ($.trim(node['@label']) !== '') {
-            var nodeID = node['@id'];
-            var rootwardEdge = targetLookup[ nodeID ][0];
-            if (rootwardEdge) {
-                rootwardEdge['@label'] = node['@label'];
-                delete node['@label'];
-            } else {
-                console.warn("shiftAmbiguousLabels(): node has no adjacent edge! possibly a new root?");
-            }
+function chosenLabelModeRequiresDescription() {
+    if (viewModel.chosenNodeLabelModeInfo() === null) 
+        return false;
+    switch(viewModel.chosenNodeLabelModeInfo()['treeNodeLabelMode']) {
+        case 'ot:otherSupport':
+        case 'ot:other':
+            return true;
+        default:
+            return false;
+    }
+}
+function readyToCaptureInternalNodeLabels() {
+    var isReady = false;
+    if (viewModel.chosenNodeLabelModeInfo() && viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode !== 'ot:undefined') {
+        if (chosenLabelModeRequiresDescription()) {
+            // test for 2+ non-whitespace characters
+            var description = $.trim(viewModel.nodeLabelModeDescription());
+            isReady = (description.length >= 2);
+        } else {
+            // any other value is ready to go
+            isReady = true;
         }
-    });
-    drawTree( tree );
-    nudgeTickler('TREES'); 
+    }
+    return isReady;
+}
+function getNodeLabelModeDescription(tree) {
+    // return a friendly string description, incl. possible description
+    var treeMode = tree['^ot:nodeLabelMode'] || 'ot:undefined';
+    switch(treeMode) {
+        case 'ot:undefined':
+            if (ambiguousLabelsFoundInTree(tree)) {
+                return 'Undefined (needs review)';
+            } else {
+                return 'No internal labels found';
+            }
+        case 'ot:bootstrapValues':
+            return 'Bootstrap support values';
+        case 'ot:posteriorSupport':
+            return 'Posterior support values';
+        case 'ot:otherSupport':
+            var moreInfo = tree['^ot:nodeLabelDescription'];
+            return 'Support values ('+ moreInfo +')';
+        case 'ot:other':
+            var moreInfo = tree['^ot:nodeLabelDescription'];
+            return moreInfo;
+    }
 }
 
 function getStudyLicenseInfo( nexml ) {
