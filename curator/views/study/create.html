@@ -103,6 +103,7 @@ body {
     var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
     var API_create_study_POST_url = '{{=API_create_study_POST_url}}';
         // this can take a few possible POSTed arguments (DOI, or initial input)
+    var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
 </script>
 <script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script src="{{=URL('static','js/study-creation.js')}}"></script>

@@ -57,6 +57,7 @@ getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
 getDraftTreeMRCAForNodes_url = {treemachine_domain}/getDraftTreeMRCAForNodes
 getDraftTreeSubtreeForNodes_url = {treemachine_domain}/getDraftTreeSubtreeForNodes
 findAllStudies_url = {oti_domain}/findAllStudies
+singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #

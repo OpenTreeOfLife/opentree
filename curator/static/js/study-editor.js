@@ -719,6 +719,11 @@ function loadSelectedStudy() {
             // get initial rendered HTML for study comment (from markdown)
             viewModel.commentHTML = response['commentHTML'] || 'COMMENT_HTML_NOT_PROVIDED';
             
+            // get (and maintain) a list of any known duplicate studies (with matching DOIs)
+            viewModel.duplicateStudyIDs = ko.observableArray(
+                response['duplicateStudyIDs'] || [ ] 
+            );
+            
             // we should also now have the full commit history of this NexSON
             // study in the docstore repo
             viewModel.versions = ko.observableArray(
@@ -6360,4 +6365,38 @@ function applyCC0Waiver() {
         '@href': 'http://creativecommons.org/publicdomain/zero/1.0/'
     }
     nudgeTickler('GENERAL_METADATA');
+}
+
+function testDOI( doi ) {
+    if (!doi) {
+        // by default, this should check the current study DOI
+        var studyDOI = ('^ot:studyPublication' in viewModel.nexml) ? viewModel.nexml['^ot:studyPublication']['@href'] : "";
+        doi = studyDOI;
+    }
+    if ($.trim(doi).length === 0) {
+        return;  // do nothing
+    }
+
+    checkForDuplicateStudies(
+        'http://dx.doi.org/10.1371/journal.pone.0049521',   // DOI
+        function( matchingStudyIDs ) {  // success callback
+            var dupesFound = [ ];
+            $.each(matchingStudyIDs, function(i, testID) {
+                if (testID !== studyID) {
+                    dupesFound.push(testID);
+                }
+            });
+            hideModalScreen();
+            if (dupesFound.length === 0) {
+                showSuccessMessage('No duplicate studies found.');
+            } else {
+                var errMsg = 'WARNING: There are other studies published at this DOI (click links below to see each one in a new browser window):<br/>';
+                $.each(dupesFound, function(i, dupeID) {
+                    var dupeURL = '/curator/study/view/{STUDY_ID}'.replace('{STUDY_ID}', dupeID);
+                    errMsg += ' &nbsp; <a href="'+ dupeURL +'" target="_blank">'+ dupeURL +'</a><br/>';
+                });
+                showErrorMessage(errMsg);
+            }
+        }
+    );
 }

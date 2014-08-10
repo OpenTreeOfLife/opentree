@@ -6,6 +6,7 @@
 
 // these variables should already be defined in the main HTML page
 var API_create_study_POST_url;
+var singlePropertySearchForStudies_url;
 
 $(document).ready(function() {
     // set initial state for all details
@@ -240,4 +241,3 @@ function createStudyFromForm( evt ) {
         }
     });
 }
-
