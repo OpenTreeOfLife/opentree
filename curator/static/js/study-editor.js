@@ -2283,6 +2283,25 @@ var studyScoringRules = {
             suggestedAction: "Check study's publication URL against the DOI in its publication reference."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
 
+        },
+        {
+            description: "There should not be any other duplicate studies (same DOI) in the docstore.",
+            test: function(studyData) {
+                // check list of duplicateStudyIDs, which is set and maintained by calls to the oti (indexing) service
+                var dupes = studyData.duplicateStudyIDs();
+                if ($.isArray(dupes)) {
+                    return (dupes.length === 0);
+                } else {
+                    console.warn("Duplicate study IDs array not found!");
+                    return true;
+                }
+            },
+            weight: 0.2, 
+            successMessage: "This study is unique (based on its DOI) in the Open Tree collection.",
+            failureMessage: "There is at least one other study with this DOI in the Open Tree collection.",
+            suggestedAction: "Compare any duplicate studies (based on DOIs) and delete all but one."
+                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+
         }
     ],
     'Trees': [
@@ -5821,6 +5840,8 @@ function updateDOIFromLookup(evt) {
     var chosenDOI = $clicked.closest('.match').find('.doi').text();
     //$('#ot_studyPublication').val(chosenDOI);
     viewModel.nexml['^ot:studyPublication']['@href'] = chosenDOI;
+    // (re)format DOI if needed, and test for duplicate studies
+    validateAndTestDOI();
     nudgeTickler('GENERAL_METADATA');
 }
 
@@ -5845,6 +5866,28 @@ function formatDOIAsURL() {
     var newValue = 'http://dx.doi.org/'+ bareDOI;
     viewModel.nexml['^ot:studyPublication']['@href'] = newValue;
     nudgeTickler('GENERAL_METADATA');
+}
+function testDOIForDuplicates( doi ) {
+    if (!doi) {
+        // by default, this should check the current study DOI
+        var studyDOI = ('^ot:studyPublication' in viewModel.nexml) ? viewModel.nexml['^ot:studyPublication']['@href'] : "";
+        doi = studyDOI;
+    }
+    checkForDuplicateStudies(
+        doi,
+        function( matchingStudyIDs ) {  // success callback
+            // remove this study's ID, if found
+            matchingStudyIDs = $.grep(matchingStudyIDs, function (testID) { return testID !==  studyID });
+            // update the viewModel and trigger fresh tests+prompts
+            viewModel.duplicateStudyIDs( matchingStudyIDs );
+            console.log( viewModel.duplicateStudyIDs() );
+            nudgeTickler('GENERAL_METADATA');
+        }
+    );
+}
+function validateAndTestDOI() {
+    formatDOIAsURL();
+    testDOIForDuplicates();
 }
 
 function unresolvedConflictsFoundInTree( tree ) {
@@ -6366,37 +6409,10 @@ function applyCC0Waiver() {
     }
     nudgeTickler('GENERAL_METADATA');
 }
-
-function testDOI( doi ) {
-    if (!doi) {
-        // by default, this should check the current study DOI
-        var studyDOI = ('^ot:studyPublication' in viewModel.nexml) ? viewModel.nexml['^ot:studyPublication']['@href'] : "";
-        doi = studyDOI;
-    }
-    if ($.trim(doi).length === 0) {
-        return;  // do nothing
-    }
-
-    checkForDuplicateStudies(
-        'http://dx.doi.org/10.1371/journal.pone.0049521',   // DOI
-        function( matchingStudyIDs ) {  // success callback
-            var dupesFound = [ ];
-            $.each(matchingStudyIDs, function(i, testID) {
-                if (testID !== studyID) {
-                    dupesFound.push(testID);
-                }
-            });
-            hideModalScreen();
-            if (dupesFound.length === 0) {
-                showSuccessMessage('No duplicate studies found.');
-            } else {
-                var errMsg = 'WARNING: There are other studies published at this DOI (click links below to see each one in a new browser window):<br/>';
-                $.each(dupesFound, function(i, dupeID) {
-                    var dupeURL = '/curator/study/view/{STUDY_ID}'.replace('{STUDY_ID}', dupeID);
-                    errMsg += ' &nbsp; <a href="'+ dupeURL +'" target="_blank">'+ dupeURL +'</a><br/>';
-                });
-                showErrorMessage(errMsg);
-            }
-        }
-    );
+function getViewURLFromStudyID( studyID ) {
+    return  '{PROTOCOL}//{HOST}/curator/study/view/{STUDY_ID}'
+        .replace('{PROTOCOL}', window.location.protocol)
+        .replace('{HOST}', window.location.host)
+        .replace('{STUDY_ID}', studyID);
 }
+

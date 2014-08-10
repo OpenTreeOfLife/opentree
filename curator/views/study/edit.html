@@ -261,7 +261,10 @@ body {
                 <label class="control-label" for="ot_studyPublication">Publication DOI (or URL)</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: nexml['^ot:studyPublication']['@href'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: formatDOIAsURL }, css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
+                  <input data-bind="value: nexml['^ot:studyPublication']['@href'], 
+                                    valueUpdate: ['afterkeydown', 'input'], 
+                                    event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: validateAndTestDOI }, 
+                                    css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
                   <button class="btn btn-info" onclick="lookUpDOI(); return false;">Look up DOI...</button>
                 {{ else: }}
                   <p class="static-form-value">
@@ -273,6 +276,15 @@ body {
                  <!-- /ko -->
                   </p>
                 {{ pass }}
+                </div>
+                <div class="controls" data-bind="if: viewModel.duplicateStudyIDs().length > 0">
+                    <p class="static-form-value interesting-value">
+                        There are other studies in Open Tree collection with this DOI. Click the links below to see each one in a new browser window.
+                    </p>
+                    <ul class="static-form-value interesting-value" data-bind="foreach: viewModel.duplicateStudyIDs">
+                        <li><a href="#" target="_blank" 
+                            data-bind="text: getViewURLFromStudyID($data), attr: {'href': getViewURLFromStudyID($data)}">&nbsp</a></li>
+                    </ul>
                 </div>
               </div>
               <div class="control-group">
