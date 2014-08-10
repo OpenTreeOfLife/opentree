@@ -2021,6 +2021,10 @@ body {
 
                 <label>Branch length mode: </label>
                 <strong data-bind="text: getBranchLengthModeDescriptionForTree($data)">TYPE</strong>
+                <br/>
+                <label>Internal node labels represent:</label>
+                <strong data-bind="css: viewModel.ticklers.TREES(), text: getNodeLabelModeDescription($data)"></strong>
+
               </div>
 
           {{ pass }}
