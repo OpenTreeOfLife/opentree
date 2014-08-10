@@ -15,6 +15,9 @@ $(document).ready(function() {
     // any change in widgets should (potentially) update all
     $('input, textarea, select').unbind('change').change(updateImportOptions);
     $('input, textarea').unbind('keyup').keyup(updateImportOptions);
+
+    // significant changes in the DOI field should test for duplicates
+    $('input[name=publication-DOI]').unbind('blur').blur(validateAndTestDOI);
 });
 
 function enableDetails($panel) {
@@ -240,4 +243,53 @@ function createStudyFromForm( evt ) {
             showErrorMessage(errMsg);
         }
     });
+}
+
+/* Adapt DOI grooming and dupe-check from study-curation (edit) page */
+var minimalDOIPattern = new RegExp('10\\..+')
+//var urlDOIPattern = new RegExp('http://dx.doi.org/10[.\\d]{2,}\\b')
+var urlPattern = new RegExp('http(s?)://\.*')
+function formatDOIAsURL() {
+    var oldValue = $.trim($('input[name=publication-DOI]').val());
+    // IF it's already in the form of a URL, do nothing
+    if (urlPattern.test(oldValue) === true) {
+        return;
+    }
+    // IF it's a reasonable "naked" DOI, do nothing
+    var possibleDOIs = oldValue.match(minimalDOIPattern);
+    if( possibleDOIs === null ) {
+        // no possible DOI found
+        return;
+    }
+    
+    // this is a candidate; try to convert it to URL form
+    var bareDOI = $.trim( possibleDOIs[0] );
+    var newValue = 'http://dx.doi.org/'+ bareDOI;
+    $('input[name=publication-DOI]').val( newValue );
+}
+function testDOIForDuplicates( ) {
+    var studyDOI = $('input[name=publication-DOI]').val();
+    checkForDuplicateStudies(
+        studyDOI,
+        function( matchingStudyIDs ) {  // success callback
+            // Warn of duplicates and show links to other studies with this DOI
+            if (matchingStudyIDs.length === 0) {
+                $('#duplicate-DOI-warning').hide();
+            } else {
+                var $linkList = $('#duplicate-study-links');
+                $linkList.empty();
+                $.each( matchingStudyIDs, function(i, studyID) {
+                    var viewURL = getViewURLFromStudyID( studyID );
+                    $linkList.append(
+                        '<li><a href="{LINK}" target="_blank">{LINK}</a></li>'.replace(/{LINK}/g, viewURL)
+                    );
+                })
+                $('#duplicate-DOI-warning').show();
+            }
+        }
+    );
+}
+function validateAndTestDOI() {
+    formatDOIAsURL();
+    testDOIForDuplicates();
 }

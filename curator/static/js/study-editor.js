@@ -6409,10 +6409,4 @@ function applyCC0Waiver() {
     }
     nudgeTickler('GENERAL_METADATA');
 }
-function getViewURLFromStudyID( studyID ) {
-    return  '{PROTOCOL}//{HOST}/curator/study/view/{STUDY_ID}'
-        .replace('{PROTOCOL}', window.location.protocol)
-        .replace('{HOST}', window.location.host)
-        .replace('{STUDY_ID}', studyID);
-}
 

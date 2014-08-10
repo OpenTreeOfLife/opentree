@@ -34,7 +34,15 @@ body {
     </label>
     <div id="import-method-PUBLICATION_DOI" class="featured-label-child">
         <h4>Publication information</h4>
-        <input class="span4" type="text" name="publication-DOI" placeholder="DOI (preferred) or permanent URL for study" style="margin-bottom: 12px;"></input>
+        <input class="span4" type="text" id="publication-DOI" name="publication-DOI" placeholder="DOI (preferred) or permanent URL for study" style="margin-bottom: 12px;"></input>
+        <div id="duplicate-DOI-warning" style="display: none;">
+            <p class="static-form-value interesting-value">
+            There are already studies in Open Tree collection with this DOI.
+            Click the links below to see each one in a new browser window. 
+            </p>
+            <ul id="duplicate-study-links" class="static-form-value interesting-value">
+            </ul>
+        </div>
 
         <h4>License information</h4>
         <label for="apply-new-CC0-waiver" class="featured-label" style="margin-top: 0px;">
