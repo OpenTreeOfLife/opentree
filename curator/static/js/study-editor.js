@@ -4475,7 +4475,7 @@ function requestTaxonMapping() {
     var mappingStartTime = new Date();
 
     $.ajax({
-        url: doTNRSForNames_url,  // NOTE that actual server-side method name might be quite different!
+        url: doTNRSForMappingOTUs_url,  // NOTE that actual server-side method name might be quite different!
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({ 
