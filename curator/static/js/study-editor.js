@@ -5429,7 +5429,7 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
             */
             if (options.TREE_SOURCE === 'taxonomy') {
                 tree['^ot:nearestTaxonMRCAName'] = responseJSON['mrca_unique_name'] || responseJSON['mrca_name'] || '???';
-                tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['mrca_ottId'] || null;
+                tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['mrca_ott_id'] || null;
             } else {  // ASSUME 'synth'
                 tree['^ot:nearestTaxonMRCAName'] = responseJSON['nearest_taxon_mrca_unique_name'] || responseJSON['nearest_taxon_mrca_name'] || '???';
                 tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['nearest_taxon_mrca_ott_id'] || null;
