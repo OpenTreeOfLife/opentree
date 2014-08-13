@@ -5387,7 +5387,7 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
     });
     ///console.log("How many MAPPED INGROUP TIP-IDs? "+ mappedIngroupOttIds.length);
 
-    if (mappedIngroupOttIds.length === 0) {
+    if (mappedIngroupOttIds.length < 2) {
         // Prompt the curator for required prerequisites.
         showErrorMessage('You must click a node to choose the ingroup clade, '
            + 'and map some of its OTUs using the tools in the OTU Mapping tab.');
