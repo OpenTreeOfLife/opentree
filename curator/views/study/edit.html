@@ -1880,14 +1880,18 @@ body {
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data), 
                                    css: viewModel.ticklers.TREES"></strong>
               <br/>
-                <label>MRCA for this tree's ingroup:</label> 
-                <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown (click button to test)<'+'/em>', 
+              <label>MRCA for this tree's ingroup (from <strong>taxonomy</strong>):</label> 
+                <strong data-bind="html: $data['^ot:MRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:MRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:MRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>', 
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
                    <!-- button text WAS: Update MRCA -->
                    <a class="btn btn-small btn-info Xbtn-info-disabled"
-                      data-bind="click: updateTaxonomicMRCAForTree">From taxonomy</a>
+                      data-bind="click: updateTaxonomicMRCAForTree">Test</a>
+              <br/>
+              <label>MRCA for this tree's ingroup (from latest <strong>synthetic tree</strong>):</label> 
+                <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>', 
+                                   css: viewModel.ticklers.TREES"></strong> &nbsp;
                    <a class="btn btn-small btn-info Xbtn-info-disabled"
-                      data-bind="click: updateSyntheticMRCAForTree">From synthetic tree </a>
+                      data-bind="click: updateSyntheticMRCAForTree">Test</a>
 
               </div>
               <div class="pull-left" style="width: 48%;">
