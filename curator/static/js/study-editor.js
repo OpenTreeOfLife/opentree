@@ -5418,15 +5418,10 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
             // Store the result in one or more NexSON properties? 
             // TODO: CONFIRM these property names!
             var responseJSON = $.parseJSON(jqXHR.responseText);
-            /* The response object now has different properties, depending on which treeSource was choseneturns these properties:
-                found_nodes: [ "Node[1889641]", "Node[1889650]", ... ]
-                mrca_node_id: 1889368
-                nearest_taxon_mrca_name: "campanulids"
-                nearest_taxon_mrca_node_id: 1889368
-                nearest_taxon_mrca_ott_id: "596121"
-                nearest_taxon_mrca_rank: "no rank"
-                nearest_taxon_mrca_unique_name: ""
-            */
+            /* N.B. The response object has different properties, depending on
+             * which treeSource was specified (from the OT taxonomy or the
+             * latest synthetic tree)
+             */
             if (options.TREE_SOURCE === 'taxonomy') {
                 tree['^ot:nearestTaxonMRCAName'] = responseJSON['mrca_unique_name'] || responseJSON['mrca_name'] || '???';
                 tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['mrca_ott_id'] || null;
