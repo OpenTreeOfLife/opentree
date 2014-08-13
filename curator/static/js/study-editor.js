@@ -5675,7 +5675,7 @@ function searchForMatchingTaxa() {
     $('#search-results').dropdown('toggle');
     
     $.ajax({
-        url: doTNRSForNames_url,  // NOTE that actual server-side method name might be quite different!
+        url: doTNRSForAutocomplete_url,  // NOTE that actual server-side method name might be quite different!
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({ 
