@@ -1680,6 +1680,7 @@ body {
     var getJSONFromNode_url = "{{=getJSONFromNode_url}}";
     var phylesystem_config_url = "{{=phylesystem_config_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";
+    var getMRCAForNodes_url = "{{=getMRCAForNodes_url}}";
     var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
     var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
@@ -1882,8 +1883,11 @@ body {
                 <label>MRCA for this tree's ingroup:</label> 
                 <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown (click button to test)<'+'/em>', 
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
+                   <!-- button text WAS: Update MRCA -->
                    <a class="btn btn-small btn-info Xbtn-info-disabled"
-                      data-bind="click: updateMRCAForTree">Update MRCA</a>
+                      data-bind="click: updateTaxonomicMRCAForTree">From taxonomy</a>
+                   <a class="btn btn-small btn-info Xbtn-info-disabled"
+                      data-bind="click: updateSyntheticMRCAForTree">From synthetic tree </a>
 
               </div>
               <div class="pull-left" style="width: 48%;">

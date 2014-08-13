@@ -5359,26 +5359,18 @@ function getIngroupNodes(tree) {
     var ingroupRootNode = getTreeNodeByID( tree, nodeID );
     return getSubtreeNodes(ingroupRootNode); 
 }
+function updateTaxonomicMRCAForTree(tree) {
+    updateMRCAForTree(tree, {'TREE_SOURCE':'taxonomy'});
+}
+function updateSyntheticMRCAForTree(tree) {
+    updateMRCAForTree(tree, {'TREE_SOURCE':'synth'});
+}
 
-function updateMRCAForTree(tree) {  // TODO? (tree, options) {
+function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
     // Presumably this only works for tips already mapped to the OT taxonomy
     // TODO: should this apply only to mapped tips in the chosen ingroup?
+    options = options || {'TREE_SOURCE':'taxonomy'}; // default
 
-    /* Include all mapped nodes, regardless of ingroup
-    var mappedOttIds = [ ];
-    $.each(tree.node, function(i, node) {
-        if (node['^ot:isLeaf'] === true) {
-            if ('@otu' in node) {
-                var otu = getOTUByID( node['@otu'] );
-                // var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
-                if ('^ot:ottId' in otu) {
-                    mappedOttIds.push(otu['^ot:ottId']);
-                } 
-            }
-        }
-    });
-    console.log("How many mapped nodes? "+ mappedOttIds.length);
-    */
     var mappedIngroupOttIds = [ ];
     var ingroupNodes = getIngroupNodes(tree);
     ///console.log("How many ingroup nodes? "+ ingroupNodes.length);
@@ -5404,13 +5396,14 @@ function updateMRCAForTree(tree) {  // TODO? (tree, options) {
 
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
-        url: getDraftTreeMRCAForNodes_url,
+        url: getMRCAForNodes_url,
         // TODO: url: getDraftTreeSubtreeForNodes_url,
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({ 
             //"nodeIds": [ ]
-            "ottIds": mappedIngroupOttIds
+            "ottIds": mappedIngroupOttIds,
+            "treeSource": options.TREE_SOURCE
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
         contentType: "application/json; charset=utf-8",
@@ -5425,7 +5418,7 @@ function updateMRCAForTree(tree) {  // TODO? (tree, options) {
             // Store the result in one or more NexSON properties? 
             // TODO: CONFIRM these property names!
             var responseJSON = $.parseJSON(jqXHR.responseText);
-            /* Returns these properties:
+            /* The response object now has different properties, depending on which treeSource was choseneturns these properties:
                 found_nodes: [ "Node[1889641]", "Node[1889650]", ... ]
                 mrca_node_id: 1889368
                 nearest_taxon_mrca_name: "campanulids"
@@ -5434,8 +5427,13 @@ function updateMRCAForTree(tree) {  // TODO? (tree, options) {
                 nearest_taxon_mrca_rank: "no rank"
                 nearest_taxon_mrca_unique_name: ""
             */
-            tree['^ot:nearestTaxonMRCAName'] = responseJSON['nearest_taxon_mrca_unique_name'] || responseJSON['nearest_taxon_mrca_name'] || '???';
-            tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['nearest_taxon_mrca_ott_id'] || null;
+            if (options.TREE_SOURCE === 'taxonomy') {
+                tree['^ot:nearestTaxonMRCAName'] = responseJSON['mrca_unique_name'] || responseJSON['mrca_name'] || '???';
+                tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['mrca_ottId'] || null;
+            } else {  // ASSUME 'synth'
+                tree['^ot:nearestTaxonMRCAName'] = responseJSON['nearest_taxon_mrca_unique_name'] || responseJSON['nearest_taxon_mrca_name'] || '???';
+                tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['nearest_taxon_mrca_ott_id'] || null;
+            }
             nudgeTickler('TREES');
         }
     });

@@ -55,6 +55,7 @@ phylesystem_config_url = {opentree_api_domain}/phylesystem_config
 render_markdown_url = {opentree_api_domain}/render_markdown
 getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
 getDraftTreeMRCAForNodes_url = {treemachine_domain}/getDraftTreeMRCAForNodes
+getMRCAForNodes_url = {treemachine_domain}/getMRCA
 getDraftTreeSubtreeForNodes_url = {treemachine_domain}/getDraftTreeSubtreeForNodes
 findAllStudies_url = {oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
