@@ -83,12 +83,20 @@ if ( History && History.enabled && pageUsesHistory ) {
                 complete: function(jqXHR, textStatus) {
                     // examine the error response and show a sensible message
                     if (textStatus === 'error') {
-                        var errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
+                        var errMsg;
                         if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
                             // the requested OTT taxon is bogus, or not found in the target tree
-                            errMsg = "The requested taxon is not used in the current tree. Please double-check the URL, or search for another taxon,  or return to <a href='/'>Home</a>.";
+                            errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy but not in our tree'
+                                    +' synthesis database. This can happen for a variety of reasons, but the most probable is that it'
+                                    +' is flagged as <em>incertae sedis</em>.'
+                                    +'<br/><br/>If you think this is an error, please'
+                                    +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
+                            // TODO: Explain in more detail: Why wasn't this used? 
+                            showErrorInArgusViewer( errMsg );
+                        } else {
+                            errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
+                            showErrorInArgusViewer( errMsg, jqXHR.responseText );
                         }
-                        showErrorInArgusViewer( errMsg, jqXHR.responseText );
                     }
                 },
                 dataType: 'json'  // should return just the node ID (number)
@@ -901,6 +909,27 @@ function showObjectProperties( objInfo, options ) {
                     // add basic edge properties (TODO: handle multiple edges!?)
                     if (typeof fullNode.supportedBy !== 'undefined') {
                         edgeSection.displayedProperties['Supported by'] = fullNode.supportedBy;
+                    }
+
+                    // add another section to explain an "orphaned" taxon (unconnected to other nodes in the tree)
+                    if (('hasChildren' in fullNode) && (fullNode.hasChildren === false)
+                     && ('pathToRoot' in fullNode) && (fullNode.pathToRoot.length === 0)) {
+                        orphanSection = {
+                            name: 'Where is the surrounding tree?',
+                            displayedProperties: {},
+                            selected: true
+                        };
+                        // this should override the highlight of node or edge
+                        if (nodeSection) {
+                            nodeSection.selected = false;
+                        }
+                        orderedSections.push(orphanSection);
+                        orphanSection.displayedProperties[
+                            '<p>This taxon exists in our taxonomy but is not connected to any other taxa in the'
+                           +' synthetic tree. This happens when the taxon is non-monphyletic in contributed'
+                           +' phylogenies. To contribute a phylogeny that supports monophyly of this taxon, use'
+                           +' our <a href="/curator" target="_blank">study curation application</a>.</p>'] = '';
+                        // TODO: Explain in more detail: Why is this disconnected from other nodes?
                     }
                 } else {
                     console.log("NO full node found for this node!");
