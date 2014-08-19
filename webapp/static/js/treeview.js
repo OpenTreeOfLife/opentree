@@ -921,7 +921,7 @@ function showObjectProperties( objInfo, options ) {
                         orphanSection.displayedProperties[
                             '<p>This node is not connected to any others in the current synthetic tree. '
                           +' Typically this happens when a taxon is determined to be non-monophyletic '
-                          +' (not a proper clade) based on the input trees to synthesis.</p>'] = '';
+                          +' based on the input trees to synthesis.</p>'] = '';
                         // TODO: Explain in more detail: Why is this disconnected from other nodes?
                     }
                 } else {
