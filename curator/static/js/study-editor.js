@@ -4418,13 +4418,25 @@ function requestTaxonMapping() {
 
             var maxResults = 100;
             var visibleResults = 0;
-            if (data && ('results' in data) && data['results'].length > 0) {
+            var resultSetsFound = (data && ('results' in data) && (data.results.length > 0));
+            if (data['results'].length > 1) {
+                console.warn('MULTIPLE SEARCH RESULT SETS!');
+                console.warn(data['results']);
+            }
+            var testForExactMatch = function(m, i) {
+                return (m.is_perfect_match === true); 
+            };
+            var exactMatchFound = false;
+            if (resultSetsFound) {
+                exactMatchFound = $.grep(data.results[0].matches, testForExactMatch).length > 0;  // must have at least one exact match 
+            }
+
+            /* Suppress all but exact matches, since approximate matches create tons of work in some studies.
+             * TODO: Restore code that offers candidate mappings (multiple options) in these cases... or all cases?
+             */
+            if (exactMatchFound) {
                 // sort results to show exact match(es) first, then more precise (lower) taxa, then others
-                if (data['results'].length > 1) {
-                    console.warn('MULTIPLE SEARCH RESULT SETS!');
-                    console.warn(data['results']);
-                }
-                var results = data.results[0].matches; // ASSUME we only get one result, with n matches
+                var results = data.results[0].matches; // ASSUME we only get one result set, with n matches
                 /* initial sort on lower taxa (will be overridden by exact matches)
                 results.sort(function(a,b) {
                     if (a.higher === b.higher) return 0;
