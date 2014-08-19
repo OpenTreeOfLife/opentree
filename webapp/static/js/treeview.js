@@ -83,36 +83,14 @@ if ( History && History.enabled && pageUsesHistory ) {
                 complete: function(jqXHR, textStatus) {
                     // examine the error response and show a sensible message
                     if (textStatus === 'error') {
+                        var errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
                         if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
                             // the requested OTT taxon is bogus, or not found in the target tree
-                            errMsg = '<p style="font-weight: bold; color: #777;">The requested taxon is not used in the current synthetic tree,'
-                                    +' probably because its placement is uncertain (<em>incertae sedis</em>).</span>';
-                            // Explain in more detail: Why wasn't this used? 
-                            var outerResponseText = jqXHR.responseText;
-                            $.ajax({
-                                url: getTaxonInfo_url,
-                                type: 'POST',
-                                dataType: 'json',
-                                data: JSON.stringify({ 
-                                    "ottId": String(ottolID), 
-                                    "includeLineage":true
-                                }),
-                                crossDomain: true,
-                                contentType: 'application/json',
-                                complete: function(jqXHR, textStatus) {
-                                    if (textStatus === 'success') {
-                                        // add details (flags, etc) to the main response message
-                                        var data = $.parseJSON(jqXHR.responseText);
-                                        errMsg += renderTaxonFlagsAndLineage(data);
-                                    }
-                                    errMsg += '<p>If you believe this is another error, please double-check the URL, or search for another taxon,  or return to <a href="/">Home</a>.</p>';
-                                    showErrorInArgusViewer( errMsg, outerResponseText );
-                                }
-                            });
-                        } else {
-                            var errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
-                            showErrorInArgusViewer( errMsg, jqXHR.responseText );
+                            errMsg = '<span style="font-weight: bold; color: #777;">The requested taxon is not used in the current synthetic tree, probably because its placement is uncertain (<em>incertae sedis</em>).</span>'
+                                    +'<br/><br/>Please double-check the URL, or search for another taxon,  or return to <a href="/">Home</a>.';
+                            // TODO: Explain in more detail: Why wasn't this used? 
                         }
+                        showErrorInArgusViewer( errMsg, jqXHR.responseText );
                     }
                 },
                 dataType: 'json'  // should return just the node ID (number)
@@ -940,36 +918,11 @@ function showObjectProperties( objInfo, options ) {
                             nodeSection.selected = false;
                         }
                         orderedSections.push(orphanSection);
-                        // this is weird, but we'll show this by stuffing markup into the name of an empty section
-                        var orphanExplanationMarkup = '<p>This node is not connected to any others in the current synthetic tree. '
+                        orphanSection.displayedProperties[
+                            '<p>This node is not connected to any others in the current synthetic tree. '
                           +' Typically this happens when a taxon is determined to be non-monophyletic '
-                          +' (not a proper clade) based on the input trees to synthesis.</p>';
-                        // now assign the full markup as this section's "name"
-                        orphanSection.displayedProperties[ orphanExplanationMarkup ] = '';
-
-                        // Explain in more detail: Why is this disconnected from other nodes?
-                        // NOTE that this is an asynchronous call, so we'll append the results to this section of the property inspector
-                        $.ajax({
-                            url: getTaxonInfo_url,
-                            type: 'POST',
-                            dataType: 'json',
-                            data: JSON.stringify({ 
-                                "ottId": String(fullNode.ottId), 
-                                "includeLineage":true
-                            }),
-                            crossDomain: true,
-                            contentType: 'application/json',
-                            complete: function(jqXHR, textStatus) {
-                                if (textStatus === 'success') {
-                                    // add details (flags, etc) to the main response message
-                                    var data = $.parseJSON(jqXHR.responseText);
-                                    var additionalDetails = renderTaxonFlagsAndLineage(data);
-                                    var $panel = $('#provenance-panel .ordered-sections .selected').eq(0);
-                                    var $appendTo = $panel.find('dt:eq(0) :last-child');
-                                    $appendTo.after(additionalDetails);
-                                }
-                            }
-                        });
+                          +' (not a proper clade) based on the input trees to synthesis.</p>'] = '';
+                        // TODO: Explain in more detail: Why is this disconnected from other nodes?
                     }
                 } else {
                     console.log("NO full node found for this node!");
@@ -1378,11 +1331,11 @@ if (false) {
 function showErrorInArgusViewer( msg, details ) {
     var errorHTML; 
     if (!details) {
-        errorHTML = '<div style="margin: 8px 12px;">'+ msg +'</div>';
+        errorHTML = '<p style="margin: 8px 12px;">'+ msg +'</p>';
     } else {
-        errorHTML = '<div style="margin: 8px 12px;">'+ msg +'&nbsp; &nbsp; '
-        + '<a href="#" onclick="$(\'#error-details\').show(); return false;">Show details</a></div>'
-        + '<div id="error-details" style="margin: 8px 12px; font-style: italic; display: none;">'+ details +'</div>';
+        errorHTML = '<p style="margin: 8px 12px;">'+ msg +'&nbsp; &nbsp; '
+        + '<a href="#" onclick="$(\'#error-details\').show(); return false;">Show details</a></p>'
+        + '<p id="error-details" style="margin: 8px 12px; font-style: italic; display: none;">'+ details +'</p>';
     }
     $('#argusCanvasContainer').css('height','500px').html( errorHTML );
 }
@@ -1421,75 +1374,6 @@ function parseMetaMapKey( key ) {
     }
 
     return props;
-}
-
-// Try to clarify some of the flag constants used by taxomachine, defined here:
-// https://github.com/OpenTreeOfLife/taxomachine/blob/master/src/main/java/org/opentree/taxonomy/OTTFlag.java
-// We list these to help explain why a taxon of interest is missing or isolated in the synthetic tree.
-// TODO: Suppress/hide some of these from view?
-var taxonFlagExplanations = {
-    'NOT_OTU': "not a valid taxon; can never represent biological lineages",
-    'BARREN': "higher taxon with zero species-level children",
-    'ENVIRONMENTAL': "contains the word 'environmental' in its name",
-    'ENVIRONMENTAL_INHERITED': "descendant of taxon flagged ENVIRONMENTAL",
-    'EXTINCT_INHERITED': "extinct taxa?",
-    'EXTINCT_DIRECT': "extinct taxa?",
-    'MAJOR_RANK_CONFLICT_DIRECT': "low-rank child of high-rank taxon (e.g. genus child of class)",
-    'MAJOR_RANK_CONFLICT_INHERITED': "descendant of low-rank child of high-rank taxon (e.g. genus child of class)",
-    'UNCLASSIFIED': "child of an 'unclassified' container",
-    'UNCLASSIFIED_DIRECT': "contains the word 'unclassified' in its name, has no children",
-    'UNCLASSIFIED_INHERITED': "descendant of a child of an 'unclassified' container",
-    'VIRAL': "virus",
-    'HIDDEN': "has been intentionally hidden, probably by a curator",
-    'HIDDEN_INHERITED': "descendant of a taxon hidden by a curator",
-    'EDITED': "has been manually edited",
-    'HYBRID': "of known hybrid origin",
-    'INCERTAE_SEDIS': "child of an incertae sedis container, or flagged as such",
-    'INCERTAE_SEDIS_INHERITED': "descendant of taxon flagged INCERTAE_CEDIS",
-    'INCERTAE_SEDIS_DIRECT': "contains the string 'incertae sedis' in its name, has no children",
-    'INFRASPECIFIC': "contained within a species-rank taxon",
-    'SIBLING_LOWER': "has a sibling of lower taxonomic rank",
-    'SIBLING_HIGHER': "has a sibling of higher taxonomic rank",
-    'TATTERED': "children are separated in merged taxonomy",
-    'TATTERED_INHERITED': "descendant of taxon flagged TATTERED",
-    'FORCE_VISIBLE': "this taxon should not be suppressed despite any other flags"
-}
-function renderTaxonFlagsAndLineage(data) {
-    // Render the JSON returned from taxomachine's getTaxonInfo service as sensible HTML
-    var markup = '';
-    if (data && 'flags' in data) {
-        markup += '<p style="font-weight: bold; color: #777;">More specifically, this taxon has been flagged with the following properties:</p>';
-        markup += '<ul style="font-weight: bold; color: #777;">';
-        $.each(data.flags, function(i, flag) {
-            if (flag in taxonFlagExplanations) {
-                markup += '<li>'+ flag +' ('+ taxonFlagExplanations[flag] +')</li>';
-            } else {
-                markup += '<li>'+ flag +' (no explanation was provided)</li>';
-                
-            }
-        });
-        markup += '</ul>';
-    }
-    if ('taxonomic_lineage' in data && data.taxonomic_lineage.length > 0) {
-        markup += '<p style="font-weight: bold; color: #777;">Higher taxa in its lineage have been flagged as follows:</p>';
-        markup += '<ul style="font-weight: bold; color: #777;">';
-        $.each(data.taxonomic_lineage, function(i, ancestor) {
-            if ('flags' in ancestor && ancestor.flags.length > 0) {  // list only taxa with at least one flag
-                markup += '<li>'+ (ancestor.uniqname || ancestor['ot:ottTaxonName']) +'</li><ul>';
-                $.each(ancestor.flags, function(i, flag) {
-                    if (flag in taxonFlagExplanations) {
-                        markup += '<li>'+ flag +' ('+ taxonFlagExplanations[flag] +')</li>';
-                    } else {
-                        markup += '<li>'+ flag +' (no explanation was provided)</li>';
-                        
-                    }
-                });
-                markup += '</ul>';
-            }
-        });
-        markup += '</ul>';
-    }
-    return markup;
 }
 
 /* provide string-trimming functions in older browsers */
