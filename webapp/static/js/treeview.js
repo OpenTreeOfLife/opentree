@@ -86,8 +86,9 @@ if ( History && History.enabled && pageUsesHistory ) {
                         var errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
                         if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
                             // the requested OTT taxon is bogus, or not found in the target tree
-                            errMsg = '<span style="font-weight: bold; color: #777;">The requested taxon is not used in the current synthetic tree, probably because its placement is uncertain (<em>incertae sedis</em>).</span>'
-                                    +'<br/><br/>Please double-check the URL, or search for another taxon,  or return to <a href="/">Home</a>.';
+                            errMsg = '<span style="font-weight: bold; color: #777;">The requested taxon is not used in the current synthetic tree.'
+                                    +' Typically this happens when a taxon is determined to be non-monophyletic, based on the input trees to synthesis.</span>'
+                                    +'<br/><br/>Please double-check the URL, or search for another taxon, or return to <a href="/">Home</a>.';
                             // TODO: Explain in more detail: Why wasn't this used? 
                         }
                         showErrorInArgusViewer( errMsg, jqXHR.responseText );
@@ -919,9 +920,9 @@ function showObjectProperties( objInfo, options ) {
                         }
                         orderedSections.push(orphanSection);
                         orphanSection.displayedProperties[
-                            '<p>This node is not connected to any others in the current synthetic tree. '
-                          +' Typically this happens when a taxon is determined to be non-monophyletic '
-                          +' based on the input trees to synthesis.</p>'] = '';
+                            '<p>This node is not connected to any others in the current synthetic tree.'
+                          +' Typically this happens when a taxon is <em>incertae sedis</em> (its position' 
+                          +' in the tree is uncertain).</p>'] = '';
                         // TODO: Explain in more detail: Why is this disconnected from other nodes?
                     }
                 } else {
