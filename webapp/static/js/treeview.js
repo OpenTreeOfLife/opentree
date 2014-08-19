@@ -83,14 +83,20 @@ if ( History && History.enabled && pageUsesHistory ) {
                 complete: function(jqXHR, textStatus) {
                     // examine the error response and show a sensible message
                     if (textStatus === 'error') {
-                        var errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
+                        var errMsg;
                         if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
                             // the requested OTT taxon is bogus, or not found in the target tree
-                            errMsg = '<span style="font-weight: bold; color: #777;">The requested taxon is not used in the current synthetic tree, probably because its placement is uncertain (<em>incertae sedis</em>).</span>'
-                                    +'<br/><br/>Please double-check the URL, or search for another taxon,  or return to <a href="/">Home</a>.';
+                            errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy but not in our tree'
+                                    +' synthesis database. This can happen for a variety of reasons, but the most probable is that it'
+                                    +' is flagged as <em>incertae sedis</em>.'
+                                    +'<br/><br/>If you think this is an error, please'
+                                    +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
                             // TODO: Explain in more detail: Why wasn't this used? 
+                            showErrorInArgusViewer( errMsg );
+                        } else {
+                            errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
+                            showErrorInArgusViewer( errMsg, jqXHR.responseText );
                         }
-                        showErrorInArgusViewer( errMsg, jqXHR.responseText );
                     }
                 },
                 dataType: 'json'  // should return just the node ID (number)
@@ -919,9 +925,10 @@ function showObjectProperties( objInfo, options ) {
                         }
                         orderedSections.push(orphanSection);
                         orphanSection.displayedProperties[
-                            '<p>This node is not connected to any others in the current synthetic tree. '
-                          +' Typically this happens when a taxon is determined to be non-monophyletic '
-                          +' based on the input trees to synthesis.</p>'] = '';
+                            '<p>This taxon exists in our taxonomy but is not connected to any other taxa in the'
+                           +' synthetic tree. This happens when the taxon is non-monphyletic in contributed'
+                           +' phylogenies. To contribute a phylogeny that supports monophyly of this taxon, use'
+                           +' our <a href="/curator" target="_blank">study curation application</a>.</p>'] = '';
                         // TODO: Explain in more detail: Why is this disconnected from other nodes?
                     }
                 } else {
