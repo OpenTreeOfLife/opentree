@@ -105,7 +105,7 @@ d3.json("", function(error, flare) {
 
 function setup(node){
 	var nodeid = "{\"nodeID\":"+node+"}";
-	var url = "http://api.opentreeoflife.org/treemachine/ext/GetSASJsons/graphdb/getSynthJson";
+	var url = "http://devapi.opentreeoflife.org/treemachine/ext/GetSASJsons/graphdb/getSynthJson";
 	var argsobj = {"url":url,"method":"POST","jsonquerystring":nodeid};
 	loadData(argsobj);
 }
@@ -114,7 +114,7 @@ function setup(node){
  * Used to get the nodeid from a start ottol id
  */
 function getNodeIDFromOttolID(oid){
-	var url = "http://api.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getNodeIDForottId";
+	var url = "http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getNodeIDForottId";
     var jsonquerystr = "{\"ottId\":\""+oid+"\"}";
     var method = "POST";
 
