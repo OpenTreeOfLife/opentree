@@ -4482,6 +4482,7 @@ function requestTaxonMapping() {
             "queryString": searchText,
             "includeDubious": false,
             "includeDeprecated": false,
+            "doApproximateMatching": false,
             "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
