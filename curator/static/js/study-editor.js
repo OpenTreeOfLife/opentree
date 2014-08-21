@@ -4531,11 +4531,7 @@ function requestTaxonMapping() {
                 console.warn('MULTIPLE SEARCH RESULT SETS!');
                 console.warn(data['results']);
             }
-            /* NOTE that this was too restrictive (ignores synonyms and homonyms)
-            var testForExactMatch = function(m, i) {
-                return (m.is_perfect_match === true);  
-            };
-            */
+            
             // For now, we want to auto-apply if there's exactly one match
             var justOneMatchFound = false;
             if (resultSetsFound) {
@@ -4546,8 +4542,9 @@ function requestTaxonMapping() {
              * TODO: Restore code that offers candidate mappings (multiple options) in these cases... or all cases?
              */
             if (justOneMatchFound) {
-                // sort results to show exact match(es) first, then more precise (lower) taxa, then others
                 var results = data.results[0].matches; // ASSUME we only get one result set, with n matches
+                
+                // TODO: Sort results based on exact text matches? fractional (matching) scores? synonyms or homonyms?
                 /* initial sort on lower taxa (will be overridden by exact matches)
                 results.sort(function(a,b) {
                     if (a.higher === b.higher) return 0;
@@ -4555,13 +4552,6 @@ function requestTaxonMapping() {
                     if (b.higher) return -1;
                 });
                 */
-                // final sort on exact matches (overrides lower taxa)
-                results.sort(function(a,b) {
-                    if (a.is_perfect_match === b.is_perfect_match) return 0;
-                    if (a.is_perfect_match) return -1;
-                    if (b.is_perfect_match) return 1;
-                });
-                // TODO: sort on explicit score?
 
                 // for now, let's immediately apply the top name
                 var resultToMap = results[0];
@@ -4570,7 +4560,7 @@ function requestTaxonMapping() {
                     name: resultToMap.matched_name,   
                     ottId: String(resultToMap.matched_ott_id),  // number-as-string
                     nodeId: resultToMap.matched_node_id,        // number
-                    exact: resultToMap.is_perfect_match,        // boolean
+                    exact: false,                               // boolean (ignoring this for now)
                     higher: false                               // boolean
                     // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
                 };
