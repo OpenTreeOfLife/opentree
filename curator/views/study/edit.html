@@ -261,7 +261,10 @@ body {
                 <label class="control-label" for="ot_studyPublication">Publication DOI (or URL)</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: nexml['^ot:studyPublication']['@href'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: formatDOIAsURL }, css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
+                  <input data-bind="value: nexml['^ot:studyPublication']['@href'], 
+                                    valueUpdate: ['afterkeydown', 'input'], 
+                                    event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: validateAndTestDOI }, 
+                                    css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
                   <button class="btn btn-info" onclick="lookUpDOI(); return false;">Look up DOI...</button>
                 {{ else: }}
                   <p class="static-form-value">
@@ -273,6 +276,15 @@ body {
                  <!-- /ko -->
                   </p>
                 {{ pass }}
+                </div>
+                <div class="controls" data-bind="if: viewModel.duplicateStudyIDs().length > 0">
+                    <p class="static-form-value interesting-value">
+                        There are other studies in Open Tree collection with this DOI. Click the links below to see each one in a new browser window.
+                    </p>
+                    <ul class="static-form-value interesting-value" data-bind="foreach: viewModel.duplicateStudyIDs">
+                        <li><a href="#" target="_blank" 
+                            data-bind="text: getViewURLFromStudyID($data), attr: {'href': getViewURLFromStudyID($data)}">&nbsp</a></li>
+                    </ul>
                 </div>
               </div>
               <div class="control-group">
@@ -310,8 +322,9 @@ body {
                             <option>{{= context_name }}</option>
                        {{ pass }}
                     {{ pass }}
-                    {{ except:
-                        pass}}
+                    {{ except: }}
+                            <option selected="selected">ERROR loading context values</option>
+                       {{ pass }}
                 <!-- 
                 NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted 
                 by the server, ie, there's no distinction between visible and occult values.
@@ -365,11 +378,63 @@ body {
                 <label class="control-label" for="ot_curatorName">Submitted by</label>
                 <div class="controls">
                   <p class="static-form-value" data-bind="text: nexml['^ot:curatorName'].join(', ')"></p>
-                 <!-- ko if: studyHasCC0Waiver( nexml ) -->
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label class="control-label">Waiver or license</label>
+                <div class="controls">
+                {{ if viewOrEdit == 'EDIT': 
+                   # treat this as read-only once it's been chosen! }}
+                 <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && studyHasCC0Waiver( nexml ) --> 
+                 <p class="static-form-value" data-bind="css:viewModel.ticklers.GENERAL_METADATA">
                   <a target="_blank" href="http://creativecommons.org/publicdomain/zero/1.0/">
                       <img alt="CC0 (opens a new window)" src="{{=URL('static','images/cc-zero.png')}}">
                   </a> 
+                 </p>
                  <!-- /ko -->
+                 <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && !studyHasCC0Waiver( nexml ) -->
+                 <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && getStudyLicenseInfo( nexml ) -->
+                     <p class="static-form-value">
+                      <a target="_blank" href="#"
+                         data-bind="text: getStudyLicenseInfo( nexml )['@name'] || '???',
+                                    attr: {'href': getStudyLicenseInfo( nexml )['@href'] || '#'}">&nbsp;</a>
+                     </p>
+                     <!-- /ko -->
+                     <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && !getStudyLicenseInfo( nexml ) -->
+                     <p class="static-form-value">
+                      <em>None</em>
+                     </p>
+                     <div id="applying-cc0-details" Xclass="featured-label-child">
+                            <label for="agreed-to-CC0" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
+                                <input type="checkbox" id="agreed-to-CC0" name="cc0_agreement" 
+                                       style="width: 20px;"
+                                       onclick="applyCC0Waiver(); return false;"/>I am an author, or can act on behalf of the authors, to apply a CC0 waiver to these data. By clicking this checkbox, I hereby release these data under the terms of the <a href="http://creativecommons.org/publicdomain/zero/1.0/" target="_blank">Creative Commons Zero (CC0) waiver</a>.
+                            </label>
+                     </div>
+                     <!-- /ko -->
+                 <!-- /ko -->
+                {{ else: }}
+                 <!-- ko if: studyHasCC0Waiver( nexml ) -->
+                 <p class="static-form-value">
+                  <a target="_blank" href="http://creativecommons.org/publicdomain/zero/1.0/">
+                      <img alt="CC0 (opens a new window)" src="{{=URL('static','images/cc-zero.png')}}">
+                  </a> 
+                 </p>
+                 <!-- /ko -->
+                 <!-- ko if: !studyHasCC0Waiver( nexml ) -->
+                 <p class="static-form-value">
+                     <!-- ko if: getStudyLicenseInfo( nexml ) -->
+                      <a target="_blank" href="#"
+                         data-bind="text: getStudyLicenseInfo( nexml )['@name'] || '???',
+                                    attr: {'href': getStudyLicenseInfo( nexml )['@href'] || '#'}">&nbsp;</a>
+                     <!-- /ko -->
+                     <!-- ko if: !getStudyLicenseInfo( nexml ) -->
+                      <em>None</em>
+                     <!-- /ko -->
+                 </p>
+                 <!-- /ko -->
+                {{ pass }}
                 </div>
               </div>
 
@@ -463,19 +528,22 @@ body {
                 <h4 style="margin-top: 0;">Working with study data in other tools</h4>
 
                 <p>
-                You can <strong>download this study</strong> in different forms:
+                You can <strong>download this study</strong> in 
+                <a href="#" onclick="showDownloadFormatDetails(); return false;"
+                   title="Click for details on how these differ">
+                    several formats</a>:
                 </p>
                 <div class="btn-group" style="position: relative; top: -5px; margin-bottom: 10px;">
                     <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=1.2' }}" target="_blank">NexSON</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=nexml' }}" target="_blank">NeXML</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=?' }}" target="_blank">NEXUS</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=?' }}" target="_blank">Trees as Newick</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.nexml' }}" target="_blank">NeXML</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.nex' }}" target="_blank">NEXUS</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.tre' }}" target="_blank">Trees as Newick</a>
                 </div>
 
                 <p>
                 You can also <strong>use the 
                 <a href="https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs" target="_blank">Open Tree API</a>
-                </strong> (the same one the powers this editor) to retrieve and make changes to study data.
+                </strong> (the same one that powers this editor) to retrieve and make changes to study data.
                 </p>
 
             </div>
@@ -532,6 +600,13 @@ body {
                                class="suggestion-prompt" style="display: block;"
                                href="#">
                                 Show conflicting nodes
+                            </a> 
+                            <a data-bind="if: ambiguousLabelsFoundInTree( tree ), 
+                                          css: viewModel.ticklers.TREES,
+                                          click: showAmbiguousLabelsInTreeViewer" 
+                               class="suggestion-prompt" style="display: block;"
+                               href="#">
+                                Review ambiguous labels
                             </a> 
                         </td>
                         <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
@@ -1171,47 +1246,23 @@ body {
                 </p>
                 <form class="form-inline" style="margin: 0;">
                  <fieldset>
-                    <!-- scraped from header search in main opentree webapp -->
-                    <!-- TODO: fetch a live list, as we do there? -->
                     <select class="input-block-level" style="margin-bottom: 1em;" name="mapping-search-context" 
                             data-bind="value: getOTUMappingHints().data.searchContext.$, 
                               valueUpdate: ['afterkeydown', 'input'], 
                               event: { keyup: updateMappingHints, change: updateMappingHints }
                               ">
-                            <option selected="selected">All life</option>
-                            <option>Land plants</option>
-                            <option>Hornworts</option>
-                            <option>Mosses</option>
-                            <option>Liverworts</option>
-                            <option>Vascular plants</option>
-                            <option>Club mosses</option>
-                            <option>Ferns</option>
-                            <option>Seed plants</option>
-                            <option>Flowering plants</option>
-                            <option>Magnoliids</option>
-                            <option>Monocots</option>
-                            <option>Eudicots</option>
-                            <option>Asterids</option>
-                            <option>Rosids</option>
-                            <option>Animals</option>
-                            <option>Birds</option>
-                            <option>Tetrapods</option>
-                            <option>Mammals</option>
-                            <option>Amphibians</option>
-                            <option>Vertebrates</option>
-                            <option>Arthropods</option>
-                            <option>Molluscs</option>
-                            <option>Platyhelminthes</option>
-                            <option>Annelids</option>
-                            <option>Cnidarians</option>
-                            <option>Arachnides</option>
-                            <option>Insects</option>
-                            <option>Bacteria</option>
-                            <option>Fungi</option>
-                    <!-- 
-                    NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted 
-                    by the server, ie, there's no distinction between visible and occult values.
-                    -->
+                    {{ # generate our contextNames list based on newly fetched names
+                      try:
+                       for context_name in taxonSearchContextNames:
+                          if context_name == 'All life': }}
+                            <option selected="selected">{{= context_name }}</option>
+                       {{ else: }}
+                            <option>{{= context_name }}</option>
+                       {{ pass }}
+                    {{ pass }}
+                    {{ except: }}
+                            <option selected="selected">ERROR loading context values</option>
+                       {{ pass }}
                     </select>
                  </fieldset>
                 </form>
@@ -1624,13 +1675,16 @@ body {
     var getConflictTaxJsonAltRel_url = "{{=getConflictTaxJsonAltRel_url}}";
     var getDraftTreeForOttolID_url = "{{=getDraftTreeForOttolID_url}}";
     var getDraftTreeForNodeID_url = "{{=getDraftTreeForNodeID_url}}";
-    var doTNRSForNames_url = "{{=doTNRSForNames_url}}";
+    var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
+    var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
     var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
     var getJSONFromNode_url = "{{=getJSONFromNode_url}}";
     var phylesystem_config_url = "{{=phylesystem_config_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";
+    var getMRCAForNodes_url = "{{=getMRCAForNodes_url}}";
     var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
     var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
+    var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
 </script>
 <script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
@@ -1676,6 +1730,33 @@ body {
       <button class="btn btn-info pull-right" style="margin-left: 20px;" 
               onclick="$('#save-comments-popup').modal('hide'); saveFormDataToStudyJSON(); return false;">Save Study</button>
       <a data-dismiss="modal" class="btn" >Cancel</a>
+    </div>
+</div>
+
+<!-- hidden template describing dowload formats -->
+<div class="modal hide fade modal-save-comments" id="download-formats-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         About study download formats
+      </h3>
+    </div>
+    <div class="modal-body">
+      <p>
+        <a href="http://opentree.wikispaces.com/NexSON" target="_blank"><strong>NexSON</strong></a> is a format used extensively in the Open Tree project. It's based on the <a href="http://badgerfish.ning.com/" target="_blank">Badgerfish</a> convention for converting NeXML to JSON, with additional improvement for faster processing. It includes both original and mapped OTU labels.
+      </p>
+      <p style="margin-top: 1.5em;">
+        <a href="http://nexml.org/" target="_blank"><strong>NeXML</strong></a> is an XML serialization of the older NEXUS format. It retains some of NexSON's richness but is compatible with more third-party software. NeXML includes both original and mapped OTU labels, with the original labels repeated in <code>label</code> attributes.
+      </p>
+      <p style="margin-top: 1.5em;">
+        <a href="http://en.wikipedia.org/wiki/Nexus_file" target="_blank"><strong>NEXUS</strong></a> is a common format from which NeXML and NexSON were derived. It includes original OTU labels only.
+      </p>
+      <p style="margin-top: 1.5em;">
+      <a href="http://en.wikipedia.org/wiki/Newick_format" target="_blank"><strong> Newick</strong></a> is a format commonly used in tree visualization. It captures <em>tree information only</em> and includes just the original OTU labels.
+      </p>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
     </div>
 </div>
 
@@ -1800,11 +1881,18 @@ body {
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data), 
                                    css: viewModel.ticklers.TREES"></strong>
               <br/>
-                <label>MRCA for this tree's ingroup:</label> 
-                <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown (click button to test)<'+'/em>', 
+              <label>MRCA for this tree's ingroup (from <strong>taxonomy</strong>):</label> 
+                <strong data-bind="html: $data['^ot:MRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:MRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:MRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>', 
+                                   css: viewModel.ticklers.TREES"></strong> &nbsp;
+                   <!-- button text WAS: Update MRCA -->
+                   <a class="btn btn-small btn-info Xbtn-info-disabled"
+                      data-bind="click: updateTaxonomicMRCAForTree">Test</a>
+              <br/>
+              <label>MRCA for this tree's ingroup (from latest <strong>synthetic tree</strong>):</label> 
+                <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>', 
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
                    <a class="btn btn-small btn-info Xbtn-info-disabled"
-                      data-bind="click: updateMRCAForTree">Update MRCA</a>
+                      data-bind="click: updateSyntheticMRCAForTree">Test</a>
 
               </div>
               <div class="pull-left" style="width: 48%;">
@@ -1840,7 +1928,6 @@ body {
                     },
                     value: $data['^ot:branchLengthMode'],
                     event: { keyup: nudge.TREES, change: nudge.TREES },
-                    optionsCaption: 'Choose...', 
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
 
@@ -1863,6 +1950,43 @@ body {
                     css: viewModel.ticklers.TREES
                 " placeholder="Describe here"></input>
                <!-- /ko -->
+
+           <!-- NOTE that a virtual element with 'ko if: ...' didn't work here! -->
+            <div data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree( $data )" class="needs-attention">
+                <label>Internal node labels represent:</label>
+                <!-- N.B. By not specifying 'optionsValue', we'll stash the
+                     complete modeInfo object into viewModel.chosenNodeLabelModeInfo -->
+                <select style="width: auto;" data-bind="options: nodeLabelModes,
+                    XXoptionsValue: 'nodeLabelMode',
+                    optionsText: 'text',
+                    value: viewModel.chosenNodeLabelModeInfo,
+                    XXevent: { keyup: updateNodeLabelMode, change: updateNodeLabelMode }, 
+                    event: { keyup: nudge.TREES, change: nudge.TREES }, 
+                    css: viewModel.ticklers.TREES
+                    ">TYPE</select>
+
+               <div class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && chosenLabelModeRequiresDescription()">
+                <label style="margin-left: 10px;">&nbsp;</label>
+                <input type="text" data-bind="value: viewModel.nodeLabelModeDescription,
+                    valueUpdate: ['afterkeydown', 'input'],
+                    event: { keyup: nudge.TREES, change: nudge.TREES },
+                    css: viewModel.ticklers.TREES
+                " placeholder="Describe here"></input>
+               </div>
+
+               <div class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree($data)">
+                 <label style="margin-left: 10px;">&nbsp;</label>
+                 <button class="btn btn-info" data-bind="click: function() { if (confirm('Warning: This can shift ambiguous node labels to their adjacent edges. Check rooting carefully! OK to proceed?')) updateNodeLabelMode($data); return false; }, enable: readyToCaptureInternalNodeLabels()"
+                    >Capture internal node labels</button>
+               </div>
+
+            </div>
+
+           <!-- NOTE that a virtual element with 'ko if: ...' didn't work here! -->
+            <div style="margin-top: 6px;" data-bind="visible: viewModel.ticklers.TREES() && !ambiguousLabelsFoundInTree( $data )">
+                <label>Internal node labels represent:</label>
+                <strong data-bind="css: viewModel.ticklers.TREES(), text: getNodeLabelModeDescription($data)"></strong>
+            </div>
 
               </div>
               <div style="clear: left; height: 20px;">&nbsp;</div>
@@ -1918,6 +2042,10 @@ body {
 
                 <label>Branch length mode: </label>
                 <strong data-bind="text: getBranchLengthModeDescriptionForTree($data)">TYPE</strong>
+                <br/>
+                <label>Internal node labels represent:</label>
+                <strong data-bind="css: viewModel.ticklers.TREES(), text: getNodeLabelModeDescription($data)"></strong>
+
               </div>
 
           {{ pass }}

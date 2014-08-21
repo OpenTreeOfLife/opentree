@@ -41,7 +41,7 @@ getConflictTaxJsonAltRel_url = {taxomachine_domain}/../ext/GetJsons/node/{nodeID
 getDraftTreeForOttolID_url = {treemachine_domain}/getDraftTreeForottId
 # N.B. getDraftTreeForottId doesn't match the capitalization conventions used elsewhere.
 getDraftTreeForNodeID_url = {treemachine_domain}/getDraftTreeForNodeID
-doTNRSForNames_url = {taxomachine_domain}/contextQueryForNames
+doTNRSForAutocomplete_url = {taxomachine_domain}/autocompleteQuery
 getContextsJSON_url = {taxomachine_domain}/getContextsJSON
 getNodeIDForOttolID_url = {treemachine_domain}/getNodeIDForottId
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node

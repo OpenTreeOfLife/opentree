@@ -102,13 +102,15 @@ function loadStudyList() {
 
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
-                showErrorMessage('Sorry, there was an error loading this study.');
+                showErrorMessage('Sorry, there was an error loading the list of studies.');
                 return;
             }
             if (typeof data !== 'object' || !($.isArray(data))) {
-                showErrorMessage('Sorry, there is a problem with the study data.');
+                showErrorMessage('Sorry, there is a problem with the study-list data.');
                 return;
             }
+            
+            sortStudiesByDOI(data);
 
             viewModel = data; /// ko.mapping.fromJS( fakeStudyList );  // ..., mappingOptions);
 
@@ -238,6 +240,38 @@ function loadStudyList() {
     });
 }
 
+/* gather any duplicate studies (with same DOI) */
+var studiesByDOI = {};
+function sortStudiesByDOI(studyList) {
+    studiesByDOI = {};
+    $.each( studyList, function(i, study) {
+        var studyID = study['ot:studyId'];
+        var studyDOI = ('ot:studyPublication' in study) ? study['ot:studyPublication'] : "";
+        if (studyDOI !== "") {
+            if ('studyDOI' in studiesByDOI) {
+                studiesByDOI[ studyDOI ].push( studyID );
+            } else {
+                studiesByDOI[ studyDOI ] = [ studyID ];
+            }
+        }
+    });
+    // remove all but the entries with actual dupes
+    for (var doi in studiesByDOI) {
+        if (studiesByDOI[ doi ].length < 2) {
+            delete studiesByDOI[doi];
+        }
+    }
+}
+function getDuplicateStudyMarker(study) {
+    var studyDOI = ('ot:studyPublication' in study) ? study['ot:studyPublication'] : "";
+    if (studyDOI !== "") {
+        var dupes = studiesByDOI[ studyDOI ];
+        if (dupes && dupes.length > 1) {
+            return '&nbsp; <a href="#" onclick="filterByDOI(\''+ studyDOI +'\'); return false;" style="font-weight: bold; color: #b94a48;" title="CLick to see all studies with this DOI">[DUPLICATE STUDY]</a'+'>';
+        }
+    }
+    return '';
+}
 
 function getViewOrEditLinks(study) {
     var html = "";
@@ -258,6 +292,7 @@ function getViewOrEditLinks(study) {
         // nothing to toggle
         html += '<a href="'+ viewOrEditURL +'">(Untitled study)</a>';
     }
+    html += getDuplicateStudyMarker(study);
 
     return html;
 }
@@ -357,4 +392,8 @@ function filterByClade( cladeName ) {
 function filterByTag( tag ) {
     // replace the filter text with this clade name
     viewModel.listFilters.STUDIES.match( tag );
+}
+function filterByDOI( doi ) {
+    // replace the filter text with this clade name
+    viewModel.listFilters.STUDIES.match( doi );
 }

@@ -83,12 +83,20 @@ if ( History && History.enabled && pageUsesHistory ) {
                 complete: function(jqXHR, textStatus) {
                     // examine the error response and show a sensible message
                     if (textStatus === 'error') {
-                        var errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
+                        var errMsg;
                         if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
                             // the requested OTT taxon is bogus, or not found in the target tree
-                            errMsg = "The requested taxon is not used in the current tree. Please double-check the URL, or search for another taxon,  or return to <a href='/'>Home</a>.";
+                            errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy but not in our tree'
+                                    +' synthesis database. This can happen for a variety of reasons, but the most probable is that it'
+                                    +' is flagged as <em>incertae sedis</em>.'
+                                    +'<br/><br/>If you think this is an error, please'
+                                    +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
+                            // TODO: Explain in more detail: Why wasn't this used? 
+                            showErrorInArgusViewer( errMsg );
+                        } else {
+                            errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
+                            showErrorInArgusViewer( errMsg, jqXHR.responseText );
                         }
-                        showErrorInArgusViewer( errMsg, jqXHR.responseText );
                     }
                 },
                 dataType: 'json'  // should return just the node ID (number)
@@ -440,13 +448,11 @@ function searchForMatchingTaxa() {
     snapViewerFrameToMainTitle();
     
     $.ajax({
-        url: doTNRSForNames_url,  // NOTE that actual server-side method name might be quite different!
+        url: doTNRSForAutocomplete_url,  // NOTE that actual server-side method name might be quite different!
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({ 
             "queryString": searchText,
-            "includeDubious": false,
-            "includeDeprecated": false,
             "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
@@ -459,41 +465,43 @@ function searchForMatchingTaxa() {
             $('#search-results').html('');
             var maxResults = 100;
             var visibleResults = 0;
-            if (data && ('results' in data) && data['results'].length > 0) {
+            /*
+             * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
+             * with these properties:
+             *      ottId   // taxon ID in OTT taxonomic tree
+             *      nodeId  // ie, neo4j node ID
+             *      exact   // matches the entered text exactly? T/F
+             *      name    // taxon name
+             *      higher  // points to a genus or higher taxon? T/F
+             */
+            if (data && data.length && data.length > 0) {
                 // sort results to show exact match(es) first, then higher taxa, then others
-                if (data['results'].length > 1) {
-                    console.warn('MULTIPLE SEARCH RESULT SETS!');
-                    console.warn(data['results']);
-                }
-                var results = data.results[0].matches; // ASSUME we only get one result, with n matches
-                /* initial sort on higher taxa (will be overridden by exact matches)
-                results.sort(function(a,b) {
+                // initial sort on higher taxa (will be overridden by exact matches)
+                data.sort(function(a,b) {
                     if (a.higher === b.higher) return 0;
                     if (a.higher) return -1;
                     if (b.higher) return 1;
                 });
-                */
                 // final sort on exact matches (overrides higher taxa)
-                results.sort(function(a,b) {
-                    if (a.is_perfect_match === b.is_perfect_match) return 0;
-                    if (a.is_perfect_match) return -1;
-                    if (b.is_perfect_match) return 1;
+                data.sort(function(a,b) {
+                    if (a.exact === b.exact) return 0;
+                    if (a.exact) return -1;
+                    if (b.exact) return 1;
                 });
 
                 // show all sorted results, up to our preset maximum
                 var matchingNodeIDs = [ ];  // ignore any duplicate results (point to the same taxon)
-                for (var mpos = 0; mpos < results.length; mpos++) {
+                for (var mpos = 0; mpos < data.length; mpos++) {
                     if (visibleResults >= maxResults) {
                         break;
                     }
-                    var match = results[mpos];
-                    var matchingName = match.matched_name;
-                    var uniqueName = match.unique_name;
-                    var matchingID = match.matched_ott_id;
+                    var match = data[mpos];
+                    var matchingName = match.name;  // N.B. this will be its unique name, if found
+                    var matchingID = match.ottId;
                     if ($.inArray(matchingID, matchingNodeIDs) === -1) {
                         // we're not showing this yet; add it now
                         $('#search-results').append(
-                            '<li><a href="'+ matchingID +'" title="'+ uniqueName +'">'+ matchingName +'</a></li>'
+                            '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
                         );
                         matchingNodeIDs.push(matchingID);
                         visibleResults++;
@@ -901,6 +909,27 @@ function showObjectProperties( objInfo, options ) {
                     // add basic edge properties (TODO: handle multiple edges!?)
                     if (typeof fullNode.supportedBy !== 'undefined') {
                         edgeSection.displayedProperties['Supported by'] = fullNode.supportedBy;
+                    }
+
+                    // add another section to explain an "orphaned" taxon (unconnected to other nodes in the tree)
+                    if (('hasChildren' in fullNode) && (fullNode.hasChildren === false)
+                     && ('pathToRoot' in fullNode) && (fullNode.pathToRoot.length === 0)) {
+                        orphanSection = {
+                            name: 'Where is the surrounding tree?',
+                            displayedProperties: {},
+                            selected: true
+                        };
+                        // this should override the highlight of node or edge
+                        if (nodeSection) {
+                            nodeSection.selected = false;
+                        }
+                        orderedSections.push(orphanSection);
+                        orphanSection.displayedProperties[
+                            '<p>This taxon exists in our taxonomy but is not connected to any other taxa in the'
+                           +' synthetic tree. This happens when the taxon is non-monphyletic in contributed'
+                           +' phylogenies. To contribute a phylogeny that supports monophyly of this taxon, use'
+                           +' our <a href="/curator" target="_blank">study curation application</a>.</p>'] = '';
+                        // TODO: Explain in more detail: Why is this disconnected from other nodes?
                     }
                 } else {
                     console.log("NO full node found for this node!");

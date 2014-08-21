@@ -63,8 +63,15 @@ function showFooterMessage(msg, msgType) {
             break;
         case 'error':
             // these should stay until user dismisses
-            $flashArea.unbind('click').click(function() {
-                // suppress normal hide-me behavior!
+            $flashArea.unbind('click').click(function(e) {
+                // suppress normal hide-me behavior (but allow outbound links)
+                console.log(e.target);
+                if ($(e.target).is('a[href]')) {
+                    console.log("DO-SOMETHING binding");
+                    e.stopPropagation();
+                    return true;
+                }
+                console.log("DO-NOTHING BINDING");
                 return false;
             });
             break;
@@ -316,4 +323,59 @@ function suspendModalEnforcedFocus() {
 }
 function restoreModalEnforcedFocus() {
     $.fn.modal.Constructor.prototype.enforceFocus = activeEnforceFocus;
+}
+
+function checkForDuplicateStudies( testDOI, successCallback ) {
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: singlePropertySearchForStudies_url,
+        data: ('{"property": "ot:studyPublication", "value": '+ 
+            JSON.stringify(testDOI) +', "exact": true }'),
+        processData: false,
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                if (jqXHR.status >= 500) {
+                    // major server-side error, just show raw response for tech support
+                    var errMsg = 'Sorry, there was an error checking for duplicate studies. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
+                    hideModalScreen();
+                    showErrorMessage(errMsg);
+                    return;
+                }
+                // Server blocked the save due to major validation errors!
+                var data = $.parseJSON(jqXHR.responseText);
+                // TODO: this should be properly parsed JSON, show it more sensibly
+                // (but for now, repeat the crude feedback used above)
+                var errMsg = 'Sorry, there was an error checking for duplicate studies. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [parsed in JS]</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            // if we're still here, use the success callback provided
+            var responseObj = $.parseJSON(jqXHR.responseText);
+            if ($.isArray(responseObj['matched_studies'])) {
+                var matchingStudyIDs = [];
+                $.each(responseObj['matched_studies'], function(i,obj) {
+                    matchingStudyIDs.push( obj['ot:studyId'] );
+                });
+            } else {
+                var errMsg = 'Sorry, there was an error checking for duplicate studies. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">Missing or malformed "matching_studies" in JSON response:\n\n'+ 
+                    jqXHR.responseText+'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            successCallback( matchingStudyIDs );
+        }
+    });
+}
+function getViewURLFromStudyID( studyID ) {
+    return  '{PROTOCOL}//{HOST}/curator/study/view/{STUDY_ID}'
+        .replace('{PROTOCOL}', window.location.protocol)
+        .replace('{HOST}', window.location.host)
+        .replace('{STUDY_ID}', studyID);
 }

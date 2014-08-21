@@ -401,7 +401,13 @@ if (!d3) { throw "d3 wasn't included!"};
                   case ('mapped label'):
                       return '#000';
                   case ('node id'):
-                      return '#ccc';
+                      if (d.ambiguousLabel) {
+                          return '#b94a48';  // show ambiguous labels, match red prompts
+                      } else if (d.adjacentEdgeLabel) {
+                          return '#888';
+                      } else {
+                          return '#888';
+                      }
                   default:
                       return '#888';
               }
@@ -412,10 +418,21 @@ if (!d3) { throw "d3 wasn't included!"};
           })
           .text(function(d) {
               // return (d.name + ' ('+d.length+')'); 
+              var nodeLabel = '';
               if (d.labelType === 'node id') {
-                  return '';
+                  nodeLabel = '';  // hide these
+              } else {
+                  nodeLabel = d.name || defaultNodeLabel;
               }
-              return d.name || defaultNodeLabel; 
+              var supplementalLabel = d.ambiguousLabel || d.adjacentEdgeLabel;
+              if (supplementalLabel) {
+                  if (nodeLabel === '') {
+                      nodeLabel = supplementalLabel;
+                  } else {
+                      nodeLabel = nodeLabel +" ["+ supplementalLabel +"]";
+                  }
+              }
+              return nodeLabel; 
           });
 
       vis.selectAll('g.root.node text')
