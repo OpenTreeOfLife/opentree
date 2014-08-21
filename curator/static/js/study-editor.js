@@ -4557,8 +4557,8 @@ function requestTaxonMapping() {
                 var resultToMap = results[0];
                 // convert to expected structure for proposed mappings
                 var otuMapping = {
-                    name: resultToMap.matched_name,   
-                    ottId: String(resultToMap.matched_ott_id),  // number-as-string
+                    name: resultToMap['ot:ottTaxonName'],       // matched name
+                    ottId: String(resultToMap['ot:ottId']),     // matched OTT id (as string)
                     nodeId: resultToMap.matched_node_id,        // number
                     exact: false,                               // boolean (ignoring this for now)
                     higher: false                               // boolean
