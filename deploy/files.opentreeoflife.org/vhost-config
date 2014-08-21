@@ -13,6 +13,6 @@
  	AllowOverride None
     </Directory>
 
-    Redirect temp /index.html http://dev.opentreeoflife.org/about/developer-resources
+    Redirect temp /index.html http://tree.opentreeoflife.org/about/developer-resources
 
 </VirtualHost>
