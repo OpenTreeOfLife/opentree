@@ -4424,18 +4424,21 @@ function requestTaxonMapping() {
                 console.warn('MULTIPLE SEARCH RESULT SETS!');
                 console.warn(data['results']);
             }
+            /* NOTE that this was too restrictive (ignores synonyms and homonyms)
             var testForExactMatch = function(m, i) {
-                return (m.is_perfect_match === true); 
+                return (m.is_perfect_match === true);  
             };
-            var exactMatchFound = false;
+            */
+            // For now, we want to auto-apply if there's exactly one match
+            var justOneMatchFound = false;
             if (resultSetsFound) {
-                exactMatchFound = $.grep(data.results[0].matches, testForExactMatch).length > 0;  // must have at least one exact match 
+                justOneMatchFound = data.results[0].matches.length === 1;  // must have exactly one match 
             }
 
-            /* Suppress all but exact matches, since approximate matches create tons of work in some studies.
+            /* NOTE that approximate matches create tons of work in some studies.
              * TODO: Restore code that offers candidate mappings (multiple options) in these cases... or all cases?
              */
-            if (exactMatchFound) {
+            if (justOneMatchFound) {
                 // sort results to show exact match(es) first, then more precise (lower) taxa, then others
                 var results = data.results[0].matches; // ASSUME we only get one result set, with n matches
                 /* initial sort on lower taxa (will be overridden by exact matches)
