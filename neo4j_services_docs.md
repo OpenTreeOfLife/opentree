@@ -1,12 +1,12 @@
 # taxomachine
 The taxonomy database of the Open Tree of Life project. Services are provided for taxonomic name resolution (TNRS), as well as direct methods of accessing the taxonomy itself. For more information on neo4j services for this database, execute this line in a terminal:
 
-	curl -v http://dev.opentreeoflife.org/taxomachine/ 
+	curl -v http://devapi.opentreeoflife.org/taxomachine/ 
 
 ### Available taxomachine service extensions:
 #### execute_query
 
-	http://dev.opentreeoflife.org/taxomachine/ext/CypherPlugin/graphdb/execute_query
+	http://devapi.opentreeoflife.org/taxomachine/ext/CypherPlugin/graphdb/execute_query
 
 execute a query
 
@@ -16,16 +16,16 @@ execute a query
 
 #### execute_script
 
-	http://dev.opentreeoflife.org/taxomachine/ext/GremlinPlugin/graphdb/execute_script
+	http://devapi.opentreeoflife.org/taxomachine/ext/GremlinPlugin/graphdb/execute_script
 
 execute a Gremlin script with 'g' set to the Neo4jGraph and 'results' containing the results. Only results of one object type is supported.
 
 *	script: The Gremlin script
 *	*params*: JSON Map of additional parameters for script variables
 
-#### contextQueryForNames
+#### contextQuery
 
-	http://dev.opentreeoflife.org/taxomachine/ext/TNRS/graphdb/contextQueryForNames
+	http://devapi.opentreeoflife.org/taxomachine/ext/TNRS/graphdb/contextQuery
 
 Return information on potential matches to a search query
 
@@ -38,15 +38,15 @@ Return information on potential matches to a search query
 
 #### getContextForNames
 
-	http://dev.opentreeoflife.org/taxomachine/ext/TNRS/graphdb/getContextForNames
+	http://devapi.opentreeoflife.org/taxomachine/ext/TNRS/graphdb/getContextForNames
 
 Find the least inclusive taxonomic context defined for the provided set of taxon names
 
 *	names: An array of taxon names to be queried.
 
-#### autocompleteBoxQuery
+#### autocompleteQuery
 
-	http://dev.opentreeoflife.org/taxomachine/ext/TNRS/graphdb/autocompleteBoxQuery
+	http://devapi.opentreeoflife.org/taxomachine/ext/TNRS/graphdb/autocompleteQuery
 
 Find the least inclusive taxonomic context defined for the provided set of taxon names
 
@@ -55,14 +55,14 @@ Find the least inclusive taxonomic context defined for the provided set of taxon
 
 #### getContextsJSON
 
-	http://dev.opentreeoflife.org/taxomachine/ext/TNRS/graphdb/getContextsJSON
+	http://devapi.opentreeoflife.org/taxomachine/ext/TNRS/graphdb/getContextsJSON
 
 Return information on available taxonomic contexts
 
 
 #### getNodeIDJSONFromName
 
-	http://dev.opentreeoflife.org/taxomachine/ext/GetJsons/graphdb/getNodeIDJSONFromName
+	http://devapi.opentreeoflife.org/taxomachine/ext/GetJsons/graphdb/getNodeIDJSONFromName
 
 Return a JSON with node ids for nodes matching a name
 
@@ -70,7 +70,7 @@ Return a JSON with node ids for nodes matching a name
 
 #### subtree
 
-	http://dev.opentreeoflife.org/taxomachine/ext/GetJsons/graphdb/subtree
+	http://devapi.opentreeoflife.org/taxomachine/ext/GetJsons/graphdb/subtree
 
 Return a taxonomy subtree for a set of taxon names
 
@@ -79,12 +79,12 @@ Return a taxonomy subtree for a set of taxon names
 # treemachine
 The phylogeny database of the Open Tree of Life project. Services are provided for getting information about the source trees, accessing individual source trees, accessing the synthetic draft tree of life, and other various tasks. For more information on neo4j services for this database, execute this line in a terminal:
 
-	curl -v http://dev.opentreeoflife.org/treemachine/ 
+	curl -v http://devapi.opentreeoflife.org/treemachine/ 
 
 ### Available treemachine service extensions:
 #### execute_query
 
-	http://dev.opentreeoflife.org/treemachine/ext/CypherPlugin/graphdb/execute_query
+	http://devapi.opentreeoflife.org/treemachine/ext/CypherPlugin/graphdb/execute_query
 
 execute a query
 
@@ -94,7 +94,7 @@ execute a query
 
 #### getSyntheticTree
 
-	http://dev.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getSyntheticTree
+	http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getSyntheticTree
 
 Returns a synthetic tree if format is "newick" then return JSON will have two fields: newick and treeID. If format = "arguson" then the return object will be the form of JSON expected by argus
 
@@ -105,7 +105,7 @@ Returns a synthetic tree if format is "newick" then return JSON will have two fi
 
 #### synthesizeSubtree
 
-	http://dev.opentreeoflife.org/treemachine/ext/GoLS/graphdb/synthesizeSubtree
+	http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/synthesizeSubtree
 
 Initiate the default synthesis process (and store the synthesized branches) for the subgraph starting from a given root node
 
@@ -113,7 +113,7 @@ Initiate the default synthesis process (and store the synthesized branches) for 
 
 #### getStudyIngestMessagesForNexSON
 
-	http://dev.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getStudyIngestMessagesForNexSON
+	http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getStudyIngestMessagesForNexSON
 
 Return a JSON obj that represents the error and warning messages associated with attempting to ingest a NexSON blob
 
@@ -121,7 +121,7 @@ Return a JSON obj that represents the error and warning messages associated with
 
 #### getSourceTree
 
-	http://dev.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getSourceTree
+	http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getSourceTree
 
 Returns a source tree if format is "newick" then return JSON will have two fields: newick and treeID. If format = "arguson" then the return object will be the form of JSON expected by argus
 
@@ -132,7 +132,7 @@ Returns a source tree if format is "newick" then return JSON will have two field
 
 #### getDraftTreeForottId
 
-	http://dev.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getDraftTreeForottId
+	http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getDraftTreeForottId
 
 Returns a newick string of the current draft tree (see GraphExplorer) for the node identified by `ottId`.
 
@@ -140,7 +140,7 @@ Returns a newick string of the current draft tree (see GraphExplorer) for the no
 
 #### getDraftTreeForNodeID
 
-	http://dev.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getDraftTreeForNodeID
+	http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getDraftTreeForNodeID
 
 returns a newick string of the current draft tree (see GraphExplorer) for the node identified by `nodeID`.
 
@@ -148,7 +148,7 @@ returns a newick string of the current draft tree (see GraphExplorer) for the no
 
 #### getDraftTreeChildNodesForNodeID
 
-	http://dev.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getDraftTreeChildNodesForNodeID
+	http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getDraftTreeChildNodesForNodeID
 
 returns the ids of the immediate SYNTHCHILDOF children of the indidcated node in the draft tree. Temporary, for interoperability testing with the arbor project.
 
@@ -156,7 +156,7 @@ returns the ids of the immediate SYNTHCHILDOF children of the indidcated node in
 
 #### getDraftTreeID
 
-	http://dev.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getDraftTreeID
+	http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getDraftTreeID
 
 Returns identifying information for the current draft tree
 
@@ -164,14 +164,14 @@ Returns identifying information for the current draft tree
 
 #### getSourceTreeIDs
 
-	http://dev.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getSourceTreeIDs
+	http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getSourceTreeIDs
 
 Returns a list of all source tree IDs
 
 
 #### getNodeIDForottId
 
-	http://dev.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getNodeIDForottId
+	http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getNodeIDForottId
 
 Returns the the node id of the named node identified by `ottId`.
 
@@ -179,14 +179,14 @@ Returns the the node id of the named node identified by `ottId`.
 
 #### getSynthesisSourceList
 
-	http://dev.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getSynthesisSourceList
+	http://devapi.opentreeoflife.org/treemachine/ext/GoLS/graphdb/getSynthesisSourceList
 
 Returns a list of the synthesis tree source information
 
 
 #### execute_script
 
-	http://dev.opentreeoflife.org/treemachine/ext/GremlinPlugin/graphdb/execute_script
+	http://devapi.opentreeoflife.org/treemachine/ext/GremlinPlugin/graphdb/execute_script
 
 execute a Gremlin script with 'g' set to the Neo4jGraph and 'results' containing the results. Only results of one object type is supported.
 
@@ -195,7 +195,7 @@ execute a Gremlin script with 'g' set to the Neo4jGraph and 'results' containing
 
 #### getSynthJson
 
-	http://dev.opentreeoflife.org/treemachine/ext/GetSASJsons/graphdb/getSynthJson
+	http://devapi.opentreeoflife.org/treemachine/ext/GetSASJsons/graphdb/getSynthJson
 
 Return a JSON with alternative parents presented
 
@@ -203,7 +203,7 @@ Return a JSON with alternative parents presented
 
 #### getTaxonJson
 
-	http://dev.opentreeoflife.org/treemachine/ext/GetSASJsons/graphdb/getTaxonJson
+	http://devapi.opentreeoflife.org/treemachine/ext/GetSASJsons/graphdb/getTaxonJson
 
 Return a JSON with alternative parents presented
 
@@ -211,7 +211,7 @@ Return a JSON with alternative parents presented
 
 #### updateGraphFromPhylografter
 
-	http://dev.opentreeoflife.org/treemachine/ext/PhylografterUpdater/graphdb/updateGraphFromPhylografter
+	http://devapi.opentreeoflife.org/treemachine/ext/PhylografterUpdater/graphdb/updateGraphFromPhylografter
 
 Update the graph studies that should be added from phylografter
 
@@ -219,12 +219,12 @@ Update the graph studies that should be added from phylografter
 # oti
 OTI is an indexing service for the NEXSoN studies available through the Open Tree of Life phylesystem. For more information on neo4j services for this database, execute this line in a terminal:
 
-	curl -v http://dev.opentreeoflife.org/oti/ 
+	curl -v http://devapi.opentreeoflife.org/oti/ 
 
 ### Available oti service extensions:
 #### execute_query
 
-	http://dev.opentreeoflife.org/oti/ext/CypherPlugin/graphdb/execute_query
+	http://devapi.opentreeoflife.org/oti/ext/CypherPlugin/graphdb/execute_query
 
 execute a query
 
@@ -234,14 +234,14 @@ execute a query
 
 #### getSearchablePropertiesForStudies
 
-	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/getSearchablePropertiesForStudies
+	http://devapi.opentreeoflife.org/oti/ext/QueryServices/graphdb/getSearchablePropertiesForStudies
 
 Get a list of properties that can be used to search for studies
 
 
 #### singlePropertySearchForTreeNodes
 
-	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/singlePropertySearchForTreeNodes
+	http://devapi.opentreeoflife.org/oti/ext/QueryServices/graphdb/singlePropertySearchForTreeNodes
 
 Perform a simple search for trees nodes (currently only supports tip nodes) in indexed studies
 
@@ -252,14 +252,14 @@ Perform a simple search for trees nodes (currently only supports tip nodes) in i
 
 #### getSearchablePropertiesForTreeNodes
 
-	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/getSearchablePropertiesForTreeNodes
+	http://devapi.opentreeoflife.org/oti/ext/QueryServices/graphdb/getSearchablePropertiesForTreeNodes
 
 Get a list of properties that can be used to search for tree nodes
 
 
 #### singlePropertySearchForStudies
 
-	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/singlePropertySearchForStudies
+	http://devapi.opentreeoflife.org/oti/ext/QueryServices/graphdb/singlePropertySearchForStudies
 
 Perform a simple search for indexed studies
 
@@ -270,7 +270,7 @@ Perform a simple search for indexed studies
 
 #### findAllStudies
 
-	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/findAllStudies
+	http://devapi.opentreeoflife.org/oti/ext/QueryServices/graphdb/findAllStudies
 
 Returns information about all studies in the database.
 
@@ -279,7 +279,7 @@ Returns information about all studies in the database.
 
 #### singlePropertySearchForTrees
 
-	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/singlePropertySearchForTrees
+	http://devapi.opentreeoflife.org/oti/ext/QueryServices/graphdb/singlePropertySearchForTrees
 
 Perform a simple search for trees in indexed studies
 
@@ -290,14 +290,14 @@ Perform a simple search for trees in indexed studies
 
 #### getSearchablePropertiesForTrees
 
-	http://dev.opentreeoflife.org/oti/ext/QueryServices/graphdb/getSearchablePropertiesForTrees
+	http://devapi.opentreeoflife.org/oti/ext/QueryServices/graphdb/getSearchablePropertiesForTrees
 
 Get a list of properties that can be used to search for trees
 
 
 #### execute_script
 
-	http://dev.opentreeoflife.org/oti/ext/GremlinPlugin/graphdb/execute_script
+	http://devapi.opentreeoflife.org/oti/ext/GremlinPlugin/graphdb/execute_script
 
 execute a Gremlin script with 'g' set to the Neo4jGraph and 'results' containing the results. Only results of one object type is supported.
 
@@ -306,7 +306,7 @@ execute a Gremlin script with 'g' set to the Neo4jGraph and 'results' containing
 
 #### unindexNexsons
 
-	http://dev.opentreeoflife.org/oti/ext/IndexServices/graphdb/unindexNexsons
+	http://devapi.opentreeoflife.org/oti/ext/IndexServices/graphdb/unindexNexsons
 
 Unindex (remove) the nexson data for these study ids. If no matching study is found, do nothing. Returns arrays containing the study ids for the studies that were successfully removed from the index, and those that could not be found (and throws exceptions for those whose removal failed.
 
@@ -314,7 +314,7 @@ Unindex (remove) the nexson data for these study ids. If no matching study is fo
 
 #### indexSingleNexson
 
-	http://dev.opentreeoflife.org/oti/ext/IndexServices/graphdb/indexSingleNexson
+	http://devapi.opentreeoflife.org/oti/ext/IndexServices/graphdb/indexSingleNexson
 
 DEPRECATED. Use `indexNexsons` instead. For compatibility, this *ALWAYS RETURNS* true. indexNexsons will provide more meaningful results.
 
@@ -322,7 +322,7 @@ DEPRECATED. Use `indexNexsons` instead. For compatibility, this *ALWAYS RETURNS*
 
 #### indexNexsons
 
-	http://dev.opentreeoflife.org/oti/ext/IndexServices/graphdb/indexNexsons
+	http://devapi.opentreeoflife.org/oti/ext/IndexServices/graphdb/indexNexsons
 
 Index the nexson data at the provided urls. If a nexson study to be indexed has an identical ot:studyId value to a previously indexed study, then the previous information for that study will be replaced by the incoming nexson. Returns an array containing the study ids for the studies that were successfully read and indexed.
 

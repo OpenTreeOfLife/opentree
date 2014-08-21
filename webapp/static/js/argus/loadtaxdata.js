@@ -37,7 +37,7 @@
 url = doTNRSForNames_url;   // passed from main HTML page template
 
 /*
- * NOTE - This appears to be dead code, so I'm not adapting it to work with the autocompleteBoxQuery method
+ * NOTE - This appears to be dead code, so I'm not adapting it to work with the autocompleteQuery method
  */
 
 function roundDecimal(value, precision) {

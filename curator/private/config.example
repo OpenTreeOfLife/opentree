@@ -47,7 +47,8 @@ getConflictTaxJsonAltRel_url = {taxomachine_domain}/../ext/GetJsons/node/{nodeID
 getDraftTreeForOttolID_url = {treemachine_domain}/getDraftTreeForottId
 # N.B. getDraftTreeForottId doesn't match the capitalization conventions used elsewhere.
 getDraftTreeForNodeID_url = {treemachine_domain}/getDraftTreeForNodeID
-doTNRSForNames_url = {taxomachine_domain}/contextQueryForNames
+doTNRSForAutocomplete_url = {taxomachine_domain}/autocompleteQuery
+doTNRSForMappingOTUs_url = {taxomachine_domain}/contextQuery
 getContextsJSON_url = {taxomachine_domain}/getContextsJSON
 getNodeIDForOttolID_url = {treemachine_domain}/getNodeIDForottId
 getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
@@ -55,8 +56,10 @@ phylesystem_config_url = {opentree_api_domain}/phylesystem_config
 render_markdown_url = {opentree_api_domain}/render_markdown
 getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
 getDraftTreeMRCAForNodes_url = {treemachine_domain}/getDraftTreeMRCAForNodes
+getMRCAForNodes_url = {treemachine_domain}/getMRCA
 getDraftTreeSubtreeForNodes_url = {treemachine_domain}/getDraftTreeSubtreeForNodes
 findAllStudies_url = {oti_domain}/findAllStudies
+singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #

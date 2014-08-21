@@ -261,7 +261,10 @@ body {
                 <label class="control-label" for="ot_studyPublication">Publication DOI (or URL)</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
-                  <input data-bind="value: nexml['^ot:studyPublication']['@href'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: formatDOIAsURL }, css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
+                  <input data-bind="value: nexml['^ot:studyPublication']['@href'], 
+                                    valueUpdate: ['afterkeydown', 'input'], 
+                                    event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: validateAndTestDOI }, 
+                                    css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
                   <button class="btn btn-info" onclick="lookUpDOI(); return false;">Look up DOI...</button>
                 {{ else: }}
                   <p class="static-form-value">
@@ -273,6 +276,15 @@ body {
                  <!-- /ko -->
                   </p>
                 {{ pass }}
+                </div>
+                <div class="controls" data-bind="if: viewModel.duplicateStudyIDs().length > 0">
+                    <p class="static-form-value interesting-value">
+                        There are other studies in Open Tree collection with this DOI. Click the links below to see each one in a new browser window.
+                    </p>
+                    <ul class="static-form-value interesting-value" data-bind="foreach: viewModel.duplicateStudyIDs">
+                        <li><a href="#" target="_blank" 
+                            data-bind="text: getViewURLFromStudyID($data), attr: {'href': getViewURLFromStudyID($data)}">&nbsp</a></li>
+                    </ul>
                 </div>
               </div>
               <div class="control-group">
@@ -588,6 +600,13 @@ body {
                                class="suggestion-prompt" style="display: block;"
                                href="#">
                                 Show conflicting nodes
+                            </a> 
+                            <a data-bind="if: ambiguousLabelsFoundInTree( tree ), 
+                                          css: viewModel.ticklers.TREES,
+                                          click: showAmbiguousLabelsInTreeViewer" 
+                               class="suggestion-prompt" style="display: block;"
+                               href="#">
+                                Review ambiguous labels
                             </a> 
                         </td>
                         <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
@@ -1656,13 +1675,16 @@ body {
     var getConflictTaxJsonAltRel_url = "{{=getConflictTaxJsonAltRel_url}}";
     var getDraftTreeForOttolID_url = "{{=getDraftTreeForOttolID_url}}";
     var getDraftTreeForNodeID_url = "{{=getDraftTreeForNodeID_url}}";
-    var doTNRSForNames_url = "{{=doTNRSForNames_url}}";
+    var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
+    var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
     var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
     var getJSONFromNode_url = "{{=getJSONFromNode_url}}";
     var phylesystem_config_url = "{{=phylesystem_config_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";
+    var getMRCAForNodes_url = "{{=getMRCAForNodes_url}}";
     var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
     var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
+    var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
 </script>
 <script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
@@ -1859,11 +1881,18 @@ body {
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data), 
                                    css: viewModel.ticklers.TREES"></strong>
               <br/>
-                <label>MRCA for this tree's ingroup:</label> 
-                <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown (click button to test)<'+'/em>', 
+              <label>MRCA for this tree's ingroup (from <strong>taxonomy</strong>):</label> 
+                <strong data-bind="html: $data['^ot:MRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:MRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:MRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>', 
+                                   css: viewModel.ticklers.TREES"></strong> &nbsp;
+                   <!-- button text WAS: Update MRCA -->
+                   <a class="btn btn-small btn-info Xbtn-info-disabled"
+                      data-bind="click: updateTaxonomicMRCAForTree">Test</a>
+              <br/>
+              <label>MRCA for this tree's ingroup (from latest <strong>synthetic tree</strong>):</label> 
+                <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>', 
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
                    <a class="btn btn-small btn-info Xbtn-info-disabled"
-                      data-bind="click: updateMRCAForTree">Update MRCA</a>
+                      data-bind="click: updateSyntheticMRCAForTree">Test</a>
 
               </div>
               <div class="pull-left" style="width: 48%;">
@@ -1899,7 +1928,6 @@ body {
                     },
                     value: $data['^ot:branchLengthMode'],
                     event: { keyup: nudge.TREES, change: nudge.TREES },
-                    optionsCaption: 'Choose...', 
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
 
@@ -1922,6 +1950,43 @@ body {
                     css: viewModel.ticklers.TREES
                 " placeholder="Describe here"></input>
                <!-- /ko -->
+
+           <!-- NOTE that a virtual element with 'ko if: ...' didn't work here! -->
+            <div data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree( $data )" class="needs-attention">
+                <label>Internal node labels represent:</label>
+                <!-- N.B. By not specifying 'optionsValue', we'll stash the
+                     complete modeInfo object into viewModel.chosenNodeLabelModeInfo -->
+                <select style="width: auto;" data-bind="options: nodeLabelModes,
+                    XXoptionsValue: 'nodeLabelMode',
+                    optionsText: 'text',
+                    value: viewModel.chosenNodeLabelModeInfo,
+                    XXevent: { keyup: updateNodeLabelMode, change: updateNodeLabelMode }, 
+                    event: { keyup: nudge.TREES, change: nudge.TREES }, 
+                    css: viewModel.ticklers.TREES
+                    ">TYPE</select>
+
+               <div class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && chosenLabelModeRequiresDescription()">
+                <label style="margin-left: 10px;">&nbsp;</label>
+                <input type="text" data-bind="value: viewModel.nodeLabelModeDescription,
+                    valueUpdate: ['afterkeydown', 'input'],
+                    event: { keyup: nudge.TREES, change: nudge.TREES },
+                    css: viewModel.ticklers.TREES
+                " placeholder="Describe here"></input>
+               </div>
+
+               <div class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree($data)">
+                 <label style="margin-left: 10px;">&nbsp;</label>
+                 <button class="btn btn-info" data-bind="click: function() { if (confirm('Warning: This can shift ambiguous node labels to their adjacent edges. Check rooting carefully! OK to proceed?')) updateNodeLabelMode($data); return false; }, enable: readyToCaptureInternalNodeLabels()"
+                    >Capture internal node labels</button>
+               </div>
+
+            </div>
+
+           <!-- NOTE that a virtual element with 'ko if: ...' didn't work here! -->
+            <div style="margin-top: 6px;" data-bind="visible: viewModel.ticklers.TREES() && !ambiguousLabelsFoundInTree( $data )">
+                <label>Internal node labels represent:</label>
+                <strong data-bind="css: viewModel.ticklers.TREES(), text: getNodeLabelModeDescription($data)"></strong>
+            </div>
 
               </div>
               <div style="clear: left; height: 20px;">&nbsp;</div>
@@ -1977,6 +2042,10 @@ body {
 
                 <label>Branch length mode: </label>
                 <strong data-bind="text: getBranchLengthModeDescriptionForTree($data)">TYPE</strong>
+                <br/>
+                <label>Internal node labels represent:</label>
+                <strong data-bind="css: viewModel.ticklers.TREES(), text: getNodeLabelModeDescription($data)"></strong>
+
               </div>
 
           {{ pass }}
