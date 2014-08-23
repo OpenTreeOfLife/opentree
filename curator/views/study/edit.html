@@ -1069,6 +1069,7 @@ body {
                         </td>
                       {{ if viewOrEdit == 'EDIT': }}
                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && !('^ot:altLabel' in otu) -->
+                          {{ # show static adjusted label (modified by mapping hints) }}
                          <td>
                             <em data-bind="text: adjustedLabel(otu['^ot:originalLabel']) || '?', 
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS,
@@ -1077,6 +1078,7 @@ body {
                         </td>
                         <td>
                           <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['^ot:ottTaxonName']) === '' && !proposedMapping(otu) -->
+                          {{ # show manual-editing widget }}
                             <button class="btn btn-mini row-controls-ghosted" title="Edit this label manually" 
                                     data-bind="click: editOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <i class="icon-edit"></i>
@@ -1085,6 +1087,7 @@ body {
                         </td>
                          <!-- /ko -->
                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0)  && ('^ot:altLabel' in otu) --> 
+                          {{ # show editable label field and its remove widget }}
                         <td>
                             <input type="text" style="height: 14px; margin:
                             0; width: 97%;" data-bind="value: otu['^ot:altLabel'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: modifyEditedLabel, change: modifyEditedLabel }, css: viewModel.ticklers.OTU_MAPPING_HINTS">
@@ -1096,18 +1099,29 @@ body {
                         </td>
                          <!-- /ko -->
                       {{ pass }}
+                       {{ # show status or failure message }}
                         <td>
                          <!-- ko if: currentlyMappingOTUs.indexOf(otu['@id']) !== -1 -->
-                            <strong style="color: red;"><em>...mapping now...</em></strong>
+                            <strong style="color: orange;"><em>...mapping now...</em></strong>
                          <!-- /ko -->
                          <!-- ko if: failedMappingOTUs.indexOf(otu['@id']) !== -1 -->
-                            <strong style="color: #999;"><em>Failed mapping (edit or add hints)</em></strong>
+                            <strong style="color: #999;"><em>Failed mapping</em></strong>
                          <!-- /ko -->
                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() &&
-                                     (currentlyMappingOTUs.indexOf(otu['@id']) === -1) && 
-                                     (failedMappingOTUs.indexOf(otu['@id']) === -1) -->
+                                     (currentlyMappingOTUs.indexOf(otu['@id']) === -1) -->
                       {{ if viewOrEdit == 'EDIT': }}
-                          <!-- ko if: proposedMapping(otu) -->
+<!--
+{<em data-bind="text:proposedMapping(otu)"></em>}
+[<em data-bind="text:$.trim(otu['^ot:ottTaxonName'])"></em>]
+-->
+                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && !(proposedMapping(otu)) && !($.trim(otu['^ot:ottTaxonName'])) -->
+                            <button id="single-otu-mapping-button" 
+                                    class="btn btn-small row-controls-ghosted pull-right" 
+                                    data-bind="visible: !autoMappingInProgress(),
+                                               click: requestTaxonMapping">Map carefully</button>
+                          <!-- /ko -->
+                          <!-- ko if: proposedMapping(otu) && !($.isArray(proposedMapping(otu))) -->
+                           {{ # show mapped label }}
                             <div class="btn-group pull-right">
                                 <button class="btn btn-mini" data-bind="click: approveProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-ok"></i>
@@ -1116,6 +1130,27 @@ body {
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
+                            <strong data-bind="text: proposedMapping(otu).name,
+                                               css: viewModel.ticklers.OTU_MAPPING_HINTS"
+                                    style="color: red"
+                                >PROPOSED LABEL</strong>
+                          <!-- /ko -->
+                          <!-- ko if: proposedMapping(otu) && $.isArray(proposedMapping(otu)) -->
+                           {{ # show available choices for mapping this OTU }}
+                            <div class="btn-group pull-right">
+                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                                    <i class="icon-remove"></i>
+                                </button>
+                            </div>
+                            <strong style="color: #999;"><em>Possible mappings <a href="#" onclick="showPossibleMappingsKey(); return false;">(key)</a></em></strong>
+                            <ul class="mapping-options"
+                                data-bind="foreach: proposedMapping(otu), 
+                                           css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                                <li><a data-bind="text: $data.originalMatch.unique_name,
+                                                  click: approveProposedOTUMappingOption,
+                                                  attr: getAttrsForMappingOption($data)"
+                                       href="#"></a></li>
+                            </ul>
                           <!-- /ko -->
                           <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['^ot:ottTaxonName']) -->
                             <div class="btn-group pull-right row-controls-ghosted">
@@ -1123,11 +1158,10 @@ body {
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
+                            <strong data-bind="text: $.trim(otu['^ot:ottTaxonName']),
+                                               css: viewModel.ticklers.OTU_MAPPING_HINTS",
+                                >MAPPED LABEL</strong>
                           <!-- /ko -->
-                            <strong data-bind="text: proposedMapping(otu) ?  proposedMapping(otu).name : $.trim(otu['^ot:ottTaxonName']),
-                                               css: viewModel.ticklers.OTU_MAPPING_HINTS,
-                                               style:  {'color': proposedMapping(otu) ? 'red' :'' }"
-                                >MAPPED (OR PROPOSED) LABEL</strong>
                       {{ else: }}
                             <strong data-bind="text: $.trim(otu['^ot:ottTaxonName'])">MAPPED LABEL</strong>
                       {{ pass }}
@@ -1704,6 +1738,76 @@ body {
             returned these matching records (best matches first).
         </p>
         <ul class="found-matches"></ul>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>
+
+<!-- hidden template for explaining colors and opacity of OTU mapping option -->
+<div class="modal hide fade" id="possible-mappings-key" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         How to interpret possible OTU mappings
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            When an OTU cannot be clearly mapped to a single taxon in the Open
+            Tree taxonomy, the most likely matches will appear in a list like
+            the one below.
+        </p>
+        <ul class="mapping-options" style="padding-left: 20px;">
+            <li>
+                <div class="key-note">most possible matches are green</div>
+                <a class="badge badge-success" 
+                   style="opacity: 1.0;" 
+                   title="100% match of original label"
+                   href="#" onclick="return false;"
+                >Hominidae</a>
+            </li>
+            <li>
+                <div class="key-note">closer matches are darker</div>
+                <a class="badge badge-success" 
+                   style="opacity: 0.78;" 
+                   title="78% match of original label"
+                   href="#" onclick="return false;"
+                >Homininae</a>
+            </li>
+            <li>
+                <a class="badge badge-success" 
+                   style="opacity: 0.56;" 
+                   title="56% match of original label"
+                   href="#" onclick="return false;"
+                >Homo</a>
+            </li>
+            <li>
+                <div class="key-note">synonyms are blue</div>
+                <a class="badge badge-info" 
+                   style="opacity: 1;" 
+                   title="Synonym for Drosophila"
+                   href="#" onclick="return false;"
+                >Psathyrella</a>
+            </li>
+            <li>
+                <div class="key-note">taxon-name homonyms are amber</div>
+                <a class="badge badge-warning" 
+                   style="opacity: 1;" 
+                   title="Taxon-name homonym"
+                   href="#" onclick="return false;"
+                >Drosophila (genus in Drosophiliti)</a>
+            </li>
+        </ul>
+        <p>
+            Roll over each match to learn more about it. Click a match to
+            map this OTU to this taxon. If none of these options is a good
+            match, click 
+            <button class="btn btn-mini row-controls-ghosted" 
+                    type="button" onclick="return false;"><i class="icon-remove"></i>
+            </button>
+            to clear the list and modify the original label used for mapping.
+        </p>
     </div>
     <div class="modal-footer">
       <a data-dismiss="modal" class="btn" >Close</a>
