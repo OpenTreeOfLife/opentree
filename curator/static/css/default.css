@@ -726,3 +726,21 @@ div.structure-only {
     padding: 0;
     margin: 0;
 }
+ul.mapping-options {
+    list-style: none; 
+    margin: 0 0 8px 0;
+}
+ul.mapping-options li {
+    padding: 2px 0;
+}
+ul.mapping-options li .key-note {
+    color: #777;
+    float: right;
+    width: 50%;
+}
+ul.mapping-options li a:hover {
+    opacity: 1.0 !important;
+    -webkit-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
+    -moz-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
+}

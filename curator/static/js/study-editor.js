@@ -1308,6 +1308,11 @@ function hideQualityDetailsPopup() {
     $('#quality-details-viewer').modal('hide');
 }
 
+function showPossibleMappingsKey() {
+    // explain colors and opacity in a popup (already bound)
+    $('#possible-mappings-key').modal('show');
+}
+
 var hidingBranchLengths = false;
 function toggleBranchLengthsInViewer(cb) {
     // checkbox enables/disables branch-length display (and labeling?) in
@@ -1325,7 +1330,6 @@ function toggleBranchLengthsInViewer(cb) {
 function updateMappingStatus() {
     // update mapping status+details based on the current state of things
     var detailsHTML, showBatchApprove, showBatchReject, needsAttention;
-    
     /* TODO: defaults assume nothing particularly interesting going on
     detailsHTML = '';
     showBatchApprove = false;
@@ -4251,6 +4255,32 @@ function updateMappingHints( data ) {
     return true;
 }
 
+function getAttrsForMappingOption( optionData ) {
+    var attrs = {
+        'title': parseInt(optionData.originalMatch.score * 100) +"% match of original label",
+        'class': "badge ",
+        'style': ("opacity: "+ matchScoreToOpacity(optionData.originalMatch.score) +";")
+    }
+    // for now, use standard colors that will still pop for color-blind users
+    if (optionData.originalMatch.is_synonym) {
+        attrs.title = ('Synonym for '+ optionData.originalMatch.matched_name);
+        attrs.class += ' badge-info';
+    } else if (optionData.originalMatch.matched_name !== optionData.originalMatch.unique_name) {
+        attrs.title = ('Taxon-name homonym');
+        attrs.class += ' badge-warning';
+    } else {
+        // keep default label with matching score
+        attrs.class += ' badge-success';
+    }
+    return attrs;
+}
+function matchScoreToOpacity(score) {
+    // remap scores (generally from 0.75 to 1.0) to be more visible
+    var distanceFromPerfect = 1.0 - score;
+    var visibleDistance = distanceFromPerfect * 1.5;
+    return (1.0 - visibleDistance);
+}
+
 var autoMappingInProgress = ko.observable(false);
 var currentlyMappingOTUs = ko.observableArray([]); // drives spinners, etc.
 var failedMappingOTUs = ko.observableArray([]); // ignore these until we have new mapping hints
@@ -4285,7 +4315,12 @@ function revertOTULabel(otu) {
 }
 
 function proposeOTULabel(OTUid, mappingInfo) {
-    proposedOTUMappings()[ OTUid ] = ko.observable( mappingInfo ).extend({ notify: 'always' });
+    // stash one (or more) mappings as options for this OTU
+    if ($.isArray( mappingInfo)) {
+        proposedOTUMappings()[ OTUid ] = ko.observableArray( mappingInfo ).extend({ notify: 'always' });
+    } else {
+        proposedOTUMappings()[ OTUid ] = ko.observable( mappingInfo ).extend({ notify: 'always' });
+    }
     proposedOTUMappings.valueHasMutated();
     // this should make the editor appear
 }
@@ -4298,11 +4333,23 @@ function proposedMapping( otu ) {
     var acc = proposedOTUMappings()[ OTUid ];
     return acc ? acc() : null;
 }
-function approveProposedOTULabel(otu) {
+function approveProposedOTULabel(otu, selectedIndex) {
     // undoes 'editOTULabel', releasing a label to use shared hints
     var OTUid = otu['@id'];
     var approvedMapping = proposedOTUMappings()[ OTUid ];
+    if ($.isArray(approvedMapping)) {
+        // there are multiple candidates; match the selected index
+        approvedMapping = approvedMapping[ selectedIndex ];
+    }
     mapOTUToTaxon( OTUid, approvedMapping() );
+    delete proposedOTUMappings()[ OTUid ];
+    proposedOTUMappings.valueHasMutated();
+    nudgeTickler('OTU_MAPPING_HINTS');
+}
+function approveProposedOTUMappingOption(approvedMapping, selectedIndex) {
+    // similar to approveProposedOTULabel, but for a listed option 
+    var OTUid = approvedMapping.otuID;
+    mapOTUToTaxon( OTUid, approvedMapping );
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
     nudgeTickler('OTU_MAPPING_HINTS');
@@ -4330,8 +4377,12 @@ function getAllVisibleProposedMappings() {
 function approveAllVisibleMappings() {
     $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
         var approvedMapping = proposedOTUMappings()[ OTUid ];
-        delete proposedOTUMappings()[ OTUid ];
-        mapOTUToTaxon( OTUid, approvedMapping(), {POSTPONE_UI_CHANGES: true} );
+        if ($.isArray(approvedMapping())) {
+            // do nothing, curator has not chosen a candidate
+        } else {
+            delete proposedOTUMappings()[ OTUid ];
+            mapOTUToTaxon( OTUid, approvedMapping(), {POSTPONE_UI_CHANGES: true} );
+        }
     });
     proposedOTUMappings.valueHasMutated();
     nudgeTickler('OTU_MAPPING_HINTS');
@@ -4442,10 +4493,20 @@ function getNextUnmappedOTU() {
 }
 
 
-function requestTaxonMapping() {
+function requestTaxonMapping( otuToMap ) {
     // set spinner, make request, handle response, and daisy-chain the next request
     // TODO: send one at a time? or in a batch (5 items)?
-    var otuToMap = getNextUnmappedOTU();
+
+    // NOTE that we might be requesting a single OTU, else find the next unmapped one
+    var singleTaxonMapping;
+    if (otuToMap) {
+        singleTaxonMapping = true;
+        failedMappingOTUs.remove(otuToMap['@id'] );
+        autoMappingInProgress( true );
+    } else {
+        singleTaxonMapping = false;
+        otuToMap = getNextUnmappedOTU();
+    }
     if (!otuToMap) {
         stopAutoMapping();
         return false;
@@ -4482,7 +4543,7 @@ function requestTaxonMapping() {
             "queryString": searchText,
             "includeDubious": false,
             "includeDeprecated": false,
-            "doApproximateMatching": false,
+            "doApproximateMatching": singleTaxonMapping ? true : false,
             "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
@@ -4503,7 +4564,9 @@ function requestTaxonMapping() {
 
             // let's hope it's something about this label and try the next one...
             failedMappingOTUs.push( otuID );
-            if (autoMappingInProgress()) {
+            if (singleTaxonMapping) {
+                stopAutoMapping();
+            } else if (autoMappingInProgress()) {
                 setTimeout(requestTaxonMapping, 100);
             }
 
@@ -4527,80 +4590,87 @@ function requestTaxonMapping() {
             var maxResults = 100;
             var visibleResults = 0;
             var resultSetsFound = (data && ('results' in data) && (data.results.length > 0));
-            if (data['results'].length > 1) {
-                console.warn('MULTIPLE SEARCH RESULT SETS!');
-                console.warn(data['results']);
-            }
-            
+            var candidateMatches = [ ];
             // For now, we want to auto-apply if there's exactly one match
-            var justOneMatchFound = false;
             if (resultSetsFound) {
-                justOneMatchFound = data.results[0].matches.length === 1;  // must have exactly one match 
-            }
+                switch (data.results.length) {
+                    case 0:
+                        console.warn('NO SEARCH RESULT SETS FOUND!');
+                        candidateMatches = [ ];
+                        break;
 
-            /* NOTE that approximate matches create tons of work in some studies.
-             * TODO: Restore code that offers candidate mappings (multiple options) in these cases... or all cases?
-             */
-            if (justOneMatchFound) {
-                var results = data.results[0].matches; // ASSUME we only get one result set, with n matches
-                
-                // TODO: Sort results based on exact text matches? fractional (matching) scores? synonyms or homonyms?
-                /* initial sort on lower taxa (will be overridden by exact matches)
-                results.sort(function(a,b) {
-                    if (a.higher === b.higher) return 0;
-                    if (a.higher) return 1;
-                    if (b.higher) return -1;
-                });
-                */
+                    case 1:
+                        // the expected case
+                        candidateMatches = data.results[0].matches;
+                        break;
 
-                // for now, let's immediately apply the top name
-                var resultToMap = results[0];
-                // convert to expected structure for proposed mappings
-                var otuMapping = {
-                    name: resultToMap['ot:ottTaxonName'],       // matched name
-                    ottId: String(resultToMap['ot:ottId']),     // matched OTT id (as string)
-                    nodeId: resultToMap.matched_node_id,        // number
-                    exact: false,                               // boolean (ignoring this for now)
-                    higher: false                               // boolean
-                    // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
-                };
-                proposeOTULabel(otuID, otuMapping);
-                // postpone actual mapping until user approves
-                
-                if (false) {
-                    // TODO: offer choices if multiple possibilities are found? 
-                    // show all sorted results, up to our preset maximum
-                    var matchingNodeIDs = [ ];  // ignore any duplicate results (point to the same taxon)
-                    for (var mpos = 0; mpos < data.length; mpos++) {
-                        if (visibleResults >= maxResults) {
-                            break;
-                        }
-                        var match = data[mpos];
-                        var matchingName = match.name;
-                        // 
-                        var matchingID = match.ottId;
-                        if ($.inArray(matchingID, matchingNodeIDs) === -1) {
-                            // TODO: we're not showing this yet; add it to a list of options?
-                            /*
-                            $('#search-results').append(
-                                '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
-                            );
-                            */
-                            console.log("Now I would offer choice '"+ matchingName +"' (id="+ matchingID +")...");
-                            matchingNodeIDs.push(matchingID);
-                            visibleResults++;
-                        }
-                    }
+                    default:
+                        console.warn('MULTIPLE SEARCH RESULT SETS (USING FIRST)');
+                        console.warn(data['results']);
+                        candidateMatches = data.results[0].matches;
                 }
+            }
+            // TODO: Filter candidate matches based on their properties, scores, etc.?
 
-            } else {
-                failedMappingOTUs.push( otuID );
+            switch (candidateMatches.length) {
+                case 0:
+                    failedMappingOTUs.push( otuID );
+                    break;
+
+                case 1:
+                    // choose the first+only match automatically!
+                    var resultToMap = candidateMatches[0];
+                    // convert to expected structure for proposed mappings
+                    var otuMapping = {
+                        name: resultToMap['ot:ottTaxonName'],       // matched name
+                        ottId: String(resultToMap['ot:ottId']),     // matched OTT id (as string)
+                        nodeId: resultToMap.matched_node_id,        // number
+                        exact: false,                               // boolean (ignoring this for now)
+                        higher: false                               // boolean
+                        // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
+                    };
+                    proposeOTULabel(otuID, otuMapping);
+                    // postpone actual mapping until user approves
+                    break;
+
+                default: 
+                    // multiple matches found, offer a choice
+                    // ASSUMES we only get one result set, with n matches
+
+                    // TODO: Sort matches based on exact text matches? fractional (matching) scores? synonyms or homonyms?
+                    /* initial sort on lower taxa (will be overridden by exact matches)
+                    candidateMatches.sort(function(a,b) {
+                        if (a.is_approximate_match === b.is_approximate_match) return 0;
+                        if (a.is_approximate_match) return 1;
+                        if (b.is_approximate_match) return -1;
+                    });
+                    */
+
+                    var candidateMappingList = [ ];
+                    $.each(candidateMatches, function(i, match) {
+                        // convert to expected structure for proposed mappings
+                        candidateMappingList.push({
+                            name: match['ot:ottTaxonName'],       // matched name
+                            ottId: String(match['ot:ottId']),     // matched OTT id (as string)
+                            nodeId: match.matched_node_id,        // number
+                            exact: false,                               // boolean (ignoring this for now)
+                            higher: false,                               // boolean
+                            // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
+                            originalMatch: match,
+                            otuID: otuID
+                        });
+                    });
+
+                    proposeOTULabel(otuID, candidateMappingList);
+                    // postpone actual mapping until user chooses, then approves
             }
 
             currentlyMappingOTUs.remove( otuID );
 
-            // after a brief pause, try for the next available OTU...
-            if (autoMappingInProgress()) {
+            if (singleTaxonMapping) {
+                stopAutoMapping();
+            } else if (autoMappingInProgress()) {
+                // after a brief pause, try for the next available OTU...
                 setTimeout(requestTaxonMapping, 10);
             }
 
