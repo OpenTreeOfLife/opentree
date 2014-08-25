@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # push.sh -c {configfile} {command} {arg...}  - see README.md for documentation
 # The command is either a component to install, or an operation to
