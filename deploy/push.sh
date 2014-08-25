@@ -197,7 +197,7 @@ function restart_apache {
     ${SSH} "$ADMIN@$OPENTREE_HOST" \
       sudo cp -p "~$OT_USER/setup/apache-config-vhosts" /etc/apache2/sites-available/opentree
     ${SSH} "$ADMIN@$OPENTREE_HOST" \
-      sudo cp -p "~$OT_USER/setup/apache-config-shared" /etc/apache2/sites-available/opentree-config-shared
+      sudo cp -p "~$OT_USER/setup/apache-config-shared" /etc/apache2/opentree-config-shared
     echo "Restarting apache httpd..."
     ${SSH} "$ADMIN@$OPENTREE_HOST" sudo apache2ctl graceful
 }
