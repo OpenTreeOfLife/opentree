@@ -38,7 +38,7 @@
     WSGIDaemonProcess web2py user=opentree group=opentree display-name=%{GROUP}
 
     # OPENTREE SHARED CONFIGURATION
-    Include /etc/apache2/sites-available/opentree-config-shared
+    Include /etc/apache2/opentree-config-shared
 
 </VirtualHost>
 
@@ -78,7 +78,7 @@
     BrowserMatch "MSIE [17-9]" ssl-unclean-shutdown
 
     # OPENTREE SHARED CONFIGURATION
-    Include /etc/apache2/sites-available/opentree-config-shared
+    Include /etc/apache2/opentree-config-shared
 
 </VirtualHost>
 </IfModule>
