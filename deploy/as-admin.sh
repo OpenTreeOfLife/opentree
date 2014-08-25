@@ -84,9 +84,13 @@ if [ ! -r /etc/apache2/mods-enabled/proxy_http.load ]; then
     sudo a2enmod proxy_http
 fi
 
-# Enable the apache ssl module
-# TODO: Should we check first for the presence of SSL cert and private keys?
-sudo a2enmod ssl
+# Enable the apache ssl module if SSL certs (and private keys?) are present;
+# otherwise disable ssl
+if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.crt ]; then
+    sudo a2enmod ssl
+else
+    sudo a2dismod ssl
+fi
 
 # ---------- UNZIP ----------
 # unzip is needed for unpacking web2py.  Somebody broke the 'which' program -
