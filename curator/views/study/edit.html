@@ -1046,21 +1046,23 @@ body {
                 </div>
 
                 <table class="table table-condensed table-hover"
-                    data-bind="visible: viewModel.filteredOTUs().pagedItems().length !== 0">
+                       data-bind="visible: viewModel.filteredOTUs().pagedItems().length !== 0">
                   <thead>
                     <tr>
-                        <th width="30%">Original label</th>
                       {{ if viewOrEdit == 'EDIT': }}
-                        <th width="5%">&nbsp;</th>
-                        <th width="30%">Modified for mapping</th>
-                        <th width="5%">&nbsp;</th>
+                        <th width="" colspan="2">Original name</th>
+                        <th width="30%" {{ if viewOrEdit == 'EDIT': }}colspan="2"{{pass}}>Modified for mapping</th>
+                        <th width="30%">Mapped to taxon</th>
+                        <th width="" style="text-align: right; position: relative;"><span style="position: absolute; top: -0.75em; right: 0; z-index: -1;">Map?</span><input type="checkbox" /></th>
+                      {{ else: }}
+                        <th width="" colspan="2">Original name</th>
+                        <th width="30%" colspan="2">Mapped to taxon</th>
                       {{ pass }}
-                        <th width="30%">Taxon label in OTT</th>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
                     <tr data-bind="if: true">
-                        <td data-bind="text: otu['^ot:originalLabel']">ORIGINAL?</td>
+                        <td data-bind="text: otu['^ot:originalLabel']">&nbsp;</td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted" title="Show this OTU in all trees"
                                      data-bind="click: showOTUInContext, css: viewModel.ticklers.OTU_MAPPING_HINTS">
@@ -1114,7 +1116,7 @@ body {
 {<em data-bind="text:proposedMapping(otu)"></em>}
 [<em data-bind="text:$.trim(otu['^ot:ottTaxonName'])"></em>]
 -->
-                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && !(proposedMapping(otu)) && !($.trim(otu['^ot:ottTaxonName'])) -->
+                          <!-- ko if: false && viewModel.ticklers.OTU_MAPPING_HINTS() && !(proposedMapping(otu)) && !($.trim(otu['^ot:ottTaxonName'])) -->
                             <button id="single-otu-mapping-button" 
                                     class="btn btn-small row-controls-ghosted pull-right" 
                                     data-bind="visible: !autoMappingInProgress(),
@@ -1167,6 +1169,11 @@ body {
                       {{ pass }}
                          <!-- /ko -->
                         </td>
+                      {{ if viewOrEdit == 'EDIT': }}
+                         <td style="text-align: right;">
+                             <input type="checkbox" />
+                         </td>
+                      {{ pass }}
                     </tr>
                   </tbody>
                 </table>
