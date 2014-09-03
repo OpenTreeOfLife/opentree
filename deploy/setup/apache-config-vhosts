@@ -38,7 +38,7 @@
     WSGIDaemonProcess web2py user=opentree group=opentree display-name=%{GROUP}
 
     # OPENTREE SHARED CONFIGURATION
-    Include /etc/apache2/sites-available/opentree-config-shared
+    Include /etc/apache2/opentree-config-shared
 
 </VirtualHost>
 
@@ -70,15 +70,8 @@
         SSLOptions +StdEnvVars
     </Directory>
 
-    #   SSL Protocol Adjustments:
-    BrowserMatch "MSIE [2-6]" \
-        nokeepalive ssl-unclean-shutdown \
-        downgrade-1.0 force-response-1.0
-    # MSIE 7 and newer should be able to use keepalive
-    BrowserMatch "MSIE [17-9]" ssl-unclean-shutdown
-
     # OPENTREE SHARED CONFIGURATION
-    Include /etc/apache2/sites-available/opentree-config-shared
+    Include /etc/apache2/opentree-config-shared
 
 </VirtualHost>
 </IfModule>
