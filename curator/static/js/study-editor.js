@@ -4263,7 +4263,7 @@ function getAttrsForMappingOption( optionData ) {
     }
     // for now, use standard colors that will still pop for color-blind users
     if (optionData.originalMatch.is_synonym) {
-        attrs.title = ('Synonym for '+ optionData.originalMatch.matched_name);
+        attrs.title = ('Matched on synonym '+ optionData.originalMatch.matched_name);
         attrs.class += ' badge-info';
     } else if (optionData.originalMatch.matched_name !== optionData.originalMatch.unique_name) {
         attrs.title = ('Taxon-name homonym');
