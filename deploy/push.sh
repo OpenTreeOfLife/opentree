@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 
 # push.sh -c {configfile} {command} {arg...}  - see README.md for documentation
 # The command is either a component to install, or an operation to
@@ -195,9 +195,11 @@ function restart_apache {
     if [ $DRYRUN = "yes" ]; then echo "[restarting apache]"; return; fi
     # The install scripts modify the apache config files, so do this last
     ${SSH} "$ADMIN@$OPENTREE_HOST" \
-      sudo cp -p "~$OT_USER/setup/apache-config-vhosts" /etc/apache2/sites-available/opentree
+      sudo cp -p "~$OT_USER/setup/apache-config-vhost" /etc/apache2/sites-available/opentree
     ${SSH} "$ADMIN@$OPENTREE_HOST" \
-      sudo cp -p "~$OT_USER/setup/apache-config-shared" /etc/apache2/sites-available/opentree-config-shared
+      sudo cp -p "~$OT_USER/setup/apache-config-vhost-ssl" /etc/apache2/sites-available/opentree-ssl
+    ${SSH} "$ADMIN@$OPENTREE_HOST" \
+      sudo cp -p "~$OT_USER/setup/apache-config-shared" /etc/apache2/opentree-config-shared
     echo "Restarting apache httpd..."
     ${SSH} "$ADMIN@$OPENTREE_HOST" sudo apache2ctl graceful
 }

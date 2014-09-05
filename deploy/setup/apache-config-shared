@@ -2,7 +2,7 @@
 # in apache2 as installed in ubuntu 12.04.
 #
 # Now that we're supporting both HTTP and HTTPS, this file contains all the
-# shared configuration from both VirtualHosts on 'apache-config-vhosts'. See
+# shared configuration for VirtualHosts in 'apache-config-vhost' and 'apache-config-vhost-ssl'. See
 # http://serverfault.com/questions/83669/apache2-with-ssl-do-i-have-to-copy-virtualhost-blocks
 #
 # This file should be periodically reviewed as apache versions advance and
@@ -14,7 +14,7 @@
 
     # See http://stackoverflow.com/questions/13216837/install-web2py-in-virtual-hosting
     # NOTE that we can only specify WSGIDaemonProcess once, so this has been
-    # retained in 'apache-config-vhosts', in the first VirtualHost section!
+    # retained in the main HTTP configuration 'apache-config-vhost'!
     #WSGIDaemonProcess web2py user=opentree group=opentree display-name=%{GROUP}
     WSGIProcessGroup web2py
     WSGIScriptAlias / /home/opentree/web2py/wsgihandler.py
