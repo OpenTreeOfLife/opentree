@@ -178,8 +178,8 @@ fi
 # web2py work, per instructions found on the web.  See
 # /etc/apache2/sites-available/default .
 # 
-# After adding a second VirtualHost for HTTPS, we moved all common
-# configuration to a second file '{apache|opentree}-config-shared', which is
+# After adding a second VirtualHost file for HTTPS, we moved all common
+# configuration to a third file '{apache|opentree}-config-shared', which is
 # used in both vhosts via the Include directive.
 
 # The purpose here (of clobbering the default vhost) is to avoid
@@ -190,6 +190,14 @@ fi
 sudo rm -f /etc/apache2/sites-enabled/000-default
 (cd /etc/apache2/sites-enabled; \
  sudo ln -sf ../sites-available/opentree ./000-opentree)
+
+# Enable the HTTPS site only if our SSL certs are found; else disable it
+if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.crt ]; then
+    (cd /etc/apache2/sites-enabled; \
+     sudo ln -sf ../sites-available/opentree-ssl ./001-opentree-ssl)
+else
+     rm -f /etc/apache2/sites-enabled/001-opentree-ssl
+fi
 
 # ---------- UNPRIVILEGED USER ----------
 
