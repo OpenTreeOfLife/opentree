@@ -7,6 +7,6 @@ Once you see a list of possible matches, click the "key" link to see a popup exp
 
 Back in the synth-tree viewer, you can confirm the presence of working taxon search (context list appears) on the [Contact page.](http://devtree.opentreeoflife.org/contact) 
  
-Other changes (to visualization and resource downloads) would appear on **files.opentreeoflife.org**, but this is not part of our usual dev deployment so I suppose these won't be available for review.
+Other changes (to visualization and resource downloads) should be available for review on **files.opentreeoflife.org**, since these are generally deployed immediately from the local repo, by the person who made the changes.
 
 --
