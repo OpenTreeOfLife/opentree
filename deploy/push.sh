@@ -94,6 +94,7 @@ if [ ! -r $OPENTREE_IDENTITY ]; then err "$OPENTREE_IDENTITY not found"; fi
 
 [ "x$TREEMACHINE_BASE_URL" != x ] || TREEMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/treemachine
 [ "x$TAXOMACHINE_BASE_URL" != x ] || TAXOMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/taxomachine
+# Extraneous http:// is needed for now, but should get phased out
 [ "x$OTI_BASE_URL" != x ] || OTI_BASE_URL=http://$OPENTREE_NEO4J_HOST/oti
 [ "x$OPENTREE_API_BASE_URL" != x ] || OPENTREE_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/api/v1
 
@@ -129,7 +130,7 @@ function docommand {
             push_opentree
 	    restart_apache=yes
 	    ;;
-	api  | push-api | push_api)
+	phylesystem | api | push-api | push_api)
 	    # Does this work without a prior push_opentree? ... maybe not.
             push_api; restart_apache
 	    ;;
