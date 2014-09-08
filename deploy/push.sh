@@ -94,6 +94,7 @@ if [ ! -r $OPENTREE_IDENTITY ]; then err "$OPENTREE_IDENTITY not found"; fi
 
 [ "x$TREEMACHINE_BASE_URL" != x ] || TREEMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/treemachine
 [ "x$TAXOMACHINE_BASE_URL" != x ] || TAXOMACHINE_BASE_URL=$OPENTREE_NEO4J_HOST/taxomachine
+# Extraneous http:// is needed for now, but should get phased out
 [ "x$OTI_BASE_URL" != x ] || OTI_BASE_URL=http://$OPENTREE_NEO4J_HOST/oti
 [ "x$OPENTREE_API_BASE_URL" != x ] || OPENTREE_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/api/v1
 
@@ -125,13 +126,14 @@ function docommand {
     shift
     case $command in
 	# Components
-	opentree  | push-web2py)
+	opentree)
             push_opentree
 	    restart_apache=yes
 	    ;;
-	api  | push-api | push_api)
-	    # Does this work without a prior push_opentree? ... maybe not.
-            push_api; restart_apache
+	phylesystem-api | api)
+ 	    # 'api' option is for backward compatibility
+            push_phylesystem_api
+	    restart_apache=yes
 	    ;;
 	oti)
             push_neo4j oti
@@ -161,7 +163,7 @@ function docommand {
 	    install_files
 	    ;;
 	apache)
-	    restart_apache
+	    restart_apache=yes
     	    ;;
 	echo)
 	    # Test ability to do remote commands inline...
@@ -243,7 +245,7 @@ function push_bot_identity {
     fi
 }
 
-function push_api {
+function push_phylesystem_api {
     if [ $DRYRUN = "yes" ]; then echo "[api]"; return; fi
 
     push_bot_identity
