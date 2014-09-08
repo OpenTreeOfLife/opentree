@@ -126,13 +126,14 @@ function docommand {
     shift
     case $command in
 	# Components
-	opentree  | push-web2py)
+	opentree)
             push_opentree
 	    restart_apache=yes
 	    ;;
-	phylesystem | api | push-api | push_api)
-	    # Does this work without a prior push_opentree? ... maybe not.
-            push_api; restart_apache
+	phylesystem-api | api)
+ 	    # 'api' option is for backward compatibility
+            push_phylesystem_api
+	    restart_apache=yes
 	    ;;
 	oti)
             push_neo4j oti
@@ -162,7 +163,7 @@ function docommand {
 	    install_files
 	    ;;
 	apache)
-	    restart_apache
+	    restart_apache=yes
     	    ;;
 	echo)
 	    # Test ability to do remote commands inline...
@@ -244,7 +245,7 @@ function push_bot_identity {
     fi
 }
 
-function push_api {
+function push_phylesystem_api {
     if [ $DRYRUN = "yes" ]; then echo "[api]"; return; fi
 
     push_bot_identity
