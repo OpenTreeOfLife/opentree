@@ -89,7 +89,7 @@ class builder:
     
     doc_preamble_template = """**Warning: this is a draft version undergoing heavy revision on the week of September 8, 2014**
 
-This documentation describes version 2.0 of the Open Tree of Life APIs. There is also documentation for [version 1.0](https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs-V1), which is still active but may be deprecated in the future.  
+This documentation describes version 2.0 of the Open Tree of Life APIs. There is also documentation for [version 1.0](https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs-V1), which is still active but is deprecated and will eventually be retired.  
 
 The Open Tree of Life APIs include services to access the following types of data:
 
