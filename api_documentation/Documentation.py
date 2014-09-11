@@ -1,4 +1,4 @@
-import pycurl, json
+import pycurl, json, subprocess
 from StringIO import StringIO
 
 class builder:
@@ -45,6 +45,15 @@ class builder:
             else:
                 p["style_modifier"] = "**"
                 required_keys.append(name)
+
+        # get the results of the example call if possible
+        e = method_info["example_command"].replace("\\","").replace("\n","")
+        if e is not None and len(e) > 0:
+            r = subprocess.Popen(e.split(),stdout=subprocess.PIPE)
+            res = r.communicate()[0]
+            if len(res) > 1000:
+                res = res[0:450] + "\n\n### snipped\n\n" + res[-450:-1]
+            method_info["example_result"] = res
 
         # now print the preamble
         markdown.write(self.method_preamble_template.format(**method_info))
@@ -125,12 +134,13 @@ If you have questions, or have a problem with any of these methods, please leave
     method_parameter_template = """{style_modifier}```{name}``` : {type}{style_modifier}<br/>
 {description}\n\n"""
 
-    method_example_template = """*Example:*
+    method_example_template = """*Example command:*
 
 ```bash
 $ {example_command}
 ```
-    
+
+*Example result:*    
 ```json
 {example_result}
 ```\n\n"""

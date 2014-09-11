@@ -1,7 +1,7 @@
 anchor_name = "taxonomy"
 title = "Taxonomy"
 short_description = "the opentree taxonomy (OTT), which is a synthesis of different input taxonomies"
-long_description = "Methods for accessing information about the current Open Tree of Life taxonomy. These methods require Open Tree of Life Taxonomy identifiers (ott ids), which can be determined using the [tnrs][#tnrs] to match against taxon names."
+long_description = "Methods for accessing information about the current Open Tree of Life taxonomy. These methods require Open Tree of Life Taxonomy identifiers (ott ids), which can be determined using the [tnrs](#tnrs) to match against taxon names."
 
 methods_list = []
 
@@ -13,7 +13,7 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/taxonomy/about",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/about",
-    "example_command" : "curl -X POST http://devapi.opentreeoflife.org/v1/taxonomy/about'",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/taxonomy/about""",
     "example_result" : "",
 })
 
@@ -25,7 +25,7 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/taxonomy/lica",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/lica",
-    "example_command" : "curl -X POST http://devapi.opentreeoflife.org/v1/taxonomy/lica -H  \\\n'content-type:application/json' -d '{\"ott_ids\":[515698,590452,409712,643717]}'",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/taxonomy/lica \\\n-H 'content-type:application/json' -d \\\n'{"ott_ids":[515698,590452,409712,643717]}'""",
     "example_result" : "",
 })
 
@@ -37,7 +37,7 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/taxonomy/subtree",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/subtree",
-    "example_command" : "curl -X POST http://devapi.opentreeoflife.org/v1/taxonomy/subtree -H 'Content-type:application/json' \\\n -d '{\"ott_id\":515698}'",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/taxonomy/subtree \\\n-H 'Content-type:application/json' -d '{"ott_id":515698}'""",
     "example_result" : "",
 })
 
@@ -49,6 +49,6 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/taxonomy/taxon",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/taxon",
-    "example_command" : "curl -X POST http://devapi.opentreeoflife.org/v1/taxonomy/taxon -H  \\\n'content-type:application/json' -d '{\"ott_id\":515698}'",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/taxonomy/taxon \\\n-H 'content-type:application/json' -d '{"ott_id":515698}'""",
     "example_result" : "",
 })

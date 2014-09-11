@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from Documentation import builder
 import graph, studies, taxonomy, tnrs, tree_of_life
 

@@ -13,7 +13,7 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/studies/find_studies",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/oti/ext/studies/graphdb/find_studies",
-    "example_command" : "",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/studies/find_studies \\\n-H 'Content-type: application/json' -d \\\n'{"property":"ot:studyId","value":"pg_719","verbose":true}'""",
     "example_result" : "",
 })
 
@@ -25,7 +25,7 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/studies/find_trees",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/oti/ext/studies/graphdb/find_trees",
-    "example_command" : "",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/studies/find_trees \\\n-H 'Content-type: application/json' -d \\\n'{"property":"ot:ottTaxonName","value":"Garcinia"}'""",
     "example_result" : "",
 })
 
@@ -37,7 +37,7 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/studies/properties",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/oti/ext/studies/graphdb/properties",
-    "example_command" : "",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/studies/properties""",
     "example_result" : "",
 })
 
