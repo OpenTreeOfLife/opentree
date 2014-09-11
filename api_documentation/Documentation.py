@@ -47,7 +47,7 @@ class builder:
                 required_keys.append(name)
 
         # get the results of the example call if possible
-        e = method_info["example_command"].replace("\\","").replace("\n","")
+        e = method_info["example_command"].replace("\\\n","")
         if e is not None and len(e) > 0:
             r = subprocess.Popen(e.split(),stdout=subprocess.PIPE)
             res = r.communicate()[0]
