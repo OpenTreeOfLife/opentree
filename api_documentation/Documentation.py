@@ -53,8 +53,8 @@ class builder:
         if e is not None and len(e) > 0:
             r = subprocess.Popen(e,stdout=subprocess.PIPE)
             res = r.communicate()[0]
-            if len(res) > max_response_len:
-                res = res[0:(max_response_len/2)-50] + "\n\n### snipped\n\n" + res[-((max_response_len/2)-50):-1]
+            if len(res) > self.max_response_len:
+                res = res[0:(self.max_response_len/2)-50] + "\n\n### snipped\n\n" + res[-((self.max_response_len/2)-50):-1]
             method_info["example_result"] = res
 
         # now print the preamble
