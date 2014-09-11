@@ -48,11 +48,11 @@ methods_list.append({
     "short_description" : "Return a study.",
     "http_verb" : "GET",
     "relative_url" : "/study/{STUDY_ID}",
-    "example_command" : "",
+    "example_command" : "curl http://devapi.opentreeoflife.org/v2/study/pg_1144",
     "example_result" : "",
     "long_description" : """Given a studyID, return a JSON object. The 'data' property of that
 object will hold the [NexSON](http://purl.org/opentree/nexson) of that study. 
-More detailed documentation of the possible arguments and return values are at [phylesystem-api/docs/README.md](https://github.com/OpenTreeOfLife/phylesystem-api/blob/master/docs/README.md#fetch-a-study)""",
+More detailed documentation of the possible arguments and return values (including as NeXML, NEXUS, or newick) are at [phylesystem-api/docs/README.md](https://github.com/OpenTreeOfLife/phylesystem-api/blob/master/docs/README.md#fetch-a-study)""",
     "parameters" :[]
 })
 
@@ -63,21 +63,8 @@ methods_list.append({
     "short_description" : "Return a tree from within a study.",
     "http_verb" : "GET",
     "relative_url" : "/study/{STUDY_ID}/tree/{TREE_ID}",
-    "example_command" : "",
+    "example_command" : "curl http://devapi.opentreeoflife.org/v2/study/pg_1144/tree/tree2324",
     "example_result" : "",
-    "long_description" : "",
-    "parameters" : []
-})
-
-# supporting_file
-methods_list.append({
-    "anchor_name" : "supporting_file",
-    "method_name" : "supporting file",
-    "short_description" : "Return a supporting file attached to a study.",
-    "http_verb" : "GET",
-    "relative_url" : "/study/{STUDY_ID}/file/{FILE_ID}",
-    "example_command" : "",
-    "example_result" : "",
-    "long_description" : "",
+    "long_description" : """Given a studyID and the ID of one of its trees, return a JSON object for the tree. More detailed documentation of the possible arguments and return values (including as NEXUS or newick) are at [phylesystem-api/docs/README.md](https://github.com/OpenTreeOfLife/phylesystem-api/blob/docv2/docs/README.md#fine-grained-access-via-get)""",
     "parameters" : []
 })
