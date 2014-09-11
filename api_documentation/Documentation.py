@@ -26,7 +26,7 @@ class builder:
         # process information from the neo4j web service info, if any        
         if "neo4j_service_url" in method_info and method_info["neo4j_service_url"] is not None:
             self._update_json_storage(method_info["neo4j_service_url"])
-            print self.json_storage.getvalue()
+#            print self.json_storage.getvalue()
             service_info = json.loads(self.json_storage.getvalue())
             method_info["long_description"] = service_info["description"]
     
@@ -53,8 +53,8 @@ class builder:
         if e is not None and len(e) > 0:
             r = subprocess.Popen(e,stdout=subprocess.PIPE)
             res = r.communicate()[0]
-            if len(res) > self.max_response_len:
-                res = res[0:(self.max_response_len/2)-50] + "\n\n### snipped\n\n" + res[-((self.max_response_len/2)-50):-1]
+#            if len(res) > self.max_response_len:
+#                res = res[0:(self.max_response_len/2)-50] + "\n\n### snipped\n\n" + res[-((self.max_response_len/2)-50):-1]
             method_info["example_result"] = res
 
         # now print the preamble
