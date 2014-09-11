@@ -80,8 +80,6 @@
       ProxyPassReverse  http://localhost:7478/db/data/ext/studies/graphdb
     </Location>
 
-    LogLevel debug
-
     # phylesystem-api is provided via web2py
     RewriteEngine on
     RewriteRule ^/v2/study/(.*) /phylesystem/v1/study/$1 [PT]
