@@ -60,8 +60,8 @@
     <Location /v2/tnrs>
       Order allow,deny
       Allow from all
-      ProxyPass  http://localhost:7476/db/data/ext/tnrs/graphdb
-      ProxyPassReverse  http://localhost:7476/db/data/ext/tnrs/graphdb
+      ProxyPass  http://localhost:7476/db/data/ext/tnrs_v2/graphdb
+      ProxyPassReverse  http://localhost:7476/db/data/ext/tnrs_v2/graphdb
     </Location>
 
     <Location /v2/taxonomy>
