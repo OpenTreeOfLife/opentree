@@ -12,8 +12,8 @@ methods_list.append({
     "short_description" : "Return a list of studies that match a given property. If no property provided, returns a list of all studies.",
     "http_verb" : "POST",
     "relative_url" : "/studies/find_studies",
-    "neo4j_service_url" : "http://devapi.opentreeoflife.org/oti/ext/studies/graphdb/find_studies",
-    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/studies/find_studies \\\n-H 'Content-type: application/json' -d \\\n'{"property":"ot:studyId","value":"pg_719","verbose":true}'""",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/studies/find_studies",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/studies/find_studies \\\n-H "content-type:application/json" -d \\\n'{"property":"ot:studyId","value":"pg_719","verbose":true}'""",
     "example_result" : "",
 })
 
@@ -24,8 +24,8 @@ methods_list.append({
     "short_description" : "Return a list of trees (and the studies that contain them) that match a given property.",
     "http_verb" : "POST",
     "relative_url" : "/studies/find_trees",
-    "neo4j_service_url" : "http://devapi.opentreeoflife.org/oti/ext/studies/graphdb/find_trees",
-    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/studies/find_trees \\\n-H 'Content-type: application/json' -d \\\n'{"property":"ot:ottTaxonName","value":"Garcinia"}'""",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/studies/find_trees",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/studies/find_trees \\\n-H "content-type:application/json" -d \\\n'{"property":"ot:ottTaxonName","value":"Garcinia"}'""",
     "example_result" : "",
 })
 
@@ -36,7 +36,7 @@ methods_list.append({
     "short_description" : "Return a list of properties that can be used to search studies and trees.",
     "http_verb" : "POST",
     "relative_url" : "/studies/properties",
-    "neo4j_service_url" : "http://devapi.opentreeoflife.org/oti/ext/studies/graphdb/properties",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/studies/properties",
     "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/studies/properties""",
     "example_result" : "",
 })

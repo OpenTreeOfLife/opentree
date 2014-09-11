@@ -16,7 +16,7 @@ methods_list.append({
     "short_description" : "Return information about the current draft tree itself, including a list of source trees and the taxonomy used to build it.",
     "http_verb" : "POST",
     "relative_url" : "/tree_of_life/about",
-#    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/tree_of_life/graphdb/about",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tree_of_life/about",
     "example_command" : "",
     "example_result" : "",
 })
@@ -28,7 +28,7 @@ methods_list.append({
     "short_description" : "Return the most recent common ancestor of a set of nodes in the draft tree.",
     "http_verb" : "POST",
     "relative_url" : "/tree_of_life/mrca",
-#    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/tree_of_life/graphdb/mrca",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tree_of_life/mrca",
     "example_command" : "",
     "example_result" : "",
 })
@@ -40,7 +40,7 @@ methods_list.append({
     "short_description" : "Return the complete subtree below a given node.",
     "http_verb" : "POST",
     "relative_url" : "/tree_of_life/subtree",
-#    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/tree_of_life/graphdb/subtree",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tree_of_life/subtree",
     "example_command" : "",
     "example_result" : "",
 })
@@ -52,7 +52,7 @@ methods_list.append({
     "short_description" : "Return the induced subtree on the draft tree that relates a set of nodes.",
     "http_verb" : "POST",
     "relative_url" : "/tree_of_life/induced_subtree",
-#    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/tree_of_life/graphdb/induced_subtree",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tree_of_life/induced_subtree",
     "example_command" : "",
     "example_result" : "",
 })

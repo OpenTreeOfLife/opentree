@@ -1,4 +1,4 @@
-import pycurl, json, subprocess
+import pycurl, json, shlex, subprocess
 from StringIO import StringIO
 
 class builder:
@@ -47,9 +47,9 @@ class builder:
                 required_keys.append(name)
 
         # get the results of the example call if possible
-        e = method_info["example_command"].replace("\\\n","")
+        e = shlex.split(method_info["example_command"].replace("\\\n",""))
         if e is not None and len(e) > 0:
-            r = subprocess.Popen(e.split(),stdout=subprocess.PIPE)
+            r = subprocess.Popen(e,stdout=subprocess.PIPE)
             res = r.communicate()[0]
             if len(res) > 1000:
                 res = res[0:450] + "\n\n### snipped\n\n" + res[-450:-1]
