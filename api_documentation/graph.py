@@ -12,7 +12,7 @@ methods_list.append({
     "short_description" : "Get information about the graph of life itself.",
     "http_verb" : "POST",
     "relative_url" : "/graph/about",
-#    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/graph/grapdb/about",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/graph/grapdb/about",
     "example_command" : "",
     "example_result" : "",
 })
@@ -24,7 +24,7 @@ methods_list.append({
     "short_description" : "Return a source tree (including metadata) from the graph of life.",
     "http_verb" : "POST",
     "relative_url" : "/graph/source_tree",
-#    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/graph/grapdb/node_info",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/graph/grapdb/node_info",
     "example_command" : "",
     "example_result" : "",
 })
@@ -36,7 +36,7 @@ methods_list.append({
     "short_description" : "Get information about a node in the graph of life.",
     "http_verb" : "POST",
     "relative_url" : "/graph/node_info",
-#    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/graph/grapdb/node_info",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/graph/grapdb/node_info",
     "example_command" : "",
     "example_result" : "",
 })
