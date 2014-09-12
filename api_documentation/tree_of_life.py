@@ -17,7 +17,7 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/tree_of_life/about",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tree_of_life/about",
-    "example_command" : "",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/tree_of_life/about""",
     "example_result" : "",
 })
 
@@ -29,7 +29,7 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/tree_of_life/mrca",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tree_of_life/mrca",
-    "example_command" : "",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/tree_of_life/mrca -H "content-type:application/json" -d '{"ott_ids":[412129, 536234]}'""",
     "example_result" : "",
 })
 
@@ -41,7 +41,7 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/tree_of_life/subtree",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tree_of_life/subtree",
-    "example_command" : "",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/tree_of_life/subtree -H "content-type:application/json" -d '{"ott_id":3599390}'""",
     "example_result" : "",
 })
 
@@ -53,6 +53,6 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/tree_of_life/induced_subtree",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tree_of_life/induced_subtree",
-    "example_command" : "",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/tree_of_life/induced_subtree -H "content-type:application/json" -d '{"ott_ids":[292466, 501678, 267845, 666104, 316878, 102710, 176458]}'""",
     "example_result" : "",
 })
