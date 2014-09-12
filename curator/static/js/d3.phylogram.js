@@ -460,7 +460,7 @@ if (!d3) { throw "d3 wasn't included!"};
       .append("svg:g")
         .attr("transform", "translate(" + r + "," + r + ")");
         
-    var tree = d3.layout.tree()
+    var tree = d3.layout.cluster()
       .size([360, r - labelWidth])
       .sort(function(node) { return node.children ? node.children.length : -1; })
       .children(options.children || function(node) {
