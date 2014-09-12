@@ -12,8 +12,8 @@ methods_list.append({
     "short_description" : "Returns a list of potential matches to known taxonomic names.",
     "http_verb" : "POST",
     "relative_url" : "/tnrs/match_names",
-    "neo4j_service_url" : "http://devapi.opentreeoflife.org/taxomachine/ext/tnrs_v2/graphdb/match_names",
-    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/tnrs/match_names \\\n-H 'content-type:application/json' -d \\\n'{"names":["Aster","Symphyotrichum","Erigeron","Barnadesia"]}'""",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tnrs/match_names",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/tnrs/match_names \\\n-H "content-type:application/json" -d \\\n'{"names":["Aster","Symphyotrichum","Erigeron","Barnadesia"]}'""",
     "example_result" : "",
 })
 
@@ -24,8 +24,8 @@ methods_list.append({
     "short_description" : "Given a partial (from the beginning) to complete taxonomic name, return a list of potential matches.",
     "http_verb" : "POST",
     "relative_url" : "/tnrs/autocomplete_name",
-    "neo4j_service_url" : "http://devapi.opentreeoflife.org/taxomachine/ext/tnrs_v2/graphdb/autocomplete_name",
-    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/autocomplete_name \\\n-H "content-type:application/json" -d \\\n'{"name":"Endoxyla","context_name":"All life"}'""",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tnrs/autocomplete_name",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/tnrs/autocomplete_name \\\n-H "content-type:application/json" -d \\\n'{"name":"Endoxyla","context_name":"All life"}'""",
     "example_result" : "",
 })
 
@@ -36,8 +36,8 @@ methods_list.append({
     "short_description" : "Return a list of pre-defined taxonomic contexts (i.e. clades), which can be used to limit the scope of tnrs queries.",
     "http_verb" : "POST",
     "relative_url" : "/tnrs/contexts",
-    "neo4j_service_url" : "http://devapi.opentreeoflife.org/taxomachine/ext/tnrs_v2/graphdb/contexts",
-    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/tnrs/contexts""",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tnrs/contexts",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/tnrs/contexts""",
     "example_result" : "",
 })
 
@@ -48,7 +48,7 @@ methods_list.append({
     "short_description" : "Return a [taxonomic context](#contexts) given a list of taxonomic names.",
     "http_verb" : "POST",
     "relative_url" : "/tnrs/infer_context",
-    "neo4j_service_url" : "http://devapi.opentreeoflife.org/taxomachine/ext/tnrs_v2/graphdb/infer_context",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tnrs/infer_context",
     "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/tnrs/infer_context \\\n-H "content-type:application/json" -d \\\n'{"names":["Pan","Homo","Mus","Bufo","Drosophila"]}'""",
     "example_result" : "",
 })

@@ -12,8 +12,8 @@ methods_list.append({
     "short_description" : "Get information about the graph of life itself.",
     "http_verb" : "POST",
     "relative_url" : "/graph/about",
-#    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/graph/grapdb/about",
-    "example_command" : "",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/graph/about",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/graph/about""",
     "example_result" : "",
 })
 
@@ -24,8 +24,8 @@ methods_list.append({
     "short_description" : "Return a source tree (including metadata) from the graph of life.",
     "http_verb" : "POST",
     "relative_url" : "/graph/source_tree",
-#    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/graph/grapdb/node_info",
-    "example_command" : "",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/graph/node_info",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/graph/source_tree -H "content-type:application/json" -d '{"tree_id":"pg_420_522_96e3dcc7d18b5ba7b96b888ef18fdf7c14c088fa"}'""",
     "example_result" : "",
 })
 
@@ -36,7 +36,7 @@ methods_list.append({
     "short_description" : "Get information about a node in the graph of life.",
     "http_verb" : "POST",
     "relative_url" : "/graph/node_info",
-#    "neo4j_service_url" : "http://devapi.opentreeoflife.org/treemachine/ext/graph/grapdb/node_info",
-    "example_command" : "",
+    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/graph/node_info",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/graph/node_info -H "content-type:application/json" -d '{"node_id":3019459}'""",
     "example_result" : "",
 })

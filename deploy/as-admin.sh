@@ -84,12 +84,14 @@ if [ ! -r /etc/apache2/mods-enabled/proxy_http.load ]; then
     sudo a2enmod proxy_http
 fi
 
-# Enable the apache ssl module if SSL certs (and private keys?) are present;
-# otherwise disable ssl
-if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.crt ]; then
+# Rewrite module
+if [ ! -r /etc/apache2/mods-enabled/rewrite.load ]; then
+    sudo a2enmod rewrite
+fi
+
+# Enable the apache ssl module.  Doesn't get used unless a cert is present
+if [ ! -r /etc/apache2/mods-enabled/ssl.load ]; then
     sudo a2enmod ssl
-else
-    sudo a2dismod ssl
 fi
 
 # ---------- UNZIP ----------

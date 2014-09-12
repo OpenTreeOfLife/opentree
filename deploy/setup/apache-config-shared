@@ -37,6 +37,56 @@
       Allow from all
     </Directory>
 
+    # See https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs
+
+    # 7474 = treemachine neo4j
+
+    <Location /v2/tree_of_life>
+      Order allow,deny
+      Allow from all
+      ProxyPass  http://localhost:7474/db/data/ext/tree_of_life/graphdb
+      ProxyPassReverse  http://localhost:7474/db/data/ext/tree_of_life/graphdb
+    </Location>
+
+    <Location /v2/graph>
+      Order allow,deny
+      Allow from all
+      ProxyPass  http://localhost:7474/db/data/ext/graph/graphdb
+      ProxyPassReverse  http://localhost:7474/db/data/ext/graph/graphdb
+    </Location>
+
+    # 7476 = taxomachine neo4j
+
+    <Location /v2/tnrs>
+      Order allow,deny
+      Allow from all
+      ProxyPass  http://localhost:7476/db/data/ext/tnrs_v2/graphdb
+      ProxyPassReverse  http://localhost:7476/db/data/ext/tnrs_v2/graphdb
+    </Location>
+
+    <Location /v2/taxonomy>
+      Order allow,deny
+      Allow from all
+      ProxyPass  http://localhost:7476/db/data/ext/taxonomy/graphdb
+      ProxyPassReverse  http://localhost:7476/db/data/ext/taxonomy/graphdb
+    </Location>
+
+    # 7478 = oti neo4j
+
+    <Location /v2/studies>
+      Order allow,deny
+      Allow from all
+      ProxyPass  http://localhost:7478/db/data/ext/studies/graphdb
+      ProxyPassReverse  http://localhost:7478/db/data/ext/studies/graphdb
+    </Location>
+
+    # phylesystem-api is provided via web2py
+    RewriteEngine on
+    RewriteRule ^/v2/study/(.*) /phylesystem/v1/study/$1 [PT]
+
+    # ------------------------------------------------------------
+    # v1 API retained for transition period (ending Nov 2014 ?)
+
     <Location /treemachine/v1>
       Order allow,deny
       Allow from all
