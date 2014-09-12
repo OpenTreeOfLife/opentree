@@ -131,7 +131,8 @@ If you have questions, or have a problem with any of these methods, please leave
 
 {long_description}
 
-##### Parameters:\n\n"""
+##### Parameters:\n
+*Parameters with bold type definitions are required.*\n\n"""
 
     method_parameter_template = """{style_modifier}```{name}``` : {type}{style_modifier}<br/>
 {description}\n\n"""

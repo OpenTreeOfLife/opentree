@@ -13,7 +13,7 @@ methods_list = []
 methods_list.append({
     "anchor_name" : "about_tree",
     "method_name" : "about (tree of life)",
-    "short_description" : "Return information about the current draft tree itself, including a list of source trees and the taxonomy used to build it.",
+    "short_description" : "Return information about the current draft tree itself.",
     "http_verb" : "POST",
     "relative_url" : "/tree_of_life/about",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tree_of_life/about",
