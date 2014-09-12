@@ -205,7 +205,7 @@ def to_nexson():
     ##pdb.set_trace()
     orig_args = {}
     is_upload = False
-    # several of our NexSON use "uploadid" instead of "uploadId"
+    # several of our NexSON use "uploadid" instead of "uploadId" so we should accept either
     if ('uploadId' in request.vars) or ('uploadid' in request.vars):
         try:
             if ('uploadId' in request.vars):
