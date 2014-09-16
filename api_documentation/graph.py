@@ -25,7 +25,7 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/graph/source_tree",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/graph/source_tree",
-    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/graph/source_tree -H "content-type:application/json" -d '{"tree_id":"pg_420_522_a2c48df995ddc9fd208986c3d4225112550c8452"}'""",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/graph/source_tree -H "content-type:applicatin/json" -d '{"study_id":"pg_420", "tree_id":"522", "git_sha":"a2c48df995ddc9fd208986c3d4225112550c8452"}'""",
     "example_result" : "",
 })
 
