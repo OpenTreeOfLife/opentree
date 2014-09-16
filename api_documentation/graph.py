@@ -37,6 +37,6 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/graph/node_info",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/graph/node_info",
-    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/graph/node_info -H "content-type:application/json" -d '{"node_id":3019459}'""",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/graph/node_info -H "content-type:application/json" -d '{"ott_id":810751}'""",
     "example_result" : "",
 })
