@@ -17,7 +17,8 @@ methods_list.append({
     "http_verb" : "POST",
     "relative_url" : "/tree_of_life/about",
     "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/tree_of_life/about",
-    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/tree_of_life/about""",
+    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/tree_of_life/about -H "content-type:application/json"  -d '{"study_list":false}'
+""",
     "example_result" : "",
 })
 
