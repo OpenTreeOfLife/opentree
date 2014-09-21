@@ -12,8 +12,8 @@ methods_list.append({
     "short_description" : "Get information about the graph of life itself.",
     "http_verb" : "POST",
     "relative_url" : "/graph/about",
-    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/graph/about",
-    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/graph/about""",
+    "neo4j_service_url" : "http://api.opentreeoflife.org/v2/graph/about",
+    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/graph/about""",
     "example_result" : "",
 })
 
@@ -24,8 +24,8 @@ methods_list.append({
     "short_description" : "Return a source tree (including metadata) from the graph of life.",
     "http_verb" : "POST",
     "relative_url" : "/graph/source_tree",
-    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/graph/source_tree",
-    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/graph/source_tree -H "content-type:applicatin/json" -d '{"study_id":"pg_420", "tree_id":"522", "git_sha":"a2c48df995ddc9fd208986c3d4225112550c8452"}'""",
+    "neo4j_service_url" : "http://api.opentreeoflife.org/v2/graph/source_tree",
+    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/graph/source_tree -H "content-type:applicatin/json" -d '{"study_id":"pg_420", "tree_id":"522", "git_sha":"a2c48df995ddc9fd208986c3d4225112550c8452"}'""",
     "example_result" : "",
 })
 
@@ -36,7 +36,7 @@ methods_list.append({
     "short_description" : "Get information about a node in the graph of life.",
     "http_verb" : "POST",
     "relative_url" : "/graph/node_info",
-    "neo4j_service_url" : "http://devapi.opentreeoflife.org/v2/graph/node_info",
-    "example_command" : """curl -X POST http://devapi.opentreeoflife.org/v2/graph/node_info -H "content-type:application/json" -d '{"ott_id":810751}'""",
+    "neo4j_service_url" : "http://api.opentreeoflife.org/v2/graph/node_info",
+    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/graph/node_info -H "content-type:application/json" -d '{"ott_id":810751}'""",
     "example_result" : "",
 })
