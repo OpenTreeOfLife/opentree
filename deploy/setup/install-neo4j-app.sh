@@ -75,16 +75,16 @@ function make_neo4j_instance {
         # Compilation takes about 4 minutes... ugh
         (cd repo/$APP; ./mvn_serverplugins.sh)
 
-	if false; then
+    if false; then
         # There was some question as to whether the above code worked.
-	    # I'm keeping the following replacement code for a while, just in case.
-	    # Stop any running server.  (The database may be empty at this point.)
-	    # N.B. Theo 'neo4j status' command returns a phrase like this (for a stopped instance):
-	    #    Neo4j Server is not running
-	    # ... or this (for a running instance):
-	    #    Neo4j Server is running at pid #####
-	    if [[ "`./neo4j-$APP/bin/neo4j status`" =~ "is running" ]]; then
-		./neo4j-$APP/bin/neo4j stop
+        # I'm keeping the following replacement code for a while, just in case.
+        # Stop any running server.  (The database may be empty at this point.)
+        # N.B. Theo 'neo4j status' command returns a phrase like this (for a stopped instance):
+        #    Neo4j Server is not running
+        # ... or this (for a running instance):
+        #    Neo4j Server is running at pid #####
+        if [[ "`./neo4j-$APP/bin/neo4j status`" =~ "is running" ]]; then
+        ./neo4j-$APP/bin/neo4j stop
             fi
         fi
 
@@ -97,8 +97,8 @@ function make_neo4j_instance {
         cat neo4j-$APP/conf/neo4j-server.properties | \
         sed s+7474+$APORT+ | \
         sed s+7473+$BPORT+ | \
-	sed s+org.neo4j.server.http.log.enabled=false+org.neo4j.server.http.log.enabled=true+ \
-	  > props.tmp
+    sed s+org.neo4j.server.http.log.enabled=false+org.neo4j.server.http.log.enabled=true+ \
+      > props.tmp
         mv props.tmp neo4j-$APP/conf/neo4j-server.properties
     fi
 
@@ -109,7 +109,7 @@ function make_neo4j_instance {
 }
 
 case $WHICH_APP in
-    oti) 	 make_neo4j_instance oti         7478 7477 ;;
+    oti)      make_neo4j_instance oti         7478 7477 ;;
     treemachine) make_neo4j_instance treemachine 7474 7473 ;;
     taxomachine) make_neo4j_instance taxomachine 7476 7475 ;;
 esac

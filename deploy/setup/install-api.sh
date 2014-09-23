@@ -90,7 +90,7 @@ pushd .
     # All the repos above are cloned via https, but we need to push via
     # ssh to use our deploy keys
     if ! grep "originssh" .git/config ; then
-	git remote add originssh git@github.com:OpenTreeOfLife/$OPENTREE_DOCSTORE.git
+    git remote add originssh git@github.com:OpenTreeOfLife/$OPENTREE_DOCSTORE.git
     fi
 popd
 
