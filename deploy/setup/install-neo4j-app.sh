@@ -4,6 +4,7 @@
 
 CONTROLLER=$1
 WHICH_APP=$2
+FORCE_COMPILE=$3
 
 # tbd: maybe allow a different branch for each repo
 
@@ -67,7 +68,7 @@ function make_neo4j_instance {
     fi
 
     # Get plugin from git repository
-    if git_refresh OpenTreeOfLife $APP || [ ! -r neo4j-$APP/plugins/$jar ]; then
+    if git_refresh OpenTreeOfLife $APP || [ ! -r neo4j-$APP/plugins/$jar ] || [ $FORCE_COMPILE = "yes" ]; then
     
         echo "attempting to recompile "$APP" plugins"
         # Create and install the plugins .jar file

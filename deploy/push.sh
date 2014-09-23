@@ -44,6 +44,7 @@ OPENTREE_DOCSTORE=phylesystem
 OPENTREE_GH_IDENTITY=opentree-gh.pem
 OPENTREE_COMPONENTS=most
 DRYRUN=no
+FORCE_COMPILE=no
 
 if [ x$CONTROLLER = x ]; then
     CONTROLLER=`whoami`
@@ -59,11 +60,15 @@ while [ $# -gt 0 ]; do
     shift
     if [ "x$flag" = "x-c" ]; then
 	# Config file overrides default parameter settings
-	configfile=$1
+	    configfile=$1
         source "$configfile"; shift
-	cp -pf $configfile setup/CONFIG    # Will get copied during 'sync'
+	    cp -pf $configfile setup/CONFIG    # Will get copied during 'sync'
+    elif [ "x$flag" = "x-f" ]; then
+        #echo "Forcing recompile!"
+	    FORCE_COMPILE=yes;
     elif [ "$flag" = "--dry-run" ]; then
-	DRYRUN=yes
+        #echo "Dry run only!"
+	    DRYRUN=yes;
     # The following are all legacy; do not add cases to this 'while'.
     # Configuration should now be done in the config file.
     elif [ "x$flag" = "x-h" ]; then
@@ -190,7 +195,7 @@ function sync_system {
 
 function push_neo4j {
     if [ $DRYRUN = "yes" ]; then echo "[neo4j app: $1]"; return; fi
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-app.sh $CONTROLLER $1
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-app.sh $CONTROLLER $1 $FORCE_COMPILE
 }
 
 function restart_apache {
