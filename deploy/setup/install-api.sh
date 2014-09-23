@@ -90,7 +90,7 @@ pushd .
     # All the repos above are cloned via https, but we need to push via
     # ssh to use our deploy keys
     if ! grep "originssh" .git/config ; then
-    git remote add originssh git@github.com:OpenTreeOfLife/$OPENTREE_DOCSTORE.git
+        git remote add originssh git@github.com:OpenTreeOfLife/$OPENTREE_DOCSTORE.git
     fi
 popd
 
@@ -134,10 +134,10 @@ pushd .
     cd $OTHOME/repo/$WEBAPP/bin
     tokenfile=~/.ssh/OPENTREEAPI_OAUTH_TOKEN
     if [ -r $tokenfile ]; then
-    python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL $tokenfile
+        python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL $tokenfile
     else
-    echo "OPENTREEAPI_OAUTH_TOKEN not found (install-api.sh), prompting for manual handling of webhooks."
-    python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL
+        echo "OPENTREEAPI_OAUTH_TOKEN not found (install-api.sh), prompting for manual handling of webhooks."
+        python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL
     fi
 popd
 

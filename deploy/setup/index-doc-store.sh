@@ -21,7 +21,7 @@ git_refresh OpenTreeOfLife oti || true
 if false; then
     # Stop neo4j!
     if ./neo4j-$APP/bin/neo4j status; then
-    ./neo4j-$APP/bin/neo4j stop
+        ./neo4j-$APP/bin/neo4j stop
     fi
 
     # See https://github.com/OpenTreeOfLife/oti/issues/18

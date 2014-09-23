@@ -54,12 +54,12 @@ fi
 
 while [ $# -gt 0 ]; do
     if [ ${1:0:1} != - ]; then
-    break
+        break
     fi
     flag=$1
     shift
     if [ "x$flag" = "x-c" ]; then
-    # Config file overrides default parameter settings
+        # Config file overrides default parameter settings
         configfile=$1
         source "$configfile"; shift
         cp -pf $configfile setup/CONFIG    # Will get copied during 'sync'
@@ -72,17 +72,17 @@ while [ $# -gt 0 ]; do
     # The following are all legacy; do not add cases to this 'while'.
     # Configuration should now be done in the config file.
     elif [ "x$flag" = "x-h" ]; then
-    OPENTREE_HOST="$1"; shift
+        OPENTREE_HOST="$1"; shift
     elif [ "x$flag" = "x-p" ]; then
-    OPENTREE_PUBLIC_DOMAIN="$1"; shift
+        OPENTREE_PUBLIC_DOMAIN="$1"; shift
     elif [ "x$flag" = "x-u" ]; then
-    OPENTREE_ADMIN="$1"; shift
+        OPENTREE_ADMIN="$1"; shift
     elif [ "x$flag" = "x-i" ]; then
-    OPENTREE_IDENTITY="$1"; shift
+        OPENTREE_IDENTITY="$1"; shift
     elif [ "x$flag" = "x-n" ]; then
-    OPENTREE_NEO4J_HOST="$1"; shift
+        OPENTREE_NEO4J_HOST="$1"; shift
     else
-    err "Unrecognized flag: $flag"
+        err "Unrecognized flag: $flag"
     fi
 done
 
@@ -120,11 +120,11 @@ restart_apache=no
 function docommand {
 
     if [ $# -eq 0 ]; then
-    if [ $DRYRUN = yes ]; then echo "[no command]"; fi
-    for component in $OPENTREE_COMPONENTS; do
-        docommand $component
-    done
-    return
+        if [ $DRYRUN = yes ]; then echo "[no command]"; fi
+        for component in $OPENTREE_COMPONENTS; do
+            docommand $component
+        done
+        return
     fi
 
     command="$1"
@@ -259,19 +259,19 @@ function push_phylesystem_api {
     if [ "x$OPENTREE_GH_IDENTITY" = "x" ]; then
         echo "Warning: OPENTREE_GH_IDENTITY not specified"
     elif [ ! -r $OPENTREE_GH_IDENTITY ]; then
-    echo "Warning: $OPENTREE_GH_IDENTITY not found"
+        echo "Warning: $OPENTREE_GH_IDENTITY not found"
     else
-    rsync -p -e "${SSH}" "$OPENTREE_GH_IDENTITY" "$OT_USER@$OPENTREE_HOST":.ssh/opentree
-    ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
+        rsync -p -e "${SSH}" "$OPENTREE_GH_IDENTITY" "$OT_USER@$OPENTREE_HOST":.ssh/opentree
+        ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/opentree
     fi
 
     # Try to place an OAuth token for GitHub API by bot user 'opentreeapi'
     tokenfile=~/.ssh/opentree/OPENTREEAPI_OAUTH_TOKEN
     if [ -r $tokenfile ]; then
-    rsync -p -e "${SSH}" $tokenfile "$OT_USER@$OPENTREE_HOST":.ssh/OPENTREEAPI_OAUTH_TOKEN
-    ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/OPENTREEAPI_OAUTH_TOKEN
+        rsync -p -e "${SSH}" $tokenfile "$OT_USER@$OPENTREE_HOST":.ssh/OPENTREEAPI_OAUTH_TOKEN
+        ${SSH} "$OT_USER@$OPENTREE_HOST" chmod 600 .ssh/OPENTREEAPI_OAUTH_TOKEN
     else
-    echo "****************************\n  OAuth token file (${tokenfile}) not found!\n  Falling back to any existing token on the server, OR a prompt for manual creation of webhooks.\n****************************"
+        echo "****************************\n  OAuth token file (${tokenfile}) not found!\n  Falling back to any existing token on the server, OR a prompt for manual creation of webhooks.\n****************************"
     fi
 
     echo "Doc store is $OPENTREE_DOCSTORE"
@@ -290,11 +290,11 @@ function index {
 
 function push_db {
     if [ $DRYRUN = "yes" ]; then echo "[push_db]"; return; fi
-    # E.g. ./push.sh push-db localnewdb.db.tgz taxomachine
-    TARBALL=$1
-    APP=$2
+        # E.g. ./push.sh push-db localnewdb.db.tgz taxomachine
+        TARBALL=$1
+        APP=$2
     if [ x$APP = x -o x$TARBALL = x ]; then
-    err "Usage: $0 -c {configfile} push-db {tarball} {application}"
+        err "Usage: $0 -c {configfile} push-db {tarball} {application}"
     fi
     HEREBALL=downloads/$APP.db.tgz
     time rsync -vax -e "${SSH}" $TARBALL "$OT_USER@$OPENTREE_HOST":$HEREBALL
@@ -309,7 +309,7 @@ function install_db {
 
 function install_files {
     if [ x$FILES_HOST = x ]; then 
-    echo "FILES_HOST not defined"
+        echo "FILES_HOST not defined"
     else
         # Transfer content
         rsync -prv -e "${SSH}" "--exclude=*~" "--exclude=#*" files.opentreeoflife.org "$OT_USER@$FILES_HOST":
