@@ -16,7 +16,9 @@ CONTROLLER=$2
 
 APP=oti
 
-git_refresh OpenTreeOfLife oti || true
+# If the repo is refreshed, then the plugin should be recompiled and neo4j restarted, as well
+# Leave this a manual dependency for now - refresh the oti plugin before indexing
+# git_refresh OpenTreeOfLife oti || true
 
 if false; then
     # Stop neo4j!
