@@ -1327,6 +1327,25 @@ function toggleBranchLengthsInViewer(cb) {
     }
 }
 
+var usingRadialTreeLayout = false;
+function toggleRadialTreeLayoutInViewer(cb) {
+    // checkbox enables/disables radial tree layout in tree-view popup
+    usingRadialTreeLayout = $(cb).is(':checked');
+    // disable/enable the branch-lengths checkbox
+    if (usingRadialTreeLayout) {
+        $('#branch-length-toggle').attr('disabled', 'disabled');
+    } else {
+        $('#branch-length-toggle').removeAttr('disabled');
+    }
+    // fetch tree ID from popup's widgets
+    var currentTreeID = $('#tree-tags').attr('treeid');
+    if (currentTreeID) {
+        drawTree(currentTreeID)
+    } else {
+        console.warn("No tree in vizInfo!");
+    }
+}
+
 function updateMappingStatus() {
     // update mapping status+details based on the current state of things
     var detailsHTML, showBatchApprove, showBatchReject, needsAttention;
@@ -2950,31 +2969,42 @@ function drawTree( treeOrID, options ) {
         }
     }
 
-    //var currentWidth = $("#tree-viewer #dialog-data").width();
-    //var currentWidth = $("#tree-viewer #dialog-data").css('width').split('px')[0];
-    var currentWidth = $("#tree-viewer").width() - 400;
-
-    // let's set the viewer height based on total number of nodes
-    // (in a bifurcating tree, perhaps half will be leaf nodes)
-    var viewHeight = tree.node.length * 12;
-    ///console.log("setting tree-view height to "+ viewHeight);
-    
     var treeEdgesHaveLength = ('@length' in tree.edge[0]);
 
     vizInfo.vis = null;
     d3.selectAll('svg').remove();
 
-    vizInfo = d3.phylogram.build(
+    var viewWidth, viewHeight, layoutGenerator;
+
+    console.log(tree.node.length +" nodes in this tree");
+
+    if (usingRadialTreeLayout) {
+        /* Set the viewer height + width based on total number of nodes:
+         *   500px is OK for just a handful of nodes
+         *   2000px keeps things legible with ~750 nodes
+         */
+        viewWidth = 600 + (tree.node.length * 2);
+        viewHeight = viewWidth;
+        layoutGenerator = d3.phylogram.buildRadial;
+    } else {
+        /* Set the viewer height based on total number of nodes;
+         * in a bifurcating tree, perhaps half will be leaf nodes.
+         */
+        viewWidth = $("#tree-viewer").width() - 400;
+        viewHeight = tree.node.length * 12;
+        layoutGenerator = d3.phylogram.build;
+    }
+    vizInfo = layoutGenerator(
         "#tree-viewer #dialog-data",   // selector
         rootNode,
         {           // options
             vis: vizInfo.vis,
             // TODO: can we make the size "adaptive" based on vis contents?
-            width: currentWidth,  // must be simple integers
+            width: viewWidth,  // must be simple integers
             height: viewHeight,
             // simplify display by omitting scales or variable-length branches
             skipTicks: true,
-            skipBranchLengthScaling: (hidingBranchLengths || !(treeEdgesHaveLength)) ?  true : false,
+            skipBranchLengthScaling: (hidingBranchLengths || usingRadialTreeLayout || !(treeEdgesHaveLength)) ?  true : false,
             children : function(d) {
                 var parentID = d['@id'];
                 var itsChildren = [];
