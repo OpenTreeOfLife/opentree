@@ -205,9 +205,13 @@ def to_nexson():
     ##pdb.set_trace()
     orig_args = {}
     is_upload = False
-    if 'uploadId' in request.vars:
+    # several of our NexSON use "uploadid" instead of "uploadId" so we should accept either
+    if ('uploadId' in request.vars) or ('uploadid' in request.vars):
         try:
-            unique_id = request.vars.uploadId
+            if ('uploadId' in request.vars):
+                unique_id = request.vars.uploadId
+            else:
+                unique_id = request.vars.uploadid 
             unique_id = str(unique_id)
         except:
             raise HTTP(400, T('Illegal uploadId "{u}"'.format(u=unique_id)))
