@@ -83,7 +83,7 @@ function opentree_branch {
 # push changes very easily, which is OK because we don't expect to be
 # making any changes that need to be kept.
 
-# Returns true is any change was made.
+# Returns true if any change was made.
 
 function git_refresh() {
     guser=$1    # OpenTreeOfLife
