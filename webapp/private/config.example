@@ -37,14 +37,12 @@ opentree_api = http://opentree.myserver.org/phylesystem/v1
 getDraftTreeID_url = {treemachine_domain}/getDraftTreeID
 getSyntheticTree_url = {treemachine_domain}/getSyntheticTree  
 getSourceTree_url = {treemachine_domain}/getSourceTree  
-getConflictTaxJsonAltRel_url = {taxomachine_domain}/../ext/GetJsons/node/{nodeID}/getConflictTaxJsonAltRel
 getDraftTreeForOttolID_url = {treemachine_domain}/getDraftTreeForottId
 # N.B. getDraftTreeForottId doesn't match the capitalization conventions used elsewhere.
 getDraftTreeForNodeID_url = {treemachine_domain}/getDraftTreeForNodeID
 doTNRSForAutocomplete_url = {taxomachine_domain}/autocompleteQuery
 getContextsJSON_url = {taxomachine_domain}/getContextsJSON
 getNodeIDForOttolID_url = {treemachine_domain}/getNodeIDForottId
-getJSONFromNode_url = {treemachine_domain}/ext/GetJsons/node
 getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
 findAllStudies_url = {oti_domain}/findAllStudies
 # Include one phylesystem-api method to download NexSON from Bibliographic References page
