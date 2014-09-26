@@ -1,6 +1,11 @@
 # Run this script as an admin user (having 'sudo' privileges)
 #  = 'admin' on debian, 'ubuntu' on ubuntu
 
+# Depending on how the target host is set up, a password might be
+# required in order to perform some of these functions. We try to
+# ensure that even if a password is needed the first time around, it
+# won't be needed the second and following times.
+
 set -e
 # Current directory = home dir for admin user
 
