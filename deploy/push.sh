@@ -38,11 +38,14 @@ function opentree_branch {
 # The host must always be specified
 # OPENTREE_HOST=dev.opentreeoflife.org
 # OPENTREE_NEO4J_HOST=dev.opentreeoflife.org
+
+# The following defaults; they can be overridden by the config file
 OPENTREE_ADMIN=admin
 OPENTREE_IDENTITY=opentree.pem
 OPENTREE_DOCSTORE=phylesystem
 OPENTREE_GH_IDENTITY=opentree-gh.pem
 OPENTREE_COMPONENTS=most
+OPENTREE_USER=opentree
 DRYRUN=no
 FORCE_COMPILE=no
 
@@ -111,7 +114,7 @@ NEO4JHOST=$OPENTREE_NEO4J_HOST
 SSH="ssh -i ${OPENTREE_IDENTITY}"
 
 # For unprivileged actions
-OT_USER=opentree
+OT_USER=$OPENTREE_USER
 
 echo "host=$OPENTREE_HOST, admin=$ADMIN, pem=$OPENTREE_IDENTITY, controller=$CONTROLLER, command=$1"
 
