@@ -10,6 +10,10 @@ set -e
 # Current directory = home dir for admin user
 
 OPENTREE_HOST=$1
+OPENTREE_USER=$2
+if [ x$OPENTREE_USER = x ]; then
+    OPENTREE_USER=opentree
+fi
 
 APTGET="sudo apt-get -q --assume-yes --no-install-recommends"
 
@@ -199,43 +203,52 @@ fi
 
 if [ -r /etc/apache2/sites-enabled/000-default ]; then
     sudo rm -f /etc/apache2/sites-enabled/000-default
+fi
+if [ ! -r /etc/apache2/sites-enabled/000-opentree ]; then
     (cd /etc/apache2/sites-enabled; \
      sudo ln -sf ../sites-available/opentree ./000-opentree)
 fi
 
 # Enable the HTTPS site only if our SSL certs are found; else disable it
-if [ ! -r /etc/apache2/sites-enabled/001-opentree-ssl -a \
-     -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.crt ]; then
-    (cd /etc/apache2/sites-enabled; \
-     sudo ln -sf ../sites-available/opentree-ssl ./001-opentree-ssl)
+if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.crt ]; then
+    if [ -r /etc/apache2/sites-enabled/001-opentree-ssl -a ]; then
+        (cd /etc/apache2/sites-enabled; \
+         sudo ln -sf ../sites-available/opentree-ssl ./001-opentree-ssl)
+    fi
 else
      rm -f /etc/apache2/sites-enabled/001-opentree-ssl
 fi
 
 # ---------- UNPRIVILEGED USER ----------
 
-if [ ! -e ~opentree ]; then
-    sudo useradd opentree
-    sudo cp -pr /etc/skel ~opentree
-    sudo chown -R opentree:opentree ~opentree
-    sudo chmod g+sw ~opentree
-    sudo chsh -s /bin/bash opentree 
+# Credit goes to Richard Bronosky via stackoverflow for this
+OTHOME=$(bash <<< "echo ~$OPENTREE_USER")
+
+if [ ! -e $OTHOME ]; then
+    sudo useradd $OPENTREE_USER
+    OTHOME=$(bash <<< "echo ~$OPENTREE_USER")
+    sudo cp -pr /etc/skel $OTHOME
+    sudo chown -R $OPENTREE_USER:$OPENTREE_USER $OTHOME
+    sudo chmod g+sw $OTHOME
+    sudo chsh -s /bin/bash $OPENTREE_USER
 fi
 
-if [ ! -e ~opentree/.ssh ]; then
-    sudo mkdir ~opentree/.ssh
-    sudo cp -p .ssh/authorized_keys ~opentree/.ssh/
-    sudo chmod 700 ~opentree/.ssh/
-    sudo chown -R opentree:opentree ~opentree
+if [ ! -e $OTHOME/.ssh ]; then
+    sudo mkdir $OTHOME/.ssh
+    sudo cp -p .ssh/authorized_keys $OTHOME/.ssh/
+    sudo chmod 700 $OTHOME/.ssh/
+    sudo chown -R $OPENTREE_USER:$OPENTREE_USER $OTHOME
 fi
 
-# Ideally this one would be done every time, but we want to avoid unsatisfiable sudo prompt demands.
+# Ideally stowing the hostname one would be done every time, but we
+# want to avoid unsatisfiable sudo prompt demands, so let's assume it
+# stays the same.
 # TBD: this code ought to be done by the 'opentree' user, not in this file.
-if [ ! -r ~opentree/hostname ]; then
-    HOSTFILE=~opentree/hostname
+if [ x$OPENTREE_HOST != x -a ! -r $OTHOME/hostname ]; then
+    HOSTFILE=$OTHOME/hostname
     cat <<EOF | sudo bash
 	echo "$OPENTREE_HOST" >$HOSTFILE
 	chmod go+r $HOSTFILE
-	chown opentree $HOSTFILE
+	chown $OPENTREE_USER $HOSTFILE
 EOF
 fi

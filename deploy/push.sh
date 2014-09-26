@@ -191,7 +191,7 @@ function sync_system {
     # Do privileged stuff
     # Don't use rsync - might not be installed yet
     scp -p -i "${OPENTREE_IDENTITY}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
-    ${SSH} "$ADMIN@$OPENTREE_HOST" ./as-admin.sh "$OPENTREE_HOST"
+    ${SSH} "$ADMIN@$OPENTREE_HOST" ./as-admin.sh "$OPENTREE_HOST" "$OPENTREE_USER"
     # Copy files over
     rsync -pr -e "${SSH}" "--exclude=*~" "--exclude=#*" setup "$OT_USER@$OPENTREE_HOST":
     }
@@ -309,6 +309,9 @@ function install_db {
     APP=$2
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh $HEREBALL $APP $CONTROLLER
 }
+
+# Copy smallish files over from opentree repo into the webroot for the
+# files.opentreeoflife.org vhost
 
 function install_files {
     if [ x$FILES_HOST = x ]; then 

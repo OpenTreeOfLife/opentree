@@ -36,6 +36,7 @@ if git_refresh OpenTreeOfLife ot-base || [ ! -d ~/.m2/repository/org/opentree/ot
     (cd repo/ot-base; sh mvn_install.sh)
 fi
 
+# I think the following is for the benefit of oti
 if git_refresh OpenTreeOfLife taxomachine || [ ! -d ~/.m2/repository/org/opentree/taxomachine ]; then
     (cd repo/taxomachine; sh mvn_install.sh)
     # Kludge. It would be better to handle dependencies using 'make' or something like that.
@@ -60,13 +61,6 @@ function make_neo4j_instance {
         mv neo4j-community-* neo4j-$APP
     fi
 
-    # Stop any running server.  (The database may be empty at this point.)
-    # N.B. We do this regardless of whether there has been a change in its
-    # repo, since otherwise apache may fail to proxy requests to this app.
-    if ./neo4j-$APP/bin/neo4j status; then
-        ./neo4j-$APP/bin/neo4j stop
-    fi
-
     # Get plugin from git repository
     if git_refresh OpenTreeOfLife $APP || [ ! -r neo4j-$APP/plugins/$jar ] || [ $FORCE_COMPILE = "yes" ]; then
     
@@ -84,19 +78,27 @@ function make_neo4j_instance {
         # ... or this (for a running instance):
         #    Neo4j Server is running at pid #####
         if [[ "`./neo4j-$APP/bin/neo4j status`" =~ "is running" ]]; then
-        ./neo4j-$APP/bin/neo4j stop
-            fi
+            ./neo4j-$APP/bin/neo4j stop
         fi
+    fi
 
-        # Move new plugin code into place
-        cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
+    # Stop any running server.  (The database may be empty at this point.)
+    # Do this after compilation, so as to minimize system downtime.
+    # N.B. We do this regardless of whether there has been a change in its
+    # repo, since otherwise apache may fail to proxy requests to this app.
+    if ./neo4j-$APP/bin/neo4j status; then
+        ./neo4j-$APP/bin/neo4j stop
+    fi
 
-        # Replace defaults ports with ports appropriate for this application
-        #org.neo4j.server.webserver.port=7474
-        #org.neo4j.server.webserver.https.port=7473
-        cat neo4j-$APP/conf/neo4j-server.properties | \
-        sed s+7474+$APORT+ | \
-        sed s+7473+$BPORT+ | \
+    # Move new plugin code into place
+    cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
+
+    # Replace defaults ports with ports appropriate for this application
+    #org.neo4j.server.webserver.port=7474
+    #org.neo4j.server.webserver.https.port=7473
+    cat neo4j-$APP/conf/neo4j-server.properties | \
+    sed s+7474+$APORT+ | \
+    sed s+7473+$BPORT+ | \
     sed s+org.neo4j.server.http.log.enabled=false+org.neo4j.server.http.log.enabled=true+ \
       > props.tmp
         mv props.tmp neo4j-$APP/conf/neo4j-server.properties
@@ -109,7 +111,7 @@ function make_neo4j_instance {
 }
 
 case $WHICH_APP in
-    oti)      make_neo4j_instance oti         7478 7477 ;;
+    oti)         make_neo4j_instance oti         7478 7477 ;;
     treemachine) make_neo4j_instance treemachine 7474 7473 ;;
     taxomachine) make_neo4j_instance taxomachine 7476 7475 ;;
 esac
