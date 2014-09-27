@@ -68,6 +68,10 @@ if grep --invert-match "distribute" \
     mv requirements.txt.new $APPROOT/requirements.txt
 fi
 
+if [ "${PEYOTL_LOG_FILE_PATH:0:1}" != "/" ]; then
+    PEYOTL_LOG_FILE_PATH="$OTHOME"/"$PEYOTL_LOG_FILE_PATH"
+fi
+
 git_refresh OpenTreeOfLife peyotl || true
 py_package_setup_install peyotl || true
 
@@ -121,6 +125,9 @@ pushd .
     #logging stuff
     sed -i -e "s+OPEN_TREE_API_LOGGING_LEVEL+${OPEN_TREE_API_LOGGING_LEVEL}+" config
     sed -i -e "s+OPEN_TREE_API_LOGGING_FORMATTER+${OPEN_TREE_API_LOGGING_FORMATTER}+" config
+    if [ "${OPEN_TREE_API_LOGGING_FILEPATH:0:1}" != "/" ]; then
+        OPEN_TREE_API_LOGGING_FILEPATH="$OTHOME"/"$OPEN_TREE_API_LOGGING_FILEPATH"
+    fi
     sed -i -e "s+OPEN_TREE_API_LOGGING_FILEPATH+${OPEN_TREE_API_LOGGING_FILEPATH}+" config
 popd
 
