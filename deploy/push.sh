@@ -226,17 +226,11 @@ function push_neo4j {
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-app.sh $CONTROLLER $1 $FORCE_COMPILE
 }
 
+# The install scripts modify the apache config files, so do this last
 function restart_apache {
     if [ $DRYRUN = "yes" ]; then echo "[restarting apache]"; return; fi
-    # The install scripts modify the apache config files, so do this last
-    ${SSH} "$ADMIN@$OPENTREE_HOST" \
-      sudo cp -p "~$OT_USER/setup/apache-config-vhost" /etc/apache2/sites-available/opentree
-    ${SSH} "$ADMIN@$OPENTREE_HOST" \
-      sudo cp -p "~$OT_USER/setup/apache-config-vhost-ssl" /etc/apache2/sites-available/opentree-ssl
-    ${SSH} "$ADMIN@$OPENTREE_HOST" \
-      sudo cp -p "~$OT_USER/setup/apache-config-shared" /etc/apache2/opentree-config-shared
-    echo "Restarting apache httpd..."
-    ${SSH} "$ADMIN@$OPENTREE_HOST" sudo apache2ctl graceful
+    scp -p -i "${OPENTREE_IDENTITY}" restart-apache.sh "$ADMIN@$OPENTREE_HOST":
+    ${SSH} "$ADMIN@$OPENTREE_HOST" bash restart-apache.sh "$OT_USER"
 }
 
 function push_opentree {
