@@ -30,6 +30,11 @@ echo "Installing web2py applications.  Hostname = $OPENTREE_HOST. Neo4j host = $
 
 bash setup/install-web2py.sh
 
+OTHOME=$PWD
+if [ "${PEYOTL_LOG_FILE_PATH:0:1}" != "/" ]; then
+    PEYOTL_LOG_FILE_PATH="$OTHOME"/"$PEYOTL_LOG_FILE_PATH"
+fi
+
 # the curator app's to_nexml import function
 # requires peyotl (after Feb 20). This
 # function may move to the API repo, but 

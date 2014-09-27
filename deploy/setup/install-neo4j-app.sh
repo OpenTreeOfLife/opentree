@@ -6,19 +6,14 @@ CONTROLLER=$1
 WHICH_APP=$2
 FORCE_COMPILE=$3
 
-# tbd: maybe allow a different branch for each repo
-
 # Will not run on AWS free tier.  Recommended at least 60G disk and 16G RAM.
 
-# Uses $CONTROLLER
-
-# Temporary locations for things downloaded from web.  Can delete this
-# after server is up and running.
+# Temporary locations for things downloaded from web.  Can delete the
+# downloads directory after server is up and running.  You can delete
+# the repo as well; the running neo4j doesn't access it.
 
 mkdir -p downloads
 mkdir -p repo
-
-echo JAVA_HOME is $JAVA_HOME
 
 # ---------- NEO4J ----------
 if [ ! -r downloads/neo4j.tgz ]; then
@@ -68,41 +63,43 @@ function make_neo4j_instance {
         # Create and install the plugins .jar file
         # Compilation takes about 4 minutes... ugh
         (cd repo/$APP; ./mvn_serverplugins.sh)
-
-    if false; then
-        # There was some question as to whether the above code worked.
-        # I'm keeping the following replacement code for a while, just in case.
-        # Stop any running server.  (The database may be empty at this point.)
-        # N.B. Theo 'neo4j status' command returns a phrase like this (for a stopped instance):
-        #    Neo4j Server is not running
-        # ... or this (for a running instance):
-        #    Neo4j Server is running at pid #####
-        if [[ "`./neo4j-$APP/bin/neo4j status`" =~ "is running" ]]; then
-            ./neo4j-$APP/bin/neo4j stop
-        fi
     fi
 
     # Stop any running server.  (The database may be empty at this point.)
     # Do this after compilation, so as to minimize system downtime.
     # N.B. We do this regardless of whether there has been a change in its
     # repo, since otherwise apache may fail to proxy requests to this app.
-    if ./neo4j-$APP/bin/neo4j status; then
-        ./neo4j-$APP/bin/neo4j stop
+    if true; then
+	if ./neo4j-$APP/bin/neo4j status; then
+	    echo "Stopping $APP neo4j server"
+	    ./neo4j-$APP/bin/neo4j stop
+	fi
+    else
+        # There was some question as to whether the above code worked.
+        # I'm keeping the following replacement code for a while, just in case.
+        # N.B. The 'neo4j status' command returns a phrase like this (for a stopped instance):
+        #    Neo4j Server is not running
+        # ... or this (for a running instance):
+        #    Neo4j Server is running at pid #####
+        if [[ "`./neo4j-$APP/bin/neo4j status`" =~ "is running" ]]; then
+	    echo "Stopping $APP neo4j server"
+            ./neo4j-$APP/bin/neo4j stop
+        fi
     fi
 
     # Move new plugin code into place
     cp -p -f repo/$APP/target/$jar neo4j-$APP/plugins/
 
     # Replace defaults ports with ports appropriate for this application
-    #org.neo4j.server.webserver.port=7474
-    #org.neo4j.server.webserver.https.port=7473
+    # The installed neo4j initially has:
+    #    org.neo4j.server.webserver.port=7474
+    #    org.neo4j.server.webserver.https.port=7473
     cat neo4j-$APP/conf/neo4j-server.properties | \
     sed s+7474+$APORT+ | \
     sed s+7473+$BPORT+ | \
     sed s+org.neo4j.server.http.log.enabled=false+org.neo4j.server.http.log.enabled=true+ \
       > props.tmp
-        mv props.tmp neo4j-$APP/conf/neo4j-server.properties
-    fi
+    mv props.tmp neo4j-$APP/conf/neo4j-server.properties
 
     # Start or restart the server
     echo "Starting $APP neo4j server"
@@ -110,13 +107,14 @@ function make_neo4j_instance {
     log "Started $APP"
 }
 
+# TBD: The port numbers should be configurable in the config file
+
 case $WHICH_APP in
     oti)         make_neo4j_instance oti         7478 7477 ;;
     treemachine) make_neo4j_instance treemachine 7474 7473 ;;
     taxomachine) make_neo4j_instance taxomachine 7476 7475 ;;
 esac
 
-
-log "Finished installing neo4j instances"
+log "Finished installing $WHICH_APP plugin"
 
 # Apache needs to be restarted

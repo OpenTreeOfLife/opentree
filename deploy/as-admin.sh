@@ -157,14 +157,6 @@ if [ `which javac`x = x ]; then
     apt_get_install openjdk-7-jdk
 fi
 
-# Cf. file 'activate' - should be the same
-export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
-
-if [ ! -d $JAVA_HOME ]; then
-    echo 1>&2 No directory $JAVA_HOME
-    exit 1
-fi
-
 # ---------- MAVEN 3 ----------
 if [ `which mvn`x = x ]; then
     apt_get_install maven
@@ -211,7 +203,7 @@ fi
 
 # Enable the HTTPS site only if our SSL certs are found; else disable it
 if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.crt ]; then
-    if [ -r /etc/apache2/sites-enabled/001-opentree-ssl -a ]; then
+    if [ -r /etc/apache2/sites-enabled/001-opentree-ssl ]; then
         (cd /etc/apache2/sites-enabled; \
          sudo ln -sf ../sites-available/opentree-ssl ./001-opentree-ssl)
     fi

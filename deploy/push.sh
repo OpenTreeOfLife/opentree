@@ -125,7 +125,7 @@ function docommand {
     if [ $# -eq 0 ]; then
         if [ $DRYRUN = yes ]; then echo "[no command]"; fi
         for component in $OPENTREE_COMPONENTS; do
-            docommand $component
+            docomponent $component
         done
         return
     fi
@@ -133,30 +133,6 @@ function docommand {
     command="$1"
     shift
     case $command in
-    # Components
-    opentree)
-            push_opentree
-        restart_apache=yes
-        ;;
-    phylesystem-api | api)
-         # 'api' option is for backward compatibility
-            push_phylesystem_api
-        restart_apache=yes
-        ;;
-    oti)
-            push_neo4j oti
-        ;;
-    treemachine)
-            push_neo4j treemachine
-        ;;
-    taxomachine)
-            push_neo4j taxomachine
-        ;;
-
-    none)
-        echo "No components specified.  Try configuring OPENTREE_COMPONENTS"
-        ;;
-
     # Commands
     push-db | pushdb)
         push_db $*
@@ -179,11 +155,60 @@ function docommand {
              echo $*
 EOF
         ;;
+    none)
+        echo "No components specified.  Try configuring OPENTREE_COMPONENTS"
+        ;;
+
     *)
-        echo "Unrecognized command: $command"
+        if ! in_list $command $OPENTREE_COMPONENTS; then
+	    err "Unrecognized command, or component not in OPENTREE_COMPONENTS: $command";
+	fi
+        docomponent $command
+    esac
+}
+
+# Push a single component
+
+function docomponent {
+    component=$1
+    # 'api' option is for backward compatibility
+    if [ $component = api ]; then component=phylesystem-api; fi
+    case $component in
+    opentree)
+        push_opentree
+        restart_apache=yes
+        ;;
+    phylesystem-api)
+        push_phylesystem_api
+        restart_apache=yes
+        ;;
+    oti)
+        push_neo4j oti
+        ;;
+    treemachine)
+	push_neo4j treemachine
+        ;;
+    taxomachine)
+        push_neo4j taxomachine
+        ;;
+
+    *)
+        echo "Unrecognized component: $command"
         ;;
     esac 
 }
+
+# list="w x y"; in_list x $list; echo $?
+# kjetil v halvorsen via stackoverflow
+function in_list() {
+       local search="$1"
+       shift
+       local list=("$@")
+       for file in "${list[@]}" ; do
+           [[ "$file" == "$search" ]] && return 0
+       done
+       return 1
+    }
 
 function sync_system {
     echo "Syncing"
@@ -201,17 +226,11 @@ function push_neo4j {
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-neo4j-app.sh $CONTROLLER $1 $FORCE_COMPILE
 }
 
+# The install scripts modify the apache config files, so do this last
 function restart_apache {
     if [ $DRYRUN = "yes" ]; then echo "[restarting apache]"; return; fi
-    # The install scripts modify the apache config files, so do this last
-    ${SSH} "$ADMIN@$OPENTREE_HOST" \
-      sudo cp -p "~$OT_USER/setup/apache-config-vhost" /etc/apache2/sites-available/opentree
-    ${SSH} "$ADMIN@$OPENTREE_HOST" \
-      sudo cp -p "~$OT_USER/setup/apache-config-vhost-ssl" /etc/apache2/sites-available/opentree-ssl
-    ${SSH} "$ADMIN@$OPENTREE_HOST" \
-      sudo cp -p "~$OT_USER/setup/apache-config-shared" /etc/apache2/opentree-config-shared
-    echo "Restarting apache httpd..."
-    ${SSH} "$ADMIN@$OPENTREE_HOST" sudo apache2ctl graceful
+    scp -p -i "${OPENTREE_IDENTITY}" restart-apache.sh "$ADMIN@$OPENTREE_HOST":
+    ${SSH} "$ADMIN@$OPENTREE_HOST" bash restart-apache.sh "$OT_USER"
 }
 
 function push_opentree {

@@ -13,7 +13,7 @@ if [ ! -d web2py -o  ! -r downloads/web2py_${WEB2PY_RELEASE}_src.zip ]; then
       https://github.com/web2py/web2py/archive/R-${WEB2PY_RELEASE}.zip
     # clobber any existing web2py installation
     rm -rf ./web2py
-    unzip downloads/web2py_${WEB2PY_RELEASE}_src.zip
+    unzip -q downloads/web2py_${WEB2PY_RELEASE}_src.zip
     # rename to expected 'web2py'
     mv web2py-R-${WEB2PY_RELEASE}/ web2py
     log "Installed web2py R-${WEB2PY_RELEASE}"
