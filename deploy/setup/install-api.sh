@@ -22,7 +22,7 @@ if ! test -f redis/bin/redis-server ; then
             wget --no-verbose -O downloads/"${REDIS_WITH_VERSION}.tar.gz" http://download.redis.io/releases/"${REDIS_WITH_VERSION}".tar.gz
         fi
         (cd downloads; \
-            tar xfvz "${REDIS_WITH_VERSION}.tar.gz")
+            tar xfz "${REDIS_WITH_VERSION}.tar.gz")
     fi
     if ! test -d redis/work ; then
         mkdir -p redis/work
