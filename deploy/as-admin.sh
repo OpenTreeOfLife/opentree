@@ -157,14 +157,6 @@ if [ `which javac`x = x ]; then
     apt_get_install openjdk-7-jdk
 fi
 
-# Cf. file 'activate' - should be the same
-export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64
-
-if [ ! -d $JAVA_HOME ]; then
-    echo 1>&2 No directory $JAVA_HOME
-    exit 1
-fi
-
 # ---------- MAVEN 3 ----------
 if [ `which mvn`x = x ]; then
     apt_get_install maven
