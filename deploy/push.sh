@@ -38,11 +38,14 @@ function opentree_branch {
 # The host must always be specified
 # OPENTREE_HOST=dev.opentreeoflife.org
 # OPENTREE_NEO4J_HOST=dev.opentreeoflife.org
+
+# The following defaults; they can be overridden by the config file
 OPENTREE_ADMIN=admin
 OPENTREE_IDENTITY=opentree.pem
 OPENTREE_DOCSTORE=phylesystem
 OPENTREE_GH_IDENTITY=opentree-gh.pem
 OPENTREE_COMPONENTS=most
+OPENTREE_USER=opentree
 DRYRUN=no
 FORCE_COMPILE=no
 
@@ -111,7 +114,7 @@ NEO4JHOST=$OPENTREE_NEO4J_HOST
 SSH="ssh -i ${OPENTREE_IDENTITY}"
 
 # For unprivileged actions
-OT_USER=opentree
+OT_USER=$OPENTREE_USER
 
 echo "host=$OPENTREE_HOST, admin=$ADMIN, pem=$OPENTREE_IDENTITY, controller=$CONTROLLER, command=$1"
 
@@ -188,7 +191,7 @@ function sync_system {
     # Do privileged stuff
     # Don't use rsync - might not be installed yet
     scp -p -i "${OPENTREE_IDENTITY}" as-admin.sh "$ADMIN@$OPENTREE_HOST":
-    ${SSH} "$ADMIN@$OPENTREE_HOST" ./as-admin.sh "$OPENTREE_HOST"
+    ${SSH} "$ADMIN@$OPENTREE_HOST" ./as-admin.sh "$OPENTREE_HOST" "$OPENTREE_USER"
     # Copy files over
     rsync -pr -e "${SSH}" "--exclude=*~" "--exclude=#*" setup "$OT_USER@$OPENTREE_HOST":
     }
@@ -306,6 +309,9 @@ function install_db {
     APP=$2
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-db.sh $HEREBALL $APP $CONTROLLER
 }
+
+# Copy smallish files over from opentree repo into the webroot for the
+# files.opentreeoflife.org vhost
 
 function install_files {
     if [ x$FILES_HOST = x ]; then 

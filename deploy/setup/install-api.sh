@@ -52,6 +52,7 @@ fi
 
 WEBAPP=phylesystem-api
 APPROOT=repo/$WEBAPP
+OTHOME=$PWD
 
 # This is required to make "git pull" work correctly
 git config --global user.name "OpenTree API"
@@ -95,8 +96,6 @@ pushd .
 popd
 
 pushd .
-    OTHOME=~opentree
-
     cd $APPROOT/private
     cp config.example config
     sed -i -e "s+REPO_PATH+$OTHOME/repo/${OPENTREE_DOCSTORE}_par/$OPENTREE_DOCSTORE+" config
