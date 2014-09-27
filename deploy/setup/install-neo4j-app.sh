@@ -87,6 +87,7 @@ function make_neo4j_instance {
     # N.B. We do this regardless of whether there has been a change in its
     # repo, since otherwise apache may fail to proxy requests to this app.
     if ./neo4j-$APP/bin/neo4j status; then
+        echo "Stopping $APP neo4j server"
         ./neo4j-$APP/bin/neo4j stop
     fi
 
