@@ -8,9 +8,9 @@ if [ "$#" -ne 12 ]; then
     exit 1
 fi
 
-OPENTREE_HOST=$1
+OPENTREE_HOST=$1  #Not used; set in functions.sh anyhow
 OPENTREE_PUBLIC_DOMAIN=$2
-NEO4JHOST=$3
+NEO4JHOST=$3      #Not used
 CONTROLLER=$4
 CURATION_GITHUB_CLIENT_ID=$5
 CURATION_GITHUB_REDIRECT_URI=$6
@@ -24,11 +24,11 @@ OPENTREE_API_BASE_URL=${12}
 
 . setup/functions.sh
 
-echo "Installing web2py applications.  Hostname = $OPENTREE_HOST. Neo4j host = $NEO4JHOST. Public-facing domain = $OPENTREE_PUBLIC_DOMAIN"
+setup/install-common.sh
+
+echo "Installing web2py applications.  Hostname = $OPENTREE_HOST.  Public-facing domain = $OPENTREE_PUBLIC_DOMAIN"
 
 # **** Begin setup that is common to opentree/curator and api
-
-bash setup/install-web2py.sh
 
 OTHOME=$PWD
 if [ "${PEYOTL_LOG_FILE_PATH:0:1}" != "/" ]; then
@@ -53,7 +53,6 @@ APPROOT=repo/$WEBAPP
 # Make sure that we have the opentree Git repo before manipulating
 # files inside of it below
 
-echo "...fetching $WEBAPP repo..."
 git_refresh OpenTreeOfLife $WEBAPP || true
 
 # Modify the requirements list
@@ -122,11 +121,3 @@ echo "Apache / web2py restart required (due to app configuration)"
 (cd web2py/applications; \
     ln -sf ../../repo/$WEBAPP/webapp ./$WEBAPP; \
     ln -sf ../../repo/$WEBAPP/curator ./)
-
-
-# ---------- ROUTES AND WEB2PY PATCHES ----------
-# These require a fresh pull of the opentree repo (above)
-
-cp -p repo/opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
-cp -p repo/opentree/rewrite.py web2py/gluon/
-cp -p repo/opentree/SITE.routes.py web2py/routes.py

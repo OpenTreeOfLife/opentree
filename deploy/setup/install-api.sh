@@ -10,9 +10,9 @@ OPENTREE_API_BASE_URL=$5
 
 . setup/functions.sh
 
-echo "Installing API"
+setup/install-common.sh
 
-bash setup/install-web2py.sh
+echo "Installing API"
 
 # ---------- Redis for caching ---------
 REDIS_WITH_VERSION="redis-2.8.8"

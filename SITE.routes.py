@@ -38,6 +38,7 @@ routes_onerror=[
   # this obfuscates error messages from the API
   # ('api/*', '/opentree/default/error'),
   ('admin/*', '/opentree/default/error'),
+  ('common/*', '/common/default/error'),
 ]
 
 # Specify log level for rewrite's debug logging
