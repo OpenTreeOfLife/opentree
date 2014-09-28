@@ -111,7 +111,6 @@ if [ ! -r $OPENTREE_IDENTITY ]; then err "$OPENTREE_IDENTITY not found"; fi
 # abbreviations... no good reason for these, they just make the commands shorter
 
 ADMIN=$OPENTREE_ADMIN
-NEO4JHOST=$OPENTREE_NEO4J_HOST
 
 SSH="ssh -i ${OPENTREE_IDENTITY}"
 
@@ -301,10 +300,6 @@ function push_phylesystem_api {
     echo "Doc store is $OPENTREE_DOCSTORE"
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" \
            $OPENTREE_DOCSTORE $CONTROLLER $OTI_BASE_URL $OPENTREE_API_BASE_URL $OPENTREE_DEFAULT_APPLICATION
-
-    # Kludge for web2py routing.  Ideally api would be self-contained
-    # and not need anything from the opentree repo.
-    rsync -p -e "${SSH}" ../SITE.routes.py "$OT_USER@$OPENTREE_HOST":web2py/routes.py
 }
 
 function index {
