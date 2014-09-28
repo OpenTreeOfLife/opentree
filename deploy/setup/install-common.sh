@@ -2,10 +2,12 @@
 
 # Common setup for all web2py applications (opentree, curator, phylesystem-api)
 
-if [ "$#" -ne 0 ]; then
-    echo "install-common.sh WNA (expecting 0)"
+if [ "$#" -ne 1 ]; then
+    echo "install-common.sh WNA (expecting 1)"
     exit 1
 fi
+
+CONTROLLER=$1
 
 . setup/functions.sh
 

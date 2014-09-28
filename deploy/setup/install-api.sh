@@ -10,7 +10,7 @@ OPENTREE_API_BASE_URL=$5
 
 . setup/functions.sh
 
-setup/install-common.sh
+setup/install-common.sh $CONTROLLER
 
 echo "Installing API"
 

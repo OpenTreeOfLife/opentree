@@ -24,7 +24,7 @@ OPENTREE_API_BASE_URL=${12}
 
 . setup/functions.sh
 
-setup/install-common.sh
+setup/install-common.sh $CONTROLLER
 
 echo "Installing web2py applications.  Hostname = $OPENTREE_HOST.  Public-facing domain = $OPENTREE_PUBLIC_DOMAIN"
 
