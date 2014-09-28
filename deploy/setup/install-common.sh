@@ -34,3 +34,6 @@ sed -e "s+default_application='.*'+default_application='$OPENTREE_DEFAULT_APPLIC
 cp $TMP web2py/routes.py
 rm $TMP
 grep default_ web2py/routes.py
+
+# Test kludge...
+cp -p repo/opentree/webapp/static/robots.txt web2py/applications/welcome/static
