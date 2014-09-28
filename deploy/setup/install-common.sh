@@ -2,12 +2,13 @@
 
 # Common setup for all web2py applications (opentree, curator, phylesystem-api)
 
-if [ "$#" -ne 1 ]; then
-    echo "install-common.sh WNA (expecting 1)"
+if [ "$#" -ne 2 ]; then
+    echo "install-common.sh WNA (expecting 2)"
     exit 1
 fi
 
-CONTROLLER=$1
+OPENTREE_DEFAULT_APPLICATION=$1
+CONTROLLER=$2
 
 . setup/functions.sh
 
@@ -25,4 +26,8 @@ git_refresh OpenTreeOfLife opentree || true
 
 cp -p repo/opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
 cp -p repo/opentree/rewrite.py web2py/gluon/
-cp -p repo/opentree/SITE.routes.py web2py/routes.py
+TMP=/tmp/tmp.tmp
+sed -e "s+default_application='.*'+default_application='$OPENTREE_DEFAULT_APPLICATION'+" \
+   repo/opentree/SITE.routes.py >$TMP
+cp $TMP web2py/routes.py
+rm $TMP

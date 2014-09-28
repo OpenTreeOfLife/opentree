@@ -7,10 +7,11 @@ OPENTREE_DOCSTORE=$2
 CONTROLLER=$3
 OTI_BASE_URL=$4
 OPENTREE_API_BASE_URL=$5
+OPENTREE_DEFAULT_APPLICATION=$6
 
 . setup/functions.sh
 
-setup/install-common.sh $CONTROLLER
+setup/install-common.sh $OPENTREE_DEFAULT_APPLICATION $CONTROLLER
 
 echo "Installing API"
 

@@ -10,7 +10,7 @@ fi
 
 OPENTREE_HOST=$1  #Not used; set in functions.sh anyhow
 OPENTREE_PUBLIC_DOMAIN=$2
-NEO4JHOST=$3      #Not used
+OPENTREE_DEFAULT_APPLICATION=$3
 CONTROLLER=$4
 CURATION_GITHUB_CLIENT_ID=$5
 CURATION_GITHUB_REDIRECT_URI=$6
@@ -24,7 +24,7 @@ OPENTREE_API_BASE_URL=${12}
 
 . setup/functions.sh
 
-setup/install-common.sh $CONTROLLER
+setup/install-common.sh $OPENTREE_DEFAULT_APPLICATION $CONTROLLER
 
 echo "Installing web2py applications.  Hostname = $OPENTREE_HOST.  Public-facing domain = $OPENTREE_PUBLIC_DOMAIN"
 
