@@ -877,10 +877,11 @@ function showObjectProperties( objInfo, options ) {
                             }
                         }
                     }
-                    console.log(fullNode);
+
                     if (fullNode.ottId) {
+                        nodeSection.displayedProperties['Reference taxonomy'] = [];
                         //nodeSection.displayedProperties['OTT ID'] = fullNode.ottolId;
-                        nodeSection.displayedProperties['Source taxonomy'].push(
+                        nodeSection.displayedProperties['Reference taxonomy'].push(
                             {
                                 taxSource: "OTT",
                                 taxSourceId: fullNode.ottId
@@ -948,6 +949,9 @@ function showObjectProperties( objInfo, options ) {
 
     displayName = (objName) ? objName : ("Unnamed "+ objType);
     jQuery('#provenance-panel .provenance-title').html( displayName );
+    // Make this name safe for use in URLs (for subtree download, EOL search)
+    // (prefer '+' to '%20', but carefully encode other characters)
+    var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');  
 
     /* Clear and rebuild collection of detailed properties, adapting to special
      * requirements as needed:
@@ -996,6 +1000,7 @@ function showObjectProperties( objInfo, options ) {
         for(dLabel in aSection.displayedProperties) {
             switch(dLabel) {
                 case 'Source taxonomy':
+                case 'Reference taxonomy':
                     var sourceList = aSection.displayedProperties[dLabel];
                     for (i = 0; i < sourceList.length; i++) {
                         var sourceInfo = sourceList[i];
@@ -1197,7 +1202,7 @@ function showObjectProperties( objInfo, options ) {
         $('#extract-subtree')
             .css('color','')  // restore normal link color
             .unbind('click').click(function() {
-                window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ displayName;
+                window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ urlSafeDisplayName;
 
                 /* OR this will load the Newick-tree text to show it in-browser
                 $.ajax({
@@ -1218,11 +1223,12 @@ function showObjectProperties( objInfo, options ) {
             });
         $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
       
-        // Attempt to find a page for this taxon in the Encyclopedia of Life website
-        // (prefer '+' to '%20', but carefully encode other characters)
-        var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');  
-        // N.B. This 'external-links' list can hold similar entries.
-        $details.after('<ul class="external-links"><li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">Search EOL for \''+ displayName +'\'</a></li></ul>');
+        // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
+        if ((displayName.indexOf('Unnamed ') !== 0) && (displayName.indexOf('[') !== 0)) {
+            // Attempt to find a page for this taxon in the Encyclopedia of Life website
+            // N.B. This 'external-links' list can hold similar entries.
+            $details.after('<ul class="external-links"><li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">Search EOL for \''+ displayName +'\'</a></li></ul>');
+        }
     }
 
 }
