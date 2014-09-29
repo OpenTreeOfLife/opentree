@@ -877,17 +877,16 @@ function showObjectProperties( objInfo, options ) {
                             }
                         }
                     }
-                    /* hide OTT id (since it's not a generally recognized taxonomy)
-                    if (fullNode.ottolId) {
+                    console.log(fullNode);
+                    if (fullNode.ottId) {
                         //nodeSection.displayedProperties['OTT ID'] = fullNode.ottolId;
                         nodeSection.displayedProperties['Source taxonomy'].push(
                             {
                                 taxSource: "OTT",
-                                taxSourceId: fullNode.ottolId
+                                taxSourceId: fullNode.ottId
                             }
                         );
                     }
-                    */
                     
                     // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
                     if (typeof fullNode.taxRank !== 'undefined') {
@@ -1043,9 +1042,11 @@ function showObjectProperties( objInfo, options ) {
                                 break;
 
                             case 'OTT': 
-                                // TODO: browse the OTT taxonomy in *local* window? or in a new one?
+                                /* browse the OTT taxonomy in *local* window? or in a new one?
                                 displayVal = '<a href="/opentree/argus/ottol@'+ sourceInfo.taxSourceId +'" '
                                               + 'title="OTT Taxonomy" target="_blank">OTT: '+ sourceInfo.taxSourceId +'</a>';
+                                */
+                                displayVal = '<span style="color: #777;" title="Open Tree of Life Reference Taxonomy (no URL provided)">'+ sourceInfo.taxSource.trim() +': '+ sourceInfo.taxSourceId +'</span>';
                                 break;
 
                             default:
