@@ -74,12 +74,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
         var getSyntheticTree_url = "{{=getSyntheticTree_url}}";
         var getSourceTree_url = "{{=getSourceTree_url}}";
-        var getConflictTaxJsonAltRel_url = "{{=getConflictTaxJsonAltRel_url}}";
         var getDraftTreeForOttolID_url = "{{=getDraftTreeForOttolID_url}}";
         var getDraftTreeForNodeID_url = "{{=getDraftTreeForNodeID_url}}";
         var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
         var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
-        var getJSONFromNode_url = "{{=getJSONFromNode_url}}";
     </script>
     {{pass}}
     <script type="text/javascript">
@@ -189,6 +187,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                   </ul>
               </li>
               <li><a href="{{= URL('contact','index') }}">Contact</a></li>
+              <li><a href="http://blog.opentreeoflife.org/" target="_blank">Blog</a></li>
             </ul>
             <form id="taxon-search-form" class="navbar-search pull-right" autocomplete="off">
                 <input type="text" name="taxon-search" class="search-query" placeholder="Search for taxon" autocomplete="off"

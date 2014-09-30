@@ -4,6 +4,7 @@ private/GITHUB_CLIENT_SECRET
 cache/
 errors/
 sessions/
+uploads/
 databases/
 backup/
 tmp/

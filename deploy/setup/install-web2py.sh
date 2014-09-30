@@ -9,11 +9,11 @@ WEB2PY_RELEASE='2.8.2'
 # listed in the section 'ROUTES AND WEB2PY PATCHES' below, and thorough testing!
 
 if [ ! -d web2py -o  ! -r downloads/web2py_${WEB2PY_RELEASE}_src.zip ]; then
-	wget --no-verbose -O downloads/web2py_${WEB2PY_RELEASE}_src.zip \
+    wget --no-verbose -O downloads/web2py_${WEB2PY_RELEASE}_src.zip \
       https://github.com/web2py/web2py/archive/R-${WEB2PY_RELEASE}.zip
     # clobber any existing web2py installation
     rm -rf ./web2py
-    unzip downloads/web2py_${WEB2PY_RELEASE}_src.zip
+    unzip -q downloads/web2py_${WEB2PY_RELEASE}_src.zip
     # rename to expected 'web2py'
     mv web2py-R-${WEB2PY_RELEASE}/ web2py
     log "Installed web2py R-${WEB2PY_RELEASE}"

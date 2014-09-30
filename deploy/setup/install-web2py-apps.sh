@@ -30,6 +30,11 @@ echo "Installing web2py applications.  Hostname = $OPENTREE_HOST. Neo4j host = $
 
 bash setup/install-web2py.sh
 
+OTHOME=$PWD
+if [ "${PEYOTL_LOG_FILE_PATH:0:1}" != "/" ]; then
+    PEYOTL_LOG_FILE_PATH="$OTHOME"/"$PEYOTL_LOG_FILE_PATH"
+fi
+
 # the curator app's to_nexml import function
 # requires peyotl (after Feb 20). This
 # function may move to the API repo, but 
@@ -125,12 +130,3 @@ echo "Apache / web2py restart required (due to app configuration)"
 cp -p repo/opentree/oauth20_account.py web2py/gluon/contrib/login_methods/
 cp -p repo/opentree/rewrite.py web2py/gluon/
 cp -p repo/opentree/SITE.routes.py web2py/routes.py
-
-
-# ---------- RANDOM ----------
-
-# Sort of random.  Nothing depends on this.
-
-if ! grep --silent setup/activate .bashrc; then
-    echo "source $HOME/setup/activate" >> ~/.bashrc
-fi

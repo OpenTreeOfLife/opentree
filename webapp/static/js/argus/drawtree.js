@@ -258,10 +258,14 @@ function createArgus(spec) {
                 ajaxData.subtreeNodeID = String(o.nodeID);
             }
         } else {
+            /* TODO: Restore the ability to fetch conflict information from taxomachine?
             url = getConflictTaxJsonAltRel_url.replace('{nodeID}', o.nodeID);
             // @TEMP assuming ottol
             ds = o.domSource === undefined ? "ottol" : o.domSource;
             ajaxData = {"domsource": ds}; // phylotastic TNRS API wants domsource, MTH believes.
+            */
+            alert("AJAX calls via taxomachine are no longer supported.");
+            return;
         }
         return {
             "url": url,

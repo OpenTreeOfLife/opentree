@@ -1125,7 +1125,7 @@ body {
                             <button id="single-otu-mapping-button" 
                                     class="btn btn-small row-controls-ghosted pull-right" 
                                     data-bind="visible: !autoMappingInProgress(),
-                                               click: requestTaxonMapping">Map carefully</button>
+                                               click: requestTaxonMapping">Fuzzy matches</button>
                           <!-- /ko -->
                           <!-- ko if: proposedMapping(otu) && !($.isArray(proposedMapping(otu))) -->
                            {{ # show mapped label }}
@@ -1730,13 +1730,11 @@ body {
     var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
     var getSyntheticTree_url = "{{=getSyntheticTree_url}}";
     var getSourceTree_url = "{{=getSourceTree_url}}";
-    var getConflictTaxJsonAltRel_url = "{{=getConflictTaxJsonAltRel_url}}";
     var getDraftTreeForOttolID_url = "{{=getDraftTreeForOttolID_url}}";
     var getDraftTreeForNodeID_url = "{{=getDraftTreeForNodeID_url}}";
     var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
     var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
     var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
-    var getJSONFromNode_url = "{{=getJSONFromNode_url}}";
     var phylesystem_config_url = "{{=phylesystem_config_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";
     var getMRCAForNodes_url = "{{=getMRCAForNodes_url}}";
@@ -2194,6 +2192,12 @@ body {
               <input type="checkbox" id="branch-length-toggle"
                      onclick="toggleBranchLengthsInViewer(this); return true;" />
               Cladogram (hide branch lengths)
+          </label>
+
+          <label class="checkbox" style="margin-left: 25px;" for="radial-layout-toggle"> 
+              <input type="checkbox" id="radial-layout-toggle"
+                     onclick="toggleRadialTreeLayoutInViewer(this); return true;" />
+              Radial tree layout
           </label>
       </div>
       <a class="btn" onclick="$('#tree-viewer').modal('hide'); false;">Close</a>

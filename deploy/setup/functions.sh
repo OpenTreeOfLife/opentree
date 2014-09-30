@@ -3,29 +3,11 @@
 
 set -e
 
-# Utilities.
+# Utilities and some setup.
 # Source this file from another bash script.
 
-# ---------- JAVA HOME ----------
-
-if false; then
-    # DOES NOT WORK ON UBUNTU, but preferred on Debian.
-    javalink=`readlink /etc/alternatives/java`
-    # => /usr/lib/jvm/java-7-openjdk-amd64/jre/bin/java
-    javalink=`dirname $javalink`
-    # => /usr/lib/jvm/java-7-openjdk-amd64/jre/bin
-    javalink=`dirname $javalink`
-    # => /usr/lib/jvm/java-7-openjdk-amd64/jre
-    javalink=`dirname $javalink`
-    # => /usr/lib/jvm/java-7-openjdk-amd64
-else
-    javalink=/usr/lib/jvm/java-7-openjdk-amd64
-fi
-
-export JAVA_HOME=$javalink
-
 # ---------- HOST NAME ----------
-# Remember the host name
+# Remember the host name.  See as-admin.sh
 
 HOSTFILE=hostname
 if [ -e $HOSTFILE ]; then
@@ -48,8 +30,8 @@ source venv/bin/activate
 
 function log() {
     if [ x$CONTROLLER = x ]; then
-	echo "CONTROLLER shell variable is not set !?"
-	exit 1
+        echo "CONTROLLER shell variable is not set !?"
+        exit 1
     fi
     mkdir -p log
     (echo `date` $CONTROLLER $OPENTREE_TAG " $*") >>log/messages
@@ -83,7 +65,7 @@ function opentree_branch {
 # push changes very easily, which is OK because we don't expect to be
 # making any changes that need to be kept.
 
-# Returns true is any change was made.
+# Returns true if any change was made.
 
 function git_refresh() {
     guser=$1    # OpenTreeOfLife
@@ -92,10 +74,10 @@ function git_refresh() {
     repos_par_arg=$4
 
     if [ x$branch = x ]; then
-	branch=${OPENTREE_BRANCHES[$reponame]}
-	if [ x$branch = x ]; then
-	    branch='master'
-	fi
+        branch=${OPENTREE_BRANCHES[$reponame]}
+        if [ x$branch = x ]; then
+            branch='master'
+        fi
     fi
     echo "Using branch $branch of repo $reponame"
 
@@ -111,7 +93,7 @@ function git_refresh() {
     if [ ! -d $repo_dir ] ; then
         (cd $repo_par; \
          git clone --branch $branch https://github.com/$guser/$reponame.git)
-	log Clone: $reponame `cd $repo_dir; git log | head -1`
+        log Clone: $reponame `cd $repo_dir; git log | head -1`
     else
         before=`cd $repo_dir; git log | head -1`
         # What if branch doesn't exist locally, or doesn't track origin branch?
@@ -123,7 +105,7 @@ function git_refresh() {
             changed=1
         else
             echo "Repository $reponame has changed"
-	    log Checkout: $reponame `cd $repo_dir; git log | head -1`
+            log Checkout: $reponame `cd $repo_dir; git log | head -1`
         fi
     fi
     return $changed

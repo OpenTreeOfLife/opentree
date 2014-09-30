@@ -22,7 +22,7 @@ if ! test -f redis/bin/redis-server ; then
             wget --no-verbose -O downloads/"${REDIS_WITH_VERSION}.tar.gz" http://download.redis.io/releases/"${REDIS_WITH_VERSION}".tar.gz
         fi
         (cd downloads; \
-            tar xfvz "${REDIS_WITH_VERSION}.tar.gz")
+            tar xfz "${REDIS_WITH_VERSION}.tar.gz")
     fi
     if ! test -d redis/work ; then
         mkdir -p redis/work
@@ -52,6 +52,7 @@ fi
 
 WEBAPP=phylesystem-api
 APPROOT=repo/$WEBAPP
+OTHOME=$PWD
 
 # This is required to make "git pull" work correctly
 git config --global user.name "OpenTree API"
@@ -65,6 +66,10 @@ cp -p $APPROOT/requirements.txt $APPROOT/requirements.txt.save
 if grep --invert-match "distribute" \
       $APPROOT/requirements.txt >requirements.txt.new ; then
     mv requirements.txt.new $APPROOT/requirements.txt
+fi
+
+if [ "${PEYOTL_LOG_FILE_PATH:0:1}" != "/" ]; then
+    PEYOTL_LOG_FILE_PATH="$OTHOME"/"$PEYOTL_LOG_FILE_PATH"
 fi
 
 git_refresh OpenTreeOfLife peyotl || true
@@ -90,13 +95,11 @@ pushd .
     # All the repos above are cloned via https, but we need to push via
     # ssh to use our deploy keys
     if ! grep "originssh" .git/config ; then
-	git remote add originssh git@github.com:OpenTreeOfLife/$OPENTREE_DOCSTORE.git
+        git remote add originssh git@github.com:OpenTreeOfLife/$OPENTREE_DOCSTORE.git
     fi
 popd
 
 pushd .
-    OTHOME=~opentree
-
     cd $APPROOT/private
     cp config.example config
     sed -i -e "s+REPO_PATH+$OTHOME/repo/${OPENTREE_DOCSTORE}_par/$OPENTREE_DOCSTORE+" config
@@ -122,6 +125,9 @@ pushd .
     #logging stuff
     sed -i -e "s+OPEN_TREE_API_LOGGING_LEVEL+${OPEN_TREE_API_LOGGING_LEVEL}+" config
     sed -i -e "s+OPEN_TREE_API_LOGGING_FORMATTER+${OPEN_TREE_API_LOGGING_FORMATTER}+" config
+    if [ "${OPEN_TREE_API_LOGGING_FILEPATH:0:1}" != "/" ]; then
+        OPEN_TREE_API_LOGGING_FILEPATH="$OTHOME"/"$OPEN_TREE_API_LOGGING_FILEPATH"
+    fi
     sed -i -e "s+OPEN_TREE_API_LOGGING_FILEPATH+${OPEN_TREE_API_LOGGING_FILEPATH}+" config
 popd
 
@@ -134,10 +140,10 @@ pushd .
     cd $OTHOME/repo/$WEBAPP/bin
     tokenfile=~/.ssh/OPENTREEAPI_OAUTH_TOKEN
     if [ -r $tokenfile ]; then
-    python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL $tokenfile
+        python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL $tokenfile
     else
-    echo "OPENTREEAPI_OAUTH_TOKEN not found (install-api.sh), prompting for manual handling of webhooks."
-    python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL
+        echo "OPENTREEAPI_OAUTH_TOKEN not found (install-api.sh), prompting for manual handling of webhooks."
+        python add_or_update_webhooks.py https://github.com/OpenTreeOfLife/$OPENTREE_DOCSTORE $OPENTREE_API_BASE_URL
     fi
 popd
 
