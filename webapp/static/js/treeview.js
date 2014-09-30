@@ -572,11 +572,14 @@ function historyStateToPageHeading( stateObj ) {
     //return (stateObj.nodeName +' <span style="color: #ccc; font-size: 0.8em;">('+ stateObj.domSource +'@'+ stateObj.nodeID +')</span>');
     return ('<span title="'+ stateObj.domSource +'@'+ stateObj.nodeID +'">'+ stateObj.nodeName +'</span>');
 }
+function makeSafeForWeb2pyURL(str) {
+    // replace characters considered unsafe (blocked) by web2py in a URL
+    return str.replace(/[:(), .]+/g, '-').replace(/[\[\]\+]+/g,'');
+}
 function historyStateToURL( stateObj ) {
     var safeNodeName = null;
     if (stateObj.nodeName) {
-        // replace characters considered unsafe (blocked) by web2py
-        safeNodeName = stateObj.nodeName.replace(/[:(), ]+/g, '-').replace(/[\[\]\+]+/g,'');
+        safeNodeName = makeSafeForWeb2pyURL(stateObj.nodeName);
     }
     return '/opentree'+ (stateObj.viewer ? '/'+stateObj.viewer : '') +'/'+ stateObj.domSource +'@'+ stateObj.nodeID + (safeNodeName ? '/'+ safeNodeName : '');
 }
@@ -949,9 +952,6 @@ function showObjectProperties( objInfo, options ) {
 
     displayName = (objName) ? objName : ("Unnamed "+ objType);
     jQuery('#provenance-panel .provenance-title').html( displayName );
-    // Make this name safe for use in URLs (for subtree download, EOL search)
-    // (prefer '+' to '%20', but carefully encode other characters)
-    var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');  
 
     /* Clear and rebuild collection of detailed properties, adapting to special
      * requirements as needed:
@@ -1202,7 +1202,9 @@ function showObjectProperties( objInfo, options ) {
         $('#extract-subtree')
             .css('color','')  // restore normal link color
             .unbind('click').click(function() {
-                window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ urlSafeDisplayName;
+                // Make this name safe for use in our subtree download URL
+                var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
+                window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ superSafeDisplayName;
 
                 /* OR this will load the Newick-tree text to show it in-browser
                 $.ajax({
@@ -1227,6 +1229,10 @@ function showObjectProperties( objInfo, options ) {
         if ((displayName.indexOf('Unnamed ') !== 0) && (displayName.indexOf('[') !== 0)) {
             // Attempt to find a page for this taxon in the Encyclopedia of Life website
             // N.B. This 'external-links' list can hold similar entries.
+            
+            // Make this name safe for use in our EOL search URL
+            // (prefer '+' to '%20', but carefully encode other characters)
+            var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');  
             $details.after('<ul class="external-links"><li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">Search EOL for \''+ displayName +'\'</a></li></ul>');
         }
     }
