@@ -1078,7 +1078,7 @@ body {
                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && !('^ot:altLabel' in otu) -->
                           {{ # show static adjusted label (modified by mapping hints) }}
                          <td>
-                            <em data-bind="text: adjustedLabel(otu['^ot:originalLabel']) || '?', 
+                            <em data-bind="text: adjustedLabelOrEmpty(otu['^ot:originalLabel']) || '&mdash;', 
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                            style: { 'color' : ($.trim(otu['^ot:ottTaxonName']) === '' && !proposedMapping(otu)) ?  '' : 'silver' }"
                                >WORKING?</em>
@@ -1086,7 +1086,7 @@ body {
                         <td>
                           <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['^ot:ottTaxonName']) === '' && !proposedMapping(otu) -->
                           {{ # show manual-editing widget }}
-                            <button class="btn btn-mini row-controls-ghosted" title="Edit this label manually" 
+                            <button class="btn btn-mini row-controls-ghosted pull-right" title="Edit this label manually" 
                                     data-bind="click: editOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <i class="icon-edit"></i>
                             </button>
@@ -1100,7 +1100,7 @@ body {
                             0; width: 97%;" data-bind="value: otu['^ot:altLabel'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: modifyEditedLabel, change: modifyEditedLabel }, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                         </td>
                         <td>
-                            <button class="btn btn-mini row-controls-ghosted" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                            <button class="btn btn-mini row-controls-ghosted pull-right" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <i class="icon-remove"></i>
                             </button>
                         </td>

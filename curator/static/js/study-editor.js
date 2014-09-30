@@ -3777,6 +3777,23 @@ function replaceViewModelNexson( nexml ) {
     nudgeTickler('ALL');
 }
 
+function adjustedLabelOrEmpty(label) {
+    // We should only display an adjusted label if it's changed from the
+    // original; otherwise return an empty string.
+    if (typeof(label) === 'function') {
+        label = label();
+    }
+    if (typeof(label) !== 'string') {
+        // probably null, nothing to see here
+        return "";
+    }
+    var adjusted = adjustedLabel(label);
+    if (adjusted == label) {
+        return "";
+    }
+    return adjusted;
+}
+
 function adjustedLabel(label) {
     // apply any active OTU mapping adjustments to this string
     if (typeof(label) === 'function') {
