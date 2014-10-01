@@ -1371,7 +1371,7 @@ function updateMappingStatus() {
         if (getNextUnmappedOTU()) {
             // IF auto-mapping is PAUSED, but there's more to do on this page
             detailsHTML = '<p'+'>Mapping paused. Select new OTUs or adjust mapping hints, then click the '
-                         +'<strong>Start mapping</strong> button above to try again.<'+'/p>';
+                         +'<strong>Map selected OTUs</strong> button above to try again.<'+'/p>';
             showBatchApprove = false;
             showBatchReject = proposedMappingNeedsDecision;
             needsAttention = proposedMappingNeedsDecision;
@@ -1520,7 +1520,7 @@ function scrubNexsonForTransport( nexml ) {
     // scrub otu properties
     var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
     $.each( allOTUs, function(i, otu) {
-        delete otu['availableForMapping'];  // only used in the curation app
+        delete otu['selectedForAction'];  // only used in the curation app
         if ('^ot:altLabel' in otu) {
             var ottId = $.trim(otu['^ot:ottId']);
             if (ottId !== '') {
@@ -4339,9 +4339,9 @@ var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-e
 function toggleMappingForOTU(otu, evt) {
     var $toggle = $(evt.target);
     if ($toggle.is(':checked')) {
-        otu['availableForMapping'] = true;
+        otu['selectedForAction'] = true;
     } else {
-        otu['availableForMapping'] = false;
+        otu['selectedForAction'] = false;
     }
     return true;  // update the checkbox
 }
@@ -4559,7 +4559,7 @@ function getNextUnmappedOTU() {
     var unmappedOTU = null;
     var visibleOTUs = viewModel.filteredOTUs().pagedItems();
     $.each( visibleOTUs, function (i, otu) {
-        var isAvailable = otu['availableForMapping'] || false; 
+        var isAvailable = otu['selectedForAction'] || false; 
         // if no such attribute, consider it unavailable
         if (isAvailable) {
             var ottMappingTag = otu['^ot:ottId'] || null;
@@ -4847,15 +4847,30 @@ function addMetaTagToParent( parent, props ) {
     parent.meta.push( newTag );
 }
 
-function clearVisibleMappings() {
+function clearSelectedMappings() {
     // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) OTUs.
     var visibleOTUs = viewModel.filteredOTUs().pagedItems();
     $.each( visibleOTUs, function (i, otu) {
-        unmapOTUFromTaxon( otu, {POSTPONE_UI_CHANGES: true} );
+        if (otu['selectedForAction']) {
+            unmapOTUFromTaxon( otu, {POSTPONE_UI_CHANGES: true} );
+        }
     });
     clearFailedOTUList();
     nudgeTickler('OTU_MAPPING_HINTS');
     nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
+}
+
+function clearAllMappings() {
+    var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+    if (confirm("WARNING: This will un-map all "+ allOTUs.length +" OTUs in the current study! Are you sure you want to do this?")) {
+        // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) OTUs.
+        $.each( allOTUs, function (i, otu) {
+            unmapOTUFromTaxon( otu, {POSTPONE_UI_CHANGES: true} );
+        });
+        clearFailedOTUList();
+        nudgeTickler('OTU_MAPPING_HINTS');
+        nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
+    }
 }
 
 function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {

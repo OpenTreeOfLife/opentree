@@ -1050,8 +1050,8 @@ body {
                   <thead>
                     <tr>
                       {{ if viewOrEdit == 'EDIT': }}
-                        <th width="5%" style="position: relative;"><span style="position: absolute; top: -0.75em; left: 0; z-index: -1; font-size: 0.85em;"
-                                >Map</span><input type="checkbox" onclick="toggleAllMappingCheckboxes(this); return true;" /></th>
+                        <th width="5%" style="position: relative;"><span style="position: absolute; top: -0.75em; left: -0.5em; z-index: -1; font-size: 0.85em;"
+                                >Select</span><input type="checkbox" onclick="toggleAllMappingCheckboxes(this); return true;" /></th>
                         <th width="" colspan="2">Original name</th>
                         <th width="30%" {{ if viewOrEdit == 'EDIT': }}colspan="2"{{pass}}>Modified for mapping</th>
                         <th width="30%">Mapped to taxon</th>
@@ -1066,10 +1066,9 @@ body {
                       {{ if viewOrEdit == 'EDIT': }}
                          <td style="text-align: left;">
                              <input type="checkbox" class="map-toggle" 
-                                    data-bind="checked: $data['availableForMapping'], 
+                                    data-bind="checked: $data['selectedForAction'], 
                                                click: toggleMappingForOTU, 
-                                               css: viewModel.ticklers.OTU_MAPPING_HINTS, 
-                                               disable: proposedMapping(otu) || $.trim(otu['^ot:ottTaxonName'])" />
+                                               css: viewModel.ticklers.OTU_MAPPING_HINTS" />
                          </td>
                       {{ pass }}
                         <td data-bind="text: otu['^ot:originalLabel']">&nbsp;</td>
@@ -1244,15 +1243,7 @@ body {
 
         {{ if viewOrEdit == 'EDIT': }}
 
-<!--
-            <button class="btn btn-warning input-block-level" style="margin-bottom: 1em;"
-                    onclick="clearVisibleMappings(); return false;">
-                <i class="icon-warning-sign icon-white"></i>
-                Clear all visible mappings
-            </button>
--->
-
-            <div id="mapping-status-panel" class="well">
+            <div id="mapping-status-panel" class="well" style="margin-top: 1em; clear: both;">
                 <div class="pull-right" style="margin-top: -2px;">
                     <button id="pause-mapping-button" class="btn btn-small" 
                             data-bind="visible: autoMappingInProgress()"
@@ -1261,7 +1252,7 @@ body {
                     <button id="start-mapping-button" class="btn btn-small"
                             data-bind="visible: !autoMappingInProgress()"
                             onclick="startAutoMapping(); return false;">
-                        <i class="icon-play"></i> Start mapping</button>
+                        <i class="icon-play"></i> Map selected OTUs</button>
                 </div>
                 <!-- TODO: heading changes to reflect status -->
                 <h4 style="margin-top: 0;" data-bind="visible: autoMappingInProgress()">Mapping in progress</h4>
@@ -1288,6 +1279,19 @@ body {
                     </button>
                 </div>
             </div>
+
+            <div style="margin: 1em 0; overflow: hidden;">
+                <button class="btn btn-small pull-left"
+                        onclick="clearSelectedMappings(); return false;">
+                    Clear selected mappings
+                </button>
+                <button class="btn btn-small btn-warning pull-right"
+                        onclick="clearAllMappings(); return false;">
+                    <i class="icon-warning-sign icon-white"></i>
+                    Clear <strong>all</strong> mappings
+                </button>
+            </div>
+
             <div class="well">
                 <h4 style="margin-top: 0;">Mapping options</h4>
                 <p>
