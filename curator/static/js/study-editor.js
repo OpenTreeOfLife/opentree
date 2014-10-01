@@ -1379,7 +1379,7 @@ function updateMappingStatus() {
             // auto-mapping is PAUSED and everything's been mapped
             if (proposedMappingNeedsDecision) {
                 // there are proposed mappings awaiting a decision
-                detailsHTML = '<p'+'>All chosen OTUs have been mapped. Use the '
+                detailsHTML = '<p'+'>All selected OTUs have been mapped. Use the '
                         +'<span class="btn-group" style="margin: -2px 0;">'
                         +' <button class="btn btn-mini disabled"><i class="icon-ok"></i></button>'
                         +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
@@ -1423,7 +1423,7 @@ function updateMappingStatus() {
 
                 /* TODO: replace this stuff with if/else block above 
                  */
-                detailsHTML = '<p'+'>Mapping is suspended because all visible OTUs have approved '
+                detailsHTML = '<p'+'>Mapping is suspended because all selected OTUs have approved '
                         +' labels already. To continue, use the '
                         +'<span class="btn-group" style="margin: -2px 0;">'
                         +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
