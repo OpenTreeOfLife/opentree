@@ -1363,14 +1363,14 @@ function updateMappingStatus() {
 
     if (autoMappingInProgress() === true) {
         // auto-mapping is ACTIVE (meaning we have work in hand)
-        detailsHTML = '<p'+'>Mapping in progress...<'+'/p>';
+        detailsHTML = ''; // '<p'+'>Mapping in progress...<'+'/p>';
         showBatchApprove = false;
         showBatchReject = false;
         needsAttention = false;
     } else {
         if (getNextUnmappedOTU()) {
             // IF auto-mapping is PAUSED, but there's more to do on this page
-            detailsHTML = '<p'+'>Mapping paused. Please adjust mapping hints and click the '
+            detailsHTML = '<p'+'>Mapping paused. Select new OTUs or adjust mapping hints, then click the '
                          +'<strong>Start mapping</strong> button above to try again.<'+'/p>';
             showBatchApprove = false;
             showBatchReject = proposedMappingNeedsDecision;
@@ -1379,7 +1379,7 @@ function updateMappingStatus() {
             // auto-mapping is PAUSED and everything's been mapped
             if (proposedMappingNeedsDecision) {
                 // there are proposed mappings awaiting a decision
-                detailsHTML = '<p'+'>All visible OTUs have been mapped. Use the '
+                detailsHTML = '<p'+'>All chosen OTUs have been mapped. Use the '
                         +'<span class="btn-group" style="margin: -2px 0;">'
                         +' <button class="btn btn-mini disabled"><i class="icon-ok"></i></button>'
                         +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
