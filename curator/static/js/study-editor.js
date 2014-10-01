@@ -1517,9 +1517,10 @@ function scrubNexsonForTransport( nexml ) {
         delete nexml['^ot:focalClade'];
     }
 
-    // scrub otu altLabel properties
+    // scrub otu properties
     var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
     $.each( allOTUs, function(i, otu) {
+        delete otu['availableForMapping'];  // only used in the curation app
         if ('^ot:altLabel' in otu) {
             var ottId = $.trim(otu['^ot:ottId']);
             if (ottId !== '') {
@@ -4334,6 +4335,38 @@ var failedMappingOTUs = ko.observableArray([]); // ignore these until we have ne
 var proposedOTUMappings = ko.observable({}); // stored any labels proposed by server, keyed by OTU id
 var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-editing UI to refresh!
 
+function toggleMappingForOTU(otu, evt) {
+    var $toggle = $(evt.target);
+    if ($toggle.is(':checked')) {
+        otu['availableForMapping'] = true;
+    } else {
+        otu['availableForMapping'] = false;
+    }
+    return true;  // update the checkbox
+}
+function toggleAllMappingCheckboxes(cb) {
+    var $bigToggle = $(cb);
+    var $allMappingToggles = $('input.map-toggle');
+    if ($bigToggle.is(':checked')) {
+        $allMappingToggles.each(function() {
+            var $cb = $(this);
+            if ($cb.is(':checked') == false) {
+                $cb.prop('checked', true);
+                $cb.triggerHandler('click');
+            }
+        });
+    } else {
+        $allMappingToggles.each(function() {
+            var $cb = $(this);
+            if ($cb.is(':checked')) {
+                $cb.prop('checked', false);
+                $cb.triggerHandler('click');
+            }
+        });
+    }
+    return true;
+}
+
 function editOTULabel(otu) {
     var OTUid = otu['@id'];
     var originalLabel = otu['^ot:originalLabel'];
@@ -4525,14 +4558,18 @@ function getNextUnmappedOTU() {
     var unmappedOTU = null;
     var visibleOTUs = viewModel.filteredOTUs().pagedItems();
     $.each( visibleOTUs, function (i, otu) {
-        var ottMappingTag = otu['^ot:ottId'] || null;
-        var proposedMappingInfo = proposedMapping(otu);
-        if (!ottMappingTag && !proposedMappingInfo) {
-            // this is an unmapped OTU!
-            if (failedMappingOTUs.indexOf(otu['@id']) === -1) {
-                // it hasn't failed mapping (at least not yet)
-                unmappedOTU = otu;
-                return false;
+        var isAvailable = otu['availableForMapping'] || false; 
+        // if no such attribute, consider it unavailable
+        if (isAvailable) {
+            var ottMappingTag = otu['^ot:ottId'] || null;
+            var proposedMappingInfo = proposedMapping(otu);
+            if (!ottMappingTag && !proposedMappingInfo) {
+                // this is an unmapped OTU!
+                if (failedMappingOTUs.indexOf(otu['@id']) === -1) {
+                    // it hasn't failed mapping (at least not yet)
+                    unmappedOTU = otu;
+                    return false;
+                }
             }
         }
     });
