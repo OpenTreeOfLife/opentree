@@ -1424,7 +1424,7 @@ function updateMappingStatus() {
                 /* TODO: replace this stuff with if/else block above 
                  */
                 detailsHTML = '<p'+'>Mapping is suspended because all selected OTUs have approved '
-                        +' labels already. To continue, use the '
+                        +' labels already. To continue, select additional OTUs to map, or use the '
                         +'<span class="btn-group" style="margin: -2px 0;">'
                         +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
                         +'</span>'
