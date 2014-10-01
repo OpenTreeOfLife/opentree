@@ -1323,7 +1323,9 @@ body {
                 </p>
                 <form class="form-inline" style="margin: 0; margin-left: 8px;">
                  <fieldset>
-                  <label><input type="checkbox" style="margin-top: 0; padding-top: 0;"> Use fuzzy matching (slower)</label>
+                  <label><input id="toggle-fuzzy-matching" type="checkbox" style="margin-top: 0; padding-top: 0;"
+                      data-bind="checked: getOTUMappingHints().data['useFuzzyMatching'],
+                                 event: { click: updateMappingHints }"> Use fuzzy matching (slower)</label>
                  </fieldset>
                 </form>
                 <p>

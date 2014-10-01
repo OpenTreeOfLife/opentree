@@ -4003,6 +4003,7 @@ var nexsonTemplates = {
                 "@humanMessageType": "NONE",
                 "data": {
                     "searchContext": {"$": "All life"},
+                    "useFuzzyMatching": false,
                     "substitutions": {"substitution": [
                         // always one default (empty) substitution
                         { 
@@ -4613,7 +4614,7 @@ function requestTaxonMapping( otuToMap ) {
 
     // groom trimmed text based on our search rules
     var searchContextName = getOTUMappingHints().data.searchContext.$;
-
+    var usingFuzzyMatching = getOTUMappingHints().data['useFuzzyMatching'] || false;
     // show spinner alongside this item...
     currentlyMappingOTUs.push( otuID );
     
@@ -4627,7 +4628,7 @@ function requestTaxonMapping( otuToMap ) {
             "queryString": searchText,
             "includeDubious": false,
             "includeDeprecated": false,
-            "doApproximateMatching": singleTaxonMapping ? true : false,
+            "doApproximateMatching": (singleTaxonMapping || usingFuzzyMatching) ? true : false,
             "contextName": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
