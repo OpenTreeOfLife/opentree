@@ -77,7 +77,7 @@ body {
 }
 .vizcontent div.viewer-frame {
 	padding: 0px;
-    background-color: #f5f5ec; /* #faf5ee; */
+    background-color: #fff;
     overflow: auto;
 }
 
