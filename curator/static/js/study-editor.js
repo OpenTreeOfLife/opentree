@@ -877,11 +877,7 @@ function loadSelectedStudy() {
                 var order = viewModel.listFilters.OTUS.order();
 
                 // gather all OTUs from all 'otus' collections
-                var allOTUs = [];
-                $.each(viewModel.nexml.otus, function( i, otusCollection ) {
-                    $.merge(allOTUs, otusCollection.otu );
-                });
-
+                var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
                 console.log("  filtering "+ allOTUs.length +" otus...");
 
                 var chosenTrees;
@@ -1014,6 +1010,17 @@ function loadSelectedStudy() {
                         return false;
 
                 }
+
+                // Un-select any otu that's now out of view (ie, outside of the first page of results)
+                var itemsInView = filteredList.slice(0, viewModel._filteredOTUs.pageSize);
+                allOTUs.map(function(otu) {
+                    if (otu['selectedForAction']) {
+                        var isOutOfView = ($.inArray(otu, itemsInView) === -1);
+                        if (isOutOfView) {
+                            otu['selectedForAction'] = false;
+                        }
+                    }
+                });
                 
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
