@@ -5901,7 +5901,12 @@ function lookUpDOI() {
                 if (resultsJSON.length === 0) {
                     alert('No matches found, please check your publication reference text.')
                 } else {
-                    $('#DOI-lookup ul.found-matches').empty();
+                    var $lookup = $('#DOI-lookup');
+                    $lookup.find('.found-matches-count').text(resultsJSON.length);
+                    $lookup.find('.found-matches').empty();
+                    $lookup.find('#current-ref-text').html( viewModel.nexml['^ot:studyPublicationReference'] || '<em>No reference text</em>');
+                    var currentDOI = viewModel.nexml['^ot:studyPublication']['@href'];
+                    updateDOIPreviewLink(currentDOI);
                     $.each(resultsJSON, function(i, match) {
                         var $matchInfo = $('<div class="match"><div class="full-citation"></div><div class="doi"></div></div>');
                         $matchInfo.find('.full-citation').html(
@@ -5920,26 +5925,62 @@ function lookUpDOI() {
                             $btn.click( updateDOIFromLookup );
                             $matchInfo.append($btn);
                         }
-                        $('#DOI-lookup ul.found-matches').append($matchInfo);
+                        $lookup.find('.found-matches').append($matchInfo);
                     });
-                    $('#DOI-lookup').modal('show');
+                    $lookup.off('shown').on('shown', function() {
+                        // size scrolling list to fit in the current DOI-lookup popup window
+                        var $lookup = $('#DOI-lookup');
+                        var resultsListHeight = $lookup.find('.modal-body').height() - $lookup.find('.before-matches').height();
+                        $lookup.find('.found-matches').outerHeight(resultsListHeight);
+                    });
+                    $lookup.modal('show'); 
                 }
             }
         });
     }
 }
 
+function updateDOIPreviewLink(doi) {
+    var $previewLink = $('#DOI-lookup').find('#current-ref-URL');
+    if (doi) {
+        $previewLink.html(doi);
+        $previewLink.attr('href', doi);
+        $previewLink.removeAttr('onclick');
+    } else {
+        $previewLink.html('<em>No DOI or URL</em>');
+        $previewLink.attr('href', '#');
+        $previewLink.attr('onclick','return false;');
+    }
+}
+
+
 function updateRefTextFromLookup(evt) {
     var $clicked = $(evt.target);
     var chosenRefText = $clicked.closest('.match').find('.full-citation').text();
-    //$('#ot_studyPublicationReference').val(chosenRefText);
+    
+    // update popup window and adjust list height
+    var $lookup = $('#DOI-lookup');
+    var oldBeforeListHeight = $lookup.find('.before-matches').outerHeight();
+    var oldListHeight = $lookup.find('.found-matches').outerHeight();
+    $lookup.find('#current-ref-text').html(chosenRefText);
+    var heightAdjust = $lookup.find('.before-matches').outerHeight() - oldBeforeListHeight;
+    $lookup.find('.found-matches').outerHeight(oldListHeight - heightAdjust);
+
     viewModel.nexml['^ot:studyPublicationReference'] = chosenRefText;
     nudgeTickler('GENERAL_METADATA');
 }
 function updateDOIFromLookup(evt) {
     var $clicked = $(evt.target);
     var chosenDOI = $clicked.closest('.match').find('.doi').text();
-    //$('#ot_studyPublication').val(chosenDOI);
+    
+    // update popup window and adjust list height
+    var $lookup = $('#DOI-lookup');
+    var oldBeforeListHeight = $lookup.find('.before-matches').outerHeight();
+    var oldListHeight = $lookup.find('.found-matches').outerHeight();
+    updateDOIPreviewLink(chosenDOI);
+    var heightAdjust = $lookup.find('.before-matches').outerHeight() - oldBeforeListHeight;
+    $lookup.find('.found-matches').outerHeight(oldListHeight - heightAdjust);
+
     viewModel.nexml['^ot:studyPublication']['@href'] = chosenDOI;
     // (re)format DOI if needed, and test for duplicate studies
     validateAndTestDOI();
