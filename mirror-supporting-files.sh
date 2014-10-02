@@ -24,5 +24,8 @@ fi
 # N.B. this is *relative* to $LOCAL_MIRROR above!
 [ "x$LOCAL_BACKUPDIR" != x ] || LOCAL_BACKUPDIR=../$CURATION_HOST-older
 
-rsync --progress --compress --archive --backup --backup-dir=$LOCAL_BACKUPDIR --delete $CURATION_HOST:/home/opentree/repo/opentree/curator/uploads $LOCAL_MIRROR
+rsync --progress --compress --archive --backup --backup-dir=$LOCAL_BACKUPDIR/uploads/ --delete $CURATION_HOST:/home/opentree/repo/opentree/curator/uploads/ $LOCAL_MIRROR/uploads
 
+rsync --progress --compress --archive --backup --backup-dir=$LOCAL_BACKUPDIR/scratch/ --delete $CURATION_HOST:/home/opentree/repo/opentree/curator/private/scratch/ $LOCAL_MIRROR/scratch
+
+rsync --progress --compress --archive --backup --backup-dir=$LOCAL_BACKUPDIR/peyotl-scratch --delete $CURATION_HOST:/home/opentree/repo/peyotl/scratch/ $LOCAL_MIRROR/peyotl-scratch
