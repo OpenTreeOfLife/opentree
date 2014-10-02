@@ -4859,10 +4859,14 @@ function clearSelectedMappings() {
     var visibleOTUs = viewModel.filteredOTUs().pagedItems();
     $.each( visibleOTUs, function (i, otu) {
         if (otu['selectedForAction']) {
+            // clear any "established" mapping (already approved)
             unmapOTUFromTaxon( otu, {POSTPONE_UI_CHANGES: true} );
+            // clear any proposed mapping
+            delete proposedOTUMappings()[ otu['@id'] ];
         }
     });
     clearFailedOTUList();
+    proposedOTUMappings.valueHasMutated();
     nudgeTickler('OTU_MAPPING_HINTS');
     nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
 }
@@ -4872,9 +4876,13 @@ function clearAllMappings() {
     if (confirm("WARNING: This will un-map all "+ allOTUs.length +" OTUs in the current study! Are you sure you want to do this?")) {
         // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) OTUs.
         $.each( allOTUs, function (i, otu) {
+            // clear any "established" mapping (already approved)
             unmapOTUFromTaxon( otu, {POSTPONE_UI_CHANGES: true} );
+            // clear any proposed mapping
+            delete proposedOTUMappings()[ otu['@id'] ];
         });
         clearFailedOTUList();
+        proposedOTUMappings.valueHasMutated();
         nudgeTickler('OTU_MAPPING_HINTS');
         nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
     }
