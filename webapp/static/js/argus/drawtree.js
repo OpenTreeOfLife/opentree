@@ -151,7 +151,8 @@ function createArgus(spec) {
         "altRelColor": "#f00",
         "nodeColor": "#999",
         "nodeHoverColor": "#ff3333",
-        "pathColor": "#555",
+        "pathColor": "#999",
+        "strongPathColor": "#000",
         "labelColor": "#000",
         "provenanceHighlightColor": "#ff3333",
         "tipColor": "#999",
@@ -1198,11 +1199,12 @@ function createArgus(spec) {
                 supportedByPhylogeny = sb.length > (supportedByTaxonomy ? 1 : 0);
 
             if (supportedByTaxonomy && supportedByPhylogeny) {
-                lineDashes = '--..';
-                lineColor = this.pathColor;
+                //lineDashes = '--..';
+                lineDashes = '';
+                lineColor = this.strongPathColor;
             } else if (supportedByPhylogeny){
                 lineDashes = '';
-                lineColor = this.pathColor;
+                lineColor = this.strongPathColor;
             } else if (supportedByTaxonomy){
                 lineDashes = '- ';
                 lineColor = this.pathColor;
