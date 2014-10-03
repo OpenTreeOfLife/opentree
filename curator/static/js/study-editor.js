@@ -5990,8 +5990,8 @@ function autoApplyExactMatch() {
             var $link = $(this);
             if ($link.text() === hopefulSearchName) {
                 $link.trigger('click');
+                return false;
             }
-            return false;
         });
     }
 }
