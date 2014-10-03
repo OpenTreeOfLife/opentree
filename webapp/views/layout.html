@@ -190,12 +190,15 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
               <li><a href="http://blog.opentreeoflife.org/" target="_blank">Blog</a></li>
             </ul>
             <form id="taxon-search-form" class="navbar-search pull-right" autocomplete="off">
-                <input type="text" name="taxon-search" class="search-query" placeholder="Search for taxon" autocomplete="off"
-                    style="width: 100px;">
+                <div class="left-inner-addon">
+                    <i class="icon-search"></i>
+                    <input type="text" name="taxon-search" class="search-query" placeholder="Search for taxon" autocomplete="off"
+                        style="width: 100px;">
+                </div>
                 <!-- <input type="submit" style="" name="taxon-search-go" value="Go" onclick="return false;"/> -->
                 <!-- then show dropdown when results are ready... -->
                 <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
-                <select style="margin-bottom: 0; width: auto;" name="taxon-search-context">
+                <select class="btn-inverse" style="margin-bottom: 0; width: auto;" name="taxon-search-context">
                     {{ # generate our contextNames list based on newly fetched names
                       try:
                        for context_name in taxonSearchContextNames:
