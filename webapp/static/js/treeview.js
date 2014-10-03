@@ -398,13 +398,33 @@ function togglePropertiesPanel( hideOrShow ) {
 clearTimeout(searchTimeoutID);  // in case there's a lingering search from last page!
 var searchTimeoutID = null;
 var searchDelay = 1000; // milliseconds
-function setTaxaSearchFuse() {
+var hopefulSearchName = null;
+function setTaxaSearchFuse(e) {
     if (searchTimeoutID) {
         // kill any pending search, apparently we're still typing
         clearTimeout(searchTimeoutID);
     }
     // reset the timeout for another n milliseconds
     searchTimeoutID = setTimeout(searchForMatchingTaxa, searchDelay);
+
+    /* If the last key pressed was the ENTER key, stash the current (trimmed)
+     * string and auto-jump if it's a valid taxon name.
+     */
+    if (e.type === 'keyup') {
+        switch (e.which) {
+            case 13:
+                hopefulSearchName = $('input[name=taxon-search]').val().trim();
+                jumpToExactMatch();  // use existing menu, if found
+                break;
+            case 17:
+                // do nothing (probably a second ENTER key)
+                break;
+            default:
+            hopefulSearchName = null;
+        }
+    } else {
+        hopefulSearchName = null;
+    }
 }
 
 var showingResultsForSearchText = '';
@@ -424,6 +444,7 @@ function searchForMatchingTaxa() {
     } else if (searchText.length < 2) {
         $('#search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
         $('#search-results').dropdown('toggle');
+
         snapViewerFrameToMainTitle();
         return false;
     }
@@ -525,6 +546,8 @@ function searchForMatchingTaxa() {
                         $link.attr('href', safeURL);
                     });
                 $('#search-results').dropdown('toggle');
+
+                jumpToExactMatch();
             } else {
                 $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
                 $('#search-results').dropdown('toggle');
@@ -534,6 +557,19 @@ function searchForMatchingTaxa() {
     });
 
     return false;
+}
+
+function jumpToExactMatch() {
+    // if the user hit the ENTER key, and there's an exact match, apply it automatically
+    if (hopefulSearchName) {
+        $('#search-results a').each(function() {
+            var $link = $(this);
+            if ($link.text() === hopefulSearchName) {
+                window.location = $link.attr('href');
+                return false;
+            }
+        });
+    }
 }
 
 function fixLoginLinks() {
