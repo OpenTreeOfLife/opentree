@@ -5988,7 +5988,7 @@ function autoApplyExactMatch() {
     if (hopefulSearchName) {
         $('#search-results a').each(function() {
             var $link = $(this);
-            if ($link.text() === hopefulSearchName) {
+            if ($link.text().toLowerCase() === hopefulSearchName.toLowerCase()) {
                 $link.trigger('click');
                 return false;
             }

@@ -564,7 +564,7 @@ function jumpToExactMatch() {
     if (hopefulSearchName) {
         $('#search-results a').each(function() {
             var $link = $(this);
-            if ($link.text() === hopefulSearchName) {
+            if ($link.text().toLowerCase() === hopefulSearchName.toLowerCase()) {
                 window.location = $link.attr('href');
                 return false;
             }
