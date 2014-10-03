@@ -1193,7 +1193,7 @@ function showObjectProperties( objInfo, options ) {
     var subtreeDepthLimit = 4;
     if (nodeSection) {
         $details = $sections.find('.properties-section:first dl');
-        $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Extract subtree</a></dt>');
+        $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Download subtree as Newick string</a></dt>');
         $details.append('<dd id="extract-subtree-caveats">&nbsp;</dd>');
       
         // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
