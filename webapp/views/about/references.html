@@ -1,5 +1,6 @@
 {{extend 'layout.html'}}
 {{import urllib}}
+{{from pprint import pprint}}
 <style type="text/css">
 <!--
 div.contributing-studies div.row {
@@ -117,10 +118,10 @@ div.contributing-studies div.links a {
                   {{ pass }}
                 <!--
                   <a target="_blank" href="http://www.reelab.net/phylografter/study/view/{{= study.get('ot:studyId')}}">Open in phylografter</a>
-                 {{ if study.get('ot:dataDeposit'): }}
-                  <a target="_blank" href="{{= study.get('ot:dataDeposit') }}">Study data archive</a>
-                 {{ pass }}
                   -->
+                 {{ if study.get('ot:dataDeposit'): }}
+                  <a target="_blank" href="{{= study.get('ot:dataDeposit') }}">Data deposit DOI/URL</a>
+                 {{ pass }}
               </div>
              </div>
                 {{ priority += 1 }}
