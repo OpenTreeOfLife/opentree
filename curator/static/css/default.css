@@ -681,10 +681,16 @@ tr:hover .row-controls-ghosted {
     /* try to make this offsetParent to all its contents */
     position: relative;
 }
+#tree-legend {
+    background-color: #f5f5f5;
+    border-radius: 6px;
+    padding: 8px;
+}
 #tree-legend table {
     width: 100%;
 }
 #tree-legend table td {
+    height: 38px;
     padding: 4px;
 }
 #server-details {

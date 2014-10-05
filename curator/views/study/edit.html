@@ -2204,11 +2204,13 @@ body {
             Normal internal label:
          </td>
          <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-internal-normal.png')}}" alt="outgroup style" />
          </td>
          <td align="right">
-            Normal tip label:
+            Mapped OTU (tip):
          </td>
          <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-normal.png')}}" alt="outgroup style" />
          </td>
         </tr>
         <tr>
@@ -2219,14 +2221,16 @@ body {
           <img src="{{=URL('static','images/tree-viewer-legend-ingroup.png')}}" alt="ingroup style" />
          </td>
          <td align="right">
-            Ambiguous internal label:
+            Ambiguous label:
          </td>
          <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-internal-ambiguous.png')}}" alt="outgroup style" />
          </td>
          <td align="right">
             Unmapped OTU:
          </td>
          <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-unmapped.png')}}" alt="outgroup style" />
          </td>
         </tr>
         <tr>
@@ -2234,14 +2238,35 @@ body {
          </td>
          <td>
          </td>
+         <td colspan="3" align="right">
+             OTU with conflicting mapping (unresolved):
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-conflicting.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
          <td align="right">
          </td>
          <td>
          </td>
-         <td align="right">
-            OTU with conflicting mapping:
+         <td colspan="3" align="right">
+             OTU with conflicting mapping (chosen exemplar):
          </td>
          <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-exemplar.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+         </td>
+         <td>
+         </td>
+         <td colspan="3" align="right">
+             OTU with conflicting mapping (non-exemplar):
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-non-exemplar.png')}}" alt="outgroup style" />
          </td>
         </tr>
        </table>
