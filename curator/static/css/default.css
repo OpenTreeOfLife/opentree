@@ -632,13 +632,34 @@ tr:hover .row-controls-ghosted {
 }
 
 /* DOI lookup window */
+.before-matches {
+    margin-top: -6px;
+}
+.current-ref-values {
+    background-color: #eee;
+    margin: 0px -4px 2px;
+    padding: 6px 8px; 
+    border-radius: 8px;
+    margin-bottom: 2px;
+}
+.current-ref-values strong {
+    color: #555;
+}
 .found-matches {
-    margin-right: 20px;
+    border: 1px solid #ddd;
+    margin: 0px -4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    max-height: 365px;
+    overflow-y: auto;
 }
 .found-matches .match {
-    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
     padding-top: 0.5em;
     padding-bottom: 1em;
+}
+.found-matches .match:last-child {
+    border-bottom: none;
 }
 .found-matches .doi {
     font-weight: bold;
