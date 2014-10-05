@@ -1964,10 +1964,10 @@ body {
     </div>
     <div class="modal-body tab-content">
       <div class="tab-pane active" id="tree-properties">
-         <form class="form-inline" style="overflow: hidden;">
+         <form class="form-inline" style="overflow: hidden; margin-bottom: 0px;">
           {{ if viewOrEdit == 'EDIT': }}
             <!-- editable tree properties here -->
-              <div class="pull-left" style="width: 48%;">
+              <div style="padding: 0 4px;">
                 <label>Inference method: </label>
                 <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny --> 
                 <select id="inference-method-select"
@@ -2031,22 +2031,11 @@ body {
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
                    <a class="btn btn-small btn-info Xbtn-info-disabled"
                       data-bind="click: updateSyntheticMRCAForTree">Test</a>
+              <br/>
 
-              </div>
-              <div class="pull-left" style="width: 48%;">
                 <label>Mapped leaf nodes: </label>
                 <span data-bind="html: getMappedTallyForTree($data), 
                                  css: viewModel.ticklers.TREES">?? / ??</span>
-              <br/>
-
-                <label>Tags: </label>
-                <select id="tree-tags" multiple="multiple" placeholder="Add tags"
-                        onchange="updateElementTags(this);"
-                        data-bind="attr: {'treeid': $data['@id'] },
-                                   options: getTags( getTreeByID($data['@id']) ), 
-                                   event: { keyup: nudge.TREES, change: nudge.TREES }, 
-                                   css: viewModel.ticklers.TREES">
-                </select>
 
               <br/>
 
@@ -2069,28 +2058,26 @@ body {
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
 
-               <!-- ko if: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:time' -->
-                <br/>
+            <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:time'" >
                 <label style="margin-left: 10px;">Time unit: </label>
                 <select data-bind="options: ['Myr'],
                     value: $data['^ot:branchLengthTimeUnit'],
                     event: { keyup: nudge.TREES, change: nudge.TREES }, 
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
-               <!-- /ko -->
+            </span>
 
-               <!-- ko if: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:other' -->
-                <br/>
-                <label style="margin-left: 10px;">&nbsp;</label>
+            <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:other'" >
                 <input type="text" data-bind="value: $data['^ot:branchLengthDescription'],
                     valueUpdate: ['afterkeydown', 'input'],
                     event: { keyup: nudge.TREES, change: nudge.TREES },
                     css: viewModel.ticklers.TREES
                 " placeholder="Describe here"></input>
-               <!-- /ko -->
+            </span>
 
            <!-- NOTE that a virtual element with 'ko if: ...' didn't work here! -->
-            <div data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree( $data )" class="needs-attention">
+            <div data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree( $data )" 
+                 class="needs-attention" style="margin: 4px -4px;">
                 <label>Internal node labels represent:</label>
                 <!-- N.B. By not specifying 'optionsValue', we'll stash the
                      complete modeInfo object into viewModel.chosenNodeLabelModeInfo -->
@@ -2103,20 +2090,19 @@ body {
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
 
-               <div class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && chosenLabelModeRequiresDescription()">
-                <label style="margin-left: 10px;">&nbsp;</label>
+               <span class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && chosenLabelModeRequiresDescription()">
                 <input type="text" data-bind="value: viewModel.nodeLabelModeDescription,
                     valueUpdate: ['afterkeydown', 'input'],
                     event: { keyup: nudge.TREES, change: nudge.TREES },
                     css: viewModel.ticklers.TREES
                 " placeholder="Describe here"></input>
-               </div>
+               </span>
 
-               <div class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree($data)">
-                 <label style="margin-left: 10px;">&nbsp;</label>
-                 <button class="btn btn-info" data-bind="click: function() { if (confirm('Warning: This can shift ambiguous node labels to their adjacent edges. Check rooting carefully! OK to proceed?')) updateNodeLabelMode($data); return false; }, enable: readyToCaptureInternalNodeLabels()"
+               <span class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree($data)">
+                 <button class="btn btn-info" style="margin-left: 10px;" 
+                         data-bind="click: function() { if (confirm('Warning: This can shift ambiguous node labels to their adjacent edges. Check rooting carefully! OK to proceed?')) updateNodeLabelMode($data); return false; }, enable: readyToCaptureInternalNodeLabels()"
                     >Capture internal node labels</button>
-               </div>
+               </span>
 
             </div>
 
@@ -2126,6 +2112,14 @@ body {
                 <strong data-bind="css: viewModel.ticklers.TREES(), text: getNodeLabelModeDescription($data)"></strong>
             </div>
 
+                <label>Tags: </label>
+                <select id="tree-tags" multiple="multiple" placeholder="Add tags"
+                        onchange="updateElementTags(this);"
+                        data-bind="attr: {'treeid': $data['@id'] },
+                                   options: getTags( getTreeByID($data['@id']) ), 
+                                   event: { keyup: nudge.TREES, change: nudge.TREES }, 
+                                   css: viewModel.ticklers.TREES">
+                </select>
               </div>
 
           {{ else: }}

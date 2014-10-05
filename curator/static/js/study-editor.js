@@ -2071,7 +2071,7 @@ var branchLengthModeDescriptions = [
     { value: 'ot:time', text: "Time" },  //  TODO: add units from ot:branchLengthTimeUnit
     { value: 'ot:bootstrapValues', text: "Bootstrap values" },
     { value: 'ot:posteriorSupport', text: "Posterior support values" },
-    { value: 'ot:other', text: "Other (describe below)" }  // TODO: refer ot:branchLengthDescription
+    { value: 'ot:other', text: "Other (describe)" }  // TODO: refer ot:branchLengthDescription
 ]
 function getBranchLengthModeDescriptionForTree( tree ) {
     var rawModeValue = tree['^ot:branchLengthMode'];

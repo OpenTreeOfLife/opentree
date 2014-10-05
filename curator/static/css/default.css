@@ -681,6 +681,9 @@ tr:hover .row-controls-ghosted {
     /* try to make this offsetParent to all its contents */
     position: relative;
 }
+#tree-properties .bootstrap-tagsinput {
+    margin-bottom: 0px;
+}
 #tree-legend {
     background-color: #f5f5f5;
     border-radius: 6px;
