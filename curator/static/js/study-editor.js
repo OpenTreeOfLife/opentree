@@ -2716,7 +2716,7 @@ function showTreeViewer( tree, options ) {
             } else {
                 displayPrompt = options.HIGHLIGHT_PROMPT;
             }
-            $('#tree-viewer .modal-header').append(
+            $('#tree-viewer .modal-header .nav-tabs').before(
                 '<div class="stepwise-highlights help-box">'
               +      displayPrompt 
               + (options.HIGHLIGHT_PLAYLIST.length < 2 ? '' :
@@ -2773,6 +2773,7 @@ function showTreeViewer( tree, options ) {
         ///hideModalScreen();
     }
 
+    var $treeViewerTabs = $('#tree-viewer .modal-header a[data-toggle="tab"]');
     if (treeViewerIsInUse) {
         // trigger its 'shown' event to 
         updateTreeDisplay();
@@ -2791,8 +2792,31 @@ function showTreeViewer( tree, options ) {
             ///console.log('@@@@@ hidden');
         });
 
+        // hide or show footer options based on tab chosen
+        $treeViewerTabs.off('shown').on('shown', function (e) {
+            var newTabTarget = $(e.target).attr('href').split('#')[1];
+            //var oldTabTarget = $(e.relatedTarget).attr('href').split('#')[1];
+            switch (newTabTarget) {
+                case 'tree-properties':
+                case 'tree-legend':
+                    $('#tree-phylogram-options').hide();
+                    break;
+                case 'tree-phylogram':
+                    $('#tree-phylogram-options').show();
+                    break;
+            }
+        });
         $('#tree-viewer').modal('show');
     }
+
+    /* IF we want different starting tab in different scenarios
+    if (options.HIGHLIGHT_PLAYLIST) {
+        $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
+    } else {
+        $treeViewerTabs.filter('[href*=tree-properties]').tab('show');
+    }
+    */
+    $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
 }
 
 function findOTUInTrees( otu, trees ) {
@@ -3007,7 +3031,7 @@ function drawTree( treeOrID, options ) {
         layoutGenerator = d3.phylogram.build;
     }
     vizInfo = layoutGenerator(
-        "#tree-viewer #dialog-data",   // selector
+        "#tree-viewer #tree-phylogram",   // selector
         rootNode,
         {           // options
             vis: vizInfo.vis,
@@ -3100,7 +3124,6 @@ function drawTree( treeOrID, options ) {
     // (re)assert standard click behavior for main vis background
     d3.select('#tree-viewer')  // div.modal-body')
         .on('click', function(d) {
-            d3.event.stopPropagation();
             // hide any node menu
             hideNodeOptionsMenu( );
         });
