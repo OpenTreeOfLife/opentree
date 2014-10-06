@@ -3719,7 +3719,6 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         otusElement['otu'] = makeArray( otusElement['otu'] );
     });
 
-    var importedTreeElements = [ ];
     var itsTreesCollection = data[nexmlName]['trees'];
     $.each(itsTreesCollection, function(i, treesElement) {
         treesElement['tree'] = makeArray( treesElement['tree'] );
@@ -3729,8 +3728,6 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
                 // mark all new tree(s) as preferred, eg, a candidate for synthesis
                 viewModel.nexml['^ot:candidateTreeForSynthesis'].push( tree['@id'] );
             }
-            // build proper NexSON elements for imported tree IDs
-            importedTreeElements.push( {"$": tree['@id']} );
         });
     });
 
@@ -3742,13 +3739,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     }
 
     // update the files list (and auto-save?)
-    var file = cloneFromNexsonTemplate('single supporting file');
-    file['@filename'] = responseJSON.filename || "";
-    file['@url'] = responseJSON.url || "";
-    file['@type'] = responseJSON.inputFormat || "";
-    file.description.$ = responseJSON.description || "";
-    file['sourceForTree'] = importedTreeElements;
-    file['@size'] = responseJSON.size || "";
+    var file = responseJSON.annotationFileInfo;
     getSupportingFiles().data.files.file.push(file);
 
     // clear the import form (using Clear button to capture all behavior)
