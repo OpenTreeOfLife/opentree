@@ -255,6 +255,13 @@ $(document).ready(function() {
         url: '/curator/supporting_files/upload_file',
         dataType: 'json',
         autoUpload: true,
+        add: function(e, data) {
+            console.log('*** fileupload - add ***');
+            if (!remindAboutAddingLateData()) {
+                return false;  // showing the reminder instead
+            }
+            data.submit();
+        },
         done: function() {
             console.log('done!');
         }
@@ -302,7 +309,6 @@ $(document).ready(function() {
                     .append('<br>')
                     .append(error);
                 */
-                debugger;
                 console.log( "FAILURE, msg = "+ error);
             }
         });
@@ -336,6 +342,9 @@ $(document).ready(function() {
             setElementIDHints();
 
             $('[name=new-tree-submit]').click(function() {
+                if (!remindAboutAddingLateData()) {
+                    return false;  // showing the reminder instead
+                }
                 console.log('treeupload - submitting...');
                 $('[name=uploadid]').val( generateTreeUploadID() );
                 showModalScreen("Adding tree...", {SHOW_BUSY_BAR:true});
@@ -3644,6 +3653,9 @@ function generateTreeUploadID() {
 function submitNewTree( form ) {
     // NOTE that this should submit the same arguments (except for file
     // data) as the fileupload behavior for #treeupload
+    if (!remindAboutAddingLateData()) {
+        return false;;  // showing the reminder instead
+    }
     ///console.log("submitting tree...");
     
     showModalScreen("Adding tree...", {SHOW_BUSY_BAR:true});
@@ -6603,3 +6615,24 @@ function applyCC0Waiver() {
     nudgeTickler('GENERAL_METADATA');
 }
 
+/* If there's a data-deposit for this study, remind the curator of
+ * the importance of adding *only* data that's already in the deposit.
+ * (This message should appear just once per session.)
+ */
+var remindedAboutAddingLateData = false;
+function remindAboutAddingLateData(evt) {
+    // return true if they don't need this message, false if it should block the caller
+    if (remindedAboutAddingLateData) {
+        return true;
+    }
+    var dataDepositURL = $.trim(viewModel.nexml['^ot:dataDeposit']['@href']);
+    if (dataDepositURL === '') {
+        // the point is moot, there's no clear deposit yet
+        return true;
+    }
+    $('#data-deposit-reminder').html(getDataDepositMessage());
+    $('#late-data-reminder').modal('show');
+    remindedAboutAddingLateData = true;
+
+    return false;
+}
