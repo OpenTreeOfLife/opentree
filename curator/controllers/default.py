@@ -463,7 +463,7 @@ def to_nexson():
         path_list.append(request.folder)
         path_list.append('uploads')
         path_list.append(record['doc'])
-        size = shutil.os.path.getsize(shutil.os.path.join(*path_list))
+        size = os.path.getsize(os.path.join(*path_list))
          
         File = db(db.supporting_files.id==id).select()[0]
         db.supporting_files[id] = dict(file_size=size)
