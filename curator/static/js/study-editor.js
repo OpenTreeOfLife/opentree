@@ -6553,6 +6553,9 @@ function getDataDepositMessage() {
     // Returns HTML explaining where to find this study's data, or an empty
     // string if no URL is found. Some cryptic dataDeposit URLs may require
     // more explanation or a modified URL to be more web-friendly.
+    //
+    // NOTE that we maintain a server-side counterpart in
+    // webapp/modules/opentreewebapputil.py > get_data_deposit_message
     var url = $.trim(viewModel.nexml['^ot:dataDeposit']['@href']);
     // If there's no URL, we have nothing to say
     if (url === '') {

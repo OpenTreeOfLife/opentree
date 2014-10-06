@@ -119,7 +119,9 @@ div.contributing-studies div.links a {
                 <!--
                   <a target="_blank" href="http://www.reelab.net/phylografter/study/view/{{= study.get('ot:studyId')}}">Open in phylografter</a>
                   -->
-                 {{ if study.get('ot:dataDeposit'): }}
+                 {{ if study.get('friendlyDepositMessage', None): }}
+                  {{= XML(study.get('friendlyDepositMessage')) }}
+                 {{ elif study.get('ot:dataDeposit', None): }}
                   <a target="_blank" href="{{= study.get('ot:dataDeposit') }}">Data deposit DOI/URL</a>
                  {{ pass }}
               </div>
