@@ -2080,7 +2080,7 @@ var branchLengthModeDescriptions = [
     { value: 'ot:time', text: "Time" },  //  TODO: add units from ot:branchLengthTimeUnit
     { value: 'ot:bootstrapValues', text: "Bootstrap values" },
     { value: 'ot:posteriorSupport', text: "Posterior support values" },
-    { value: 'ot:other', text: "Other (describe below)" }  // TODO: refer ot:branchLengthDescription
+    { value: 'ot:other', text: "Other (describe)" }  // TODO: refer ot:branchLengthDescription
 ]
 function getBranchLengthModeDescriptionForTree( tree ) {
     var rawModeValue = tree['^ot:branchLengthMode'];
@@ -2725,7 +2725,7 @@ function showTreeViewer( tree, options ) {
             } else {
                 displayPrompt = options.HIGHLIGHT_PROMPT;
             }
-            $('#tree-viewer .modal-header').append(
+            $('#tree-viewer .modal-header .nav-tabs').before(
                 '<div class="stepwise-highlights help-box">'
               +      displayPrompt 
               + (options.HIGHLIGHT_PLAYLIST.length < 2 ? '' :
@@ -2782,6 +2782,7 @@ function showTreeViewer( tree, options ) {
         ///hideModalScreen();
     }
 
+    var $treeViewerTabs = $('#tree-viewer .modal-header a[data-toggle="tab"]');
     if (treeViewerIsInUse) {
         // trigger its 'shown' event to 
         updateTreeDisplay();
@@ -2800,8 +2801,31 @@ function showTreeViewer( tree, options ) {
             ///console.log('@@@@@ hidden');
         });
 
+        // hide or show footer options based on tab chosen
+        $treeViewerTabs.off('shown').on('shown', function (e) {
+            var newTabTarget = $(e.target).attr('href').split('#')[1];
+            //var oldTabTarget = $(e.relatedTarget).attr('href').split('#')[1];
+            switch (newTabTarget) {
+                case 'tree-properties':
+                case 'tree-legend':
+                    $('#tree-phylogram-options').hide();
+                    break;
+                case 'tree-phylogram':
+                    $('#tree-phylogram-options').show();
+                    break;
+            }
+        });
         $('#tree-viewer').modal('show');
     }
+
+    /* IF we want different starting tab in different scenarios
+    if (options.HIGHLIGHT_PLAYLIST) {
+        $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
+    } else {
+        $treeViewerTabs.filter('[href*=tree-properties]').tab('show');
+    }
+    */
+    $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
 }
 
 function findOTUInTrees( otu, trees ) {
@@ -3016,7 +3040,7 @@ function drawTree( treeOrID, options ) {
         layoutGenerator = d3.phylogram.build;
     }
     vizInfo = layoutGenerator(
-        "#tree-viewer #dialog-data",   // selector
+        "#tree-viewer #tree-phylogram",   // selector
         rootNode,
         {           // options
             vis: vizInfo.vis,
@@ -3109,7 +3133,6 @@ function drawTree( treeOrID, options ) {
     // (re)assert standard click behavior for main vis background
     d3.select('#tree-viewer')  // div.modal-body')
         .on('click', function(d) {
-            d3.event.stopPropagation();
             // hide any node menu
             hideNodeOptionsMenu( );
         });
@@ -3731,7 +3754,6 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         otusElement['otu'] = makeArray( otusElement['otu'] );
     });
 
-    var importedTreeElements = [ ];
     var itsTreesCollection = data[nexmlName]['trees'];
     $.each(itsTreesCollection, function(i, treesElement) {
         treesElement['tree'] = makeArray( treesElement['tree'] );
@@ -3741,8 +3763,6 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
                 // mark all new tree(s) as preferred, eg, a candidate for synthesis
                 viewModel.nexml['^ot:candidateTreeForSynthesis'].push( tree['@id'] );
             }
-            // build proper NexSON elements for imported tree IDs
-            importedTreeElements.push( {"$": tree['@id']} );
         });
     });
 
@@ -3754,13 +3774,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     }
 
     // update the files list (and auto-save?)
-    var file = cloneFromNexsonTemplate('single supporting file');
-    file['@filename'] = responseJSON.filename || "";
-    file['@url'] = responseJSON.url || "";
-    file['@type'] = responseJSON.inputFormat || "";
-    file.description.$ = responseJSON.description || "";
-    file['sourceForTree'] = importedTreeElements;
-    file['@size'] = responseJSON.size || "";
+    var file = responseJSON.annotationFileInfo;
     getSupportingFiles().data.files.file.push(file);
 
     // clear the import form (using Clear button to capture all behavior)
@@ -6002,7 +6016,12 @@ function lookUpDOI() {
                 if (resultsJSON.length === 0) {
                     alert('No matches found, please check your publication reference text.')
                 } else {
-                    $('#DOI-lookup ul.found-matches').empty();
+                    var $lookup = $('#DOI-lookup');
+                    $lookup.find('.found-matches-count').text(resultsJSON.length);
+                    $lookup.find('.found-matches').empty();
+                    $lookup.find('#current-ref-text').html( viewModel.nexml['^ot:studyPublicationReference'] || '<em>No reference text</em>');
+                    var currentDOI = viewModel.nexml['^ot:studyPublication']['@href'];
+                    updateDOIPreviewLink(currentDOI);
                     $.each(resultsJSON, function(i, match) {
                         var $matchInfo = $('<div class="match"><div class="full-citation"></div><div class="doi"></div></div>');
                         $matchInfo.find('.full-citation').html(
@@ -6021,26 +6040,62 @@ function lookUpDOI() {
                             $btn.click( updateDOIFromLookup );
                             $matchInfo.append($btn);
                         }
-                        $('#DOI-lookup ul.found-matches').append($matchInfo);
+                        $lookup.find('.found-matches').append($matchInfo);
                     });
-                    $('#DOI-lookup').modal('show');
+                    $lookup.off('shown').on('shown', function() {
+                        // size scrolling list to fit in the current DOI-lookup popup window
+                        var $lookup = $('#DOI-lookup');
+                        var resultsListHeight = $lookup.find('.modal-body').height() - $lookup.find('.before-matches').height();
+                        $lookup.find('.found-matches').outerHeight(resultsListHeight);
+                    });
+                    $lookup.modal('show'); 
                 }
             }
         });
     }
 }
 
+function updateDOIPreviewLink(doi) {
+    var $previewLink = $('#DOI-lookup').find('#current-ref-URL');
+    if (doi) {
+        $previewLink.html(doi);
+        $previewLink.attr('href', doi);
+        $previewLink.removeAttr('onclick');
+    } else {
+        $previewLink.html('<em>No DOI or URL</em>');
+        $previewLink.attr('href', '#');
+        $previewLink.attr('onclick','return false;');
+    }
+}
+
+
 function updateRefTextFromLookup(evt) {
     var $clicked = $(evt.target);
     var chosenRefText = $clicked.closest('.match').find('.full-citation').text();
-    //$('#ot_studyPublicationReference').val(chosenRefText);
+    
+    // update popup window and adjust list height
+    var $lookup = $('#DOI-lookup');
+    var oldBeforeListHeight = $lookup.find('.before-matches').outerHeight();
+    var oldListHeight = $lookup.find('.found-matches').outerHeight();
+    $lookup.find('#current-ref-text').html(chosenRefText);
+    var heightAdjust = $lookup.find('.before-matches').outerHeight() - oldBeforeListHeight;
+    $lookup.find('.found-matches').outerHeight(oldListHeight - heightAdjust);
+
     viewModel.nexml['^ot:studyPublicationReference'] = chosenRefText;
     nudgeTickler('GENERAL_METADATA');
 }
 function updateDOIFromLookup(evt) {
     var $clicked = $(evt.target);
     var chosenDOI = $clicked.closest('.match').find('.doi').text();
-    //$('#ot_studyPublication').val(chosenDOI);
+    
+    // update popup window and adjust list height
+    var $lookup = $('#DOI-lookup');
+    var oldBeforeListHeight = $lookup.find('.before-matches').outerHeight();
+    var oldListHeight = $lookup.find('.found-matches').outerHeight();
+    updateDOIPreviewLink(chosenDOI);
+    var heightAdjust = $lookup.find('.before-matches').outerHeight() - oldBeforeListHeight;
+    $lookup.find('.found-matches').outerHeight(oldListHeight - heightAdjust);
+
     viewModel.nexml['^ot:studyPublication']['@href'] = chosenDOI;
     // (re)format DOI if needed, and test for duplicate studies
     validateAndTestDOI();
