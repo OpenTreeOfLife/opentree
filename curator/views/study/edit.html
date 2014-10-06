@@ -871,15 +871,15 @@ body {
                            -->
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
-                            <button data-bind="visible: getAssociatedTrees(file).length > 0"
-                                class="pull-right btn btn-mini" 
+                            <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length > 0"
+                                class="pull-right btn btn-mini btn-danger" 
                                 style="opacity: 0.3 !important;"
                                 onclick="alert('You must delete the associated tree(s) to remove this file.'); return false;">
-                                <i class="icon-remove"></i>
+                                <i class="icon-remove icon-white"></i>
                             </button>
-                            <button data-bind="visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
-                                class="pull-right btn btn-mini row-controls-ghosted">
-                                <i class="icon-remove"></i>
+                            <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
+                                class="pull-right btn btn-mini btn-danger row-controls-ghosted">
+                                <i class="icon-remove icon-white"></i>
                             </button>
                         </td>
                     {{ else: }}
