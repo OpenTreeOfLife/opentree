@@ -317,9 +317,9 @@ body {
                       try:
                        for context_name in taxonSearchContextNames:
                           if context_name == 'All life': }}
-                           <option selected="selected">{{= context_name }}</option>
+                            <option selected="selected" value="{{= context_name }}">{{= context_name }}</option>
                        {{ else: }}
-                            <option>{{= context_name }}</option>
+                            <option value="{{= context_name }}">{{= context_name }}</option>
                        {{ pass }}
                     {{ pass }}
                     {{ except: }}
@@ -1300,7 +1300,7 @@ body {
                 </p>
                 <form class="form-inline" style="margin: 0;">
                  <fieldset>
-                    <select class="input-block-level" style="margin-bottom: 1em;" name="mapping-search-context" 
+                    <select class="input-block-level" style="margin-bottom: 8px;" name="mapping-search-context" 
                             data-bind="value: getOTUMappingHints().data.searchContext.$, 
                               valueUpdate: ['afterkeydown', 'input'], 
                               event: { keyup: updateMappingHints, change: updateMappingHints }
@@ -1318,6 +1318,12 @@ body {
                             <option selected="selected">ERROR loading context values</option>
                        {{ pass }}
                     </select>
+                    <div style="text-align: center; margin: 0 0 1em;">
+                        <button class="btn btn-small Xbtn-info"
+                                onclick="inferSearchContextFromAvailableOTUs(); return false;">
+                            Infer search context from all OTUs
+                        </button>
+                    </div>
                  </fieldset>
                 </form>
                 <p>
@@ -1742,6 +1748,7 @@ body {
     var getDraftTreeForNodeID_url = "{{=getDraftTreeForNodeID_url}}";
     var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
     var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
+    var getContextForNames_url = "{{=getContextForNames_url}}";
     var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
     var phylesystem_config_url = "{{=phylesystem_config_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";

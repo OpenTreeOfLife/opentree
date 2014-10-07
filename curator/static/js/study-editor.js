@@ -729,6 +729,9 @@ function loadSelectedStudy() {
             viewModel.versions = ko.observableArray(
                 response['versionHistory'] || [ ]
             ).asPaged(20);
+            
+            // take initial stab at setting search context (for focal clade and OTU mapping)
+            inferSearchContextFromAvailableOTUs();
 
             /*
              * Add observable properties to the model to support the UI
@@ -878,7 +881,6 @@ function loadSelectedStudy() {
 
                 // gather all OTUs from all 'otus' collections
                 var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
-                console.log("  filtering "+ allOTUs.length +" otus...");
 
                 var chosenTrees;
                 switch(scope) {
@@ -6655,3 +6657,63 @@ function applyCC0Waiver() {
     nudgeTickler('GENERAL_METADATA');
 }
 
+function inferSearchContextFromAvailableOTUs() {
+    // Fetch the least inclusive context via AJAX, and update the drop-down menu
+    var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+    var namesToSubmit = [ ];
+    var maxNamesToSubmit = 5000;  // if more than this, drop extra OTUs evenly
+    ///console.log(">> found "+ allOTUs.length +" OTUs in the study");
+    var namesToSubmit = $.map(allOTUs, function(otu, index) {
+        return ('^ot:ottTaxonName' in otu) ? otu['^ot:ottTaxonName'] : otu['^ot:originalLabel'];
+    });
+    if (namesToSubmit.length > maxNamesToSubmit) {
+        // reduce the list in a distributed fashion (eg, every fourth item)
+        var stepSize = maxNamesToSubmit / namesToSubmit.length; 
+        ///console.log("TOO MANY NAMES, reducing with step-size "+ stepSize);
+        // creep to whole numbers, keeping an item every time we increment by one
+        var currentStepTotal = 0.0;
+        var nextWholeNumber = 1;
+        namesToSubmit = namesToSubmit.filter(function(item, index) {
+            if ((currentStepTotal += stepSize) >= nextWholeNumber) {
+                nextWholeNumber += 1; // bump to next number
+                return true;
+            }
+            return false;
+        });
+    }
+    ///console.log(">> submitting "+ namesToSubmit.length +" OTUs in the study");
+    
+    ///showModalScreen("Inferring search context...", {SHOW_BUSY_BAR:true});
+    
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: getContextForNames_url,
+        processData: false,
+        data: ('{"names": '+ JSON.stringify(namesToSubmit) +'}'),
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                showErrorMessage('Sorry, there was an error inferring the context.');
+                console.log("ERROR: textStatus !== 'success', but "+ textStatus);
+                return;
+            }
+            ///hideModalScreen();
+            ///showSuccessMessage('Study removed, returning to study list...');
+            var result = JSON.parse( jqXHR.responseText );
+            var inferredContext = null;
+            if (result && 'context_name' in result) {
+                inferredContext = result['context_name'];
+            }
+            ///console.log(">> inferredContext: "+ inferredContext);
+            if (inferredContext) {
+                // update BOTH search-context drop-down menus to show this result
+                $('select[name=taxon-search-context], select[name=mapping-search-context]').val(inferredContext);
+            } else {
+                showErrorMessage('Sorry, there was an error inferring the search context.');
+            }
+        }
+    }); 
+}
