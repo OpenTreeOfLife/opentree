@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 from opentreewebapputil import (get_opentree_services_method_urls, 
-                                fetch_current_TNRS_context_names)
+                                fetch_current_TNRS_context_names,
+                                get_data_deposit_message,)
 
 ### required - do no delete
 def user(): return dict(form=auth())
@@ -112,6 +113,13 @@ def fetch_current_synthesis_source_data():
 
         # TODO: encode data to utf-8?
         ## context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
+        
+        # translate data-deposit DOIs/URLs into friendlier forms
+        from pprint import pprint
+        for study in contributing_studies:
+            raw_deposit_doi = study.get('ot:dataDeposit', None)
+            if raw_deposit_doi:
+                study['friendlyDepositMessage'] = get_data_deposit_message(raw_deposit_doi)
         
         return contributing_studies
 
