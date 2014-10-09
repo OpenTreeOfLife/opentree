@@ -419,8 +419,13 @@ function setTaxaSearchFuse(e) {
             case 17:
                 // do nothing (probably a second ENTER key)
                 break;
+            case 39:
+            case 40:
+                // down or right arrow should try to tab to first result
+                $('#search-results a:eq(0)').focus();
+                break;
             default:
-            hopefulSearchName = null;
+                hopefulSearchName = null;
         }
     } else {
         hopefulSearchName = null;
@@ -522,7 +527,7 @@ function searchForMatchingTaxa() {
                     if ($.inArray(matchingID, matchingNodeIDs) === -1) {
                         // we're not showing this yet; add it now
                         $('#search-results').append(
-                            '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
+                            '<li><a href="'+ matchingID +'" tabindex="'+ (mpos+2) +'">'+ matchingName +'</a></li>'
                         );
                         matchingNodeIDs.push(matchingID);
                         visibleResults++;
