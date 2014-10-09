@@ -5848,8 +5848,13 @@ function setTaxaSearchFuse(e) {
             case 17:
                 // do nothing (probably a second ENTER key)
                 break;
+            case 39:
+            case 40:
+                // down or right arrows should try to select first result
+                $('#search-results a:eq(0)').focus();
+                break;
             default:
-            hopefulSearchName = null;
+                hopefulSearchName = null;
         }
     } else {
         hopefulSearchName = null;
