@@ -138,7 +138,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
 {{ if get_domain_banner_text(request): }}
   <div class="ribbon-banner" title="{{= get_domain_banner_hovertext(request) }}">{{= get_domain_banner_text(request) }}</div>
 {{ pass }}
-  <div class="navbar navbar-inverse navbar-static-top">
+  <div class="navbar navbar-inverse navbar-static-top" role="navigation">
     <div class="navbar-inner">
       <div class="container">
 
@@ -193,7 +193,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                 <div class="left-inner-addon">
                     <i class="icon-search"></i>
                     <input type="text" name="taxon-search" class="search-query" placeholder="Search for taxon" autocomplete="off"
-                        style="width: 100px;">
+                        style="width: 100px;" tabindex="1">
                 </div>
                 <!-- <input type="submit" style="" name="taxon-search-go" value="Go" onclick="return false;"/> -->
                 <!-- then show dropdown when results are ready... -->
@@ -217,7 +217,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                 -->
                 </select>
                 <div class="">
-                    <ul id="search-results" class="dropdown-menu">
+                    <ul id="search-results" class="dropdown-menu" role="menu">
                         ...
                     </ul>
                 </div>

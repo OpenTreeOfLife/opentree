@@ -77,7 +77,7 @@ body {
 }
 .vizcontent div.viewer-frame {
 	padding: 0px;
-    background-color: #f5f5ec; /* #faf5ee; */
+    background-color: #fff;
     overflow: auto;
 }
 
@@ -632,13 +632,34 @@ tr:hover .row-controls-ghosted {
 }
 
 /* DOI lookup window */
+.before-matches {
+    margin-top: -6px;
+}
+.current-ref-values {
+    background-color: #eee;
+    margin: 0px -4px 2px;
+    padding: 6px 8px; 
+    border-radius: 8px;
+    margin-bottom: 2px;
+}
+.current-ref-values strong {
+    color: #555;
+}
 .found-matches {
-    margin-right: 20px;
+    border: 1px solid #ddd;
+    margin: 0px -4px;
+    padding-left: 6px;
+    padding-right: 6px;
+    max-height: 365px;
+    overflow-y: auto;
 }
 .found-matches .match {
-    border-top: 1px solid #ddd;
+    border-bottom: 1px solid #ddd;
     padding-top: 0.5em;
     padding-bottom: 1em;
+}
+.found-matches .match:last-child {
+    border-bottom: none;
 }
 .found-matches .doi {
     font-weight: bold;
@@ -680,6 +701,21 @@ tr:hover .row-controls-ghosted {
 #tree-viewer .modal-body svg {
     /* try to make this offsetParent to all its contents */
     position: relative;
+}
+#tree-properties .bootstrap-tagsinput {
+    margin-bottom: 0px;
+}
+#tree-legend {
+    background-color: #f5f5f5;
+    border-radius: 6px;
+    padding: 8px;
+}
+#tree-legend table {
+    width: 100%;
+}
+#tree-legend table td {
+    height: 38px;
+    padding: 4px;
 }
 #server-details {
     display: none; 

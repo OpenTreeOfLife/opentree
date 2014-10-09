@@ -331,7 +331,7 @@ body {
                 -->
                 </select>
                 <div class="">
-                    <ul id="search-results" class="dropdown-menu">
+                    <ul id="search-results" class="dropdown-menu" role="menu">
                         ...
                     </ul>
                 </div>
@@ -871,15 +871,15 @@ body {
                            -->
                         </td>
                         <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
-                            <button data-bind="visible: getAssociatedTrees(file).length > 0"
-                                class="pull-right btn btn-mini" 
+                            <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length > 0"
+                                class="pull-right btn btn-mini btn-danger" 
                                 style="opacity: 0.3 !important;"
                                 onclick="alert('You must delete the associated tree(s) to remove this file.'); return false;">
-                                <i class="icon-remove"></i>
+                                <i class="icon-remove icon-white"></i>
                             </button>
-                            <button data-bind="visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
-                                class="pull-right btn btn-mini row-controls-ghosted">
-                                <i class="icon-remove"></i>
+                            <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
+                                class="pull-right btn btn-mini btn-danger row-controls-ghosted">
+                                <i class="icon-remove icon-white"></i>
                             </button>
                         </td>
                     {{ else: }}
@@ -1761,13 +1761,20 @@ body {
          Matching DOIs and references
       </h3>
     </div>
-    <div class="modal-body">
-        <p>
-            Based on the reference text for this study,
-            <a href="http://crossref.org/" target="_blank">CrossRef.org</a>
-            returned these matching records (best matches first).
-        </p>
-        <ul class="found-matches"></ul>
+    <div class="modal-body" style="overflow-y: inherit;">
+        <div class="before-matches">
+            <div class="current-ref-values">
+                <strong>Current reference text and DOI/URL:</strong>
+                <p id="current-ref-text" style="margin-bottom: 0.25em;">&nbsp;</p>
+                <a id="current-ref-URL" style="display: block;" href="#" target="_blank" onclick="return false;">&nbsp;</a>
+            </div>
+            <p>
+                Based on the reference text for this study,
+                <a href="http://crossref.org/" target="_blank">CrossRef.org</a>
+                returned these <span class="found-matches-count"></span> matching records (best matches first).
+            </p>
+        </div>
+        <div class="found-matches" style="overflow-y: auto;"></div>
     </div>
     <div class="modal-footer">
       <a data-dismiss="modal" class="btn" >Close</a>
@@ -1938,9 +1945,9 @@ body {
 </div>
 
 <!-- hidden template for the tree-viewer (editor) -->
-<div class="modal hide fade modal-tree-viewer" id="tree-viewer" style="display: none;">
+<div class="modal hide fade modal-tree-viewer tabbable" id="tree-viewer" style="display: none;">
   <!-- KO binding here to 'tree' (as $data below) -->
-    <div class="modal-header">
+    <div class="modal-header" style="padding-bottom: 0;">
       <a class="close" onclick="$('#tree-viewer').modal('hide'); false;">×</a>
       <h3 id='dialog-heading'>
         {{ if viewOrEdit == 'EDIT': }}
@@ -1955,15 +1962,19 @@ body {
             View tree
             '<span data-bind="text: $data['@label']">{TREE NAME}</span>'
         {{ pass }}
-
        </h3>
+       <ul class="nav nav-tabs" style="margin-bottom: -1px;">
+          <li class="active"><a href="#tree-properties" data-toggle="tab">Properties</a></li>
+          <li><a href="#tree-phylogram" data-toggle="tab">Phylogram</a></li>
+          <li><a href="#tree-legend" data-toggle="tab">Legend</a></li>
+       </ul>
     </div>
-    <div class="modal-body">
-        <div id="dialog-data">
-         <form class="form-inline" style="border-bottom: 1px solid #eee; overflow: hidden; padding-bottom: 4px;">
+    <div class="modal-body tab-content">
+      <div class="tab-pane active" id="tree-properties">
+         <form class="form-inline" style="overflow: hidden; margin-bottom: 0px;">
           {{ if viewOrEdit == 'EDIT': }}
             <!-- editable tree properties here -->
-              <div class="pull-left" style="width: 48%;">
+              <div style="padding: 0 4px;">
                 <label>Inference method: </label>
                 <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny --> 
                 <select id="inference-method-select"
@@ -2027,22 +2038,11 @@ body {
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
                    <a class="btn btn-small btn-info Xbtn-info-disabled"
                       data-bind="click: updateSyntheticMRCAForTree">Test</a>
+              <br/>
 
-              </div>
-              <div class="pull-left" style="width: 48%;">
                 <label>Mapped leaf nodes: </label>
                 <span data-bind="html: getMappedTallyForTree($data), 
                                  css: viewModel.ticklers.TREES">?? / ??</span>
-              <br/>
-
-                <label>Tags: </label>
-                <select id="tree-tags" multiple="multiple" placeholder="Add tags"
-                        onchange="updateElementTags(this);"
-                        data-bind="attr: {'treeid': $data['@id'] },
-                                   options: getTags( getTreeByID($data['@id']) ), 
-                                   event: { keyup: nudge.TREES, change: nudge.TREES }, 
-                                   css: viewModel.ticklers.TREES">
-                </select>
 
               <br/>
 
@@ -2065,28 +2065,26 @@ body {
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
 
-               <!-- ko if: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:time' -->
-                <br/>
+            <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:time'" >
                 <label style="margin-left: 10px;">Time unit: </label>
                 <select data-bind="options: ['Myr'],
                     value: $data['^ot:branchLengthTimeUnit'],
                     event: { keyup: nudge.TREES, change: nudge.TREES }, 
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
-               <!-- /ko -->
+            </span>
 
-               <!-- ko if: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:other' -->
-                <br/>
-                <label style="margin-left: 10px;">&nbsp;</label>
+            <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:other'" >
                 <input type="text" data-bind="value: $data['^ot:branchLengthDescription'],
                     valueUpdate: ['afterkeydown', 'input'],
                     event: { keyup: nudge.TREES, change: nudge.TREES },
                     css: viewModel.ticklers.TREES
                 " placeholder="Describe here"></input>
-               <!-- /ko -->
+            </span>
 
            <!-- NOTE that a virtual element with 'ko if: ...' didn't work here! -->
-            <div data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree( $data )" class="needs-attention">
+            <div data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree( $data )" 
+                 class="needs-attention" style="margin: 4px -4px;">
                 <label>Internal node labels represent:</label>
                 <!-- N.B. By not specifying 'optionsValue', we'll stash the
                      complete modeInfo object into viewModel.chosenNodeLabelModeInfo -->
@@ -2099,20 +2097,19 @@ body {
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
 
-               <div class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && chosenLabelModeRequiresDescription()">
-                <label style="margin-left: 10px;">&nbsp;</label>
+               <span class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && chosenLabelModeRequiresDescription()">
                 <input type="text" data-bind="value: viewModel.nodeLabelModeDescription,
                     valueUpdate: ['afterkeydown', 'input'],
                     event: { keyup: nudge.TREES, change: nudge.TREES },
                     css: viewModel.ticklers.TREES
                 " placeholder="Describe here"></input>
-               </div>
+               </span>
 
-               <div class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree($data)">
-                 <label style="margin-left: 10px;">&nbsp;</label>
-                 <button class="btn btn-info" data-bind="click: function() { if (confirm('Warning: This can shift ambiguous node labels to their adjacent edges. Check rooting carefully! OK to proceed?')) updateNodeLabelMode($data); return false; }, enable: readyToCaptureInternalNodeLabels()"
+               <span class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree($data)">
+                 <button class="btn btn-info" style="margin-left: 10px;" 
+                         data-bind="click: function() { if (confirm('Warning: This can shift ambiguous node labels to their adjacent edges. Check rooting carefully! OK to proceed?')) updateNodeLabelMode($data); return false; }, enable: readyToCaptureInternalNodeLabels()"
                     >Capture internal node labels</button>
-               </div>
+               </span>
 
             </div>
 
@@ -2122,13 +2119,14 @@ body {
                 <strong data-bind="css: viewModel.ticklers.TREES(), text: getNodeLabelModeDescription($data)"></strong>
             </div>
 
-              </div>
-              <div style="clear: left; height: 20px;">&nbsp;</div>
-              <div class="help-box">
-                  Click any node below to set the ingroup clade. Click any node
-                  <strong>or</strong> edge to re-root the entire tree. N.B. An
-                  <strong>arbitrary root</strong> (see options above) will only be used to draw
-                  the tree and correctly set the ingroup clade. The tree itself might be unrooted.
+                <label>Tags: </label>
+                <select id="tree-tags" multiple="multiple" placeholder="Add tags"
+                        onchange="updateElementTags(this);"
+                        data-bind="attr: {'treeid': $data['@id'] },
+                                   options: getTags( getTreeByID($data['@id']) ), 
+                                   event: { keyup: nudge.TREES, change: nudge.TREES }, 
+                                   css: viewModel.ticklers.TREES">
+                </select>
               </div>
 
           {{ else: }}
@@ -2184,31 +2182,110 @@ body {
 
           {{ pass }}
          </form>
+      </div>
+      <div class="tab-pane" id="tree-phylogram">
+          <div class="help-box">
+              Click any node below to set the ingroup clade. Click any node
+              <strong>or</strong> edge to re-root the entire tree. N.B. An
+              <strong>arbitrary root</strong> (see Properties tab) will only be used to draw
+              the tree and correctly set the ingroup clade. The tree itself might be unrooted.
+          </div>
          <!-- tree-view SVG goes here -->
-        </div>
+      </div>
+      <div class="tab-pane" id="tree-legend">
+       <table>
+        <tr>
+         <td align="right">
+            Outgroup:
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-outgroup.png')}}" alt="outgroup style" />
+         </td>
+         <td align="right">
+            Normal internal label:
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-internal-normal.png')}}" alt="outgroup style" />
+         </td>
+         <td align="right">
+            Mapped OTU (tip):
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-normal.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Ingroup:
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-ingroup.png')}}" alt="ingroup style" />
+         </td>
+         <td align="right">
+            Ambiguous label:
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-internal-ambiguous.png')}}" alt="outgroup style" />
+         </td>
+         <td align="right">
+            Unmapped OTU:
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-unmapped.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+         </td>
+         <td>
+         </td>
+         <td colspan="3" align="right">
+             OTU with conflicting mapping (unresolved):
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-conflicting.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+         </td>
+         <td>
+         </td>
+         <td colspan="3" align="right">
+             OTU with conflicting mapping (chosen exemplar):
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-exemplar.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+         </td>
+         <td>
+         </td>
+         <td colspan="3" align="right">
+             OTU with conflicting mapping (non-exemplar):
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-non-exemplar.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+       </table>
+      </div>
     </div>
     <div class="modal-footer">
-      <div class="popup-legend pull-left form-inline">
-          <strong>Legend: </strong>
-          <label style="margin-left: 20px;">Outgroup: </label> 
-          <img src="{{=URL('static','images/tree-viewer-legend-outgroup.png')}}" alt="outgroup style" />
-
-          <label style="margin-left: 20px;">Ingroup: </label>
-          <img src="{{=URL('static','images/tree-viewer-legend-ingroup.png')}}" alt="ingroup style" />
-
+      <div id="tree-phylogram-options" class="pull-left form-inline" style="display: none;">
           <label class="checkbox" style="margin-left: 25px;" for="branch-length-toggle"> 
               <input type="checkbox" id="branch-length-toggle"
                      onclick="toggleBranchLengthsInViewer(this); return true;" />
               Cladogram (hide branch lengths)
           </label>
-
           <label class="checkbox" style="margin-left: 25px;" for="radial-layout-toggle"> 
               <input type="checkbox" id="radial-layout-toggle"
                      onclick="toggleRadialTreeLayoutInViewer(this); return true;" />
               Radial tree layout
           </label>
       </div>
-      <a class="btn" onclick="$('#tree-viewer').modal('hide'); false;">Close</a>
-      <!-- <a class="btn btn-primary" id="btnSaveChanges">Save changes</a> -->
+      <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); false;">Close</a>
     </div>
 </div>

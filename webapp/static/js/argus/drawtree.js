@@ -145,16 +145,17 @@ function createArgus(spec) {
         "yOffset": 10, // distance from top margin at which topmost nodes are drawn; also set in loadData
         "yOffsetDefault": 10, // distance from top margin at which topmost nodes are drawn; also set in loadData
         /* colors for the tree view */
-        "bgColor": "#f5f5ec",
+        "bgColor": "#fff",
         "altPColor": "#c69",
         "altPLinkColor": "#900",
         "altRelColor": "#f00",
-        "nodeColor": "#8af",
+        "nodeColor": "#999",
         "nodeHoverColor": "#ff3333",
-        "pathColor": "#bb9977",
-        "labelColor": "#997766",
+        "pathColor": "#999",
+        "strongPathColor": "#000",
+        "labelColor": "#000",
         "provenanceHighlightColor": "#ff3333",
-        "tipColor": "#14d",
+        "tipColor": "#999",
         "tipHoverColor": "#ff3333",
         "currMaxDepth": spec.maxDepth,
         "backStack": [], // args to previous displayNode calls
@@ -1198,13 +1199,14 @@ function createArgus(spec) {
                 supportedByPhylogeny = sb.length > (supportedByTaxonomy ? 1 : 0);
 
             if (supportedByTaxonomy && supportedByPhylogeny) {
+                //lineDashes = '--..';
                 lineDashes = '';
-                lineColor = this.pathColor;
+                lineColor = this.strongPathColor;
             } else if (supportedByPhylogeny){
                 lineDashes = '';
-                lineColor = this.pathColor;
+                lineColor = this.strongPathColor;
             } else if (supportedByTaxonomy){
-                lineDashes = '-';
+                lineDashes = '- ';
                 lineColor = this.pathColor;
             } else {
                 lineDashes = '--..';
@@ -1234,7 +1236,7 @@ function createArgus(spec) {
                 // ... and a congruent, visible path
                 visibleBranch = paper.path(branchSt).toBack().attr({
                     "stroke-width": 1,
-                    "stroke-linecap": (lineDashes === '.') ? 'butt' : 'round',      // avoids Chrome bug with dotted lines + round caps
+                    "stroke-linecap": (lineDashes === '.') || (lineDashes === '--..') || (lineDashes === '--.') ? 'butt' : 'round',      // avoids Chrome bug with dotted lines + round caps
                     "stroke-dasharray": lineDashes,
                     "stroke": lineColor          // this.pathColor
                 }).insertBefore(dividerBeforeLabels);
@@ -1287,8 +1289,8 @@ function createArgus(spec) {
                         // create the new branch
                         branch = paper.path(upwardSt).toBack().attr({
                             "stroke": this.pathColor,
-                            "stroke-linecap": 'round',
-                            "stroke-dasharray": '- ',
+                            "stroke-linecap": 'butt', // REQUIRED if stroke-dasharray is '.'
+                            "stroke-dasharray": '. ',
                             "opacity": pathOpacity
                         }).insertBefore(dividerBeforeLabels);
                         branch.id = (nodeBranchElementID);
@@ -1384,8 +1386,8 @@ function createArgus(spec) {
             // create the new path
             branch = paper.path(branchSt).toBack().attr({
                 "stroke-width": 1,
-                "stroke-linecap": 'round',
-                "stroke-dasharray": '-',
+                "stroke-linecap": 'butt', // REQUIRED if stroke-dasharray is '.'
+                "stroke-dasharray": '. ',
                 "stroke": this.pathColor
             }).insertBefore(dividerBeforeLabels);
             branch.id = (clusterBranchElementID);
