@@ -365,6 +365,11 @@ $(document).ready(function() {
     // enable taxon search
     $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
     $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
+    
+    // don't trigger unrelated form submission when pressing ENTER here
+    $('input[name=taxon-search], select[name=taxon-search-context]')
+        .unbind('keydown')
+        .bind('keydown', function(e) { return e.which !== 13; });
 });
 
 
@@ -5836,13 +5841,38 @@ function getAssociatedTreeLabels( fileInfo ) {
 clearTimeout(searchTimeoutID);  // in case there's a lingering search from last page!
 var searchTimeoutID = null;
 var searchDelay = 1000; // milliseconds
-function setTaxaSearchFuse() {
+var hopefulSearchName = null;
+function setTaxaSearchFuse(e) {
     if (searchTimeoutID) {
         // kill any pending search, apparently we're still typing
         clearTimeout(searchTimeoutID);
     }
     // reset the timeout for another n milliseconds
     searchTimeoutID = setTimeout(searchForMatchingTaxa, searchDelay);
+
+    /* If the last key pressed was the ENTER key, stash the current (trimmed)
+     * string and auto-jump if it's a valid taxon name.
+     */
+    if (e.type === 'keyup') {
+        switch (e.which) {
+            case 13:
+                hopefulSearchName = $('input[name=taxon-search]').val().trim();
+                autoApplyExactMatch();  // use existing menu, if found
+                break;
+            case 17:
+                // do nothing (probably a second ENTER key)
+                break;
+            case 39:
+            case 40:
+                // down or right arrows should try to select first result
+                $('#search-results a:eq(0)').focus();
+                break;
+            default:
+                hopefulSearchName = null;
+        }
+    } else {
+        hopefulSearchName = null;
+    }
 }
 
 var showingResultsForSearchText = '';
@@ -5960,6 +5990,8 @@ function searchForMatchingTaxa() {
                         nudgeTickler('GENERAL_METADATA');
                     });
                 $('#search-results').dropdown('toggle');
+
+                autoApplyExactMatch();
             } else {
                 $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
                 $('#search-results').dropdown('toggle');
@@ -5968,6 +6000,19 @@ function searchForMatchingTaxa() {
     });
 
     return false;
+}
+
+function autoApplyExactMatch() {
+    // if the user hit the ENTER key, and there's an exact match, apply it automatically
+    if (hopefulSearchName) {
+        $('#search-results a').each(function() {
+            var $link = $(this);
+            if ($link.text().toLowerCase() === hopefulSearchName.toLowerCase()) {
+                $link.trigger('click');
+                return false;
+            }
+        });
+    }
 }
 
 function lookUpDOI() {
