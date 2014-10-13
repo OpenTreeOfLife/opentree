@@ -310,7 +310,8 @@ def to_nexson():
                     filename = upf.filename
                 elif request.vars.content is not None:
                     upload_stream = request.vars.content # stream is a bad name, but write_input_files does the write thing.
-                    filename = '<content provided as a string in a "content" rather than a file upload>'
+                    file_extensions = {'nexson':'.json', 'nexus':'.nex', 'nexml':'.nexml', 'newick':'.tre', 'relaxedphyliptree':'.tre'}
+                    filename = 'PASTED%s' % (file_extensions.get(inp_format),)
                 else:
                     raise HTTP(400, 'Expecting a "file" argument with an input file or a "content" argument with the contents of in input file')
                 write_input_files(request, working_dir, [(INPUT_FILENAME, upload_stream)])
@@ -443,36 +444,46 @@ def to_nexson():
         read_inp_format = bundle_properties.get('inputFormat', '')
         read_filename = bundle_properties.get('filename', '')
 
-        for tree_tup in iter_trees(nex):
-            tree_group_id, tree_id, imported_tree = tree_tup
-            # create (or replace) the file information for this imported tree
-            imported_tree[ u'^ot:messages' ] = { 
-                u'message': [ { 
-                    u'@id': "message{u}".format(u=unique_id),
-                    u'@code': u'SUPPORTING_FILE_INFO',
-                    u'@humanMessageType': u'NONE',
-                    u'@severity': u'INFO',
-                    u'@wasGeneratedBy': u'opentree.2nexml',
-                    # TODO: Do we need to add this agent to the main study?
-                    u'data': {
-                        u'@movedToPermanentArchive': False,
-                        u'files': {
-                            u'file': [
-                                {
-                                    u'@filename': read_filename,
-                                    u'@size': shutil.os.path.getsize(INPUT_FILEPATH),
-                                    u'@sourceForTree': tree_id,
-                                    u'@type': read_inp_format,
-                                    u'@url': "/curator/default/to_nexson?output=input&uploadid={u}".format(u=unique_id),
-                                    u'description': {
-                                        u'$': "Source data for tree '{u}'".format(u=tree_id)
-                                    }
-                                }
-                            ]
-                        }
-                    }
-                }]
+        # Since import was successful, we should copy the original data to a file in the supporting-files area
+        if request.vars.file is not None:
+            file_data = request.vars.file.file
+        else:
+            # mimic the expected upload file field by coercing pasted text to a file-like object
+            import StringIO
+            file_data = StringIO.StringIO()
+            file_data.write( request.vars.content )
+        file_data.seek(0)
+        id = db.supporting_files.insert(doc = db.supporting_files.doc.store(file_data, str(read_filename)))
+        # N.B. read_filename must be passed as a str! Unicode filename will
+        # throw an error during insert() below, due to a bug in web2py (dal > _attempt_upload)
+
+        # Compute size of the file and update the record
+        record = db.supporting_files[id]
+        path_list = []
+        path_list.append(request.folder)
+        path_list.append('uploads')
+        path_list.append(record['doc'])
+        size = os.path.getsize(os.path.join(*path_list))
+         
+        File = db(db.supporting_files.id==id).select()[0]
+        db.supporting_files[id] = dict(file_size=size)
+        db.supporting_files[id] = dict(study_id=response.study_id)
+         
+        # Put annotation- message information to a top-level property, so that
+        # it can be added to the message collection in the main (nexml-level)
+        # 'supporting-files-metadata' annotationEvent. This matches our current
+        # policy for annotations; see 
+        # https://github.com/OpenTreeOfLife/phylesystem-api/wiki/Annotations-in-NexSON#33-storage-and-placement-of-message-objects
+        r['annotationFileInfo'] = { 
+            u'@filename': read_filename,
+            u'@size': size,
+            u'sourceForTree': [{'$':tree_id} for (tree_group_id, tree_id, imported_tree) in iter_trees(nex)],
+            u'@type': read_inp_format,
+            u'@url': URL(f='download', args=[File['doc']]),
+            u'description': {
+                u'$': "Source data for tree '{u}'".format(u=tree_id)
             }
+        }
         return r
     assert (False)
 

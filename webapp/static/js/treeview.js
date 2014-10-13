@@ -398,13 +398,38 @@ function togglePropertiesPanel( hideOrShow ) {
 clearTimeout(searchTimeoutID);  // in case there's a lingering search from last page!
 var searchTimeoutID = null;
 var searchDelay = 1000; // milliseconds
-function setTaxaSearchFuse() {
+var hopefulSearchName = null;
+function setTaxaSearchFuse(e) {
     if (searchTimeoutID) {
         // kill any pending search, apparently we're still typing
         clearTimeout(searchTimeoutID);
     }
     // reset the timeout for another n milliseconds
     searchTimeoutID = setTimeout(searchForMatchingTaxa, searchDelay);
+
+    /* If the last key pressed was the ENTER key, stash the current (trimmed)
+     * string and auto-jump if it's a valid taxon name.
+     */
+    if (e.type === 'keyup') {
+        switch (e.which) {
+            case 13:
+                hopefulSearchName = $('input[name=taxon-search]').val().trim();
+                jumpToExactMatch();  // use existing menu, if found
+                break;
+            case 17:
+                // do nothing (probably a second ENTER key)
+                break;
+            case 39:
+            case 40:
+                // down or right arrow should try to tab to first result
+                $('#search-results a:eq(0)').focus();
+                break;
+            default:
+                hopefulSearchName = null;
+        }
+    } else {
+        hopefulSearchName = null;
+    }
 }
 
 var showingResultsForSearchText = '';
@@ -424,6 +449,7 @@ function searchForMatchingTaxa() {
     } else if (searchText.length < 2) {
         $('#search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
         $('#search-results').dropdown('toggle');
+
         snapViewerFrameToMainTitle();
         return false;
     }
@@ -501,7 +527,7 @@ function searchForMatchingTaxa() {
                     if ($.inArray(matchingID, matchingNodeIDs) === -1) {
                         // we're not showing this yet; add it now
                         $('#search-results').append(
-                            '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
+                            '<li><a href="'+ matchingID +'" tabindex="'+ (mpos+2) +'">'+ matchingName +'</a></li>'
                         );
                         matchingNodeIDs.push(matchingID);
                         visibleResults++;
@@ -525,6 +551,8 @@ function searchForMatchingTaxa() {
                         $link.attr('href', safeURL);
                     });
                 $('#search-results').dropdown('toggle');
+
+                jumpToExactMatch();
             } else {
                 $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
                 $('#search-results').dropdown('toggle');
@@ -534,6 +562,19 @@ function searchForMatchingTaxa() {
     });
 
     return false;
+}
+
+function jumpToExactMatch() {
+    // if the user hit the ENTER key, and there's an exact match, apply it automatically
+    if (hopefulSearchName) {
+        $('#search-results a').each(function() {
+            var $link = $(this);
+            if ($link.text().toLowerCase() === hopefulSearchName.toLowerCase()) {
+                window.location = $link.attr('href');
+                return false;
+            }
+        });
+    }
 }
 
 function fixLoginLinks() {
@@ -572,11 +613,14 @@ function historyStateToPageHeading( stateObj ) {
     //return (stateObj.nodeName +' <span style="color: #ccc; font-size: 0.8em;">('+ stateObj.domSource +'@'+ stateObj.nodeID +')</span>');
     return ('<span title="'+ stateObj.domSource +'@'+ stateObj.nodeID +'">'+ stateObj.nodeName +'</span>');
 }
+function makeSafeForWeb2pyURL(str) {
+    // replace characters considered unsafe (blocked) by web2py in a URL
+    return str.replace(/[:(), .]+/g, '-').replace(/[\[\]\+]+/g,'');
+}
 function historyStateToURL( stateObj ) {
     var safeNodeName = null;
     if (stateObj.nodeName) {
-        // replace characters considered unsafe (blocked) by web2py
-        safeNodeName = stateObj.nodeName.replace(/[:(), ]+/g, '-').replace(/[\[\]\+]+/g,'');
+        safeNodeName = makeSafeForWeb2pyURL(stateObj.nodeName);
     }
     return '/opentree'+ (stateObj.viewer ? '/'+stateObj.viewer : '') +'/'+ stateObj.domSource +'@'+ stateObj.nodeID + (safeNodeName ? '/'+ safeNodeName : '');
 }
@@ -877,17 +921,17 @@ function showObjectProperties( objInfo, options ) {
                             }
                         }
                     }
-                    /* hide OTT id (since it's not a generally recognized taxonomy)
-                    if (fullNode.ottolId) {
+
+                    if (fullNode.ottId) {
+                        nodeSection.displayedProperties['Reference taxonomy'] = [];
                         //nodeSection.displayedProperties['OTT ID'] = fullNode.ottolId;
-                        nodeSection.displayedProperties['Source taxonomy'].push(
+                        nodeSection.displayedProperties['Reference taxonomy'].push(
                             {
                                 taxSource: "OTT",
-                                taxSourceId: fullNode.ottolId
+                                taxSourceId: fullNode.ottId
                             }
                         );
                     }
-                    */
                     
                     // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
                     if (typeof fullNode.taxRank !== 'undefined') {
@@ -997,6 +1041,7 @@ function showObjectProperties( objInfo, options ) {
         for(dLabel in aSection.displayedProperties) {
             switch(dLabel) {
                 case 'Source taxonomy':
+                case 'Reference taxonomy':
                     var sourceList = aSection.displayedProperties[dLabel];
                     for (i = 0; i < sourceList.length; i++) {
                         var sourceInfo = sourceList[i];
@@ -1043,9 +1088,11 @@ function showObjectProperties( objInfo, options ) {
                                 break;
 
                             case 'OTT': 
-                                // TODO: browse the OTT taxonomy in *local* window? or in a new one?
+                                /* browse the OTT taxonomy in *local* window? or in a new one?
                                 displayVal = '<a href="/opentree/argus/ottol@'+ sourceInfo.taxSourceId +'" '
                                               + 'title="OTT Taxonomy" target="_blank">OTT: '+ sourceInfo.taxSourceId +'</a>';
+                                */
+                                displayVal = '<span style="color: #777;" title="Open Tree of Life Reference Taxonomy (no URL provided)">'+ sourceInfo.taxSource.trim() +': '+ sourceInfo.taxSourceId +'</span>';
                                 break;
 
                             default:
@@ -1187,7 +1234,7 @@ function showObjectProperties( objInfo, options ) {
     var subtreeDepthLimit = 4;
     if (nodeSection) {
         $details = $sections.find('.properties-section:first dl');
-        $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Extract subtree</a></dt>');
+        $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Download subtree as Newick string</a></dt>');
         $details.append('<dd id="extract-subtree-caveats">&nbsp;</dd>');
       
         // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
@@ -1196,7 +1243,9 @@ function showObjectProperties( objInfo, options ) {
         $('#extract-subtree')
             .css('color','')  // restore normal link color
             .unbind('click').click(function() {
-                window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ displayName;
+                // Make this name safe for use in our subtree download URL
+                var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
+                window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ superSafeDisplayName;
 
                 /* OR this will load the Newick-tree text to show it in-browser
                 $.ajax({
@@ -1217,11 +1266,16 @@ function showObjectProperties( objInfo, options ) {
             });
         $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
       
-        // Attempt to find a page for this taxon in the Encyclopedia of Life website
-        // (prefer '+' to '%20', but carefully encode other characters)
-        var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');  
-        // N.B. This 'external-links' list can hold similar entries.
-        $details.after('<ul class="external-links"><li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">Search EOL for \''+ displayName +'\'</a></li></ul>');
+        // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
+        if ((displayName.indexOf('Unnamed ') !== 0) && (displayName.indexOf('[') !== 0)) {
+            // Attempt to find a page for this taxon in the Encyclopedia of Life website
+            // N.B. This 'external-links' list can hold similar entries.
+            
+            // Make this name safe for use in our EOL search URL
+            // (prefer '+' to '%20', but carefully encode other characters)
+            var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');  
+            $details.after('<ul class="external-links"><li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">Search EOL for \''+ displayName +'\'</a></li></ul>');
+        }
     }
 
 }
