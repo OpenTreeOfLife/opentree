@@ -125,3 +125,9 @@
       Allow from all
       ProxyPass  http://localhost:7478/db/data/ext
     </Location>
+
+    # ------------------------------------------------------------
+    # default home page (JSON with links to API docs) via web2py
+
+    RewriteEngine on
+    RewriteRule ^/$ /phylesystem/default/index.html [PT]
