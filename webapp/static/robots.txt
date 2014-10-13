@@ -17,4 +17,5 @@ Disallow: /api/
 # Block access to admin pages, login, logout
 Disallow: /admin/
 Disallow: /user/
+Disallow: /v2/
 Crawl-delay: 60

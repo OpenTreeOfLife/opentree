@@ -7,12 +7,13 @@ OPENTREE_DOCSTORE=$2
 CONTROLLER=$3
 OTI_BASE_URL=$4
 OPENTREE_API_BASE_URL=$5
+OPENTREE_DEFAULT_APPLICATION=$6
 
 . setup/functions.sh
 
-echo "Installing API"
+setup/install-common.sh $OPENTREE_DEFAULT_APPLICATION $CONTROLLER
 
-bash setup/install-web2py.sh
+echo "Installing API"
 
 # ---------- Redis for caching ---------
 REDIS_WITH_VERSION="redis-2.8.8"
