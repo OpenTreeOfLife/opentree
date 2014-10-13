@@ -211,11 +211,19 @@ def url_out(request, environ, application, controller, function,
         url = '%s://%s%s' % (scheme, host_port, url)
     return url
 
+def make_response_CORS_compliant(http_response):
+    """
+    prevents "lost" responses (esp. HTTP exceptions) across domains
+    """
+    http_response.headers['Access-Control-Allow-Credentials'] = 'true'
+    http_response.headers['Access-Control-Allow-Origin'] = '*'
+    http_response.headers['Access-Control-Max-Age'] = 86400
 
 def try_rewrite_on_error(http_response, request, environ, ticket=None):
     """
     called from main.wsgibase to rewrite the http response.
     """
+    make_response_CORS_compliant(http_response)
     status = int(str(http_response.status).split()[0])
     if status >= 399 and THREAD_LOCAL.routes.routes_onerror:
         keys = set(('%s/%s' % (request.application, status),
