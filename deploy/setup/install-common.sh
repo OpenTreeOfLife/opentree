@@ -35,5 +35,6 @@ cp $TMP web2py/routes.py
 rm $TMP
 grep default_ web2py/routes.py
 
-# Kludge in case OPENTREE_DEFAULT_APPLICATION is set to 'welcome'
+# Kludge in case OPENTREE_DEFAULT_APPLICATION is set to 'welcome' or (more likely) 'phylesystem'
 cp -p repo/opentree/webapp/static/robots.txt web2py/applications/welcome/static/
+cp -p repo/opentree/webapp/static/robots.txt web2py/applications/phylesystem/static/
