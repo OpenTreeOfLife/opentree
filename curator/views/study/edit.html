@@ -288,6 +288,26 @@ body {
                 </div>
               </div>
               <div class="control-group">
+                <label class="control-label" for="ot_studyDataDeposit">Data deposit DOI/URL</label>
+                <div class="controls">
+                {{ if viewOrEdit == 'EDIT': }}
+                  <input data-bind="value: nexml['^ot:dataDeposit']['@href'], 
+                                    valueUpdate: ['afterkeydown', 'input'], 
+                                    event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: validateAndTestDOI }, 
+                                    css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyDataDeposit" class="input-xlarge" placeholder="">
+                {{ else: }}
+                  <p class="static-form-value">
+                  <!-- ko if: getDataDepositMessage() !== '' -->
+                      <span data-bind="html: getDataDepositMessage()">&nbsp;</span>
+                 <!-- /ko -->
+                 <!-- ko if: getDataDepositMessage() === '' --> 
+                      <em>None</em>
+                 <!-- /ko -->
+                  </p>
+                {{ pass }}
+                </div>
+              </div>
+              <div class="control-group">
                 <label class="control-label" for="ot_studyYear">Study Year</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
@@ -331,7 +351,7 @@ body {
                 -->
                 </select>
                 <div class="">
-                    <ul id="search-results" class="dropdown-menu">
+                    <ul id="search-results" class="dropdown-menu" role="menu">
                         ...
                     </ul>
                 </div>
@@ -1878,6 +1898,26 @@ body {
       <button class="btn btn-info pull-right" style="margin-left: 20px;" 
               onclick="$('#save-comments-popup').modal('hide'); saveFormDataToStudyJSON(); return false;">Save Study</button>
       <a data-dismiss="modal" class="btn" >Cancel</a>
+    </div>
+</div>
+
+<!-- hidden template reminding about adding data if a data deposit already exists -->
+<div class="modal hide fade" id="late-data-reminder" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Reminder
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Files or trees added here should already be present in the data deposit for this study.
+            <span id="data-deposit-reminder">&nbsp;</span>
+        </p>
+        <p>(This reminder will only appear once per editing session.)</p>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
     </div>
 </div>
 

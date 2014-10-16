@@ -255,6 +255,13 @@ $(document).ready(function() {
         url: '/curator/supporting_files/upload_file',
         dataType: 'json',
         autoUpload: true,
+        add: function(e, data) {
+            console.log('*** fileupload - add ***');
+            if (!remindAboutAddingLateData()) {
+                return false;  // showing the reminder instead
+            }
+            data.submit();
+        },
         done: function() {
             console.log('done!');
         }
@@ -302,7 +309,6 @@ $(document).ready(function() {
                     .append('<br>')
                     .append(error);
                 */
-                debugger;
                 console.log( "FAILURE, msg = "+ error);
             }
         });
@@ -336,6 +342,9 @@ $(document).ready(function() {
             setElementIDHints();
 
             $('[name=new-tree-submit]').click(function() {
+                if (!remindAboutAddingLateData()) {
+                    return false;  // showing the reminder instead
+                }
                 console.log('treeupload - submitting...');
                 $('[name=uploadid]').val( generateTreeUploadID() );
                 showModalScreen("Adding tree...", {SHOW_BUSY_BAR:true});
@@ -365,6 +374,11 @@ $(document).ready(function() {
     // enable taxon search
     $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
     $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
+    
+    // don't trigger unrelated form submission when pressing ENTER here
+    $('input[name=taxon-search], select[name=taxon-search-context]')
+        .unbind('keydown')
+        .bind('keydown', function(e) { return e.which !== 13; });
 });
 
 
@@ -3669,6 +3683,9 @@ function generateTreeUploadID() {
 function submitNewTree( form ) {
     // NOTE that this should submit the same arguments (except for file
     // data) as the fileupload behavior for #treeupload
+    if (!remindAboutAddingLateData()) {
+        return false;;  // showing the reminder instead
+    }
     ///console.log("submitting tree...");
     
     showModalScreen("Adding tree...", {SHOW_BUSY_BAR:true});
@@ -5838,13 +5855,38 @@ function getAssociatedTreeLabels( fileInfo ) {
 clearTimeout(searchTimeoutID);  // in case there's a lingering search from last page!
 var searchTimeoutID = null;
 var searchDelay = 1000; // milliseconds
-function setTaxaSearchFuse() {
+var hopefulSearchName = null;
+function setTaxaSearchFuse(e) {
     if (searchTimeoutID) {
         // kill any pending search, apparently we're still typing
         clearTimeout(searchTimeoutID);
     }
     // reset the timeout for another n milliseconds
     searchTimeoutID = setTimeout(searchForMatchingTaxa, searchDelay);
+
+    /* If the last key pressed was the ENTER key, stash the current (trimmed)
+     * string and auto-jump if it's a valid taxon name.
+     */
+    if (e.type === 'keyup') {
+        switch (e.which) {
+            case 13:
+                hopefulSearchName = $('input[name=taxon-search]').val().trim();
+                autoApplyExactMatch();  // use existing menu, if found
+                break;
+            case 17:
+                // do nothing (probably a second ENTER key)
+                break;
+            case 39:
+            case 40:
+                // down or right arrows should try to select first result
+                $('#search-results a:eq(0)').focus();
+                break;
+            default:
+                hopefulSearchName = null;
+        }
+    } else {
+        hopefulSearchName = null;
+    }
 }
 
 var showingResultsForSearchText = '';
@@ -5962,6 +6004,8 @@ function searchForMatchingTaxa() {
                         nudgeTickler('GENERAL_METADATA');
                     });
                 $('#search-results').dropdown('toggle');
+
+                autoApplyExactMatch();
             } else {
                 $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
                 $('#search-results').dropdown('toggle');
@@ -5970,6 +6014,19 @@ function searchForMatchingTaxa() {
     });
 
     return false;
+}
+
+function autoApplyExactMatch() {
+    // if the user hit the ENTER key, and there's an exact match, apply it automatically
+    if (hopefulSearchName) {
+        $('#search-results a').each(function() {
+            var $link = $(this);
+            if ($link.text().toLowerCase() === hopefulSearchName.toLowerCase()) {
+                $link.trigger('click');
+                return false;
+            }
+        });
+    }
 }
 
 function lookUpDOI() {
@@ -6610,6 +6667,9 @@ function getDataDepositMessage() {
     // Returns HTML explaining where to find this study's data, or an empty
     // string if no URL is found. Some cryptic dataDeposit URLs may require
     // more explanation or a modified URL to be more web-friendly.
+    //
+    // NOTE that we maintain a server-side counterpart in
+    // webapp/modules/opentreewebapputil.py > get_data_deposit_message
     var url = $.trim(viewModel.nexml['^ot:dataDeposit']['@href']);
     // If there's no URL, we have nothing to say
     if (url === '') {
@@ -6716,4 +6776,26 @@ function inferSearchContextFromAvailableOTUs() {
             }
         }
     }); 
+}
+
+/* If there's a data-deposit for this study, remind the curator of
+ * the importance of adding *only* data that's already in the deposit.
+ * (This message should appear just once per session.)
+ */
+var remindedAboutAddingLateData = false;
+function remindAboutAddingLateData(evt) {
+    // return true if they don't need this message, false if it should block the caller
+    if (remindedAboutAddingLateData) {
+        return true;
+    }
+    var dataDepositURL = $.trim(viewModel.nexml['^ot:dataDeposit']['@href']);
+    if (dataDepositURL === '') {
+        // the point is moot, there's no clear deposit yet
+        return true;
+    }
+    $('#data-deposit-reminder').html(getDataDepositMessage());
+    $('#late-data-reminder').modal('show');
+    remindedAboutAddingLateData = true;
+
+    return false;
 }

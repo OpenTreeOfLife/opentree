@@ -53,7 +53,7 @@ declare -A OPENTREE_BRANCHES
 
 function opentree_branch {
     OPENTREE_BRANCHES[$1]=$2
-    echo Set branch for $1 to be ${OPENTREE_BRANCHES[$1]}
+    #echo Set branch for $1 to be ${OPENTREE_BRANCHES[$1]}
 }
 
 . setup/CONFIG

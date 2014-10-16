@@ -437,4 +437,39 @@ div#r0 {
     cursor: pointer;
 }
 
+/* Adjusting "inverse" colors in header search */
+.navbar-inverse .navbar-search .search-query {
+    background-color: #ddd;
+    color: #000;
+}
+.navbar-inverse .navbar-search .search-query:-moz-placeholder {color: #555;}
+.navbar-inverse .navbar-search .search-query::-moz-placeholder {color: #555;}
+.navbar-inverse .navbar-search .search-query:-ms-input-placeholder {color: #555;}
+.navbar-inverse .navbar-search .search-query::-webkit-input-placeholder {color: #555;}
 
+/* Optional style when field has focus
+.navbar-inverse .navbar-search .search-query:focus, 
+.navbar-inverse .navbar-search .search-query.focused {
+    background-color: black;
+    color: orange;
+}
+*/
+
+/* Prepend search icon in the input field */
+.navbar-search .left-inner-addon {
+    position: relative;
+    display: inline-block;
+}
+.navbar-search .left-inner-addon .search-query {
+    padding-left: 24px;    
+}
+.navbar-search .left-inner-addon .search-query:focus, 
+.navbar-search .left-inner-addon .search-query.focused {
+    padding-left: 25px;    
+}
+.navbar-search .left-inner-addon i {
+    position: absolute;
+    top: 7px;
+    left: 8px;
+    pointer-events: none;
+}

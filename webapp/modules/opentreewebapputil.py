@@ -3,6 +3,7 @@ import logging
 import os
 import sys
 import json
+import re
 from gluon.http import HTTP
 
 _CONF_OBJ_DICT = {}
@@ -166,6 +167,31 @@ def get_domain_banner_hovertext(request):
     elif request.env.http_host == 'stagingtree.opentreeoflife.org':
         return 'This is the staging site for Open Tree of Life. Data and services may not be up to date, or may be untested. Production version at tree.opentreeoflife.org'
     return ''
+
+
+treebase_deposit_doi = re.compile('//purl.org/phylo/treebase/phylows/study/TB2:S(?P<treebase_id>\d+)')
+def get_data_deposit_message(raw_deposit_doi):
+    # Returns a *compact* hyperlink (HTML) to study data, or an empty string if
+    # no DOI/URL is found. Some cryptic dataDeposit URLs require more
+    # explanation or a modified URL to be more web-friendly.
+    #
+    # NOTE that we maintain a client-side counterpart in
+    # curator/static/js/study-editor.js > getDataDepositMessage
+    raw_deposit_doi = raw_deposit_doi.strip()
+    if raw_deposit_doi == '':
+        return ''
+
+    # TreeBASE URLs should point to a web page (vs RDF)
+    # EXAMPLE: http://purl.org/phylo/treebase/phylows/study/TB2:S13451
+    #    => http://treebase.org/treebase-web/search/study/summary.html?id=13451
+    treebase_match = treebase_deposit_doi.search(raw_deposit_doi)
+    if treebase_match:
+        return ('<a href="http://treebase.org/treebase-web/search/study/summary.html?'+
+               'id=%s" target="_blank">Data in Treebase</a>' % treebase_match.group('treebase_id'))
+ 
+    # TODO: Add other substitutions?
+
+    return ('<a target="_blank" href="%s">Data deposit DOI/URL</a>' % raw_deposit_doi)
 
 def fetch_current_TNRS_context_names(request):
     try:
