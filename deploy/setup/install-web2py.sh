@@ -6,8 +6,7 @@
 # https://github.com/web2py/web2py/releases for all available releases.)
 WEB2PY_RELEASE='2.8.2'
 # N.B. We should only change WEB2PY_RELEASE after updating the modified web2py files
-# listed in the section 'ROUTES AND WEB2PY PATCHES' of `setup/install-web2py-apps.sh`, 
-# plus thorough testing!
+# listed in the section 'ROUTES AND WEB2PY PATCHES' below, and thorough testing!
 
 if [ ! -d web2py -o  ! -r downloads/web2py_${WEB2PY_RELEASE}_src.zip ]; then
     wget --no-verbose -O downloads/web2py_${WEB2PY_RELEASE}_src.zip \
