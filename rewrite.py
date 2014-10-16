@@ -14,6 +14,10 @@ which also allows for rewriting of certain error messages.
 routes.py supports two styles of URL rewriting, depending on whether 'routers' is defined.
 Refer to router.example.py and routes.example.py for additional documentation.
 
+*****************************
+NOTE that this is a modified version from web2py 2.8.2. For full details on what has changed, see
+https://github.com/OpenTreeOfLife/opentree/commits/master/rewrite.py
+*****************************
 """
 
 import os
