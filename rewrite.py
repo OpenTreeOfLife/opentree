@@ -16,7 +16,10 @@ Refer to router.example.py and routes.example.py for additional documentation.
 
 *****************************
 NOTE that this is a modified version from web2py 2.8.2. For full details on what has changed, see
-https://github.com/OpenTreeOfLife/opentree/commits/master/rewrite.py
+ https://github.com/OpenTreeOfLife/opentree/commits/master/rewrite.py
+
+This file was patched (by jimallman, on 3/25/2014) to restore liberal CORS
+headers when returning exceptions from a cross-domain request.
 *****************************
 """
 

@@ -12,6 +12,8 @@ OAuth 2.0 spec: http://tools.ietf.org/html/rfc6749
 *****************************
 NOTE that this is a modified version from web2py 2.8.2. For full details on what has changed, see
 https://github.com/OpenTreeOfLife/opentree/commits/master/oauth20_account.py
+
+This file was patched (by jimallman, on 3/25/2014) to support redirection on proxied web2py servers.
 *****************************
 """
 
