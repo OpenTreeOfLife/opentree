@@ -101,7 +101,7 @@ function git_refresh() {
 	tmpbranch=origin/master
         (cd $repo_dir && \
 	 git checkout -q $tmpbranch && \
-	 git fetch origin $branch && \
+	 git fetch origin && \
 	 git branch --track -f $branch origin/$branch && \
 	 git checkout $branch && \
 	 git merge origin/$branch) || echo "*** git failure ***"
