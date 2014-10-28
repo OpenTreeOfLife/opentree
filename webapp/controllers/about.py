@@ -48,6 +48,26 @@ def references():
     view_dict['contributing_studies'] = fetch_current_synthesis_source_data()
     return view_dict
 
+def statistics():
+    view_dict = default_view_dict.copy()
+    view_dict['synthesis_stats'] = fetch_local_synthesis_stats()
+    view_dict['phylesystem_stats'] = fetch_local_phylesystem_stats()
+    return view_dict
+
+def fetch_local_synthesis_stats():
+    try:
+        stats = open("applications/%s/static/stats/synthesis.json" % request.application).read().strip()
+        return stats
+    except Exception, e:
+        return None
+
+def fetch_local_phylesystem_stats():
+    try:
+        stats = open("applications/%s/static/stats/phylesystem.json" % request.application).read().strip()
+        return stats
+    except Exception, e:
+        return None
+
 def fetch_current_synthesis_source_data():
     try:
         from gluon.tools import fetch
