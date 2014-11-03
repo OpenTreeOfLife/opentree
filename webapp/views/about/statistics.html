@@ -251,6 +251,7 @@ function showCurrentSynthesisProfile() {
     // Our stats JSON has friendly property names. Just format them!
     $('#synthesis-stats-panel table').empty();
     for (var prop in currentSynthesisProfile) {
+        if (prop === 'Date') continue;
         var itsValue = currentSynthesisProfile[ prop ];
         $('#synthesis-stats-panel table').append(
             '<tr>'
@@ -296,6 +297,7 @@ function showCurrentPhylesystemProfile() {
     // Our stats JSON has friendly property names. Just format them!
     $('#phylesystem-stats-panel table').empty();
     for (var prop in currentPhylesystemProfile) {
+        if (prop === 'Date') continue;
         var itsValue = currentPhylesystemProfile[ prop ];
         $('#phylesystem-stats-panel table').append(
             '<tr>'
