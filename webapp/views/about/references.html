@@ -40,41 +40,7 @@ div.contributing-studies div.links a {
       <h1 id="main-title">Bibliographic references for the synthetic tree</h1>
 
       <div class="row">
-          <div class="span3">
-              <ul class="nav nav-pills nav-stacked">
-                  <li class="nav=header">Learn more about&hellip;</li>
-                  <li>
-                      <a href="{{= URL('about', 'open-tree-of-life') }}">Open Tree of Life</a>
-                  </li>
-<!--
-					<li>
-                      <a href="{{= URL('about', 'the-synthetic-tree') }}">The synthetic tree</a>
-                  </li>
-                  <li>
-                      <a href="{{= URL('about', 'materials-and-methods') }}">Materials and methods</a>
-                  </li>
-                  <li>
-                      <a href="{{= URL('about', 'the-source-tree-manager') }}">The source tree manager</a>
-                  </li>
--->
-					<li class="active">
-                      <a href="{{= URL('about', 'references') }}">Bibliographic references</a>
-                  </li>
-                  <li>
-                      <a href="https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs" target="_blank">API documentation</a>
-                  </li>
-                  <li>
-                      <a href="{{= URL('about', 'developer-resources') }}">Developer resources</a>
-                  </li>
-                  <li>
-                      <a href="{{= URL('about', 'credits') }}">Credits</a>
-                  </li>
-                  <li>
-                      <a href="{{= URL('about', 'licenses') }}">Licenses</a>
-                  </li>
-              </ul>
-          </div>
-          <div class="contributing-studies span8 offset1">
+          <div class="contributing-studies span10 offset1">
               <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
               <p>The following studies have contributed to the current synthetic tree.</p>
 
@@ -86,7 +52,7 @@ div.contributing-studies div.links a {
              {{ priority = 1 }}
              {{ for study in contributing_studies: }}
              <div class="row synthesis-priority-{{= "{0:0>6}".format(priority) }}">
-              <div class="span5 reference">
+              <div class="span6 reference">
                   {{= study.get('ot:studyPublicationReference') }}
                   {{ if study.get('ot:studyPublication'): }}
                     <a target="_blank" href="{{= study.get('ot:studyPublication') }}">{{= study.get('ot:studyPublication') }}</a>
@@ -104,7 +70,7 @@ div.contributing-studies div.links a {
                     </div>
                   {{ pass }}
               </div>
-              <div class="span3 links">
+              <div class="span4 links">
                   <a target="_blank" href="{{= URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ]) }}"
                     >Open in curator application</a>
                   <a target="_blank" 
