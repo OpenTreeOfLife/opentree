@@ -669,7 +669,7 @@ def get_local_comments(location={}):
     try:
         resp.raise_for_status()
     except:
-        print('call to {u} failed. Returnint empty comments list'.format(u=url))
+        print('call to {u} failed. Returning empty comments list'.format(u=url))
         return []
     try:
         results = resp.json()
