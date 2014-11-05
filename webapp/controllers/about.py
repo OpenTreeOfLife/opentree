@@ -105,7 +105,7 @@ def otu_statistics():
                          'Unique OTUs in nominated studies': num_otu_in_nominated_studies,
                          'Date': str(date)}
     # sort by date
-    dk = [(datetime.strptime(i, "%Y-%m-%dT%HZ"), i) for i in by_date.keys()]
+    dk = [(datetime.strptime(i, "%Y-%m-%dT%HZ"), i) for i in by_date.keys() if i]
     dk.sort()
     ks = [i[1] for i in dk]
     # create the list of stat objects to return
