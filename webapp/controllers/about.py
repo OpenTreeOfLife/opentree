@@ -64,11 +64,10 @@ def otu_statistics():
     # create some an otu summary stats for each synthesis that we have info about...
     by_date = {}
     warnings = set()
-    keys = set(synth.keys() + phylesystem.keys())
-    for k in keys:
-        synth_v = synth.get(k, {})
-        phyle_v = phylesystem.get(k, {})
-        date = synth_v.get('Date') or phyle_v.get('Date')
+    dates = set(synth.keys() + phylesystem.keys())
+    for date in dates:
+        synth_v = synth.get(date, {})
+        phyle_v = phylesystem.get(date, {})
         ott_version = synth_v.get('OTT version')
         num_otu_in_ott = 2000000
         if ott_version is None:
