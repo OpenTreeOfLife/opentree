@@ -72,7 +72,7 @@ div.stats-panel {
 var otu_stats = {{= XML(otu_stats) }}
 
 // jimA: TEMPORARILY restricting this to just a few samples (for review)
-otu_stats = otu_stats.slice(0,4);
+otu_stats = otu_stats.slice(0,5);
 
 var sortedSynthesisProfileKeys = null;
 var currentSynthesisProfileIndex = 0;
@@ -97,13 +97,13 @@ var y = d3.scale.linear()
 // let's define two color ranges, with a common endpoint
 var darkest = d3.rgb('#666666'),  // represents OTUs from studies in synthesis
     white = d3.rgb('#ffffff'),
-    warm = d3.rgb('#ccaa77'),
-    cool = d3.rgb('#8888BB'),
+    warm = d3.rgb('#cc9966'),
+    cool = d3.rgb('#6677BB'),
     warmScale = d3.interpolateRgb(warm, white),
     coolScale = d3.interpolateRgb(cool, white);
 var color = d3.scale.ordinal()
-    .range([darkest, warmScale(0.3), warmScale(0.6), warmScale(0.85),
-            darkest, coolScale(0.4), coolScale(0.85)])
+    .range([darkest, warmScale(0.25), warmScale(0.6), warmScale(0.85),
+            darkest, coolScale(0.5), coolScale(0.85)])
 var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom");
