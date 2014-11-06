@@ -94,10 +94,16 @@ var x = d3.scale.ordinal()
     .rangeRoundBands([0, width], .1);
 var y = d3.scale.linear()
     .rangeRound([height, 0]);
+// let's define two color ranges, with a common endpoint
+var darkest = d3.rgb('#666666'),  // represents OTUs from studies in synthesis
+    white = d3.rgb('#ffffff'),
+    warm = d3.rgb('#ccaa77'),
+    cool = d3.rgb('#8888BB'),
+    warmScale = d3.interpolateRgb(warm, white),
+    coolScale = d3.interpolateRgb(cool, white);
 var color = d3.scale.ordinal()
-    .range(["#666666", "#dddd44","#000000", "#8888ff",
-            "#666666", /*"#ffaa55", */
-            "#4444aa", "#995555" ]);
+    .range([darkest, warmScale(0.3), warmScale(0.6), warmScale(0.85),
+            darkest, coolScale(0.4), coolScale(0.85)])
 var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom");
