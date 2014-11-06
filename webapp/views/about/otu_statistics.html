@@ -72,7 +72,7 @@ div.stats-panel {
 var otu_stats = {{= XML(otu_stats) }}
 
 // jimA: TEMPORARILY restricting this to just a few samples (for review)
-otu_stats = otu_stats.slice(0,5);
+otu_stats = otu_stats.slice(0,3);
 
 var sortedSynthesisProfileKeys = null;
 var currentSynthesisProfileIndex = 0;
@@ -152,7 +152,7 @@ var populateSVG = function(data) {
     d
   });
   data.sort(function(a, b) { return b.total - a.total; });
-  x.domain(data.map(function(d) { return d.Date; }));
+  x.domain(data.map(function(d) { return formatISODate(d.Date); }));
   y.domain([0, d3.max(data, function(d) { return d['Unique OTUs in OTT']; })]);
   svg.append("g")
       .attr("class", "x axis")
@@ -166,13 +166,13 @@ var populateSVG = function(data) {
       .attr("y", 6)
       .attr("dy", ".71em")
       .style("text-anchor", "end")
-      .text("OTUs");
+      .text("OTUs in Open Tree Taxonomy");
   var profile = svg.selectAll(".profile")
       .data(data)
     .enter().append("g")
       .attr("class", "g")
       .attr("transform", function(d) {
-        return "translate(" + x(d.Date) + ",0)";
+        return "translate(" + x(formatISODate(d.Date)) + ",0)";
       });
   profile.selectAll("rect")
       .data(function(d) { return d.blocks; })
@@ -256,9 +256,7 @@ $(document).ready(function() {
         // build and bind profile-date chooser
         $('#otu-profile-date-chooser').empty();
         $.each( sortedSynthesisProfileKeys, function (i, profileDate) {
-            var aDate = new moment(profileDate);
-            // see http://momentjs.com/docs/#/parsing/string/
-            var displayDate = aDate.format('MMMM Do YYYY, hA');
+            var displayDate = formatISODate(profileDate);
             $('#otu-profile-date-chooser').prepend(
                 '<option value="'+ profileDate +'">'+ displayDate +'</option>'
             );
@@ -272,6 +270,17 @@ $(document).ready(function() {
         $('#otu-stats-missing').show();
     }
 });
+
+function formatISODate( dateString, options ) {
+    options = options || {includeTime: true};
+    var aDate = new moment(dateString);
+    // see http://momentjs.com/docs/#/parsing/string/
+    if (options.includeTime) {
+        return aDate.format('MMMM Do YYYY, hA');
+    } else {
+        return aDate.format('MMMM Do YYYY');
+    }
+}
 
 function showCurrentSynthesisProfile() {
     var currentSynthesisProfile = profilesByDate[currentSynthesisProfileDate];
