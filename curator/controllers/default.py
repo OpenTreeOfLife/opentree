@@ -499,3 +499,46 @@ def search_crossref_proxy():
         raise HTTP(501, "DOI lookup service failed. Please try again in a few minutes.")
     return resp
 
+# provide support for phylogeny-taxonomy alignment service (missing CORS and HTTPS)
+# See https://github.com/OpenTreeOfLife/pta
+def phylogeny_taxonomy_alignment_proxy():
+    from pprint import pprint
+    import urllib
+    import json
+    pta_url = 'http://54.148.22.78/pta/default/index.json'
+    # TODO: move this to config file? or treat it as an external service, ala CrossRef?
+
+    nexson = extract_nexson_from_http_call(request, **request.vars)  # web2py equivalent to **kwargs
+    # re-encode this to pass it along...
+    #nexson = urllib.urlencode(nexson)
+    nexson = json.dumps(nexson)
+
+    import pdb; pdb.set_trace()
+
+    pprint('-----')
+    pprint(nexson)
+    pprint('-----')
+
+    req = urllib2.Request(url=pta_url, data=nexson) 
+    req.add_header("Content-Type",'application/json; charset=utf-8')
+
+    pprint(req)
+    pprint('-----')
+
+    try:
+        resp = urllib2.urlopen(req).read()
+        pprint('RAW resp')
+        pprint(resp)
+        pprint('-----')
+    except Exception, x:
+        s = str(x)
+        resp = {'error': 1,
+                'description': s}
+
+    pprint(resp)
+    pprint('-----')
+    return resp
+
+    #except:
+    #    raise HTTP(501, "Alignment service failed. Please try again in a few minutes.")
+

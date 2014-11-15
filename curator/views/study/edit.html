@@ -2013,7 +2013,8 @@ body {
        <ul class="nav nav-tabs" style="margin-bottom: -1px;">
           <li class="active"><a href="#tree-properties" data-toggle="tab">Properties</a></li>
           <li><a href="#tree-phylogram" data-toggle="tab">Phylogram</a></li>
-          <li><a href="#tree-legend" data-toggle="tab">Legend</a></li>
+          <li><a href="#tree-legend" data-toggle="tab">Phylogram Legend</a></li>
+          <li><a href="#tree-conflict" data-toggle="tab">Conflict and Concordance</a></li>
        </ul>
     </div>
     <div class="modal-body tab-content">
@@ -2319,6 +2320,14 @@ body {
         </tr>
        </table>
       </div>
+      <div class="tab-pane" id="tree-conflict">
+          <div class="help-box">
+              This tool will compare the current source tree to the latest Open Tree taxonomy.
+              Click <strong>Refresh to show latest changes</strong> to see the current tree,
+              including any operations that have not yet been saved (OTU mapping, re-rooting, etc.)
+          </div>
+         <!-- tree-view SVG goes here -->
+      </div>
     </div>
     <div class="modal-footer">
       <div id="tree-phylogram-options" class="pull-left form-inline" style="display: none;">
@@ -2332,6 +2341,10 @@ body {
                      onclick="toggleRadialTreeLayoutInViewer(this); return true;" />
               Radial tree layout
           </label>
+      </div>
+      <div id="tree-conflict-options" class="pull-left form-inline" style="display: none;">
+          <a class="btn" style="margin-left: 25px;" onclick="refreshTreeConflict(); return false;">
+               Refresh to show latest changes</a>
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); false;">Close</a>
     </div>

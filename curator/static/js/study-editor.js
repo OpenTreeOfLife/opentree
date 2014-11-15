@@ -2816,9 +2816,17 @@ function showTreeViewer( tree, options ) {
                 case 'tree-properties':
                 case 'tree-legend':
                     $('#tree-phylogram-options').hide();
+                    $('#tree-conflict-options').hide();
                     break;
                 case 'tree-phylogram':
                     $('#tree-phylogram-options').show();
+                    $('#tree-conflict-options').hide();
+                    break;
+                case 'tree-conflict':
+                    $('#tree-phylogram-options').hide();
+                    $('#tree-conflict-options').show();
+                    // trigger initial conflict display?
+                    refreshTreeConflict();
                     break;
             }
         });
@@ -2833,6 +2841,73 @@ function showTreeViewer( tree, options ) {
     }
     */
     $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
+}
+
+var TODOcounter = 0;
+function refreshTreeConflict() {
+    // TODO: move this to config file!
+    //var conflictURL = 'http://54.148.22.78/';
+    var conflictURL = '/curator/phylogeny_taxonomy_alignment_proxy';
+    showModalScreen("Analyzing conflict in this tree...", {SHOW_BUSY_BAR:true});
+
+    // clean any client-side junk from the study
+    scrubNexsonForTransport();
+
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: conflictURL,
+        processData: false,
+        data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
+        error: returnFromTreeConflict,  // to suppress web2py's unhelpful error msg
+        complete: returnFromTreeConflict
+    });
+}
+function returnFromTreeConflict( jqXHR, textStatus ) {
+    console.log('returnFromTreeConflict(), textStatus = '+ textStatus);
+    // report errors or malformed data, if any
+    var badResponse = false;
+    var responseJSON = null;
+    if (textStatus !== 'success') {
+        badResponse = true;
+    } else {
+        // convert raw response to JSON
+        responseJSON = $.parseJSON(jqXHR.responseText);
+        if (!responseJSON) { 
+            jqXHR.responseText = "EMPTY RESPONSE (but reports 'success')";
+            console.warn(jqXHR.responseText);
+            badResponse = true;
+        } else {
+            if (('error' in responseJSON) && (responseJSON['error'] === 1)) {
+                badResponse = true;
+            }
+        }
+    }
+
+    if (badResponse) {
+        console.warn("jqXHR.status: "+ jqXHR.status);
+        console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+        hideModalScreen();
+        // TODO: This is going to leave a mess! Should we force a reload of the page at this point?
+        showErrorMessage(
+            'Sorry, there was an error analyzing conflict in this tree. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">' +
+            'Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>'
+        );
+        return;
+    }
+
+    // TODO: Show the resulting conflict visualization
+    var $conflictPanel = $('#tree-conflict');
+    $conflictPanel.find('.TODO-message').remove();
+    var msg = "Now I'd show the latest tree-conflict view!";
+    msg += TODOcounter++;
+    $conflictPanel.append('<p class="TODO-message"><em>'+ msg +'</em></p>');
+
+    hideModalScreen();
+debugger;
 }
 
 function findOTUInTrees( otu, trees ) {
