@@ -509,11 +509,11 @@ def phylogeny_taxonomy_alignment_proxy():
     # TODO: move this to config file? or treat it as an external service, ala CrossRef?
 
     nexson = extract_nexson_from_http_call(request, **request.vars)  # web2py equivalent to **kwargs
+    #nexson = json.dumps(nexson)
     # re-encode this to pass it along...
-    #nexson = urllib.urlencode(nexson)
-    nexson = json.dumps(nexson)
+    nexson = urllib.urlencode(nexson)
 
-    import pdb; pdb.set_trace()
+    #import pdb; pdb.set_trace()
 
     pprint('-----')
     pprint(nexson)
