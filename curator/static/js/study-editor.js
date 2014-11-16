@@ -2852,6 +2852,9 @@ function refreshTreeConflict() {
 
     // clean any client-side junk from the study
     scrubNexsonForTransport();
+    
+    // N.B. The web service expects URL-encoded Nexson in a 'data' argument!
+    var pseudoFormData = {'data': ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}') }
 
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
@@ -2860,8 +2863,8 @@ function refreshTreeConflict() {
         // crossdomain: true,
         contentType: "application/json; charset=utf-8",
         url: conflictURL,
-        processData: false,
-        data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
+        //processData: false,
+        data: pseudoFormData,
         error: returnFromTreeConflict,  // to suppress web2py's unhelpful error msg
         complete: returnFromTreeConflict
     });

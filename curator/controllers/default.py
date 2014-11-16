@@ -508,18 +508,24 @@ def phylogeny_taxonomy_alignment_proxy():
     pta_url = 'http://54.148.22.78/pta/default/index.json'
     # TODO: move this to config file? or treat it as an external service, ala CrossRef?
 
-    nexson = extract_nexson_from_http_call(request, **request.vars)  # web2py equivalent to **kwargs
-    #nexson = json.dumps(nexson)
-    # re-encode this to pass it along...
-    nexson = urllib.urlencode(nexson)
+    if False:
+        nexson = extract_nexson_from_http_call(request, **request.vars)  # web2py equivalent to **kwargs
+        #nexson = json.dumps(nexson)
+        # re-encode this to pass it along...
+        nexson = urllib.urlencode(unicode(nexson))
+        # add explicit field name
+        payload = 'data=%s' % nexson
+
+    # let's just forward the raw POSTed data
+    payload = request.body.read()
 
     #import pdb; pdb.set_trace()
 
     pprint('-----')
-    pprint(nexson)
+    pprint(payload)
     pprint('-----')
 
-    req = urllib2.Request(url=pta_url, data=nexson) 
+    req = urllib2.Request(url=pta_url, data=payload) 
     req.add_header("Content-Type",'application/json; charset=utf-8')
 
     pprint(req)
@@ -532,13 +538,9 @@ def phylogeny_taxonomy_alignment_proxy():
         pprint('-----')
     except Exception, x:
         s = str(x)
-        resp = {'error': 1,
-                'description': s}
+        raise HTTP(501, "DOI lookup service failed: %s" % s)
 
     pprint(resp)
     pprint('-----')
     return resp
-
-    #except:
-    #    raise HTTP(501, "Alignment service failed. Please try again in a few minutes.")
 
