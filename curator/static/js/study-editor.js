@@ -2826,7 +2826,9 @@ function showTreeViewer( tree, options ) {
                     $('#tree-phylogram-options').hide();
                     $('#tree-conflict-options').show();
                     // trigger initial conflict display?
-                    refreshTreeConflict();
+                    if ($("#conflict-viz-container svg").length === 0) {
+                        refreshTreeConflict(tree['@id']);
+                    }
                     break;
             }
         });
@@ -2843,11 +2845,16 @@ function showTreeViewer( tree, options ) {
     $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
 }
 
-var TODOcounter = 0;
-function refreshTreeConflict() {
+function refreshTreeConflict(treeID) {
+    //var conflictURL = '/curator/phylogeny_taxonomy_alignment_proxy';
+    if (!treeID) {
+        treeID = $('#tree-tags').attr('treeid');
+    }
+    
+    // Let's call the pta (phylogeny-taxonomy alignment) service directly
+    var ptaServiceURL = 'http://54.148.22.78/pta/default/index.json'
     // TODO: move this to config file!
-    //var conflictURL = 'http://54.148.22.78/';
-    var conflictURL = '/curator/phylogeny_taxonomy_alignment_proxy';
+
     showModalScreen("Analyzing conflict in this tree...", {SHOW_BUSY_BAR:true});
 
     // clean any client-side junk from the study
@@ -2856,21 +2863,24 @@ function refreshTreeConflict() {
     // N.B. The web service expects URL-encoded Nexson in a 'data' argument!
     var pseudoFormData = {'data': ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}') }
 
+    var returnWithTreeID = function(jqXHR, textStatus) {
+        returnFromTreeConflict(jqXHR, textStatus, treeID);
+    }
+
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: 'POST',
         dataType: 'json',
         // crossdomain: true,
-        contentType: "application/json; charset=utf-8",
-        url: conflictURL,
+        //contentType: "application/json; charset=utf-8",
+        url: ptaServiceURL,
         //processData: false,
         data: pseudoFormData,
-        error: returnFromTreeConflict,  // to suppress web2py's unhelpful error msg
-        complete: returnFromTreeConflict
+        error: returnWithTreeID,  // to suppress web2py's unhelpful error msg
+        complete: returnWithTreeID
     });
 }
-function returnFromTreeConflict( jqXHR, textStatus ) {
-    console.log('returnFromTreeConflict(), textStatus = '+ textStatus);
+function returnFromTreeConflict( jqXHR, textStatus, treeID) {
     // report errors or malformed data, if any
     var badResponse = false;
     var responseJSON = null;
@@ -2902,15 +2912,12 @@ function returnFromTreeConflict( jqXHR, textStatus ) {
         return;
     }
 
-    // TODO: Show the resulting conflict visualization
-    var $conflictPanel = $('#tree-conflict');
-    $conflictPanel.find('.TODO-message').remove();
-    var msg = "Now I'd show the latest tree-conflict view!";
-    msg += TODOcounter++;
-    $conflictPanel.append('<p class="TODO-message"><em>'+ msg +'</em></p>');
+    // Show the resulting conflict visualization
+    var conflictJSON = $.parseJSON(jqXHR.responseText);
+    var treeJSON = conflictJSON[ treeID ];
+    renderTreeConflict(treeJSON);
 
     hideModalScreen();
-debugger;
 }
 
 function findOTUInTrees( otu, trees ) {
@@ -6876,4 +6883,158 @@ function remindAboutAddingLateData(evt) {
     remindedAboutAddingLateData = true;
 
     return false;
+}
+
+/* Build d3 (SVG) visualization showing tree conflict, using JSON from the
+ * phylogen-taxonomy analysis server. Adapted from 
+ *   https://github.com/OpenTreeOfLife/pta/blob/99409f9b267218b12101c91dd4a5fc4caf1626f8/views/default/view.html
+ */
+function renderTreeConflict(data) {
+    // Handler for .ready() called.
+    var w = "100%",
+    h = 600,
+    cx = w/2,
+    cy = h/2,
+    fill = d3.scale.category10();
+    data.nodes.forEach( function(n) {
+        //n.x += cx; n.y += h*0.66;
+        n.ox = n.x; n.oy = n.y;
+        //n.fixed = true;
+        //if (n.isleaf) { n.fixed = true; }
+    });
+    // Allow for re-draw (clobber old SVG)
+    $('#conflict-viz-container svg').remove();
+    var svg = d3.select("#conflict-viz-container").append("svg:svg")
+        .attr("id", "figure")
+        .attr("width", w)
+        .attr("height", h);
+    var group = d3.select("#figure").append("svg:g");
+    
+    // TODO: Place the legend somewhere nearby?
+
+    var dragging = false;
+    var scale = 1.0;
+    var node_drag = d3.behavior.drag()
+        .on("dragstart", function(d,i) {
+        dragging = true;
+        //layout.stop();
+        //d.fixed = false;
+        ;
+        })
+        .on("drag", function(d,i) {
+        d.x += d3.event.dx; d.y += d3.event.dy;
+        d.ox = d.x/scale; d.oy = d.y/scale;
+        tick();
+        })
+        .on("dragend", function(d,i) {
+        //d.fixed = true;
+        dragging = false;
+        //layout.resume();
+        });
+    var svg_drag = d3.behavior.drag()
+        .on("dragstart", function() {
+        dragging = true;
+        })
+        .on("drag", function() {
+        data.nodes.forEach( function(d) {
+            d.x += d3.event.dx; d.y += d3.event.dy;
+            d.ox = d.x/scale; d.oy = d.y/scale;
+        });
+        tick();
+        })
+        .on("dragend", function() {
+        dragging = false;
+        });
+    var layout = d3.layout.force()
+        .gravity(0.0)
+        .linkDistance(1)
+        //.charge( function (n, i) { n.isleaf? -30:-10; })
+        .charge(-0)
+        .friction(0.7)
+        .size([w, h])
+        .nodes(data.nodes)
+        .links(data.links)
+        .start();
+    var leaves = data.nodes.filter(function(n,i) {return n.isleaf;});
+    var link = group.selectAll("line.link")
+        .data(data.links)
+        .enter().append("svg:line")
+        .attr("class", "link")
+        .attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; })
+        .attr("stroke-width", function(d) {
+        return d.width;
+        })
+        .attr("stroke", function(d) {
+        //return d.stree>0? fill(d.stree):'gray';
+        return d.color;
+        });
+    var node = group.selectAll("g.node")
+        .data(data.nodes)
+        .enter().append("svg:g")
+        .attr("class", "node")
+        .call(node_drag);
+    node.append("svg:circle")
+        .attr("class", "circle")
+        .attr("cx", 0)
+        .attr("cy", 0)
+        .attr("r", function(d) {
+            //return d.isleaf||d==data.nodes[0]? 4:2;
+            return d.size/2;
+        })
+        .style("pointer-events","all")
+        .style("fill", function(d) {
+        return d.color;
+        })
+        .style("stroke", 'white')
+        .style("stroke-opacity", "0.8")
+        .style("stroke-width", function(d) {
+        return d.isleaf? "1px":0;
+        })
+        .append("title")
+        .text( function(d) { return d.altlabel; });
+    node.append("svg:text")
+        .attr("dx", function(d) {return d.size/2+2;})
+        .attr("dy", ".35em")
+        .style("stroke", "#fff")
+        .style("stroke-width", "4px")
+        .style("stroke-opacity", "0.8")
+        .text(function(d) { return d.label });
+    node.append("svg:text")
+        .attr("dx", function(d) {return d.size/2+2;})
+        .attr("dy", ".35em")
+        .text(function(d) { return d.label });
+    function tick() {
+        link.attr("x1", function(d) { return d.source.x; })
+        .attr("y1", function(d) { return d.source.y; })
+        .attr("x2", function(d) { return d.target.x; })
+        .attr("y2", function(d) { return d.target.y; });
+        node.attr("transform", function(d) {
+            return "translate(" + d.x + "," + d.y + ")";
+        });
+        layout.stop();
+    }
+    layout.on("tick", tick);
+    svg.call(d3.behavior.zoom().on("zoom", function() {
+        if (!dragging) {
+        console.log(d3.event.scale);
+        var p = d3.mouse(this), px = p[0], py = p[1];
+        scale = d3.event.scale;
+        data.nodes.forEach( function(n) {
+            var dx = n.ox * scale - n.x;
+            var dy = n.oy * scale - n.y;
+            n.x += dx; n.y += dy;
+        });
+        node.attr("transform", function(d) {
+            return "translate("+d.x+","+d.y+")";
+        });
+        link.attr("x1", function(d) { return d.source.x; })
+            .attr("y1", function(d) { return d.source.y; })
+            .attr("x2", function(d) { return d.target.x; })
+            .attr("y2", function(d) { return d.target.y; });
+        group.attr("transform", "translate(" + d3.event.translate + ")");
+        }
+    }));
 }

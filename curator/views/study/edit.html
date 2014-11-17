@@ -2013,8 +2013,8 @@ body {
        <ul class="nav nav-tabs" style="margin-bottom: -1px;">
           <li class="active"><a href="#tree-properties" data-toggle="tab">Properties</a></li>
           <li><a href="#tree-phylogram" data-toggle="tab">Phylogram</a></li>
-          <li><a href="#tree-legend" data-toggle="tab">Phylogram Legend</a></li>
           <li><a href="#tree-conflict" data-toggle="tab">Conflict and Concordance</a></li>
+          <li><a href="#tree-legend" data-toggle="tab">Legend</a></li>
        </ul>
     </div>
     <div class="modal-body tab-content">
@@ -2241,6 +2241,7 @@ body {
          <!-- tree-view SVG goes here -->
       </div>
       <div class="tab-pane" id="tree-legend">
+       <h4>Phylogram</h4>
        <table>
         <tr>
          <td align="right">
@@ -2319,6 +2320,33 @@ body {
          </td>
         </tr>
        </table>
+       <h4>Conflict and Concordance</h4>
+        <table>
+          <tr>
+            <td width="55%">
+                <ul>
+                    <li><strong style="color: green;">Green edges</strong> are
+                        parent-child relationships in the tree that match the taxonomy.</li>
+                    <li><strong style="color: blue;">Blue edges</strong> are
+                        relationships in the tree that neither exist in the taxonomy nor contradict it
+                        (e.g., resolving relationships within a genus).</li>
+                    <li><strong style="color: red;">Red edges</strong> are
+                        parent-child relationships in the taxonomy that are not traced by the tree.
+                        <strong stye="color: red;">Red nodes</strong> are taxa whose monophyly is
+                        contradicted by the tree.</li>
+                </ul>
+            </td>
+            <td width="10%">&nbsp;</td>
+            <td width="35%">
+                <strong>Controls</strong>
+                <ul>
+                    <li>Middle Mouse Wheel to Zoom and and Out</li>
+                    <li>Left Click and Drag in the white space to drag the entire graph</li>
+                    <li>Left Click on a node to drag that node around</li>
+                </ul>
+            </td>
+          </tr>
+        </table>
       </div>
       <div class="tab-pane" id="tree-conflict">
           <div class="help-box">
@@ -2326,7 +2354,9 @@ body {
               Click <strong>Refresh to show latest changes</strong> to see the current tree,
               including any operations that have not yet been saved (OTU mapping, re-rooting, etc.)
           </div>
-         <!-- tree-view SVG goes here -->
+          <div id="conflict-viz-container">
+            <!-- tree-view SVG goes here -->
+          </div>
       </div>
     </div>
     <div class="modal-footer">
@@ -2343,7 +2373,8 @@ body {
           </label>
       </div>
       <div id="tree-conflict-options" class="pull-left form-inline" style="display: none;">
-          <a class="btn" style="margin-left: 25px;" onclick="refreshTreeConflict(); return false;">
+          <a class="btn" style="margin-left: 25px;" 
+             onclick="refreshTreeConflict(); return false;">
                Refresh to show latest changes</a>
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); false;">Close</a>
