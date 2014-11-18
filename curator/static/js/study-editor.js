@@ -2799,6 +2799,12 @@ function showTreeViewer( tree, options ) {
         });
         $('#tree-viewer').off('shown').on('shown', function () {
             updateTreeDisplay();
+            // remove a stale conflict viz if found
+            var currentTreeInPopup = $('#tree-tags').attr('treeid');
+            var treeInConflictViz = $('#conflict-viz-container svg').attr('treeid')
+            if (currentTreeInPopup !== treeInConflictViz) {
+                $("#conflict-viz-container svg").remove();
+            }
         });
         $('#tree-viewer').off('hide').on('hide', function () {
             treeViewerIsInUse = false;
@@ -2827,7 +2833,7 @@ function showTreeViewer( tree, options ) {
                     $('#tree-conflict-options').show();
                     // trigger initial conflict display?
                     if ($("#conflict-viz-container svg").length === 0) {
-                        refreshTreeConflict(tree['@id']);
+                        refreshTreeConflictViz(tree['@id']);
                     }
                     break;
             }
@@ -2846,7 +2852,7 @@ function showTreeViewer( tree, options ) {
     $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
 }
 
-function refreshTreeConflict(treeID) {
+function refreshTreeConflictViz(treeID) {
     //var conflictURL = '/curator/phylogeny_taxonomy_alignment_proxy';
     if (!treeID) {
         treeID = $('#tree-tags').attr('treeid');
@@ -2864,10 +2870,6 @@ function refreshTreeConflict(treeID) {
     // N.B. The web service expects URL-encoded Nexson in a 'data' argument!
     var pseudoFormData = {'data': ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}') }
 
-    var returnWithTreeID = function(jqXHR, textStatus) {
-        returnFromTreeConflict(jqXHR, textStatus, treeID);
-    }
-
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: 'POST',
@@ -2877,8 +2879,8 @@ function refreshTreeConflict(treeID) {
         url: ptaServiceURL,
         //processData: false,
         data: pseudoFormData,
-        error: returnWithTreeID,  // to suppress web2py's unhelpful error msg
-        complete: returnWithTreeID
+        error: returnFromTreeConflict,  // to suppress web2py's unhelpful error msg
+        complete: returnFromTreeConflict
     });
 }
 function returnFromTreeConflict( jqXHR, textStatus, treeID) {
@@ -2914,9 +2916,12 @@ function returnFromTreeConflict( jqXHR, textStatus, treeID) {
     }
 
     // Show the resulting conflict visualization
+    if (!treeID) {
+        treeID = $('#tree-tags').attr('treeid');
+    }
     var conflictJSON = $.parseJSON(jqXHR.responseText);
     var treeJSON = conflictJSON[ treeID ];
-    renderTreeConflict(treeJSON);
+    renderTreeConflict(treeJSON, treeID);
 
     hideModalScreen();
 }
@@ -6890,7 +6895,7 @@ function remindAboutAddingLateData(evt) {
  * phylogen-taxonomy analysis server. Adapted from 
  *   https://github.com/OpenTreeOfLife/pta/blob/99409f9b267218b12101c91dd4a5fc4caf1626f8/views/default/view.html
  */
-function renderTreeConflict(data) {
+function renderTreeConflict(data, treeID) {
     // Handler for .ready() called.
     var w = "100%",
     h = 600,
@@ -6907,6 +6912,7 @@ function renderTreeConflict(data) {
     $('#conflict-viz-container svg').remove();
     var svg = d3.select("#conflict-viz-container").append("svg:svg")
         .attr("id", "figure")
+        .attr("treeid", treeID)
         .attr("width", w)
         .attr("height", h);
     var group = d3.select("#figure").append("svg:g");
