@@ -2831,6 +2831,7 @@ function showTreeViewer( tree, options ) {
                     }
                     break;
             }
+            return false;  // don't trigger 'shown' on #tree-viewer above
         });
         $('#tree-viewer').modal('show');
     }
@@ -3109,7 +3110,7 @@ function drawTree( treeOrID, options ) {
     var treeEdgesHaveLength = ('@length' in tree.edge[0]);
 
     vizInfo.vis = null;
-    d3.selectAll('svg').remove();
+    d3.selectAll('#tree-phylogram svg').remove();
 
     var viewWidth, viewHeight, layoutGenerator;
 
