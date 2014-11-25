@@ -334,7 +334,9 @@ function install_files {
         echo "FILES_HOST not defined"
     else
         # Transfer content
-        rsync -prv -e "${SSH}" "--exclude=*~" "--exclude=#*" files.opentreeoflife.org "$OT_USER@$FILES_HOST":
+        rsync -prv -e "${SSH}" "--exclude=*~" "--exclude=#*" \
+	      --backup --backup-dir=files.opentreeoflife.org.backup \
+	      files.opentreeoflife.org "$OT_USER@$FILES_HOST":
     fi
 }
 
