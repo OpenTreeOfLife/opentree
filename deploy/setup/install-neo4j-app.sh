@@ -62,7 +62,7 @@ function make_neo4j_instance {
         echo "attempting to recompile "$APP" plugins"
         # Create and install the plugins .jar file
         # Compilation takes about 4 minutes... ugh
-        (cd repo/$APP; ./mvn_serverplugins.sh)
+        (cd repo/$APP; bash mvn_serverplugins.sh)
     fi
 
     # Stop any running server.  (The database may be empty at this point.)
