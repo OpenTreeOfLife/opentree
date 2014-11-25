@@ -9,7 +9,7 @@ devapi.opentreeoflife.org), with a web root directory of
 There are two kinds of files in this tree: "large" and "small".  The
 large files (e.g. versions of OTT or the synthetic tree) are simply
 copied into place.  The small files - mostly index.html files - can be
-updated in either of two ways:
+updated in either of three ways:
 
 ### Push method 1
 
