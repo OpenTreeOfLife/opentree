@@ -3,19 +3,22 @@ How to make changes to the files.opentreeoflife.org site
 ====
 
 The site is currently deployed on ot10.opentreeoflife.org (a.k.a
-devapi.opentreeoflife.org), with a web root directory of
+devapi.opentreeoflife.org), with a web root directory there of
 ~opentree/files.opentreeoflife.org/.
 
-There are two kinds of files in this tree: "large" and "small".  The
+There are two kinds of files in this tree on ot10: "large" and "small".  The
 large files (e.g. versions of OTT or the synthetic tree) are simply
-copied into place.  The small files - mostly index.html files - can be
-updated in either of three ways:
+copied from wherever they originate to the appropriate place on ot10.
+The small files - mostly index.html files - are mirrored manually 
+in the opentree repo on github.  These can be
+updated on ot10 in any of three ways:
 
 ### Push method 1
 
-Update the small files you want to change in your local clone of the
-opentree repository, under deploy/files.opentreeoflifeorg/, and then
-copy files into place using scp or rsync:
+Clone the opentree repository, or make sure it's up to date ('git pull').
+Update the small files you want to change in your local clone, 
+under deploy/files.opentreeoflifeorg/.  Then
+copy files into place on ot10 using scp or rsync:
 
     scp -p foo/index.html opentree@ot10.opentreeoflife.org:files.opentreeoflife.org/foo/
 
@@ -23,9 +26,10 @@ Commit your local changes, push to a branch, and submit a pull request.
 
 ### Push method 2
 
-Update the small files you want to change in your local clone of the
-opentree repository, under deploy/files.opentreeoflifeorg/, and then
-do
+May be better for more complicated changes.
+As above, clone or update the opentree repo.
+Update the small files you want to change in your local clone, 
+under deploy/files.opentreeoflifeorg/, and then do
 
     cd opentree/deploy
     ./push.sh -c ../../deployed-systems/development/devapi.config files
