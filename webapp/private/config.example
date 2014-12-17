@@ -4,6 +4,8 @@
 # this file! The 'config.example' files are used by our deployment scripts to
 # build the final config for each web2py app. Changes here might keep it
 # from being built properly.
+[security]
+secure_sessions_with_HTTPS = false
 
 # paths for the study/status page (DEPRECATED)
 [paths]
