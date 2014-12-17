@@ -150,8 +150,8 @@ function loadStudyList() {
                         var curator = study['ot:curatorName'];
                         var clade = ('ot:focalCladeOTTTaxonName' in study && 
                                      ($.trim(study['ot:focalCladeOTTTaxonName']) !== "")) ?
-                                        study['ot:curatorName'] :
-                                        study['ot:focalClade'];
+                                        study['ot:focalCladeOTTTaxonName'] :  // use mapped name if found
+                                        study['ot:focalClade']; // fall back to numeric ID (should be very rare)
                         if (!matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
                             return false;
                         }
