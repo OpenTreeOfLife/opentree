@@ -85,10 +85,14 @@ function updateImportOptions() {
                 creationAllowed = false;
                 errMsg = 'You must enter a TreeBASE ID to continue.';
             } else {
-                var testForInt = $.trim($('input[name=treebase-id]').val());
-                if (isNaN(testForInt) || parseInt(testForInt) != testForInt) {
+                var testIdentifier = $.trim($('input[name=treebase-id]').val());
+                // a TreeBASE id should be an integer, possibly starting with 's' or 'S'
+                // Or we can use this regex found here: http://identifiers.org/treebase/
+                //var treeBaseIdPattern = new RegExp('^TB[1,2]?:[A-Z][a-z]?\\d+$');
+                var treeBaseIdPattern = new RegExp('^((TB[1,2]?:)?[sS])?\\d+$');
+                if (treeBaseIdPattern.test(testIdentifier) === false) {
                     creationAllowed = false;
-                    errMsg = 'TreeBASE ID should be an integer.';
+                    errMsg = 'TreeBASE ID should conform to one of these patterns: 123, S123, TB:S123, TB1:S123, TB2:S123';
                 }
             }
 
@@ -187,6 +191,11 @@ function createStudyFromForm( evt ) {
         'import-method-TREEBASE_ID' : 'import-method-PUBLICATION_DOI';
     console.log("importMethod: ["+ importMethod +"]");
 
+    // strip any TB: (or TB2:) prefix from the TreeBASE ID
+    var rawTreeBaseId = $.trim($('[name=treebase-id]').val()) || '';
+    var idParts = rawTreeBaseId.split(':');
+    var groomedTreeBaseId = (idParts.length === 1) ? idParts[0] : idParts[1];
+
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: 'POST',
@@ -199,7 +208,7 @@ function createStudyFromForm( evt ) {
             // depend on the server to discern which ones really matter.
             'import_method': importMethod,
             'import_from_location': $('[name=import-from-location]:checked').val() || '',
-            'treebase_id': $('[name=treebase-id]').val() || '',
+            'treebase_id': groomedTreeBaseId,
             'publication_DOI': $('[name=publication-DOI]').val() || '',
             //'publication_reference': $('[name=publication-reference]').val() || '',
             //'nexml_fetch_url': $('[name=nexml-fetch-url]').val() || '',
