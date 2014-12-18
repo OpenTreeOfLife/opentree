@@ -5,6 +5,9 @@
 # build the final config for each web2py app. Changes here might keep it
 # from being built properly.
 
+[security]
+secure_sessions_with_HTTPS = false
+
 [maintenance]
 # During system migration and other scheduled maintenance, we should allow
 # viewing of existing studies but block study creation and editing.
