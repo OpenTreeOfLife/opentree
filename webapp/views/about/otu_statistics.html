@@ -72,7 +72,7 @@ div.stats-panel {
 var otu_stats = {{= XML(otu_stats) }}
 
 // jimA: TEMPORARILY restricting this to just a few samples (for review)
-otu_stats = otu_stats.slice(0,3);
+otu_stats = otu_stats.slice(0,4);
 
 var sortedSynthesisProfileKeys = null;
 var currentSynthesisProfileIndex = 0;
@@ -100,10 +100,10 @@ var darkest = d3.rgb('#666666'),  // represents OTUs from studies in synthesis
     warm = d3.rgb('#cc9966'),
     cool = d3.rgb('#6677BB'),
     warmScale = d3.interpolateRgb(warm, white),
-    coolScale = d3.interpolateRgb(cool, white);
-var color = d3.scale.ordinal()
-    .range([darkest, warmScale(0.25), warmScale(0.6), warmScale(0.85),
-            darkest, coolScale(0.5), coolScale(0.85)])
+    coolScale = d3.interpolateRgb(cool, white);  // not currently used!
+// create the final color set
+var colors = d3.scale.ordinal()
+    .range([warmScale(0.25), warmScale(0.6), warmScale(0.85)]);
 var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom");
@@ -131,25 +131,12 @@ var populateSVG = function(data) {
     var h = d['Unique OTUs in synthesis from studies'];
     d.blocks[0] = {y0: t, y1: h};
     t = h;
-    h = d['Unique OTUs in nominated studies']
+    h = d['Unique OTUs in nominated studies'] + d['Unique OTUs in studies'];
     d.blocks[1] = {y0: t, y1: h};
     t = h;
-    h = d['Unique OTUs in studies']
+    h = d['Unique OTUs in OTT']
     d.blocks[2] = {y0: t, y1: h};
-    t = h;
-    h = d['Unique OTUs in OTT']
-    d.blocks[3] = {y0: t, y1: h};
     d.total = h;
-    t = 0;
-    h = d['Unique OTUs in synthesis from studies'];
-    d.blocks[4] = {y0: t, y1: h};
-    t = h;
-    h = d['Unique OTUs in synthesis']
-    d.blocks[5] = {y0: t, y1: h};
-    t = h;
-    h = d['Unique OTUs in OTT']
-    d.blocks[6] = {y0: t, y1: h};
-    d
   });
   data.sort(function(a, b) { return b.total - a.total; });
   x.domain(data.map(function(d) { return formatISODate(d.Date); }));
@@ -178,23 +165,19 @@ var populateSVG = function(data) {
       .data(function(d) { return d.blocks; })
     .enter().append("rect")
       .attr("x", function(d, i) {
-              if (i < 4) {
               return x.rangeBand()/7.0;
-              }
-              return x.rangeBand()*4.0/7.0;})
-      .attr("width", x.rangeBand()*2.0/7.0)
+       })
+      .attr("width", x.rangeBand()*5.0/7.0)
       .attr("y", function(d) {
              return y(d.y1);
        })
       .attr("height", function(d) { return y(d.y0) - y(d.y1); })
-      .style("fill", function(d, i) { return color(i); });
+      .style("fill", function(d, i) { return colors(i); });
   var legend = svg.selectAll(".legend")
-      .data(['OTUs from studies in synthesis', 
-             'OTUs in nominated studies, but not synth',
-             'OTUs in studies, but not nominated',
+      .data([
              'OTUs in OTT, but not studies',
-             'OTUs in synthesis, but not studies',
-             'OTUs in OTT, but not synthesis'
+             'OTUs in studies, but not in synth',
+             'OTUs from studies in synthesis'
              ])
     .enter().append("g")
       .attr("class", "legend")
@@ -204,11 +187,9 @@ var populateSVG = function(data) {
       .attr("width", 18)
       .attr("height", 18)
       .style("fill", function(d, i) {
-          if (i > 3) {
-              return color(i+1);
-          }
-          return color(i);
-          });
+          // reverse order
+          return colors( colors.length + 1 - i );
+      });
   legend.append("text")
       .attr("x", width - 24)
       .attr("y", 9)
