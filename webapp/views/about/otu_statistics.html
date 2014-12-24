@@ -19,6 +19,13 @@
 .x.axis path {
   display: none;
 }
+.y.axis .tick line {
+    stroke: #000;
+    opacity: 0.15;
+}
+.y.axis path.domain {
+    fill: none;
+}
 </style>
 <!--
 div.stats-panel {
@@ -111,7 +118,9 @@ var xAxis = d3.svg.axis()
     .orient("bottom");
 var yAxis = d3.svg.axis()
     .scale(y)
-    .orient("left")
+    .orient("right")
+    //.ticks(10)
+    .innerTickSize(width)
     .tickFormat(d3.format(".2s"));
 var svgpar = d3.select("#stacked-bar-div");
 var svg = svgpar.append("svg")
@@ -152,21 +161,12 @@ var populateSVG = function(data) {
     ];
   });
   data.sort(function(a, b) { return b.total - a.total; });
+
+  // render X axis under data (to anchor dates)
   x.domain(data.map(function(d) { return formatISODate(d.Date); }));
   y.domain([0, maxOTUs]);
-  svg.append("g")
-      .attr("class", "x axis")
-      .attr("transform", "translate(0," + height + ")")
-      .call(xAxis);
-  svg.append("g")
-      .attr("class", "y axis")
-      .call(yAxis)
-    .append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("dy", ".71em")
-      .style("text-anchor", "end")
-      .text("OTUs in Open Tree Taxonomy");
+
+  // render stacked data blocks
   var profile = svg.selectAll(".profile")
       .data(data)
     .enter().append("g")
@@ -190,6 +190,25 @@ var populateSVG = function(data) {
           console.log('big bar '+i+', color='+ nextColor); 
           return nextColor; 
        });
+
+  // render axes on top of data
+  svg.append("g")
+      .attr("class", "x axis")
+      .attr("transform", "translate(0," + height + ")")
+      .call(xAxis);
+  var gy = svg.append("g")
+      .attr("class", "y axis")
+      .call(yAxis);
+  gy.selectAll("text")
+      .attr("x", 4)
+      .attr("dy", -4);
+  gy.append("text")
+      .attr("transform", "rotate(-90)")
+      .attr("y", 6)
+      .attr("dy", "-1.25em")
+      .style("text-anchor", "end")
+      .text("OTUs in Open Tree Taxonomy");
+
   // place color legend in a (visuallly) quiet place
   var legend = svg.selectAll(".legend")
       .data([
