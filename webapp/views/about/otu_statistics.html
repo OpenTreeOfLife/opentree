@@ -93,17 +93,19 @@ var margin = {top: 20, right: 20, bottom: 30, left: 40},
 var x = d3.scale.ordinal()
     .rangeRoundBands([0, width], .1);
 var y = d3.scale.linear()
-    .rangeRound([height, 0]);
+    .rangeRound([0, height]);
 // let's define two color ranges, with a common endpoint
 var darkest = d3.rgb('#666666'),  // represents OTUs from studies in synthesis
     white = d3.rgb('#ffffff'),
     warm = d3.rgb('#cc9966'),
     cool = d3.rgb('#6677BB'),
-    warmScale = d3.interpolateRgb(warm, white),
+    warmScale = d3.interpolateRgb(white, warm),
     coolScale = d3.interpolateRgb(cool, white);  // not currently used!
 // create the final color set
 var colors = d3.scale.ordinal()
-    .range([warmScale(0.25), warmScale(0.6), warmScale(0.85)]);
+    .domain([0, 1, 2, 3])  // set this explicitly to avoid weirdness below!
+    .range([warmScale(0.0), warmScale(0.85), warmScale(0.6), warmScale(0.25)]);
+var colorCount = colors.range().length; // used below to get color index
 var xAxis = d3.svg.axis()
     .scale(x)
     .orient("bottom");
@@ -124,23 +126,34 @@ for (i = 0; i < otu_stats.length; ++i) {
     dup_otu_stats[2*i + 1] = $.extend({}, otu_stats[i]);
 }
 var populateSVG = function(data) {
+  // pre-fetch the highest Y to support alternate stacking orders
+  var maxOTUs = d3.max(data, function(d) { return d['Unique OTUs in OTT']; });
   data.forEach(function(d) {
-    var y0 = 0;
-    d.blocks = [];
-    var t = 0;
-    var h = d['Unique OTUs in synthesis from studies'];
-    d.blocks[0] = {y0: t, y1: h};
-    t = h;
-    h = d['Unique OTUs in nominated studies'] + d['Unique OTUs in studies'];
-    d.blocks[1] = {y0: t, y1: h};
-    t = h;
-    h = d['Unique OTUs in OTT']
-    d.blocks[2] = {y0: t, y1: h};
-    d.total = h;
+    /* Construct a stack of blocks for each dated sample. NOTE that these stats
+     * are currently overlapping and need to be separated into mutually
+     * exclusive values.
+     */
+    var OTUsInSynthesis = d['Unique OTUs in synthesis from studies'];
+    var OTUsInPhylesystemButNotSynthesis = d['Unique OTUs in studies'] - OTUsInSynthesis;
+    var OTUsInTaxonomyOnly = d['Unique OTUs in OTT'] - OTUsInSynthesis - OTUsInPhylesystemButNotSynthesis;
+    d.blocks = [
+        { // OTUs in synthesis
+            y0: 0,
+            y1: OTUsInSynthesis
+        },
+        { // OTUs in phylesystem, but not in synthesis
+            y0: OTUsInSynthesis,
+            y1: OTUsInSynthesis + OTUsInPhylesystemButNotSynthesis
+        },
+        { // OTUs in taxonomy, but not in phylesystem (or synthesis)
+            y0: OTUsInSynthesis + OTUsInPhylesystemButNotSynthesis,
+            y1: OTUsInSynthesis + OTUsInPhylesystemButNotSynthesis + OTUsInTaxonomyOnly
+        }
+    ];
   });
   data.sort(function(a, b) { return b.total - a.total; });
   x.domain(data.map(function(d) { return formatISODate(d.Date); }));
-  y.domain([0, d3.max(data, function(d) { return d['Unique OTUs in OTT']; })]);
+  y.domain([0, maxOTUs]);
   svg.append("g")
       .attr("class", "x axis")
       .attr("transform", "translate(0," + height + ")")
@@ -169,26 +182,33 @@ var populateSVG = function(data) {
        })
       .attr("width", x.rangeBand()*5.0/7.0)
       .attr("y", function(d) {
-             return y(d.y1);
+             return y(d.y0);
        })
-      .attr("height", function(d) { return y(d.y0) - y(d.y1); })
-      .style("fill", function(d, i) { return colors(i); });
+      .attr("height", function(d) { return y(d.y1) - y(d.y0); })
+      .style("fill", function(d, i) { 
+          var nextColor = colors(i+1);
+          console.log('big bar '+i+', color='+ nextColor); 
+          return nextColor; 
+       });
+  // place color legend in a (visuallly) quiet place
   var legend = svg.selectAll(".legend")
       .data([
-             'OTUs in OTT, but not studies',
-             'OTUs in studies, but not in synth',
-             'OTUs from studies in synthesis'
+             'Color signifies OTUs that are...',
+             '...in a tree that contributed to synthesis (i.e. in the synthetic tree)',
+             '...in a tree but not contributing to synthesis (in phylesystem but not in the synthetic tree)',
+             '...in OTT (but not in phylesystem or the synthetic tree)'
              ])
     .enter().append("g")
       .attr("class", "legend")
-      .attr("transform", function(d, i) { return "translate(0," + i * 20 + ")"; });
+      .attr("transform", function(d, i) { return "translate(0," + (300 + (i * 20)) + ")"; });
   legend.append("rect")
       .attr("x", width - 18)
       .attr("width", 18)
       .attr("height", 18)
       .style("fill", function(d, i) {
-          // reverse order
-          return colors( colors.length + 1 - i );
+          var nextColor = colors(i);
+          console.log('legend block '+i+', color='+ nextColor); 
+          return nextColor; 
       });
   legend.append("text")
       .attr("x", width - 24)
