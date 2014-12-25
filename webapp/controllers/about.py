@@ -65,11 +65,19 @@ def otu_statistics():
     by_date = {}
     warnings = set()
     dates = set(synth.keys() + phylesystem.keys())
-    for date in dates:
+    # Let's creep tallies up in our fake data, with starting values here
+    import random
+    num_otu_in_ott =        1920000
+    num_otu_in_synth =       890000
+    num_phylo_otu_in_synth =  70000
+    num_otu_in_studies =     400000
+    num_otu_in_nominated_studies = 390000
+
+    for date in sorted(dates, reverse=False):
         synth_v = synth.get(date, {})
         phyle_v = phylesystem.get(date, {})
         ott_version = synth_v.get('OTT version')
-        num_otu_in_ott = 2000000
+        num_otu_in_ott += random.randint(0,10000)
         if ott_version is None:
             ott_version = 'unknown'
             warnings.add('ott version info not found - just making up some numbers as a placeholder!')
@@ -81,22 +89,31 @@ def otu_statistics():
                 warnings.add('ott info for version {v} of OTT not found - just making up some numbers as a placeholder!'.format(v=ott_version))
             else:
                 num_otu_in_ott = ov['Unique OTUs']
-        num_otu_in_synth = synth_v.get('Unique OTUs in Synthesis')
-        if num_otu_in_synth is None:
-            num_otu_in_synth = 1000000
+
+        num_otu_in_synth += random.randint(0,5000)
+        if synth_v.get('Unique OTUs in Synthesis') is None:
             warnings.add('"Unique OTUs in Synthesis" info not found - just making up some numbers as a placeholder!')
-        num_phylo_otu_in_synth = synth_v.get('Unique OTUs in Synthesis from studies')
-        if num_phylo_otu_in_synth is None:
-            num_phylo_otu_in_synth = 70000
+        else:
+            num_otu_in_synth = synth_v.get('Unique OTUs in Synthesis')
+
+        num_phylo_otu_in_synth += random.randint(0,3000)
+        if synth_v.get('Unique OTUs in Synthesis from studies') is None:
             warnings.add('"Unique OTUs in Synthesis from studies" info not found - just making up some numbers as a placeholder!')
-        num_otu_in_studies = phyle_v.get('Unique OTUs')
-        if num_otu_in_studies is None:
-            num_otu_in_studies = 400000
+        else:
+            num_phylo_otu_in_synth = synth_v.get('Unique OTUs in Synthesis from studies')
+
+        num_otu_in_studies += random.randint(0,10000)
+        if phyle_v.get('Unique OTUs') is None:
             warnings.add('"Unique OTUs" info not found for phylesystem - just making up some numbers as a placeholder!')
-        num_otu_in_nominated_studies = synth_v.get('Unique OTUs in nominated studies')
-        if num_otu_in_nominated_studies is None:
-            num_otu_in_nominated_studies = 390000
+        else:
+            num_otu_in_studies = phyle_v.get('Unique OTUs')
+
+        num_otu_in_nominated_studies += random.randint(0,8000)
+        if synth_v.get('Unique OTUs in nominated studies') is None:
             warnings.add('"Unique OTUs in nominated studies" info not found - just making up some numbers as a placeholder!')
+        else:
+            num_otu_in_nominated_studies = synth_v.get('Unique OTUs in nominated studies')
+
         by_date[date] = {'Unique OTUs in OTT': num_otu_in_ott,
                          'Unique OTUs in synthesis': num_otu_in_synth,
                          'Unique OTUs in synthesis from studies': num_phylo_otu_in_synth,

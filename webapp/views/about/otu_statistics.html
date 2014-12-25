@@ -1,5 +1,6 @@
 {{extend 'layout.html'}}
-<script src="http://d3js.org/d3.v3.min.js"></script>
+{{### <script src="http://d3js.org/d3.v3.min.js"></script> }}
+<script src="http://d3js.org/d3.v3.js"></script>
 {{import urllib}}
 {{from pprint import pprint}}
 {{### Add support scripts for parsing ISO-8601 dates
@@ -79,7 +80,7 @@ div.stats-panel {
 var otu_stats = {{= XML(otu_stats) }}
 
 // jimA: TEMPORARILY restricting this to just a few samples (for review)
-otu_stats = otu_stats.slice(0,4);
+//otu_stats = otu_stats.slice(0,4);
 
 var sortedSynthesisProfileKeys = null;
 var currentSynthesisProfileIndex = 0;
@@ -94,13 +95,15 @@ for (i = 0; i < warnings.length; ++i) {
     $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
 }
 /* svg based on http://bl.ocks.org/mbostock/3886208 */
-var margin = {top: 20, right: 20, bottom: 30, left: 40},
-    width = 960 - margin.left - margin.right,
-    height = 500 - margin.top - margin.bottom;
+var margin = {top: 30, right: 20, bottom: 30, left: 40},
+    outerWidth = 960,
+    outerHeight = 500,
+    width = outerWidth - margin.left - margin.right,
+    height = outerHeight - margin.top - margin.bottom;
 var x = d3.scale.ordinal()
-    .rangeRoundBands([0, width], .1);
+    .rangeRoundBands([margin.left, width], .1);
 var y = d3.scale.linear()
-    .rangeRound([0, height]);
+    .rangeRound([height, margin.bottom]);
 // let's define two color ranges, with a common endpoint
 var darkest = d3.rgb('#666666'),  // represents OTUs from studies in synthesis
     white = d3.rgb('#ffffff'),
@@ -108,10 +111,14 @@ var darkest = d3.rgb('#666666'),  // represents OTUs from studies in synthesis
     cool = d3.rgb('#6677BB'),
     warmScale = d3.interpolateRgb(white, warm),
     coolScale = d3.interpolateRgb(cool, white);  // not currently used!
+
+
 // create the final color set
 var colors = d3.scale.ordinal()
-    .domain([0, 1, 2, 3])  // set this explicitly to avoid weirdness below!
-    .range([warmScale(0.0), warmScale(0.85), warmScale(0.6), warmScale(0.25)]);
+    //.domain([0, 1, 2, 3])  // set this explicitly to avoid weirdness below!
+    // Set domain to property names, to support area chart?
+    .range([warmScale(0.85), warmScale(0.6), warmScale(0.25)]);
+
 var colorCount = colors.range().length; // used below to get color index
 var xAxis = d3.svg.axis()
     .scale(x)
@@ -137,35 +144,74 @@ for (i = 0; i < otu_stats.length; ++i) {
 var populateSVG = function(data) {
   // pre-fetch the highest Y to support alternate stacking orders
   var maxOTUs = d3.max(data, function(d) { return d['Unique OTUs in OTT']; });
+
+  // Augment each profile with the properties we actually want to show, using the function for each
+  var mutuallyExclusiveCategories = {
+    'OTUs in synthesis': function(d) {
+        return d['Unique OTUs in synthesis from studies'];
+    },
+    'OTUs in phylesystem, but not in synthesis': function(d) {
+        return d['Unique OTUs in studies'] - d['Unique OTUs in synthesis from studies'];
+    },
+    'OTUs in taxonomy, but not in phylesystem or synthesis': function(d) {
+        return d['Unique OTUs in OTT'] - d['Unique OTUs in studies'] - d['Unique OTUs in synthesis from studies'];
+    }
+  };
+  // These property names should be the domain for our colors above
+  colors.domain(d3.keys(mutuallyExclusiveCategories));
+
   data.forEach(function(d) {
-    /* Construct a stack of blocks for each dated sample. NOTE that these stats
-     * are currently overlapping and need to be separated into mutually
-     * exclusive values.
-     */
+    d3.keys(mutuallyExclusiveCategories).forEach(function(propName) {
+        var func = mutuallyExclusiveCategories[propName];
+        d[propName] = func(d);
+    });
+  });
+/*
+    var profileDate = formatISODate(d.Date);
     var OTUsInSynthesis = d['Unique OTUs in synthesis from studies'];
     var OTUsInPhylesystemButNotSynthesis = d['Unique OTUs in studies'] - OTUsInSynthesis;
     var OTUsInTaxonomyOnly = d['Unique OTUs in OTT'] - OTUsInSynthesis - OTUsInPhylesystemButNotSynthesis;
     d.blocks = [
         { // OTUs in synthesis
+            date: profileDate,
             y0: 0,
             y1: OTUsInSynthesis
         },
         { // OTUs in phylesystem, but not in synthesis
+            date: profileDate,
             y0: OTUsInSynthesis,
             y1: OTUsInSynthesis + OTUsInPhylesystemButNotSynthesis
         },
-        { // OTUs in taxonomy, but not in phylesystem (or synthesis)
+        { // OTUs in taxonomy, but not in phylesystem or synthesis
+            date: profileDate,
             y0: OTUsInSynthesis + OTUsInPhylesystemButNotSynthesis,
             y1: OTUsInSynthesis + OTUsInPhylesystemButNotSynthesis + OTUsInTaxonomyOnly
         }
     ];
   });
-  data.sort(function(a, b) { return b.total - a.total; });
+*/
+  data.sort(function(a, b) { return b.Date > a.Date; });
+
+  // convert to stacked data format
+  var stack = d3.layout.stack()
+      .values(function(d) { return d.values; }); // unpack structure below
+
+  // Gathers the [named] properties for each profile, by key
+  var gatheredProperties = d3.keys(mutuallyExclusiveCategories).map(function(name) {
+    return {
+        name: name,
+        values: data.map(function(d) {
+            return { date: d.Date, y: d[name] };
+        })
+    }
+  });
+  var otuStates = stack(gatheredProperties);
 
   // render X axis under data (to anchor dates)
   x.domain(data.map(function(d) { return formatISODate(d.Date); }));
   y.domain([0, maxOTUs]);
 
+  /*
   // render stacked data blocks
   var profile = svg.selectAll(".profile")
       .data(data)
@@ -175,7 +221,7 @@ var populateSVG = function(data) {
         return "translate(" + x(formatISODate(d.Date)) + ",0)";
       });
   profile.selectAll("rect")
-      .data(function(d) { return d.blocks; })
+      .data(function(d) { return d; })
     .enter().append("rect")
       .attr("x", function(d, i) {
               return x.rangeBand()/7.0;
@@ -190,6 +236,18 @@ var populateSVG = function(data) {
           console.log('big bar '+i+', color='+ nextColor); 
           return nextColor; 
        });
+   */
+  // render area chart
+  var area = d3.svg.area()
+      .x(function(d) { return x(formatISODate(d.date)); })
+      .y0(function(d) { return y(d.y0); })
+      .y1(function(d) { return y(d.y0 + d.y); });
+  var profile = svg.selectAll(".profile")
+      .data(otuStates)
+    .enter().append("path")
+      .attr("class", "area")
+      .attr("d", function(d) { debugger; return area(d.values); })
+      .style("fill", function(d) { return colors(d.name); });
 
   // render axes on top of data
   svg.append("g")
@@ -211,21 +269,16 @@ var populateSVG = function(data) {
 
   // place color legend in a (visuallly) quiet place
   var legend = svg.selectAll(".legend")
-      .data([
-             'Color signifies OTUs that are...',
-             '...in a tree that contributed to synthesis (i.e. in the synthetic tree)',
-             '...in a tree but not contributing to synthesis (in phylesystem but not in the synthetic tree)',
-             '...in OTT (but not in phylesystem or the synthetic tree)'
-             ])
+      .data(d3.keys(mutuallyExclusiveCategories).reverse())
     .enter().append("g")
       .attr("class", "legend")
-      .attr("transform", function(d, i) { return "translate(0," + (300 + (i * 20)) + ")"; });
+      .attr("transform", function(d, i) { return "translate(0," + (-28 + (i * 20)) + ")"; });
   legend.append("rect")
       .attr("x", width - 18)
       .attr("width", 18)
       .attr("height", 18)
       .style("fill", function(d, i) {
-          var nextColor = colors(i);
+          var nextColor = colors(d);
           console.log('legend block '+i+', color='+ nextColor); 
           return nextColor; 
       });
