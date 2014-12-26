@@ -27,6 +27,22 @@
 .y.axis path.domain {
     fill: none;
 }
+.highlight-details-box {
+    stroke: #ccc;
+    fill: #fff;
+    opacity: 0.8;
+}
+.highlight-details-title {
+    font-size: 12px;
+    font-weight: bold;
+    stroke: none;
+    fill: #000;
+}
+.highlight-details-stat {
+    font-size: 12px;
+    font-weight: normal;
+    fill: #333;
+}
 </style>
 <!--
 div.stats-panel {
@@ -77,6 +93,7 @@ div.stats-panel {
       <div id="stacked-bar-div" />
 <script type="text/javascript">
 // pass statistics as JSON to client for stepping, plotting, etc.
+// NOTE that these are correctly date-sorted from the server!
 var otu_stats = {{= XML(otu_stats) }}
 
 // jimA: TEMPORARILY restricting this to just a few samples (for review)
@@ -100,8 +117,8 @@ var margin = {top: 30, right: 20, bottom: 30, left: 40},
     outerHeight = 500,
     width = outerWidth - margin.left - margin.right,
     height = outerHeight - margin.top - margin.bottom;
-var x = d3.scale.ordinal()
-    .rangeRoundBands([margin.left, width], .1);
+var x = d3.time.scale.utc()
+    .range([margin.left, width]);
 var y = d3.scale.linear()
     .rangeRound([height, margin.bottom]);
 // let's define two color ranges, with a common endpoint
@@ -166,31 +183,8 @@ var populateSVG = function(data) {
         d[propName] = func(d);
     });
   });
-/*
-    var profileDate = formatISODate(d.Date);
-    var OTUsInSynthesis = d['Unique OTUs in synthesis from studies'];
-    var OTUsInPhylesystemButNotSynthesis = d['Unique OTUs in studies'] - OTUsInSynthesis;
-    var OTUsInTaxonomyOnly = d['Unique OTUs in OTT'] - OTUsInSynthesis - OTUsInPhylesystemButNotSynthesis;
-    d.blocks = [
-        { // OTUs in synthesis
-            date: profileDate,
-            y0: 0,
-            y1: OTUsInSynthesis
-        },
-        { // OTUs in phylesystem, but not in synthesis
-            date: profileDate,
-            y0: OTUsInSynthesis,
-            y1: OTUsInSynthesis + OTUsInPhylesystemButNotSynthesis
-        },
-        { // OTUs in taxonomy, but not in phylesystem or synthesis
-            date: profileDate,
-            y0: OTUsInSynthesis + OTUsInPhylesystemButNotSynthesis,
-            y1: OTUsInSynthesis + OTUsInPhylesystemButNotSynthesis + OTUsInTaxonomyOnly
-        }
-    ];
-  });
-*/
-  data.sort(function(a, b) { return b.Date > a.Date; });
+  // N.B. These are PRE-sorted in chronological order!
+  //data.sort(function(a, b) { return b.Date > a.Date; });
 
   // convert to stacked data format
   var stack = d3.layout.stack()
@@ -201,14 +195,16 @@ var populateSVG = function(data) {
     return {
         name: name,
         values: data.map(function(d) {
-            return { date: d.Date, y: d[name] };
+            return { date: new Date(moment.utc(d.Date)), y: d[name] };
         })
     }
   });
   var otuStates = stack(gatheredProperties);
 
   // render X axis under data (to anchor dates)
-  x.domain(data.map(function(d) { return formatISODate(d.Date); }));
+  var earliestDate = new Date(moment.utc(data[0].Date));
+  var latestDate = new Date(moment.utc(data[data.length - 1].Date));
+  x.domain([earliestDate, latestDate]);
   y.domain([0, maxOTUs]);
 
   /*
@@ -239,14 +235,14 @@ var populateSVG = function(data) {
    */
   // render area chart
   var area = d3.svg.area()
-      .x(function(d) { return x(formatISODate(d.date)); })
+      .x(function(d) { return x(d.date); })
       .y0(function(d) { return y(d.y0); })
       .y1(function(d) { return y(d.y0 + d.y); });
   var profile = svg.selectAll(".profile")
       .data(otuStates)
     .enter().append("path")
       .attr("class", "area")
-      .attr("d", function(d) { debugger; return area(d.values); })
+      .attr("d", function(d) { return area(d.values); })
       .style("fill", function(d) { return colors(d.name); });
 
   // render axes on top of data
@@ -288,6 +284,108 @@ var populateSVG = function(data) {
       .attr("dy", ".35em")
       .style("text-anchor", "end")
       .text(function(d) { return d; });
+
+  // add a moving highlight to spotlight single dates
+  var highlight = svg.append("g")
+      .attr("class", "highlight")
+      .attr("transform", "translate(-1000, "+ margin.top +")");
+  highlight.append("rect")
+      .attr("x", -2)
+      .attr("width", 3)
+      .attr("height", height)
+      .attr("opacity", 0.5)
+      .style("fill", "#f00");
+  var highlightDetails = highlight.append("g")
+      .attr("class", "highlight-details");
+  var highlightDetailsBox = highlightDetails.append("rect")
+      .attr("class", "highlight-details-box")
+      .attr("height", 100)
+      .attr("width", 420);
+  var highlightDetailsTitle = highlightDetails.append("text")
+      .attr("class", "highlight-details-title")
+      .attr("x", 8)
+      .attr("y", 16)
+      .text('foo');
+  var highlightDetailsStats = highlightDetails.append("g");
+  // add a legend block and display text field for each property
+  var currentY = 34;
+  d3.keys(mutuallyExclusiveCategories).reverse().forEach(function(propName) {
+      highlightDetailsStats.append("rect")
+          .attr("x", 8)
+          .attr("y", currentY - 9)
+          .attr("width", 18)
+          .attr("height", 18)
+          .style("fill", colors(propName));
+      highlightDetailsStats.append("text")
+          .attr("class", "highlight-details-stat")
+          .attr("x", 30)
+          .attr("y", currentY)
+          .attr("dy", ".35em")
+          .style("text-anchor", "start")
+          .text('This is a test');
+      currentY += 24;
+  });
+  
+  var highlightDetailsStat1 = highlightDetails.append("text")
+      .attr("class", "highlight-details-stat")
+      .attr("x", 8)
+      .attr("y", 28);
+  var highlightDetailsStat2 = highlightDetails.append("text")
+      .attr("class", "highlight-details-stat")
+      .attr("x", 8)
+      .attr("y", 42);
+  var highlightDetailsStat3 = highlightDetails.append("text")
+      .attr("class", "highlight-details-stat")
+      .attr("x", 8)
+      .attr("y", 56)
+
+  // make a bisector that splits on any date (used below)
+  var bisectDate = d3.bisector(function(d) { return new Date(moment.utc(d.Date)); }).right;
+
+  // highlight should respond to mouse movement
+  svg.on("mousemove", function() {
+    var mouse = d3.mouse(this);
+    var localX = mouse[0]; //  + margin.left;
+    // find the nearest date and snap to its X coordinate
+    var mouseDate = x.invert(localX);
+    var nextDatePos = bisectDate( data, mouseDate );
+    var nextDate = new Date(moment.utc( data[nextDatePos].Date ));
+    var previousDatePos = Math.max(0, nextDatePos - 1);
+    var previousDate = new Date(moment.utc( data[previousDatePos].Date ));
+    // which is nearest?
+    var previousSnapDistance = mouseDate - previousDate;
+    var nextSnapDistance = nextDate - mouseDate;
+    var nearestDate, nearestProfileData;
+    if (nextSnapDistance > previousSnapDistance) {
+        nearestDate = previousDate;
+        nearestProfileData = data[previousDatePos];
+    } else {
+        nearestDate = nextDate;
+        nearestProfileData = data[nextDatePos];
+    }
+    var snapX = x(nearestDate); // find X coordinates for the nearest date
+    // move the highlight and update its displayed stats
+    highlight.attr("transform", "translate("+ snapX +","+ margin.top +")");
+    highlightDetailsTitle.text(nextDate);
+
+    var statPosition = 0; 
+    var statsFields = highlightDetailsStats.selectAll('text');
+    d3.keys(mutuallyExclusiveCategories).reverse().forEach(function(propName) {
+        var func = mutuallyExclusiveCategories[propName];
+        var displayText = propName +": "+ func(nearestProfileData);
+        var itsField = statsFields.filter(function(d,i) {return i === statPosition;});
+        itsField.text(displayText);
+        statPosition++;
+    });
+
+    // should we put the details box on left or right (default)?
+    var detailsWidth = highlightDetailsBox.attr('width');
+    if (snapX > (width - detailsWidth)) {
+        highlightDetails.attr("transform", "translate(-"+ (Number(detailsWidth) + 8) +", 100)");
+    } else {
+        highlightDetails.attr("transform", "translate(8,100)");
+    }
+  });
 };
 
 $(document).ready(function() {
