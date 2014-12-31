@@ -4458,15 +4458,20 @@ function proposedMapping( otu ) {
     var acc = proposedOTUMappings()[ OTUid ];
     return acc ? acc() : null;
 }
-function approveProposedOTULabel(otu, selectedIndex) {
+function approveProposedOTULabel(otu) {
     // undoes 'editOTULabel', releasing a label to use shared hints
     var OTUid = otu['@id'];
-    var approvedMapping = proposedOTUMappings()[ OTUid ];
+    var itsMappingInfo = proposedOTUMappings()[ OTUid ];
+    var approvedMapping = $.isFunction(itsMappingInfo) ?
+        itsMappingInfo() :
+        itsMappingInfo;
     if ($.isArray(approvedMapping)) {
-        // there are multiple candidates; match the selected index
-        approvedMapping = approvedMapping[ selectedIndex ];
+        // apply the first (only) value
+        mapOTUToTaxon( OTUid, approvedMapping[0] );
+    } else {
+        // apply the inner value of an observable (accessor) function
+        mapOTUToTaxon( OTUid, ko.unwrap(approvedMapping) );
     }
-    mapOTUToTaxon( OTUid, approvedMapping() );
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
     nudgeTickler('OTU_MAPPING_HINTS');
@@ -4746,6 +4751,7 @@ function requestTaxonMapping( otuToMap ) {
                     failedMappingOTUs.push( otuID );
                     break;
 
+                /* SKIPPING THIS to provide uniform treatment of all matches
                 case 1:
                     // choose the first+only match automatically!
                     var resultToMap = candidateMatches[0];
@@ -4761,6 +4767,7 @@ function requestTaxonMapping( otuToMap ) {
                     proposeOTULabel(otuID, otuMapping);
                     // postpone actual mapping until user approves
                     break;
+                 */
 
                 default: 
                     // multiple matches found, offer a choice
