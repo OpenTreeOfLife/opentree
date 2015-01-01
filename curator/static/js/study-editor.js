@@ -4417,8 +4417,12 @@ function editOTULabel(otu, evt) {
     var originalLabel = otu['^ot:originalLabel'];
     otu['^ot:altLabel'] = adjustedLabel(originalLabel);
     
+    // Mark this OTU as selected for mapping.
+    otu['selectedForAction'] = true;
+
     // If we have a proper mouse event, try to move input focus to this field
     // and pre-select its full text.
+    //
     // N.B. There's a 'hasFocus' binding with similar behavior, but it's tricky
     // to mark the new field vs. existing ones:
     //   http://knockoutjs.com/documentation/hasfocus-binding.html 
@@ -4433,6 +4437,7 @@ function editOTULabel(otu, evt) {
 
     // this should make the editor appear (altering the DOM)
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+    nudgeTickler( 'OTU_MAPPING_HINTS'); // to refresh 'selected' checkbox
 }
 function modifyEditedLabel(otu) {
     // remove its otu-id from failed-OTU list when user makes changes
