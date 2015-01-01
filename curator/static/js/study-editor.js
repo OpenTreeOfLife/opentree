@@ -4412,11 +4412,26 @@ function toggleAllMappingCheckboxes(cb) {
     return true;
 }
 
-function editOTULabel(otu) {
+function editOTULabel(otu, evt) {
     var OTUid = otu['@id'];
     var originalLabel = otu['^ot:originalLabel'];
     otu['^ot:altLabel'] = adjustedLabel(originalLabel);
-    // this should make the editor appear
+    
+    // If we have a proper mouse event, try to move input focus to this field
+    // and pre-select its full text.
+    // N.B. There's a 'hasFocus' binding with similar behavior, but it's tricky
+    // to mark the new field vs. existing ones:
+    //   http://knockoutjs.com/documentation/hasfocus-binding.html 
+    if ('currentTarget' in evt) {
+        // capture the current table row before DOM updates
+        var $currentRow = $(evt.currentTarget).closest('tr');
+        setTimeout(function() {
+            var $editField = $currentRow.find('input:text');
+            $editField.focus().select();
+        }, 50);
+    }
+
+    // this should make the editor appear (altering the DOM)
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
 }
 function modifyEditedLabel(otu) {
