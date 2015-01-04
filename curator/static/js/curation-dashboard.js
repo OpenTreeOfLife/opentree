@@ -131,7 +131,7 @@ function loadStudyList() {
             viewModel.filteredStudies = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
-                updateClearSearchWidget( '#study-list-filter' );
+                updateClearSearchWidget( '#study-list-filter', viewModel.listFilters.STUDIES.match );
 
                 var match = viewModel.listFilters.STUDIES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -334,7 +334,7 @@ function getFocalCladeLink(study) {
         return '<span style="color: #ccc;">'+ cladeName +'</span>';
     }
 
-    return '<a href="#" onclick="filterByClade(\''+ ottID +'\'); return false;"'+'>'+ cladeName +'</a'+'>';
+    return '<a href="#" onclick="filterByClade(\''+ cladeName +'\'); return false;"'+'>'+ cladeName +'</a'+'>';
 }
 function getPubLink(study) {
     var urlNotFound = false;
