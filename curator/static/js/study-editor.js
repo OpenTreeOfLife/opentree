@@ -806,7 +806,7 @@ function loadSelectedStudy() {
                 // new paged observableArray
                 var ticklers = [ viewModel.ticklers.TREES() ];
 
-                updateClearSearchWidget( '#tree-list-filter' );
+                updateClearSearchWidget( '#tree-list-filter', viewModel.listFilters.TREES.match );
 
                 var match = viewModel.listFilters.TREES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
