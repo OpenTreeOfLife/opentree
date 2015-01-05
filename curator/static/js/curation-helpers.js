@@ -387,3 +387,12 @@ function getViewURLFromStudyID( studyID ) {
         .replace('{HOST}', window.location.host)
         .replace('{STUDY_ID}', studyID);
 }
+
+function slugify(str) {
+    // Convert any string into a simplified "slug" suitable for use in URL or query-string
+    return str.toLowerCase()
+              .replace(/[^a-z0-9 -]/g, '')  // remove invalid chars
+              .replace(/\s+/g, '-')         // collapse whitespace and replace by -
+              .replace(/-+/g, '-');         // collapse dashes
+}
+
