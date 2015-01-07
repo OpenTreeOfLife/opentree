@@ -1403,18 +1403,6 @@ function showErrorInArgusViewer( msg, details ) {
 
 function toggleTreeViewLegend() {
     $('#tree-view-legend').modal('show');
-    /* 
-    // Toggling behavior, in case we want a non-modal legend
-    var $legendPopup = $('#tree-view-legend');
-    var $toggle = $('.legend-widget a.badge');
-    if ($legendPopup.is(':visible')) {
-        $legendPopup.modal('hide');
-        $toggle.text('Show legend');
-    } else {
-        $legendPopup.modal('show');
-        $toggle.text('Hide legend');
-    }
-    */
 }
 
 function parseMetaMapKey( key ) {
