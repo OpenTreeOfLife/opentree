@@ -488,3 +488,6 @@ div#r0 {
     height: 38px;
     padding: 4px;
 }
+#tree-view-legend .legend-pane img {
+    border: 1px solid #fcfcfc;
+}
