@@ -200,6 +200,9 @@ div.viewer-frame {
     color: #555;
 }
 
+.legend-widget {
+    /* color: blue; */
+}
 .zoom-widget a:hover {
     text-decoration: none;
 }
@@ -472,4 +475,16 @@ div#r0 {
     top: 7px;
     left: 8px;
     pointer-events: none;
+}
+#tree-view-legend .legend-pane {
+    background-color: #f5f5f5;
+    border-radius: 6px;
+    padding: 8px;
+}
+#tree-view-legend .legend-pane table {
+    width: 100%;
+}
+#tree-view-legend .legend-pane table td {
+    height: 38px;
+    padding: 4px;
 }
