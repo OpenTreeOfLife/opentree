@@ -244,6 +244,7 @@ $(document).ready(function() {
     }
     // N.B. We'll check this again once we've loaded the selected study, then clear it
 
+    disableSaveButton();
     loadSelectedStudy();
     
     // Initialize the jQuery File Upload widgets
@@ -1164,6 +1165,7 @@ function loadSelectedStudy() {
 
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
+                enableSaveButton();
                 addPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
                 updateQualityDisplay();
             });
@@ -1648,8 +1650,28 @@ function saveFormDataToStudyJSON() {
             showSuccessMessage('Study saved to remote storage.');
 
             removePageExitWarning();
+            disableSaveButton();
             // TODO: should we expect fresh JSON to refresh the form?
         }
+    });
+}
+
+function disableSaveButton() {
+    var $btn = $('#save-study-button');
+    $btn.addClass('disabled');
+    $btn.unbind('click').click(function(evt) {
+        showErrorMessage('There are no unsaved changes.');
+        return false;
+    });
+}
+function enableSaveButton() {
+    var $btn = $('#save-study-button');
+    $btn.removeClass('disabled');
+    $btn.unbind('click').click(function(evt) {
+        if (validateFormData()) {
+            promptForSaveComments(); 
+        }
+        return false;
     });
 }
 

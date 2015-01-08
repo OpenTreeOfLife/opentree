@@ -203,8 +203,7 @@ body {
 
     <div class="span4 Xbtn-group" style="float: right; margin-top: -56px;">
         {{ if viewOrEdit == 'EDIT': }}
-          <button class="btn btn"
-            onclick="if (validateFormData()) promptForSaveComments(); return false;">Save Study</button>
+          <button id="save-study-button" class="btn">Save Study</button>
           <a id="return-to-study-list" class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
           <button class="btn btn-danger pull-right"
             onclick="removeStudy(); return false;">Delete Study</button>
