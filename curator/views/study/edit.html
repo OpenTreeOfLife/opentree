@@ -1086,7 +1086,7 @@ body {
                                 >Select</span><input type="checkbox" onclick="toggleAllMappingCheckboxes(this); return true;" /></th>
                         <th colspan="2">Original name</th>
                         <th colspan="2">Modified for mapping</th>
-                        <th >Mapped to taxon</th>
+                        <th>Mapped to taxon <a href="#" onclick="showPossibleMappingsKey(); return false;">(key)</a></th>
                       {{ else: }}
                         <th colspan="2">Original name</th>
                         <th colspan="2">Mapped to taxon</th>
@@ -1163,7 +1163,7 @@ body {
                                     data-bind="visible: !autoMappingInProgress(),
                                                click: requestTaxonMapping">Fuzzy matches</button>
                           <!-- /ko -->
-                          <!-- ko if: proposedMapping(otu) && !($.isArray(proposedMapping(otu))) -->
+                          <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length === 1) -->
                            {{ # show mapped label }}
                             <div class="btn-group pull-right">
                                 <button class="btn btn-mini" data-bind="click: approveProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
@@ -1173,21 +1173,22 @@ body {
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <strong data-bind="text: proposedMapping(otu).name,
-                                               css: viewModel.ticklers.OTU_MAPPING_HINTS"
+                            <strong data-bind="text: proposedMapping(otu)[0].name,
+                                               css: viewModel.ticklers.OTU_MAPPING_HINTS,
+                                               attr: getAttrsForMappingOption(proposedMapping(otu)[0])"
                                     style="color: red"
                                 >PROPOSED LABEL</strong>
                           <!-- /ko -->
-                          <!-- ko if: proposedMapping(otu) && $.isArray(proposedMapping(otu)) -->
+                          <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length > 1) -->
                            {{ # show available choices for mapping this OTU }}
                             <div class="btn-group pull-right">
                                 <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <strong style="color: #999;"><em>Possible mappings <a href="#" onclick="showPossibleMappingsKey(); return false;">(key)</a></em></strong>
+                            <strong style="font-size: 85%; color: #999;"><em>Possible mappings <a href="#" onclick="showPossibleMappingsKey(); return false;">(key)</a></em></strong>
                             <ul class="mapping-options"
-                                data-bind="foreach: proposedMapping(otu), 
+                                data-bind="foreach: makeArray(proposedMapping(otu)), 
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <li><a data-bind="text: $data.originalMatch.unique_name,
                                                   click: approveProposedOTUMappingOption,
