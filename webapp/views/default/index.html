@@ -99,6 +99,10 @@
                </a>
               </span><!-- .comments-indicator -->
               
+              <span class="legend-widget">
+                  <a class="badge" onclick="toggleTreeViewLegend(); $(this).blur(); return false;">Show legend</a>
+              </span>
+
               <span class="zoom-widget">
                <span class="badge"
                    title="Magnify tree view"
@@ -193,3 +197,62 @@
   </script>
   <script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
 </script>
+
+<!-- hidden template for argus (tree-viewer) legend -->
+<div class="modal hide fade" id="tree-view-legend" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Tree view legend
+      </h3>
+    </div>
+    <div class="modal-body">
+      <div class="legend-pane">
+       <table>
+        <tr>
+         <td align="right">
+            Node size reflects number of descendants
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-view-node-sizes.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Nearest ancestors of current node
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-view-ancestors.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Hollow tips may have more descendants
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-view-tips.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Paths supported by phylogeny
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-view-solid-paths.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Paths supported only by taxonomy
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-view-dotted-paths.png')}}" alt="outgroup style" />
+         </td>
+        </tr>
+       </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>

@@ -1401,6 +1401,10 @@ function showErrorInArgusViewer( msg, details ) {
     $('#argusCanvasContainer').css('height','500px').html( errorHTML );
 }
 
+function toggleTreeViewLegend() {
+    $('#tree-view-legend').modal('show');
+}
+
 function parseMetaMapKey( key ) {
     // Adapt to various forms of meta-map key and return any components found as an object
     // EXAMPLE: '1234_987' is '{STUDY-ID}_{TREE-ID}'
