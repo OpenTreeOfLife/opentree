@@ -1,4 +1,6 @@
 # -*- coding: utf-8 -*-
+import json
+from datetime import datetime
 from opentreewebapputil import (get_opentree_services_method_urls, 
                                 fetch_current_TNRS_context_names,
                                 get_data_deposit_message,)
@@ -47,6 +49,108 @@ def references():
     view_dict = default_view_dict.copy()
     view_dict['contributing_studies'] = fetch_current_synthesis_source_data()
     return view_dict
+
+def statistics():
+    view_dict = default_view_dict.copy()
+    view_dict['synthesis_stats'] = fetch_local_synthesis_stats()
+    view_dict['phylesystem_stats'] = fetch_local_phylesystem_stats()
+    return view_dict
+
+def otu_statistics():
+    view_dict = default_view_dict.copy()
+    synth = json.loads(fetch_local_synthesis_stats() or '{}')
+    phylesystem = json.loads(fetch_local_phylesystem_stats() or '{}')
+    ott = json.loads(fetch_local_ott_stats() or '{}')
+    # create some an otu summary stats for each synthesis that we have info about...
+    by_date = {}
+    warnings = set()
+    dates = set(synth.keys() + phylesystem.keys())
+    # Let's creep tallies up in our fake data, with starting values here
+    import random
+    num_otu_in_ott =        1920000
+    num_otu_in_synth =       890000
+    num_phylo_otu_in_synth =  70000
+    num_otu_in_studies =     400000
+    num_otu_in_nominated_studies = 390000
+
+    for date in sorted(dates, reverse=False):
+        synth_v = synth.get(date, {})
+        phyle_v = phylesystem.get(date, {})
+        ott_version = synth_v.get('OTT version')
+        num_otu_in_ott += random.randint(0,10000)
+        if ott_version is None:
+            ott_version = 'unknown'
+            warnings.add('ott version info not found - just making up some numbers as a placeholder!')
+        elif ott is None:
+            warnings.add('ott info not found - just making up some numbers as a placeholder!')
+        else:
+            ov = ott.get(ott_version)
+            if ov is None:
+                warnings.add('ott info for version {v} of OTT not found - just making up some numbers as a placeholder!'.format(v=ott_version))
+            else:
+                num_otu_in_ott = ov['Unique OTUs']
+
+        num_otu_in_synth += random.randint(0,5000)
+        if synth_v.get('Unique OTUs in Synthesis') is None:
+            warnings.add('"Unique OTUs in Synthesis" info not found - just making up some numbers as a placeholder!')
+        else:
+            num_otu_in_synth = synth_v.get('Unique OTUs in Synthesis')
+
+        num_phylo_otu_in_synth += random.randint(0,3000)
+        if synth_v.get('Unique OTUs in Synthesis from studies') is None:
+            warnings.add('"Unique OTUs in Synthesis from studies" info not found - just making up some numbers as a placeholder!')
+        else:
+            num_phylo_otu_in_synth = synth_v.get('Unique OTUs in Synthesis from studies')
+
+        num_otu_in_studies += random.randint(0,10000)
+        if phyle_v.get('Unique OTUs') is None:
+            warnings.add('"Unique OTUs" info not found for phylesystem - just making up some numbers as a placeholder!')
+        else:
+            num_otu_in_studies = phyle_v.get('Unique OTUs')
+
+        num_otu_in_nominated_studies += random.randint(0,8000)
+        if synth_v.get('Unique OTUs in nominated studies') is None:
+            warnings.add('"Unique OTUs in nominated studies" info not found - just making up some numbers as a placeholder!')
+        else:
+            num_otu_in_nominated_studies = synth_v.get('Unique OTUs in nominated studies')
+
+        by_date[date] = {'Unique OTUs in OTT': num_otu_in_ott,
+                         'Unique OTUs in synthesis': num_otu_in_synth,
+                         'Unique OTUs in synthesis from studies': num_phylo_otu_in_synth,
+                         'Unique OTUs in studies': num_otu_in_studies,
+                         'Unique OTUs in nominated studies': num_otu_in_nominated_studies,
+                         'Date': str(date)}
+    # sort by date
+    dk = [(datetime.strptime(i, "%Y-%m-%dT%HZ"), i) for i in by_date.keys() if i]
+    dk.sort()
+    ks = [i[1] for i in dk]
+    # create the list of stat objects to return
+    stat_list = [by_date[i] for i in ks]
+    view_dict['otu_stats'] = stat_list
+    view_dict['warnings'] = list(warnings)
+    view_dict['warnings'].sort()
+    return view_dict
+
+def fetch_local_synthesis_stats():
+    try:
+        stats = open("applications/%s/static/stats/synthesis.json" % request.application).read().strip()
+        return stats
+    except Exception, e:
+        return None
+
+def fetch_local_phylesystem_stats():
+    try:
+        stats = open("applications/%s/static/stats/phylesystem.json" % request.application).read().strip()
+        return stats
+    except Exception, e:
+        return None
+
+def fetch_local_ott_stats():
+    try:
+        stats = open("applications/%s/static/stats/ott.json" % request.application).read().strip()
+        return stats
+    except:
+        return None
 
 def fetch_current_synthesis_source_data():
     try:
