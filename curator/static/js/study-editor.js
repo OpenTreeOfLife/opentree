@@ -244,6 +244,7 @@ $(document).ready(function() {
     }
     // N.B. We'll check this again once we've loaded the selected study, then clear it
 
+    disableSaveButton();
     loadSelectedStudy();
     
     // Initialize the jQuery File Upload widgets
@@ -1164,6 +1165,7 @@ function loadSelectedStudy() {
 
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
+                enableSaveButton();
                 addPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
                 updateQualityDisplay();
             });
@@ -1648,8 +1650,28 @@ function saveFormDataToStudyJSON() {
             showSuccessMessage('Study saved to remote storage.');
 
             removePageExitWarning();
+            disableSaveButton();
             // TODO: should we expect fresh JSON to refresh the form?
         }
+    });
+}
+
+function disableSaveButton() {
+    var $btn = $('#save-study-button');
+    $btn.addClass('disabled');
+    $btn.unbind('click').click(function(evt) {
+        showErrorMessage('There are no unsaved changes.');
+        return false;
+    });
+}
+function enableSaveButton() {
+    var $btn = $('#save-study-button');
+    $btn.removeClass('disabled');
+    $btn.unbind('click').click(function(evt) {
+        if (validateFormData()) {
+            promptForSaveComments(); 
+        }
+        return false;
     });
 }
 
@@ -4412,12 +4434,32 @@ function toggleAllMappingCheckboxes(cb) {
     return true;
 }
 
-function editOTULabel(otu) {
+function editOTULabel(otu, evt) {
     var OTUid = otu['@id'];
     var originalLabel = otu['^ot:originalLabel'];
     otu['^ot:altLabel'] = adjustedLabel(originalLabel);
-    // this should make the editor appear
+    
+    // Mark this OTU as selected for mapping.
+    otu['selectedForAction'] = true;
+
+    // If we have a proper mouse event, try to move input focus to this field
+    // and pre-select its full text.
+    //
+    // N.B. There's a 'hasFocus' binding with similar behavior, but it's tricky
+    // to mark the new field vs. existing ones:
+    //   http://knockoutjs.com/documentation/hasfocus-binding.html 
+    if ('currentTarget' in evt) {
+        // capture the current table row before DOM updates
+        var $currentRow = $(evt.currentTarget).closest('tr');
+        setTimeout(function() {
+            var $editField = $currentRow.find('input:text');
+            $editField.focus().select();
+        }, 50);
+    }
+
+    // this should make the editor appear (altering the DOM)
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+    nudgeTickler( 'OTU_MAPPING_HINTS'); // to refresh 'selected' checkbox
 }
 function modifyEditedLabel(otu) {
     // remove its otu-id from failed-OTU list when user makes changes
@@ -4458,15 +4500,20 @@ function proposedMapping( otu ) {
     var acc = proposedOTUMappings()[ OTUid ];
     return acc ? acc() : null;
 }
-function approveProposedOTULabel(otu, selectedIndex) {
+function approveProposedOTULabel(otu) {
     // undoes 'editOTULabel', releasing a label to use shared hints
     var OTUid = otu['@id'];
-    var approvedMapping = proposedOTUMappings()[ OTUid ];
+    var itsMappingInfo = proposedOTUMappings()[ OTUid ];
+    var approvedMapping = $.isFunction(itsMappingInfo) ?
+        itsMappingInfo() :
+        itsMappingInfo;
     if ($.isArray(approvedMapping)) {
-        // there are multiple candidates; match the selected index
-        approvedMapping = approvedMapping[ selectedIndex ];
+        // apply the first (only) value
+        mapOTUToTaxon( OTUid, approvedMapping[0] );
+    } else {
+        // apply the inner value of an observable (accessor) function
+        mapOTUToTaxon( OTUid, ko.unwrap(approvedMapping) );
     }
-    mapOTUToTaxon( OTUid, approvedMapping() );
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
     nudgeTickler('OTU_MAPPING_HINTS');
@@ -4746,6 +4793,7 @@ function requestTaxonMapping( otuToMap ) {
                     failedMappingOTUs.push( otuID );
                     break;
 
+                /* SKIPPING THIS to provide uniform treatment of all matches
                 case 1:
                     // choose the first+only match automatically!
                     var resultToMap = candidateMatches[0];
@@ -4761,6 +4809,7 @@ function requestTaxonMapping( otuToMap ) {
                     proposeOTULabel(otuID, otuMapping);
                     // postpone actual mapping until user approves
                     break;
+                 */
 
                 default: 
                     // multiple matches found, offer a choice

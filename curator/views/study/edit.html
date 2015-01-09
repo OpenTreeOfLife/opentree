@@ -203,8 +203,7 @@ body {
 
     <div class="span4 Xbtn-group" style="float: right; margin-top: -56px;">
         {{ if viewOrEdit == 'EDIT': }}
-          <button class="btn btn"
-            onclick="if (validateFormData()) promptForSaveComments(); return false;">Save Study</button>
+          <button id="save-study-button" class="btn">Save Study</button>
           <a id="return-to-study-list" class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
           <button class="btn btn-danger pull-right"
             onclick="removeStudy(); return false;">Delete Study</button>
@@ -1065,19 +1064,32 @@ body {
                     OTUs in this study.
                 </div>
 
-                <table class="table table-condensed table-hover"
+                <table class="table table-condensed table-hover" style="table-layout: fixed;"
                        data-bind="visible: viewModel.filteredOTUs().pagedItems().length !== 0">
                   <thead>
-                    <tr>
+                    <tr class="table-shims">
                       {{ if viewOrEdit == 'EDIT': }}
-                        <th width="5%" style="position: relative;"><span style="position: absolute; top: -0.75em; left: -0.5em; z-index: -1; font-size: 0.85em;"
-                                >Select</span><input type="checkbox" onclick="toggleAllMappingCheckboxes(this); return true;" /></th>
-                        <th width="" colspan="2">Original name</th>
-                        <th width="30%" {{ if viewOrEdit == 'EDIT': }}colspan="2"{{pass}}>Modified for mapping</th>
-                        <th width="30%">Mapped to taxon</th>
+                        <td width="5%"></td>
+                        <td width="25%"></td>
+                        <td width="28"></td><!-- width in px, based on button width -->
+                        <td width="25%"></td>
+                        <td width="28"></td><!-- width in px, based on button width -->
+                        <td width="30%"></td>
                       {{ else: }}
-                        <th width="" colspan="2">Original name</th>
-                        <th width="30%" colspan="2">Mapped to taxon</th>
+                        <td width="70%" colspan="2"></td>
+                        <td width="30%"></td>
+                      {{ pass }}
+                    </tr>
+                    <tr class="after-shims">
+                      {{ if viewOrEdit == 'EDIT': }}
+                        <th style="position: relative;"><span style="position: absolute; top: -0.75em; left: -0.5em; z-index: -1; font-size: 0.85em;"
+                                >Select</span><input type="checkbox" onclick="toggleAllMappingCheckboxes(this); return true;" /></th>
+                        <th colspan="2">Original name</th>
+                        <th colspan="2">Modified for mapping</th>
+                        <th>Mapped to taxon <a href="#" onclick="showPossibleMappingsKey(); return false;">(key)</a></th>
+                      {{ else: }}
+                        <th colspan="2">Original name</th>
+                        <th>Mapped to taxon</th>
                       {{ pass }}
                     </tr>
                   </thead>
@@ -1120,8 +1132,8 @@ body {
                          <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0)  && ('^ot:altLabel' in otu) --> 
                           {{ # show editable label field and its remove widget }}
                         <td>
-                            <input type="text" style="height: 14px; margin:
-                            0; width: 97%;" data-bind="value: otu['^ot:altLabel'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: modifyEditedLabel, change: modifyEditedLabel }, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                            <input type="text" class="input-block-level" style="min-height: inherit; height: 1.6em; margin-bottom: 0" 
+                                   data-bind="value: otu['^ot:altLabel'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: modifyEditedLabel, change: modifyEditedLabel }, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                         </td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted pull-right" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
@@ -1151,7 +1163,7 @@ body {
                                     data-bind="visible: !autoMappingInProgress(),
                                                click: requestTaxonMapping">Fuzzy matches</button>
                           <!-- /ko -->
-                          <!-- ko if: proposedMapping(otu) && !($.isArray(proposedMapping(otu))) -->
+                          <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length === 1) -->
                            {{ # show mapped label }}
                             <div class="btn-group pull-right">
                                 <button class="btn btn-mini" data-bind="click: approveProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
@@ -1161,21 +1173,22 @@ body {
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <strong data-bind="text: proposedMapping(otu).name,
-                                               css: viewModel.ticklers.OTU_MAPPING_HINTS"
+                            <strong data-bind="text: proposedMapping(otu)[0].name,
+                                               css: viewModel.ticklers.OTU_MAPPING_HINTS,
+                                               attr: getAttrsForMappingOption(proposedMapping(otu)[0])"
                                     style="color: red"
                                 >PROPOSED LABEL</strong>
                           <!-- /ko -->
-                          <!-- ko if: proposedMapping(otu) && $.isArray(proposedMapping(otu)) -->
+                          <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length > 1) -->
                            {{ # show available choices for mapping this OTU }}
                             <div class="btn-group pull-right">
                                 <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <strong style="color: #999;"><em>Possible mappings <a href="#" onclick="showPossibleMappingsKey(); return false;">(key)</a></em></strong>
+                            <strong style="font-size: 85%; color: #999;"><em>Possible mappings <a href="#" onclick="showPossibleMappingsKey(); return false;">(key)</a></em></strong>
                             <ul class="mapping-options"
-                                data-bind="foreach: proposedMapping(otu), 
+                                data-bind="foreach: makeArray(proposedMapping(otu)), 
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <li><a data-bind="text: $data.originalMatch.unique_name,
                                                   click: approveProposedOTUMappingOption,
