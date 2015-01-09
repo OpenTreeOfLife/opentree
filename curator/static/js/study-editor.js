@@ -3491,6 +3491,8 @@ function updateEdgesInTree( tree ) {
     sweepEdgePolarity( tree, rootNodeID, null, inGroupClade );
     clearFastLookup('EDGES_BY_SOURCE_ID');
     clearFastLookup('EDGES_BY_TARGET_ID');
+    // set (or remove) ot:isLeaf flags on all nodes
+    updateLeafNodeFlags(tree);
 }
 
 function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID, inGroupClade, insideInGroupClade ) {
@@ -3593,6 +3595,37 @@ function reverseEdgeDirection( edge ) {
     var oldSource = edge['@source'];
     edge['@source'] = edge['@target'];
     edge['@target'] = oldSource;
+}
+function updateLeafNodeFlags(tree) {
+    // ASSUMES that this parent-node lookup is up to date
+    var sourceLookup = getFastLookup('EDGES_BY_SOURCE_ID');
+    $.each( tree.node, function( i, node ) {
+        var nodeID = node['@id'];
+        parentEdges = sourceLookup[ nodeID ];
+        if (parentEdges) {
+            // it's a parent, so not a leaf
+            if ('^ot:isLeaf' in node) {
+                delete node['^ot:isLeaf'];
+                //console.log(">> REMOVING isLeaf from node "+ nodeID);
+            }
+        } else {
+            // a leaf node is nobody's parent, (re)set its flag
+            if (!('^ot:isLeaf' in node) || node['^ot:isLeaf'] !== true) {
+                node['^ot:isLeaf'] = true;
+                //console.log(">> SETTING isLeaf for node "+ nodeID);
+            }
+        }
+    });
+    /* NOTE: Other related properties are for d3 (display) only, so no action
+     * required; see clearD3PropertiesFromTree()
+     *  .parent
+     *  .children
+     *  .rootDistsance
+     *  .ingroup
+     *  .depth
+     *  .length
+     *  .rootDist
+     */
 }
 function getTreeNodeLabel(tree, node, importantNodeIDs) {
     // Return the best available label for this node, and its type:
