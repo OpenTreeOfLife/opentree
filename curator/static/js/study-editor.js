@@ -5038,7 +5038,7 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     if (nodeID == importantNodeIDs.treeRoot) {
         nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
     } else {
-        if (viewOrEdit === 'EDIT') {
+        if ((viewOrEdit === 'EDIT') && !(node['^ot:isLeaf'])) {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as root of this tree</a></li>');
         }
     }
