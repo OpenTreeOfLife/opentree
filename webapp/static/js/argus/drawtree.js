@@ -517,7 +517,8 @@ function createArgus(spec) {
                     "stroke": argusObj.provenanceHighlightColor,
                     "title": "Click to see properties for this node", // add name?
                     "stroke-width": 2,
-                    "fill": "white"
+                    "fill": "white",
+                    "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
             );
             argusObj.nodeProvenanceHighlight.push(
@@ -529,7 +530,8 @@ function createArgus(spec) {
                     "text-anchor": "middle",
                     "fill": argusObj.provenanceHighlightColor,
                     "font-weight": "bold",
-                    "font-size": 12 
+                    "font-size": 12,
+                    "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
             );
             // hide until user rolls over a node
@@ -557,7 +559,8 @@ function createArgus(spec) {
                     "height": 4,
                     "fill": argusObj.provenanceHighlightColor,
                     "title": "Click to see properties for this edge",
-                    "stroke": "none"
+                    "stroke": "none",
+                    "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
 
                 /* this path version was tempting, but doesn't scale easily!
@@ -577,7 +580,8 @@ function createArgus(spec) {
                     "title": "Click to see properties for this edge",
                     "stroke": argusObj.provenanceHighlightColor,
                     "stroke-width": 2,
-                    "fill": "white"
+                    "fill": "white",
+                    "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
             );
             argusObj.edgeProvenanceHighlight.push(
@@ -589,7 +593,8 @@ function createArgus(spec) {
                     "text-anchor": "middle",
                     "fill": argusObj.provenanceHighlightColor,
                     "font-weight": "bold",
-                    "font-size": 12 
+                    "font-size": 12,
+                    "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
             );
             // hide until user rolls over an edge
@@ -764,13 +769,11 @@ function createArgus(spec) {
                 case 'OUT':
                     // are we REALLY outside the lozenge, or just over the text?
                       
-                    // remap page-based mouse coordinates to the canvas
-                    var localX = evt.pageX - $('#argusCanvasContainer').offset().left + $('#argusCanvasContainer').scrollLeft();
-                    var localY = evt.pageY - $('#argusCanvasContainer').offset().top  + $('#argusCanvasContainer').scrollTop();
-
-                    var bbox = argusObj.nodeProvenanceHighlight.getBBox(); // bounding box
+                    // Test using client/page coordinates, instead of canvas.
+                    // (This handles scaling, scrolling, etc. more reliably.)
+                    var bbox = getClientBoundingBox( argusObj.nodeProvenanceHighlight );
                     
-                    if (Raphael.isPointInsideBBox( bbox, localX, localY )) {
+                    if (Raphael.isPointInsideBBox( bbox, evt.pageX, evt.pageY )) {
                         // false alarm, it's just moved over text or the node circle
                         return;
                     }
@@ -833,13 +836,11 @@ function createArgus(spec) {
                 case 'OUT':
                     // are we REALLY outside the lozenge and bar, or just over the text?
                       
-                    // remap page-based mouse coordinates to the canvas
-                    var localX = evt.pageX - $('#argusCanvasContainer').offset().left + $('#argusCanvasContainer').scrollLeft();
-                    var localY = evt.pageY - $('#argusCanvasContainer').offset().top  + $('#argusCanvasContainer').scrollTop();
-
-                    var bbox = argusObj.edgeProvenanceHighlight.getBBox(); // bounding box
+                    // Test using client/page coordinates, instead of canvas.
+                    // (This handles scaling, scrolling, etc. more reliably.)
+                    var bbox = getClientBoundingBox( argusObj.edgeProvenanceHighlight );
                     
-                    if (Raphael.isPointInsideBBox( bbox, localX, localY )) {
+                    if (Raphael.isPointInsideBBox( bbox, evt.pageX, evt.pageY )) {
                         // false alarm, it's just moved over text or the node circle
                         return;
                     }
@@ -1910,3 +1911,25 @@ ArgusCluster.prototype.updateDisplayBounds = function() {
     };
     return this.displayBounds;
 };
+
+function getClientBoundingBox( elementSet ) {
+    // Takes a RaphaelJS element set, reckons its full bounding box in
+    // page/client coordinates.
+    var bbox = {
+        x: Number.MAX_VALUE, 
+        y: Number.MAX_VALUE, 
+        x2: Number.MIN_VALUE, 
+        y2: Number.MIN_VALUE
+    };
+    elementSet.forEach(function(e) {
+        var el = e[0];
+        var rect = el.getBoundingClientRect();
+        bbox.x =  Math.min(bbox.x,  rect.left);
+        bbox.x2 = Math.max(bbox.x2, rect.right);
+        bbox.y =  Math.min(bbox.y,  rect.top);
+        bbox.y2 = Math.max(bbox.y2, rect.bottom);
+    });
+    bbox.width =  bbox.x2 - bbox.x;
+    bbox.height = bbox.y2 - bbox.y;
+    return bbox;
+}
