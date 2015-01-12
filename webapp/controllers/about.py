@@ -72,6 +72,7 @@ def otu_statistics():
     num_phylo_otu_in_synth =  70000
     num_otu_in_studies =     400000
     num_otu_in_nominated_studies = 390000
+    warnings.add('Creeping OTU tallies added to show progression!')
 
     for date in sorted(dates, reverse=False):
         synth_v = synth.get(date, {})
@@ -80,9 +81,9 @@ def otu_statistics():
         num_otu_in_ott += random.randint(0,10000)
         if ott_version is None:
             ott_version = 'unknown'
-            warnings.add('ott version info not found - just making up some numbers as a placeholder!')
+            warnings.add('OTT version info not found - just making up some numbers as a placeholder!')
         elif ott is None:
-            warnings.add('ott info not found - just making up some numbers as a placeholder!')
+            warnings.add('OTT info not found - just making up some numbers as a placeholder!')
         else:
             ov = ott.get(ott_version)
             if ov is None:
@@ -119,6 +120,9 @@ def otu_statistics():
                          'Unique OTUs in synthesis from studies': num_phylo_otu_in_synth,
                          'Unique OTUs in studies': num_otu_in_studies,
                          'Unique OTUs in nominated studies': num_otu_in_nominated_studies,
+                         'Date has synthesis release': (synth_v and "true" or "false"),
+                         'Date has phylesystem info': (phyle_v and "true" or "false"),
+                         'OTT version': ott_version,
                          'Date': str(date)}
     # sort by date
     dk = [(datetime.strptime(i, "%Y-%m-%dT%HZ"), i) for i in by_date.keys() if i]
