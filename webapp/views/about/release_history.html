@@ -331,12 +331,13 @@ var populateSVG = function(data) {
     .append("svg:title")
       .text("Synthesis release (click to see details in a new window).");
   highlightDetailsStats.append("text")
-      .attr("class", "synth-release-marker")
+      .attr("class", "synth-release-marker highlight-details-stat")
       .style("visibility", "visible")
       .attr("x", 17 + markerRadius + 4)
       .attr("y", highlightMarkerFirstRowY)
-      .attr("dy", ".35em")
+      .attr("dy", ".32em")
       .text("Synthesis release (click marker below for details)");
+
   highlightDetailsStats.append("circle")
       .attr("class", "taxo-release-marker")
       .style("visibility", "visible")
@@ -353,11 +354,11 @@ var populateSVG = function(data) {
     .append("svg:title")
       .text("Synthesis release (click to see details in a new window).");
   highlightDetailsStats.append("text")
-      .attr("class", "taxo-release-marker")
+      .attr("class", "taxo-release-marker highlight-details-stat")
       .style("visibility", "visible")
       .attr("x", 17 + markerRadius + 4)
       .attr("y", highlightMarkerFirstRowY)
-      .attr("dy", ".35em")
+      .attr("dy", ".32em")
       .text("Taxonomy release (click marker below for details)");
 
   // render event markers below X axis (for releases, updates, etc)
@@ -382,29 +383,43 @@ var populateSVG = function(data) {
           var translate = ("translate("+ markerX +"," + markerY + ")");
           return translate;
       });
+
   var markerRadius = 5;
-  markers.append("circle")
+
+  markers.append("svg:a")
+      .attr("target", "_blank")
+      .attr("xlink:href", function(d){ return ("/about/synthesis-release?date="+ d.Date); })
+    .append("circle")
       .attr("class", "synth-release-marker")
       .attr("cx", 0)
       .attr("cy", 0)
       .attr("r", markerRadius)
     .append("svg:title")
       .text("Synthesis release (click to see details in a new window).");
-  markers.append('text')
+  markers.append("svg:a")
+      .attr("target", "_blank")
+      .attr("xlink:href", function(d){ return ("/about/synthesis-release?date="+ d.Date); })
+    .append('text')
       .attr("class", "synth-release-marker")
       .text("S")
       .attr("x", -2.5)
       .attr("dy", 3)
     .append("svg:title")
       .text("Synthesis release (click to see details in a new window).");
-  markers.append("circle")
+  markers.append("svg:a")
+      .attr("target", "_blank")
+      .attr("xlink:href", function(d){ return ("/about/taxonomy-release?date="+ d.Date); })
+    .append("circle")
       .attr("class", "taxo-release-marker")
       .attr("cx", 0)
       .attr("cy", 15)
       .attr("r", markerRadius)
     .append("svg:title")
       .text("Taxonomy release (click to see details in a new window).");
-  markers.append("text")
+  markers.append("svg:a")
+      .attr("target", "_blank")
+      .attr("xlink:href", function(d){ return ("/about/taxonomy-release?date="+ d.Date); })
+    .append("text")
       .attr("class", "taxo-release-marker")
       .text('T')
       .attr("x", -2.5)
