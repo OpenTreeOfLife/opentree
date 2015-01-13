@@ -50,13 +50,7 @@ def references():
     view_dict['contributing_studies'] = fetch_current_synthesis_source_data()
     return view_dict
 
-def statistics():
-    view_dict = default_view_dict.copy()
-    view_dict['synthesis_stats'] = fetch_local_synthesis_stats()
-    view_dict['phylesystem_stats'] = fetch_local_phylesystem_stats()
-    return view_dict
-
-def otu_statistics():
+def release_history():
     view_dict = default_view_dict.copy()
     synth = json.loads(fetch_local_synthesis_stats() or '{}')
     phylesystem = json.loads(fetch_local_phylesystem_stats() or '{}')
@@ -133,6 +127,15 @@ def otu_statistics():
     view_dict['otu_stats'] = stat_list
     view_dict['warnings'] = list(warnings)
     view_dict['warnings'].sort()
+    return view_dict
+
+def synthesis_release():
+    view_dict = default_view_dict.copy()
+    view_dict['synthesis_stats'] = fetch_local_synthesis_stats()
+    return view_dict
+
+def taxonomy_release():
+    view_dict = default_view_dict.copy()
     return view_dict
 
 def fetch_local_synthesis_stats():
