@@ -7,7 +7,6 @@
   #response.files.append(URL('static','js/moment.min.js'))
 }}
 <style type="text/css">
-<style>
 .axis path,
 .axis line {
   fill: none;
@@ -43,12 +42,36 @@
     font-weight: normal;
     fill: #333;
 }
-</style>
-<!--
-div.stats-panel {
-    margin: 1em 3em;
+
+.event-markers .synth-release-marker,
+.event-markers .taxo-release-marker {
+    visibility: hidden;
 }
-//-->
+circle.synth-release-marker {
+    fill: #939;
+}
+circle.taxo-release-marker {
+    fill: #39c;
+}
+.event-markers .date-with-synthesis circle.synth-release-marker,
+.event-markers .date-with-synthesis text.synth-release-marker {
+    visibility: visible;
+}
+.event-markers .date-with-phylesystem circle.taxo-release-marker,
+.event-markers .date-with-phylesystem text.taxo-release-marker  {
+    visibility: visible;
+}
+.event-markers text {
+    fill: #fff;
+    font-size: 8px;
+    cursor: pointer;
+}
+.event-marker:hover circle {
+    stroke: red;
+    stroke-width: 2px;
+    stroke-opacity: 0.5;
+}
+*/
 </style>
 <div class="container">
       <h1 id="main-title">Open Tree OTU statistics</h1>
@@ -112,7 +135,7 @@ for (i = 0; i < warnings.length; ++i) {
     $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
 }
 /* svg based on http://bl.ocks.org/mbostock/3886208 */
-var margin = {top: 30, right: 20, bottom: 30, left: 40},
+var margin = {top: 10, right: 20, bottom: 90, left: 40},
     outerWidth = 960,
     outerHeight = 500,
     width = outerWidth - margin.left - margin.right,
@@ -120,7 +143,7 @@ var margin = {top: 30, right: 20, bottom: 30, left: 40},
 var x = d3.time.scale.utc()
     .range([margin.left, width]);
 var y = d3.scale.linear()
-    .rangeRound([height, margin.bottom]);
+    .rangeRound([height, margin.top]);
 // let's define two color ranges, with a common endpoint
 var darkest = d3.rgb('#666666'),  // represents OTUs from studies in synthesis
     white = d3.rgb('#ffffff'),
@@ -263,36 +286,14 @@ var populateSVG = function(data) {
       .style("text-anchor", "end")
       .text("OTUs in Open Tree Taxonomy");
 
-  // place color legend in a (visuallly) quiet place
-  var legend = svg.selectAll(".legend")
-      .data(d3.keys(mutuallyExclusiveCategories).reverse())
-    .enter().append("g")
-      .attr("class", "legend")
-      .attr("transform", function(d, i) { return "translate(0," + (-28 + (i * 20)) + ")"; });
-  legend.append("rect")
-      .attr("x", width - 18)
-      .attr("width", 18)
-      .attr("height", 18)
-      .style("fill", function(d, i) {
-          var nextColor = colors(d);
-          console.log('legend block '+i+', color='+ nextColor); 
-          return nextColor; 
-      });
-  legend.append("text")
-      .attr("x", width - 24)
-      .attr("y", 9)
-      .attr("dy", ".35em")
-      .style("text-anchor", "end")
-      .text(function(d) { return d; });
-
   // add a moving highlight to spotlight single dates
   var highlight = svg.append("g")
       .attr("class", "highlight")
       .attr("transform", "translate(-1000, "+ margin.top +")");
   highlight.append("rect")
-      .attr("x", -2)
-      .attr("width", 3)
-      .attr("height", height)
+      .attr("x", -1)
+      .attr("width", 2)
+      .attr("height", height + margin.bottom)
       .attr("opacity", 0.5)
       .style("fill", "#f00");
   var highlightDetails = highlight.append("g")
@@ -338,6 +339,59 @@ var populateSVG = function(data) {
       .attr("class", "highlight-details-stat")
       .attr("x", 8)
       .attr("y", 56)
+
+  // render event markers below X axis (for releases, updates, etc)
+  var markers = svg.append("g")
+      .attr("class", "event-markers")
+  .selectAll(".event-marker")
+    .data(data)
+    .enter().append("g")
+      .attr("class", function(d,i) {
+          className = 'event-marker';
+          if (d['Date has synthesis release'] === 'true') {
+              className += ' date-with-synthesis';
+          }
+          if (d['Date has phylesystem info'] === 'true') {
+              className += ' date-with-phylesystem';
+          }
+          return className;
+      })
+      .attr("transform", function(d,i) {
+          var markerX = x( new Date(moment.utc( d.Date)) );
+          var markerY = (height+30);
+          var translate = ("translate("+ markerX +"," + markerY + ")");
+          console.log(translate);
+          return translate;
+      });
+  var markerRadius = 5;
+  markers.append("circle")
+      .attr("class", "synth-release-marker")
+      .attr("cx", 0)
+      .attr("cy", 0)
+      .attr("r", markerRadius)
+    .append("svg:title")
+      .text("Synthesis release (click to see details in a new window).");
+  markers.append('text')
+      .attr("class", "synth-release-marker")
+      .text("S")
+      .attr("x", -2.5)
+      .attr("dy", 3)
+    .append("svg:title")
+      .text("Synthesis release (click to see details in a new window).");
+  markers.append("circle")
+      .attr("class", "taxo-release-marker")
+      .attr("cx", 0)
+      .attr("cy", 15)
+      .attr("r", markerRadius)
+    .append("svg:title")
+      .text("Taxonomy release (click to see details in a new window).");
+  markers.append("text")
+      .attr("class", "taxo-release-marker")
+      .text('T')
+      .attr("x", -2.5)
+      .attr("dy", 18)
+    .append("svg:title")
+      .text("Taxonomy release (click to see details in a new window).");
 
   // make a bisector that splits on any date (used below)
   var bisectDate = d3.bisector(function(d) { return new Date(moment.utc(d.Date)); }).right;

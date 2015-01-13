@@ -50,13 +50,7 @@ def references():
     view_dict['contributing_studies'] = fetch_current_synthesis_source_data()
     return view_dict
 
-def statistics():
-    view_dict = default_view_dict.copy()
-    view_dict['synthesis_stats'] = fetch_local_synthesis_stats()
-    view_dict['phylesystem_stats'] = fetch_local_phylesystem_stats()
-    return view_dict
-
-def otu_statistics():
+def release_history():
     view_dict = default_view_dict.copy()
     synth = json.loads(fetch_local_synthesis_stats() or '{}')
     phylesystem = json.loads(fetch_local_phylesystem_stats() or '{}')
@@ -72,6 +66,7 @@ def otu_statistics():
     num_phylo_otu_in_synth =  70000
     num_otu_in_studies =     400000
     num_otu_in_nominated_studies = 390000
+    warnings.add('Creeping OTU tallies added to show progression!')
 
     for date in sorted(dates, reverse=False):
         synth_v = synth.get(date, {})
@@ -80,9 +75,9 @@ def otu_statistics():
         num_otu_in_ott += random.randint(0,10000)
         if ott_version is None:
             ott_version = 'unknown'
-            warnings.add('ott version info not found - just making up some numbers as a placeholder!')
+            warnings.add('OTT version info not found - just making up some numbers as a placeholder!')
         elif ott is None:
-            warnings.add('ott info not found - just making up some numbers as a placeholder!')
+            warnings.add('OTT info not found - just making up some numbers as a placeholder!')
         else:
             ov = ott.get(ott_version)
             if ov is None:
@@ -119,6 +114,9 @@ def otu_statistics():
                          'Unique OTUs in synthesis from studies': num_phylo_otu_in_synth,
                          'Unique OTUs in studies': num_otu_in_studies,
                          'Unique OTUs in nominated studies': num_otu_in_nominated_studies,
+                         'Date has synthesis release': (synth_v and "true" or "false"),
+                         'Date has phylesystem info': (phyle_v and "true" or "false"),
+                         'OTT version': ott_version,
                          'Date': str(date)}
     # sort by date
     dk = [(datetime.strptime(i, "%Y-%m-%dT%HZ"), i) for i in by_date.keys() if i]
@@ -129,6 +127,15 @@ def otu_statistics():
     view_dict['otu_stats'] = stat_list
     view_dict['warnings'] = list(warnings)
     view_dict['warnings'].sort()
+    return view_dict
+
+def synthesis_release():
+    view_dict = default_view_dict.copy()
+    view_dict['synthesis_stats'] = fetch_local_synthesis_stats()
+    return view_dict
+
+def taxonomy_release():
+    view_dict = default_view_dict.copy()
     return view_dict
 
 def fetch_local_synthesis_stats():
