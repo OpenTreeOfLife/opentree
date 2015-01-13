@@ -283,7 +283,7 @@ var populateSVG = function(data) {
       .attr("class", "highlight-details");
   var highlightDetailsBox = highlightDetails.append("rect")
       .attr("class", "highlight-details-box")
-      .attr("height", 100)
+      .attr("height", 40) // reset below
       .attr("width", 420);
   var highlightDetailsTitle = highlightDetails.append("text")
       .attr("class", "highlight-details-title")
@@ -309,19 +309,56 @@ var populateSVG = function(data) {
           .text('This is a test');
       currentY += 24;
   });
-  
-  var highlightDetailsStat1 = highlightDetails.append("text")
-      .attr("class", "highlight-details-stat")
-      .attr("x", 8)
-      .attr("y", 28);
-  var highlightDetailsStat2 = highlightDetails.append("text")
-      .attr("class", "highlight-details-stat")
-      .attr("x", 8)
-      .attr("y", 42);
-  var highlightDetailsStat3 = highlightDetails.append("text")
-      .attr("class", "highlight-details-stat")
-      .attr("x", 8)
-      .attr("y", 56)
+  // add optional markers for synthesis and/or taxonomy release
+  var markerRadius = 8;
+  var highlightMarkerFirstRowY = currentY;
+  var highlightMarkerSecondRowY = currentY + 20;
+  highlightDetailsStats.append("circle")
+      .attr("class", "synth-release-marker")
+      .style("visibility", "visible")
+      .attr("cx", 17)
+      .attr("cy", highlightMarkerFirstRowY)
+      .attr("r", markerRadius)
+    .append("svg:title")
+      .text("Synthesis release (click to see details in a new window).");
+  highlightDetailsStats.append('text')
+      .attr("class", "synth-release-marker")
+      .style("fill", "#fff")
+      .text("S")
+      .attr("x", 12.5)
+      .attr("y", highlightMarkerFirstRowY)
+      .attr("dy", ".35em")
+    .append("svg:title")
+      .text("Synthesis release (click to see details in a new window).");
+  highlightDetailsStats.append("text")
+      .attr("class", "synth-release-marker")
+      .style("visibility", "visible")
+      .attr("x", 17 + markerRadius + 4)
+      .attr("y", highlightMarkerFirstRowY)
+      .attr("dy", ".35em")
+      .text("Synthesis release (click marker below for details)");
+  highlightDetailsStats.append("circle")
+      .attr("class", "taxo-release-marker")
+      .style("visibility", "visible")
+      .attr("cx", 17)
+      .attr("cy", highlightMarkerFirstRowY)
+      .attr("r", markerRadius);
+  highlightDetailsStats.append('text')
+      .attr("class", "taxo-release-marker")
+      .style("fill", "#fff")
+      .text("T")
+      .attr("x", 13)
+      .attr("y", highlightMarkerFirstRowY)
+      .attr("dy", ".4em")
+    .append("svg:title")
+      .text("Synthesis release (click to see details in a new window).");
+  highlightDetailsStats.append("text")
+      .attr("class", "taxo-release-marker")
+      .style("visibility", "visible")
+      .attr("x", 17 + markerRadius + 4)
+      .attr("y", highlightMarkerFirstRowY)
+      .attr("dy", ".35em")
+      .text("Taxonomy release (click marker below for details)");
 
   // render event markers below X axis (for releases, updates, etc)
   var markers = svg.append("g")
@@ -343,7 +380,6 @@ var populateSVG = function(data) {
           var markerX = x( new Date(moment.utc( d.Date)) );
           var markerY = (height+30);
           var translate = ("translate("+ markerX +"," + markerY + ")");
-          console.log(translate);
           return translate;
       });
   var markerRadius = 5;
@@ -413,6 +449,42 @@ var populateSVG = function(data) {
         var itsField = statsFields.filter(function(d,i) {return i === statPosition;});
         itsField.text(displayText);
         statPosition++;
+    });
+
+    // show markers for synthesis and/or taxonomy release, IF found for this date
+    var dateHasSynthRelease = (nearestProfileData['Date has synthesis release'] === 'true');
+    var dateHasTaxoRelease = (nearestProfileData['Date has phylesystem info'] === 'true');
+    if (dateHasSynthRelease && dateHasTaxoRelease) {
+        // shift the taxo-release markers down to second row
+        highlightDetailsStats.select('circle.taxo-release-marker')
+            .attr("cy", highlightMarkerSecondRowY);
+        highlightDetailsStats.selectAll('text.taxo-release-marker')
+            .attr("y", highlightMarkerSecondRowY);
+    } else {
+        // shift the taxo-release markers up to first row
+        highlightDetailsStats.select('circle.taxo-release-marker')
+            .attr("cy", highlightMarkerFirstRowY);
+        highlightDetailsStats.selectAll('text.taxo-release-marker')
+            .attr("y", highlightMarkerFirstRowY);
+    }
+    highlightDetailsStats.selectAll('.synth-release-marker')
+        .style('visibility', function() {
+            return (dateHasSynthRelease ? 'visible' : 'hidden');
+        });
+    highlightDetailsStats.selectAll('.taxo-release-marker')
+        .style('visibility', function() {
+            return (dateHasTaxoRelease ? 'visible' : 'hidden');
+        });
+
+    // set box height according to optional markers above
+    highlightDetailsBox.attr('height', function() {
+        if (dateHasSynthRelease && dateHasTaxoRelease) {
+            return 140;
+        }
+        if (dateHasSynthRelease || dateHasTaxoRelease) {
+            return 120;
+        }
+        return 100;
     });
 
     // should we put the details box on left or right (default)?
