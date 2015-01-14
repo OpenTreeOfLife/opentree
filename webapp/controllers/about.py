@@ -131,7 +131,18 @@ def release_history():
 
 def synthesis_release():
     view_dict = default_view_dict.copy()
-    view_dict['synthesis_stats'] = fetch_local_synthesis_stats()
+    synth = json.loads(fetch_local_synthesis_stats() or '{}')
+
+    # Get date or version from URL, or bounce to the latest release
+    #import pdb; pdb.set_trace()
+    if len(request.args) == 0:
+        release_version = sorted(synth.keys(), reverse=False)[-1]
+        redirect(URL('opentree', 'about', 'synthesis_release', 
+            vars={}, 
+            args=[release_version]))
+
+    view_dict['release_version'] = request.args[0]
+    view_dict['synthesis_stats'] = synth
     return view_dict
 
 def taxonomy_release():

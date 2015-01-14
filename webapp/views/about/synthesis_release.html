@@ -74,36 +74,45 @@ circle.taxo-release-marker {
 */
 </style>
 <div class="container">
-      <h1 id="main-title">Open Tree OTU statistics</h1>
+      <h1 id="main-title">Synthesis release ({{= release_version }})</h1>
       <div class="row">
           <div class="span10 offset1">
               <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
-              <h3>OTU statistics</h3>
-              <div id="otu-stats-missing" class="alert alert-error" style="display: none;">
-                  No otu statistics found!
+              <h3>Statistics</h3>
+
+              <div id="synthesis-stats-missing" class="alert alert-error" style="display: none;">
+                  No synthesis statistics found!
               </div>
-              <div id="otu-stats-panel" class="stats-panel" style="display: none;">
+
+              <div id="synthesis-stats-panel" class="stats-panel" style="display: none;">
+
                 <form class="form-inline pull-left" style="display: inline-block; margin-bottom: 10px;">
                   <div class="control-group">
                       <label class="control-label" style="position: relative; top: 1px;">Synthesis date</label>
                       &nbsp;
-                      <select id="otu-profile-date-chooser" style="">
+                      <select id="synthesis-profile-date-chooser" style="">
                       </select>
                   </div>
                 </form>
                   <div class="pagination pull-left hidden-tablet" style="display: inline-block; margin: 0 0 0 20px;">
                     <ul>
-                        <li id="prev-otu-profile"><a href="#">Prev</a></li>
-                        <li id="next-otu-profile"><a href="#">Next</a></li>
+                        <li id="prev-synthesis-profile"><a href="#">Prev</a></li>
+                        <li id="next-synthesis-profile"><a href="#">Next</a></li>
                     </ul>
                   </div>
+
                   <div class="pull-left" style="clear: left; position: relative; top: -8px;">
                       <a href="#TODO" onclick="alert('TODO: Show release page for this date+time'); return false;">More information about this synthesis</a>
                   </div>
                   <table class="table table-condensed table-hover" style="clear: left;"></table>
               </div>
+              <h3>Downloads</h3>
+              <p><em>TODO</em></p>
+              <h3>Notes</h3>
+              <p><em>TODO</em></p>
           </div>
       </div>
+      <!--
       <h4 id="warnings-toggle" 
            onclick="$('#warnings-panel').toggle(); return false;"
            style="font-weight:bold; color:red; background-color: #fdd; cursor: pointer; text-align: center; padding: 0.5em;"
@@ -111,339 +120,90 @@ circle.taxo-release-marker {
       <div id="warnings-panel" 
            style="display: none; background-color: #fdd; padding: 1em; border: 1px solid #fcc;"></div>
 
+-->
 </div><!-- end of .container -->
 
       <div id="stacked-bar-div" />
 <script type="text/javascript">
 // pass statistics as JSON to client for stepping, plotting, etc.
 // NOTE that these are correctly date-sorted from the server!
-var otu_stats = {{= XML(otu_stats) }}
+{{ if synthesis_stats: 
+    # NOTE that we use XML() here to decode HTML entities like &quot; }}
+var synthesis_stats = {{= XML(json.dumps(synthesis_stats)) }};
+{{ else: }}
+var synthesis_stats = null;
+{{ pass }}
 
 // jimA: TEMPORARILY restricting this to just a few samples (for review)
 //otu_stats = otu_stats.slice(0,4);
 
-var sortedSynthesisProfileKeys = null;
-var currentSynthesisProfileIndex = 0;
-var profilesByDate = {};
-var i;
-for (i = 0; i < otu_stats.length ; ++i) {
-    var profileDate = otu_stats[i]['Date'];
-    profilesByDate[profileDate] = otu_stats[i];
-}
-var warnings = {{= XML(warnings)}};
+var warnings = [ ]; {{## = XML(warnings)}};
 for (i = 0; i < warnings.length; ++i) {
     $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
 }
-/* svg based on http://bl.ocks.org/mbostock/3886208 */
-var margin = {top: 10, right: 20, bottom: 90, left: 40},
-    outerWidth = 960,
-    outerHeight = 500,
-    width = outerWidth - margin.left - margin.right,
-    height = outerHeight - margin.top - margin.bottom;
-var x = d3.time.scale.utc()
-    .range([margin.left, width]);
-var y = d3.scale.linear()
-    .rangeRound([height, margin.top]);
-// let's define two color ranges, with a common endpoint
-var darkest = d3.rgb('#666666'),  // represents OTUs from studies in synthesis
-    white = d3.rgb('#ffffff'),
-    warm = d3.rgb('#cc9966'),
-    cool = d3.rgb('#6677BB'),
-    warmScale = d3.interpolateRgb(white, warm),
-    coolScale = d3.interpolateRgb(cool, white);  // not currently used!
 
+var sortedSynthesisProfileKeys = null;
+var currentSynthesisProfileDate = null;
 
-// create the final color set
-var colors = d3.scale.ordinal()
-    //.domain([0, 1, 2, 3])  // set this explicitly to avoid weirdness below!
-    // Set domain to property names, to support area chart?
-    .range([warmScale(0.85), warmScale(0.6), warmScale(0.25)]);
-
-var colorCount = colors.range().length; // used below to get color index
-var xAxis = d3.svg.axis()
-    .scale(x)
-    .orient("bottom");
-var yAxis = d3.svg.axis()
-    .scale(y)
-    .orient("right")
-    //.ticks(10)
-    .innerTickSize(width)
-    .tickFormat(d3.format(".2s"));
-var svgpar = d3.select("#stacked-bar-div");
-var svg = svgpar.append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
-  .append("g")
-    .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-var dup_otu_stats = [];
-var i;
-for (i = 0; i < otu_stats.length; ++i) {
-    dup_otu_stats[2*i] = $.extend({}, otu_stats[i]);
-    dup_otu_stats[2*i + 1] = $.extend({}, otu_stats[i]);
-}
-var populateSVG = function(data) {
-  // pre-fetch the highest Y to support alternate stacking orders
-  var maxOTUs = d3.max(data, function(d) { return d['Unique OTUs in OTT']; });
-
-  // Augment each profile with the properties we actually want to show, using the function for each
-  var mutuallyExclusiveCategories = {
-    'OTUs in synthesis': function(d) {
-        return d['Unique OTUs in synthesis from studies'];
-    },
-    'OTUs in phylesystem, but not in synthesis': function(d) {
-        return d['Unique OTUs in studies'] - d['Unique OTUs in synthesis from studies'];
-    },
-    'OTUs in taxonomy, but not in phylesystem or synthesis': function(d) {
-        return d['Unique OTUs in OTT'] - d['Unique OTUs in studies'] - d['Unique OTUs in synthesis from studies'];
-    }
-  };
-  // These property names should be the domain for our colors above
-  colors.domain(d3.keys(mutuallyExclusiveCategories));
-
-  data.forEach(function(d) {
-    d3.keys(mutuallyExclusiveCategories).forEach(function(propName) {
-        var func = mutuallyExclusiveCategories[propName];
-        d[propName] = func(d);
-    });
-  });
-  // N.B. These are PRE-sorted in chronological order!
-  //data.sort(function(a, b) { return b.Date > a.Date; });
-
-  // convert to stacked data format
-  var stack = d3.layout.stack()
-      .values(function(d) { return d.values; }); // unpack structure below
-
-  // Gathers the [named] properties for each profile, by key
-  var gatheredProperties = d3.keys(mutuallyExclusiveCategories).map(function(name) {
-    return {
-        name: name,
-        values: data.map(function(d) {
-            return { date: new Date(moment.utc(d.Date)), y: d[name] };
-        })
-    }
-  });
-  var otuStates = stack(gatheredProperties);
-
-  // render X axis under data (to anchor dates)
-  var earliestDate = new Date(moment.utc(data[0].Date));
-  var latestDate = new Date(moment.utc(data[data.length - 1].Date));
-  x.domain([earliestDate, latestDate]);
-  y.domain([0, maxOTUs]);
-
-  /*
-  // render stacked data blocks
-  var profile = svg.selectAll(".profile")
-      .data(data)
-    .enter().append("g")
-      .attr("class", "g")
-      .attr("transform", function(d) {
-        return "translate(" + x(formatISODate(d.Date)) + ",0)";
-      });
-  profile.selectAll("rect")
-      .data(function(d) { return d; })
-    .enter().append("rect")
-      .attr("x", function(d, i) {
-              return x.rangeBand()/7.0;
-       })
-      .attr("width", x.rangeBand()*5.0/7.0)
-      .attr("y", function(d) {
-             return y(d.y0);
-       })
-      .attr("height", function(d) { return y(d.y1) - y(d.y0); })
-      .style("fill", function(d, i) { 
-          var nextColor = colors(i+1);
-          console.log('big bar '+i+', color='+ nextColor); 
-          return nextColor; 
-       });
-   */
-  // render area chart
-  var area = d3.svg.area()
-      .x(function(d) { return x(d.date); })
-      .y0(function(d) { return y(d.y0); })
-      .y1(function(d) { return y(d.y0 + d.y); });
-  var profile = svg.selectAll(".profile")
-      .data(otuStates)
-    .enter().append("path")
-      .attr("class", "area")
-      .attr("d", function(d) { return area(d.values); })
-      .style("fill", function(d) { return colors(d.name); });
-
-  // render axes on top of data
-  svg.append("g")
-      .attr("class", "x axis")
-      .attr("transform", "translate(0," + height + ")")
-      .call(xAxis);
-  var gy = svg.append("g")
-      .attr("class", "y axis")
-      .call(yAxis);
-  gy.selectAll("text")
-      .attr("x", 4)
-      .attr("dy", -4);
-  gy.append("text")
-      .attr("transform", "rotate(-90)")
-      .attr("y", 6)
-      .attr("dy", "-1.25em")
-      .style("text-anchor", "end")
-      .text("OTUs in Open Tree Taxonomy");
-
-  // add a moving highlight to spotlight single dates
-  var highlight = svg.append("g")
-      .attr("class", "highlight")
-      .attr("transform", "translate(-1000, "+ margin.top +")");
-  highlight.append("rect")
-      .attr("x", -1)
-      .attr("width", 2)
-      .attr("height", height + margin.bottom)
-      .attr("opacity", 0.5)
-      .style("fill", "#f00");
-  var highlightDetails = highlight.append("g")
-      .attr("class", "highlight-details");
-  var highlightDetailsBox = highlightDetails.append("rect")
-      .attr("class", "highlight-details-box")
-      .attr("height", 100)
-      .attr("width", 420);
-  var highlightDetailsTitle = highlightDetails.append("text")
-      .attr("class", "highlight-details-title")
-      .attr("x", 8)
-      .attr("y", 16)
-      .text('foo');
-  var highlightDetailsStats = highlightDetails.append("g");
-  // add a legend block and display text field for each property
-  var currentY = 34;
-  d3.keys(mutuallyExclusiveCategories).reverse().forEach(function(propName) {
-      highlightDetailsStats.append("rect")
-          .attr("x", 8)
-          .attr("y", currentY - 9)
-          .attr("width", 18)
-          .attr("height", 18)
-          .style("fill", colors(propName));
-      highlightDetailsStats.append("text")
-          .attr("class", "highlight-details-stat")
-          .attr("x", 30)
-          .attr("y", currentY)
-          .attr("dy", ".35em")
-          .style("text-anchor", "start")
-          .text('This is a test');
-      currentY += 24;
-  });
-  
-  var highlightDetailsStat1 = highlightDetails.append("text")
-      .attr("class", "highlight-details-stat")
-      .attr("x", 8)
-      .attr("y", 28);
-  var highlightDetailsStat2 = highlightDetails.append("text")
-      .attr("class", "highlight-details-stat")
-      .attr("x", 8)
-      .attr("y", 42);
-  var highlightDetailsStat3 = highlightDetails.append("text")
-      .attr("class", "highlight-details-stat")
-      .attr("x", 8)
-      .attr("y", 56)
-
-  // render event markers below X axis (for releases, updates, etc)
-  var markers = svg.append("g")
-      .attr("class", "event-markers")
-  .selectAll(".event-marker")
-    .data(data)
-    .enter().append("g")
-      .attr("class", function(d,i) {
-          className = 'event-marker';
-          if (d['Date has synthesis release'] === 'true') {
-              className += ' date-with-synthesis';
-          }
-          if (d['Date has phylesystem info'] === 'true') {
-              className += ' date-with-phylesystem';
-          }
-          return className;
-      })
-      .attr("transform", function(d,i) {
-          var markerX = x( new Date(moment.utc( d.Date)) );
-          var markerY = (height+30);
-          var translate = ("translate("+ markerX +"," + markerY + ")");
-          console.log(translate);
-          return translate;
-      });
-  var markerRadius = 5;
-  markers.append("circle")
-      .attr("class", "synth-release-marker")
-      .attr("cx", 0)
-      .attr("cy", 0)
-      .attr("r", markerRadius)
-    .append("svg:title")
-      .text("Synthesis release (click to see details in a new window).");
-  markers.append('text')
-      .attr("class", "synth-release-marker")
-      .text("S")
-      .attr("x", -2.5)
-      .attr("dy", 3)
-    .append("svg:title")
-      .text("Synthesis release (click to see details in a new window).");
-  markers.append("circle")
-      .attr("class", "taxo-release-marker")
-      .attr("cx", 0)
-      .attr("cy", 15)
-      .attr("r", markerRadius)
-    .append("svg:title")
-      .text("Taxonomy release (click to see details in a new window).");
-  markers.append("text")
-      .attr("class", "taxo-release-marker")
-      .text('T')
-      .attr("x", -2.5)
-      .attr("dy", 18)
-    .append("svg:title")
-      .text("Taxonomy release (click to see details in a new window).");
-
-  // make a bisector that splits on any date (used below)
-  var bisectDate = d3.bisector(function(d) { return new Date(moment.utc(d.Date)); }).right;
-
-  // highlight should respond to mouse movement
-  svg.on("mousemove", function() {
-    var mouse = d3.mouse(this);
-    var localX = mouse[0]; //  + margin.left;
-    // find the nearest date and snap to its X coordinate
-    var mouseDate = x.invert(localX);
-    var nextDatePos = bisectDate( data, mouseDate );
-    var nextDate = new Date(moment.utc( data[nextDatePos].Date ));
-    var previousDatePos = Math.max(0, nextDatePos - 1);
-    var previousDate = new Date(moment.utc( data[previousDatePos].Date ));
-    // which is nearest?
-    var previousSnapDistance = mouseDate - previousDate;
-    var nextSnapDistance = nextDate - mouseDate;
-    var nearestDate, nearestProfileData;
-    if (nextSnapDistance > previousSnapDistance) {
-        nearestDate = previousDate;
-        nearestProfileData = data[previousDatePos];
-    } else {
-        nearestDate = nextDate;
-        nearestProfileData = data[nextDatePos];
-    }
-    var snapX = x(nearestDate); // find X coordinates for the nearest date
-    // move the highlight and update its displayed stats
-    highlight.attr("transform", "translate("+ snapX +","+ margin.top +")");
-    highlightDetailsTitle.text(nextDate);
-
-    var statPosition = 0; 
-    var statsFields = highlightDetailsStats.selectAll('text');
-    d3.keys(mutuallyExclusiveCategories).reverse().forEach(function(propName) {
-        var func = mutuallyExclusiveCategories[propName];
-        var displayText = propName +": "+ func(nearestProfileData);
-        var itsField = statsFields.filter(function(d,i) {return i === statPosition;});
-        itsField.text(displayText);
-        statPosition++;
-    });
-
-    // should we put the details box on left or right (default)?
-    var detailsWidth = highlightDetailsBox.attr('width');
-    if (snapX > (width - detailsWidth)) {
-        highlightDetails.attr("transform", "translate(-"+ (Number(detailsWidth) + 8) +", 100)");
-    } else {
-        highlightDetails.attr("transform", "translate(8,100)");
-    }
-  });
-};
+var sortedPhylesystemProfileKeys = null;
+var currentPhylesystemProfileDate = null;
 
 $(document).ready(function() {
-    populateSVG(otu_stats);
+    // show current profiles, or a notice if no data was found 
+    if (synthesis_stats) {
+        // load and sort its keys (profile dates) in chronological order
+        sortedSynthesisProfileKeys = $.map(
+            synthesis_stats, 
+            function( ignoreValue, profileDate ) {
+                return profileDate; // its JSON property
+            }
+        ).sort();
+
+        // start with the last (latest) profile
+        currentSynthesisProfileDate = sortedSynthesisProfileKeys[ sortedSynthesisProfileKeys.length - 1 ];
+        
+        showCurrentSynthesisProfile();
+        $('#synthesis-stats-panel').show();
+
+        // bind Prev and Next buttons
+        $('#prev-synthesis-profile').click(function() {
+            var nthProfile = sortedSynthesisProfileKeys.indexOf(currentSynthesisProfileDate);
+            // sanity check
+            if (nthProfile === 0) return false;
+            currentSynthesisProfileDate = sortedSynthesisProfileKeys[nthProfile - 1];
+            showCurrentSynthesisProfile();
+            return false;
+        });
+        $('#next-synthesis-profile').click(function() {
+            var nthProfile = sortedSynthesisProfileKeys.indexOf(currentSynthesisProfileDate);
+            // sanity check
+            if (nthProfile === sortedSynthesisProfileKeys.length - 1) return false;
+            currentSynthesisProfileDate = sortedSynthesisProfileKeys[nthProfile + 1];
+            showCurrentSynthesisProfile();
+            return false;
+        });
+
+        // build and bind profile-date chooser
+        $('#synthesis-profile-date-chooser').empty();
+        $.each( sortedSynthesisProfileKeys, function (i, profileDate) {
+            var aDate = new moment(profileDate);
+            // see http://momentjs.com/docs/#/parsing/string/
+            var displayDate = aDate.format('MMMM Do YYYY, hA');
+            $('#synthesis-profile-date-chooser').prepend(
+                '<option value="'+ profileDate +'">'+ displayDate +'</option>'
+            );
+        });
+        $('#synthesis-profile-date-chooser').change(function() {
+            currentSynthesisProfileDate = $(this).val();
+            showCurrentSynthesisProfile();
+        });
+
+    } else {
+        $('#synthesis-stats-missing').show();
+    }
+});
+/*
+$(document).ready(function() {
     // show current profiles, or a notice if no data was found 
     if (otu_stats) {
         // load and sort its keys (profile dates) in chronological order
@@ -495,6 +255,7 @@ $(document).ready(function() {
         $('#otu-stats-missing').show();
     }
 });
+*/
 
 function formatISODate( dateString, options ) {
     options = options || {includeTime: true};
@@ -508,19 +269,19 @@ function formatISODate( dateString, options ) {
 }
 
 function showCurrentSynthesisProfile() {
-    var currentSynthesisProfile = profilesByDate[currentSynthesisProfileDate];
+    var currentSynthesisProfile = synthesis_stats[ currentSynthesisProfileDate ];
     // Our stats JSON has friendly property names. Just format them!
-    $('#otu-stats-panel table').empty();
+    $('#synthesis-stats-panel table').empty();
     for (var prop in currentSynthesisProfile) {
-        if (prop === 'Date' || prop == 'blocks' || prop == 'total') continue;
+        if (prop === 'Date') continue;
         var itsValue = currentSynthesisProfile[ prop ];
-        $('#otu-stats-panel table').append(
+        $('#synthesis-stats-panel table').append(
             '<tr>'
               + '<th>'+ prop +'</th>'
               + '<td>'+ itsValue +'</td>'
               // for sparkline specs, see http://style.org/chartapi/sparklines/
               + '<td>'
-                  + '<img src="http://chart.apis.google.com/chart?'
+                  + '<img src="//chart.googleapis.com/chart?'
                     + 'cht=lc'
                     + '&chs=50x20'
                     + '&chd=t:'+ getSynthesisSparklineData(prop, currentSynthesisProfileDate)
@@ -539,18 +300,18 @@ function showCurrentSynthesisProfile() {
     // Update the Next and Prev buttons (disable if no more)
     var nthProfile = sortedSynthesisProfileKeys.indexOf(currentSynthesisProfileDate);
     if (nthProfile === 0) {
-        $('#prev-otu-profile').addClass('disabled');
+        $('#prev-synthesis-profile').addClass('disabled');
     } else {
-        $('#prev-otu-profile').removeClass('disabled');
+        $('#prev-synthesis-profile').removeClass('disabled');
     }
     if (nthProfile === (sortedSynthesisProfileKeys.length - 1)) {
-        $('#next-otu-profile').addClass('disabled');
+        $('#next-synthesis-profile').addClass('disabled');
     } else {
-        $('#next-otu-profile').removeClass('disabled');
+        $('#next-synthesis-profile').removeClass('disabled');
     }
 
     // Update the date selector
-    $('#otu-profile-date-chooser').val(currentSynthesisProfileDate);
+    $('#synthesis-profile-date-chooser').val(currentSynthesisProfileDate);
 }
 
 function getSynthesisSparklineData(prop, lastProfileDate) {
@@ -561,7 +322,7 @@ function getSynthesisSparklineData(prop, lastProfileDate) {
     $.each(sortedSynthesisProfileKeys, function(i, profileDate) {
         // skip more recent profiles, if we're looking at something older
         if (profileDate <= lastProfileDate) {
-             series.push( profilesByDate[profileDate][prop] );
+             series.push( synthesis_stats[profileDate][prop] );
         }
     });
 

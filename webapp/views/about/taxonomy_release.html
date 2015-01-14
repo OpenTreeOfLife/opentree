@@ -84,18 +84,8 @@ div.stats-panel {
 <script type="text/javascript">
 // pass statistics as JSON to client for stepping, plotting, etc.
 
-{{ if synthesis_stats: 
-    # NOTE that we use XML() here to decode HTML entities like &quot; }}
-var synthesis_stats = {{= XML(synthesis_stats) }};
-{{ else: }}
 var synthesis_stats = null;
-{{ pass }}
-
-{{ if phylesystem_stats: }}
-var phylesystem_stats = {{= XML(phylesystem_stats) }};
-{{ else: }}
 var phylesystem_stats = null;
-{{ pass }}
 
 var sortedSynthesisProfileKeys = null;
 var currentSynthesisProfileDate = null;
