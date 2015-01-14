@@ -102,7 +102,7 @@ circle.taxo-release-marker {
                   </div>
 
                   <div class="pull-left" style="clear: left; position: relative; top: -8px;">
-                      <a href="#TODO" onclick="alert('TODO: Show release page for this date+time'); return false;">More information about this synthesis</a>
+                      <a href="/about/release-history?highlight={{= release_version }}">Show this synthesis in release history (timeline).</a>
                   </div>
                   <table class="table table-condensed table-hover" style="clear: left;"></table>
               </div>
@@ -170,16 +170,17 @@ $(document).ready(function() {
             var nthProfile = sortedSynthesisProfileKeys.indexOf(currentSynthesisProfileDate);
             // sanity check
             if (nthProfile === 0) return false;
-            currentSynthesisProfileDate = sortedSynthesisProfileKeys[nthProfile - 1];
-            showCurrentSynthesisProfile();
+            var anotherDate = sortedSynthesisProfileKeys[nthProfile - 1];
+            jumpToSynthesisProfileDate(anotherDate);
+
             return false;
         });
         $('#next-synthesis-profile').click(function() {
             var nthProfile = sortedSynthesisProfileKeys.indexOf(currentSynthesisProfileDate);
             // sanity check
             if (nthProfile === sortedSynthesisProfileKeys.length - 1) return false;
-            currentSynthesisProfileDate = sortedSynthesisProfileKeys[nthProfile + 1];
-            showCurrentSynthesisProfile();
+            var anotherDate = sortedSynthesisProfileKeys[nthProfile + 1];
+            jumpToSynthesisProfileDate(anotherDate);
             return false;
         });
 
@@ -194,68 +195,14 @@ $(document).ready(function() {
             );
         });
         $('#synthesis-profile-date-chooser').change(function() {
-            currentSynthesisProfileDate = $(this).val();
-            showCurrentSynthesisProfile();
+            var anotherDate = $(this).val();
+            jumpToSynthesisProfileDate(anotherDate);
         });
 
     } else {
         $('#synthesis-stats-missing').show();
     }
 });
-/*
-$(document).ready(function() {
-    // show current profiles, or a notice if no data was found 
-    if (otu_stats) {
-        // load and sort its keys (profile dates) in chronological order
-        sortedSynthesisProfileKeys = $.map(
-            profilesByDate,
-            function( ignoreValue, profileDate ) {
-                return profileDate; // its JSON property
-            }
-        ).sort();
-
-        // start with the last (latest) profile
-        currentSynthesisProfileDate = sortedSynthesisProfileKeys[ sortedSynthesisProfileKeys.length - 1 ];
-        
-        showCurrentSynthesisProfile();
-        $('#otu-stats-panel').show();
-
-        // bind Prev and Next buttons
-        $('#prev-otu-profile').click(function() {
-            var nthProfile = sortedSynthesisProfileKeys.indexOf(currentSynthesisProfileDate);
-            // sanity check
-            if (nthProfile === 0) return false;
-            currentSynthesisProfileDate = sortedSynthesisProfileKeys[nthProfile - 1];
-            showCurrentSynthesisProfile();
-            return false;
-        });
-        $('#next-otu-profile').click(function() {
-            var nthProfile = sortedSynthesisProfileKeys.indexOf(currentSynthesisProfileDate);
-            // sanity check
-            if (nthProfile === sortedSynthesisProfileKeys.length - 1) return false;
-            currentSynthesisProfileDate = sortedSynthesisProfileKeys[nthProfile + 1];
-            showCurrentSynthesisProfile();
-            return false;
-        });
-
-        // build and bind profile-date chooser
-        $('#otu-profile-date-chooser').empty();
-        $.each( sortedSynthesisProfileKeys, function (i, profileDate) {
-            var displayDate = formatISODate(profileDate);
-            $('#otu-profile-date-chooser').prepend(
-                '<option value="'+ profileDate +'">'+ displayDate +'</option>'
-            );
-        });
-        $('#otu-profile-date-chooser').change(function() {
-            currentSynthesisProfileDate = $(this).val();
-            showCurrentSynthesisProfile();
-        });
-
-    } else {
-        $('#otu-stats-missing').show();
-    }
-});
-*/
 
 function formatISODate( dateString, options ) {
     options = options || {includeTime: true};
@@ -266,6 +213,17 @@ function formatISODate( dateString, options ) {
     } else {
         return aDate.format('MMMM Do YYYY');
     }
+}
+
+function jumpToSynthesisProfileDate( targetDate ) {
+    // move this page to the chosen date
+    var currentURL = window.location.href;
+    var urlParts = currentURL.split('/');
+    // ASSUME there's always a date in the final URL-part
+    var currentDate = urlParts.pop();
+    urlParts.push(targetDate);  // convert to string?
+    var newURL = urlParts.join('/');
+    window.location.href = newURL;
 }
 
 function showCurrentSynthesisProfile() {
