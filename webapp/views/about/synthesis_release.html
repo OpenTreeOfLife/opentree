@@ -74,21 +74,21 @@ circle.taxo-release-marker {
 */
 </style>
 <div class="container">
-      <h1 id="main-title">Synthesis release ({{= release_version }})</h1>
+    <h1 id="main-title" style="padding-bottom: 12px;">Synthesis release 
+        <span id="title-date" style="color: #999; font-size: 0.8em;"></span>
+    </h1>
       <div class="row">
           <div class="span10 offset1">
               <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
-              <h3>Statistics</h3>
 
-              <div id="synthesis-stats-missing" class="alert alert-error" style="display: none;">
-                  No synthesis statistics found!
-              </div>
+              <div id="synthesis-stats-nav" class="stats-panel">
+                  <div class="pull-left" style="position: relative; top: -4px;">
+                      <a href="/about/release-history?highlight={{= release_version }}">Show this synthesis in the Open Tree release history (timeline)</a>
+                  </div>
 
-              <div id="synthesis-stats-panel" class="stats-panel" style="display: none;">
-
-                <form class="form-inline pull-left" style="display: inline-block; margin-bottom: 10px;">
+                <form class="form-inline pull-left" style="clear: left; margin-bottom: 10px;">
                   <div class="control-group">
-                      <label class="control-label" style="position: relative; top: 1px;">Synthesis date</label>
+                      <label class="control-label" style="position: relative; top: 1px;">Other synthesis releases</label>
                       &nbsp;
                       <select id="synthesis-profile-date-chooser" style="">
                       </select>
@@ -100,10 +100,16 @@ circle.taxo-release-marker {
                         <li id="next-synthesis-profile"><a href="#">Next</a></li>
                     </ul>
                   </div>
+              </div>
 
-                  <div class="pull-left" style="clear: left; position: relative; top: -8px;">
-                      <a href="/about/release-history?highlight={{= release_version }}">Show this synthesis in release history (timeline).</a>
-                  </div>
+              <h3 style="clear: both;">Statistics</h3>
+
+              <div id="synthesis-stats-missing" class="alert alert-error" style="display: none;">
+                  No synthesis statistics found!
+              </div>
+
+              <div id="synthesis-stats-panel" class="stats-panel" style="display: none;">
+
                   <table class="table table-condensed table-hover" style="clear: left;"></table>
               </div>
               <h3>Downloads</h3>
@@ -167,6 +173,9 @@ $(document).ready(function() {
         } else {
             currentSynthesisProfileDate = sortedSynthesisProfileKeys[ sortedSynthesisProfileKeys.length - 1 ];
         }
+        // format nicely and add to page title
+        var displayDate = formatISODate( currentSynthesisProfileDate );
+        $('#title-date').html( "("+ displayDate +")" );
 
         // bind Prev and Next buttons
         $('#prev-synthesis-profile').click(function() {
@@ -190,9 +199,7 @@ $(document).ready(function() {
         // build and bind profile-date chooser
         $('#synthesis-profile-date-chooser').empty();
         $.each( sortedSynthesisProfileKeys, function (i, profileDate) {
-            var aDate = new moment(profileDate);
-            // see http://momentjs.com/docs/#/parsing/string/
-            var displayDate = aDate.format('MMMM Do YYYY, hA');
+            var displayDate = formatISODate( profileDate );
             $('#synthesis-profile-date-chooser').prepend(
                 '<option value="'+ profileDate +'">'+ displayDate +'</option>'
             );
