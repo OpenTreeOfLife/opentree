@@ -74,9 +74,19 @@ circle.taxo-release-marker {
 */
 </style>
 <div class="container">
-    <h1 id="main-title" style="padding-bottom: 12px;">Synthesis release 
-        <span id="title-date" style="color: #999; font-size: 0.8em;"></span>
+    <h1 id="main-title" style="display: inline-block; padding-bottom: 12px;">Synthesis release 
     </h1>
+                  &nbsp;
+                  <select id="synthesis-profile-date-chooser" style="">
+                  </select>
+                  &nbsp;
+                  <div class="pagination hidden-tablet" style="display: inline-block; vertical-align: middle; line-height: 30px;">
+                    <ul>
+                        <li id="prev-synthesis-profile"><a href="#">Prev</a></li>
+                        <li id="next-synthesis-profile"><a href="#">Next</a></li>
+                    </ul>
+                  </div>
+
       <div class="row">
           <div class="span10 offset1">
               <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
@@ -87,19 +97,7 @@ circle.taxo-release-marker {
                   </div>
 
                 <form class="form-inline pull-left" style="clear: left; margin-bottom: 10px;">
-                  <div class="control-group">
-                      <label class="control-label" style="position: relative; top: 1px;">Other synthesis releases</label>
-                      &nbsp;
-                      <select id="synthesis-profile-date-chooser" style="">
-                      </select>
-                  </div>
                 </form>
-                  <div class="pagination pull-left hidden-tablet" style="display: inline-block; margin: 0 0 0 20px;">
-                    <ul>
-                        <li id="prev-synthesis-profile"><a href="#">Prev</a></li>
-                        <li id="next-synthesis-profile"><a href="#">Next</a></li>
-                    </ul>
-                  </div>
               </div>
 
               <h3 style="clear: both;">Statistics</h3>
