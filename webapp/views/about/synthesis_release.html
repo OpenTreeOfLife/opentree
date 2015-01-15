@@ -148,6 +148,8 @@ var currentSynthesisProfileDate = null;
 var sortedPhylesystemProfileKeys = null;
 var currentPhylesystemProfileDate = null;
 
+var releaseVersion = '{{= release_version }}';
+
 $(document).ready(function() {
     // show current profiles, or a notice if no data was found 
     if (synthesis_stats) {
@@ -159,11 +161,12 @@ $(document).ready(function() {
             }
         ).sort();
 
-        // start with the last (latest) profile
-        currentSynthesisProfileDate = sortedSynthesisProfileKeys[ sortedSynthesisProfileKeys.length - 1 ];
-        
-        showCurrentSynthesisProfile();
-        $('#synthesis-stats-panel').show();
+        // start with the profile whose date is in the URL (or latest, by default)
+        if (releaseVersion) {
+            currentSynthesisProfileDate = releaseVersion;
+        } else {
+            currentSynthesisProfileDate = sortedSynthesisProfileKeys[ sortedSynthesisProfileKeys.length - 1 ];
+        }
 
         // bind Prev and Next buttons
         $('#prev-synthesis-profile').click(function() {
@@ -198,6 +201,9 @@ $(document).ready(function() {
             var anotherDate = $(this).val();
             jumpToSynthesisProfileDate(anotherDate);
         });
+
+        showCurrentSynthesisProfile();
+        $('#synthesis-stats-panel').show();
 
     } else {
         $('#synthesis-stats-missing').show();
@@ -239,7 +245,7 @@ function showCurrentSynthesisProfile() {
               + '<td>'+ itsValue +'</td>'
               // for sparkline specs, see http://style.org/chartapi/sparklines/
               + '<td>'
-                  + '<img src="//chart.googleapis.com/chart?'
+                  + '<img width="50: height="20" src="//chart.googleapis.com/chart?'
                     + 'cht=lc'
                     + '&chs=50x20'
                     + '&chd=t:'+ getSynthesisSparklineData(prop, currentSynthesisProfileDate)
