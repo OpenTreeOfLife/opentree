@@ -168,6 +168,11 @@ for (i = 0; i < otu_stats.length; ++i) {
     dup_otu_stats[2*i] = $.extend({}, otu_stats[i]);
     dup_otu_stats[2*i + 1] = $.extend({}, otu_stats[i]);
 }
+// add a full-size (invisible) rectangle to receive mouse clicks
+svg.append("rect")
+    .attr("width", "100%")
+    .attr("height", "100%")
+    .style("fill", "#fff");
 
 // allow "pinning" the highlight to a particular date (vs. following the mouse)
 var highlightPinned = false;
