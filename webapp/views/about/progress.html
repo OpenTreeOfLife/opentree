@@ -74,13 +74,13 @@ circle.taxo-release-marker {
 */
 </style>
 <div class="container">
-      <h1 id="main-title">Open Tree release history</h1>
+      <h1 id="main-title">Open Tree progress</h1>
       <div class="row">
           <div class="span10 offset1">
               <p>
               The Open Tree of Life project includes periodic releases of the
-              <a href="/about/synthesis-release" target="_blank">OTT (Open Tree taxonomy)</a> and
-              the <a href="/about/taxonomy-release" target="_blank">latest synthetic tree</a>.
+              <a href="/about/taxonomy-release" target="_blank">OTT (Open Tree taxonomy)</a> and
+              the <a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>.
               The timeline below shows these releases and the result&mdash;an 
               increase in OTUs (operating taxonomic units) in our synthesis.
               <br/>
@@ -89,6 +89,7 @@ circle.taxo-release-marker {
                  &nbsp;CAUTION: FAKE DATA BELOW (click for details)&nbsp;
                </a>
               </p>
+              <p id="highlight-prompt" style="font-style: italic;">&nbsp;</p>
           </div>
       </div>
       <div id="warnings-panel" 
@@ -118,8 +119,9 @@ for (i = 0; i < warnings.length; ++i) {
     $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
 }
 /* svg based on http://bl.ocks.org/mbostock/3886208 */
+var $svgParent = $('#stacked-bar-div');
 var margin = {top: 10, right: 20, bottom: 90, left: 40},
-    outerWidth = 960,
+    outerWidth = $svgParent.width(), // 960,
     outerHeight = 500,
     width = outerWidth - margin.left - margin.right,
     height = outerHeight - margin.top - margin.bottom;
@@ -154,8 +156,10 @@ var yAxis = d3.svg.axis()
     .tickFormat(d3.format(".2s"));
 var svgpar = d3.select("#stacked-bar-div");
 var svg = svgpar.append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
+    .attr("width", "100%")   //width + margin.left + margin.right)
+    //.attr("height", height + margin.top + margin.bottom)
+    .attr("viewBox", "0 0 "+ outerWidth +" 500")
+    .attr("preserveAspectRatio", "xMinYMin meet")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 var dup_otu_stats = [];
@@ -164,6 +168,25 @@ for (i = 0; i < otu_stats.length; ++i) {
     dup_otu_stats[2*i] = $.extend({}, otu_stats[i]);
     dup_otu_stats[2*i + 1] = $.extend({}, otu_stats[i]);
 }
+
+// allow "pinning" the highlight to a particular date (vs. following the mouse)
+var highlightPinned = false;
+function pinHighlight() {
+    highlightPinned = true;
+    // update the UI for this
+    //$('#unpin-highlight-widget').css('opacity', 1.0);
+    $('#highlight-prompt').html('Click the chart below to see details for any date. Click \
+              <a id="unpin-highlight-widget" class="badge" style="Xbackground-color: #f88;" \
+                 href="#" title="" onclick="unpinHighlight(); $(this).blur(); return false;"> \
+                 <span class="widget-prompt">Unlock highlight</span> \
+        </a> to follow the mouse.');
+}
+function unpinHighlight() {
+    highlightPinned = false;
+    //$('#unpin-highlight-widget').css('opacity', 0.25);
+    $('#highlight-prompt').html("Move the mouse below to see details for any date. Click to keep the highlight there.");
+}
+
 var populateSVG = function(data) {
   // pre-fetch the highest Y to support alternate stacking orders
   var maxOTUs = d3.max(data, function(d) { return d['Unique OTUs in OTT']; });
@@ -284,7 +307,7 @@ var populateSVG = function(data) {
   var highlightDetailsBox = highlightDetails.append("rect")
       .attr("class", "highlight-details-box")
       .attr("height", 40) // reset below
-      .attr("width", 420);
+      .attr("width", 400);
   var highlightDetailsTitle = highlightDetails.append("text")
       .attr("class", "highlight-details-title")
       .attr("x", 8)
@@ -388,7 +411,7 @@ var populateSVG = function(data) {
 
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/synthesis-release?date="+ d.Date); })
+      .attr("xlink:href", function(d){ return ("/about/synthesis-release/"+ d.Date); })
     .append("circle")
       .attr("class", "synth-release-marker")
       .attr("cx", 0)
@@ -398,7 +421,7 @@ var populateSVG = function(data) {
       .text("Synthesis release (click to see details in a new window).");
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/synthesis-release?date="+ d.Date); })
+      .attr("xlink:href", function(d){ return ("/about/synthesis-release/"+ d.Date); })
     .append('text')
       .attr("class", "synth-release-marker")
       .text("S")
@@ -408,7 +431,7 @@ var populateSVG = function(data) {
       .text("Synthesis release (click to see details in a new window).");
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/taxonomy-release?date="+ d.Date); })
+      .attr("xlink:href", function(d){ return ("/about/taxonomy-release/"+ d.Date); })
     .append("circle")
       .attr("class", "taxo-release-marker")
       .attr("cx", 0)
@@ -418,7 +441,7 @@ var populateSVG = function(data) {
       .text("Taxonomy release (click to see details in a new window).");
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/taxonomy-release?date="+ d.Date); })
+      .attr("xlink:href", function(d){ return ("/about/taxonomy-release/"+ d.Date); })
     .append("text")
       .attr("class", "taxo-release-marker")
       .text('T')
@@ -430,141 +453,194 @@ var populateSVG = function(data) {
   // make a bisector that splits on any date (used below)
   var bisectDate = d3.bisector(function(d) { return new Date(moment.utc(d.Date)); }).right;
 
-  // highlight should respond to mouse movement
+  // highlight should respond to mouse movement (or incoming date on query string)
+  svg.on("click", function() {
+    // clicking forces a pin in the new place
+    unpinHighlight();
+
+    // create a synthetic event on the highlight
+    var mouse = d3.mouse(this);
+    var evt = document.createEvent("MouseEvents");
+    evt.initMouseEvent(
+        "mousemove",
+        true,       // bubbles?
+        true,       // cancelable?
+        window,     // view
+        0,          // detail (unused)
+        0,          // screenX (ignored)
+        0,          // screenY (ignored)
+        event.x,    // clientX (copy from click event)
+        event.y,    // clientY (copy from click event)
+        false,      // ctrlKey
+        false,      // altKey
+        false,      // shiftKey
+        false,      // metaKey
+        0,          // button
+        svg[0][0]   // relatedTarget
+    );
+
+    // "unwrap" the funky d3 selection and dispatch the mousemove
+    svg[0][0].dispatchEvent(evt);
+    pinHighlight();
+  });
+
   svg.on("mousemove", function() {
+    if (highlightPinned) { 
+        // pinning stops this behavior
+        return;
+    };
+
     var mouse = d3.mouse(this);
     var localX = mouse[0]; //  + margin.left;
     // find the nearest date and snap to its X coordinate
+    var nearestDate, nearestProfileData;
     var mouseDate = x.invert(localX);
     var nextDatePos = bisectDate( data, mouseDate );
-    var nextDate = new Date(moment.utc( data[nextDatePos].Date ));
-    var previousDatePos = Math.max(0, nextDatePos - 1);
-    var previousDate = new Date(moment.utc( data[previousDatePos].Date ));
-    // which is nearest?
-    var previousSnapDistance = mouseDate - previousDate;
-    var nextSnapDistance = nextDate - mouseDate;
-    var nearestDate, nearestProfileData;
-    if (nextSnapDistance > previousSnapDistance) {
-        nearestDate = previousDate;
-        nearestProfileData = data[previousDatePos];
+    if (nextDatePos === data.length) {
+        // we're at the end of the date range
+        var lastDatePos = nextDatePos - 1;
+        nearestDate = new Date(moment.utc( data[lastDatePos].Date ));
+        nearestProfileData = data[lastDatePos];
     } else {
-        nearestDate = nextDate;
-        nearestProfileData = data[nextDatePos];
-    }
-    var snapX = x(nearestDate); // find X coordinates for the nearest date
-    // move the highlight and update its displayed stats
-    highlight.attr("transform", "translate("+ snapX +","+ margin.top +")");
-    highlightDetailsTitle.text(nextDate);
-
-    var statPosition = 0; 
-    var statsFields = highlightDetailsStats.selectAll('text');
-    d3.keys(mutuallyExclusiveCategories).reverse().forEach(function(propName) {
-        var func = mutuallyExclusiveCategories[propName];
-        var displayText = propName +": "+ func(nearestProfileData);
-        var itsField = statsFields.filter(function(d,i) {return i === statPosition;});
-        itsField.text(displayText);
-        statPosition++;
-    });
-
-    // show markers for synthesis and/or taxonomy release, IF found for this date
-    var dateHasSynthRelease = (nearestProfileData['Date has synthesis release'] === 'true');
-    var dateHasTaxoRelease = (nearestProfileData['Date has phylesystem info'] === 'true');
-    if (dateHasSynthRelease && dateHasTaxoRelease) {
-        // shift the taxo-release markers down to second row
-        highlightDetailsStats.select('circle.taxo-release-marker')
-            .attr("cy", highlightMarkerSecondRowY);
-        highlightDetailsStats.selectAll('text.taxo-release-marker')
-            .attr("y", highlightMarkerSecondRowY);
-    } else {
-        // shift the taxo-release markers up to first row
-        highlightDetailsStats.select('circle.taxo-release-marker')
-            .attr("cy", highlightMarkerFirstRowY);
-        highlightDetailsStats.selectAll('text.taxo-release-marker')
-            .attr("y", highlightMarkerFirstRowY);
-    }
-    highlightDetailsStats.selectAll('.synth-release-marker')
-        .style('visibility', function() {
-            return (dateHasSynthRelease ? 'visible' : 'hidden');
-        });
-    highlightDetailsStats.selectAll('.taxo-release-marker')
-        .style('visibility', function() {
-            return (dateHasTaxoRelease ? 'visible' : 'hidden');
-        });
-
-    // set box height according to optional markers above
-    highlightDetailsBox.attr('height', function() {
-        if (dateHasSynthRelease && dateHasTaxoRelease) {
-            return 140;
+        // split is somewhere inside the date range
+        var nextDate = new Date(moment.utc( data[nextDatePos].Date ));
+        var previousDatePos = Math.max(0, nextDatePos - 1);
+        var previousDate = new Date(moment.utc( data[previousDatePos].Date ));
+        // which is nearest?
+        var previousSnapDistance = mouseDate - previousDate;
+        var nextSnapDistance = nextDate - mouseDate;
+        if (nextSnapDistance > previousSnapDistance) {
+            nearestDate = previousDate;
+            nearestProfileData = data[previousDatePos];
+        } else {
+            nearestDate = nextDate;
+            nearestProfileData = data[nextDatePos];
         }
-        if (dateHasSynthRelease || dateHasTaxoRelease) {
-            return 120;
-        }
-        return 100;
-    });
-
-    // should we put the details box on left or right (default)?
-    var detailsWidth = highlightDetailsBox.attr('width');
-    if (snapX > (width - detailsWidth)) {
-        highlightDetails.attr("transform", "translate(-"+ (Number(detailsWidth) + 8) +", 100)");
-    } else {
-        highlightDetails.attr("transform", "translate(8,100)");
     }
+
+    highlightDate( nearestDate, nearestProfileData );
   });
+
+  // nested function, to use highlight and other instances
+  function highlightDate( targetDate, profileData ) {
+      if (typeof(targetDate) === 'string') {
+          // fetch the expected Date and data
+          if (!profileData) {
+              // try to retrieve data
+              var matchingProfiles = data.filter(function(d) {return d.Date === targetDate});
+              if (matchingProfiles.length === 0) {
+                alert("No data was found for this date: "+ targetDate);
+                return;
+              }
+              profileData = matchingProfiles[0];
+          }
+          targetDate = new Date(moment.utc(targetDate));
+      }
+
+      var snapX = x(targetDate); // find X coordinates for the nearest date
+      // move the highlight and update its displayed stats
+      highlight.attr("transform", "translate("+ snapX +","+ margin.top +")");
+      highlightDetailsTitle.text(targetDate);
+
+      var statPosition = 0; 
+      var statsFields = highlightDetailsStats.selectAll('text');
+      d3.keys(mutuallyExclusiveCategories).reverse().forEach(function(propName) {
+          var func = mutuallyExclusiveCategories[propName];
+          var displayText = propName +": "+ func(profileData);
+          var itsField = statsFields.filter(function(d,i) {return i === statPosition;});
+          itsField.text(displayText);
+          statPosition++;
+      });
+
+      // show markers for synthesis and/or taxonomy release, IF found for this date
+      var dateHasSynthRelease = (profileData['Date has synthesis release'] === 'true');
+      var dateHasTaxoRelease = (profileData['Date has phylesystem info'] === 'true');
+      if (dateHasSynthRelease && dateHasTaxoRelease) {
+          // shift the taxo-release markers down to second row
+          highlightDetailsStats.select('circle.taxo-release-marker')
+              .attr("cy", highlightMarkerSecondRowY);
+          highlightDetailsStats.selectAll('text.taxo-release-marker')
+              .attr("y", highlightMarkerSecondRowY);
+      } else {
+          // shift the taxo-release markers up to first row
+          highlightDetailsStats.select('circle.taxo-release-marker')
+              .attr("cy", highlightMarkerFirstRowY);
+          highlightDetailsStats.selectAll('text.taxo-release-marker')
+              .attr("y", highlightMarkerFirstRowY);
+      }
+      highlightDetailsStats.selectAll('.synth-release-marker')
+          .style('visibility', function() {
+              return (dateHasSynthRelease ? 'visible' : 'hidden');
+          });
+      highlightDetailsStats.selectAll('.taxo-release-marker')
+          .style('visibility', function() {
+              return (dateHasTaxoRelease ? 'visible' : 'hidden');
+          });
+
+      // set box height according to optional markers above
+      highlightDetailsBox.attr('height', function() {
+          if (dateHasSynthRelease && dateHasTaxoRelease) {
+              return 140;
+          }
+          if (dateHasSynthRelease || dateHasTaxoRelease) {
+              return 120;
+          }
+          return 100;
+      });
+
+      /* Should we put the details box on left or right (default)?
+       * Back this away from any edge of the viz as needed.
+       * NOTE that all coordinates here are internal (svg) px! 
+       */
+      var detailsWidth = Number(highlightDetailsBox.attr('width'));
+      var localX; // relative to the hightlight line
+      if (snapX > (width - detailsWidth)) {
+          // no room on the right side of the line
+          if (snapX > detailsWidth) {
+              // plenty of room on the left side
+              localX = -(Number(detailsWidth) + 8);
+          } else {
+              // hug the right edge, overlapping line as needed
+              localX = -(detailsWidth - (width - snapX));
+          }
+      } else {
+          // show details to the right of highlight
+          localX = 8;
+      }
+      highlightDetails.attr("transform", "translate("+ localX +",100)");
+  }
+
+  // expose these methods for outside callers
+  populateSVG.highlightDate = highlightDate;
 };
+
+
 
 $(document).ready(function() {
     populateSVG(otu_stats);
-    // show current profiles, or a notice if no data was found 
-    if (otu_stats) {
-        // load and sort its keys (profile dates) in chronological order
-        sortedSynthesisProfileKeys = $.map(
-            profilesByDate,
-            function( ignoreValue, profileDate ) {
-                return profileDate; // its JSON property
-            }
-        ).sort();
 
-        // start with the last (latest) profile
-        currentSynthesisProfileDate = sortedSynthesisProfileKeys[ sortedSynthesisProfileKeys.length - 1 ];
-        
-        showCurrentSynthesisProfile();
-        $('#otu-stats-panel').show();
-
-        // bind Prev and Next buttons
-        $('#prev-otu-profile').click(function() {
-            var nthProfile = sortedSynthesisProfileKeys.indexOf(currentSynthesisProfileDate);
-            // sanity check
-            if (nthProfile === 0) return false;
-            currentSynthesisProfileDate = sortedSynthesisProfileKeys[nthProfile - 1];
-            showCurrentSynthesisProfile();
-            return false;
-        });
-        $('#next-otu-profile').click(function() {
-            var nthProfile = sortedSynthesisProfileKeys.indexOf(currentSynthesisProfileDate);
-            // sanity check
-            if (nthProfile === sortedSynthesisProfileKeys.length - 1) return false;
-            currentSynthesisProfileDate = sortedSynthesisProfileKeys[nthProfile + 1];
-            showCurrentSynthesisProfile();
-            return false;
-        });
-
-        // build and bind profile-date chooser
-        $('#otu-profile-date-chooser').empty();
-        $.each( sortedSynthesisProfileKeys, function (i, profileDate) {
-            var displayDate = formatISODate(profileDate);
-            $('#otu-profile-date-chooser').prepend(
-                '<option value="'+ profileDate +'">'+ displayDate +'</option>'
-            );
-        });
-        $('#otu-profile-date-chooser').change(function() {
-            currentSynthesisProfileDate = $(this).val();
-            showCurrentSynthesisProfile();
-        });
-
+    // highlight incoming date/version, or the latest if not found
+    var featuredDate = getParameterByName('highlight');
+    var pinInitialHighlight = false;
+    if (featuredDate) {
+        // stick to this date until user clicks elsewhere
+        pinInitialHighlight = true;
     } else {
-        $('#otu-stats-missing').show();
+        // set initial highlight on latest date, but allow easy exploration
+        featuredDate = otu_stats[otu_stats.length - 1].Date;  // eg, '2014-11-05T19Z'
+    }
+    populateSVG.highlightDate( featuredDate );
+    if (pinInitialHighlight) {
+        pinHighlight();
     }
 });
+
+function getParameterByName(name) {
+    // Retrieves query-string vars by name (or null)
+    // from http://stackoverflow.com/a/5158301
+    var match = RegExp('[?&]' + name + '=([^&]*)').exec(window.location.search);
+    return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
+}
 
 function formatISODate( dateString, options ) {
     options = options || {includeTime: true};
