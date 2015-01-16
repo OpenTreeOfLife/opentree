@@ -467,10 +467,10 @@ var populateSVG = function(data) {
         true,       // cancelable?
         window,     // view
         0,          // detail (unused)
-        0,          // screenX (ignored)
-        0,          // screenY (ignored)
-        event.x,    // clientX (copy from click event)
-        event.y,    // clientY (copy from click event)
+        d3.event.screenX,    // screenX (ignored)
+        d3.event.screenY,    // screenY (ignored)
+        d3.event.clientX,    // clientX (copy from click event)
+        d3.event.clientY,    // clientY (copy from click event)
         false,      // ctrlKey
         false,      // altKey
         false,      // shiftKey
@@ -632,7 +632,10 @@ $(document).ready(function() {
     populateSVG.highlightDate( featuredDate );
     if (pinInitialHighlight) {
         pinHighlight();
+    } else {
+        unpinHighlight();
     }
+
 });
 
 function getParameterByName(name) {
