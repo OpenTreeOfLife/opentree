@@ -119,8 +119,9 @@ for (i = 0; i < warnings.length; ++i) {
     $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
 }
 /* svg based on http://bl.ocks.org/mbostock/3886208 */
+var $svgParent = $('#stacked-bar-div');
 var margin = {top: 10, right: 20, bottom: 90, left: 40},
-    outerWidth = 960,
+    outerWidth = $svgParent.width(), // 960,
     outerHeight = 500,
     width = outerWidth - margin.left - margin.right,
     height = outerHeight - margin.top - margin.bottom;
@@ -155,8 +156,10 @@ var yAxis = d3.svg.axis()
     .tickFormat(d3.format(".2s"));
 var svgpar = d3.select("#stacked-bar-div");
 var svg = svgpar.append("svg")
-    .attr("width", width + margin.left + margin.right)
-    .attr("height", height + margin.top + margin.bottom)
+    .attr("width", "100%")   //width + margin.left + margin.right)
+    //.attr("height", height + margin.top + margin.bottom)
+    .attr("viewBox", "0 0 "+ outerWidth +" 500")
+    .attr("preserveAspectRatio", "xMinYMin meet")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 var dup_otu_stats = [];
@@ -304,7 +307,7 @@ var populateSVG = function(data) {
   var highlightDetailsBox = highlightDetails.append("rect")
       .attr("class", "highlight-details-box")
       .attr("height", 40) // reset below
-      .attr("width", 420);
+      .attr("width", 400);
   var highlightDetailsTitle = highlightDetails.append("text")
       .attr("class", "highlight-details-title")
       .attr("x", 8)
@@ -585,13 +588,26 @@ var populateSVG = function(data) {
           return 100;
       });
 
-      // should we put the details box on left or right (default)?
-      var detailsWidth = highlightDetailsBox.attr('width');
+      /* Should we put the details box on left or right (default)?
+       * Back this away from any edge of the viz as needed.
+       * NOTE that all coordinates here are internal (svg) px! 
+       */
+      var detailsWidth = Number(highlightDetailsBox.attr('width'));
+      var localX; // relative to the hightlight line
       if (snapX > (width - detailsWidth)) {
-          highlightDetails.attr("transform", "translate(-"+ (Number(detailsWidth) + 8) +", 100)");
+          // no room on the right side of the line
+          if (snapX > detailsWidth) {
+              // plenty of room on the left side
+              localX = -(Number(detailsWidth) + 8);
+          } else {
+              // hug the right edge, overlapping line as needed
+              localX = -(detailsWidth - (width - snapX));
+          }
       } else {
-          highlightDetails.attr("transform", "translate(8,100)");
+          // show details to the right of highlight
+          localX = 8;
       }
+      highlightDetails.attr("transform", "translate("+ localX +",100)");
   }
 
   // expose these methods for outside callers
