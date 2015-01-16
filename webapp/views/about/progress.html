@@ -121,12 +121,14 @@ for (i = 0; i < warnings.length; ++i) {
 /* svg based on http://bl.ocks.org/mbostock/3886208 */
 var $svgParent = $('#stacked-bar-div');
 var margin = {top: 10, right: 20, bottom: 90, left: 40},
-    outerWidth = $svgParent.width(), // 960,
-    outerHeight = 500,
-    width = outerWidth - margin.left - margin.right,
-    height = outerHeight - margin.top - margin.bottom;
+    vizOuterWidth = $svgParent.width(); // 960,
+var vizOuterHeight = 500,
+    width = vizOuterWidth - margin.left - margin.right,
+    height = vizOuterHeight - margin.top - margin.bottom;
 var x = d3.time.scale.utc()
     .range([margin.left, width]);
+console.log("height: "+ height);
+console.log("margin.top: "+ margin.top);
 var y = d3.scale.linear()
     .rangeRound([height, margin.top]);
 // let's define two color ranges, with a common endpoint
@@ -158,7 +160,7 @@ var svgpar = d3.select("#stacked-bar-div");
 var svg = svgpar.append("svg")
     .attr("width", "100%")   //width + margin.left + margin.right)
     //.attr("height", height + margin.top + margin.bottom)
-    .attr("viewBox", "0 0 "+ outerWidth +" 500")
+    .attr("viewBox", "0 0 "+ vizOuterWidth +" 500")
     .attr("preserveAspectRatio", "xMinYMin meet")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
