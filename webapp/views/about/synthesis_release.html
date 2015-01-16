@@ -91,16 +91,11 @@ circle.taxo-release-marker {
           <div class="span10 offset1">
               <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
 
-              <div id="synthesis-stats-nav" class="stats-panel">
-                  <div class="pull-left" style="position: relative; top: -4px;">
-                      <a href="/about/progress?highlight={{= release_version }}">Show this synthesis in the history of Open Tree</a>
-                  </div>
-
-                <form class="form-inline pull-left" style="clear: left; margin-bottom: 10px;">
-                </form>
+              <div style="margin-top: -16px;">
+                  <a href="/about/progress?highlight={{= release_version }}">Show this release in the history of Open Tree</a>
               </div>
 
-              <h3 style="clear: both;">Statistics</h3>
+              <h3>Statistics</h3>
 
               <div id="synthesis-stats-missing" class="alert alert-error" style="display: none;">
                   No synthesis statistics found!
@@ -115,10 +110,12 @@ circle.taxo-release-marker {
               <p style="font-style: italic;">
                 TODO: Read download files list from static site?
               </p>
+
               <h3>Notes</h3>
               <p style="font-style: italic;">
-                TODO: Render markdown release notes from static files?
+                TODO: Render README (markdown =&gt; HTML) from static files?
               </p>
+
               <h3>Sources</h3>
               <p style="font-style: italic;">
                 TODO: Link to taxonomy release used in this synthesis?</a>
@@ -126,17 +123,13 @@ circle.taxo-release-marker {
               <p style="font-style: italic;">
                 TODO: List all trees and studies (mimic Bibliographic Refs page?)
               </p>
+
           </div>
       </div>
-      <!--
-      <h4 id="warnings-toggle" 
-           onclick="$('#warnings-panel').toggle(); return false;"
-           style="font-weight:bold; color:red; background-color: #fdd; cursor: pointer; text-align: center; padding: 0.5em;"
-           >FAKE DATA BELOW (click for details)</h4>
-      <div id="warnings-panel" 
-           style="display: none; background-color: #fdd; padding: 1em; border: 1px solid #fcc;"></div>
 
--->
+      <h3 id="comment-header">Comments <i></i></h3>
+      {{=plugin_localcomments(filter=('url',),url=request.url)}}
+
 </div><!-- end of .container -->
 
       <div id="stacked-bar-div" />
