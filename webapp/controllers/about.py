@@ -50,7 +50,7 @@ def references():
     view_dict['contributing_studies'] = fetch_current_synthesis_source_data()
     return view_dict
 
-def release_history():
+def progress():
     view_dict = default_view_dict.copy()
     synth = json.loads(fetch_local_synthesis_stats() or '{}')
     phylesystem = json.loads(fetch_local_phylesystem_stats() or '{}')
