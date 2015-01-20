@@ -1505,6 +1505,7 @@ function scrubNexsonForTransport( nexml ) {
      *   - remove unused rooting elements
      *   - remove "empty" elements if server doesn't expect them
      *   - clean up empty/unused OTU alt-labels
+     *   - remove client-side MRCA test results
      */
     if (!nexml) {
         nexml = viewModel.nexml;
@@ -1519,6 +1520,7 @@ function scrubNexsonForTransport( nexml ) {
     $.each( allTrees, function(i, tree) {
         cleanupAdHocRoot(tree);
         clearD3PropertiesFromTree(tree);
+        clearMRCATestResults(tree);
     });
 
     // coerce some non-string values
@@ -5161,6 +5163,15 @@ function clearD3PropertiesFromTree(tree) {
         delete node.ambiguousLabel;
         delete node.adjacentEdgeLabel;
     });
+}
+
+function clearMRCATestResults(tree) {
+    // These are temporary client-side tests that can go stale and mislead
+    // other Nexson users. Best to remove them before saving.
+    delete tree['^ot:MRCAName'];
+    delete tree['^ot:MRCAOttId'];
+    delete tree['^ot:nearestTaxonMRCAName'];
+    delete tree['^ot:nearestTaxonMRCAOttId'];
 }
 
 function coerceEdgeLengthsToNumbers(tree) {
