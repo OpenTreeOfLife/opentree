@@ -525,11 +525,12 @@ function createArgus(spec) {
                 paper.text().attr({
                     "x": -20,
                     "y": 0,
-                    "text": "?",
+                    "text": "i",
                     "title": "Click to see properties for this node", // add name?
                     "text-anchor": "middle",
                     "fill": argusObj.provenanceHighlightColor,
                     "font-weight": "bold",
+                    "font-family": "Courier, monospace",
                     "font-size": 12,
                     "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
@@ -588,11 +589,12 @@ function createArgus(spec) {
                 paper.text().attr({
                     "x": 0,
                     "y": 0,
-                    "text": "?",
+                    "text": "i",
                     "title": "Click to see properties for this edge",
                     "text-anchor": "middle",
                     "fill": argusObj.provenanceHighlightColor,
                     "font-weight": "bold",
+                    "font-family": "Courier, monospace",
                     "font-size": 12,
                     "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
