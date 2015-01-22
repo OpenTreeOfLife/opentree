@@ -176,6 +176,7 @@ function changeTab(o) {
         // click tab normally (ignore browser history)
         goToTab( newTabName );
     }
+    fixLoginLinks();
 }
 function showTreeWithHistory(tree) {
     if (History && History.enabled) {
@@ -205,11 +206,12 @@ function hideTreeWithHistory() {
         };
         History.pushState( newState, (window.document.title), '?tab=trees' );
     }
+    fixLoginLinks();
 }
 
 function fixLoginLinks() {
-    // Update all login links to return directly to the current URL (NOTE that this 
-    // doesn't seem to work for Logout)
+    // Update all login (and logout!) links to return directly to the current
+    // URL. This may also mean switching from /edit/ to /view/, or vice versa.
     var currentURL;
     try {
         var State = History.getState();
@@ -218,13 +220,49 @@ function fixLoginLinks() {
         currentURL = window.location.href;
     }
 
-    // TODO: mark and mutate links on this page
-    $('a.login-logout').each(function() {
-        var $link = $(this);
+    // Nudge to edit or view URLs?
+    var editURL = currentURL.replace('/view/', '/edit/');
+    var viewURL = currentURL.replace('/edit/', '/view/');
+
+    // mark and mutate links on this page
+    var $loginLinks = $('a:not(.sticky-login):contains(Login)');
+    var $logoutLinks = $('a:contains(Logout)');
+    var $loginToEditLinks = $('a.sticky-login');
+    var $switchToViewLinks = $('#cancel-study-edits');
+
+    var updateLoginHref = function( link, targetURL ) {
+        // allow for different URL patterns
+        var $link = $(link);
         var itsHref = $link.attr('href');
-        itsHref = itsHref.split('?')[0];
-        itsHref += ('?_next='+ currentURL);
+        if (itsHref.indexOf('_next') !== -1) {
+            // modify the 'next' URL to match the latest
+            itsHref = itsHref.split('?')[0];
+            itsHref += ('?_next='+ targetURL);
+        } else {
+            // replace the entire href attribute
+            itsHref = targetURL;
+        }
         $link.attr('href', itsHref);
+    }
+
+    $loginLinks.each(function() {
+        // simple login, stick w/ current URL
+        updateLoginHref(this, currentURL);
+    });
+
+    $logoutLinks.each(function() {
+        // simple logout, switch from edit to view as needed
+        updateLoginHref(this, viewURL);
+    });
+
+    $loginToEditLinks.each(function() {
+        // login and implicit to edit
+        updateLoginHref(this, editURL);
+    });
+
+    $switchToViewLinks.each(function() {
+        // login and implicit to edit
+        updateLoginHref(this, viewURL);
     });
 }
 var initialState;
@@ -1719,7 +1757,7 @@ function removeStudy() {
             hideModalScreen();
             showSuccessMessage('Study removed, returning to study list...');
             setTimeout(function() {
-                var studyListURL = $('#return-to-study-list').attr('href');
+                var studyListURL = $('#return-to-study-list').val();
                 if (!studyListURL) {
                     console.error("Missing studyListURL!");
                 }
