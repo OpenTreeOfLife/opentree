@@ -204,13 +204,15 @@ body {
     <div class="span4 Xbtn-group" style="float: right; margin-top: -56px;">
         {{ if viewOrEdit == 'EDIT': }}
           <button id="save-study-button" class="btn">Save Study</button>
-          <a id="return-to-study-list" class="btn btn-link" href="{{= URL(a='curator', c='default', f='index')}}">Cancel</a>
+          <input type="hidden" id="return-to-study-list" 
+                 value="{{= URL(a='curator', c='default', f='index')}}">
+          <a id="cancel-study-edits" class="btn btn-link" href="#">Cancel</a>
           <button class="btn btn-danger pull-right"
             onclick="removeStudy(); return false;">Delete Study</button>
         {{ else: }} 
           <a class="btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to study list</a>
          {{ if userCanEdit: }}
-          <a class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
+          <a class="btn btn-info pull-right sticky-login" href="{{=URL('study', 'edit/'+ studyID)}}"
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
             onclick="showMaintenancePopup(); return false;"
            {{ else: }}
@@ -218,7 +220,7 @@ body {
            {{ pass }}
           >Edit Study</a>
          {{ else: }}
-          <a class="btn btn-info pull-right" href="{{=URL('study', 'edit/'+ studyID)}}"
+          <a class="btn btn-info pull-right sticky-login" href="{{=URL('study', 'edit/'+ studyID)}}"
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
             onclick="showMaintenancePopup(); return false;"
            {{ else: }}
