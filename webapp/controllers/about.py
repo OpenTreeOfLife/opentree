@@ -151,21 +151,21 @@ def taxonomy_release():
 
 def fetch_local_synthesis_stats():
     try:
-        stats = open("applications/%s/static/stats/synthesis.json" % request.application).read().strip()
+        stats = open("applications/%s/static/statistics/synthesis.json" % request.application).read().strip()
         return stats
     except Exception, e:
         return None
 
 def fetch_local_phylesystem_stats():
     try:
-        stats = open("applications/%s/static/stats/phylesystem.json" % request.application).read().strip()
+        stats = open("applications/%s/static/statistics/phylesystem.json" % request.application).read().strip()
         return stats
     except Exception, e:
         return None
 
 def fetch_local_ott_stats():
     try:
-        stats = open("applications/%s/static/stats/ott.json" % request.application).read().strip()
+        stats = open("applications/%s/static/statistics/ott.json" % request.application).read().strip()
         return stats
     except:
         return None
