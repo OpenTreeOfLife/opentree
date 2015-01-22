@@ -154,7 +154,9 @@ function createArgus(spec) {
         "pathColor": "#999",
         "strongPathColor": "#000",
         "labelColor": "#000",
-        "provenanceHighlightColor": "#ff3333",
+        "provenanceHighlightColor": "#3333ff",
+        "provenanceHighlightLabelColor": "#ffffff",
+        "provenanceHighlightLabelBackgroundColor": "#3333ff",
         "tipColor": "#999",
         "tipHoverColor": "#ff3333",
         "currMaxDepth": spec.maxDepth,
@@ -517,7 +519,7 @@ function createArgus(spec) {
                     "stroke": argusObj.provenanceHighlightColor,
                     "title": "Click to see properties for this node", // add name?
                     "stroke-width": 2,
-                    "fill": "white",
+                    "fill": argusObj.provenanceHighlightLabelBackgroundColor,
                     "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
             );
@@ -525,11 +527,12 @@ function createArgus(spec) {
                 paper.text().attr({
                     "x": -20,
                     "y": 0,
-                    "text": "?",
+                    "text": "i",
                     "title": "Click to see properties for this node", // add name?
                     "text-anchor": "middle",
-                    "fill": argusObj.provenanceHighlightColor,
+                    "fill": argusObj.provenanceHighlightLabelColor,
                     "font-weight": "bold",
+                    "font-family": "Courier, monospace",
                     "font-size": 12,
                     "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
@@ -580,7 +583,7 @@ function createArgus(spec) {
                     "title": "Click to see properties for this edge",
                     "stroke": argusObj.provenanceHighlightColor,
                     "stroke-width": 2,
-                    "fill": "white",
+                    "fill": argusObj.provenanceHighlightLabelBackgroundColor,
                     "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
             );
@@ -588,11 +591,12 @@ function createArgus(spec) {
                 paper.text().attr({
                     "x": 0,
                     "y": 0,
-                    "text": "?",
+                    "text": "i",
                     "title": "Click to see properties for this edge",
                     "text-anchor": "middle",
-                    "fill": argusObj.provenanceHighlightColor,
+                    "fill": argusObj.provenanceHighlightLabelColor,
                     "font-weight": "bold",
+                    "font-family": "Courier, monospace",
                     "font-size": 12,
                     "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
