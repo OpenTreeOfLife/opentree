@@ -6912,8 +6912,11 @@ function inferSearchContextFromAvailableOTUs() {
 /* If there's a data-deposit for this study, remind the curator of
  * the importance of adding *only* data that's already in the deposit.
  * (This message should appear just once per session.)
+ *
+ * NOTE: We're trying a more unobtrusive (static text) reminder for this feature.
+ * For now, initialize this flag as true to prevent all popups!
  */
-var remindedAboutAddingLateData = false;
+var remindedAboutAddingLateData = true;
 function remindAboutAddingLateData(evt) {
     // return true if they don't need this message, false if it should block the caller
     if (remindedAboutAddingLateData) {

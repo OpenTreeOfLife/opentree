@@ -740,6 +740,13 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
             <div class="well" style="clear: right;">
                 <h4 style="margin-top: 0;">Add a tree to this study</h4>
+
+                <p class="interesting-value" style="line-height: 1.25em; display: none;"
+                   data-bind="style: {'display': getDataDepositMessage() === '' ? 'none':'block'}">
+                    <span data-bind="html: getDataDepositMessage()">&nbsp;</span>.
+                    Trees added here should already be present in the data deposit for this study.
+                </p>
+
                 <form id="tree-import-form" 
                       style="margin: 0;" 
                       Xaction="{{= URL(a='curator', c='default', f='to_nexson')}}" 
@@ -984,6 +991,13 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
             <div class="well" style="clear: right;">
                 <h4 style="margin-top: 0;">Add a file to this study</h4>
+
+                <p class="interesting-value" style="line-height: 1.25em; display: none;"
+                   data-bind="style: {'display': getDataDepositMessage() === '' ? 'none':'block'}">
+                    <span data-bind="html: getDataDepositMessage()">&nbsp;</span>.
+                    Files added here should already be present in the data deposit for this study.
+                </p>
+
                 <form style="margin: 0;">
                  <fieldset>
 
