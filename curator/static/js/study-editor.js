@@ -2084,10 +2084,16 @@ function getRootedDescriptionForTree( tree ) {
     var unrootedTree = tree['^ot:unrootedTree'];
 
     if (unrootedTree) {
-        return "Arbitrary (not biologically correct)";
+        return '<span class="XXsuggestion-prompt">Arbitrary (not biologically correct)</span>';
     } else {
         return "Confirmed by curator";
     }
+}
+function showArbitraryRootExplanationInTreeViewer(tree) {
+    // hint to tree viewer that we're focused on this property
+    showTreeViewer(tree, {
+        HIGHLIGHT_ARBITRARY_ROOT: true
+    });
 }
 function getRootNodeDescriptionForTree( tree ) {
     // return display-ready description ('node123 [implicit]', 'node234 [explicit]', 'No root', ...)
@@ -2127,7 +2133,7 @@ function getRootNodeDescriptionForTree( tree ) {
 function getRootedStatusForTree( tree ) {
     // return display-ready description ('<span class="caution">Tree root is arbitrary</span>', ...)
     var biologicalRootMessage = 'Tree root has been confirmed by the curator.';
-    var arbitraryRootMessage = '<span class="interesting-value">Tree root is arbitrary (for display only)</span>';
+    var arbitraryRootMessage = '<span class="interesting-value">Tree root is arbitrary (for display only) since it has not been confirmed by a curator.</span>';
 
     if (!tree || !tree.node || tree.node.length === 0) {
         return '';
@@ -2777,7 +2783,11 @@ function showTreeViewer( tree, options ) {
 
         updateEdgesInTree( tree );
         
-        drawTree( tree, {'INITIAL_DRAWING':true, 'HIGHLIGHT_AMBIGUOUS_LABELS':(options.HIGHLIGHT_AMBIGUOUS_LABELS || false)} );
+        drawTree(tree, {
+            'INITIAL_DRAWING': true, 
+            'HIGHLIGHT_AMBIGUOUS_LABELS': (options.HIGHLIGHT_AMBIGUOUS_LABELS || false), 
+            'HIGHLIGHT_ARBITRARY_ROOT': (options.HIGHLIGHT_ARBITRARY_ROOT || false)
+        });
 
         // clear any prior stepwise UI for showing highlights
         $('#tree-viewer').find('.stepwise-highlights').remove();
@@ -2887,14 +2897,16 @@ function showTreeViewer( tree, options ) {
         $('#tree-viewer').modal('show');
     }
 
-    /* IF we want different starting tab in different scenarios
-    if (options.HIGHLIGHT_PLAYLIST) {
-        $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
-    } else {
+    // IF we want different starting tab in different scenarios
+    var $rootWidget = $('#tree-root-status-widget');
+    if (options.HIGHLIGHT_ARBITRARY_ROOT) {
+        // jump immediately to the Properties tab (element is already highly visible)
+        $rootWidget.addClass('needs-attention').css('margin', '4px -4px 2px');
         $treeViewerTabs.filter('[href*=tree-properties]').tab('show');
+    } else {
+        $rootWidget.removeClass('needs-attention').css('margin', '');
+        $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
     }
-    */
-    $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
 }
 
 function findOTUInTrees( otu, trees ) {
