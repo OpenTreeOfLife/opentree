@@ -635,7 +635,9 @@ body {
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
                                 css: viewModel.ticklers.TREES"></td>
                         <td data-bind="html: getRootedDescriptionForTree(tree),
-                                css: viewModel.ticklers.TREES">?/?? (?%)</td>
+                                          click: showArbitraryRootExplanationInTreeViewer,
+                                          css: viewModel.ticklers.TREES"
+                               style="cursor: pointer;">&nbsp;</td>
                         <td data-bind="html: getMappedTallyForTree(tree),
                                 css: viewModel.ticklers.TREES">?/?? (?%)</td>
                       {{ if viewOrEdit == 'EDIT': }}
@@ -2063,8 +2065,8 @@ body {
                 <label for="testtest">Root node: </label>
                 <strong data-bind="text: getRootNodeDescriptionForTree($data), 
                                    css: viewModel.ticklers.TREES"></strong>
-              <br/>
 
+              <div id="tree-root-status-widget" class="Xneeds-attention" style="Xmargin: 4px -4px;">
                 <label>Tree root is </label>
                 <label for="tree-root-status-false" class="radio" style="padding-left: 10px;">
                     <input id="tree-root-status-false" type="radio" 
@@ -2082,8 +2084,8 @@ body {
                                       css: viewModel.ticklers.TREES" />
                     arbitrary (for display only)
                 </label>
+              </div>
 
-              <br/>
                 <label for="testtest">Ingroup clade: </label>
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data), 
                                    css: viewModel.ticklers.TREES"></strong>
@@ -2201,8 +2203,8 @@ body {
                <!-- TODO: tag(s) for this tree? -->
                 <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
               <br/>
-                <label for="arbitrary-tree-root" class="checkbox" style="padding-left: 12px; position: relative; top: -4px;">
-                    <strong data-bind="html: getRootedStatusForTree($data)">Tree root is arbitrary (for display only)</strong>
+                <label for="arbitrary-tree-root" class="checkbox" style="padding: 0 24px 0 16px; line-height: 1.2em; position: relative; top: -4px;">
+                    <strong data-bind="html: getRootedStatusForTree($data)">&nbsp;</strong>
                 </label>
               <br/>
                 <label for="testtest">Ingroup clade: </label>
