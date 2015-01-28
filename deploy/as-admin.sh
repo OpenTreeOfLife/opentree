@@ -104,11 +104,11 @@ fi
 # Enable the apache ssl module.  Doesn't get used unless a cert is present
 if [ ! -r /etc/apache2/mods-enabled/ssl.load ]; then
     sudo a2enmod ssl
-    # Protect against POODLE vulnerability in SSLv3; see https://zmap.io/sslv3/servers.html#apache
-    sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol TLSv1+" /etc/apache2/mods-available/ssl.conf
-    # N.B. httpd version 2.2.23+ will need this change instead:
-    #sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol ALL -SSLv2 -SSLv3+" /etc/apache2/mods-available/ssl.conf
 fi
+# Protect against POODLE vulnerability in SSLv3; see https://zmap.io/sslv3/servers.html#apache
+sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol TLSv1+" /etc/apache2/mods-available/ssl.conf
+# N.B. httpd version 2.2.23+ will need this change instead:
+#sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol ALL -SSLv2 -SSLv3+" /etc/apache2/mods-available/ssl.conf
 
 # ---------- UNZIP ----------
 # unzip is needed for unpacking web2py.  Somebody broke the 'which' program -
