@@ -2084,7 +2084,7 @@ function getRootedDescriptionForTree( tree ) {
     var unrootedTree = tree['^ot:unrootedTree'];
 
     if (unrootedTree) {
-        return '<span class="XXsuggestion-prompt">Arbitrary (not biologically correct)</span>';
+        return '<span class="XXsuggestion-prompt">Unconfirmed (may be arbitrary)</span>';
     } else {
         return "Confirmed by curator";
     }
@@ -2131,9 +2131,9 @@ function getRootNodeDescriptionForTree( tree ) {
     return nodeName;
 }
 function getRootedStatusForTree( tree ) {
-    // return display-ready description ('<span class="caution">Tree root is arbitrary</span>', ...)
-    var biologicalRootMessage = 'Tree root has been confirmed by the curator.';
-    var arbitraryRootMessage = '<span class="interesting-value">Tree root is arbitrary (for display only) since it has not been confirmed by a curator.</span>';
+    // return display-ready description ('<span class="caution">Biological root is ...</span>', ...)
+    var biologicalRootMessage = 'Biological root is confirmed by the curator.';
+    var arbitraryRootMessage = '<span class="interesting-value">Biological root is not confirmed (displayed root could be arbitrary).</span>';
 
     if (!tree || !tree.node || tree.node.length === 0) {
         return '';

@@ -2067,7 +2067,7 @@ body {
                                    css: viewModel.ticklers.TREES"></strong>
 
               <div id="tree-root-status-widget" class="Xneeds-attention" style="Xmargin: 4px -4px;">
-                <label>Tree root is </label>
+                <label>Biological root is </label>
                 <label for="tree-root-status-false" class="radio" style="padding-left: 10px;">
                     <input id="tree-root-status-false" type="radio" 
                            name="tree-root-status" value="false" 
@@ -2082,7 +2082,7 @@ body {
                            data-bind="checked: $data['^ot:unrootedTree'].toString(), 
                                       click: toggleTreeRootStatus, 
                                       css: viewModel.ticklers.TREES" />
-                    arbitrary (for display only)
+                    not confirmed (displayed root could be arbitrary)
                 </label>
               </div>
 
@@ -2251,7 +2251,7 @@ body {
           <div class="help-box">
               Click any node below to set the ingroup clade. Click any node
               <strong>or</strong> edge to re-root the entire tree. N.B. An
-              <strong>arbitrary root</strong> (see Properties tab) will only be used to draw
+              <strong>unconfirmed root</strong> (see Properties tab) will only be used to draw
               the tree and correctly set the ingroup clade. The tree itself might be unrooted.
           </div>
          <!-- tree-view SVG goes here -->
