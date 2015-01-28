@@ -32,9 +32,11 @@ Put the ssh private key somewhere, e.g. in ~/.ssh/opentree/opentree.pem (on your
 not the server).
 Set its file permissions to 600.
 
-If running the API, put the private key for the github account somewhere (e.g. in ~/.ssh/opentree/), so that the API can push changes to study files out to github.
+To support secure (HTTPS) web connections, put the required files on the server:
+ - Our Apache config currently expects to find the **SSL private keyfile** (from your local filesystem) at `/etc/ssl/private/opentreeoflife.org.key`. 
+ - You'll also need to push the **combined public SSL cert file** (setup/ssl-certs/STAR_opentreeoflife_org.pem) to its expected location `/etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem`.
 
-To support secure (HTTPS) web connections, put the private keyfile on the server. Our Apache config currently expects to find this at /etc/ssl/private/opentreeoflife.org.key
+If running the API, put the private key for the github account somewhere (e.g. in ~/.ssh/opentree/), so that the API can push changes to study files out to github.
 
 Create one configuration file for each server.  A configuration is just a shell script that sets some variables.  See sample.config in this directory for documentation on how to prepare a configuration file.
 

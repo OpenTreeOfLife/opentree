@@ -206,7 +206,7 @@ if [ ! -r /etc/apache2/sites-enabled/000-opentree ]; then
 fi
 
 # Enable the HTTPS site only if our SSL certs are found; else disable it
-if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.crt ]; then
+if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem ]; then
     if [ ! -r /etc/apache2/sites-enabled/001-opentree-ssl ]; then
         (cd /etc/apache2/sites-enabled; \
          sudo ln -sf ../sites-available/opentree-ssl ./001-opentree-ssl)

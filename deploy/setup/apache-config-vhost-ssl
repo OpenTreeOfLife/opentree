@@ -19,7 +19,8 @@
     LogLevel warn
 
     SSLEngine on
-    SSLCertificateFile    /etc/ssl/certs/opentree/STAR_opentreeoflife_org.crt
+    SSLCertificateFile         /etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem
+    SSLCertificateChainFile    /etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem
     SSLCertificateKeyFile /etc/ssl/private/opentreeoflife.org.key
 
     #   SSL Engine Options:
