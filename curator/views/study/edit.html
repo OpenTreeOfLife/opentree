@@ -597,9 +597,9 @@ body {
                       {{ if viewOrEdit == 'EDIT': }}
                         <th>Tree name (click to edit tree)</th>
                       {{ else: }}
-                        <th>Tree name (click to view tree)</th>
+                        <th>Tree name (click to view)</th>
                       {{ pass }}
-                        <th>Type</th>
+                        <th>Inference method</th>
                         <th>Ingroup clade</th>
                         <th>Tree root</th>
                         <th>OTUs mapped</th>
@@ -2194,7 +2194,7 @@ body {
           {{ else: }}
             <!-- read-only tree properties here -->
               <div class="pull-left" style="width: 48%;">
-                <label>Tree type: </label>
+                <label>Inference method: </label>
                 <strong data-bind="text: $data['^ot:curatedType'] || 'Unspecified'">TYPE</strong>
               <br/>
                 <label for="testtest">Root node: </label>
