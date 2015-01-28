@@ -20,8 +20,8 @@ For more information about our current deployment practices, see the notes and c
 How to deploy a new server
 --------------------------
 
-**Note: We're now using a single, common approach to managing sensitive files (private keys and API "secrets").
-** These files should be kept in directory ```~/.ssh/opentree/```, so that configuration can be shared easily among your team. See the [deployed-systems README](https://github.com/OpenTreeOfLife/deployed-servers/blob/master/README.md) for details.
+**Note: We're now using a single, common approach to managing sensitive files (private keys and API "secrets").** 
+These files should be kept in directory ```~/.ssh/opentree/```, so that configuration can be shared easily among your team. See the [deployed-systems README](https://github.com/OpenTreeOfLife/deployed-servers/blob/master/README.md) for details.
 
 Go to Amazon or some other cloud provider, and reserve one or more instances
 running Debian GNU/Linux (version 7.5 has been working for us, but others ought to as well).  As of 2014-07-08 we're using m3.medium servers that don't
@@ -31,6 +31,10 @@ m3.large for those that do (taxomachine/treemachine).
 Put the ssh private key somewhere, e.g. in ~/.ssh/opentree/opentree.pem (on your own machine, 
 not the server).
 Set its file permissions to 600.
+
+To support secure (HTTPS) web connections, put the required files on the server:
+ - Our Apache config currently expects to find the **SSL private keyfile** (from your local filesystem) at `/etc/ssl/private/opentreeoflife.org.key`. 
+ - You'll also need to push the **combined public SSL cert file** (setup/ssl-certs/STAR_opentreeoflife_org.pem) to its expected location `/etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem`.
 
 If running the API, put the private key for the github account somewhere (e.g. in ~/.ssh/opentree/), so that the API can push changes to study files out to github.
 
