@@ -20,8 +20,8 @@ For more information about our current deployment practices, see the notes and c
 How to deploy a new server
 --------------------------
 
-**Note: We're now using a single, common approach to managing sensitive files (private keys and API "secrets").
-** These files should be kept in directory ```~/.ssh/opentree/```, so that configuration can be shared easily among your team. See the [deployed-systems README](https://github.com/OpenTreeOfLife/deployed-servers/blob/master/README.md) for details.
+**Note: We're now using a single, common approach to managing sensitive files (private keys and API "secrets").** 
+These files should be kept in directory ```~/.ssh/opentree/```, so that configuration can be shared easily among your team. See the [deployed-systems README](https://github.com/OpenTreeOfLife/deployed-servers/blob/master/README.md) for details.
 
 Go to Amazon or some other cloud provider, and reserve one or more instances
 running Debian GNU/Linux (version 7.5 has been working for us, but others ought to as well).  As of 2014-07-08 we're using m3.medium servers that don't
@@ -33,6 +33,8 @@ not the server).
 Set its file permissions to 600.
 
 If running the API, put the private key for the github account somewhere (e.g. in ~/.ssh/opentree/), so that the API can push changes to study files out to github.
+
+To support secure (HTTPS) web connections, put the private keyfile on the server. Our Apache config currently expects to find this at /etc/ssl/private/opentreeoflife.org.key
 
 Create one configuration file for each server.  A configuration is just a shell script that sets some variables.  See sample.config in this directory for documentation on how to prepare a configuration file.
 
