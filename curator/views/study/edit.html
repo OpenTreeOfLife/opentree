@@ -1769,6 +1769,7 @@ body {
 
 </div><!-- /.row -->
 
+<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script type='text/javascript'>
     var studyID = '{{= studyID }}';
     var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
@@ -1785,15 +1786,52 @@ body {
     var API_update_file_PUT_url = '{{=API_update_file_PUT_url}}';
     var API_remove_file_DELETE_url = '{{=API_remove_file_DELETE_url}}';
 
-    // if inbound URL specifies a particular tab or tree, record it here
-    var initialState = {
-     {{ if request.vars.get('tree',None): }}
-      tab: 'Trees',
-      tree: '{{= request.vars['tree'] }}'
-     {{ else: }}
-      tab: '{{= request.vars.get('tab','Metadata') }}',
-     {{ pass }}
+    // If inbound URL specifies tab, tree, or filter settings, record them here
+    var initialState = {{= XML( dict(request.vars) ) }};
+    // set any required defaults (for clean/simple history behavior)
+    if (!('tab' in initialState)) {
+        initialState.tab = 'Metadata';
+    }
+    var listFilterDefaults = {
+        // track these defaults so we can reset them in history
+        'TREES': {
+            'match': ""
+        },
+        'FILES': {
+            'match': ""
+        },
+        'OTUS': {
+            // TODO: add 'pagesize'?
+            'match': "",
+            'scope': "In all trees",
+            'order': "Unmapped OTUs first"
+        },
+        'ANNOTATIONS': {
+            'match': "",
+            'scope': "Anywhere in the study",
+            'submitter': "Submitted by all"
+        }
     };
+    var filterDefaults = null;
+    switch(slugify(initialState.tab)) {
+        case 'trees':
+            filterDefaults = listFilterDefaults.TREES;
+            break;
+        case 'files':
+            filterDefaults = listFilterDefaults.FILES;
+            break;
+        case 'otu-mapping':
+            filterDefaults = listFilterDefaults.OTUS;
+            break;
+    }
+    if (filterDefaults) {
+        // apply any missing filter defaults
+        for (var prop in filterDefaults) {
+            if (!(prop in initialState)) {
+                initialState[prop] = filterDefaults[prop];
+            }
+        }
+    }
 
     var treemachine_domain = "{{=treemachine_domain}}";
     var taxomachine_domain = "{{=taxomachine_domain}}";
@@ -1813,7 +1851,6 @@ body {
     var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
 </script>
-<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
 
 <!-- hidden template for DOI lookups -->

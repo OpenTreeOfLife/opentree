@@ -90,9 +90,16 @@ function captureTagTextOnBlur( $tagsSelect ) {
 
 /* Use history plugin to track moves from tab to tab, single-tree popup, others? */
 
+var listFilterDefaults; // defined in main page, for a clean initial state
+
 if ( History && History.enabled ) {
-    // bind to statechange event
-    History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
+    
+    var handleChangingState = function() {
+        if (!viewModel) {
+            // try again soon (waiting for a study to load)
+            setTimeout( handleChangingState, 50 );
+            return;
+        }
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
         ///History.log(State.data, State.title, State.url);
 
@@ -101,9 +108,38 @@ if ( History && History.enabled ) {
         // treatment of initial URLs.
         var currentTab = State.data.tab;
         var currentTree = State.data.tree;
+        var activeFilter = null;
+        var filterDefaults = null;
         
         if (currentTab) {
             goToTab( currentTab );
+            switch(slugify(currentTab)) {
+                case 'trees':
+                    activeFilter = viewModel.listFilters.TREES;
+                    filterDefaults = listFilterDefaults.TREES;
+                    break;
+
+                case 'files':
+                    activeFilter = viewModel.listFilters.FILES;
+                    filterDefaults = listFilterDefaults.FILES;
+                    break;
+
+                case 'otu-mapping':
+                    activeFilter = viewModel.listFilters.OTUS;
+                    filterDefaults = listFilterDefaults.OTUS;
+                    break;
+            }
+            if (activeFilter) {
+                // assert any saved filter values
+                for (var prop in activeFilter) {
+                    if (prop in State.data) {
+                        activeFilter[prop]( State.data[prop] );
+                    } else {
+                        // (re)set to its default value
+                        activeFilter[prop]( filterDefaults[prop] );
+                    }
+                }
+            }
         }
         if (currentTree) {
             var tree = getTreeByID(currentTree);
@@ -114,7 +150,6 @@ if ( History && History.enabled ) {
                 hideModalScreen();
                 showInfoMessage(errMsg);
             }
-            delete initialState;  // clear this to avoid repeat viewing
         } else {
             // hide any active tree viewer
             if (treeViewerIsInUse) {
@@ -124,7 +159,12 @@ if ( History && History.enabled ) {
 
         // TODO: update all login links to use the new URL?
         fixLoginLinks();
-    });
+        
+        initialState = null;  // clear this to unlock history for other changes
+    };
+
+    // bind to statechange event
+    History.Adapter.bind(window, 'statechange', handleChangingState);
 }
 
 function deparam( querystring ) {
@@ -142,7 +182,6 @@ function bindHistoryAwareWidgets() {
     // TODO: set first event handlers on tabs, tree popups, etc.
     var $tabBar = $('ul.nav-tabs:eq(0)');
     $tabBar.find('li > a').click(function() {
-        console.log('INITIAL CLICK on tab');
         var $tab = $(this);
         var tabName = $.trim( $tab.html().split('<')[0] );
         changeTab( {'tab': tabName } );
@@ -207,6 +246,58 @@ function hideTreeWithHistory() {
         History.pushState( newState, (window.document.title), '?tab=trees' );
     }
     fixLoginLinks();
+}
+
+function updateListFiltersWithHistory() {
+    // capture changing list filters in browser history
+    // N.B. This is triggered when filter is updated programmatically
+    // TODO: Try not to capture all keystrokes, or trivial changes?
+    if (History && History.enabled) {
+        if (initialState) {
+            // wait until initial state has been applied!
+            return;
+        }
+        var oldState = History.getState().data;
+
+        // Determine which list filter is active (currently based on tab)
+        // N.B. There's currently just one filter per tab (Trees, Files, OTU Mapping).
+        var activeFilter;
+        var filterDefaults;
+        switch(slugify(oldState.tab)) {
+            case 'trees':
+                activeFilter = viewModel.listFilters.TREES;
+                filterDefaults = listFilterDefaults.TREES;
+                break;
+            case 'files':
+                activeFilter = viewModel.listFilters.FILES;
+                filterDefaults = listFilterDefaults.FILES;
+                break;
+            case 'otu-mapping':
+                activeFilter = viewModel.listFilters.OTUS;
+                filterDefaults = listFilterDefaults.OTUS;
+                break;
+            default:
+                console.warn('updateListFiltersWithHistory(): No filters in this tab: '+ oldState.tab);
+                return;
+        }
+        var newState = {
+            tab: oldState.tab
+        };
+        // use slugified tab name for the query-string (filter values are preserved)
+        var newQSValues = {
+            tab: slugify(oldState.tab)
+        };
+        for (prop in activeFilter) {
+            newState[prop] = ko.unwrap(activeFilter[prop]);
+            // Hide default filter settings, for simpler URLs
+            if (newState[prop] !== filterDefaults[prop]) {
+                newQSValues[prop] = ko.unwrap(activeFilter[prop]);
+            }
+        }
+        //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
+        var newQueryString = '?'+ $.param(newQSValues);
+        History.pushState( newState, (window.document.title), newQueryString );
+    }
 }
 
 function fixLoginLinks() {
@@ -280,7 +371,7 @@ $(document).ready(function() {
     } else {
         goToTab( initialState.tab );
     }
-    // N.B. We'll check this again once we've loaded the selected study, then clear it
+    // N.B. We'll apply this once we've loaded the selected study, then clear it
 
     disableSaveButton();
     loadSelectedStudy();
@@ -820,21 +911,21 @@ function loadSelectedStudy() {
                 // UI widgets bound to these variables will trigger the
                 // computed display lists below..
                 'TREES': {
-                    'match': ko.observable("")
+                    'match': ko.observable( listFilterDefaults.TREES.match )
                 },
                 'FILES': {
-                    'match': ko.observable("")
+                    'match': ko.observable( listFilterDefaults.FILES.match )
                 },
                 'OTUS': {
                     // TODO: add 'pagesize'?
-                    'match': ko.observable(""),
-                    'scope': ko.observable("In all trees"),
-                    'order': ko.observable("Unmapped OTUs first")
+                    'match': ko.observable( listFilterDefaults.OTUS.match ),
+                    'scope': ko.observable( listFilterDefaults.OTUS.scope ),
+                    'order': ko.observable( listFilterDefaults.OTUS.order )
                 },
                 'ANNOTATIONS': {
-                    'match': ko.observable(""),
-                    'scope': ko.observable("Anywhere in the study"),
-                    'submitter': ko.observable("Submitted by all")
+                    'match': ko.observable( listFilterDefaults.ANNOTATIONS.match ),
+                    'scope': ko.observable( listFilterDefaults.ANNOTATIONS.scope ),
+                    'submitter': ko.observable( listFilterDefaults.ANNOTATIONS.submitter )
                 }
             };
 
@@ -845,7 +936,8 @@ function loadSelectedStudy() {
                 // new paged observableArray
                 var ticklers = [ viewModel.ticklers.TREES() ];
 
-                updateClearSearchWidget( '#tree-list-filter' );
+                updateClearSearchWidget( '#tree-list-filter', viewModel.listFilters.TREES.match );
+                updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.TREES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -888,6 +980,7 @@ function loadSelectedStudy() {
                 var ticklers = [ viewModel.ticklers.SUPPORTING_FILES() ];
 
                 updateClearSearchWidget( '#file-list-filter' );
+                updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.FILES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -925,7 +1018,9 @@ function loadSelectedStudy() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
                 var ticklers = [ viewModel.ticklers.OTU_MAPPING_HINTS() ];
+
                 updateClearSearchWidget( '#otu-list-filter' );
+                updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.OTUS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -1088,6 +1183,7 @@ function loadSelectedStudy() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
                 updateClearSearchWidget( '#annotation-list-filter' );
+                updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.ANNOTATIONS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -1224,19 +1320,6 @@ function loadSelectedStudy() {
 
             hideModalScreen();
             showInfoMessage('Study data loaded.');
-
-            if (initialState.tree) {
-                var tree = getTreeByID(initialState.tree);
-                if (tree) {
-                    showTreeViewer(tree);
-                } else {
-                    var errMsg = 'The requested tree (\''+ initialState.tree +'\') was not found. It has probably been deleted from this study.';
-                    hideModalScreen();
-                    showInfoMessage(errMsg);
-                }
-                delete initialState;  // clear this to avoid repeat viewing
-            }
-
         }
     });
 }
@@ -6825,14 +6908,6 @@ function getDataDepositMessage() {
     
     // default message simply repeats the dataDeposit URL
     return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
-}
-
-function slugify(str) {
-    // Convert any string into a simplified "slug" suitable for use in URL or query-string
-    return str.toLowerCase()
-              .replace(/[^a-z0-9 -]/g, '')  // remove invalid chars
-              .replace(/\s+/g, '-')         // collapse whitespace and replace by -
-              .replace(/-+/g, '-');         // collapse dashes
 }
 
 function showDownloadFormatDetails() {
