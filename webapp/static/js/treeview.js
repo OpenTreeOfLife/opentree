@@ -626,12 +626,13 @@ function historyStateToURL( stateObj ) {
 }
 
 function buildNodeNameFromTreeData( node ) {
+    var nameOfLastResort = "(untitled node)";
     var compoundNodeNameDelimiter = ' + ';
     var compoundNodeNamePrefix = '[';
     var compoundNodeNameSuffix = ']';
     if (node.name) {
         // easy, name was provided
-        return node.name;
+        return node.name || nameOfLastResort;
     }
     // unnamed nodes should show two descendant names as tip taxa (eg, 'dog, cat')
     if (node.descendantNameList) {
@@ -641,13 +642,15 @@ function buildNodeNameFromTreeData( node ) {
                 + compoundNodeNameSuffix);
     }
     // we'll need to build a name from visible children and/or their descendantNamesList
-    if (node.children === undefined || node.children.length < 2) {
-        // we need at least two names to do this TODO: CONFIRM
-        return null;
+    if (node.children === undefined || node.children.length === 0) {
+        return nameOfLastResort;
     }
     // recurse as needed to build child names, then prune as needed
     var moreThanTwoDescendants = false;
     var firstChildName = buildNodeNameFromTreeData(node.children[0]);
+    if (node.children.length < 2) {
+        return firstChildName;
+    }
     var nameParts = firstChildName.split(compoundNodeNameDelimiter);
     console.log(nameParts);
     firstChildName = nameParts[0];
