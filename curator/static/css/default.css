@@ -765,6 +765,7 @@ div.structure-only {
 ul.mapping-options {
     list-style: none; 
     margin: 0 0 8px 0;
+    position: relative; /* choices should float above right sidebar */
 }
 ul.mapping-options li {
     padding: 2px 0;
