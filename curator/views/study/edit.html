@@ -597,9 +597,9 @@ body {
                       {{ if viewOrEdit == 'EDIT': }}
                         <th>Tree name (click to edit tree)</th>
                       {{ else: }}
-                        <th>Tree name (click to view tree)</th>
+                        <th>Tree name (click to view)</th>
                       {{ pass }}
-                        <th>Type</th>
+                        <th>Inference method</th>
                         <th>Ingroup clade</th>
                         <th>Tree root</th>
                         <th>OTUs mapped</th>
@@ -614,42 +614,49 @@ body {
                         <td>
                             <a href="#" data-bind="click: showTreeWithHistory,
                                 text: tree['@label'],
-                                css: viewModel.ticklers.TREES">?</a>
+                                css: viewModel.ticklers.TREES">&nbsp;</a>
+                            <br/>
                             <a data-bind="if: unresolvedConflictsFoundInTree( tree ), 
                                           css: viewModel.ticklers.TREES,
-                                          click: showConflictingNodesInTreeViewer" 
-                               class="suggestion-prompt" style="display: block;"
+                                          click: showConflictingNodesInTreeViewer,
+                                          visible: true" 
+                               class="suggestion-prompt" style="display: none;"
                                href="#">
                                 Show conflicting nodes
                             </a> 
+                            <br/>
                             <a data-bind="if: ambiguousLabelsFoundInTree( tree ), 
                                           css: viewModel.ticklers.TREES,
-                                          click: showAmbiguousLabelsInTreeViewer" 
-                               class="suggestion-prompt" style="display: block;"
+                                          click: showAmbiguousLabelsInTreeViewer,
+                                          visible: true" 
+                               class="suggestion-prompt" style="display: none;"
                                href="#">
                                 Review ambiguous labels
                             </a> 
                         </td>
                         <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
-                                css: viewModel.ticklers.TREES">TYPE?</td>
+                                css: viewModel.ticklers.TREES">&nbsp;</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
-                                css: viewModel.ticklers.TREES"></td>
+                                css: viewModel.ticklers.TREES">&nbsp;</td>
                         <td data-bind="html: getRootedDescriptionForTree(tree),
-                                css: viewModel.ticklers.TREES">?/?? (?%)</td>
+                                css: viewModel.ticklers.TREES">&nbsp;</td>
                         <td data-bind="html: getMappedTallyForTree(tree),
-                                css: viewModel.ticklers.TREES">?/?? (?%)</td>
+                                css: viewModel.ticklers.TREES">&nbsp;</td>
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <input type="checkbox" style="margin: 0px 20px;" 
+                            <input type="checkbox" style="margin: 0px 20px; display: none;" 
             data-bind="attr: {'checked': jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1}, 
-                       click: togglePreferredTree" /></td>
+                       click: togglePreferredTree,
+                       visible: true" /></td>
                       {{ else: }}
-                        <td data-bind="text: (jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) ? 'YES' : 'NO'">?</td>
+                        <td data-bind="text: (jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) ? 'YES' : 'NO'">&nbsp;</td>
                       {{ pass }}
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <button data-bind="click: removeTree"
-                                class="pull-right btn btn-mini btn-danger row-controls-ghosted">
+                            <button data-bind="click: removeTree,
+                                               visible: true"
+                                class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                                style="display: none;">
                                 <i class="icon-remove icon-white"></i>
                             </button>
                         </td>
@@ -2208,7 +2215,7 @@ body {
           {{ else: }}
             <!-- read-only tree properties here -->
               <div class="pull-left" style="width: 48%;">
-                <label>Tree type: </label>
+                <label>Inference method: </label>
                 <strong data-bind="text: $data['^ot:curatedType'] || 'Unspecified'">TYPE</strong>
               <br/>
                 <label for="testtest">Root node: </label>
