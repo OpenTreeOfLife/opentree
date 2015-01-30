@@ -373,8 +373,7 @@ body {
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
                     <select id="study-tags" multiple="multiple" placeholder="Add tags"
-                            onchange="updateElementTags(this); nudge.GENERAL_METADATA();"
-                            data-bind="options: getTags(viewModel.nexml)">
+                            onchange="updateElementTags(this); nudge.GENERAL_METADATA();">
                     </select>
                 {{ else: }}
                     <!-- TODO: make all tags clickable (search in new window?) -->
@@ -2185,7 +2184,6 @@ body {
                 <select id="tree-tags" multiple="multiple" placeholder="Add tags"
                         onchange="updateElementTags(this);"
                         data-bind="attr: {'treeid': $data['@id'] },
-                                   options: getTags( getTreeByID($data['@id']) ), 
                                    event: { keyup: nudge.TREES, change: nudge.TREES }, 
                                    css: viewModel.ticklers.TREES">
                 </select>
