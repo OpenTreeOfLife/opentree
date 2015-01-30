@@ -597,9 +597,9 @@ body {
                       {{ if viewOrEdit == 'EDIT': }}
                         <th>Tree name (click to edit tree)</th>
                       {{ else: }}
-                        <th>Tree name (click to view tree)</th>
+                        <th>Tree name (click to view)</th>
                       {{ pass }}
-                        <th>Type</th>
+                        <th>Inference method</th>
                         <th>Ingroup clade</th>
                         <th>Tree root</th>
                         <th>OTUs mapped</th>
@@ -614,44 +614,51 @@ body {
                         <td>
                             <a href="#" data-bind="click: showTreeWithHistory,
                                 text: tree['@label'],
-                                css: viewModel.ticklers.TREES">?</a>
+                                css: viewModel.ticklers.TREES">&nbsp;</a>
+                            <br/>
                             <a data-bind="if: unresolvedConflictsFoundInTree( tree ), 
                                           css: viewModel.ticklers.TREES,
-                                          click: showConflictingNodesInTreeViewer" 
-                               class="suggestion-prompt" style="display: block;"
+                                          click: showConflictingNodesInTreeViewer,
+                                          visible: true" 
+                               class="suggestion-prompt" style="display: none;"
                                href="#">
                                 Show conflicting nodes
                             </a> 
+                            <br/>
                             <a data-bind="if: ambiguousLabelsFoundInTree( tree ), 
                                           css: viewModel.ticklers.TREES,
-                                          click: showAmbiguousLabelsInTreeViewer" 
-                               class="suggestion-prompt" style="display: block;"
+                                          click: showAmbiguousLabelsInTreeViewer,
+                                          visible: true" 
+                               class="suggestion-prompt" style="display: none;"
                                href="#">
                                 Review ambiguous labels
                             </a> 
                         </td>
                         <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
-                                css: viewModel.ticklers.TREES">TYPE?</td>
+                                css: viewModel.ticklers.TREES">&nbsp;</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
-                                css: viewModel.ticklers.TREES"></td>
+                                css: viewModel.ticklers.TREES">&nbsp;</td>
                         <td data-bind="html: getRootedDescriptionForTree(tree),
                                           click: showArbitraryRootExplanationInTreeViewer,
                                           css: viewModel.ticklers.TREES"
                                style="cursor: pointer;">&nbsp;</td>
                         <td data-bind="html: getMappedTallyForTree(tree),
-                                css: viewModel.ticklers.TREES">?/?? (?%)</td>
+                                css: viewModel.ticklers.TREES">&nbsp;</td>
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <input type="checkbox" style="margin: 0px 20px;" 
+                            <input type="checkbox" style="margin: 0px 20px; display: none;" 
             data-bind="attr: {'checked': jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1}, 
-                       click: togglePreferredTree" /></td>
+                       click: togglePreferredTree,
+                       visible: true" /></td>
                       {{ else: }}
-                        <td data-bind="text: (jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) ? 'YES' : 'NO'">?</td>
+                        <td data-bind="text: (jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) ? 'YES' : 'NO'">&nbsp;</td>
                       {{ pass }}
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <button data-bind="click: removeTree"
-                                class="pull-right btn btn-mini btn-danger row-controls-ghosted">
+                            <button data-bind="click: removeTree,
+                                               visible: true"
+                                class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                                style="display: none;">
                                 <i class="icon-remove icon-white"></i>
                             </button>
                         </td>
@@ -742,6 +749,13 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
             <div class="well" style="clear: right;">
                 <h4 style="margin-top: 0;">Add a tree to this study</h4>
+
+                <p class="interesting-value" style="line-height: 1.25em; display: none;"
+                   data-bind="style: {'display': getDataDepositMessage() === '' ? 'none':'block'}">
+                    <span data-bind="html: getDataDepositMessage()">&nbsp;</span>.
+                    Trees added here should already be present in the data deposit for this study.
+                </p>
+
                 <form id="tree-import-form" 
                       style="margin: 0;" 
                       Xaction="{{= URL(a='curator', c='default', f='to_nexson')}}" 
@@ -986,6 +1000,13 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
             <div class="well" style="clear: right;">
                 <h4 style="margin-top: 0;">Add a file to this study</h4>
+
+                <p class="interesting-value" style="line-height: 1.25em; display: none;"
+                   data-bind="style: {'display': getDataDepositMessage() === '' ? 'none':'block'}">
+                    <span data-bind="html: getDataDepositMessage()">&nbsp;</span>.
+                    Files added here should already be present in the data deposit for this study.
+                </p>
+
                 <form style="margin: 0;">
                  <fieldset>
 
@@ -1750,6 +1771,7 @@ body {
 
 </div><!-- /.row -->
 
+<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script type='text/javascript'>
     var studyID = '{{= studyID }}';
     var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
@@ -1766,15 +1788,52 @@ body {
     var API_update_file_PUT_url = '{{=API_update_file_PUT_url}}';
     var API_remove_file_DELETE_url = '{{=API_remove_file_DELETE_url}}';
 
-    // if inbound URL specifies a particular tab or tree, record it here
-    var initialState = {
-     {{ if request.vars.get('tree',None): }}
-      tab: 'Trees',
-      tree: '{{= request.vars['tree'] }}'
-     {{ else: }}
-      tab: '{{= request.vars.get('tab','Metadata') }}',
-     {{ pass }}
+    // If inbound URL specifies tab, tree, or filter settings, record them here
+    var initialState = {{= XML( dict(request.vars) ) }};
+    // set any required defaults (for clean/simple history behavior)
+    if (!('tab' in initialState)) {
+        initialState.tab = 'Metadata';
+    }
+    var listFilterDefaults = {
+        // track these defaults so we can reset them in history
+        'TREES': {
+            'match': ""
+        },
+        'FILES': {
+            'match': ""
+        },
+        'OTUS': {
+            // TODO: add 'pagesize'?
+            'match': "",
+            'scope': "In all trees",
+            'order': "Unmapped OTUs first"
+        },
+        'ANNOTATIONS': {
+            'match': "",
+            'scope': "Anywhere in the study",
+            'submitter': "Submitted by all"
+        }
     };
+    var filterDefaults = null;
+    switch(slugify(initialState.tab)) {
+        case 'trees':
+            filterDefaults = listFilterDefaults.TREES;
+            break;
+        case 'files':
+            filterDefaults = listFilterDefaults.FILES;
+            break;
+        case 'otu-mapping':
+            filterDefaults = listFilterDefaults.OTUS;
+            break;
+    }
+    if (filterDefaults) {
+        // apply any missing filter defaults
+        for (var prop in filterDefaults) {
+            if (!(prop in initialState)) {
+                initialState[prop] = filterDefaults[prop];
+            }
+        }
+    }
 
     var treemachine_domain = "{{=treemachine_domain}}";
     var taxomachine_domain = "{{=taxomachine_domain}}";
@@ -1794,7 +1853,6 @@ body {
     var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
 </script>
-<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
 
 <!-- hidden template for DOI lookups -->
@@ -2196,7 +2254,7 @@ body {
           {{ else: }}
             <!-- read-only tree properties here -->
               <div class="pull-left" style="width: 48%;">
-                <label>Tree type: </label>
+                <label>Inference method: </label>
                 <strong data-bind="text: $data['^ot:curatedType'] || 'Unspecified'">TYPE</strong>
               <br/>
                 <label for="testtest">Root node: </label>

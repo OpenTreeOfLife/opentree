@@ -127,14 +127,23 @@ function makeArray( val ) {
     return arr;
 }
 
-function updateClearSearchWidget( searchFieldSelector ) {
-    // add/remove clear widget based on field's contents
+function updateClearSearchWidget( searchFieldSelector, observable ) {
+    // Add/remove clear widget based on field's contents (or its 
+    // underlying observable, if provided).
     var $search = $(searchFieldSelector);
     if ($search.length === 0) {
         console.warn("updateClearSearchWidget: field '"+ searchFieldSelector +"' not found!");
         return;
     }
-    if ($.trim($search.val()) === '') {
+    var testText;
+    if ($.isFunction(observable)) {
+        // this is more accurate when the filter value is set programmatically
+        testText = observable();
+    } else {
+        // this is good enough if value is always typed directly into the field
+        testText = $search.val();
+    }
+    if ($.trim(testText) === '') {
         // remove clear widget, if any
         $search.next('.clear-search').remove();
     } else {
@@ -149,7 +158,6 @@ function updateClearSearchWidget( searchFieldSelector ) {
             });
         }
     }
-
 }
 
 function getPageNumbers( pagedArray ) {
@@ -379,3 +387,12 @@ function getViewURLFromStudyID( studyID ) {
         .replace('{HOST}', window.location.host)
         .replace('{STUDY_ID}', studyID);
 }
+
+function slugify(str) {
+    // Convert any string into a simplified "slug" suitable for use in URL or query-string
+    return str.toLowerCase()
+              .replace(/[^a-z0-9 -]/g, '')  // remove invalid chars
+              .replace(/\s+/g, '-')         // collapse whitespace and replace by -
+              .replace(/-+/g, '-');         // collapse dashes
+}
+
