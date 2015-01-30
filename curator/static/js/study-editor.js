@@ -61,8 +61,12 @@ var viewModel;
 
 var tagsOptions = {
     confirmKeys: [13, 9],  // ENTER, TAB for next tag
+    allowDuplicates: false,  // default, but added here for clarity
+    // using simple objects-as-tags, to avoid bugs with string + SELECT
+    itemValue: 'attrValue',
+    itemText: 'displayString',
     typeahead: {                  
-        source: ['eenie', 'meanie', 'minie', 'moe']
+        //source: ['eenie', 'meanie', 'minie', 'moe']
         /*
         source: function(query) {
             return $.get('/oti/existing_tags');  // TODO
@@ -82,10 +86,28 @@ function captureTagTextOnBlur( $tagsSelect ) {
         if ($select.length === 0) {
             console.warn("captureTagTextOnBlur(): No SELECT widget found!");
         } else {
-            $select.tagsinput('add', $input.val());
+            var inputText = $.trim( $input.val() );
+            // reject whitespace-only tags!
+            if (inputText !== '') {
+                var tagInfo = makeTagObjFromString(inputText);
+                $select.tagsinput('add', tagInfo);
+            }
             $input.val('');
         }
     });
+}
+function makeTagObjFromString( tagString ) {
+    // groom string value, and make it safe for HTML attributes
+    if (typeof tagString !== 'string') {
+        tagString = tagString.toString();
+    }
+    var displayString = $.trim(tagString);
+    var attrValue = encodeURIComponent(displayString);
+    var tagInfo = {
+        displayString: displayString,
+        attrValue: attrValue
+    };
+    return tagInfo;
 }
 
 /* Use history plugin to track moves from tab to tab, single-tree popup, others? */
@@ -765,6 +787,8 @@ function loadSelectedStudy() {
                 data.nexml['^ot:tag'] = [ ];
             }
 
+            removeDuplicateTags( data.nexml );
+
             // add study-level containers for annotations
             if (['^ot:annotationEvents'] in data.nexml) {
                 data.nexml['^ot:annotationEvents'].annotation = 
@@ -1314,6 +1338,10 @@ function loadSelectedStudy() {
                     $('#study-tags').tagsinput('destroy');
                 }
                 $('#study-tags').tagsinput( tagsOptions );
+                // add all tag values directly from nemxml
+                $.each( getTags( data.nexml, {FULL_TAG_INFO: true}), function(i, tagInfo) {
+                    $('#study-tags').tagsinput('add', tagInfo);
+                });
                 captureTagTextOnBlur( $('#study-tags') );
                 studyTagsInitialized = true;
             }
@@ -2045,6 +2073,8 @@ function normalizeTree( tree ) {
     } else {
         tree['^ot:tag'] = [ ];
     }
+
+    removeDuplicateTags( tree );
 
     // pre-select first node among conflicting siblings
     resolveSiblingOnlyConflictsInTree(tree);
@@ -2860,6 +2890,10 @@ function showTreeViewer( tree, options ) {
             }
             updateInferenceMethodWidgets( tree );
             $('#tree-tags').tagsinput( tagsOptions );
+            // add all tag values directly from nemxml
+            $.each( getTags( tree, {FULL_TAG_INFO: true}), function(i, tagInfo) {
+                $('#tree-tags').tagsinput('add', tagInfo);
+            });
             captureTagTextOnBlur( $('#tree-tags') );
             treeTagsInitialized = true;
         }
@@ -5702,28 +5736,45 @@ function relocateLocalAnnotationMessages( nexml ) {
  * metatags, with no duplicate values for the parent element.
  */
 
-function getTags( parentElement ) {
+function getTags( parentElement, options ) {
+    options = options || { FULL_TAG_INFO: false };
     var tags = [];
     var rawTagValues = parentElement['^ot:tag'] || [];
     $.each(rawTagValues, function(i, tagText) {
         var tagText = $.trim(tagText);
-        switch(tagText) {  // non-empty points to a candidate tree
+        switch(tagText) {  
             case '':
-                break;
+                break;  // discard empty tags
             default:
-                tags.push( tagText );
+                if (options.FULL_TAG_INFO) {
+                    var tagInfo = makeTagObjFromString( tagText );
+                    tags.push( tagInfo );
+                } else {
+                    tags.push( tagText );
+                }
         }
     });
     return tags;
 }
 function addTag( parentElement, newTagText ) {
+    // ASSUMES that tag text is storage-ready (URI-decoded and trimmed)
     if (!('^ot:tag' in parentElement)) {
         parentElement['^ot:tag'] = [];
     }
-    parentElement['^ot:tag'].push( newTagText );
+    // only add unique tags!
+    if ($.inArray(newTagText, parentElement['^ot:tag']) === -1) {
+        parentElement['^ot:tag'].push( newTagText );
+    }
 }
 function removeAllTags( parentElement ) {
     parentElement['^ot:tag'] = [];
+}
+function removeDuplicateTags( parentElement ) {
+    var uniqueTags = [ ] ;
+    $.each(parentElement['^ot:tag'], function(i,tag){ 
+        if ($.inArray(tag, uniqueTags) === -1) { uniqueTags.push(tag) };
+    });
+    parentElement['^ot:tag'] = uniqueTags;
 }
 function updateElementTags( select ) {
     var parentElement;
@@ -5737,8 +5788,11 @@ function updateElementTags( select ) {
     // read and apply the values in this tags-input SELECT element
     // N.B. multiple-value select returns null if no values selected!
     var values = $(select).val() || [];  
-    $.each(values, function(i,v) {
-        addTag( parentElement, $.trim(v) );
+    $.each(values, function(i, encodedTag ) {
+        // convert as needed, e.g. 'delete%20me' => 'delete me'
+        var rawTagValue = decodeURIComponent( encodedTag );
+        // trim final string just to be safe
+        addTag( parentElement, $.trim(rawTagValue) );
     });
 }
 
