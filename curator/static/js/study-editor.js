@@ -210,7 +210,10 @@ function changeTab(o) {
         // deep copy of o, with default values if none supplied
         //History.pushState(o, historyStateToWindowTitle(o), historyStateToURL(o));
         */
-        History.pushState(o, '', '?tab='+ slugify(newTabName));  // TODO: change title and URL?
+        var newState = o;   // incoming arg, just has tab defined
+        // NOTE that this should obviate any other state vars, which are all tab-limited
+        History.pushState(newState, '', '?tab='+ slugify(newTabName));  // TODO: change title and URL?
+        // TODO: preserve general state vars in URL query string?
     } else {
         // click tab normally (ignore browser history)
         goToTab( newTabName );
@@ -220,10 +223,14 @@ function changeTab(o) {
 function showTreeWithHistory(tree) {
     if (History && History.enabled) {
         // push tree view onto history (if available) and show it
-        var newState = {
-            'tab': 'Trees',
-            'tree': tree['@id']
-        };
+        var oldState = History.getState().data;
+        var newState = $.extend(
+            cloneFromSimpleObject( oldState ),
+            {
+                'tab': 'Trees',
+                'tree': tree['@id']
+            }
+        );
         History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree) );
     } else {
         // show tree normally (ignore browser history)
@@ -240,18 +247,25 @@ function hideTreeWithHistory() {
             // it wasn't added to history, so no change needed
             return;
         }
-        var newState = {
-            'tab': 'Trees'
-        };
+        var newState = $.extend(
+            cloneFromSimpleObject( oldState ),
+            {
+                'tab': 'Trees',
+                'tree': null
+            }
+        );
         History.pushState( newState, (window.document.title), '?tab=trees' );
     }
     fixLoginLinks();
 }
 
 function updateListFiltersWithHistory() {
-    // capture changing list filters in browser history
-    // N.B. This is triggered when filter is updated programmatically
-    // TODO: Try not to capture all keystrokes, or trivial changes?
+    /* capture changing list filters in browser history
+     *
+     * N.B. This is triggered when filter is updated programmatically, which
+     * could be as innocuous as the TREES tickler being nudged. So we should
+     * avoid modifying the browser history unless something has really changed.
+     */
     if (History && History.enabled) {
         if (initialState) {
             // wait until initial state has been applied!
@@ -280,9 +294,9 @@ function updateListFiltersWithHistory() {
                 console.warn('updateListFiltersWithHistory(): No filters in this tab: '+ oldState.tab);
                 return;
         }
-        var newState = {
-            tab: oldState.tab
-        };
+        var newState = cloneFromSimpleObject( oldState );
+        // TODO: weed out old filter properties?
+        
         // use slugified tab name for the query-string (filter values are preserved)
         var newQSValues = {
             tab: slugify(oldState.tab)
@@ -294,9 +308,30 @@ function updateListFiltersWithHistory() {
                 newQSValues[prop] = ko.unwrap(activeFilter[prop]);
             }
         }
-        //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
-        var newQueryString = '?'+ $.param(newQSValues);
-        History.pushState( newState, (window.document.title), newQueryString );
+        
+        // Compare old and new states (or query-strings?) and bail if nothing interesting has changed
+        console.log('=== CHECKING OLD VS. NEW STATE ===');
+        var interestingChangesFound = false;
+        for (prop in oldState) {
+            if (newState[prop] !== oldState[prop]) {
+                console.log('oldState.'+ prop +' WAS '+ oldState[prop] +' <'+ typeof( oldState[prop] ) +'>, IS '+ newState[prop] +' <'+ typeof( newState[prop] ) +'>');
+                interestingChangesFound = true;
+            }
+        }
+        for (prop in newState) {
+            if (!(prop in oldState)) {
+                console.log('newState.'+ prop +' NOT FOUND in oldState');
+                interestingChangesFound = true;
+            }
+        }
+        if (interestingChangesFound) {
+            console.log('=== INTERESTING! ===');
+            //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
+            var newQueryString = '?'+ $.param(newQSValues);
+            History.pushState( newState, (window.document.title), newQueryString );
+        } else {
+            console.log('=== BORING... ===');
+        }
     }
 }
 
@@ -6974,7 +7009,7 @@ function inferSearchContextFromAvailableOTUs() {
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
-                showErrorMessage('Sorry, there was an error inferring the context.');
+                showErrorMessage('Sorry, there was an error inferring the search context.');
                 console.log("ERROR: textStatus !== 'success', but "+ textStatus);
                 return;
             }
@@ -6990,7 +7025,7 @@ function inferSearchContextFromAvailableOTUs() {
                 // update BOTH search-context drop-down menus to show this result
                 $('select[name=taxon-search-context], select[name=mapping-search-context]').val(inferredContext);
             } else {
-                showErrorMessage('Sorry, there was an error inferring the search context.');
+                showErrorMessage('Sorry, no search context was inferred.');
             }
         }
     }); 
