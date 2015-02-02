@@ -1035,7 +1035,8 @@ function showObjectProperties( objInfo, options ) {
         aSection, dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
     for (sectionPos = 0; sectionPos < sectionCount; sectionPos++) {
         var aSection = orderedSections[sectionPos];
-        var useHighlight = (orderedSections.length > 1) && aSection.selected;
+        // We now treat the node and edge as a single target, so no distinction is required
+        var useHighlight = false;  // (orderedSections.length > 1) && aSection.selected;
         $newSection = $('<div class="properties-section '+ (useHighlight ? 'selected' : '') +'"><'+'/div>');
         $newSection.append( '<div class="section-title">'+ aSection.name +'<'+'/div>');
         $sections.append($newSection);
