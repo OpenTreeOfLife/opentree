@@ -1044,6 +1044,9 @@ function showObjectProperties( objInfo, options ) {
         $newSection.append( '<div class="section-title">'+ aSection.name +'<'+'/div>');
         $sections.append($newSection);
         $details = $('<dl><'+'/dl>');
+        // pad the details area below a multi-line title
+        var extraPadding = ($newSection.find('.section-title').height() - 20) +'px';
+        $details.css('padding-top', extraPadding);
         $newSection.append($details);
         for(dLabel in aSection.displayedProperties) {
             switch(dLabel) {
