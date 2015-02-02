@@ -827,6 +827,9 @@ function createArgus(spec) {
             var listAfterCluster = parentNode.displayList.slice(dlPos + 1);
             parentNode.displayList = listBeforeCluster.concat( cluster.nodes, listAfterCluster );
 
+            // hide any stale highlight
+            argusObj.provenanceHighlight.hide();
+
             // redraw entire tree with changes
             argusObj.drawTree();
         };
