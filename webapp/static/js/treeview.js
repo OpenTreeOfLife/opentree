@@ -689,10 +689,13 @@ function buildAllMissingNodeNames( node ) {
 var spinnerSelector = '#spinner';
 function showSpinner( $container ) {
     // put the spinner inside the specified container element (passed as jQuery selection)
-    // ? replace all of its contents?
     var $spinner = $(spinnerSelector);
+    // toggle container element to avoid "empty" container or missing spinner
+    $container.hide();
     $container.append($spinner);
+    var oldOverflow = $container.css('overflow');  // seems important for visible spinner
     $spinner.show();
+    $container.show();
 }
 function hideSpinner() {
     // restore spinner to its standby location
