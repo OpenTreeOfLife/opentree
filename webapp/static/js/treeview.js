@@ -689,10 +689,13 @@ function buildAllMissingNodeNames( node ) {
 var spinnerSelector = '#spinner';
 function showSpinner( $container ) {
     // put the spinner inside the specified container element (passed as jQuery selection)
-    // ? replace all of its contents?
     var $spinner = $(spinnerSelector);
+    // toggle container element to avoid "empty" container or missing spinner
+    $container.hide();
     $container.append($spinner);
+    var oldOverflow = $container.css('overflow');  // seems important for visible spinner
     $spinner.show();
+    $container.show();
 }
 function hideSpinner() {
     // restore spinner to its standby location
@@ -1035,11 +1038,15 @@ function showObjectProperties( objInfo, options ) {
         aSection, dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
     for (sectionPos = 0; sectionPos < sectionCount; sectionPos++) {
         var aSection = orderedSections[sectionPos];
-        var useHighlight = (orderedSections.length > 1) && aSection.selected;
+        // We now treat the node and edge as a single target, so no distinction is required
+        var useHighlight = false;  // (orderedSections.length > 1) && aSection.selected;
         $newSection = $('<div class="properties-section '+ (useHighlight ? 'selected' : '') +'"><'+'/div>');
         $newSection.append( '<div class="section-title">'+ aSection.name +'<'+'/div>');
         $sections.append($newSection);
         $details = $('<dl><'+'/dl>');
+        // pad the details area below a multi-line title
+        var extraPadding = ($newSection.find('.section-title').height() - 20) +'px';
+        $details.css('padding-top', extraPadding);
         $newSection.append($details);
         for(dLabel in aSection.displayedProperties) {
             switch(dLabel) {
