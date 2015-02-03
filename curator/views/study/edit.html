@@ -2362,10 +2362,20 @@ body {
       </div>
       <div class="tab-pane" id="tree-phylogram">
           <div class="help-box">
-              Click any node below to set the ingroup clade. Click any node
-              <strong>or</strong> edge to re-root the entire tree. N.B. An
-              <strong>arbitrary root</strong> (see Properties tab) will only be used to draw
-              the tree and correctly set the ingroup clade. The tree itself might be unrooted.
+        {{ if viewOrEdit == 'EDIT': }}
+              Click any node <strong>or</strong> edge below for a menu of
+              available actions. You can set the ingroup clade from any node or
+              re-root the entire tree from a node or edge. N.B. An
+              <strong>arbitrary root</strong> (see Properties tab) will only be
+              used to draw the tree and correctly set the ingroup clade. The
+              tree itself might be unrooted.
+        {{ else: }}
+              Click any node below to see more information about it. N.B. An
+              <strong>arbitrary root</strong> (see Properties tab) will only be
+              used to draw the tree and correctly set the ingroup clade. The
+              tree itself might be unrooted. See the Legend tab for more tips
+              on how to interpret this diagram.
+        {{ pass }}
           </div>
          <!-- tree-view SVG goes here -->
       </div>
