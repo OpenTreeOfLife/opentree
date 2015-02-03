@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {{ 
-from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext
+from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch
 }}
 <html lang="{{=T.accepted_language or 'en'}}" class="no-js"><!-- no-js need it for modernzr -->
   <head>
@@ -373,6 +373,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
             <dl>
                <dt id="shard-list">phylesystem shard(s):</dt>
             {{ # N.B. This list will be populated by AJAX only when shown }} 
+               <dt id="deployed-branch">deployed branch of opentree webapps:</dt>
+                   <dd><strong class="setting-name">{{= get_currently_deployed_opentree_branch(request) }}
+                   </strong></dd>
             
             {{ # format non-sensitive config data for display
                conf = get_conf(request)
