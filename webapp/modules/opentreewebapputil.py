@@ -247,3 +247,22 @@ def extract_nexson_from_http_call(request, **kwargs):
         # TODO: _LOG.exception('Exception getting nexson content in extract_nexson_from_http_call')
         raise HTTP(400, json.dumps({"error": 1, "description": 'NexSON must be valid JSON'}))
     return nexson
+
+def get_currently_deployed_opentree_branch(request):
+    """Read local git configuration and return the current branch"""
+    # Backtrack to the real (vs. symlinked) filesystem path for this app
+    real_app_path = os.path.realpath(request.folder)
+    infilepath = os.path.join(real_app_path, '..', '.git', 'HEAD')
+    branch_name = 'NOT FOUND (app is not inside a git repo?)'
+    try:
+        infile = open(infilepath)
+        for line in infile:
+            if 'ref:' in line:
+                # FOR EXAMPLE:
+                #   ref: refs/heads/mystery-branch\n
+                branch_name = line.split('/')[-1].strip()
+                break
+        infile.close()
+    except:
+        pass
+    return branch_name
