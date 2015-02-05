@@ -727,6 +727,7 @@ body {
                 <a href="https://github.com/OpenTreeOfLife/treemachine/wiki" target="_blank">treemachine</a>
                 (see the <strong>Tools</strong> tab for details).
               </p>
+        {{ if viewOrEdit == 'EDIT': }}
               <p>
                 Use the tools below to add new trees from a file or pasted text.
                 <strong>Note:</strong> Adding trees and OTUs can quickly
@@ -735,14 +736,31 @@ body {
                 prompt for full OTU mapping and other quality checks.
                 We recommend adding
                 only the most interesting and useful trees. 
-                Precursor trees can be ignored here or added in the
+                Precursor trees can be omitted entirely or added in the
                 <strong>Files</strong> tab. 
               </p>
               <p>
                 Click on the name of a tree to edit it using an interactive
-                cladogram. You can re-root the tree, define its ingroup clade,
-                and manage all of its properties in NexSON.
+                cladogram. There you can re-root the tree, define its ingroup
+                clade, and manage all of its properties in NexSON.
               </p>
+        {{ else: }}
+              <p>
+                Trees listed here are typically the most interesting or useful
+                ones in the study. Precursor trees can sometimes be found in
+                the <strong>Files</strong> tab. 
+              </p>
+              <p>
+                Trees marked as <strong>preferred</strong> have been nominated
+                by a curator for inclusion in synthesis. Curators are
+                encouraged to complete OTU mapping and meet additional quality
+                standards for preferred trees.
+              </p>
+              <p>
+                Click on the name of a tree to get more information and see it
+                as an interactive cladogram.
+              </p>
+        {{ pass }}
             </div>
 
         {{ if viewOrEdit == 'EDIT': }}
@@ -971,6 +989,7 @@ body {
               <button class="help-toggle">
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
+        {{ if viewOrEdit == 'EDIT': }}
               <p>
                 The <strong>Files</strong> tab is a list of supporting files
                 for this study. This can include character matrices, precursor
@@ -989,11 +1008,29 @@ body {
                 itself; instead, they're stored on our servers pending transfer
                 to a permanent data repository. (This feature is not yet complete.)
               </p>
+        {{ else: }}
               <p>
-                <strong>[TODO]</strong> Describe how we interoperate with data repositories, and
+                The <strong>Files</strong> tab is a list of supporting files
+                for this study. This can include character matrices, precursor
+                trees, images&mdash;anything that would normally be submitted
+                to a permanent data repository. Tree data used in the
+                <strong>Trees</strong> tab also appears here in its original
+                form.
+              </p>
+              <p>
+                 Note that these files aren't stored
+                in the NexSON document itself; instead, they're stored on our
+                servers pending transfer to a permanent data repository.  (This
+                feature is not yet complete.)
+              </p>
+        {{ pass }}
+            <!--
+              <p>
+                <strong>Note</strong> Describe how we interoperate with data repositories, and
                 what the curator can do here if the permanent deposit of this study's
                 data has already taken place.
               </p>
+            -->
             </div>
 
         {{ if viewOrEdit == 'EDIT': }}
@@ -1272,6 +1309,7 @@ body {
               <button class="help-toggle">
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
+        {{ if viewOrEdit == 'EDIT': }}
                 <p>
                 For a tree in your study to contribute to synthesis in the 
                 <a href="http://blog.opentreeoflife.org/what-is-the-tree-of-life/" target="_blank">Open Tree of Life project</a>, 
@@ -1282,6 +1320,10 @@ body {
                 your study's trees.
                 </p>
                 <p>
+                Click the magnifying-glass icon next to any OTU to see it in
+                the context of this study's trees.
+                </p>
+                <p>
                 We use a TNRS (taxonomic name resolution service) to automate this
                 "mapping" process where possible. If you've used standard taxonomic
                 names for the nodes in your trees, mapping is fast and easy.
@@ -1289,6 +1331,21 @@ body {
                 shorthand, unrecognized taxa, or simple misspellings. The tools on
                 this page will help you adjust labels for faster mapping.
                 </p>
+        {{ else: }}
+                <p>
+                For a tree in your study to contribute to synthesis in the 
+                <a href="http://blog.opentreeoflife.org/what-is-the-tree-of-life/" target="_blank">Open Tree of Life project</a>, 
+                its leaf nodes should correspond to taxa in the 
+                <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/General-information" target="_blank">OTT (Open Tree Taxonomy)</a>. 
+                This list includes all the OTUs (operating taxonomic units) in
+                the current study. Each OTU is a distinct label used in one or
+                more of its trees.
+                </p>
+                <p>
+                Click the magnifying-glass icon next to any OTU to see it in
+                the context of this study's trees.
+                </p>
+        {{ pass }}
             </div>
 
 <!-- TODO: If we're doing independent server-side mapping, show a blanket message like this to avoid conflicts?
@@ -1711,7 +1768,7 @@ body {
                 This tab shows the <strong>edit history</strong> for this study:
                 each saved version of the data, who submitted the changes, and
                 a comment added each time. Note that this might include edits
-                made in other tools, or by automated software.
+                made in other tools or by automated software.
               </p>
             </div>
 
@@ -2305,10 +2362,20 @@ body {
       </div>
       <div class="tab-pane" id="tree-phylogram">
           <div class="help-box">
-              Click any node below to set the ingroup clade. Click any node
-              <strong>or</strong> edge to re-root the entire tree. N.B. An
-              <strong>unconfirmed root</strong> (see Properties tab) will only be used to draw
-              the tree and correctly set the ingroup clade. The tree itself might be unrooted.
+        {{ if viewOrEdit == 'EDIT': }}
+              Click any node <strong>or</strong> edge below for a menu of
+              available actions. You can set the ingroup clade from any node or
+              re-root the entire tree from a node or edge. N.B. An
+              <strong>arbitrary root</strong> (see Properties tab) will only be
+              used to draw the tree and correctly set the ingroup clade. The
+              tree itself might be unrooted.
+        {{ else: }}
+              Click any node below to see more information about it. N.B. An
+              <strong>arbitrary root</strong> (see Properties tab) will only be
+              used to draw the tree and correctly set the ingroup clade. The
+              tree itself might be unrooted. See the Legend tab for more tips
+              on how to interpret this diagram.
+        {{ pass }}
           </div>
          <!-- tree-view SVG goes here -->
       </div>
