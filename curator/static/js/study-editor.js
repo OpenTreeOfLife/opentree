@@ -210,7 +210,10 @@ function changeTab(o) {
         // deep copy of o, with default values if none supplied
         //History.pushState(o, historyStateToWindowTitle(o), historyStateToURL(o));
         */
-        History.pushState(o, '', '?tab='+ slugify(newTabName));  // TODO: change title and URL?
+        var newState = o;   // incoming arg, just has tab defined
+        // NOTE that this should obviate any other state vars, which are all tab-limited
+        History.pushState(newState, '', '?tab='+ slugify(newTabName));  // TODO: change title and URL?
+        // TODO: preserve general state vars in URL query string?
     } else {
         // click tab normally (ignore browser history)
         goToTab( newTabName );
@@ -220,10 +223,14 @@ function changeTab(o) {
 function showTreeWithHistory(tree) {
     if (History && History.enabled) {
         // push tree view onto history (if available) and show it
-        var newState = {
-            'tab': 'Trees',
-            'tree': tree['@id']
-        };
+        var oldState = History.getState().data;
+        var newState = $.extend(
+            cloneFromSimpleObject( oldState ),
+            {
+                'tab': 'Trees',
+                'tree': tree['@id']
+            }
+        );
         History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree) );
     } else {
         // show tree normally (ignore browser history)
@@ -240,18 +247,25 @@ function hideTreeWithHistory() {
             // it wasn't added to history, so no change needed
             return;
         }
-        var newState = {
-            'tab': 'Trees'
-        };
+        var newState = $.extend(
+            cloneFromSimpleObject( oldState ),
+            {
+                'tab': 'Trees',
+                'tree': null
+            }
+        );
         History.pushState( newState, (window.document.title), '?tab=trees' );
     }
     fixLoginLinks();
 }
 
 function updateListFiltersWithHistory() {
-    // capture changing list filters in browser history
-    // N.B. This is triggered when filter is updated programmatically
-    // TODO: Try not to capture all keystrokes, or trivial changes?
+    /* capture changing list filters in browser history
+     *
+     * N.B. This is triggered when filter is updated programmatically, which
+     * could be as innocuous as the TREES tickler being nudged. So we should
+     * avoid modifying the browser history unless something has really changed.
+     */
     if (History && History.enabled) {
         if (initialState) {
             // wait until initial state has been applied!
@@ -280,9 +294,9 @@ function updateListFiltersWithHistory() {
                 console.warn('updateListFiltersWithHistory(): No filters in this tab: '+ oldState.tab);
                 return;
         }
-        var newState = {
-            tab: oldState.tab
-        };
+        var newState = cloneFromSimpleObject( oldState );
+        // TODO: weed out old filter properties?
+        
         // use slugified tab name for the query-string (filter values are preserved)
         var newQSValues = {
             tab: slugify(oldState.tab)
@@ -294,9 +308,30 @@ function updateListFiltersWithHistory() {
                 newQSValues[prop] = ko.unwrap(activeFilter[prop]);
             }
         }
-        //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
-        var newQueryString = '?'+ $.param(newQSValues);
-        History.pushState( newState, (window.document.title), newQueryString );
+        
+        // Compare old and new states (or query-strings?) and bail if nothing interesting has changed
+        console.log('=== CHECKING OLD VS. NEW STATE ===');
+        var interestingChangesFound = false;
+        for (prop in oldState) {
+            if (newState[prop] !== oldState[prop]) {
+                console.log('oldState.'+ prop +' WAS '+ oldState[prop] +' <'+ typeof( oldState[prop] ) +'>, IS '+ newState[prop] +' <'+ typeof( newState[prop] ) +'>');
+                interestingChangesFound = true;
+            }
+        }
+        for (prop in newState) {
+            if (!(prop in oldState)) {
+                console.log('newState.'+ prop +' NOT FOUND in oldState');
+                interestingChangesFound = true;
+            }
+        }
+        if (interestingChangesFound) {
+            console.log('=== INTERESTING! ===');
+            //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
+            var newQueryString = '?'+ $.param(newQSValues);
+            History.pushState( newState, (window.document.title), newQueryString );
+        } else {
+            console.log('=== BORING... ===');
+        }
     }
 }
 
@@ -2167,10 +2202,16 @@ function getRootedDescriptionForTree( tree ) {
     var unrootedTree = tree['^ot:unrootedTree'];
 
     if (unrootedTree) {
-        return "Arbitrary (not biologically correct)";
+        return '<span class="XXsuggestion-prompt">Unconfirmed (may be arbitrary)</span>';
     } else {
         return "Confirmed by curator";
     }
+}
+function showArbitraryRootExplanationInTreeViewer(tree) {
+    // hint to tree viewer that we're focused on this property
+    showTreeViewer(tree, {
+        HIGHLIGHT_ARBITRARY_ROOT: true
+    });
 }
 function getRootNodeDescriptionForTree( tree ) {
     // return display-ready description ('node123 [implicit]', 'node234 [explicit]', 'No root', ...)
@@ -2208,9 +2249,9 @@ function getRootNodeDescriptionForTree( tree ) {
     return nodeName;
 }
 function getRootedStatusForTree( tree ) {
-    // return display-ready description ('<span class="caution">Tree root is arbitrary</span>', ...)
-    var biologicalRootMessage = 'Tree root has been confirmed by the curator.';
-    var arbitraryRootMessage = '<span class="interesting-value">Tree root is arbitrary (for display only)</span>';
+    // return display-ready description ('<span class="caution">Biological root is ...</span>', ...)
+    var biologicalRootMessage = 'Biological root is confirmed by the curator.';
+    var arbitraryRootMessage = '<span class="interesting-value">Biological root is not confirmed (displayed root could be arbitrary).</span>';
 
     if (!tree || !tree.node || tree.node.length === 0) {
         return '';
@@ -2860,7 +2901,11 @@ function showTreeViewer( tree, options ) {
 
         updateEdgesInTree( tree );
         
-        drawTree( tree, {'INITIAL_DRAWING':true, 'HIGHLIGHT_AMBIGUOUS_LABELS':(options.HIGHLIGHT_AMBIGUOUS_LABELS || false)} );
+        drawTree(tree, {
+            'INITIAL_DRAWING': true, 
+            'HIGHLIGHT_AMBIGUOUS_LABELS': (options.HIGHLIGHT_AMBIGUOUS_LABELS || false), 
+            'HIGHLIGHT_ARBITRARY_ROOT': (options.HIGHLIGHT_ARBITRARY_ROOT || false)
+        });
 
         // clear any prior stepwise UI for showing highlights
         $('#tree-viewer').find('.stepwise-highlights').remove();
@@ -2970,14 +3015,16 @@ function showTreeViewer( tree, options ) {
         $('#tree-viewer').modal('show');
     }
 
-    /* IF we want different starting tab in different scenarios
-    if (options.HIGHLIGHT_PLAYLIST) {
-        $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
-    } else {
+    // IF we want different starting tab in different scenarios
+    var $rootWidget = $('#tree-root-status-widget');
+    if (options.HIGHLIGHT_ARBITRARY_ROOT) {
+        // jump immediately to the Properties tab (element is already highly visible)
+        $rootWidget.addClass('needs-attention').css('margin', '4px -4px 2px');
         $treeViewerTabs.filter('[href*=tree-properties]').tab('show');
+    } else {
+        $rootWidget.removeClass('needs-attention').css('margin', '');
+        $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
     }
-    */
-    $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
 }
 
 function findOTUInTrees( otu, trees ) {
@@ -6962,7 +7009,7 @@ function inferSearchContextFromAvailableOTUs() {
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
-                showErrorMessage('Sorry, there was an error inferring the context.');
+                showErrorMessage('Sorry, there was an error inferring the search context.');
                 console.log("ERROR: textStatus !== 'success', but "+ textStatus);
                 return;
             }
@@ -6978,7 +7025,7 @@ function inferSearchContextFromAvailableOTUs() {
                 // update BOTH search-context drop-down menus to show this result
                 $('select[name=taxon-search-context], select[name=mapping-search-context]').val(inferredContext);
             } else {
-                showErrorMessage('Sorry, there was an error inferring the search context.');
+                showErrorMessage('Sorry, no search context was inferred.');
             }
         }
     }); 

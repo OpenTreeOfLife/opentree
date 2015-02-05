@@ -639,7 +639,9 @@ body {
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
                         <td data-bind="html: getRootedDescriptionForTree(tree),
-                                css: viewModel.ticklers.TREES">&nbsp;</td>
+                                          click: showArbitraryRootExplanationInTreeViewer,
+                                          css: viewModel.ticklers.TREES"
+                               style="cursor: pointer;">&nbsp;</td>
                         <td data-bind="html: getMappedTallyForTree(tree),
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
                       {{ if viewOrEdit == 'EDIT': }}
@@ -2121,9 +2123,9 @@ body {
                 <label for="testtest">Root node: </label>
                 <strong data-bind="text: getRootNodeDescriptionForTree($data), 
                                    css: viewModel.ticklers.TREES"></strong>
-              <br/>
 
-                <label>Tree root is </label>
+              <div id="tree-root-status-widget" class="Xneeds-attention" style="Xmargin: 4px -4px;">
+                <label>Biological root is </label>
                 <label for="tree-root-status-false" class="radio" style="padding-left: 10px;">
                     <input id="tree-root-status-false" type="radio" 
                            name="tree-root-status" value="false" 
@@ -2138,10 +2140,10 @@ body {
                            data-bind="checked: $data['^ot:unrootedTree'].toString(), 
                                       click: toggleTreeRootStatus, 
                                       css: viewModel.ticklers.TREES" />
-                    arbitrary (for display only)
+                    not confirmed (displayed root could be arbitrary)
                 </label>
+              </div>
 
-              <br/>
                 <label for="testtest">Ingroup clade: </label>
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data), 
                                    css: viewModel.ticklers.TREES"></strong>
@@ -2259,8 +2261,8 @@ body {
                <!-- TODO: tag(s) for this tree? -->
                 <strong data-bind="text: getRootNodeDescriptionForTree($data)"></strong>
               <br/>
-                <label for="arbitrary-tree-root" class="checkbox" style="padding-left: 12px; position: relative; top: -4px;">
-                    <strong data-bind="html: getRootedStatusForTree($data)">Tree root is arbitrary (for display only)</strong>
+                <label for="arbitrary-tree-root" class="checkbox" style="padding: 0 24px 0 16px; line-height: 1.2em; position: relative; top: -4px;">
+                    <strong data-bind="html: getRootedStatusForTree($data)">&nbsp;</strong>
                 </label>
               <br/>
                 <label for="testtest">Ingroup clade: </label>
@@ -2307,7 +2309,7 @@ body {
           <div class="help-box">
               Click any node below to set the ingroup clade. Click any node
               <strong>or</strong> edge to re-root the entire tree. N.B. An
-              <strong>arbitrary root</strong> (see Properties tab) will only be used to draw
+              <strong>unconfirmed root</strong> (see Properties tab) will only be used to draw
               the tree and correctly set the ingroup clade. The tree itself might be unrooted.
           </div>
          <!-- tree-view SVG goes here -->
