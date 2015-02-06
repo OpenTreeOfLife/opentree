@@ -12,6 +12,9 @@
 
     CustomLog ${APACHE_LOG_DIR}/access.log combined
 
+    # TEMPORARY REDIRECT to maintenance page
+    #RedirectMatch 302 ^(.*)$ http://opentreeoflife.github.io/maintenance.html
+
     # See http://stackoverflow.com/questions/13216837/install-web2py-in-virtual-hosting
     # NOTE that we can only specify WSGIDaemonProcess once, so this has been
     # retained in the main HTTP configuration 'apache-config-vhost'!
