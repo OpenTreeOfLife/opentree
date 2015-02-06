@@ -1391,7 +1391,11 @@ function updatePageHeadings() {
     // page headings should reflect the latest metadata for the study
     var studyFullReference = viewModel.nexml['^ot:studyPublicationReference'];
     var studyCompactReference = fullToCompactReference(studyFullReference);
-    $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
+    if (viewOrEdit == 'EDIT') {
+        $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
+    } else {
+        $('#main-title').html('<span style="color: #ccc;">Viewing study</span> '+ studyCompactReference);
+    }
 
     var studyDOI = ('^ot:studyPublication' in viewModel.nexml) ? viewModel.nexml['^ot:studyPublication']['@href'] : "";
     studyDOI = $.trim(studyDOI);
