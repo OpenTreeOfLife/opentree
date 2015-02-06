@@ -33,6 +33,15 @@ div.contributing-studies div.links a {
     margin-bottom: 0.25em;
     margin-left: 1em;
 }
+div.contributing-studies div.links .tree-links {
+    display: none;
+    margin-bottom: 0.25em;
+    margin-left: 2em;
+}
+div.contributing-studies div.links .tree-links a {
+    display: block;
+    margin-left: 0;
+}
 //-->
 </style>
 
@@ -72,7 +81,15 @@ div.contributing-studies div.links a {
               </div>
               <div class="span4 links">
                   <a target="_blank" href="{{= URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ]) }}"
-                    >Open in curator application</a>
+                    >Open study in curator application</a>
+                  <a href="#" onclick="toggleTreeLinks(this); return false;"
+                      ><span>Show links to included trees</span> ({{= len(study['tree_ids']) }})</a>
+                  <div class="tree-links">
+                     {{ for tree_id in study['tree_ids']: }}
+                     <a target="_blank" href="{{= URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ], vars={'tab':'trees', 'tree': 'tree%s' % tree_id }) }}"
+                        title="Click to see this tree in the curation app">tree{{= tree_id }}</a>
+                     {{ pass }}
+                  </div>
                   <a target="_blank" 
                     href="{{= URL(a='default', c='default', f='argus', args=['ottol@{}/{}'.format( study.get('ot:focalClade'), study.get('ot:focalCladeOTTTaxonName') ) ] ) }}"
                     >Browse focal clade in synthetic tree</a>
@@ -143,5 +160,17 @@ div.contributing-studies div.links a {
         $.each(sortedRefs, function(pos, ref) {
             $refContainer.append(ref);
         });
+    }
+    function toggleTreeLinks( clicked ) {
+        var $clicked = $(clicked);
+        var $prompt = $(clicked).find('span');
+        var $treeLinks = $clicked.next('.tree-links');
+        if ($treeLinks.is(':visible')) {
+            $treeLinks.hide();
+            $prompt.text("Show links to included trees");
+        } else {
+            $treeLinks.show();
+            $prompt.text("Hide links to included trees");
+        }
     }
 </script>
