@@ -89,7 +89,7 @@ echo "Triggering use of HTTPS from within web2py? [$SSL_CERTS_FOUND]"
 # Replace tokens in example config file to make the active config (assume this always changes)
 cp -p $configtemplate $configfile
 # Prepend /cached/ to treemachine for some method calls
-CACHED_TREEMACHINE_BASE_URL=sed "s+treemachine/+cached/treemachine/+"
+CACHED_TREEMACHINE_BASE_URL=$(sed "s+treemachine/+cached/treemachine/+" <<< $TREEMACHINE_BASE_URL)
 
 sed "s+github_client_id = .*+github_client_id = $TREEVIEW_GITHUB_CLIENT_ID+;
      s+github_redirect_uri = .*+github_redirect_uri = $TREEVIEW_GITHUB_REDIRECT_URI+
