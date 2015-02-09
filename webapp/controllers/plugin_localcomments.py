@@ -494,10 +494,12 @@ def index():
     else:   # fall back to url
         comments = get_local_comments({"URL": url})
 
+    #pprint(comments) 
+
     for comment in comments:
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
         threads.append(comment)
-    ##pprint('{0} threads loaded'.format(len(threads)))
+    pprint('{0} threads loaded'.format(len(threads)))
     return DIV(script,
                DIV(FORM(# anonymous users should see be encouraged to login or add a name-or-email to their comments
                         '' if auth.user_id else A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
@@ -650,20 +652,29 @@ def delete_comment(comment_id):
         resp_json = resp.json
     return resp_json
 
+def build_localcomments_key(request):
+    return 'localcomments:'+ request.url +'?'+ repr(request.vars)
+
+@cache(key=build_localcomments_key(request), 
+       time_expire=None, 
+       cache_model=cache.ram)
 def get_local_comments(location={}):
     # Use the Search API to get all comments for this location. 
     # See https://developer.github.com/v3/search/#search-issues
     # build and encode search text (location "filter")
+    print('>> its cache key would be:')
+    print(build_localcomments_key(request))
     search_text = '' 
     for k,v in location.items():
         search_text = '{0}"{1} | {2} " '.format( search_text, k, v )
-        print search_text
     search_text = urllib.quote_plus(search_text.encode('utf-8'), safe='~')
+    #print search_text
+    print('>> calling GitHub API for local issues...')
     url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+state:open&sort=created&order=desc'
     ##TODO: search only within body?
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
     url = url.format(GH_BASE_URL, search_text)
-    print(url)
+    ##print(url)
     resp = requests.get( url, headers=GH_GET_HEADERS)
     ##print(resp)
     resp.raise_for_status()
@@ -672,11 +683,32 @@ def get_local_comments(location={}):
     except:
         results = resp.json
     ##pprint(results)
-    print("Returned {0} issues ({1})".format(
-        results["total_count"],
-        results["incomplete_results"] and 'INCOMPLETE' or 'COMPLETE'
-        ))
+    ##print("Returned {0} issues ({1})".format(
+    ##  results["total_count"],
+    ##  results["incomplete_results"] and 'INCOMPLETE' or 'COMPLETE'
+    ##  ))
     return results['items']
+
+def clear_local_comments():
+    # Keep it simple for now, just clobber all local comments in cache
+    # whenever *anything* changes. (Later we'll try to get more information
+    # about *where* comments were added or changed, and just clear those.)
+    print(">>> CLEARING all cached localcomments")
+    #import pdb; pdb.set_trace()
+    cache.ram.clear(regex='^localcomments:')
+
+    # So how do we make this smarter?
+    # posted = parsed POST body
+    ## if posted.action == 'created':
+    ##   parse posted.issue.body for location fields
+    ## metadata = parse_comment_metadata(posted.issue.body)
+    # apply this generously (when in doubt, clear a cache entry)
+    # REMINDER: For now at least, it seems we always use just the 'url' filter:
+    #  {{=plugin_localcomments(filter=('url',),url=url)}}
+    # This should mean we can match the cache key on a string like:
+    #  "'url': '/opentree', ..."
+    ## matching_key = "^localcomments:.*'url': '%s'" %s metadata['url]
+    ## cache.ram.clear(regex=matching_key)
 
 # Build and parse metadata for comments (stored as markdown in GitHub). 
 # The full footer is used for a thread starter (GitHub issue), while replies
