@@ -657,10 +657,10 @@ def build_localcomments_key(request):
 
 def clear_matching_cache_keys(key_pattern):
     # ASSUMES we're working with RAM cache
-    item_count_before = len(cache.ram.keys())
+    item_count_before = len(cache.ram.storage.keys())
     pprint("> clearing cached items matching [%s]" % key_pattern)
     cache.ram.clear(regex=key_pattern)
-    item_count_after = len(cache.ram.keys())
+    item_count_after = len(cache.ram.storage.keys())
     pprint("  %d items removed" % (item_count_after - item_count_before,))
 
 @cache(key=build_localcomments_key(request), 
