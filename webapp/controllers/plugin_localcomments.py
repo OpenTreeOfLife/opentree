@@ -650,6 +650,8 @@ def delete_comment(comment_id):
         resp_json = resp.json()
     except:
         resp_json = resp.json
+    # clobber all cached comments (since we have no metadata)
+    clear_matching_cache_keys("^localcomments:")
     return resp_json
 
 def build_localcomments_key(request):
@@ -657,11 +659,21 @@ def build_localcomments_key(request):
 
 def clear_matching_cache_keys(key_pattern):
     # ASSUMES we're working with RAM cache
+    # NOTE that we apparently need to "clear" (using a bogus regex) to get a fresh view of the cache
+    cache.ram.clear(regex='^_BOGUS_CACHE_KEY_$')
     item_count_before = len(cache.ram.storage.keys())
+    pprint("=== %d RAM cache keys BEFORE clearing: ===" % item_count_before)
+    for k in cache.ram.storage.keys():
+        pprint(k)
+    pprint("===")
     pprint("> clearing cached items matching [%s]" % key_pattern)
     cache.ram.clear(regex=key_pattern)
     item_count_after = len(cache.ram.storage.keys())
-    pprint("  %d items removed" % (item_count_after - item_count_before,))
+    pprint("=== %d RAM cache keys AFTER clearing: ===" % item_count_after)
+    for k in cache.ram.storage.keys():
+        pprint(k)
+    pprint("===")
+    pprint("  %d items removed" % (item_count_before - item_count_after,))
 
 @cache(key=build_localcomments_key(request), 
        time_expire=60*5, 
