@@ -750,11 +750,11 @@ def clear_local_comments():
                 root_relative_url = '/' + '/'.join(parts)
             print('root_relative_url:')
             print(root_relative_url)
-            clear_matching_cache_keys("^localcomments:.*'url':'%s'.*" % root_relative_url)
+            clear_matching_cache_keys("^localcomments:.*'url': '%s'.*" % root_relative_url)
         if metadata['Open Tree Taxonomy id']:
-            clear_matching_cache_keys("^localcomments:.*'ottol_id':'%s'.*" % metadata['Open Tree Taxonomy id'])
+            clear_matching_cache_keys("^localcomments:.*'ottol_id': '%s'.*" % metadata['Open Tree Taxonomy id'])
         if metadata['Synthetic tree node id']:
-            clear_matching_cache_keys("^localcomments:.*'synthtree_node_id':'%s'.*" % metadata['Synthetic tree node id'])
+            clear_matching_cache_keys("^localcomments:.*'synthtree_node_id': '%s'.*" % metadata['Synthetic tree node id'])
     else:
         # Play it safe and clobber *all* local comments in cache.
         print(">>> No metadata found. CLEARING ALL cached localcomments!")
