@@ -702,7 +702,7 @@ def clear_local_comments():
     # only the affected localcomments. If not, play it safe and clear all 
     # comments in the cache.
     trigger_action = request.vars.get('action', None)
-    pprint(">>> clear_local_comments(): trigger_action is [%s]" % trigger_action)
+    print(">>> clear_local_comments(): trigger_action is [%s]" % trigger_action)
 
     if trigger_action in ['created', 'TODO']:
         issue_with_metadata = request.vars.issue
@@ -711,7 +711,7 @@ def clear_local_comments():
         issue_with_metadata = request.vars.issue
     else:
         # fall back to most likely payload structure
-        pprint(">>> Unexpected trigger_action [%s]!" % trigger_action)
+        print(">>> Unexpected trigger_action [%s]!" % trigger_action)
         issue_with_metadata = request.vars.issue
 
     metadata = parse_comment_metadata(issue_with_metadata.get('body', ''))
@@ -727,7 +727,7 @@ def clear_local_comments():
             clear_matching_cache_keys("^localcomments:.*'synthtree_node_id':'%s'.*" % metadata['Synthetic tree node id'])
     else:
         # Play it safe and clobber *all* local comments in cache.
-        pprint(">>> No metadata found. CLEARING ALL cached localcomments!")
+        print(">>> No metadata found. CLEARING ALL cached localcomments!")
         clear_matching_cache_keys("^localcomments:")
 
 
