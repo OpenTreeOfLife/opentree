@@ -655,6 +655,14 @@ def delete_comment(comment_id):
 def build_localcomments_key(request):
     return 'localcomments:'+ request.url +'?'+ repr(request.vars)
 
+def clear_matching_cache_keys(key_pattern):
+    # ASSUMES we're working with RAM cache
+    item_count_before = len(cache.ram.keys())
+    pprint("> clearing cached items matching [%s]" % key_pattern)
+    cache.ram.clear(regex=key_pattern)
+    item_count_after = len(cache.ram.keys())
+    pprint("  %d items removed" % (item_count_after - item_count_before,))
+
 @cache(key=build_localcomments_key(request), 
        time_expire=None, 
        cache_model=cache.ram)
@@ -694,25 +702,38 @@ def get_local_comments(location={}):
     return results['items']
 
 def clear_local_comments():
-    # Keep it simple for now, just clobber all local comments in cache
-    # whenever *anything* changes. (Later we'll try to get more information
-    # about *where* comments were added or changed, and just clear those.)
-    print(">>> CLEARING all cached localcomments")
-    #import pdb; pdb.set_trace()
-    cache.ram.clear(regex='^localcomments:')
+    # Examine the JSON payload (now in request.vars) to see if we can clear
+    # only the affected localcomments. If not, play it safe and clear all 
+    # comments in the cache.
+    trigger_action = request.vars.get('action', None)
+    pprint(">>> clear_local_comments(): trigger_action is [%s]" % trigger_action)
 
-    # So how do we make this smarter?
-    # posted = parsed POST body
-    ## if posted.action == 'created':
-    ##   parse posted.issue.body for location fields
-    ## metadata = parse_comment_metadata(posted.issue.body)
-    # apply this generously (when in doubt, clear a cache entry)
-    # REMINDER: For now at least, it seems we always use just the 'url' filter:
-    #  {{=plugin_localcomments(filter=('url',),url=url)}}
-    # This should mean we can match the cache key on a string like:
-    #  "'url': '/opentree', ..."
-    ## matching_key = "^localcomments:.*'url': '%s'" %s metadata['url]
-    ## cache.ram.clear(regex=matching_key)
+    if trigger_action in ['created', 'TODO']:
+        issue_with_metadata = request.vars.issue
+    elif trigger_action in ['FOO', 'BAR']:
+        # different payload structure for some events?
+        issue_with_metadata = request.vars.issue
+    else:
+        # fall back to most likely payload structure
+        pprint(">>> Unexpected trigger_action [%s]!" % trigger_action)
+        issue_with_metadata = request.vars.issue
+
+    metadata = parse_comment_metadata(issue_with_metadata.get('body', ''))
+    if metadata:
+        # Clobber any cached comment keyed to its metadata. N.B. that we err on
+        # the side of clobbering, since reloading is no big deal, but we definitely
+        # don't want to show stale comments from the cache.
+        if metadata['URL']:
+            clear_matching_cache_keys("^localcomments:.*'url':'%s'.*" % metadata['URL'])
+        if metadata['Open Tree Taxonomy id']:
+            clear_matching_cache_keys("^localcomments:.*'ottol_id':'%s'.*" % metadata['Open Tree Taxonomy id'])
+        if metadata['Synthetic tree node id']:
+            clear_matching_cache_keys("^localcomments:.*'synthtree_node_id':'%s'.*" % metadata['Synthetic tree node id'])
+    else:
+        # Play it safe and clobber *all* local comments in cache.
+        pprint(">>> No metadata found. CLEARING ALL cached localcomments!")
+        clear_matching_cache_keys("^localcomments:")
+
 
 # Build and parse metadata for comments (stored as markdown in GitHub). 
 # The full footer is used for a thread starter (GitHub issue), while replies
