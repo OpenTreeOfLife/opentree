@@ -664,7 +664,7 @@ def clear_matching_cache_keys(key_pattern):
     pprint("  %d items removed" % (item_count_after - item_count_before,))
 
 @cache(key=build_localcomments_key(request), 
-       time_expire=None, 
+       time_expire=60*5, 
        cache_model=cache.ram)
 def get_local_comments(location={}):
     # Use the Search API to get all comments for this location. 
@@ -720,7 +720,25 @@ def clear_local_comments():
         # the side of clobbering, since reloading is no big deal, but we definitely
         # don't want to show stale comments from the cache.
         if metadata['URL']:
-            clear_matching_cache_keys("^localcomments:.*'url':'%s'.*" % metadata['URL'])
+            # Extract a root-relative URL from markdown strings like 
+            # "[devtree.opentreeoflife.org/opentree/argus/otol.draft.22@132](http://devtree.opentreeoflife.org/opentree/argus/otol.draft.22@132)"
+            markdown_url = metadata['URL']
+            print('markdown_url:')
+            print(markdown_url)
+            parts = markdown_url.split('[')
+            if len(parts) > 1:
+                markdown_url = parts[1]
+                parts = markdown_url.split(']')
+                markdown_url = parts[0]
+                parts = markdown_url.split('/')[1:]
+                root_relative_url = '/' + '/'.join(parts)
+            else:
+                // assume we have an absolute URL, and remove three slashes
+                parts = markdown_url.split('/')[3:]
+                root_relative_url = '/' + '/'.join(parts)
+            print('root_relative_url:')
+            print(root_relative_url)
+            clear_matching_cache_keys("^localcomments:.*'url':'%s'.*" % root_relative_url)
         if metadata['Open Tree Taxonomy id']:
             clear_matching_cache_keys("^localcomments:.*'ottol_id':'%s'.*" % metadata['Open Tree Taxonomy id'])
         if metadata['Synthetic tree node id']:
