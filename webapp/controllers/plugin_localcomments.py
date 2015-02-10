@@ -733,7 +733,7 @@ def clear_local_comments():
                 parts = markdown_url.split('/')[1:]
                 root_relative_url = '/' + '/'.join(parts)
             else:
-                // assume we have an absolute URL, and remove three slashes
+                # assume we have an absolute URL, and remove three slashes
                 parts = markdown_url.split('/')[3:]
                 root_relative_url = '/' + '/'.join(parts)
             print('root_relative_url:')
