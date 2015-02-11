@@ -4016,15 +4016,22 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     // move its collections into the view model Nexson
     var nexmlName = ('nex:nexml' in data) ? 'nex:nexml' : 'nexml';
  
+    // check for needed collections
+    var itsOTUsCollection =  data[nexmlName]['otus'];
+    var itsTreesCollection = data[nexmlName]['trees'];
+    if (!itsOTUsCollection || !itsTreesCollection) {
+        hideModalScreen();
+        showErrorMessage('Sorry, no trees were found in this file.');
+        return;
+    }
+    
     // coerce the inner array of each collection into an array
     // (override Badgerfish singletons)
     // NOTE that there may be multiple trees elements, otus elements
-    var itsOTUsCollection =  data[nexmlName]['otus'];
     $.each(itsOTUsCollection, function(i, otusElement) {
         otusElement['otu'] = makeArray( otusElement['otu'] );
     });
 
-    var itsTreesCollection = data[nexmlName]['trees'];
     $.each(itsTreesCollection, function(i, treesElement) {
         treesElement['tree'] = makeArray( treesElement['tree'] );
         $.each( treesElement.tree, function(i, tree) {
