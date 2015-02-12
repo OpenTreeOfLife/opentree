@@ -474,14 +474,16 @@ def to_nexson():
         # 'supporting-files-metadata' annotationEvent. This matches our current
         # policy for annotations; see 
         # https://github.com/OpenTreeOfLife/phylesystem-api/wiki/Annotations-in-NexSON#33-storage-and-placement-of-message-objects
+        tree_ids = [tree_id for (tree_group_id, tree_id, imported_tree) in iter_trees(nex)]
+        quoted_tree_ids = ["'{s}'".format(s=tree_id) for tree_id in tree_ids]
         r['annotationFileInfo'] = { 
             u'@filename': read_filename,
             u'@size': size,
-            u'sourceForTree': [{'$':tree_id} for (tree_group_id, tree_id, imported_tree) in iter_trees(nex)],
+            u'sourceForTree': [{'$':tree_id} for tree_id in tree_ids],
             u'@type': read_inp_format,
             u'@url': URL(f='download', args=[File['doc']]),
             u'description': {
-                u'$': "Source data for tree '{u}'".format(u=tree_id)
+                u'$': len(quoted_tree_ids) and "Source data for tree(s) {s}".format(s=', '.join(quoted_tree_ids)) or "No trees found in this file."
             }
         }
         return r
