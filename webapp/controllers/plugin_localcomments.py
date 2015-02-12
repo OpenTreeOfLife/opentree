@@ -494,10 +494,12 @@ def index():
     else:   # fall back to url
         comments = get_local_comments({"URL": url})
 
+    #pprint(comments) 
+
     for comment in comments:
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
         threads.append(comment)
-    ##pprint('{0} threads loaded'.format(len(threads)))
+    pprint('{0} threads loaded'.format(len(threads)))
     return DIV(script,
                DIV(FORM(# anonymous users should see be encouraged to login or add a name-or-email to their comments
                         '' if auth.user_id else A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
@@ -648,22 +650,51 @@ def delete_comment(comment_id):
         resp_json = resp.json()
     except:
         resp_json = resp.json
+    # clobber all cached comments (since we have no metadata)
+    clear_matching_cache_keys("^localcomments:")
     return resp_json
 
+def build_localcomments_key(request):
+    return 'localcomments:'+ request.url +'?'+ repr(request.vars)
+
+def clear_matching_cache_keys(key_pattern):
+    # ASSUMES we're working with RAM cache
+    # NOTE that we apparently need to "clear" (using a bogus regex) to get a fresh view of the cache
+    cache.ram.clear(regex='^_BOGUS_CACHE_KEY_$')
+    item_count_before = len(cache.ram.storage.keys())
+    pprint("=== %d RAM cache keys BEFORE clearing: ===" % item_count_before)
+    for k in cache.ram.storage.keys():
+        pprint(k)
+    pprint("===")
+    pprint("> clearing cached items matching [%s]" % key_pattern)
+    cache.ram.clear(regex=key_pattern)
+    item_count_after = len(cache.ram.storage.keys())
+    pprint("=== %d RAM cache keys AFTER clearing: ===" % item_count_after)
+    for k in cache.ram.storage.keys():
+        pprint(k)
+    pprint("===")
+    pprint("  %d items removed" % (item_count_before - item_count_after,))
+
+@cache(key=build_localcomments_key(request), 
+       time_expire=60*5, 
+       cache_model=cache.ram)
 def get_local_comments(location={}):
     # Use the Search API to get all comments for this location. 
     # See https://developer.github.com/v3/search/#search-issues
     # build and encode search text (location "filter")
+    print('>> its cache key would be:')
+    print(build_localcomments_key(request))
     search_text = '' 
     for k,v in location.items():
         search_text = '{0}"{1} | {2} " '.format( search_text, k, v )
-        print search_text
     search_text = urllib.quote_plus(search_text.encode('utf-8'), safe='~')
+    #print search_text
+    print('>> calling GitHub API for local issues...')
     url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+state:open&sort=created&order=desc'
     ##TODO: search only within body?
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
     url = url.format(GH_BASE_URL, search_text)
-    print(url)
+    ##print(url)
     resp = requests.get( url, headers=GH_GET_HEADERS)
     ##print(resp)
     resp.raise_for_status()
@@ -672,11 +703,63 @@ def get_local_comments(location={}):
     except:
         results = resp.json
     ##pprint(results)
-    print("Returned {0} issues ({1})".format(
-        results["total_count"],
-        results["incomplete_results"] and 'INCOMPLETE' or 'COMPLETE'
-        ))
+    ##print("Returned {0} issues ({1})".format(
+    ##  results["total_count"],
+    ##  results["incomplete_results"] and 'INCOMPLETE' or 'COMPLETE'
+    ##  ))
     return results['items']
+
+def clear_local_comments():
+    # Examine the JSON payload (now in request.vars) to see if we can clear
+    # only the affected localcomments. If not, play it safe and clear all 
+    # comments in the cache.
+    trigger_action = request.vars.get('action', None)
+    print(">>> clear_local_comments(): trigger_action is [%s]" % trigger_action)
+
+    if trigger_action in ['created', 'TODO']:
+        issue_with_metadata = request.vars.issue
+    elif trigger_action in ['FOO', 'BAR']:
+        # different payload structure for some events?
+        issue_with_metadata = request.vars.issue
+    else:
+        # fall back to most likely payload structure
+        print(">>> Unexpected trigger_action [%s]!" % trigger_action)
+        issue_with_metadata = request.vars.issue
+
+    metadata = parse_comment_metadata(issue_with_metadata.get('body', ''))
+    if metadata:
+        # Clobber any cached comment keyed to its metadata. N.B. that we err on
+        # the side of clobbering, since reloading is no big deal, but we definitely
+        # don't want to show stale comments from the cache.
+        if metadata['URL']:
+            # Extract a root-relative URL from markdown strings like 
+            # "[devtree.opentreeoflife.org/opentree/argus/otol.draft.22@132](http://devtree.opentreeoflife.org/opentree/argus/otol.draft.22@132)"
+            markdown_url = metadata['URL']
+            print('markdown_url:')
+            print(markdown_url)
+            parts = markdown_url.split('[')
+            if len(parts) > 1:
+                markdown_url = parts[1]
+                parts = markdown_url.split(']')
+                markdown_url = parts[0]
+                parts = markdown_url.split('/')[1:]
+                root_relative_url = '/' + '/'.join(parts)
+            else:
+                # assume we have an absolute URL, and remove three slashes
+                parts = markdown_url.split('/')[3:]
+                root_relative_url = '/' + '/'.join(parts)
+            print('root_relative_url:')
+            print(root_relative_url)
+            clear_matching_cache_keys("^localcomments:.*'url': '%s'.*" % root_relative_url)
+        if metadata['Open Tree Taxonomy id']:
+            clear_matching_cache_keys("^localcomments:.*'ottol_id': '%s'.*" % metadata['Open Tree Taxonomy id'])
+        if metadata['Synthetic tree node id']:
+            clear_matching_cache_keys("^localcomments:.*'synthtree_node_id': '%s'.*" % metadata['Synthetic tree node id'])
+    else:
+        # Play it safe and clobber *all* local comments in cache.
+        print(">>> No metadata found. CLEARING ALL cached localcomments!")
+        clear_matching_cache_keys("^localcomments:")
+
 
 # Build and parse metadata for comments (stored as markdown in GitHub). 
 # The full footer is used for a thread starter (GitHub issue), while replies
