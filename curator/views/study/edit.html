@@ -598,7 +598,7 @@ body {
                       {{ else: }}
                         <th>Tree name (click to view)</th>
                       {{ pass }}
-                        <th>Inference method</th>
+                        <th>Inference method(s)</th>
                         <th>Ingroup clade</th>
                         <th>Tree root</th>
                         <th>OTUs mapped</th>
@@ -633,7 +633,7 @@ body {
                                 Review ambiguous labels
                             </a> 
                         </td>
-                        <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
+                        <td data-bind="text: tree['^ot:inferenceMethods'].join(',') || 'Unspecified',
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
@@ -2152,30 +2152,42 @@ body {
          <form class="form-inline" style="overflow: hidden; margin-bottom: 0px;">
           {{ if viewOrEdit == 'EDIT': }}
             <!-- editable tree properties here -->
-              <div style="padding: 0 4px;">
-                <label>Inference method: </label>
-                <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny --> 
-                <select id="inference-method-select"
-                        onchange="(this); return false;"
-                        data-bind="options: [
-                                       'Bayesian inference ',
-                                       'Maximum likelihood ',
-                                       'Maximum parsimony ',
-                                       'Neighbor-joining ',
-                                       'UPGMA ',
-                                       'Least squares ',
-                                       'Three-taxon analysis',
-                                       'Other (specify)'
-                                   ], 
-                                   optionsCaption: 'Choose a method...',
-                                   event: { change: updateInferenceMethodWidgets }, 
-                                   css: viewModel.ticklers.TREES">
-                </select>
-                <input type="text" id="inference-method-other" 
-                       placeholder="Other (specify)"
-                       data-bind="event: { change: updateInferenceMethodWidgets }, 
-                                  css: viewModel.ticklers.TREES"></input>
+
+                <label>Description: </label>
+                <input type="text" data-bind="value: $data['^ot:treeDescription']"
+                    class="input-xxlarge" style="margin-bottom: 2px;"
+                    placeholder="Add a brief note about this tree">
               <br/>
+                <label>Tree type: </label>
+                <select data-bind="options: treeTypes,
+                    optionsValue: function(item) { 
+                        return item.value;
+                    },
+                    optionsText: function(item) { 
+                        return item.label || item.value;
+                    },
+                    value: $data['^ot:treeType'],
+                    event: { keyup: nudge.TREES, change: nudge.TREES },
+                    css: viewModel.ticklers.TREES
+                    ">TYPE</select>
+
+              <div style="padding: 0 4px;">
+                <label>Inference method(s): </label>
+                <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny --> 
+              <div style="position: relative; top: -5px;" 
+                  data-bind="foreach: {data: inferenceMethods, as: 'method'}">
+                <label class="checkbox inference-method-checkbox" style="padding-left: 20px;" 
+                       data-bind="attr: {'for': 'inference-method-'+ $index()}">
+                    <input type="checkbox"
+                           data-bind="attr: {
+                                        'id': 'inference-method-'+ $index(),
+                                        'value': method['value'] 
+                                      },
+                                      checked: $parent['^ot:inferenceMethods']" /> 
+                    <span data-bind="text: method['label'] || method['value']">&nbsp;</span>
+                </label>
+              </div>
+              
                 <label for="testtest">Root node: </label>
                 <strong data-bind="text: getRootNodeDescriptionForTree($data), 
                                    css: viewModel.ticklers.TREES"></strong>
@@ -2308,9 +2320,16 @@ body {
 
           {{ else: }}
             <!-- read-only tree properties here -->
-              <div class="pull-left" style="width: 48%;">
-                <label>Inference method: </label>
-                <strong data-bind="text: $data['^ot:curatedType'] || 'Unspecified'">TYPE</strong>
+              <div class="pull-left">
+                <label>Description: </label>
+                <strong  data-bind="text: $data['^ot:treeDescription'] || 'None'">TYPE</strong>
+              </div>
+              <div class="pull-left" style="clear: left; width: 48%;">
+                <label>Tree type: </label>
+                <strong data-bind="text: $data['^ot:treeType'] || 'Unspecified'">TYPE</strong>
+              <br/>
+                <label>Inference method(s): </label>
+                <strong  data-bind="text: $data['^ot:inferenceMethods'].join(', ') || 'Unspecified'">TYPE</strong>
               <br/>
                 <label for="testtest">Root node: </label>
                <!-- TODO: tag(s) for this tree? -->
