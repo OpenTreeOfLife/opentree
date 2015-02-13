@@ -59,6 +59,20 @@ var API_remove_file_DELETE_url;
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
 
+// Enumerate the expected values for tree inference methods. 
+// N.B. Multiple values are allowed!
+var inferenceMethods = [
+    // add a 'label' attribute if not the same as 'value'
+    // { value: 'BAYESIAN', label: "Bayesian inference" },
+    { value: 'Bayesian inference'},
+    { value: 'Maximum likelihood'}, 
+    { value: 'Maximum parsimony'},
+    { value: 'Neighbor-joining'},
+    { value: 'UPGMA'},
+    { value: 'Least squares'},
+    { value: 'Three-taxon analysis'},
+];
+
 var tagsOptions = {
     confirmKeys: [13, 9],  // ENTER, TAB for next tag
     allowDuplicates: false,  // default, but added here for clarity
@@ -2090,7 +2104,9 @@ function normalizeTree( tree ) {
 
     // metadata fields (with empty default values)
     var metatags = [
-        '^ot:curatedType',
+        //'^ot:curatedType',    // DEPRECATED
+        '^ot:treeType',
+        '^ot:treeDescription',
         '^ot:specifiedRoot',
         '^ot:inGroupClade',
         '^ot:outGroupEdge',
@@ -2111,6 +2127,26 @@ function normalizeTree( tree ) {
         tree['^ot:tag'] = makeArray(tree['^ot:tag']);
     } else {
         tree['^ot:tag'] = [ ];
+    }
+
+    // add array of inference methods (convert singleton)
+    if ('^ot:inferenceMethods' in tree) {
+        tree['^ot:inferenceMethods'] = makeArray(tree['^ot:inferenceMethods']);
+    } else {
+        tree['^ot:inferenceMethods'] = [ ];
+        if ('^ot:curatedType' in tree) {
+            // One-time migration of matching value from old curatedType field
+            var oldCuratedType = $.trim(tree['^ot:curatedType']);
+            var foundMatchingMethod = false;
+            $.each(inferenceMethods, function(i, methodInfo) {
+                if (methodInfo.value === oldCuratedType) {
+                    foundMatchingMethod = true;
+                }
+            });
+            if (foundMatchingMethod) {
+                tree['^ot:inferenceMethods'].push(oldCuratedType);
+            }
+        }
     }
 
     removeDuplicateTags( tree );
@@ -2918,6 +2954,8 @@ function showTreeViewer( tree, options ) {
     // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
     $.each($boundElements, function(i, el) {
         ko.cleanNode(el);
+        // remove all but one inference checkbox (else they multiply!)
+        $('.inference-method-checkbox:gt(0)').remove();
         ko.applyBindings(tree,el);
     });
 
@@ -2927,7 +2965,6 @@ function showTreeViewer( tree, options ) {
                 $('#tree-tags').tagsinput('destroy');
                 treeTagsInitialized = false;
             }
-            updateInferenceMethodWidgets( tree );
             $('#tree-tags').tagsinput( tagsOptions );
             // add all tag values directly from nemxml
             $.each( getTags( tree, {FULL_TAG_INFO: true}), function(i, tagInfo) {
@@ -5840,39 +5877,6 @@ function updateElementTags( select ) {
         // trim final string just to be safe
         addTag( parentElement, $.trim(rawTagValue) );
     });
-}
-
-function updateInferenceMethodWidgets( tree, event ) {
-    // This is a sort of indirect binding, since we want to offer both
-    // preset options and free-form text for inference methods.
-    var $selectWidget = $('#inference-method-select');
-    var $freeTextWidget = $('#inference-method-other');
-    if (event) {
-        // read from widgets and apply value
-        var selectValue = $selectWidget.val();
-        if (selectValue === 'Other (specify)') {
-            $freeTextWidget.show();
-            tree['^ot:curatedType'] = $freeTextWidget.val();
-        } else {
-            $('#inference-method-other').hide();
-            tree['^ot:curatedType'] = selectValue;
-        }
-    } else {
-        // read from model and update widget display
-        var modelValue = tree['^ot:curatedType'];
-        // check this value against SELECT options
-        if ($selectWidget.find("option[value='"+ modelValue +"']").length === 0) {
-            // not a preset option, use free-form text
-            $selectWidget.val('Other (specify)');
-            $freeTextWidget.val(modelValue);
-            $freeTextWidget.show();
-        } else {
-            // select the matching option, hide the field
-            $selectWidget.val(modelValue);
-            $freeTextWidget.hide();
-        }
-    }
-    nudgeTickler('TREES');
 }
 
 function getTreeChildNodes(parentNode, options) {
