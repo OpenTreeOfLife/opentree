@@ -2152,10 +2152,29 @@ body {
          <form class="form-inline" style="overflow: hidden; margin-bottom: 0px;">
           {{ if viewOrEdit == 'EDIT': }}
             <!-- editable tree properties here -->
+
+                <label>Description: </label>
+                <input type="text" data-bind="value: $data['^ot:treeDescription']"
+                    class="input-xxlarge" style="margin-bottom: 2px;"
+                    placeholder="Add a brief note about this tree">
+              <br/>
+                <label>Tree type: </label>
+                <select data-bind="options: treeTypes,
+                    optionsValue: function(item) { 
+                        return item.value;
+                    },
+                    optionsText: function(item) { 
+                        return item.label || item.value;
+                    },
+                    value: $data['^ot:treeType'],
+                    event: { keyup: nudge.TREES, change: nudge.TREES },
+                    css: viewModel.ticklers.TREES
+                    ">TYPE</select>
+
               <div style="padding: 0 4px;">
                 <label>Inference method(s): </label>
                 <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny --> 
-              <div style="position: relative; top: -6px;" 
+              <div style="position: relative; top: -5px;" 
                   data-bind="foreach: {data: inferenceMethods, as: 'method'}">
                 <label class="checkbox inference-method-checkbox" style="padding-left: 20px;" 
                        data-bind="attr: {'for': 'inference-method-'+ $index()}">
@@ -2301,9 +2320,16 @@ body {
 
           {{ else: }}
             <!-- read-only tree properties here -->
-              <div class="pull-left" style="width: 48%;">
+              <div class="pull-left">
+                <label>Description: </label>
+                <strong  data-bind="text: $data['^ot:treeDescription'] || 'None'">TYPE</strong>
+              </div>
+              <div class="pull-left" style="clear: left; width: 48%;">
+                <label>Tree type: </label>
+                <strong data-bind="text: $data['^ot:treeType'] || 'Unspecified'">TYPE</strong>
+              <br/>
                 <label>Inference method(s): </label>
-                <strong data-bind="text: $data['^ot:inferenceMethods'].join(', ') || 'Unspecified'">TYPE</strong>
+                <strong  data-bind="text: $data['^ot:inferenceMethods'].join(', ') || 'Unspecified'">TYPE</strong>
               <br/>
                 <label for="testtest">Root node: </label>
                <!-- TODO: tag(s) for this tree? -->

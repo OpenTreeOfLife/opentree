@@ -70,7 +70,17 @@ var inferenceMethods = [
     { value: 'Neighbor-joining'},
     { value: 'UPGMA'},
     { value: 'Least squares'},
-    { value: 'Three-taxon analysis'},
+    { value: 'Three-taxon analysis'}
+];
+// Enumerate the expected values for "tree type" 
+var treeTypes = [
+    // add a 'label' attribute if not the same as 'value'
+    // { value: 'GENE_TREE', label: "gene tree" },
+    { value: '', label: "Choose one..." },
+    { value: 'gene tree'},
+    { value: 'supermatrix'}, 
+    { value: 'supertree'},
+    { value: 'species tree'}
 ];
 
 var tagsOptions = {
@@ -2134,19 +2144,48 @@ function normalizeTree( tree ) {
         tree['^ot:inferenceMethods'] = makeArray(tree['^ot:inferenceMethods']);
     } else {
         tree['^ot:inferenceMethods'] = [ ];
-        if ('^ot:curatedType' in tree) {
-            // One-time migration of matching value from old curatedType field
-            var oldCuratedType = $.trim(tree['^ot:curatedType']);
-            var foundMatchingMethod = false;
-            $.each(inferenceMethods, function(i, methodInfo) {
-                if (methodInfo.value === oldCuratedType) {
-                    foundMatchingMethod = true;
-                }
-            });
-            if (foundMatchingMethod) {
+    }
+
+    // One-time capture of matching value from old 'curatedType' field into
+    // one of the new tree properties. If it matches one of the expected values
+    // for inferenceMethods or treeType, move it there; otherwise append it to
+    // the description (which is probably empty).
+    if ('^ot:curatedType' in tree) {
+        var oldCuratedType = $.trim(tree['^ot:curatedType']);
+        var foundMatchingMethod = false;
+        $.each(inferenceMethods, function(i, methodInfo) {
+            if (methodInfo.value === oldCuratedType) {
+                foundMatchingMethod = true;
+            }
+        });
+        if (foundMatchingMethod) {
+            // add it to our list IF it's not already there
+            var methodNotSet = $.inArray(oldCuratedType, tree['^ot:inferenceMethods']) === -1;
+            if (methodNotSet) {
                 tree['^ot:inferenceMethods'].push(oldCuratedType);
+                return;
             }
         }
+
+        var foundMatchingTreeType = false;
+        $.each(treeTypes, function(i, typeInfo) {
+            if (typeInfo.value === oldCuratedType) {
+                foundMatchingTreeType = true;
+            }
+        });
+        if (foundMatchingTreeType) {
+            // set tree type to match, IF it's empty
+            if ($.trim(tree['^ot:treeType']) === '') {
+                tree['^ot:treeType'] = oldCuratedType;
+                return;
+            }
+        }
+
+        // still here? then add it (play it safe) to the description
+        tree['^ot:treeDescription'] += oldCuratedType;
+
+        // clobber the deprecated field
+        delete tree['^ot:curatedType'];
     }
 
     removeDuplicateTags( tree );
