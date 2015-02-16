@@ -1,0 +1,49 @@
+{{ response.title = "User Profile"
+from pprint import pprint
+
+# The incoming view_dict will contain these special properties:
+#   userid: from the query-string, or from the logged-in user
+#   user_info: JSON response fetched from GitHub User API, or
+#   error_msg: INSTEAD of user_info, if unable to fetch it
+
+response.subtitle = userid
+left_sidebar_enabled,right_sidebar_enabled=False,False
+}}
+{{extend 'layout.html'}}
+
+{{ if error_msg: 
+     if error_msg == 'Not Found': 
+     # no such user found on GitHub }}
+    <p class="interesting-value">Sorry, we can't find user '{{= userid}}' on GitHub. Please check the URL above and try agin.</p>
+{{   else: 
+     # some other error }}
+    <h2>{{= error_msg }}</h2>
+    <p class="interesting-value">There was a problem retrieving this user's profile. Please try again.</p>
+{{   pass  
+   else: 
+   # user data loaded successfully from GitHub }}
+<div class="row">
+ <div class="span8 wireframe">
+    {{ for userprop in user_info: }}
+    <strong>{{= userprop }}</strong> {{= user_info[ userprop ]}}
+    <br/>
+    {{ pass }}
+{{
+# login // github id
+# name  // display name
+# company
+# html_url  // GitHub profile page
+# avatar_url  // img URL
+# blog   // URL to personal site
+# location  // geo, or 'None'
+# email   // OK to show this?
+# type    // User (vs. what?)
+# bio    // text, or None
+# gists_url   // need this?
+}}
+    
+ </div>
+</div>
+{{ pass }}
+<script language="javascript"><!--
+//--></script>

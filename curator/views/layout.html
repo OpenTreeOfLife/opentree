@@ -177,10 +177,16 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         $authNavbar.empty().append( $authMenuLink );
       } else {
         // it has multiple menu items; make it a proper (Bootstrap) dropdown menu
-        jQuery('ul#auth-navbar > li:last-child > a').attr({
+        var $menuTrigger = jQuery('ul#auth-navbar > li:last-child > a');
+        $menuTrigger.attr({
             'class':'dropdown-toggle',
             'data-toggle': 'dropdown'
         });
+        // add menu items for user profile and collections(?)
+        var $menu = $menuTrigger.next('ul.dropdown-menu');
+        // REMINDER: these items will appear in reverse order!
+        $menu.prepend('<li><a href="/curator/profile" rel="nofollow">My curator profile</a><li>');
+        $menu.prepend('<li><a href="/curator/profile#collections" rel="nofollow">My collections</a><li>');
       }
       
       // tweak validation errors to show proper Bootstrap classes

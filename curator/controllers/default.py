@@ -7,6 +7,8 @@ from applications.opentree.modules.opentreewebapputil import(
 # 'opentree'. Any name changes will be needed here as well!
 
 from peyotl.manip import merge_otus_and_trees, iter_trees
+import requests
+from pprint import pprint
 import json
 #import pdb
 # this file is released under public domain and you can use without limitations
@@ -59,6 +61,83 @@ def user():
     """
     return dict(form=auth())
 
+def profile():
+    """
+    shows a personalized profile for any user (default = the current logged-in user) 
+    http://..../{app}/default/profile/[username]
+    """
+    view_dict = get_opentree_services_method_urls(request)
+
+    # prepare for calls to the GitHub User API
+    GH_BASE_URL = 'https://api.github.com'
+    oauth_token_path = os.path.expanduser('~/.ssh/OPENTREEAPI_OAUTH_TOKEN')
+    try:
+        OPENTREEAPI_AUTH_TOKEN = open(oauth_token_path).read().strip()
+    except:
+        OPENTREEAPI_AUTH_TOKEN = ''
+        print("OAuth token (%s) not found!" % oauth_token_path)
+
+    # if the current user is logged in, use their auth token instead
+    USER_AUTH_TOKEN = auth.user and auth.user.github_auth_token or None
+
+    # Specify the media-type from GitHub, to freeze v3 API responses and get
+    # the comment body as markdown (vs. plaintext or HTML)
+    PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json'
+    # to get markdown AND html body, use 'application/vnd.github.v3.full+json'
+
+    GH_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+    GH_GET_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
+                      'Accept': PREFERRED_MEDIA_TYPE}
+    GH_POST_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
+                       'Content-Type': 'application/json',
+                       'Accept': PREFERRED_MEDIA_TYPE}
+
+    # if the URL has a [username], try to load their information
+    if len(request.args) > 0:
+        # try to load a profile for the specified userid, using the GitHub API
+        specified_userid = request.args[0]
+        view_dict['userid'] = specified_userid
+        user_info_found = False
+
+        url = '{0}/users/{1}'.format(GH_BASE_URL, specified_userid)
+        print('>>> trying to fetch user info: ', url)
+        resp = requests.get( url, headers=GH_GET_HEADERS)
+        json_response = resp.json()
+        error_msg = json_response.get('message', None)
+        view_dict['error_msg'] = error_msg
+        if error_msg:
+            # pass error to the page for display
+            print("ERROR FETCHING INFO FOR USERID: ", specified_userid)
+            print(error_msg)
+        else:
+            # pass user info to the page for display
+            view_dict['user_info'] = json_response
+        return view_dict
+
+    else:
+        # No userid was provided in the URL. Instead, we should try to show the
+        # current user's profile if they're logged in (or try to force a login).
+        if auth.is_logged_in():
+            current_userid = auth.user and auth.user.github_login or None
+            view_dict['userid'] = current_userid
+            url = '{0}/users/{1}'.format(GH_BASE_URL, current_userid)
+            print('>>> trying to fetch current user info: ', url)
+            resp = requests.get( url, headers=GH_GET_HEADERS)
+            json_response = resp.json()
+            error_msg = view_dict['error_msg'] = json_response.get('message', None)
+            if error_msg:
+                # pass error to the page for display
+                print("ERROR FETCHING INFO FOR USERID: ", specified_userid)
+                print(error_msg)
+                view_dict['user_info'] = None
+            else:
+                # pass user info to the page for display
+                view_dict['user_info'] = json_response
+            return view_dict
+        else:
+            # try to force a login and return here
+            redirect(URL('curator', 'user', 'login',
+                     vars=dict(_next=URL(args=request.args, vars=request.vars))))
 
 def download():
     """
@@ -202,7 +281,6 @@ def to_nexson():
     N.B. Further documentation is available in curator/README.md
     '''
     _LOG = get_logger(request, 'to_nexson')
-    ##pdb.set_trace()
     orig_args = {}
     is_upload = False
     # several of our NexSON use "uploadid" instead of "uploadId" so we should accept either
