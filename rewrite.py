@@ -226,9 +226,9 @@ def make_response_CORS_compliant(request, http_response):
     http_response.headers['Access-Control-Allow-Origin'] = '*'
     # echo requested methods and headers, if found (helps with cached response to OPTIONS)
     if request.env.http_access_control_request_method:
-         response.headers['Access-Control-Allow-Methods'] = request.env.http_access_control_request_method
+         http_response.headers['Access-Control-Allow-Methods'] = request.env.http_access_control_request_method
     if request.env.http_access_control_request_headers:
-         response.headers['Access-Control-Allow-Headers'] = request.env.http_access_control_request_headers
+         http_response.headers['Access-Control-Allow-Headers'] = request.env.http_access_control_request_headers
     http_response.headers['Access-Control-Max-Age'] = 86400
 
 def try_rewrite_on_error(http_response, request, environ, ticket=None):
