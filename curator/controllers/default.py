@@ -149,6 +149,11 @@ def _get_opentree_activity( userid=None ):
         return None
     activity_found = False
     activity = {'comments':[], 'studies':[], 'collections':[]}
+    # TODO: use GitHub API to gather comments from this user
+    # https://github.com/OpenTreeOfLife/feedback/issues/created_by/jimallman
+    # TODO: use oti to gather studies curated by this user
+    # TODO: cull the list of curated studies by first curator name (added by...)
+    # TODO: fetch collections once we have a home for them
     if activity_found:
         return activity
     else:
