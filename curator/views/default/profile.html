@@ -1,17 +1,43 @@
 {{ response.title = "User Profile"
 from pprint import pprint
 
+left_sidebar_enabled,right_sidebar_enabled=False,False
+
 # The incoming view_dict will contain these special properties:
 #   userid: from the query-string, or from the logged-in user
 #   user_info: JSON response fetched from GitHub User API, or
 #   error_msg: INSTEAD of user_info, if unable to fetch it
+#   opentree_activity: None, or a dict with one or more of
+#       comments: a count, perhaps more information, or None?
+#       collections: list or None?
+#       studies: a count, roles played, or None?
 
-response.subtitle = userid
-left_sidebar_enabled,right_sidebar_enabled=False,False
+response.title = "User profile"
+response.subtitle = XML(
+    '%s <a style="font-weight: normal; font-size: 0.75em;" href="%s" target="_blank" title="Open GitHub profile in a new window">(%s)</a>' % (
+        user_info.get('name', user_info.get('login', 'User not found')), 
+        user_info.get('html_url'), 
+        user_info.get('login'),
+    )
+)
+
 }}
 {{extend 'layout.html'}}
-
-{{ if error_msg: 
+<style type="text/css">
+.user-profile .form-horizontal .control-group {
+    margin-bottom: 0px;
+}
+.user-profile .form-horizontal .control-group:after {
+    clear: none;
+}
+.activity-stats {
+    background-color: #eee;
+    border-radius: 8px;
+    overflow: hidden;
+}
+</style>
+{{
+if error_msg: 
      if error_msg == 'Not Found': 
      # no such user found on GitHub }}
     <p class="interesting-value">Sorry, we can't find user '{{= userid}}' on GitHub. Please check the URL above and try agin.</p>
@@ -23,24 +49,138 @@ left_sidebar_enabled,right_sidebar_enabled=False,False
    else: 
    # user data loaded successfully from GitHub }}
 <div class="row">
- <div class="span8 wireframe">
+ <div class="span2">
+    <img src="{{= user_info.get('avatar_url', '') }}" 
+         alt="{{= user_info.get('name', user_info.get('login', 'User')) }} avatar" 
+         style="width: 105px; height: 105px; padding: 0 0 30px 0;">
+ </div>
+ <div class="span10 wireframe user-profile">
+{{# Display selected information for this user
+    # login         // github id
+    # name          // display name
+    # html_url      // GitHub profile page
+    # avatar_url    // img URL
+    # company
+    # blog          // URL to personal site
+    # location      // geo, or 'None'
+    # email         // OK to show this?
+    # type          // User or Organization
+    # bio           // UNUSED?
+    # gists_url     // need this?
+}}
+
+<!-- dump all values from GitHub user API
     {{ for userprop in user_info: }}
     <strong>{{= userprop }}</strong> {{= user_info[ userprop ]}}
     <br/>
     {{ pass }}
-{{
-# login // github id
-# name  // display name
-# company
-# html_url  // GitHub profile page
-# avatar_url  // img URL
-# blog   // URL to personal site
-# location  // geo, or 'None'
-# email   // OK to show this?
-# type    // User (vs. what?)
-# bio    // text, or None
-# gists_url   // need this?
-}}
+-->
+
+<form class="form-horizontal wider-fields">
+  {{ if user_info['company']: }}
+    <div class="control-group">
+        <label class="control-label">Affiliation</label>
+        <div class="controls">
+            <p class="static-form-value">{{= user_info['company'] }}</p>
+        </div>
+    </div>
+  {{ pass }}
+  {{ if user_info['blog']: }}
+    <div class="control-group">
+        <label class="control-label">Website</label>
+        <div class="controls">
+          <p class="static-form-value">
+            <a href="{{= user_info['blog'] }}" target="_blank">{{= user_info['blog'] }}</a>
+          </p>
+        </div>
+    </div>
+  {{ pass }}
+  {{ if user_info['email']: }}
+    <div class="control-group">
+        <label class="control-label">Email</label>
+        <div class="controls">
+          <p class="static-form-value">
+            <a href="mailto:{{= user_info['email'] }}">{{= user_info['email'] }}</a>
+          </p>
+        </div>
+    </div>
+  {{ pass }}
+  {{ if user_info['bio']: }}
+    <div class="control-group">
+        <label class="control-label">Bio</label>
+        <div class="controls">
+            <p class="static-form-value">{{= user_info['bio'] }}</p>
+        </div>
+    </div>
+  {{ pass }}
+  {{ if not user_info.get('opentree_activity'): 
+       # this user (or organization) has no activity to show }}
+    <div class="control-group">
+        <div class="controls">
+            <p class="static-form-value interesting-value" Xstyle="font-weight: bold;">
+              {{ if user_info['type'] == 'Organization': }}
+                This organization was found on GitHub, but is not an OpenTree participant.
+              {{ else: }}
+                This user was found on GitHub, but is not an active OpenTree participant.
+              {{ pass }}
+            </p>
+        </div>
+    </div>
+  {{ pass }}
+</form>
+
+{{ if True or user_info.get('opentree_activity'):
+       # show this user's activity in the Open Tree sites }}
+<form class="form-horizontal wider-fields activity-stats">
+    <div class="control-group">
+        <label class="control-label">Curator since</label>
+        <div class="controls">
+            <p class="static-form-value">{{= 'TODO' }}</p>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">Studies added</label>
+        <div class="controls">
+            <p class="static-form-value">{{= 'TODO' }}</p>
+            <!--  TODO: add markers for top 5%, etc. -->
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">Studies curated</label>
+        <div class="controls">
+            <p class="static-form-value">{{= 'TODO' }}</p>
+            <!--  TODO: add markers for top 5%, etc. -->
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">Studies in synthesis</label>
+        <div class="controls">
+            <p class="static-form-value">{{= 'TODO' }}</p>
+            <!--  TODO: add markers for top 5%, etc. -->
+        </div>
+    </div>
+</form>
+
+<h2 id="collections">Custom collections</h2>
+
+<table style="width: 100%; margin-bottom: 2em;">
+    <tr>
+        <td align="left">
+            Name (TODO)
+        </td>
+        <td align="right">
+            <a href="#">View</a>
+            |
+            <a href="#">Edit</a>
+            |
+            <a href="#">Duplicate</a>
+            |
+            <a href="#">Synthesis report</a>
+        </td>
+    </tr>
+</table>
+
+{{ pass }}
     
  </div>
 </div>

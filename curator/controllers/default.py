@@ -112,6 +112,7 @@ def profile():
         else:
             # pass user info to the page for display
             view_dict['user_info'] = json_response
+            view_dict['opentree_activity'] = _get_opentree_activity( specified_userid )
         return view_dict
 
     else:
@@ -127,17 +128,31 @@ def profile():
             error_msg = view_dict['error_msg'] = json_response.get('message', None)
             if error_msg:
                 # pass error to the page for display
-                print("ERROR FETCHING INFO FOR USERID: ", specified_userid)
+                print("ERROR FETCHING INFO FOR USERID: ", current_userid)
                 print(error_msg)
                 view_dict['user_info'] = None
             else:
                 # pass user info to the page for display
                 view_dict['user_info'] = json_response
+                view_dict['opentree_activity'] = _get_opentree_activity( current_userid )
             return view_dict
         else:
             # try to force a login and return here
             redirect(URL('curator', 'user', 'login',
                      vars=dict(_next=URL(args=request.args, vars=request.vars))))
+
+def _get_opentree_activity( userid=None ):
+    # Fetch information about a user's studies, comments, and collections in the
+    # OpenTree project. If a dict was provided, add this information to it; else
+    # bundle up the information and return it directly
+    if not userid:
+        return None
+    activity_found = False
+    activity = {'comments':[], 'studies':[], 'collections':[]}
+    if activity_found:
+        return activity
+    else:
+        return None
 
 def download():
     """

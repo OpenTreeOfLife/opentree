@@ -336,7 +336,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
           <!--<div style="margin:0 1em 0 1em;">-->
           {{ if response.title: }}
           <h1 id="main-title">
-          {{=A(response.title or request.application, _href=URL('default','index'))}}{{if response.subtitle:}}: {{=response.subtitle}}{{pass}}
+              <span style="color: #ccc;">{{=response.title or request.application}}{{if response.subtitle:}}:{{pass}}</span>
+              {{if response.subtitle:}}{{=response.subtitle}}{{pass}}
           </h1>
           {{ pass }}
           {{block center}}
