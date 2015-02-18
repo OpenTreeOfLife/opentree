@@ -48,70 +48,77 @@ var argus;
 // @TEMP - preserve incoming OTT id and source, so we can demo the Extract Subtree feature
 var incomingOttolID = null;
 
+function updateTreeView( State ) {
+    /* N.B. This should respond identically to state changes in HTML5 History,
+     * or to explicit calls from older/simpler browsers.
+     */
+    $('#main-title .comments-indicator, #main-title .properties-indicator').hide();
+    $('#node-provenance-panel h3').html('Provenance');
+    $('#main-title .title').html( 'Loading tree view...' );
+    // nudge static viewer to show second line, if any
+    snapViewerFrameToMainTitle();
+
+    // fetch the matching synth-tree node ID, then notify argus (trigger data load and/or view change)
+    var ottolID = State.data.nodeID;
+    if (argus.useSyntheticTree && State.data.domSource == 'ottol') {
+        // we'll need to convert to a more volatile node ID for the current tree
+
+        // @TEMP - save this and we'll add it dataTree when it arrives
+        incomingOttolID = ottolID;
+
+        var treeNodeID;
+        $.ajax({
+            type: 'POST',
+            url: getNodeIDForOttolID_url,
+            data: {'ottId': String(ottolID)},
+            success: function(data) {
+                argus.displayNode({"nodeID": data,
+                                   "domSource": syntheticTreeID});  // from main HTML view
+            },
+            error: function(jqXHR, textStatus, errorThrown) {
+                // NOTE that this won't fire in cross-domain requests! using complete (below) instead..
+            },
+            complete: function(jqXHR, textStatus) {
+                // examine the error response and show a sensible message
+                if (textStatus === 'error') {
+                    var errMsg;
+                    if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
+                        // the requested OTT taxon is bogus, or not found in the target tree
+                        errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy but not in our tree'
+                                +' synthesis database. This can happen for a variety of reasons, but the most probable is that it'
+                                +' is flagged as <em>incertae sedis</em>.'
+                                +'<br/><br/>If you think this is an error, please'
+                                +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
+                        // TODO: Explain in more detail: Why wasn't this used? 
+                        showErrorInArgusViewer( errMsg );
+                    } else {
+                        errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
+                        showErrorInArgusViewer( errMsg, jqXHR.responseText );
+                    }
+                }
+            },
+            dataType: 'json'  // should return just the node ID (number)
+        });
+    } else {
+        // use ottol ID if we're browsing the taxonomy
+        argus.displayNode({"nodeID": ottolID,
+                           "domSource": State.data.domSource});
+    }
+    
+    // we'll finish updating the page in a callback from argusObj.loadData()
+
+    // update all login links to use the new URL
+    fixLoginLinks();
+};
+
 if ( History && History.enabled && pageUsesHistory ) {
     // bind to statechange event
-    History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
+    // Note: We are using statechange instead of popstate
+    History.Adapter.bind(window, 'statechange', function() {
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
         History.log(State.data, State.title, State.url);
-
-        $('#main-title .comments-indicator, #main-title .properties-indicator').hide();
-        $('#node-provenance-panel h3').html('Provenance');
-        $('#main-title .title').html( 'Loading tree view...' );
-        // nudge static viewer to show second line, if any
-        snapViewerFrameToMainTitle();
-
-        // fetch the matching synth-tree node ID, then notify argus (trigger data load and/or view change)
-        var ottolID = State.data.nodeID;
-        if (argus.useSyntheticTree && State.data.domSource == 'ottol') {
-            // we'll need to convert to a more volatile node ID for the current tree
-
-            // @TEMP - save this and we'll add it dataTree when it arrives
-            incomingOttolID = ottolID;
-
-            var treeNodeID;
-            $.ajax({
-                type: 'POST',
-                url: getNodeIDForOttolID_url,
-                data: {'ottId': String(ottolID)},
-                success: function(data) {
-                    argus.displayNode({"nodeID": data,
-                                       "domSource": syntheticTreeID});  // from main HTML view
-                },
-                error: function(jqXHR, textStatus, errorThrown) {
-                    // NOTE that this won't fire in cross-domain requests! using complete (below) instead..
-                },
-                complete: function(jqXHR, textStatus) {
-                    // examine the error response and show a sensible message
-                    if (textStatus === 'error') {
-                        var errMsg;
-                        if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
-                            // the requested OTT taxon is bogus, or not found in the target tree
-                            errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy but not in our tree'
-                                    +' synthesis database. This can happen for a variety of reasons, but the most probable is that it'
-                                    +' is flagged as <em>incertae sedis</em>.'
-                                    +'<br/><br/>If you think this is an error, please'
-                                    +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
-                            // TODO: Explain in more detail: Why wasn't this used? 
-                            showErrorInArgusViewer( errMsg );
-                        } else {
-                            errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
-                            showErrorInArgusViewer( errMsg, jqXHR.responseText );
-                        }
-                    }
-                },
-                dataType: 'json'  // should return just the node ID (number)
-            });
-        } else {
-            // use ottol ID if we're browsing the taxonomy
-            argus.displayNode({"nodeID": ottolID,
-                               "domSource": State.data.domSource});
-        }
-        
-        // we'll finish updating the page in a callback from argusObj.loadData()
-
-        // update all login links to use the new URL
-        fixLoginLinks();
-    });
+        updateTreeView( State );
+    }); 
 }
 
 function getCommentIndexURL( rawURL ) {
@@ -263,10 +270,9 @@ $(document).ready(function() {
             History.replaceState( priorState.data, priorState.title, priorState.url );
         }
     } else {
-        // force initial argus view using defaults above
-        // NOTE: forcing even this through history, to get possible remapping of node IDs
-        argus.moveToNode({"nodeID": initialState.nodeID,
-                           "domSource": initialState.domSource});
+        // force initial argus view using defaults above (mimic History state object)
+        // NOTE: we force this through common code to remap ottids to node ids
+        updateTreeView({'data': initialState});
     }
 
     /*
@@ -606,12 +612,17 @@ function historyStateToWindowTitle( stateObj ) {
 }
 function historyStateToPageHeading( stateObj ) {
     // show name if possible, else just source+ID
-    if ((!stateObj.nodeName) || stateObj.nodeName.trim() === '') {
-        return ('Unnamed node '+ stateObj.domSource +'@'+ stateObj.nodeID);
+    var sourceAndID = '';
+    if (('domSource' in stateObj) && ('nodeID' in stateObj)) {
+        sourceAndID = stateObj.domSource +'@'+ stateObj.nodeID;
     }
-    //return ('Node \''+ stateObj.nodeName +'\' ('+ stateObj.domSource +'@'+ stateObj.nodeID +')');
-    //return (stateObj.nodeName +' <span style="color: #ccc; font-size: 0.8em;">('+ stateObj.domSource +'@'+ stateObj.nodeID +')</span>');
-    return ('<span title="'+ stateObj.domSource +'@'+ stateObj.nodeID +'">'+ stateObj.nodeName +'</span>');
+    if ((!stateObj.nodeName) || stateObj.nodeName.trim() === '') {
+        return ('Unnamed node '+ sourceAndID);
+    }
+    if (sourceAndID) {
+        return ('<span title="'+ stateObj.domSource +'@'+ stateObj.nodeID +'">'+ stateObj.nodeName +'</span>');
+    }
+    return stateObj.nodeName;
 }
 function makeSafeForWeb2pyURL(str) {
     // replace characters considered unsafe (blocked) by web2py in a URL
@@ -1332,14 +1343,16 @@ function nodeDataLoaded( nodeTree ) {
         incomingOttolID = null;
     }
 
-    var improvedState = $.extend( History.getState().data, {nodeName: targetNode.name});
-    // add missing information to the current history state
-    ///History.replaceState( improvedState.data, improvedState.title, improvedState.url );
-    // NO, this causes a loop of updates/history-changes, maybe later..
+    var newState;
+    if ( History && History.enabled && pageUsesHistory ) {
+        newState = $.extend( History.getState().data, {nodeName: targetNode.name});
+    } else {
+        newState = {nodeName: targetNode.name};
+    }
 
     // update page title and page contents
     jQuery('#main-title .comments-indicator, #main-title .properties-indicator').show();
-    jQuery('#main-title .title').html( historyStateToPageHeading( improvedState ) );
+    jQuery('#main-title .title').html( historyStateToPageHeading( newState ) );
 
     // if the current node has conflicts, offer a toggle to hide/show them
     if (argus.getToggleConflictsHandler() === null) {
