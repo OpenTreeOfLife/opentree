@@ -68,7 +68,58 @@ def profile():
     """
     view_dict = get_opentree_services_method_urls(request)
 
-    # prepare for calls to the GitHub User API
+    # if the URL has a [username], try to load their information
+    if len(request.args) > 0:
+        # try to load a profile for the specified userid, using the GitHub API
+        specified_userid = request.args[0]
+        view_dict['userid'] = specified_userid
+        user_info_found = False
+
+        # fetch the JSON for this user's activities
+        json_response = _fetch_github_api(verb='GET', 
+            url='/users/{0}'.format(specified_userid))
+
+        error_msg = json_response.get('message', None)
+        view_dict['error_msg'] = error_msg
+        if error_msg:
+            # pass error to the page for display
+            print("ERROR FETCHING INFO FOR USERID: ", specified_userid)
+            print(error_msg)
+        else:
+            # pass user info to the page for display
+            view_dict['user_info'] = json_response
+            view_dict['opentree_activity'] = _get_opentree_activity( specified_userid )
+        return view_dict
+
+    else:
+        # No userid was provided in the URL. Instead, we should try to show the
+        # current user's profile if they're logged in (or try to force a login).
+        if auth.is_logged_in():
+            current_userid = auth.user and auth.user.github_login or None
+            view_dict['userid'] = current_userid
+            json_response = _fetch_github_api(verb='GET', 
+                url='/users/{0}'.format(current_userid))
+            error_msg = view_dict['error_msg'] = json_response.get('message', None)
+            if error_msg:
+                # pass error to the page for display
+                print("ERROR FETCHING INFO FOR USERID: ", current_userid)
+                print(error_msg)
+                view_dict['user_info'] = None
+            else:
+                # pass user info to the page for display
+                view_dict['user_info'] = json_response
+                view_dict['opentree_activity'] = _get_opentree_activity( current_userid )
+            return view_dict
+        else:
+            # try to force a login and return here
+            redirect(URL('curator', 'user', 'login',
+                     vars=dict(_next=URL(args=request.args, vars=request.vars))))
+
+def _fetch_github_api(verb='GET', url=None, data=None):
+    # Wrapper for all (synchronous) calls to GitHub APIs
+    #   'verb' should be GET or POST (when in doubt, send GET headers below)
+    #   'url' should be root-relative (assume GitHub API)
+    #   'data' could be passed via GET [TODO] or POST
     GH_BASE_URL = 'https://api.github.com'
     oauth_token_path = os.path.expanduser('~/.ssh/OPENTREEAPI_OAUTH_TOKEN')
     try:
@@ -92,54 +143,15 @@ def profile():
                        'Content-Type': 'application/json',
                        'Accept': PREFERRED_MEDIA_TYPE}
 
-    # if the URL has a [username], try to load their information
-    if len(request.args) > 0:
-        # try to load a profile for the specified userid, using the GitHub API
-        specified_userid = request.args[0]
-        view_dict['userid'] = specified_userid
-        user_info_found = False
-
-        url = '{0}/users/{1}'.format(GH_BASE_URL, specified_userid)
-        print('>>> trying to fetch user info: ', url)
-        resp = requests.get( url, headers=GH_GET_HEADERS)
-        json_response = resp.json()
-        error_msg = json_response.get('message', None)
-        view_dict['error_msg'] = error_msg
-        if error_msg:
-            # pass error to the page for display
-            print("ERROR FETCHING INFO FOR USERID: ", specified_userid)
-            print(error_msg)
-        else:
-            # pass user info to the page for display
-            view_dict['user_info'] = json_response
-            view_dict['opentree_activity'] = _get_opentree_activity( specified_userid )
-        return view_dict
-
+    url = '{0}{1}'.format(GH_BASE_URL, url)
+    if verb == 'POST':
+        resp = requests.post( url, headers=GH_POST_HEADERS)
     else:
-        # No userid was provided in the URL. Instead, we should try to show the
-        # current user's profile if they're logged in (or try to force a login).
-        if auth.is_logged_in():
-            current_userid = auth.user and auth.user.github_login or None
-            view_dict['userid'] = current_userid
-            url = '{0}/users/{1}'.format(GH_BASE_URL, current_userid)
-            print('>>> trying to fetch current user info: ', url)
-            resp = requests.get( url, headers=GH_GET_HEADERS)
-            json_response = resp.json()
-            error_msg = view_dict['error_msg'] = json_response.get('message', None)
-            if error_msg:
-                # pass error to the page for display
-                print("ERROR FETCHING INFO FOR USERID: ", current_userid)
-                print(error_msg)
-                view_dict['user_info'] = None
-            else:
-                # pass user info to the page for display
-                view_dict['user_info'] = json_response
-                view_dict['opentree_activity'] = _get_opentree_activity( current_userid )
-            return view_dict
-        else:
-            # try to force a login and return here
-            redirect(URL('curator', 'user', 'login',
-                     vars=dict(_next=URL(args=request.args, vars=request.vars))))
+        resp = requests.get( url, headers=GH_GET_HEADERS)
+
+    # Assume we always return JSON, even if it's an error message
+    return resp.json()
+    
 
 def _get_opentree_activity( userid=None ):
     # Fetch information about a user's studies, comments, and collections in the
@@ -148,9 +160,26 @@ def _get_opentree_activity( userid=None ):
     if not userid:
         return None
     activity_found = False
-    activity = {'comments':[], 'studies':[], 'collections':[]}
-    # TODO: use GitHub API to gather comments from this user
-    # https://github.com/OpenTreeOfLife/feedback/issues/created_by/jimallman
+    activity = {'comments':[], 'issues': [], 'studies':[], 'collections':[]}
+
+    # Use GitHub API to gather comments from this user, as shown in
+    #   https://github.com/OpenTreeOfLife/feedback/issues/created_by/jimallman
+    all_comments = _fetch_github_api(verb='GET', 
+        url='/repos/OpenTreeOfLife/feedback/issues/comments')
+    for comment in all_comments:
+        if comment.get('user', None):
+            comment_author = comment.get('user').get('login')
+            if comment_author == userid:
+                activity.get('comments').append( comment )
+                activity_found = True
+
+    # Again, for all feedback issues created by them
+    created_issues = _fetch_github_api(verb='GET', 
+        url='/repos/OpenTreeOfLife/issues?creator={0}'.format(userid))
+    activity['issues'] = created_issues
+    if len(created_issues) > 0:
+        activity_found = True
+
     # TODO: use oti to gather studies curated by this user
     # TODO: cull the list of curated studies by first curator name (added by...)
     # TODO: fetch collections once we have a home for them

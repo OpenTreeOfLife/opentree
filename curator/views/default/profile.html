@@ -113,7 +113,7 @@ if error_msg:
         </div>
     </div>
   {{ pass }}
-  {{ if not user_info.get('opentree_activity'): 
+  {{ if not opentree_activity: 
        # this user (or organization) has no activity to show }}
     <div class="control-group">
         <div class="controls">
@@ -129,7 +129,7 @@ if error_msg:
   {{ pass }}
 </form>
 
-{{ if True or user_info.get('opentree_activity'):
+{{ if opentree_activity:
        # show this user's activity in the Open Tree sites }}
 <form class="form-horizontal wider-fields activity-stats">
     <div class="control-group">
@@ -160,9 +160,16 @@ if error_msg:
         </div>
     </div>
     <div class="control-group">
-        <label class="control-label">Feedback items</label>
+        <label class="control-label">Feedback (items)</label>
         <div class="controls">
-            <p class="static-form-value">{{= 'TODO' }}</p>
+            <p class="static-form-value">{{= len( opentree_activity.get('issues', []) ) }}</p>
+            <!--  TODO: add markers for top 5%, etc. -->
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label">Feedback (comments)</label>
+        <div class="controls">
+            <p class="static-form-value">{{= len( opentree_activity.get('comments', []) ) }}</p>
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
     </div>
