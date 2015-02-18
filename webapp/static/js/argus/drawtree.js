@@ -615,8 +615,8 @@ function createArgus(spec) {
             var stateObj = $.extend(true, {'nodeName': ''}, o); // deep copy of o, with default values if none supplied
             History.pushState(stateObj, historyStateToWindowTitle(stateObj), historyStateToURL(stateObj));
         } else {
-            // proceed directly to display (ignore browser history)
-            this.displayNode(o);
+            // proceed directly to display (emulate browser history State object)
+            updateTreeView({'data': o});
         }
     };
 
