@@ -23,6 +23,9 @@ response.subtitle = XML(
 
 }}
 {{extend 'layout.html'}}
+<script type='text/javascript'>
+    var phylesystem_config_url = '{{=phylesystem_config_url}}';
+</script>
 <style type="text/css">
 .user-profile .form-horizontal .control-group {
     margin-bottom: 0px;
@@ -135,34 +138,58 @@ if error_msg:
     <div class="control-group">
         <label class="control-label">Curator since</label>
         <div class="controls">
-            <p class="static-form-value">{{= 'TODO' }}</p>
+            <p class="static-form-value">{{= opentree_activity.get('curator_since', '&ndash;') }}</p>
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">Studies added</label>
         <div class="controls">
-            <p class="static-form-value">{{= 'TODO' }}</p>
+            <p class="static-form-value">
+                {{= len( opentree_activity.get('added_studies', []) ) }}
+            </p>
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">Studies curated</label>
         <div class="controls">
-            <p class="static-form-value">{{= 'TODO' }}</p>
+            <p class="static-form-value">
+                {{= len( opentree_activity.get('curated_studies', []) ) }}
+                &nbsp;
+                &nbsp;
+                {{ if len( opentree_activity.get('curated_studies', []) ) > 0: }}
+                <a target="_blank" style="font-weight: normal;"
+                   href="/curator/?match={{= user_info.get('name', user_info.get('login')) }}">
+                   See these studies in the curation dashboard
+                </a>
+                {{ pass }}
+            </p>
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">Studies in synthesis</label>
         <div class="controls">
-            <p class="static-form-value">{{= 'TODO' }}</p>
+            <p class="static-form-value">
+                {{= len( opentree_activity.get('curated_studies_in_synthesis', []) ) }}
+            </p>
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
     </div>
     <div class="control-group">
         <label class="control-label">Feedback (items)</label>
         <div class="controls">
-            <p class="static-form-value">{{= len( opentree_activity.get('issues', []) ) }}</p>
+            <p class="static-form-value">
+                {{= len( opentree_activity.get('issues', []) ) }}
+                &nbsp;
+                &nbsp;
+                {{ if len( opentree_activity.get('issues', []) ) > 0: }}
+                <a target="_blank" style="font-weight: normal;"
+                   href="https://github.com/OpenTreeOfLife/feedback/issues/created_by/{{= user_info.get('login') }}">
+                   See these items on GitHub
+                </a>
+                {{ pass }}
+            </p>
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
     </div>

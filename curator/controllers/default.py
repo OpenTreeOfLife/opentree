@@ -88,7 +88,8 @@ def profile():
         else:
             # pass user info to the page for display
             view_dict['user_info'] = json_response
-            view_dict['opentree_activity'] = _get_opentree_activity( specified_userid )
+            view_dict['opentree_activity'] = _get_opentree_activity( 
+                userid=specified_userid, username=view_dict['user_info']['name'] )
         return view_dict
 
     else:
@@ -108,7 +109,8 @@ def profile():
             else:
                 # pass user info to the page for display
                 view_dict['user_info'] = json_response
-                view_dict['opentree_activity'] = _get_opentree_activity( current_userid )
+                view_dict['opentree_activity'] = _get_opentree_activity( 
+                    userid=current_userid, username=view_dict['user_info']['name'])
             return view_dict
         else:
             # try to force a login and return here
@@ -153,14 +155,23 @@ def _fetch_github_api(verb='GET', url=None, data=None):
     return resp.json()
     
 
-def _get_opentree_activity( userid=None ):
+def _get_opentree_activity( userid=None, username=None ):
     # Fetch information about a user's studies, comments, and collections in the
     # OpenTree project. If a dict was provided, add this information to it; else
     # bundle up the information and return it directly
     if not userid:
         return None
     activity_found = False
-    activity = {'comments':[], 'issues': [], 'studies':[], 'collections':[]}
+    activity = {
+        'curator_since': None,
+        'comments':[], 
+        'issues': [], 
+        'added_studies':[], 
+        'curated_studies': [], 
+        'curated_studies_in_synthesis': [], 
+        'collections':[]
+    }
+    method_dict = get_opentree_services_method_urls(request)
 
     # Use GitHub API to gather comments from this user, as shown in
     #   https://github.com/OpenTreeOfLife/feedback/issues/created_by/jimallman
@@ -175,15 +186,108 @@ def _get_opentree_activity( userid=None ):
 
     # Again, for all feedback issues created by them
     created_issues = _fetch_github_api(verb='GET', 
-        url='/repos/OpenTreeOfLife/issues?creator={0}'.format(userid))
+        url='/repos/OpenTreeOfLife/feedback/issues?state=all&creator={0}'.format(userid))
     activity['issues'] = created_issues
     if len(created_issues) > 0:
         activity_found = True
 
-    # TODO: use oti to gather studies curated by this user
-    # TODO: cull the list of curated studies by first curator name (added by...)
+
+    # fetch a list of all studies that contribute to synthesis
+    fetch_url = method_dict['getSynthesisSourceList_url']
+    if fetch_url.startswith('//'):
+        # Prepend scheme to a scheme-relative URL
+        fetch_url = "http:%s" % fetch_url
+    # as usual, this needs to be a POST (pass empty fetch_args)
+    source_list = requests.post(
+        url=fetch_url,
+        data={}
+    ).json()
+
+    # split these source descriptions, which are in the form '{STUDY_ID_PREFIX}_{STUDY_NUMERIC_ID}_{TREE_ID}_{COMMIT_SHA}'
+    contributing_study_info = { }   # store (unique) study IDs as keys, commit SHAs as values
+
+    for source_desc in source_list:
+        if source_desc == 'taxonomy':
+            continue
+        source_parts = source_desc.split('_')
+        # add default prefix 'pg' to study ID, if not found
+        if source_parts[0].isdigit():
+            # prepend with default namespace 'pg'
+            study_id = 'pg_%s' % source_parts[0]
+        else:
+            study_id = '_'.join(source_parts[0:2])
+        if len(source_parts) == 4:
+            commit_SHA_in_synthesis = source_parts[3]
+        else:
+            commit_SHA_in_synthesis = None
+        contributing_study_info[ study_id ] = commit_SHA_in_synthesis
+    
+    # Use oti to gather studies curated and created by this user.
+    fetch_url = method_dict['findAllStudies_url']
+    if fetch_url.startswith('//'):
+        # Prepend scheme to a scheme-relative URL
+        fetch_url = "http:%s" % fetch_url
+    all_studies = requests.post(
+        url=fetch_url,
+        data={'verbose': True}  # include curator list
+    ).json()
+
+    for study in all_studies:
+        study_curators = study['ot:curatorName']
+        # TODO: improve oti to handle multiple curator names!
+        if type(study_curators) is not list:
+            study_curators = [study_curators]
+        if username in study_curators:
+            activity_found = True
+            activity['curated_studies'].append(study)
+            # first curator name is its original contributor
+            if study_curators[0] == username:
+                activity['added_studies'].append(study)
+            # does this contribute to synthesis?
+            if contributing_study_info.has_key( study['ot:studyId'] ):
+                activity['curated_studies_in_synthesis'].append(study)
+
     # TODO: fetch collections once we have a home for them
+
     if activity_found:
+        # search the repo stats (for each phylesystem shard!) for their earliest contribution
+        earliest_activity_date = None  # TODO: make this today? or tomorrow? MAXTIME?
+        fetch_url = method_dict['phylesystem_config_url']
+        if fetch_url.startswith('//'):
+            # Prepend scheme to a scheme-relative URL
+            fetch_url = "http:%s" % fetch_url
+        phylesystem_config = requests.get( url=fetch_url ).json()
+        shard_list = phylesystem_config['shards']
+        # if GitHub is rebuilding stats cache for any shard, poke them all but ignore dates
+        rebuilding_cache = False
+        for shard in shard_list:
+            shard_name = shard['name']
+            shard_contributors = _fetch_github_api(verb='GET', 
+                url='/repos/OpenTreeOfLife/{0}/stats/contributors'.format(shard_name))
+            if type(shard_contributors) is not list:
+                # Flag this, but try to fetch remaining shards (to nudge the cache)
+                rebuilding_cache = True
+            else:
+                for contrib_info in shard_contributors:
+                    if contrib_info['author']['login'] == userid:
+                        # look for the earliest week here
+                        for week in contrib_info['weeks']:
+                            if earliest_activity_date:
+                                earliest_activity_date = min(earliest_activity_date, week['w'])
+                            else:
+                                earliest_activity_date = week['w']
+                        break  # skip any remaining records
+
+        if rebuilding_cache:
+            activity['curator_since'] = 'Generating data, please try again in a moment...'
+        elif not earliest_activity_date: 
+            activity['curator_since'] = 'This user has not curated any studies.'
+        else:
+            # show a very approximate date (stats are just weekly)
+            from datetime import datetime
+            d = datetime.fromtimestamp(earliest_activity_date)
+            activity['curator_since'] = d.strftime("%B %Y")
+
         return activity
     else:
         return None
