@@ -89,7 +89,9 @@ def profile():
             # pass user info to the page for display
             view_dict['user_info'] = json_response
             view_dict['opentree_activity'] = _get_opentree_activity( 
-                userid=specified_userid, username=view_dict['user_info']['name'] )
+                userid=specified_userid, 
+                username=view_dict['user_info'].get('name', specified_userid)
+            )
         return view_dict
 
     else:
@@ -110,7 +112,9 @@ def profile():
                 # pass user info to the page for display
                 view_dict['user_info'] = json_response
                 view_dict['opentree_activity'] = _get_opentree_activity( 
-                    userid=current_userid, username=view_dict['user_info']['name'])
+                    userid=current_userid, 
+                    username=view_dict['user_info'].get('name', current_userid)
+                )
             return view_dict
         else:
             # try to force a login and return here
