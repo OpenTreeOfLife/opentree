@@ -146,7 +146,15 @@ if error_msg:
         <div class="controls">
             <p class="static-form-value">
                 {{= len( opentree_activity.get('added_studies', []) ) }}
+                &nbsp;
+                &nbsp;
+                <span class="interesting-value" style="font-weight: normal;">
+                    N.B. Study counts here are dubious, pending  
+                    <a href="https://github.com/OpenTreeOfLife/oti/issues/35" target="_blank">
+                        needed fixes to oti</a>
+                </span>
             </p>
+
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
     </div>
