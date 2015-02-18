@@ -80,7 +80,7 @@ if error_msg:
 -->
 
 <form class="form-horizontal wider-fields">
-  {{ if user_info['company']: }}
+  {{ if user_info.get('company', None): }}
     <div class="control-group">
         <label class="control-label">Affiliation</label>
         <div class="controls">
@@ -88,7 +88,7 @@ if error_msg:
         </div>
     </div>
   {{ pass }}
-  {{ if user_info['blog']: }}
+  {{ if user_info.get('blog', None): }}
     <div class="control-group">
         <label class="control-label">Website</label>
         <div class="controls">
@@ -98,7 +98,7 @@ if error_msg:
         </div>
     </div>
   {{ pass }}
-  {{ if user_info['email']: }}
+  {{ if user_info.get('email', None): }}
     <div class="control-group">
         <label class="control-label">Email</label>
         <div class="controls">
@@ -108,7 +108,7 @@ if error_msg:
         </div>
     </div>
   {{ pass }}
-  {{ if user_info['bio']: }}
+  {{ if user_info.get('bio', None): }}
     <div class="control-group">
         <label class="control-label">Bio</label>
         <div class="controls">
