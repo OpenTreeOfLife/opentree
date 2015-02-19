@@ -133,6 +133,12 @@ def synthesis_release():
     view_dict = default_view_dict.copy()
     synth = json.loads(fetch_local_synthesis_stats() or '{}')
 
+    if len(synth.keys()) == 0:
+        # report this error on the page
+        view_dict['release_version'] = 'NO RELEASES FOUND'
+        view_dict['synthesis_stats'] = synth
+        return view_dict
+
     # Get date or version from URL, or bounce to the latest release
     #import pdb; pdb.set_trace()
     if len(request.args) == 0:
@@ -143,10 +149,19 @@ def synthesis_release():
 
     view_dict['release_version'] = request.args[0]
     view_dict['synthesis_stats'] = synth
+    # TODO: fetch and render Markdown release notes as HTML
+    ##view_dict['release_notes'] =
+
     return view_dict
 
 def taxonomy_release():
     view_dict = default_view_dict.copy()
+    fetch_url = 'https://github.com/OpenTreeOfLife/reference-taxonomy/tree/master/doc/{0}.md'
+
+    # fetch and render Markdown release notes as HTML
+
+    #TODO: view_dict['release_notes'] =
+
     return view_dict
 
 def fetch_local_synthesis_stats():
