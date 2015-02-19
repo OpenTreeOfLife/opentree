@@ -1,0 +1,125 @@
+#NEXUS 
+
+Begin trees;  [Treefile saved Fri Apr 10 10:01:05 2009]
+[!
+>Data file = /Users/mholder/Desktop/avian_ovomucoids.nex
+>Heuristic search settings:
+>  Optimality criterion = parsimony
+>    Characterstatus summary:
+>      Of 88 total characters:
+>        All characters are of type 'unord'
+>        All characters have equal weight
+>        2 characters are constant
+>        15 variable characters are parsimonyuninformative
+>        Number of parsimonyinformative characters = 71
+>    Gaps are treated as "missing"
+>  Starting tree(s) obtained via stepwise addition
+>  Addition sequence: simple (reference taxon = Struthio camelus)
+>  Number of trees held at each step during stepwise addition = 1
+>  Branchswapping algorithm: treebisectionreconnection (TBR)
+>  Steepest descent option not in effect
+>  Initial 'MaxTrees' setting = 2
+>  Branches collapsed (creating polytomies) if maximum branch length is zero
+>  'MulTrees' option in effect
+>  Topological constraints not enforced
+>  Trees are unrooted
+>
+>Heuristic search completed
+>   Total number of rearrangements tried = 465576
+>   Score of best tree(s) found = 494
+>   Number of trees retained = 2
+>   Note: Effectiveness of search may have been diminished due to treebuffer overflow.
+>   Time used = 2 sec (CPU time = 0.13 sec)
+]
+	Translate
+		1 Struthio_camelus,
+		2 Rhea_americana,
+		3 Pterocnemia_pennata,
+		4 Casuarius_casuarius,
+		5 Dromaius_novaehollandiae,
+		6 Nothoprocta_cinerascens,
+		7 Eudromia_elegans,
+		8 Pygoscelis_adeliae_f,
+		9 Pygoscelis_adeliae_y,
+		10 Spheniscus_humboldti,
+		11 Phalacrocorax_sulcirostris,
+		12 Anhinga_novaehollandeae,
+		13 Nycticorax_nycticorax,
+		14 Chauna_chavaria,
+		15 Anseranas_semipalmata,
+		16 Dendrocygna_arcuata,
+		17 Dendrocygna_autumnalis,
+		18 Dendrocygna_eytoni_d,
+		19 Dendrocygna_eytoni_e,
+		20 Dendrocygna_viduata,
+		21 Coscoroba_coscoroba,
+		22 Cygnus_atratus,
+		23 Goose,
+		24 Anser_indicus,
+		25 Branta_canadensis,
+		26 Cereopsis_novaehollandiae,
+		27 Chloephaga_picta,
+		28 Duck,
+		29 Anas_platyrhynchos,
+		30 Megapodius_freycinet,
+		31 Leipoa_ocellata,
+		32 Ortalis_vetula,
+		33 Penelope_jacquacu,
+		34 Penelope_superciliaris,
+		35 Bonasa_umbellus,
+		36 Tympanuchus_cupido,
+		37 Oreortyx_pictus,
+		38 Callipepla_squamata_n,
+		39 Callipepla_squamata_s,
+		40 Lophortyx_californicus,
+		41 Colinus_virginianus,
+		42 Cyrtonyx_montezumae_l,
+		43 Cyrtonyx_montezumae_s,
+		44 Alectoris_chukar,
+		45 Alectoris_rufa,
+		46 Francolinus_afer,
+		47 Francolinus_erckelii,
+		48 Francolinus_coqui_v,
+		49 Francolinus_coqui_a,
+		50 Francolinus_francolinus_a,
+		51 Francolinus_francolinus_v,
+		52 Francolinus_pondicerianus,
+		53 Perdix_perdix,
+		54 Coturnix_delegorguei,
+		55 Coturnix_coturnix_japonica_1,
+		56 Coturnix_coturnix_japonica_2,
+		57 Arborophilia_torqueola,
+		58 Bambusicola_thoracica,
+		59 Tragopan_satyra,
+		60 Tragopan_temmincki,
+		61 Lophophorus_impejanus,
+		62 Crossoptilon_auritum,
+		63 Lophura_edwardsi,
+		64 Lophura_ignita,
+		65 Gallus_gallus,
+		66 Grey_jungle_fowl,
+		67 Phasianus_colchicus,
+		68 Syrmaticus_ellioti,
+		69 Syrmaticus_reevesii,
+		70 Chrysolophus_amherstiae,
+		71 Polyplectron_bicalcaratum,
+		72 Argusianus_argus_argus,
+		73 Pavo_cristatus,
+		74 Afropavo_congensis,
+		75 Numida_meleagris,
+		76 Acryllium_vulturinum,
+		77 Meleagris_gallopavo,
+		78 Grus_carunculatus,
+		79 Anthropoides_virgo,
+		80 Grus_vipio,
+		81 Fulica_atra,
+		82 Vanellus_spinosus,
+		83 Larus_rudibundus,
+		84 Turnix_sylvatica,
+		85 Gallirallus_australis,
+		86 Geococcyx_californianus,
+		87 Dacelo_novaeguineae,
+		88 Carpococcyx_renauldi,
+		89 Podargus_strigoides
+		;
+End;

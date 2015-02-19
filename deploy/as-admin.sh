@@ -105,6 +105,10 @@ fi
 if [ ! -r /etc/apache2/mods-enabled/ssl.load ]; then
     sudo a2enmod ssl
 fi
+# Protect against POODLE vulnerability in SSLv3; see https://zmap.io/sslv3/servers.html#apache
+sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol TLSv1+" /etc/apache2/mods-available/ssl.conf
+# N.B. httpd version 2.2.23+ will need this change instead:
+#sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol ALL -SSLv2 -SSLv3+" /etc/apache2/mods-available/ssl.conf
 
 # ---------- UNZIP ----------
 # unzip is needed for unpacking web2py.  Somebody broke the 'which' program -
@@ -202,13 +206,13 @@ if [ ! -r /etc/apache2/sites-enabled/000-opentree ]; then
 fi
 
 # Enable the HTTPS site only if our SSL certs are found; else disable it
-if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.crt ]; then
-    if [ -r /etc/apache2/sites-enabled/001-opentree-ssl ]; then
+if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem ]; then
+    if [ ! -r /etc/apache2/sites-enabled/001-opentree-ssl ]; then
         (cd /etc/apache2/sites-enabled; \
          sudo ln -sf ../sites-available/opentree-ssl ./001-opentree-ssl)
     fi
 else
-     rm -f /etc/apache2/sites-enabled/001-opentree-ssl
+     sudo rm -f /etc/apache2/sites-enabled/001-opentree-ssl
 fi
 
 # ---------- UNPRIVILEGED USER ----------

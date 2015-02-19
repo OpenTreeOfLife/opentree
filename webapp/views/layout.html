@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {{ 
-from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext
+from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch
 }}
 <html lang="en">
   <head>
@@ -293,6 +293,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         <div id="server-details" style="display: none; clear: both; margin: 4px 0; background-color: #f5f5f5; padding: 6px 8px; border-radius: 8px;">
             Configuration for the <strong>{{= request.application }}</strong> web2py app: 
             <dl>
+               <dt id="deployed-branch">deployed branch of opentree webapps:</dt>
+                   <dd><strong style="color: #888;">{{= get_currently_deployed_opentree_branch(request) }}
+                   </strong></dd>
             {{ # format non-sensitive config data for display
                conf = get_conf(request)
                for sec in conf.sections(): }}

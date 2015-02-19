@@ -61,8 +61,12 @@ var viewModel;
 
 var tagsOptions = {
     confirmKeys: [13, 9],  // ENTER, TAB for next tag
+    allowDuplicates: false,  // default, but added here for clarity
+    // using simple objects-as-tags, to avoid bugs with string + SELECT
+    itemValue: 'attrValue',
+    itemText: 'displayString',
     typeahead: {                  
-        source: ['eenie', 'meanie', 'minie', 'moe']
+        //source: ['eenie', 'meanie', 'minie', 'moe']
         /*
         source: function(query) {
             return $.get('/oti/existing_tags');  // TODO
@@ -82,17 +86,42 @@ function captureTagTextOnBlur( $tagsSelect ) {
         if ($select.length === 0) {
             console.warn("captureTagTextOnBlur(): No SELECT widget found!");
         } else {
-            $select.tagsinput('add', $input.val());
+            var inputText = $.trim( $input.val() );
+            // reject whitespace-only tags!
+            if (inputText !== '') {
+                var tagInfo = makeTagObjFromString(inputText);
+                $select.tagsinput('add', tagInfo);
+            }
             $input.val('');
         }
     });
 }
+function makeTagObjFromString( tagString ) {
+    // groom string value, and make it safe for HTML attributes
+    if (typeof tagString !== 'string') {
+        tagString = tagString.toString();
+    }
+    var displayString = $.trim(tagString);
+    var attrValue = encodeURIComponent(displayString);
+    var tagInfo = {
+        displayString: displayString,
+        attrValue: attrValue
+    };
+    return tagInfo;
+}
 
 /* Use history plugin to track moves from tab to tab, single-tree popup, others? */
 
+var listFilterDefaults; // defined in main page, for a clean initial state
+
 if ( History && History.enabled ) {
-    // bind to statechange event
-    History.Adapter.bind(window,'statechange',function(){ // Note: We are using statechange instead of popstate
+    
+    var handleChangingState = function() {
+        if (!viewModel) {
+            // try again soon (waiting for a study to load)
+            setTimeout( handleChangingState, 50 );
+            return;
+        }
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
         ///History.log(State.data, State.title, State.url);
 
@@ -101,9 +130,38 @@ if ( History && History.enabled ) {
         // treatment of initial URLs.
         var currentTab = State.data.tab;
         var currentTree = State.data.tree;
+        var activeFilter = null;
+        var filterDefaults = null;
         
         if (currentTab) {
             goToTab( currentTab );
+            switch(slugify(currentTab)) {
+                case 'trees':
+                    activeFilter = viewModel.listFilters.TREES;
+                    filterDefaults = listFilterDefaults.TREES;
+                    break;
+
+                case 'files':
+                    activeFilter = viewModel.listFilters.FILES;
+                    filterDefaults = listFilterDefaults.FILES;
+                    break;
+
+                case 'otu-mapping':
+                    activeFilter = viewModel.listFilters.OTUS;
+                    filterDefaults = listFilterDefaults.OTUS;
+                    break;
+            }
+            if (activeFilter) {
+                // assert any saved filter values
+                for (var prop in activeFilter) {
+                    if (prop in State.data) {
+                        activeFilter[prop]( State.data[prop] );
+                    } else {
+                        // (re)set to its default value
+                        activeFilter[prop]( filterDefaults[prop] );
+                    }
+                }
+            }
         }
         if (currentTree) {
             var tree = getTreeByID(currentTree);
@@ -114,7 +172,6 @@ if ( History && History.enabled ) {
                 hideModalScreen();
                 showInfoMessage(errMsg);
             }
-            delete initialState;  // clear this to avoid repeat viewing
         } else {
             // hide any active tree viewer
             if (treeViewerIsInUse) {
@@ -124,7 +181,12 @@ if ( History && History.enabled ) {
 
         // TODO: update all login links to use the new URL?
         fixLoginLinks();
-    });
+        
+        initialState = null;  // clear this to unlock history for other changes
+    };
+
+    // bind to statechange event
+    History.Adapter.bind(window, 'statechange', handleChangingState);
 }
 
 function deparam( querystring ) {
@@ -142,7 +204,6 @@ function bindHistoryAwareWidgets() {
     // TODO: set first event handlers on tabs, tree popups, etc.
     var $tabBar = $('ul.nav-tabs:eq(0)');
     $tabBar.find('li > a').click(function() {
-        console.log('INITIAL CLICK on tab');
         var $tab = $(this);
         var tabName = $.trim( $tab.html().split('<')[0] );
         changeTab( {'tab': tabName } );
@@ -171,19 +232,27 @@ function changeTab(o) {
         // deep copy of o, with default values if none supplied
         //History.pushState(o, historyStateToWindowTitle(o), historyStateToURL(o));
         */
-        History.pushState(o, '', '?tab='+ slugify(newTabName));  // TODO: change title and URL?
+        var newState = o;   // incoming arg, just has tab defined
+        // NOTE that this should obviate any other state vars, which are all tab-limited
+        History.pushState(newState, '', '?tab='+ slugify(newTabName));  // TODO: change title and URL?
+        // TODO: preserve general state vars in URL query string?
     } else {
         // click tab normally (ignore browser history)
         goToTab( newTabName );
     }
+    fixLoginLinks();
 }
 function showTreeWithHistory(tree) {
     if (History && History.enabled) {
         // push tree view onto history (if available) and show it
-        var newState = {
-            'tab': 'Trees',
-            'tree': tree['@id']
-        };
+        var oldState = History.getState().data;
+        var newState = $.extend(
+            cloneFromSimpleObject( oldState ),
+            {
+                'tab': 'Trees',
+                'tree': tree['@id']
+            }
+        );
         History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree) );
     } else {
         // show tree normally (ignore browser history)
@@ -200,16 +269,97 @@ function hideTreeWithHistory() {
             // it wasn't added to history, so no change needed
             return;
         }
-        var newState = {
-            'tab': 'Trees'
-        };
+        var newState = $.extend(
+            cloneFromSimpleObject( oldState ),
+            {
+                'tab': 'Trees',
+                'tree': null
+            }
+        );
         History.pushState( newState, (window.document.title), '?tab=trees' );
+    }
+    fixLoginLinks();
+}
+
+function updateListFiltersWithHistory() {
+    /* capture changing list filters in browser history
+     *
+     * N.B. This is triggered when filter is updated programmatically, which
+     * could be as innocuous as the TREES tickler being nudged. So we should
+     * avoid modifying the browser history unless something has really changed.
+     */
+    if (History && History.enabled) {
+        if (initialState) {
+            // wait until initial state has been applied!
+            return;
+        }
+        var oldState = History.getState().data;
+
+        // Determine which list filter is active (currently based on tab)
+        // N.B. There's currently just one filter per tab (Trees, Files, OTU Mapping).
+        var activeFilter;
+        var filterDefaults;
+        switch(slugify(oldState.tab)) {
+            case 'trees':
+                activeFilter = viewModel.listFilters.TREES;
+                filterDefaults = listFilterDefaults.TREES;
+                break;
+            case 'files':
+                activeFilter = viewModel.listFilters.FILES;
+                filterDefaults = listFilterDefaults.FILES;
+                break;
+            case 'otu-mapping':
+                activeFilter = viewModel.listFilters.OTUS;
+                filterDefaults = listFilterDefaults.OTUS;
+                break;
+            default:
+                console.warn('updateListFiltersWithHistory(): No filters in this tab: '+ oldState.tab);
+                return;
+        }
+        var newState = cloneFromSimpleObject( oldState );
+        // TODO: weed out old filter properties?
+        
+        // use slugified tab name for the query-string (filter values are preserved)
+        var newQSValues = {
+            tab: slugify(oldState.tab)
+        };
+        for (prop in activeFilter) {
+            newState[prop] = ko.unwrap(activeFilter[prop]);
+            // Hide default filter settings, for simpler URLs
+            if (newState[prop] !== filterDefaults[prop]) {
+                newQSValues[prop] = ko.unwrap(activeFilter[prop]);
+            }
+        }
+        
+        // Compare old and new states (or query-strings?) and bail if nothing interesting has changed
+        console.log('=== CHECKING OLD VS. NEW STATE ===');
+        var interestingChangesFound = false;
+        for (prop in oldState) {
+            if (newState[prop] !== oldState[prop]) {
+                console.log('oldState.'+ prop +' WAS '+ oldState[prop] +' <'+ typeof( oldState[prop] ) +'>, IS '+ newState[prop] +' <'+ typeof( newState[prop] ) +'>');
+                interestingChangesFound = true;
+            }
+        }
+        for (prop in newState) {
+            if (!(prop in oldState)) {
+                console.log('newState.'+ prop +' NOT FOUND in oldState');
+                interestingChangesFound = true;
+            }
+        }
+        if (interestingChangesFound) {
+            console.log('=== INTERESTING! ===');
+            //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
+            var newQueryString = '?'+ $.param(newQSValues);
+            History.pushState( newState, (window.document.title), newQueryString );
+        } else {
+            console.log('=== BORING... ===');
+        }
     }
 }
 
 function fixLoginLinks() {
-    // Update all login links to return directly to the current URL (NOTE that this 
-    // doesn't seem to work for Logout)
+    // Update all login (and logout!) links to return directly to the current
+    // URL. This may also mean switching from /edit/ to /view/, or vice versa.
     var currentURL;
     try {
         var State = History.getState();
@@ -218,13 +368,49 @@ function fixLoginLinks() {
         currentURL = window.location.href;
     }
 
-    // TODO: mark and mutate links on this page
-    $('a.login-logout').each(function() {
-        var $link = $(this);
+    // Nudge to edit or view URLs?
+    var editURL = currentURL.replace('/view/', '/edit/');
+    var viewURL = currentURL.replace('/edit/', '/view/');
+
+    // mark and mutate links on this page
+    var $loginLinks = $('a:not(.sticky-login):contains(Login)');
+    var $logoutLinks = $('a:contains(Logout)');
+    var $loginToEditLinks = $('a.sticky-login');
+    var $switchToViewLinks = $('#cancel-study-edits');
+
+    var updateLoginHref = function( link, targetURL ) {
+        // allow for different URL patterns
+        var $link = $(link);
         var itsHref = $link.attr('href');
-        itsHref = itsHref.split('?')[0];
-        itsHref += ('?_next='+ currentURL);
+        if (itsHref.indexOf('_next') !== -1) {
+            // modify the 'next' URL to match the latest
+            itsHref = itsHref.split('?')[0];
+            itsHref += ('?_next='+ targetURL);
+        } else {
+            // replace the entire href attribute
+            itsHref = targetURL;
+        }
         $link.attr('href', itsHref);
+    }
+
+    $loginLinks.each(function() {
+        // simple login, stick w/ current URL
+        updateLoginHref(this, currentURL);
+    });
+
+    $logoutLinks.each(function() {
+        // simple logout, switch from edit to view as needed
+        updateLoginHref(this, viewURL);
+    });
+
+    $loginToEditLinks.each(function() {
+        // login and implicit to edit
+        updateLoginHref(this, editURL);
+    });
+
+    $switchToViewLinks.each(function() {
+        // login and implicit to edit
+        updateLoginHref(this, viewURL);
     });
 }
 var initialState;
@@ -242,8 +428,9 @@ $(document).ready(function() {
     } else {
         goToTab( initialState.tab );
     }
-    // N.B. We'll check this again once we've loaded the selected study, then clear it
+    // N.B. We'll apply this once we've loaded the selected study, then clear it
 
+    disableSaveButton();
     loadSelectedStudy();
     
     // Initialize the jQuery File Upload widgets
@@ -635,6 +822,8 @@ function loadSelectedStudy() {
                 data.nexml['^ot:tag'] = [ ];
             }
 
+            removeDuplicateTags( data.nexml );
+
             // add study-level containers for annotations
             if (['^ot:annotationEvents'] in data.nexml) {
                 data.nexml['^ot:annotationEvents'].annotation = 
@@ -781,21 +970,21 @@ function loadSelectedStudy() {
                 // UI widgets bound to these variables will trigger the
                 // computed display lists below..
                 'TREES': {
-                    'match': ko.observable("")
+                    'match': ko.observable( listFilterDefaults.TREES.match )
                 },
                 'FILES': {
-                    'match': ko.observable("")
+                    'match': ko.observable( listFilterDefaults.FILES.match )
                 },
                 'OTUS': {
                     // TODO: add 'pagesize'?
-                    'match': ko.observable(""),
-                    'scope': ko.observable("In all trees"),
-                    'order': ko.observable("Unmapped OTUs first")
+                    'match': ko.observable( listFilterDefaults.OTUS.match ),
+                    'scope': ko.observable( listFilterDefaults.OTUS.scope ),
+                    'order': ko.observable( listFilterDefaults.OTUS.order )
                 },
                 'ANNOTATIONS': {
-                    'match': ko.observable(""),
-                    'scope': ko.observable("Anywhere in the study"),
-                    'submitter': ko.observable("Submitted by all")
+                    'match': ko.observable( listFilterDefaults.ANNOTATIONS.match ),
+                    'scope': ko.observable( listFilterDefaults.ANNOTATIONS.scope ),
+                    'submitter': ko.observable( listFilterDefaults.ANNOTATIONS.submitter )
                 }
             };
 
@@ -806,7 +995,8 @@ function loadSelectedStudy() {
                 // new paged observableArray
                 var ticklers = [ viewModel.ticklers.TREES() ];
 
-                updateClearSearchWidget( '#tree-list-filter' );
+                updateClearSearchWidget( '#tree-list-filter', viewModel.listFilters.TREES.match );
+                updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.TREES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -849,6 +1039,7 @@ function loadSelectedStudy() {
                 var ticklers = [ viewModel.ticklers.SUPPORTING_FILES() ];
 
                 updateClearSearchWidget( '#file-list-filter' );
+                updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.FILES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -886,7 +1077,9 @@ function loadSelectedStudy() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
                 var ticklers = [ viewModel.ticklers.OTU_MAPPING_HINTS() ];
+
                 updateClearSearchWidget( '#otu-list-filter' );
+                updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.OTUS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -1049,6 +1242,7 @@ function loadSelectedStudy() {
                 // filter raw OTU list, then sort, returning a
                 // new (OR MODIFIED??) paged observableArray
                 updateClearSearchWidget( '#annotation-list-filter' );
+                updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.ANNOTATIONS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -1164,6 +1358,7 @@ function loadSelectedStudy() {
 
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
+                enableSaveButton();
                 addPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
                 updateQualityDisplay();
             });
@@ -1178,25 +1373,16 @@ function loadSelectedStudy() {
                     $('#study-tags').tagsinput('destroy');
                 }
                 $('#study-tags').tagsinput( tagsOptions );
+                // add all tag values directly from nemxml
+                $.each( getTags( data.nexml, {FULL_TAG_INFO: true}), function(i, tagInfo) {
+                    $('#study-tags').tagsinput('add', tagInfo);
+                });
                 captureTagTextOnBlur( $('#study-tags') );
                 studyTagsInitialized = true;
             }
 
             hideModalScreen();
             showInfoMessage('Study data loaded.');
-
-            if (initialState.tree) {
-                var tree = getTreeByID(initialState.tree);
-                if (tree) {
-                    showTreeViewer(tree);
-                } else {
-                    var errMsg = 'The requested tree (\''+ initialState.tree +'\') was not found. It has probably been deleted from this study.';
-                    hideModalScreen();
-                    showInfoMessage(errMsg);
-                }
-                delete initialState;  // clear this to avoid repeat viewing
-            }
-
         }
     });
 }
@@ -1205,7 +1391,11 @@ function updatePageHeadings() {
     // page headings should reflect the latest metadata for the study
     var studyFullReference = viewModel.nexml['^ot:studyPublicationReference'];
     var studyCompactReference = fullToCompactReference(studyFullReference);
-    $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
+    if (viewOrEdit == 'EDIT') {
+        $('#main-title').html('<span style="color: #ccc;">Editing study</span> '+ studyCompactReference);
+    } else {
+        $('#main-title').html('<span style="color: #ccc;">Viewing study</span> '+ studyCompactReference);
+    }
 
     var studyDOI = ('^ot:studyPublication' in viewModel.nexml) ? viewModel.nexml['^ot:studyPublication']['@href'] : "";
     studyDOI = $.trim(studyDOI);
@@ -1503,6 +1693,7 @@ function scrubNexsonForTransport( nexml ) {
      *   - remove unused rooting elements
      *   - remove "empty" elements if server doesn't expect them
      *   - clean up empty/unused OTU alt-labels
+     *   - remove client-side MRCA test results
      */
     if (!nexml) {
         nexml = viewModel.nexml;
@@ -1517,6 +1708,7 @@ function scrubNexsonForTransport( nexml ) {
     $.each( allTrees, function(i, tree) {
         cleanupAdHocRoot(tree);
         clearD3PropertiesFromTree(tree);
+        clearMRCATestResults(tree);
     });
 
     // coerce some non-string values
@@ -1648,8 +1840,28 @@ function saveFormDataToStudyJSON() {
             showSuccessMessage('Study saved to remote storage.');
 
             removePageExitWarning();
+            disableSaveButton();
             // TODO: should we expect fresh JSON to refresh the form?
         }
+    });
+}
+
+function disableSaveButton() {
+    var $btn = $('#save-study-button');
+    $btn.addClass('disabled');
+    $btn.unbind('click').click(function(evt) {
+        showErrorMessage('There are no unsaved changes.');
+        return false;
+    });
+}
+function enableSaveButton() {
+    var $btn = $('#save-study-button');
+    $btn.removeClass('disabled');
+    $btn.unbind('click').click(function(evt) {
+        if (validateFormData()) {
+            promptForSaveComments(); 
+        }
+        return false;
     });
 }
 
@@ -1697,7 +1909,7 @@ function removeStudy() {
             hideModalScreen();
             showSuccessMessage('Study removed, returning to study list...');
             setTimeout(function() {
-                var studyListURL = $('#return-to-study-list').attr('href');
+                var studyListURL = $('#return-to-study-list').val();
                 if (!studyListURL) {
                     console.error("Missing studyListURL!");
                 }
@@ -1901,6 +2113,8 @@ function normalizeTree( tree ) {
         tree['^ot:tag'] = [ ];
     }
 
+    removeDuplicateTags( tree );
+
     // pre-select first node among conflicting siblings
     resolveSiblingOnlyConflictsInTree(tree);
 }
@@ -2022,10 +2236,16 @@ function getRootedDescriptionForTree( tree ) {
     var unrootedTree = tree['^ot:unrootedTree'];
 
     if (unrootedTree) {
-        return "Arbitrary (not biologically correct)";
+        return '<span class="XXsuggestion-prompt">Unconfirmed (may be arbitrary)</span>';
     } else {
         return "Confirmed by curator";
     }
+}
+function showArbitraryRootExplanationInTreeViewer(tree) {
+    // hint to tree viewer that we're focused on this property
+    showTreeViewer(tree, {
+        HIGHLIGHT_ARBITRARY_ROOT: true
+    });
 }
 function getRootNodeDescriptionForTree( tree ) {
     // return display-ready description ('node123 [implicit]', 'node234 [explicit]', 'No root', ...)
@@ -2063,9 +2283,9 @@ function getRootNodeDescriptionForTree( tree ) {
     return nodeName;
 }
 function getRootedStatusForTree( tree ) {
-    // return display-ready description ('<span class="caution">Tree root is arbitrary</span>', ...)
-    var biologicalRootMessage = 'Tree root has been confirmed by the curator.';
-    var arbitraryRootMessage = '<span class="interesting-value">Tree root is arbitrary (for display only)</span>';
+    // return display-ready description ('<span class="caution">Biological root is ...</span>', ...)
+    var biologicalRootMessage = 'Biological root is confirmed by the curator.';
+    var arbitraryRootMessage = '<span class="interesting-value">Biological root is not confirmed (displayed root could be arbitrary).</span>';
 
     if (!tree || !tree.node || tree.node.length === 0) {
         return '';
@@ -2709,13 +2929,21 @@ function showTreeViewer( tree, options ) {
             }
             updateInferenceMethodWidgets( tree );
             $('#tree-tags').tagsinput( tagsOptions );
+            // add all tag values directly from nemxml
+            $.each( getTags( tree, {FULL_TAG_INFO: true}), function(i, tagInfo) {
+                $('#tree-tags').tagsinput('add', tagInfo);
+            });
             captureTagTextOnBlur( $('#tree-tags') );
             treeTagsInitialized = true;
         }
 
         updateEdgesInTree( tree );
         
-        drawTree( tree, {'INITIAL_DRAWING':true, 'HIGHLIGHT_AMBIGUOUS_LABELS':(options.HIGHLIGHT_AMBIGUOUS_LABELS || false)} );
+        drawTree(tree, {
+            'INITIAL_DRAWING': true, 
+            'HIGHLIGHT_AMBIGUOUS_LABELS': (options.HIGHLIGHT_AMBIGUOUS_LABELS || false), 
+            'HIGHLIGHT_ARBITRARY_ROOT': (options.HIGHLIGHT_ARBITRARY_ROOT || false)
+        });
 
         // clear any prior stepwise UI for showing highlights
         $('#tree-viewer').find('.stepwise-highlights').remove();
@@ -2825,14 +3053,16 @@ function showTreeViewer( tree, options ) {
         $('#tree-viewer').modal('show');
     }
 
-    /* IF we want different starting tab in different scenarios
-    if (options.HIGHLIGHT_PLAYLIST) {
-        $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
-    } else {
+    // IF we want different starting tab in different scenarios
+    var $rootWidget = $('#tree-root-status-widget');
+    if (options.HIGHLIGHT_ARBITRARY_ROOT) {
+        // jump immediately to the Properties tab (element is already highly visible)
+        $rootWidget.addClass('needs-attention').css('margin', '4px -4px 2px');
         $treeViewerTabs.filter('[href*=tree-properties]').tab('show');
+    } else {
+        $rootWidget.removeClass('needs-attention').css('margin', '');
+        $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
     }
-    */
-    $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
 }
 
 function findOTUInTrees( otu, trees ) {
@@ -3469,6 +3699,8 @@ function updateEdgesInTree( tree ) {
     sweepEdgePolarity( tree, rootNodeID, null, inGroupClade );
     clearFastLookup('EDGES_BY_SOURCE_ID');
     clearFastLookup('EDGES_BY_TARGET_ID');
+    // set (or remove) ot:isLeaf flags on all nodes
+    updateLeafNodeFlags(tree);
 }
 
 function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID, inGroupClade, insideInGroupClade ) {
@@ -3571,6 +3803,37 @@ function reverseEdgeDirection( edge ) {
     var oldSource = edge['@source'];
     edge['@source'] = edge['@target'];
     edge['@target'] = oldSource;
+}
+function updateLeafNodeFlags(tree) {
+    // ASSUMES that this parent-node lookup is up to date
+    var sourceLookup = getFastLookup('EDGES_BY_SOURCE_ID');
+    $.each( tree.node, function( i, node ) {
+        var nodeID = node['@id'];
+        parentEdges = sourceLookup[ nodeID ];
+        if (parentEdges) {
+            // it's a parent, so not a leaf
+            if ('^ot:isLeaf' in node) {
+                delete node['^ot:isLeaf'];
+                //console.log(">> REMOVING isLeaf from node "+ nodeID);
+            }
+        } else {
+            // a leaf node is nobody's parent, (re)set its flag
+            if (!('^ot:isLeaf' in node) || node['^ot:isLeaf'] !== true) {
+                node['^ot:isLeaf'] = true;
+                //console.log(">> SETTING isLeaf for node "+ nodeID);
+            }
+        }
+    });
+    /* NOTE: Other related properties are for d3 (display) only, so no action
+     * required; see clearD3PropertiesFromTree()
+     *  .parent
+     *  .children
+     *  .rootDistsance
+     *  .ingroup
+     *  .depth
+     *  .length
+     *  .rootDist
+     */
 }
 function getTreeNodeLabel(tree, node, importantNodeIDs) {
     // Return the best available label for this node, and its type:
@@ -3753,15 +4016,22 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
     // move its collections into the view model Nexson
     var nexmlName = ('nex:nexml' in data) ? 'nex:nexml' : 'nexml';
  
+    // check for needed collections
+    var itsOTUsCollection =  data[nexmlName]['otus'];
+    var itsTreesCollection = data[nexmlName]['trees'];
+    if (!itsOTUsCollection || !itsTreesCollection) {
+        hideModalScreen();
+        showErrorMessage('Sorry, no trees were found in this file.');
+        return;
+    }
+    
     // coerce the inner array of each collection into an array
     // (override Badgerfish singletons)
     // NOTE that there may be multiple trees elements, otus elements
-    var itsOTUsCollection =  data[nexmlName]['otus'];
     $.each(itsOTUsCollection, function(i, otusElement) {
         otusElement['otu'] = makeArray( otusElement['otu'] );
     });
 
-    var itsTreesCollection = data[nexmlName]['trees'];
     $.each(itsTreesCollection, function(i, treesElement) {
         treesElement['tree'] = makeArray( treesElement['tree'] );
         $.each( treesElement.tree, function(i, tree) {
@@ -4412,12 +4682,32 @@ function toggleAllMappingCheckboxes(cb) {
     return true;
 }
 
-function editOTULabel(otu) {
+function editOTULabel(otu, evt) {
     var OTUid = otu['@id'];
     var originalLabel = otu['^ot:originalLabel'];
     otu['^ot:altLabel'] = adjustedLabel(originalLabel);
-    // this should make the editor appear
+    
+    // Mark this OTU as selected for mapping.
+    otu['selectedForAction'] = true;
+
+    // If we have a proper mouse event, try to move input focus to this field
+    // and pre-select its full text.
+    //
+    // N.B. There's a 'hasFocus' binding with similar behavior, but it's tricky
+    // to mark the new field vs. existing ones:
+    //   http://knockoutjs.com/documentation/hasfocus-binding.html 
+    if ('currentTarget' in evt) {
+        // capture the current table row before DOM updates
+        var $currentRow = $(evt.currentTarget).closest('tr');
+        setTimeout(function() {
+            var $editField = $currentRow.find('input:text');
+            $editField.focus().select();
+        }, 50);
+    }
+
+    // this should make the editor appear (altering the DOM)
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+    nudgeTickler( 'OTU_MAPPING_HINTS'); // to refresh 'selected' checkbox
 }
 function modifyEditedLabel(otu) {
     // remove its otu-id from failed-OTU list when user makes changes
@@ -4458,15 +4748,20 @@ function proposedMapping( otu ) {
     var acc = proposedOTUMappings()[ OTUid ];
     return acc ? acc() : null;
 }
-function approveProposedOTULabel(otu, selectedIndex) {
+function approveProposedOTULabel(otu) {
     // undoes 'editOTULabel', releasing a label to use shared hints
     var OTUid = otu['@id'];
-    var approvedMapping = proposedOTUMappings()[ OTUid ];
+    var itsMappingInfo = proposedOTUMappings()[ OTUid ];
+    var approvedMapping = $.isFunction(itsMappingInfo) ?
+        itsMappingInfo() :
+        itsMappingInfo;
     if ($.isArray(approvedMapping)) {
-        // there are multiple candidates; match the selected index
-        approvedMapping = approvedMapping[ selectedIndex ];
+        // apply the first (only) value
+        mapOTUToTaxon( OTUid, approvedMapping[0] );
+    } else {
+        // apply the inner value of an observable (accessor) function
+        mapOTUToTaxon( OTUid, ko.unwrap(approvedMapping) );
     }
-    mapOTUToTaxon( OTUid, approvedMapping() );
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
     nudgeTickler('OTU_MAPPING_HINTS');
@@ -4746,6 +5041,7 @@ function requestTaxonMapping( otuToMap ) {
                     failedMappingOTUs.push( otuID );
                     break;
 
+                /* SKIPPING THIS to provide uniform treatment of all matches
                 case 1:
                     // choose the first+only match automatically!
                     var resultToMap = candidateMatches[0];
@@ -4761,6 +5057,7 @@ function requestTaxonMapping( otuToMap ) {
                     proposeOTULabel(otuID, otuMapping);
                     // postpone actual mapping until user approves
                     break;
+                 */
 
                 default: 
                     // multiple matches found, offer a choice
@@ -4956,7 +5253,7 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     if (nodeID == importantNodeIDs.treeRoot) {
         nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
     } else {
-        if (viewOrEdit === 'EDIT') {
+        if ((viewOrEdit === 'EDIT') && !(node['^ot:isLeaf'])) {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as root of this tree</a></li>');
         }
     }
@@ -5079,6 +5376,15 @@ function clearD3PropertiesFromTree(tree) {
         delete node.ambiguousLabel;
         delete node.adjacentEdgeLabel;
     });
+}
+
+function clearMRCATestResults(tree) {
+    // These are temporary client-side tests that can go stale and mislead
+    // other Nexson users. Best to remove them before saving.
+    delete tree['^ot:MRCAName'];
+    delete tree['^ot:MRCAOttId'];
+    delete tree['^ot:nearestTaxonMRCAName'];
+    delete tree['^ot:nearestTaxonMRCAOttId'];
 }
 
 function coerceEdgeLengthsToNumbers(tree) {
@@ -5476,28 +5782,45 @@ function relocateLocalAnnotationMessages( nexml ) {
  * metatags, with no duplicate values for the parent element.
  */
 
-function getTags( parentElement ) {
+function getTags( parentElement, options ) {
+    options = options || { FULL_TAG_INFO: false };
     var tags = [];
     var rawTagValues = parentElement['^ot:tag'] || [];
     $.each(rawTagValues, function(i, tagText) {
         var tagText = $.trim(tagText);
-        switch(tagText) {  // non-empty points to a candidate tree
+        switch(tagText) {  
             case '':
-                break;
+                break;  // discard empty tags
             default:
-                tags.push( tagText );
+                if (options.FULL_TAG_INFO) {
+                    var tagInfo = makeTagObjFromString( tagText );
+                    tags.push( tagInfo );
+                } else {
+                    tags.push( tagText );
+                }
         }
     });
     return tags;
 }
 function addTag( parentElement, newTagText ) {
+    // ASSUMES that tag text is storage-ready (URI-decoded and trimmed)
     if (!('^ot:tag' in parentElement)) {
         parentElement['^ot:tag'] = [];
     }
-    parentElement['^ot:tag'].push( newTagText );
+    // only add unique tags!
+    if ($.inArray(newTagText, parentElement['^ot:tag']) === -1) {
+        parentElement['^ot:tag'].push( newTagText );
+    }
 }
 function removeAllTags( parentElement ) {
     parentElement['^ot:tag'] = [];
+}
+function removeDuplicateTags( parentElement ) {
+    var uniqueTags = [ ] ;
+    $.each(parentElement['^ot:tag'], function(i,tag){ 
+        if ($.inArray(tag, uniqueTags) === -1) { uniqueTags.push(tag) };
+    });
+    parentElement['^ot:tag'] = uniqueTags;
 }
 function updateElementTags( select ) {
     var parentElement;
@@ -5511,8 +5834,11 @@ function updateElementTags( select ) {
     // read and apply the values in this tags-input SELECT element
     // N.B. multiple-value select returns null if no values selected!
     var values = $(select).val() || [];  
-    $.each(values, function(i,v) {
-        addTag( parentElement, $.trim(v) );
+    $.each(values, function(i, encodedTag ) {
+        // convert as needed, e.g. 'delete%20me' => 'delete me'
+        var rawTagValue = decodeURIComponent( encodedTag );
+        // trim final string just to be safe
+        addTag( parentElement, $.trim(rawTagValue) );
     });
 }
 
@@ -6696,14 +7022,6 @@ function getDataDepositMessage() {
     return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
 }
 
-function slugify(str) {
-    // Convert any string into a simplified "slug" suitable for use in URL or query-string
-    return str.toLowerCase()
-              .replace(/[^a-z0-9 -]/g, '')  // remove invalid chars
-              .replace(/\s+/g, '-')         // collapse whitespace and replace by -
-              .replace(/-+/g, '-');         // collapse dashes
-}
-
 function showDownloadFormatDetails() {
   // show details in a popup (already bound)
   $('#download-formats-popup').modal('show');
@@ -6756,7 +7074,7 @@ function inferSearchContextFromAvailableOTUs() {
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
-                showErrorMessage('Sorry, there was an error inferring the context.');
+                showErrorMessage('Sorry, there was an error inferring the search context.');
                 console.log("ERROR: textStatus !== 'success', but "+ textStatus);
                 return;
             }
@@ -6772,7 +7090,7 @@ function inferSearchContextFromAvailableOTUs() {
                 // update BOTH search-context drop-down menus to show this result
                 $('select[name=taxon-search-context], select[name=mapping-search-context]').val(inferredContext);
             } else {
-                showErrorMessage('Sorry, there was an error inferring the search context.');
+                showErrorMessage('Sorry, no search context was inferred.');
             }
         }
     }); 
@@ -6781,8 +7099,11 @@ function inferSearchContextFromAvailableOTUs() {
 /* If there's a data-deposit for this study, remind the curator of
  * the importance of adding *only* data that's already in the deposit.
  * (This message should appear just once per session.)
+ *
+ * NOTE: We're trying a more unobtrusive (static text) reminder for this feature.
+ * For now, initialize this flag as true to prevent all popups!
  */
-var remindedAboutAddingLateData = false;
+var remindedAboutAddingLateData = true;
 function remindAboutAddingLateData(evt) {
     // return true if they don't need this message, false if it should block the caller
     if (remindedAboutAddingLateData) {

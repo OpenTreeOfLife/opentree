@@ -78,8 +78,21 @@ configdir=repo/opentree/webapp/private
 configtemplate=$configdir/config.example
 configfile=$configdir/config
 
+# Use the existence of a wildcard cert to trigger the use of HTTPS from within web2py.
+if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem ]; then
+   SSL_CERTS_FOUND=true
+else
+   SSL_CERTS_FOUND=false
+fi
+echo "Triggering use of HTTPS from within web2py? [$SSL_CERTS_FOUND]"
+
 # Replace tokens in example config file to make the active config (assume this always changes)
 cp -p $configtemplate $configfile
+
+# Prepend /cached/ to some API base URLs (for faster retrieval of common method calls)
+CACHED_TREEMACHINE_BASE_URL=$(sed "s+treemachine/+cached/treemachine/+" <<< $TREEMACHINE_BASE_URL)
+CACHED_TAXOMACHINE_BASE_URL=$(sed "s+taxomachine/+cached/taxomachine/+" <<< $TAXOMACHINE_BASE_URL)
+
 sed "s+github_client_id = .*+github_client_id = $TREEVIEW_GITHUB_CLIENT_ID+;
      s+github_redirect_uri = .*+github_redirect_uri = $TREEVIEW_GITHUB_REDIRECT_URI+
      s+hostdomain = .*+hostdomain = $OPENTREE_PUBLIC_DOMAIN+;
@@ -87,6 +100,9 @@ sed "s+github_client_id = .*+github_client_id = $TREEVIEW_GITHUB_CLIENT_ID+;
      s+taxomachine = .*+taxomachine = $TAXOMACHINE_BASE_URL+
      s+oti = .*+oti = $OTI_BASE_URL+
      s+opentree_api = .*+opentree_api = $OPENTREE_API_BASE_URL+
+     s+CACHED_treemachine = .*+CACHED_treemachine = $CACHED_TREEMACHINE_BASE_URL+
+     s+CACHED_taxomachine = .*+CACHED_taxomachine = $CACHED_TAXOMACHINE_BASE_URL+
+     s+secure_sessions_with_HTTPS = .*+secure_sessions_with_HTTPS = $SSL_CERTS_FOUND+
     " < $configfile > tmp.tmp
 mv tmp.tmp $configfile
 
@@ -103,6 +119,7 @@ sed "s+github_client_id = .*+github_client_id = $CURATION_GITHUB_CLIENT_ID+;
      s+taxomachine = .*+taxomachine = $TAXOMACHINE_BASE_URL+
      s+oti = .*+oti = $OTI_BASE_URL+
      s+opentree_api = .*+opentree_api = $OPENTREE_API_BASE_URL+
+     s+secure_sessions_with_HTTPS = .*+secure_sessions_with_HTTPS = $SSL_CERTS_FOUND+
     " < $configfile > tmp.tmp
 mv tmp.tmp $configfile
 

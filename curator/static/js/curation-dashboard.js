@@ -1,3 +1,34 @@
+/*    
+@licstart  The following is the entire license notice for the JavaScript code in this page. 
+
+    Copyright (c) 2013, Jim Allman
+
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    Redistributions of source code must retain the above copyright notice, this
+    list of conditions and the following disclaimer.
+
+    Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+@licend  The above is the entire license notice for the JavaScript code in this page.
+*/
+
 /*
  * Client-side behavior for the Open Tree curation home page and personalized dashboard
  *
@@ -6,6 +37,14 @@
  * then use client-side code to filter and sort them.
  */
 
+/*
+ * Subscribe to history changes (adapted from History.js boilerplate) 
+ */
+
+var History = window.History; // Note: capital H refers to History.js!
+// History.js can be disabled for HTML4 browsers, but this should not be the case for opentree!
+
+
 // these variables should already be defined in the main HTML page
 var findAllStudies_url;
 var viewOrEdit;
@@ -13,9 +52,84 @@ var viewOrEdit;
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
 
+/* Use history plugin to track moves from tab to tab, single-tree popup, others? */
+
+var listFilterDefaults; // defined in main page, for a clean initial state
+
+if ( History && History.enabled ) {
+    
+    var handleChangingState = function() {
+        if (!viewModel) {
+            // try again soon (waiting for the study list to load)
+            setTimeout( handleChangingState, 50 );
+            return;
+        }
+        var State = History.getState(); // Note: We are using History.getState() instead of event.state
+        ///History.log(State.data, State.title, State.url);
+
+        // Extract our state vars from State.url (not from State.data) for equal
+        // treatment of initial URLs.
+        var activeFilter = viewModel.listFilters.STUDIES;
+        var filterDefaults = listFilterDefaults.STUDIES;
+        // assert any saved filter values
+        for (var prop in activeFilter) {
+            if (prop in State.data) {
+                activeFilter[prop]( State.data[prop] );
+            } else {
+                // (re)set to its default value
+                activeFilter[prop]( filterDefaults[prop] );
+            }
+        }
+
+        initialState = null;  // clear this to unlock history for other changes
+    };
+
+    // bind to statechange event
+    History.Adapter.bind(window, 'statechange', handleChangingState);
+}
+
+function updateListFiltersWithHistory() {
+    // capture changing list filters in browser history
+    // N.B. This is triggered when filter is updated programmatically
+    // TODO: Try not to capture all keystrokes, or trivial changes?
+    if (History && History.enabled) {
+        if (initialState) {
+            // wait until initial state has been applied!
+            return;
+        }
+        var oldState = History.getState().data;
+
+        // Determine which list filter is active (currently based on tab)
+        // N.B. There's currently just one filter per tab (Trees, Files, OTU Mapping).
+        var activeFilter = viewModel.listFilters.STUDIES;
+        var filterDefaults = listFilterDefaults.STUDIES;
+        var newState = { };
+        var newQSValues = { };
+        for (prop in activeFilter) {
+            newState[prop] = ko.unwrap(activeFilter[prop]);
+            // Hide default filter settings, for simpler URLs
+            if (newState[prop] !== filterDefaults[prop]) {
+                newQSValues[prop] = ko.unwrap(activeFilter[prop]);
+            }
+        }
+        //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
+        var newQueryString = '?'+ $.param(newQSValues);
+        History.pushState( newState, (window.document.title), newQueryString );
+    }
+}
+
 $(document).ready(function() {
     bindHelpPanels();
     loadStudyList();
+    
+    // NOTE that our initial state is set in the main page template, so we 
+    // can build it from incoming URL in web2py. Try to recapture this state,
+    // ideally through manipulating history.
+    if (History && History.enabled) {
+        // "formalize" the current state with an object
+        initialState.nudge = new Date().getTime();
+        History.replaceState(initialState, window.document.title, window.location.href);
+    }
 });
 
 function loadStudyList() {
@@ -131,7 +245,8 @@ function loadStudyList() {
             viewModel.filteredStudies = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
-                updateClearSearchWidget( '#study-list-filter' );
+                updateClearSearchWidget( '#study-list-filter', viewModel.listFilters.STUDIES.match );
+                updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.STUDIES.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
@@ -150,8 +265,8 @@ function loadStudyList() {
                         var curator = study['ot:curatorName'];
                         var clade = ('ot:focalCladeOTTTaxonName' in study && 
                                      ($.trim(study['ot:focalCladeOTTTaxonName']) !== "")) ?
-                                        study['ot:curatorName'] :
-                                        study['ot:focalClade'];
+                                        study['ot:focalCladeOTTTaxonName'] :  // use mapped name if found
+                                        study['ot:focalClade']; // fall back to numeric ID (should be very rare)
                         if (!matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
                             return false;
                         }
@@ -334,7 +449,7 @@ function getFocalCladeLink(study) {
         return '<span style="color: #ccc;">'+ cladeName +'</span>';
     }
 
-    return '<a href="#" onclick="filterByClade(\''+ ottID +'\'); return false;"'+'>'+ cladeName +'</a'+'>';
+    return '<a href="#" onclick="filterByClade(\''+ cladeName +'\'); return false;"'+'>'+ cladeName +'</a'+'>';
 }
 function getPubLink(study) {
     var urlNotFound = false;

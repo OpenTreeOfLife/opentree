@@ -25,9 +25,11 @@ if os.path.isfile("applications/%s/private/GITHUB_CLIENT_SECRET" % request.appli
 ## File is released under public domain and you can use without limitations
 #########################################################################
 
-## if SSL/HTTPS is properly configured and you want all HTTP requests to
-## be redirected to HTTPS, uncomment the line below:
-# request.requires_https()
+# If SSL/HTTPS is properly configured and you want all HTTP requests to
+# be redirected to HTTPS, uncomment the line below:
+## request.requires_https()
+# NO, this is too all-inclusive and complicates our registered apps on GitHub.
+# (Its OAuth should work with either secure or insecure/test setups.)
 
 if not request.env.web2py_runtime_gae:
     ## if NOT running on Google App Engine use SQLite or other DB
@@ -59,8 +61,12 @@ response.generic_patterns = ['*'] if request.is_local else []
 ## (more options discussed in gluon/tools.py)
 #########################################################################
 
+SECURE_SESSIONS_WITH_HTTPS = conf.getboolean("security", "secure_sessions_with_HTTPS")
+# This is set to 'true' during deployment if our wildcard cert file is found. We
+# assume this means all prerequisites for HTTPS/SSL are complete.
+
 from gluon.tools import Auth, Crud, Service, PluginManager, prettydate
-auth = Auth(db)
+auth = Auth(db, secure=SECURE_SESSIONS_WITH_HTTPS)
 crud, service, plugins = Crud(db), Service(), PluginManager()
 
 

@@ -199,10 +199,23 @@ def fetch_current_synthesis_source_data():
             else:
                 study_id = '_'.join(source_parts[0:2])
             if len(source_parts) == 4:
+                tree_id = source_parts[2]
                 commit_SHA_in_synthesis = source_parts[3]
             else:
-                commit_SHA_in_synthesis = None
-            contributing_study_info[ study_id ] = commit_SHA_in_synthesis
+                tree_id = source_parts[1]
+                if len(source_parts) == 3:
+                    commit_SHA_in_synthesis = source_parts[2]
+                else:
+                    commit_SHA_in_synthesis = None
+
+            if study_id in contributing_study_info.keys():
+                contributing_study_info[ study_id ]['tree_ids'].append( tree_id )
+            else:
+                contributing_study_info[ study_id ] = {
+                    'tree_ids': [ tree_id, ],
+                    'commit_SHA_in_synthesis': commit_SHA_in_synthesis
+                }
+
 
         # fetch the oti metadata (esp. DOI and full reference text) for each
         fetch_url = method_dict['findAllStudies_url']
@@ -211,7 +224,8 @@ def fetch_current_synthesis_source_data():
             fetch_url = "http:%s" % fetch_url
 
         # as usual, this needs to be a POST (pass empty fetch_args)
-        study_metadata_response = fetch(fetch_url, data={"verbose": True})
+        study_metadata_response = fetch(fetch_url, data={"verbose": True}) 
+        # TODO: add more friendly label to tree metadata? if so, add "includeTreeMetadata":True above
         study_metadata = simplejson.loads( study_metadata_response )
 
         # filter just the metadata for studies contributing to synthesis
@@ -225,8 +239,11 @@ def fetch_current_synthesis_source_data():
             else:
                 prefixed_study_id = study['ot:studyId']
             if prefixed_study_id in contributing_study_info.keys():
-                # add commit SHA to support retrieval of *exact* Nexson from synthesis
-                study['commit_SHA_in_synthesis'] = contributing_study_info[ prefixed_study_id ];
+                contrib_info = contributing_study_info[ prefixed_study_id ]
+                # and commit SHA to support retrieval of *exact* Nexson from synthesis
+                study['commit_SHA_in_synthesis'] = contrib_info['commit_SHA_in_synthesis']
+                # add contributing tree ID(s) so we can directly link to (or download) them
+                study['tree_ids'] = contrib_info['tree_ids']
                 contributing_studies.append( study )
 
         # TODO: sort these alphabetically(?) and render in the page

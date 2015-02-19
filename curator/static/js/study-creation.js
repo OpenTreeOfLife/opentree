@@ -1,7 +1,38 @@
 /*
+@licstart  The following is the entire license notice for the JavaScript code in this page.
+
+    Copyright (c) 2013, Jim Allman
+
+    All rights reserved.
+
+    Redistribution and use in source and binary forms, with or without
+    modification, are permitted provided that the following conditions are met:
+
+    Redistributions of source code must retain the above copyright notice, this
+    list of conditions and the following disclaimer.
+
+    Redistributions in binary form must reproduce the above copyright notice,
+    this list of conditions and the following disclaimer in the documentation
+    and/or other materials provided with the distribution.
+
+    THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+    AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+    IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+    DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+    FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+    DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+    SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+    CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+    OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+    OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+@licend  The above is the entire license notice for the JavaScript code in this page.
+*/
+
+/*
  * Client-side behavior for the Open Tree curation UI
  *
- * This uses the Open Tree API to fetch and store studies and trees remotely.
+ * This uses the Open Tree API to trigger the creation of a new study.
  */
 
 // these variables should already be defined in the main HTML page
@@ -85,10 +116,14 @@ function updateImportOptions() {
                 creationAllowed = false;
                 errMsg = 'You must enter a TreeBASE ID to continue.';
             } else {
-                var testForInt = $.trim($('input[name=treebase-id]').val());
-                if (isNaN(testForInt) || parseInt(testForInt) != testForInt) {
+                var testIdentifier = $.trim($('input[name=treebase-id]').val());
+                // a TreeBASE id should be an integer, possibly starting with 's' or 'S'
+                // Or we can use this regex found here: http://identifiers.org/treebase/
+                //var treeBaseIdPattern = new RegExp('^TB[1,2]?:[A-Z][a-z]?\\d+$');
+                var treeBaseIdPattern = new RegExp('^((TB[1,2]?:)?[sS])?\\d+$');
+                if (treeBaseIdPattern.test(testIdentifier) === false) {
                     creationAllowed = false;
-                    errMsg = 'TreeBASE ID should be an integer.';
+                    errMsg = 'TreeBASE ID should conform to one of these patterns: 123, S123, TB:S123, TB1:S123, TB2:S123';
                 }
             }
 
@@ -187,6 +222,11 @@ function createStudyFromForm( evt ) {
         'import-method-TREEBASE_ID' : 'import-method-PUBLICATION_DOI';
     console.log("importMethod: ["+ importMethod +"]");
 
+    // strip any TB: (or TB2:) prefix from the TreeBASE ID
+    var rawTreeBaseId = $.trim($('[name=treebase-id]').val()) || '';
+    var idParts = rawTreeBaseId.split(':');
+    var groomedTreeBaseId = (idParts.length === 1) ? idParts[0] : idParts[1];
+
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: 'POST',
@@ -199,7 +239,7 @@ function createStudyFromForm( evt ) {
             // depend on the server to discern which ones really matter.
             'import_method': importMethod,
             'import_from_location': $('[name=import-from-location]:checked').val() || '',
-            'treebase_id': $('[name=treebase-id]').val() || '',
+            'treebase_id': groomedTreeBaseId,
             'publication_DOI': $('[name=publication-DOI]').val() || '',
             //'publication_reference': $('[name=publication-reference]').val() || '',
             //'nexml_fetch_url': $('[name=nexml-fetch-url]').val() || '',
