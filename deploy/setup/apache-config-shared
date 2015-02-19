@@ -88,6 +88,12 @@
     RewriteRule ^/v2/study/(.*) /phylesystem/v1/study/$1 [PT]
 
     # ------------------------------------------------------------
+    # Explicit routing for /cached/* URLs (in phylesystem-api)
+
+    RewriteEngine on
+    RewriteRule ^/cached/(.*) /phylesystem/default/cached/$1 [PT]
+
+    # ------------------------------------------------------------
     # v1 API retained for transition period (ending Nov 2014 ?)
 
     <Location /treemachine/v1>
