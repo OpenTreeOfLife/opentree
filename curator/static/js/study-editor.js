@@ -1709,6 +1709,12 @@ function promptForSaveComments() {
     // buttons there do the remaining work
 }
 
+function promptForDeleteComments() {
+    // show a modal popup to gather comments (or cancel)
+    $('#delete-comments-popup').modal('show');
+    // buttons there do the remaining work
+}
+
 
 function scrubNexsonForTransport( nexml ) {
     /* Groom client-side Nexson for storage on server (details below)
@@ -1891,17 +1897,26 @@ function enableSaveButton() {
 
 function removeStudy() {
     // let's be sure, since deletion will make a mess...
-    if (!confirm("Are you sure you want to delete this study?")) {
-        return;
+    var removeURL = API_remove_study_DELETE_url.replace('{STUDY_ID}', studyID);
+    // gather commit message (if any) from pre-save popup
+    var commitMessage;
+    var firstLine = $('#delete-comment-first-line').val();
+    var moreLines = $('#delete-comment-more-lines').val();
+    if ($.trim(firstLine) === '') {
+        commitMessage = $.trim(moreLines);
+    } else if ($.trim(moreLines) === ''){
+        commitMessage = $.trim(firstLine);
+    } else {
+        commitMessage = $.trim(firstLine) +"\n\n"+ $.trim(moreLines);
     }
 
-    var removeURL = API_remove_study_DELETE_url.replace('{STUDY_ID}', studyID);
     // add auth-token to the query string (no body allowed!)
     var qsVars = $.param({
         author_name: authorName,
         author_email: authorEmail,
         auth_token: authToken,
-        starting_commit_SHA: viewModel.startingCommitSHA
+        starting_commit_SHA: viewModel.startingCommitSHA,
+        commit_msg: commitMessage
     });
     removeURL += ('?'+ qsVars);
 
