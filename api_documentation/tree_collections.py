@@ -12,7 +12,7 @@ methods_list.append({
     "short_description" : "Return a list of collections that match a given property. If no property provided, returns a list of all collections.",
     "http_verb" : "POST",
     "relative_url" : "/collections/find_collections",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/v2/collections/find_collections",
+    #"neo4j_service_url" : "http://api.opentreeoflife.org/v2/collections/find_collections",
     "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/collections/find_collections \\\n-H "content-type:application/json" -d \\\n'{"property":"ot:collectionId","value":"pg_719","verbose":true}'""",
     "example_result" : "",
 })
@@ -24,7 +24,7 @@ methods_list.append({
     "short_description" : "Return a list of properties that can be used to search collections.",
     "http_verb" : "POST",
     "relative_url" : "/collections/properties",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/v2/collections/properties",
+    #"neo4j_service_url" : "http://api.opentreeoflife.org/v2/collections/properties",
     "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/collections/properties""",
     "example_result" : "",
 })
