@@ -73,7 +73,7 @@ def profile():
         # try to load a profile for the specified userid, using the GitHub API
         specified_userid = request.args[0]
         view_dict['userid'] = specified_userid
-        user_info_found = False
+        view_dict['active_user_found'] = False
 
         # fetch the JSON for this user's activities
         json_response = _fetch_github_api(verb='GET', 
@@ -85,13 +85,22 @@ def profile():
             # pass error to the page for display
             print("ERROR FETCHING INFO FOR USERID: ", specified_userid)
             print(error_msg)
+            view_dict['user_info'] = None
+            view_dict['opentree_activity'] = None 
         else:
             # pass user info to the page for display
             view_dict['user_info'] = json_response
-            view_dict['opentree_activity'] = _get_opentree_activity( 
+            activity = _get_opentree_activity( 
                 userid=specified_userid, 
                 username=view_dict['user_info'].get('name', specified_userid)
             )
+            if activity:
+                view_dict['active_user_found'] = True
+            else:
+                view_dict['active_user_found'] = False
+                view_dict['error_msg'] = 'Not active in OpenTree'
+            view_dict['opentree_activity'] = activity
+
         return view_dict
 
     else:
@@ -108,13 +117,21 @@ def profile():
                 print("ERROR FETCHING INFO FOR USERID: ", current_userid)
                 print(error_msg)
                 view_dict['user_info'] = None
+                view_dict['opentree_activity'] = None
+                view_dict['active_user_found'] = False
             else:
                 # pass user info to the page for display
                 view_dict['user_info'] = json_response
-                view_dict['opentree_activity'] = _get_opentree_activity( 
+                activity = _get_opentree_activity( 
                     userid=current_userid, 
                     username=view_dict['user_info'].get('name', current_userid)
                 )
+                if activity:
+                    view_dict['active_user_found'] = True
+                else:
+                    view_dict['active_user_found'] = False
+                    view_dict['error_msg'] = 'Not active in OpenTree'
+                view_dict['opentree_activity'] = activity
             return view_dict
         else:
             # try to force a login and return here

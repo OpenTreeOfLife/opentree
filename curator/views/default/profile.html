@@ -13,14 +13,17 @@ left_sidebar_enabled,right_sidebar_enabled=False,False
 #       studies: a count, roles played, or None?
 
 response.title = "User profile"
-response.subtitle = XML(
-    '%s <a style="font-weight: normal; font-size: 0.75em;" href="%s" target="_blank" title="Open GitHub profile in a new window">(%s)</a>' % (
-        user_info.get('name', user_info.get('login', 'User not found')), 
-        user_info.get('html_url'), 
-        user_info.get('login'),
+if active_user_found:
+    response.subtitle = XML(
+        '%s <a style="font-weight: normal; font-size: 0.75em;" href="%s" target="_blank" title="Open GitHub profile in a new window">(%s)</a>' % (
+            user_info.get('name', user_info.get('login', '???')), 
+            user_info.get('html_url'), 
+            user_info.get('login'),
+        )
     )
-)
-
+else:
+    response.subtitle = XML('User not found')
+pass
 }}
 {{extend 'layout.html'}}
 <script type='text/javascript'>
@@ -41,16 +44,26 @@ response.subtitle = XML(
 </style>
 {{
 if error_msg: 
-     if error_msg == 'Not Found': 
-     # no such user found on GitHub }}
-    <p class="interesting-value">Sorry, we can't find user '{{= userid}}' on GitHub. Please check the URL above and try agin.</p>
-{{   else: 
+   if error_msg == 'Not Found': 
+       # no such user found on GitHub }}
+    <p class="interesting-value">Sorry, we can't find user '{{= userid}}' on GitHub. Please check the URL above and try again.</p>
+{{ elif error_msg == 'Not active in OpenTree': 
+       # user exists, but isn't active in OpenTree }}
+    <p class="interesting-value">
+          {{ if user_info.get('type', '') == 'Organization': }}
+            An organization with this name was found on GitHub, but is not an OpenTree participant. Please check the URL above and try again.
+          {{ else: }}
+            A user with this name was found on GitHub, but is not an active OpenTree participant. Please check the URL above and try again.
+
+          {{ pass }}
+    </p>
+{{ else: 
      # some other error }}
     <h2>{{= error_msg }}</h2>
     <p class="interesting-value">There was a problem retrieving this user's profile. Please try again.</p>
-{{   pass  
-   else: 
-   # user data loaded successfully from GitHub }}
+{{ pass  
+elif active_user_found: 
+   # active user data loaded successfully from GitHub }}
 <div class="row">
  <div class="span2">
     <img src="{{= user_info.get('avatar_url', '') }}" 
@@ -80,7 +93,8 @@ if error_msg:
 -->
 
 <form class="form-horizontal wider-fields">
-  {{ if user_info.get('company', None): }}
+{{ if active_user_found:
+     if user_info.get('company', None): }}
     <div class="control-group">
         <label class="control-label">Affiliation</label>
         <div class="controls">
@@ -115,7 +129,8 @@ if error_msg:
             <p class="static-form-value">{{= user_info['bio'] }}</p>
         </div>
     </div>
-  {{ pass }}
+  {{ pass
+  pass }}
   {{ if not opentree_activity: 
        # this user (or organization) has no activity to show }}
     <div class="control-group">
@@ -124,7 +139,7 @@ if error_msg:
               {{ if user_info['type'] == 'Organization': }}
                 This organization was found on GitHub, but is not an OpenTree participant.
               {{ else: }}
-                This user was found on GitHub, but is not an active OpenTree participant.
+                A user with this name was found on GitHub, but is not an active OpenTree participant.
               {{ pass }}
             </p>
         </div>
