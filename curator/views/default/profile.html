@@ -225,23 +225,120 @@ elif active_user_found:
     </div>
 </form>
 
-<h2 id="collections">Custom collections</h2>
+<h2 id="collections">Collections</h2>
 
-<table style="width: 100%; margin-bottom: 2em;">
+<!-- TODO: Add a notice if user has no collections (as owner, collaborator, or follower)
+<div class="empty-list-prompt" data-bind="visible: viewModel.filteredTrees().pagedItems().length === 0">
+    No matching trees found! Add new trees or clear the
+    filter above to see trees in this study.
+</div> 
+-->
+<p>
+A collection is a list of trees, chosen for synthesis or any other purpose. Each collection has a nominal owner, but any user can choose to collaborate (add and manage trees) or simply follow its progress. 
+<br/>
+<span class="interesting-value" style="font-weight: bold;">NOTE that these are inactive placeholders!</span>
+</p>
+
+<table class="table table-condensed table-hover"
+    data-bind="visible: true"><!-- TODO: hide if no collections found -->
+  <thead>
     <tr>
-        <td align="left">
-            Name (TODO)
+        <th>Collection name (click to view)</th>
+        <th>User's role</th>
+        <td>&nbsp;</td>
+        <th>&nbsp;</th>
+    </tr>
+  </thead>
+  <tbody Xdata-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
+  <!-- TODO
+    <tr data-bind="if: true">
+        <td>
+            <a href="#" data-bind="click: showTreeWithHistory,
+                text: tree['@label'],
+                css: viewModel.ticklers.TREES">&nbsp;</a>
+            <br/>
+            <a data-bind="if: unresolvedConflictsFoundInTree( tree ), 
+                          css: viewModel.ticklers.TREES,
+                          click: showConflictingNodesInTreeViewer,
+                          visible: true" 
+               class="suggestion-prompt" style="display: none;"
+               href="#">
+                Show conflicting nodes
+            </a> 
+            <br/>
+            <a data-bind="if: ambiguousLabelsFoundInTree( tree ), 
+                          css: viewModel.ticklers.TREES,
+                          click: showAmbiguousLabelsInTreeViewer,
+                          visible: true" 
+               class="suggestion-prompt" style="display: none;"
+               href="#">
+                Review ambiguous labels
+            </a> 
         </td>
-        <td align="right">
-            <a href="#">View</a>
-            |
-            <a href="#">Edit</a>
+        <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
+                css: viewModel.ticklers.TREES">&nbsp;</td>
+        <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
+                css: viewModel.ticklers.TREES">&nbsp;</td>
+        <td data-bind="html: getRootedDescriptionForTree(tree),
+                          click: showArbitraryRootExplanationInTreeViewer,
+                          css: viewModel.ticklers.TREES"
+               style="cursor: pointer;">&nbsp;</td>
+        <td data-bind="html: getMappedTallyForTree(tree),
+                css: viewModel.ticklers.TREES">&nbsp;</td>
+        <td>   *** TODO: show to owner only! ***
+            <button data-bind="click: removeTree,
+                               visible: true"
+                class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                style="display: none;">
+                <i class="icon-remove icon-white"></i>
+            </button>
+        </td>
+    </tr>
+    -->
+<!-- EXAMPLES of collection entries -->
+    <tr>
+        <td><a href="#">Clarifying Porifera placement</a></td>
+        <td>Owner</td>
+        <td style="text-align: right;">
+            <a href="#">Follow</a>
             |
             <a href="#">Duplicate</a>
             |
             <a href="#">Synthesis report</a>
         </td>
+        <td>
+            <button Xdata-bind="click: removeTree,
+                               visible: true"
+                class="pull-right btn btn-mini btn-danger row-controls-ghosted">
+                <i class="icon-remove icon-white"></i>
+            </button>
+        </td>
     </tr>
+    <tr>
+        <td><a href="#">Trees about bees</a></td>
+        <td>Collaborator</td>
+        <td style="text-align: right;">
+            <a href="#">Follow</a>
+            |
+            <a href="#">Duplicate</a>
+            |
+            <a href="#">Synthesis report</a>
+        </td>
+        <td>&nbsp;</td>
+    </tr>
+    <tr>
+        <td><a href="#">OpenTree draft tree synthesis</a></td>
+        <td>Follower</td>
+        <td style="text-align: right;">
+            <a href="#">Follow</a>
+            |
+            <a href="#">Duplicate</a>
+            |
+            <a href="#">Synthesis report</a>
+        </td>
+        <td>&nbsp;</td>
+    </tr>
+  </tbody>
 </table>
 
 {{ pass }}
