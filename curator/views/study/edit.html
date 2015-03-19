@@ -1234,11 +1234,12 @@ body {
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <strong data-bind="text: proposedMapping(otu)[0].name,
+                            <a data-bind="text: proposedMapping(otu)[0].name,
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                                attr: getAttrsForMappingOption(proposedMapping(otu)[0])"
-                                    style="color: red"
-                                >PROPOSED LABEL</strong>
+                                    href="#"
+                                    onclick="return false;"
+                                >PROPOSED LABEL</a>
                           <!-- /ko -->
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length > 1) -->
                            {{ # show available choices for mapping this OTU }}
