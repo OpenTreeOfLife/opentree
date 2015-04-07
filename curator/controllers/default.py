@@ -202,6 +202,8 @@ def to_nexson():
     N.B. Further documentation is available in curator/README.md
     '''
     _LOG = get_logger(request, 'to_nexson')
+    if request.vars.request_method == 'OPTIONS':
+        raise HTTP(200, T('Preflight approved!'))
     ##pdb.set_trace()
     orig_args = {}
     is_upload = False
