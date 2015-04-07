@@ -455,6 +455,8 @@ def to_nexson():
     N.B. Further documentation is available in curator/README.md
     '''
     _LOG = get_logger(request, 'to_nexson')
+    if request.vars.request_method == 'OPTIONS':
+        raise HTTP(200, T('Preflight approved!'))
     orig_args = {}
     is_upload = False
     # several of our NexSON use "uploadid" instead of "uploadId" so we should accept either

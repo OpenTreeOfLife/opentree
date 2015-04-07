@@ -5029,7 +5029,7 @@ function requestTaxonMapping( otuToMap ) {
 
     updateMappingStatus();
     var otuID = otuToMap['@id'];
-    var originalLabel = otuToMap['^ot:originalLabel'] || null;
+    var originalLabel = $.trim(otuToMap['^ot:originalLabel']) || null;
     // use the manually edited label (if any), or the hint-adjusted version
     var editedLabel = $.trim(otuToMap['^ot:altLabel']);
     var searchText = (editedLabel !== '') ? editedLabel : adjustedLabel(originalLabel);
