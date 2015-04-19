@@ -98,11 +98,11 @@ popd
 pushd .
     cd $APPROOT/private
     cp config.example config
-    sed -i -e "s+REPO_PATH+$OTHOME/repo/${OPENTREE_DOCSTORE}_par/$OPENTREE_DOCSTORE+" config
-    sed -i -e "s+REPO_PAR+$OTHOME/repo/${OPENTREE_DOCSTORE}_par+" config
+    sed -i -e "s+PHYLESYSTEM_REPO_PATH+$OTHOME/repo/${OPENTREE_DOCSTORE}_par/$OPENTREE_DOCSTORE+" config
+    sed -i -e "s+PHYLESYSTEM_REPO_PAR+$OTHOME/repo/${OPENTREE_DOCSTORE}_par+" config
 
     # Specify our remote to push to, which is added to local repo above
-    sed -i -e "s+REPO_REMOTE+originssh+" config
+    sed -i -e "s+PHYLESYSTEM_REPO_REMOTE+originssh+" config
 
     # This wrapper script allows us to specify an ssh key to use in git pushes
     sed -i -e "s+GIT_SSH+$OTHOME/repo/$WEBAPP/bin/git.sh+" config
