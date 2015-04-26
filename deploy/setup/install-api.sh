@@ -9,7 +9,9 @@ FAVORITES_REPO=$4
 CONTROLLER=$5
 OTI_BASE_URL=$6
 OPENTREE_API_BASE_URL=$7
-OPENTREE_DEFAULT_APPLICATION=$8
+COLLECTIONS_API_BASE_URL=$8
+FAVORITES_API_BASE_URL=$9
+OPENTREE_DEFAULT_APPLICATION=${10}
 
 . setup/functions.sh
 
@@ -119,6 +121,9 @@ pushd .
 
     # Access oti search from shared server-config variable
     sed -i -e "s+OTI_BASE_URL+$OTI_BASE_URL+" config
+
+    sed -i -e "s+COLLECTIONS_API_BASE_URL+$COLLECTIONS_API_BASE_URL+" config
+    sed -i -e "s+FAVORITES_API_BASE_URL+$FAVORITES_API_BASE_URL+" config
 
     # Define the public URL of the docstore repo (used for updating oti)
     # N.B. Because of limitations oti's index_current_repo.py, this is
