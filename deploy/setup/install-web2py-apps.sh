@@ -102,8 +102,8 @@ sed "s+github_client_id = .*+github_client_id = $TREEVIEW_GITHUB_CLIENT_ID+;
      s+taxomachine = .*+taxomachine = $TAXOMACHINE_BASE_URL+
      s+oti = .*+oti = $OTI_BASE_URL+
      s+opentree_api = .*+opentree_api = $OPENTREE_API_BASE_URL+
-     s+collections_api_base_url = .*+opentree_api = $COLLECTIONS_API_BASE_URL+
-     s+favorites_api_base_url = .*+opentree_api = $FAVORITES_API_BASE_URL+
+     s+collections_api_base_url = .*+collections_api_base_url = $COLLECTIONS_API_BASE_URL+
+     s+favorites_api_base_url = .*+favorites_api_base_url = $FAVORITES_API_BASE_URL+
      s+CACHED_treemachine = .*+CACHED_treemachine = $CACHED_TREEMACHINE_BASE_URL+
      s+CACHED_taxomachine = .*+CACHED_taxomachine = $CACHED_TAXOMACHINE_BASE_URL+
      s+secure_sessions_with_HTTPS = .*+secure_sessions_with_HTTPS = $SSL_CERTS_FOUND+
