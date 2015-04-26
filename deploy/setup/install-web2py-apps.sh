@@ -3,7 +3,7 @@
 # Some of this repeats what's found in install-api.sh.  Keep in sync.
 
 # Lots of arguments to make this work.. check to see if we have them all.
-if [ "$#" -ne 12 ]; then
+if [ "$#" -ne 14 ]; then
     echo "install-web2py-apps.sh missing required parameters (expecting 12)"
     exit 1
 fi
