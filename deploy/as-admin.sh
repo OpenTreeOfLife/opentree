@@ -105,10 +105,12 @@ fi
 if [ ! -r /etc/apache2/mods-enabled/ssl.load ]; then
     sudo a2enmod ssl
 fi
-# Protect against POODLE vulnerability in SSLv3; see https://zmap.io/sslv3/servers.html#apache
-sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol TLSv1+" /etc/apache2/mods-available/ssl.conf
-# N.B. httpd version 2.2.23+ will need this change instead:
-#sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol ALL -SSLv2 -SSLv3+" /etc/apache2/mods-available/ssl.conf
+if apt-cache policy apache2 | egrep -q "Installed: 2.2"; then
+    # Protect against POODLE vulnerability in SSLv3; see https://zmap.io/sslv3/servers.html#apache
+    sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol TLSv1+" /etc/apache2/mods-available/ssl.conf
+    # N.B. httpd version 2.2.23+ will need this change instead:
+    #sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol ALL -SSLv2 -SSLv3+" /etc/apache2/mods-available/ssl.conf
+fi
 
 # ---------- UNZIP ----------
 # unzip is needed for unpacking web2py.  Somebody broke the 'which' program -
@@ -184,7 +186,7 @@ fi
 
 # How the apache config (the one found in the deployment setup
 # directory) was created: we copied the apache default vhost config
-# (000-default) from a fresh EC2 instance, then modified it to make
+# (000-default) from a fresh EC2 (woody) instance, then modified it to make
 # web2py work, per instructions found on the web.  See
 # /etc/apache2/sites-available/default .
 # 
@@ -192,10 +194,10 @@ fi
 # configuration to a third file '{apache|opentree}-config-shared', which is
 # used in both vhosts via the Include directive.
 
-# The purpose here (of clobbering the default vhost) is to avoid
+# The purpose of clobbering the default vhost is to avoid
 # having to know all of our own vhost names.  Instead we make opentree
-# the default 'vhost'.  The opentree config file gets put into
-# place later on in the setup sequence.
+# the default 'vhost'.  The opentree vhost config files get put into
+# place later on in the setup sequence (restart-apache.sh).
 
 if apt-cache policy apache2 | egrep -q "Installed: 2.2"; then
     # Keep old script transiently; flush this after full transition to 2.4+
@@ -233,6 +235,15 @@ else
         fi
     else
          sudo rm -f /etc/apache2/sites-enabled/001-opentree-ssl.conf
+    fi
+fi
+
+# Apache 2.4 is finicky about protection of the key file
+
+if sudo test -e /etc/ssl/private/opentreeoflife.org.key; then
+    sudo chmod o-r /etc/ssl/private/opentreeoflife.org.key
+    if egrep -q ssl-cert /etc/group; then
+        sudo chgrp ssl-cert /etc/ssl/private/opentreeoflife.org.key
     fi
 fi
 
