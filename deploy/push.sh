@@ -233,7 +233,7 @@ function push_neo4j {
 function restart_apache {
     if [ $DRYRUN = "yes" ]; then echo "[restarting apache]"; return; fi
     scp -p -i "${OPENTREE_IDENTITY}" restart-apache.sh "$ADMIN@$OPENTREE_HOST":
-    ${SSH} "$ADMIN@$OPENTREE_HOST" bash restart-apache.sh "$OT_USER"
+    ${SSH} "$ADMIN@$OPENTREE_HOST" bash restart-apache.sh "$OT_USER" "$OPENTREE_HOST"
 }
 
 function push_opentree {
