@@ -197,22 +197,43 @@ fi
 # the default 'vhost'.  The opentree config file gets put into
 # place later on in the setup sequence.
 
-if [ -r /etc/apache2/sites-enabled/000-default ]; then
-    sudo rm -f /etc/apache2/sites-enabled/000-default
-fi
-if [ ! -r /etc/apache2/sites-enabled/000-opentree ]; then
-    (cd /etc/apache2/sites-enabled; \
-     sudo ln -sf ../sites-available/opentree ./000-opentree)
-fi
-
-# Enable the HTTPS site only if our SSL certs are found; else disable it
-if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem ]; then
-    if [ ! -r /etc/apache2/sites-enabled/001-opentree-ssl ]; then
+if apt-cache policy apache2 | egrep -q "Installed: 2.2"; then
+    # Keep old script transiently; flush this after full transition to 2.4+
+    if [ -r /etc/apache2/sites-enabled/000-default ]; then
+        sudo rm -f /etc/apache2/sites-enabled/000-default
+    fi
+    if [ ! -r /etc/apache2/sites-enabled/000-opentree ]; then
         (cd /etc/apache2/sites-enabled; \
-         sudo ln -sf ../sites-available/opentree-ssl ./001-opentree-ssl)
+         sudo ln -sf ../sites-available/opentree ./000-opentree)
+    fi
+
+    # Enable the HTTPS site only if our SSL certs are found; else disable it
+    if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem ]; then
+        if [ ! -r /etc/apache2/sites-enabled/001-opentree-ssl ]; then
+            (cd /etc/apache2/sites-enabled; \
+             sudo ln -sf ../sites-available/opentree-ssl ./001-opentree-ssl)
+        fi
+    else
+         sudo rm -f /etc/apache2/sites-enabled/001-opentree-ssl
     fi
 else
-     sudo rm -f /etc/apache2/sites-enabled/001-opentree-ssl
+    sudo rm -f /etc/apache2/sites-enabled/000-default*
+    sudo rm -f /etc/apache2/sites-enabled/000-opentree
+    sudo rm -f /etc/apache2/sites-enabled/001-opentree-ssl
+    if [ ! -e /etc/apache2/sites-enabled/000-opentree.conf ]; then
+        (cd /etc/apache2/sites-enabled; \
+         sudo ln -sf ../sites-available/opentree.conf ./000-opentree.conf)
+    fi
+
+    # Enable the HTTPS site only if our SSL certs are found; else disable it
+    if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem ]; then
+        if [ ! -r /etc/apache2/sites-enabled/001-opentree-ssl.conf ]; then
+            (cd /etc/apache2/sites-enabled; \
+             sudo ln -sf ../sites-available/opentree-ssl.conf ./001-opentree-ssl.conf)
+        fi
+    else
+         sudo rm -f /etc/apache2/sites-enabled/001-opentree-ssl.conf
+    fi
 fi
 
 # ---------- UNPRIVILEGED USER ----------
