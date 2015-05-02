@@ -163,7 +163,7 @@ fi
 
 if [ `which javac`x != x ] && javac -version 2>&1 | egrep -q 1.8; then
     echo "Java 8 OK"
-elif apt-cache policy openjdk-8-jdk | egrep -q "Installed: (none)"; then
+elif apt-cache policy openjdk-8-jdk | grep -q "Installed.*none"; then
     apt_get_install openjdk-8-jre-headless
     apt_get_install openjdk-8-jdk
     sudo update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
