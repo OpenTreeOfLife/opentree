@@ -105,10 +105,12 @@ fi
 if [ ! -r /etc/apache2/mods-enabled/ssl.load ]; then
     sudo a2enmod ssl
 fi
-# Protect against POODLE vulnerability in SSLv3; see https://zmap.io/sslv3/servers.html#apache
-sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol TLSv1+" /etc/apache2/mods-available/ssl.conf
-# N.B. httpd version 2.2.23+ will need this change instead:
-#sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol ALL -SSLv2 -SSLv3+" /etc/apache2/mods-available/ssl.conf
+if apt-cache policy apache2 | egrep -q "Installed: 2.2"; then
+    # Protect against POODLE vulnerability in SSLv3; see https://zmap.io/sslv3/servers.html#apache
+    sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol TLSv1+" /etc/apache2/mods-available/ssl.conf
+    # N.B. httpd version 2.2.23+ will need this change instead:
+    #sudo sed -i -e "s+^SSLProtocol.*+SSLProtocol ALL -SSLv2 -SSLv3+" /etc/apache2/mods-available/ssl.conf
+fi
 
 # ---------- UNZIP ----------
 # unzip is needed for unpacking web2py.  Somebody broke the 'which' program -
@@ -156,8 +158,24 @@ if [ `which virtualenv`x = x ]; then
 fi
 
 # ---------- JAVA ----------
-if [ `which javac`x = x ]; then
-    apt_get_install openjdk-7-jre 
+# N.b. Java 8 isn't available for woody, and is available for jessie
+# only with the addition of unstable to /etc/apt/sources.list and a
+# corresponding prioritization in /etc/apt/preferences (to prevent
+# unstable from taking over the whole system).
+
+if [ `which javac`x != x ] && javac -version 2>&1 | egrep -q 1.8; then
+    echo "Java 8 OK"
+elif apt-cache policy openjdk-8-jdk | grep -q "Installed.*none"; then
+    apt_get_install openjdk-8-jre-headless
+    apt_get_install openjdk-8-jdk
+    sudo update-alternatives --set java /usr/lib/jvm/java-8-openjdk-amd64/jre/bin/java
+    sudo update-alternatives --set javac /usr/lib/jvm/java-8-openjdk-amd64/bin/javac
+elif [ `which javac`x != x ] && javac -version 2>&1 | egrep -q 1.7; then
+    echo "Java 7 OK"
+elif [ `which javac`x != x ]; then
+    echo "** Possible wrong version of java"
+else
+    apt_get_install openjdk-7-jre-headless
     apt_get_install openjdk-7-jdk
 fi
 
@@ -184,7 +202,7 @@ fi
 
 # How the apache config (the one found in the deployment setup
 # directory) was created: we copied the apache default vhost config
-# (000-default) from a fresh EC2 instance, then modified it to make
+# (000-default) from a fresh EC2 (woody) instance, then modified it to make
 # web2py work, per instructions found on the web.  See
 # /etc/apache2/sites-available/default .
 # 
@@ -192,27 +210,57 @@ fi
 # configuration to a third file '{apache|opentree}-config-shared', which is
 # used in both vhosts via the Include directive.
 
-# The purpose here (of clobbering the default vhost) is to avoid
+# The purpose of clobbering the default vhost is to avoid
 # having to know all of our own vhost names.  Instead we make opentree
-# the default 'vhost'.  The opentree config file gets put into
-# place later on in the setup sequence.
+# the default 'vhost'.  The opentree vhost config files get put into
+# place later on in the setup sequence (restart-apache.sh).
 
-if [ -r /etc/apache2/sites-enabled/000-default ]; then
-    sudo rm -f /etc/apache2/sites-enabled/000-default
-fi
-if [ ! -r /etc/apache2/sites-enabled/000-opentree ]; then
-    (cd /etc/apache2/sites-enabled; \
-     sudo ln -sf ../sites-available/opentree ./000-opentree)
-fi
-
-# Enable the HTTPS site only if our SSL certs are found; else disable it
-if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem ]; then
-    if [ ! -r /etc/apache2/sites-enabled/001-opentree-ssl ]; then
+if apt-cache policy apache2 | egrep -q "Installed: 2.2"; then
+    # Keep old script transiently; flush this after full transition to 2.4+
+    if [ -r /etc/apache2/sites-enabled/000-default ]; then
+        sudo rm -f /etc/apache2/sites-enabled/000-default
+    fi
+    if [ ! -r /etc/apache2/sites-enabled/000-opentree ]; then
         (cd /etc/apache2/sites-enabled; \
-         sudo ln -sf ../sites-available/opentree-ssl ./001-opentree-ssl)
+         sudo ln -sf ../sites-available/opentree ./000-opentree)
+    fi
+
+    # Enable the HTTPS site only if our SSL certs are found; else disable it
+    if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem ]; then
+        if [ ! -r /etc/apache2/sites-enabled/001-opentree-ssl ]; then
+            (cd /etc/apache2/sites-enabled; \
+             sudo ln -sf ../sites-available/opentree-ssl ./001-opentree-ssl)
+        fi
+    else
+         sudo rm -f /etc/apache2/sites-enabled/001-opentree-ssl
     fi
 else
-     sudo rm -f /etc/apache2/sites-enabled/001-opentree-ssl
+    sudo rm -f /etc/apache2/sites-enabled/000-default*
+    sudo rm -f /etc/apache2/sites-enabled/000-opentree
+    sudo rm -f /etc/apache2/sites-enabled/001-opentree-ssl
+    if [ ! -e /etc/apache2/sites-enabled/000-opentree.conf ]; then
+        (cd /etc/apache2/sites-enabled; \
+         sudo ln -sf ../sites-available/opentree.conf ./000-opentree.conf)
+    fi
+
+    # Enable the HTTPS site only if our SSL certs are found; else disable it
+    if [ -r /etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem ]; then
+        if [ ! -r /etc/apache2/sites-enabled/001-opentree-ssl.conf ]; then
+            (cd /etc/apache2/sites-enabled; \
+             sudo ln -sf ../sites-available/opentree-ssl.conf ./001-opentree-ssl.conf)
+        fi
+    else
+         sudo rm -f /etc/apache2/sites-enabled/001-opentree-ssl.conf
+    fi
+fi
+
+# Apache 2.4 is finicky about protection of the key file
+
+if sudo test -e /etc/ssl/private/opentreeoflife.org.key; then
+    sudo chmod o-r /etc/ssl/private/opentreeoflife.org.key
+    if egrep -q ssl-cert /etc/group; then
+        sudo chgrp ssl-cert /etc/ssl/private/opentreeoflife.org.key
+    fi
 fi
 
 # ---------- UNPRIVILEGED USER ----------
