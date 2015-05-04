@@ -187,10 +187,14 @@ function docomponent {
         push_neo4j oti
         ;;
     treemachine)
-	push_neo4j treemachine
+        push_neo4j treemachine
+        # restart apache to clear the RAM cache (stale results)
+        restart_apache=yes
         ;;
     taxomachine)
         push_neo4j taxomachine
+        # restart apache to clear the RAM cache (stale results)
+        restart_apache=yes
         ;;
 
     *)
