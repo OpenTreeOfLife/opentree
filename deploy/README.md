@@ -162,7 +162,8 @@ should redirect all traffic to the editable
 github-pages sites. (Be sure to edit the text of this page to reflect the current situation and
 expected downtime.)
 
-This should be done with a **302 Temporary** redirect. Currently, the easiest way to do this is by [un-commenting this line](https://github.com/OpenTreeOfLife/opentree/blob/d35768d9a2233908a1982846870cf57326450525/deploy/setup/apache-config-shared#L15-L16) in our shared apache configuration file. This should be on the server as `/etc/apache2/opentree-shared.conf`.
+This should be done with a **302 Temporary** redirect. Currently, the easiest way to do this is by [un-commenting this 
+line](https://github.com/OpenTreeOfLife/opentree/blob/e62b653b82870d1860c832a2bb1c9bb65ebf23b6/deploy/setup/opentree-shared.conf#L15-L16) in our shared apache configuration file. This should be on the server as `/etc/apache2/opentree.conf`.
 
 To avoid lost work in the [study curation app](http://tree.opentreeoflife.org/curator), 
 we should also disable the creation and editing of studies in the hours before any 
