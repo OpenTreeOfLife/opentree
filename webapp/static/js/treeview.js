@@ -190,7 +190,7 @@ function loadLocalComments( chosenFilter ) {
         fetchArgs.target_node_label = commentLabel;
     } else {
         // use the fallback 'url' index (apparently there's no tree-view here)
-        console.log("loadLocalComments() - Loading comments based on 'url' (no argus.treeData!)");
+        ///console.log("loadLocalComments() - Loading comments based on 'url' (no argus.treeData!)");
         fetchArgs.filter = 'url';
         fetchArgs.url = getCommentIndexURL();
 
@@ -260,12 +260,12 @@ $(document).ready(function() {
         // Check first for incoming URL that might override prior history
         if (initialState.forcedByURL || !(priorState.data.nodeID)) {
             // apply the state as specified in the URL (or defaults, if prior history is incomplete)
-            console.log("Applying state from incoming URL...");
+            ///console.log("Applying state from incoming URL...");
             initialState.nudge = new Date().getTime();
             History.pushState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
         } else {
             // nudge the (existing) browser state to view it again
-            console.log("Nudging state (and hopefully initial view)...");
+            ///console.log("Nudging state (and hopefully initial view)...");
             priorState.data.nudge = new Date().getTime();
             History.replaceState( priorState.data, priorState.title, priorState.url );
         }
@@ -806,34 +806,6 @@ function showObjectProperties( objInfo, options ) {
 
         // fetch additional information used to detail provenance for nodes and edges
         metaMap = argus.treeData.sourceToMetaMap;
-        /* TEST FOR and REPORT metaMap
-        if (metaMap) {
-            // for now, just report these values if found
-            for (var p in metaMap) {
-                var v = metaMap[p];
-                console.log("> metaMap['"+ p +"'] = "+ v);
-                if (typeof v === 'object') {
-                    for (var p2 in v) {
-                        var v2 = v[p2];
-                        console.log(">> metaMap."+ p +"['"+ p2 +"'] = "+ v2);
-                        if (typeof v2 === 'object') {
-                            for (var p3 in v2) {
-                                var v3 = v2[p3];
-                                console.log(">>> metaMap."+ p +"."+ p2 +"['"+ p3 +"'] = "+ v3);
-                                if (typeof v3 === 'object') {
-                                    for (var p4 in v3) {
-                                        console.log(">>>> metaMap."+ p +"."+ p2 +"."+ p3 +"['"+ p4 +"'] = "+ v3[p4]);
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        } else {
-            console.log(">> WARNING - no metaMap to examine?");
-        }
-        */
 
         // Gather data for all displayed properties, storing each in the most
         // appropriate section
@@ -963,13 +935,17 @@ function showObjectProperties( objInfo, options ) {
                     }
                     */
 
-                    // TODO: show ALL source trees (phylo-trees + IDs) for this node
-
+                    // Show ALL source trees (phylo-trees + IDs) for this node
                     objID = fullNode.sourceID ? fullNode.sourceID : fullNode.nodeid;
 
                     // add basic edge properties (TODO: handle multiple edges!?)
                     if (typeof fullNode.supportedBy !== 'undefined') {
-                        edgeSection.displayedProperties['Supported by'] = fullNode.supportedBy;
+                        if (edgeSection) {
+                            edgeSection.displayedProperties['Supported by'] = fullNode.supportedBy;
+                        } else {
+                            console.log('>>> No edgeSection found for this node:');
+                            console.log(fullNode);
+                        }
                     }
 
                     // add another section to explain an "orphaned" taxon (unconnected to other nodes in the tree)
@@ -1021,28 +997,79 @@ function showObjectProperties( objInfo, options ) {
 
     // remove any old thumbnail image
     $('#provenance-panel .taxon-image').remove();
-    // for nodes, load a thumbnail silhouette from PhyloPic
+    // for nodes, load supporting information and a thumbnail silhouette from PhyloPic
     switch (objType) {
         case 'node':
         case 'edge':
-            $.getJSON(
-                '/phylopic_proxy/api/a/name/search?callback=?',  // JSONP fetch URL
-                {   // GET data
-                    text: objName,
-                    options: 'icon illustrated' // uid? string?
-                },
-                function(data) {    // JSONP callback
-                    if (data.result && (data.result.length > 0) && data.result[0].icon && data.result[0].icon.uid) {
-                        $('#provenance-panel .provenance-title').after(
-                            '<img class="taxon-image" src="/phylopic_proxy/assets/images/submissions/'+ data.result[0].icon.uid 
-                            +'.icon.png" title="Click for image credits"/>'       // 'thumb.png' = 64px, 'icon.png' = 32px and blue
-                        );
-                        $('#provenance-panel .taxon-image').unbind('click').click(function() {
-                            window.open('http://phylopic.org/image/'+ data.result[0].icon.uid +'/', '_blank');
-                        });
+            if (objInfo.supportedBy) {
+                // fetch full supporting info, then display it
+                $.each(objInfo.supportedBy, function(i, sourceID) {
+                    if (sourceID === 'taxonomy') {
+                        // this supporting data is already in arguson
+                    } else {
+                        // it's a study; call the index to get full details
+                        sourceMetadata = argus.treeData.sourceToMetaMap[ sourceID ];
+                        if ((typeof sourceMetadata['sourceDetails'] === 'undefined') && (sourceMetadata['loadStatus'] !== 'PENDING')) {
+                            // don't keep sending requests for the same source! we manage this with 'loadStatus'
+                            sourceMetadata['loadStatus'] = 'PENDING';
+                            ///console.warn('>>>>>>>>>>>>>>> sourceDetails NOT FOUND for sourceID '+ sourceID +', FETCHING NOW...');
+                            $.post(
+                                singlePropertySearchForStudies_url, // JSONP fetch URL
+                                {   // POSTed data
+                                    "property": "ot:studyId",
+                                    "value": (sourceMetadata).study_id,
+                                    verbose: true
+                                },
+                                function(data) {    // JSONP callback
+                                    // reset this locally, to MAKE SURE we've got the right box
+                                    ///console.warn('<<<<<<<<<<<<<<< BACK FROM FETCH for sourceID '+ sourceID);
+                                    var cbSourceMetadata = argus.treeData.sourceToMetaMap[ sourceID ];
+                                    // ignore this if not requested, or already complete
+                                    if (cbSourceMetadata['loadStatus'] === 'PENDING') {
+                                        if (data.matched_studies && (data.matched_studies.length > 0)) {
+                                            if (data.matched_studies.length > 1) {
+                                                console.log(">>>> EXPECTED to find one matching study for id '"+ (cbSourceMetadata).study_id +"', not multiple:");
+                                                console.log(data);
+                                            }
+                                            var studyInfo = data.matched_studies[0];
+                                            cbSourceMetadata['sourceDetails'] = studyInfo;
+                                            cbSourceMetadata['loadStatus'] = 'COMPLETE';
+                                            // Nudge for a refresh of the properties display?
+                                            showObjectProperties( objInfo );
+                                        } else {
+                                            console.log(">>>> EXPECTED to find a matching study for id '"+ (cbSourceMetadata).study_id +"', not this:");
+                                            console.log(data);
+                                            cbSourceMetadata['loadStatus'] = 'FAILED';
+                                        }
+                                    }
+                                }
+                            );
+                        }
                     }
-                }
-            );
+                });
+            }
+            if (objInfo['phyloPicStatus'] !== 'PENDING') {
+                // fetch a PhyloPic image (just once!), then show it when it returns
+                objInfo['phyloPicStatus'] = 'PENDING';
+                $.getJSON(
+                    '/phylopic_proxy/api/a/name/search?callback=?',  // JSONP fetch URL
+                    {   // GET data
+                        text: objName,
+                        options: 'icon illustrated' // uid? string?
+                    },
+                    function(data) {    // JSONP callback
+                        if (data.result && (data.result.length > 0) && data.result[0].icon && data.result[0].icon.uid) {
+                            $('#provenance-panel .provenance-title').after(
+                                '<img class="taxon-image" src="/phylopic_proxy/assets/images/submissions/'+ data.result[0].icon.uid 
+                                +'.icon.png" title="Click for image credits"/>'       // 'thumb.png' = 64px, 'icon.png' = 32px and blue
+                            );
+                            $('#provenance-panel .taxon-image').unbind('click').click(function() {
+                                window.open('http://phylopic.org/image/'+ data.result[0].icon.uid +'/', '_blank');
+                            });
+                        }
+                    }
+                );
+            }
     }
 
     var sectionPos, sectionCount = orderedSections.length, 
@@ -1130,13 +1157,20 @@ function showObjectProperties( objInfo, options ) {
 
                     //var supportingStudyIDs = [ ];  // don't repeat studies under 'Supported by', but gather trees for each!
                     var supportedByTaxonomy = false;
+                    var ottInfo = argus.treeData.sourceToMetaMap['taxonomy'];
+                    var supportingTaxonomyVersion = ottInfo ? ottInfo['version'] : null;
                     var supportingStudyInfo = { };  // don't repeat studies under 'Supported by', but gather trees for each *then* generate output
+                    // if we're still waiting on fetched study info, add a message to the properties window
+                    var waitingForStudyInfo = false;
+
                     dValues = String(aSection.displayedProperties[dLabel]).split(',');
                     for (i = 0; i < dValues.length; i++) {
                         rawVal = dValues[i];
+                        var metaMapValues = null;
                         if (rawVal === 'taxonomy') {
                             // this will be added below any supporting studies+trees
                             supportedByTaxonomy = true;
+                            metaMapValues = parseMetaMapKey( 'taxonomy' );
                             continue;
                         }
 
@@ -1144,14 +1178,15 @@ function showObjectProperties( objInfo, options ) {
                         if (metaMap) {
                             moreInfo = metaMap[ rawVal ];
                         }
-                        if (typeof moreInfo === 'object' && 'study' in moreInfo) {
-                            // EXAMPLE rawVal = 'WangEtAl2009-studyid-15' (a study)
+
+                        if (typeof moreInfo === 'object' && 'sourceDetails' in moreInfo) {
+                            // Study details, fetched via AJAX as needed
                             
                             // adapt to various forms of meta-map key
-                            var metaMapValues = parseMetaMapKey( rawVal );
+                            metaMapValues = parseMetaMapKey( rawVal );
                             if (!(metaMapValues.studyID in supportingStudyInfo)) {
                                 // add this study now, plus an empty trees collection
-                                supportingStudyInfo[ metaMapValues.studyID ] = $.extend({ supportingTrees: {} }, moreInfo.study);
+                                supportingStudyInfo[ metaMapValues.studyID ] = $.extend({ supportingTrees: {} }, moreInfo.sourceDetails);
                             }
                             // add the current tree 
                             supportingStudyInfo[ metaMapValues.studyID ].supportingTrees[ metaMapValues.treeID ] = {};
@@ -1162,65 +1197,78 @@ function showObjectProperties( objInfo, options ) {
                             for (p2 in moreInfo) {
                                 console.error("  "+ p2 +" = "+ moreInfo[p2]);
                             }
+                            waitingForStudyInfo = true;
                         } else {
                             // when in doubt, just show the raw value
                             console.error("! Expecting to find moreInfo and a study (dLabel="+ dLabel +", rawVal="+ rawVal +")");
+                            waitingForStudyInfo = true;
                         }
                     }
                     // Now that we've gathered all trees for all studies, show organized results by study, with taxonomy LAST if found
-                    for (studyID in supportingStudyInfo) { 
-                        var studyInfo = supportingStudyInfo[ studyID ]; 
-                        var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pURL, pID, pCurator;
-                        // assemble and display study info
-                        pRef = studyInfo['ot:studyPublicationReference'];
-                        // be careful, in case we have an incomplete or badly-formatted reference
-                        if (pRef) {
-                            // we'll show full (vs. compact) reference for each study
-                            displayVal = '<div class="full-ref">'+ pRef +'</div>';
 
-                            /* compact ref logic, if needed later
-                            pCompactYear = pRef.match(/(\d{4})/)[0];  
-                                // capture the first valid year
-                            pCompactPrimaryAuthor = pRef.split(pCompactYear)[0].split(',')[0];
-                                // split on the year to get authors (before), and capture the first surname
-                            pRefCompact = pCompactPrimaryAuthor +", "+ pCompactYear;    // eg, "Smith, 1999";
-                            displayVal += pRefCompact;
-                            */
-                        }
+                    // clear any previously added 'Supported by' information (probably still fetching details)
+                    $details.find('dt.loading-supporting-studies').remove();
 
-                        // publication URL should always be present, non-empty, and a valid URL
-                        pURL = studyInfo['ot:studyPublication'];
-                        if (pURL) {
-                            displayVal += 'Full publication: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pURL +'</a><br/>';
-                        }
-                        
-                        pID = studyInfo['ot:studyId'];
-                        if (pID) {
-                            /* Phylografter link
-                            displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
-                            */
-                            displayVal += (
-                                'Open Tree curation of this study: <a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pID +'</a><br/>'
-                              + 'Supporting '+ (studyInfo.supportingTrees.length > 1 ? 'trees:' : 'tree:')
-                            );
-                            for (var treeID in studyInfo.supportingTrees) {
-                                displayVal += (
-                                    '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree=tree'+ treeID +'" '
-                                  + 'target="_blank" title="Link to this supporting tree in curation app">tree'+ treeID +'</a>'
-                                );
+                    if (waitingForStudyInfo) {
+                        $details.append('<dt class="loading-supporting-studies">Loading supporting studies...</dt>');
+                    } else {
+                        // we have all the details, try to show supporting studies
+                        for (studyID in supportingStudyInfo) { 
+                            console.warn(">>> adding study info for "+ studyID +"...");
+                            var studyInfo = supportingStudyInfo[ studyID ]; 
+                            var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pURL, pID, pCurator;
+                            // assemble and display study info
+                            pRef = studyInfo['ot:studyPublicationReference'];
+                            // be careful, in case we have an incomplete or badly-formatted reference
+                            if (pRef) {
+                                // we'll show full (vs. compact) reference for each study
+                                displayVal = '<div class="full-ref">'+ pRef +'</div>';
+
+                                /* compact ref logic, if needed later
+                                pCompactYear = pRef.match(/(\d{4})/)[0];  
+                                    // capture the first valid year
+                                pCompactPrimaryAuthor = pRef.split(pCompactYear)[0].split(',')[0];
+                                    // split on the year to get authors (before), and capture the first surname
+                                pRefCompact = pCompactPrimaryAuthor +", "+ pCompactYear;    // eg, "Smith, 1999";
+                                displayVal += pRefCompact;
+                                */
                             }
-                        }
 
-                        pCurator = studyInfo['ot:curatorName'];
-                        if (pCurator) {
-                            displayVal += ('<div class="full-ref-curator">Curated by: '+ pCurator +'</div>');
-                        }
+                            // publication URL should always be present, non-empty, and a valid URL
+                            pURL = studyInfo['ot:studyPublication'];
+                            if (pURL) {
+                                displayVal += 'Full publication: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pURL +'</a><br/>';
+                            }
+                            
+                            pID = studyInfo['ot:studyId'];
+                            if (pID) {
+                                /* Phylografter link
+                                displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
+                                */
+                                displayVal += (
+                                    'Open Tree curation of this study: <a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pID +'</a><br/>'
+                                  + 'Supporting '+ (studyInfo.supportingTrees.length > 1 ? 'trees:' : 'tree:')
+                                );
+                                for (var treeID in studyInfo.supportingTrees) {
+                                    displayVal += (
+                                        '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree=tree'+ treeID +'" '
+                                      + 'target="_blank" title="Link to this supporting tree in curation app">tree'+ treeID +'</a>'
+                                    );
+                                }
+                            }
 
-                        $details.append('<dt>'+ dLabel +'</dt>');
-                        $details.append('<dd>'+ displayVal +'</dd>');
+                            pCurator = studyInfo['ot:curatorName'];
+                            if (pCurator) {
+                                displayVal += ('<div class="full-ref-curator">Curated by: '+ pCurator +'</div>');
+                            }
+
+                            $details.append('<dt>'+ dLabel +'</dt>');
+                            $details.append('<dd>'+ displayVal +'</dd>');
+                        }
                     }
                     if (supportedByTaxonomy) {
                         $details.append('<dt>Supported by taxonomy</dt>');
+                        $details.append('<dd>'+ supportingTaxonomyVersion +' &nbsp;<a href="http://files.opentreeoflife.org/ott/" target="_blank">(OTT and version information)</a></dd>');
                     }
                     $details.find('.full-ref-toggle').unbind('click').click(function() {
                         var $itsReference = $(this).nextAll('.full-ref, .full-ref-curator');
@@ -1235,8 +1283,6 @@ function showObjectProperties( objInfo, options ) {
             
                 default:
                     // general approach, just show the raw value
-                    ///console.log("showing raw value for '"+ dLabel +"'");
-                    ///console.log(aSection.displayedProperties);
                     displayVal = aSection.displayedProperties[dLabel];
                     $details.append('<dt>'+ dLabel +'</dt>');
                     $details.append('<dd>'+ displayVal +'</dd>');
@@ -1307,9 +1353,22 @@ function getTreeDataNode( filterFunc, testNode ) {
         // start at top-most node in tree, if not specified
         testNode = argus.treeData; 
     }
-    // test against our requirements (eg, a particular node ID)
+    // test the target node against our requirements (eg, a particular node ID)
     if (filterFunc(testNode)) {
         return testNode;
+    }
+    if (testNode === argus.treeData) {
+        // check for a matching ancestor (walk the path toward the root node)
+        var foundAncestor = null;
+        $.each(testNode.pathToRoot, function(i, testNode) {
+            if (filterFunc(testNode)) {
+                foundAncestor = testNode;
+                return false;
+            }
+        });
+        if (foundAncestor) {
+            return foundAncestor;
+        }
     }
     // still here? then recurse to test this node's children, returning any match found
     var foundDescendant = null;
