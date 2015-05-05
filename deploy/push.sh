@@ -189,10 +189,14 @@ function docomponent {
         push_neo4j oti
         ;;
     treemachine)
-	push_neo4j treemachine
+        push_neo4j treemachine
+        # restart apache to clear the RAM cache (stale results)
+        restart_apache=yes
         ;;
     taxomachine)
         push_neo4j taxomachine
+        # restart apache to clear the RAM cache (stale results)
+        restart_apache=yes
         ;;
 
     *)
@@ -233,7 +237,7 @@ function push_neo4j {
 function restart_apache {
     if [ $DRYRUN = "yes" ]; then echo "[restarting apache]"; return; fi
     scp -p -i "${OPENTREE_IDENTITY}" restart-apache.sh "$ADMIN@$OPENTREE_HOST":
-    ${SSH} "$ADMIN@$OPENTREE_HOST" bash restart-apache.sh "$OT_USER"
+    ${SSH} "$ADMIN@$OPENTREE_HOST" bash restart-apache.sh "$OT_USER" "$OPENTREE_HOST"
 }
 
 function push_opentree {
