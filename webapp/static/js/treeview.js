@@ -48,6 +48,16 @@ var argus;
 // @TEMP - preserve incoming OTT id and source, so we can demo the Extract Subtree feature
 var incomingOttolID = null;
 
+function getSupportingSourceIDs( node ) {
+    // handle different properties used here (each should hold an array of source-ids)
+    if (typeof node.supportedBy !== 'undefined') {
+        return (node.supportedBy.length > 0) ? node.supportedBy : null;
+    }
+    if (typeof node.supporting_sources !== 'undefined') {
+        return (node.supporting_sources.length > 0) ? node.supporting_sources : null;
+    }
+    return null;
+}
 function updateTreeView( State ) {
     /* N.B. This should respond identically to state changes in HTML5 History,
      * or to explicit calls from older/simpler browsers.
@@ -939,9 +949,10 @@ function showObjectProperties( objInfo, options ) {
                     objID = fullNode.sourceID ? fullNode.sourceID : fullNode.nodeid;
 
                     // add basic edge properties (TODO: handle multiple edges!?)
-                    if (typeof fullNode.supportedBy !== 'undefined') {
+                    var fullNodeSupporters = getSupportingSourceIDs( fullNode );
+                    if (fullNodeSupporters) {
                         if (edgeSection) {
-                            edgeSection.displayedProperties['Supported by'] = fullNode.supportedBy;
+                            edgeSection.displayedProperties['Supported by'] = fullNodeSupporters;
                         } else {
                             console.log('>>> No edgeSection found for this node:');
                             console.log(fullNode);
@@ -1001,9 +1012,16 @@ function showObjectProperties( objInfo, options ) {
     switch (objType) {
         case 'node':
         case 'edge':
-            if (objInfo.supportedBy) {
+            var fullNode = argus.getArgusNodeByID( objID );
+            var objSupporters = null;
+            if (fullNode) {
+                objSupporters = getSupportingSourceIDs( fullNode );
+            } else {
+                objSupporters = getSupportingSourceIDs( objInfo );
+            }
+            if (objSupporters) {
                 // fetch full supporting info, then display it
-                $.each(objInfo.supportedBy, function(i, sourceID) {
+                $.each(objSupporters, function(i, sourceID) {
                     if (sourceID === 'taxonomy') {
                         // this supporting data is already in arguson
                     } else {
