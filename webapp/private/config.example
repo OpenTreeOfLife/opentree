@@ -51,5 +51,6 @@ getContextsJSON_url = {CACHED_taxomachine_domain}/getContextsJSON
 getNodeIDForOttolID_url = {treemachine_domain}/getNodeIDForottId
 getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
 findAllStudies_url = {oti_domain}/findAllStudies
+singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
 # Include one phylesystem-api method to download NexSON from Bibliographic References page
 API_load_study_GET_url = {opentree_api_domain}/study/{STUDY_ID}
