@@ -26,6 +26,7 @@ else:
 pass
 }}
 {{extend 'layout.html'}}
+<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script type='text/javascript'>
     var phylesystem_config_url = '{{=phylesystem_config_url}}';
 </script>
@@ -299,7 +300,9 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
     -->
 <!-- EXAMPLES of collection entries -->
     <tr>
-        <td><a href="#">Clarifying Porifera placement</a></td>
+        <td><a href="#" 
+                onclick="showCollectionViewer(); return false;"
+            >Clarifying Porifera placement</a></td>
         <td>Owner</td>
         <!--
         <td style="text-align: right;">
@@ -385,7 +388,9 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
         </td>
     </tr>
     <tr>
-        <td><a href="#">Trees about bees</a></td>
+        <td><a href="#" 
+                onclick="showCollectionViewer(); return false;"
+            >Trees about bees</a></td>
         <td>Collaborator</td>
         <!--
         <td style="text-align: right;">
@@ -462,7 +467,9 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
         </td>
     </tr>
     <tr>
-        <td><a href="#">OpenTree draft tree synthesis</a></td>
+        <td><a href="#" 
+                onclick="showCollectionViewer(); return false;"
+            >OpenTree draft tree synthesis</a></td>
         <td>Follower</td>
         <!--
         <td style="text-align: right;">
