@@ -113,6 +113,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
     {{response.files.append(URL('static','js/bootstrap-collapse.js'))}}
     {{response.files.append(URL('static','js/bootstrap-carousel.js'))}}
     {{response.files.append(URL('static','js/bootstrap-typeahead.js'))}}
+    <!-- Knockout.js for binding JSON model to editing UI -->
+    {{response.files.append(URL('static','js/knockout-2.3.0.js'))}}
 
     {{#------ include web2py specific js code (jquery, calendar, form stuff) ------}}
     {{include 'web2py_ajax.html'}}
@@ -424,6 +426,121 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
           <div class="bar" style="width: 100%;"></div>
         </div>
     </div>
+
+  <!-- hidden template for the tree-collection-viewer (editor) -->
+  <div class="modal hide fade" id="tree-collection-viewer" 
+       Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
+   <!-- TODO: KO binding here to 'collection' (as $data below) -->
+    <div class="modal-header" style="padding-bottom: 0;">
+      <a class="close" onclick="$('#tree-collection-viewer').modal('hide'); false;">×</a>
+      <h3 id='dialog-heading'>
+            Tree collection
+            <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
+                   data-bind="value: $data['name'], 
+                              valueUpdate: ['afterkeydown', 'input']"
+            />
+       </h3>
+        <!-- TODO -->
+        <p style="color: #999; margin-top: -7px; margin-left: 180px;">jimallman/trees-about-bees</p>
+    </div>
+    <div class="modal-body">
+        <div class="tab-pane active" id="tree-properties">
+          <form class="form-inline" style="overflow: hidden; margin-bottom: 0px;">
+            <!-- editable tree properties here -->
+                <label>Description: </label>
+                <input type="text" data-bind="value: $data['treeDescription']"
+                    class="input-xxlarge" style="margin-bottom: 2px;"
+                    placeholder="Describe this collection's focus or purpose">
+                </input>
+
+                <label style="clear: left; margin-top: 6px;">Contributors (creator first): </label>
+                <strong><!-- TODO -->
+                    <a href="https://github.com/jimallman" target="_blank">Jim Allman</a>
+                    ,
+                    <a href="https://github.com/pmidford" target="_blank">Peter Midford</a>
+                    ,
+                    <a href="https://github.com/kcranston" target="_blank">Karen Cranston</a>
+                </strong>
+
+                <div class="btn-group" style="margin-left: 80px; margin-top: 6px;">
+                  <button id="show-included-trees-button" class="btn btn-small active" onclick="alert('COMING SOON'); return false;">&nbsp; Show only included trees &nbsp;</button>
+                  <button id="show-all-trees-button" class="btn btn-small" onclick="alert('COMING SOON'); return false;">&nbsp; Show all tree decisions &nbsp;</button>
+                </div>
+                <table class="table table-condensed table-hover"
+                    data-bind="visible: true"><!-- TODO: hide if no trees found -->
+                  <thead>
+                    <tr>
+                        <th width="20">&nbsp;</th><!-- ranking -->
+                        <th width="*">Tree name (click to view)</th><!-- also comments! -->
+                        <th>&nbsp;</th><!-- sorting buttons -->
+                        <th width="60">Decision</th>
+                    </tr>
+                  </thead>
+                  <tbody data-bind="foreach: { data: decisions, as: 'decision' }">
+                      <tr>
+                          <td data-bind="text: $index() + 1"
+                              style="color: #999; text-align: right;">1</td>
+                          <td><a data-bind="html: name"
+                                 href="#" target="_blank"><!--NAME--></a>
+                              <br/>
+                              <p data-bind="html: comments"
+                                 style="color: #999; margin-bottom: 4px;">
+                                <!--COMMENTS--></p>
+                          </td>
+                          <td>
+                            <!-- SORTING buttons -->
+                            <div class="btn-group">
+                                <button Xdata-bind="click: TODO-move-tree-up,
+                                                    visible: true"
+                                    title="Move this tree up in the list"
+                                    class="btn btn-mini row-controls-ghosted">
+                                    <a class="icon-chevron-up"></a>
+                                </button>
+                                <button Xdata-bind="click: TODO-move-tree-down,
+                                                    visible: true"
+                                    title="Move this tree down in the list"
+                                    class="btn btn-mini row-controls-ghosted">
+                                    <a class="icon-chevron-down"></a>
+                                </button>
+                            </div>
+                          </td>
+                          <td>
+                            <!-- DECISION options -->
+                            <div class="pull-right btn-group"
+                                 style="margin-left: 4px;">
+                                        <button Xdata-bind="click: TODO-update-tree-decision,
+                                                            visible: true"
+                                            title="This tree is included (click to change)"
+                                            class="btn btn-mini row-controls-ghosted dropdown-toggle" data-toggle="dropdown">
+                                            Included
+                                            <span class="caret"></span>
+                                        </button>
+                                <ul class="dropdown-menu">
+                                    <li>
+                                        <a Xdata-bind="click: TODO-include-this-tree">
+                                            Include this tree</a>
+                                    </li>
+                                    <li>
+                                        <a Xdata-bind="click: TODO-exclude-this-tree">
+                                            Exclude this tree</a>
+                                    </li>
+                                    <li>
+                                        <a Xdata-bind="click: TODO-remember-this-tree">
+                                            Remember this tree, but postpone decision</a>
+                                    </li>
+                                </ul>
+                            </div>
+                          </td>
+                      </tr>
+                  </tbody>
+                </table>
+          </form>
+          </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+    </div>
+  </div>
 
 {{ if ('maintenance_info' in locals()) and maintenance_info.get('maintenance_notice', None):
    # N.b. Check to make sure it's in the view-dict, or error pages etc. will fail }}

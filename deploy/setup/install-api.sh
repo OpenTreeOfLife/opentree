@@ -5,11 +5,13 @@
 OPENTREE_HOST=$1
 OPENTREE_DOCSTORE=$2
 COLLECTIONS_REPO=$3
-FOLLOWING_REPO=$4
+FAVORITES_REPO=$4
 CONTROLLER=$5
 OTI_BASE_URL=$6
 OPENTREE_API_BASE_URL=$7
-OPENTREE_DEFAULT_APPLICATION=$8
+COLLECTIONS_API_BASE_URL=$8
+FAVORITES_API_BASE_URL=$9
+OPENTREE_DEFAULT_APPLICATION=${10}
 
 . setup/functions.sh
 
@@ -105,11 +107,11 @@ popd
 pushd .
     cd $APPROOT/private
     cp config.example config
-    sed -i -e "s+REPO_PATH+$OTHOME/repo/${OPENTREE_DOCSTORE}_par/$OPENTREE_DOCSTORE+" config
-    sed -i -e "s+REPO_PAR+$OTHOME/repo/${OPENTREE_DOCSTORE}_par+" config
+    sed -i -e "s+PHYLESYSTEM_REPO_PATH+$OTHOME/repo/${OPENTREE_DOCSTORE}_par/$OPENTREE_DOCSTORE+" config
+    sed -i -e "s+PHYLESYSTEM_REPO_PAR+$OTHOME/repo/${OPENTREE_DOCSTORE}_par+" config
 
     # Specify our remote to push to, which is added to local repo above
-    sed -i -e "s+REPO_REMOTE+originssh+" config
+    sed -i -e "s+PHYLESYSTEM_REPO_REMOTE+originssh+" config
 
     # This wrapper script allows us to specify an ssh key to use in git pushes
     sed -i -e "s+GIT_SSH+$OTHOME/repo/$WEBAPP/bin/git.sh+" config
@@ -119,6 +121,9 @@ pushd .
 
     # Access oti search from shared server-config variable
     sed -i -e "s+OTI_BASE_URL+$OTI_BASE_URL+" config
+
+    sed -i -e "s+COLLECTIONS_API_BASE_URL+$COLLECTIONS_API_BASE_URL+" config
+    sed -i -e "s+FAVORITES_API_BASE_URL+$FAVORITES_API_BASE_URL+" config
 
     # Define the public URL of the docstore repo (used for updating oti)
     # N.B. Because of limitations oti's index_current_repo.py, this is
@@ -151,7 +156,7 @@ pushd .
 popd
 
 # ---------- MINOR REPOS ----------
-# Setup COLLECTIONS_REPO, FOLLOWING_REPO, any others
+# Setup COLLECTIONS_REPO, FAVORITES_REPO, any others
 
 echo "...fetching minor repos..."
 echo "   ${COLLECTIONS_REPO}..."
@@ -169,18 +174,18 @@ pushd .
     fi
 popd
 
-echo "   ${FOLLOWING_REPO}..."
+echo "   ${FAVORITES_REPO}..."
 
-following=repo/${FOLLOWING_REPO}_par/$FOLLOWING_REPO
-mkdir -p repo/${FOLLOWING_REPO}_par
-git_refresh OpenTreeOfLife $FOLLOWING_REPO "$BRANCH" repo/${FOLLOWING_REPO}_par || true
+favorites=repo/${FAVORITES_REPO}_par/$FAVORITES_REPO
+mkdir -p repo/${FAVORITES_REPO}_par
+git_refresh OpenTreeOfLife $FAVORITES_REPO "$BRANCH" repo/${FAVORITES_REPO}_par || true
 
 pushd .
-    cd $following
+    cd $favorites
     # All the repos above are cloned via https, but we need to push via
     # ssh to use our deploy keys
     if ! grep "originssh" .git/config ; then
-        git remote add originssh git@github.com:OpenTreeOfLife/$FOLLOWING_REPO.git
+        git remote add originssh git@github.com:OpenTreeOfLife/$FAVORITES_REPO.git
     fi
 popd
 
@@ -190,12 +195,12 @@ pushd .
     cd $APPROOT/private
     sed -i -e "s+COLLECTIONS_REPO_PATH+$OTHOME/repo/${COLLECTIONS_REPO}_par/$COLLECTIONS_REPO+" config
     sed -i -e "s+COLLECTIONS_REPO_PAR+$OTHOME/repo/${COLLECTIONS_REPO}_par+" config
-    sed -i -e "s+FOLLOWING_REPO_PATH+$OTHOME/repo/${FOLLOWING_REPO}_par/$FOLLOWING_REPO+" config
-    sed -i -e "s+FOLLOWING_REPO_PAR+$OTHOME/repo/${FOLLOWING_REPO}_par+" config
+    sed -i -e "s+FAVORITES_REPO_PATH+$OTHOME/repo/${FAVORITES_REPO}_par/$FAVORITES_REPO+" config
+    sed -i -e "s+FAVORITES_REPO_PAR+$OTHOME/repo/${FAVORITES_REPO}_par+" config
 
     # Specify our remotes to push to (added to local repos above)
     sed -i -e "s+COLLECTIONS_REPO_REMOTE+originssh+" config
-    sed -i -e "s+FOLLOWING_REPO_REMOTE+originssh+" config
+    sed -i -e "s+FAVORITES_REPO_REMOTE+originssh+" config
 
     # N.B. Assume we're using the same ssh keys as for the main OPENTREE_DOCSTORE
 
@@ -203,7 +208,7 @@ pushd .
     # N.B. Because of limitations oti's index_current_repo.py, this is
     # always one of our public repos on GitHub.
     sed -i -e "s+COLLECTIONS_REPO_URL+https://github.com/OpenTreeOfLife/$COLLECTIONS_REPO+" config
-    sed -i -e "s+FOLLOWING_REPO_URL+https://github.com/OpenTreeOfLife/$FOLLOWING_REPO+" config
+    sed -i -e "s+FAVORITES_REPO_URL+https://github.com/OpenTreeOfLife/$FAVORITES_REPO+" config
 popd
 
 # ---------- REDIS AND CELERY ----------

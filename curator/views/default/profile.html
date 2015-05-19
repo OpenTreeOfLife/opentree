@@ -26,6 +26,7 @@ else:
 pass
 }}
 {{extend 'layout.html'}}
+<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script type='text/javascript'>
     var phylesystem_config_url = '{{=phylesystem_config_url}}';
 </script>
@@ -225,7 +226,7 @@ elif active_user_found:
     </div>
 </form>
 
-<h2 id="collections">Collections</h2>
+<h2 id="collections">Tree collections</h2>
 
 <!-- TODO: Add a notice if user has no collections (as owner, collaborator, or follower)
 <div class="empty-list-prompt" data-bind="visible: viewModel.filteredTrees().pagedItems().length === 0">
@@ -245,7 +246,9 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
     <tr>
         <th>Collection name (click to view)</th>
         <th>User's role</th>
+        <!--
         <td>&nbsp;</td>
+        -->
         <th>&nbsp;</th>
     </tr>
   </thead>
@@ -297,8 +300,11 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
     -->
 <!-- EXAMPLES of collection entries -->
     <tr>
-        <td><a href="#">Clarifying Porifera placement</a></td>
+        <td><a href="#" 
+                onclick="showCollectionViewer(); return false;"
+            >Clarifying Porifera placement</a></td>
         <td>Owner</td>
+        <!--
         <td style="text-align: right;">
             <a href="#">Follow</a>
             |
@@ -306,17 +312,87 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
             |
             <a href="#">Synthesis report</a>
         </td>
+        -->
         <td>
+            <!-- action buttons, from right to left -->
+
+            <!-- DELETE button -->
             <button Xdata-bind="click: removeTree,
                                visible: true"
-                class="pull-right btn btn-mini btn-danger row-controls-ghosted">
+                class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                style="margin-left: 4px;">
                 <i class="icon-remove icon-white"></i>
+            </button>
+
+            <!-- DUPLICATE button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Copy this collection (you will own the copy)"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-share"></i>
+            </button>
+
+            <!-- EDIT button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Edit this collection (become a collaborator)"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-edit"></i>
+            </button>
+
+            <!-- FOLLOW options -->
+            <div class="pull-right btn-group"
+                 style="margin-left: 4px;">
+                        <button Xdata-bind="click: TODO-remove-this-collection,
+                                            visible: true"
+                            title="Following this collection (click to change)"
+                            class="btn btn-mini row-controls-ghosted dropdown-toggle" data-toggle="dropdown">
+                            <i class="icon-star"></i><!-- TODO: icon+title varies based on current following state -->
+                            <span class="caret"></span>
+                        </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a Xdata-bind="click: TODO-ignore-this-collection">
+                            <i class="icon-star-empty"></i> Ignore this collection</a>
+                    </li>
+                    <li>
+                        <a Xdata-bind="click: TODO-follow-this-collection">
+                            <i class="icon-star"></i> Follow this collection</a>
+                    </li>
+                    <li>
+                        <a Xdata-bind="click: TODO-get-alerts-for-this-collection">
+                            <i class="icon-bell"></i> Follow with alerts</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- DOWNLOAD button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Download this collection as JSON"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-download"></i>
+            </button>
+
+            <!-- SYNTHESIS REPORT button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="View synthesis report for this collection"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-list-alt"></i>
             </button>
         </td>
     </tr>
     <tr>
-        <td><a href="#">Trees about bees</a></td>
+        <td><a href="#" 
+                onclick="showCollectionViewer(); return false;"
+            >Trees about bees</a></td>
         <td>Collaborator</td>
+        <!--
         <td style="text-align: right;">
             <a href="#">Follow</a>
             |
@@ -324,11 +400,78 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
             |
             <a href="#">Synthesis report</a>
         </td>
-        <td>&nbsp;</td>
+        -->
+        <td>
+            <!-- action buttons, from right to left -->
+
+            <!-- DELETE button -->
+            <button Xdata-bind="click: removeTree,
+                               visible: true"
+                class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-remove icon-white"></i>
+            </button>
+
+            <!-- DUPLICATE button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Copy this collection (you will own the copy)"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px">
+                <i class="icon-share"></i>
+            </button>
+
+            <!-- EDIT button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Edit this collection (become a collaborator)"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-edit"></i>
+            </button>
+
+            <!-- FOLLOW options -->
+            <div class="pull-right btn-group"
+                 style="margin-left: 4px;">
+                        <button Xdata-bind="click: TODO-remove-this-collection,
+                                            visible: true"
+                            title="Following with alerts (click to change)"
+                            class="btn btn-mini row-controls-ghosted dropdown-toggle" data-toggle="dropdown">
+                            <i class="icon-bell"></i><!-- TODO: icon+title varies based on current following state -->
+                            <span class="caret"></span>
+                        </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a Xdata-bind="click: TODO-ignore-this-collection">
+                            <i class="icon-star-empty"></i> Ignore this collection</a>
+                    </li>
+                    <li>
+                        <a Xdata-bind="click: TODO-follow-this-collection">
+                            <i class="icon-star"></i> Follow this collection</a>
+                    </li>
+                    <li>
+                        <a Xdata-bind="click: TODO-get-alerts-for-this-collection">
+                            <i class="icon-bell"></i> Follow with alerts</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- DOWNLOAD button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Download this collection as JSON"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-download"></i>
+            </button>
+        </td>
     </tr>
     <tr>
-        <td><a href="#">OpenTree draft tree synthesis</a></td>
+        <td><a href="#" 
+                onclick="showCollectionViewer(); return false;"
+            >OpenTree draft tree synthesis</a></td>
         <td>Follower</td>
+        <!--
         <td style="text-align: right;">
             <a href="#">Follow</a>
             |
@@ -336,10 +479,92 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
             |
             <a href="#">Synthesis report</a>
         </td>
-        <td>&nbsp;</td>
+        -->
+        <td>
+            <!-- action buttons, from right to left -->
+
+            <!-- DELETE button -->
+            <button Xdata-bind="click: removeTree,
+                               visible: true"
+                class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                style="margin-left: 4px; visibility: hidden;">
+                <i class="icon-remove icon-white"></i>
+            </button>
+
+            <!-- DUPLICATE button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Copy this collection (you will own the copy)"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-share"></i>
+            </button>
+
+            <!-- EDIT button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Edit this collection (become a collaborator)"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-edit"></i>
+            </button>
+
+            <!-- FOLLOW options -->
+            <div class="pull-right btn-group"
+                 style="margin-left: 4px;">
+                        <button Xdata-bind="click: TODO-remove-this-collection,
+                                            visible: true"
+                            title="Following this collection (click to change)"
+                            class="btn btn-mini row-controls-ghosted dropdown-toggle" data-toggle="dropdown">
+                            <i class="icon-star"></i><!-- TODO: icon+title varies based on current following state -->
+                            <span class="caret"></span>
+                        </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a Xdata-bind="click: TODO-ignore-this-collection">
+                            <i class="icon-star-empty"></i> Ignore this collection</a>
+                    </li>
+                    <li>
+                        <a Xdata-bind="click: TODO-follow-this-collection">
+                            <i class="icon-star"></i> Follow this collection</a>
+                    </li>
+                    <li>
+                        <a Xdata-bind="click: TODO-get-alerts-for-this-collection">
+                            <i class="icon-bell"></i> Follow with alerts</a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- DOWNLOAD button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Download this collection as JSON"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-download"></i>
+            </button>
+
+            <!-- SYNTHESIS REPORT button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="View synthesis report for this collection"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-list-alt"></i>
+            </button>
+        </td>
     </tr>
   </tbody>
 </table>
+
+<!-- CREATE NEW button -->
+<button Xdata-bind="click: TODO-create-a-new-collection,
+                    visible: true"
+    class="btn btn-info"
+    style="margin-top: -24px;">
+    Create new tree collection
+    <i class="icon-pencil icon-white"></i> 
+</button>
 
 {{ pass }}
     

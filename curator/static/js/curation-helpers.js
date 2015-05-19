@@ -396,3 +396,124 @@ function slugify(str) {
               .replace(/-+/g, '-');         // collapse dashes
 }
 
+
+// Keep track of when the collection viewer is already showing, so we
+// can hold it open and step through nodes or trees.
+var collectionViewerIsInUse = false;
+function showCollectionViewer( collection, options ) {
+    // TODO: allow options for initial display, etc.?
+    options = options || {};
+
+    if (collection) {
+        // TODO: Cleanup or initialization?
+        ; // do nothing
+    } else {
+        // this should *never* happen
+        //TODO: alert("showCollectionViewer(): No collection specified!");
+        //TODO: return;
+        // use a dummy object for now?
+        collection = {
+            "url": "https://raw.githubusercontent.com/OpenTreeOfLife/collections/jimallman/trees-about-bees.json",
+            "name": "Trees about bees",
+            "description": "We're gathering these with an eye toward local synthesis in Anthophila (Apoidea). Contributions welcome!",
+            "creator": {"login": "jimallman", "name": "Jim Allman"},
+            "contributors": [
+                {"login": "pmidford2", "name": "Peter Midford"},
+                {"login": "kcranston", "name": "Karen Cranston"}
+            ],
+            "decisions": [
+                {
+                    "name": "Andrenidae from Foster, 2002", 
+                    "studyID": "ot_23532", 
+                    "treeID": "tree9870",
+                    "decision": "INCLUDED",
+                    "comments": "Lots of good analysis here!"
+                }, 
+                {
+                    "name": "Apidae from Winkle, 1998", 
+                    "studyID": "ot_12345", 
+                    "treeID": "tree999",
+                    "decision": "EXCLUDED",
+                    "comments": "Questionable methods and major gaps. Let's not use this."
+                }, 
+                {
+                    "name": "Colletidae gene tree (also Winkle)", 
+                    "studyID": "ot_12345", 
+                    "treeID": "tree888",
+                    "decision": "INCLUDED",
+                    "comments": "This should tie together some loose ends."
+                }, 
+                {
+                    "name": "Megachilidae supertree", 
+                    "studyID": "ot_2222", 
+                    "treeID": "tree7777",
+                    "decision": "UNDECIDED",
+                    "comments": "Intriguing! Waiting for more information from authors..."
+                }, 
+                {
+                    "name": "A. mellifera supertree #2", 
+                    "studyID": "ot_2222", 
+                    "treeID": "tree7778",
+                    "decision": "UNDECIDED",
+                    "comments": "Added by automatic query 'Harvest recent Apis mellifera'"
+                }
+            ]
+        }
+
+    }
+
+    // TODO: adapt tags widget from tree viewer?
+    /*
+    if (viewOrEdit == 'EDIT') {
+        // TODO: reset observables for some options?
+        viewModel.chosenNodeLabelModeInfo = ko.observable(null);
+        viewModel.nodeLabelModeDescription = ko.observable('');
+    }
+    */
+
+    // bind just the selected collection to the modal HTML 
+    // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
+    var $boundElements = $('#tree-collection-viewer').find('.modal-body, .modal-header h3');
+    // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
+    $.each($boundElements, function(i, el) {
+        ko.cleanNode(el);
+        ko.applyBindings(collection,el);
+    });
+
+    var updateCollectionDisplay = function() {
+        /* TODO: anything to do here? maybe not.
+        if (highlightNodeID) {
+            // scroll this node into view (once popup is properly place in the DOM)
+            ///setTimeout(function() {
+            scrollToTreeNode(tree['@id'], highlightNodeID);
+            ///}, 250);
+        }
+        if (options.HIGHLIGHT_AMBIGUOUS_LABELS) {
+            // TODO: visibly mark the Label Types widget, and show internal labels in red
+            console.warn(">>>> Now I'd highlight the LabelTypes widget!");
+        }
+        */
+        ///hideModalScreen();
+    }
+
+    if (collectionViewerIsInUse) {
+        // trigger its 'shown' event to 
+        updateCollectionDisplay();
+    } else {
+        $('#tree-collection-viewer').off('show').on('show', function () {
+            collectionViewerIsInUse = true;
+        });
+        $('#tree-collection-viewer').off('shown').on('shown', function () {
+            updateCollectionDisplay();
+        });
+        $('#tree-collection-viewer').off('hide').on('hide', function () {
+            collectionViewerIsInUse = false;
+        });
+        $('#tree-collection-viewer').off('hidden').on('hidden', function () {
+            ///console.log('@@@@@ hidden');
+        });
+
+        $('#tree-collection-viewer').modal('show');
+    }
+}
+

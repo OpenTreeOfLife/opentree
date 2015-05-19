@@ -3134,6 +3134,7 @@ function showTreeViewer( tree, options ) {
             switch (newTabTarget) {
                 case 'tree-properties':
                 case 'tree-legend':
+                case 'tree-collections':
                     $('#tree-phylogram-options').hide();
                     break;
                 case 'tree-phylogram':
