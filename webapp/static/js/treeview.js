@@ -1180,6 +1180,7 @@ function showObjectProperties( objInfo, options ) {
                     var supportingStudyInfo = { };  // don't repeat studies under 'Supported by', but gather trees for each *then* generate output
                     // if we're still waiting on fetched study info, add a message to the properties window
                     var waitingForStudyInfo = false;
+                    var studiesWithErrors = [];
 
                     dValues = String(aSection.displayedProperties[dLabel]).split(',');
                     for (i = 0; i < dValues.length; i++) {
@@ -1197,11 +1198,11 @@ function showObjectProperties( objInfo, options ) {
                             moreInfo = metaMap[ rawVal ];
                         }
 
+                        // adapt to various forms of meta-map key
+                        metaMapValues = parseMetaMapKey( rawVal );
                         if (typeof moreInfo === 'object' && 'sourceDetails' in moreInfo) {
                             // Study details, fetched via AJAX as needed
                             
-                            // adapt to various forms of meta-map key
-                            metaMapValues = parseMetaMapKey( rawVal );
                             if (!(metaMapValues.studyID in supportingStudyInfo)) {
                                 // add this study now, plus an empty trees collection
                                 supportingStudyInfo[ metaMapValues.studyID ] = $.extend({ supportingTrees: {} }, moreInfo.sourceDetails);
@@ -1216,10 +1217,12 @@ function showObjectProperties( objInfo, options ) {
                                 console.error("  "+ p2 +" = "+ moreInfo[p2]);
                             }
                             waitingForStudyInfo = true;
+                            studiesWithErrors.push( metaMapValues.studyID );
                         } else {
                             // when in doubt, just show the raw value
                             console.error("! Expecting to find moreInfo and a study (dLabel="+ dLabel +", rawVal="+ rawVal +")");
                             waitingForStudyInfo = true;
+                            studiesWithErrors.push( metaMapValues.studyID );
                         }
                     }
                     // Now that we've gathered all trees for all studies, show organized results by study, with taxonomy LAST if found
@@ -1228,7 +1231,11 @@ function showObjectProperties( objInfo, options ) {
                     $details.find('dt.loading-supporting-studies').remove();
 
                     if (waitingForStudyInfo) {
-                        $details.append('<dt class="loading-supporting-studies">Loading supporting studies...</dt>');
+                        if (studiesWithErrors) {
+                            $details.append('<dt class="loading-supporting-studies">ERROR loading supporting study: '+ studiesWithErrors.join(',') +'</dt>');
+                        } else {
+                            $details.append('<dt class="loading-supporting-studies">Loading supporting studies...</dt>');
+                        }
                     } else {
                         // we have all the details, try to show supporting studies
                         for (studyID in supportingStudyInfo) { 
