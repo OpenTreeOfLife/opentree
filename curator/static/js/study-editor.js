@@ -4888,12 +4888,23 @@ function getAllVisibleProposedMappings() {
 }
 function approveAllVisibleMappings() {
     $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
-        var approvedMapping = proposedOTUMappings()[ OTUid ];
-        if ($.isArray(approvedMapping())) {
-            // do nothing, curator has not chosen a candidate
+        var itsMappingInfo = proposedOTUMappings()[ OTUid ];
+        var approvedMapping = $.isFunction(itsMappingInfo) ?
+            itsMappingInfo() :
+            itsMappingInfo;
+        debugger;
+        if ($.isArray(approvedMapping)) {
+            if (approvedMapping.length === 1) {
+                // apply the first (only) value
+                delete proposedOTUMappings()[ OTUid ];
+                mapOTUToTaxon( OTUid, approvedMapping[0], {POSTPONE_UI_CHANGES: true} );
+            } else {
+                // do nothing if there are multiple possibilities
+            }
         } else {
+            // apply the inner value of an observable (accessor) function
             delete proposedOTUMappings()[ OTUid ];
-            mapOTUToTaxon( OTUid, approvedMapping(), {POSTPONE_UI_CHANGES: true} );
+            mapOTUToTaxon( OTUid, ko.unwrap(approvedMapping), {POSTPONE_UI_CHANGES: true} );
         }
     });
     proposedOTUMappings.valueHasMutated();
