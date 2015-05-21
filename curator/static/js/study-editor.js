@@ -4815,7 +4815,6 @@ function approveAllVisibleMappings() {
         var approvedMapping = $.isFunction(itsMappingInfo) ?
             itsMappingInfo() :
             itsMappingInfo;
-        debugger;
         if ($.isArray(approvedMapping)) {
             if (approvedMapping.length === 1) {
                 // apply the first (only) value
