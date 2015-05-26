@@ -444,6 +444,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         <p style="color: #999; margin-top: -7px; margin-left: 180px;">jimallman/trees-about-bees</p>
     </div>
     <div class="modal-body">
+      <!-- ko if: 'decisions' in $data -->
         <div class="tab-pane active" id="tree-properties">
           <form class="form-inline" style="overflow: hidden; margin-bottom: 0px;">
             <!-- editable tree properties here -->
@@ -536,6 +537,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                 </table>
           </form>
           </div>
+      <!-- /ko -->
     </div>
     <div class="modal-footer">
       <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
