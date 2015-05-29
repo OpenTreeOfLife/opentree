@@ -38,6 +38,14 @@ def index():
         # anonymous visitor, show a general info page
         return view_dict
 
+def collections():
+    """
+    Show a filtered list of all tree collections in the system.
+    """
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict['maintenance_info'] = get_maintenance_info(request)
+    return view_dict
+    
 def error():
     return dict()
 
