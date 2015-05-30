@@ -279,43 +279,47 @@ def _get_opentree_activity( userid=None, username=None ):
     # TODO: fetch collections once we have a home for them
 
     if activity_found:
-        # search the repo stats (for each phylesystem shard!) for their earliest contribution
-        earliest_activity_date = None  # TODO: make this today? or tomorrow? MAXTIME?
-        fetch_url = method_dict['phylesystem_config_url']
-        if fetch_url.startswith('//'):
-            # Prepend scheme to a scheme-relative URL
-            fetch_url = "http:%s" % fetch_url
-        phylesystem_config = requests.get( url=fetch_url ).json()
-        shard_list = phylesystem_config['shards']
-        # if GitHub is rebuilding stats cache for any shard, poke them all but ignore dates
-        rebuilding_cache = False
-        for shard in shard_list:
-            shard_name = shard['name']
-            shard_contributors = _fetch_github_api(verb='GET', 
-                url='/repos/OpenTreeOfLife/{0}/stats/contributors'.format(shard_name))
-            if type(shard_contributors) is not list:
-                # Flag this, but try to fetch remaining shards (to nudge the cache)
-                rebuilding_cache = True
-            else:
-                for contrib_info in shard_contributors:
-                    if contrib_info['author']['login'] == userid:
-                        # look for the earliest week here
-                        for week in contrib_info['weeks']:
-                            if earliest_activity_date:
-                                earliest_activity_date = min(earliest_activity_date, week['w'])
-                            else:
-                                earliest_activity_date = week['w']
-                        break  # skip any remaining records
+        try:
+            # search the repo stats (for each phylesystem shard!) for their earliest contribution
+            earliest_activity_date = None  # TODO: make this today? or tomorrow? MAXTIME?
+            fetch_url = method_dict['phylesystem_config_url']
+            if fetch_url.startswith('//'):
+                # Prepend scheme to a scheme-relative URL
+                fetch_url = "http:%s" % fetch_url
+            phylesystem_config = requests.get( url=fetch_url ).json()
+            shard_list = phylesystem_config['shards']
+            # if GitHub is rebuilding stats cache for any shard, poke them all but ignore dates
+            rebuilding_cache = False
+            for shard in shard_list:
+                shard_name = shard['name']
+                shard_contributors = _fetch_github_api(verb='GET', 
+                    url='/repos/OpenTreeOfLife/{0}/stats/contributors'.format(shard_name))
+                if type(shard_contributors) is not list:
+                    # Flag this, but try to fetch remaining shards (to nudge the cache)
+                    rebuilding_cache = True
+                else:
+                    for contrib_info in shard_contributors:
+                        if contrib_info['author']['login'] == userid:
+                            # look for the earliest week here
+                            for week in contrib_info['weeks']:
+                                if earliest_activity_date:
+                                    earliest_activity_date = min(earliest_activity_date, week['w'])
+                                else:
+                                    earliest_activity_date = week['w']
+                            break  # skip any remaining records
 
-        if rebuilding_cache:
-            activity['curator_since'] = 'Generating data, please try again in a moment...'
-        elif not earliest_activity_date: 
-            activity['curator_since'] = 'This user has not curated any studies.'
-        else:
-            # show a very approximate date (stats are just weekly)
-            from datetime import datetime
-            d = datetime.fromtimestamp(earliest_activity_date)
-            activity['curator_since'] = d.strftime("%B %Y")
+            if rebuilding_cache:
+                activity['curator_since'] = 'Generating data, please try again in a moment...'
+            elif not earliest_activity_date: 
+                activity['curator_since'] = 'This user has not curated any studies.'
+            else:
+                # show a very approximate date (stats are just weekly)
+                from datetime import datetime
+                d = datetime.fromtimestamp(earliest_activity_date)
+                activity['curator_since'] = d.strftime("%B %Y")
+        except:
+            # probably JSONDecodeError due to misconfiguration of the API server
+            activity['curator_since'] = "Unable to determine this user's first activity"
 
         return activity
     else:

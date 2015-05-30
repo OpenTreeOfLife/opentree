@@ -103,12 +103,18 @@ elif active_user_found:
         </div>
     </div>
   {{ pass }}
-  {{ if user_info.get('blog', None): }}
+  {{ if user_info.get('blog', None):
+        # if no scheme is found, prepend 'http://'
+        displayed_url = user_info['blog']
+        if '//' not in displayed_url:
+            displayed_url = "http://%s" % displayed_url
+        pass
+  }}
     <div class="control-group">
         <label class="control-label">Website</label>
         <div class="controls">
           <p class="static-form-value">
-            <a href="{{= user_info['blog'] }}" target="_blank">{{= user_info['blog'] }}</a>
+            <a href="{{= displayed_url }}" target="_blank">{{= displayed_url }}</a>
           </p>
         </div>
     </div>
