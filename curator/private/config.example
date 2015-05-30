@@ -62,6 +62,7 @@ getMRCAForNodes_url = {treemachine_domain}/getMRCA
 getDraftTreeSubtreeForNodes_url = {treemachine_domain}/getDraftTreeSubtreeForNodes
 findAllStudies_url = {oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
+findAllTreeCollections_url = {opentree_api_domain}/../../v2/collections
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #
