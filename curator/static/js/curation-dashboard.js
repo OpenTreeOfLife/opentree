@@ -310,9 +310,35 @@ function loadStudyList() {
                         break;
 
                     case 'Oldest publication first':
-                        filteredList.sort(function(a,b) { 
+                        filteredList.sort(function(a,b) {
                             if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
                             return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
+                        });
+                        break;
+
+                    case 'Sort by primary author':
+                        filteredList.sort(function(a,b) {
+                            var aRef = $.trim(a['ot:studyPublicationReference']);
+                            var bRef = $.trim(b['ot:studyPublicationReference']);
+                            if (aRef.localeCompare) {
+                                return aRef.localeCompare(bRef);
+                            }
+                            // fallback do dumb alpha-sort on older browsers
+                            if (aRef === bRef) return 0;
+                            return (aRef > bRef) ? 1 : -1;
+                        });
+                        break;
+
+                    case 'Sort by primary author (reversed)':
+                        filteredList.sort(function(a,b) {
+                            var bRef = $.trim(b['ot:studyPublicationReference']);
+                            var aRef = $.trim(a['ot:studyPublicationReference']);
+                            if (bRef.localeCompare) {
+                                return bRef.localeCompare(aRef);
+                            }
+                            // fallback do dumb alpha-sort on older browsers
+                            if (aRef === bRef) return 0;
+                            return (aRef < bRef) ? 1 : -1;
                         });
                         break;
 
