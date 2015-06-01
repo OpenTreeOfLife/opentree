@@ -477,6 +477,8 @@ function showCollectionViewer( collection, options ) {
     // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
     $.each($boundElements, function(i, el) {
         ko.cleanNode(el);
+        // remove all but one table row (else they multiply!)
+        $('tr.single-tree-row:gt(0)', el).remove();
         ko.applyBindings(collection,el);
     });
 

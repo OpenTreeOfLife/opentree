@@ -167,8 +167,8 @@ function loadCollectionList() {
                 'COLLECTIONS': {
                     // TODO: add 'pagesize'?
                     'match': ko.observable(""),
-                    'workflow': ko.observable("Any workflow state"),
-                    'order': ko.observable("Newest publication first")
+                    'order': ko.observable("Most recently modified"),
+                    'filter': ko.observable("All tree collections")
                 }
             };
             
