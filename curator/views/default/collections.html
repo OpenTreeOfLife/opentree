@@ -40,8 +40,8 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
         'COLLECTIONS': {
             // TODO: Define these based on UI mockups
             'match': "",
-            'workflow': "Any workflow state",
-            'order': "Newest publication first"
+            'order': "Most recently modified",
+            'filter': "All tree collections"
         }
     };
     var filterDefaults = listFilterDefaults.COLLECTIONS;
@@ -72,20 +72,21 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
         <button class="help-toggle">
             Hide <i class="icon-chevron-up Xicon-white"></i>
         </button>
-        <p><!-- TODO: Import help/explanation of collections from elsewhere -->
-        This tool allows you to contribute studies and trees to our database for
-        synthesis. Once your data is submitted, you can return and make improvements,
-        share your data more widely, and watch for changes in your area of interest.
+
+        <p>
+            A collection is a list of trees, chosen for synthesis or any other
+            purpose. Each collection has a nominal owner, but any logged-in user
+            can choose to collaborate (add and manage trees) or simply follow its progress. 
+            <span class="interesting-value" style="font-weight: bold;">NOTE that any collections listed below are inactive placeholders!</span>
         </p>
         <p>
-        All data is stored as documents in <a href="https://github.com/" target="_blank">GitHub</a>, 
-        a collaborative coding website. This curation tool makes it easy to edit and
-        contribute data, but you'll need a (free) GitHub account to participate.
-        </p>
-        <p>
-        Once you've created an account on GitHub, just <a href="/curator/user/login?_next=/curator">login</a> using the link above. Once
-        you've agreed to give access to the OpenTree tool, you can start adding data
-        immediately.
+            Collections are stored as documents in <a href="https://github.com/" target="_blank">GitHub</a>, 
+            a collaborative coding website. This curation tool makes it easy to edit and
+            contribute data, but you'll need a (free) GitHub account to participate.
+            Once you've created an account on GitHub, just 
+            <a href="/curator/user/login?_next=/curator">login</a> using the link above. Once
+            you've agreed to give access to the OpenTree tool, you can start adding collections
+            immediately.
         </p>
       </div>
 
@@ -121,12 +122,24 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
             <!--<li class="divider-vertical"></li>-->
             <li class="dropdown">
                 <a href="#" class="dropdown-toggle" data-toggle="dropdown">
-                  <span data-bind="text: viewModel.listFilters.COLLECTIONS.order">SORT</span>
+                  <span data-bind="text: viewModel.listFilters.COLLECTIONS.order">Most recently modified</span>
                   <b class="caret"></b>
                 </a>
-                <ul class="dropdown-menu" data-bind="foreach: ['Newest publication first', 'Oldest publication first'] "><!-- , 'Workflow state', 'Completeness'] -->
+                <ul class="dropdown-menu" data-bind="foreach: ['Most recently modified', 'Most recently modified (reversed)', 'By owner/name', 'By owner/name (reversed)'] "><!-- , 'Workflow state', 'Completeness'] -->
                     <li data-bind="css: {'disabled': viewModel.listFilters.COLLECTIONS.order() == $data }">
                         <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.COLLECTIONS.order($data); }">SORT</a>
+                    </li>
+                </ul>
+            </li>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <span data-bind="text: viewModel.listFilters.COLLECTIONS.filter">All tree collections</span>
+                  <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu" data-bind="foreach: ['All tree collections', 'Collections I own', 'Collections I participate in', 'Collections I follow'] ">
+                    <!-- 'Collections with synthesis reports' -->
+                    <li data-bind="css: {'disabled': viewModel.listFilters.COLLECTIONS.filter() == $data }">
+                        <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.COLLECTIONS.filter($data); }">FILTER</a>
                     </li>
                 </ul>
             </li>
@@ -138,12 +151,13 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
           <thead>
             <tr>
               {{ if isLoggedIn: }}
-                <th>Reference (click to edit study)</th>
+                <th>Tree Collection (click to edit)</th>
               {{ else: }}
-                <th>Reference (click to view study)</th>
+                <th>Tree Collection (click to view)</th>
               {{ pass }}
-                <th>Focal clade</th>
-                <th>Curator</th>
+                <th>How many trees</th>
+                <th>Synthesis report?</th>
+                <th>Owner</th>
                 <!--
                 <th style="text-align: right;">Publication</th>
                 <th>Completeness</th>

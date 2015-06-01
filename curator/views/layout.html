@@ -270,7 +270,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                 <li class="dropdown">
                     <a href="/curator#TODO" class="dropdown-toggle" data-toggle="dropdown">Tree collections  <b class="caret"></b></a>
                     <ul class="dropdown-menu">
-                        <li><a href="/curator/profile#collections">Manage my collections</a></li>
+                        <li><a href="/curator/profile">Manage my collections</a></li>
                         <li><a href="/curator/collections">Browse all collections</a></li>
                         <li><a href="/curator#TODO">Add new collection</a></li>
                     </ul>
@@ -440,7 +440,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
        Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
    <!-- TODO: KO binding here to 'collection' (as $data below) -->
     <div class="modal-header" style="padding-bottom: 0;">
-      <a class="close" onclick="$('#tree-collection-viewer').modal('hide'); false;">×</a>
+      <a class="close" onclick="$('#tree-collection-viewer').modal('hide'); return false;">×</a>
       <h3 id='dialog-heading'>
             Tree collection
             <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
@@ -449,96 +449,162 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
             />
        </h3>
         <!-- TODO -->
-        <p style="color: #999; margin-top: -7px; margin-left: 180px;">jimallman/trees-about-bees</p>
+        <p style="color: #999; margin-top: -7px; margin-left: 180px;">jimallman/trees-about-bees 
+            <a href="https://github.com/OpenTreeOfLife/collections-0/blob/master/collections-by-owner/jimallman/my-test-collection.json" target="_blank">(on GitHub)</a>
+        </p>
     </div>
     <div class="modal-body">
       <!-- ko if: 'decisions' in $data -->
         <div class="tab-pane active" id="tree-properties">
-          <form class="form-inline" style="overflow: hidden; margin-bottom: 0px;">
+          <form class="form-inline" 
+                style="overflow: hidden; margin-bottom: 0px; margin-top: -12px; padding-top: 12px;">
+           <div class="collection-actions">
+            <!-- action buttons, from right to left -->
+
+            <!-- DELETE button -->
+            <button Xdata-bind="click: removeTree,
+                               visible: true"
+                title="Delete this tree collection"
+                class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-remove icon-white"></i>
+            </button>
+
+            <!-- DUPLICATE button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Copy this collection (you will own the copy)"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-share"></i>
+            </button>
+
+            <!-- EDIT button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Edit this collection (become a collaborator)"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-edit"></i>
+            </button>
+
+            <!-- FOLLOW options -->
+            <div class="pull-right btn-group"
+                 style="margin-left: 4px;">
+                        <button Xdata-bind="click: TODO-remove-this-collection,
+                                            visible: true"
+                            title="Following this collection (click to change)"
+                            class="btn btn-mini row-controls-ghosted dropdown-toggle" data-toggle="dropdown">
+                            <i class="icon-star"></i><!-- TODO: icon+title varies based on current following state -->
+                            <span class="caret"></span>
+                        </button>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a Xdata-bind="click: TODO-ignore-this-collection">
+                            <i class="icon-star-empty" style="opacity: 0.3;"></i> Ignore this collection</a>
+                    </li>
+                    <li>
+                        <a Xdata-bind="click: TODO-follow-this-collection">
+                            <i class="icon-star"></i> Follow this collection</a>
+                    </li>
+                    <!--
+                    <li>
+                        <a Xdata-bind="click: TODO-get-alerts-for-this-collection">
+                            <i class="icon-bell"></i> Follow with alerts</a>
+                    </li>
+                    -->
+                </ul>
+            </div>
+
+            <!-- DOWNLOAD button -->
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="Download this collection as JSON"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                <i class="icon-download"></i>
+            </button>
+
+            <!-- SYNTHESIS REPORT button (TODO?)
+            <button Xdata-bind="click: TODO-follow-this-collection,
+                                visible: true"
+                title="(PROPOSED) View synthesis report for this collection"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px; opacity: 0.5;">
+                <i class="icon-list-alt"></i>
+            </button>
+            -->
+           </div>
+
             <!-- editable tree properties here -->
-                <label>Description: </label>
+                <label>Description</label>
                 <input type="text" data-bind="value: $data['treeDescription']"
-                    class="input-xxlarge" style="margin-bottom: 2px;"
+                    class="input-xlarge" style="width: 500px; margin-bottom: 2px;"
                     placeholder="Describe this collection's focus or purpose">
                 </input>
 
-                <label style="clear: left; margin-top: 6px;">Contributors (creator first): </label>
-                <strong><!-- TODO -->
-                    <a href="https://github.com/jimallman" target="_blank">Jim Allman</a>
-                    ,
-                    <a href="https://github.com/pmidford" target="_blank">Peter Midford</a>
-                    ,
-                    <a href="https://github.com/kcranston" target="_blank">Karen Cranston</a>
+                <label style="clear: left; margin-top: 6px;">Created by </label>
+                <strong><a href="https://github.com/jimallman" target="_blank">Jim Allman</a></strong>, with
+              <!-- TODO: list collaborators (links) in a popup -->
+              <div id="collection-collab-toggle" Xclass="btn-group" 
+                   style="display: inline-block; position: relative;">
+                <strong id="collection-collab-toggle" class="dropdown-toggle" 
+                        style="cursor: pointer;"
+                        data-toggle="dropdown">2 collaborators
+                   <span class="caret" style="vertical-align: middle;"></span>
                 </strong>
+                <ul class="dropdown-menu">
+                    <li>
+                        <a href="https://github.com/pmidford" target="_blank">Peter Midford</a>
+                    </li>
+                    <li>
+                        <a href="https://github.com/kcranston" target="_blank">Karen Cranston</a>
+                    </li>
+                </ul>
+              </div>
 
+                <!-- let's keep it simple for now
                 <div class="btn-group" style="margin-left: 80px; margin-top: 6px;">
                   <button id="show-included-trees-button" class="btn btn-small active" onclick="alert('COMING SOON'); return false;">&nbsp; Show only included trees &nbsp;</button>
                   <button id="show-all-trees-button" class="btn btn-small" onclick="alert('COMING SOON'); return false;">&nbsp; Show all tree decisions &nbsp;</button>
                 </div>
+                -->
                 <table class="table table-condensed table-hover"
                     data-bind="visible: true"><!-- TODO: hide if no trees found -->
                   <thead>
                     <tr>
-                        <th width="20">&nbsp;</th><!-- ranking -->
+                        <th width="65">Rank</th><!-- ranking -->
                         <th width="*">Tree name (click to view)</th><!-- also comments! -->
-                        <th>&nbsp;</th><!-- sorting buttons -->
-                        <th width="60">Decision</th>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: decisions, as: 'decision' }">
-                      <tr>
-                          <td data-bind="text: $index() + 1"
-                              style="color: #999; text-align: right;">1</td>
+                      <tr class="single-tree-row">
+                          <td>
+                            <span data-bind="text: $index() + 1"
+                                  style="color: #999; text-align: right;"
+                             >1</span>&nbsp;
+                            <!-- SORTING widgets -->
+                            <a Xdata-bind="click: TODO-move-tree-down,
+                                                visible: true"
+data-bind="style: {'opacity': ($index() > 0 ? 1.0 : 0.5)}"
+                               href="#"
+                               title="Move this tree up in the list"
+                               class="icon-chevron-up">
+                            </a>
+                            <a Xdata-bind="click: TODO-move-tree-down,
+                                                visible: true"
+data-bind="style: {'opacity': ($index() < ($parent.decisions.length-1) ? 1.0 : 0.5)}"
+                               href="#"
+                               title="Move this tree down in the list"
+                               class="icon-chevron-down">
+                            </a>
+                          </td>
                           <td><a data-bind="html: name"
                                  href="#" target="_blank"><!--NAME--></a>
                               <br/>
                               <p data-bind="html: comments"
                                  style="color: #999; margin-bottom: 4px;">
                                 <!--COMMENTS--></p>
-                          </td>
-                          <td>
-                            <!-- SORTING buttons -->
-                            <div class="btn-group">
-                                <button Xdata-bind="click: TODO-move-tree-up,
-                                                    visible: true"
-                                    title="Move this tree up in the list"
-                                    class="btn btn-mini row-controls-ghosted">
-                                    <a class="icon-chevron-up"></a>
-                                </button>
-                                <button Xdata-bind="click: TODO-move-tree-down,
-                                                    visible: true"
-                                    title="Move this tree down in the list"
-                                    class="btn btn-mini row-controls-ghosted">
-                                    <a class="icon-chevron-down"></a>
-                                </button>
-                            </div>
-                          </td>
-                          <td>
-                            <!-- DECISION options -->
-                            <div class="pull-right btn-group"
-                                 style="margin-left: 4px;">
-                                        <button Xdata-bind="click: TODO-update-tree-decision,
-                                                            visible: true"
-                                            title="This tree is included (click to change)"
-                                            class="btn btn-mini row-controls-ghosted dropdown-toggle" data-toggle="dropdown">
-                                            Included
-                                            <span class="caret"></span>
-                                        </button>
-                                <ul class="dropdown-menu">
-                                    <li>
-                                        <a Xdata-bind="click: TODO-include-this-tree">
-                                            Include this tree</a>
-                                    </li>
-                                    <li>
-                                        <a Xdata-bind="click: TODO-exclude-this-tree">
-                                            Exclude this tree</a>
-                                    </li>
-                                    <li>
-                                        <a Xdata-bind="click: TODO-remember-this-tree">
-                                            Remember this tree, but postpone decision</a>
-                                    </li>
-                                </ul>
-                            </div>
                           </td>
                       </tr>
                   </tbody>

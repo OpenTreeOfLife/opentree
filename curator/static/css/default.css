@@ -790,3 +790,7 @@ tr.table-shims td {
 tr.after-shims th {
     border-top: 0;
 }
+.collection-actions {
+    position: relative;
+    top: -8px;
+}
