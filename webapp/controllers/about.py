@@ -118,8 +118,17 @@ def progress():
                          'Date has phylesystem info': (phyle_v and "true" or "false"),
                          'OTT version': ott_version,
                          'Date': str(date)}
-    # sort by date
-    dk = [(datetime.strptime(i, "%Y-%m-%dT%HZ"), i) for i in by_date.keys() if i]
+    # sort by date (allowing for different date formats)
+    #dk = [(datetime.strptime(i, "%Y-%m-%d"), i) for i in by_date.keys() if i]
+    dk = []
+    for i in by_date.keys():
+        if i:
+            # we might still have a mix of zulu-time and date-only
+            try: 
+                converted_date = datetime.strptime(i, "%Y-%m-%d")
+            except ValueError:
+                converted_date = datetime.strptime(i, "%Y-%m-%dT%HZ")
+            dk.append((converted_date, i,))
     dk.sort()
     ks = [i[1] for i in dk]
     # create the list of stat objects to return
