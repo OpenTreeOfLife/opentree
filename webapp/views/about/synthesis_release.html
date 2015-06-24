@@ -311,8 +311,9 @@ function getSynthesisSparklineData(prop, lastProfileDate) {
     }
     // scale all values to under 100 (using 90 to avoid cropping)
     var scaleToFit = 90.0 / maxValue;
+    // N.B. that we limit each fractional number to 2 decimal places, to avoid building over-long URLs
     series = $.map(series, function(d) {
-        return d * scaleToFit;
+        return (d * scaleToFit).toFixed(2);
     });
 
     return series.join(',');
