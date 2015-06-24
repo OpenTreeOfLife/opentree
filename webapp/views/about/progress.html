@@ -48,17 +48,17 @@
     visibility: hidden;
 }
 circle.synth-release-marker {
-    fill: #939;
+    fill: #9b8f56;
 }
 circle.taxo-release-marker {
-    fill: #39c;
+    fill: #347592;
 }
 .event-markers .date-with-synthesis circle.synth-release-marker,
 .event-markers .date-with-synthesis text.synth-release-marker {
     visibility: visible;
 }
-.event-markers .date-with-phylesystem circle.taxo-release-marker,
-.event-markers .date-with-phylesystem text.taxo-release-marker  {
+.event-markers .date-with-taxonomy circle.taxo-release-marker,
+.event-markers .date-with-taxonomy text.taxo-release-marker  {
     visibility: visible;
 }
 .event-markers text {
@@ -86,7 +86,7 @@ circle.taxo-release-marker {
               <br/>
               <a id="warnings-toggle" onclick="$('#warnings-panel').toggle(); return false;"
                  style="font-weight:bold; color:red; background-color: #fdd;" href="#">
-                 &nbsp;CAUTION: FAKE DATA BELOW (click for details)&nbsp;
+                 &nbsp;CAUTION: DUBIOUS DATA BELOW (click for details)&nbsp;
                </a>
               </p>
               <p id="highlight-prompt" style="font-style: italic;">&nbsp;</p>
@@ -102,9 +102,6 @@ circle.taxo-release-marker {
 // pass statistics as JSON to client for stepping, plotting, etc.
 // NOTE that these are correctly date-sorted from the server!
 var otu_stats = {{= XML(otu_stats) }}
-
-// jimA: TEMPORARILY restricting this to just a few samples (for review)
-//otu_stats = otu_stats.slice(0,4);
 
 var sortedSynthesisProfileKeys = null;
 var currentSynthesisProfileIndex = 0;
@@ -134,7 +131,7 @@ var y = d3.scale.linear()
 // let's define two color ranges, with a common endpoint
 var darkest = d3.rgb('#666666'),  // represents OTUs from studies in synthesis
     white = d3.rgb('#ffffff'),
-    warm = d3.rgb('#cc9966'),
+    warm = d3.rgb('#2a7e40'),
     cool = d3.rgb('#6677BB'),
     warmScale = d3.interpolateRgb(white, warm),
     coolScale = d3.interpolateRgb(cool, white);  // not currently used!
@@ -164,12 +161,6 @@ var svg = svgpar.append("svg")
     .attr("preserveAspectRatio", "xMinYMin meet")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-var dup_otu_stats = [];
-var i;
-for (i = 0; i < otu_stats.length; ++i) {
-    dup_otu_stats[2*i] = $.extend({}, otu_stats[i]);
-    dup_otu_stats[2*i + 1] = $.extend({}, otu_stats[i]);
-}
 // add a full-size (invisible) rectangle to receive mouse clicks
 svg.append("rect")
     .attr("width", "100%")
@@ -183,7 +174,7 @@ function pinHighlight() {
     // update the UI for this
     //$('#unpin-highlight-widget').css('opacity', 1.0);
     $('#highlight-prompt').html('Click the chart below to see details for any date. Click \
-              <a id="unpin-highlight-widget" class="badge" style="Xbackground-color: #f88;" \
+              <a id="unpin-highlight-widget" class="badge" style="background-color: #c33;" \
                  href="#" title="" onclick="unpinHighlight(); $(this).blur(); return false;"> \
                  <span class="widget-prompt">Unlock highlight</span> \
         </a> to follow the mouse.');
@@ -402,6 +393,9 @@ var populateSVG = function(data) {
           if (d['Date has synthesis release'] === 'true') {
               className += ' date-with-synthesis';
           }
+          if (d['Date has taxonomy release'] === 'true') {
+              className += ' date-with-taxonomy';
+          }
           if (d['Date has phylesystem info'] === 'true') {
               className += ' date-with-phylesystem';
           }
@@ -547,7 +541,8 @@ var populateSVG = function(data) {
       var snapX = x(targetDate); // find X coordinates for the nearest date
       // move the highlight and update its displayed stats
       highlight.attr("transform", "translate("+ snapX +","+ margin.top +")");
-      highlightDetailsTitle.text(targetDate);
+      var displayDate = formatISODate(targetDate, {includeDate:false});
+      highlightDetailsTitle.text(displayDate);
 
       var statPosition = 0; 
       var statsFields = highlightDetailsStats.selectAll('text');
@@ -561,7 +556,8 @@ var populateSVG = function(data) {
 
       // show markers for synthesis and/or taxonomy release, IF found for this date
       var dateHasSynthRelease = (profileData['Date has synthesis release'] === 'true');
-      var dateHasTaxoRelease = (profileData['Date has phylesystem info'] === 'true');
+      var dateHasTaxoRelease = (profileData['Date has taxonomy release'] === 'true');
+      var dateHasPhylesystemInfo = (profileData['Date has phylesystem info'] === 'true');
       if (dateHasSynthRelease && dateHasTaxoRelease) {
           // shift the taxo-release markers down to second row
           highlightDetailsStats.select('circle.taxo-release-marker')
@@ -657,9 +653,9 @@ function formatISODate( dateString, options ) {
     var aDate = new moment(dateString);
     // see http://momentjs.com/docs/#/parsing/string/
     if (options.includeTime) {
-        return aDate.format('MMMM Do YYYY, hA');
+        return aDate.format('MMMM D, YYYY, hA');
     } else {
-        return aDate.format('MMMM Do YYYY');
+        return aDate.format('MMMM D, YYYY');
     }
 }
 

@@ -52,82 +52,127 @@ def references():
 
 def progress():
     view_dict = default_view_dict.copy()
-    synth = json.loads(fetch_local_synthesis_stats() or '{}')
-    phylesystem = json.loads(fetch_local_phylesystem_stats() or '{}')
-    ott = json.loads(fetch_local_ott_stats() or '{}')
-    # create some an otu summary stats for each synthesis that we have info about...
+
+    # Load each JSON document into a list or dict, so we can compile daily entries. 
+    # NB: For simplicity and uniformity, filter these to use only simple dates
+    # with no time component!
+    # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
+    raw = json.loads(fetch_local_synthesis_stats() or '{}')
+    # Pre-sort its raw date strings, so we can discard all the but latest info
+    # for each date (e.g. we might toss the morning stats but keep the evening).
+    sorted_dates = sorted(raw.keys(), reverse=False)
+    synth = {}
+    for d in sorted_dates:
+        raw_data = raw[d]
+        simple_date = _force_to_simple_date_string(d)
+        synth[ simple_date ] = raw_data
+        # this should overwrite data from earlier in the day
+
+    # phylesystem stats also have mixed date formats
+    raw = json.loads(fetch_local_phylesystem_stats() or '{}')
+    sorted_dates = sorted(raw.keys(), reverse=False)
+    phylesystem = {}
+    for d in sorted_dates:
+        raw_data = raw[d]
+        simple_date = _force_to_simple_date_string(d)
+        phylesystem[ simple_date ] = raw_data
+        # this should overwrite data from earlier in the day
+
+    # taxonomy stats should always use simple dates
+    ott = json.loads(fetch_local_ott_stats() or '[]')
+
+    # create some otu summary stats for each synthesis that we have info about...
     by_date = {}
     warnings = set()
-    dates = set(synth.keys() + phylesystem.keys())
+    dates = set(synth.keys() + phylesystem.keys() + [ott_v.get('date') for ott_v in ott])
     # Let's creep tallies up in our fake data, with starting values here
-    import random
-    num_otu_in_ott =        1920000
-    num_otu_in_synth =       890000
-    num_phylo_otu_in_synth =  70000
-    num_otu_in_studies =     400000
-    num_otu_in_nominated_studies = 390000
-    warnings.add('Creeping OTU tallies added to show progression!')
+    num_otu_in_ott = 0
+    num_otu_in_synth = 0
+    num_phylo_otu_in_synth = 0
+    num_otu_in_studies = 0
+    num_otu_in_nominated_studies = 0
+
+    # Set initial (empty) values for synthesis and phylesystem stats; these will
+    # be "carried over" to a subsequent date that has no current data.
+    synth_v = {}
+    phyle_v = {}
 
     for date in sorted(dates, reverse=False):
-        synth_v = synth.get(date, {})
-        phyle_v = phylesystem.get(date, {})
-        ott_version = synth_v.get('OTT version')
-        num_otu_in_ott += random.randint(0,10000)
-        if ott_version is None:
-            ott_version = 'unknown'
-            warnings.add('OTT version info not found - just making up some numbers as a placeholder!')
+        # carry over latest stats, if none found for this day
+        synth_v = synth.get(date, synth_v)
+        phyle_v = phylesystem.get(date, phyle_v)
+
+        specified_version = synth_v.get('OTT version')
+        if specified_version:
+            ott_version_info = get_ott_version_info(specified_version)
+            if ott_version_info is None:
+                warnings.add('specified version {v} of OTT not found!'.format(v=specified_version))
+        else:
+            warnings.add('No specified version of OTT for some synthesis releases; guessing OTT versions based on synth-date!')
+            ott_version_info =  get_latest_ott_version_info_by_date(date)
+            if ott_version_info is None:
+                warnings.add('No version of OTT found on-or-before date {d}!'.format(d=date))
+        if ott_version_info is None:
+            ott_version_info = {}
+            warnings.add('OTT version info not found!')
         elif ott is None:
-            warnings.add('OTT info not found - just making up some numbers as a placeholder!')
+            warnings.add('OTT info not found!')
         else:
-            ov = ott.get(ott_version)
-            if ov is None:
-                warnings.add('ott info for version {v} of OTT not found - just making up some numbers as a placeholder!'.format(v=ott_version))
+            if ott_version_info is None:
+                warnings.add('OTT info for version {v} not found!'.format(v=ott_version_info.get('version')))
             else:
-                num_otu_in_ott = ov['Unique OTUs']
+                num_otu_in_ott = ott_version_info.get('visible_taxon_count', 0)
 
-        num_otu_in_synth += random.randint(0,5000)
-        if synth_v.get('Unique OTUs in Synthesis') is None:
-            warnings.add('"Unique OTUs in Synthesis" info not found - just making up some numbers as a placeholder!')
-        else:
-            num_otu_in_synth = synth_v.get('Unique OTUs in Synthesis')
+        # WAS synth_v.get('Unique OTUs in Synthesis')
+        # N.B. Some days (esp. early in history) might not have any synthesis data
+        if synth_v:  # ignore empty dict (no data found)
+            if synth_v.get('unique_OTU_count') is None:
+                warnings.add('"unique_OTU_count" info not found!')
+            else:
+                num_otu_in_synth = synth_v.get('unique_OTU_count')
 
-        num_phylo_otu_in_synth += random.randint(0,3000)
-        if synth_v.get('Unique OTUs in Synthesis from studies') is None:
-            warnings.add('"Unique OTUs in Synthesis from studies" info not found - just making up some numbers as a placeholder!')
-        else:
-            num_phylo_otu_in_synth = synth_v.get('Unique OTUs in Synthesis from studies')
+            # WAS synth_v.get('Unique OTUs in Synthesis from studies')
+            if synth_v.get('total_OTU_count') is None:
+                warnings.add('"total_OTU_count" info not found!')
+            else:
+                num_phylo_otu_in_synth = synth_v.get('total_OTU_count')
 
-        num_otu_in_studies += random.randint(0,10000)
-        if phyle_v.get('Unique OTUs') is None:
-            warnings.add('"Unique OTUs" info not found for phylesystem - just making up some numbers as a placeholder!')
-        else:
-            num_otu_in_studies = phyle_v.get('Unique OTUs')
+        if phyle_v:  # ignore empty dict (no data found)
+            # WAS phyle_v.get('Unique OTUs')
+            if phyle_v.get('unique_OTU_count') is None:
+                warnings.add('phylesystem.unique_OTU_count info not found!')
+            else:
+                num_otu_in_studies = phyle_v.get('unique_OTU_count')
 
-        num_otu_in_nominated_studies += random.randint(0,8000)
-        if synth_v.get('Unique OTUs in nominated studies') is None:
-            warnings.add('"Unique OTUs in nominated studies" info not found - just making up some numbers as a placeholder!')
-        else:
-            num_otu_in_nominated_studies = synth_v.get('Unique OTUs in nominated studies')
+            # WAS synth_v.get('Unique OTUs in nominated studies')
+            if phyle_v.get('nominated_study_unique_OTU_count') is None:
+                warnings.add('phylesystem.nominated_study_unique_OTU_count info not found!')
+            else:
+                num_otu_in_nominated_studies = phyle_v.get('nominated_study_unique_OTU_count')
 
+        #import pdb; pdb.set_trace()
+        #print( date, ott_version_info['date'], (ott_version_info['date'] == date and "true" or "false") )
+        #print( date, (synth.get(date, None) and "true" or "false") )
         by_date[date] = {'Unique OTUs in OTT': num_otu_in_ott,
                          'Unique OTUs in synthesis': num_otu_in_synth,
                          'Unique OTUs in synthesis from studies': num_phylo_otu_in_synth,
                          'Unique OTUs in studies': num_otu_in_studies,
                          'Unique OTUs in nominated studies': num_otu_in_nominated_studies,
-                         'Date has synthesis release': (synth_v and "true" or "false"),
-                         'Date has phylesystem info': (phyle_v and "true" or "false"),
-                         'OTT version': ott_version,
+                         # TODO: Add pre-calculated stats where provided?
+                         'Date has synthesis release': (synth.get(date, None) and "true" or "false"),
+                         'Date has taxonomy release': (ott_version_info['date'] == date and "true" or "false"),
+                         'Date has phylesystem info': (phylesystem.get(date, None) and "true" or "false"),
+                         'OTT version': ott_version_info.get('version').encode("utf8"),
                          'Date': str(date)}
     # sort by date (allowing for different date formats)
     #dk = [(datetime.strptime(i, "%Y-%m-%d"), i) for i in by_date.keys() if i]
     dk = []
     for i in by_date.keys():
         if i:
-            # we might still have a mix of zulu-time and date-only
-            try: 
-                converted_date = datetime.strptime(i, "%Y-%m-%d")
-            except ValueError:
-                converted_date = datetime.strptime(i, "%Y-%m-%dT%HZ")
+            # remove any time (intra-day) component for uniform dates!
+            # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
+            i = i.split('T')[0]
+            converted_date = datetime.strptime(i, "%Y-%m-%d")
             dk.append((converted_date, i,))
     dk.sort()
     ks = [i[1] for i in dk]
@@ -137,6 +182,11 @@ def progress():
     view_dict['warnings'] = list(warnings)
     view_dict['warnings'].sort()
     return view_dict
+
+def _force_to_simple_date_string( date_string ):
+    # remove any time (intra-day) component for uniform dates!
+    # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
+    return date_string.split('T')[0]
 
 def synthesis_release():
     view_dict = default_view_dict.copy()
@@ -193,6 +243,34 @@ def fetch_local_ott_stats():
         return stats
     except:
         return None
+
+_sorted_ott_versions = None
+def get_sorted_ott_versions():
+    global _sorted_ott_versions
+    if not _sorted_ott_versions:
+        _sorted_ott_versions = json.loads(fetch_local_ott_stats() or '[]')
+        # make sure these are sorted by date (chronological order)
+        _sorted_ott_versions.sort(key = lambda x: x.get('date'))
+    return _sorted_ott_versions
+
+def get_ott_version_info(specified_version):
+    for version in get_sorted_ott_versions():
+        if version.get('version') == specified_version:
+            return version
+
+def get_latest_ott_version_info_by_date(date):
+    closest_previous_version = None
+    for version in get_sorted_ott_versions():
+        try:
+            #v_date = datetime.strptime(version.get('date'), "%Y-%m-%dT%HZ")
+            v_date = version.get('date')
+        except:
+            raise Exception('Missing OTT version date')
+        if v_date <= date:
+            closest_previous_version = version
+    if closest_previous_version is None:
+        raise Exception('No OTT version before this date: %s' % date)
+    return closest_previous_version
 
 def fetch_current_synthesis_source_data():
     try:
@@ -277,7 +355,6 @@ def fetch_current_synthesis_source_data():
         ## context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
         
         # translate data-deposit DOIs/URLs into friendlier forms
-        from pprint import pprint
         for study in contributing_studies:
             raw_deposit_doi = study.get('ot:dataDeposit', None)
             if raw_deposit_doi:

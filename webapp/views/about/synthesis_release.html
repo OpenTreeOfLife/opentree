@@ -48,17 +48,17 @@
     visibility: hidden;
 }
 circle.synth-release-marker {
-    fill: #939;
+    fill: #9b8f56;
 }
 circle.taxo-release-marker {
-    fill: #39c;
+    fill: #347592;
 }
 .event-markers .date-with-synthesis circle.synth-release-marker,
 .event-markers .date-with-synthesis text.synth-release-marker {
     visibility: visible;
 }
-.event-markers .date-with-phylesystem circle.taxo-release-marker,
-.event-markers .date-with-phylesystem text.taxo-release-marker  {
+.event-markers .date-with-taxonomy circle.taxo-release-marker,
+.event-markers .date-with-taxonomy text.taxo-release-marker  {
     visibility: visible;
 }
 .event-markers text {
@@ -177,7 +177,7 @@ $(document).ready(function() {
             currentSynthesisProfileDate = sortedSynthesisProfileKeys[ sortedSynthesisProfileKeys.length - 1 ];
         }
         // format nicely and add to page title
-        var displayDate = formatISODate( currentSynthesisProfileDate );
+        var displayDate = formatISODate( currentSynthesisProfileDate, {includeTime: false} );
         $('#title-date').html( "("+ displayDate +")" );
 
         // bind Prev and Next buttons
@@ -202,7 +202,7 @@ $(document).ready(function() {
         // build and bind profile-date chooser
         $('#synthesis-profile-date-chooser').empty();
         $.each( sortedSynthesisProfileKeys, function (i, profileDate) {
-            var displayDate = formatISODate( profileDate );
+            var displayDate = formatISODate( profileDate, {includeTime: false} );
             $('#synthesis-profile-date-chooser').prepend(
                 '<option value="'+ profileDate +'">'+ displayDate +'</option>'
             );
@@ -225,9 +225,9 @@ function formatISODate( dateString, options ) {
     var aDate = new moment(dateString);
     // see http://momentjs.com/docs/#/parsing/string/
     if (options.includeTime) {
-        return aDate.format('MMMM Do YYYY, hA');
+        return aDate.format('MMMM D, YYYY, hA');
     } else {
-        return aDate.format('MMMM Do YYYY');
+        return aDate.format('MMMM D, YYYY');
     }
 }
 
