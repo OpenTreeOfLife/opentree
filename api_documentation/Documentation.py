@@ -38,12 +38,18 @@ class Builder(object):
             if sd:
                 out.write(sd + '\n\n')
         else:
-            if "neo4j_service_url" in method_info and method_info["neo4j_service_url"] is not None:
+
+
+            parameters = {}
+            if method_info.get("neo4j_service_url"):
                 self._update_json_storage(method_info["neo4j_service_url"])
                 service_info = json.loads(self.json_storage.getvalue())
                 method_info["long_description"] = service_info["description"]
+                # process neo4j parameters
+                for p in service_info["parameters"]:
+                    parameters[p["name"]] = p
             # just a kludge to keep from failing if there is no description
-            method_info["long_description"] = method_info.get("long_description", '')
+            method_info.setdefault("long_description", '')
             # get the results of the example call if possible
             e = shlex.split(method_info["example_command"].replace("\\\n",""))
             if e is not None and len(e) > 0:
@@ -52,6 +58,20 @@ class Builder(object):
                 method_info["example_result"] = res
             # now print the preamble
             out.write(_METHOD_PREAMBLE_TEMPLATE.format(**method_info))
+            # and the parameters
+            required_keys = []
+            optional_keys = []
+            for name, p in parameters.iteritems():
+                if p["optional"] == True:
+                    p["style_modifier"] = ""
+                    optional_keys.append(name)
+                else:
+                    p["style_modifier"] = "**"
+                    required_keys.append(name)
+            param_temp = "{style_modifier}```{name}``` : {type}{style_modifier}<br/>\n{description}\n\n"
+            for key_set in [sorted(required_keys), sorted(optional_keys)]:
+                for p in key_set:
+                    out.write(param_temp.format(**parameters[p]))
             # and the example
             out.write(_METHOD_EXAMPLE_TEMPLATE.format(**method_info))
         link_outs = method_info.get('further_info', [])
@@ -72,7 +92,7 @@ class Builder(object):
                 out.write(active_templ.format(m=m));
         dep = [i for i in method_group.methods_list if i.get('deprecated')]
         if dep:
-            out.write('\n\n*Deprecated methods*\n')
+            out.write('\n\n*Deprecated methods*\n\n')
             out.write(TABLE_HEADER)
             deprecated_templ = "|[`{m[relative_url]}`](#{m[anchor_name]}) |     | *Deprecated*: {m[short_description]} |\n"
             for m in dep:
