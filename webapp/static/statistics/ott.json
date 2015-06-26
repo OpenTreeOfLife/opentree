@@ -25,23 +25,5 @@
         "date": "2014-04-11",
         "taxon_count":         2762556,
         "visible_taxon_count": 2189119
-    },
-    {
-        "version": "ott2.5", 
-        "date": "2014-03-28",
-        "taxon_count": 0,
-        "visible_taxon_count": 0
-    },
-    {
-        "version": "ott2.4", 
-        "date": "2014-03-17",
-        "taxon_count": 0,
-        "visible_taxon_count": 0
-    },
-    {
-        "version": "ott2.3", 
-        "date": "2013-12-04",
-        "taxon_count": 0,
-        "visible_taxon_count": 0
     }
 ]
