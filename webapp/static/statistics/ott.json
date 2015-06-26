@@ -1,0 +1,29 @@
+[
+    {
+        "===": "These 'comments' will be ignored by the app.",
+        "===": "Note that releases are listed in reverse chronological order.",
+
+        "version": "ott2.9", 
+        "date": "2015-02-18",
+        "taxon_count":         2896060,
+        "visible_taxon_count": 2263023
+    },
+    {
+        "version": "ott2.8", 
+        "date": "2014-06-11",
+        "taxon_count":         2918183,
+        "visible_taxon_count": 2278750
+    },
+    {
+        "version": "ott2.7", 
+        "date": "2014-05-08",
+        "taxon_count":         2734175,
+        "visible_taxon_count": 2149208
+    },
+    {
+        "version": "ott2.6", 
+        "date": "2014-04-11",
+        "taxon_count":         2762556,
+        "visible_taxon_count": 2189119
+    }
+]

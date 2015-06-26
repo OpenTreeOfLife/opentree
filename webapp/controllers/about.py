@@ -160,7 +160,7 @@ def progress():
                          'Unique OTUs in nominated studies': num_otu_in_nominated_studies,
                          # TODO: Add pre-calculated stats where provided?
                          'Date has synthesis release': (synth.get(date, None) and "true" or "false"),
-                         'Date has taxonomy release': (ott_version_info['date'] == date and "true" or "false"),
+                         'Date has taxonomy version': (ott_version_info['date'] == date and "true" or "false"),
                          'Date has phylesystem info': (phylesystem.get(date, None) and "true" or "false"),
                          'OTT version': ott_version_info.get('version').encode("utf8"),
                          'Date': str(date)}
@@ -190,7 +190,21 @@ def _force_to_simple_date_string( date_string ):
 
 def synthesis_release():
     view_dict = default_view_dict.copy()
-    synth = json.loads(fetch_local_synthesis_stats() or '{}')
+
+    # Load each JSON document into a list or dict, so we can compile daily entries. 
+    # NB: For simplicity and uniformity, filter these to use only simple dates
+    # with no time component!
+    # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
+    raw = json.loads(fetch_local_synthesis_stats() or '{}')
+    # Pre-sort its raw date strings, so we can discard all the but latest info
+    # for each date (e.g. we might toss the morning stats but keep the evening).
+    sorted_dates = sorted(raw.keys(), reverse=False)
+    synth = {}
+    for d in sorted_dates:
+        raw_data = raw[d]
+        simple_date = _force_to_simple_date_string(d)
+        synth[ simple_date ] = raw_data
+        # this should overwrite data from earlier in the day
 
     if len(synth.keys()) == 0:
         # report this error on the page
@@ -198,8 +212,7 @@ def synthesis_release():
         view_dict['synthesis_stats'] = synth
         return view_dict
 
-    # Get date or version from URL, or bounce to the latest release
-    #import pdb; pdb.set_trace()
+    # Get date or version from URL, or bounce to the latest release by default
     if len(request.args) == 0:
         release_version = sorted(synth.keys(), reverse=False)[-1]
         redirect(URL('opentree', 'about', 'synthesis_release', 
@@ -213,13 +226,61 @@ def synthesis_release():
 
     return view_dict
 
-def taxonomy_release():
+def taxonomy_version():
     view_dict = default_view_dict.copy()
-    fetch_url = 'https://github.com/OpenTreeOfLife/reference-taxonomy/tree/master/doc/{0}.md'
+
+    # load taxonomy-version history and basic stats
+    ott = json.loads(fetch_local_ott_stats() or '[]')
+    if len(ott) == 0:
+        # report this error on the page
+        view_dict['taxonomy_version'] = 'NO VERSIONS FOUND'
+        view_dict['taxonomy_stats'] = ott
+        return view_dict
+
+    # Get OTT version from URL, or bounce to the latest version by default
+    if len(request.args) == 0:
+        taxonomy_version = sorted([v.get('version') for v in ott], reverse=False)[-1]
+        redirect(URL('opentree', 'about', 'taxonomy_version', 
+            vars={}, 
+            args=[taxonomy_version]))
+
+    view_dict['taxonomy_version'] = request.args[0]
+    view_dict['taxonomy_stats'] = ott
 
     # fetch and render Markdown release notes as HTML
+    from gluon.tools import fetch
+    from gluon.contrib.markdown.markdown2 import markdown
+    from urllib2 import HTTPError
+    import re
+    # Cook up some reasonably strong regular expressions to detect bare
+    # URLs and wrap them in hyperlinks. Adapted from
+    # http://stackoverflow.com/questions/1071191/detect-urls-in-a-string-and-wrap-with-a-href-tag
+    link_regex = re.compile(  r'''
+                         (?x)( # verbose identify URLs within text
+                  (http|https) # make sure we find a resource type
+                           :// # ...needs to be followed by colon-slash-slash
+                (\w+[:.]?){2,} # at least two domain groups, e.g. (gnosis.)(cx)
+                          (/?| # could be just the domain name (maybe w/ slash)
+                    [^ \n\r"]+ # or stuff then space, newline, tab, quote
+                        [\w/]) # resource name ends in alphanumeric or slash
+         (?=([\s\.,>)'"\]]|$)) # assert: followed by white or clause ending OR end of line
+                             ) # end of match group
+                               ''')
+    # link_replace = r'<a href="\1" />\1</a>'
+    # let's try this do-nothing version
+    link_replace = r'\1'
+    # NOTE the funky constructor required to use this below
 
-    #TODO: view_dict['release_notes'] =
+    fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/reference-taxonomy/master/doc/{v}.md'.format(v=request.args[0])
+    try:
+        version_notes_response = fetch(fetch_url)
+        version_notes_html = markdown(version_notes_response, 
+                                      extras={'link-patterns':None}, 
+                                      link_patterns=[(link_regex, link_replace)]
+                                      ).encode('utf-8')
+    except HTTPError:
+        version_notes_html = None
+    view_dict['taxonomy_version_notes'] = version_notes_html
 
     return view_dict
 
