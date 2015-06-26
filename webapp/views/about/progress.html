@@ -124,8 +124,6 @@ var vizOuterHeight = 500,
     height = vizOuterHeight - margin.top - margin.bottom;
 var x = d3.time.scale.utc()
     .range([margin.left, width]);
-console.log("height: "+ height);
-console.log("margin.top: "+ margin.top);
 var y = d3.scale.linear()
     .rangeRound([height, margin.top]);
 // let's define two color ranges, with a common endpoint
@@ -222,15 +220,15 @@ var populateSVG = function(data) {
     return {
         name: name,
         values: data.map(function(d) {
-            return { date: new Date(moment.utc(d.Date)), y: d[name] };
+            return { date: new Date(moment(d.Date)), y: d[name] };
         })
     }
   });
   var otuStates = stack(gatheredProperties);
 
   // render X axis under data (to anchor dates)
-  var earliestDate = new Date(moment.utc(data[0].Date));
-  var latestDate = new Date(moment.utc(data[data.length - 1].Date));
+  var earliestDate = new Date(moment(data[0].Date));
+  var latestDate = new Date(moment(data[data.length - 1].Date));
   x.domain([earliestDate, latestDate]);
   y.domain([0, maxOTUs]);
 
@@ -256,7 +254,6 @@ var populateSVG = function(data) {
       .attr("height", function(d) { return y(d.y1) - y(d.y0); })
       .style("fill", function(d, i) { 
           var nextColor = colors(i+1);
-          console.log('big bar '+i+', color='+ nextColor); 
           return nextColor; 
        });
    */
@@ -402,7 +399,7 @@ var populateSVG = function(data) {
           return className;
       })
       .attr("transform", function(d,i) {
-          var markerX = x( new Date(moment.utc( d.Date)) );
+          var markerX = x( new Date(moment( d.Date)) );
           var markerY = (height+30);
           var translate = ("translate("+ markerX +"," + markerY + ")");
           return translate;
@@ -452,7 +449,7 @@ var populateSVG = function(data) {
       .text("Taxonomy release (click to see details in a new window).");
 
   // make a bisector that splits on any date (used below)
-  var bisectDate = d3.bisector(function(d) { return new Date(moment.utc(d.Date)); }).right;
+  var bisectDate = d3.bisector(function(d) { return new Date(moment(d.Date)); }).right;
 
   // highlight should respond to mouse movement (or incoming date on query string)
   svg.on("click", function() {
@@ -500,13 +497,13 @@ var populateSVG = function(data) {
     if (nextDatePos === data.length) {
         // we're at the end of the date range
         var lastDatePos = nextDatePos - 1;
-        nearestDate = new Date(moment.utc( data[lastDatePos].Date ));
+        nearestDate = new Date(moment( data[lastDatePos].Date ));
         nearestProfileData = data[lastDatePos];
     } else {
         // split is somewhere inside the date range
-        var nextDate = new Date(moment.utc( data[nextDatePos].Date ));
+        var nextDate = new Date(moment( data[nextDatePos].Date ));
         var previousDatePos = Math.max(0, nextDatePos - 1);
-        var previousDate = new Date(moment.utc( data[previousDatePos].Date ));
+        var previousDate = new Date(moment( data[previousDatePos].Date ));
         // which is nearest?
         var previousSnapDistance = mouseDate - previousDate;
         var nextSnapDistance = nextDate - mouseDate;
@@ -535,7 +532,7 @@ var populateSVG = function(data) {
               }
               profileData = matchingProfiles[0];
           }
-          targetDate = new Date(moment.utc(targetDate));
+          targetDate = moment(targetDate).toDate();
       }
 
       var snapX = x(targetDate); // find X coordinates for the nearest date
@@ -648,9 +645,9 @@ function getParameterByName(name) {
     return match && decodeURIComponent(match[1].replace(/\+/g, ' '));
 }
 
-function formatISODate( dateString, options ) {
+function formatISODate( dateStringOrObject, options ) {
     options = options || {includeTime: true};
-    var aDate = new moment(dateString);
+    var aDate = new moment(dateStringOrObject);
     // see http://momentjs.com/docs/#/parsing/string/
     if (options.includeTime) {
         return aDate.format('MMMM D, YYYY, hA');
