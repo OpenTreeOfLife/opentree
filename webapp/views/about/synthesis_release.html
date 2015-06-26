@@ -211,7 +211,6 @@ $(document).ready(function() {
             var anotherDate = $(this).val();
             jumpToSynthesisProfileDate(anotherDate);
         });
-
         showCurrentSynthesisProfile();
         $('#synthesis-stats-panel').show();
 
@@ -246,12 +245,36 @@ function showCurrentSynthesisProfile() {
     var currentSynthesisProfile = synthesis_stats[ currentSynthesisProfileDate ];
     // Our stats JSON has friendly property names. Just format them!
     $('#synthesis-stats-panel table').empty();
-    for (var prop in currentSynthesisProfile) {
-        if (prop === 'Date') continue;
+    // NOTE that we will ignore stats not listed here!
+    var propsToDisplayLabels = {
+        'date': "Date",
+        'run_time': "Run time (seconds)",
+        'study_count': "Studies in synthesis",
+        'reported_study_count': "Reported study count",
+        'total_OTU_count': "Total OTUs in synthesis",
+        'unique_OTU_count': "Unique OTUs in synthesis"
+    }
+    for (var prop in propsToDisplayLabels) {
+        var itsLabel = propsToDisplayLabels[ prop ];
         var itsValue = currentSynthesisProfile[ prop ];
+
+        // special formatting for some values
+        switch(prop) {
+            case 'date':
+                itsValue = formatISODate( currentSynthesisProfileDate, {includeTime: false} );
+                break;
+            case 'run_time':
+            case 'study_count':
+            case 'reported_study_count':
+            case 'unique_OTU_count':
+            case 'total_OTU_count':
+                itsValue = currentSynthesisProfile[prop].toLocaleString();
+                break;
+        }
+
         $('#synthesis-stats-panel table').append(
             '<tr>'
-              + '<th>'+ prop +'</th>'
+              + '<th>'+ itsLabel +'</th>'
               + '<td>'+ itsValue +'</td>'
               // for sparkline specs, see http://style.org/chartapi/sparklines/
               + '<td>'

@@ -79,7 +79,7 @@ circle.taxo-release-marker {
           <div class="span10 offset1">
               <p>
               The Open Tree of Life project includes periodic releases of the
-              <a href="/about/taxonomy-release" target="_blank">OTT (Open Tree taxonomy)</a> and
+              <a href="/about/taxonomy-version" target="_blank">OTT (Open Tree taxonomy)</a> and
               the <a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>.
               The timeline below shows these releases and the result&mdash;an 
               increase in OTUs (operating taxonomic units) in our synthesis.
@@ -393,7 +393,7 @@ var populateSVG = function(data) {
           if (d['Date has synthesis release'] === 'true') {
               className += ' date-with-synthesis';
           }
-          if (d['Date has taxonomy release'] === 'true') {
+          if (d['Date has taxonomy version'] === 'true') {
               className += ' date-with-taxonomy';
           }
           if (d['Date has phylesystem info'] === 'true') {
@@ -432,7 +432,7 @@ var populateSVG = function(data) {
       .text("Synthesis release (click to see details in a new window).");
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/taxonomy-release/"+ d.Date); })
+      .attr("xlink:href", function(d){ return ("/about/taxonomy-version/"+ d['OTT version']); })
     .append("circle")
       .attr("class", "taxo-release-marker")
       .attr("cx", 0)
@@ -442,7 +442,7 @@ var populateSVG = function(data) {
       .text("Taxonomy release (click to see details in a new window).");
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/taxonomy-release/"+ d.Date); })
+      .attr("xlink:href", function(d){ return ("/about/taxonomy-version/"+ d['OTT version']); })
     .append("text")
       .attr("class", "taxo-release-marker")
       .text('T')
@@ -556,9 +556,9 @@ var populateSVG = function(data) {
 
       // show markers for synthesis and/or taxonomy release, IF found for this date
       var dateHasSynthRelease = (profileData['Date has synthesis release'] === 'true');
-      var dateHasTaxoRelease = (profileData['Date has taxonomy release'] === 'true');
+      var dateHasTaxoVersion = (profileData['Date has taxonomy version'] === 'true');
       var dateHasPhylesystemInfo = (profileData['Date has phylesystem info'] === 'true');
-      if (dateHasSynthRelease && dateHasTaxoRelease) {
+      if (dateHasSynthRelease && dateHasTaxoVersion) {
           // shift the taxo-release markers down to second row
           highlightDetailsStats.select('circle.taxo-release-marker')
               .attr("cy", highlightMarkerSecondRowY);
@@ -577,15 +577,15 @@ var populateSVG = function(data) {
           });
       highlightDetailsStats.selectAll('.taxo-release-marker')
           .style('visibility', function() {
-              return (dateHasTaxoRelease ? 'visible' : 'hidden');
+              return (dateHasTaxoVersion ? 'visible' : 'hidden');
           });
 
       // set box height according to optional markers above
       highlightDetailsBox.attr('height', function() {
-          if (dateHasSynthRelease && dateHasTaxoRelease) {
+          if (dateHasSynthRelease && dateHasTaxoVersion) {
               return 140;
           }
-          if (dateHasSynthRelease || dateHasTaxoRelease) {
+          if (dateHasSynthRelease || dateHasTaxoVersion) {
               return 120;
           }
           return 100;

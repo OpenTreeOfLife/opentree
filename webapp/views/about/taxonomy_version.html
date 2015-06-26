@@ -1,0 +1,289 @@
+{{extend 'layout.html'}}
+{{import urllib}}
+{{from pprint import pprint}}
+{{### Add support scripts for parsing ISO-8601 dates
+  #response.files.append(URL('static','js/moment.min.js'))
+}}
+<style type="text/css">
+<!--
+//-->
+</style>
+
+<div class="container">
+    <h1 id="main-title" style="display: inline-block; padding-bottom: 12px;">Taxonomy version 
+    </h1>
+                  &nbsp;
+                  <select id="taxonomy-version-chooser" style="">
+                    <option>&nbsp;</option>
+                    <option selected="selected">&nbsp;</option>
+                  </select>
+                  &nbsp;
+                  <div class="pagination hidden-tablet" style="display: inline-block; vertical-align: middle; line-height: 30px;">
+                    <ul>
+                        <li id="prev-taxonomy-version"><a href="#">Prev</a></li>
+                        <li id="next-taxonomy-version"><a href="#">Next</a></li>
+                    </ul>
+                  </div>
+
+      <div class="row">
+          <div class="span10 offset1">
+              <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
+
+              <div style="margin-top: -16px;">
+                  <a id="progress-highlight-link" 
+                     href="/about/progress?highlight={{= taxonomy_version }}">Highlight this version in the history of Open Tree</a>
+              </div>
+
+              <h3>Statistics</h3>
+              <div id="taxonomy-stats-missing" class="alert alert-error" style="display: none;">
+                  No taxonomy statistics found!
+              </div>
+              <div id="taxonomy-stats-panel" class="stats-panel" style="display: none;">
+                  <table class="table table-condensed table-hover" style="clear: left;"></table>
+              </div>
+
+              <h3>Release notes</h3>
+              <em>Notes for most OTT versions are available in the <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/tree/master/doc" target="_blank">OTT documentation</a>:</em>
+            {{ if taxonomy_version_notes: }}
+              <div id="taxonomy-version-notes"
+                   style="background-color: #f5f5f5; padding: 1em; border-radius: 6px;">
+                  {{= XML(taxonomy_version_notes) }}
+              </div>
+            {{ else: }}
+              <div class="alert alert-error">
+                  No release notes found for this taxonomy version!
+              </div>
+            {{ pass }}
+
+            <h3>Sources</h3>
+            <p style="font-style: italic;">
+                TODO: Link to synthesis releases using this taxonomy?</a>
+            </p>
+            <p style="font-style: italic;">
+                TODO: List all source taxonomies in ranked order?
+            </p>
+
+          </div>
+
+      </div>
+
+      <h3 id="comment-header">Comments <i></i></h3>
+      {{=plugin_localcomments(filter=('url',),url=request.url)}}
+
+</div><!-- end of .container -->
+
+<script type="text/javascript">
+// TODO: Add statistics for taxonomy, from ott.json
+// These provide version history (version numbers, eg 'ott2.8') to enable stepwise navigation.
+
+// pass statistics as JSON to client for stepping, plotting, etc.
+{{ if taxonomy_stats: 
+    # NOTE that we use XML() here to decode HTML entities like &quot; }}
+var taxonomy_stats = {{= XML(json.dumps(taxonomy_stats)) }};
+{{ else: }}
+var taxonomy_stats = null;
+{{ pass }}
+
+var warnings = [ ]; {{## = XML(warnings)}};
+for (i = 0; i < warnings.length; ++i) {
+    $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
+}
+
+var sortedTaxonomyVersions = null;
+var currentTaxonomyVersion = null;
+var currentTaxoVersionInfo = null;
+
+var taxonomyVersion = '{{= taxonomy_version }}';
+
+$(document).ready(function() {
+    // show current profiles, or a notice if no data was found 
+    if (taxonomy_stats) {
+        // load and sort versions in ascending order
+        sortedTaxonomyVersions = $.map(
+            taxonomy_stats, 
+            function( versionInfo, i ) {
+                return versionInfo.version;
+            }
+        ).sort();
+
+        // start with the profile whose date is in the URL (or latest, by default)
+        if (taxonomyVersion) {
+            currentTaxonomyVersion = taxonomyVersion;
+        } else {
+            currentTaxonomyVersion = sortedTaxonomyVersions[ sortedTaxonomyVersions.length - 1 ];
+        }
+
+        var matchingVersions = $.grep(taxonomy_stats, function(v) {
+            return (v['version'] == currentTaxonomyVersion);
+        });
+        if (matchingVersions.length === 1) {
+            currentTaxoVersionInfo = matchingVersions[0];
+
+            // point the highlight link to its date
+            $('#progress-highlight-link').attr('href', 
+                '/about/progress?highlight='+ currentTaxoVersionInfo['date']);
+
+            showCurrentTaxonomyVersion();
+            $('#taxonomy-stats-panel').show();
+
+        } else {
+            // steal the missing-stats message box to explain this
+            $('#taxonomy-stats-missing').html('No statistics found for version <strong>'+ currentTaxonomyVersion +'</strong>').show();
+        }
+
+        // bind Prev and Next buttons
+        $('#prev-taxonomy-version').click(function() {
+            var nthProfile = sortedTaxonomyVersions.indexOf(currentTaxonomyVersion);
+            // sanity check
+            if (nthProfile === 0) return false;
+            var anotherDate = sortedTaxonomyVersions[nthProfile - 1];
+            jumpToTaxonomyVersion(anotherDate);
+
+            return false;
+        });
+        $('#next-taxonomy-version').click(function() {
+            var nthProfile = sortedTaxonomyVersions.indexOf(currentTaxonomyVersion);
+            // sanity check
+            if (nthProfile === sortedTaxonomyVersions.length - 1) return false;
+            var anotherDate = sortedTaxonomyVersions[nthProfile + 1];
+            jumpToTaxonomyVersion(anotherDate);
+            return false;
+        });
+
+        // build, bind, and update the version chooser
+        $('#taxonomy-version-chooser').empty();
+        $.each( sortedTaxonomyVersions, function (i, taxoVersion) {
+            $('#taxonomy-version-chooser').prepend(
+                '<option value="'+ taxoVersion +'">'+ taxoVersion +'</option>'
+            );
+        });
+        $('#taxonomy-version-chooser').change(function() {
+            var anotherDate = $(this).val();
+            jumpToTaxonomyVersion(anotherDate);
+        });
+        $('#taxonomy-version-chooser').val(currentTaxonomyVersion);
+
+    } else {
+        // keep trying to load notes, etc. using passed-in version
+        currentTaxonomyVersion = taxonomyVersion;
+        $('#taxonomy-stats-missing').show();
+    }
+
+});
+
+function formatISODate( dateString, options ) {
+    options = options || {includeTime: true};
+    var aDate = new moment(dateString);
+    // see http://momentjs.com/docs/#/parsing/string/
+    if (options.includeTime) {
+        return aDate.format('MMMM D, YYYY, hA');
+    } else {
+        return aDate.format('MMMM D, YYYY');
+    }
+}
+
+function jumpToTaxonomyVersion( targetVersion ) {
+    // move this page to the chosen date
+    var currentURL = window.location.href;
+    var urlParts = currentURL.split('/');
+    // ASSUME there's always a version in the final URL-part
+    var currentVersion = urlParts.pop();
+    urlParts.push(targetVersion);
+    var newURL = urlParts.join('/');
+    window.location.href = newURL;
+}
+
+function showCurrentTaxonomyVersion() {
+    // Our stats JSON has friendly property names. Just format them!
+    $('#taxonomy-stats-panel table').empty();
+    // NOTE that we will ignore stats not listed here!
+    var propsToDisplayLabels = {
+        'date': "Date",
+        'version': "OTT version",
+        'taxon_count': "Taxon count",
+        'visible_taxon_count': "Visible taxon count"
+    }
+    for (var prop in propsToDisplayLabels) {
+        var itsLabel = propsToDisplayLabels[ prop ];
+        var itsValue = currentTaxoVersionInfo[ prop ];
+
+        // special formatting for some values
+        switch(prop) {
+            case 'date':
+                itsValue = formatISODate( currentTaxoVersionInfo[prop], {includeTime: false} );
+                break;
+            case 'taxon_count':
+            case 'visible_taxon_count':
+                itsValue = currentTaxoVersionInfo[prop].toLocaleString();
+                break;
+        }
+
+        $('#taxonomy-stats-panel table').append(
+            '<tr>'
+              + '<th>'+ itsLabel +'</th>'
+              + '<td>'+ itsValue +'</td>'
+              // for sparkline specs, see http://style.org/chartapi/sparklines/
+              + '<td>'
+                  + '<img width="50: height="20" src="//chart.googleapis.com/chart?'
+                    + 'cht=lc'
+                    + '&chs=50x20'
+                 // + '&chd=t:'+ getSynthesisSparklineData(prop, currentTaxonomyVersion)
+                    + '&chco=336699'
+                    + '&chls=1,1,0'
+                    + '&chm=o,990000,0,20,4'
+                    + '&chxt=r,x,y'
+                    + '&chxs=0,990000,11,0,_|1,990000,1,0,_|2,990000,1,0,_'
+                    + '&chxl=0:||1:||2:||'
+                  + '" title="Previous history for this statistic">'
+              +'</td>'
+          + '</tr>'
+        );
+    }
+
+    // Update the Next and Prev buttons (disable if no more)
+    var nthProfile = sortedTaxonomyVersions.indexOf(currentTaxonomyVersion);
+    if (nthProfile === 0) {
+        $('#prev-taxonomy-version').addClass('disabled');
+    } else {
+        $('#prev-taxonomy-version').removeClass('disabled');
+    }
+    if (nthProfile === (sortedTaxonomyVersions.length - 1)) {
+        $('#next-taxonomy-version').addClass('disabled');
+    } else {
+        $('#next-taxonomy-version').removeClass('disabled');
+    }
+}
+
+function getSynthesisSparklineData(prop, lastTaxoVersion) {
+    // return a comma-delimited data series (string) for plotting
+    // NOTE that these should be decimal numbers between 0 and 100, so scale accordingly
+    //   EXAMPLE: '5.3,26.5,15.9,31.7,42.3,21.2'
+    var series = [];
+    $.each(sortedTaxonomyVersions, function(i, taxoVersion) {
+        // skip more recent profiles, if we're looking at something older
+        if (taxoVersion <= lastTaxoVersion) {
+             series.push( taxonomy_stats[taxoVersion][prop] );
+        }
+    });
+
+    // normalize all values in the series to the range 0.0 to 100.0
+    var minValue = Math.min.apply(Math, series);
+    var maxValue = Math.max.apply(Math, series);
+    // move all values above zero
+    if (minValue < 0) {
+        series = $.map(series, function(d) {
+            return d - minValue;
+        });
+    }
+    // scale all values to under 100 (using 90 to avoid cropping)
+    var scaleToFit = 90.0 / maxValue;
+    // N.B. that we limit each fractional number to 2 decimal places, to avoid building over-long URLs
+    series = $.map(series, function(d) {
+        return (d * scaleToFit).toFixed(2);
+    });
+
+    return series.join(',');
+}
+
+
+</script>
