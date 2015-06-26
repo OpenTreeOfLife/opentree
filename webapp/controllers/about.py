@@ -251,33 +251,11 @@ def taxonomy_version():
     from gluon.tools import fetch
     from gluon.contrib.markdown.markdown2 import markdown
     from urllib2 import HTTPError
-    import re
-    # Cook up some reasonably strong regular expressions to detect bare
-    # URLs and wrap them in hyperlinks. Adapted from
-    # http://stackoverflow.com/questions/1071191/detect-urls-in-a-string-and-wrap-with-a-href-tag
-    link_regex = re.compile(  r'''
-                         (?x)( # verbose identify URLs within text
-                  (http|https) # make sure we find a resource type
-                           :// # ...needs to be followed by colon-slash-slash
-                (\w+[:.]?){2,} # at least two domain groups, e.g. (gnosis.)(cx)
-                          (/?| # could be just the domain name (maybe w/ slash)
-                    [^ \n\r"]+ # or stuff then space, newline, tab, quote
-                        [\w/]) # resource name ends in alphanumeric or slash
-         (?=([\s\.,>)'"\]]|$)) # assert: followed by white or clause ending OR end of line
-                             ) # end of match group
-                               ''')
-    # link_replace = r'<a href="\1" />\1</a>'
-    # let's try this do-nothing version
-    link_replace = r'\1'
-    # NOTE the funky constructor required to use this below
-
     fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/reference-taxonomy/master/doc/{v}.md'.format(v=request.args[0])
     try:
         version_notes_response = fetch(fetch_url)
-        version_notes_html = markdown(version_notes_response, 
-                                      extras={'link-patterns':None}, 
-                                      link_patterns=[(link_regex, link_replace)]
-                                      ).encode('utf-8')
+        # N.B. We assume here that any hyperlinks have the usual Markdown braces!
+        version_notes_html = markdown(version_notes_response).encode('utf-8')
     except HTTPError:
         version_notes_html = None
     view_dict['taxonomy_version_notes'] = version_notes_html
