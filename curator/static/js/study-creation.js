@@ -138,27 +138,6 @@ function updateImportOptions() {
             if ($.trim($('input[name=publication-DOI]').val()) === '') {
                 creationAllowed = false;
                 errMsg = 'You must enter a DOI (preferred) or URL to continue.';
-            } else {
-                // Check for a compliant license or waiver
-                if ($chosenLicense.length === 0) {
-                    creationAllowed = false;
-                    errMsg = 'You must select an appropriate waiver or license for these data.';
-                } else if (authorChoosingToApplyCC0 && !($('#agreed-to-CC0').is(':checked'))) {
-                    creationAllowed = false;
-                    errMsg = 'You must agree to release the data under the terms of the CC0 waiver.';
-                } else if (altLicenseDetailsRequired && (chosenAltLicense === '')) {
-                    creationAllowed = false;
-                    errMsg = 'You must select an appropriate waiver or license for these data.';
-                } else if (altOtherLicenseInfoRequired) {
-                    if ($.trim($('input[name=data-license-name]').val()) === '') {
-                        creationAllowed = false;
-                        errMsg = 'You must specify the name and URL of the current data license for these data.';
-                    }
-                    if ($.trim($('input[name=data-license-url]').val()) === '') {
-                        creationAllowed = false;
-                        errMsg = 'You must specify the name and URL of the current data license for these data.';
-                    }
-                }
             }
             break;
 
@@ -176,6 +155,28 @@ function updateImportOptions() {
             console.log(typeof(chosenImportLocation));
     } 
 
+    if (creationAllowed) {
+        // Check for a compliant license or waiver (regardless of import method)
+        if ($chosenLicense.length === 0) {
+            creationAllowed = false;
+            errMsg = 'You must select an appropriate waiver or license for these data.';
+        } else if (authorChoosingToApplyCC0 && !($('#agreed-to-CC0').is(':checked'))) {
+            creationAllowed = false;
+            errMsg = 'You must agree to release the data under the terms of the CC0 waiver.';
+        } else if (altLicenseDetailsRequired && (chosenAltLicense === '')) {
+            creationAllowed = false;
+            errMsg = 'You must select an appropriate waiver or license for these data.';
+        } else if (altOtherLicenseInfoRequired) {
+            if ($.trim($('input[name=data-license-name]').val()) === '') {
+                creationAllowed = false;
+                errMsg = 'You must specify the name and URL of the current data license for these data.';
+            }
+            if ($.trim($('input[name=data-license-url]').val()) === '') {
+                creationAllowed = false;
+                errMsg = 'You must specify the name and URL of the current data license for these data.';
+            }
+        }
+    }
     
     var $continueButton = $('#continue-button');
     if (creationAllowed) {
