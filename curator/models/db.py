@@ -7,13 +7,26 @@ import urllib2
 import json
 
 conf = SafeConfigParser({})
+config_file_found = None
 try:
-    if os.path.isfile("applications/%s/private/localconfig" % request.application):
-        conf.read("applications/%s/private/localconfig" % request.application)
-    else:
-        conf.read("applications/%s/private/config" % request.application)
+    test_config_paths = [
+        "applications/%s/private/localconfig" % request.application,
+        "applications/%s/private/config" % request.application,
+    ]
+    for test_path in test_config_paths:
+        if os.path.isfile(test_path):
+            config_file_found = test_path
+            conf.read(test_path)
+    assert 'apis' in conf.sections()
 except:
-    pass  #@TEMP probably should log this event...
+    print("\n=== WEB-APP CONFIG NOT FOUND, INVALID, OR INCOMPLETE ===")
+    if config_file_found == None:
+        err_msg = "Webapp config not found! Expecting it in one of these locations:\n  {}".format(test_config_paths)
+        print(err_msg)
+        raise Exception(err_msg)
+    err_msg = "Webapp config file ({}) is broken or incomplete (missing [apis] section)".format(config_file_found)
+    print(err_msg)
+    raise Exception(err_msg)
 
 # add our GitHub client secret from a separate file (kept out of source repo)
 if os.path.isfile("applications/%s/private/GITHUB_CLIENT_SECRET" % request.application):
