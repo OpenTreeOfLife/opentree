@@ -72,6 +72,7 @@ function updateImportOptions() {
     var $altLicenseDetails = $('#alternate-license-details'); // set of widgets
     var $altOtherLicenseInfo = $('#other-license-info');  // subset, used only if "Other license' chosen
     var $chosenLicense = $('input[name=data-license]:checked');
+    var $treebaseOnlyElements = $('.treebase-only');
     var authorChoosingToApplyCC0 = ($chosenLicense.attr('id') === 'apply-new-CC0-waiver');
     var altLicenseDetailsRequired = ($chosenLicense.attr('id') === 'study-data-has-existing-license');
     var chosenAltLicense = $('select[name=alternate-license]').val();
@@ -110,6 +111,7 @@ function updateImportOptions() {
         case 'IMPORT_FROM_TREEBASE':
             enableDetails( $treebaseDetailPanel );
             disableDetails( $uploadDetailPanel );
+            $treebaseOnlyElements.show();
 
             // Are we ready to continue?
             if ($.trim($('input[name=treebase-id]').val()) === '') {
@@ -133,6 +135,7 @@ function updateImportOptions() {
         case 'IMPORT_FROM_UPLOAD':
             disableDetails( $treebaseDetailPanel );
             enableDetails( $uploadDetailPanel );
+            $treebaseOnlyElements.hide();
             
             // Are we ready to continue?
             if ($.trim($('input[name=publication-DOI]').val()) === '') {
@@ -144,6 +147,7 @@ function updateImportOptions() {
         case undefined:
             disableDetails( $treebaseDetailPanel );
             disableDetails( $uploadDetailPanel );
+            $treebaseOnlyElements.hide();
 
             creationAllowed = false;
             errMsg = 'You must choose a study creation method (import from TreeBASE, or upload from your computer).';

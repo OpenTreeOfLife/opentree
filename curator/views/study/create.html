@@ -65,6 +65,7 @@ body {
             <input type="radio" id="study-data-has-existing-license" name="data-license" 
                    value="study-data-has-existing-license"/>
              These data already have an applied waiver or license
+             <span class="treebase-only" style="display: none;">(highly unusual for TreeBASE data)</span>
         </label>
             <div id="alternate-license-details" class="featured-label-child" style="display: none;">
                 <select id="alternate-license" name="alternate-license" 
@@ -84,9 +85,10 @@ body {
                 </div>
             </div>
 
-        <label for="submit-without-CC0" class="featured-label">
+        <label for="submit-without-CC0" class="featured-label" style="text-indent: -20px; padding-left: 20px;">
             <input type="radio" id="submit-without-CC0" name="data-license" value="submit-without-CC0"/>
             These data have no applied waiver or license, and I have no authority to apply a waiver
+             <span class="treebase-only" style="display: none;">(usually true for TreeBASE data)</span>
         </label>
     </div>
 
