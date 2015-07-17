@@ -2658,8 +2658,8 @@ var studyScoringRules = {
                 }
             },
             weight: 0.2, 
-            successMessage: "This study is unique (based on its DOI) in the Open Tree collection.",
-            failureMessage: "There is at least one other study with this DOI in the Open Tree collection.",
+            successMessage: "This study is unique (based on its DOI) in the Open Tree database.",
+            failureMessage: "There is at least one other study with this DOI in the Open Tree database.",
             suggestedAction: "Compare any duplicate studies (based on DOIs) and delete all but one."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
 
