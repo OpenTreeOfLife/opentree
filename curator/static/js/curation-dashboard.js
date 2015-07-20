@@ -258,6 +258,7 @@ function loadStudyList() {
                     viewModel, 
                     function(study) {
                         // match entered text against pub reference (author, title, journal name, DOI)
+                        var studyID = study['ot:studyId'];
                         var pubReference = study['ot:studyPublicationReference'];
                         var pubURL = study['ot:studyPublication'];
                         var pubYear = study['ot:studyYear'];
@@ -267,7 +268,7 @@ function loadStudyList() {
                                      ($.trim(study['ot:focalCladeOTTTaxonName']) !== "")) ?
                                         study['ot:focalCladeOTTTaxonName'] :  // use mapped name if found
                                         study['ot:focalClade']; // fall back to numeric ID (should be very rare)
-                        if (!matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
+                        if (!matchPattern.test(studyID) && !matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
                             return false;
                         }
                         // check for filtered workflow state
