@@ -573,6 +573,7 @@ console.log(collection);
             collectionViewerIsInUse = false;
         });
         $('#tree-collection-viewer').off('hidden').on('hidden', function () {
+            $('#tree-collection-contributors li:gt(0)').remove();
             ///console.log('@@@@@ hidden');
         });
 

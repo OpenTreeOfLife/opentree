@@ -539,27 +539,43 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
 
             <!-- editable collection properties here -->
                 <label>Description</label>
-                <input type="text" data-bind="value: $data['treeDescription']"
+                <input type="text"
                     class="input-xlarge" style="width: 500px; margin-bottom: 2px;"
-                    placeholder="Describe this collection's focus or purpose">
+                    placeholder="Describe this collection's focus or purpose"
+                    data-bind="value: $data.data['description'], 
+                               valueUpdate: ['afterkeydown', 'input']
+                               "
+                >
                 </input>
 
                 <label style="clear: left; margin-top: 6px;">Created by </label>
-                <strong><a href="https://github.com/jimallman" target="_blank">Jim Allman</a></strong>, with
-              <!-- TODO: list collaborators (links) in a popup -->
+                <strong><a href="https://github.com/jimallman" target="_blank"
+                           data-bind="text: $data.data.creator['name'], 
+                                      attr: { 
+                                        href: ('https://github.com/'+ $data.data.creator['login']) 
+                                      }
+                                      "
+                        >&nbsp;</a></strong>, with
+              <!-- list collaborators (links) in a popup -->
               <div id="collection-collab-toggle" Xclass="btn-group" 
                    style="display: inline-block; position: relative;">
                 <strong id="collection-collab-toggle" class="dropdown-toggle" 
                         style="cursor: pointer;"
-                        data-toggle="dropdown">2 collaborators
+                        data-toggle="dropdown">
+                    <span data-bind="text: $data.data.contributors.length">0</span> 
+                    collaborator<span data-bind="if: $data.data.contributors.length != 1">s</span>
                    <span class="caret" style="vertical-align: middle;"></span>
                 </strong>
-                <ul class="dropdown-menu">
+                <ul id="tree-collection-contributors" class="dropdown-menu" 
+                    data-bind="foreach: { data: $data.data.contributors, as: 'contributor' }">
                     <li>
-                        <a href="https://github.com/pmidford" target="_blank">Peter Midford</a>
-                    </li>
-                    <li>
-                        <a href="https://github.com/kcranston" target="_blank">Karen Cranston</a>
+                        <a target="_blank"
+                           data-bind="text: contributor['name'], 
+                                      attr: { 
+                                        href: ('https://github.com/'+ contributor['login']) 
+                                      }
+                                      "
+                        >&nbsp;</a>
                     </li>
                 </ul>
               </div>
@@ -595,7 +611,7 @@ data-bind="style: {'opacity': ($index() > 0 ? 1.0 : 0.5)}"
                             </a>
                             <a Xdata-bind="click: TODO-move-tree-down,
                                                 visible: true"
-data-bind="style: {'opacity': ($index() < ($parent.decisions.length-1) ? 1.0 : 0.5)}"
+data-bind="style: {'opacity': ($index() < ($parent.data.decisions.length-1) ? 1.0 : 0.5)}"
                                href="#"
                                title="Move this tree down in the list"
                                class="icon-chevron-down">
@@ -649,25 +665,23 @@ data-bind="style: {'opacity': ($index() < ($parent.decisions.length-1) ? 1.0 : 0
                                event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
                                "
                 ></input>
-                <button id="new-collection-tree-by-ids" type="submit" 
-                  class="btn btn-info Xbtn-info-disabled" Xdisabled="Xdisabled">
-                      &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+                <button class="btn btn-info" onclick="return false;">
+                      <i class="icon-plus icon-white"></i>
                 </button>
             </div>
             <div id="new-collection-tree-by-url"
                  class="new-collection-tree-options" style="display: none; padding-left: 12px;">
                 <label>by URL</label>
                 <input type="text"  name="tree-url"
-                    class="input-xlarge" style="width: 395px; margin-bottom: 2px;"
+                    class="input-xlarge" style="width: 385px; margin-bottom: 2px;"
                     placeholder="http://tree.opentreeoflife.org/curator/ot_study/123/tree/456"
                     data-bind="value: '', 
                                valueUpdate: ['afterkeydown', 'input'], 
                                event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
                                "
                 ></input>
-                <button type="submit" 
-                  class="btn btn-info Xbtn-info-disabled" Xdisabled="Xdisabled">
-                      &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+                <button class="btn btn-info" onclick="return false;">
+                      <i class="icon-plus icon-white"></i>
                 </button>
             </div>
 
