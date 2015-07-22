@@ -29,6 +29,12 @@ pass
 <script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script type='text/javascript'>
     var phylesystem_config_url = '{{=phylesystem_config_url}}';
+
+    var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}"; 
+    var API_create_collection_POST_url = "{{=API_create_collection_POST_url}}"; 
+    var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}"; 
+    var API_update_file_PUT_url = "{{=API_update_file_PUT_url}}"; 
+    var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}"; 
 </script>
 <style type="text/css">
 .user-profile .form-horizontal .control-group {
@@ -311,7 +317,7 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
             <i class="icon-star" style="opacity: 0.3;" title="You participate in (but do not follow) this collection"></i><!-- TODO: icon+title varies based on current following state -->
         </td>
         <td><a href="#" 
-                onclick="showCollectionViewer(); return false;"
+               onclick="loadAndShowTestCollection(); return false;"
             >Clarifying Porifera placement</a></td>
         <td style="color: #999;">
             An example collection with a very specific purpose.
@@ -323,7 +329,7 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
             <i class="icon-star" title="You are currently following this collection"></i><!-- TODO: icon+title varies based on current following state -->
         </td>
         <td><a href="#" 
-                onclick="showCollectionViewer(); return false;"
+                onclick="loadAndShowTestCollection(); return false;"
             >Trees about bees</a></td>
         <td style="color: #999;">
             A shared collection focused on a clade of interest.
@@ -344,7 +350,7 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
             <i class="icon-star" title="You are currently following this collection"></i><!-- TODO: icon+title varies based on current following state -->
         </td>
         <td><a href="#" 
-                onclick="showCollectionViewer(); return false;"
+                onclick="loadAndShowTestCollection(); return false;"
             >OpenTree draft tree synthesis</a></td>
         <td style="color: #999;">
             This key collection is the basis for the project's main synthetic tree.

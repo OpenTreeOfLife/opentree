@@ -396,6 +396,35 @@ function slugify(str) {
               .replace(/-+/g, '-');         // collapse dashes
 }
 
+var testCollection = null;
+function loadAndShowTestCollection() {
+    // fetch a known-good collection from the tree-collections API, and open it in a popup
+    if (testCollection) {
+        // just load it once?
+        showCollectionViewer(testCollection);
+        return;
+    }
+    // On first request, load this via the API
+    var testCollectionID = 'jimallman/my-test-collection';
+    var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', testCollectionID);
+    $.ajax({
+        type: 'GET',
+        //dataType: 'json',
+        url: fetchURL,
+        //data: {},
+        success: function( data ) {  // success callback
+            console.log(data);
+            testCollection = data;
+            showCollectionViewer(testCollection);
+        },
+        error: function( jqXHR, textStatus, errorThrown ) {
+            showErrorMessage("Unable to load collection '"+ testCollectionID +"'");
+        },
+        complete: function( jqXHR, textStatus ) {
+            //debugger;
+        }
+    });
+}
 
 // Keep track of when the collection viewer is already showing, so we
 // can hold it open and step through nodes or trees.
@@ -405,59 +434,62 @@ function showCollectionViewer( collection, options ) {
     options = options || {};
 
     if (collection) {
-        // TODO: Cleanup or initialization?
+        // needs cleanup or initialization?
         ; // do nothing
+console.log(collection);
     } else {
         // this should *never* happen
         //TODO: alert("showCollectionViewer(): No collection specified!");
         //TODO: return;
-        // use a dummy object for now?
-        collection = {
-            "url": "https://raw.githubusercontent.com/OpenTreeOfLife/collections/jimallman/trees-about-bees.json",
-            "name": "Trees about bees",
-            "description": "We're gathering these with an eye toward local synthesis in Anthophila (Apoidea). Contributions welcome!",
-            "creator": {"login": "jimallman", "name": "Jim Allman"},
-            "contributors": [
-                {"login": "pmidford2", "name": "Peter Midford"},
-                {"login": "kcranston", "name": "Karen Cranston"}
-            ],
-            "decisions": [
-                {
-                    "name": "Andrenidae from Foster, 2002", 
-                    "studyID": "ot_23532", 
-                    "treeID": "tree9870",
-                    "decision": "INCLUDED",
-                    "comments": "Lots of good analysis here!"
-                }, 
-                {
-                    "name": "Apidae from Winkle, 1998", 
-                    "studyID": "ot_12345", 
-                    "treeID": "tree999",
-                    "decision": "EXCLUDED",
-                    "comments": "Questionable methods and major gaps. Let's not use this."
-                }, 
-                {
-                    "name": "Colletidae gene tree (also Winkle)", 
-                    "studyID": "ot_12345", 
-                    "treeID": "tree888",
-                    "decision": "INCLUDED",
-                    "comments": "This should tie together some loose ends."
-                }, 
-                {
-                    "name": "Megachilidae supertree", 
-                    "studyID": "ot_2222", 
-                    "treeID": "tree7777",
-                    "decision": "UNDECIDED",
-                    "comments": "Intriguing! Waiting for more information from authors..."
-                }, 
-                {
-                    "name": "A. mellifera supertree #2", 
-                    "studyID": "ot_2222", 
-                    "treeID": "tree7778",
-                    "decision": "UNDECIDED",
-                    "comments": "Added by automatic query 'Harvest recent Apis mellifera'"
-                }
-            ]
+        // a dummy object for testing, with core JSON in its inner 'data' member
+        collection = { 'data': 
+            {
+                "url": "https://raw.githubusercontent.com/OpenTreeOfLife/collections/jimallman/trees-about-bees.json",
+                "name": "Trees about bees",
+                "description": "We're gathering these with an eye toward local synthesis in Anthophila (Apoidea). Contributions welcome!",
+                "creator": {"login": "jimallman", "name": "Jim Allman"},
+                "contributors": [
+                    {"login": "pmidford2", "name": "Peter Midford"},
+                    {"login": "kcranston", "name": "Karen Cranston"}
+                ],
+                "decisions": [
+                    {
+                        "name": "Andrenidae from Foster, 2002", 
+                        "studyID": "ot_23532", 
+                        "treeID": "tree9870",
+                        "decision": "INCLUDED",
+                        "comments": "Lots of good analysis here!"
+                    }, 
+                    {
+                        "name": "Apidae from Winkle, 1998", 
+                        "studyID": "ot_12345", 
+                        "treeID": "tree999",
+                        "decision": "EXCLUDED",
+                        "comments": "Questionable methods and major gaps. Let's not use this."
+                    }, 
+                    {
+                        "name": "Colletidae gene tree (also Winkle)", 
+                        "studyID": "ot_12345", 
+                        "treeID": "tree888",
+                        "decision": "INCLUDED",
+                        "comments": "This should tie together some loose ends."
+                    }, 
+                    {
+                        "name": "Megachilidae supertree", 
+                        "studyID": "ot_2222", 
+                        "treeID": "tree7777",
+                        "decision": "UNDECIDED",
+                        "comments": "Intriguing! Waiting for more information from authors..."
+                    }, 
+                    {
+                        "name": "A. mellifera supertree #2", 
+                        "studyID": "ot_2222", 
+                        "treeID": "tree7778",
+                        "decision": "UNDECIDED",
+                        "comments": "Added by automatic query 'Harvest recent Apis mellifera'"
+                    }
+                ]
+            }
         }
 
     }
@@ -473,13 +505,13 @@ function showCollectionViewer( collection, options ) {
 
     // bind just the selected collection to the modal HTML 
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
-    var $boundElements = $('#tree-collection-viewer').find('.modal-body, .modal-header h3');
+    var $boundElements = $('#tree-collection-viewer').find('.modal-body, .modal-header');
     // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
     $.each($boundElements, function(i, el) {
         ko.cleanNode(el);
         // remove all but one table row (else they multiply!)
         $('tr.single-tree-row:gt(0)', el).remove();
-        ko.applyBindings(collection,el);
+        ko.applyBindings(collection, el);
     });
 
     var updateCollectionDisplay = function() {
@@ -495,7 +527,36 @@ function showCollectionViewer( collection, options ) {
             console.warn(">>>> Now I'd highlight the LabelTypes widget!");
         }
         */
-        ///hideModalScreen();
+        // (re)bind widgets, esp. for adding trees
+        var $popup = $('#tree-collection-viewer');
+        var $newTreeStartButton = $popup.find('#new-collection-tree-start');
+        var $newTreeCancelButton = $popup.find('#new-collection-tree-cancel');
+        var $newTreeOptionsPanels = $popup.find('.new-collection-tree-options');
+        var $newTreeByIDsButton = $popup.find('#new-collection-tree-by-ids');
+        var $newTreeByURLButton = $popup.find('#new-collection-tree-by-url');
+        $newTreeCancelButton.hide();
+        $newTreeOptionsPanels.hide();
+        $newTreeStartButton.click(function() {
+            $newTreeStartButton.attr('disabled', 'disabled')
+                               .addClass('btn-info-disabled');
+            $newTreeCancelButton.show();
+            $newTreeOptionsPanels.show();
+            // clear all input fields and disable buttons
+            $newTreeOptionsPanels.find('input').val('');
+            $newTreeByIDsButton.attr('disabled', 'disabled')
+                .addClass('btn-info-disabled');
+            $newTreeByURLButton.attr('disabled', 'disabled')
+                .addClass('btn-info-disabled');
+            updateNewCollTreeUI();
+            return false;
+        });
+        $newTreeCancelButton.click(function() {
+            $newTreeStartButton.attr('disabled', null)
+                               .removeClass('btn-info-disabled');
+            $newTreeCancelButton.hide();
+            $newTreeOptionsPanels.hide();
+            return false;
+        });
     }
 
     if (collectionViewerIsInUse) {
@@ -519,3 +580,33 @@ function showCollectionViewer( collection, options ) {
     }
 }
 
+function getCollectionIDFromURL(url) {
+    // anything after the known API endpoint is a collection ID
+    return url.split('/v2/collection/')[1];
+}
+
+function updateNewCollTreeUI() {
+    // update by-ID widgets
+    var $addByIDsPanel = $('#new-collection-tree-by-ids');
+    var $studyIDField = $addByIDsPanel.find('input[name=study-id]');
+    var $treeIDField = $addByIDsPanel.find('input[name=tree-id]');
+    var $submitByIDButton = $addByIDsPanel.find('button').eq(0);
+    if (($.trim($studyIDField.val()) == '') || ($.trim($treeIDField.val()) == '')) {
+        $submitByIDButton.attr('disabled', 'disabled')
+                         .addClass('btn-info-disabled');
+    } else {
+        $submitByIDButton.attr('disabled', null)
+                         .removeClass('btn-info-disabled');
+    }
+    // update by-URL widgets
+    var $addByURLPanel = $('#new-collection-tree-by-url');
+    var $urlField = $addByURLPanel.find('input[name=tree-url]');
+    var $submitByURLButton = $addByURLPanel.find('button').eq(0);
+    if ($.trim($urlField.val()) == '') {
+        $submitByURLButton.attr('disabled', 'disabled')
+                          .addClass('btn-info-disabled');
+    } else {
+        $submitByURLButton.attr('disabled', null)
+                          .removeClass('btn-info-disabled');
+    }
+}

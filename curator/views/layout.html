@@ -435,6 +435,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         </div>
     </div>
 
+<!-- ko if: ('data' in $data) && ('decisions' in $data.data) -->
   <!-- hidden template for the tree-collection-viewer (editor) -->
   <div class="modal hide fade" id="tree-collection-viewer" 
        Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
@@ -444,18 +445,18 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
       <h3 id='dialog-heading'>
             Tree collection
             <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
-                   data-bind="value: $data['name'], 
+                   data-bind="value: $data.data['name'], 
                               valueUpdate: ['afterkeydown', 'input']"
             />
        </h3>
         <!-- TODO -->
-        <p style="color: #999; margin-top: -7px; margin-left: 180px;">jimallman/trees-about-bees 
-            <a href="https://github.com/OpenTreeOfLife/collections-0/blob/master/collections-by-owner/jimallman/my-test-collection.json" target="_blank">(on GitHub)</a>
+        <p style="color: #999; margin-top: -7px; margin-left: 180px;">
+            <span data-bind="text: getCollectionIDFromURL($data.data.url)">&nbsp;</span>
+            <a data-bind="attr: { href: $data['external_url'] }" target="_blank">(on GitHub)</a>
         </p>
     </div>
     <div class="modal-body">
-      <!-- ko if: 'decisions' in $data -->
-        <div class="tab-pane active" id="tree-properties">
+      <div class="tab-pane active" id="tree-properties">
           <form class="form-inline" 
                 style="overflow: hidden; margin-bottom: 0px; margin-top: -12px; padding-top: 12px;">
            <div class="collection-actions">
@@ -536,7 +537,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
             -->
            </div>
 
-            <!-- editable tree properties here -->
+            <!-- editable collection properties here -->
                 <label>Description</label>
                 <input type="text" data-bind="value: $data['treeDescription']"
                     class="input-xlarge" style="width: 500px; margin-bottom: 2px;"
@@ -569,6 +570,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                   <button id="show-all-trees-button" class="btn btn-small" onclick="alert('COMING SOON'); return false;">&nbsp; Show all tree decisions &nbsp;</button>
                 </div>
                 -->
+      <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->
                 <table class="table table-condensed table-hover"
                     data-bind="visible: true"><!-- TODO: hide if no trees found -->
                   <thead>
@@ -577,7 +579,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                         <th width="*">Tree name (click to view)</th><!-- also comments! -->
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: decisions, as: 'decision' }">
+                  <tbody data-bind="foreach: { data: $data.data.decisions, as: 'decision' }">
                       <tr class="single-tree-row">
                           <td>
                             <span data-bind="text: $index() + 1"
@@ -609,14 +611,76 @@ data-bind="style: {'opacity': ($index() < ($parent.decisions.length-1) ? 1.0 : 0
                       </tr>
                   </tbody>
                 </table>
-          </form>
-          </div>
       <!-- /ko -->
+      <!-- ko if: !('decisions' in $data.data) || ($data.data.decisions.length === 0) -->
+            <div class="empty-list-prompt">
+                This collection is empty! Add trees using the buttons below, or
+                by visiting trees in the curation app.
+            </div>
+      <!-- /ko -->
+
+            <!-- TODO: Put add-collection widgets! -->
+            <div xclass="form-actions" style="margin-top: 1em; margin-bottom: 0.25em;">
+              <button id="new-collection-tree-start" type="submit" 
+                class="btn btn-info Xbtn-info-disabled" Xdisabled="Xdisabled">Add tree to this collection
+                    &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+              </button>
+              <button id="new-collection-tree-cancel" type="submit"
+                      style="display: none;" class="btn">Cancel
+              </button>
+            </div>
+            <div id="new-collection-tree-by-ids"
+                 class="new-collection-tree-options" style="display: none; padding-left: 12px;">
+                <label>by study ID</label>
+                <input type="text" name="study-id"
+                    class="input-small" style="margin-bottom: 2px;"
+                    placeholder="ot_123"
+                    data-bind="value: '', 
+                               valueUpdate: ['afterkeydown', 'input'], 
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                ></input>
+                <label>and tree ID</label>
+                <input type="text" name="tree-id"
+                    class="input-small" style="margin-bottom: 2px;"
+                    placeholder="456"
+                    data-bind="value: '', 
+                               valueUpdate: ['afterkeydown', 'input'], 
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                ></input>
+                <button id="new-collection-tree-by-ids" type="submit" 
+                  class="btn btn-info Xbtn-info-disabled" Xdisabled="Xdisabled">
+                      &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+                </button>
+            </div>
+            <div id="new-collection-tree-by-url"
+                 class="new-collection-tree-options" style="display: none; padding-left: 12px;">
+                <label>by URL</label>
+                <input type="text"  name="tree-url"
+                    class="input-xlarge" style="width: 395px; margin-bottom: 2px;"
+                    placeholder="http://tree.opentreeoflife.org/curator/ot_study/123/tree/456"
+                    data-bind="value: '', 
+                               valueUpdate: ['afterkeydown', 'input'], 
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                ></input>
+                <button type="submit" 
+                  class="btn btn-info Xbtn-info-disabled" Xdisabled="Xdisabled">
+                      &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+                </button>
+            </div>
+
+            </div>
+
+          </form>
+        </div>
     </div>
     <div class="modal-footer">
       <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
     </div>
   </div>
+<!-- /ko-->
 
 {{ if ('maintenance_info' in locals()) and maintenance_info.get('maintenance_notice', None):
    # N.b. Check to make sure it's in the view-dict, or error pages etc. will fail }}
