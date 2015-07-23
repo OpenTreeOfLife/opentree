@@ -790,3 +790,7 @@ tr.table-shims td {
 tr.after-shims th {
     border-top: 0;
 }
+
+.form-horizontal.metadata-readonly .control-group {
+  margin-bottom: 12px;
+}
