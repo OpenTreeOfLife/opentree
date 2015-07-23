@@ -46,8 +46,6 @@ response.files.append(URL('static','js/d3.phylogram.js'))
 
 {{extend 'layout.html'}}
 
-<a class="main-title-DOI" style="display: none; position: relative; top: -4px;" href="#" target="_blank">{DOI}</a>
-
 <div class="header-quality-panel" style="margin-bottom: 8px; overflow: hidden;">
     <div style="float: left;">
         Study quality &nbsp;
@@ -247,7 +245,7 @@ body {
           <div class="tab-pane" id="Metadata">
            <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
-            <form class="form-horizontal wider-fields">
+            <form class="form-horizontal wider-fields{{= (viewOrEdit == 'VIEW') and ' metadata-readonly' or '' }}">
               <div class="control-group">
                 <label class="control-label" for="ot_studyPublicationReference">Publication reference</label>
                 <div class="controls">
@@ -455,6 +453,13 @@ body {
                  </p>
                  <!-- /ko -->
                 {{ pass }}
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label class="control-label" for="ot_curatorName">Study ID</label>
+                <div class="controls">
+                  <p class="static-form-value" data-bind="text: nexml['^ot:studyId']"></p>
                 </div>
               </div>
 

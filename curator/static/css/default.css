@@ -794,3 +794,7 @@ tr.after-shims th {
     position: relative;
     top: -8px;
 }
+
+.form-horizontal.metadata-readonly .control-group {
+  margin-bottom: 12px;
+}
