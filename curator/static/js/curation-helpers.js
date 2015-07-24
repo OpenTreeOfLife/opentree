@@ -396,6 +396,15 @@ function slugify(str) {
               .replace(/-+/g, '-');         // collapse dashes
 }
 
+/* 
+ *
+ */
+
+// these variables should already be defined in the main HTML page
+var userLogin;
+var userDisplayName;
+var singlePropertySearchForTrees_url;
+
 var testCollection = null;
 function loadAndShowTestCollection() {
     // fetch a known-good collection from the tree-collections API, and open it in a popup
@@ -413,7 +422,7 @@ function loadAndShowTestCollection() {
         url: fetchURL,
         //data: {},
         success: function( data ) {  // success callback
-            console.log(data);
+            //console.log(data);
             testCollection = data;
             showCollectionViewer(testCollection);
         },
@@ -436,7 +445,7 @@ function showCollectionViewer( collection, options ) {
     if (collection) {
         // needs cleanup or initialization?
         ; // do nothing
-console.log(collection);
+        //console.log(collection);
     } else {
         // this should *never* happen
         //TODO: alert("showCollectionViewer(): No collection specified!");
@@ -581,9 +590,12 @@ console.log(collection);
     }
 }
 
+// Use a known-good URL fragment to extract a collection ID from its API URL
+var collectionURLSplitter = '/v2/collection/';
+
 function getCollectionIDFromURL(url) {
     // anything after the known API endpoint is a collection ID
-    return url.split('/v2/collection/')[1];
+    return url.split( collectionURLSplitter )[1];
 }
 
 function updateNewCollTreeUI() {
@@ -610,4 +622,168 @@ function updateNewCollTreeUI() {
         $submitByURLButton.attr('disabled', null)
                           .removeClass('btn-info-disabled');
     }
+}
+
+function createNewTreeCollection() {
+    /* NOTE: This initial collection JSON matches the current server-side implementation
+     * in peyotl (see peyotl.collections.get_empty_collection)
+     */
+    var newCollection = {
+        "url": "",
+        "name": "",
+        "description": "",
+        "creator": {"login": "", "name": ""},
+        "contributors": [],
+        "decisions": [],
+        "queries": []
+    };
+    // populate the creator fields using client-side data
+    newCollection.creator.login = userLogin;
+    newCollection.creator.name = userDisplayName;
+    // make an initial bogus URL, for display
+    newCollection.url = ( collectionURLSplitter + userLogin +"/");
+
+    // wrap this in a stripped-down version of the usual fetched JSON
+    var wrappedNewCollection = {
+        "data": newCollection
+        // "external_url": etc.
+    }
+
+    showCollectionViewer( wrappedNewCollection );
+}
+
+function updateNewCollectionID( collection ) {
+    if ('version_history' in collection) {
+        // it's an existing collection with a frozen ID
+        return false;
+    }
+    // it's a new collection; build an ID based on its name!
+    var urlParts = collection.data.url.split();
+    var nameSlug = slugify(collection.data.name);
+    // build a fresh ID with current user as creator
+    collection.data.url = collectionURLSplitter + userLogin +'/'+ nameSlug;
+    //console.log(">>> collection.data.url = "+ collection.data.url);
+    var proposedID = getCollectionIDFromURL( collection.data.url );
+    //console.log(">>> proposedID = "+ proposedID);
+    $('#collection-id-display').text( proposedID );
+}
+
+function addTreeToCollection( collection, inputType ) {
+    // Test input values against oti (study index), to see if there's a matching tree
+    var studyID, treeID, treeURL;
+    if (inputType === 'FROM_IDS') {
+        studyID = $.trim($('#new-collection-tree-by-ids input[name=study-id]').val());
+        treeID =  $.trim($('#new-collection-tree-by-ids input[name=tree-id]').val());
+    } else { // presumably 'FROM_URL'
+        treeURL = $.trim($('#new-collection-tree-by-url input[name=tree-url]').val());
+        // split this to determine the study and tree IDs
+        // EXAMPLE: http://devtree.opentreeoflife.org/curator/study/edit/pg_2889/?tab=trees&tree=tree6698
+        var idString = treeURL.split('/edit/')[1] || "";
+        // EXAMPLE: pg_2889/?tab=trees&tree=tree6698
+        // EXAMPLE: pg_2889?tab=trees&tree=tree6698
+        var studyID = $.trim( idString.split(/\/|\?/)[0] );
+        //console.log('>>> studyID = '+ studyID);
+        var treeID = $.trim( idString.split('&tree=')[1] );
+        //console.log('>>> treeID = '+ treeID);
+        if ((studyID === '') || (treeID === '')) {
+            // TODO: prompt for fresh input, perhaps with an example?
+            showErrorMessage('The URL must include both '
+              + '<em>study <strong>and</strong> tree IDs</em>, for example: '
+              + 'http://devtree.opentreeoflife.org/curator/study/edit/<strong>pg_2889</strong>'
+              + '/?tab=trees&tree=<strong>tree6698</strong>');
+            return false;
+        } 
+    }
+
+    // still here? let's look for a matching tree in the study index
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: singlePropertySearchForTrees_url,
+        // data: ('{"property": "ot:studyId", "value": '+ 
+        //    JSON.stringify(studyID) +', "exact": true, "verbose": true }'),
+        data: JSON.stringify({
+            property: "oti_tree_id", 
+            value: (String(studyID) +'_'+ String(treeID)), 
+            exact: true, 
+            verbose: true }),
+        processData: false,
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                if (jqXHR.status >= 500) {
+                    // major server-side error, just show raw response for tech support
+                    var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
+                    //hideModalScreen();
+                    showErrorMessage(errMsg);
+                    return;
+                }
+                // Server blocked the save due to major validation errors!
+                var data = $.parseJSON(jqXHR.responseText);
+                // TODO: this should be properly parsed JSON, show it more sensibly
+                // (but for now, repeat the crude feedback used above)
+                var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [parsed in JS]</pre>';
+                //hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            // if we're still here, handle the search results
+            // IF NOT FOUND, complain and prompt for new input
+            // IF FOUND, use its label/description/SHA(?) to populate the entry
+            var responseObj = $.parseJSON(jqXHR.responseText);
+            //console.log("responseObj:");
+            //console.log(responseObj);
+            if ($.isArray(responseObj['matched_studies'])) {
+                switch(responseObj['matched_studies'].length) {
+                    case 0:
+                        // no such tree
+                        var errMsg = 'Sorry, there are no trees matching these IDs. '
+                                   + 'Please check your input values and try again';
+                        //hideModalScreen();
+                        showErrorMessage(errMsg);
+                        return;
+
+                    case 1:
+                        // walk its properties and use them in our collection JSON
+                        var foundStudy = responseObj['matched_studies'][0];
+                        var foundTree = foundStudy['matched_trees'][0];
+                        var foundTreeName = (foundTree['ot:originalLabel']
+                            || "Unnamed ("+ treeID +")" );
+                        var foundTreeComments = "from "
+                            + fullToCompactReference(foundStudy['ot:studyPublicationReference']);
+                        var treeEntry = {
+                            "decision": "INCLUDED",
+                            "name": foundTreeName,
+                            "studyID": studyID,
+                            "treeID": treeID,
+                            //"commitSHA": "",    // TODO
+                            "comments": foundTreeComments
+                        };
+                        //console.log(treeEntry);
+                        collection.data.decisions.push(treeEntry);
+                        showCollectionViewer( collection );  // to refresh the list
+                        showSuccessMessage('Tree found and added to this collection.');
+                        break;
+
+                    default:
+                        var errMsg = 'Sorry, there are multiple trees matching these IDs. '
+                                   + '<strong>This is not expected!</strong> Please '
+                                   + '<a href="/contact" target="_blank">report this error</a> '
+                                   + 'so we can investigate.';
+                        //hideModalScreen();
+                        showErrorMessage(errMsg);
+                        return;
+                }
+            } else {
+                var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">Missing or malformed "matching_studies" in JSON response:\n\n'+ 
+                    jqXHR.responseText+'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+        }
+    });
 }

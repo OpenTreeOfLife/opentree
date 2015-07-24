@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {{ 
-from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch
+from applications.opentree.modules.opentreewebapputil import get_user_login, get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch
 }}
 <html lang="{{=T.accepted_language or 'en'}}" class="no-js"><!-- no-js need it for modernzr -->
   <head>
@@ -168,6 +168,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
       $('#maintenance-notice').modal('show');
   }
 
+  // Fetch the userid and display name for a logged-in user
+  var userLogin = "{{= get_user_login() }}";
   var userDisplayName = "{{= get_user_display_name() }}";
   jQuery(document).ready(function(){ 
     {{ if 'auth' in globals(): }}
@@ -444,16 +446,26 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
       <a class="close" onclick="$('#tree-collection-viewer').modal('hide'); return false;">×</a>
       <h3 id='dialog-heading'>
             Tree collection
-            <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
+            <input type="text" style="font-size: inherit; vertical-align: baseline; 
+                                      color: #000; font-weight: bold; width: 50%;"
                    data-bind="value: $data.data['name'], 
-                              valueUpdate: ['afterkeydown', 'input']"
+                              valueUpdate: ['afterkeydown', 'input'],
+                              event: { keyup: updateNewCollectionID, change: updateNewCollectionID }
+                              "
             />
-       </h3>
-        <!-- TODO -->
-        <p style="color: #999; margin-top: -7px; margin-left: 180px;">
-            <span data-bind="text: getCollectionIDFromURL($data.data.url)">&nbsp;</span>
-            <a data-bind="attr: { href: $data['external_url'] }" target="_blank">(on GitHub)</a>
+      </h3>
+      <div style="color: #999; margin-top: -7px; position: relative;">
+        <p style="position: absolute; width: 170px; text-align: right;">
+            Collection ID: 
         </p>
+        <p style="margin-left: 180px;">
+            <span id="collection-id-display" 
+                  data-bind="text: getCollectionIDFromURL($data.data.url)">&nbsp;</span>
+           <!-- ko if: ('external_url' in $data) -->
+            <a data-bind="attr: { href: $data['external_url'] }" target="_blank">(on GitHub)</a>
+           <!-- /ko -->
+        </p>
+      </div>
     </div>
     <div class="modal-body">
       <div class="tab-pane active" id="tree-properties">
@@ -638,7 +650,9 @@ data-bind="style: {'opacity': ($index() < ($parent.data.decisions.length-1) ? 1.
             <!-- TODO: Put add-collection widgets! -->
             <div xclass="form-actions" style="margin-top: 1em; margin-bottom: 0.25em;">
               <button id="new-collection-tree-start" type="submit" 
-                class="btn btn-info Xbtn-info-disabled" Xdisabled="Xdisabled">Add tree to this collection
+                      class="btn btn-info Xbtn-info-disabled"
+                      onclick="return false;"
+              >Add tree to this collection
                     &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
               </button>
               <button id="new-collection-tree-cancel" type="submit"
@@ -665,7 +679,10 @@ data-bind="style: {'opacity': ($index() < ($parent.data.decisions.length-1) ? 1.
                                event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
                                "
                 ></input>
-                <button class="btn btn-info" onclick="return false;">
+                <button class="btn btn-info" 
+                        Xonclick="addTreeToCollection('FROM_IDS'); return false;"
+                        data-bind="click: function() {addTreeToCollection($data, 'FROM_IDS'); return false;}"
+                >
                       <i class="icon-plus icon-white"></i>
                 </button>
             </div>
@@ -680,7 +697,10 @@ data-bind="style: {'opacity': ($index() < ($parent.data.decisions.length-1) ? 1.
                                event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
                                "
                 ></input>
-                <button class="btn btn-info" onclick="return false;">
+                <button class="btn btn-info" 
+                        Xonclick="addTreeToCollection('FROM_URL'); return false;"
+                        data-bind="click: function() {addTreeToCollection($data, 'FROM_URL'); return false;}"
+                >
                       <i class="icon-plus icon-white"></i>
                 </button>
             </div>

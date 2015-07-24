@@ -35,6 +35,7 @@ pass
     var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}"; 
     var API_update_file_PUT_url = "{{=API_update_file_PUT_url}}"; 
     var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}"; 
+    var singlePropertySearchForTrees_url = "{{=singlePropertySearchForTrees_url}}"; 
 </script>
 <style type="text/css">
 .user-profile .form-horizontal .control-group {
@@ -370,10 +371,8 @@ A collection is a list of trees, chosen for synthesis or any other purpose. Each
 </table>
 
 <!-- CREATE NEW button -->
-<button Xdata-bind="click: TODO-create-a-new-collection,
-                    visible: true"
-    class="btn btn-info"
-    style="margin-top: -24px;">
+<button class="btn btn-info" style="margin-top: -24px;"
+        onclick="createNewTreeCollection(); return false;">
     Create new tree collection
     <i class="icon-pencil icon-white"></i> 
 </button>
