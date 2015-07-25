@@ -512,14 +512,14 @@ function showCollectionViewer( collection, options ) {
     }
     */
 
+    // keep a safe copy of this markup as a Knockout template (see below)
+    var $stashedCollectionViewerTemplate = $('#tree-collection-viewer').clone();
     // bind just the selected collection to the modal HTML 
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
     var $boundElements = $('#tree-collection-viewer').find('.modal-body, .modal-header');
     // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
     $.each($boundElements, function(i, el) {
         ko.cleanNode(el);
-        // remove all but one table row (else they multiply!)
-        $('tr.single-tree-row:gt(0)', el).remove();
         ko.applyBindings(collection, el);
     });
 
@@ -582,7 +582,11 @@ function showCollectionViewer( collection, options ) {
             collectionViewerIsInUse = false;
         });
         $('#tree-collection-viewer').off('hidden').on('hidden', function () {
-            $('#tree-collection-contributors li:gt(0)').remove();
+            /* Replace the popup body (DOM element) with our pristine (stashed)
+             * version, to prevent avoid missing or repeated list items next
+             * time we use this popup!
+             */
+            $('#tree-collection-viewer').replaceWith($stashedCollectionViewerTemplate.clone());
             ///console.log('@@@@@ hidden');
         });
 

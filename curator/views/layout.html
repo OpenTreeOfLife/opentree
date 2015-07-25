@@ -599,7 +599,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 </div>
                 -->
       <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->
-                <table class="table table-condensed table-hover"
+                <table id="tree-collection-decision-holder" class="table table-condensed table-hover"
                     data-bind="visible: true"><!-- TODO: hide if no trees found -->
                   <thead>
                     <tr>
@@ -607,7 +607,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                         <th width="*">Tree name (click to view)</th><!-- also comments! -->
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: $data.data.decisions, as: 'decision' }">
+                  <tbody id="tree-collection-decisions" 
+                         data-bind="foreach: { data: $data.data.decisions, as: 'decision' }">
                       <tr class="single-tree-row">
                           <td>
                             <span data-bind="text: $index() + 1"
