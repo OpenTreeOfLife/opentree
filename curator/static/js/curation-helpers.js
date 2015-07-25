@@ -438,9 +438,31 @@ function loadAndShowTestCollection() {
 // Keep track of when the collection viewer is already showing, so we
 // can hold it open and step through nodes or trees.
 var collectionViewerIsInUse = false;
+
+// Keep safe copy of its markup for re=use as a Knockout template (see below)
+var $stashedCollectionViewerTemplate = null;
+var $stashedCollectionContributorElement = null;
+var $stashedCollectionDecisionElement = null;
+
 function showCollectionViewer( collection, options ) {
     // TODO: allow options for initial display, etc.?
     options = options || {};
+
+    if ($stashedCollectionViewerTemplate === null) {
+        // Stash the pristine markup before binding this popup for the first time
+        $stashedCollectionViewerTemplate = $('#tree-collection-viewer').clone();
+        $stashedCollectionContributorElement = $('#tree-collection-viewer')
+            .find('#tree-collection-contributors > li').eq(0).clone();
+        $stashedCollectionDecisionElement = $('#tree-collection-viewer')
+            .find('#tree-collection-decisions > tr.single-tree-row').eq(0).clone();
+    } else {
+        // Replace with pristine markup to avoid weird results in later popups
+        $('#tree-collection-viewer').contents().replaceWith(
+            $stashedCollectionViewerTemplate.clone().contents()
+        );
+        //$('#tree-collection-contributors').empty().append($stashedCollectionContributorElement);
+        //$('#tree-collection-decisions').empty().append($stashedCollectionDecisionElement);
+    }
 
     if (collection) {
         // needs cleanup or initialization?
@@ -512,8 +534,6 @@ function showCollectionViewer( collection, options ) {
     }
     */
 
-    // keep a safe copy of this markup as a Knockout template (see below)
-    var $stashedCollectionViewerTemplate = $('#tree-collection-viewer').clone();
     // bind just the selected collection to the modal HTML 
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
     var $boundElements = $('#tree-collection-viewer').find('.modal-body, .modal-header');
@@ -582,11 +602,6 @@ function showCollectionViewer( collection, options ) {
             collectionViewerIsInUse = false;
         });
         $('#tree-collection-viewer').off('hidden').on('hidden', function () {
-            /* Replace the popup body (DOM element) with our pristine (stashed)
-             * version, to prevent avoid missing or repeated list items next
-             * time we use this popup!
-             */
-            $('#tree-collection-viewer').replaceWith($stashedCollectionViewerTemplate.clone());
             ///console.log('@@@@@ hidden');
         });
 
@@ -680,9 +695,10 @@ function addTreeToCollection( collection, inputType ) {
         treeID =  $.trim($('#new-collection-tree-by-ids input[name=tree-id]').val());
     } else { // presumably 'FROM_URL'
         treeURL = $.trim($('#new-collection-tree-by-url input[name=tree-url]').val());
-        // split this to determine the study and tree IDs
-        // EXAMPLE: http://devtree.opentreeoflife.org/curator/study/edit/pg_2889/?tab=trees&tree=tree6698
-        var idString = treeURL.split('/edit/')[1] || "";
+        // split this to determine the study and tree IDs. EXAMPLES:
+        //  http://devtree.opentreeoflife.org/curator/study/edit/pg_2889/?tab=trees&tree=tree6698
+        //  http://devtree.opentreeoflife.org/curator/study/view/pg_2889/?tab=trees&tree=tree6698
+        var idString = treeURL.split(/(\/view\/|\/edit\/)/)[2] || "";
         // EXAMPLE: pg_2889/?tab=trees&tree=tree6698
         // EXAMPLE: pg_2889?tab=trees&tree=tree6698
         var studyID = $.trim( idString.split(/\/|\?/)[0] );
@@ -754,8 +770,7 @@ function addTreeToCollection( collection, inputType ) {
                         // walk its properties and use them in our collection JSON
                         var foundStudy = responseObj['matched_studies'][0];
                         var foundTree = foundStudy['matched_trees'][0];
-                        var foundTreeName = (foundTree['ot:originalLabel']
-                            || "Unnamed ("+ treeID +")" );
+                        var foundTreeName = (foundTree['@label'] || "Untitled ("+ treeID +")" );
                         var foundTreeComments = "from "
                             + fullToCompactReference(foundStudy['ot:studyPublicationReference']);
                         var treeEntry = {
@@ -790,4 +805,13 @@ function addTreeToCollection( collection, inputType ) {
             }
         }
     });
+}
+
+function getTreeViewURL( decisionData ) {
+    // use its study ID and tree ID to build a proper tree-display URL
+    var urlTemplate = '/curator/study/view/STUDY_ID/?tab=trees&tree=TREE_ID';
+    var safeStudyID = $.trim(decisionData['studyID']);
+    var safeTreeID = $.trim(decisionData['treeID']);
+    return urlTemplate.replace('STUDY_ID', safeStudyID)
+                      .replace('TREE_ID', safeTreeID);
 }

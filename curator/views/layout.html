@@ -630,7 +630,8 @@ data-bind="style: {'opacity': ($index() < ($parent.data.decisions.length-1) ? 1.
                                class="icon-chevron-down">
                             </a>
                           </td>
-                          <td><a data-bind="html: name"
+                          <td><a data-bind="html: name,
+                                            attr: { href: getTreeViewURL($data) }"
                                  href="#" target="_blank"><!--NAME--></a>
                               <br/>
                               <p data-bind="html: comments"
