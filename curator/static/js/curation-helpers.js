@@ -815,3 +815,15 @@ function getTreeViewURL( decisionData ) {
     return urlTemplate.replace('STUDY_ID', safeStudyID)
                       .replace('TREE_ID', safeTreeID);
 }
+
+function moveInTreeCollection( tree, collection, newPosition ) {
+    // move this tree (decision) to an explicit position in the list
+    var decisionList = collection.data.decisions;
+    var oldPosition = decisionList.indexOf( tree );
+    if (oldPosition === -1) {
+        alert('No such tree in this collection!');
+        return false;
+    }
+    decisionList[newPosition] = decisionList.splice(oldPosition, 1, decisionList[newPosition])[0];
+    showCollectionViewer( collection );  // to refresh the list
+}

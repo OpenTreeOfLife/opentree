@@ -614,21 +614,38 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             <span data-bind="text: $index() + 1"
                                   style="color: #999; text-align: right;"
                              >1</span>&nbsp;
-                            <!-- SORTING widgets -->
-                            <a Xdata-bind="click: TODO-move-tree-down,
-                                                visible: true"
-data-bind="style: {'opacity': ($index() > 0 ? 1.0 : 0.5)}"
+
+                           <!-- SORTING widgets -->
+
+                           <!-- ko if: $index() === 0 -->
+                            <a style="opacity: 0.5;"
+                               href="#"
+                               onclick="return false;"
+                               class="icon-chevron-up">
+                            </a>
+                           <!-- /ko -->
+                           <!-- ko if: $index() > 0 -->
+                            <a data-bind="click: function() {moveInTreeCollection($data, $parent, $index()-1); return false;}"
                                href="#"
                                title="Move this tree up in the list"
                                class="icon-chevron-up">
                             </a>
-                            <a Xdata-bind="click: TODO-move-tree-down,
-                                                visible: true"
-data-bind="style: {'opacity': ($index() < ($parent.data.decisions.length-1) ? 1.0 : 0.5)}"
+                           <!-- /ko -->
+
+                           <!-- ko if: $index() === ($parent.data.decisions.length-1) -->
+                            <a style="opacity: 0.5;"
+                               href="#"
+                               onclick="return false;"
+                               class="icon-chevron-down">
+                            </a>
+                           <!-- /ko -->
+                           <!-- ko if: $index() < ($parent.data.decisions.length-1) -->
+                            <a data-bind="click: function() {moveInTreeCollection($data, $parent, $index()+1); return false;}"
                                href="#"
                                title="Move this tree down in the list"
                                class="icon-chevron-down">
                             </a>
+                           <!-- /ko -->
                           </td>
                           <td><a data-bind="html: name,
                                             attr: { href: getTreeViewURL($data) }"
