@@ -794,3 +794,17 @@ tr.after-shims th {
     position: relative;
     top: -8px;
 }
+.collection-move-panel {
+    position: absolute;
+    margin-top: -2px;
+    margin-left: 2px;
+    z-index: 1;
+    border-radius: 5px;
+    background-color: #fff;
+    -webkit-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
+    -moz-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
+}
+.collection-move-panel button {
+    opacity: 1.0;
+}

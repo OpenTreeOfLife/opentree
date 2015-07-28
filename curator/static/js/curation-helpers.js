@@ -534,6 +534,9 @@ function showCollectionViewer( collection, options ) {
     }
     */
 
+    // add any missing 'rank' properties
+    ensureTreeCollectionRanking( collection );
+
     // bind just the selected collection to the modal HTML 
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
     var $boundElements = $('#tree-collection-viewer').find('.modal-body, .modal-header');
@@ -817,7 +820,8 @@ function getTreeViewURL( decisionData ) {
 }
 
 function moveInTreeCollection( tree, collection, newPosition ) {
-    // move this tree (decision) to an explicit position in the list
+    // Move this tree (decision) to an explicit position in the list
+    // N.B. We use zero-based counting here!
     var decisionList = collection.data.decisions;
     var oldPosition = decisionList.indexOf( tree );
     if (oldPosition === -1) {
@@ -825,5 +829,127 @@ function moveInTreeCollection( tree, collection, newPosition ) {
         return false;
     }
     decisionList[newPosition] = decisionList.splice(oldPosition, 1, decisionList[newPosition])[0];
+    resetTreeCollectionRanking( collection );
     showCollectionViewer( collection );  // to refresh the list
+}
+
+function showCollectionMoveUI( decision, itsElement, collection ) {
+    // show/add? a simple panel with Move, Move All, and Cancel buttons
+
+    // build the panel if it's not already hidden in the DOM
+    var $collectionMoveUI = $('#collection-move-ui');
+    if ($collectionMoveUI.length === 0) {
+        $collectionMoveUI = $(
+          '<div id="collection-move-ui" class="collection-move-panel btn-group">'
+             +'<button class="btn">Move</button>'
+             +'<button class="btn" disabled="disabled">Move All</button>'
+             +'<button class="btn btn-danger">Cancel</button>'
+         +'</div>'
+        );
+    }
+
+    // check for integer value, and alert if not valid!
+    if (isNaN(Number(decision['rank'])) || ($.trim(decision['rank']) == '')) {
+        $(itsElement).css('color','#f33');
+        $collectionMoveUI.hide();
+        return false;
+    } else {
+        $(itsElement).css('color', '');
+    }
+
+    // (re)bind buttons to this decision
+    $collectionMoveUI.find('button:contains(Move)')
+                     .unbind('click').click(function() {
+                        var newPosition = (Number(decision.rank) - 1) || 0;
+                        moveInTreeCollection( decision, collection, newPosition );
+                        resetTreeCollectionRanking( collection );
+                        $('#collection-move-ui').hide();
+                        return false;
+                      });
+    $collectionMoveUI.find('button:contains(Move All)')
+                     .unbind('click').click(function() {
+                        $.each(collection.data.decisions, function(i, decision) {
+                            var newPosition = (Number(decision.rank) - 1) || 0;
+                            moveInTreeCollection( decision, collection, newPosition );
+                        });
+                        resetTreeCollectionRanking( collection );
+                        $('#collection-move-ui').hide();
+                        return false;
+                      });
+    $collectionMoveUI.find('button:contains(Cancel)')
+                     .unbind('click').click(function() {
+                        resetTreeCollectionRanking( collection );
+                        $('#collection-move-ui').hide();
+                        return false;
+                      });
+
+    // en/disable widgets in the move UI, based on how many pending moves
+    var highestRankSoFar = -1;
+    var treesOutOfPlace = $.grep(collection.data.decisions, function(tree, i) {
+        // Does its stated 'rank' match its list position? N.B. that we're not
+        // looking for an exact match, just relative value vs. its neighbors
+        // in the decision list.
+        if (isNaN(Number(decision['rank'])) || ($.trim(decision['rank']) == '')) {
+            // weird values should prompt us to move+refresh
+            return true;
+        }
+        var statedRank = Number(decision['rank']);
+        if (statedRank < highestRankSoFar) {
+            return true;
+        }
+        highestRankSoFar = statedRank;
+        return false;
+    });
+    switch(treesOutOfPlace.length) {
+        case 0:
+            // don't show the UI, nothing to move!
+            return false;
+        case 1:
+            $collectionMoveUI.find('button:contains(Move)')
+                             .attr('disabled', null);
+            $collectionMoveUI.find('button:contains(Move All)')
+                             .attr('disabled', 'disabled');
+            break;
+        default:
+            $collectionMoveUI.find('button:contains(Move)')
+                             .attr('disabled', null);
+            $collectionMoveUI.find('button:contains(Move All)')
+                             .attr('disabled', null);
+    }
+
+    // float this panel alongside the specified decision (tree), IF it's not already there
+    if ($(itsElement).nextAll('#collection-move-ui:visible').length === 0) {
+        $collectionMoveUI.insertAfter(itsElement).css('display','inline-block');
+    }
+}
+
+function ensureTreeCollectionRanking( collection ) {
+    // add a 'rank' property to any decision that doesn't have one; if any are
+    // missing, reset ALL values based on their "natural" order in the array
+    var missingRankProperties = false;
+    // check for any missing properties (if so, reset all)
+    $.each(collection.data.decisions, function(i, decision) {
+        if (!('rank' in decision)) {
+            decision['rank'] = null;
+            missingRankProperties = true;
+        }
+    });
+    if (missingRankProperties) {
+        resetTreeCollectionRanking( collection );
+    }
+}
+function resetTreeCollectionRanking( collection ) {
+    // update existing 'rank' property to each of its decisions, using
+    // their "natural" order in the array
+    $.each(collection.data.decisions, function(i, decision) {
+        decision.rank = (i+1);
+    });
+}
+function stripTreeCollectionRanking( collection ) {
+    // remove explicit 'rank' properties before saving a collection, since the
+    // JSON array already has the current order
+    var decisionList = ('data' in collection) ? collection.data.decisions : collection.decisions;
+    $.each(collection.data.decisions, function(i, decision) {
+        delete decision['rank'];
+    });
 }

@@ -603,7 +603,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     data-bind="visible: true"><!-- TODO: hide if no trees found -->
                   <thead>
                     <tr>
-                        <th width="65">Rank</th><!-- ranking -->
+                        <th width="76">Rank</th><!-- ranking -->
                         <th width="*">Tree name (click to view)</th><!-- also comments! -->
                     </tr>
                   </thead>
@@ -611,9 +611,15 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                          data-bind="foreach: { data: $data.data.decisions, as: 'decision' }">
                       <tr class="single-tree-row">
                           <td>
-                            <span data-bind="text: $index() + 1"
-                                  style="color: #999; text-align: right;"
-                             >1</span>&nbsp;
+                            <input data-bind="value: $data['rank'],
+                                              valueUpdate: ['afterkeydown', 'input'],
+                                              event: {
+                        keyup: function() {showCollectionMoveUI($data, $element, $parent)},
+                        change: function() {showCollectionMoveUI($data, $element, $parent)}
+                                              }"
+                                   style="color: #999; width: 28px; text-align: right;"
+                                   value=""
+                             />&nbsp;
 
                            <!-- SORTING widgets -->
 
