@@ -828,7 +828,61 @@ function moveInTreeCollection( tree, collection, newPosition ) {
         alert('No such tree in this collection!');
         return false;
     }
-    decisionList[newPosition] = decisionList.splice(oldPosition, 1, decisionList[newPosition])[0];
+
+    // Find the new position using simple "stepper" widgets or an
+    // explicit/stated rank.
+    switch(newPosition) {
+        case 'UP':
+            newPosition = Math.max(0, oldPosition - 1);
+            break;
+
+        case 'DOWN':
+            newPosition = Math.min(decisionList.length, oldPosition + 1);
+            break;
+
+        default:  
+            // stated rank should be an integer or int-as-string
+            if (isNaN(Number(tree['rank'])) || ($.trim(tree['rank']) == '')) {
+                // don't move if it's not a valid rank!
+                console.log(">> INVALID rank: "+ tree['rank'] +" <"+ typeof(tree['rank']) +">");
+                return false;
+            }
+            var movingRank = Number(tree['rank']);
+            // displace the first tree that has the same or higher stated rank
+            var movingTree = tree;
+            var sameRankOrHigher = $.grep(decisionList, function(testTree, i) {
+                if (testTree === movingTree) {
+                    return false;  // skip the moving tree!
+                }
+                // Does its stated 'rank' match its list position? N.B. that we're not
+                // looking for an exact match, just relative value vs. its neighbors
+                // in the decision list.
+                var statedRank = Number(testTree['rank']);
+                if (isNaN(statedRank) || ($.trim(testTree['rank']) == '')) {
+                    // treat invalid/missing values as zero, I guess
+                    statedRank = 0;
+                }
+                if (statedRank >= movingRank) {
+                    return true;
+                }
+                return false;
+            });
+            var nextTree;
+            if (sameRankOrHigher.length === 0) {
+                // looks like we're moving to the end of the list
+                newPosition = decisionList.length - 1;
+            } else {
+                // displace the first matching tree
+                nextTree = sameRankOrHigher[0]; 
+                newPosition = decisionList.indexOf( nextTree );
+            }
+            break;
+    }
+
+    // just grab the moving item and move (or append) it 
+    var grabbedItem = decisionList.splice( oldPosition, 1 )[0];
+    decisionList.splice(newPosition, 0, grabbedItem);
+
     resetTreeCollectionRanking( collection );
     showCollectionViewer( collection );  // to refresh the list
 }
@@ -868,11 +922,25 @@ function showCollectionMoveUI( decision, itsElement, collection ) {
                       });
     $collectionMoveUI.find('button:contains(Move All)')
                      .unbind('click').click(function() {
-                        $.each(collection.data.decisions, function(i, decision) {
-                            var newPosition = (Number(decision.rank) - 1) || 0;
-                            moveInTreeCollection( decision, collection, newPosition );
+                        // sort all trees by rank-as-number, in ascending order
+                        var decisionList = collection.data.decisions;
+                        decisionList.sort(function(a,b) { 
+                            // N.B. This works even if there's no such property.
+                            var aStatedRank = Number(a['rank']);
+                            var bStatedRank = Number(b['rank']);
+                            // if either field has an invalid rank value, freeze this pair
+                            if (isNaN(aStatedRank) || ($.trim(a['rank']) == '')
+                             || isNaN(bStatedRank) || ($.trim(b['rank']) == '')) {
+                                return 0;
+                            }
+                            if (aStatedRank === bStatedRank) {
+                                return 0;
+                            }
+                            // sort these from low to high
+                            return (aStatedRank > bStatedRank) ? 1 : -1;
                         });
                         resetTreeCollectionRanking( collection );
+                        showCollectionViewer( collection );  // to refresh the list
                         $('#collection-move-ui').hide();
                         return false;
                       });
@@ -889,11 +957,11 @@ function showCollectionMoveUI( decision, itsElement, collection ) {
         // Does its stated 'rank' match its list position? N.B. that we're not
         // looking for an exact match, just relative value vs. its neighbors
         // in the decision list.
-        if (isNaN(Number(decision['rank'])) || ($.trim(decision['rank']) == '')) {
+        if (isNaN(Number(tree['rank'])) || ($.trim(tree['rank']) == '')) {
             // weird values should prompt us to move+refresh
             return true;
         }
-        var statedRank = Number(decision['rank']);
+        var statedRank = Number(tree['rank']);
         if (statedRank < highestRankSoFar) {
             return true;
         }
@@ -903,6 +971,7 @@ function showCollectionMoveUI( decision, itsElement, collection ) {
     switch(treesOutOfPlace.length) {
         case 0:
             // don't show the UI, nothing to move!
+            $('#collection-move-ui').hide();
             return false;
         case 1:
             $collectionMoveUI.find('button:contains(Move)')
@@ -919,8 +988,9 @@ function showCollectionMoveUI( decision, itsElement, collection ) {
 
     // float this panel alongside the specified decision (tree), IF it's not already there
     if ($(itsElement).nextAll('#collection-move-ui:visible').length === 0) {
-        $collectionMoveUI.insertAfter(itsElement).css('display','inline-block');
+        $collectionMoveUI.insertAfter(itsElement);
     }
+    $collectionMoveUI.css('display','inline-block');
 }
 
 function ensureTreeCollectionRanking( collection ) {

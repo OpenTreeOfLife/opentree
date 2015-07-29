@@ -631,7 +631,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             </a>
                            <!-- /ko -->
                            <!-- ko if: $index() > 0 -->
-                            <a data-bind="click: function() {moveInTreeCollection($data, $parent, $index()-1); return false;}"
+                            <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'UP'); return false;}"
                                href="#"
                                title="Move this tree up in the list"
                                class="icon-chevron-up">
@@ -646,7 +646,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             </a>
                            <!-- /ko -->
                            <!-- ko if: $index() < ($parent.data.decisions.length-1) -->
-                            <a data-bind="click: function() {moveInTreeCollection($data, $parent, $index()+1); return false;}"
+                            <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'DOWN'); return false;}"
                                href="#"
                                title="Move this tree down in the list"
                                class="icon-chevron-down">
