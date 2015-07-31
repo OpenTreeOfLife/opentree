@@ -69,21 +69,77 @@ def progress():
         # this should overwrite data from earlier in the day
 
     # phylesystem stats also have mixed date formats
+    warnings = set()
+    phylesystem = {}
     raw = json.loads(fetch_local_phylesystem_stats() or '{}')
     sorted_dates = sorted(raw.keys(), reverse=False)
-    phylesystem = {}
-    for d in sorted_dates:
-        raw_data = raw[d]
-        simple_date = _force_to_simple_date_string(d)
-        phylesystem[ simple_date ] = raw_data
-        # this should overwrite data from earlier in the day
+
+    if len(sorted_dates) == 0:
+        warnings.add('No phylesystem data was found! Most stats below are probably incomplete.')
+    else:
+        # N.B. We only want to show monthly changes in phylesystem! For each month
+        # in this range, include just one record, ideally
+        #   - the first day of the month (if found), OR
+        #   - the nearest prior OR following record; if equally close, use prior
+        # Use the actual date found for this data, so that glitches in the "monthly"
+        # reporting of this data are apparent to the user.
+
+        # use a recurrence rule to find starting dates for each month for which we have data
+        import re
+        from dateutil import rrule
+
+        def string2date(s):
+            s = _force_to_simple_date_string(s)
+            return datetime.strptime(s, '%Y-%m-%d')  # e.g. '2014-08-15'
+
+        first_date_string = sorted_dates[ 0 ]
+        # shift the first date found to the first of that month, e.g. '2014-08-15' => '2014-08-01'
+        first_date_string = re.sub(r'\d+$', '01', first_date_string)
+        first_date = string2date(first_date_string)
+        last_date_string = sorted_dates[ len(sorted_dates)-1 ]
+        last_date =  string2date(last_date_string)
+        monthly_milestones = list(rrule.rrule(rrule.MONTHLY, dtstart=first_date, until=last_date))
+
+        def nearest_phylesystem_datestring(target_date):
+            # find the closest timestamp and return the corresponding date-string
+            from bisect import bisect_left
+            if (isinstance(target_date, str)):
+                try:
+                    target_date = string2date(target_date)
+                except:
+                    raise ValueError("Expected a date-string in the form '2014-08-15'!")
+            nearest_datestring = None
+            # build a list of timestamps from the pre-sorted date strings
+            sorted_timestamps = [string2date(ds) for ds in sorted_dates]
+            prior_position = bisect_left(sorted_timestamps, target_date) - 1
+            following_position = min(prior_position+1, len(sorted_timestamps)-1)
+            # fetch and compare the timestamps before and after; which is closer?
+            prior_timestamp = sorted_timestamps[prior_position]
+            following_timestamp = sorted_timestamps[following_position]
+            #import pdb; pdb.set_trace()
+            if abs(target_date - prior_timestamp) <= abs(target_date - following_timestamp):
+                # in the event of a tie, use the prior date
+                prior_datestring = sorted_dates[prior_position]
+                return prior_datestring
+            else:
+                following_datestring = sorted_dates[following_position]
+                return following_datestring
+
+        # adjust each "milestone" to the nearest date with phylesystem data, then remove duplicates
+        monthly_milestones = [nearest_phylesystem_datestring(m) for m in monthly_milestones]
+        monthly_milestones = sorted(list(set(monthly_milestones)))
+
+        for d in monthly_milestones:
+            raw_data = raw[d]
+            simple_date = _force_to_simple_date_string(d)
+            phylesystem[ simple_date ] = raw_data
+            # this should overwrite data from earlier in the day
 
     # taxonomy stats should always use simple dates
     ott = json.loads(fetch_local_ott_stats() or '[]')
 
     # create some otu summary stats for each synthesis that we have info about...
     by_date = {}
-    warnings = set()
     dates = set(synth.keys() + phylesystem.keys() + [ott_v.get('date') for ott_v in ott])
     # Let's creep tallies up in our fake data, with starting values here
     num_otu_in_ott = 0
