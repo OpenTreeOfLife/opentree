@@ -473,7 +473,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       </div>
     </div>
     <div class="modal-body">
-      <div class="tab-pane active" id="tree-properties">
+      <div class="tab-pane active">
           <form class="form-inline" 
                 style="overflow: hidden; margin-bottom: 0px; margin-top: -12px; padding-top: 12px;">
            <div class="collection-actions">
@@ -820,15 +820,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             </div>
           <!-- /ko -->
 
-            </div>
-
-          </form>
-        </div>
-    </div>
+            </form>
+          </div>
+    </div><!-- end of .modal-body -->
     <div class="modal-footer">
       <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
     </div>
-  </div>
+  </div><!-- end of #tree-collection-viewer.modal- -->
 <!-- /ko-->
 
 {{ if ('maintenance_info' in locals()) and maintenance_info.get('maintenance_notice', None):
