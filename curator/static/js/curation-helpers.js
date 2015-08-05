@@ -1023,3 +1023,24 @@ function stripTreeCollectionRanking( collection ) {
         delete decision['rank'];
     });
 }
+
+function deleteTreeCollection() {
+    // TODO: prompt for commit msg along with confirmation?
+    if (confirm('Are you sure you want to delete this tree collection?')) {
+        alert('TODO');
+    }
+}
+function removeTreeFromCollection(tree, collection) {
+    // TODO: prompt for commit msg along with confirmation?
+    if (confirm('Are you sure you want to remove this tree from the collection?')) {
+        var decisionList = collection.data.decisions;
+        var oldPosition = decisionList.indexOf( tree );
+        if (oldPosition === -1) {
+            alert('No such tree in this collection!');
+            return false;
+        }
+        decisionList.splice(oldPosition, 1);
+        resetTreeCollectionRanking( collection );
+        showCollectionViewer( collection );  // to refresh the list
+    }
+}

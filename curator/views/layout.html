@@ -475,7 +475,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             <!-- action buttons, from right to left -->
 
             <!-- DELETE button -->
-            <button Xdata-bind="click: removeTree,
+            <button data-bind="click: deleteTreeCollection,
                                visible: true"
                 title="Delete this tree collection"
                 class="pull-right btn btn-mini btn-danger row-controls-ghosted"
@@ -664,9 +664,15 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                               </button>
 -->
                             <!-- ko if: true -->
+                              <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;}"
+                                      title="Remove this tree from the collection"
+                                      class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                                      style="margin-left: 4px;">
+                                  <i class="icon-remove icon-white"></i>
+                              </button>
                               <input type="text"
                                      class="input-large" 
-                                     style="width: 360px; margin-right: 8px; margin-bottom: 2px;"
+                                     style="width: 320px; margin-right: 10px; margin-bottom: 2px;"
                                      placeholder="Name this tree"
                                      data-bind="value: name, 
                                                 valueUpdate: ['afterkeydown', 'input']
@@ -674,6 +680,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                               >
                               </input>
                               <a data-bind="attr: { href: getTreeViewURL($data) }"
+                                 title="View this tree in a new window"
                                  href="#" target="_blank">(link)</a>
                               <br/>
                               <textarea data-bind="value: comments"
