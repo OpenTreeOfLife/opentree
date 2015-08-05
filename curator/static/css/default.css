@@ -796,7 +796,6 @@ tr.after-shims th {
 }
 .collection-move-panel {
     position: absolute;
-    margin-top: -2px;
     margin-left: 2px;
     z-index: 1;
     border-radius: 5px;

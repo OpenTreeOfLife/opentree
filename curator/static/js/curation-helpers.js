@@ -671,7 +671,7 @@ function createNewTreeCollection() {
         // "external_url": etc.
     }
 
-    showCollectionViewer( wrappedNewCollection );
+    editCollection( wrappedNewCollection );
 }
 
 function updateNewCollectionID( collection ) {
@@ -1043,4 +1043,29 @@ function removeTreeFromCollection(tree, collection) {
         resetTreeCollectionRanking( collection );
         showCollectionViewer( collection );  // to refresh the list
     }
+}
+
+var currentlyEditingCollectionID = null;
+function userIsEditingCollection( collection ) {
+    return (currentlyEditingCollectionID === collection.data['url']);
+}
+function editCollection( collection ) {
+    // toggle to full editing UI
+    currentlyEditingCollectionID = collection.data['url'];
+    showCollectionViewer( collection );  // to refresh the UI
+}
+function saveChangesToCollection( collection ) {
+    // TODO: prompt for commit msg and confirmation?
+    if (confirm('Are you sure you want to save your changes to this collection?')) {
+        alert('TODO');
+    }
+}
+function cancelChangesToCollection( collection ) {
+    // refresh collection from storage, toggle to view-only UI
+    currentlyEditingCollectionID = null;
+    // TODO: replace with unchanged collection from storage!
+    showCollectionViewer( collection );  // to refresh the UI
+}
+function userIsLoggedIn() {
+    return userLogin !== 'ANONYMOUS';
 }

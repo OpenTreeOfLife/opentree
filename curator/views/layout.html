@@ -445,16 +445,21 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     <div class="modal-header" style="padding-bottom: 0;">
       <a class="close" onclick="$('#tree-collection-viewer').modal('hide'); return false;">×</a>
       <h3 id='dialog-heading'>
-            Tree collection
-            <input type="text" style="font-size: inherit; vertical-align: baseline; 
-                                      color: #000; font-weight: bold; width: 50%;"
+            <span style="color: #999;">Tree collection</span>
+           <!-- ko if: userIsEditingCollection($data) -->
+            <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; 
+                                      font-weight: bold; width: 50%; margin-bottom: 0px;"
                    data-bind="value: $data.data['name'], 
                               valueUpdate: ['afterkeydown', 'input'],
                               event: { keyup: updateNewCollectionID, change: updateNewCollectionID }
                               "
             />
+           <!-- /ko -->
+           <!-- ko if: !userIsEditingCollection($data) -->
+             <span data-bind="html: $data.data['name']"></span>
+           <!-- /ko -->
       </h3>
-      <div style="color: #999; margin-top: -7px; position: relative;">
+      <div style="color: #999; position: relative;">
         <p style="position: absolute; width: 170px; text-align: right;">
             Collection ID: 
         </p>
@@ -474,15 +479,18 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
            <div class="collection-actions">
             <!-- action buttons, from right to left -->
 
+           <!-- ko if: userIsEditingCollection($data) -->
             <!-- DELETE button -->
             <button data-bind="click: deleteTreeCollection,
                                visible: true"
                 title="Delete this tree collection"
                 class="pull-right btn btn-mini btn-danger row-controls-ghosted"
-                style="margin-left: 4px;">
-                <i class="icon-remove icon-white"></i>
+                style="margin-left: 14px;">
+                Delete <i class="icon-remove icon-white"></i>
             </button>
+           <!-- /ko -->
 
+           <!-- ko if: !userIsEditingCollection($data) -->
             <!-- DUPLICATE button -->
             <button Xdata-bind="click: TODO-follow-this-collection,
                                 visible: true"
@@ -490,15 +498,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 class="pull-right btn btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
                 <i class="icon-share"></i>
-            </button>
-
-            <!-- EDIT button -->
-            <button Xdata-bind="click: TODO-follow-this-collection,
-                                visible: true"
-                title="Edit this collection (become a collaborator)"
-                class="pull-right btn btn-mini row-controls-ghosted"
-                style="margin-left: 4px;">
-                <i class="icon-edit"></i>
             </button>
 
             <!-- FOLLOW options -->
@@ -547,18 +546,53 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <i class="icon-list-alt"></i>
             </button>
             -->
+           <!-- /ko -->
+
+            <!-- EDIT button -->
+            <button data-bind="click: editCollection,
+                               visible: !(userIsEditingCollection($data)),
+                               attr: {'title': userIsLoggedIn() ? 'Edit this collection (become a collaborator)' : 'Edit this collection (requires login)'}"
+                title=""
+                class="pull-right btn btn-info btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                Edit <i class="icon-edit icon-white"></i>
+            </button>
+            <button data-bind="click: cancelChangesToCollection,
+                               visible: userIsEditingCollection($data)"
+                title="Cancel your changes to this collection"
+                class="pull-right btn btn-warning btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                Cancel</i>
+            </button>
+            <button data-bind="click: saveChangesToCollection,
+                               visible: userIsEditingCollection($data)"
+                title="Save your changes to this collection"
+                class="pull-right btn btn-info btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                Save Changes</i>
+            </button>
+
            </div>
 
             <!-- editable collection properties here -->
+
                 <label>Description</label>
+              <!-- ko if: userIsEditingCollection($data) -->
                 <input type="text"
                     class="input-xlarge" style="width: 500px; margin-bottom: 2px;"
                     placeholder="Describe this collection's focus or purpose"
                     data-bind="value: $data.data['description'], 
                                valueUpdate: ['afterkeydown', 'input']
                                "
-                >
-                </input>
+                ></input>
+              <!-- /ko -->
+              <!-- ko if: !userIsEditingCollection($data) -->
+                <div style="background-color: #eee; width: 500px; 
+                            margin: 0px 0px 2px -1px;
+                            border-radius: 4px; padding: 5px 8px;"
+                     data-bind="html: $data.data['description'] || '&nbsp;'" 
+                ></div>
+              <!-- /ko -->
 
                 <label style="clear: left; margin-top: 6px;">Created by </label>
                 <strong><a href="https://github.com/jimallman" target="_blank"
@@ -599,8 +633,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 </div>
                 -->
       <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->
-                <table id="tree-collection-decision-holder" class="table table-condensed table-hover"
-                    data-bind="visible: true"><!-- TODO: hide if no trees found -->
+                <table id="tree-collection-decision-holder" 
+                       class="table table-condensed table-hover"
+                       style="margin-bottom: 2px;"
+                       data-bind="visible: true"><!-- TODO: hide if no trees found -->
                   <thead>
                     <tr>
                         <th width="76">Rank</th><!-- ranking -->
@@ -611,16 +647,18 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                          data-bind="foreach: { data: $data.data.decisions, as: 'decision' }">
                       <tr class="single-tree-row">
                           <td>
-                            <input data-bind="value: $data['rank'],
+                          <!-- ko if: userIsEditingCollection($parent) -->
+                            <input type="text" 
+                                   data-bind="value: $data['rank'],
                                               valueUpdate: ['afterkeydown', 'input'],
                                               event: {
                         keyup: function() {showCollectionMoveUI($data, $element, $parent)},
                         change: function() {showCollectionMoveUI($data, $element, $parent)}
                                               }"
-                                   style="color: #999; width: 28px; text-align: right;"
+                                   style="color: #999; width: 24px; 
+                                          margin-left: -4px; text-align: right;"
                                    value=""
                              />&nbsp;
-
                            <!-- SORTING widgets -->
 
                            <!-- ko if: $index() === 0 -->
@@ -652,6 +690,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                                class="icon-chevron-down">
                             </a>
                            <!-- /ko -->
+
+                          <!-- /ko --><!-- END of editing widgets -->
+                          <!-- ko if: !userIsEditingCollection($parent) -->
+                          <div data-bind="text: $data['rank']"
+                               style="text-align: right; width: 27px; margin-top: 5px;">XX</div>
+                          <!-- /ko -->
+
                           </td>
                           <td>
 <!--
@@ -663,7 +708,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                                   <i class="icon-edit"></i>
                               </button>
 -->
-                            <!-- ko if: true -->
+                            <!-- ko if: userIsEditingCollection($parent) -->
                               <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;}"
                                       title="Remove this tree from the collection"
                                       class="pull-right btn btn-mini btn-danger row-controls-ghosted"
@@ -688,7 +733,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                                         placeholder="Describe this tree">
                                 <!--COMMENTS--></textarea>
                             <!-- /ko -->
-                            <!-- ko if: false -->
+                            <!-- ko if: !userIsEditingCollection($parent) -->
                               <a data-bind="html: name,
                                             attr: { href: getTreeViewURL($data) }"
                                  href="#" target="_blank"><!--NAME--></a>
@@ -703,14 +748,21 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 </table>
       <!-- /ko -->
       <!-- ko if: !('decisions' in $data.data) || ($data.data.decisions.length === 0) -->
-            <div class="empty-list-prompt">
+            <div class="empty-list-prompt" style="margin-bottom: 4px;">
+          <!-- ko if: userIsEditingCollection($data) -->
                 This collection is empty! Add trees using the buttons below, or
                 by visiting trees in the curation app.
+          <!-- /ko -->
+          <!-- ko if: !userIsEditingCollection($data) -->
+                This collection is empty! Add trees by clicking Edit above, or
+                by visiting trees in the curation app.
+          <!-- /ko -->
             </div>
       <!-- /ko -->
 
+          <!-- ko if: userIsEditingCollection($data) -->
             <!-- TODO: Put add-collection widgets! -->
-            <div xclass="form-actions" style="margin-top: 1em; margin-bottom: 0.25em;">
+            <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
               <button id="new-collection-tree-start" type="submit" 
                       class="btn btn-info Xbtn-info-disabled"
                       onclick="return false;"
@@ -766,6 +818,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                       <i class="icon-plus icon-white"></i>
                 </button>
             </div>
+          <!-- /ko -->
 
             </div>
 
