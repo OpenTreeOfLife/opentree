@@ -653,13 +653,43 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             </a>
                            <!-- /ko -->
                           </td>
-                          <td><a data-bind="html: name,
+                          <td>
+<!--
+                              <button Xdata-bind="click: TODO-follow-this-collection,
+                                                  visible: true"
+                                  title="Edit name and description (become a collaborator)"
+                                  class="pull-right btn btn-mini row-controls-ghosted"
+                                  style="margin-left: 4px;">
+                                  <i class="icon-edit"></i>
+                              </button>
+-->
+                            <!-- ko if: true -->
+                              <input type="text"
+                                     class="input-large" 
+                                     style="width: 360px; margin-right: 8px; margin-bottom: 2px;"
+                                     placeholder="Name this tree"
+                                     data-bind="value: name, 
+                                                valueUpdate: ['afterkeydown', 'input']
+                                                "
+                              >
+                              </input>
+                              <a data-bind="attr: { href: getTreeViewURL($data) }"
+                                 href="#" target="_blank">(link)</a>
+                              <br/>
+                              <textarea data-bind="value: comments"
+                                        style="width: 400px; color: #333; margin-bottom: 4px;"
+                                        placeholder="Describe this tree">
+                                <!--COMMENTS--></textarea>
+                            <!-- /ko -->
+                            <!-- ko if: false -->
+                              <a data-bind="html: name,
                                             attr: { href: getTreeViewURL($data) }"
                                  href="#" target="_blank"><!--NAME--></a>
                               <br/>
                               <p data-bind="html: comments"
                                  style="color: #999; margin-bottom: 4px;">
                                 <!--COMMENTS--></p>
+                            <!-- /ko -->
                           </td>
                       </tr>
                   </tbody>
