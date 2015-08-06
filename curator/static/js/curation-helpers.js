@@ -266,7 +266,7 @@ var confirmOnPageExit = function (e)
 
 function pushPageExitWarning( warningText ) {
     // add the desired text to our stack of warnings
-    pageExitWarnings.push( warningText || defaultPageEditWarning );
+    pageExitWarnings.push( warningText || defaultPageExitWarning );
     // assign the function that returns the string
     window.onbeforeunload = confirmOnPageExit;
 }
@@ -1071,11 +1071,13 @@ function editCollection( collection ) {
     // toggle to full editing UI
     currentlyEditingCollectionID = collection.data['url'];
     showCollectionViewer( collection );  // to refresh the UI
+    pushPageExitWarning();
 }
 function saveChangesToCollection( collection ) {
     // TODO: prompt for commit msg and confirmation?
     if (confirm('Are you sure you want to save your changes to this collection?')) {
         alert('TODO');
+        popPageExitWarning();
     }
 }
 function cancelChangesToCollection( collection ) {
@@ -1083,6 +1085,7 @@ function cancelChangesToCollection( collection ) {
     currentlyEditingCollectionID = null;
     // TODO: replace with unchanged collection from storage!
     showCollectionViewer( collection );  // to refresh the UI
+    popPageExitWarning();
 }
 function userIsLoggedIn() {
     return userLogin !== 'ANONYMOUS';
