@@ -29,7 +29,12 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
 <script type='text/javascript'>
     var isLoggedIn = {{= isLoggedIn and 'true' or 'false' }};
     {{ # TODO: Define needed URLs for collections API, others }}
+
     var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}"; 
+    var API_create_collection_POST_url = "{{=API_create_collection_POST_url}}"; 
+    var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}"; 
+    var API_update_file_PUT_url = "{{=API_update_file_PUT_url}}"; 
+    var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}"; 
 
     {{ # TODO: Handle stateful URLs and History here? }}
     // If inbound URL specifies tab, tree, or filter settings, record them here

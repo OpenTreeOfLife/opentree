@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {{ 
-from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch
+from applications.opentree.modules.opentreewebapputil import get_user_login, get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch
 }}
 <html lang="{{=T.accepted_language or 'en'}}" class="no-js"><!-- no-js need it for modernzr -->
   <head>
@@ -168,6 +168,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
       $('#maintenance-notice').modal('show');
   }
 
+  // Fetch the userid and display name for a logged-in user
+  var userLogin = "{{= get_user_login() }}";
   var userDisplayName = "{{= get_user_display_name() }}";
   jQuery(document).ready(function(){ 
     {{ if 'auth' in globals(): }}
@@ -435,6 +437,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         </div>
     </div>
 
+<!-- ko if: ('data' in $data) && ('decisions' in $data.data) -->
   <!-- hidden template for the tree-collection-viewer (editor) -->
   <div class="modal hide fade" id="tree-collection-viewer" 
        Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
@@ -442,34 +445,52 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
     <div class="modal-header" style="padding-bottom: 0;">
       <a class="close" onclick="$('#tree-collection-viewer').modal('hide'); return false;">×</a>
       <h3 id='dialog-heading'>
-            Tree collection
-            <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
-                   data-bind="value: $data['name'], 
-                              valueUpdate: ['afterkeydown', 'input']"
+            <span style="color: #999;">Tree collection</span>
+           <!-- ko if: userIsEditingCollection($data) -->
+            <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; 
+                                      font-weight: bold; width: 50%; margin-bottom: 0px;"
+                   data-bind="value: $data.data['name'], 
+                              valueUpdate: ['afterkeydown', 'input'],
+                              event: { keyup: updateNewCollectionID, change: updateNewCollectionID }
+                              "
             />
-       </h3>
-        <!-- TODO -->
-        <p style="color: #999; margin-top: -7px; margin-left: 180px;">jimallman/trees-about-bees 
-            <a href="https://github.com/OpenTreeOfLife/collections-0/blob/master/collections-by-owner/jimallman/my-test-collection.json" target="_blank">(on GitHub)</a>
+           <!-- /ko -->
+           <!-- ko if: !userIsEditingCollection($data) -->
+             <span data-bind="html: $data.data['name']"></span>
+           <!-- /ko -->
+      </h3>
+      <div style="color: #999; position: relative;">
+        <p style="position: absolute; width: 170px; text-align: right;">
+            Collection ID: 
         </p>
+        <p style="margin-left: 180px;">
+            <span id="collection-id-display" 
+                  data-bind="text: getCollectionIDFromURL($data.data.url)">&nbsp;</span>
+           <!-- ko if: ('external_url' in $data) -->
+            <a data-bind="attr: { href: $data['external_url'] }" target="_blank">(on GitHub)</a>
+           <!-- /ko -->
+        </p>
+      </div>
     </div>
     <div class="modal-body">
-      <!-- ko if: 'decisions' in $data -->
-        <div class="tab-pane active" id="tree-properties">
+      <div class="tab-pane active">
           <form class="form-inline" 
                 style="overflow: hidden; margin-bottom: 0px; margin-top: -12px; padding-top: 12px;">
            <div class="collection-actions">
             <!-- action buttons, from right to left -->
 
+           <!-- ko if: userIsEditingCollection($data) -->
             <!-- DELETE button -->
-            <button Xdata-bind="click: removeTree,
+            <button data-bind="click: deleteTreeCollection,
                                visible: true"
                 title="Delete this tree collection"
                 class="pull-right btn btn-mini btn-danger row-controls-ghosted"
-                style="margin-left: 4px;">
-                <i class="icon-remove icon-white"></i>
+                style="margin-left: 14px;">
+                Delete <i class="icon-remove icon-white"></i>
             </button>
+           <!-- /ko -->
 
+           <!-- ko if: !userIsEditingCollection($data) -->
             <!-- DUPLICATE button -->
             <button Xdata-bind="click: TODO-follow-this-collection,
                                 visible: true"
@@ -477,15 +498,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                 class="pull-right btn btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
                 <i class="icon-share"></i>
-            </button>
-
-            <!-- EDIT button -->
-            <button Xdata-bind="click: TODO-follow-this-collection,
-                                visible: true"
-                title="Edit this collection (become a collaborator)"
-                class="pull-right btn btn-mini row-controls-ghosted"
-                style="margin-left: 4px;">
-                <i class="icon-edit"></i>
             </button>
 
             <!-- FOLLOW options -->
@@ -534,31 +546,82 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                 <i class="icon-list-alt"></i>
             </button>
             -->
+           <!-- /ko -->
+
+            <!-- EDIT button -->
+            <button data-bind="click: editCollection,
+                               visible: !(userIsEditingCollection($data)),
+                               attr: {'title': userIsLoggedIn() ? 'Edit this collection (become a collaborator)' : 'Edit this collection (requires login)'}"
+                title=""
+                class="pull-right btn btn-info btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                Edit <i class="icon-edit icon-white"></i>
+            </button>
+            <button data-bind="click: cancelChangesToCollection,
+                               visible: userIsEditingCollection($data)"
+                title="Cancel your changes to this collection"
+                class="pull-right btn btn-warning btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                Cancel</i>
+            </button>
+            <button data-bind="click: saveChangesToCollection,
+                               visible: userIsEditingCollection($data)"
+                title="Save your changes to this collection"
+                class="pull-right btn btn-info btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                Save Changes</i>
+            </button>
+
            </div>
 
-            <!-- editable tree properties here -->
+            <!-- editable collection properties here -->
+
                 <label>Description</label>
-                <input type="text" data-bind="value: $data['treeDescription']"
+              <!-- ko if: userIsEditingCollection($data) -->
+                <input type="text"
                     class="input-xlarge" style="width: 500px; margin-bottom: 2px;"
-                    placeholder="Describe this collection's focus or purpose">
-                </input>
+                    placeholder="Describe this collection's focus or purpose"
+                    data-bind="value: $data.data['description'], 
+                               valueUpdate: ['afterkeydown', 'input']
+                               "
+                ></input>
+              <!-- /ko -->
+              <!-- ko if: !userIsEditingCollection($data) -->
+                <div style="background-color: #eee; width: 500px; 
+                            margin: 0px 0px 2px -1px;
+                            border-radius: 4px; padding: 5px 8px;"
+                     data-bind="html: $data.data['description'] || '&nbsp;'" 
+                ></div>
+              <!-- /ko -->
 
                 <label style="clear: left; margin-top: 6px;">Created by </label>
-                <strong><a href="https://github.com/jimallman" target="_blank">Jim Allman</a></strong>, with
-              <!-- TODO: list collaborators (links) in a popup -->
+                <strong><a href="https://github.com/jimallman" target="_blank"
+                           data-bind="text: $data.data.creator['name'], 
+                                      attr: { 
+                                        href: ('https://github.com/'+ $data.data.creator['login']) 
+                                      }
+                                      "
+                        >&nbsp;</a></strong>, with
+              <!-- list collaborators (links) in a popup -->
               <div id="collection-collab-toggle" Xclass="btn-group" 
                    style="display: inline-block; position: relative;">
                 <strong id="collection-collab-toggle" class="dropdown-toggle" 
                         style="cursor: pointer;"
-                        data-toggle="dropdown">2 collaborators
+                        data-toggle="dropdown">
+                    <span data-bind="text: $data.data.contributors.length">0</span> 
+                    collaborator<span data-bind="if: $data.data.contributors.length != 1">s</span>
                    <span class="caret" style="vertical-align: middle;"></span>
                 </strong>
-                <ul class="dropdown-menu">
+                <ul id="tree-collection-contributors" class="dropdown-menu" 
+                    data-bind="foreach: { data: $data.data.contributors, as: 'contributor' }">
                     <li>
-                        <a href="https://github.com/pmidford" target="_blank">Peter Midford</a>
-                    </li>
-                    <li>
-                        <a href="https://github.com/kcranston" target="_blank">Karen Cranston</a>
+                        <a target="_blank"
+                           data-bind="text: contributor['name'], 
+                                      attr: { 
+                                        href: ('https://github.com/'+ contributor['login']) 
+                                      }
+                                      "
+                        >&nbsp;</a>
                     </li>
                 </ul>
               </div>
@@ -569,54 +632,200 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                   <button id="show-all-trees-button" class="btn btn-small" onclick="alert('COMING SOON'); return false;">&nbsp; Show all tree decisions &nbsp;</button>
                 </div>
                 -->
-                <table class="table table-condensed table-hover"
-                    data-bind="visible: true"><!-- TODO: hide if no trees found -->
+      <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->
+                <table id="tree-collection-decision-holder" 
+                       class="table table-condensed table-hover"
+                       style="margin-bottom: 2px;"
+                       data-bind="visible: true"><!-- TODO: hide if no trees found -->
                   <thead>
                     <tr>
-                        <th width="65">Rank</th><!-- ranking -->
+                        <th width="76">Rank</th><!-- ranking -->
                         <th width="*">Tree name (click to view)</th><!-- also comments! -->
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: decisions, as: 'decision' }">
+                  <tbody id="tree-collection-decisions" 
+                         data-bind="foreach: { data: $data.data.decisions, as: 'decision' }">
                       <tr class="single-tree-row">
                           <td>
-                            <span data-bind="text: $index() + 1"
-                                  style="color: #999; text-align: right;"
-                             >1</span>&nbsp;
-                            <!-- SORTING widgets -->
-                            <a Xdata-bind="click: TODO-move-tree-down,
-                                                visible: true"
-data-bind="style: {'opacity': ($index() > 0 ? 1.0 : 0.5)}"
+                          <!-- ko if: userIsEditingCollection($parent) -->
+                            <input type="text" 
+                                   data-bind="value: $data['rank'],
+                                              valueUpdate: ['afterkeydown', 'input'],
+                                              event: {
+                        keyup: function() {showCollectionMoveUI($data, $element, $parent)},
+                        change: function() {showCollectionMoveUI($data, $element, $parent)}
+                                              }"
+                                   style="color: #999; width: 24px; 
+                                          margin-left: -4px; text-align: right;"
+                                   value=""
+                             />&nbsp;
+                           <!-- SORTING widgets -->
+
+                           <!-- ko if: $index() === 0 -->
+                            <a style="opacity: 0.5;"
+                               href="#"
+                               onclick="return false;"
+                               class="icon-chevron-up">
+                            </a>
+                           <!-- /ko -->
+                           <!-- ko if: $index() > 0 -->
+                            <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'UP'); return false;}"
                                href="#"
                                title="Move this tree up in the list"
                                class="icon-chevron-up">
                             </a>
-                            <a Xdata-bind="click: TODO-move-tree-down,
-                                                visible: true"
-data-bind="style: {'opacity': ($index() < ($parent.decisions.length-1) ? 1.0 : 0.5)}"
+                           <!-- /ko -->
+
+                           <!-- ko if: $index() === ($parent.data.decisions.length-1) -->
+                            <a style="opacity: 0.5;"
+                               href="#"
+                               onclick="return false;"
+                               class="icon-chevron-down">
+                            </a>
+                           <!-- /ko -->
+                           <!-- ko if: $index() < ($parent.data.decisions.length-1) -->
+                            <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'DOWN'); return false;}"
                                href="#"
                                title="Move this tree down in the list"
                                class="icon-chevron-down">
                             </a>
+                           <!-- /ko -->
+
+                          <!-- /ko --><!-- END of editing widgets -->
+                          <!-- ko if: !userIsEditingCollection($parent) -->
+                          <div data-bind="text: $data['rank']"
+                               style="text-align: right; width: 27px; margin-top: 5px;">XX</div>
+                          <!-- /ko -->
+
                           </td>
-                          <td><a data-bind="html: name"
+                          <td>
+<!--
+                              <button Xdata-bind="click: TODO-follow-this-collection,
+                                                  visible: true"
+                                  title="Edit name and description (become a collaborator)"
+                                  class="pull-right btn btn-mini row-controls-ghosted"
+                                  style="margin-left: 4px;">
+                                  <i class="icon-edit"></i>
+                              </button>
+-->
+                            <!-- ko if: userIsEditingCollection($parent) -->
+                              <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;}"
+                                      title="Remove this tree from the collection"
+                                      class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                                      style="margin-left: 4px;">
+                                  <i class="icon-remove icon-white"></i>
+                              </button>
+                              <input type="text"
+                                     class="input-large" 
+                                     style="width: 320px; margin-right: 10px; margin-bottom: 2px;"
+                                     placeholder="Name this tree"
+                                     data-bind="value: name, 
+                                                valueUpdate: ['afterkeydown', 'input']
+                                                "
+                              >
+                              </input>
+                              <a data-bind="attr: { href: getTreeViewURL($data) }"
+                                 title="View this tree in a new window"
+                                 href="#" target="_blank">(link)</a>
+                              <br/>
+                              <textarea data-bind="value: comments"
+                                        style="width: 400px; color: #333; margin-bottom: 4px;"
+                                        placeholder="Describe this tree">
+                                <!--COMMENTS--></textarea>
+                            <!-- /ko -->
+                            <!-- ko if: !userIsEditingCollection($parent) -->
+                              <a data-bind="html: name,
+                                            attr: { href: getTreeViewURL($data) }"
                                  href="#" target="_blank"><!--NAME--></a>
                               <br/>
                               <p data-bind="html: comments"
                                  style="color: #999; margin-bottom: 4px;">
                                 <!--COMMENTS--></p>
+                            <!-- /ko -->
                           </td>
                       </tr>
                   </tbody>
                 </table>
-          </form>
-          </div>
       <!-- /ko -->
-    </div>
-    <div class="modal-footer">
-      <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
-    </div>
-  </div>
+      <!-- ko if: !('decisions' in $data.data) || ($data.data.decisions.length === 0) -->
+            <div class="empty-list-prompt" style="margin-bottom: 4px;">
+          <!-- ko if: userIsEditingCollection($data) -->
+                This collection is empty! Add trees using the buttons below, or
+                by visiting trees in the curation app.
+          <!-- /ko -->
+          <!-- ko if: !userIsEditingCollection($data) -->
+                This collection is empty! Add trees by clicking Edit above, or
+                by visiting trees in the curation app.
+          <!-- /ko -->
+            </div>
+      <!-- /ko -->
+
+          <!-- ko if: userIsEditingCollection($data) -->
+            <!-- TODO: Put add-collection widgets! -->
+            <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
+              <button id="new-collection-tree-start" type="submit" 
+                      class="btn btn-info Xbtn-info-disabled"
+                      onclick="return false;"
+              >Add tree to this collection
+                    &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+              </button>
+              <button id="new-collection-tree-cancel" type="submit"
+                      style="display: none;" class="btn">Cancel
+              </button>
+            </div>
+            <div id="new-collection-tree-by-ids"
+                 class="new-collection-tree-options" style="display: none; padding-left: 12px;">
+                <label>by study ID</label>
+                <input type="text" name="study-id"
+                    class="input-small" style="margin-bottom: 2px;"
+                    placeholder="ot_123"
+                    data-bind="value: '', 
+                               valueUpdate: ['afterkeydown', 'input'], 
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                ></input>
+                <label>and tree ID</label>
+                <input type="text" name="tree-id"
+                    class="input-small" style="margin-bottom: 2px;"
+                    placeholder="456"
+                    data-bind="value: '', 
+                               valueUpdate: ['afterkeydown', 'input'], 
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                ></input>
+                <button class="btn btn-info" 
+                        Xonclick="addTreeToCollection('FROM_IDS'); return false;"
+                        data-bind="click: function() {addTreeToCollection($data, 'FROM_IDS'); return false;}"
+                >
+                      <i class="icon-plus icon-white"></i>
+                </button>
+            </div>
+            <div id="new-collection-tree-by-url"
+                 class="new-collection-tree-options" style="display: none; padding-left: 12px;">
+                <label>by URL</label>
+                <input type="text"  name="tree-url"
+                    class="input-xlarge" style="width: 385px; margin-bottom: 2px;"
+                    placeholder="http://tree.opentreeoflife.org/curator/ot_study/123/tree/456"
+                    data-bind="value: '', 
+                               valueUpdate: ['afterkeydown', 'input'], 
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                ></input>
+                <button class="btn btn-info" 
+                        Xonclick="addTreeToCollection('FROM_URL'); return false;"
+                        data-bind="click: function() {addTreeToCollection($data, 'FROM_URL'); return false;}"
+                >
+                      <i class="icon-plus icon-white"></i>
+                </button>
+            </div>
+          <!-- /ko -->
+
+            </form>
+          </div>
+    </div><!-- end of .modal-body -->
+    <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
+  </div><!-- end of #tree-collection-viewer.modal- -->
+<!-- /ko-->
 
 {{ if ('maintenance_info' in locals()) and maintenance_info.get('maintenance_notice', None):
    # N.b. Check to make sure it's in the view-dict, or error pages etc. will fail }}
