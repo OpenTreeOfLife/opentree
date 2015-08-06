@@ -230,21 +230,29 @@ function loadMissingFocalCladeNames() {
  * page with unsaved changes. This should also protect against the Back button,
  * swipe gestures in Chrome, etc.
  *  
- * Call addPageExitWarning(), removePageExitWarning() to add/remove this
+ * Call pushPageExitWarning(), popPageExitWarning() to add/remove this
  * protection as needed.
  *
  * Adapted from  
  * http://stackoverflow.com/questions/1119289/how-to-show-the-are-you-sure-you-want-to-navigate-away-from-this-page-when-ch/1119324#1119324
+ *
+ * UPDATE (August 2015): Now we have use cases with unsaved changes in both
+ * studies and tree collections, so we need a push/pop stack of page-exit
+ * warnings.  NOTE that we assume the UI will enforce modality of editing
+ * tasks, so that any push+pop sequence will refer to a single task (editing a
+ * study, or editing a collection).
  */
 
-var pageExitWarning = "WARNING: This page contains unsaved changes.";
+var pageExitWarnings = [ ];
+var defaultPageExitWarning = "WARNING: This page contains unsaved changes.";
 
 var confirmOnPageExit = function (e) 
 {
     // If we haven't been passed the event get the window.event
     e = e || window.event;
 
-    var message = pageExitWarning;
+    // use the topmost (most recently added) message on the stack
+    var message = pageExitWarnings[pageExitWarnings.length - 1];
 
     // For IE6-8 and Firefox prior to version 4
     if (e) 
@@ -256,16 +264,22 @@ var confirmOnPageExit = function (e)
     return message;
 };
 
-function addPageExitWarning( warningText ) {
-    // Turn it on - assign the function that returns the string
-    if (warningText) {
-        pageExitWarning = warningText;
-    }
+function pushPageExitWarning( warningText ) {
+    // add the desired text to our stack of warnings
+    pageExitWarnings.push( warningText || defaultPageEditWarning );
+    // assign the function that returns the string
     window.onbeforeunload = confirmOnPageExit;
 }
-function removePageExitWarning() {
-    // Turn it off - remove the function entirely
-    window.onbeforeunload = null;
+function popPageExitWarning() {
+    // remove the topmost message from our stack of warnings
+    pageExitWarnings.pop();
+    if (pageExitWarnings.length === 0) {
+        // turn it off - remove the function entirely
+        window.onbeforeunload = null;
+    } else {
+        // prepare to show the previous (underlying) message
+        window.onbeforeunload = confirmOnPageExit;
+    }
 }
 
 function bindHelpPanels() {

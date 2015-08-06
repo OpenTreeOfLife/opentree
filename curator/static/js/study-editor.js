@@ -1383,7 +1383,7 @@ function loadSelectedStudy() {
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
                 enableSaveButton();
-                addPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
+                pushPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
                 updateQualityDisplay();
             });
 
@@ -1869,7 +1869,7 @@ function saveFormDataToStudyJSON() {
             hideModalScreen();
             showSuccessMessage('Study saved to remote storage.');
 
-            removePageExitWarning();
+            popPageExitWarning();
             disableSaveButton();
             // TODO: should we expect fresh JSON to refresh the form?
         }
