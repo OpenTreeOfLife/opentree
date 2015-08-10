@@ -82,7 +82,6 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
             A collection is a list of trees, chosen for synthesis or any other
             purpose. Each collection has a nominal owner, but any logged-in user
             can choose to collaborate (add and manage trees) or simply follow its progress. 
-            <span class="interesting-value" style="font-weight: bold;">NOTE that any collections listed below are inactive placeholders!</span>
         </p>
         <p>
             Collections are stored as documents in <a href="https://github.com/" target="_blank">GitHub</a>, 
@@ -161,9 +160,10 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
                 <th>Tree Collection (click to view)</th>
               {{ pass }}
                 <th>How many trees</th>
-                <th>Synthesis report?</th>
+                <th>Last modified</th>
                 <th>Owner</th>
                 <!--
+                <th>Synthesis report?</th>
                 <th style="text-align: right;">Publication</th>
                 <th>Completeness</th>
                 <th>Year</th>
@@ -176,7 +176,7 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
             <tr>
                 <td data-bind="html: getViewLink(collection)">&nbsp;</td>
                 <td data-bind="html: getTreeCount(collection)">&nbsp;</td>
-                <td>TODO?</td>
+                <td data-bind="html: getLastModification(collection)">&nbsp;</td>
                 <td data-bind="html: getCreatorLink(collection)">&nbsp;</td>
                 <!--
                 <td data-bind="text: study.is_deprecated">?</td>

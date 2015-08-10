@@ -185,18 +185,29 @@ function loadCollectionList() {
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
                     viewModel, 
-                    function(study) {
+                    function(collection) {
                         // match entered text against pub reference (author, title, journal name, DOI)
-                        var pubReference = study['ot:studyPublicationReference'];
-                        var pubURL = study['ot:studyPublication'];
-                        var pubYear = study['ot:studyYear'];
-                        var tags = $.isArray(study['ot:tag']) ? study['ot:tag'].join('|') : study['ot:tag'];
-                        var curator = study['ot:curatorName'];
-                        var clade = ('ot:focalCladeOTTTaxonName' in study && 
-                                     ($.trim(study['ot:focalCladeOTTTaxonName']) !== "")) ?
-                                        study['ot:focalCladeOTTTaxonName'] :  // use mapped name if found
-                                        study['ot:focalClade']; // fall back to numeric ID (should be very rare)
-                        if (!matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
+                        var id, name, description, creator, contributors;
+                        var id = $.trim(collection['id']);
+                        var name = $.trim(collection['name']);
+                        var description = $.trim(collection['description']);
+                        // extract names and IDs of all stakeholders (incl. creator!)
+                        if ($.isPlainObject(collection['creator'])) {
+                            creator = $.trim(collection['creator'].name)
+                                +'|'+ $.trim(collection['creator'].login);
+                        } else {
+                            creator = "";
+                        }
+                        if ($.isArray(collection['contributors'])) {
+                            contributors = "";
+                            $.each(collection['contributors'], function(i,c) {
+                                contributors += ('|'+ $.trim(c.name) +'|'+ $.trim(c.login));
+                            });
+                        } else {
+                            contributors = "";
+                        }
+
+                        if (!matchPattern.test(id) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
                             return false;
                         }
 
@@ -213,8 +224,8 @@ function loadCollectionList() {
                      */
                     case 'Most recently modified':
                         filteredList.sort(function(a,b) { 
-                            var aMod = a['lastModified'] || '';
-                            var bMod = b['lastModified'] || '';
+                            var aMod = a.lastModified.ISO_date;
+                            var bMod = b.lastModified.ISO_date;
                             if (aMod === bMod) return 0;
                             return (aMod < bMod)? 1 : -1;
                         });
@@ -222,8 +233,8 @@ function loadCollectionList() {
 
                     case 'Most recently modified (reversed)':
                         filteredList.sort(function(a,b) { 
-                            var aMod = a['lastModified'] || '';
-                            var bMod = b['lastModified'] || '';
+                            var aMod = a.lastModified.ISO_date;
+                            var bMod = b.lastModified.ISO_date;
                             if (aMod === bMod) return 0;
                             return (aMod > bMod)? 1 : -1;
                         });
@@ -268,7 +279,7 @@ function loadCollectionList() {
 
 function getViewLink(collection) {
     // shows this collection in a popup viewer/editor
-    var html = '<a class="" href="#" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'+ collection.name +'</a>';
+    var html = '<a class="" href="#" title="'+ collection.id +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'+ collection.name +'</a>';
 
     return html;
 }
@@ -278,20 +289,9 @@ function getTreeCount(collection) {
 function getCreatorLink(collection) {
     return '<a href="#" onclick="filterByCurator(\''+ collection.creator.name +'\'); return false;"'+'>'+ collection.creator.name +'</a'+'>';
 }
-
-function toggleStudyDetails( clicked ) {
-    var $toggle = $(clicked);
-    //var $compactRef = $toggle.prevAll('.compact-study-ref');
-    var $fullRef = $toggle.closest('tr').next().find('.full-study-ref');
-    if ($fullRef.is(':visible')) {
-        //$compactRef.show();
-        $fullRef.hide();
-        $toggle.text('[show details]');
-    } else {
-        //$compactRef.hide();
-        $fullRef.show();
-        $toggle.text('[hide details]');
-    }
+function getLastModification(collection) {
+    // nicely formatted for display, with details on mouseover 
+    return '<span title="'+ collection.lastModified.display_date +'">'+ collection.lastModified.relative_date +'</a'+'>';
 }
 
 function filterByCurator( curatorID ) {
