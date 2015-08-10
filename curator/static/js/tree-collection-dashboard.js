@@ -120,7 +120,7 @@ function updateListFiltersWithHistory() {
 
 $(document).ready(function() {
     bindHelpPanels();
-    //loadCollectionList();
+    loadCollectionList();
     
     // NOTE that our initial state is set in the main page template, so we 
     // can build it from incoming URL in web2py. Try to recapture this state,
@@ -142,22 +142,20 @@ function loadCollectionList() {
         type: 'POST',
         dataType: 'json',
         url: findAllTreeCollections_url,
-        data: { verbose: true },
+        data: null,  // TODO: do we need { verbose: true } or other options here?
         success: function( data, textStatus, jqXHR ) {
             // this should be properly parsed JSON
 
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
-                showErrorMessage('Sorry, there was an error loading the list of studies.');
+                showErrorMessage('Sorry, there was an error loading the list of tree collections.');
                 return;
             }
             if (typeof data !== 'object' || !($.isArray(data))) {
-                showErrorMessage('Sorry, there is a problem with the study-list data.');
+                showErrorMessage('Sorry, there is a problem with the tree-collection data.');
                 return;
             }
             
-            sortStudiesByDOI(data);
-
             viewModel = data; /// ko.mapping.fromJS( fakeStudyList );  // ..., mappingOptions);
 
             // enable sorting and filtering for lists in the editor
@@ -173,8 +171,8 @@ function loadCollectionList() {
             };
             
             // maintain a persistent array to preserve pagination (reset when computed)
-            viewModel._filteredStudies = ko.observableArray( ).asPaged(20);
-            viewModel.filteredStudies = ko.computed(function() {
+            viewModel._filteredCollections = ko.observableArray( ).asPaged(20);
+            viewModel.filteredCollections = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
                 updateClearSearchWidget( '#study-list-filter', viewModel.listFilters.COLLECTIONS.match );
@@ -182,7 +180,6 @@ function loadCollectionList() {
 
                 var match = viewModel.listFilters.COLLECTIONS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
-                var workflow = viewModel.listFilters.COLLECTIONS.workflow();
                 var order = viewModel.listFilters.COLLECTIONS.order();
 
                 // map old array to new and return it
@@ -202,26 +199,6 @@ function loadCollectionList() {
                         if (!matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
                             return false;
                         }
-                        // check for filtered workflow state
-                        switch (workflow) {
-                            case 'Any workflow state':
-                                // nothing to do here, all studies pass
-                                break;
-
-                            case 'Draft study':
-                            case 'Submitted for synthesis':
-                            case 'Under revision':
-                            case 'Included in synthetic tree':
-                                // show only matching studies
-                                if (study.workflowState !== workflow) { 
-                                    return false; // stop looping on trees
-                                }
-                                break;
-
-                            default:
-                                console.log("Unexpected workflow for study list: ["+ workflow +"]");
-                                return false;
-                        }
 
                         return true;
                     }
@@ -234,177 +211,73 @@ function loadCollectionList() {
                      *   0 = no change
                      *   1 = b comes before a
                      */
-                    case 'Newest publication first':
+                    case 'Most recently modified':
                         filteredList.sort(function(a,b) { 
-                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
-                            return (a['ot:studyYear'] > b['ot:studyYear'])? -1 : 1;
+                            var aMod = a['lastModified'] || '';
+                            var bMod = b['lastModified'] || '';
+                            if (aMod === bMod) return 0;
+                            return (aMod < bMod)? 1 : -1;
                         });
                         break;
 
-                    case 'Oldest publication first':
+                    case 'Most recently modified (reversed)':
                         filteredList.sort(function(a,b) { 
-                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
-                            return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
+                            var aMod = a['lastModified'] || '';
+                            var bMod = b['lastModified'] || '';
+                            if (aMod === bMod) return 0;
+                            return (aMod > bMod)? 1 : -1;
                         });
                         break;
 
-                    case 'Workflow state':
-                        var displayOrder = {
-                            'Draft study': 1,
-                            'Submitted for synthesis': 2,
-                            'Under revision': 3,
-                            'Included in synthetic tree': 4
-                        };
+                    case 'By owner/name':
                         filteredList.sort(function(a,b) { 
-                            var aDisplayOrder = displayOrder[ a.workflowState ];
-                            var bDisplayOrder = displayOrder[ b.workflowState ];
-                            if (aDisplayOrder === bDisplayOrder) return 0;
-                            return (aDisplayOrder < bDisplayOrder) ? -1 : 1;
+                            // first element is the ID with user-name/collection-name
+                            if (a.id === b.id) return 0;
+                            return (a.id < b.id) ? -1 : 1;
                         });
                         break;
 
-                    case 'Completeness':
+                    case 'By owner/name (reversed)':
                         filteredList.sort(function(a,b) { 
-                            if (a.completeness === b.completeness) return 0;
-                            return (a.completeness < b.completeness) ? -1 : 1;
+                            // first element is the ID with user-name/collection-name
+                            if (a.id === b.id) return 0;
+                            return (a.id > b.id) ? -1 : 1;
                         });
                         break;
 
+                    // TODO: add a filter for 'Has un-merged changes'?
+                    
                     default:
-                        console.log("Unexpected order for OTU list: ["+ order +"]");
-                        return false;
+                        console.warn("Unexpected order for collection list: ["+ order +"]");
+                        return null;
 
                 }
-                viewModel._filteredStudies( filteredList );
-                viewModel._filteredStudies.goToPage(1);
-                return viewModel._filteredStudies;
-            }); // END of filteredStudies
+                viewModel._filteredCollections( filteredList );
+                viewModel._filteredCollections.goToPage(1);
+                return viewModel._filteredCollections;
+            }); // END of filteredCollections
                     
-            ko.applyBindings(viewModel);
+            // bind just to the main collection list (not the single-collection editor!)
+            var listArea = $('#collection-list-container')[0];
+            ko.applyBindings(viewModel, listArea);
 
             hideModalScreen();
         }
     });
 }
 
-/* gather any duplicate studies (with same DOI) */
-var studiesByDOI = {};
-function sortStudiesByDOI(studyList) {
-    studiesByDOI = {};
-    $.each( studyList, function(i, study) {
-        var studyID = study['ot:studyId'];
-        var studyDOI = ('ot:studyPublication' in study) ? study['ot:studyPublication'] : "";
-        if (studyDOI !== "") {
-            if ('studyDOI' in studiesByDOI) {
-                studiesByDOI[ studyDOI ].push( studyID );
-            } else {
-                studiesByDOI[ studyDOI ] = [ studyID ];
-            }
-        }
-    });
-    // remove all but the entries with actual dupes
-    for (var doi in studiesByDOI) {
-        if (studiesByDOI[ doi ].length < 2) {
-            delete studiesByDOI[doi];
-        }
-    }
-}
-function getDuplicateStudyMarker(study) {
-    var studyDOI = ('ot:studyPublication' in study) ? study['ot:studyPublication'] : "";
-    if (studyDOI !== "") {
-        var dupes = studiesByDOI[ studyDOI ];
-        if (dupes && dupes.length > 1) {
-            return '&nbsp; <a href="#" onclick="filterByDOI(\''+ studyDOI +'\'); return false;" style="font-weight: bold; color: #b94a48;" title="CLick to see all studies with this DOI">[DUPLICATE STUDY]</a'+'>';
-        }
-    }
-    return '';
-}
-
-function getViewOrEditLinks(study) {
-    var html = "";
-
-    /* Send authorized users straight to Edit page?
-    var viewOrEditURL = (viewOrEdit === 'EDIT') ?
-        '/curator/study/edit/'+ study['ot:studyId'] : 
-        '/curator/study/view/'+ study['ot:studyId'];
-    */
-    var viewOrEditURL = '/curator/study/view/'+ study['ot:studyId'];
-
-    var fullRef = study['ot:studyPublicationReference'];
-    if (fullRef) {
-        // hide/show full publication reference
-        html += '<a class="compact-study-ref" href="'+ viewOrEditURL +'">'+ fullToCompactReference(fullRef) +'</a>';
-        html += '&nbsp; &nbsp; <a class="full-ref-toggle" href="#" onclick="toggleStudyDetails(this); return false;">[show details]</a>';
-    } else {
-        // nothing to toggle
-        html += '<a href="'+ viewOrEditURL +'">(Untitled study)</a>';
-    }
-    html += getDuplicateStudyMarker(study);
+function getViewLink(collection) {
+    // shows this collection in a popup viewer/editor
+    var html = '<a class="" href="#" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'+ collection.name +'</a>';
 
     return html;
 }
-function getCuratorLink(study) {
-    return '<a href="#" onclick="filterByCurator(\''+ study['ot:curatorName'] +'\'); return false;"'+'>'+ study['ot:curatorName'] +'</a'+'>';
+function getTreeCount(collection) {
+    return collection.decisions.length || 0;
 }
-function getFocalCladeLink(study) {
-    var ottIdNotFound = false;
-    var ottID;
-    if ('ot:focalClade' in study) {
-        ottID = study['ot:focalClade'];
-        if ($.trim(ottID) === "") {
-            ottIdNotFound = true;
-        }
-    } else {
-        ottIdNotFound = true;
-    }
-
-    var cladeNameNotFound = false;
-    var cladeName;
-    if ('ot:focalCladeOTTTaxonName' in study) {
-        cladeName = study['ot:focalCladeOTTTaxonName'];
-        if ($.trim(cladeName) === "") {
-            cladeNameNotFound = true;
-        }
-    } else {
-        cladeNameNotFound = true;
-    }
-    if (cladeNameNotFound) {
-        // use the best available placeholder
-        if (ottIdNotFound) {
-            cladeName = '&mdash;';
-        } else {
-            cladeName = ottID;
-        }
-    }
-
-    if (ottIdNotFound) {
-        return '<span style="color: #ccc;">'+ cladeName +'</span>';
-    }
-
-    return '<a href="#" onclick="filterByClade(\''+ cladeName +'\'); return false;"'+'>'+ cladeName +'</a'+'>';
+function getCreatorLink(collection) {
+    return '<a href="#" onclick="filterByCurator(\''+ collection.creator.name +'\'); return false;"'+'>'+ collection.creator.name +'</a'+'>';
 }
-function getPubLink(study) {
-    var urlNotFound = false;
-    var pubURL;
-    if ('ot:studyPublication' in study) {
-        pubURL = study['ot:studyPublication'];
-        if ($.trim(pubURL) === "") {
-            urlNotFound = true;
-        }
-    } else {
-        urlNotFound = true;
-    }
-    if (urlNotFound) {
-        return '<span style="color: #999;">No link to this publication.</span>';
-        //return '<span style="color: #ccc;">[DOI not found]</span>';
-    }
-    return '<a href="'+ pubURL +'" target="_blank"'+'>'+ pubURL +'</a'+'>';
-}
-/*
-function getSuggestedActions(study) {
-    return '<a href="#"'+'>'+ study.nextActions()[0] +'</a'+'>';
-}
-*/
 
 function toggleStudyDetails( clicked ) {
     var $toggle = $(clicked);

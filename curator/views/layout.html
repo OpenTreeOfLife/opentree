@@ -437,7 +437,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         </div>
     </div>
 
-<!-- ko if: ('data' in $data) && ('decisions' in $data.data) -->
   <!-- hidden template for the tree-collection-viewer (editor) -->
   <div class="modal hide fade" id="tree-collection-viewer" 
        Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
@@ -446,7 +445,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       <a class="close" onclick="$('#tree-collection-viewer').modal('hide'); return false;">×</a>
       <h3 id='dialog-heading'>
             <span style="color: #999;">Tree collection</span>
-           <!-- ko if: userIsEditingCollection($data) -->
+           <!-- ko if: $data && console.log($data) && userIsEditingCollection($data) -->
             <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; 
                                       font-weight: bold; width: 50%; margin-bottom: 0px;"
                    data-bind="value: $data.data['name'], 
@@ -825,7 +824,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div><!-- end of .modal-body -->
     <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
   </div><!-- end of #tree-collection-viewer.modal- -->
-<!-- /ko-->
 
 {{ if ('maintenance_info' in locals()) and maintenance_info.get('maintenance_notice', None):
    # N.b. Check to make sure it's in the view-dict, or error pages etc. will fail }}

@@ -419,29 +419,25 @@ var userLogin;
 var userDisplayName;
 var singlePropertySearchForTrees_url;
 
-var testCollection = null;
-function loadAndShowTestCollection() {
-    // fetch a known-good collection from the tree-collections API, and open it in a popup
-    if (testCollection) {
-        // just load it once?
-        showCollectionViewer(testCollection);
-        return;
-    }
-    // On first request, load this via the API
-    var testCollectionID = 'jimallman/my-test-collection';
-    var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', testCollectionID);
+function fetchAndShowCollection( collectionID ) {
+    /* Fetch a known-good collection from the tree-collections API, and open it
+     * in a popup.  This should always get the lastest version from the docstore, 
+     * complete with its commit history and merged edits from other users.
+     */
+    var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID);
     $.ajax({
         type: 'GET',
         //dataType: 'json',
         url: fetchURL,
         //data: {},
         success: function( data ) {  // success callback
-            //console.log(data);
-            testCollection = data;
-            showCollectionViewer(testCollection);
+            // N.B. this includes the core collection JSON, plus a wrapper that
+            // has history and other supporting values.
+            console.log(data);
+            showCollectionViewer(data);
         },
         error: function( jqXHR, textStatus, errorThrown ) {
-            showErrorMessage("Unable to load collection '"+ testCollectionID +"'");
+            showErrorMessage("Unable to load collection '"+ collectionID +"'");
         },
         complete: function( jqXHR, textStatus ) {
             //debugger;
@@ -1065,8 +1061,14 @@ function removeTreeFromCollection(tree, collection) {
 
 var currentlyEditingCollectionID = null;
 function userIsEditingCollection( collection ) {
-    return (currentlyEditingCollectionID === collection.data['url']);
+    if ('data' in collection && 'url' in collection.data) {
+        return (currentlyEditingCollectionID === collection.data['url']);
+    }
+    console.warn("returning false for malformed collection:");
+    console.warn(collection);
+    return false;
 }
+
 function editCollection( collection ) {
     // toggle to full editing UI
     currentlyEditingCollectionID = collection.data['url'];
