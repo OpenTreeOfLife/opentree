@@ -1038,12 +1038,6 @@ function stripTreeCollectionRanking( collection ) {
     });
 }
 
-function deleteTreeCollection() {
-    // TODO: prompt for commit msg along with confirmation?
-    if (confirm('Are you sure you want to delete this tree collection?')) {
-        alert('TODO');
-    }
-}
 function removeTreeFromCollection(tree, collection) {
     // TODO: prompt for commit msg along with confirmation?
     if (confirm('Are you sure you want to remove this tree from the collection?')) {
@@ -1075,12 +1069,41 @@ function editCollection( collection ) {
     showCollectionViewer( collection );  // to refresh the UI
     pushPageExitWarning();
 }
-function saveChangesToCollection( collection ) {
-    // TODO: prompt for commit msg and confirmation?
-    if (confirm('Are you sure you want to save your changes to this collection?')) {
-        alert('TODO');
-        popPageExitWarning();
+function validateCollectionData( collection ) {
+    // do some basic sanity checks on the current tree collection
+    if ($.trim(collection.data.name) === '') {
+        showErrorMessage('Tree collection requires a name');
+        return false;
     }
+    return true;
+}
+function promptForSaveCollectionComments( collection ) {
+    // show a modal popup to gather comments (or cancel)
+    if (validateCollectionData( collection )) {
+        $('#save-collection-comments-popup').modal('show');
+        // buttons there do the remaining work
+    }
+}
+function promptForDeleteCollectionComments( collection ) {
+    // show a modal popup to gather comments (or cancel)
+    $('#delete-collection-comments-popup').modal('show');
+    // buttons there do the remaining work
+}
+function saveTreeCollection( collection ) {
+    // user has confirmed; fix up and submit data
+    alert('SAVING NOW...');
+    // TODO: add this user to contributors (or creator)
+    // remove explicit ranking values (rely on array order)
+    stripTreeCollectionRanking( collection );
+    // TODO: attach comments and submit via collections API
+    // TODO: IF successful, remove page blocker!
+    popPageExitWarning();
+    // TODO: refresh display with new data (or error msg)
+}
+function deleteTreeCollection() {
+    // user has already confirmed and provided commit msg
+    alert('DELETING');
+    // TODO
 }
 function cancelChangesToCollection( collection ) {
     // refresh collection from storage, toggle to view-only UI

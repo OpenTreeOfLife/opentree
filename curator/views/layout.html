@@ -480,7 +480,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
 
            <!-- ko if: userIsEditingCollection($data) -->
             <!-- DELETE button -->
-            <button data-bind="click: deleteTreeCollection,
+            <button data-bind="click: promptForDeleteCollectionComments,
                                visible: true"
                 title="Delete this tree collection"
                 class="pull-right btn btn-mini btn-danger row-controls-ghosted"
@@ -563,7 +563,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 style="margin-left: 4px;">
                 Cancel</i>
             </button>
-            <button data-bind="click: saveChangesToCollection,
+            <button data-bind="click: promptForSaveCollectionComments,
                                visible: userIsEditingCollection($data)"
                 title="Save your changes to this collection"
                 class="pull-right btn btn-info btn-mini row-controls-ghosted"
@@ -824,6 +824,53 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div><!-- end of .modal-body -->
     <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
   </div><!-- end of #tree-collection-viewer.modal- -->
+
+<!-- hidden template for gathering comments when saving a tree collection -->
+<div class="modal hide fade modal-save-comments" id="save-collection-comments-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Add a comment for these changes
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Add a brief description of the work you've done.
+            This will appear in this collection's history on GitHub.
+        </p>
+        <input type="text" id="save-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
+        <textarea id="save-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-info pull-right" style="margin-left: 20px;" 
+              onclick="$('#save-collection-comments-popup').modal('hide'); saveTreeCollection(); return false;">Save Collection</button>
+      <a data-dismiss="modal" class="btn" >Cancel</a>
+    </div>
+</div>
+
+<!-- hidden template for gathering comments when deleting a tree collection -->
+<div class="modal hide fade modal-save-comments" id="delete-collection-comments-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Are you sure you want to do this?
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Add a brief description of why you're deleting this study.
+            (This will be saved in the main repository.)
+        </p>
+        <input type="text" id="delete-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
+        <textarea id="delete-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger pull-right" style="margin-left: 20px;" 
+              onclick="$('#delete-collection-comments-popup').modal('hide'); deleteTreeCollection(); return false;">Delete Collection</button>
+      <a data-dismiss="modal" class="btn" >Cancel</a>
+    </div>
+</div>
+
 
 {{ if ('maintenance_info' in locals()) and maintenance_info.get('maintenance_notice', None):
    # N.b. Check to make sure it's in the view-dict, or error pages etc. will fail }}

@@ -220,13 +220,13 @@ function loadCollectionList() {
 
                             case 'Collections I own':
                                 // show only matching studies
-                                debugger;
                                 if (('creator' in collection) && ('login' in collection.creator)) { 
                                     // compare to logged-in userid provide in the main page
                                     if (collection.creator.login !== userLogin) {
                                         return false; // stop looping on trees
                                     }
                                 }
+                                break;
 
                             case 'Collections I participate in':
                                 var userIsTheCreator = false;
