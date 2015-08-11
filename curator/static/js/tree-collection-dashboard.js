@@ -181,6 +181,7 @@ function loadCollectionList() {
                 var match = viewModel.listFilters.COLLECTIONS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
                 var order = viewModel.listFilters.COLLECTIONS.order();
+                var filter = viewModel.listFilters.COLLECTIONS.filter();
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
@@ -209,6 +210,53 @@ function loadCollectionList() {
 
                         if (!matchPattern.test(id) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
                             return false;
+                        }
+                        
+                        // check for preset filters
+                        switch (filter) {
+                            case 'All tree collections':
+                                // nothing to do here, all studies pass
+                                break;
+
+                            case 'Collections I own':
+                                // show only matching studies
+                                debugger;
+                                if (('creator' in collection) && ('login' in collection.creator)) { 
+                                    // compare to logged-in userid provide in the main page
+                                    if (collection.creator.login !== userLogin) {
+                                        return false; // stop looping on trees
+                                    }
+                                }
+
+                            case 'Collections I participate in':
+                                var userIsTheCreator = false;
+                                var userIsAContributor = false;
+                                if (('creator' in collection) && ('login' in collection.creator)) { 
+                                    // compare to logged-in userid provide in the main page
+                                    if (collection.creator.login === userLogin) {
+                                        userIsTheCreator = true;
+                                    }
+                                }
+                                if (('contributors' in collection) && $.isArray(collection.contributors)) { 
+                                    // compare to logged-in userid provide in the main page
+                                    $.each(collection.contributors, function(i, c) {
+                                        if (c.login === userLogin) {
+                                            userIsAContributor = true;
+                                        }
+                                    });
+                                }
+                                if (userIsTheCreator || userIsAContributor) {
+                                    return true;
+                                }
+                                return false;
+
+                            case 'Collections I follow':
+                                // TODO: implement this once we have a favorites API
+                                break;
+
+                            default:
+                                console.log("Unexpected filter for tree collection: ["+ filter +"]");
+                                return false;
                         }
 
                         return true;
@@ -280,7 +328,6 @@ function loadCollectionList() {
 function getViewLink(collection) {
     // shows this collection in a popup viewer/editor
     var html = '<a class="" href="#" title="'+ collection.id +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'+ collection.name +'</a>';
-
     return html;
 }
 function getTreeCount(collection) {
@@ -295,25 +342,6 @@ function getLastModification(collection) {
 }
 
 function filterByCurator( curatorID ) {
-    /* add their userid to the filter field
-    var oldFilterText = viewModel.listFilters.COLLECTIONS.match();
-    if (oldFilterText.indexOf( curatorID ) === -1) {
-        var newFilterText = oldFilterText +' '+ curatorID;
-        viewModel.listFilters.COLLECTIONS.match( newFilterText );
-    }
-    */
     // replace the filter text with this curator's userid
     viewModel.listFilters.COLLECTIONS.match( curatorID );
-}
-function filterByClade( cladeName ) {
-    // replace the filter text with this clade name
-    viewModel.listFilters.COLLECTIONS.match( cladeName );
-}
-function filterByTag( tag ) {
-    // replace the filter text with this clade name
-    viewModel.listFilters.COLLECTIONS.match( tag );
-}
-function filterByDOI( doi ) {
-    // replace the filter text with this clade name
-    viewModel.listFilters.COLLECTIONS.match( doi );
 }
