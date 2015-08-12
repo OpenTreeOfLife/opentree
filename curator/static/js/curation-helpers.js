@@ -1111,11 +1111,123 @@ function promptForDeleteCollectionComments( collection ) {
 }
 function saveTreeCollection( collection ) {
     // user has confirmed; fix up and submit data
-    alert('SAVING NOW...');
-    // TODO: add this user to contributors (or creator)
+    showModalScreen("Saving tree collection...", {SHOW_BUSY_BAR:true});
+
+    // add this user to contributors (or creator)
+    var foundUser = false;
+    if (collection.data.creator && collection.data.creator.login ) {
+        // check to see if they're the creator (if so, we're done)
+        if (collection.data.creator.login === userLogin) {
+            foundUser = true;
+        }
+    } else {
+        // add as the creator if none is defined, or if login field is empty
+        collection.data.creator = {};
+        collection.data.creator.login = userLogin;
+        collection.data.creator.name = userDisplayName;
+        foundUser = true;
+    }
+    if (!foundUser) {
+        // check for the user among the listed contributors
+        $.each(collection.data.contributors, function(i, c) {
+            if (c.login === userLogin) {
+                foundUser = true;
+                return false;
+            }
+        });
+        if (!foundUser) {
+            // add this user to the contributors list
+            collection.data.contributors.push({
+                login: userLogin,
+                name: userDisplayName
+            });
+            foundUser = true;
+        }
+    }
+
     // remove explicit ranking values (rely on array order)
     stripTreeCollectionRanking( collection );
-    // TODO: attach comments and submit via collections API
+
+    // push changes back to storage
+    var collectionID = getCollectionIDFromURL( collection.data.url );
+    var saveURL = API_update_collection_PUT_url.replace('{COLLECTION_ID}', collectionID);
+    // gather commit message (if any) from pre-save popup
+    var commitMessage;
+    var firstLine = $('#save-collection-comment-first-line').val();
+    var moreLines = $('#save-collection-comment-more-lines').val();
+    if ($.trim(firstLine) === '') {
+        commitMessage = $.trim(moreLines);
+    } else if ($.trim(moreLines) === ''){
+        commitMessage = $.trim(firstLine);
+    } else {
+        commitMessage = $.trim(firstLine) +"\n\n"+ $.trim(moreLines);
+    }
+    
+    // add non-JSON values to the query string
+    var qsVars = $.param({
+        author_name: userDisplayName,
+        author_email: userEmail,
+        auth_token: userAuthToken,
+        starting_commit_SHA: collection.sha,
+        commit_msg: commitMessage
+    });
+    saveURL += ('?'+ qsVars);
+
+    console.log("=== saveURL:");
+    console.log(saveURL);
+
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        type: 'PUT',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: saveURL,
+        processData: false,
+        //data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
+        data: collection,  // OR collection.data?
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                if (jqXHR.status >= 500) {
+                    // major server-side error, just show raw response for tech support
+                    var errMsg = 'Sorry, there was an error saving this collection. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                    hideModalScreen();
+                    showErrorMessage(errMsg);
+                    return;
+                }
+                // Server blocked the save due to major validation errors!
+                var data = $.parseJSON(jqXHR.responseText);
+                // TODO: this should be properly parsed JSON, show it more sensibly
+                // (but for now, repeat the crude feedback used above)
+                var errMsg = 'Sorry, there was an error in the study data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            var putResponse = $.parseJSON(jqXHR.responseText);
+debugger;
+            viewModel.startingCommitSHA = putResponse['sha'] || viewModel.startingCommitSHA;
+            // update the History tab to show the latest commit
+            if ('versionHistory' in putResponse) {
+                viewModel.versions(putResponse['versionHistory'] || [ ]);
+            }
+            if (putResponse['merge_needed']) {
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Collection%20merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            // presume success from here on
+            hideModalScreen();
+            showSuccessMessage('Study saved to remote storage.');
+
+            popPageExitWarning();
+            disableSaveButton();
+            // TODO: should we expect fresh JSON to refresh the form?
+        }
+    });
+    
     // TODO: IF successful, remove page blocker!
     popPageExitWarning();
     // TODO: refresh display with new data (or error msg)
@@ -1172,16 +1284,19 @@ function deleteTreeCollection( collection ) {
             */
 
             // OK, looks like the operation was a success
+            currentlyEditingCollectionID = null; // enables closing this window
             popPageExitWarning();
-            $('#tree-collection-viewer').modal('hide');
             hideModalScreen();
+            $('#tree-collection-viewer').modal('hide');
 
             // parse the payload to see if a merge is required
             var result = $.parseJSON(jqXHR.responseText);
             var refreshDelay;
-            if (result.merge_needed) {
-                refreshDelay = 8000;
-                showErrorMessage('Collection removed, but a manual merge is required! Please <a href="/contact" target="_blank">contact us for assistance</a>.');
+            if (result['merge_needed']) {
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Collection%20merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                refreshDelay = 10000; // show this message for 10 sec
             } else {
                 refreshDelay = 3000;
                 showSuccessMessage('Collection removed, returning to the list...');
@@ -1201,9 +1316,9 @@ function deleteTreeCollection( collection ) {
 }
 function cancelChangesToCollection( collection ) {
     // refresh collection from storage, toggle to view-only UI
+    fetchAndShowCollection( currentlyEditingCollectionID );
     currentlyEditingCollectionID = null;
-    // TODO: replace with unchanged collection from storage!
-    showCollectionViewer( collection );  // to refresh the UI
+    //showCollectionViewer( collection );  // to refresh the UI
     popPageExitWarning();
 }
 function userIsLoggedIn() {
