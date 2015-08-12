@@ -627,11 +627,19 @@ function showCollectionViewer( collection, options ) {
 }
 
 // Use a known-good URL fragment to extract a collection ID from its API URL
-var collectionURLSplitter = '/v2/collection/';
+var collectionURLSplitterAPI = '/v2/collection/';
+// Fall back to raw-data URL in some cases
+var collectionURLSplitterRaw = '/collections/';
 
 function getCollectionIDFromURL(url) {
     // anything after the known API endpoint is a collection ID
-    return url.split( collectionURLSplitter )[1];
+    var fromAPI = url.split( collectionURLSplitterAPI )[1];
+    var fromRawData = url.split( collectionURLSplitterRaw )[1];
+    if (fromRawData) {
+        // strip file extension
+        fromRawData = fromRawData.split('.json')[0];
+    }
+    return fromAPI || fromRawData;
 }
 
 function updateNewCollTreeUI() {
@@ -677,7 +685,7 @@ function createNewTreeCollection() {
     newCollection.creator.login = userLogin;
     newCollection.creator.name = userDisplayName;
     // make an initial bogus URL, for display
-    newCollection.url = ( collectionURLSplitter + userLogin +"/");
+    newCollection.url = ( collectionURLSplitterAPI + userLogin +"/");
 
     // wrap this in a stripped-down version of the usual fetched JSON
     var wrappedNewCollection = {
@@ -697,7 +705,7 @@ function updateNewCollectionID( collection ) {
     var urlParts = collection.data.url.split();
     var nameSlug = slugify(collection.data.name);
     // build a fresh ID with current user as creator
-    collection.data.url = collectionURLSplitter + userLogin +'/'+ nameSlug;
+    collection.data.url = collectionURLSplitterAPI + userLogin +'/'+ nameSlug;
     //console.log(">>> collection.data.url = "+ collection.data.url);
     var proposedID = getCollectionIDFromURL( collection.data.url );
     //console.log(">>> proposedID = "+ proposedID);
@@ -1082,12 +1090,24 @@ function promptForSaveCollectionComments( collection ) {
     if (validateCollectionData( collection )) {
         $('#save-collection-comments-popup').modal('show');
         // buttons there do the remaining work
+        $('#save-collection-comments-submit')
+            .unbind('click')
+            .click(function() {
+                $('#save-collection-comments-popup').modal('hide'); 
+                saveTreeCollection( collection ); 
+            });
     }
 }
 function promptForDeleteCollectionComments( collection ) {
     // show a modal popup to gather comments (or cancel)
     $('#delete-collection-comments-popup').modal('show');
     // buttons there do the remaining work
+    $('#delete-collection-comments-submit')
+        .unbind('click')
+        .click(function() {
+            $('#delete-collection-comments-popup').modal('hide'); 
+            deleteTreeCollection( collection ); 
+        });
 }
 function saveTreeCollection( collection ) {
     // user has confirmed; fix up and submit data
@@ -1100,10 +1120,84 @@ function saveTreeCollection( collection ) {
     popPageExitWarning();
     // TODO: refresh display with new data (or error msg)
 }
-function deleteTreeCollection() {
+function deleteTreeCollection( collection ) {
     // user has already confirmed and provided commit msg
-    alert('DELETING');
-    // TODO
+    var collectionID = getCollectionIDFromURL( collection.data.url );
+    var removeURL = API_remove_collection_DELETE_url.replace('{COLLECTION_ID}', collectionID);
+    // gather commit message (if any) from pre-save popup
+    var commitMessage;
+    var firstLine = $('#delete-collection-comment-first-line').val();
+    var moreLines = $('#delete-collection-comment-more-lines').val();
+    if ($.trim(firstLine) === '') {
+        commitMessage = $.trim(moreLines);
+    } else if ($.trim(moreLines) === ''){
+        commitMessage = $.trim(firstLine);
+    } else {
+        commitMessage = $.trim(firstLine) +"\n\n"+ $.trim(moreLines);
+    }
+
+    // add auth-token to the query string (no body allowed!)
+    var qsVars = $.param({
+        author_name: userDisplayName,
+        author_email: userEmail,
+        auth_token: userAuthToken,
+        starting_commit_SHA: collection.sha,
+        commit_msg: commitMessage
+    });
+    removeURL += ('?'+ qsVars);
+
+    // do the actual removal (from the remote file-store) via AJAX
+    showModalScreen("Deleting tree collection...", {SHOW_BUSY_BAR:true});
+
+    $.ajax({
+        type: 'DELETE',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: removeURL, // modified API call, see above
+        data: {},   // sadly not recognized for DELETE, using query-string instead 
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                showErrorMessage('Sorry, there was an error removing this collection.');
+                console.log("ERROR: textStatus !== 'success', but "+ textStatus);
+                return;
+            }
+            /*
+            if (data.message !== 'File deleted') {
+                showErrorMessage('Sorry, there was an error removing this study.');
+                console.log("ERROR: message !== 'File deleted', but "+ data.message);
+                return;
+            }
+            */
+
+            // OK, looks like the operation was a success
+            popPageExitWarning();
+            $('#tree-collection-viewer').modal('hide');
+            hideModalScreen();
+
+            // parse the payload to see if a merge is required
+            var result = $.parseJSON(jqXHR.responseText);
+            var refreshDelay;
+            if (result.merge_needed) {
+                refreshDelay = 8000;
+                showErrorMessage('Collection removed, but a manual merge is required! Please <a href="/contact" target="_blank">contact us for assistance</a>.');
+            } else {
+                refreshDelay = 3000;
+                showSuccessMessage('Collection removed, returning to the list...');
+            }
+            setTimeout(function() {
+                window.location.reload(true); // true, i.e., skip the cache and load fresh data
+                /* TODO: Bounce to whichever page is appropriate! OR just refresh the list via AJAX.
+                var studyListURL = $('#return-to-study-list').val();
+                if (!studyListURL) {
+                    console.error("Missing studyListURL!");
+                }
+                window.location = studyListURL || '/curator';
+                */
+            }, refreshDelay);
+        }
+    });
 }
 function cancelChangesToCollection( collection ) {
     // refresh collection from storage, toggle to view-only UI

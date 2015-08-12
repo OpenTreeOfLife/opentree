@@ -253,9 +253,9 @@ function createStudyFromForm( evt ) {
             'alt_license_URL': $.trim($('input[name=data-license-url]').val()),
             //
             // misc identifying information
-            'author_name': authorName,
-            'author_email': authorEmail,
-            'auth_token': authToken
+            'author_name': userDisplayName,
+            'author_email': userEmail,
+            'auth_token': userAuthToken
         },
         success: function( data, textStatus, jqXHR ) {
             // creation method should return either a redirect URL to the new study, or an error

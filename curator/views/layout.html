@@ -168,9 +168,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       $('#maintenance-notice').modal('show');
   }
 
-  // Fetch the userid and display name for a logged-in user
+  // Fetch the current user information for general use
   var userLogin = "{{= get_user_login() }}";
+  var userLoginASCII = "{{= get_user_login().encode('ascii','ignore') }}";
   var userDisplayName = "{{= get_user_display_name() }}";
+  var userEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
+  var userAuthToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
+
   jQuery(document).ready(function(){ 
     {{ if 'auth' in globals(): }}
       // add marker classes to final nav link (for logged-in user)
@@ -838,12 +842,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             Add a brief description of the work you've done.
             This will appear in this collection's history on GitHub.
         </p>
-        <input type="text" id="save-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
-        <textarea id="save-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
+        <input type="text" id="save-collection-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
+        <textarea id="save-collection-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-info pull-right" style="margin-left: 20px;" 
-              onclick="$('#save-collection-comments-popup').modal('hide'); saveTreeCollection(); return false;">Save Collection</button>
+      <button id="save-collection-comments-submit" 
+              class="btn btn-info pull-right" style="margin-left: 20px;" 
+              onclick="return false;">Save Collection</button>
       <a data-dismiss="modal" class="btn" >Cancel</a>
     </div>
 </div>
@@ -858,15 +863,16 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div>
     <div class="modal-body">
         <p>
-            Add a brief description of why you're deleting this study.
+            Add a brief description of why you're deleting this collection.
             (This will be saved in the main repository.)
         </p>
-        <input type="text" id="delete-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
-        <textarea id="delete-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
+        <input type="text" id="delete-collection-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
+        <textarea id="delete-collection-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
     </div>
     <div class="modal-footer">
-      <button class="btn btn-danger pull-right" style="margin-left: 20px;" 
-              onclick="$('#delete-collection-comments-popup').modal('hide'); deleteTreeCollection(); return false;">Delete Collection</button>
+      <button id="delete-collection-comments-submit" 
+              class="btn btn-danger pull-right" style="margin-left: 20px;" 
+              onclick="return false;">Delete Collection</button>
       <a data-dismiss="modal" class="btn" >Cancel</a>
     </div>
 </div>
