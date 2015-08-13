@@ -959,7 +959,7 @@ function loadSelectedStudy() {
 
             // add external URLs (on GitHub) for the differences between versions
             if (response['shardName']) {
-                $.each(viewModel.versions, function(i, version) {
+                $.each(viewModel.versions(), function(i, version) {
                     version['publicDiffURL'] = ('//github.com/OpenTreeOfLife/'+ response.shardName +'/commit/'+ version.id);
                 });
             }
