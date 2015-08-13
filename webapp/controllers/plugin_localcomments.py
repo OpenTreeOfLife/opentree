@@ -54,16 +54,48 @@ function capture_form() {
     if (isThreadStarter) {
         //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'General comment' );
         jQuery('div.plugin_localcomments select[name=feedback_type]').show();
-        jQuery('div.plugin_localcomments select[name=intended_scope]').show();
+        //jQuery('div.plugin_localcomments select[name=intended_scope]').show();
         jQuery('div.plugin_localcomments select[name=issue_title]').show();
+
+        // hide/show form widgets based on the chosen feedback type
+        console.log("SETTING UP SELECT");
+        console.log("exists? "+ jQuery('div.plugin_localcomments select[name=feedback_type]').length);
+        jQuery('div.plugin_localcomments select[name=feedback_type]')
+            .unbind('change')
+            .change(function(){
+                console.log("SELECT CHANGED");
+                var $select = $(this);
+                switch($select.val()) {
+                    case '':
+                        // hide all UI until they choose a feedback type
+                        jQuery('div.plugin_localcomments [name=doi]').hide();
+                        jQuery('div.plugin_localcomments [name=tree_id]').hide();
+                        jQuery('div.plugin_localcomments [name=body]').hide();
+                        break;
+                    case 'Tree suggestion':
+                        // show fields for paper and tree
+                        jQuery('div.plugin_localcomments [name=doi]').show();
+                        jQuery('div.plugin_localcomments [name=tree_id]').show();
+                        jQuery('div.plugin_localcomments [name=body]').show();
+                        break;
+                    default:
+                        jQuery('div.plugin_localcomments [name=doi]').hide();
+                        jQuery('div.plugin_localcomments [name=tree_id]').hide();
+                        jQuery('div.plugin_localcomments [name=body]').show();
+                }
+            });
+        jQuery('div.plugin_localcomments select[name=feedback_type]').change();
+
     } else {
-        //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'Reply or general comment' );
+        // jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'Reply or general comment' );
         jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
-        jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
+        // jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
         jQuery('div.plugin_localcomments select[name=issue_title]').hide();
     }
     // always hide expertise checkbox and surrounding label (not currently needed)
     jQuery('div.plugin_localcomments label.expertise-option').hide();
+
+
 
     jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
         var $form = jQuery(this).closest('form');
@@ -104,7 +136,7 @@ function capture_form() {
                'title': $form.find('input[name="issue_title"]').val(),
                'body': $form.find('textarea[name="body"]').val(),
                'feedback_type': $form.find('select[name="feedback_type"]').val(),
-               'intended_scope': $form.find('select[name="intended_scope"]').val(),
+               // 'intended_scope': $form.find('select[name="intended_scope"]').val(),
                'claimed_expertise': $form.find(':checkbox[name="claimed_expertise"]').is(':checked'),
                'visitor_name': $form.find('input[name="visitor_name"]').val(),
                'visitor_email': $form.find('input[name="visitor_email"]').val()
@@ -134,6 +166,7 @@ function capture_form() {
 }
 
 function plugin_localcomments_init() {
+  // bind client-side widgets to get desired behavior
   jQuery('div.plugin_localcomments .toggle').unbind('click').click(function(){
      var $toggle = $(this);
      var $parentIssue = $toggle.closest('li.issue');
@@ -146,6 +179,7 @@ function plugin_localcomments_init() {
      }
      return false;
   });
+
   jQuery('div.plugin_localcomments .delete').unbind('click').click(function(){
     delete_all_forms();
     var $commentDiv = jQuery(this).closest('.msg-wrapper');
@@ -197,8 +231,8 @@ def show_type_icon(type):
 
 @auth.requires_membership(role='editor')
 def grid():
-    db.plugin_localcomments_comment.intended_scope.readable = True
-    db.plugin_localcomments_comment.intended_scope.represent = lambda scope, row: scope and scope.capitalize() or XML(T('&mdash;'))
+    #db.plugin_localcomments_comment.intended_scope.readable = True
+    #db.plugin_localcomments_comment.intended_scope.represent = lambda scope, row: scope and scope.capitalize() or XML(T('&mdash;'))
     db.plugin_localcomments_comment.feedback_type.represent = lambda row, value: show_type_icon(value)
 
     grid = SQLFORM.grid( db.plugin_localcomments_comment,
@@ -227,7 +261,7 @@ def grid():
             db.plugin_localcomments_comment.synthtree_id,
             db.plugin_localcomments_comment.synthtree_node_id,
             db.plugin_localcomments_comment.created_on,
-            db.plugin_localcomments_comment.intended_scope,
+            #db.plugin_localcomments_comment.intended_scope,
         ],
         headers = {
             # NOTE the funky key format used here
@@ -276,7 +310,7 @@ def index():
     thread_parent_id = request.vars['thread_parent_id'] # can be None
     comment_id = request.vars['comment_id'] # used for some operations (eg, delete)
     feedback_type = request.vars['feedback_type'] # used for new comments
-    intended_scope = request.vars['intended_scope'] # used for new comments
+    #intended_scope = request.vars['intended_scope'] # used for new comments
     issue_title = request.vars['title'] # used for new issues (threads)
     claims_expertise = request.vars['claimed_expertise'] # used for new comments
     threads = [ ]
@@ -451,7 +485,7 @@ def index():
                 "Synthetic tree node id": synthtree_node_id,
                 "Source tree id": sourcetree_id,
                 "Open Tree Taxonomy id": ottol_id,
-                "Intended scope": intended_scope
+                #"Intended scope": intended_scope
             })
             msg_data = {
                 "title": issue_title,
@@ -508,23 +542,26 @@ def index():
                         '' if auth.user_id else T(' '),
                         '' if auth.user_id else INPUT(_type='text',_id='visitor_email',_name='visitor_email',_value=session.get('visitor_email',''),_placeholder="Your email (will be public)"),
                         '' if auth.user_id else BR(),
-                        SELECT(
+                        SELECT( #this option lets us know what labels to use in the GitHub issue tracker
+                        # labels get created if they do not already exist
                             OPTION('What kind of feedback is this?', _value=''),
-                            OPTION('General comment', _value='General comment'),
-                            OPTION('Feedback on tree of life', _value='Error in phylogeny'),
-                            OPTION('Bug report (website behavior)', _value='Bug report'),
+                            OPTION('Feedback on tree of life', _value='Synthesis feedback'),
+                            OPTION('Suggest tree for incorporation', _value='Tree suggestion'),
                             OPTION('New feature request', _value='Feature request'),
+                            OPTION('Bug report (website behavior)', _value='Bug report'),
+                            OPTION('General comment', _value='General comment'),
                         _name='feedback_type',value='',_style='width: auto;'),
                         T(' '),
-                        SELECT(
-                            OPTION('suggest tree for incorporation', _value='Re: suggest tree'),
-                            OPTION('about node placement in the synthetic tree', _value='Re: synthetic tree'),
-                            OPTION('about node placement in the source tree', _value='Re: source tree'),
-                            OPTION('about taxon data in OTT', _value='Re: OTT taxon'),
-                            OPTION('general feedback (none of the above)', _value=''),
-                        _name='intended_scope',value='',_style='width: auto;'),
+                        #SELECT(
+                            #OPTION('about node placement in the synthetic tree', _value='Re: synthetic tree'),
+                            #OPTION('about node placement in the source tree', _value='Re: source tree'),
+                            #OPTION('about taxon data in OTT', _value='Re: OTT taxon'),
+                            #OPTION('general feedback (none of the above)', _value=''),
+                        #_name='intended_scope',value='',_style='width: auto;'),
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
                         INPUT(_type='text',_id='issue_title',_name='issue_title',_value='',_placeholder="Short title"),   # should appear for proper issues only
+                        INPUT(_type='text',_id='doi',_name='doi',_value='',_placeholder="DOI of the paper containing the tree"),   # should appear for tree suggestions only
+                        INPUT(_type='text',_id='tree_id',_name='tree_id',_value='',_placeholder="Which tree from this paper (e.g. Figure 3)"),   # should appear for proper issues only
                         TEXTAREA(_name='body',_placeholder="Add more detail; optionally using Markdown for formatting (click 'Markdown help' below to learn more)."),
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),

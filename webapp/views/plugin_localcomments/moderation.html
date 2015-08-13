@@ -1,8 +1,11 @@
 {{extend 'layout.html'}}
+{{
+# Unused code, originally intended to provide a web-based UI for moderating comments
+}}
 
 {{ """ 
-    A friendly "time since" formatter, public domain from 
-    http://flask.pocoo.org/snippets/33/ 
+    A friendly "time since" formatter, public domain from
+    http://flask.pocoo.org/snippets/33/
    """
 from datetime import datetime
 
@@ -14,7 +17,7 @@ def timesince(dt, default="just now"):
 
     now = datetime.utcnow()
     diff = now - dt
-    
+
     periods = (
         (diff.days / 365, "year", "years"),
         (diff.days / 30, "month", "months"),
@@ -33,7 +36,7 @@ def timesince(dt, default="just now"):
     return default
 }}
 
-{{ 
+{{
 # Import machinery to render markdown in comment body
 from gluon.contrib.markdown.markdown2 import markdown
 }}
@@ -42,7 +45,7 @@ from gluon.contrib.markdown.markdown2 import markdown
   <a class="pull-right" href="#" onclick="$('.more-info').toggle(); return false;">show full info</a>
   -->
   <h1 id="main-title">Feedback Moderation</h1>
-  
+
   <div class="localcomments_moderation">
   {{= form.custom.begin }}
 
@@ -118,7 +121,7 @@ from gluon.contrib.markdown.markdown2 import markdown
     <!-- compact actions on selected comments -->
     <div class="btn-group pull-right" style="text-align: left;">
         <a class="btn dropdown-toggle" data-toggle="dropdown" href="#">
-            <b>0</b> comments selected 
+            <b>0</b> comments selected
             &nbsp;
             <span class="caret"></span>
         </a>
@@ -137,7 +140,7 @@ from gluon.contrib.markdown.markdown2 import markdown
 
 <!--
     <span id="feedback-selection-count" class="pull-right" style="padding-top: 0.7em;">
-        <b>0</b> comments selected &nbsp; 
+        <b>0</b> comments selected &nbsp;
     </span>
 -->
 
@@ -171,7 +174,7 @@ from gluon.contrib.markdown.markdown2 import markdown
         <th><input type="checkbox" /></th>
     </tr>
   {{ import itertools
-     row_class = itertools.cycle(['even', 'odd']) 
+     row_class = itertools.cycle(['even', 'odd'])
      for row_class, comment in itertools.izip(row_class, comments): }}
     <tr class="{{= row_class}} feedback-summary {parentID: {{= comment.thread_parent_id }}, deleted: {{= comment.deleted }} }">
         {{""" other interesting icons:
@@ -179,16 +182,16 @@ from gluon.contrib.markdown.markdown2 import markdown
                           icon-fire
                           icon-flag
                           icon-ban-circle
-                          icon-thumbs-down 
-                          icon-thumbs-up 
+                          icon-thumbs-down
+                          icon-thumbs-up
                           icon-heart
-                          icon-gift 
+                          icon-gift
         """}}
         <td class="type-and-toggle-icons"><i class="{{ if comment.feedback_type == 'Error in phylogeny': }}
                           icon-move
                       {{ pass }}
                       {{ if comment.feedback_type == 'Bug report': }}
-                          icon-warning-sign 
+                          icon-warning-sign
                       {{ pass }}
                       {{ if comment.feedback_type == 'Feature request': }}
                           icon-wrench
@@ -223,7 +226,7 @@ from gluon.contrib.markdown.markdown2 import markdown
              'Re: synthetic tree' : 'SYN',
              'Re: source tree' : 'SRC',
              'Re: OTT taxon' : 'OTT',
-             'DEFAULT' :  'GEN', 
+             'DEFAULT' :  'GEN',
            } }}
         <td><strong style="color: #999;" title="{{= comment.intended_scope or 'General feedback' }}">{{= scopeValues[comment.intended_scope or "DEFAULT"] }}</strong></td>
         <!-- <td>{{= comment.votes }}</td> -->
@@ -233,7 +236,7 @@ from gluon.contrib.markdown.markdown2 import markdown
         <td>
           <pre class="more-info" style="display: none;">
           {{ # = vars(comment) }}
-  
+
           {{'''
           { comment_vars = vars(comment) }
           { for k,v in comment_vars.iteritems(): }
@@ -296,7 +299,7 @@ from gluon.contrib.markdown.markdown2 import markdown
   </table>
   {{= form.custom.end }}
   </div>
-  
+
   <script type="text/javascript">
       function toggleFeedbackDetails(clicked) {
           var $clicked = $(clicked);
