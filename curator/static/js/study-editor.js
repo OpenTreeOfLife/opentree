@@ -956,6 +956,13 @@ function loadSelectedStudy() {
             viewModel.versions = ko.observableArray(
                 response['versionHistory'] || [ ]
             ).asPaged(20);
+
+            // add external URLs (on GitHub) for the differences between versions
+            if (response['shardName']) {
+                $.each(viewModel.versions(), function(i, version) {
+                    version['publicDiffURL'] = ('//github.com/OpenTreeOfLife/'+ response.shardName +'/commit/'+ version.id);
+                });
+            }
             
             // take initial stab at setting search context (for focal clade and OTU mapping)
             inferSearchContextFromAvailableOTUs();

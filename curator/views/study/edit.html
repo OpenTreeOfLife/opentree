@@ -1791,7 +1791,8 @@ body {
                     <tr>
                         <th width="20%">Date</th>
                         <th width="20%">Curated by</th>
-                        <th width="60%">Comment</th>
+                        <th width="50%">Comment</th>
+                        <th width="10%">Details</th>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.versions.pagedItems(), as: 'version' }">
@@ -1799,6 +1800,15 @@ body {
                         <td><span data-bind="text: version['relative_date'], attr: {'title': version['date']}">?</span></td>
                         <td data-bind="text: version['author_name']">?</td>
                         <td><pre class="rendered-comment" data-bind="text: version['message_subject'] + (version['message_body'] ? '\n\n'+ version['message_body'] : '')">?</pre></td>
+                        <td>
+                          <!-- ko if: version['publicDiffURL'] -->
+                            <a href="" target="_blank" title="See detailed differences on GitHub"
+                               data-bind="attr: {'href': version['publicDiffURL']}">Diff view</a>
+                          <!-- /ko -->
+                          <!-- ko if: !version['publicDiffURL'] -->
+                            &mdash;
+                          <!-- /ko -->
+                        </td>
                     </tr>
                   </tbody>
                 </table>
