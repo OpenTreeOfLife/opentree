@@ -3,12 +3,6 @@
         "===": "These 'comments' will be ignored by the app.",
         "===": "Note that releases are listed in reverse chronological order.",
 
-        "version": "ott2.9", 
-        "date": "2015-02-18",
-        "taxon_count":         2896060,
-        "visible_taxon_count": 2263023
-    },
-    {
         "version": "ott2.8", 
         "date": "2014-06-11",
         "taxon_count":         2918183,
