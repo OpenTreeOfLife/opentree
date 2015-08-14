@@ -1125,7 +1125,7 @@ function showObjectProperties( objInfo, options ) {
         // temporarily changing link to download Newick string to go to
         // download page because current code uses v1 api call
         // without checks on size and therefore hanging for large trees
-        $details.append('<dt style="margin-top: 1em;"><a href="http://files.opentreeoflife.org/trees/">Download entire synthetic tree</a></dt>');
+        $details.append('<dt style="margin-top: 1em;"><a target="_blank" href="http://files.opentreeoflife.org/trees/">Download entire synthetic tree</a></dt>');
 
         /*
         $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Download subtree as Newick string</a></dt>');
