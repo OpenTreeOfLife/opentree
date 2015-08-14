@@ -1319,7 +1319,13 @@ function showObjectProperties( objInfo, options ) {
     var subtreeDepthLimit = 4;
     if (nodeSection) {
         $details = $sections.find('.properties-section:first dl');
-        $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Download subtree as Newick string</a></dt>');
+        // temporarily changing link to download Newick string to go to
+        // download page because current code uses v1 api call
+        // without checks on size and therefore hanging for large trees
+        $details.append('<dt style="margin-top: 1em;"><a target="_blank" href="http://files.opentreeoflife.org/trees/">Download entire synthetic tree</a></dt>');
+
+    /*
+$details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Download subtree as Newick string</a></dt>');
         $details.append('<dd id="extract-subtree-caveats">&nbsp;</dd>');
       
         // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
@@ -1332,7 +1338,7 @@ function showObjectProperties( objInfo, options ) {
                 var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
                 window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ superSafeDisplayName;
 
-                /* OR this will load the Newick-tree text to show it in-browser
+                OR this will load the Newick-tree text to show it in-browser
                 $.ajax({
                     type: 'POST',
                     url: getDraftTreeForOttolID_url,
@@ -1345,12 +1351,13 @@ function showObjectProperties( objInfo, options ) {
                     },
                     dataType: 'json'  // should return a complete Newick tree
                 });
-                */
 
                 return false;
             });
         $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
-      
+      */
+      // end of comment block for removing subtree links
+
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
         if ((displayName.indexOf('Unnamed ') !== 0) && (displayName.indexOf('[') !== 0)) {
             // Attempt to find a page for this taxon in the Encyclopedia of Life website
