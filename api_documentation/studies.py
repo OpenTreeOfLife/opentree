@@ -65,6 +65,6 @@ methods_list.append({
     "relative_url" : "/study/{STUDY_ID}/tree/{TREE_ID}",
     "example_command" : "curl http://api.opentreeoflife.org/v2/study/pg_1144/tree/tree2324",
     "example_result" : "",
-    "long_description" : """Given a studyID and the ID of one of its trees, return a JSON object for the tree. More detailed documentation of the possible arguments and return values (including as NEXUS or newick) are at [phylesystem-api/docs/README.md](https://github.com/OpenTreeOfLife/phylesystem-api/blob/docv2/docs/README.md#fine-grained-access-via-get)""",
+    "long_description" : """Given a studyID and the ID of one of its trees, return a JSON object for the tree. More detailed documentation of the possible arguments and return values (including as NEXUS or newick) are at [phylesystem-api/docs/README.md](https://github.com/OpenTreeOfLife/phylesystem-api/blob/master/docs/README.md#fine-grained-access-via-get)""",
     "parameters" : []
 })

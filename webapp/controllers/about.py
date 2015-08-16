@@ -443,9 +443,8 @@ def fetch_current_synthesis_source_data():
                 study['tree_ids'] = contrib_info['tree_ids']
                 contributing_studies.append( study )
 
-        # TODO: sort these alphabetically(?) and render in the page
-        ## contributing_studies.sort(key = lambda x: x.get('ot:studyPublicationReference'))
-        # NO, apparently they're pre-sorted to reflect the importance of each study
+        # sort these alphabetically by first author, then render in the page
+        contributing_studies.sort(key = lambda x: x.get('ot:studyPublicationReference'))
 
         # TODO: encode data to utf-8?
         ## context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]

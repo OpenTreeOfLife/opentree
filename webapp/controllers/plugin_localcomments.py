@@ -38,6 +38,7 @@ function delete_all_forms() {
     });
 }
 function capture_form() {
+    // bind and modify widgets 
     jQuery('div.plugin_localcomments a.msg-close').unbind('click').click(function(){
         delete_all_forms();
         return false;
@@ -64,6 +65,11 @@ function capture_form() {
     }
     // always hide expertise checkbox and surrounding label (not currently needed)
     jQuery('div.plugin_localcomments label.expertise-option').hide();
+
+    // update the Login link, if shown
+    if (typeof(fixLoginLinks) === 'function') {
+        fixLoginLinks();
+    }
 
     jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
         var $form = jQuery(this).closest('form');

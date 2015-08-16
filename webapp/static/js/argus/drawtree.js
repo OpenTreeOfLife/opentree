@@ -190,6 +190,15 @@ function createArgus(spec) {
                     }
                 }
 
+                if (value.pathToRoot) {
+                    // assign parent IDs up the "root-ward" chain of nodes
+                    var testChild = value;
+                    $.each(value.pathToRoot, function(i, testParent) {
+                        testChild.parentNodeID = testParent.nodeid;
+                        testChild = testParent;  // and move to *its* parent
+                    });
+                }
+
                 // convert to desired JS pseudo-class
                 return $.extend( new ArgusNode(), value );
             }
@@ -615,8 +624,8 @@ function createArgus(spec) {
             var stateObj = $.extend(true, {'nodeName': ''}, o); // deep copy of o, with default values if none supplied
             History.pushState(stateObj, historyStateToWindowTitle(stateObj), historyStateToURL(stateObj));
         } else {
-            // proceed directly to display (ignore browser history)
-            this.displayNode(o);
+            // proceed directly to display (emulate browser history State object)
+            updateTreeView({'data': o});
         }
     };
 

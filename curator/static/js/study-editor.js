@@ -932,6 +932,13 @@ function loadSelectedStudy() {
             viewModel.versions = ko.observableArray(
                 response['versionHistory'] || [ ]
             ).asPaged(20);
+
+            // add external URLs (on GitHub) for the differences between versions
+            if (response['shardName']) {
+                $.each(viewModel.versions(), function(i, version) {
+                    version['publicDiffURL'] = ('//github.com/OpenTreeOfLife/'+ response.shardName +'/commit/'+ version.id);
+                });
+            }
             
             // take initial stab at setting search context (for focal clade and OTU mapping)
             inferSearchContextFromAvailableOTUs();
@@ -1685,6 +1692,12 @@ function promptForSaveComments() {
     // buttons there do the remaining work
 }
 
+function promptForDeleteComments() {
+    // show a modal popup to gather comments (or cancel)
+    $('#delete-comments-popup').modal('show');
+    // buttons there do the remaining work
+}
+
 
 function scrubNexsonForTransport( nexml ) {
     /* Groom client-side Nexson for storage on server (details below)
@@ -1867,17 +1880,26 @@ function enableSaveButton() {
 
 function removeStudy() {
     // let's be sure, since deletion will make a mess...
-    if (!confirm("Are you sure you want to delete this study?")) {
-        return;
+    var removeURL = API_remove_study_DELETE_url.replace('{STUDY_ID}', studyID);
+    // gather commit message (if any) from pre-save popup
+    var commitMessage;
+    var firstLine = $('#delete-comment-first-line').val();
+    var moreLines = $('#delete-comment-more-lines').val();
+    if ($.trim(firstLine) === '') {
+        commitMessage = $.trim(moreLines);
+    } else if ($.trim(moreLines) === ''){
+        commitMessage = $.trim(firstLine);
+    } else {
+        commitMessage = $.trim(firstLine) +"\n\n"+ $.trim(moreLines);
     }
 
-    var removeURL = API_remove_study_DELETE_url.replace('{STUDY_ID}', studyID);
     // add auth-token to the query string (no body allowed!)
     var qsVars = $.param({
         author_name: authorName,
         author_email: authorEmail,
         auth_token: authToken,
-        starting_commit_SHA: viewModel.startingCommitSHA
+        starting_commit_SHA: viewModel.startingCommitSHA,
+        commit_msg: commitMessage
     });
     removeURL += ('?'+ qsVars);
 
@@ -2568,8 +2590,8 @@ var studyScoringRules = {
                 }
             },
             weight: 0.2, 
-            successMessage: "This study is unique (based on its DOI) in the Open Tree collection.",
-            failureMessage: "There is at least one other study with this DOI in the Open Tree collection.",
+            successMessage: "This study is unique (based on its DOI) in the Open Tree database.",
+            failureMessage: "There is at least one other study with this DOI in the Open Tree database.",
             suggestedAction: "Compare any duplicate studies (based on DOIs) and delete all but one."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
 
@@ -4796,12 +4818,22 @@ function getAllVisibleProposedMappings() {
 }
 function approveAllVisibleMappings() {
     $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
-        var approvedMapping = proposedOTUMappings()[ OTUid ];
-        if ($.isArray(approvedMapping())) {
-            // do nothing, curator has not chosen a candidate
+        var itsMappingInfo = proposedOTUMappings()[ OTUid ];
+        var approvedMapping = $.isFunction(itsMappingInfo) ?
+            itsMappingInfo() :
+            itsMappingInfo;
+        if ($.isArray(approvedMapping)) {
+            if (approvedMapping.length === 1) {
+                // apply the first (only) value
+                delete proposedOTUMappings()[ OTUid ];
+                mapOTUToTaxon( OTUid, approvedMapping[0], {POSTPONE_UI_CHANGES: true} );
+            } else {
+                // do nothing if there are multiple possibilities
+            }
         } else {
+            // apply the inner value of an observable (accessor) function
             delete proposedOTUMappings()[ OTUid ];
-            mapOTUToTaxon( OTUid, approvedMapping(), {POSTPONE_UI_CHANGES: true} );
+            mapOTUToTaxon( OTUid, ko.unwrap(approvedMapping), {POSTPONE_UI_CHANGES: true} );
         }
     });
     proposedOTUMappings.valueHasMutated();
@@ -4938,7 +4970,7 @@ function requestTaxonMapping( otuToMap ) {
 
     updateMappingStatus();
     var otuID = otuToMap['@id'];
-    var originalLabel = otuToMap['^ot:originalLabel'] || null;
+    var originalLabel = $.trim(otuToMap['^ot:originalLabel']) || null;
     // use the manually edited label (if any), or the hint-adjusted version
     var editedLabel = $.trim(otuToMap['^ot:altLabel']);
     var searchText = (editedLabel !== '') ? editedLabel : adjustedLabel(originalLabel);

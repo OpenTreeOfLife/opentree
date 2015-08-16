@@ -249,7 +249,8 @@ function loadStudyList() {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.STUDIES.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' );
+                    matchPattern = new RegExp( $.trim(match), 'i' ),
+                    wholeWordMatchPattern = new RegExp( '\\b'+ $.trim(match) +'\\b', 'i' );
                 var workflow = viewModel.listFilters.STUDIES.workflow();
                 var order = viewModel.listFilters.STUDIES.order();
 
@@ -258,6 +259,7 @@ function loadStudyList() {
                     viewModel, 
                     function(study) {
                         // match entered text against pub reference (author, title, journal name, DOI)
+                        var studyID = study['ot:studyId'];
                         var pubReference = study['ot:studyPublicationReference'];
                         var pubURL = study['ot:studyPublication'];
                         var pubYear = study['ot:studyYear'];
@@ -267,7 +269,7 @@ function loadStudyList() {
                                      ($.trim(study['ot:focalCladeOTTTaxonName']) !== "")) ?
                                         study['ot:focalCladeOTTTaxonName'] :  // use mapped name if found
                                         study['ot:focalClade']; // fall back to numeric ID (should be very rare)
-                        if (!matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
+                        if (!wholeWordMatchPattern.test(studyID) && !matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
                             return false;
                         }
                         // check for filtered workflow state
@@ -310,9 +312,35 @@ function loadStudyList() {
                         break;
 
                     case 'Oldest publication first':
-                        filteredList.sort(function(a,b) { 
+                        filteredList.sort(function(a,b) {
                             if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
                             return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
+                        });
+                        break;
+
+                    case 'Sort by primary author':
+                        filteredList.sort(function(a,b) {
+                            var aRef = $.trim(a['ot:studyPublicationReference']);
+                            var bRef = $.trim(b['ot:studyPublicationReference']);
+                            if (aRef.localeCompare) {
+                                return aRef.localeCompare(bRef);
+                            }
+                            // fallback do dumb alpha-sort on older browsers
+                            if (aRef === bRef) return 0;
+                            return (aRef > bRef) ? 1 : -1;
+                        });
+                        break;
+
+                    case 'Sort by primary author (reversed)':
+                        filteredList.sort(function(a,b) {
+                            var bRef = $.trim(b['ot:studyPublicationReference']);
+                            var aRef = $.trim(a['ot:studyPublicationReference']);
+                            if (bRef.localeCompare) {
+                                return bRef.localeCompare(aRef);
+                            }
+                            // fallback do dumb alpha-sort on older browsers
+                            if (aRef === bRef) return 0;
+                            return (aRef < bRef) ? 1 : -1;
                         });
                         break;
 
