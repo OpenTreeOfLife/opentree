@@ -1,0 +1,50 @@
+{
+    "2014-04-14T00Z": {
+        // based on file mod-date(?) shown in http://files.opentreeoflife.org/trees/
+        "version": "v1?",
+        "OTT_version": "ott2.6"
+        "unique_OTU_count": null, 
+        "study_count": null, 
+        "run_time": null, 
+        "total_OTU_count": null, 
+        "reported_study_count": null
+    }, 
+    "2014-07-23T00Z": {
+        // based on jar286's IRC comment at http://irclog.perlgeek.de/opentreeoflife/2015-07-30#i_10979489
+        "version": "v1?",
+        "OTT_version": "ott2.6"
+        "unique_OTU_count": null, 
+        "study_count": null, 
+        "run_time": null, 
+        "total_OTU_count": null, 
+        "reported_study_count": null
+    }, 
+    "2014-09-14T00Z": {
+        "version": "v2",
+        "OTT_version": "ott2.8"
+        "unique_OTU_count": null, 
+        "study_count": null, 
+        "run_time": null, 
+        "total_OTU_count": null, 
+        "reported_study_count": null
+    }, 
+    "2015-01-16T23Z": {
+        // can we put some stats on the board? these are the earliest we have
+        "version": "v2a (initial stats)",
+        "OTT_version": "ott2.8", 
+        "unique_OTU_count": 60405, 
+        "study_count": 429, 
+        "run_time": 311.77482295036316, 
+        "total_OTU_count": 60933, 
+        "reported_study_count": 483
+    },
+    "2015-05-06T00Z": {
+        "version": "v3",
+        "OTT_version": "ott2.8"
+        "unique_OTU_count": 60356, 
+        "study_count": 424, 
+        "run_time": 280.048357963562, 
+        "total_OTU_count": 60884, 
+        "reported_study_count": 478
+    }
+}
