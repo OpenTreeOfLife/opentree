@@ -101,7 +101,7 @@ circle.taxo-release-marker {
 <script type="text/javascript">
 // pass statistics as JSON to client for stepping, plotting, etc.
 // NOTE that these are correctly date-sorted from the server!
-var otu_stats = {{= XML(otu_stats) }}
+var otu_stats = {{= XML(json.dumps(otu_stats)) }}
 
 var sortedSynthesisProfileKeys = null;
 var currentSynthesisProfileIndex = 0;
@@ -193,9 +193,22 @@ var populateSVG = function(data) {
         return d['Unique OTUs in synthesis from studies'];
     },
     'OTUs in phylesystem, but not in synthesis': function(d) {
+        /* Can we omit incomplete data without breaking the area chart?
+        if ((d['Unique OTUs in studies'] == null) || 
+            (d['Unique OTUs in synthesis from studies'] == null)) {
+            return null;
+        }
+        */
         return d['Unique OTUs in studies'] - d['Unique OTUs in synthesis from studies'];
     },
     'OTUs in taxonomy, but not in phylesystem or synthesis': function(d) {
+        /* Can we omit incomplete data without breaking the area chart?
+        if ((d['Unique OTUs in OTT'] == null) || 
+            (d['Unique OTUs in studies'] == null)) || 
+            (d['Unique OTUs in synthesis from studies'] == null)) {
+            return null;
+        }
+        */
         return d['Unique OTUs in OTT'] - d['Unique OTUs in studies'] - d['Unique OTUs in synthesis from studies'];
     }
   };
@@ -545,9 +558,13 @@ var populateSVG = function(data) {
       var statsFields = highlightDetailsStats.selectAll('text');
       d3.keys(mutuallyExclusiveCategories).reverse().forEach(function(propName) {
           var func = mutuallyExclusiveCategories[propName];
-          var displayText = propName +": "+ func(profileData);
+          var rawValue = func(profileData);
           var itsField = statsFields.filter(function(d,i) {return i === statPosition;});
-          itsField.text(displayText);
+          if (rawValue == null) {
+              itsField.text(propName +": NOT AVAILABLE");
+          } else {
+              itsField.text(propName +": "+ rawValue);
+          }
           statPosition++;
       });
 

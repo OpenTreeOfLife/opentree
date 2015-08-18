@@ -188,17 +188,19 @@ def progress():
             else:
                 num_otu_in_ott = ott_synth_version_info.get('visible_taxon_count', 0)
 
-        # WAS synth_v.get('Unique OTUs in Synthesis')
-        # N.B. Some days (esp. early in history) might not have any synthesis data
+        # N.B. Some days (esp. early in history) might not have any synthesis data, 
+        # or incomplete data (if synthesis was prior to gathering detailed stats)
         if synth_v:  # ignore empty dict (no data found)
             if synth_v.get('unique_OTU_count') is None:
-                warnings.add('"unique_OTU_count" info not found!')
+                #warnings.add('{d}: "unique_OTU_count" info not found!'.format(d=date))
+                num_otu_in_synth = None
             else:
                 num_otu_in_synth = synth_v.get('unique_OTU_count')
 
             # WAS synth_v.get('Unique OTUs in Synthesis from studies')
             if synth_v.get('total_OTU_count') is None:
-                warnings.add('"total_OTU_count" info not found!')
+                #warnings.add('{d}: "total_OTU_count" info not found!'.format(d=date))
+                num_phylo_otu_in_synth = None
             else:
                 num_phylo_otu_in_synth = synth_v.get('total_OTU_count')
 
