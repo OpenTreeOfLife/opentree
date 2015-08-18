@@ -116,7 +116,6 @@ def progress():
             # fetch and compare the timestamps before and after; which is closer?
             prior_timestamp = sorted_timestamps[prior_position]
             following_timestamp = sorted_timestamps[following_position]
-            #import pdb; pdb.set_trace()
             if abs(target_date - prior_timestamp) <= abs(target_date - following_timestamp):
                 # in the event of a tie, use the prior date
                 prior_datestring = sorted_dates[prior_position]
@@ -157,39 +156,51 @@ def progress():
         # carry over latest stats, if none found for this day
         synth_v = synth.get(date, synth_v)
         phyle_v = phylesystem.get(date, phyle_v)
-
-        specified_version = synth_v.get('OTT version')
-        if specified_version:
-            ott_version_info = get_ott_version_info(specified_version)
-            if ott_version_info is None:
-                warnings.add('specified version {v} of OTT not found!'.format(v=specified_version))
+        # Note any taxonomy version released on this date, AND the version used
+        # in today's synthesis. (These are probably not the same)
+        ott_new_version_info = get_ott_version_info_by_date(date)
+        synth_ott_version = synth_v.get('OTT_version')
+        if synth_ott_version:
+            ott_synth_version_info = get_ott_version_info(synth_ott_version)
+            if ott_synth_version_info is None:
+                # TODO: If a draft was provided (eg, "ott2.9draft8"), try again
+                # asking for the main version (in this case, "ott2.9")
+                warnings.add('specified version {v} of OTT not found!'.format(v=synth_ott_version))
         else:
-            warnings.add('No specified version of OTT for some synthesis releases; guessing OTT versions based on synth-date!')
-            ott_version_info =  get_latest_ott_version_info_by_date(date)
-            if ott_version_info is None:
+            if synth_v:
+                # this should have specified an OTT version
+                warnings.add('No specified version of OTT for some synthesis releases; guessing OTT versions based on synth-date!')
+            else:
+                # No synthesis has occurred yet; pick up the closest prior taxonomy version
+                pass
+            ott_synth_version_info =  get_latest_ott_version_info_by_date(date)
+            if ott_synth_version_info is None:
                 warnings.add('No version of OTT found on-or-before date {d}!'.format(d=date))
-        if ott_version_info is None:
-            ott_version_info = {}
+
+        if ott_synth_version_info is None:
+            ott_synth_version_info = {}
             warnings.add('OTT version info not found!')
         elif ott is None:
             warnings.add('OTT info not found!')
         else:
-            if ott_version_info is None:
-                warnings.add('OTT info for version {v} not found!'.format(v=ott_version_info.get('version')))
+            if ott_synth_version_info is None:
+                warnings.add('OTT info for version {v} not found!'.format(v=ott_synth_version_info.get('version')))
             else:
-                num_otu_in_ott = ott_version_info.get('visible_taxon_count', 0)
+                num_otu_in_ott = ott_synth_version_info.get('visible_taxon_count', 0)
 
-        # WAS synth_v.get('Unique OTUs in Synthesis')
-        # N.B. Some days (esp. early in history) might not have any synthesis data
+        # N.B. Some days (esp. early in history) might not have any synthesis data, 
+        # or incomplete data (if synthesis was prior to gathering detailed stats)
         if synth_v:  # ignore empty dict (no data found)
             if synth_v.get('unique_OTU_count') is None:
-                warnings.add('"unique_OTU_count" info not found!')
+                #warnings.add('{d}: "unique_OTU_count" info not found!'.format(d=date))
+                num_otu_in_synth = None
             else:
                 num_otu_in_synth = synth_v.get('unique_OTU_count')
 
             # WAS synth_v.get('Unique OTUs in Synthesis from studies')
             if synth_v.get('total_OTU_count') is None:
-                warnings.add('"total_OTU_count" info not found!')
+                #warnings.add('{d}: "total_OTU_count" info not found!'.format(d=date))
+                num_phylo_otu_in_synth = None
             else:
                 num_phylo_otu_in_synth = synth_v.get('total_OTU_count')
 
@@ -206,8 +217,7 @@ def progress():
             else:
                 num_otu_in_nominated_studies = phyle_v.get('nominated_study_unique_OTU_count')
 
-        #import pdb; pdb.set_trace()
-        #print( date, ott_version_info['date'], (ott_version_info['date'] == date and "true" or "false") )
+        #print( date, ott_synth_version_info['date'], (ott_synth_version_info['date'] == date and "true" or "false") )
         #print( date, (synth.get(date, None) and "true" or "false") )
         by_date[date] = {'Unique OTUs in OTT': num_otu_in_ott,
                          'Unique OTUs in synthesis': num_otu_in_synth,
@@ -216,9 +226,11 @@ def progress():
                          'Unique OTUs in nominated studies': num_otu_in_nominated_studies,
                          # TODO: Add pre-calculated stats where provided?
                          'Date has synthesis release': (synth.get(date, None) and "true" or "false"),
-                         'Date has taxonomy version': (ott_version_info['date'] == date and "true" or "false"),
+                         'Synthesis version released today': synth.get(date, None) and synth.get(date).get('version').encode("utf8") or '',
+                         'Date has taxonomy version': (ott_new_version_info and "true" or "false"),
                          'Date has phylesystem info': (phylesystem.get(date, None) and "true" or "false"),
-                         'OTT version': ott_version_info.get('version').encode("utf8"),
+                         'OTT version released today': ott_new_version_info and ott_new_version_info.get('version','').encode("utf8") or '',
+                         'OTT version used in synthesis': ott_synth_version_info.get('version','').encode("utf8"),
                          'Date': str(date)}
     # sort by date (allowing for different date formats)
     #dk = [(datetime.strptime(i, "%Y-%m-%d"), i) for i in by_date.keys() if i]
@@ -270,7 +282,8 @@ def synthesis_release():
 
     # Get date or version from URL, or bounce to the latest release by default
     if len(request.args) == 0:
-        release_version = sorted(synth.keys(), reverse=False)[-1]
+        release_date = sorted(synth.keys(), reverse=False)[-1]
+        release_version = synth[release_date].get('version')
         redirect(URL('opentree', 'about', 'synthesis_release', 
             vars={}, 
             args=[release_version]))
@@ -300,14 +313,15 @@ def taxonomy_version():
             vars={}, 
             args=[taxonomy_version]))
 
-    view_dict['taxonomy_version'] = request.args[0]
+    taxo_version = request.args[0]
+    view_dict['taxonomy_version'] = taxo_version
     view_dict['taxonomy_stats'] = ott
 
     # fetch and render Markdown release notes as HTML
     from gluon.tools import fetch
     from gluon.contrib.markdown.markdown2 import markdown
     from urllib2 import HTTPError
-    fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/reference-taxonomy/master/doc/{v}.md'.format(v=request.args[0])
+    fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/reference-taxonomy/master/doc/{v}.md'.format(v=taxo_version)
     try:
         version_notes_response = fetch(fetch_url)
         # N.B. We assume here that any hyperlinks have the usual Markdown braces!
@@ -315,6 +329,14 @@ def taxonomy_version():
     except HTTPError:
         version_notes_html = None
     view_dict['taxonomy_version_notes'] = version_notes_html
+
+    # List all synthesis releases that used this OTT version
+    synth = json.loads(fetch_local_synthesis_stats() or '{}')
+    related_releases = []
+    for date in synth:
+        if synth[date]['OTT_version'] == taxo_version:
+            related_releases.append(synth[date]['version'])
+    view_dict['related_synth_releases'] = related_releases 
 
     return view_dict
 
@@ -352,6 +374,17 @@ def get_ott_version_info(specified_version):
     for version in get_sorted_ott_versions():
         if version.get('version') == specified_version:
             return version
+    return None
+
+def get_ott_version_info_by_date(date):
+    for version in get_sorted_ott_versions():
+        try:
+            v_date = version.get('date')
+        except:
+            raise Exception('Missing OTT version date')
+        if v_date == date:
+            return version
+    return None
 
 def get_latest_ott_version_info_by_date(date):
     closest_previous_version = None

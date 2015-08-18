@@ -101,7 +101,7 @@ circle.taxo-release-marker {
 <script type="text/javascript">
 // pass statistics as JSON to client for stepping, plotting, etc.
 // NOTE that these are correctly date-sorted from the server!
-var otu_stats = {{= XML(otu_stats) }}
+var otu_stats = {{= XML(json.dumps(otu_stats)) }}
 
 var sortedSynthesisProfileKeys = null;
 var currentSynthesisProfileIndex = 0;
@@ -111,10 +111,17 @@ for (i = 0; i < otu_stats.length ; ++i) {
     var profileDate = otu_stats[i]['Date'];
     profilesByDate[profileDate] = otu_stats[i];
 }
+
+// provide a crude UI for viewing "dubious data" caveats
 var warnings = {{= XML(warnings)}};
-for (i = 0; i < warnings.length; ++i) {
-    $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
+if (warnings.length === 0) {
+    $('#warnings-toggle').hide();
+} else {
+    for (i = 0; i < warnings.length; ++i) {
+        $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
+    }
 }
+
 /* svg based on http://bl.ocks.org/mbostock/3886208 */
 var $svgParent = $('#stacked-bar-div');
 var margin = {top: 10, right: 20, bottom: 90, left: 40},
@@ -193,9 +200,22 @@ var populateSVG = function(data) {
         return d['Unique OTUs in synthesis from studies'];
     },
     'OTUs in phylesystem, but not in synthesis': function(d) {
+        /* Can we omit incomplete data without breaking the area chart?
+        if ((d['Unique OTUs in studies'] == null) || 
+            (d['Unique OTUs in synthesis from studies'] == null)) {
+            return null;
+        }
+        */
         return d['Unique OTUs in studies'] - d['Unique OTUs in synthesis from studies'];
     },
     'OTUs in taxonomy, but not in phylesystem or synthesis': function(d) {
+        /* Can we omit incomplete data without breaking the area chart?
+        if ((d['Unique OTUs in OTT'] == null) || 
+            (d['Unique OTUs in studies'] == null)) || 
+            (d['Unique OTUs in synthesis from studies'] == null)) {
+            return null;
+        }
+        */
         return d['Unique OTUs in OTT'] - d['Unique OTUs in studies'] - d['Unique OTUs in synthesis from studies'];
     }
   };
@@ -409,7 +429,7 @@ var populateSVG = function(data) {
 
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/synthesis-release/"+ d.Date); })
+      .attr("xlink:href", function(d){ return ("/about/synthesis-release/"+ d['Synthesis version released today']); })
     .append("circle")
       .attr("class", "synth-release-marker")
       .attr("cx", 0)
@@ -419,7 +439,7 @@ var populateSVG = function(data) {
       .text("Synthesis release (click to see details in a new window).");
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/synthesis-release/"+ d.Date); })
+      .attr("xlink:href", function(d){ return ("/about/synthesis-release/"+ d['Synthesis version released today']); })
     .append('text')
       .attr("class", "synth-release-marker")
       .text("S")
@@ -429,7 +449,7 @@ var populateSVG = function(data) {
       .text("Synthesis release (click to see details in a new window).");
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/taxonomy-version/"+ d['OTT version']); })
+      .attr("xlink:href", function(d){ return ("/about/taxonomy-version/"+ d['OTT version released today']); })
     .append("circle")
       .attr("class", "taxo-release-marker")
       .attr("cx", 0)
@@ -439,7 +459,7 @@ var populateSVG = function(data) {
       .text("Taxonomy release (click to see details in a new window).");
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/taxonomy-version/"+ d['OTT version']); })
+      .attr("xlink:href", function(d){ return ("/about/taxonomy-version/"+ d['OTT version released today']); })
     .append("text")
       .attr("class", "taxo-release-marker")
       .text('T')
@@ -545,9 +565,13 @@ var populateSVG = function(data) {
       var statsFields = highlightDetailsStats.selectAll('text');
       d3.keys(mutuallyExclusiveCategories).reverse().forEach(function(propName) {
           var func = mutuallyExclusiveCategories[propName];
-          var displayText = propName +": "+ func(profileData);
+          var rawValue = func(profileData);
           var itsField = statsFields.filter(function(d,i) {return i === statPosition;});
-          itsField.text(displayText);
+          if (rawValue == null) {
+              itsField.text(propName +": NOT AVAILABLE");
+          } else {
+              itsField.text(propName +": "+ rawValue);
+          }
           statPosition++;
       });
 

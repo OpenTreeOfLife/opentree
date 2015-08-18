@@ -55,11 +55,6 @@
               </div>
             {{ pass }}
 
-            <h3>Sources</h3>
-            <p style="font-style: italic;">
-                TODO: Link to synthesis releases using this taxonomy?</a>
-            </p>
-
           </div>
 
       </div>
@@ -70,7 +65,7 @@
 </div><!-- end of .container -->
 
 <script type="text/javascript">
-// TODO: Add statistics for taxonomy, from ott.json
+// Add statistics for taxonomy, from ott.json
 // These provide version history (version numbers, eg 'ott2.8') to enable stepwise navigation.
 
 // pass statistics as JSON to client for stepping, plotting, etc.
@@ -91,6 +86,7 @@ var currentTaxonomyVersion = null;
 var currentTaxoVersionInfo = null;
 
 var taxonomyVersion = '{{= taxonomy_version }}';
+var relatedSynthReleases = {{= XML(json.dumps(related_synth_releases )) }};
 
 $(document).ready(function() {
     // show current profiles, or a notice if no data was found 
@@ -196,7 +192,7 @@ function showCurrentTaxonomyVersion() {
     // NOTE that we will ignore stats not listed here!
     var propsToDisplayLabels = {
         'date': "Date",
-        'version': "OTT version",
+        'version': "Version",
         'taxon_count': "Taxon count",
         'visible_taxon_count': "Visible taxon count"
     }
@@ -237,6 +233,14 @@ function showCurrentTaxonomyVersion() {
         );
     }
 
+    // add a final row with links to all synthesis releases for which this was a source
+    $('#taxonomy-stats-panel table').append(
+        '<tr>'
+          + '<th>Used in synthesis releases</th>'
+          + '<td colspan="2">'+ getMarkupForRelatedSynthReleases() +'</td>'
+      + '</tr>'
+    );
+
     // Update the Next and Prev buttons (disable if no more)
     var nthProfile = sortedTaxonomyVersions.indexOf(currentTaxonomyVersion);
     if (nthProfile === 0) {
@@ -249,6 +253,15 @@ function showCurrentTaxonomyVersion() {
     } else {
         $('#next-taxonomy-version').removeClass('disabled');
     }
+}
+
+function getMarkupForRelatedSynthReleases() {
+    console.warn(relatedSynthReleases);
+    var relatedHyperlinks = relatedSynthReleases.map(function(v) {
+        return '<a href="/about/synthesis-release/'+ v 
+              +'" title="Click for details about this synthesis release">'+ v +'</a>';
+    });
+    return relatedHyperlinks.join(', ');
 }
 
 function getSynthesisSparklineData(prop, lastTaxoVersion) {
