@@ -1,7 +1,7 @@
 {
     "2014-04-14T00Z": {
         "===": "These 'comments' will be ignored by the app.",
-        "version": "v1?",
+        "version": "v1",
         "===": "Based on file mod-date shown in http://files.opentreeoflife.org/trees/",
         "OTT_version": "ott2.6",
         "unique_OTU_count": null, 
@@ -11,7 +11,7 @@
         "reported_study_count": null
     }, 
     "2014-07-23T00Z": {
-        "version": "v1?",
+        "version": "v1a - alternate date",
         "===": "Based on jar286's IRC comment at http://irclog.perlgeek.de/opentreeoflife/2015-07-30#i_10979489",
         "OTT_version": "ott2.6",
         "unique_OTU_count": null, 
@@ -30,7 +30,7 @@
         "reported_study_count": null
     }, 
     "2015-01-16T23Z": {
-        "version": "v2a (initial stats)",
+        "version": "v2a - initial stats",
         "===": "Can we put some stats on the board? These are the earliest we have.",
         "OTT_version": "ott2.8", 
         "unique_OTU_count": 60405, 
