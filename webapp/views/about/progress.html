@@ -71,7 +71,16 @@ circle.taxo-release-marker {
     stroke-width: 2px;
     stroke-opacity: 0.5;
 }
-*/
+#stacked-bar-div {
+    font-size: 11px;
+    border: 1px orange dashed;
+}
+<!--[if IE]>
+#stacked-bar-div > svg {
+    border: 2px purple dashed;
+    min-height: 400px;
+}
+<![endif]-->
 </style>
 <div class="container">
       <h1 id="main-title">Open Tree progress</h1>
@@ -124,6 +133,9 @@ if (warnings.length === 0) {
 
 /* svg based on http://bl.ocks.org/mbostock/3886208 */
 var $svgParent = $('#stacked-bar-div');
+// in IE, we need to force this to a sensible height
+///var minVizHeight = $svgParent.width() * 0.75;
+///$svgParent.find('svg:eq(0)').css('min-height', minVizHeight +'px');
 var margin = {top: 10, right: 20, bottom: 90, left: 40},
     vizOuterWidth = $svgParent.width(); // 960,
 var vizOuterHeight = 500,
@@ -151,6 +163,8 @@ var colors = d3.scale.ordinal()
 var colorCount = colors.range().length; // used below to get color index
 var xAxis = d3.svg.axis()
     .scale(x)
+    .ticks(6)
+    .tickFormat(d3.time.format("%b %Y"))  // use short month names
     .orient("bottom");
 var yAxis = d3.svg.axis()
     .scale(y)
@@ -161,7 +175,7 @@ var yAxis = d3.svg.axis()
 var svgpar = d3.select("#stacked-bar-div");
 var svg = svgpar.append("svg")
     .attr("width", "100%")   //width + margin.left + margin.right)
-    //.attr("height", height + margin.top + margin.bottom)
+    ///.attr("height", minVizHeight)
     .attr("viewBox", "0 0 "+ vizOuterWidth +" 500")
     .attr("preserveAspectRatio", "xMinYMin meet")
   .append("g")
