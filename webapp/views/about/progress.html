@@ -111,10 +111,17 @@ for (i = 0; i < otu_stats.length ; ++i) {
     var profileDate = otu_stats[i]['Date'];
     profilesByDate[profileDate] = otu_stats[i];
 }
+
+// provide a crude UI for viewing "dubious data" caveats
 var warnings = {{= XML(warnings)}};
-for (i = 0; i < warnings.length; ++i) {
-    $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
+if (warnings.length === 0) {
+    $('#warnings-toggle').hide();
+} else {
+    for (i = 0; i < warnings.length; ++i) {
+        $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
+    }
 }
+
 /* svg based on http://bl.ocks.org/mbostock/3886208 */
 var $svgParent = $('#stacked-bar-div');
 var margin = {top: 10, right: 20, bottom: 90, left: 40},
