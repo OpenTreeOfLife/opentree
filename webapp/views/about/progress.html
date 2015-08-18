@@ -409,7 +409,7 @@ var populateSVG = function(data) {
 
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/synthesis-release/"+ d.Date); })
+      .attr("xlink:href", function(d){ return ("/about/synthesis-release/"+ d['Synthesis version released today']); })
     .append("circle")
       .attr("class", "synth-release-marker")
       .attr("cx", 0)
@@ -419,7 +419,7 @@ var populateSVG = function(data) {
       .text("Synthesis release (click to see details in a new window).");
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/synthesis-release/"+ d.Date); })
+      .attr("xlink:href", function(d){ return ("/about/synthesis-release/"+ d['Synthesis version released today']); })
     .append('text')
       .attr("class", "synth-release-marker")
       .text("S")

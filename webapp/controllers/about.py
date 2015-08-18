@@ -224,6 +224,7 @@ def progress():
                          'Unique OTUs in nominated studies': num_otu_in_nominated_studies,
                          # TODO: Add pre-calculated stats where provided?
                          'Date has synthesis release': (synth.get(date, None) and "true" or "false"),
+                         'Synthesis version released today': synth.get(date, None) and synth.get(date).get('version').encode("utf8") or '',
                          'Date has taxonomy version': (ott_new_version_info and "true" or "false"),
                          'Date has phylesystem info': (phylesystem.get(date, None) and "true" or "false"),
                          'OTT version released today': ott_new_version_info and ott_new_version_info.get('version','').encode("utf8") or '',
@@ -279,7 +280,8 @@ def synthesis_release():
 
     # Get date or version from URL, or bounce to the latest release by default
     if len(request.args) == 0:
-        release_version = sorted(synth.keys(), reverse=False)[-1]
+        release_date = sorted(synth.keys(), reverse=False)[-1]
+        release_version = synth[release_date].get('version')
         redirect(URL('opentree', 'about', 'synthesis_release', 
             vars={}, 
             args=[release_version]))
@@ -309,14 +311,15 @@ def taxonomy_version():
             vars={}, 
             args=[taxonomy_version]))
 
-    view_dict['taxonomy_version'] = request.args[0]
+    taxo_version = request.args[0]
+    view_dict['taxonomy_version'] = taxo_version
     view_dict['taxonomy_stats'] = ott
 
     # fetch and render Markdown release notes as HTML
     from gluon.tools import fetch
     from gluon.contrib.markdown.markdown2 import markdown
     from urllib2 import HTTPError
-    fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/reference-taxonomy/master/doc/{v}.md'.format(v=request.args[0])
+    fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/reference-taxonomy/master/doc/{v}.md'.format(v=taxo_version)
     try:
         version_notes_response = fetch(fetch_url)
         # N.B. We assume here that any hyperlinks have the usual Markdown braces!
@@ -324,6 +327,14 @@ def taxonomy_version():
     except HTTPError:
         version_notes_html = None
     view_dict['taxonomy_version_notes'] = version_notes_html
+
+    # List all synthesis releases that used this OTT version
+    synth = json.loads(fetch_local_synthesis_stats() or '{}')
+    related_releases = []
+    for date in synth:
+        if synth[date]['OTT_version'] == taxo_version:
+            related_releases.append(synth[date]['version'])
+    view_dict['related_synth_releases'] = related_releases 
 
     return view_dict
 

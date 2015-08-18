@@ -77,7 +77,7 @@ circle.taxo-release-marker {
     <h1 id="main-title" style="display: inline-block; padding-bottom: 12px;">Synthesis release 
     </h1>
                   &nbsp;
-                  <select id="synthesis-profile-date-chooser" style="">
+                  <select id="synthesis-release-version-chooser" style="">
                   </select>
                   &nbsp;
                   <div class="pagination hidden-tablet" style="display: inline-block; vertical-align: middle; line-height: 30px;">
@@ -92,7 +92,7 @@ circle.taxo-release-marker {
               <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
 
               <div style="margin-top: -16px;">
-                  <a href="/about/progress?highlight={{= release_version }}">Show this release in the history of Open Tree</a>
+                  <a id="progressPageLink" href="#">Show this release in the history of Open Tree</a>
               </div>
 
               <h3>Statistics</h3>
@@ -102,27 +102,25 @@ circle.taxo-release-marker {
               </div>
 
               <div id="synthesis-stats-panel" class="stats-panel" style="display: none;">
-
                   <table class="table table-condensed table-hover" style="clear: left;"></table>
               </div>
 
+              <!--
               <h3 style="clear: both;">Downloads</h3>
               <p style="font-style: italic;">
                 TODO: Read download files list from static site?
               </p>
-
               <h3>Notes</h3>
               <p style="font-style: italic;">
                 TODO: Render README (markdown =&gt; HTML) from static files?
               </p>
+              -->
 
-              <h3>Sources</h3>
-              <p style="font-style: italic;">
-                TODO: Link to taxonomy release used in this synthesis?</a>
-              </p>
+              <!--
               <p style="font-style: italic;">
                 TODO: List all trees and studies (mimic Bibliographic Refs page?)
               </p>
+              -->
 
           </div>
       </div>
@@ -172,13 +170,19 @@ $(document).ready(function() {
 
         // start with the profile whose date is in the URL (or latest, by default)
         if (releaseVersion) {
-            currentSynthesisProfileDate = releaseVersion;
+            currentSynthesisProfileDate = getDateForReleaseVersion(releaseVersion);
         } else {
             currentSynthesisProfileDate = sortedSynthesisProfileKeys[ sortedSynthesisProfileKeys.length - 1 ];
+            releaseVersion = synthesis_stats[currentSynthesisProfileDate].version;
         }
-        // format nicely and add to page title
+        // update the link to the Progress page to use this date
+        $('#progressPageLink').attr('href', 
+                                    '/about/progress?highlight='+ currentSynthesisProfileDate);
+
+        /* format nicely and add to page title
         var displayDate = formatISODate( currentSynthesisProfileDate, {includeTime: false} );
         $('#title-date').html( "("+ displayDate +")" );
+        */
 
         // bind Prev and Next buttons
         $('#prev-synthesis-profile').click(function() {
@@ -186,8 +190,8 @@ $(document).ready(function() {
             // sanity check
             if (nthProfile === 0) return false;
             var anotherDate = sortedSynthesisProfileKeys[nthProfile - 1];
-            jumpToSynthesisProfileDate(anotherDate);
-
+            var anotherVersion = synthesis_stats[anotherDate].version;
+            jumpToSynthesisReleaseVersion(anotherVersion);
             return false;
         });
         $('#next-synthesis-profile').click(function() {
@@ -195,21 +199,22 @@ $(document).ready(function() {
             // sanity check
             if (nthProfile === sortedSynthesisProfileKeys.length - 1) return false;
             var anotherDate = sortedSynthesisProfileKeys[nthProfile + 1];
-            jumpToSynthesisProfileDate(anotherDate);
+            var anotherVersion = synthesis_stats[anotherDate].version;
+            jumpToSynthesisReleaseVersion(anotherVersion);
             return false;
         });
 
-        // build and bind profile-date chooser
-        $('#synthesis-profile-date-chooser').empty();
+        // build and bind release-version chooser
+        $('#synthesis-release-version-chooser').empty();
         $.each( sortedSynthesisProfileKeys, function (i, profileDate) {
-            var displayDate = formatISODate( profileDate, {includeTime: false} );
-            $('#synthesis-profile-date-chooser').prepend(
-                '<option value="'+ profileDate +'">'+ displayDate +'</option>'
+            var itsVersion = synthesis_stats[profileDate].version;
+            $('#synthesis-release-version-chooser').prepend(
+                '<option value="'+ itsVersion +'">'+ itsVersion +'</option>'
             );
         });
-        $('#synthesis-profile-date-chooser').change(function() {
-            var anotherDate = $(this).val();
-            jumpToSynthesisProfileDate(anotherDate);
+        $('#synthesis-release-version-chooser').change(function() {
+            var anotherVersion = $(this).val();
+            jumpToSynthesisReleaseVersion(anotherVersion);
         });
         showCurrentSynthesisProfile();
         $('#synthesis-stats-panel').show();
@@ -218,6 +223,16 @@ $(document).ready(function() {
         $('#synthesis-stats-missing').show();
     }
 });
+
+function getDateForReleaseVersion( version ) {
+    for (var releaseDate in synthesis_stats) {
+        var releaseInfo = synthesis_stats[releaseDate];
+        if (releaseInfo.version === version) {
+            return releaseDate;
+        }
+    }
+    return null;
+}
 
 function formatISODate( dateString, options ) {
     options = options || {includeTime: true};
@@ -230,13 +245,13 @@ function formatISODate( dateString, options ) {
     }
 }
 
-function jumpToSynthesisProfileDate( targetDate ) {
-    // move this page to the chosen date
+function jumpToSynthesisReleaseVersion( targetVersion ) {
+    // move this page to the chosen version
     var currentURL = window.location.href;
     var urlParts = currentURL.split('/');
     // ASSUME there's always a date in the final URL-part
-    var currentDate = urlParts.pop();
-    urlParts.push(targetDate);  // convert to string?
+    var currentVersion = urlParts.pop();
+    urlParts.push(targetVersion);
     var newURL = urlParts.join('/');
     window.location.href = newURL;
 }
@@ -248,6 +263,7 @@ function showCurrentSynthesisProfile() {
     // NOTE that we will ignore stats not listed here!
     var propsToDisplayLabels = {
         'date': "Date",
+        'OTT_version': "Open Tree Taxonomy version used",
         'run_time': "Run time (seconds)",
         'study_count': "Studies in synthesis",
         'reported_study_count': "Reported study count",
@@ -263,12 +279,25 @@ function showCurrentSynthesisProfile() {
             case 'date':
                 itsValue = formatISODate( currentSynthesisProfileDate, {includeTime: false} );
                 break;
+            case 'OTT_version':
+                var taxoVersion = currentSynthesisProfile[prop];
+                itsValue = '<a href="/about/taxonomy-version/'+ taxoVersion
+                         +'" title="Click to see details for this taxonomy version">' 
+                         + taxoVersion
+                         + '</a>';
+                break;
             case 'run_time':
             case 'study_count':
             case 'reported_study_count':
             case 'unique_OTU_count':
             case 'total_OTU_count':
-                itsValue = currentSynthesisProfile[prop].toLocaleString();
+                if (itsValue == null) {
+                    // this data is missing
+                    itsValue = 'NOT AVAILABLE';
+                } else {
+                    // coerce it to a string
+                    itsValue = currentSynthesisProfile[prop].toLocaleString();
+                }
                 break;
         }
 
@@ -308,7 +337,7 @@ function showCurrentSynthesisProfile() {
     }
 
     // Update the date selector
-    $('#synthesis-profile-date-chooser').val(currentSynthesisProfileDate);
+    $('#synthesis-release-version-chooser').val(releaseVersion);
 }
 
 function getSynthesisSparklineData(prop, lastProfileDate) {
