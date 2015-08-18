@@ -429,7 +429,7 @@ var populateSVG = function(data) {
       .text("Synthesis release (click to see details in a new window).");
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/taxonomy-version/"+ d['OTT version']); })
+      .attr("xlink:href", function(d){ return ("/about/taxonomy-version/"+ d['OTT version released today']); })
     .append("circle")
       .attr("class", "taxo-release-marker")
       .attr("cx", 0)
@@ -439,7 +439,7 @@ var populateSVG = function(data) {
       .text("Taxonomy release (click to see details in a new window).");
   markers.append("svg:a")
       .attr("target", "_blank")
-      .attr("xlink:href", function(d){ return ("/about/taxonomy-version/"+ d['OTT version']); })
+      .attr("xlink:href", function(d){ return ("/about/taxonomy-version/"+ d['OTT version released today']); })
     .append("text")
       .attr("class", "taxo-release-marker")
       .text('T')
