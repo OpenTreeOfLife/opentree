@@ -138,10 +138,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                                    <link rel="shortcut icon" href="/favicon.ico">
   </head>
   
-  <!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->	
-  <!--[if IE]> <body class="ie"> <![endif]-->
-  <!--[if !(IE)]><!--> <body> <!--<![endif]-->
-
+<body>
 {{ if get_domain_banner_text(request): }}
   <div class="ribbon-banner" title="{{= get_domain_banner_hovertext(request) }}">{{= get_domain_banner_text(request) }}</div>
 {{ pass }}
