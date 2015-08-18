@@ -73,11 +73,6 @@ circle.taxo-release-marker {
 }
 #stacked-bar-div {
     font-size: 11px;
-    border: 1px orange dashed;
-}
-body.ie #stacked-bar-div > svg {
-    border: 2px purple dashed;
-    min-height: 500px;
 }
 </style>
 <div class="container">
@@ -131,9 +126,6 @@ if (warnings.length === 0) {
 
 /* svg based on http://bl.ocks.org/mbostock/3886208 */
 var $svgParent = $('#stacked-bar-div');
-// in IE, we need to force this to a sensible height
-///var minVizHeight = $svgParent.width() * 0.75;
-///$svgParent.find('svg:eq(0)').css('min-height', minVizHeight +'px');
 var margin = {top: 10, right: 20, bottom: 90, left: 40},
     vizOuterWidth = $svgParent.width(); // 960,
 var vizOuterHeight = 500,
@@ -173,11 +165,18 @@ var yAxis = d3.svg.axis()
 var svgpar = d3.select("#stacked-bar-div");
 var svg = svgpar.append("svg")
     .attr("width", "100%")   //width + margin.left + margin.right)
-    ///.attr("height", minVizHeight)
     .attr("viewBox", "0 0 "+ vizOuterWidth +" 500")
     .attr("preserveAspectRatio", "xMinYMin meet")
   .append("g")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+
+// N.B. in IE only, we need to force this to a sensible height
+console.warn("SVG height");
+console.warn($('#stacked-bar-div svg:eq(0)').height());
+if ($('#stacked-bar-div svg:eq(0)').height() === 150) {
+    $('#stacked-bar-div svg:eq(0)').css('height', '500px');
+}
+
 // add a full-size (invisible) rectangle to receive mouse clicks
 svg.append("rect")
     .attr("width", "100%")
