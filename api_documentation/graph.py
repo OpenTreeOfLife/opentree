@@ -21,12 +21,19 @@ methods_list.append({
 methods_list.append({
     "anchor_name" : "source_tree",
     "method_name" : "source_tree",
-    "short_description" : "Return a source tree (including metadata) from the graph of life.",
-    "http_verb" : "POST",
+    "deprecated": True,
+    "short_description": "Source trees used in synthesis are currently only available by a download",
+    "further_info": ({'url': "http://files.opentreeoflife.org/preprocessed/v3.0/", 
+                      'link_name': 'Page with the download links'},
+                     {'url': "https://github.com/OpenTreeOfLife/treemachine/issues/170", 
+                      'link_name': "GitHub issue describing decision to deprecate this service"},
+                    ),
+    #"short_description" : "Return a source tree (including metadata) from the graph of life.",
+    #"http_verb" : "POST",
     "relative_url" : "/graph/source_tree",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/v2/graph/source_tree",
-    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/graph/source_tree -H "content-type:application/json" -d '{"study_id":"pg_420", "tree_id":"522", "git_sha":"a2c48df995ddc9fd208986c3d4225112550c8452"}'""",
-    "example_result" : "",
+    #"neo4j_service_url" : "http://api.opentreeoflife.org/v2/graph/source_tree",
+    #"example_command" : """curl -X POST http://api.opentreeoflife.org/v2/graph/source_tree -H "content-type:application/json" -d '{"study_id":"pg_420", "tree_id":"522", "git_sha":"a2c48df995ddc9fd208986c3d4225112550c8452"}'""",
+    #"example_result" : "",
 })
 
 # node_info

@@ -956,6 +956,13 @@ function loadSelectedStudy() {
             viewModel.versions = ko.observableArray(
                 response['versionHistory'] || [ ]
             ).asPaged(20);
+
+            // add external URLs (on GitHub) for the differences between versions
+            if (response['shardName']) {
+                $.each(viewModel.versions(), function(i, version) {
+                    version['publicDiffURL'] = ('//github.com/OpenTreeOfLife/'+ response.shardName +'/commit/'+ version.id);
+                });
+            }
             
             // take initial stab at setting search context (for focal clade and OTU mapping)
             inferSearchContextFromAvailableOTUs();
@@ -2658,8 +2665,8 @@ var studyScoringRules = {
                 }
             },
             weight: 0.2, 
-            successMessage: "This study is unique (based on its DOI) in the Open Tree collection.",
-            failureMessage: "There is at least one other study with this DOI in the Open Tree collection.",
+            successMessage: "This study is unique (based on its DOI) in the Open Tree database.",
+            failureMessage: "There is at least one other study with this DOI in the Open Tree database.",
             suggestedAction: "Compare any duplicate studies (based on DOIs) and delete all but one."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
 
@@ -4888,12 +4895,22 @@ function getAllVisibleProposedMappings() {
 }
 function approveAllVisibleMappings() {
     $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
-        var approvedMapping = proposedOTUMappings()[ OTUid ];
-        if ($.isArray(approvedMapping())) {
-            // do nothing, curator has not chosen a candidate
+        var itsMappingInfo = proposedOTUMappings()[ OTUid ];
+        var approvedMapping = $.isFunction(itsMappingInfo) ?
+            itsMappingInfo() :
+            itsMappingInfo;
+        if ($.isArray(approvedMapping)) {
+            if (approvedMapping.length === 1) {
+                // apply the first (only) value
+                delete proposedOTUMappings()[ OTUid ];
+                mapOTUToTaxon( OTUid, approvedMapping[0], {POSTPONE_UI_CHANGES: true} );
+            } else {
+                // do nothing if there are multiple possibilities
+            }
         } else {
+            // apply the inner value of an observable (accessor) function
             delete proposedOTUMappings()[ OTUid ];
-            mapOTUToTaxon( OTUid, approvedMapping(), {POSTPONE_UI_CHANGES: true} );
+            mapOTUToTaxon( OTUid, ko.unwrap(approvedMapping), {POSTPONE_UI_CHANGES: true} );
         }
     });
     proposedOTUMappings.valueHasMutated();

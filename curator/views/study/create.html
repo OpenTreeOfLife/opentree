@@ -37,22 +37,27 @@ body {
         <input class="span4" type="text" id="publication-DOI" name="publication-DOI" placeholder="DOI (preferred) or permanent URL for study" style="margin-bottom: 12px;"></input>
         <div id="duplicate-DOI-warning" style="display: none;">
             <p class="static-form-value interesting-value">
-            There are already studies in Open Tree collection with this DOI.
+            There are already studies in Open Tree database with this DOI.
             Click the links below to see each one in a new browser window. 
             </p>
             <ul id="duplicate-study-links" class="static-form-value interesting-value">
             </ul>
         </div>
+    </div>
 
+    <div id="license-or-waiver-options" style="margin-bottom: 1em;">
         <h4>License information</h4>
         <label for="apply-new-CC0-waiver" class="featured-label" style="margin-top: 0px;">
             <input type="radio" id="apply-new-CC0-waiver" name="data-license" value="apply-new-CC0-waiver"/>
-             I am an author, or can act on behalf of the authors, to apply a CC0 waiver to these data
+             I am an author, or can act on behalf of the authors, to apply a 
+             <a href="https://creativecommons.org/choose/zero/" target="_blank">CC0 waiver</a> 
+             to these data
         </label>
             <div id="applying-cc0-details" class="featured-label-child" Xstyle="display: none;">
                 <label for="agreed-to-CC0" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
                     <input type="checkbox" id="agreed-to-CC0" name="cc0_agreement" style="width: 20px;"/>By
-                    clicking this checkbox, I hereby release these data under the terms of the Creative Commons Zero (CC0) waiver.
+                    clicking this checkbox, I hereby release these data under the terms of the 
+                    <a href="https://creativecommons.org/choose/zero/" target="_blank">Creative Commons Zero (CC0) waiver</a>.
                 </label>
             </div>
 
@@ -60,6 +65,7 @@ body {
             <input type="radio" id="study-data-has-existing-license" name="data-license" 
                    value="study-data-has-existing-license"/>
              These data already have an applied waiver or license
+             <span class="treebase-only" style="display: none;">(highly unusual for TreeBASE data)</span>
         </label>
             <div id="alternate-license-details" class="featured-label-child" style="display: none;">
                 <select id="alternate-license" name="alternate-license" 
@@ -79,9 +85,10 @@ body {
                 </div>
             </div>
 
-        <label for="submit-without-CC0" class="featured-label">
+        <label for="submit-without-CC0" class="featured-label" style="text-indent: -20px; padding-left: 20px;">
             <input type="radio" id="submit-without-CC0" name="data-license" value="submit-without-CC0"/>
             These data have no applied waiver or license, and I have no authority to apply a waiver
+             <span class="treebase-only" style="display: none;">(usually true for TreeBASE data)</span>
         </label>
     </div>
 

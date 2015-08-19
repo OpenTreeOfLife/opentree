@@ -46,8 +46,6 @@ response.files.append(URL('static','js/d3.phylogram.js'))
 
 {{extend 'layout.html'}}
 
-<a class="main-title-DOI" style="display: none; position: relative; top: -4px;" href="#" target="_blank">{DOI}</a>
-
 <div class="header-quality-panel" style="margin-bottom: 8px; overflow: hidden;">
     <div style="float: left;">
         Study quality &nbsp;
@@ -247,7 +245,7 @@ body {
           <div class="tab-pane" id="Metadata">
            <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
-            <form class="form-horizontal wider-fields">
+            <form class="form-horizontal wider-fields{{= (viewOrEdit == 'VIEW') and ' metadata-readonly' or '' }}">
               <div class="control-group">
                 <label class="control-label" for="ot_studyPublicationReference">Publication reference</label>
                 <div class="controls">
@@ -280,7 +278,7 @@ body {
                 </div>
                 <div class="controls" data-bind="if: viewModel.duplicateStudyIDs().length > 0">
                     <p class="static-form-value interesting-value">
-                        There are other studies in Open Tree collection with this DOI. Click the links below to see each one in a new browser window.
+                        There are other studies in Open Tree database with this DOI. Click the links below to see each one in a new browser window.
                     </p>
                     <ul class="static-form-value interesting-value" data-bind="foreach: viewModel.duplicateStudyIDs">
                         <li><a href="#" target="_blank" 
@@ -455,6 +453,13 @@ body {
                  </p>
                  <!-- /ko -->
                 {{ pass }}
+                </div>
+              </div>
+
+              <div class="control-group">
+                <label class="control-label" for="ot_curatorName">Study ID</label>
+                <div class="controls">
+                  <p class="static-form-value" data-bind="text: nexml['^ot:studyId']"></p>
                 </div>
               </div>
 
@@ -1786,7 +1791,8 @@ body {
                     <tr>
                         <th width="20%">Date</th>
                         <th width="20%">Curated by</th>
-                        <th width="60%">Comment</th>
+                        <th width="50%">Comment</th>
+                        <th width="10%">Details</th>
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.versions.pagedItems(), as: 'version' }">
@@ -1794,6 +1800,15 @@ body {
                         <td><span data-bind="text: version['relative_date'], attr: {'title': version['date']}">?</span></td>
                         <td data-bind="text: version['author_name']">?</td>
                         <td><pre class="rendered-comment" data-bind="text: version['message_subject'] + (version['message_body'] ? '\n\n'+ version['message_body'] : '')">?</pre></td>
+                        <td>
+                          <!-- ko if: version['publicDiffURL'] -->
+                            <a href="" target="_blank" title="See detailed differences on GitHub"
+                               data-bind="attr: {'href': version['publicDiffURL']}">Diff view</a>
+                          <!-- /ko -->
+                          <!-- ko if: !version['publicDiffURL'] -->
+                            &mdash;
+                          <!-- /ko -->
+                        </td>
                     </tr>
                   </tbody>
                 </table>

@@ -159,18 +159,17 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         </a>
 
         <div class="nav-collapse collapse">
-            <ul class="nav">
-              <li class="active"><a href="{{= URL('default','index') }}">Home</a></li>
+                    <ul class="nav">
+              <!--<li class="active"><a href="{{= URL('default','index') }}">Home</a></li>-->
+              <li><a href="/curator">Add / browse trees</a></li>
+              <li><a href="{{= URL('contact','index') }}">Feedback</a></li>
+              <li><a href="http://blog.opentreeoflife.org/" target="_blank">Blog</a></li>
               <li class="dropdown">
-                  <a href="{{= URL('about','open-tree-of-life') }}" class="dropdown-toggle" data-toggle="dropdown">
+                <a href="{{= URL('about','open-tree-of-life') }}" class="dropdown-toggle" data-toggle="dropdown">
                       About  <b class="caret"></b>
                   </a>
-                  <ul class="dropdown-menu">
-                      <li><a href="{{= URL('about','open-tree-of-life') }}">Open Tree of Life</a></li>
-                      <!--
-                      <li><a href="{{= URL('about','the-synthetic-tree') }}">The synthetic tree</a></li>
-                      <li><a href="{{= URL('about','materials-and-methods') }}">Materials and methods</a></li>
-                      -->
+                <ul class="dropdown-menu">
+                <li><a href="{{= URL('about','open-tree-of-life') }}">Open Tree of Life</a></li>
                       <li><a href="{{= URL('about','references') }}">Bibliographic references</a></li>
                       <li><a href="{{= URL('about', 'progress') }}">Progress</a></li>
                       <li><a href="{{= URL('about', 'synthesis-release') }}">Latest synthesis release</a></li>
@@ -180,21 +179,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                       -->
                       <li><a href="https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs" target="_blank">API documentation</a></li>
                       <li><a href="{{= URL('about','developer-resources') }}">Developer resources</a></li>
-                      <li><a href="{{= URL('about','credits') }}">Credits</a></li>
                       <li><a href="{{= URL('about','licenses') }}">Licenses</a></li>
-                  </ul>
+                </ul>
               </li>
-              <li class="dropdown">
-                  <a href="http://www.reelab.net/phylografter" class="dropdown-toggle" data-toggle="dropdown">
-                      Source trees  <b class="caret"></b>
-                  </a>
-                  <ul class="dropdown-menu">
-                      <li><a href="/curator">Study Curator</a>
-                      <li><a href="http://www.reelab.net/phylografter">Phylografter</a></li>
-                  </ul>
-              </li>
-              <li><a href="{{= URL('contact','index') }}">Contact</a></li>
-              <li><a href="http://blog.opentreeoflife.org/" target="_blank">Blog</a></li>
             </ul>
             <form id="taxon-search-form" class="navbar-search pull-right" autocomplete="off">
                 <div class="left-inner-addon">
@@ -202,7 +189,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                     <input type="text" name="taxon-search" class="search-query" placeholder="Search for taxon" autocomplete="off"
                         style="width: 100px;" tabindex="1">
                 </div>
-                <!-- <input type="submit" style="" name="taxon-search-go" value="Go" onclick="return false;"/> -->
                 <!-- then show dropdown when results are ready... -->
                 <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
                 <select class="btn-inverse" style="margin-bottom: 0; width: auto;" name="taxon-search-context">

@@ -47,16 +47,22 @@ div.contributing-studies div.links .tree-links a {
 
 <div class="container">
       <h1 id="main-title">Bibliographic references for the synthetic tree</h1>
+      <div class="row">
+          <div class="span12">
+              <p>The following studies (listed alphabetically by first author) have contributed to the current synthetic tree.</p>
+          </div>
+      </div>
 
       <div class="row">
           <div class="contributing-studies span10 offset1">
               <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
-              <p>The following studies have contributed to the current synthetic tree.</p>
 
+              <!-- Hide sorting options until we have a programmatic source for priority order, and ways to show *tree* rank vs. study rank.
               <div class="btn-group">
                 <button id="priority-sort-button" class="btn active" onclick="sortReferences(sortByPriority); return false;">&nbsp; Sort by priority in synthesis &nbsp;</button>
                 <button id="alpha-sort-button" class="btn" onclick="sortReferences(sortByPrimaryAuthor); return false;">&nbsp; Sort alphabetically &nbsp;</button>
               </div>
+              -->
 
              {{ priority = 1 }}
              {{ for study in contributing_studies: }}
