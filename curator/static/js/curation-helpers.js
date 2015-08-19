@@ -37,7 +37,7 @@ function showFooterMessage(msg, msgType) {
     footerMessageCloseID = null;
 
     // replace its contents (may include markup!)
-    $flashArea.find('.message').html(msg);
+    $flashArea.html(msg);
 
     // incoming msgType should be one of the preset values below
     var msgTypes = ['info', 'success', 'error'];
@@ -50,7 +50,8 @@ function showFooterMessage(msg, msgType) {
         }
     });
     
-    // enable the close widget
+    // add and enable the close widget
+    $flashArea.append('<button type="button" id="closeflash" class="close" data-dismiss="alert">&times;</button>');
     $flashArea.find('#closeflash')
         .unbind('click')
         .click( hideFooterMessage );

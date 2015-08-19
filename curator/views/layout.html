@@ -315,10 +315,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div>
 --><!-- topbar -->
 
-    <div class="flash alert">
-        <!--<button type="button" class="close" data-dismiss="alert">&times;</button>-->
-        <span class="message">{{=response.flash or ''}}</span>
-    </div> <!-- notification div (adapted for Bootstrap) -->
+    <div class="flash alert" style="display: none;"
+        >{{ # NOTE that this DIV must be *completely* empty to stay hidden on page load
+            if response.flash: }}
+        <span class="message">{{=response.flash}}</span>
+         {{ pass }}</div> <!-- notification div (adapted for Bootstrap) -->
     
     <!--
     <div class="header">
