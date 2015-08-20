@@ -87,7 +87,7 @@ circle.taxo-release-marker {
               increase in OTUs (operating taxonomic units) in our synthesis.
               <br/>
               <a id="warnings-toggle" onclick="$('#warnings-panel').toggle(); return false;"
-                 style="font-weight:bold; color:red; background-color: #fdd;" href="#">
+                 style="display: none; font-weight:bold; color:red; background-color: #fdd;" href="#">
                  &nbsp;CAUTION: DUBIOUS DATA BELOW (click for details)&nbsp;
                </a>
               </p>
@@ -122,6 +122,7 @@ if (warnings.length === 0) {
     for (i = 0; i < warnings.length; ++i) {
         $('#warnings-panel').append("<p style=\"font-weight:bold;color:red\">" + warnings[i] + "</p>");
     }
+    $('#warnings-toggle').show();
 }
 
 /* svg based on http://bl.ocks.org/mbostock/3886208 */
