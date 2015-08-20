@@ -142,7 +142,6 @@ def progress():
     dates = set(synth.keys() + phylesystem.keys() + [ott_v.get('date') for ott_v in ott])
     # Let's creep tallies up in our fake data, with starting values here
     num_otu_in_ott = 0
-    num_otu_in_synth = 0
     num_phylo_otu_in_synth = 0
     num_otu_in_studies = 0
     num_otu_in_nominated_studies = 0
@@ -161,10 +160,11 @@ def progress():
         ott_new_version_info = get_ott_version_info_by_date(date)
         synth_ott_version = synth_v.get('OTT_version')
         if synth_ott_version:
+            # If a draft was provided (eg, "ott2.9draft8"), truncate this
+            # to specify the main version (in this case, "ott2.9")
+            synth_ott_version = synth_ott_version.split('draft')[0]
             ott_synth_version_info = get_ott_version_info(synth_ott_version)
             if ott_synth_version_info is None:
-                # TODO: If a draft was provided (eg, "ott2.9draft8"), try again
-                # asking for the main version (in this case, "ott2.9")
                 warnings.add('specified version {v} of OTT not found!'.format(v=synth_ott_version))
         else:
             if synth_v:
@@ -191,13 +191,6 @@ def progress():
         # N.B. Some days (esp. early in history) might not have any synthesis data, 
         # or incomplete data (if synthesis was prior to gathering detailed stats)
         if synth_v:  # ignore empty dict (no data found)
-            if synth_v.get('unique_OTU_count') is None:
-                #warnings.add('{d}: "unique_OTU_count" info not found!'.format(d=date))
-                num_otu_in_synth = None
-            else:
-                num_otu_in_synth = synth_v.get('unique_OTU_count')
-
-            # WAS synth_v.get('Unique OTUs in Synthesis from studies')
             if synth_v.get('total_OTU_count') is None:
                 #warnings.add('{d}: "total_OTU_count" info not found!'.format(d=date))
                 num_phylo_otu_in_synth = None
@@ -205,13 +198,11 @@ def progress():
                 num_phylo_otu_in_synth = synth_v.get('total_OTU_count')
 
         if phyle_v:  # ignore empty dict (no data found)
-            # WAS phyle_v.get('Unique OTUs')
             if phyle_v.get('unique_OTU_count') is None:
                 warnings.add('phylesystem.unique_OTU_count info not found!')
             else:
                 num_otu_in_studies = phyle_v.get('unique_OTU_count')
 
-            # WAS synth_v.get('Unique OTUs in nominated studies')
             if phyle_v.get('nominated_study_unique_OTU_count') is None:
                 warnings.add('phylesystem.nominated_study_unique_OTU_count info not found!')
             else:
@@ -220,7 +211,6 @@ def progress():
         #print( date, ott_synth_version_info['date'], (ott_synth_version_info['date'] == date and "true" or "false") )
         #print( date, (synth.get(date, None) and "true" or "false") )
         by_date[date] = {'Unique OTUs in OTT': num_otu_in_ott,
-                         'Unique OTUs in synthesis': num_otu_in_synth,
                          'Unique OTUs in synthesis from studies': num_phylo_otu_in_synth,
                          'Unique OTUs in studies': num_otu_in_studies,
                          'Unique OTUs in nominated studies': num_otu_in_nominated_studies,
@@ -334,7 +324,12 @@ def taxonomy_version():
     synth = json.loads(fetch_local_synthesis_stats() or '{}')
     related_releases = []
     for date in synth:
-        if synth[date]['OTT_version'] == taxo_version:
+        synth_ott_version = synth[date]['OTT_version']
+        if synth_ott_version:
+            # If a draft was provided (eg, "ott2.9draft8"), truncate this
+            # to specify the main version (in this case, "ott2.9")
+            synth_ott_version = synth_ott_version.split('draft')[0]
+        if synth_ott_version == taxo_version:
             related_releases.append(synth[date]['version'])
     view_dict['related_synth_releases'] = related_releases 
 

@@ -1,3 +1,4 @@
+{{response.title = "Taxonomy release {v} - Open Tree of Life".format(v=taxonomy_version)}}
 {{extend 'layout.html'}}
 {{import urllib}}
 {{from pprint import pprint}}
@@ -43,7 +44,7 @@
               </div>
 
               <h3>Release notes</h3>
-              <em>Notes for most OTT versions are available in the <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/tree/master/doc" target="_blank">OTT documentation</a>:</em>
+              <em>A fuller release history (including early draft versions) is available in the <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/tree/master/doc" target="_blank">OTT documentation</a>:</em>
             {{ if taxonomy_version_notes: }}
               <div id="taxonomy-version-notes"
                    style="background-color: #f5f5f5; padding: 1em; border-radius: 6px;">

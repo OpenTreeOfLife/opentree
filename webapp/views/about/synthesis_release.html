@@ -1,5 +1,6 @@
-{{### response.files.append("/curator/static/js/d3.v3.js") }}
-{{ response.files.append("/curator/static/js/d3.v3.min.js") }}
+{{response.title = "Synthesis release {v} - Open Tree of Life".format(v=release_version)
+  ### response.files.append("/curator/static/js/d3.v3.js") 
+  response.files.append("/curator/static/js/d3.v3.min.js") }}
 {{extend 'layout.html'}}
 {{import urllib}}
 {{from pprint import pprint}}
@@ -264,9 +265,8 @@ function showCurrentSynthesisProfile() {
     var propsToDisplayLabels = {
         'date': "Date",
         'OTT_version': "Open Tree Taxonomy version used",
-        //'study_count': "",
-        'reported_study_count': "Trees in synthesis",
-        'unique_OTU_count': "OTUs from phylogeny"
+        'tree_count': "Trees in synthesis",
+        'total_OTU_count': "OTUs from phylogeny"
     }
     for (var prop in propsToDisplayLabels) {
         var itsLabel = propsToDisplayLabels[ prop ];
@@ -279,15 +279,18 @@ function showCurrentSynthesisProfile() {
                 break;
             case 'OTT_version':
                 var taxoVersion = currentSynthesisProfile[prop];
+                if (taxoVersion) {
+                    // If a draft was provided (eg, "ott2.9draft8"), truncate this
+                    // to specify the main version (in this case, "ott2.9")
+                    taxoVersion = taxoVersion.split('draft')[0];
+                }
                 itsValue = '<a href="/about/taxonomy-version/'+ taxoVersion
                          +'" title="Click to see details for this taxonomy version">' 
                          + taxoVersion
                          + '</a>';
                 break;
-            case 'run_time':
-            case 'study_count':
-            case 'reported_study_count':
-            case 'unique_OTU_count':
+            case 'tree_count':
+            case 'total_OTU_count':
             case 'total_OTU_count':
                 if (itsValue == null) {
                     // this data is missing
