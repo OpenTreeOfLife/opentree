@@ -216,7 +216,8 @@ function showCurrentTaxonomyVersion() {
               + '<th>'+ itsLabel +'</th>'
               + '<td>'+ itsValue +'</td>'
               // for sparkline specs, see http://style.org/chartapi/sparklines/
-              + '<td>'
+              + '<td>&nbsp;'
+              /* TODO: restore sparklines once we have more interesting trends to show?
                   + '<img width="50: height="20" src="//chart.googleapis.com/chart?'
                     + 'cht=lc'
                     + '&chs=50x20'
@@ -228,6 +229,7 @@ function showCurrentTaxonomyVersion() {
                     + '&chxs=0,990000,11,0,_|1,990000,1,0,_|2,990000,1,0,_'
                     + '&chxl=0:||1:||2:||'
                   + '" title="Previous history for this statistic">'
+              */
               +'</td>'
           + '</tr>'
         );
