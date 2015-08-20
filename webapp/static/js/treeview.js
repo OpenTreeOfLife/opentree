@@ -1338,7 +1338,7 @@ $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">D
                 var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
                 window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ superSafeDisplayName;
 
-                OR this will load the Newick-tree text to show it in-browser
+                / * OR this will load the Newick-tree text to show it in-browser
                 $.ajax({
                     type: 'POST',
                     url: getDraftTreeForOttolID_url,
@@ -1351,6 +1351,7 @@ $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">D
                     },
                     dataType: 'json'  // should return a complete Newick tree
                 });
+                * /
 
                 return false;
             });
