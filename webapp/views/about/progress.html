@@ -581,7 +581,7 @@ var populateSVG = function(data) {
           if (rawValue == null) {
               itsField.text(propName +": NOT AVAILABLE");
           } else {
-              itsField.text(propName +": "+ rawValue);
+              itsField.text(propName +": "+ rawValue.toLocaleString());
           }
           statPosition++;
       });
