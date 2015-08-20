@@ -153,7 +153,10 @@ def phylopic_proxy():
     phylopic_url = request.env.web2py_original_uri.split('phylopic_proxy')[1]
     # prepend the real domain, using HTTP, and return the response
     phylopic_url = 'http://phylopic.org/%s' % phylopic_url
-    req = urllib2.Request(url=phylopic_url) 
-    resp = urllib2.urlopen(req).read()
-    return resp
+    try:
+        req = urllib2.Request(url=phylopic_url) 
+        resp = urllib2.urlopen(req).read()
+        return resp
+    except:
+        raise HTTP(503, 'The attempt to fetch an image from phylopic failed')
 
