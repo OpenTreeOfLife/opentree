@@ -1,5 +1,6 @@
-{{### response.files.append("/curator/static/js/d3.v3.js") }}
-{{ response.files.append("/curator/static/js/d3.v3.min.js") }}
+{{response.title = "Progress - Open Tree of Life"
+  ### response.files.append("/curator/static/js/d3.v3.js")
+  response.files.append("/curator/static/js/d3.v3.min.js") }}
 {{extend 'layout.html'}}
 {{import urllib}}
 {{from pprint import pprint}}

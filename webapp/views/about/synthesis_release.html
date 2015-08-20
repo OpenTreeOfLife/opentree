@@ -1,5 +1,6 @@
-{{### response.files.append("/curator/static/js/d3.v3.js") }}
-{{ response.files.append("/curator/static/js/d3.v3.min.js") }}
+{{response.title = "Synthesis release {v} - Open Tree of Life".format(v=release_version)
+  ### response.files.append("/curator/static/js/d3.v3.js") 
+  response.files.append("/curator/static/js/d3.v3.min.js") }}
 {{extend 'layout.html'}}
 {{import urllib}}
 {{from pprint import pprint}}
