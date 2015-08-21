@@ -92,7 +92,7 @@ circle.taxo-release-marker {
                  &nbsp;CAUTION: DUBIOUS DATA BELOW (click for details)&nbsp;
                </a>
               </p>
-              <p id="highlight-prompt" style="font-style: italic;">&nbsp;</p>
+              <p id="highlight-prompt" style="font-style: italic;">Move the mouse below to see details for any date.</p>
           </div>
       </div>
       <div id="warnings-panel" 
@@ -184,24 +184,6 @@ svg.append("rect")
     .attr("width", "100%")
     .attr("height", "100%")
     .style("fill", "#fff");
-
-// allow "pinning" the highlight to a particular date (vs. following the mouse)
-var highlightPinned = false;
-function pinHighlight() {
-    highlightPinned = true;
-    // update the UI for this
-    //$('#unpin-highlight-widget').css('opacity', 1.0);
-    $('#highlight-prompt').html('Click the chart below to see details for any date. Click \
-              <a id="unpin-highlight-widget" class="badge" style="background-color: #c33;" \
-                 href="#" title="" onclick="unpinHighlight(); $(this).blur(); return false;"> \
-                 <span class="widget-prompt">Unlock highlight</span> \
-        </a> to follow the mouse.');
-}
-function unpinHighlight() {
-    highlightPinned = false;
-    //$('#unpin-highlight-widget').css('opacity', 0.25);
-    $('#highlight-prompt').html("Move the mouse below to see details for any date. Click to keep the highlight there.");
-}
 
 var populateSVG = function(data) {
   // pre-fetch the highest Y to support alternate stacking orders
@@ -486,9 +468,6 @@ var populateSVG = function(data) {
 
   // highlight should respond to mouse movement (or incoming date on query string)
   svg.on("click", function() {
-    // clicking forces a pin in the new place
-    unpinHighlight();
-
     // create a synthetic event on the highlight
     var mouse = d3.mouse(this);
     var evt = document.createEvent("MouseEvents");
@@ -512,15 +491,9 @@ var populateSVG = function(data) {
 
     // "unwrap" the funky d3 selection and dispatch the mousemove
     svg[0][0].dispatchEvent(evt);
-    pinHighlight();
   });
 
   svg.on("mousemove", function() {
-    if (highlightPinned) { 
-        // pinning stops this behavior
-        return;
-    };
-
     var mouse = d3.mouse(this);
     var localX = mouse[0]; //  + margin.left;
     // find the nearest date and snap to its X coordinate
@@ -658,21 +631,11 @@ $(document).ready(function() {
 
     // highlight incoming date/version, or the latest if not found
     var featuredDate = getParameterByName('highlight');
-    var pinInitialHighlight = false;
-    if (featuredDate) {
-        // stick to this date until user clicks elsewhere
-        pinInitialHighlight = true;
-    } else {
+    if (!featuredDate) {
         // set initial highlight on latest date, but allow easy exploration
         featuredDate = otu_stats[otu_stats.length - 1].Date;  // eg, '2014-11-05T19Z'
     }
     populateSVG.highlightDate( featuredDate );
-    if (pinInitialHighlight) {
-        pinHighlight();
-    } else {
-        unpinHighlight();
-    }
-
 });
 
 function getParameterByName(name) {
