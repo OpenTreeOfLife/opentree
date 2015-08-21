@@ -239,7 +239,7 @@ function showCurrentTaxonomyVersion() {
     // add a final row with links to all synthesis releases for which this was a source
     $('#taxonomy-stats-panel table').append(
         '<tr>'
-          + '<th>Used in synthesis releases</th>'
+          + '<th>Used in synthesis release(s)</th>'
           + '<td colspan="2">'+ getMarkupForRelatedSynthReleases() +'</td>'
       + '</tr>'
     );
@@ -264,6 +264,9 @@ function getMarkupForRelatedSynthReleases() {
         return '<a href="/about/synthesis-release/'+ v 
               +'" title="Click for details about this synthesis release">'+ v +'</a>';
     });
+    if (relatedHyperlinks.length === 0) {
+        return '<em>None</em>';
+    }
     return relatedHyperlinks.join(', ');
 }
 
