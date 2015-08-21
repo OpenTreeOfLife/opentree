@@ -700,10 +700,14 @@ def get_local_comments(location={}):
     ##TODO: search only within body?
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
     url = url.format(GH_BASE_URL, search_text)
-    ##print(url)
-    resp = requests.get( url, headers=GH_GET_HEADERS)
+    print(url)
+    resp = requests.get(url, headers=GH_GET_HEADERS)
     ##print(resp)
-    resp.raise_for_status()
+    try:
+        resp.raise_for_status()
+    except:
+        print('call to {u} failed. Returning empty comments list'.format(u=url))
+        return []
     try:
         results = resp.json()
     except:

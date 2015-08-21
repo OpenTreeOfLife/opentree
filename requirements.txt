@@ -7,3 +7,4 @@ stevedore==0.8
 pyparsing==1.5.7
 requests==1.2.0
 virtualenv==1.9.1
+python-dateutil==2.2
