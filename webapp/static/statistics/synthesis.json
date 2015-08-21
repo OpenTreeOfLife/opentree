@@ -7,26 +7,11 @@
         "tree_count": null, 
         "total_OTU_count": null, 
         "tip_count": null
-    }, 
-    "2014-07-23T00Z": {
-        "version": "v1a - alternate date",
-        "===": "Based on jar286's IRC comment at http://irclog.perlgeek.de/opentreeoflife/2015-07-30#i_10979489",
-        "OTT_version": "ott2.6",
-        "tree_count": null, 
-        "total_OTU_count": null, 
-        "tip_count": null
-    }, 
-    "2014-09-14T00Z": {
+    },
+    "2014-09-20T00Z": {
         "version": "v2",
+        "===": "Using initial stats gathered on 2015-01-16T23Z, which should be accurate here. Release date is based on .tgz file modification date.",
         "OTT_version": "ott2.8",
-        "tree_count": null, 
-        "total_OTU_count": null, 
-        "tip_count": null
-    }, 
-    "2015-01-16T23Z": {
-        "version": "v2a - initial stats",
-        "===": "Can we put some stats on the board? These are the earliest we have.",
-        "OTT_version": "ott2.8", 
         "tree_count": 429, 
         "total_OTU_count": 60933, 
         "tip_count": null
