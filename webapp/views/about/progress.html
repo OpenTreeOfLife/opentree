@@ -173,8 +173,6 @@ var svg = svgpar.append("svg")
     .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
 
 // N.B. in IE only, we need to force this to a sensible height
-console.warn("SVG height");
-console.warn($('#stacked-bar-div svg:eq(0)').height());
 if ($('#stacked-bar-div svg:eq(0)').height() === 150) {
     $('#stacked-bar-div svg:eq(0)').css('height', '500px');
 }
