@@ -1,5 +1,6 @@
-{{### response.files.append("/curator/static/js/d3.v3.js") }}
-{{ response.files.append("/curator/static/js/d3.v3.min.js") }}
+{{response.title = "Synthesis release {v} - Open Tree of Life".format(v=release_version)
+  ### response.files.append("/curator/static/js/d3.v3.js") 
+  response.files.append("/curator/static/js/d3.v3.min.js") }}
 {{extend 'layout.html'}}
 {{import urllib}}
 {{from pprint import pprint}}
@@ -48,17 +49,17 @@
     visibility: hidden;
 }
 circle.synth-release-marker {
-    fill: #939;
+    fill: #9b8f56;
 }
 circle.taxo-release-marker {
-    fill: #39c;
+    fill: #347592;
 }
 .event-markers .date-with-synthesis circle.synth-release-marker,
 .event-markers .date-with-synthesis text.synth-release-marker {
     visibility: visible;
 }
-.event-markers .date-with-phylesystem circle.taxo-release-marker,
-.event-markers .date-with-phylesystem text.taxo-release-marker  {
+.event-markers .date-with-taxonomy circle.taxo-release-marker,
+.event-markers .date-with-taxonomy text.taxo-release-marker  {
     visibility: visible;
 }
 .event-markers text {
@@ -77,7 +78,7 @@ circle.taxo-release-marker {
     <h1 id="main-title" style="display: inline-block; padding-bottom: 12px;">Synthesis release 
     </h1>
                   &nbsp;
-                  <select id="synthesis-profile-date-chooser" style="">
+                  <select id="synthesis-release-version-chooser" style="">
                   </select>
                   &nbsp;
                   <div class="pagination hidden-tablet" style="display: inline-block; vertical-align: middle; line-height: 30px;">
@@ -92,7 +93,7 @@ circle.taxo-release-marker {
               <!-- TODO: Relax the margin-top if we're on a narrow screen (stacked columns), to avoid overlap. -->
 
               <div style="margin-top: -16px;">
-                  <a href="/about/progress?highlight={{= release_version }}">Show this release in the history of Open Tree</a>
+                  <a id="progressPageLink" href="#">Show this release in the history of Open Tree</a>
               </div>
 
               <h3>Statistics</h3>
@@ -102,27 +103,27 @@ circle.taxo-release-marker {
               </div>
 
               <div id="synthesis-stats-panel" class="stats-panel" style="display: none;">
-
                   <table class="table table-condensed table-hover" style="clear: left;"></table>
               </div>
 
+              <!--
               <h3 style="clear: both;">Downloads</h3>
               <p style="font-style: italic;">
                 TODO: Read download files list from static site?
               </p>
-
               <h3>Notes</h3>
               <p style="font-style: italic;">
                 TODO: Render README (markdown =&gt; HTML) from static files?
               </p>
+              -->
 
-              <h3>Sources</h3>
-              <p style="font-style: italic;">
-                TODO: Link to taxonomy release used in this synthesis?</a>
-              </p>
+              <!--
               <p style="font-style: italic;">
                 TODO: List all trees and studies (mimic Bibliographic Refs page?)
               </p>
+              -->
+
+              <p>Information and downloads for all synthesis releases can be found at <a href="http://files.opentreeoflife.org/trees/">http://files.opentreeoflife.org/trees/</a>.</p>
 
           </div>
       </div>
@@ -172,13 +173,19 @@ $(document).ready(function() {
 
         // start with the profile whose date is in the URL (or latest, by default)
         if (releaseVersion) {
-            currentSynthesisProfileDate = releaseVersion;
+            currentSynthesisProfileDate = getDateForReleaseVersion(releaseVersion);
         } else {
             currentSynthesisProfileDate = sortedSynthesisProfileKeys[ sortedSynthesisProfileKeys.length - 1 ];
+            releaseVersion = synthesis_stats[currentSynthesisProfileDate].version;
         }
-        // format nicely and add to page title
-        var displayDate = formatISODate( currentSynthesisProfileDate );
+        // update the link to the Progress page to use this date
+        $('#progressPageLink').attr('href', 
+                                    '/about/progress?highlight='+ currentSynthesisProfileDate);
+
+        /* format nicely and add to page title
+        var displayDate = formatISODate( currentSynthesisProfileDate, {includeTime: false} );
         $('#title-date').html( "("+ displayDate +")" );
+        */
 
         // bind Prev and Next buttons
         $('#prev-synthesis-profile').click(function() {
@@ -186,8 +193,8 @@ $(document).ready(function() {
             // sanity check
             if (nthProfile === 0) return false;
             var anotherDate = sortedSynthesisProfileKeys[nthProfile - 1];
-            jumpToSynthesisProfileDate(anotherDate);
-
+            var anotherVersion = synthesis_stats[anotherDate].version;
+            jumpToSynthesisReleaseVersion(anotherVersion);
             return false;
         });
         $('#next-synthesis-profile').click(function() {
@@ -195,23 +202,23 @@ $(document).ready(function() {
             // sanity check
             if (nthProfile === sortedSynthesisProfileKeys.length - 1) return false;
             var anotherDate = sortedSynthesisProfileKeys[nthProfile + 1];
-            jumpToSynthesisProfileDate(anotherDate);
+            var anotherVersion = synthesis_stats[anotherDate].version;
+            jumpToSynthesisReleaseVersion(anotherVersion);
             return false;
         });
 
-        // build and bind profile-date chooser
-        $('#synthesis-profile-date-chooser').empty();
+        // build and bind release-version chooser
+        $('#synthesis-release-version-chooser').empty();
         $.each( sortedSynthesisProfileKeys, function (i, profileDate) {
-            var displayDate = formatISODate( profileDate );
-            $('#synthesis-profile-date-chooser').prepend(
-                '<option value="'+ profileDate +'">'+ displayDate +'</option>'
+            var itsVersion = synthesis_stats[profileDate].version;
+            $('#synthesis-release-version-chooser').prepend(
+                '<option value="'+ itsVersion +'">'+ itsVersion +'</option>'
             );
         });
-        $('#synthesis-profile-date-chooser').change(function() {
-            var anotherDate = $(this).val();
-            jumpToSynthesisProfileDate(anotherDate);
+        $('#synthesis-release-version-chooser').change(function() {
+            var anotherVersion = $(this).val();
+            jumpToSynthesisReleaseVersion(anotherVersion);
         });
-
         showCurrentSynthesisProfile();
         $('#synthesis-stats-panel').show();
 
@@ -220,24 +227,34 @@ $(document).ready(function() {
     }
 });
 
+function getDateForReleaseVersion( version ) {
+    for (var releaseDate in synthesis_stats) {
+        var releaseInfo = synthesis_stats[releaseDate];
+        if (releaseInfo.version === version) {
+            return releaseDate;
+        }
+    }
+    return null;
+}
+
 function formatISODate( dateString, options ) {
     options = options || {includeTime: true};
     var aDate = new moment(dateString);
     // see http://momentjs.com/docs/#/parsing/string/
     if (options.includeTime) {
-        return aDate.format('MMMM Do YYYY, hA');
+        return aDate.format('MMMM D, YYYY, hA');
     } else {
-        return aDate.format('MMMM Do YYYY');
+        return aDate.format('MMMM D, YYYY');
     }
 }
 
-function jumpToSynthesisProfileDate( targetDate ) {
-    // move this page to the chosen date
+function jumpToSynthesisReleaseVersion( targetVersion ) {
+    // move this page to the chosen version
     var currentURL = window.location.href;
     var urlParts = currentURL.split('/');
     // ASSUME there's always a date in the final URL-part
-    var currentDate = urlParts.pop();
-    urlParts.push(targetDate);  // convert to string?
+    var currentVersion = urlParts.pop();
+    urlParts.push(targetVersion);
     var newURL = urlParts.join('/');
     window.location.href = newURL;
 }
@@ -246,15 +263,54 @@ function showCurrentSynthesisProfile() {
     var currentSynthesisProfile = synthesis_stats[ currentSynthesisProfileDate ];
     // Our stats JSON has friendly property names. Just format them!
     $('#synthesis-stats-panel table').empty();
-    for (var prop in currentSynthesisProfile) {
-        if (prop === 'Date') continue;
+    // NOTE that we will ignore stats not listed here!
+    var propsToDisplayLabels = {
+        'date': "Date",
+        'OTT_version': "Open Tree Taxonomy version used",
+        'tree_count': "Trees in synthesis",
+        'total_OTU_count': "OTUs from phylogeny"
+    }
+    for (var prop in propsToDisplayLabels) {
+        var itsLabel = propsToDisplayLabels[ prop ];
         var itsValue = currentSynthesisProfile[ prop ];
+
+        // special formatting for some values
+        switch(prop) {
+            case 'date':
+                itsValue = formatISODate( currentSynthesisProfileDate, {includeTime: false} );
+                break;
+            case 'OTT_version':
+                var taxoVersion = currentSynthesisProfile[prop];
+                if (taxoVersion) {
+                    // If a draft was provided (eg, "ott2.9draft8"), truncate this
+                    // to specify the main version (in this case, "ott2.9")
+                    taxoVersion = taxoVersion.split('draft')[0];
+                }
+                itsValue = '<a href="/about/taxonomy-version/'+ taxoVersion
+                         +'" title="Click to see details for this taxonomy version">' 
+                         + taxoVersion
+                         + '</a>';
+                break;
+            case 'tree_count':
+            case 'total_OTU_count':
+            case 'total_OTU_count':
+                if (itsValue == null) {
+                    // this data is missing
+                    itsValue = 'NOT AVAILABLE';
+                } else {
+                    // coerce it to a string
+                    itsValue = currentSynthesisProfile[prop].toLocaleString();
+                }
+                break;
+        }
+
         $('#synthesis-stats-panel table').append(
             '<tr>'
-              + '<th>'+ prop +'</th>'
+              + '<th>'+ itsLabel +'</th>'
               + '<td>'+ itsValue +'</td>'
               // for sparkline specs, see http://style.org/chartapi/sparklines/
-              + '<td>'
+              + '<td>&nbsp;'
+              /* TODO: restore sparklines once we have more interesting trends to show?
                   + '<img width="50: height="20" src="//chart.googleapis.com/chart?'
                     + 'cht=lc'
                     + '&chs=50x20'
@@ -266,6 +322,7 @@ function showCurrentSynthesisProfile() {
                     + '&chxs=0,990000,11,0,_|1,990000,1,0,_|2,990000,1,0,_'
                     + '&chxl=0:||1:||2:||'
                   + '" title="Previous history for this statistic">'
+              */
               +'</td>'
           + '</tr>'
         );
@@ -285,7 +342,7 @@ function showCurrentSynthesisProfile() {
     }
 
     // Update the date selector
-    $('#synthesis-profile-date-chooser').val(currentSynthesisProfileDate);
+    $('#synthesis-release-version-chooser').val(releaseVersion);
 }
 
 function getSynthesisSparklineData(prop, lastProfileDate) {
@@ -311,8 +368,9 @@ function getSynthesisSparklineData(prop, lastProfileDate) {
     }
     // scale all values to under 100 (using 90 to avoid cropping)
     var scaleToFit = 90.0 / maxValue;
+    // N.B. that we limit each fractional number to 2 decimal places, to avoid building over-long URLs
     series = $.map(series, function(d) {
-        return d * scaleToFit;
+        return (d * scaleToFit).toFixed(2);
     });
 
     return series.join(',');

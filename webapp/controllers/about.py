@@ -52,74 +52,186 @@ def references():
 
 def progress():
     view_dict = default_view_dict.copy()
-    synth = json.loads(fetch_local_synthesis_stats() or '{}')
-    phylesystem = json.loads(fetch_local_phylesystem_stats() or '{}')
-    ott = json.loads(fetch_local_ott_stats() or '{}')
-    # create some an otu summary stats for each synthesis that we have info about...
-    by_date = {}
+
+    # Load each JSON document into a list or dict, so we can compile daily entries. 
+    # NB: For simplicity and uniformity, filter these to use only simple dates
+    # with no time component!
+    # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
+    raw = json.loads(fetch_local_synthesis_stats() or '{}')
+    # Pre-sort its raw date strings, so we can discard all the but latest info
+    # for each date (e.g. we might toss the morning stats but keep the evening).
+    sorted_dates = sorted(raw.keys(), reverse=False)
+    synth = {}
+    for d in sorted_dates:
+        raw_data = raw[d]
+        simple_date = _force_to_simple_date_string(d)
+        synth[ simple_date ] = raw_data
+        # this should overwrite data from earlier in the day
+
+    # phylesystem stats also have mixed date formats
     warnings = set()
-    dates = set(synth.keys() + phylesystem.keys())
+    phylesystem = {}
+    raw = json.loads(fetch_local_phylesystem_stats() or '{}')
+    sorted_dates = sorted(raw.keys(), reverse=False)
+
+    if len(sorted_dates) == 0:
+        warnings.add('No phylesystem data was found! Most stats below are probably incomplete.')
+    else:
+        # N.B. We only want to show monthly changes in phylesystem! For each month
+        # in this range, include just one record, ideally
+        #   - the first day of the month (if found), OR
+        #   - the nearest prior OR following record; if equally close, use prior
+        # Use the actual date found for this data, so that glitches in the "monthly"
+        # reporting of this data are apparent to the user.
+
+        # use a recurrence rule to find starting dates for each month for which we have data
+        import re
+        from dateutil import rrule
+
+        def string2date(s):
+            s = _force_to_simple_date_string(s)
+            return datetime.strptime(s, '%Y-%m-%d')  # e.g. '2014-08-15'
+
+        first_date_string = sorted_dates[ 0 ]
+        # shift the first date found to the first of that month, e.g. '2014-08-15' => '2014-08-01'
+        first_date_string = re.sub(r'\d+$', '01', first_date_string)
+        first_date = string2date(first_date_string)
+        last_date_string = sorted_dates[ len(sorted_dates)-1 ]
+        last_date =  string2date(last_date_string)
+        monthly_milestones = list(rrule.rrule(rrule.MONTHLY, dtstart=first_date, until=last_date))
+
+        def nearest_phylesystem_datestring(target_date):
+            # find the closest timestamp and return the corresponding date-string
+            from bisect import bisect_left
+            if (isinstance(target_date, str)):
+                try:
+                    target_date = string2date(target_date)
+                except:
+                    raise ValueError("Expected a date-string in the form '2014-08-15'!")
+            nearest_datestring = None
+            # build a list of timestamps from the pre-sorted date strings
+            sorted_timestamps = [string2date(ds) for ds in sorted_dates]
+            prior_position = bisect_left(sorted_timestamps, target_date) - 1
+            following_position = min(prior_position+1, len(sorted_timestamps)-1)
+            # fetch and compare the timestamps before and after; which is closer?
+            prior_timestamp = sorted_timestamps[prior_position]
+            following_timestamp = sorted_timestamps[following_position]
+            if abs(target_date - prior_timestamp) <= abs(target_date - following_timestamp):
+                # in the event of a tie, use the prior date
+                prior_datestring = sorted_dates[prior_position]
+                return prior_datestring
+            else:
+                following_datestring = sorted_dates[following_position]
+                return following_datestring
+
+        # adjust each "milestone" to the nearest date with phylesystem data, then remove duplicates
+        monthly_milestones = [nearest_phylesystem_datestring(m) for m in monthly_milestones]
+        monthly_milestones = sorted(list(set(monthly_milestones)))
+
+        for d in monthly_milestones:
+            raw_data = raw[d]
+            simple_date = _force_to_simple_date_string(d)
+            phylesystem[ simple_date ] = raw_data
+            # this should overwrite data from earlier in the day
+
+    # taxonomy stats should always use simple dates
+    ott = json.loads(fetch_local_ott_stats() or '[]')
+
+    # create some otu summary stats for each synthesis that we have info about...
+    by_date = {}
+    dates = set(synth.keys() + phylesystem.keys() + [ott_v.get('date') for ott_v in ott])
     # Let's creep tallies up in our fake data, with starting values here
-    import random
-    num_otu_in_ott =        1920000
-    num_otu_in_synth =       890000
-    num_phylo_otu_in_synth =  70000
-    num_otu_in_studies =     400000
-    num_otu_in_nominated_studies = 390000
-    warnings.add('Creeping OTU tallies added to show progression!')
+    num_otu_in_ott = 0
+    num_phylo_otu_in_synth = 0
+    num_otu_in_studies = 0
+    num_otu_in_nominated_studies = 0
+
+    # Set initial (empty) values for synthesis and phylesystem stats; these will
+    # be "carried over" to a subsequent date that has no current data.
+    synth_v = {}
+    phyle_v = {}
 
     for date in sorted(dates, reverse=False):
-        synth_v = synth.get(date, {})
-        phyle_v = phylesystem.get(date, {})
-        ott_version = synth_v.get('OTT version')
-        num_otu_in_ott += random.randint(0,10000)
-        if ott_version is None:
-            ott_version = 'unknown'
-            warnings.add('OTT version info not found - just making up some numbers as a placeholder!')
-        elif ott is None:
-            warnings.add('OTT info not found - just making up some numbers as a placeholder!')
+        # carry over latest stats, if none found for this day
+        synth_v = synth.get(date, synth_v)
+        phyle_v = phylesystem.get(date, phyle_v)
+        # Note any taxonomy version released on this date, AND the version used
+        # in today's synthesis. (These are probably not the same)
+        ott_new_version_info = get_ott_version_info_by_date(date)
+        synth_ott_version = synth_v.get('OTT_version')
+        if synth_ott_version:
+            # If a draft was provided (eg, "ott2.9draft8"), truncate this
+            # to specify the main version (in this case, "ott2.9")
+            synth_ott_version = synth_ott_version.split('draft')[0]
+            ott_synth_version_info = get_ott_version_info(synth_ott_version)
+            if ott_synth_version_info is None:
+                warnings.add('specified version {v} of OTT not found!'.format(v=synth_ott_version))
         else:
-            ov = ott.get(ott_version)
-            if ov is None:
-                warnings.add('ott info for version {v} of OTT not found - just making up some numbers as a placeholder!'.format(v=ott_version))
+            if synth_v:
+                # this should have specified an OTT version
+                warnings.add('No specified version of OTT for some synthesis releases; guessing OTT versions based on synth-date!')
             else:
-                num_otu_in_ott = ov['Unique OTUs']
+                # No synthesis has occurred yet; pick up the closest prior taxonomy version
+                pass
+            ott_synth_version_info =  get_latest_ott_version_info_by_date(date)
+            if ott_synth_version_info is None:
+                warnings.add('No version of OTT found on-or-before date {d}!'.format(d=date))
 
-        num_otu_in_synth += random.randint(0,5000)
-        if synth_v.get('Unique OTUs in Synthesis') is None:
-            warnings.add('"Unique OTUs in Synthesis" info not found - just making up some numbers as a placeholder!')
+        if ott_synth_version_info is None:
+            ott_synth_version_info = {}
+            warnings.add('OTT version info not found!')
+        elif ott is None:
+            warnings.add('OTT info not found!')
         else:
-            num_otu_in_synth = synth_v.get('Unique OTUs in Synthesis')
+            if ott_synth_version_info is None:
+                warnings.add('OTT info for version {v} not found!'.format(v=ott_synth_version_info.get('version')))
+            else:
+                num_otu_in_ott = ott_synth_version_info.get('visible_taxon_count', 0)
 
-        num_phylo_otu_in_synth += random.randint(0,3000)
-        if synth_v.get('Unique OTUs in Synthesis from studies') is None:
-            warnings.add('"Unique OTUs in Synthesis from studies" info not found - just making up some numbers as a placeholder!')
-        else:
-            num_phylo_otu_in_synth = synth_v.get('Unique OTUs in Synthesis from studies')
+        # N.B. Some days (esp. early in history) might not have any synthesis data, 
+        # or incomplete data (if synthesis was prior to gathering detailed stats)
+        if synth_v:  # ignore empty dict (no data found)
+            if synth_v.get('total_OTU_count') is None:
+                #warnings.add('{d}: "total_OTU_count" info not found!'.format(d=date))
+                num_phylo_otu_in_synth = None
+            else:
+                num_phylo_otu_in_synth = synth_v.get('total_OTU_count')
 
-        num_otu_in_studies += random.randint(0,10000)
-        if phyle_v.get('Unique OTUs') is None:
-            warnings.add('"Unique OTUs" info not found for phylesystem - just making up some numbers as a placeholder!')
-        else:
-            num_otu_in_studies = phyle_v.get('Unique OTUs')
+        if phyle_v:  # ignore empty dict (no data found)
+            if phyle_v.get('unique_OTU_count') is None:
+                warnings.add('phylesystem.unique_OTU_count info not found!')
+            else:
+                num_otu_in_studies = phyle_v.get('unique_OTU_count')
 
-        num_otu_in_nominated_studies += random.randint(0,8000)
-        if synth_v.get('Unique OTUs in nominated studies') is None:
-            warnings.add('"Unique OTUs in nominated studies" info not found - just making up some numbers as a placeholder!')
-        else:
-            num_otu_in_nominated_studies = synth_v.get('Unique OTUs in nominated studies')
+            if phyle_v.get('nominated_study_unique_OTU_count') is None:
+                warnings.add('phylesystem.nominated_study_unique_OTU_count info not found!')
+            else:
+                num_otu_in_nominated_studies = phyle_v.get('nominated_study_unique_OTU_count')
 
+        #print( date, ott_synth_version_info['date'], (ott_synth_version_info['date'] == date and "true" or "false") )
+        #print( date, (synth.get(date, None) and "true" or "false") )
         by_date[date] = {'Unique OTUs in OTT': num_otu_in_ott,
-                         'Unique OTUs in synthesis': num_otu_in_synth,
                          'Unique OTUs in synthesis from studies': num_phylo_otu_in_synth,
                          'Unique OTUs in studies': num_otu_in_studies,
                          'Unique OTUs in nominated studies': num_otu_in_nominated_studies,
-                         'Date has synthesis release': (synth_v and "true" or "false"),
-                         'Date has phylesystem info': (phyle_v and "true" or "false"),
-                         'OTT version': ott_version,
+                         # TODO: Add pre-calculated stats where provided?
+                         'Date has synthesis release': (synth.get(date, None) and "true" or "false"),
+                         'Synthesis version released today': synth.get(date, None) and synth.get(date).get('version').encode("utf8") or '',
+                         'Date has taxonomy version': (ott_new_version_info and "true" or "false"),
+                         'Date has phylesystem info': (phylesystem.get(date, None) and "true" or "false"),
+                         'OTT version released today': ott_new_version_info and ott_new_version_info.get('version','').encode("utf8") or '',
+                         'OTT version used in synthesis': ott_synth_version_info.get('version','').encode("utf8"),
                          'Date': str(date)}
-    # sort by date
-    dk = [(datetime.strptime(i, "%Y-%m-%dT%HZ"), i) for i in by_date.keys() if i]
+    # sort by date (allowing for different date formats)
+    #dk = [(datetime.strptime(i, "%Y-%m-%d"), i) for i in by_date.keys() if i]
+    dk = []
+    for i in by_date.keys():
+        if i:
+            # remove any time (intra-day) component for uniform dates!
+            # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
+            i = i.split('T')[0]
+            converted_date = datetime.strptime(i, "%Y-%m-%d")
+            dk.append((converted_date, i,))
     dk.sort()
     ks = [i[1] for i in dk]
     # create the list of stat objects to return
@@ -129,24 +241,98 @@ def progress():
     view_dict['warnings'].sort()
     return view_dict
 
+def _force_to_simple_date_string( date_string ):
+    # remove any time (intra-day) component for uniform dates!
+    # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
+    return date_string.split('T')[0]
+
 def synthesis_release():
     view_dict = default_view_dict.copy()
-    synth = json.loads(fetch_local_synthesis_stats() or '{}')
 
-    # Get date or version from URL, or bounce to the latest release
-    #import pdb; pdb.set_trace()
+    # Load each JSON document into a list or dict, so we can compile daily entries. 
+    # NB: For simplicity and uniformity, filter these to use only simple dates
+    # with no time component!
+    # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
+    raw = json.loads(fetch_local_synthesis_stats() or '{}')
+    # Pre-sort its raw date strings, so we can discard all the but latest info
+    # for each date (e.g. we might toss the morning stats but keep the evening).
+    sorted_dates = sorted(raw.keys(), reverse=False)
+    synth = {}
+    for d in sorted_dates:
+        raw_data = raw[d]
+        simple_date = _force_to_simple_date_string(d)
+        synth[ simple_date ] = raw_data
+        # this should overwrite data from earlier in the day
+
+    if len(synth.keys()) == 0:
+        # report this error on the page
+        view_dict['release_version'] = 'NO RELEASES FOUND'
+        view_dict['synthesis_stats'] = synth
+        return view_dict
+
+    # Get date or version from URL, or bounce to the latest release by default
     if len(request.args) == 0:
-        release_version = sorted(synth.keys(), reverse=False)[-1]
+        release_date = sorted(synth.keys(), reverse=False)[-1]
+        release_version = synth[release_date].get('version')
         redirect(URL('opentree', 'about', 'synthesis_release', 
             vars={}, 
             args=[release_version]))
 
     view_dict['release_version'] = request.args[0]
     view_dict['synthesis_stats'] = synth
+    # TODO: fetch and render Markdown release notes as HTML
+    ##view_dict['release_notes'] =
+
     return view_dict
 
-def taxonomy_release():
+def taxonomy_version():
     view_dict = default_view_dict.copy()
+
+    # load taxonomy-version history and basic stats
+    ott = json.loads(fetch_local_ott_stats() or '[]')
+    if len(ott) == 0:
+        # report this error on the page
+        view_dict['taxonomy_version'] = 'NO VERSIONS FOUND'
+        view_dict['taxonomy_stats'] = ott
+        return view_dict
+
+    # Get OTT version from URL, or bounce to the latest version by default
+    if len(request.args) == 0:
+        taxonomy_version = sorted([v.get('version') for v in ott], reverse=False)[-1]
+        redirect(URL('opentree', 'about', 'taxonomy_version', 
+            vars={}, 
+            args=[taxonomy_version]))
+
+    taxo_version = request.args[0]
+    view_dict['taxonomy_version'] = taxo_version
+    view_dict['taxonomy_stats'] = ott
+
+    # fetch and render Markdown release notes as HTML
+    from gluon.tools import fetch
+    from gluon.contrib.markdown.markdown2 import markdown
+    from urllib2 import HTTPError
+    fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/reference-taxonomy/master/doc/{v}.md'.format(v=taxo_version)
+    try:
+        version_notes_response = fetch(fetch_url)
+        # N.B. We assume here that any hyperlinks have the usual Markdown braces!
+        version_notes_html = markdown(version_notes_response).encode('utf-8')
+    except HTTPError:
+        version_notes_html = None
+    view_dict['taxonomy_version_notes'] = version_notes_html
+
+    # List all synthesis releases that used this OTT version
+    synth = json.loads(fetch_local_synthesis_stats() or '{}')
+    related_releases = []
+    for date in synth:
+        synth_ott_version = synth[date]['OTT_version']
+        if synth_ott_version:
+            # If a draft was provided (eg, "ott2.9draft8"), truncate this
+            # to specify the main version (in this case, "ott2.9")
+            synth_ott_version = synth_ott_version.split('draft')[0]
+        if synth_ott_version == taxo_version:
+            related_releases.append(synth[date]['version'])
+    view_dict['related_synth_releases'] = related_releases 
+
     return view_dict
 
 def fetch_local_synthesis_stats():
@@ -169,6 +355,45 @@ def fetch_local_ott_stats():
         return stats
     except:
         return None
+
+_sorted_ott_versions = None
+def get_sorted_ott_versions():
+    global _sorted_ott_versions
+    if not _sorted_ott_versions:
+        _sorted_ott_versions = json.loads(fetch_local_ott_stats() or '[]')
+        # make sure these are sorted by date (chronological order)
+        _sorted_ott_versions.sort(key = lambda x: x.get('date'))
+    return _sorted_ott_versions
+
+def get_ott_version_info(specified_version):
+    for version in get_sorted_ott_versions():
+        if version.get('version') == specified_version:
+            return version
+    return None
+
+def get_ott_version_info_by_date(date):
+    for version in get_sorted_ott_versions():
+        try:
+            v_date = version.get('date')
+        except:
+            raise Exception('Missing OTT version date')
+        if v_date == date:
+            return version
+    return None
+
+def get_latest_ott_version_info_by_date(date):
+    closest_previous_version = None
+    for version in get_sorted_ott_versions():
+        try:
+            #v_date = datetime.strptime(version.get('date'), "%Y-%m-%dT%HZ")
+            v_date = version.get('date')
+        except:
+            raise Exception('Missing OTT version date')
+        if v_date <= date:
+            closest_previous_version = version
+    if closest_previous_version is None:
+        raise Exception('No OTT version before this date: %s' % date)
+    return closest_previous_version
 
 def fetch_current_synthesis_source_data():
     try:
@@ -253,7 +478,6 @@ def fetch_current_synthesis_source_data():
         ## context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
         
         # translate data-deposit DOIs/URLs into friendlier forms
-        from pprint import pprint
         for study in contributing_studies:
             raw_deposit_doi = study.get('ot:dataDeposit', None)
             if raw_deposit_doi:

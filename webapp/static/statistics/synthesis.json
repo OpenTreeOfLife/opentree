@@ -1,0 +1,26 @@
+{
+    "2014-04-14T00Z": {
+        "===": "These 'comments' will be ignored by the app.",
+        "version": "v1",
+        "===": "Based on file mod-date shown in http://files.opentreeoflife.org/trees/",
+        "OTT_version": "ott2.6",
+        "tree_count": null, 
+        "total_OTU_count": null, 
+        "tip_count": null
+    },
+    "2014-09-20T00Z": {
+        "version": "v2",
+        "===": "Using initial stats gathered on 2015-01-16T23Z, which should be accurate here. Release date is based on .tgz file modification date.",
+        "OTT_version": "ott2.8",
+        "tree_count": 429, 
+        "total_OTU_count": 60933, 
+        "tip_count": null
+    },
+    "2015-05-06T00Z": {
+        "version": "v3",
+        "OTT_version": "ott2.8draft5",
+        "tree_count": 478, 
+        "total_OTU_count": 63393, 
+        "tip_count": 2339460
+    }
+}
