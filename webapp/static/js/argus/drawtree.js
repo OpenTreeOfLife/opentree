@@ -597,11 +597,10 @@ function createArgus(spec) {
             converters: { 
                 // serialize this JSON into dedicated pseudo-classes
                 'text nodeTree': function(data) {
-                    console.log(">>> pre-processing raw JSON string..." );
+                    ///console.log(">>> pre-processing raw JSON string..." );
                     // NOTE that jQuery's parseJSON() doesn't support the 'reviver' option
                     ///return $.parseJSON(data, argusObj.makeNodeTree);
                     return JSON.parse(data, argusObj.makeNodeTree);
-                    // TODO: ensure proper JSON support in all target browsers, see http://stackoverflow.com/a/10936563
                 }
             },
             success: ajaxSuccess,
