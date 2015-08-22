@@ -126,7 +126,7 @@ if ( History && History.enabled && pageUsesHistory ) {
     // Note: We are using statechange instead of popstate
     History.Adapter.bind(window, 'statechange', function() {
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
-        History.log(State.data, State.title, State.url);
+        //History.log(State.data, State.title, State.url);
         updateTreeView( State );
     });
 }
@@ -469,7 +469,6 @@ function buildNodeNameFromTreeData( node ) {
         return firstChildName;
     }
     var nameParts = firstChildName.split(compoundNodeNameDelimiter);
-    console.log(nameParts);
     firstChildName = nameParts[0];
     if(firstChildName.indexOf(compoundNodeNamePrefix) !== -1) {
         moreThanTwoDescendants = true;
@@ -477,7 +476,6 @@ function buildNodeNameFromTreeData( node ) {
     }
     var lastChildName = buildNodeNameFromTreeData(node.children[ node.children.length-1 ]);
     nameParts = lastChildName.split(compoundNodeNameDelimiter);
-    console.log(nameParts);
     lastChildName = nameParts[nameParts.length - 1];
     if (lastChildName === '...]') {
         // sidestep any ellipsis found here
@@ -1141,7 +1139,7 @@ function showObjectProperties( objInfo, options ) {
                 var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
                 window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ superSafeDisplayName;
 
-                OR this will load the Newick-tree text to show it in-browser
+                / * OR this will load the Newick-tree text to show it in-browser
                 $.ajax({
                     type: 'POST',
                     url: getDraftTreeForOttolID_url,
@@ -1154,12 +1152,14 @@ function showObjectProperties( objInfo, options ) {
                     },
                     dataType: 'json'  // should return a complete Newick tree
                 });
-
+                * /
 
                 return false;
             });
         $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
         */
+      // end of comment block for removing subtree links
+
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
         if ((displayName.indexOf('Unnamed ') !== 0) && (displayName.indexOf('[') !== 0)) {
             // Attempt to find a page for this taxon in the Encyclopedia of Life website
