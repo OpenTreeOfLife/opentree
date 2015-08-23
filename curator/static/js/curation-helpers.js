@@ -425,6 +425,7 @@ function fetchAndShowCollection( collectionID ) {
      * in a popup.  This should always get the lastest version from the docstore, 
      * complete with its commit history and merged edits from other users.
      */
+debugger;
     var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID);
     $.ajax({
         type: 'GET',
@@ -1065,7 +1066,8 @@ function removeTreeFromCollection(tree, collection) {
 var currentlyEditingCollectionID = null;
 function userIsEditingCollection( collection ) {
     if ('data' in collection && 'url' in collection.data) {
-        return (currentlyEditingCollectionID === collection.data['url']);
+        var collectionID = getCollectionIDFromURL( collection.data.url );
+        return (currentlyEditingCollectionID === collectionID);
     }
     console.warn("returning false for malformed collection:");
     console.warn(collection);
@@ -1074,9 +1076,13 @@ function userIsEditingCollection( collection ) {
 
 function editCollection( collection ) {
     // toggle to full editing UI
-    currentlyEditingCollectionID = collection.data['url'];
-    showCollectionViewer( collection );  // to refresh the UI
-    pushPageExitWarning();
+    if ('data' in collection && 'url' in collection.data) {
+        currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
+        showCollectionViewer( collection );  // to refresh the UI
+        pushPageExitWarning();
+    }
+    console.warn("can't edit malformed collection:");
+    console.warn(collection);
 }
 function validateCollectionData( collection ) {
     // do some basic sanity checks on the current tree collection
