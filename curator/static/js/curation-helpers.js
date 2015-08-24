@@ -1074,15 +1074,30 @@ function userIsEditingCollection( collection ) {
 }
 
 function editCollection( collection ) {
-    // toggle to full editing UI
-    if ('data' in collection && 'url' in collection.data) {
-        currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
-        showCollectionViewer( collection );  // to refresh the UI
-        pushPageExitWarning();
+    // toggle to full editing UI (or login if user is anonymous)
+    if (userIsLoggedIn()) {
+        if ('data' in collection && 'url' in collection.data) {
+            currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
+            showCollectionViewer( collection );  // to refresh the UI
+            pushPageExitWarning();
+        }
+        console.warn("can't edit malformed collection:");
+        console.warn(collection);
+    } else {
+        // bounce anonymous user to login (taking advantage of _next URL set elsewhere)
+        if (confirm('Editing a tree collection requires login via Github. OK to proceed?')) {
+            var $loginLinks = $('a:not(.sticky-login):contains(Login)');
+            if ($loginLinks.length > 0) {
+                // use Login link for most accurate re-entry (current tab, tree, etc)
+                window.location = $loginLinks.eq(0).attr('href');
+            } else {
+                // no Login link found!? use default login URL (and approximate re-entry)
+                window.location = '/curator/user/login?_next='+ window.location.pathname;
+            }
+        }
     }
-    console.warn("can't edit malformed collection:");
-    console.warn(collection);
 }
+
 function validateCollectionData( collection ) {
     // do some basic sanity checks on the current tree collection
     if ($.trim(collection.data.name) === '') {
