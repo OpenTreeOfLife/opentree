@@ -425,7 +425,6 @@ function fetchAndShowCollection( collectionID ) {
      * in a popup.  This should always get the lastest version from the docstore, 
      * complete with its commit history and merged edits from other users.
      */
-debugger;
     var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID);
     $.ajax({
         type: 'GET',
