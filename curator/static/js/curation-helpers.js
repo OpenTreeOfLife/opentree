@@ -698,7 +698,7 @@ function createNewTreeCollection() {
 }
 
 function updateNewCollectionID( collection ) {
-    if ('version_history' in collection) {
+    if ('versionHistory' in collection) {
         // it's an existing collection with a frozen ID
         return false;
     }
