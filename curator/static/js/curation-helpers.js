@@ -536,15 +536,6 @@ function showCollectionViewer( collection, options ) {
 
     }
 
-    // TODO: adapt tags widget from tree viewer?
-    /*
-    if (viewOrEdit == 'EDIT') {
-        // TODO: reset observables for some options?
-        viewModel.chosenNodeLabelModeInfo = ko.observable(null);
-        viewModel.nodeLabelModeDescription = ko.observable('');
-    }
-    */
-
     // add any missing 'rank' properties
     ensureTreeCollectionRanking( collection );
 
@@ -703,7 +694,7 @@ function updateNewCollectionID( collection ) {
         return false;
     }
     // it's a new collection; build an ID based on its name!
-    var urlParts = collection.data.url.split();
+    console.log(">> collection.data.url: "+ collection.data.url);
     var nameSlug = slugify(collection.data.name);
     // build a fresh ID with current user as creator
     collection.data.url = collectionURLSplitterAPI + userLogin +'/'+ nameSlug;
@@ -1073,6 +1064,43 @@ function userIsEditingCollection( collection ) {
     return false;
 }
 
+function copyCollection( collection ) {
+    // create a user-owned copy (or login if user is anonymous)
+    if (userIsLoggedIn()) {
+        alert("Now I'd make a copy in this user's folder");
+        /* TODO
+         * - submit this collection (a copy) via POST
+         * - change its creator/owner to the current user
+         * - assert its new ID as {current_user}/{old_name} and rely on the API
+         *   to modify this as needed for uniqueness
+         * - get the new result; reload the page + list, possibly filtered to show the new ID?
+         *  OR
+         * - editCollection(newCollection) to bring this up in the editor?
+
+        if ('data' in collection && 'url' in collection.data) {
+            currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
+            showCollectionViewer( collection );  // to refresh the UI
+            pushPageExitWarning();
+            return;
+        }
+        console.warn("can't edit malformed collection:");
+        console.warn(collection);
+         */
+    } else {
+        // bounce anonymous user to login (taking advantage of _next URL set elsewhere)
+        if (confirm('Copying a tree collection requires login via Github. OK to proceed?')) {
+            var $loginLinks = $('a:not(.sticky-login):contains(Login)');
+            if ($loginLinks.length > 0) {
+                // use Login link for most accurate re-entry (current tab, tree, etc)
+                window.location = $loginLinks.eq(0).attr('href');
+            } else {
+                // no Login link found!? use default login URL (and approximate re-entry)
+                window.location = '/curator/user/login?_next='+ window.location.pathname;
+            }
+        }
+    }
+}
+
 function editCollection( collection ) {
     // toggle to full editing UI (or login if user is anonymous)
     if (userIsLoggedIn()) {
@@ -1080,6 +1108,7 @@ function editCollection( collection ) {
             currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
             showCollectionViewer( collection );  // to refresh the UI
             pushPageExitWarning();
+            return;
         }
         console.warn("can't edit malformed collection:");
         console.warn(collection);
@@ -1132,7 +1161,20 @@ function promptForDeleteCollectionComments( collection ) {
 }
 function saveTreeCollection( collection ) {
     // user has confirmed; fix up and submit data
-    showModalScreen("Saving tree collection...", {SHOW_BUSY_BAR:true});
+    // N.B. that we might be CREATING or UPDATING
+    var createOrUpdate;
+    if ('versionHistory' in collection) {
+        // we're UPDATING an existing collection
+        createOrUpdate = 'UPDATE';
+    } else {
+        // we're CREATING a new collection
+        createOrUpdate = 'CREATE';
+    }
+
+    showModalScreen( 
+        (createOrUpdate === 'UPDATE') ? "Saving tree collection..." : "Adding tree collection...", 
+        {SHOW_BUSY_BAR:true}
+    );
 
     // add this user to contributors (or creator)
     var foundUser = false;
@@ -1170,8 +1212,16 @@ function saveTreeCollection( collection ) {
     stripTreeCollectionRanking( collection );
 
     // push changes back to storage
-    var collectionID = getCollectionIDFromURL( collection.data.url );
-    var saveURL = API_update_collection_PUT_url.replace('{COLLECTION_ID}', collectionID);
+    var saveURL;
+    if (createOrUpdate === 'UPDATE') {
+        // we're UPDATING an existing collection
+        var collectionID = getCollectionIDFromURL( collection.data.url );
+        saveURL = API_update_collection_PUT_url.replace('{COLLECTION_ID}', collectionID);
+    } else {
+        // we're CREATING a new collection
+        saveURL = API_create_collection_POST_url;
+    }
+
     // gather commit message (if any) from pre-save popup
     var commitMessage;
     var firstLine = $('#save-collection-comment-first-line').val();
@@ -1199,14 +1249,14 @@ function saveTreeCollection( collection ) {
 
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
-        type: 'PUT',
+        type: (createOrUpdate === 'UPDATE') ? 'PUT' : 'POST',
         dataType: 'json',
         // crossdomain: true,
         contentType: "application/json; charset=utf-8",
         url: saveURL,
         processData: false,
-        //data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
-        data: collection,  // OR collection.data?
+        data: JSON.stringify(collection.data),
+        //data: collection,  // OR collection.data?
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
@@ -1227,14 +1277,9 @@ function saveTreeCollection( collection ) {
                 return;
             }
             var putResponse = $.parseJSON(jqXHR.responseText);
-debugger;
-            viewModel.startingCommitSHA = putResponse['sha'] || viewModel.startingCommitSHA;
-            // update the History tab to show the latest commit
-            if ('versionHistory' in putResponse) {
-                viewModel.versions(putResponse['versionHistory'] || [ ]);
-            }
+
             if (putResponse['merge_needed']) {
-                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Collection%20merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Collection%20merge%20needed%20-%20'+ putResponse.sha +'">report this error</a> to the Open Tree of Life software team';
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 return;
@@ -1242,10 +1287,9 @@ debugger;
             // presume success from here on
             hideModalScreen();
             showSuccessMessage('Study saved to remote storage.');
-
             popPageExitWarning();
-            disableSaveButton();
-            // TODO: should we expect fresh JSON to refresh the form?
+            // get fresh JSON and refresh the form (view only)
+            cancelChangesToCollection( collection );
         }
     });
     
@@ -1314,7 +1358,7 @@ function deleteTreeCollection( collection ) {
             var result = $.parseJSON(jqXHR.responseText);
             var refreshDelay;
             if (result['merge_needed']) {
-                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Collection%20merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Collection%20merge%20needed%20-%20'+ result.sha +'">report this error</a> to the Open Tree of Life software team';
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 refreshDelay = 10000; // show this message for 10 sec
