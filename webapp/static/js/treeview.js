@@ -1116,45 +1116,45 @@ function showObjectProperties( objInfo, options ) {
     var subtreeDepthLimit = 4;
     if (nodeSection) {
         $details = $sections.find('.properties-section:first dl');
-        // temporarily changing link to download Newick string to go to
-        // download page because current code uses v1 api call
-        // without checks on size and therefore hanging for large trees
-        $details.append('<dt style="margin-top: 1em;"><a target="_blank" href="http://files.opentreeoflife.org/trees/">Download entire synthetic tree</a></dt>');
+        // Offer to download Newick string for this subtree, OR link to the
+        // main download page if it's too large (based on the number of
+        // descendant tips)
+        var maxTipsForNewickSubtree = 1000;
+        if (fullNode.nTipDescendants > maxTipsForNewickSubtree) {
+            $details.append('<dt style="margin-top: 1em;"><a target="_blank" href="http://files.opentreeoflife.org/trees/">Download entire synthetic tree</a></dt>');
+        } else {
+            $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Download subtree as Newick string</a></dt>');
+            $details.append('<dd id="extract-subtree-caveats">&nbsp;</dd>');
+          
+            // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
+            var idType = (objSource == 'ottol') ? 'ottol-id' : 'node-id';
+            // Choose from among the collection of objSources
+            $('#extract-subtree')
+                .css('color','')  // restore normal link color
+                .unbind('click').click(function() {
+                    // Make this name safe for use in our subtree download URL
+                    var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
+                    window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ superSafeDisplayName;
 
-    /*
-$details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Download subtree as Newick string</a></dt>');
-        $details.append('<dd id="extract-subtree-caveats">&nbsp;</dd>');
-      
-        // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
-        var idType = (objSource == 'ottol') ? 'ottol-id' : 'node-id';
-        // Choose from among the collection of objSources
-        $('#extract-subtree')
-            .css('color','')  // restore normal link color
-            .unbind('click').click(function() {
-                // Make this name safe for use in our subtree download URL
-                var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
-                window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ superSafeDisplayName;
+                    /* OR this will load the Newick-tree text to show it in-browser
+                    $.ajax({
+                        type: 'POST',
+                        url: getDraftTreeForOttolID_url,
+                        data: {
+                            'ottId': String(ottolID),
+                            'maxDepth': String(subtreeDepthLimit),
+                        },
+                        success: function(data) {
+                            alert(data.tree);
+                        },
+                        dataType: 'json'  // should return a complete Newick tree
+                    });
+                    */
 
-                / * OR this will load the Newick-tree text to show it in-browser
-                $.ajax({
-                    type: 'POST',
-                    url: getDraftTreeForOttolID_url,
-                    data: {
-                        'ottId': String(ottolID),
-                        'maxDepth': String(subtreeDepthLimit),
-                    },
-                    success: function(data) {
-                        alert(data.tree);
-                    },
-                    dataType: 'json'  // should return a complete Newick tree
+                    return false;
                 });
-                * /
-
-                return false;
-            });
-        $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
-      */
-      // end of comment block for removing subtree links
+            $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
+        }
 
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
         if ((displayName.indexOf('Unnamed ') !== 0) && (displayName.indexOf('[') !== 0)) {
