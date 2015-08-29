@@ -1120,7 +1120,8 @@ function showObjectProperties( objInfo, options ) {
         // main download page if it's too large (based on the number of
         // descendant tips)
         var maxTipsForNewickSubtree = 1000;
-        if (fullNode.nTipDescendants > maxTipsForNewickSubtree) {
+        if ((typeof fullNode.nTipDescendants !== 'number') || (fullNode.nTipDescendants > maxTipsForNewickSubtree)) {
+            // when in doubt (e.g. nodes on the rootward path), offer the full download
             $details.append('<dt style="margin-top: 1em;"><a target="_blank" href="http://files.opentreeoflife.org/trees/">Download entire synthetic tree</a></dt>');
         } else {
             $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Download subtree as Newick string</a></dt>');
@@ -1157,7 +1158,9 @@ function showObjectProperties( objInfo, options ) {
         }
 
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
-        if ((displayName.indexOf('Unnamed ') !== 0) && (displayName.indexOf('[') !== 0)) {
+        if ((displayName.indexOf('Unnamed ') !== 0) && 
+            (displayName.indexOf('(untitled ') !== 0) && 
+            (displayName.indexOf('[') !== 0)) {
             // Attempt to find a page for this taxon in the Encyclopedia of Life website
             // N.B. This 'external-links' list can hold similar entries.
             
