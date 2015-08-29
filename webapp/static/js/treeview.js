@@ -733,13 +733,14 @@ function showObjectProperties( objInfo, options ) {
                         nodeSection.displayedProperties['Taxonomic rank'] = fullNode.taxRank;
                     }
 
-                    /* TODO: Restore this once we have proper leaf count, as described here:
-                     * https://github.com/OpenTreeOfLife/treemachine/issues/63
-                    if (typeof fullNode.nleaves !== 'undefined') {
-                        nodeSection.displayedProperties['Terminal taxa within this clade'] = fullNode.nleaves;
-                        // OR 'Clade members'? 'Leaf taxa'?
+                    if (typeof fullNode.nTipDescendants !== 'undefined') {
+                        if (fullNode.nTipDescendants === 0) {
+                            nodeSection.displayedProperties['Leaf node (no descendant tips)'] = '';
+                        } else {
+                            nodeSection.displayedProperties['Descendant tips'] = (fullNode.nTipDescendants || 0).toLocaleString();
+                            // OR 'Clade members'? 'Leaf taxa'?
+                        }
                     }
-                    */
 
                     // Show ALL source trees (phylo-trees + IDs) for this node
                     objID = fullNode.sourceID ? fullNode.sourceID : fullNode.nodeid;
