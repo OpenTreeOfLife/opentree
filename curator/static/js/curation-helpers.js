@@ -732,6 +732,21 @@ function addTreeToCollection( collection, inputType ) {
         } 
     }
 
+    // check to see if this tree is already in the collection; if so, bail w/ a message
+    var alreadyInCollection = false;
+    $.each(collection.data.decisions, function(i, decision) {
+        if ((decision.treeID === treeID) && (decision.studyID === studyID)) {
+            showErrorMessage("This tree is already in the collection as '<strong>"+ 
+                decision.name +"</strong>'");
+            // TODO: scroll the list to show this tree!? highlight it?
+            alreadyInCollection = true;
+            return false;
+        }
+    });
+    if (alreadyInCollection) {
+        return false;
+    }
+
     // still here? let's look for a matching tree in the study index
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
