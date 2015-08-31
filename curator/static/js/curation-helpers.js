@@ -1081,25 +1081,29 @@ function userIsEditingCollection( collection ) {
 function copyCollection( collection ) {
     // create a user-owned copy (or login if user is anonymous)
     if (userIsLoggedIn()) {
-        alert("Now I'd make a copy in this user's folder");
-        /* TODO
-         * - submit this collection (a copy) via POST
+        /* Step by step:
          * - change its creator/owner to the current user
          * - assert its new ID as {current_user}/{old_name} and rely on the API
          *   to modify this as needed for uniqueness
+         * - submit this collection (a copy) via POST
          * - get the new result; reload the page + list, possibly filtered to show the new ID?
          *  OR
          * - editCollection(newCollection) to bring this up in the editor?
-
-        if ('data' in collection && 'url' in collection.data) {
-            currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
-            showCollectionViewer( collection );  // to refresh the UI
-            pushPageExitWarning();
-            return;
-        }
-        console.warn("can't edit malformed collection:");
-        console.warn(collection);
          */
+        // populate the creator fields using client-side data
+        collection.data.creator.login = userLogin;
+        collection.data.creator.name = userDisplayName;
+        // remove this user from collaborators list, if found
+        collection.data.contributors = $.grep(collection.data.contributors, function(i, c) {
+            return (c.login !== userLogin);
+        });
+        // modify its (proposed) ID to reflect the current user
+        var nameStub = getCollectionIDFromURL(collection.data.url).split('/')[1];
+        collection.data.url = (collectionURLSplitterAPI + userLogin +"/"+ nameStub);
+        // clobber its versionHistory to trigger create (vs. update) behavior
+        delete collection['versionHistory'];
+        promptForSaveCollectionComments( collection );
+        // from this point, it's treated like a new collection
     } else {
         // bounce anonymous user to login (taking advantage of _next URL set elsewhere)
         if (confirm('Copying a tree collection requires login via Github. OK to proceed?')) {
@@ -1300,7 +1304,7 @@ function saveTreeCollection( collection ) {
             }
             // presume success from here on
             hideModalScreen();
-            showSuccessMessage('Study saved to remote storage.');
+            showSuccessMessage('Collection saved to remote storage.');
             popPageExitWarning();
             // update in-use ID in case phylesystem API has forced a new one
             currentlyEditingCollectionID = putResponse['resource_id'];
@@ -1308,10 +1312,6 @@ function saveTreeCollection( collection ) {
             cancelChangesToCollection();
         }
     });
-    
-    // TODO: IF successful, remove page blocker!
-    popPageExitWarning();
-    // TODO: refresh display with new data (or error msg)
 }
 function deleteTreeCollection( collection ) {
     // user has already confirmed and provided commit msg
