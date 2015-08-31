@@ -496,7 +496,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
 
            <!-- ko if: !userIsEditingCollection($data) -->
             <!-- DUPLICATE button -->
-            <button Xdata-bind="click: copyCollection,
+            <button data-bind="click: copyCollection,
                                 visible: true,
                                 attr: {'title': userIsLoggedIn() ? 'Copy this collection (you will own the copy)' : 'Copy this collection (requires login)'}"
                 title=""

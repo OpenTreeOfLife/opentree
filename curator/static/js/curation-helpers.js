@@ -694,14 +694,13 @@ function updateNewCollectionID( collection ) {
         return false;
     }
     // it's a new collection; build an ID based on its name!
-    console.log(">> collection.data.url: "+ collection.data.url);
     var nameSlug = slugify(collection.data.name);
     // build a fresh ID with current user as creator
     collection.data.url = collectionURLSplitterAPI + userLogin +'/'+ nameSlug;
-    //console.log(">>> collection.data.url = "+ collection.data.url);
     var proposedID = getCollectionIDFromURL( collection.data.url );
-    //console.log(">>> proposedID = "+ proposedID);
     $('#collection-id-display').text( proposedID );
+    // update in-use ID (for good refresh)
+    currentlyEditingCollectionID = proposedID;
 }
 
 function addTreeToCollection( collection, inputType ) {
@@ -1303,8 +1302,10 @@ function saveTreeCollection( collection ) {
             hideModalScreen();
             showSuccessMessage('Study saved to remote storage.');
             popPageExitWarning();
+            // update in-use ID in case phylesystem API has forced a new one
+            currentlyEditingCollectionID = putResponse['resource_id'];
             // get fresh JSON and refresh the form (view only)
-            cancelChangesToCollection( collection );
+            cancelChangesToCollection();
         }
     });
     
@@ -1394,11 +1395,10 @@ function deleteTreeCollection( collection ) {
         }
     });
 }
-function cancelChangesToCollection( collection ) {
+function cancelChangesToCollection() {
     // refresh collection from storage, toggle to view-only UI
     fetchAndShowCollection( currentlyEditingCollectionID );
     currentlyEditingCollectionID = null;
-    //showCollectionViewer( collection );  // to refresh the UI
     popPageExitWarning();
 }
 function userIsLoggedIn() {
