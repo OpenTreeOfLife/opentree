@@ -1167,15 +1167,21 @@ function promptForSaveCollectionComments( collection ) {
     }
 }
 function promptForDeleteCollectionComments( collection ) {
-    // show a modal popup to gather comments (or cancel)
-    $('#delete-collection-comments-popup').modal('show');
-    // buttons there do the remaining work
-    $('#delete-collection-comments-submit')
-        .unbind('click')
-        .click(function() {
-            $('#delete-collection-comments-popup').modal('hide'); 
-            deleteTreeCollection( collection ); 
-        });
+    if ($.isPlainObject(collection) && ('versionHistory' in collection)) {
+        // this collection has been saved; show a modal popup to gather comments (or cancel)
+        $('#delete-collection-comments-popup').modal('show');
+        // buttons there do the remaining work
+        $('#delete-collection-comments-submit')
+            .unbind('click')
+            .click(function() {
+                $('#delete-collection-comments-popup').modal('hide'); 
+                deleteTreeCollection( collection ); 
+            });
+    } else {
+        // new collection hasn't been saved; just close the editor
+        currentlyEditingCollectionID = null;
+        $('#tree-collection-viewer').modal('hide');
+    }
 }
 function saveTreeCollection( collection ) {
     // user has confirmed; fix up and submit data
@@ -1309,7 +1315,11 @@ function saveTreeCollection( collection ) {
             // update in-use ID in case phylesystem API has forced a new one
             currentlyEditingCollectionID = putResponse['resource_id'];
             // get fresh JSON and refresh the form (view only)
-            cancelChangesToCollection();
+            if (createOrUpdate === 'CREATE') {
+                // add empty history to hint that we should hold the editor open
+                collection['versionHistory'] = [ ];
+            }
+            cancelChangesToCollection(collection);
         }
     });
 }
@@ -1395,10 +1405,16 @@ function deleteTreeCollection( collection ) {
         }
     });
 }
-function cancelChangesToCollection() {
-    // refresh collection from storage, toggle to view-only UI
-    fetchAndShowCollection( currentlyEditingCollectionID );
-    currentlyEditingCollectionID = null;
+function cancelChangesToCollection(collection) {
+    if ($.isPlainObject(collection) && ('versionHistory' in collection)) {
+        // refresh collection from storage, toggle to view-only UI
+        fetchAndShowCollection( currentlyEditingCollectionID );
+        currentlyEditingCollectionID = null;
+    } else {
+        // new collection hasn't been saved; just close the editor
+        currentlyEditingCollectionID = null;
+        $('#tree-collection-viewer').modal('hide');
+    }
     popPageExitWarning();
 }
 function userIsLoggedIn() {
