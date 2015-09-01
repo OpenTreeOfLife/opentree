@@ -132,11 +132,26 @@ $(document).ready(function() {
     }
 });
 
-function loadCollectionList() {
-    // show/hide spinner during all AJAX requests?
+function loadCollectionList(option) {
+    // Used for both initial list and refresh (to reflect adding/deleting collections).
+    option = option ? option: 'INIT'; // or 'REFRESH'
 
-    // use oti (study indexing service) to get the complete list
-    showModalScreen("Loading tree collection list...", {SHOW_BUSY_BAR:true});
+    if (option === 'INIT') {
+        showModalScreen("Loading tree collection list...", {SHOW_BUSY_BAR:true});
+    }
+
+    var effectiveFilters = {};
+    if (option === 'REFRESH') {
+        // preserve current filter values
+        for (var fName in viewModel.listFilters.COLLECTIONS) {
+            effectiveFilters[fName] = ko.unwrap(viewModel.listFilters.COLLECTIONS[fName]);
+        }
+    } else {
+        // use default filter values
+        effectiveFilters['match']  = "";
+        effectiveFilters['order']  = "Most recently modified";
+        effectiveFilters['filter'] = "All tree collections";
+    }
 
     $.ajax({
         type: 'POST',
@@ -163,19 +178,19 @@ function loadCollectionList() {
                 // UI widgets bound to these variables will trigger the
                 // computed display lists below..
                 'COLLECTIONS': {
-                    // TODO: add 'pagesize'?
-                    'match': ko.observable(""),
-                    'order': ko.observable("Most recently modified"),
-                    'filter': ko.observable("All tree collections")
+                    // use default (or preserved) filters, as determined above
+                    'match': ko.observable(effectiveFilters['match']),
+                    'order': ko.observable(effectiveFilters['order']),
+                    'filter': ko.observable(effectiveFilters['filter'])
                 }
             };
-            
+
             // maintain a persistent array to preserve pagination (reset when computed)
             viewModel._filteredCollections = ko.observableArray( ).asPaged(20);
             viewModel.filteredCollections = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
-                updateClearSearchWidget( '#study-list-filter', viewModel.listFilters.COLLECTIONS.match );
+                updateClearSearchWidget( '#collection-list-filter', viewModel.listFilters.COLLECTIONS.match );
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.COLLECTIONS.match(),
@@ -318,9 +333,21 @@ function loadCollectionList() {
                     
             // bind just to the main collection list (not the single-collection editor!)
             var listArea = $('#collection-list-container')[0];
+            ko.cleanNode(listArea);
+            // remove all but one list entry (else they multiply!)
+            // N.B. that we also skip the first (header) row!
+            $('#collection-list-container tr:gt(1)').remove();
+            // remove extra menu items in list filters
+            $('#collection-list-container .dropdown-menu').find('li:gt(0)').remove();
             ko.applyBindings(viewModel, listArea);
 
-            hideModalScreen();
+            if (option === 'REFRESH') {
+                updateClearSearchWidget( '#collection-list-filter', viewModel.listFilters.COLLECTIONS.match );
+            }
+            
+            if (option === 'INIT') {
+                hideModalScreen();
+            }
         }
     });
 }

@@ -148,16 +148,16 @@ function updateClearSearchWidget( searchFieldSelector, observable ) {
         // remove clear widget, if any
         $search.next('.clear-search').remove();
     } else {
-        // add and enable the clear widget
+        // add and enable (or rebind) the clear widget
         var $clear = $search.next('.clear-search');
         if ($clear.length === 0) {
             $search.after('<i class="clear-search icon-remove"></i>');
             $clear = $search.next('.clear-search');
-            $clear.click(function() {
-               $(this).prev().val('').trigger('change'); 
-               return false;
-            });
         }
+        $clear.unbind('click').click(function() {
+           $(this).prev().val('').trigger('change'); 
+           return false;
+        });
     }
 }
 
@@ -1268,9 +1268,6 @@ function saveTreeCollection( collection ) {
     });
     saveURL += ('?'+ qsVars);
 
-    console.log("=== saveURL:");
-    console.log(saveURL);
-
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: (createOrUpdate === 'UPDATE') ? 'PUT' : 'POST',
@@ -1312,6 +1309,10 @@ function saveTreeCollection( collection ) {
             hideModalScreen();
             showSuccessMessage('Collection saved to remote storage.');
             popPageExitWarning();
+            // refresh any collection list on the current page
+            if (typeof loadCollectionList === 'function') {
+                loadCollectionList('REFRESH');
+            }
             // update in-use ID in case phylesystem API has forced a new one
             currentlyEditingCollectionID = putResponse['resource_id'];
             // get fresh JSON and refresh the form (view only)
@@ -1377,31 +1378,21 @@ function deleteTreeCollection( collection ) {
             // OK, looks like the operation was a success
             currentlyEditingCollectionID = null; // enables closing this window
             popPageExitWarning();
+            // refresh any collection list on the current page
+            if (typeof loadCollectionList === 'function') {
+                loadCollectionList('REFRESH');
+            }
             hideModalScreen();
             $('#tree-collection-viewer').modal('hide');
 
             // parse the payload to see if a merge is required
             var result = $.parseJSON(jqXHR.responseText);
-            var refreshDelay;
             if (result['merge_needed']) {
                 var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Collection%20merge%20needed%20-%20'+ result.sha +'">report this error</a> to the Open Tree of Life software team';
-                hideModalScreen();
                 showErrorMessage(errMsg);
-                refreshDelay = 10000; // show this message for 10 sec
             } else {
-                refreshDelay = 3000;
-                showSuccessMessage('Collection removed, returning to the list...');
+                showSuccessMessage('Collection removed, refreshing list...');
             }
-            setTimeout(function() {
-                window.location.reload(true); // true, i.e., skip the cache and load fresh data
-                /* TODO: Bounce to whichever page is appropriate! OR just refresh the list via AJAX.
-                var studyListURL = $('#return-to-study-list').val();
-                if (!studyListURL) {
-                    console.error("Missing studyListURL!");
-                }
-                window.location = studyListURL || '/curator';
-                */
-            }, refreshDelay);
         }
     });
 }
