@@ -152,6 +152,13 @@ function loadCollectionList(option) {
         effectiveFilters['order']  = "Most recently modified";
         effectiveFilters['filter'] = "All tree collections";
     }
+    /*
+    if (!userIsLoggedIn()) {
+        // override filter if user is not logged in
+        console.log('ANON BOUNCE to show all collections');
+        effectiveFilters['filter'] = "All tree collections";
+    }
+    */
 
     $.ajax({
         type: 'POST',
@@ -197,6 +204,20 @@ function loadCollectionList(option) {
                     matchPattern = new RegExp( $.trim(match), 'i' );
                 var order = viewModel.listFilters.COLLECTIONS.order();
                 var filter = viewModel.listFilters.COLLECTIONS.filter();
+
+                var showEmptyListWarningForAnonymousUser = false;
+                switch (filter) {
+                    case 'Collections I own':
+                    case 'Collections I participate in':
+                        if (!userIsLoggedIn()) {
+                            showEmptyListWarningForAnonymousUser = true;
+                        }
+                }
+                if (showEmptyListWarningForAnonymousUser) {
+                    $('#empty-collection-list-warning').show();
+                } else {
+                    $('#empty-collection-list-warning').hide();
+                }
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 

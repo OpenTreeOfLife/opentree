@@ -1105,16 +1105,8 @@ function copyCollection( collection ) {
         promptForSaveCollectionComments( collection );
         // from this point, it's treated like a new collection
     } else {
-        // bounce anonymous user to login (taking advantage of _next URL set elsewhere)
         if (confirm('Copying a tree collection requires login via Github. OK to proceed?')) {
-            var $loginLinks = $('a:not(.sticky-login):contains(Login)');
-            if ($loginLinks.length > 0) {
-                // use Login link for most accurate re-entry (current tab, tree, etc)
-                window.location = $loginLinks.eq(0).attr('href');
-            } else {
-                // no Login link found!? use default login URL (and approximate re-entry)
-                window.location = '/curator/user/login?_next='+ window.location.pathname;
-            }
+            loginAndReturn(); 
         }
     }
 }
@@ -1131,17 +1123,21 @@ function editCollection( collection ) {
         console.warn("can't edit malformed collection:");
         console.warn(collection);
     } else {
-        // bounce anonymous user to login (taking advantage of _next URL set elsewhere)
         if (confirm('Editing a tree collection requires login via Github. OK to proceed?')) {
-            var $loginLinks = $('a:not(.sticky-login):contains(Login)');
-            if ($loginLinks.length > 0) {
-                // use Login link for most accurate re-entry (current tab, tree, etc)
-                window.location = $loginLinks.eq(0).attr('href');
-            } else {
-                // no Login link found!? use default login URL (and approximate re-entry)
-                window.location = '/curator/user/login?_next='+ window.location.pathname;
-            }
+            loginAndReturn(); 
         }
+    }
+}
+
+function loginAndReturn() {
+    // bounce anonymous user to login (taking advantage of _next URL set elsewhere)
+    var $loginLinks = $('a:not(.sticky-login):contains(Login)');
+    if ($loginLinks.length > 0) {
+        // use Login link for most accurate re-entry (current tab, tree, etc)
+        window.location = $loginLinks.eq(0).attr('href');
+    } else {
+        // no Login link found!? use default login URL (and approximate re-entry)
+        window.location = '/curator/user/login?_next='+ window.location.pathname;
     }
 }
 
