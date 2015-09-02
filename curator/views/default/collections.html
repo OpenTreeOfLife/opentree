@@ -37,7 +37,6 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
     var API_update_collection_PUT_url = "{{=API_update_collection_PUT_url}}";
     var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}"; 
 
-    {{ # TODO: Handle stateful URLs and History here? }}
     // If inbound URL specifies tab, tree, or filter settings, record them here
     var initialState = {{= XML( dict(request.vars) ) }};
     // set any required defaults (for clean/simple history behavior)
@@ -58,7 +57,6 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
         }
     }
 </script>
-{{ # Adapt single-page JS from 'js/curation-dashboard.js' }}
 <script src="{{=URL('static','js/tree-collection-dashboard.js')}}"></script>
 
 <div class="row">
@@ -95,7 +93,7 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
         </p>
       </div>
 
-      <!-- TODO: Adapt the existing New Collection button from tree popup -->
+      <!-- Adapt the existing New Collection button from tree popup -->
       <a name="new-collection-submit" class="btn btn-info" style="margin-bottom: 1em;" href="#"
 {{ if maintenance_info.get('maintenance_in_progress', False): }}
          onclick="showMaintenancePopup(); return false;"
@@ -109,7 +107,7 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
        <div class="navbar-inner">
         <form class="navbar-search pull-left">
             <input type="text" id="collection-list-filter" class="search-query" style="width: 290px;"
-                   placeholder="Filter by reference text, DOI, tag, curator&hellip;"
+                   placeholder="Filter by name, user, description&hellip;"
                    data-bind="value: viewModel.listFilters.COLLECTIONS.match, valueUpdate: ['afterkeydown', 'input']">
         </form>
         <ul class="nav" style="padding-left: 1em;">
@@ -145,9 +143,9 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
           <thead>
             <tr>
               {{ if isLoggedIn: }}
-                <th>Tree Collection (click to edit)</th>
+                <th>Collection name (click to edit)</th>
               {{ else: }}
-                <th>Tree Collection (click to view)</th>
+                <th>Collection name (click to view)</th>
               {{ pass }}
                 <th>How many trees</th>
                 <th>Last modified</th>

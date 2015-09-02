@@ -75,6 +75,7 @@ def profile():
     http://..../{app}/default/profile/[username]
     """
     view_dict = get_opentree_services_method_urls(request)
+    view_dict['maintenance_info'] = get_maintenance_info(request)
 
     # if the URL has a [username], try to load their information
     if len(request.args) > 0:
@@ -108,6 +109,12 @@ def profile():
                 view_dict['active_user_found'] = False
                 view_dict['error_msg'] = 'Not active in OpenTree'
             view_dict['opentree_activity'] = activity
+        
+        view_dict['is_current_user_profile'] = False
+        if view_dict['active_user_found'] == True and auth.is_logged_in():
+            current_userid = auth.user and auth.user.github_login or None
+            if specified_userid == current_userid:
+                view_dict['is_current_user_profile'] = True
 
         return view_dict
 
@@ -140,6 +147,9 @@ def profile():
                     view_dict['active_user_found'] = False
                     view_dict['error_msg'] = 'Not active in OpenTree'
                 view_dict['opentree_activity'] = activity
+
+            view_dict['is_current_user_profile'] = True
+
             return view_dict
         else:
             # try to force a login and return here

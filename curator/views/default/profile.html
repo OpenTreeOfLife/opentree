@@ -25,6 +25,23 @@ else:
     response.subtitle = XML('User not found')
 pass
 }}
+
+{{### Add support scripts for single-page editor 
+
+# JSON support for older browsers (esp. IE7) 
+response.files.append(URL('static','js/json2.js'))
+
+# Knockout.js for binding JSON model to editing UI 
+response.files.append(URL('static','js/knockout-2.3.0.js'))
+
+# KO plugin for paginated lists
+response.files.append(URL('static','js/knockout-paged-e4a5770702.js'))
+
+# Knockout bindings for Twitter Bootstrap components
+response.files.append(URL('static','js/knockout-bootstrap.min.js'))
+
+}}
+
 {{extend 'layout.html'}}
 <script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script type='text/javascript'>
@@ -36,7 +53,31 @@ pass
     var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}"; 
     var API_update_collection_PUT_url = "{{=API_update_collection_PUT_url}}";
     var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}"; 
+
+    // If inbound URL specifies tab, tree, or filter settings, record them here
+    var initialState = {{= XML( dict(request.vars) ) }};
+    // set any required defaults (for clean/simple history behavior)
+    var listFilterDefaults = {
+        // track these defaults so we can reset them in history
+        'COLLECTIONS': {
+            // TODO: Define these based on UI mockups
+            'match': "",
+            'order': "Most recently modified",
+            'filter': "Collections they participate in"
+        }
+    };
+    var filterDefaults = listFilterDefaults.COLLECTIONS;
+    // apply any missing filter defaults
+    for (var prop in filterDefaults) {
+        if (!(prop in initialState)) {
+            initialState[prop] = filterDefaults[prop];
+        }
+    }
+    var curatorLogin = '{{= user_info.get('login')}}';
+    var isCurrentUserProfile = {{= is_current_user_profile and 'true' or 'false' }};
+
 </script>
+<script src="{{=URL('static','js/curator-profile.js')}}"></script>
 <style type="text/css">
 .user-profile .form-horizontal .control-group {
     margin-bottom: 0px;
@@ -239,101 +280,111 @@ elif active_user_found:
     </div>
 </form>
 
-<h2 id="collections">Tree collections</h2>
+<div id="collection-list-container">
+    <h2 id="collections">This curator's tree collections</h2>
 
-<!-- TODO: Add a notice if user has no collections (as owner, collaborator, or follower)
-<div class="empty-list-prompt" data-bind="visible: viewModel.filteredTrees().pagedItems().length === 0">
-    No matching trees found! Add new trees or clear the
-    filter above to see trees in this study.
-</div> 
--->
-<p>
-A collection is a list of trees, chosen for synthesis or any other purpose. Each collection has a nominal owner, but any user can choose to collaborate (add and manage trees) or simply follow its progress. 
-<br/>
-<span class="interesting-value" style="font-weight: bold;">NOTE that these are inactive placeholders!</span>
-</p>
+    <button class="help-toggle" style="display: none;">
+        Show help for this page <i class="icon-chevron-down Xicon-white"></i>
+    </button>
+    <div class="help-box">
+      <button class="help-toggle">
+          Hide <i class="icon-chevron-up Xicon-white"></i>
+      </button>
 
-<table class="table table-condensed table-hover"
-    data-bind="visible: true"><!-- TODO: hide if no collections found -->
-  <thead>
-    <tr>
-        <th width="16">&nbsp;</th>
-        <th>Collection name (click to view)</th>
-        <th>Description</th>
-        <th>User's role</th>
-        <!--
-        <td>&nbsp;</td>
-        -->
-    </tr>
-  </thead>
-  <tbody Xdata-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
-  <!-- TODO
-    <tr data-bind="if: true">
-        <td>
-            <a href="#" data-bind="click: showTreeWithHistory,
-                text: tree['@label'],
-                css: viewModel.ticklers.TREES">&nbsp;</a>
-            <br/>
-            <a data-bind="if: unresolvedConflictsFoundInTree( tree ), 
-                          css: viewModel.ticklers.TREES,
-                          click: showConflictingNodesInTreeViewer,
-                          visible: true" 
-               class="suggestion-prompt" style="display: none;"
-               href="#">
-                Show conflicting nodes
-            </a> 
-            <br/>
-            <a data-bind="if: ambiguousLabelsFoundInTree( tree ), 
-                          css: viewModel.ticklers.TREES,
-                          click: showAmbiguousLabelsInTreeViewer,
-                          visible: true" 
-               class="suggestion-prompt" style="display: none;"
-               href="#">
-                Review ambiguous labels
-            </a> 
-        </td>
-        <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
-                css: viewModel.ticklers.TREES">&nbsp;</td>
-        <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
-                css: viewModel.ticklers.TREES">&nbsp;</td>
-        <td data-bind="html: getRootedDescriptionForTree(tree),
-                          click: showArbitraryRootExplanationInTreeViewer,
-                          css: viewModel.ticklers.TREES"
-               style="cursor: pointer;">&nbsp;</td>
-        <td data-bind="html: getMappedTallyForTree(tree),
-                css: viewModel.ticklers.TREES">&nbsp;</td>
-        <td>   *** TODO: show to owner only! ***
-            <button data-bind="click: removeTree,
-                               visible: true"
-                class="pull-right btn btn-mini btn-danger row-controls-ghosted"
-                style="display: none;">
-                <i class="icon-remove icon-white"></i>
-            </button>
-        </td>
-    </tr>
-    -->
-<!-- EXAMPLES of collection entries -->
-    <tr>
-        <td>
-            <i class="icon-star" style="opacity: 0.3;" title="You participate in (but do not follow) this collection"></i><!-- TODO: icon+title varies based on current following state -->
-        </td>
-        <td><a href="#" 
-               onclick="fetchAndShowCollection('jimallman/my-test-collection'); return false;"
-            >Clarifying Porifera placement</a></td>
-        <td style="color: #999;">
-            An example collection with a very specific purpose.
-        </td>
-        <td>Owner</td>
-    </tr>
-  </tbody>
-</table>
+      <p>
+          A collection is a list of trees, chosen for synthesis or any other
+          purpose. The collections listed below are those which this curator
+          either owns or has chosen to collaborate in by adding or managing
+          trees.
+      </p>
+    </div>
 
-<!-- CREATE NEW button -->
-<button class="btn btn-info" style="margin-top: -24px;"
-        onclick="createNewTreeCollection(); return false;">
-    Create new tree collection
-    <i class="icon-pencil icon-white"></i> 
-</button>
+
+{{ if is_current_user_profile: }}
+      <a name="new-collection-submit" class="btn btn-info" style="margin-bottom: 1em;" href="#"
+  {{ if maintenance_info.get('maintenance_in_progress', False): }}
+         onclick="showMaintenancePopup(); return false;"
+  {{ else: }}
+         onclick="createNewTreeCollection(); return false;"
+  {{ pass }}
+      >Create new tree collection 
+          <i class="icon-circle-arrow-up Xicon-plusXicon-upload icon-white"></i></a>
+{{ pass }}
+
+  <div class="navbar" style="clear: both;">
+   <div class="navbar-inner">
+    <form class="navbar-search pull-left">
+        <input type="text" id="collection-list-filter" class="search-query" style="width: 290px;"
+               placeholder="Filter by name, user, description&hellip;"
+               data-bind="value: viewModel.listFilters.COLLECTIONS.match, valueUpdate: ['afterkeydown', 'input']">
+    </form>
+    <ul class="nav" style="padding-left: 1em;">
+        <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+              <span data-bind="text: viewModel.listFilters.COLLECTIONS.order">Most recently modified</span>
+              <b class="caret"></b>
+            </a>
+            <ul class="dropdown-menu" data-bind="foreach: ['Most recently modified', 'Most recently modified (reversed)', 'By owner/name', 'By owner/name (reversed)'] ">
+                <li data-bind="css: {'disabled': viewModel.listFilters.COLLECTIONS.order() == $data }">
+                    <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.COLLECTIONS.order($data); }">SORT</a>
+                </li>
+            </ul>
+        </li>
+        <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+              <span data-bind="text: viewModel.listFilters.COLLECTIONS.filter">Collections they participate in</span>
+              <b class="caret"></b>
+            </a>
+            <ul class="dropdown-menu" data-bind="foreach: ['Collections they participate in', 'Collections they own']">
+                <!-- TODO: 'Collections I follow' -->
+                <!-- TODO: 'Collections with synthesis reports' -->
+                <li data-bind="css: {'disabled': viewModel.listFilters.COLLECTIONS.filter() == $data }">
+                    <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.COLLECTIONS.filter($data); }">FILTER</a>
+                </li>
+            </ul>
+        </li>
+    </ul>
+   </div>
+  </div>
+
+    <table class="table table-condensed table-hover"
+        data-bind="visible: true"><!-- TODO: hide if no collections found -->
+      <thead>
+        <tr>
+            <th width="16">&nbsp;</th><!-- favorites -->
+            <th>Collection name (click to view)</th>
+            <th>How many trees</th>
+            <th>Last modified</th>
+            <th>User's role</th>
+        </tr>
+      </thead>
+
+      <tbody data-bind="foreach: { data: viewModel.filteredCollections().pagedItems(), as: 'collection' }">
+        <tr>
+            <td>
+                <i class="icon-star" style="opacity: 0.3;" title="You participate in (but do not follow) this collection"></i><!-- TODO: icon+title varies based on current following state -->
+            </td>
+            <td data-bind="html: getViewLink(collection)">&nbsp;</td>
+            <td data-bind="html: getTreeCount(collection)">&nbsp;</td>
+            <td data-bind="html: getLastModification(collection)">&nbsp;</td>
+            <td data-bind="html: getCuratorRole(collection)">&nbsp;</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-list-prompt" style="margin-top: -1em; margin-bottom: 2em;"
+         data-bind="visible: viewModel.filteredCollections().pagedItems().length === 0">
+     {{ if is_current_user_profile: }}
+        No matching collections found! You can <a href="/curator/profile">clear all
+        filters</a>, create a new collection using the button above, or 
+        <a href="/curator/collections">collaborate with others</a> to add collections here.
+     {{ else: }}
+        No matching collections found! Try <a href="/curator/profile">clearing all
+        filters</a> to see more.
+     {{ pass }}
+    </div> 
+
+</div><!-- /#collection-list-container -->
 
 {{ pass }}
     

@@ -47,7 +47,6 @@ var History = window.History; // Note: capital H refers to History.js!
 
 // these variables should already be defined in the main HTML page
 var findAllTreeCollections_url;
-var viewOrEdit;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -178,7 +177,7 @@ function loadCollectionList(option) {
                 return;
             }
             
-            viewModel = data; /// ko.mapping.fromJS( fakeStudyList );  // ..., mappingOptions);
+            viewModel = data;
 
             // enable sorting and filtering for lists in the editor
             viewModel.listFilters = {
@@ -256,13 +255,14 @@ function loadCollectionList(option) {
 
                             case 'Collections I own':
                                 // show only matching studies
+                                var userIsTheCreator = false;
                                 if (('creator' in collection) && ('login' in collection.creator)) { 
                                     // compare to logged-in userid provide in the main page
-                                    if (collection.creator.login !== userLogin) {
-                                        return false; // stop looping on trees
+                                    if (collection.creator.login === userLogin) {
+                                        userIsTheCreator = true;
                                     }
                                 }
-                                break;
+                                return userIsTheCreator;
 
                             case 'Collections I participate in':
                                 var userIsTheCreator = false;
@@ -281,10 +281,7 @@ function loadCollectionList(option) {
                                         }
                                     });
                                 }
-                                if (userIsTheCreator || userIsAContributor) {
-                                    return true;
-                                }
-                                return false;
+                                return (userIsTheCreator || userIsAContributor);
 
                             case 'Collections I follow':
                                 // TODO: implement this once we have a favorites API
@@ -364,11 +361,11 @@ function loadCollectionList(option) {
             $('#collection-list-container .pagination li.repeating-page:gt(0)').remove();
             $('#collection-list-container .pagination li.repeating-spacer:gt(0)').remove();
             ko.applyBindings(viewModel, listArea);
+            bindHelpPanels();
 
             if (option === 'REFRESH') {
                 updateClearSearchWidget( '#collection-list-filter', viewModel.listFilters.COLLECTIONS.match );
             }
-            
             if (option === 'INIT') {
                 hideModalScreen();
             }
