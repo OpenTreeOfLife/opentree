@@ -435,7 +435,6 @@ function fetchAndShowCollection( collectionID ) {
         success: function( data ) {  // success callback
             // N.B. this includes the core collection JSON, plus a wrapper that
             // has history and other supporting values.
-            console.log(data);
             showCollectionViewer(data);
         },
         error: function( jqXHR, textStatus, errorThrown ) {
