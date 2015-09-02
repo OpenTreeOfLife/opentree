@@ -1,0 +1,36 @@
+swagger: '2.0'
+# This is your document metadata
+info:
+  version: "3.0.0a"
+  title: Open Tree of Life
+
+# Describe your paths here
+paths:
+  /tree_of_life/about:
+    get:
+      description: |
+        Returns summary information about the current synthetic tree of life,
+        including information about the list of source trees and the taxonomy
+        used to build it.
+      parameters:
+        # An example parameter that is in query and is required
+        -
+          name: study_list
+          in: query
+          description: Whether or not to include the complete list of references
+            to the input source trees
+          required: true
+          type: boolean
+      # Expected responses for this operation:
+      responses:
+        # Response code
+        200:
+          description: Successful response
+          schema:
+            title: TreeAbout
+            type: object
+            properties:
+              date_created:
+                type: string
+              tree_id:
+                type: string
