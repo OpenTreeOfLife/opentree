@@ -425,6 +425,7 @@ function fetchAndShowCollection( collectionID ) {
      * in a popup.  This should always get the lastest version from the docstore, 
      * complete with its commit history and merged edits from other users.
      */
+    showModalScreen( "Loading tree collection...", {SHOW_BUSY_BAR:true});
     var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID);
     $.ajax({
         type: 'GET',
@@ -442,6 +443,7 @@ function fetchAndShowCollection( collectionID ) {
         },
         complete: function( jqXHR, textStatus ) {
             //debugger;
+            hideModalScreen();
         }
     });
 }
@@ -1152,6 +1154,11 @@ function validateCollectionData( collection ) {
 function promptForSaveCollectionComments( collection ) {
     // show a modal popup to gather comments (or cancel)
     if (validateCollectionData( collection )) {
+        // stash current collection ID (so we can hide editor)
+        var collectionID = currentlyEditingCollectionID;
+        currentlyEditingCollectionID = null;
+        $('#tree-collection-viewer').modal('hide');
+
         $('#save-collection-comments-popup').modal('show');
         // buttons there do the remaining work
         $('#save-collection-comments-submit')
@@ -1160,10 +1167,22 @@ function promptForSaveCollectionComments( collection ) {
                 $('#save-collection-comments-popup').modal('hide'); 
                 saveTreeCollection( collection ); 
             });
+        $('#save-collection-comments-cancel')
+            .unbind('click')
+            .click(function() {
+                currentlyEditingCollectionID = collectionID;
+                $('#tree-collection-viewer').modal('show');
+                return true;
+            });
     }
 }
 function promptForDeleteCollectionComments( collection ) {
     if ($.isPlainObject(collection) && ('versionHistory' in collection)) {
+        // stash current collection ID (so we can hide editor)
+        var collectionID = currentlyEditingCollectionID;
+        currentlyEditingCollectionID = null;
+        $('#tree-collection-viewer').modal('hide');
+
         // this collection has been saved; show a modal popup to gather comments (or cancel)
         $('#delete-collection-comments-popup').modal('show');
         // buttons there do the remaining work
@@ -1172,6 +1191,13 @@ function promptForDeleteCollectionComments( collection ) {
             .click(function() {
                 $('#delete-collection-comments-popup').modal('hide'); 
                 deleteTreeCollection( collection ); 
+            });
+        $('#delete-collection-comments-cancel')
+            .unbind('click')
+            .click(function() {
+                currentlyEditingCollectionID = collectionID;
+                $('#tree-collection-viewer').modal('show');
+                return true;
             });
     } else {
         // new collection hasn't been saved; just close the editor
@@ -1302,7 +1328,6 @@ function saveTreeCollection( collection ) {
                 return;
             }
             // presume success from here on
-            hideModalScreen();
             showSuccessMessage('Collection saved to remote storage.');
             popPageExitWarning();
             // refresh any collection list on the current page
@@ -1316,6 +1341,7 @@ function saveTreeCollection( collection ) {
                 // add empty history to hint that we should hold the editor open
                 collection['versionHistory'] = [ ];
             }
+            hideModalScreen();
             cancelChangesToCollection(collection);
         }
     });
