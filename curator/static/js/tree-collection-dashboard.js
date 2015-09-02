@@ -360,6 +360,9 @@ function loadCollectionList(option) {
             $('#collection-list-container tr:gt(1)').remove();
             // remove extra menu items in list filters
             $('#collection-list-container .dropdown-menu').find('li:gt(0)').remove();
+            // remove extra pagination elements below
+            $('#collection-list-container .pagination li.repeating-page:gt(0)').remove();
+            $('#collection-list-container .pagination li.repeating-spacer:gt(0)').remove();
             ko.applyBindings(viewModel, listArea);
 
             if (option === 'REFRESH') {
