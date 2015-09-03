@@ -351,7 +351,6 @@ elif active_user_found:
         data-bind="visible: true"><!-- TODO: hide if no collections found -->
       <thead>
         <tr>
-            <th width="16">&nbsp;</th><!-- favorites -->
             <th>Collection name (click to view)</th>
             <th>How many trees</th>
             <th>Last modified</th>
@@ -361,9 +360,6 @@ elif active_user_found:
 
       <tbody data-bind="foreach: { data: viewModel.filteredCollections().pagedItems(), as: 'collection' }">
         <tr>
-            <td>
-                <i class="icon-star" style="opacity: 0.3;" title="You participate in (but do not follow) this collection"></i><!-- TODO: icon+title varies based on current following state -->
-            </td>
             <td data-bind="html: getViewLink(collection)">&nbsp;</td>
             <td data-bind="html: getTreeCount(collection)">&nbsp;</td>
             <td data-bind="html: getLastModification(collection)">&nbsp;</td>

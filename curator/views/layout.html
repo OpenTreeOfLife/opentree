@@ -505,34 +505,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <i class="icon-share"></i>
             </button>
 
-            <!-- FOLLOW options -->
-            <div class="pull-right btn-group"
-                 style="margin-left: 4px;">
-                        <button Xdata-bind="click: TODO-remove-this-collection,
-                                            visible: true"
-                            title="Following this collection (click to change)"
-                            class="btn btn-mini row-controls-ghosted dropdown-toggle" data-toggle="dropdown">
-                            <i class="icon-star"></i><!-- TODO: icon+title varies based on current following state -->
-                            <span class="caret"></span>
-                        </button>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a Xdata-bind="click: TODO-ignore-this-collection">
-                            <i class="icon-star-empty" style="opacity: 0.3;"></i> Ignore this collection</a>
-                    </li>
-                    <li>
-                        <a Xdata-bind="click: TODO-follow-this-collection">
-                            <i class="icon-star"></i> Follow this collection</a>
-                    </li>
-                    <!--
-                    <li>
-                        <a Xdata-bind="click: TODO-get-alerts-for-this-collection">
-                            <i class="icon-bell"></i> Follow with alerts</a>
-                    </li>
-                    -->
-                </ul>
-            </div>
-
            <!-- ko if: ('external_url' in $data) -->
             <!-- DOWNLOAD button -->
             <a data-bind="attr: { href: $data['external_url'] }"
