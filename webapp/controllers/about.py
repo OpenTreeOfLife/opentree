@@ -278,10 +278,22 @@ def synthesis_release():
             vars={}, 
             args=[release_version]))
 
-    view_dict['release_version'] = request.args[0]
+    synth_release_version = request.args[0]
+    view_dict['release_version'] = synth_release_version
     view_dict['synthesis_stats'] = synth
-    # TODO: fetch and render Markdown release notes as HTML
-    ##view_dict['release_notes'] =
+
+    # fetch and render Markdown release notes as HTML
+    from gluon.tools import fetch
+    from gluon.contrib.markdown.markdown2 import markdown
+    from urllib2 import HTTPError
+    fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/germinator/master/doc/ot-synthesis-{v}.md'.format(v=synth_release_version)
+    try:
+        version_notes_response = fetch(fetch_url)
+        # N.B. We assume here that any hyperlinks have the usual Markdown braces!
+        version_notes_html = markdown(version_notes_response).encode('utf-8')
+    except HTTPError:
+        version_notes_html = None
+    view_dict['synthesis_release_notes'] = version_notes_html
 
     return view_dict
 

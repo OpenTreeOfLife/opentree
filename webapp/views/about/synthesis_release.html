@@ -97,31 +97,25 @@ circle.taxo-release-marker {
               </div>
 
               <h3>Statistics</h3>
-
               <div id="synthesis-stats-missing" class="alert alert-error" style="display: none;">
                   No synthesis statistics found!
               </div>
-
               <div id="synthesis-stats-panel" class="stats-panel" style="display: none;">
                   <table class="table table-condensed table-hover" style="clear: left;"></table>
               </div>
 
-              <!--
-              <h3 style="clear: both;">Downloads</h3>
-              <p style="font-style: italic;">
-                TODO: Read download files list from static site?
-              </p>
-              <h3>Notes</h3>
-              <p style="font-style: italic;">
-                TODO: Render README (markdown =&gt; HTML) from static files?
-              </p>
-              -->
-
-              <!--
-              <p style="font-style: italic;">
-                TODO: List all trees and studies (mimic Bibliographic Refs page?)
-              </p>
-              -->
+              <h3>Release notes</h3>
+              <em>A fuller release history (including early draft versions) is available in the <a href="https://github.com/OpenTreeOfLife/germinator/tree/master/doc" target="_blank">germinator documentation</a>:</em>
+            {{ if synthesis_release_notes: }}
+              <div id="taxonomy-version-notes"
+                   style="background-color: #f5f5f5; padding: 1em; border-radius: 6px;">
+                  {{= XML(synthesis_release_notes) }}
+              </div>
+            {{ else: }}
+              <div class="alert alert-error">
+                  No release notes found for this synthesis release!
+              </div>
+            {{ pass }}
 
               <p>Information and downloads for all synthesis releases can be found at <a href="http://files.opentreeoflife.org/trees/">http://files.opentreeoflife.org/trees/</a>.</p>
 
@@ -268,7 +262,8 @@ function showCurrentSynthesisProfile() {
         'date': "Date",
         'OTT_version': "Open Tree Taxonomy version used",
         'tree_count': "Trees in synthesis",
-        'total_OTU_count': "OTUs from phylogeny"
+        'total_OTU_count': "OTUs from phylogeny",
+        'tip_count': "Tips in synthetic tree"
     }
     for (var prop in propsToDisplayLabels) {
         var itsLabel = propsToDisplayLabels[ prop ];
@@ -291,6 +286,7 @@ function showCurrentSynthesisProfile() {
                          + taxoVersion
                          + '</a>';
                 break;
+            case 'tip_count':
             case 'tree_count':
             case 'total_OTU_count':
             case 'total_OTU_count':
