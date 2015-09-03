@@ -148,16 +148,16 @@ function updateClearSearchWidget( searchFieldSelector, observable ) {
         // remove clear widget, if any
         $search.next('.clear-search').remove();
     } else {
-        // add and enable the clear widget
+        // add and enable (or rebind) the clear widget
         var $clear = $search.next('.clear-search');
         if ($clear.length === 0) {
             $search.after('<i class="clear-search icon-remove"></i>');
             $clear = $search.next('.clear-search');
-            $clear.click(function() {
-               $(this).prev().val('').trigger('change'); 
-               return false;
-            });
         }
+        $clear.unbind('click').click(function() {
+           $(this).prev().val('').trigger('change'); 
+           return false;
+        });
     }
 }
 
@@ -420,32 +420,29 @@ var userLogin;
 var userDisplayName;
 var singlePropertySearchForTrees_url;
 
-var testCollection = null;
-function loadAndShowTestCollection() {
-    // fetch a known-good collection from the tree-collections API, and open it in a popup
-    if (testCollection) {
-        // just load it once?
-        showCollectionViewer(testCollection);
-        return;
-    }
-    // On first request, load this via the API
-    var testCollectionID = 'jimallman/my-test-collection';
-    var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', testCollectionID);
+function fetchAndShowCollection( collectionID ) {
+    /* Fetch a known-good collection from the tree-collections API, and open it
+     * in a popup.  This should always get the lastest version from the docstore, 
+     * complete with its commit history and merged edits from other users.
+     */
+    showModalScreen( "Loading tree collection...", {SHOW_BUSY_BAR:true});
+    var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID);
     $.ajax({
         type: 'GET',
         //dataType: 'json',
         url: fetchURL,
         //data: {},
         success: function( data ) {  // success callback
-            //console.log(data);
-            testCollection = data;
-            showCollectionViewer(testCollection);
+            // N.B. this includes the core collection JSON, plus a wrapper that
+            // has history and other supporting values.
+            showCollectionViewer(data);
         },
         error: function( jqXHR, textStatus, errorThrown ) {
-            showErrorMessage("Unable to load collection '"+ testCollectionID +"'");
+            showErrorMessage("Unable to load collection '"+ collectionID +"'");
         },
         complete: function( jqXHR, textStatus ) {
             //debugger;
+            hideModalScreen();
         }
     });
 }
@@ -540,15 +537,6 @@ function showCollectionViewer( collection, options ) {
 
     }
 
-    // TODO: adapt tags widget from tree viewer?
-    /*
-    if (viewOrEdit == 'EDIT') {
-        // TODO: reset observables for some options?
-        viewModel.chosenNodeLabelModeInfo = ko.observable(null);
-        viewModel.nodeLabelModeDescription = ko.observable('');
-    }
-    */
-
     // add any missing 'rank' properties
     ensureTreeCollectionRanking( collection );
 
@@ -632,11 +620,19 @@ function showCollectionViewer( collection, options ) {
 }
 
 // Use a known-good URL fragment to extract a collection ID from its API URL
-var collectionURLSplitter = '/v2/collection/';
+var collectionURLSplitterAPI = '/v2/collection/';
+// Fall back to raw-data URL in some cases
+var collectionURLSplitterRaw = '/collections/';
 
 function getCollectionIDFromURL(url) {
     // anything after the known API endpoint is a collection ID
-    return url.split( collectionURLSplitter )[1];
+    var fromAPI = url.split( collectionURLSplitterAPI )[1];
+    var fromRawData = url.split( collectionURLSplitterRaw )[1];
+    if (fromRawData) {
+        // strip file extension
+        fromRawData = fromRawData.split('.json')[0];
+    }
+    return fromAPI || fromRawData;
 }
 
 function updateNewCollTreeUI() {
@@ -682,7 +678,7 @@ function createNewTreeCollection() {
     newCollection.creator.login = userLogin;
     newCollection.creator.name = userDisplayName;
     // make an initial bogus URL, for display
-    newCollection.url = ( collectionURLSplitter + userLogin +"/");
+    newCollection.url = ( collectionURLSplitterAPI + userLogin +"/");
 
     // wrap this in a stripped-down version of the usual fetched JSON
     var wrappedNewCollection = {
@@ -694,19 +690,18 @@ function createNewTreeCollection() {
 }
 
 function updateNewCollectionID( collection ) {
-    if ('version_history' in collection) {
+    if ('versionHistory' in collection) {
         // it's an existing collection with a frozen ID
         return false;
     }
     // it's a new collection; build an ID based on its name!
-    var urlParts = collection.data.url.split();
     var nameSlug = slugify(collection.data.name);
     // build a fresh ID with current user as creator
-    collection.data.url = collectionURLSplitter + userLogin +'/'+ nameSlug;
-    //console.log(">>> collection.data.url = "+ collection.data.url);
+    collection.data.url = collectionURLSplitterAPI + userLogin +'/'+ nameSlug;
     var proposedID = getCollectionIDFromURL( collection.data.url );
-    //console.log(">>> proposedID = "+ proposedID);
     $('#collection-id-display').text( proposedID );
+    // update in-use ID (for good refresh)
+    currentlyEditingCollectionID = proposedID;
 }
 
 function addTreeToCollection( collection, inputType ) {
@@ -735,6 +730,21 @@ function addTreeToCollection( collection, inputType ) {
               + '/?tab=trees&tree=<strong>tree6698</strong>');
             return false;
         } 
+    }
+
+    // check to see if this tree is already in the collection; if so, bail w/ a message
+    var alreadyInCollection = false;
+    $.each(collection.data.decisions, function(i, decision) {
+        if ((decision.treeID === treeID) && (decision.studyID === studyID)) {
+            showErrorMessage("This tree is already in the collection as '<strong>"+ 
+                decision.name +"</strong>'");
+            // TODO: scroll the list to show this tree!? highlight it?
+            alreadyInCollection = true;
+            return false;
+        }
+    });
+    if (alreadyInCollection) {
+        return false;
     }
 
     // still here? let's look for a matching tree in the study index
@@ -1043,12 +1053,6 @@ function stripTreeCollectionRanking( collection ) {
     });
 }
 
-function deleteTreeCollection() {
-    // TODO: prompt for commit msg along with confirmation?
-    if (confirm('Are you sure you want to delete this tree collection?')) {
-        alert('TODO');
-    }
-}
 function removeTreeFromCollection(tree, collection) {
     // TODO: prompt for commit msg along with confirmation?
     if (confirm('Are you sure you want to remove this tree from the collection?')) {
@@ -1066,26 +1070,363 @@ function removeTreeFromCollection(tree, collection) {
 
 var currentlyEditingCollectionID = null;
 function userIsEditingCollection( collection ) {
-    return (currentlyEditingCollectionID === collection.data['url']);
+    if ('data' in collection && 'url' in collection.data) {
+        var collectionID = getCollectionIDFromURL( collection.data.url );
+        return (currentlyEditingCollectionID === collectionID);
+    }
+    console.warn("returning false for malformed collection:");
+    console.warn(collection);
+    return false;
 }
-function editCollection( collection ) {
-    // toggle to full editing UI
-    currentlyEditingCollectionID = collection.data['url'];
-    showCollectionViewer( collection );  // to refresh the UI
-    pushPageExitWarning();
-}
-function saveChangesToCollection( collection ) {
-    // TODO: prompt for commit msg and confirmation?
-    if (confirm('Are you sure you want to save your changes to this collection?')) {
-        alert('TODO');
-        popPageExitWarning();
+
+function copyCollection( collection ) {
+    // create a user-owned copy (or login if user is anonymous)
+    if (userIsLoggedIn()) {
+        /* Step by step:
+         * - change its creator/owner to the current user
+         * - assert its new ID as {current_user}/{old_name} and rely on the API
+         *   to modify this as needed for uniqueness
+         * - submit this collection (a copy) via POST
+         * - get the new result; reload the page + list, possibly filtered to show the new ID?
+         *  OR
+         * - editCollection(newCollection) to bring this up in the editor?
+         */
+        // populate the creator fields using client-side data
+        collection.data.creator.login = userLogin;
+        collection.data.creator.name = userDisplayName;
+        // remove this user from collaborators list, if found
+        collection.data.contributors = $.grep(collection.data.contributors, function(i, c) {
+            return (c.login !== userLogin);
+        });
+        // modify its (proposed) ID to reflect the current user
+        var nameStub = getCollectionIDFromURL(collection.data.url).split('/')[1];
+        collection.data.url = (collectionURLSplitterAPI + userLogin +"/"+ nameStub);
+        // clobber its versionHistory to trigger create (vs. update) behavior
+        delete collection['versionHistory'];
+        promptForSaveCollectionComments( collection );
+        // from this point, it's treated like a new collection
+    } else {
+        if (confirm('Copying a tree collection requires login via Github. OK to proceed?')) {
+            loginAndReturn(); 
+        }
     }
 }
-function cancelChangesToCollection( collection ) {
-    // refresh collection from storage, toggle to view-only UI
-    currentlyEditingCollectionID = null;
-    // TODO: replace with unchanged collection from storage!
-    showCollectionViewer( collection );  // to refresh the UI
+
+function editCollection( collection ) {
+    // toggle to full editing UI (or login if user is anonymous)
+    if (userIsLoggedIn()) {
+        if ('data' in collection && 'url' in collection.data) {
+            currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
+            showCollectionViewer( collection );  // to refresh the UI
+            pushPageExitWarning();
+            return;
+        }
+        console.warn("can't edit malformed collection:");
+        console.warn(collection);
+    } else {
+        if (confirm('Editing a tree collection requires login via Github. OK to proceed?')) {
+            loginAndReturn(); 
+        }
+    }
+}
+
+function loginAndReturn() {
+    // bounce anonymous user to login (taking advantage of _next URL set elsewhere)
+    var $loginLinks = $('a:not(.sticky-login):contains(Login)');
+    if ($loginLinks.length > 0) {
+        // use Login link for most accurate re-entry (current tab, tree, etc)
+        window.location = $loginLinks.eq(0).attr('href');
+    } else {
+        // no Login link found!? use default login URL (and approximate re-entry)
+        window.location = '/curator/user/login?_next='+ window.location.pathname;
+    }
+}
+
+function validateCollectionData( collection ) {
+    // do some basic sanity checks on the current tree collection
+    if ($.trim(collection.data.name) === '') {
+        showErrorMessage('Tree collection requires a name');
+        return false;
+    }
+    return true;
+}
+function promptForSaveCollectionComments( collection ) {
+    // show a modal popup to gather comments (or cancel)
+    if (validateCollectionData( collection )) {
+        // stash current collection ID (so we can hide editor)
+        var collectionID = currentlyEditingCollectionID;
+        currentlyEditingCollectionID = null;
+        $('#tree-collection-viewer').modal('hide');
+
+        $('#save-collection-comments-popup').modal('show');
+        // buttons there do the remaining work
+        $('#save-collection-comments-submit')
+            .unbind('click')
+            .click(function() {
+                $('#save-collection-comments-popup').modal('hide'); 
+                saveTreeCollection( collection ); 
+            });
+        $('#save-collection-comments-cancel')
+            .unbind('click')
+            .click(function() {
+                currentlyEditingCollectionID = collectionID;
+                $('#tree-collection-viewer').modal('show');
+                return true;
+            });
+    }
+}
+function promptForDeleteCollectionComments( collection ) {
+    if ($.isPlainObject(collection) && ('versionHistory' in collection)) {
+        // stash current collection ID (so we can hide editor)
+        var collectionID = currentlyEditingCollectionID;
+        currentlyEditingCollectionID = null;
+        $('#tree-collection-viewer').modal('hide');
+
+        // this collection has been saved; show a modal popup to gather comments (or cancel)
+        $('#delete-collection-comments-popup').modal('show');
+        // buttons there do the remaining work
+        $('#delete-collection-comments-submit')
+            .unbind('click')
+            .click(function() {
+                $('#delete-collection-comments-popup').modal('hide'); 
+                deleteTreeCollection( collection ); 
+            });
+        $('#delete-collection-comments-cancel')
+            .unbind('click')
+            .click(function() {
+                currentlyEditingCollectionID = collectionID;
+                $('#tree-collection-viewer').modal('show');
+                return true;
+            });
+    } else {
+        // new collection hasn't been saved; just close the editor
+        currentlyEditingCollectionID = null;
+        $('#tree-collection-viewer').modal('hide');
+    }
+}
+function saveTreeCollection( collection ) {
+    // user has confirmed; fix up and submit data
+    // N.B. that we might be CREATING or UPDATING
+    var createOrUpdate;
+    if ('versionHistory' in collection) {
+        // we're UPDATING an existing collection
+        createOrUpdate = 'UPDATE';
+    } else {
+        // we're CREATING a new collection
+        createOrUpdate = 'CREATE';
+    }
+
+    showModalScreen( 
+        (createOrUpdate === 'UPDATE') ? "Saving tree collection..." : "Adding tree collection...", 
+        {SHOW_BUSY_BAR:true}
+    );
+
+    // add this user to contributors (or creator)
+    var foundUser = false;
+    if (collection.data.creator && collection.data.creator.login ) {
+        // check to see if they're the creator (if so, we're done)
+        if (collection.data.creator.login === userLogin) {
+            foundUser = true;
+        }
+    } else {
+        // add as the creator if none is defined, or if login field is empty
+        collection.data.creator = {};
+        collection.data.creator.login = userLogin;
+        collection.data.creator.name = userDisplayName;
+        foundUser = true;
+    }
+    if (!foundUser) {
+        // check for the user among the listed contributors
+        $.each(collection.data.contributors, function(i, c) {
+            if (c.login === userLogin) {
+                foundUser = true;
+                return false;
+            }
+        });
+        if (!foundUser) {
+            // add this user to the contributors list
+            collection.data.contributors.push({
+                login: userLogin,
+                name: userDisplayName
+            });
+            foundUser = true;
+        }
+    }
+
+    // remove explicit ranking values (rely on array order)
+    stripTreeCollectionRanking( collection );
+
+    // push changes back to storage
+    var saveURL;
+    if (createOrUpdate === 'UPDATE') {
+        // we're UPDATING an existing collection
+        var collectionID = getCollectionIDFromURL( collection.data.url );
+        saveURL = API_update_collection_PUT_url.replace('{COLLECTION_ID}', collectionID);
+    } else {
+        // we're CREATING a new collection
+        saveURL = API_create_collection_POST_url;
+    }
+
+    // gather commit message (if any) from pre-save popup
+    var commitMessage;
+    var firstLine = $('#save-collection-comment-first-line').val();
+    var moreLines = $('#save-collection-comment-more-lines').val();
+    if ($.trim(firstLine) === '') {
+        commitMessage = $.trim(moreLines);
+    } else if ($.trim(moreLines) === ''){
+        commitMessage = $.trim(firstLine);
+    } else {
+        commitMessage = $.trim(firstLine) +"\n\n"+ $.trim(moreLines);
+    }
+    
+    // add non-JSON values to the query string
+    var qsVars = $.param({
+        author_name: userDisplayName,
+        author_email: userEmail,
+        auth_token: userAuthToken,
+        starting_commit_SHA: collection.sha,
+        commit_msg: commitMessage
+    });
+    saveURL += ('?'+ qsVars);
+
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        type: (createOrUpdate === 'UPDATE') ? 'PUT' : 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: saveURL,
+        processData: false,
+        data: JSON.stringify(collection.data),
+        //data: collection,  // OR collection.data?
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                if (jqXHR.status >= 500) {
+                    // major server-side error, just show raw response for tech support
+                    var errMsg = 'Sorry, there was an error saving this collection. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                    hideModalScreen();
+                    showErrorMessage(errMsg);
+                    return;
+                }
+                // Server blocked the save due to major validation errors!
+                var data = $.parseJSON(jqXHR.responseText);
+                // TODO: this should be properly parsed JSON, show it more sensibly
+                // (but for now, repeat the crude feedback used above)
+                var errMsg = 'Sorry, there was an error in the study data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            var putResponse = $.parseJSON(jqXHR.responseText);
+
+            if (putResponse['merge_needed']) {
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Collection%20merge%20needed%20-%20'+ putResponse.sha +'">report this error</a> to the Open Tree of Life software team';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            // presume success from here on
+            showSuccessMessage('Collection saved to remote storage.');
+            popPageExitWarning();
+            // refresh any collection list on the current page
+            if (typeof loadCollectionList === 'function') {
+                loadCollectionList('REFRESH');
+            }
+            // update in-use ID in case phylesystem API has forced a new one
+            currentlyEditingCollectionID = putResponse['resource_id'];
+            // get fresh JSON and refresh the form (view only)
+            if (createOrUpdate === 'CREATE') {
+                // add empty history to hint that we should hold the editor open
+                collection['versionHistory'] = [ ];
+            }
+            hideModalScreen();
+            cancelChangesToCollection(collection);
+        }
+    });
+}
+function deleteTreeCollection( collection ) {
+    // user has already confirmed and provided commit msg
+    var collectionID = getCollectionIDFromURL( collection.data.url );
+    var removeURL = API_remove_collection_DELETE_url.replace('{COLLECTION_ID}', collectionID);
+    // gather commit message (if any) from pre-save popup
+    var commitMessage;
+    var firstLine = $('#delete-collection-comment-first-line').val();
+    var moreLines = $('#delete-collection-comment-more-lines').val();
+    if ($.trim(firstLine) === '') {
+        commitMessage = $.trim(moreLines);
+    } else if ($.trim(moreLines) === ''){
+        commitMessage = $.trim(firstLine);
+    } else {
+        commitMessage = $.trim(firstLine) +"\n\n"+ $.trim(moreLines);
+    }
+
+    // add auth-token to the query string (no body allowed!)
+    var qsVars = $.param({
+        author_name: userDisplayName,
+        author_email: userEmail,
+        auth_token: userAuthToken,
+        starting_commit_SHA: collection.sha,
+        commit_msg: commitMessage
+    });
+    removeURL += ('?'+ qsVars);
+
+    // do the actual removal (from the remote file-store) via AJAX
+    showModalScreen("Deleting tree collection...", {SHOW_BUSY_BAR:true});
+
+    $.ajax({
+        type: 'DELETE',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: removeURL, // modified API call, see above
+        data: {},   // sadly not recognized for DELETE, using query-string instead 
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                showErrorMessage('Sorry, there was an error removing this collection.');
+                console.log("ERROR: textStatus !== 'success', but "+ textStatus);
+                return;
+            }
+            /*
+            if (data.message !== 'File deleted') {
+                showErrorMessage('Sorry, there was an error removing this study.');
+                console.log("ERROR: message !== 'File deleted', but "+ data.message);
+                return;
+            }
+            */
+
+            // OK, looks like the operation was a success
+            currentlyEditingCollectionID = null; // enables closing this window
+            popPageExitWarning();
+            // refresh any collection list on the current page
+            if (typeof loadCollectionList === 'function') {
+                loadCollectionList('REFRESH');
+            }
+            hideModalScreen();
+            $('#tree-collection-viewer').modal('hide');
+
+            // parse the payload to see if a merge is required
+            var result = $.parseJSON(jqXHR.responseText);
+            if (result['merge_needed']) {
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Collection%20merge%20needed%20-%20'+ result.sha +'">report this error</a> to the Open Tree of Life software team';
+                showErrorMessage(errMsg);
+            } else {
+                showSuccessMessage('Collection removed, refreshing list...');
+            }
+        }
+    });
+}
+function cancelChangesToCollection(collection) {
+    if ($.isPlainObject(collection) && ('versionHistory' in collection)) {
+        // refresh collection from storage, toggle to view-only UI
+        fetchAndShowCollection( currentlyEditingCollectionID );
+        currentlyEditingCollectionID = null;
+    } else {
+        // new collection hasn't been saved; just close the editor
+        currentlyEditingCollectionID = null;
+        $('#tree-collection-viewer').modal('hide');
+    }
     popPageExitWarning();
 }
 function userIsLoggedIn() {

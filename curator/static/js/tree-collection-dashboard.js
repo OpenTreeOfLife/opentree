@@ -47,7 +47,6 @@ var History = window.History; // Note: capital H refers to History.js!
 
 // these variables should already be defined in the main HTML page
 var findAllTreeCollections_url;
-var viewOrEdit;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -120,7 +119,7 @@ function updateListFiltersWithHistory() {
 
 $(document).ready(function() {
     bindHelpPanels();
-    //loadCollectionList();
+    loadCollectionList();
     
     // NOTE that our initial state is set in the main page template, so we 
     // can build it from incoming URL in web2py. Try to recapture this state,
@@ -132,94 +131,164 @@ $(document).ready(function() {
     }
 });
 
-function loadCollectionList() {
-    // show/hide spinner during all AJAX requests?
+function loadCollectionList(option) {
+    // Used for both initial list and refresh (to reflect adding/deleting collections).
+    option = option ? option: 'INIT'; // or 'REFRESH'
 
-    // use oti (study indexing service) to get the complete list
-    showModalScreen("Loading tree collection list...", {SHOW_BUSY_BAR:true});
+    if (option === 'INIT') {
+        showModalScreen("Loading tree collection list...", {SHOW_BUSY_BAR:true});
+    }
+
+    var effectiveFilters = {};
+    if (option === 'REFRESH') {
+        // preserve current filter values
+        for (var fName in viewModel.listFilters.COLLECTIONS) {
+            effectiveFilters[fName] = ko.unwrap(viewModel.listFilters.COLLECTIONS[fName]);
+        }
+    } else {
+        // use default filter values
+        effectiveFilters['match']  = "";
+        effectiveFilters['order']  = "Most recently modified";
+        effectiveFilters['filter'] = "All tree collections";
+    }
+    /*
+    if (!userIsLoggedIn()) {
+        // override filter if user is not logged in
+        console.log('ANON BOUNCE to show all collections');
+        effectiveFilters['filter'] = "All tree collections";
+    }
+    */
 
     $.ajax({
         type: 'POST',
         dataType: 'json',
         url: findAllTreeCollections_url,
-        data: { verbose: true },
+        data: null,  // TODO: do we need { verbose: true } or other options here?
         success: function( data, textStatus, jqXHR ) {
             // this should be properly parsed JSON
 
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
-                showErrorMessage('Sorry, there was an error loading the list of studies.');
+                showErrorMessage('Sorry, there was an error loading the list of tree collections.');
                 return;
             }
             if (typeof data !== 'object' || !($.isArray(data))) {
-                showErrorMessage('Sorry, there is a problem with the study-list data.');
+                showErrorMessage('Sorry, there is a problem with the tree-collection data.');
                 return;
             }
             
-            sortStudiesByDOI(data);
-
-            viewModel = data; /// ko.mapping.fromJS( fakeStudyList );  // ..., mappingOptions);
+            viewModel = data;
 
             // enable sorting and filtering for lists in the editor
             viewModel.listFilters = {
                 // UI widgets bound to these variables will trigger the
                 // computed display lists below..
                 'COLLECTIONS': {
-                    // TODO: add 'pagesize'?
-                    'match': ko.observable(""),
-                    'order': ko.observable("Most recently modified"),
-                    'filter': ko.observable("All tree collections")
+                    // use default (or preserved) filters, as determined above
+                    'match': ko.observable(effectiveFilters['match']),
+                    'order': ko.observable(effectiveFilters['order']),
+                    'filter': ko.observable(effectiveFilters['filter'])
                 }
             };
-            
+
             // maintain a persistent array to preserve pagination (reset when computed)
-            viewModel._filteredStudies = ko.observableArray( ).asPaged(20);
-            viewModel.filteredStudies = ko.computed(function() {
+            viewModel._filteredCollections = ko.observableArray( ).asPaged(20);
+            viewModel.filteredCollections = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
-                updateClearSearchWidget( '#study-list-filter', viewModel.listFilters.COLLECTIONS.match );
+                updateClearSearchWidget( '#collection-list-filter', viewModel.listFilters.COLLECTIONS.match );
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.COLLECTIONS.match(),
                     matchPattern = new RegExp( $.trim(match), 'i' );
-                var workflow = viewModel.listFilters.COLLECTIONS.workflow();
                 var order = viewModel.listFilters.COLLECTIONS.order();
+                var filter = viewModel.listFilters.COLLECTIONS.filter();
+
+                var showEmptyListWarningForAnonymousUser = false;
+                switch (filter) {
+                    case 'Collections I own':
+                    case 'Collections I participate in':
+                        if (!userIsLoggedIn()) {
+                            showEmptyListWarningForAnonymousUser = true;
+                        }
+                }
+                if (showEmptyListWarningForAnonymousUser) {
+                    $('#empty-collection-list-warning').show();
+                } else {
+                    $('#empty-collection-list-warning').hide();
+                }
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
                     viewModel, 
-                    function(study) {
+                    function(collection) {
                         // match entered text against pub reference (author, title, journal name, DOI)
-                        var pubReference = study['ot:studyPublicationReference'];
-                        var pubURL = study['ot:studyPublication'];
-                        var pubYear = study['ot:studyYear'];
-                        var tags = $.isArray(study['ot:tag']) ? study['ot:tag'].join('|') : study['ot:tag'];
-                        var curator = study['ot:curatorName'];
-                        var clade = ('ot:focalCladeOTTTaxonName' in study && 
-                                     ($.trim(study['ot:focalCladeOTTTaxonName']) !== "")) ?
-                                        study['ot:focalCladeOTTTaxonName'] :  // use mapped name if found
-                                        study['ot:focalClade']; // fall back to numeric ID (should be very rare)
-                        if (!matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
+                        var id, name, description, creator, contributors;
+                        var id = $.trim(collection['id']);
+                        var name = $.trim(collection['name']);
+                        var description = $.trim(collection['description']);
+                        // extract names and IDs of all stakeholders (incl. creator!)
+                        if ($.isPlainObject(collection['creator'])) {
+                            creator = $.trim(collection['creator'].name)
+                                +'|'+ $.trim(collection['creator'].login);
+                        } else {
+                            creator = "";
+                        }
+                        if ($.isArray(collection['contributors'])) {
+                            contributors = "";
+                            $.each(collection['contributors'], function(i,c) {
+                                contributors += ('|'+ $.trim(c.name) +'|'+ $.trim(c.login));
+                            });
+                        } else {
+                            contributors = "";
+                        }
+
+                        if (!matchPattern.test(id) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
                             return false;
                         }
-                        // check for filtered workflow state
-                        switch (workflow) {
-                            case 'Any workflow state':
+                        
+                        // check for preset filters
+                        switch (filter) {
+                            case 'All tree collections':
                                 // nothing to do here, all studies pass
                                 break;
 
-                            case 'Draft study':
-                            case 'Submitted for synthesis':
-                            case 'Under revision':
-                            case 'Included in synthetic tree':
+                            case 'Collections I own':
                                 // show only matching studies
-                                if (study.workflowState !== workflow) { 
-                                    return false; // stop looping on trees
+                                var userIsTheCreator = false;
+                                if (('creator' in collection) && ('login' in collection.creator)) { 
+                                    // compare to logged-in userid provide in the main page
+                                    if (collection.creator.login === userLogin) {
+                                        userIsTheCreator = true;
+                                    }
                                 }
+                                return userIsTheCreator;
+
+                            case 'Collections I participate in':
+                                var userIsTheCreator = false;
+                                var userIsAContributor = false;
+                                if (('creator' in collection) && ('login' in collection.creator)) { 
+                                    // compare to logged-in userid provide in the main page
+                                    if (collection.creator.login === userLogin) {
+                                        userIsTheCreator = true;
+                                    }
+                                }
+                                if (('contributors' in collection) && $.isArray(collection.contributors)) { 
+                                    // compare to logged-in userid provide in the main page
+                                    $.each(collection.contributors, function(i, c) {
+                                        if (c.login === userLogin) {
+                                            userIsAContributor = true;
+                                        }
+                                    });
+                                }
+                                return (userIsTheCreator || userIsAContributor);
+
+                            case 'Collections I follow':
+                                // TODO: implement this once we have a favorites API
                                 break;
 
                             default:
-                                console.log("Unexpected workflow for study list: ["+ workflow +"]");
+                                console.log("Unexpected filter for tree collection: ["+ filter +"]");
                                 return false;
                         }
 
@@ -234,213 +303,93 @@ function loadCollectionList() {
                      *   0 = no change
                      *   1 = b comes before a
                      */
-                    case 'Newest publication first':
+                    case 'Most recently modified':
                         filteredList.sort(function(a,b) { 
-                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
-                            return (a['ot:studyYear'] > b['ot:studyYear'])? -1 : 1;
+                            var aMod = a.lastModified.ISO_date;
+                            var bMod = b.lastModified.ISO_date;
+                            if (aMod === bMod) return 0;
+                            return (aMod < bMod)? 1 : -1;
                         });
                         break;
 
-                    case 'Oldest publication first':
+                    case 'Most recently modified (reversed)':
                         filteredList.sort(function(a,b) { 
-                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
-                            return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
+                            var aMod = a.lastModified.ISO_date;
+                            var bMod = b.lastModified.ISO_date;
+                            if (aMod === bMod) return 0;
+                            return (aMod > bMod)? 1 : -1;
                         });
                         break;
 
-                    case 'Workflow state':
-                        var displayOrder = {
-                            'Draft study': 1,
-                            'Submitted for synthesis': 2,
-                            'Under revision': 3,
-                            'Included in synthetic tree': 4
-                        };
+                    case 'By owner/name':
                         filteredList.sort(function(a,b) { 
-                            var aDisplayOrder = displayOrder[ a.workflowState ];
-                            var bDisplayOrder = displayOrder[ b.workflowState ];
-                            if (aDisplayOrder === bDisplayOrder) return 0;
-                            return (aDisplayOrder < bDisplayOrder) ? -1 : 1;
+                            // first element is the ID with user-name/collection-name
+                            if (a.id === b.id) return 0;
+                            return (a.id < b.id) ? -1 : 1;
                         });
                         break;
 
-                    case 'Completeness':
+                    case 'By owner/name (reversed)':
                         filteredList.sort(function(a,b) { 
-                            if (a.completeness === b.completeness) return 0;
-                            return (a.completeness < b.completeness) ? -1 : 1;
+                            // first element is the ID with user-name/collection-name
+                            if (a.id === b.id) return 0;
+                            return (a.id > b.id) ? -1 : 1;
                         });
                         break;
 
+                    // TODO: add a filter for 'Has un-merged changes'?
+                    
                     default:
-                        console.log("Unexpected order for OTU list: ["+ order +"]");
-                        return false;
+                        console.warn("Unexpected order for collection list: ["+ order +"]");
+                        return null;
 
                 }
-                viewModel._filteredStudies( filteredList );
-                viewModel._filteredStudies.goToPage(1);
-                return viewModel._filteredStudies;
-            }); // END of filteredStudies
+                viewModel._filteredCollections( filteredList );
+                viewModel._filteredCollections.goToPage(1);
+                return viewModel._filteredCollections;
+            }); // END of filteredCollections
                     
-            ko.applyBindings(viewModel);
+            // bind just to the main collection list (not the single-collection editor!)
+            var listArea = $('#collection-list-container')[0];
+            ko.cleanNode(listArea);
+            // remove all but one list entry (else they multiply!)
+            // N.B. that we also skip the first (header) row!
+            $('#collection-list-container tr:gt(1)').remove();
+            // remove extra menu items in list filters
+            $('#collection-list-container .dropdown-menu').find('li:gt(0)').remove();
+            // remove extra pagination elements below
+            $('#collection-list-container .pagination li.repeating-page:gt(0)').remove();
+            $('#collection-list-container .pagination li.repeating-spacer:gt(0)').remove();
+            ko.applyBindings(viewModel, listArea);
+            bindHelpPanels();
 
-            hideModalScreen();
-        }
-    });
-}
-
-/* gather any duplicate studies (with same DOI) */
-var studiesByDOI = {};
-function sortStudiesByDOI(studyList) {
-    studiesByDOI = {};
-    $.each( studyList, function(i, study) {
-        var studyID = study['ot:studyId'];
-        var studyDOI = ('ot:studyPublication' in study) ? study['ot:studyPublication'] : "";
-        if (studyDOI !== "") {
-            if ('studyDOI' in studiesByDOI) {
-                studiesByDOI[ studyDOI ].push( studyID );
-            } else {
-                studiesByDOI[ studyDOI ] = [ studyID ];
+            if (option === 'REFRESH') {
+                updateClearSearchWidget( '#collection-list-filter', viewModel.listFilters.COLLECTIONS.match );
+            }
+            if (option === 'INIT') {
+                hideModalScreen();
             }
         }
     });
-    // remove all but the entries with actual dupes
-    for (var doi in studiesByDOI) {
-        if (studiesByDOI[ doi ].length < 2) {
-            delete studiesByDOI[doi];
-        }
-    }
-}
-function getDuplicateStudyMarker(study) {
-    var studyDOI = ('ot:studyPublication' in study) ? study['ot:studyPublication'] : "";
-    if (studyDOI !== "") {
-        var dupes = studiesByDOI[ studyDOI ];
-        if (dupes && dupes.length > 1) {
-            return '&nbsp; <a href="#" onclick="filterByDOI(\''+ studyDOI +'\'); return false;" style="font-weight: bold; color: #b94a48;" title="CLick to see all studies with this DOI">[DUPLICATE STUDY]</a'+'>';
-        }
-    }
-    return '';
 }
 
-function getViewOrEditLinks(study) {
-    var html = "";
-
-    /* Send authorized users straight to Edit page?
-    var viewOrEditURL = (viewOrEdit === 'EDIT') ?
-        '/curator/study/edit/'+ study['ot:studyId'] : 
-        '/curator/study/view/'+ study['ot:studyId'];
-    */
-    var viewOrEditURL = '/curator/study/view/'+ study['ot:studyId'];
-
-    var fullRef = study['ot:studyPublicationReference'];
-    if (fullRef) {
-        // hide/show full publication reference
-        html += '<a class="compact-study-ref" href="'+ viewOrEditURL +'">'+ fullToCompactReference(fullRef) +'</a>';
-        html += '&nbsp; &nbsp; <a class="full-ref-toggle" href="#" onclick="toggleStudyDetails(this); return false;">[show details]</a>';
-    } else {
-        // nothing to toggle
-        html += '<a href="'+ viewOrEditURL +'">(Untitled study)</a>';
-    }
-    html += getDuplicateStudyMarker(study);
-
+function getViewLink(collection) {
+    // shows this collection in a popup viewer/editor
+    var html = '<a class="" href="#" title="'+ collection.id +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'+ collection.name +'</a>';
     return html;
 }
-function getCuratorLink(study) {
-    return '<a href="#" onclick="filterByCurator(\''+ study['ot:curatorName'] +'\'); return false;"'+'>'+ study['ot:curatorName'] +'</a'+'>';
+function getTreeCount(collection) {
+    return collection.decisions.length || 0;
 }
-function getFocalCladeLink(study) {
-    var ottIdNotFound = false;
-    var ottID;
-    if ('ot:focalClade' in study) {
-        ottID = study['ot:focalClade'];
-        if ($.trim(ottID) === "") {
-            ottIdNotFound = true;
-        }
-    } else {
-        ottIdNotFound = true;
-    }
-
-    var cladeNameNotFound = false;
-    var cladeName;
-    if ('ot:focalCladeOTTTaxonName' in study) {
-        cladeName = study['ot:focalCladeOTTTaxonName'];
-        if ($.trim(cladeName) === "") {
-            cladeNameNotFound = true;
-        }
-    } else {
-        cladeNameNotFound = true;
-    }
-    if (cladeNameNotFound) {
-        // use the best available placeholder
-        if (ottIdNotFound) {
-            cladeName = '&mdash;';
-        } else {
-            cladeName = ottID;
-        }
-    }
-
-    if (ottIdNotFound) {
-        return '<span style="color: #ccc;">'+ cladeName +'</span>';
-    }
-
-    return '<a href="#" onclick="filterByClade(\''+ cladeName +'\'); return false;"'+'>'+ cladeName +'</a'+'>';
+function getCreatorLink(collection) {
+    return '<a href="#" onclick="filterByCurator(\''+ collection.creator.name +'\'); return false;"'+'>'+ collection.creator.name +'</a'+'>';
 }
-function getPubLink(study) {
-    var urlNotFound = false;
-    var pubURL;
-    if ('ot:studyPublication' in study) {
-        pubURL = study['ot:studyPublication'];
-        if ($.trim(pubURL) === "") {
-            urlNotFound = true;
-        }
-    } else {
-        urlNotFound = true;
-    }
-    if (urlNotFound) {
-        return '<span style="color: #999;">No link to this publication.</span>';
-        //return '<span style="color: #ccc;">[DOI not found]</span>';
-    }
-    return '<a href="'+ pubURL +'" target="_blank"'+'>'+ pubURL +'</a'+'>';
-}
-/*
-function getSuggestedActions(study) {
-    return '<a href="#"'+'>'+ study.nextActions()[0] +'</a'+'>';
-}
-*/
-
-function toggleStudyDetails( clicked ) {
-    var $toggle = $(clicked);
-    //var $compactRef = $toggle.prevAll('.compact-study-ref');
-    var $fullRef = $toggle.closest('tr').next().find('.full-study-ref');
-    if ($fullRef.is(':visible')) {
-        //$compactRef.show();
-        $fullRef.hide();
-        $toggle.text('[show details]');
-    } else {
-        //$compactRef.hide();
-        $fullRef.show();
-        $toggle.text('[hide details]');
-    }
+function getLastModification(collection) {
+    // nicely formatted for display, with details on mouseover 
+    return '<span title="'+ collection.lastModified.display_date +'">'+ collection.lastModified.relative_date +'</a'+'>';
 }
 
 function filterByCurator( curatorID ) {
-    /* add their userid to the filter field
-    var oldFilterText = viewModel.listFilters.COLLECTIONS.match();
-    if (oldFilterText.indexOf( curatorID ) === -1) {
-        var newFilterText = oldFilterText +' '+ curatorID;
-        viewModel.listFilters.COLLECTIONS.match( newFilterText );
-    }
-    */
     // replace the filter text with this curator's userid
     viewModel.listFilters.COLLECTIONS.match( curatorID );
-}
-function filterByClade( cladeName ) {
-    // replace the filter text with this clade name
-    viewModel.listFilters.COLLECTIONS.match( cladeName );
-}
-function filterByTag( tag ) {
-    // replace the filter text with this clade name
-    viewModel.listFilters.COLLECTIONS.match( tag );
-}
-function filterByDOI( doi ) {
-    // replace the filter text with this clade name
-    viewModel.listFilters.COLLECTIONS.match( doi );
 }

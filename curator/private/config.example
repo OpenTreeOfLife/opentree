@@ -63,7 +63,7 @@ getDraftTreeSubtreeForNodes_url = {treemachine_domain}/getDraftTreeSubtreeForNod
 findAllStudies_url = {oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
 singlePropertySearchForTrees_url = {oti_domain}/singlePropertySearchForTrees
-findAllTreeCollections_url = {opentree_api_domain}/../../v2/collections
+findAllTreeCollections_url = {opentree_api_domain}/../../v2/collections/find_collections
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #
