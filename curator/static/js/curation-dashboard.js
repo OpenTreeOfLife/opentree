@@ -376,7 +376,8 @@ function loadStudyList() {
                 return viewModel._filteredStudies;
             }); // END of filteredStudies
                     
-            ko.applyBindings(viewModel);
+            var listHolder = $('#study-list-container')[0];
+            ko.applyBindings(viewModel, listHolder);
 
             hideModalScreen();
         }

@@ -168,9 +168,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       $('#maintenance-notice').modal('show');
   }
 
-  // Fetch the userid and display name for a logged-in user
+  // Fetch the current user information for general use
   var userLogin = "{{= get_user_login() }}";
+  var userLoginASCII = "{{= get_user_login().encode('ascii','ignore') }}";
   var userDisplayName = "{{= get_user_display_name() }}";
+  var userEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
+  var userAuthToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
+
   jQuery(document).ready(function(){ 
     {{ if 'auth' in globals(): }}
       // add marker classes to final nav link (for logged-in user)
@@ -438,7 +442,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         </div>
     </div>
 
-<!-- ko if: ('data' in $data) && ('decisions' in $data.data) -->
   <!-- hidden template for the tree-collection-viewer (editor) -->
   <div class="modal hide fade" id="tree-collection-viewer" 
        Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
@@ -457,7 +460,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             />
            <!-- /ko -->
            <!-- ko if: !userIsEditingCollection($data) -->
-             <span data-bind="html: $data.data['name']"></span>
+             <span data-bind="html: $data.data['name'] || 'Untitled'"></span>
            <!-- /ko -->
       </h3>
       <div style="color: #999; position: relative;">
@@ -482,7 +485,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
 
            <!-- ko if: userIsEditingCollection($data) -->
             <!-- DELETE button -->
-            <button data-bind="click: deleteTreeCollection,
+            <button data-bind="click: promptForDeleteCollectionComments,
                                visible: true"
                 title="Delete this tree collection"
                 class="pull-right btn btn-mini btn-danger row-controls-ghosted"
@@ -493,50 +496,25 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
 
            <!-- ko if: !userIsEditingCollection($data) -->
             <!-- DUPLICATE button -->
-            <button Xdata-bind="click: TODO-follow-this-collection,
-                                visible: true"
-                title="Copy this collection (you will own the copy)"
+            <button data-bind="click: copyCollection,
+                                visible: true,
+                                attr: {'title': userIsLoggedIn() ? 'Copy this collection (you will own the copy)' : 'Copy this collection (requires login)'}"
+                title=""
                 class="pull-right btn btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
                 <i class="icon-share"></i>
             </button>
 
-            <!-- FOLLOW options -->
-            <div class="pull-right btn-group"
-                 style="margin-left: 4px;">
-                        <button Xdata-bind="click: TODO-remove-this-collection,
-                                            visible: true"
-                            title="Following this collection (click to change)"
-                            class="btn btn-mini row-controls-ghosted dropdown-toggle" data-toggle="dropdown">
-                            <i class="icon-star"></i><!-- TODO: icon+title varies based on current following state -->
-                            <span class="caret"></span>
-                        </button>
-                <ul class="dropdown-menu">
-                    <li>
-                        <a Xdata-bind="click: TODO-ignore-this-collection">
-                            <i class="icon-star-empty" style="opacity: 0.3;"></i> Ignore this collection</a>
-                    </li>
-                    <li>
-                        <a Xdata-bind="click: TODO-follow-this-collection">
-                            <i class="icon-star"></i> Follow this collection</a>
-                    </li>
-                    <!--
-                    <li>
-                        <a Xdata-bind="click: TODO-get-alerts-for-this-collection">
-                            <i class="icon-bell"></i> Follow with alerts</a>
-                    </li>
-                    -->
-                </ul>
-            </div>
-
+           <!-- ko if: ('external_url' in $data) -->
             <!-- DOWNLOAD button -->
-            <button Xdata-bind="click: TODO-follow-this-collection,
-                                visible: true"
-                title="Download this collection as JSON"
-                class="pull-right btn btn-mini row-controls-ghosted"
-                style="margin-left: 4px;">
+            <a data-bind="attr: { href: $data['external_url'] }"
+               title="Download this collection as JSON"
+               class="pull-right btn btn-mini row-controls-ghosted"
+               style="margin-left: 4px;"
+               href="#" target="_blank">
                 <i class="icon-download"></i>
-            </button>
+            </a>
+           <!-- /ko -->
 
             <!-- SYNTHESIS REPORT button (TODO?)
             <button Xdata-bind="click: TODO-follow-this-collection,
@@ -565,7 +543,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 style="margin-left: 4px;">
                 Cancel</i>
             </button>
-            <button data-bind="click: saveChangesToCollection,
+            <button data-bind="click: promptForSaveCollectionComments,
                                visible: userIsEditingCollection($data)"
                 title="Save your changes to this collection"
                 class="pull-right btn btn-info btn-mini row-controls-ghosted"
@@ -826,7 +804,55 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div><!-- end of .modal-body -->
     <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
   </div><!-- end of #tree-collection-viewer.modal- -->
-<!-- /ko-->
+
+<!-- hidden template for gathering comments when saving a tree collection -->
+<div class="modal hide fade modal-save-comments" id="save-collection-comments-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Add a comment for these changes
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Add a brief description of the work you've done.
+            This will appear in this collection's history on GitHub.
+        </p>
+        <input type="text" id="save-collection-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
+        <textarea id="save-collection-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button id="save-collection-comments-submit" 
+              class="btn btn-info pull-right" style="margin-left: 20px;" 
+              onclick="return false;">Save Collection</button>
+      <a id="save-collection-comments-cancel" data-dismiss="modal" class="btn" >Cancel</a>
+    </div>
+</div>
+
+<!-- hidden template for gathering comments when deleting a tree collection -->
+<div class="modal hide fade modal-save-comments" id="delete-collection-comments-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Are you sure you want to do this?
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Add a brief description of why you're deleting this collection.
+            (This will be saved in the main repository.)
+        </p>
+        <input type="text" id="delete-collection-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
+        <textarea id="delete-collection-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button id="delete-collection-comments-submit" 
+              class="btn btn-danger pull-right" style="margin-left: 20px;" 
+              onclick="return false;">Delete Collection</button>
+      <a id="delete-collection-comments-cancel" data-dismiss="modal" class="btn" >Cancel</a>
+    </div>
+</div>
+
 
 {{ if ('maintenance_info' in locals()) and maintenance_info.get('maintenance_notice', None):
    # N.b. Check to make sure it's in the view-dict, or error pages etc. will fail }}

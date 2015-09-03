@@ -542,9 +542,9 @@ $(document).ready(function() {
         formData: {
             // these are ADDED to the form's native widgets
             // https://github.com/blueimp/jQuery-File-Upload/wiki/How-to-submit-additional-Form-Data
-            author_name: authorName,
-            author_email: authorEmail,
-            auth_token: authToken
+            author_name: userDisplayName,
+            author_email: userEmail,
+            auth_token: userAuthToken
         },
         */
         add: function(e, data) {
@@ -640,7 +640,7 @@ function loadSelectedStudy() {
         url: fetchURL,
         data: { 
             'output_nexml2json': '1.0.0',  // '0.0', '1.0', '1.2', '1.2.1'
-            'auth_token': authToken
+            'auth_token': userAuthToken
         },
         error: function(jqXHR, textStatus, errorThrown) {
             // report errors or malformed data, if any
@@ -1824,9 +1824,9 @@ function saveFormDataToStudyJSON() {
     
     // add non-Nexson values to the query string
     var qsVars = $.param({
-        author_name: authorName,
-        author_email: authorEmail,
-        auth_token: authToken,
+        author_name: userDisplayName,
+        author_email: userEmail,
+        auth_token: userAuthToken,
         starting_commit_SHA: viewModel.startingCommitSHA,
         commit_msg: commitMessage
     });
@@ -1875,7 +1875,7 @@ function saveFormDataToStudyJSON() {
                 viewModel.versions(putResponse['versionHistory'] || [ ]);
             }
             if (putResponse['merge_needed']) {
-                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Study merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 return;
@@ -1927,9 +1927,9 @@ function removeStudy() {
 
     // add auth-token to the query string (no body allowed!)
     var qsVars = $.param({
-        author_name: authorName,
-        author_email: authorEmail,
-        auth_token: authToken,
+        author_name: userDisplayName,
+        author_email: userEmail,
+        auth_token: userAuthToken,
         starting_commit_SHA: viewModel.startingCommitSHA,
         commit_msg: commitMessage
     });
@@ -4047,7 +4047,7 @@ function clearNewTreeUploadWidget() {
 }
 function generateTreeUploadID() {
     // generate a new/unique upload ID for this attempt
-    var personalTimestamp = authorSafeID + '.'+ new Date().getTime();
+    var personalTimestamp = userLoginASCII + '.'+ new Date().getTime();
     return personalTimestamp;
 }
 function submitNewTree( form ) {

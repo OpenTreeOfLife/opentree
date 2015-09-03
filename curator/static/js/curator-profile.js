@@ -30,7 +30,7 @@
 */
 
 /*
- * Client-side behavior for the Open Tree tree-collection browser
+ * Client-side behavior for the Open Tree curator profile page
  *
  * This uses the Open Tree API to fetch and store tree collections remotely. In
  * this initial version, we'll load metadata for all collections in the system,
@@ -47,6 +47,8 @@ var History = window.History; // Note: capital H refers to History.js!
 
 // these variables should already be defined in the main HTML page
 var findAllTreeCollections_url;
+var curatorLogin; // userid for the *profiled* curator (NOT the current user)
+var isCurrentUserProfile; // does this profile belong to the current user?
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -149,15 +151,8 @@ function loadCollectionList(option) {
         // use default filter values
         effectiveFilters['match']  = "";
         effectiveFilters['order']  = "Most recently modified";
-        effectiveFilters['filter'] = "All tree collections";
+        effectiveFilters['filter'] = "Collections they participate in";
     }
-    /*
-    if (!userIsLoggedIn()) {
-        // override filter if user is not logged in
-        console.log('ANON BOUNCE to show all collections');
-        effectiveFilters['filter'] = "All tree collections";
-    }
-    */
 
     $.ajax({
         type: 'POST',
@@ -204,20 +199,6 @@ function loadCollectionList(option) {
                 var order = viewModel.listFilters.COLLECTIONS.order();
                 var filter = viewModel.listFilters.COLLECTIONS.filter();
 
-                var showEmptyListWarningForAnonymousUser = false;
-                switch (filter) {
-                    case 'Collections I own':
-                    case 'Collections I participate in':
-                        if (!userIsLoggedIn()) {
-                            showEmptyListWarningForAnonymousUser = true;
-                        }
-                }
-                if (showEmptyListWarningForAnonymousUser) {
-                    $('#empty-collection-list-warning').show();
-                } else {
-                    $('#empty-collection-list-warning').hide();
-                }
-
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
                     viewModel, 
@@ -249,34 +230,30 @@ function loadCollectionList(option) {
                         
                         // check for preset filters
                         switch (filter) {
-                            case 'All tree collections':
-                                // nothing to do here, all studies pass
-                                break;
-
-                            case 'Collections I own':
+                            case 'Collections they own':
                                 // show only matching studies
                                 var userIsTheCreator = false;
                                 if (('creator' in collection) && ('login' in collection.creator)) { 
                                     // compare to logged-in userid provide in the main page
-                                    if (collection.creator.login === userLogin) {
+                                    if (collection.creator.login === curatorLogin) {
                                         userIsTheCreator = true;
                                     }
                                 }
                                 return userIsTheCreator;
 
-                            case 'Collections I participate in':
+                            case 'Collections they participate in':
                                 var userIsTheCreator = false;
                                 var userIsAContributor = false;
                                 if (('creator' in collection) && ('login' in collection.creator)) { 
                                     // compare to logged-in userid provide in the main page
-                                    if (collection.creator.login === userLogin) {
+                                    if (collection.creator.login === curatorLogin) {
                                         userIsTheCreator = true;
                                     }
                                 }
                                 if (('contributors' in collection) && $.isArray(collection.contributors)) { 
                                     // compare to logged-in userid provide in the main page
                                     $.each(collection.contributors, function(i, c) {
-                                        if (c.login === userLogin) {
+                                        if (c.login === curatorLogin) {
                                             userIsAContributor = true;
                                         }
                                     });
@@ -354,7 +331,7 @@ function loadCollectionList(option) {
             ko.cleanNode(listArea);
             // remove all but one list entry (else they multiply!)
             // N.B. that we also skip the first (header) row!
-            $('#collection-list-container tr:gt(1)').remove();
+            $('#collection-list-container tbody tr:gt(0)').remove();
             // remove extra menu items in list filters
             $('#collection-list-container .dropdown-menu').find('li:gt(0)').remove();
             // remove extra pagination elements below
@@ -381,8 +358,25 @@ function getViewLink(collection) {
 function getTreeCount(collection) {
     return collection.decisions.length || 0;
 }
-function getCreatorLink(collection) {
-    return '<a href="#" onclick="filterByCurator(\''+ collection.creator.name +'\'); return false;"'+'>'+ collection.creator.name +'</a'+'>';
+function getCuratorRole(collection) {
+    // return 'Owner' | 'Collaborator' | 'None'
+    var userIsTheCreator = false;
+    var userIsAContributor = false;
+    if (('creator' in collection) && ('login' in collection.creator)) { 
+        // compare to logged-in userid provide in the main page
+        if (collection.creator.login === curatorLogin) {
+            return 'Owner';
+        }
+    }
+    if (('contributors' in collection) && $.isArray(collection.contributors)) { 
+        // compare to logged-in userid provide in the main page
+        $.each(collection.contributors, function(i, c) {
+            if (c.login === curatorLogin) {
+                return 'Contributor';
+            }
+        });
+    }
+    return 'None'; 
 }
 function getLastModification(collection) {
     // nicely formatted for display, with details on mouseover 
