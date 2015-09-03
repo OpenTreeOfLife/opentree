@@ -1510,6 +1510,7 @@ body {
                         <option value="foo =:= bar">Replace 'foo' with 'bar'</option>
                         <option value="^(\w*)\s+\b =:= ">Remove first of multiple words</option>
                         <option value="\b\s+(\w*)$ =:= ">Remove last of multiple words</option>
+                        <option value="^(\S*\s+\S*).* =:= $1">Keep first two words</option>
                         <option value=".*\s+(\w*)\s*$ =:= $1">Isolate trailing ID</option>
                       </select>
                   </div>
