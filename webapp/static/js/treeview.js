@@ -469,7 +469,7 @@ function buildNodeNameFromTreeData( node ) {
         return firstChildName;
     }
     var nameParts = firstChildName.split(compoundNodeNameDelimiter);
-    console.log(nameParts);
+    ///console.log(nameParts);
     firstChildName = nameParts[0];
     if(firstChildName.indexOf(compoundNodeNamePrefix) !== -1) {
         moreThanTwoDescendants = true;
@@ -477,7 +477,7 @@ function buildNodeNameFromTreeData( node ) {
     }
     var lastChildName = buildNodeNameFromTreeData(node.children[ node.children.length-1 ]);
     nameParts = lastChildName.split(compoundNodeNameDelimiter);
-    console.log(nameParts);
+    ///console.log(nameParts);
     lastChildName = nameParts[nameParts.length - 1];
     if (lastChildName === '...]') {
         // sidestep any ellipsis found here
@@ -743,7 +743,6 @@ function showObjectProperties( objInfo, options ) {
                     }
 
                     // Show ALL source trees (phylo-trees + IDs) for this node
-                    objID = fullNode.sourceID ? fullNode.sourceID : fullNode.nodeid;
 
                     // add basic edge properties (TODO: handle multiple edges!?)
                     var fullNodeSupporters = getSupportingSourceIDs( fullNode );
@@ -1008,9 +1007,13 @@ function showObjectProperties( objInfo, options ) {
                             // TODO: add more info in data objects, e.g., a descriptive tree label
 
                         } else if (moreInfo && !('study' in moreInfo)) {
-                            console.error("! expected a study, but found mysterious stuff in metaMap:");
-                            for (p2 in moreInfo) {
-                                console.error("  "+ p2 +" = "+ moreInfo[p2]);
+                            if (moreInfo['loadStatus'] === 'PENDING') {
+                                ///console.log('>>> study data is PENDING...');
+                            } else {
+                                console.error("! expected a study, but found mysterious stuff in metaMap:");
+                                for (p2 in moreInfo) {
+                                    console.error("  "+ p2 +" = "+ moreInfo[p2]);
+                                }
                             }
                             waitingForStudyInfo = true;
                         } else {
@@ -1029,7 +1032,7 @@ function showObjectProperties( objInfo, options ) {
                     } else {
                         // we have all the details, try to show supporting studies
                         for (studyID in supportingStudyInfo) { 
-                            console.warn(">>> adding study info for "+ studyID +"...");
+                            ///console.log(">>> study data for "+ studyID +" is COMPLETE, adding it now...");
                             var studyInfo = supportingStudyInfo[ studyID ]; 
                             var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pURL, pID, pCurator;
                             // assemble and display study info
@@ -1122,39 +1125,26 @@ function showObjectProperties( objInfo, options ) {
         var maxTipsForNewickSubtree = 1000;
         if ((typeof fullNode.nTipDescendants !== 'number') || (fullNode.nTipDescendants > maxTipsForNewickSubtree)) {
             // when in doubt (e.g. nodes on the rootward path), offer the full download
-            $details.append('<dt style="margin-top: 1em;"><a target="_blank" href="http://files.opentreeoflife.org/trees/">Download entire synthetic tree</a></dt>');
+            $details.append('<dt>Download subtree as Newick string</dt>');
+            $details.append('<dd>This tree is too large to download through webservices, but you can '
+                          + '<a target="_blank" href="http://files.opentreeoflife.org/trees/">download the entire synthetic tree as Newick</a></dd>');
         } else {
-            $details.append('<dt style="margin-top: 1em;"><a href="#" id="extract-subtree">Download subtree as Newick string</a></dt>');
-            $details.append('<dd id="extract-subtree-caveats">&nbsp;</dd>');
+            $details.append('<dt><a id="extract-subtree" href="#">Download subtree as Newick string</a></dt>');
           
             // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
             var idType = (objSource == 'ottol') ? 'ottol-id' : 'node-id';
+            var fetchID = (objSource == 'ottol') ? fullNode.sourceID : (fullNode.nodeid || fullNode.nodeID);
             // Choose from among the collection of objSources
             $('#extract-subtree')
                 .css('color','')  // restore normal link color
                 .unbind('click').click(function() {
                     // Make this name safe for use in our subtree download URL
                     var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
-                    window.location = '/opentree/default/download_subtree/'+ idType +'/'+ objID +'/'+ subtreeDepthLimit +'/'+ superSafeDisplayName;
-
-                    /* OR this will load the Newick-tree text to show it in-browser
-                    $.ajax({
-                        type: 'POST',
-                        url: getDraftTreeForOttolID_url,
-                        data: {
-                            'ottId': String(ottolID),
-                            'maxDepth': String(subtreeDepthLimit),
-                        },
-                        success: function(data) {
-                            alert(data.tree);
-                        },
-                        dataType: 'json'  // should return a complete Newick tree
-                    });
-                    */
-
+                    var downloadURL = '/opentree/default/download_subtree/'+ idType +'/'+ fetchID +'/'+ superSafeDisplayName;
+                    ///console.log(downloadURL);
+                    window.location = downloadURL;
                     return false;
                 });
-            $('#extract-subtree-caveats').html('(depth limited to '+ subtreeDepthLimit +' levels)');
         }
 
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL

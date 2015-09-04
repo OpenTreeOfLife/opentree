@@ -216,6 +216,7 @@ function createArgus(spec) {
                 return (node.nodeid === nodeID); 
             });
         },
+        // TODO: add a method to get node by OTT id?
 
         getZoomInHandler: function () {
             return function() {
@@ -599,7 +600,7 @@ function createArgus(spec) {
             converters: { 
                 // serialize this JSON into dedicated pseudo-classes
                 'text nodeTree': function(data) {
-                    console.log(">>> pre-processing raw JSON string..." );
+                    ///console.log(">>> pre-processing raw JSON string..." );
                     // NOTE that jQuery's parseJSON() doesn't support the 'reviver' option
                     ///return $.parseJSON(data, argusObj.makeNodeTree);
                     return JSON.parse(data, argusObj.makeNodeTree);
