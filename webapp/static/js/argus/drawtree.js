@@ -216,6 +216,7 @@ function createArgus(spec) {
                 return (node.nodeid === nodeID); 
             });
         },
+        // TODO: add a method to get node by OTT id?
 
         getZoomInHandler: function () {
             return function() {
