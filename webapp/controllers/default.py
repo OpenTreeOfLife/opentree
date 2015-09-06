@@ -85,12 +85,11 @@ def download_subtree():
         method_dict = get_opentree_services_method_urls(request)
 
         # use the appropriate web service for this ID type
+        fetch_url = method_dict['getDraftSubtree_url']
         if id_type == 'ottol-id':
-            fetch_url = method_dict['getDraftTreeForOttolID_url']
-            fetch_args = {'ottId': node_or_ottol_id}
+            fetch_args = {'ott_id': node_or_ottol_id}
         else:
-            fetch_url = method_dict['getDraftTreeForNodeID_url']
-            fetch_args = {'nodeID': node_or_ottol_id}
+            fetch_args = {'node_id': node_or_ottol_id}
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
             fetch_url = "http:%s" % fetch_url
@@ -98,7 +97,7 @@ def download_subtree():
         # apparently this needs to be a POST, or it just describes the API
         tree_response = fetch(fetch_url, data=fetch_args)
         tree_json = simplejson.loads( tree_response )
-        newick_text = str(tree_json['tree']).encode('utf-8');
+        newick_text = str(tree_json.get('newick', 'NEWICK_NOT_FOUND')).encode('utf-8');
         s.write( newick_text )
 
     except Exception, e:
