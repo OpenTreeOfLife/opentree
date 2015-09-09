@@ -2216,20 +2216,20 @@ function getNonPreferredTrees() {
     );
 }
 
-function getMappedTallyForTree(tree) {
-    // return display-ready tally (mapped/total ratio and percentage)
-    if (!tree || !tree.node || tree.node.length === 0) {
-        return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
+function getNodeCounts(tree) {
+    // helper function that returns the total number nodes, total number
+    // of tips and the number of tips mapped to OTT taxa
+    var nodeCounts = {
+      totalNodes: 0,
+      totalTips: 0,
+      mappedTips: 0
     }
 
-    var totalNodes = 0;
-    var totalLeafNodes = 0;
-    var mappedLeafNodes = 0;
-    ///console.log("Testing "+ totalLeafNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
+    if (!tree || !tree.node || tree.node.length === 0) {
+      return tipCounts;
+    }
     $.each(tree.node, function(i, node) {
         totalNodes++;
-
-        // Is this a leaf node? If not, skip it
         //console.log(i +' is a leaf? '+ node['^ot:isLeaf']);
         if (node['^ot:isLeaf'] !== true) {
             // this is not a leaf node! skip to the next one
@@ -2239,19 +2239,63 @@ function getMappedTallyForTree(tree) {
 
         if ('@otu' in node) {
             var otu = getOTUByID( node['@otu'] );
-            var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
-            if (('^ot:ottId' in otu) && (itsMappedLabel !== '')) {
-                mappedLeafNodes++;
+            var mappedLabel = $.trim(otu['^ot:ottTaxonName']);
+            if (('^ot:ottId' in otu) && (mappedLabel !== '')) {
+                mappedTips++;
             }
         }
         return true;  // skip to next node
     });
+    console.log("total nodes? "+ nodeCounts.totalNodes);
+    console.log("total leaf nodes? "+ nodeCounts.totalTips);
+    console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
+
+    return tipCounts;
+}
+
+function getMappedTallyForTree(tree) {
+    // return display-ready tally (mapped/total ratio and percentage)
+    var thinSpace = '&#8201;';
+
+    if (!tree || !tree.node || tree.node.length === 0) {
+        return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
+    } else {
+      nodeCounts = getNodeCounts(tree);
+      console.log("total nodes? "+ nodeCounts.totalNodes);
+      console.log("total leaf nodes? "+ nodeCounts.totalTips);
+      console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
+
+      return '<strong>'+ nodeCounts.mappedTips +'</strong><span>'+ thinSpace +'/'+ thinSpace + nodeCounts.totalTips +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(nodeCounts.mappedTips/nodeCounts.totalTips) +'%)</span>';
+    }
+
+    //var totalNodes = 0;
+    //var totalLeafNodes = 0;
+    //var mappedLeafNodes = 0;
+    ///console.log("Testing "+ totalLeafNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
+    //$.each(tree.node, function(i, node) {
+    //    totalNodes++;
+
+        // Is this a leaf node? If not, skip it
+        //console.log(i +' is a leaf? '+ node['^ot:isLeaf']);
+    //    if (node['^ot:isLeaf'] !== true) {
+            // this is not a leaf node! skip to the next one
+    //        return true;
+    //    }
+    //    totalLeafNodes++;
+
+    //    if ('@otu' in node) {
+    //        var otu = getOTUByID( node['@otu'] );
+    //        var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
+    //        if (('^ot:ottId' in otu) && (itsMappedLabel !== '')) {
+    //            mappedLeafNodes++;
+    //        }
+    //    }
+    //    return true;  // skip to next node
+    //});
     // console.log("total nodes? "+ totalNodes);
     // console.log("total leaf nodes? "+ totalLeafNodes);
     // console.log("mapped leaf nodes? "+ mappedLeafNodes);
 
-    var thinSpace = '&#8201;';
-    return '<strong>'+ mappedLeafNodes +'</strong><span>'+ thinSpace +'/'+ thinSpace + totalLeafNodes +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(mappedLeafNodes/totalLeafNodes) +'%)</span>';
 }
 
 function getRootedDescriptionForTree( tree ) {
@@ -2506,14 +2550,14 @@ var studyScoringRules = {
                                     testValue = testMeta['$']; // assumes value is stored here
                             }
                             if ($.trim(testValue) === "") {
-                                ///console.log(">>> metatag '"+ testMeta['@property'] +"' is empty!");
+                                console.log(">>> metatag '"+ testMeta['@property'] +"' is empty!");
                                 return false;
                             }
                             break;
 
                         default:
                             // ignore other meta tags (annotations)
-                            ///console.log('found some other metadata (annotation?): '+ testProperty);
+                            console.log('found some other metadata (annotation?): '+ testProperty);
                             continue;
                     }
                 }
@@ -2595,7 +2639,7 @@ var studyScoringRules = {
                 if ($.isArray(dupes)) {
                     return (dupes.length === 0);
                 } else {
-                    console.warn("Duplicate study IDs array not found!");
+                    ///console.warn("Duplicate study IDs array not found!");
                     return true;
                 }
             },
@@ -2611,7 +2655,7 @@ var studyScoringRules = {
             test: function(studyData) {
                 // check that a license or waiver exists
                 if (getStudyLicenseInfo(studyData)) {
-                    ///console.log('study has license');
+                    console.log('study has license');
                     return true;
                 } else {
                   return false;
@@ -2675,7 +2719,7 @@ var studyScoringRules = {
                 // check preferred trees (synthesis candidates) only
                 //var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                 var conflictingNodesFound = false;
-                ///var startTime = new Date();
+                var startTime = new Date();
                 $.each(getPreferredTrees(), function(i, tree) {
                     // disregard sibling-only conflicts (will be resolved on the server)
                     var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_SIBLINGS_ONLY: false} );
@@ -2684,7 +2728,7 @@ var studyScoringRules = {
                         return false;
                     }
                 });
-                ///console.log("total elapsed: "+ (new Date() - startTime) +" ms");
+                console.log("total elapsed: "+ (new Date() - startTime) +" ms");
                 return !(conflictingNodesFound);
             },
             weight: 0.5,
@@ -2700,7 +2744,7 @@ var studyScoringRules = {
                 // check all trees
                 var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                 var ambiguousLabelsFound = false;
-var startTime = new Date();
+                var startTime = new Date();
                 $.each(allTrees, function(i, tree) {
                     // disregard sibling-only conflicts (will be resolved on the server)
                     var ambiguousLabelData = getAmbiguousLabelsInTree( tree );
@@ -2709,7 +2753,7 @@ var startTime = new Date();
                         return false;
                     }
                 });
-console.log("ambiguous label test... total elapsed: "+ (new Date() - startTime) +" ms");
+                console.log("ambiguous label test... total elapsed: "+ (new Date() - startTime) +" ms");
                 return !(ambiguousLabelsFound);
             },
             weight: 0.75,
@@ -2720,17 +2764,17 @@ console.log("ambiguous label test... total elapsed: "+ (new Date() - startTime) 
     ],
     'Files': [
         // problems with uploaded files (formats, missing, corrupt)
-                        {
-                            description: "placeholder to fake happy data",
-                            test: function() {
-                                return true;
-                            },
-                            weight: 0.4,
-                            successMessage: "",
-                            failureMessage: "",
-                            suggestedAction: ""
-                                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-                        }
+        {
+            description: "placeholder to fake happy data",
+            test: function(studyData) {
+                return true;
+            },
+            weight: 0.4,
+            successMessage: "",
+            failureMessage: "",
+            suggestedAction: ""
+                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+        }
     ],
     'OTU Mapping': [
         // un-mapped taxon names, conflicting or dubious mapping
@@ -2745,8 +2789,9 @@ console.log("ambiguous label test... total elapsed: "+ (new Date() - startTime) 
                 }
 
                 // find all the candidate trees by ID (on study metadata) and build a tally tree
-                //var candidateTreeTallies = { };
-
+                var candidateTreeTallies = { };
+                var totalTips = 0;
+                var mappedTips = 0;
                 // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
                 var unmappedLeafNodesFound = false;
                 $.each(getPreferredTrees(), function(i, tree) {
@@ -2765,9 +2810,11 @@ console.log("ambiguous label test... total elapsed: "+ (new Date() - startTime) 
                             return true;
                         }
                         if ('@otu' in node) {
+                            ++totalTips;
                             var otu = getOTUByID( node['@otu'] );
                             var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
                             if (('^ot:ottId' in otu) && (itsMappedLabel !== '')) {
+                                ++mappedTips;
                                 return true;  // skip to next node
                             } else {
                                 unmappedLeafNodesFound = true;
@@ -2779,6 +2826,8 @@ console.log("ambiguous label test... total elapsed: "+ (new Date() - startTime) 
                     //candidateTreeTallies[ treeID ].mappedNodes = mappedNodes;
                     //candidateTreeTallies[ treeID ].totalNodes = totalNodes;
                 });
+                var percentMapped = mappedTips/totalTips*100;
+                console.log(mappedTips + " of " + totalTips + " tips in preferred trees mapped (" + percentMapped + "%)")
                 // if no unmapped leaf nodes were found, it passes the test
                 return !unmappedLeafNodesFound;
             },
@@ -2844,10 +2893,10 @@ function scoreStudy( studyData ) {
         scoreInfo.scoredCriteria[cName] = criterionScoreInfo;
 
         criterionRules = studyScoringRules[cName];
-        ///console.log("Checking study against rules for "+ cName +"...");
+        console.log("Checking study against rules for "+ cName +"...");
         for (i = 0; i < criterionRules.length; i++) {
             rule = criterionRules[i];
-            ///console.log("  rule.weight = "+ rule.weight);
+            console.log("  rule.weight = "+ rule.weight);
 
             // bump up max scores for this criterion and the overall study
             criterionScoreInfo.highestPossibleScore += rule.weight;
@@ -2862,7 +2911,7 @@ function scoreStudy( studyData ) {
 
             if (rule.test( studyData )) {
                 // passed this test
-                ///console.log("  PASSED this rule: "+ rule.description);
+                console.log("  PASSED this rule: "+ rule.description);
                 criterionScoreInfo.score += rule.weight;
                 scoreInfo.rawOverallScore += rule.weight;
 
@@ -2872,7 +2921,7 @@ function scoreStudy( studyData ) {
 
             } else {
                 // failed this test
-                ///console.log("  FAILED this rule: "+ rule.description);
+                console.log("  FAILED this rule: "+ rule.description);
                 ruleScoreInfo.message = rule.failureMessage;
                 ruleScoreInfo.success = false;
                 ruleScoreInfo.suggestedAction = rule.suggestedAction;
@@ -6584,7 +6633,7 @@ function unresolvedConflictsFoundInTree( tree ) {
     return $.isEmptyObject(conflictData) ? false : true;
 }
 function isConflictingNode( tree, node ) {
-    ///console.log("isConflictingNode( "+ tree['@id'] +", "+ node['@id'] +")...");
+    console.log("isConflictingNode( "+ tree['@id'] +", "+ node['@id'] +")...");
     // N.B. This checks for ALL conflicts (incl. resolved and sibling-only)
     var conflictInfo = getConflictingNodesInTree( tree );
     var foundNodeInConflictData = false;
