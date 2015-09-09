@@ -2605,6 +2605,23 @@ var studyScoringRules = {
             suggestedAction: "Compare any duplicate studies (based on DOIs) and delete all but one."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
 
+        },
+        {
+            description: "There should be a license or waiver on the data.",
+            test: function(studyData) {
+                // check that a license or waiver exists
+                if (getStudyLicenseInfo(studyData)) {
+                    ///console.log('study has license');
+                    return true;
+                } else {
+                  return false;
+                }
+            },
+            weight: 0.2,
+            successMessage: "This study has a license or waiver.",
+            failureMessage: "This study has no license or waiver.",
+            suggestedAction: "A study author should add an appropriate license or waiver."
+            // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
     ],
     'Trees': [
@@ -2863,7 +2880,6 @@ function scoreStudy( studyData ) {
 
             scoreInfo.allComments.push(ruleScoreInfo);
             criterionScoreInfo.comments.push(ruleScoreInfo);
-            ///console.log("  now study score is "+ studyScore);
         }
         // sort this criterion's comment list by weight
         criterionScoreInfo.comments.sort(function(a,b) { return parseFloat(b.weight) - parseFloat(a.weight) } )
