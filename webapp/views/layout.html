@@ -80,6 +80,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
     </script>
     {{pass}}
+
+    {{# JSON support for older browsers (esp. IE7)}}
+    {{response.files.append(URL('static','js/json2.js'))}}
     {{response.files.append(URL('static','js/argus/raphael-min.js'))}}
     {{response.files.append(URL('static','js/argus/drawtree.js'))}}
 
