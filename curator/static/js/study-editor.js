@@ -2749,6 +2749,25 @@ var studyScoringRules = {
             suggestedAction: "Check the current rooting of each tree; correct if necessary on tree viewer and mark root as confirmed on tree properties."
         },
         {
+            description: "All trees should have the ingroup specified.",
+            test: function(studyData) {
+                var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+                var allTreesHaveIngroups = true;
+                $.each(allTrees, function(i, tree) {
+                  ///treeID = tree['@id'];
+                  if (!tree['^ot:inGroupClade']) {
+                    ///console.log("ingroup not defined for tree " + treeID);
+                    allTreesHaveIngroups = false;
+                  }
+                });
+                return (allTreesHaveIngroups);
+            },
+            weight: 0.75,
+            successMessage: "All trees have defined ingroups.",
+            failureMessage: "At least one tree does not have a defined ingroup.",
+            suggestedAction: "Set the ingroup for each tree in the tree viewer."
+        },
+        {
             description: "Trees with branch lengths should have defined type and units.",
             test: function(studyData) {
                 // check all trees
