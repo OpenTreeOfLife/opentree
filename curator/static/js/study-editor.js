@@ -2226,22 +2226,22 @@ function getNodeCounts(tree) {
     }
 
     if (!tree || !tree.node || tree.node.length === 0) {
-      return tipCounts;
+      return nodeCounts;
     }
     $.each(tree.node, function(i, node) {
-        totalNodes++;
+        nodeCounts.totalNodes++;
         //console.log(i +' is a leaf? '+ node['^ot:isLeaf']);
         if (node['^ot:isLeaf'] !== true) {
             // this is not a leaf node! skip to the next one
             return true;
         }
-        totalLeafNodes++;
+        nodeCounts.totalTips++;
 
         if ('@otu' in node) {
             var otu = getOTUByID( node['@otu'] );
             var mappedLabel = $.trim(otu['^ot:ottTaxonName']);
             if (('^ot:ottId' in otu) && (mappedLabel !== '')) {
-                mappedTips++;
+                nodeCounts.mappedTips++;
             }
         }
         return true;  // skip to next node
@@ -2250,13 +2250,12 @@ function getNodeCounts(tree) {
     console.log("total leaf nodes? "+ nodeCounts.totalTips);
     console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
 
-    return tipCounts;
+    return nodeCounts;
 }
 
 function getMappedTallyForTree(tree) {
     // return display-ready tally (mapped/total ratio and percentage)
     var thinSpace = '&#8201;';
-
     if (!tree || !tree.node || tree.node.length === 0) {
         return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
     } else {
@@ -2267,35 +2266,6 @@ function getMappedTallyForTree(tree) {
 
       return '<strong>'+ nodeCounts.mappedTips +'</strong><span>'+ thinSpace +'/'+ thinSpace + nodeCounts.totalTips +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(nodeCounts.mappedTips/nodeCounts.totalTips) +'%)</span>';
     }
-
-    //var totalNodes = 0;
-    //var totalLeafNodes = 0;
-    //var mappedLeafNodes = 0;
-    ///console.log("Testing "+ totalLeafNodes +" nodes in this tree"); // against "+ sstudyOTUs.length +" study OTUs");
-    //$.each(tree.node, function(i, node) {
-    //    totalNodes++;
-
-        // Is this a leaf node? If not, skip it
-        //console.log(i +' is a leaf? '+ node['^ot:isLeaf']);
-    //    if (node['^ot:isLeaf'] !== true) {
-            // this is not a leaf node! skip to the next one
-    //        return true;
-    //    }
-    //    totalLeafNodes++;
-
-    //    if ('@otu' in node) {
-    //        var otu = getOTUByID( node['@otu'] );
-    //        var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
-    //        if (('^ot:ottId' in otu) && (itsMappedLabel !== '')) {
-    //            mappedLeafNodes++;
-    //        }
-    //    }
-    //    return true;  // skip to next node
-    //});
-    // console.log("total nodes? "+ totalNodes);
-    // console.log("total leaf nodes? "+ totalLeafNodes);
-    // console.log("mapped leaf nodes? "+ mappedLeafNodes);
-
 }
 
 function getRootedDescriptionForTree( tree ) {
@@ -2669,7 +2639,6 @@ var studyScoringRules = {
         }
     ],
     'Trees': [
-        // no trees, unrooted or badly rooted trees
         {
             description: "The study should contain at least one tree.",
             test: function(studyData) {
@@ -2701,8 +2670,8 @@ var studyScoringRules = {
                 return getPreferredTrees().length > 0;
             },
             weight: 0.3,
-            successMessage: "There is at least one candidate tree, or this study is not nominated for synthesis.",
-            failureMessage: "There should be at least one candidate tree, or the study should not be nominated for synthesis.",
+            successMessage: "There is at least one preferred tree, or this study is not nominated for synthesis.",
+            failureMessage: "There should be at least one preferred tree, or the study should not be nominated for synthesis.",
             suggestedAction: "Mark at least one tree as preferred, or mark this study as not contributing to synthesis in Metadata."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         },
@@ -2732,7 +2701,7 @@ var studyScoringRules = {
                 return !(conflictingNodesFound);
             },
             weight: 0.5,
-            successMessage: "No conflicting nodes (tips mapped to same taxon) found in preferred trees.",
+            successMessage: "No conflicting nodes (non-monophyletic tips mapped to same taxon) found in preferred trees.",
             failureMessage: "Conflicting nodes found! Choose an 'exemplar' for each duplicate taxon in preferred trees.",
             suggestedAction: "Review all conflicting instances of a mapped taxon and choose an exemplar."
         },
@@ -2758,8 +2727,57 @@ var studyScoringRules = {
             },
             weight: 0.75,
             successMessage: "No undefined internal node labels found.",
-            failureMessage: "Undefined internal node labels found! Assign a type to internal node lables (check the tree root first!).",
+            failureMessage: "Undefined internal node labels found! Assign a type to internal node lables.",
             suggestedAction: "Assign a type to all undefined internal node labels."
+        },
+        {
+            description: "Trees with branch lengths should have defined type and units.",
+            test: function(studyData) {
+                // check all trees
+                var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+                var branchLengthFieldsPresent = true;
+                $.each(allTrees, function(i, tree) {
+                    // check if there are branch lengths (assume if one edge has length, they all have lengths)
+                    // TODO: change this next line to the new branch length test function
+                    var edgesHaveLength = ('@length' in tree.edge[0]);
+                    if (edgesHaveLength) {
+                      // check that ot:branchLengthMode set
+                      var brlenMode = tree['^ot:branchLengthMode'];
+                      switch( brlenMode ) {
+                          case undefined:
+                              branchLengthFieldsPresent = false;
+                              ///console.log("branch length mode not set")
+                              break;
+                          case 'ot:undefined':
+                              branchLengthFieldsPresent = false;
+                              ///console.log("branch length mode undefined");
+                              break;
+                          case 'ot:time':
+                              var displayUnit = getBranchLengthUnitForTree( tree );
+                              if (displayUnit == "Myr?") {
+                                branchLengthFieldsPresent = false;
+                                ///console.log("branch length time units undefined");
+                              }
+                              break;
+                          case 'ot:other':
+                              if (getBranchLengthDescriptionForTree( tree ) == "Undefined") {
+                                branchLengthFieldsPresent = false;
+                                ///console.log("branch length = other; needs detail");
+                              }
+                              break;
+                          default:
+                              break;
+                      }
+                    } else {
+                      ///console.log("tree has no branch lenghts");
+                    }
+                });
+                return (branchLengthFieldsPresent);
+            },
+            weight: 0.2,
+            successMessage: "Branch length meaning well-defined (or tree does not have branch lengths).",
+            failureMessage: "Tree has branch length but meaning and / or units undefined.",
+            suggestedAction: "Check that branch length type and units set for all trees."
         }
     ],
     'Files': [
@@ -2777,7 +2795,7 @@ var studyScoringRules = {
         }
     ],
     'OTU Mapping': [
-        // un-mapped taxon names, conflicting or dubious mapping
+        // checks that all preferred tree tips mapped to OTT taxon names (i.e. pass / fail test)
         {
             description: "All tip labels in preferred trees should be mapped to the Open Tree Taxonomy.",
             test: function(studyData) {
@@ -2788,50 +2806,50 @@ var studyScoringRules = {
                     return true;
                 }
 
-                // find all the candidate trees by ID (on study metadata) and build a tally tree
-                var candidateTreeTallies = { };
-                var totalTips = 0;
-                var mappedTips = 0;
                 // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
-                var unmappedLeafNodesFound = false;
+                var unmappedLeafNodes = false;
                 $.each(getPreferredTrees(), function(i, tree) {
-                    if (!tree.node || tree.node.length === 0) {
-                        // skip this tree (no nodes yet, which is weird but not relevant to the test)
-                        //candidateTreeTallies[ treeID ].mappedNodes = 0;
-                        //candidateTreeTallies[ treeID ].totalNodes = 0;
-                        return true;
+                    nodeCounts = getNodeCounts(tree)
+                    if (nodeCounts.mappedTips != nodeCounts.totalTips) {
+                      return true; // no need to look at other trees for pass / fail test
                     }
-
-                    // only check the leaf nodes on the tree
-                    $.each(tree.node, function(i, node) {
-                        // Is this a leaf node? If not, skip it
-                        if (node['^ot:isLeaf'] !== true) {
-                            // this is not a leaf node! skip to the next one
-                            return true;
-                        }
-                        if ('@otu' in node) {
-                            ++totalTips;
-                            var otu = getOTUByID( node['@otu'] );
-                            var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
-                            if (('^ot:ottId' in otu) && (itsMappedLabel !== '')) {
-                                ++mappedTips;
-                                return true;  // skip to next node
-                            } else {
-                                unmappedLeafNodesFound = true;
-                                return false;   // bail out of loop
-                            }
-                        }
-                    });
-                    // TODO: actually count these, for a proportional score?
-                    //candidateTreeTallies[ treeID ].mappedNodes = mappedNodes;
-                    //candidateTreeTallies[ treeID ].totalNodes = totalNodes;
-                });
-                var percentMapped = mappedTips/totalTips*100;
-                console.log(mappedTips + " of " + totalTips + " tips in preferred trees mapped (" + percentMapped + "%)")
+                  });
                 // if no unmapped leaf nodes were found, it passes the test
-                return !unmappedLeafNodesFound;
+                return !unmappedLeafNodes;
             },
             weight: 0.5,
+            successMessage: "Preferred trees (submitted for synthesis) have all tips mapped to Open Tree Taxonomy.",
+            failureMessage: "There are unmapped tip labels in preferred trees (submitted for synthesis).",
+            suggestedAction: "Review all unmapped tips in OTU Mapping."
+                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
+        },
+        {
+            // checks fraction of OTUs mapped in preferred trees
+            // does not currently add to quality score (weight = 0)
+            description: "What fraction of tip labels in preferred trees are mapped to the Open Tree Taxonomy.",
+            test: function(studyData) {
+                // check for opt-out flag
+                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
+                if (optOutFlag) {
+                    // submitter has explicitly said this study is not intended for synthesis
+                    return true;
+                }
+
+                // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
+                var totalTips = 0;
+                var mappedTips = 0;
+                $.each(getPreferredTrees(), function(i, tree) {
+                    nodeCounts = getNodeCounts(tree)
+                    totalTips = nodeCounts.totalTips
+                    mappedTips = nodeCounts.mappedTips
+                });
+                fractionMapped = mappedTips/totalTips;
+                console.log(floatToPercent(fractionMapped) + "% of OTUs in preferred trees mapped")
+                return fractionMapped;
+            },
+            // would like to update weight based on fractionMapped, but in different scopes
+            // with this setup
+            weight: 0.0,
             successMessage: "Preferred trees (submitted for synthesis) have all tips mapped to Open Tree Taxonomy.",
             failureMessage: "There are unmapped tip labels in preferred trees (submitted for synthesis).",
             suggestedAction: "Review all unmapped tips in OTU Mapping."
@@ -6633,7 +6651,7 @@ function unresolvedConflictsFoundInTree( tree ) {
     return $.isEmptyObject(conflictData) ? false : true;
 }
 function isConflictingNode( tree, node ) {
-    console.log("isConflictingNode( "+ tree['@id'] +", "+ node['@id'] +")...");
+    ///console.log("isConflictingNode( "+ tree['@id'] +", "+ node['@id'] +")...");
     // N.B. This checks for ALL conflicts (incl. resolved and sibling-only)
     var conflictInfo = getConflictingNodesInTree( tree );
     var foundNodeInConflictData = false;
