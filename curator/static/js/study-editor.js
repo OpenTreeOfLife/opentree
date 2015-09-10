@@ -2731,6 +2731,24 @@ var studyScoringRules = {
             suggestedAction: "Assign a type to all undefined internal node labels."
         },
         {
+            description: "Tree roots should be confirmed by a curator.",
+            test: function(studyData) {
+                var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+                var allRootsConfirmed = true;
+                $.each(allTrees, function(i, tree) {
+                    var unrootedTree = tree['^ot:unrootedTree'];
+                    if (unrootedTree) {
+                      allRootsConfirmed = false;
+                    }
+                });
+                return (allRootsConfirmed);
+            },
+            weight: 0.75,
+            successMessage: "All tree roots confirmed.",
+            failureMessage: "At least one tree root not confirmed (may be arbitrary).",
+            suggestedAction: "Check the current rooting of each tree; correct if necessary on tree viewer and mark root as confirmed on tree properties."
+        },
+        {
             description: "Trees with branch lengths should have defined type and units.",
             test: function(studyData) {
                 // check all trees
