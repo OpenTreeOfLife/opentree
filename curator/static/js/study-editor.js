@@ -3182,6 +3182,13 @@ function highlightTreeNode( treeID, nodeID ) {
     // this effect was defined in an SVG 'filter' element
 }
 
+function treeEdgesHaveLength(tree) {
+    if (tree.edge.length > 0) {
+        return ('@length' in tree.edge[0]);
+    }
+    return false;
+}
+
 var vizInfo = { tree: null, vis: null };
 function drawTree( treeOrID, options ) {
     options = options || {};
@@ -3281,8 +3288,6 @@ function drawTree( treeOrID, options ) {
         }
     }
 
-    var treeEdgesHaveLength = ('@length' in tree.edge[0]);
-
     vizInfo.vis = null;
     d3.selectAll('svg').remove();
 
@@ -3316,7 +3321,7 @@ function drawTree( treeOrID, options ) {
             height: viewHeight,
             // simplify display by omitting scales or variable-length branches
             skipTicks: true,
-            skipBranchLengthScaling: (hidingBranchLengths || usingRadialTreeLayout || !(treeEdgesHaveLength)) ?  true : false,
+            skipBranchLengthScaling: (hidingBranchLengths || usingRadialTreeLayout || !(treeEdgesHaveLength(tree))) ?  true : false,
             children : function(d) {
                 var parentID = d['@id'];
                 var itsChildren = [];
@@ -3549,7 +3554,8 @@ function addTreeNodeBetween( tree, nodeID_A, nodeID_B ) {
             if (!adHocRootNode) {
                 // create the ad-hoc root node
                 adHocRootNode = {
-                    '@id': getAdHocRootID(tree)
+                    '@id': getAdHocRootID(tree),
+                    'ot:addedDuringRooting': true
                 };
                 tree.node.push(adHocRootNode);
             }
@@ -3561,8 +3567,13 @@ function addTreeNodeBetween( tree, nodeID_A, nodeID_B ) {
                 adHocRootEdge = {
                     '@id': getAdHocEdgeID(tree),
                     '@source': getAdHocRootID(tree),
-                    '@target': null  // we'll set this below
+                    '@target': null,  // we'll set this below
+                    'ot:addedDuringRooting': true
                 };
+                if (treeEdgesHaveLength(tree)) {
+                    // presumably this will not change for a given tree
+                    adHocRootEdge['@length'] = 0;
+                }
                 tree.edge.push(adHocRootEdge);
             } else {
                 detachAdHocRootElements(tree);
