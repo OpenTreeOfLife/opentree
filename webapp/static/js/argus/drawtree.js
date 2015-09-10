@@ -131,7 +131,7 @@ function createArgus(spec) {
         "treeData": null,
         "fontScalar": 2.6, // multiplied by radius to set font size
         "minTipRadius": 5, // the minimum radius of the node/tip circles. "r" in old argus
-        "nodeDiamScalar": 1.5,  // how much internal nodes are scaled by logleafcount
+        "nodeDiamScalar": 1.0,  // how much internal nodes are scaled by logleafcount
         "nodesWidth": 100, // the distance between parent/child nodes
             // TODO: try a wider setting (180?), or adapt to screen-width  
         "nubDistScalar": 4, // the x/y distance of the nub from its child
@@ -147,6 +147,8 @@ function createArgus(spec) {
         "altPLinkColor": "#900",
         "altRelColor": "#f00",
         "nodeColor": "#999",
+        "actualLeafColor": "#333",
+        "visibleLeafColor": "#fff",  // ie, click to see more descendants
         "nodeHoverColor": "#ff3333",
         "pathColor": "#999",
         "strongPathColor": "#000",
@@ -214,6 +216,7 @@ function createArgus(spec) {
                 return (node.nodeid === nodeID); 
             });
         },
+        // TODO: add a method to get node by OTT id?
 
         getZoomInHandler: function () {
             return function() {
@@ -1016,10 +1019,19 @@ function createArgus(spec) {
         if (node.isLocalLeafNode()) {
             node.r = node.isActualLeafNode() ? (this.minTipRadius * 0.7) : this.minTipRadius;
         } else {
-            node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.nleaves);
+            node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.nTipDescendants);
         }
-        var nodeFill = isTargetNode ? this.pathColor : 
-                                node.isActualLeafNode() ? this.bgColor : this.nodeColor;
+        var nodeFill = this.nodeColor; 
+        var nodeStroke = this.pathColor;
+        // override for special cases
+        if (node.isActualLeafNode()) {
+            nodeFill = this.actualLeafColor;
+            nodeStroke = this.bgColor;
+        } else if (node.isVisibleLeafNode()) {
+            nodeFill = this.visibleLeafColor;
+        } else if (isTargetNode) { 
+            // add special styles for this?
+        }
         if (circle) {
             // update the existing circle
             circle.attr({
@@ -1031,7 +1043,7 @@ function createArgus(spec) {
             circle = paper.circle( node.x, node.y, node.r).attr({
                             "fill": nodeFill,
                             "title": "Click to move to this node",
-                            "stroke": this.pathColor
+                            "stroke": nodeStroke
                          }).insertBefore(dividerBeforeAnchoredUI);
             circle.id = (nodeCircleElementID);
 
@@ -1753,8 +1765,8 @@ function alphaSortByName(a,b) {
     return 0;
 }
 function sortByDescendantCount(a,b) {
-    if (a.nleaves > b.leaves) return 1;
-    if (a.leaves < b.leaves) return -1;
+    if (a.nTipDescendants > b.nTipDescendants) return 1;
+    if (a.nTipDescendants < b.nTipDescendants) return -1;
     return 0;
 }
 
@@ -1784,6 +1796,9 @@ ArgusNode.prototype.isLocalLeafNode = function() {
     return (typeof this.children === 'undefined');
 };
 ArgusNode.prototype.isActualLeafNode = function() {
+    return this.nTipDescendants === 0;
+};
+ArgusNode.prototype.isVisibleLeafNode = function() {
     return this.hasChildren === false || this.nleaves === 0;
 };
 ArgusNode.prototype.updateDisplayBounds = function() {

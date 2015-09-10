@@ -12,6 +12,10 @@ The tree is nested set of node description. Each node has the attributes:
         pruned to "maxnodedepth" (see below), not the # of nodes in the source
         graph that are descendants of the node.
 
+    "nTipDescendants" -> 0 for a leaf, # of tips within the node's clade,
+        *excluding* the node itself. (In other words, this reflects the full
+        source graph, irrespective of "maxonodedepth".)
+
     "name" -> string with the node's name.
 
     "nodeid" -> string that is a node ID in the webservice that generated the JSON
