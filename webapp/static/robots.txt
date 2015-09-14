@@ -18,4 +18,5 @@ Disallow: /api/
 Disallow: /admin/
 Disallow: /user/
 Disallow: /v2/
+Disallow: /v1/
 Crawl-delay: 60
