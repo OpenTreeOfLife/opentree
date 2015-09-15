@@ -2858,6 +2858,9 @@ var studyScoringRules = {
             suggestedAction: "Check that branch length type and units set for all trees."
         }
     ],
+    /*
+    // no tests for files right now
+    // could add test checking for file description
     'Files': [
         // problems with uploaded files (formats, missing, corrupt)
         {
@@ -2872,6 +2875,7 @@ var studyScoringRules = {
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
     ],
+    */
     'OTU Mapping': [
         // checks that all preferred tree tips mapped to OTT taxon names (i.e. pass / fail test)
         {
