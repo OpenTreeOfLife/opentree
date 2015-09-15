@@ -889,9 +889,16 @@ body {
                     <tr>
                     {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <a href="#" target="_blank" data-bind="text: file['@filename'] || '?', attr: { href: file['@url'] || '#' }">
+                          <!-- ko if: file['@url']  -->
+                            <a href="#" target="_blank" data-bind="text: file['@filename'] || '?', attr: { href: file['@url'] }">
                                 Alignment data (urchins).xls
                             </a>
+                          <!-- /ko -->
+                          <!-- ko if: !file['@url'] -->
+                            <span style="color: #999;" data-bind="text: file['@filename'] || '?'" onclick="showErrorMessage('No URL stored for this file!')">
+                                Alignment data (urchins).xls
+                            </span>
+                          <!-- /ko -->
                         </td>
                         <td>
                             <div><textarea data-bind="value: file.description.$"
@@ -908,7 +915,13 @@ body {
                                    placeholder="Tree ID (if source file for a tree)">OPTIONAL_TREE_ID</em>
                            -->
                         </td>
-                        <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
+                        <td>
+                          <!-- ko if: file['@size'] -->
+                            <span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
+                          <!-- /ko -->
+                          <!-- ko if: !file['@size'] -->
+                            &mdash;
+                          <!-- /ko -->
                             <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length > 0"
                                 class="pull-right btn btn-mini btn-danger"
                                 style="opacity: 0.3 !important;"
@@ -922,9 +935,16 @@ body {
                         </td>
                     {{ else: }}
                         <td>
-                            <a href="#" target="_blank" data-bind="text: file['@filename'] || '?', attr: { href: file['@url'] || '#' }">
+                          <!-- ko if: file['@url']  -->
+                            <a href="#" target="_blank" data-bind="text: file['@filename'] || '?', attr: { href: file['@url'] }">
                                 Alignment data (urchins).xls
                             </a>
+                          <!-- /ko -->
+                          <!-- ko if: !file['@url'] -->
+                            <span style="color: #999;" data-bind="text: file['@filename'] || '?'" onclick="showErrorMessage('No URL stored for this file!')">
+                                Alignment data (urchins).xls
+                            </span>
+                          <!-- /ko -->
                         </td>
                         <td>
                             <div data-bind="text: file.description.$">Microsoft Excel spreadsheet</div>
@@ -933,7 +953,14 @@ body {
                                 <strong data-bind="text: getAssociatedTreeLabels(file).join(', ')">&nbsp;</strong>
                             </em>
                         </td>
-                        <td><span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span></td>
+                        <td>
+                          <!-- ko if: file['@size'] -->
+                            <span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
+                          <!-- /ko -->
+                          <!-- ko if: !file['@size'] -->
+                            &mdash;
+                          <!-- /ko -->
+                        </td>
                     {{ pass }}
                     </tr>
                   </tbody>
