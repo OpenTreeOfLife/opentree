@@ -2768,6 +2768,47 @@ var studyScoringRules = {
             suggestedAction: "Set the ingroup for each tree in the tree viewer."
         },
         {
+          description: "All trees should have an inference method specified.",
+          test: function(studyData) {
+              var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+              var allTreesHaveMethod = true;
+              $.each(allTrees, function(i, tree) {
+                  inferenceMethod = tree['^ot:curatedType'] || 'Unspecified';
+                  ///console.log("inference method: " + inferenceMethod);
+                  if (inferenceMethod == 'Unspecified') {
+                    allTreesHaveMethod = false;
+                  }
+              });
+              return allTreesHaveMethod;
+          },
+          weight: 0.75,
+          successMessage: "Inference method specified for all trees.",
+          failureMessage: "At least one tree does not have inference method specified.",
+          suggestedAction: "Specify the inference method for each tree."
+        },
+        {
+            description: "All trees should have a descriptive name.",
+            test: function(studyData) {
+                var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+                var allTreesHaveNames = true;
+                $.each(allTrees, function(i, tree) {
+                  var treeName = tree['@label'];
+                  defaultName = 'Untitled'
+                  ///treeID = tree['@id'];
+                  // default treename is Untitled + treeid
+                  if (treeName.substring(0, defaultName.length) === defaultName) {
+                    ///console.log('treeName is default '+ treeName)
+                    allTreesHaveNames = false;
+                  }
+                });
+                return (allTreesHaveNames);
+            },
+            weight: 0.75,
+            successMessage: "All trees have a descriptive name.",
+            failureMessage: "At least one tree has default name starting with 'Untitled'.",
+            suggestedAction: "Add a descriptive name for each tree (e.g. Fig. 1: Maximum Likelihood tree)."
+        },
+        {
             description: "Trees with branch lengths should have defined type and units.",
             test: function(studyData) {
                 // check all trees
@@ -2875,18 +2916,23 @@ var studyScoringRules = {
                 // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
                 var totalTips = 0;
                 var mappedTips = 0;
+                var fractionMapped = 0;
                 $.each(getPreferredTrees(), function(i, tree) {
                     nodeCounts = getNodeCounts(tree)
-                    totalTips = nodeCounts.totalTips
-                    mappedTips = nodeCounts.mappedTips
+                    totalTips += nodeCounts.totalTips
+                    mappedTips += nodeCounts.mappedTips
+                    ///console.log("mappedTips: " + mappedTips + "; totalTips: " + totalTips);
+
                 });
-                fractionMapped = mappedTips/totalTips;
-                console.log(floatToPercent(fractionMapped) + "% of OTUs in preferred trees mapped")
+                if (totalTips != 0) {
+                  fractionMapped = mappedTips/totalTips;
+                }
+                console.log(mappedTips + "/" + totalTips + " = " + floatToPercent(fractionMapped) + "% of OTUs in preferred trees mapped")
                 return fractionMapped;
             },
             // would like to update weight based on fractionMapped, but in different scopes
             // with this setup
-            weight: 0.0,
+            weight: 0.5,
             successMessage: "Preferred trees (submitted for synthesis) have all tips mapped to Open Tree Taxonomy.",
             failureMessage: "There are unmapped tip labels in preferred trees (submitted for synthesis).",
             suggestedAction: "Review all unmapped tips in OTU Mapping."
