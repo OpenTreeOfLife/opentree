@@ -2533,7 +2533,7 @@ var studyScoringRules = {
                 }
                 return true;
             },
-            weight: 0.35,
+            weight: 0.5,
             successMessage: "All metadata fields have data.",
             failureMessage: "Some metadata fields are empty.",
             suggestedAction: "Check study metadata for empty fields."
@@ -2669,7 +2669,7 @@ var studyScoringRules = {
                 // check for any candidate tree in the study
                 return getPreferredTrees().length > 0;
             },
-            weight: 0.3,
+            weight: 0.2,
             successMessage: "There is at least one preferred tree, or this study is not nominated for synthesis.",
             failureMessage: "There should be at least one preferred tree, or the study should not be nominated for synthesis.",
             suggestedAction: "Mark at least one tree as preferred, or mark this study as not contributing to synthesis in Metadata."
@@ -2700,7 +2700,7 @@ var studyScoringRules = {
                 console.log("total elapsed: "+ (new Date() - startTime) +" ms");
                 return !(conflictingNodesFound);
             },
-            weight: 0.5,
+            weight: 0.2,
             successMessage: "No conflicting nodes (non-monophyletic tips mapped to same taxon) found in preferred trees.",
             failureMessage: "Conflicting nodes found! Choose an 'exemplar' for each duplicate taxon in preferred trees.",
             suggestedAction: "Review all conflicting instances of a mapped taxon and choose an exemplar."
@@ -2725,7 +2725,7 @@ var studyScoringRules = {
                 console.log("ambiguous label test... total elapsed: "+ (new Date() - startTime) +" ms");
                 return !(ambiguousLabelsFound);
             },
-            weight: 0.75,
+            weight: 0.2,
             successMessage: "No undefined internal node labels found.",
             failureMessage: "Undefined internal node labels found! Assign a type to internal node lables.",
             suggestedAction: "Assign a type to all undefined internal node labels."
@@ -2743,7 +2743,7 @@ var studyScoringRules = {
                 });
                 return (allRootsConfirmed);
             },
-            weight: 0.75,
+            weight: 0.2,
             successMessage: "All tree roots confirmed.",
             failureMessage: "At least one tree root not confirmed (may be arbitrary).",
             suggestedAction: "Check the current rooting of each tree; correct if necessary on tree viewer and mark root as confirmed on tree properties."
@@ -2762,7 +2762,7 @@ var studyScoringRules = {
                 });
                 return (allTreesHaveIngroups);
             },
-            weight: 0.75,
+            weight: 0.2,
             successMessage: "All trees have defined ingroups.",
             failureMessage: "At least one tree does not have a defined ingroup.",
             suggestedAction: "Set the ingroup for each tree in the tree viewer."
@@ -2781,7 +2781,7 @@ var studyScoringRules = {
               });
               return allTreesHaveMethod;
           },
-          weight: 0.75,
+          weight: 0.2,
           successMessage: "Inference method specified for all trees.",
           failureMessage: "At least one tree does not have inference method specified.",
           suggestedAction: "Specify the inference method for each tree."
@@ -2803,7 +2803,7 @@ var studyScoringRules = {
                 });
                 return (allTreesHaveNames);
             },
-            weight: 0.75,
+            weight: 0.2,
             successMessage: "All trees have a descriptive name.",
             failureMessage: "At least one tree has default name starting with 'Untitled'.",
             suggestedAction: "Add a descriptive name for each tree (e.g. Fig. 1: Maximum Likelihood tree)."
@@ -2904,7 +2904,8 @@ var studyScoringRules = {
             failureMessage: "There are unmapped tip labels in preferred trees (submitted for synthesis).",
             suggestedAction: "Review all unmapped tips in OTU Mapping."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        },
+        }
+        /* commenting this out for now because no way to deal with non pass-fail tests
         {
             // checks fraction of OTUs mapped in preferred trees
             // does not currently add to quality score (weight = 0)
@@ -2942,6 +2943,7 @@ var studyScoringRules = {
             suggestedAction: "Review all unmapped tips in OTU Mapping."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
+        */
     ],
 /*
     'Annotations': [
