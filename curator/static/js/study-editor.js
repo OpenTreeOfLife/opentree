@@ -850,10 +850,6 @@ function loadSelectedStudy() {
             if (['^ot:messages'] in data.nexml) {
                 data.nexml['^ot:messages'].message = 
                     makeArray(data.nexml['^ot:messages'].message);
-            } else {
-                data.nexml['^ot:messages'] = {
-                    'message': []
-                }
             }
 
             // move any old-style messages to new location
@@ -5503,7 +5499,7 @@ function localMessagesCollectionExists( element ) {
 }
 function localMessagesCollectionIsBeingUsed( element ) {
     // return T|F
-    var localMessages = getElementAnnotationMessages( element );
+    var localMessages = getLocalMessages( element );
     return localMessages.length > 0;
 }
 function addLocalMessagesCollection( element ) {
@@ -5769,52 +5765,150 @@ function relocateLocalAnnotationMessages( nexml ) {
     if (!nexml) {
         nexml = viewModel.nexml;
     }
+    // Trigger this behavior ONLY if we find an old-style "local" message store
+    // in the main nexml element.
     if ('^ot:messages' in nexml) {
-        console.warn(">>> Now I'd relocate old annotation messages...");
+        console.warn("Now I'd relocate old annotation messages...");
     } else {
         // no messages stored in the old system
         return;
     }
 
-    // TODO: walk the entire nexml structure, looking for old messages
-    // TODO: relocate each to the new home (in its annotationEvent)
-    //    eventID = ko.unwrap( msg['@wasGeneratedById'] )
-    // TODO: remove deprecated '@wasGeneratedById' property
-    // TODO: delete the old local collections as we go?
-    var allMessages = makeArray(nexml['^ot:messages']);
+    /* In short, this is how we'll update old (local) messages to new:
+     * - Walk the entire nexml structure, looking for "local" messages
+     * - Relocate each local message to its new home (its parent annotationEvent)
+     * - Remove deprecated '@wasGeneratedBy' property and others
+     * - Delete old local collections as we go, IF all of an element's messages have been migrated
+     * - Delete nexml['^ot:messages'] when we're done, IF all messages migrated successfully
+     */
+    var allLocalMessages = [ ];
     // gather "local" messages from all other elements!
     // NOTE: Add any new target elements here to avoid duplication!
-    $.each(nexml.otus, function( i, otusCollection ) {
-        $.each(otusCollection.otu, function( i, otu ) {
-            var localMessages = getLocalMessages(otu);
-            if (localMessages.length > 0) {
-                $.merge(allMessages, makeArray(localMessages.message));
-            }
-        });
-    });
-    var allTrees = [];
-    $.each(nexml.trees, function(i, treesCollection) {
-        $.each(treesCollection.tree, function(i, tree) {
-            allTrees.push( tree );
-        });
-    });
-    $.each(allTrees, function(i, tree) {
-        var localMessages = getLocalMessages(tree);
+
+    // gather all elements that *might* hold local messages, including the main 'nexml'
+    var potentialMessageHolders = [ nexml ];
+    $.merge(potentialMessageHolders, viewModel.elementTypes.otu.gatherAll(viewModel.nexml));
+    $.merge(potentialMessageHolders, viewModel.elementTypes.tree.gatherAll(viewModel.nexml));
+    $.merge(potentialMessageHolders, viewModel.elementTypes.node.gatherAll(viewModel.nexml));
+    $.merge(potentialMessageHolders, viewModel.elementTypes.edge.gatherAll(viewModel.nexml));
+    console.warn(">> scanning "+ potentialMessageHolders.length +" potential message holders...");
+
+    var unableToMergeAll = false;
+    $.each(potentialMessageHolders, function( i, ele ) {
+        // harvest any messages found here, and attempt to merge them
+        var localMessages = getLocalMessages(ele);
+        var unableToMergeFromElement = false;
         if (localMessages.length > 0) {
-            $.merge(allMessages, makeArray(localMessages.message));
+            $.merge(allLocalMessages, makeArray(localMessages));
+            $.each(localMessages, function(i, msg) {
+                // attempt to add (or merge) this with central messages
+                try {
+                    moveOrMergeLocalMessage(msg, ele, nexml );
+                        // N.B. this will remove the local message, if successful!
+                    //console.log('>>> MERGED this message successfully!');
+                    //console.log(msg);
+                } catch(e) {
+                    unableToMergeAll = true;
+                    unableToMergeFromElement = true;
+                    console.error('>>> UNABLE TO MERGE this messsage ('+ e +'):');
+                    console.error(msg);
+                }
+            });
         }
-        // look again at all nodes in the tree
-        $.each(makeArray(tree.node), function(i, node) {
-            var localMessages = getLocalMessages(node);
-            if (localMessages.length > 0) {
-                $.merge(allMessages, makeArray(localMessages.message));
-            }
-        });
+        if (unableToMergeFromElement) {
+            // preserve the remaining local messages for another time
+            console.warn('>> UNABLE TO MERGE some messsages in this element:');
+            console.warn(ele);
+            return true;
+        }
+        // ... and remove the local collection, if found
+        removeLocalMessagesCollection(ele);
+        //console.log('>>>> all messages merged, local collection removed');
     });
-    console.warn(">>> found "+ allMessages.length +" messages throughout this study");
-        
+    console.warn(">> found "+ allLocalMessages.length +" local messages in this study");
+
+    if (unableToMergeAll) {
+        /* Restore the main messages collection on nexml. (This is our cue above
+         * to prompt future cleanup attempts.)
+         */
+        console.error("> UNABLE TO MERGE some messsages in this study! We'll try again later...");
+        addLocalMessagesCollection( nexml );
+    } else {
+        console.warn(">> all local messages successfully merged!");
+    }
 }
 
+function moveOrMergeLocalMessage(msg, parentElement, nexml) {
+    /* Examine a local message (stored within a tree, node, etc) and attempt to
+     * move it to new-style storage within its central parent annotation. Any
+     * failure (esp. due to unknown type or context) should throw an error
+     * message, so that we can preserve the local message collection for later
+     * cleanup attempts.
+     */
+    switch (msg['@code']) {
+        case 'SUPPORTING_FILE_INFO':
+            /* This is the most common case. Presumably its parent element is
+             * the related tree. We should merge this message into the main
+             * SUPPORTING_FILE_INFO annotation on the nexml object, watching
+             * carefully to see if it's already listed there. IF SO, just copy
+             * non-empty '@url' and '@size' values and others as needed.
+             */
+            if (msg.data.files.file.length !== 1) {
+                throw "expected just one file in msg.data.files.file!";
+            }
+            var localFileInfo = msg.data.files.file[0];
+            var localFileRelatedTreeID = $.trim(localFileInfo['@sourceForTree']);
+            if (!localFileRelatedTreeID) {
+                throw "expected (old) '@sourceForTree' not found!";
+            }
+
+            // look for matching file information in the main nexml 
+            var nexmlFilesMessage = getSupportingFiles(nexml);
+            if (!nexmlFilesMessage) {
+                throw 'nexml supporting-files info not found!';
+            }
+            // find the central file description with a matching treeID
+            var matchingFileInfo = null;
+            $.each(nexmlFilesMessage.data.files.file, function(i, fileInfo) {
+                if (!fileInfo['sourceForTree']) {
+                    throw "expected fileInfo['sourceForTree'] not found!";
+                }
+                $.each(fileInfo['sourceForTree'], function(i, relatedTreeInfo) {
+                    if (relatedTreeInfo.$ === localFileRelatedTreeID) {
+                        matchingFileInfo = fileInfo;
+                        // Compare and copy fields from old (local) to new (central) file info.
+                        // N.B. that we can drop the deprecated @id and @wasGeneratedBy fields!
+                        if (!matchingFileInfo['@size']) {
+                            matchingFileInfo['@size'] = localFileInfo['@size'];
+                        }
+                        if (!matchingFileInfo['@url']) {
+                            matchingFileInfo['@url'] = localFileInfo['@url'];
+                        }
+                        if (!matchingFileInfo.description.$) {
+                            matchingFileInfo.description.$ = localFileInfo.description.$;
+                        }
+                        return false;
+                    }
+                });
+            });
+            if (!matchingFileInfo) {
+                // no matching central file found! move (and modify) the local file info
+                delete localFileInfo['@id'];
+                delete localFileInfo['@wasGeneratedBy'];
+                // move simple string to new array of BadgerFish elements and clobber old property
+                localFileInfo['sourceForTree'] = [ {'$':localFileRelatedTreeID} ];
+                delete localFileInfo['@sourceForTree'];
+                nexmlFilesMessage.data.files.file.push(localFileInfo);
+            }
+            break;
+
+        default:
+            throw "unknown message code '"+ msg['@code'] +"'!";
+    }
+    // still here? then we can safely remove this local message
+    var msgCollection = getLocalMessagesCollection( parentElement );
+    removeFromArray(msg, msgCollection.message);
+}
 
 /* 
  * Manage free-form tags for a specified study or tree. This is somewhat
