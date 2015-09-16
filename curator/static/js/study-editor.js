@@ -6137,6 +6137,10 @@ var nudge = {
         nudgeTickler( 'TREES');
         return true;
     },
+    'SUPPORTING_FILES': function( data, event ) {
+        nudgeTickler( 'SUPPORTING_FILES');
+        return true;
+    },
     'OTU_MAPPING_HINTS': function( data, event ) {
         nudgeTickler( 'OTU_MAPPING_HINTS');
         return true;

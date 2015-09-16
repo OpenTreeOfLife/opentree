@@ -496,10 +496,12 @@ body {
 <!--
                     <textarea id="save-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
 -->
-                    <div id="comment-editor"><textarea data-bind="value: viewModel.nexml['^ot:comment']"
-                            placeholder="Enter notes for viewers and other curators here (as markdown)."
-                            rows="8"
-                            class="input-block-level">?</textarea></div>
+                    <div id="comment-editor"><textarea data-bind="value: viewModel.nexml['^ot:comment'], 
+                                                                  valueUpdate: ['afterkeydown', 'input'], 
+                                                                  event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }"
+                                                       placeholder="Enter notes for viewers and other curators here (as markdown)."
+                                                       rows="8"
+                                                       class="input-block-level">?</textarea></div>
                     <div id="comment-preview" class="rendered-comment" style="display: none;">
                     </div>
                 {{ else: }}
@@ -901,11 +903,13 @@ body {
                           <!-- /ko -->
                         </td>
                         <td>
-                            <div><textarea data-bind="value: file.description.$"
-                            placeholder="Describe this file's format and purpose."
-                            rows="2"
-                            class="input-block-level"
-                            style="margin-bottom: 0px;">?</textarea></div>
+                            <div><textarea data-bind="value: file.description.$, 
+                                                      valueUpdate: ['afterkeydown', 'input'], 
+                                                      event: { keyup: nudge.SUPPORTING_FILES, change: nudge.SUPPORTING_FILES }"
+                                           placeholder="Describe this file's format and purpose."
+                                           rows="2"
+                                           class="input-block-level"
+                                           style="margin-bottom: 0px;">?</textarea></div>
                             <em data-bind="if: getAssociatedTrees(file).length > 0">
                                 Source for tree(s):
                                 <strong data-bind="text: getAssociatedTreeLabels(file).join(', ')">&nbsp;</strong>
