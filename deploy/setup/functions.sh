@@ -104,7 +104,11 @@ function git_refresh() {
 	 git fetch origin && \
 	 git branch --track -f $branch origin/$branch && \
 	 git checkout $branch && \
-	 git merge origin/$branch) || echo "*** git failure ***"
+     git merge origin/$branch) || echo "
+        ***** git failure (see details above)! *****
+        To discard unwanted local changes, try this (with appropriate hostname):
+        $ ssh $OPENTREE_HOST \"cd ~/repo/opentree; git reset --hard; git status\"
+        " && exit 1
         after=`cd $repo_dir; git log | head -1`
         if [ "$before" = "$after" ] ; then
             echo "Repository $reponame is unchanged since last time"
