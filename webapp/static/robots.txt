@@ -10,10 +10,12 @@ Allow: /curator/study/view/
 Disallow: /curator/study/edit/
 Disallow: /curator/study/create/
 # Block access to APIs, if found here
+Disallow: /phylesystem/
 Disallow: /treemachine/
 Disallow: /taxomachine/
 Disallow: /oti/
 Disallow: /api/
+Disallow: /cached/
 # Block access to admin pages, login, logout
 Disallow: /admin/
 Disallow: /user/
