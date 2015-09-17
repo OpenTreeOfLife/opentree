@@ -107,7 +107,7 @@ function git_refresh() {
      git merge origin/$branch) || echo "
         ***** git failure (see details above)! *****
         To discard unwanted local changes, try this (with appropriate hostname):
-        $ ssh $OPENTREE_HOST \"cd ~/repo/opentree; git reset --hard; git status\"
+        $ ssh $OPENTREE_HOST \"cd $repo_dir; git reset --hard; git status\"
         " && exit 1
         after=`cd $repo_dir; git log | head -1`
         if [ "$before" = "$after" ] ; then
