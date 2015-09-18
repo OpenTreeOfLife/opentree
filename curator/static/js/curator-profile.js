@@ -387,3 +387,25 @@ function filterByCurator( curatorID ) {
     // replace the filter text with this curator's userid
     viewModel.listFilters.COLLECTIONS.match( curatorID );
 }
+
+function promptToEditProfile() {
+    var gitHubProfileURL = 'https://github.com/settings/profile';
+    var msg = 'You can add or modify this information by editing your GitHub profile:\n'
+             +'   Name and profile picture\n'
+             +'   Affiliation ("Company" on GitHub)\n'
+             +'   Website ("URL" on GitHub)\n'
+             +'   Email ("Public email" on GitHub)\n\n'
+             +'Would you like to do this now?'
+    if (confirm(msg)) {
+        var newWindow = window.open(gitHubProfileURL , '_blank' );
+        if (newWindow) {
+            // if blocked by popup blocker, this is undefined
+            newWindow.focus();
+        } else {
+            alert(
+                'The new window was blocked. You can edit your GitHub profile at this URL:'
+               +'\n\n   '+ gitHubProfileURL
+            );
+        }
+    }
+}
