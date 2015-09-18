@@ -62,13 +62,6 @@ git config --global user.email api@opentreeoflife.org
 echo "...fetching $WEBAPP repo..."
 git_refresh OpenTreeOfLife $WEBAPP || true
 
-# Modify the requirements list
-cp -p $APPROOT/requirements.txt $APPROOT/requirements.txt.save
-if grep --invert-match "distribute" \
-      $APPROOT/requirements.txt >requirements.txt.new ; then
-    mv requirements.txt.new $APPROOT/requirements.txt
-fi
-
 if [ "${PEYOTL_LOG_FILE_PATH:0:1}" != "/" ]; then
     PEYOTL_LOG_FILE_PATH="$OTHOME"/"$PEYOTL_LOG_FILE_PATH"
 fi
