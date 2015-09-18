@@ -57,13 +57,6 @@ APPROOT=repo/$WEBAPP
 
 git_refresh OpenTreeOfLife $WEBAPP || true
 
-# Modify the requirements list
-cp -p $APPROOT/requirements.txt $APPROOT/requirements.txt.save
-if grep --invert-match "distribute" \
-      $APPROOT/requirements.txt >requirements.txt.new ; then
-    mv requirements.txt.new $APPROOT/requirements.txt
-fi
-
 # ---------- WEB2PY CONFIGURATION ----------
 
 # The web2py apps need to know their own host names, for
