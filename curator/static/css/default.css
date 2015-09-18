@@ -811,3 +811,8 @@ tr.after-shims th {
 .form-horizontal.metadata-readonly .control-group {
   margin-bottom: 12px;
 }
+
+.profile-header .control-group > .control-label, 
+.profile-header .control-group > .controls {
+    margin-top: -8px;
+}

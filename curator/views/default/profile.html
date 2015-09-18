@@ -141,15 +141,14 @@ elif active_user_found:
     {{ pass }}
 -->
 
-<form class="form-horizontal wider-fields">
-{{ if active_user_found:
-     if user_info.get('company', None): }}
+<form class="form-horizontal wider-fields profile-header">
+{{ if active_user_found: }}
     <div class="control-group">
+  {{ if user_info.get('company', None): }}
         <label class="control-label">Affiliation</label>
         <div class="controls">
             <p class="static-form-value">{{= user_info['company'] }}</p>
         </div>
-    </div>
   {{ pass }}
   {{ if user_info.get('blog', None):
         # if no scheme is found, prepend 'http://'
@@ -158,34 +157,30 @@ elif active_user_found:
             displayed_url = "http://%s" % displayed_url
         pass
   }}
-    <div class="control-group">
         <label class="control-label">Website</label>
         <div class="controls">
           <p class="static-form-value">
             <a href="{{= displayed_url }}" target="_blank">{{= displayed_url }}</a>
           </p>
         </div>
-    </div>
   {{ pass }}
   {{ if user_info.get('email', None): }}
-    <div class="control-group">
         <label class="control-label">Email</label>
         <div class="controls">
           <p class="static-form-value">
             <a href="mailto:{{= user_info['email'] }}">{{= user_info['email'] }}</a>
           </p>
         </div>
-    </div>
   {{ pass }}
   {{ if user_info.get('bio', None): }}
-    <div class="control-group">
         <label class="control-label">Bio</label>
         <div class="controls">
             <p class="static-form-value">{{= user_info['bio'] }}</p>
         </div>
+  {{ pass }}
     </div>
-  {{ pass
-  pass }}
+{{ pass }}
+
   {{ if not opentree_activity: 
        # this user (or organization) has no activity to show }}
     <div class="control-group">
@@ -211,6 +206,9 @@ elif active_user_found:
             <p class="static-form-value">{{= opentree_activity.get('curator_since', '&ndash;') }}</p>
         </div>
     </div>
+
+{{# TODO: Restore these stats once OTI has been fixed, see https://github.com/OpenTreeOfLife/oti/issues/35 }}
+{{ if False: }}
     <div class="control-group">
         <label class="control-label">Studies added</label>
         <div class="controls">
@@ -224,7 +222,6 @@ elif active_user_found:
                         needed fixes to oti</a>
                 </span>
             </p>
-
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
     </div>
@@ -254,28 +251,39 @@ elif active_user_found:
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
     </div>
+{{ pass }}
+
     <div class="control-group">
-        <label class="control-label">Feedback (items)</label>
+        <label class="control-label">Feedback</label>
         <div class="controls">
             <p class="static-form-value">
                 {{= len( opentree_activity.get('issues', []) ) }}
-                &nbsp;
-                &nbsp;
-                {{ if len( opentree_activity.get('issues', []) ) > 0: }}
-                <a target="_blank" style="font-weight: normal;"
-                   href="https://github.com/OpenTreeOfLife/feedback/issues/created_by/{{= user_info.get('login') }}">
-                   See these items on GitHub
-                </a>
-                {{ pass }}
+                <span style="font-weight: normal;">
+                    recent items
+                    {{ if len( opentree_activity.get('issues', []) ) > 0: }}
+                    <a target="_blank"
+                       href="https://github.com/OpenTreeOfLife/feedback/issues?utf8=✓&q=+is%3Aissue+author%3A{{= user_info.get('login') }}">
+                       (see all on GitHub)
+                    </a>
+                    {{ pass }}
+                </span>
             </p>
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label">Feedback (comments)</label>
-        <div class="controls">
-            <p class="static-form-value">{{= len( opentree_activity.get('comments', []) ) }}</p>
-            <!--  TODO: add markers for top 5%, etc. -->
+        <div class="controls" style="margin-top: -8px;">
+            <p class="static-form-value">
+                <!--  TODO: add markers for top 5%, etc. -->
+                {{= len( opentree_activity.get('comments', []) ) }}
+                <span style="font-weight: normal;">
+                    recent comments
+                    {{ if len( opentree_activity.get('comments', []) ) > 0: }}
+                        <a target="_blank" style="font-weight: normal;"
+                           href="https://github.com/OpenTreeOfLife/feedback/issues?utf8=✓&q=+is%3Aissue+commenter%3A{{= user_info.get('login') }}">
+                           (see all on GitHub)
+                        </a>
+                    {{ pass }}
+                </span>
+            </p>
         </div>
     </div>
 </form>
