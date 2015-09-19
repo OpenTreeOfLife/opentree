@@ -304,7 +304,7 @@ def index():
                 # WE need logging in the web app!
                 try:
                     import sys
-                    sys.stderr.write('Error: got a {c} from {u}'.format(c=resp.status_code,
+                    sys.stderr.write('Error: got a {c} from {u}\n'.format(c=resp.status_code,
                                                                         u=get_children_url))
                 except:
                     pass # well that sucks, we failed to even write to stderr
