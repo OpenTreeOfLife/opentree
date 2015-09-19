@@ -121,7 +121,9 @@ function updateListFiltersWithHistory() {
 
 $(document).ready(function() {
     bindHelpPanels();
-    loadCollectionList();
+    if (isCurrentUserProfile) {
+        loadCollectionList();
+    }
     
     // NOTE that our initial state is set in the main page template, so we 
     // can build it from incoming URL in web2py. Try to recapture this state,
@@ -390,7 +392,7 @@ function filterByCurator( curatorID ) {
 
 function promptToEditProfile() {
     var gitHubProfileURL = 'https://github.com/settings/profile';
-    var msg = 'You can add or modify this information by editing your GitHub profile:\n'
+    var msg = 'You can personalize this curator page by editing your GitHub profile:\n'
              +'   Name and profile picture\n'
              +'   Affiliation ("Company" on GitHub)\n'
              +'   Website ("URL" on GitHub)\n'
