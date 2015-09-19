@@ -72,8 +72,7 @@ def error():
 def download_subtree():
     id_type = request.args(0)  # 'ottol-id' or 'node-id'
     node_or_ottol_id = request.args(1)
-    max_depth = request.args(2)
-    node_name = request.args(3)
+    node_name = request.args(2)
     import cStringIO
     import contenttype as c
     s=cStringIO.StringIO()
@@ -86,12 +85,11 @@ def download_subtree():
         method_dict = get_opentree_services_method_urls(request)
 
         # use the appropriate web service for this ID type
+        fetch_url = method_dict['getDraftSubtree_url']
         if id_type == 'ottol-id':
-            fetch_url = method_dict['getDraftTreeForOttolID_url']
-            fetch_args = {'ottId': node_or_ottol_id, 'maxDepth': max_depth}
+            fetch_args = {'ott_id': node_or_ottol_id}
         else:
-            fetch_url = method_dict['getDraftTreeForNodeID_url']
-            fetch_args = {'nodeID': node_or_ottol_id, 'maxDepth': max_depth}
+            fetch_args = {'node_id': node_or_ottol_id}
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
             fetch_url = "http:%s" % fetch_url
@@ -99,15 +97,15 @@ def download_subtree():
         # apparently this needs to be a POST, or it just describes the API
         tree_response = fetch(fetch_url, data=fetch_args)
         tree_json = simplejson.loads( tree_response )
-        newick_text = str(tree_json['tree']).encode('utf-8');
+        newick_text = str(tree_json.get('newick', 'NEWICK_NOT_FOUND')).encode('utf-8');
         s.write( newick_text )
 
     except Exception, e:
         # throw 403 or 500 or just leave it
         if id_type == 'ottol-id':
-            s.write( u'ERROR - Unable to fetch the Newick subtree for ottol id "%s" (%s) with max depth %s:\n\n%s' % (node_or_ottol_id, node_name, max_depth, newick_text) )
+            s.write( u'ERROR - Unable to fetch the Newick subtree for ottol id "%s" (%s):\n\n%s' % (node_or_ottol_id, node_name, newick_text) )
         else:
-            s.write( u'ERROR - Unable to fetch the Newick subtree for node id "%s" (%s) with max depth %s:\n\n%s' % (node_or_ottol_id, node_name, max_depth, newick_text) )
+            s.write( u'ERROR - Unable to fetch the Newick subtree for node id "%s" (%s):\n\n%s' % (node_or_ottol_id, node_name, newick_text) )
 
     finally:
         response.headers['Content-Type'] = 'text/plain'

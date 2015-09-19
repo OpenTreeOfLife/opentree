@@ -9,12 +9,12 @@ response.subtitle = "Building the tree, one study at a time"
 {{response.title = "Study Curator"}}
 {{response.subtitle = ""}}
 
-{{### Add support scripts for single-page editor 
+{{### Add support scripts for single-page editor
 
-# JSON support for older browsers (esp. IE7) 
+# JSON support for older browsers (esp. IE7)
 response.files.append(URL('static','js/json2.js'))
 
-# Knockout.js for binding JSON model to editing UI 
+# Knockout.js for binding JSON model to editing UI
 response.files.append(URL('static','js/knockout-2.3.0.js'))
 
 # KO plugin for paginated lists
@@ -73,19 +73,18 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
             Hide <i class="icon-chevron-up Xicon-white"></i>
         </button>
         <p>
-        This tool allows you to contribute studies and trees to our database for
-        synthesis. Once your data is submitted, you can return and make improvements,
-        share your data more widely, and watch for changes in your area of interest.
+        The Study Curator allows you to add new trees or edit existing trees
+        to the Open Tree of Life database. All trees must be associated with
+        a published study, and once uploaded are available as public documents in
+        <a href="https://github.com/OpenTreeOfLife/phylesystem" target="_blank">GitHub</a>.
         </p>
         <p>
-        All data is stored as documents in <a href="https://github.com/" target="_blank">GitHub</a>, 
-        a collaborative coding website. This curation tool makes it easy to edit and
-        contribute data, but you'll need a (free) GitHub account to participate.
-        </p>
-        <p>
-        Once you've created an account on GitHub, just <a href="/curator/user/login?_next=/curator">login</a> using the link above. Once
-        you've agreed to give access to the OpenTree tool, you can start adding data
-        immediately.
+        You need a (free) <a href="https://github.com/join" target="_blank">GitHub account</a>
+        to participate. Using GitHub allows us to track the history and changes of all data.
+        Once you've created a GitHub account, just <a href="/curator/user/login?_next=/curator">login</a>
+        and give access to OpenTree. We also have
+        <a href="https://github.com/OpenTreeOfLife/opentree/wiki/Submitting-phylogenies-to-Open-Tree-of-Life" target="_blank">detailed documentation</a>
+        on submitting data.
         </p>
       </div>
 
@@ -93,7 +92,7 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
 {{ if maintenance_info.get('maintenance_in_progress', False): }}
          onclick="showMaintenancePopup(); return false;"
 {{ pass }}
-      >Add new study 
+      >Add new study
           <i class="icon-circle-arrow-up Xicon-plusXicon-upload icon-white"></i></a>
 
       <div class="navbar" style="clear: both;">
@@ -179,11 +178,11 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
                         </div>
 
                         <label style="display: inline-block" data-bind="visible: (study['ot:tag'])">Tags&nbsp;</label>
-                        <div class="bootstrap-tagsinput" 
+                        <div class="bootstrap-tagsinput"
                              style="display: inline-block; border: none; margin-bottom: 0; padding: 0 0 4px 0;"
                              data-bind="visible: study['ot:tag'] !== ''">
                         <!-- ko foreach: makeArray(study['ot:tag']) -->
-                            <a class="tag label label-info" style="display: none;" 
+                            <a class="tag label label-info" style="display: none;"
                                href="#" data-bind="text: $data, visible: true"
                                onclick="filterByTag($(this).text()); return false;">&nbsp;</a>
                         <!-- /ko -->
@@ -197,7 +196,7 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
           </tbody>
         </table>
 
-        <div class="pagination pagination-centered pagination-small" 
+        <div class="pagination pagination-centered pagination-small"
              Xdata-bind="if: viewModel.filteredStudies()().length &gt; viewModel.filteredStudies().pagedItems().length">
           <ul>
             <li data-bind="css: { 'disabled': !viewModel.filteredStudies().prev.enabled() }" class="disabled">
