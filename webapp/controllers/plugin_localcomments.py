@@ -293,12 +293,21 @@ def index():
         if comment.get('comments') and comment.get('comments') > 0:
             get_children_url = comment['comments_url']
             resp = requests.get( get_children_url, headers=GH_GET_HEADERS)
-            resp.raise_for_status()
             try:
-                child_comments = resp.json()
+                resp.raise_for_status()
+                try:
+                    child_comments = resp.json()
+                except:
+                    child_comments = resp.json
+                print("found {0} child comments".format(len(child_comments)))
             except:
-                child_comments = resp.json
-            print("found {0} child comments".format(len(child_comments)))
+                # WE need logging in the web app!
+                try:
+                    import sys
+                    sys.stderr.write('Error: got a {c} from {u}'.format(c=resp.status_code,
+                                                                        u=get_children_url))
+                except:
+                    pass # well that sucks, we failed to even write to stderr
 
         metadata = parse_comment_metadata(comment['body'])
         ##print(metadata)
