@@ -1,0 +1,1358 @@
+<!DOCTYPE html>
+
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>opentree</title>
+    
+    
+    <style type="text/css">
+        // Fix for broken submenus on mobile devices
+        .dropdown-backdrop{
+            position: static !important;
+        }
+    </style>
+
+    <script type="text/javascript">
+        /*    
+        @licstart  The following is the entire license notice for the JavaScript code in this page. 
+
+        Copyright (c) 2013, Jonathan Rees
+        Copyright (c) 2013, Mark Holder
+        Copyright (c) 2013, Jim Allman
+        Copyright (c) 2013, Stephen Smith
+
+        All rights reserved.
+
+        Redistribution and use in source and binary forms, with or without
+        modification, are permitted provided that the following conditions are met:
+
+        Redistributions of source code must retain the above copyright notice, this
+        list of conditions and the following disclaimer.
+
+        Redistributions in binary form must reproduce the above copyright notice,
+        this list of conditions and the following disclaimer in the documentation
+        and/or other materials provided with the distribution.
+
+        THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+        AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+        IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+        DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+        FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+        DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+        SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+        CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+        OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+        OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+        @licend  The above is the entire license notice for the JavaScript code in this page.
+
+        Licensing for third-party and linked JavaScript can be found in the
+        'License information' page linked from the footer.
+        */
+    </script>
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      
+    <![endif]-->
+
+    
+    
+    <!-- css for comments -->
+    
+    
+    <!-- js dependencies for argus -->
+      <!-- TODO: add a proper test here, to omit while in /opentree/appadmin -->
+    <script type="text/javascript">
+        // make important domains available to client-side code
+        var treemachine_domain = "//api.opentreeoflife.org/treemachine/v1";
+        var taxomachine_domain = "//api.opentreeoflife.org/taxomachine/v1";
+        var getDraftTreeID_url = "//api.opentreeoflife.org/treemachine/v1/getDraftTreeID";
+        var getSyntheticTree_url = "//api.opentreeoflife.org/cached/treemachine/v1/getSyntheticTree";
+        var getSourceTree_url = "//api.opentreeoflife.org/treemachine/v1/getSourceTree";
+        var getDraftSubtree_url = "//devapi.opentreeoflife.org/v2/tree_of_life/subtree";
+        var doTNRSForAutocomplete_url = "//api.opentreeoflife.org/taxomachine/v1/autocompleteQuery";
+        var getNodeIDForOttolID_url = "//api.opentreeoflife.org/treemachine/v1/getNodeIDForottId";
+        var singlePropertySearchForStudies_url = "//api.opentreeoflife.org/oti/v1/singlePropertySearchForStudies";
+    </script>
+    
+
+    
+    
+    
+    
+
+    <!-- js for history management -->
+    
+
+    <!-- jquery splitter plugin -->
+    
+    
+
+    <!-- js for Bootstrap components -->
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    <!-- js improved date parsing & formatting -->
+    
+    
+    <!-- support for web2py AJAX (incl. link to static/js/jquery.js) -->
+    <script type="text/javascript"><!--
+    // These variables are used by the web2py_ajax_init function in web2py_ajax.js (which is loaded below).
+    var w2p_ajax_confirm_message = "Are you sure you want to delete this object?";
+    var w2p_ajax_date_format = "%Y-%m-%d";
+    var w2p_ajax_datetime_format = "%Y-%m-%d %H:%M:%S";
+    var ajax_error_500 = 'An error occured, please <a data-w2p_disable_with="default" href="/">reload</a> the page'
+    //--></script>
+<meta name="keywords" content="bioinformatics, evolutionary biology, phylogenetics" />
+
+<meta name="description" content="The goal of the Open Tree of Life project is to make phylogenetic knowledge more accessible. This site will allow you to explore previously published tree estimates and synthetic estimates of phylogenies that are created from many datasets. You can help make the system more comprehensive by uploading trees or linking trees in the system to the data on which they are based." />
+
+<meta name="author" content="Open Tree of Life developers &lt;mtholder@gmail.com&gt;" />
+<script src="/opentree/static/js/jquery.js" type="text/javascript"></script><link href="/opentree/static/css/calendar.css" rel="stylesheet" type="text/css" /><script src="/opentree/static/js/calendar.js" type="text/javascript"></script><script src="/opentree/static/js/web2py.js" type="text/javascript"></script><link href="/opentree/static/css/bootstrap.css" rel="stylesheet" type="text/css" /><link href="/opentree/static/css/bootstrap-responsive.css" rel="stylesheet" type="text/css" /><script src="/opentree/static/js/html5shiv.js" type="text/javascript"></script><link href="/opentree/static/plugin_layouts/opentree/default.css" rel="stylesheet" type="text/css" /><script src="/opentree/static/plugin_layouts/superfish.js" type="text/javascript"></script><link href="/opentree/static/plugin_localcomments/css/localcomments.css" rel="stylesheet" type="text/css" /><script src="/opentree/static/js/json2.js" type="text/javascript"></script><script src="/opentree/static/js/argus/raphael-min.js" type="text/javascript"></script><script src="/opentree/static/js/argus/drawtree.js" type="text/javascript"></script><script src="/opentree/static/js/jquery.history.js" type="text/javascript"></script><script src="/opentree/static/js/jquery.splitter-0.6.js" type="text/javascript"></script><link href="/opentree/static/css/jquery.splitter.css" rel="stylesheet" type="text/css" /><script src="/opentree/static/js/bootstrap-transition.js" type="text/javascript"></script><script src="/opentree/static/js/bootstrap-alert.js" type="text/javascript"></script><script src="/opentree/static/js/bootstrap-modal.js" type="text/javascript"></script><script src="/opentree/static/js/bootstrap-dropdown.js" type="text/javascript"></script><script src="/opentree/static/js/bootstrap-scrollspy.js" type="text/javascript"></script><script src="/opentree/static/js/bootstrap-tab.js" type="text/javascript"></script><script src="/opentree/static/js/bootstrap-tooltip.js" type="text/javascript"></script><script src="/opentree/static/js/bootstrap-popover.js" type="text/javascript"></script><script src="/opentree/static/js/bootstrap-button.js" type="text/javascript"></script><script src="/opentree/static/js/bootstrap-collapse.js" type="text/javascript"></script><script src="/opentree/static/js/bootstrap-carousel.js" type="text/javascript"></script><script src="/opentree/static/js/bootstrap-typeahead.js" type="text/javascript"></script><script src="/opentree/static/js/moment.min.js" type="text/javascript"></script>
+
+
+    <script type="text/javascript">
+        // some behavior should be on *every* page (after jQuery)
+        function toggleServerDetailsPopup() {
+            var $detailsBox = $('#server-details');
+            $detailsBox.toggle();
+            if ($detailsBox.is(':visible')) {
+                $('body').animate({scrollTop: parseInt($detailsBox.offset().top) });
+            }
+        }
+
+        /* Sensible autocomplete behavior requires the use of timeouts
+         * and sanity checks for unchanged content, etc.
+         */
+        clearTimeout(searchTimeoutID);  // in case there's a lingering search from last page!
+        var searchTimeoutID = null;
+        var searchDelay = 1000; // milliseconds
+        var hopefulSearchName = null;
+        function setTaxaSearchFuse(e) {
+            if (searchTimeoutID) {
+                // kill any pending search, apparently we're still typing
+                clearTimeout(searchTimeoutID);
+            }
+            // reset the timeout for another n milliseconds
+            searchTimeoutID = setTimeout(searchForMatchingTaxa, searchDelay);
+
+            /* If the last key pressed was the ENTER key, stash the current (trimmed)
+             * string and auto-jump if it's a valid taxon name.
+             */
+            if (e.type === 'keyup') {
+                switch (e.which) {
+                    case 13:
+                        hopefulSearchName = $('input[name=taxon-search]').val().trim();
+                        jumpToExactMatch();  // use existing menu, if found
+                        break;
+                    case 17:
+                        // do nothing (probably a second ENTER key)
+                        break;
+                    case 39:
+                    case 40:
+                        // down or right arrow should try to tab to first result
+                        $('#search-results a:eq(0)').focus();
+                        break;
+                    default:
+                        hopefulSearchName = null;
+                }
+            } else {
+                hopefulSearchName = null;
+            }
+        }
+
+        function makeSafeForWeb2pyURL(str) {
+            // replace characters considered unsafe (blocked) by web2py in a URL
+            return str.replace(/[:(), .]+/g, '-').replace(/[\[\]\+]+/g,'');
+        }
+        function historyStateToURL( stateObj ) {
+            var safeNodeName = null;
+            if (stateObj.nodeName) {
+                safeNodeName = makeSafeForWeb2pyURL(stateObj.nodeName);
+            }
+            return '/opentree'+ (stateObj.viewer ? '/'+stateObj.viewer : '') +'/'+ stateObj.domSource +'@'+ stateObj.nodeID + (safeNodeName ? '/'+ safeNodeName : '');
+        }
+
+        var showingResultsForSearchText = '';
+        var showingResultsForSearchContextName = '';
+        function searchForMatchingTaxa() {
+            // clear any pending search timeout and ID
+            clearTimeout(searchTimeoutID);
+            searchTimeoutID = null;
+
+            var $input = $('input[name=taxon-search]');
+            var searchText = $input.val().trimLeft();
+
+            if (searchText.length === 0) {
+                $('#search-results').html('');
+                if (typeof snapViewerFrameToMainTitle === 'function') snapViewerFrameToMainTitle();
+                return false;
+            } else if (searchText.length < 2) {
+                $('#search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+                $('#search-results').dropdown('toggle');
+
+                if (typeof snapViewerFrameToMainTitle === 'function') snapViewerFrameToMainTitle();
+                return false;
+            }
+
+            // groom trimmed text based on our search rules
+            var searchContextName = $('select[name=taxon-search-context]').val();
+
+            // is this unchanged from last time? no need to search again..
+            if ((searchText == showingResultsForSearchText) && (searchContextName == showingResultsForSearchContextName)) {
+                ///console.log("Search text and context UNCHANGED!");
+                return false; 
+            }
+
+            // stash these to use for later comparison (to avoid redundant searches)
+            var queryText = searchText; // trimmed above
+            var queryContextName = searchContextName;
+
+            // proper version queries treemachine API
+            // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
+            $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
+            $('#search-results').dropdown('toggle');
+            if (typeof snapViewerFrameToMainTitle === 'function') snapViewerFrameToMainTitle();
+            
+            $.ajax({
+                url: doTNRSForAutocomplete_url,  // NOTE that actual server-side method name might be quite different!
+                type: 'POST',
+                dataType: 'json',
+                data: JSON.stringify({ 
+                    "queryString": searchText,
+                    "contextName": searchContextName
+                }),  // data (asterisk required for completion suggestions)
+                crossDomain: true,
+                contentType: 'application/json',
+                success: function(data) {    // JSONP callback
+                    // stash the search-text used to generate these results
+                    showingResultsForSearchText = queryText;
+                    showingResultsForSearchContextName = queryContextName;
+
+                    $('#search-results').html('');
+                    var maxResults = 100;
+                    var visibleResults = 0;
+                    /*
+                     * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
+                     * with these properties:
+                     *      ottId   // taxon ID in OTT taxonomic tree
+                     *      nodeId  // ie, neo4j node ID
+                     *      exact   // matches the entered text exactly? T/F
+                     *      name    // taxon name
+                     *      higher  // points to a genus or higher taxon? T/F
+                     */
+                    if (data && data.length && data.length > 0) {
+                        // sort results to show exact match(es) first, then higher taxa, then others
+                        // initial sort on higher taxa (will be overridden by exact matches)
+                        data.sort(function(a,b) {
+                            if (a.higher === b.higher) return 0;
+                            if (a.higher) return -1;
+                            if (b.higher) return 1;
+                        });
+                        // final sort on exact matches (overrides higher taxa)
+                        data.sort(function(a,b) {
+                            if (a.exact === b.exact) return 0;
+                            if (a.exact) return -1;
+                            if (b.exact) return 1;
+                        });
+
+                        // show all sorted results, up to our preset maximum
+                        var matchingNodeIDs = [ ];  // ignore any duplicate results (point to the same taxon)
+                        for (var mpos = 0; mpos < data.length; mpos++) {
+                            if (visibleResults >= maxResults) {
+                                break;
+                            }
+                            var match = data[mpos];
+                            var matchingName = match.name;  // N.B. this will be its unique name, if found
+                            var matchingID = match.ottId;
+                            if ($.inArray(matchingID, matchingNodeIDs) === -1) {
+                                // we're not showing this yet; add it now
+                                $('#search-results').append(
+                                    '<li><a href="'+ matchingID +'" tabindex="'+ (mpos+2) +'">'+ matchingName +'</a></li>'
+                                );
+                                matchingNodeIDs.push(matchingID);
+                                visibleResults++;
+                            }
+                        }
+                        
+                        $('#search-results a')
+                            .click(function(e) {
+                                // suppress normal dropdown logic and jump to link normally (TODO: Why is this needed?)
+                                e.stopPropagation();
+                            })
+                            .each(function() {
+                                var $link = $(this);
+                                //// WAS constructed literal ('/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName)
+                                var safeURL = historyStateToURL({
+                                    nodeID: $link.attr('href'), 
+                                    domSource: 'ottol',
+                                    nodeName: $link.html(),
+                                    viewer: 'argus'
+                                });
+                                $link.attr('href', safeURL);
+                            });
+                        $('#search-results').dropdown('toggle');
+
+                        jumpToExactMatch();
+                    } else {
+                        $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+                        $('#search-results').dropdown('toggle');
+                    }
+                    if (typeof snapViewerFrameToMainTitle === 'function') snapViewerFrameToMainTitle();
+                }
+            });
+
+            return false;
+        }
+
+        function jumpToExactMatch() {
+            // if the user hit the ENTER key, and there's an exact match, apply it automatically
+            if (hopefulSearchName) {
+                $('#search-results a').each(function() {
+                    var $link = $(this);
+                    if ($link.text().toLowerCase() === hopefulSearchName.toLowerCase()) {
+                        window.location = $link.attr('href');
+                        return false;
+                    }
+                });
+            }
+        }
+
+        $(document).ready(function() {
+            // taxon search on remote site (using JSONP to overcome the same-origin policy)
+            $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
+            $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
+            $('#taxon-search-form').unbind('submit').submit(function() {
+                searchForMatchingTaxa();
+                return false;
+            });
+        });
+
+    </script>
+    
+    
+
+    <!-- Fav and touch icons (TODO: add these files to site root!)
+    <link rel="apple-touch-icon-precomposed" sizes="144x144" href="/apple-touch-icon-144-precomposed.png">
+    <link rel="apple-touch-icon-precomposed" sizes="114x114" href="/apple-touch-icon-114-precomposed.png">
+      <link rel="apple-touch-icon-precomposed" sizes="72x72" href="/apple-touch-icon-72-precomposed.png">
+                    <link rel="apple-touch-icon-precomposed" href="/apple-touch-icon-57-precomposed.png">
+    -->
+                                   <link rel="shortcut icon" href="/favicon.ico">
+  </head>
+  
+<body>
+
+  <div class="navbar navbar-inverse navbar-static-top" role="navigation">
+    <div class="navbar-inner">
+      <div class="container">
+
+        <!-- .btn-navbar is used as the toggle for collapsed navbar content -->
+        <a class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+        </a>
+
+        <a class="brand" href="/opentree" style="font-weight: 400; color: #bbb; padding-right: 10px;">
+            <img style="margin: -12px 4px -8px -2px;" src="/opentree/static/images/mini-opentree-logo.png">
+            Open Tree of Life
+        </a>
+
+        <div class="nav-collapse collapse">
+                    <ul class="nav">
+              <!--<li class="active"><a href="/">Home</a></li>-->
+              <li><a href="/curator">Add / browse trees</a></li>
+              <li><a href="/contact">Feedback</a></li>
+              <li><a href="http://blog.opentreeoflife.org/" target="_blank">Blog</a></li>
+              <li class="dropdown">
+                <a href="/about/open-tree-of-life" class="dropdown-toggle" data-toggle="dropdown">
+                      About  <b class="caret"></b>
+                  </a>
+                <ul class="dropdown-menu">
+                <li><a href="/about/open-tree-of-life">Open Tree of Life</a></li>
+                      <li><a href="/about/references">Bibliographic references</a></li>
+                      <li><a href="/about/progress">Progress</a></li>
+                      <li><a href="/about/synthesis-release">Latest synthesis release</a></li>
+                      <li><a href="/about/taxonomy-version">Latest taxonomy release</a></li>
+                      <!--
+                      <li><a href="/about/the-source-tree-manager">The source tree manager</a></li>
+                      -->
+                      <li><a href="https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs" target="_blank">API documentation</a></li>
+                      <li><a href="/about/developer-resources">Developer resources</a></li>
+                      <li><a href="/about/licenses">Licenses</a></li>
+                </ul>
+              </li>
+            </ul>
+            <form id="taxon-search-form" class="navbar-search pull-right" autocomplete="off">
+                <div class="left-inner-addon">
+                    <i class="icon-search"></i>
+                    <input type="text" name="taxon-search" class="search-query" placeholder="Search for taxon" autocomplete="off"
+                        style="width: 100px;" tabindex="1">
+                </div>
+                <!-- then show dropdown when results are ready... -->
+                <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
+                <select class="btn-inverse" style="margin-bottom: 0; width: auto;" name="taxon-search-context">
+                    
+                           <option selected="selected">All life</option>
+                       
+                    
+                            <option>Land plants</option>
+                       
+                    
+                            <option>Hornworts</option>
+                       
+                    
+                            <option>Mosses</option>
+                       
+                    
+                            <option>Liverworts</option>
+                       
+                    
+                            <option>Vascular plants</option>
+                       
+                    
+                            <option>Club mosses</option>
+                       
+                    
+                            <option>Ferns</option>
+                       
+                    
+                            <option>Seed plants</option>
+                       
+                    
+                            <option>Flowering plants</option>
+                       
+                    
+                            <option>Monocots</option>
+                       
+                    
+                            <option>Eudicots</option>
+                       
+                    
+                            <option>Rosids</option>
+                       
+                    
+                            <option>Asterids</option>
+                       
+                    
+                            <option>Asterales</option>
+                       
+                    
+                            <option>Asteraceae</option>
+                       
+                    
+                            <option>Aster</option>
+                       
+                    
+                            <option>Symphyotrichum</option>
+                       
+                    
+                            <option>Campanulaceae</option>
+                       
+                    
+                            <option>Lobelia</option>
+                       
+                    
+                            <option>Animals</option>
+                       
+                    
+                            <option>Birds</option>
+                       
+                    
+                            <option>Tetrapods</option>
+                       
+                    
+                            <option>Mammals</option>
+                       
+                    
+                            <option>Amphibians</option>
+                       
+                    
+                            <option>Vertebrates</option>
+                       
+                    
+                            <option>Arthropods</option>
+                       
+                    
+                            <option>Molluscs</option>
+                       
+                    
+                            <option>Nematodes</option>
+                       
+                    
+                            <option>Platyhelminthes</option>
+                       
+                    
+                            <option>Annelids</option>
+                       
+                    
+                            <option>Cnidarians</option>
+                       
+                    
+                            <option>Arachnides</option>
+                       
+                    
+                            <option>Insects</option>
+                       
+                    
+                            <option>Fungi</option>
+                       
+                    
+                            <option>Basidiomycetes</option>
+                       
+                    
+                            <option>Ascomycetes</option>
+                       
+                    
+                            <option>Bacteria</option>
+                       
+                    
+                            <option>SAR group</option>
+                       
+                    
+                            <option>Archaea</option>
+                       
+                    
+                            <option>Excavata</option>
+                       
+                    
+                            <option>Amoebae</option>
+                       
+                    
+                            <option>Centrohelida</option>
+                       
+                    
+                            <option>Haptophyta</option>
+                       
+                    
+                            <option>Apusozoa</option>
+                       
+                    
+                            <option>Diatoms</option>
+                       
+                    
+                            <option>Ciliates</option>
+                       
+                    
+                            <option>Forams</option>
+                       
+                    
+                    
+                <!-- 
+                NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted 
+                by the server, ie, there's no distinction between visible and occult values.
+                -->
+                </select>
+                <div class="">
+                    <ul id="search-results" class="dropdown-menu" role="menu">
+                        ...
+                    </ul>
+                </div>
+            </form>
+
+        </div><!-- /.nav-collapse.collapse -->
+
+      </div>
+    </div>
+  </div><!-- /.navbar -->
+
+  <div class="container">
+    <section id="main" class="main row">
+        
+
+        <div class="span12">
+            
+            
+
+<div id="argusDBContainer" />
+
+<!--
+<div id="screen-size-indicator">
+<span class="visible-phone">phone</span>
+<span class="visible-tablet">tablet</span>
+<span class="visible-desktop">desktop</span>
+</div>
+-->
+
+<div class="container">
+      <!--
+    <div class="navbar">
+
+	  <div class="header">
+	    <div class="headerlogo">
+		  <a data-w2p_disable_with="default" href="http://opentreeoflife.org/"><img alt="Open Tree of Life logo" height="74" src="/opentree/static/images/logo.png" valign="middle" width="144" /></a>
+	    </div>
+	  </div>
+
+	  <div class="sidebar-search">
+        <form style="text-align: center;" autocomplete="off">
+            <input type="text" style="width: 150px;" name="taxon-search" placeholder="Search for taxon/node" autocomplete="off"/>
+            <input type="submit" style="" name="taxon-search-go" value="Go" onclick="return false;"/>
+		</form>
+        <div id="search-results">
+            &nbsp;
+        </div>
+	  </div>
+
+      <br />
+
+      <a href="#TODO-about.html">About the tree</a>
+      <br />
+
+      <a href="#TODO-extract.html">Extracting subtrees</a>
+      <br />
+
+      <a href="#TODO-download.html">Download</a>
+      <br />
+
+      <a href="http://www.reelab.net/phylografter">Source tree manager</a>
+      <br />
+
+      <a href="#TODO-credits.html">Credits</a>
+      <br />
+      <br />
+      <hr />
+      <i>What's new:</i>
+      <p style="margin-left:2em; font-size: 80%;">
+        New in version 0.73: Something very cool
+      </p>
+      <hr />
+    
+
+   </div>--><!-- /.navbar -->
+
+    <div class="vizcontent">
+     <div id="viz-header" class="row">
+      <div class="span12">
+       <h1 id="main-title" class="pull-left" style="margin: 0;">
+           <span class="title">&nbsp;</span>
+       </h1>
+       <p id="tree-description" class="hidden-phone pull-right">Exploring the current synthetic tree</p>
+       <!-- if main title is long, this should disappear on narrow screens -->
+
+       <!--
+           <div id="links-to-local-comments" style="clear: both;">
+               <a href="#comment-header">Comments on this node</a>
+               |
+               <a href="#comment-header" onclick="$('.plugin_localcomments #r0 > a.reply, .plugin_localcomments a.login-logout').eq(0).click(); return true;">Add a comment</a>
+           </div>
+       -->
+      </div>
+     </div>
+
+     <!--<a id="provenance-show" href="#">Show properties</a>-->
+     <div id="viewer-collection" class="with-small-provenance"
+          style="overflow: visible;" >
+
+           <div id="argus-controls" style="position: absolute; top: -24px; width: 100%; line-height: 1em; text-align: center;">
+              <span class="comments-indicator"
+                    style="float: left; margin-left: 4px;">
+               <a class="badge" href="#"
+                  title="Show comments for this node"
+                  onclick="toggleCommentsPanel(); $(this).blur(); return false;">
+                   <span id="comment-count">0</span>
+                   <i class="icon-comment icon-white"></i>
+                   <span class="hidden-phone widget-prompt"> Show comments</span>
+               </a>
+              </span><!-- .comments-indicator -->
+              
+              <span class="legend-widget">
+                  <a class="badge" onclick="toggleTreeViewLegend(); $(this).blur(); return false;">Legend</a>
+              </span>
+
+              <span class="zoom-widget">
+               <span class="badge"
+                   title="Magnify tree view"
+                   onclick="return false;"
+                   >
+                   <a href="#"
+                      onclick="(argus.getZoomInHandler())(); $(this).blur(); return false;" >
+                      <span class="hidden-phone widget-prompt">Zoom tree view &nbsp;</span>
+                      <i class="icon-plus icon-white" style="margin-right: 8px;" ></i>
+                   </a>
+                   <span style="color: #ccc;">|</span>
+                   <a href="#"
+                      onclick="(argus.getZoomOutHandler())(); $(this).blur(); return false;" >
+                       <i class="icon-minus icon-white" style="margin-left: 8px;" ></i>
+                   </a>
+               </span>
+              </span><!-- .zoom-widget -->
+
+               <a class="badge toggle-conflicts" href="#"
+                   style="display: none;"
+                   title="Toggle conflict information"
+                   onclick="f = argus.getToggleConflictsHandler(); if (f) f(); $(this).blur(); return false;"
+                   >
+                      Toggle conflicts
+               </a>
+
+              <span class="properties-indicator"
+                    style="float: right; margin-right: 4px;">
+               <a class="badge" href="#" 
+                  title="Show properties for the current selection"
+                  onclick="togglePropertiesPanel(); $(this).blur(); return false;">
+                   <i class="icon-info-sign icon-white"></i>
+                   <span class="hidden-phone widget-prompt">Show properties </span>
+               </a>
+              </span><!-- .properties-indicator -->
+           </div>
+
+          <div id="comments-panel">
+           <div class="panel-edges">
+            <div class="panel-content">
+             <div class="panel-controls">
+                 <a id="comments-hide" href="#" title="Hide comments">&times;</a>
+             </div>
+             <div class="provenance-intro">Loading&hellip;</div>
+             <div class="provenance-title">&nbsp;</div>
+             <div>
+               
+               <div id="c12970091685"><div class="plugin_localcomments"><script><!--
+
+var action = null;
+var formhtml = null;
+function delete_all_forms() { 
+    jQuery('div.plugin_localcomments div.reply').each(function() {
+        if ($(this).closest('.issue').length === 0) {
+            // this is the space for new topics, with a separate link
+            $(this).html('<a class="btn btn-small reply" href="#">Add a new topic</a>');
+        } else {
+            // this is the prompt to add comments to an existing topic
+            $(this).html('<a class="btn btn-small reply" href="#">Add a comment</a>');
+        }
+        $(this).find('a.reply').unbind('click').click(function() {
+            $formHolder = $(this).parent();
+            delete_all_forms();
+            $formHolder.html(formhtml); 
+            capture_form(); 
+            return false;
+        });
+    });
+}
+function capture_form() {
+    // bind and modify widgets 
+    jQuery('div.plugin_localcomments a.msg-close').unbind('click').click(function(){
+        delete_all_forms();
+        return false;
+    });
+
+    // adjust UI for issues versus comments
+    var threadParentID = 0;
+    var $parentIssueContainer = $('.plugin_localcomments form').closest('li.issue');
+    if ($parentIssueContainer.length > 0) {
+        threadParentID = $parentIssueContainer.find('div:eq(0)').attr('id').split('r')[1];
+    }
+    console.log('threadParentID:'+ threadParentID);
+    var isThreadStarter = threadParentID == 0;
+    if (isThreadStarter) {
+        //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'General comment' );
+        jQuery('div.plugin_localcomments select[name=feedback_type]').show();
+        jQuery('div.plugin_localcomments select[name=intended_scope]').show();
+        jQuery('div.plugin_localcomments select[name=issue_title]').show();
+    } else {
+        //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'Reply or general comment' );
+        jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
+        jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
+        jQuery('div.plugin_localcomments select[name=issue_title]').hide();
+    }
+    // always hide expertise checkbox and surrounding label (not currently needed)
+    jQuery('div.plugin_localcomments label.expertise-option').hide();
+
+    // update the Login link, if shown
+    if (typeof(fixLoginLinks) === 'function') {
+        fixLoginLinks();
+    }
+
+    jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
+        var $form = jQuery(this).closest('form');
+
+        // validate form fields
+        var $visitorNameField = $form.find('input[name="visitor_name"]'); 
+        if ($visitorNameField.is(':visible') && ($.trim($visitorNameField.val()) === '')) {
+            alert("Please enter your name (and preferably an email address) so we can stay in touch.");
+            return false;
+        }
+        var $fbTypeField = $form.find('select[name="feedback_type"]'); 
+        if ($fbTypeField.is(':visible') && ($.trim($fbTypeField.val()) === '')) {
+            alert("Please choose a feedback type for this topic.");
+            return false;
+        }
+        var $titleField = $form.find('input[name="issue_title"]'); 
+        if ($titleField.is(':visible') && ($.trim($titleField.val()) === '')) {
+            alert("Please give this topic a title.");
+            return false;
+        }
+        var $bodyField = $form.find('textarea[name="body"]'); 
+        if ($.trim($bodyField.val()) === '') {
+            alert("Please enter some text for this "+ (isThreadStarter ? 'issue' : 'comment') +".");
+            return false;
+        }
+
+        jQuery.post(action,
+            {
+               ////$'thread_parent_id': form.find('input[name="thread_parent_id"]').val(),
+               'issue_or_comment': (isThreadStarter ? 'issue' : 'comment'),
+               'thread_parent_id': threadParentID,    ///$form.parent().prev().attr('id').split('r')[1], 
+               'synthtree_id': $form.find('input[name="synthtree_id"]').val(),
+               'synthtree_node_id': $form.find('input[name="synthtree_node_id"]').val(),
+               'sourcetree_id': $form.find('input[name="sourcetree_id"]').val(),
+               'ottol_id': $form.find('input[name="ottol_id"]').val(),
+               'target_node_label': $form.find('input[name="target_node_label"]').val(),
+               'url': $form.find('input[name="url"]').val(),
+               'title': $form.find('input[name="issue_title"]').val(),
+               'body': $form.find('textarea[name="body"]').val(),
+               'feedback_type': $form.find('select[name="feedback_type"]').val(),
+               'intended_scope': $form.find('select[name="intended_scope"]').val(),
+               'claimed_expertise': $form.find(':checkbox[name="claimed_expertise"]').is(':checked'),
+               'visitor_name': $form.find('input[name="visitor_name"]').val(),
+               'visitor_email': $form.find('input[name="visitor_email"]').val()
+            },
+            function(data,r){ 
+               if(data) { 
+                   var $refreshArea;
+                   if (isThreadStarter) {
+                       $refreshArea = $form.parent().nextAll('ul');
+                       // add the new comment (LI) to the top of the list
+                       $refreshArea.prepend(data);
+                   } else {
+                       $refreshArea = $form.parent().prevAll('ul');
+                       // add the new comment (LI) to the end of the list
+                       $refreshArea.append(data);
+                   } 
+                   $form.find('textarea[name="body"]').val('');
+                   //$form.find('input[name="thread_parent_id"]').val('0');
+                   plugin_localcomments_init(); 
+                   delete_all_forms();
+               }
+            },
+            'html'
+        );
+        return false;
+    });
+}
+
+function plugin_localcomments_init() {
+  jQuery('div.plugin_localcomments .toggle').unbind('click').click(function(){
+     var $toggle = $(this);
+     var $parentIssue = $toggle.closest('li.issue');
+     var $collapsibleTargets = $parentIssue.find('ul').eq(0).add($parentIssue.find('div.reply'));
+     $collapsibleTargets.slideToggle(250);  // duration in ms
+     if ($toggle.text().indexOf('Show') == -1) {
+        $toggle.text('Show/add comments');
+     } else {
+        $toggle.text('Hide comments');
+     }
+     return false;
+  });
+  jQuery('div.plugin_localcomments .delete').unbind('click').click(function(){
+    delete_all_forms();
+    var $commentDiv = jQuery(this).closest('.msg-wrapper');
+    var $msgItem = $commentDiv.closest('li');
+    var issueOrComment = ($msgItem.is('.issue') ? 'issue' : 'comment');
+    jQuery.post(
+        action,    // WAS: action+'/delete',
+        {
+            'thread_parent_id': 'delete',
+            'comment_id': $commentDiv.attr('id').split('r')[1],
+            'issue_or_comment': issueOrComment
+        },
+        function(data,r){
+            $msgItem.fadeOut(function() {$(this).remove();});
+        }
+    );
+    return false;
+  });
+}
+jQuery(document).ready(function() {
+  action = jQuery('div.plugin_localcomments form').attr('action');  
+  formhtml = jQuery('div.plugin_localcomments form').parent().html();
+  delete_all_forms();  // important! creates .reply buttons before init() below
+  plugin_localcomments_init();
+});
+
+//--></script><div class="reply"><form action="/plugin-localcomments" enctype="multipart/form-data" method="post"><a class="login-logout reply" data-w2p_disable_with="default" href="/user/login">Login</a> or <input id="visitor_name" name="visitor_name" placeholder="Enter your name" type="text" value="" /> <input id="visitor_email" name="visitor_email" placeholder="Your email (visible on GitHub)" type="text" value="" /><br /><select name="feedback_type" style="width: auto;"><option selected="selected" value="">What kind of feedback is this?</option><option value="General comment">General comment</option><option value="Error in phylogeny">Reporting an error in phylogeny</option><option value="Bug report">Bug report (website behavior)</option><option value="Feature request">New feature request</option></select> <select name="intended_scope" style="width: auto;"><option value="Re: synthetic tree">about node placement in the synthetic tree</option><option value="Re: source tree">about node placement in the source tree</option><option value="Re: OTT taxon">about taxon data in OTT</option><option selected="selected" value="">general feedback (none of the above)</option></select><label class="expertise-option" style="float: right;"><input name="claimed_expertise" type="checkbox" value="on" /> I claim expertise in this area</label><input id="issue_title" name="issue_title" placeholder="Give this topic a title" type="text" value="" /><textarea cols="40" name="body" placeholder="Add more to this topic, using Markdown (click &#x27;Markdown help&#x27; below to learn more)." rows="10"></textarea><input name="synthtree_id" type="hidden" value="" /><input name="synthtree_node_id" type="hidden" value="" /><input name="sourcetree_id" type="hidden" value="" /><input name="ottol_id" type="hidden" value="" /><input name="target_node_label" type="hidden" value="" /><input name="url" type="hidden" value="/" /><div class="msg-footer"><a class="msg-close" data-w2p_disable_with="default" href="#" style="margin-right: 6px">Close</a><span style="margin-right: 6px"> | </span><a data-w2p_disable_with="default" href="https://help.github.com/articles/markdown-basics" style="margin-right: 10px" target="_blank">Markdown help</a><input class="btn btn-small" style="" type="submit" value="Post" /></div></form></div><ul><li class="issue"><div class="msg-wrapper" id="r89"><div class="topic-title">Pan paniscus vs Pan troglodytes verus<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/89" target="_blank">on GitHub</a></div><div class="body issue-body"><p>Why are Pan paniscus and Pan troglodytes verus placed together as subspecies of Pan. As far as I can see, the references does not support this, .</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="mailto:jomoman57@hotmail.com" target="_blank">Björn Hedman</a><span class="badge"> Re: synthetic tree </span> - 4 hours ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r141668546"><div class="body comment-body"><p>Hi, I agree that that relationship is not discussed in the paper nor is it shown in Figure 2 of that paper. Interestingly though, that grouping is shown in the TreeBase version of the tree labeled "Fig. 2". See <a href="http://treebase.org/treebase-web/search/study/trees.html?id=12186">http://treebase.org/treebase-web/search/study/trees.html?id=12186</a> The tree in the open tree curator app (<a href="https://tree.opentreeoflife.org/curator/study/view/pg_1600?tab=trees&amp;tree=tree3231">https://tree.opentreeoflife.org/curator/study/view/pg_1600?tab=trees&amp;tree=tree3231</a> ) comes from TreeBase. I'm not sure whether the figure in the paper or the treebase record is in error.  Thanks for bringing this up!</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/mtholder" target="_blank">Mark T. Holder</a> - 2 hours ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r141672203"><div class="body comment-body"><p>Thanks for the feedback! I've added a comment to the study about the mismatch and emailed the authors.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/kcranston" target="_blank">kcranston</a> - 1 hour ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r88"><div class="topic-title">Probably misplaced<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/88" target="_blank">on GitHub</a></div><div class="body issue-body"><p>I have seen no evidence online which classifies Acanthokara outside the true onychophorans (Euonychophora), so I don't know where this deep placement is coming from.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">None</a><span class="badge"> Re: synthetic tree </span> - 4 days ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r140247009"><div class="body comment-body"><p>Thanks for reporting this, as it surfaces a bug in the code that generates OTT.</p>
+
+<p>NCBI doesn't want to commit to any particular placement of this genus; it puts it in <a href="<a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Tree&amp;id=62871&amp;lvl=3&amp;lin=f&amp;keep=1&amp;srchmode=1&amp;unlock">http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?mode=Tree&amp;id=62871&amp;lvl=3&amp;lin=f&amp;keep=1&amp;srchmode=1&amp;unlock</a>">'unclassified Onychophora'</a>. So NCBI is why OTT doesn't put it in any sub-phylum taxon (e.g. Peripatopsidae, which is where GBIF puts it).  But OTT should either accept the NCBI incertae-sedis status for the genus, or it should accept GBIF's placement; it does neither, taking it to be a direct non-incertae-sedis child of Onychophora. That's wrong.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 4 days ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r140453528"><div class="body comment-body"><p>I spoke too soon, I don't think there is a bug in the code. The genus is placed in Peripatopsidae, and this information comes from GBIF, which gets it from The Catalogue of Life, 3rd January 2011. The current CoL has pretty much the same information. NCBI has the genus as unclassified. Neither source has a Euonychophora taxon, so saying it goes there is not of much use.</p>
+
+<p>Can you give a URL for an Onychophora taxonomy source that you think reflects current understanding?</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 3 days ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r140459153"><div class="body comment-body"><p>On 15 Sep 2015, at 17:34, Jonathan A Rees <a href="&#109;&#x61;&#x69;&#x6c;t&#x6f;:&#110;oti&#102;&#x69;&#99;&#97;&#116;i&#111;&#x6e;&#115;&#64;&#x67;&#x69;&#x74;h&#x75;&#x62;&#x2e;&#99;&#x6f;m">&#110;oti&#102;&#x69;&#99;&#97;&#116;i&#111;&#x6e;&#115;&#64;&#x67;&#x69;&#x74;h&#x75;&#x62;&#x2e;&#99;&#x6f;m</a> wrote:</p>
+
+<blockquote>
+  <p>I spoke too soon, I don't think there is a bug in the code. The genus is placed in Peripatopsidae, and this information comes from GBIF, which gets it from The Catalogue of Life, 3rd January 2011. The current CoL has pretty much the same information. NCBI has the genus as unclassified. Neither source has a Euonychophora taxon, so saying it goes there is not of much use.</p>
+  
+  <p>Can you give a URL for an Onychophora taxonomy source that you think reflects current understanding?</p>
+</blockquote>
+
+<p>No, sorry. But odd that it�s only this species that has problems. What is causing all the other Peripatopsidae taxa to be placed within Euonychophora. And if GBIF puts the taxon in Peripatopsidae, why isn�t it in <a href="https://tree.opentreeoflife.org/opentree/opentree3.0@1278831/Peripatopsidae">https://tree.opentreeoflife.org/opentree/opentree3.0@1278831/Peripatopsidae</a> ?</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a> - 3 days ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r140494031"><div class="body comment-body"><p>Oh I see, I misread a digit... in OTT 2.8, the NCBI classification has precedence, and NCBI has it as unclassified. It ought to be suppressed but for reasons I won't track down it's put as a direct child of Onychophora. The merge algorithm got smarter (?) for OTT 2.9, and OTT 2.9 puts the genus in Peripatopsidae, where GBIF has it.</p>
+
+<p>The NCBI taxonomy curators must have had a reason for not putting it in its customary location, but as usual they don't say why they do what they do.</p>
+
+<p>If there are so many Onychophora sequences in NCBI, perhaps one could do a phylogenetic analysis to figure out where the genus should go...  I found this study by poking around genbank, but unfortunately it doesn't sample Acanthokara: <a href="http://rspb.royalsocietypublishing.org/content/281/1775/20132648.short">http://rspb.royalsocietypublishing.org/content/281/1775/20132648.short</a>
+The paper for which Acanthokara was sampled is very interesting, but it's a broad-scale phylogenetic analysis looking at Hox genes, and doesn't resolve within the phylum.</p>
+
+<p>The higher classification of the phylum (Euonychophora and so on) comes from IRMNG, not GBIF.</p>
+
+<p>Anyhow, it should be in Peripatopsidae the next time we do a synthesis, so I'm not taking any action.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 3 days ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r140508092"><div class="body comment-body"><p>On 15 Sep 2015, at 19:39, Jonathan A Rees <a href="&#x6d;&#x61;&#x69;&#x6c;&#116;&#x6f;&#x3a;&#110;&#111;&#x74;&#x69;&#x66;&#x69;&#x63;a&#x74;&#x69;&#x6f;n&#115;&#x40;g&#x69;&#x74;&#104;&#117;&#98;&#46;c&#111;&#x6d;">&#110;&#111;&#x74;&#x69;&#x66;&#x69;&#x63;a&#x74;&#x69;&#x6f;n&#115;&#x40;g&#x69;&#x74;&#104;&#117;&#98;&#46;c&#111;&#x6d;</a> wrote:</p>
+
+<blockquote>
+  <p>If there are so many Onychophora sequences in NCBI, perhaps one could do a phylogenetic analysis to figure out where the genus should go... I found this study by poking around genbank, but unfortunately it doesn't sample Acanthokara: <a href="http://rspb.royalsocietypublishing.org/content/281/1775/20132648.short">http://rspb.royalsocietypublishing.org/content/281/1775/20132648.short</a></p>
+</blockquote>
+
+<p>Hmm. Is the era of automated phylogenetic analysis via genbank coming?</p>
+
+<blockquote>
+  <p>The paper for which Acanthokara was sampled is very interesting, but it's a broad-scale phylogenetic analysis looking at Hox genes, and doesn't resolve within the phylum.</p>
+</blockquote>
+
+<p>OpenTree is lacking high level arthropod etc phylogenies (see my recent post to the mailing list). perhaps this is a good one to add.</p>
+
+<blockquote>
+  <p>Anyhow, it should be in Peripatopsidae the next time we do a synthesis, so I'm not taking any action.</p>
+</blockquote>
+
+<p>Yep - seems the most sensible. Thanks.</p>
+
+<p>Yan</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a> - 3 days ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r87"><div class="topic-title">Probably reclassified<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/87" target="_blank">on GitHub</a></div><div class="body issue-body"><p><a href="http://tolweb.org/Somasteroidea/24272">http://tolweb.org/Somasteroidea/24272</a> says 'The extant Platasterias latiradiata was subsequently reclassified by D. B. Blake (1982) and was placed in the Asteroidea'. Either way, this taxon belongs within Asterozoa, not at the base of the Echinoderms</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">None</a><span class="badge"> Re: source tree </span> - 6 days ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r86"><div class="topic-title">This is a fossil taxon<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/86" target="_blank">on GitHub</a></div><div class="body issue-body"><p>This is a fossil taxon but not identified as such</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">None</a><span class="badge"> Re: OTT taxon </span> - 6 days ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r85"><div class="topic-title">Synonymous species not identified in genus Silene<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/85" target="_blank">on GitHub</a></div><div class="body issue-body"><p>It seems that the genera Lychnis, Gastrolychnis and Melandrium are correctly placed in the genus Silene, but the synonymy of species names is not taken into account. E.g. Silene drummondii is represented 3 more times, as Lychnis drummondii, Gastrolychnis drummondii and Melandrium drummondii ; these species are however recognized as synonyms on the IRMNG website, where your information comes from. I haven't checked other genera, but suspect this issue arises elsewhere as well.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="mailto:jos.kaefer@gmail.com" target="_blank">jos</a><span class="badge"> Re: OTT taxon </span> - 1 week ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r139246400"><div class="body comment-body"><p>Looks like this problem is already fixed in OTT2.9</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/snacktavish" target="_blank">snacktavish</a> - 1 week ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r84"><div class="topic-title">Genus change<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/84" target="_blank">on GitHub</a></div><div class="body issue-body"><p>Tarsius bancanus is now in genus Cephalopachus</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">None</a><span class="badge"> Re: OTT taxon </span> - 1 week ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r83"><div class="topic-title">Genus change<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/83" target="_blank">on GitHub</a></div><div class="body issue-body"><p>Tarsius syrichta is now in genus Carlito </p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">None</a><span class="badge"> Re: OTT taxon </span> - 1 week ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r139636909"><div class="body comment-body"><p>I'm going to rename the species, but I am going to be lazy and won't create the monotypic genus. (we are not too keen on monotypic taxa around here.)  Let's hope a future NCBI update straightens this out.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 1 week ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r82"><div class="topic-title">Fossil sp<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/82" target="_blank">on GitHub</a></div><div class="body issue-body"><p>Tarsius thailandica is a fossil spp, but not marked as such in the synth tree</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">None</a><span class="badge"> Re: synthetic tree </span> - 1 week ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r80"><div class="topic-title">Testing comment placement<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/80" target="_blank">on GitHub</a></div><div class="body issue-body"><p>Checking to see what happens when I leave a comment on this node, since @hyanwong reports a bug where comments appear with the wrong node (<a href="<a href="https://github.com/OpenTreeOfLife/feedback/issues/79">https://github.com/OpenTreeOfLife/feedback/issues/79</a>">issue #79</a>)</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/kcranston" target="_blank">Karen Cranston</a> - 1 month ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r79"><div class="topic-title">Bug reports not correctly associated with node name<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/79" target="_blank">on GitHub</a></div><div class="body issue-body"><p>There seems to be a intermittent problem with the association between node names and bug reports. For example, I reported a minor issue here:</p>
+
+<p><a href="https://tree.opentreeoflife.org/opentree/opentree3.0@979147/Synodontaspis">https://tree.opentreeoflife.org/opentree/opentree3.0@979147/Synodontaspis</a></p>
+
+<p>Which used to appear as a bug report here</p>
+
+<p><a href="https://github.com/OpenTreeOfLife/feedback/issues/78">https://github.com/OpenTreeOfLife/feedback/issues/78</a></p>
+
+<p>But now it has disappeared from the Synodontaspis node.I resubmitted but the report seems to have vanished again. There is something odd going on, but I can't pin it down.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a> - 1 month ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r132991309"><div class="body comment-body"><p>Thanks for the bug report. I am not sure what is going on - my comment on this node seems to be placed correctly. The way we refer to nodes is likely to change in the near future, which may help with these sorts of issues. Leaving open while we investigate, though. </p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/kcranston" target="_blank">kcranston</a> - 1 month ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r133030141"><div class="body comment-body"><p>According to the issue's metadata, @hyanwong's original comment (#78) was actually entered from this URL (for Oxyprinichthys, rather than Synodontaspis):</p>
+
+<p><a href="https://tree.opentreeoflife.org/opentree/argus/opentree3.0@978886/Oxyprinichthys">https://tree.opentreeoflife.org/opentree/argus/opentree3.0@978886/Oxyprinichthys</a></p>
+
+<p>The comment does appear at this URL, as expected. I've <a href="<a href="https://github.com/OpenTreeOfLife/feedback/search?q=Synodontaspis&amp;type=Issues&amp;utf8=%E2%9C%93">https://github.com/OpenTreeOfLife/feedback/search?q=Synodontaspis&amp;type=Issues&amp;utf8=%E2%9C%93</a>">searched the feedback issues</a> for 'Synodontaspis', and the only instances I see are in this comment and @kcranston's test comment.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jimallman" target="_blank">jimallman</a> - 1 month ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r133032089"><div class="body comment-body"><p>On 20 Aug 2015, at 15:29, Jim Allman <a href="&#109;&#x61;&#x69;&#x6c;&#x74;&#x6f;&#58;&#x6e;&#111;&#116;&#105;&#x66;&#x69;&#x63;&#x61;&#x74;&#x69;&#x6f;&#110;&#x73;&#64;&#103;i&#116;&#x68;&#117;&#x62;&#x2e;&#x63;&#x6f;&#109;">&#x6e;&#111;&#116;&#105;&#x66;&#x69;&#x63;&#x61;&#x74;&#x69;&#x6f;&#110;&#x73;&#64;&#103;i&#116;&#x68;&#117;&#x62;&#x2e;&#x63;&#x6f;&#109;</a> wrote:</p>
+
+<blockquote>
+  <p>According to the issue's metadata, @hyanwong's original comment (#78) was actually entered from this URL (for Oxyprinichthys, rather than Synodontaspis):</p>
+</blockquote>
+
+<p>Thanks for checking. I wonder if this is a browser / slow internet issue (I�m in the UK, primarily using Safari on OS X 10.9). Certainly a number of times when I�ve tried to log in on tree.opentreeoflife.org recently the site has timed out completely, and at other times it is remarkably slow from here. I can�t quite see how that might cause the issue though. </p>
+
+<p>I guess you can probably ignore unless others are having problems too. I�ll keep an eye out and post here if it happens again.</p>
+
+<p>Yan</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a> - 1 month ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r78"><div class="topic-title">Fossil genus<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/78" target="_blank">on GitHub</a></div><div class="body issue-body"><p>This is a fossil genus but not recognised as such in the syn tree</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">None</a><span class="badge"> Re: synthetic tree </span> - 1 month ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r74"><div class="topic-title">Misplaced snail<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/74" target="_blank">on GitHub</a></div><div class="body issue-body"><p>This seems to be a typo for Lymnaea acuminata which is freshwater snail, not a shark!</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">None</a><span class="badge"> Re: synthetic tree </span> - 1 month ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r132629510"><div class="body comment-body"><p>IRMNG seems to have gotten the species record from this source:
+<a href="http://collections.museumvictoria.com.au/search?query=Lymnea&amp;sort=relevance">http://collections.museumvictoria.com.au/search?query=Lymnea&amp;sort=relevance</a>
+which provides very little information (not authority or other citation, no
+image, etc.).</p>
+
+<p>For the genus, IRMNG says "Unavailable name (nomen nudum). See Noelius
+Rafinesque 1815. Nomen. Zool.). Not available, name only; perhaps an
+incorrect subsequent spelling of Lamna. Rafinesque changed name from Lymnea
+to Noelius in "Additions et Corrections" on p. 220 without explanation.
+(Eschmeyer)."</p>
+
+<p>I would be inclined to simply delete the species and genus from OTT.</p>
+
+<p>On Tue, Aug 18, 2015 at 7:03 PM, hyanwong <a href="&#109;&#x61;&#x69;&#x6c;&#116;&#x6f;&#58;&#110;o&#x74;&#x69;f&#105;&#99;&#97;&#x74;&#x69;&#x6f;&#x6e;s&#64;g&#x69;&#x74;&#x68;&#117;&#98;&#x2e;c&#111;&#109;">&#110;o&#x74;&#x69;f&#105;&#99;&#97;&#x74;&#x69;&#x6f;&#x6e;s&#64;g&#x69;&#x74;&#x68;&#117;&#98;&#x2e;c&#111;&#109;</a> wrote:</p>
+
+<blockquote>
+  <p>This seems to be a typo for Lymnaea acuminata which is freshwater snail,
+  not a shark!
+  Metadata Do not edit below this line Author None
+  <a href="<a href="https://github.com/hyanwong">https://github.com/hyanwong</a>"><a href="https://github.com/hyanwong</a">https://github.com/hyanwong</a</a>&gt; Upvotes 0 URL
+  tree.opentreeoflife.org/opentree/argus/opentree3.0@978884/Lymnea Target
+  node label Lymnea Synthetic tree id opentree3.0 Synthetic tree node id
+  978884 Source tree id(s) irmng:1317416 Open Tree Taxonomy id 5327187 Intended
+  scope Re: synthetic tree</p>
+  
+  <p>—
+  Reply to this email directly or view it on GitHub
+  <a href="<a href="https://github.com/OpenTreeOfLife/feedback/issues/74">https://github.com/OpenTreeOfLife/feedback/issues/74</a>"><a href="https://github.com/OpenTreeOfLife/feedback/issues/74</a">https://github.com/OpenTreeOfLife/feedback/issues/74</a</a>&gt;.</p>
+</blockquote>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 1 month ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r73"><div class="topic-title">Duplicate<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/73" target="_blank">on GitHub</a></div><div class="body issue-body"><p>This is a misspelling of Asymmetron which is also in the tree (as a sister)</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">None</a><span class="badge"> Re: OTT taxon </span> - 1 month ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r139631593"><div class="body comment-body"><p>The synonymy now comes in via WoRMS, so no particular action is required to fix this in OTT 2.9.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 1 week ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r72"><div class="topic-title">Fossil spp<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/72" target="_blank">on GitHub</a></div><div class="body issue-body"><p>This is a fossil sp</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">None</a><span class="badge"> Re: synthetic tree </span> - 1 month ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r71"><div class="topic-title">Incertae sedis?<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/71" target="_blank">on GitHub</a></div><div class="body issue-body"><p>I thought we were suppressing OTT taxa named "Incertae Sedis"? </p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/kcranston" target="_blank">Karen Cranston</a> - 1 month ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r132635910"><div class="body comment-body"><p>This is a known bug in OTT 2.8 (missing incertae_sedis flag when the
+container comes from SILVA).  It has already been fixed in OTT 2.9.</p>
+
+<p>On Fri, Aug 14, 2015 at 11:59 AM, Karen Cranston <a href="m&#97;&#105;&#x6c;&#116;&#111;&#x3a;&#x6e;&#x6f;&#x74;&#105;&#x66;&#x69;&#x63;&#97;&#116;&#105;o&#x6e;&#115;&#64;&#x67;&#x69;&#116;&#x68;&#117;&#98;.&#99;&#111;&#x6d;">&#x6e;&#x6f;&#x74;&#105;&#x66;&#x69;&#x63;&#97;&#116;&#105;o&#x6e;&#115;&#64;&#x67;&#x69;&#116;&#x68;&#117;&#98;.&#99;&#111;&#x6d;</a>
+wrote:</p>
+
+<blockquote>
+  <p>I thought we were suppressing OTT taxa named "Incertae Sedis"?
+  Metadata Do not edit below this line Author Karen Cranston
+  <a href="<a href="https://github.com/kcranston">https://github.com/kcranston</a>"><a href="https://github.com/kcranston</a">https://github.com/kcranston</a</a>&gt; Upvotes 0 URL
+  tree.opentreeoflife.org/opentree/argus/opentree3.0@3448063/Incertae-Sedis Target
+  node label Incertae Sedis Synthetic tree id opentree3.0 Synthetic tree
+  node id 3448063 Source tree id(s) silva:L37037/#2
+  <a href="<a href="https://github.com/OpenTreeOfLife/feedback/issues/2">https://github.com/OpenTreeOfLife/feedback/issues/2</a>"><a href="https://github.com/OpenTreeOfLife/feedback/issues/2</a">https://github.com/OpenTreeOfLife/feedback/issues/2</a</a>&gt; Open Tree Taxonomy
+  id 5268476 Intended scope</p>
+  
+  <p>—
+  Reply to this email directly or view it on GitHub
+  <a href="<a href="https://github.com/OpenTreeOfLife/feedback/issues/71">https://github.com/OpenTreeOfLife/feedback/issues/71</a>"><a href="https://github.com/OpenTreeOfLife/feedback/issues/71</a">https://github.com/OpenTreeOfLife/feedback/issues/71</a</a>&gt;.</p>
+</blockquote>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 1 month ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r65"><div class="topic-title">Worlandia is a fossil taxon<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/65" target="_blank">on GitHub</a></div><div class="body issue-body"><p>Should not appear in the synthetic tree</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a><span class="badge"> Re: synthetic tree </span> - 2 months ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r139624573"><div class="body comment-body"><p>Fixed in OTT 2.9draft9</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 1 week ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r64"><div class="topic-title">Plagiomene is a fossil taxon<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/64" target="_blank">on GitHub</a></div><div class="body issue-body"><p>This is mistakenly appearing in the synthetic tree</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a><span class="badge"> Re: synthetic tree </span> - 2 months ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r139624424"><div class="body comment-body"><p>Fixed in 2.9draft9</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 1 week ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r59"><div class="topic-title">be good to have a way to designate fossils<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/59" target="_blank">on GitHub</a></div><div class="body issue-body"><p>Timothyia trinervis   = fossil</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/opentreeapi" target="_blank">Doug Soltis</a> - 7 months ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r139623759"><div class="body comment-body"><p>All of Timothyia is extinct.  This is fixed in ott2.9draft9</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 1 week ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r57"><div class="topic-title">Resnova in wrong subfamily<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/57" target="_blank">on GitHub</a></div><div class="body issue-body"><p>Resnova belongs in the Massonieae of Hyacinthaceae (Asparagaceae). It is closely related to Ledebouria and Drimiopsis.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="mailto:cchoward@ufl.edu" target="_blank">Cody</a><span class="badge"> Re: synthetic tree </span> - 8 months ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r116049527"><div class="body comment-body"><p>The reference seems to be <a href="http://dx.doi.org/10.1002/fedr.19971080106">http://dx.doi.org/10.1002/fedr.19971080106</a></p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 2 months ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r56"><div class="topic-title">Extinct taxon<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/56" target="_blank">on GitHub</a></div><div class="body issue-body"><p>I have added this to <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116">https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116</a></p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a><span class="badge"> Re: OTT taxon </span> - 9 months ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r55"><div class="topic-title">Majasphaeridium is extinct...<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/55" target="_blank">on GitHub</a></div><div class="body issue-body"><p>...but appears in the synthetic tree</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a><span class="badge"> Re: OTT taxon </span> - 9 months ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r54"><div class="topic-title">Mycosphaeroides is extinct ...<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/54" target="_blank">on GitHub</a></div><div class="body issue-body"><p>... but appears in the synthetic tree</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a><span class="badge"> Re: OTT taxon </span> - 9 months ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r64957830"><div class="body comment-body"><p>Thanks. This isn't marked extinct in the version of IRMNG (Jan 31) that we
+used to get extinctness annotations, but IRMNG does now seem to know it's
+extinct. The best way to get this fixed is to obtain a recent IRMNG dump.
+I'll see if I can do that.​</p>
+
+<p>Index fungorum has
+<em>Position in classification:</em>
+Fossil Mycetozoa</p>
+
+<p>Probably this information was not in the database dump that we received.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 9 months ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r67181265"><div class="body comment-body"><p>Tracking this (and the other two) as
+<a href="https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116">https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116</a></p>
+
+<p>On Sat, Nov 29, 2014 at 11:55 AM, Jonathan A Rees <a href="&#x6d;&#x61;i&#108;&#x74;&#111;&#x3a;&#114;&#x65;&#101;&#115;&#x40;m&#x75;&#109;b&#x6c;&#x65;&#46;&#x6e;&#101;t">&#114;&#x65;&#101;&#115;&#x40;m&#x75;&#109;b&#x6c;&#x65;&#46;&#x6e;&#101;t</a> wrote:</p>
+
+<blockquote>
+  <p>Thanks. This isn't marked extinct in the version of IRMNG (Jan 31) that we
+  used to get extinctness annotations, but IRMNG does now seem to know it's
+  extinct. The best way to get this fixed is to obtain a recent IRMNG dump.
+  I'll see if I can do that.​</p>
+  
+  <p>Index fungorum has
+  <em>Position in classification:</em>
+  Fossil Mycetozoa</p>
+  
+  <p>Probably this information was not in the database dump that we received.</p>
+</blockquote>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 9 months ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r67296445"><div class="body comment-body"><p>On 16 Dec 2014, at 15:56, Jonathan A Rees <a href="&#x6d;&#97;&#105;&#108;&#116;&#x6f;:&#x6e;&#111;&#116;&#105;&#x66;&#x69;&#x63;&#x61;t&#105;&#111;&#110;&#115;&#64;&#x67;&#x69;&#116;&#x68;&#117;&#98;&#46;&#x63;&#111;&#x6d;">&#x6e;&#111;&#116;&#105;&#x66;&#x69;&#x63;&#x61;t&#105;&#111;&#110;&#115;&#64;&#x67;&#x69;&#116;&#x68;&#117;&#98;&#46;&#x63;&#111;&#x6d;</a> wrote:</p>
+
+<blockquote>
+  <p>Tracking this (and the other two) as 
+  <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116">https://github.com/OpenTreeOfLife/reference-taxonomy/issues/116</a> </p>
+</blockquote>
+
+<p>Thanks. In fact, one of the main problems as I got through the tree seems to be a smattering of extinct species which clutter up an otherwise conventional topology. Is there a good way to mark these up: e.g. provide a checkbox on the feedback form, or perhaps add them to a list on the github issue/116 page. What would suit you best?=</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a> - 9 months ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r67345872"><div class="body comment-body"><p>When I get back to working on the taxonomy I will go through all the
+reference-taxonomy issues. So adding to issue 116 is good, or creating a
+new issue there. A single list would be best since I can just transform it
+into the form required by the patch system. Or if you want to learn the
+patch system (
+<a href="https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/scripting.md">https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/scripting.md</a>).
+..</p>
+
+<p>I will probably go through the feedback issues as well, but may forget to.</p>
+
+<p>I checked to see if there's a new IRMNG release and there isn't yet. If I
+can convince Tony (or whoever is in charge now) to make one we may be able
+to fix large numbers of these in one fell swoop, without you having to find
+them manually. You might check the IRMNG web site to see what it now knows
+about these taxa. The ones I checked were already marked extinct.</p>
+
+<p>Jonathan</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 9 months ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r53"><div class="topic-title">Griphopithecus is extinct...<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/53" target="_blank">on GitHub</a></div><div class="body issue-body"><p>... but appears in the synthetic tree</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a><span class="badge"> Re: OTT taxon </span> - 9 months ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r52"><div class="topic-title">Zygomycota has only a single leaf<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/52" target="_blank">on GitHub</a></div><div class="body issue-body"><p>This is presumably an artifact, and should be somehow merged into <a href="http://tree.opentreeoflife.org/opentree/otol.draft.22@837887/Mucoromycotina">http://tree.opentreeoflife.org/opentree/otol.draft.22@837887/Mucoromycotina</a></p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a><span class="badge"> Re: synthetic tree </span> - 9 months ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r51"><div class="topic-title">Duplicate branch for Nucleariidae and Fonticula<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/51" target="_blank">on GitHub</a></div><div class="body issue-body"><p>There is already a branch for this at <a href="http://tree.opentreeoflife.org/opentree/otol.draft.22@384849/Discicristoidea">http://tree.opentreeoflife.org/opentree/otol.draft.22@384849/Discicristoidea</a></p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a><span class="badge"> Re: synthetic tree </span> - 9 months ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r46"><div class="topic-title">Gymnotiform phylogeny<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/46" target="_blank">on GitHub</a></div><div class="body issue-body"><p>Family level topology is: </p>
+
+<p>Gymnotidae((Rhamichthyidae, Hypopomidae)(Sternopygidae,Apteronotidae))</p>
+
+<p>Reference: 
+Albert, J. S. 2001. Species diversity and phylogenetic systematics of American knifefishes (Gymnotiformes, Teleostei). Misc. Publ. Mus. Zool. University of Michigan, 190:1-127. </p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="mailto:jalbert@louisiana.edu" target="_blank">James Albert</a> - 12 months ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r45"><div class="topic-title">Choanoflagellates wrongly placed here.<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/45" target="_blank">on GitHub</a></div><div class="body issue-body"><p>They should map to the group marked "Choanomonada" (<a href="http://tree.opentreeoflife.org/opentree/argus/ottol@5246832/Choanomonada">http://tree.opentreeoflife.org/opentree/argus/ottol@5246832/Choanomonada</a>)</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a><span class="badge"> Re: synthetic tree </span> - 1 year ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r55681512"><div class="body comment-body"><p>Great, thanks. This is an interesting one. They both come from SILVA, but
+following the Choanoflagellida entry (which has no descendent taxa) leads
+via SILVA to a single Genbank record that doesn't link back to the
+Choanoflagellida taxon record. It must have linked there at one time, since
+NCBI is the source of SILVA names at that level, so NCBI changed its mind.</p>
+
+<p>Just to be sure, is Choanomonada really the new preferred name for this
+group? I found it in Paleodb and (as I said) SILVA, but it's unknown to EOL
+and wikipedia, both of which cast a pretty wide net, so I'm wondering if
+we're sure we want to present the taxon under that name or under the more
+popular one.</p>
+
+<p>On Mon, Sep 15, 2014 at 8:33 AM, hyanwong <a href="&#109;&#x61;&#105;&#108;&#116;&#x6f;&#x3a;&#x6e;&#x6f;&#116;&#105;f&#105;&#99;&#x61;&#x74;&#x69;&#111;&#x6e;&#x73;&#64;&#103;&#x69;&#x74;&#104;&#117;&#98;&#x2e;&#99;&#111;&#x6d;">&#x6e;&#x6f;&#116;&#105;f&#105;&#99;&#x61;&#x74;&#x69;&#111;&#x6e;&#x73;&#64;&#103;&#x69;&#x74;&#104;&#117;&#98;&#x2e;&#99;&#111;&#x6d;</a> wrote:</p>
+
+<blockquote>
+  <p>They should map to the group marked "Choanomonada" (
+  <a href="http://tree.opentreeoflife.org/opentree/argus/ottol@5246832/Choanomonada">http://tree.opentreeoflife.org/opentree/argus/ottol@5246832/Choanomonada</a>)
+    Metadata Do not edit below this line  Author hyanwong
+  <a href="<a href="https://github.com/hyanwong">https://github.com/hyanwong</a>"><a href="https://github.com/hyanwong</a">https://github.com/hyanwong</a</a>&gt;  Upvotes 0  URL
+  tree.opentreeoflife.org/opentree/argus/ottol@202765/Choanoflagellida  Target
+  node label Choanoflagellida  Synthetic tree id otol.draft.22  Synthetic
+  tree node id 2599305  Source tree id(s)
+  silva:L29455,ncbi:42893,ncbi:28009,irmng:10270  Open Tree Taxonomy id
+  202765  Intended scope Re: synthetic tree</p>
+  
+  <p>—
+  Reply to this email directly or view it on GitHub
+  <a href="<a href="https://github.com/OpenTreeOfLife/feedback/issues/45">https://github.com/OpenTreeOfLife/feedback/issues/45</a>"><a href="https://github.com/OpenTreeOfLife/feedback/issues/45</a">https://github.com/OpenTreeOfLife/feedback/issues/45</a</a>&gt;.</p>
+</blockquote>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 1 year ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r55710602"><div class="body comment-body"><p>I've never seen "Choanomonada" before, and I assume this is a non-standard neologism, although it's not really my field. The standard name is "Choanaflagellida".</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a> - 1 year ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r55711842"><div class="body comment-body"><p>p.s. either way they definitely shouldn't be nested within Ichthyosporea</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a> - 1 year ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r44"><div class="topic-title">Show more genera, fewer species<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/44" target="_blank">on GitHub</a></div><div class="body issue-body"><p>In this view you see a lot of detail for a few genera, but the list of genera itself is curtailed. Maybe it's just me but I wonder if it would be better to use screen real estate to give longer lists of higher taxa (e.g. genera) in preference to longer lists of lower taxa (e.g. species). That is, show as many genera as will fit, and then if there's space left over, start showing species.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">Jonathan A Rees</a> - 1 year ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r49510581"><div class="body comment-body"><p>Oops, that comment doesn't go with this particular view!  The view I was talking about was lost when I logged in to github view the comment interface.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 1 year ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r49510610"><div class="body comment-body"><p>Here's the one I was looking at that prompted the comment:
+<a href="http://tree.opentreeoflife.org/opentree/otol.draft.22@3168166/Rhodymeniophycidae">http://tree.opentreeoflife.org/opentree/otol.draft.22@3168166/Rhodymeniophycidae</a></p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 1 year ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li><li class="issue"><div class="msg-wrapper" id="r43"><div class="topic-title">Amiiformes has only one extant species, should be sister group to gars ( Lepisosteiformes)<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/43" target="_blank">on GitHub</a></div><div class="body issue-body"><p>The synthetic tree here does not follow DeepFin, and is missing Lepisosteiformes (e.g. anything in genus Lepisosteus)</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/hyanwong" target="_blank">hyanwong</a><span class="badge"> Re: synthetic tree </span> - 1 year ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Show/add comments</a></span></div></div><ul style="display: none;"></ul><div class="reply" style="display: none;"></div></li><li class="issue"><div class="msg-wrapper" id="r41"><div class="topic-title">Can&#x27;t get to developer resources page on small screen<a data-w2p_disable_with="default" href="https://github.com/OpenTreeOfLife/feedback/issues/41" target="_blank">on GitHub</a></div><div class="body issue-body"><p>I'm on an iphone and can't get to the developer resources page. It always takes me to the taxon search box instead.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="mailto:Rees@nescent.org" target="_blank">JAR</a> - 1 year ago<span class="controls"><a class="toggle" data-w2p_disable_with="default" href="#">Hide comments</a></span></div></div><ul style=""><li class="comment"><div class="msg-wrapper" id="r46788192"><div class="body comment-body"><p>Confirmed with same behavior on Android (but I think the actual behavior is to stay on the current page, with a mangled layout). Chasing this now..</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jimallman" target="_blank">Jim Allman</a> - 1 year ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r46794427"><div class="body comment-body"><p>@jar398, This is working now on Android (on <strong>devtree</strong>, of course). Please let me know what you see on iOS.</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jimallman" target="_blank">jimallman</a> - 1 year ago<span class="controls"></span></div></div></li><li class="comment"><div class="msg-wrapper" id="r46831861"><div class="body comment-body"><p>No, refreshed and tried again and I can't get to <em>any</em> of the 'about'
+pages.​</p>
+</div><div class="byline"><a data-w2p_disable_with="default" href="https://github.com/jar398" target="_blank">jar398</a> - 1 year ago<span class="controls"></span></div></div></li></ul><div class="reply" style=""></div></li></ul></div></div>
+             </div>
+            </div>
+           </div>
+          </div>
+
+          <div id="argusCanvasContainer" class="viewer-frame"> &nbsp;</div>
+          <!-- TODO: Add other viewers here, and code to switch among them -->
+
+          <div id="provenance-panel">
+           <div class="panel-edges">
+            <div class="panel-content">
+             <div class="panel-controls">
+                 <a id="provenance-hide" href="#" title="Hide properties">&times;</a>
+             </div>
+             <div class="provenance-title">&nbsp;</div>
+             <div class="ordered-sections">&nbsp;</div>
+            </div>
+           </div>
+          </div>
+      </div>
+
+    </div><!-- end of .vizcontent -->
+  </div><!-- end of .container -->
+
+  <script type="text/javascript">
+    var syntheticTreeID = 'opentree3.0';
+    var syntheticTreeDefaultStartingNodeID = '1';
+        // TODO: Allow other choices via URL?
+
+    // if inbound URL points to a particular location+view, record it here
+    var urlState = {
+     
+    };
+    // treeview.js will examine this to determine our starting view
+  </script>
+  <script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
+</script>
+
+<!-- hidden template for argus (tree-viewer) legend -->
+<div class="modal hide fade" id="tree-view-legend" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Tree view legend
+      </h3>
+    </div>
+    <div class="modal-body">
+      <div class="legend-pane">
+       <table>
+        <tr>
+         <td align="right">
+            Node size reflects number of descendants
+         </td>
+         <td>
+          <img src="/opentree/static/images/tree-view-node-sizes.png" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Nearest ancestors of current node
+         </td>
+         <td>
+          <img src="/opentree/static/images/tree-view-ancestors.png" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Hollow tips may have more descendants
+         </td>
+         <td>
+          <img src="/opentree/static/images/tree-view-tips.png" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Paths supported by phylogeny
+         </td>
+         <td>
+          <img src="/opentree/static/images/tree-view-solid-paths.png" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Paths supported only by taxonomy
+         </td>
+         <td>
+          <img src="/opentree/static/images/tree-view-dotted-paths.png" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            Mouse-over hint (click to see node and edge properties)
+         </td>
+         <td>
+          <img src="/opentree/static/images/tree-view-node-info.png" alt="outgroup style" />
+         </td>
+        </tr>
+        <tr>
+         <td align="right">
+            New target node (click to jump to it)
+         </td>
+         <td>
+          <img src="/opentree/static/images/tree-view-node-jump.png" alt="outgroup style" />
+         </td>
+        </tr>
+       </table>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>
+
+            
+        </div>
+
+        
+    </section>
+    
+</div><!-- /.container -->
+
+<!-- Footer ================================================== -->
+<footer class="footer" id="footer">
+  <div class="container">
+    <div class="footer-content">
+         <!-- this is default footer -->
+        <div id="fundedBy" class="pull-left">
+            Open Tree of Life is funded by NSF (AVAToL)
+            </div>
+        <div id="poweredBy" class="pull-right">
+            <a href="#" onclick="toggleServerDetailsPopup(); return false;">Show/hide server details</a>
+            &bull;
+            <a href="/opentree/about/licenses" IGNOREME="/about/licenses" rel="jslicense">License information</a>
+            &bull;
+            Powered by
+            <a href="http://www.web2py.com/" target="_blank" >web2py</a>
+        </div>
+        <div id="server-details" style="display: none; clear: both; margin: 4px 0; background-color: #f5f5f5; padding: 6px 8px; border-radius: 8px;">
+            Configuration for the <strong>opentree</strong> web2py app: 
+            <dl>
+               <dt id="deployed-branch">deployed branch of opentree webapps:</dt>
+                   <dd><strong style="color: #888;">master
+                   </strong></dd>
+            
+               <dt>security</dt>
+                   
+                   <dd><strong style="color: #888;">secure_sessions_with_HTTPS</strong>: true</dd>
+                   
+            
+               <dt>paths</dt>
+                   
+            
+               <dt>apis</dt>
+                   
+                   <dd><strong style="color: #888;">github_client_id</strong>: dff0cf4bb02360426224</dd>
+                   
+                   <dd><strong style="color: #888;">github_redirect_uri</strong>: http://tree.opentreeoflife.org/opentree/user/login</dd>
+                   
+            
+               <dt>domains</dt>
+                   
+                   <dd><strong style="color: #888;">treemachine</strong>: //api.opentreeoflife.org/treemachine/v1</dd>
+                   
+                   <dd><strong style="color: #888;">taxomachine</strong>: //api.opentreeoflife.org/taxomachine/v1</dd>
+                   
+                   <dd><strong style="color: #888;">oti</strong>: //api.opentreeoflife.org/oti/v1</dd>
+                   
+                   <dd><strong style="color: #888;">opentree_api</strong>: //api.opentreeoflife.org/phylesystem/v1</dd>
+                   
+                   <dd><strong style="color: #888;">v2_api</strong>: //devapi.opentreeoflife.org/v2</dd>
+                   
+                   <dd><strong style="color: #888;">CACHED_treemachine</strong>: //api.opentreeoflife.org/cached/treemachine/v1</dd>
+                   
+                   <dd><strong style="color: #888;">CACHED_taxomachine</strong>: //api.opentreeoflife.org/cached/taxomachine/v1</dd>
+                   
+                   <dd><strong style="color: #888;">CACHED_v2_api</strong>: http://opentree.myserver.org/cached/v2</dd>
+                   
+            
+               <dt>method_urls</dt>
+                   
+                   <dd><strong style="color: #888;">getDraftTreeID_url</strong>: {treemachine_domain}/getDraftTreeID</dd>
+                   
+                   <dd><strong style="color: #888;">getSyntheticTree_url</strong>: {CACHED_treemachine_domain}/getSyntheticTree</dd>
+                   
+                   <dd><strong style="color: #888;">getSourceTree_url</strong>: {treemachine_domain}/getSourceTree</dd>
+                   
+                   <dd><strong style="color: #888;">getDraftSubtree_url</strong>: {v2_api_domain}/tree_of_life/subtree</dd>
+                   
+                   <dd><strong style="color: #888;">doTNRSForAutocomplete_url</strong>: {taxomachine_domain}/autocompleteQuery</dd>
+                   
+                   <dd><strong style="color: #888;">getContextsJSON_url</strong>: {CACHED_taxomachine_domain}/getContextsJSON</dd>
+                   
+                   <dd><strong style="color: #888;">getNodeIDForOttolID_url</strong>: {treemachine_domain}/getNodeIDForottId</dd>
+                   
+                   <dd><strong style="color: #888;">getSynthesisSourceList_url</strong>: {treemachine_domain}/getSynthesisSourceList</dd>
+                   
+                   <dd><strong style="color: #888;">findAllStudies_url</strong>: {oti_domain}/findAllStudies</dd>
+                   
+                   <dd><strong style="color: #888;">singlePropertySearchForStudies_url</strong>: {oti_domain}/singlePropertySearchForStudies</dd>
+                   
+                   <dd><strong style="color: #888;">API_load_study_GET_url</strong>: {opentree_api_domain}/study/{STUDY_ID}</dd>
+                   
+            
+            </dl>
+        </div>
+        
+    </div>
+  </div>
+</footer>
+
+<!-- hidden spinner (move and display as needed), created with http://preloaders.net/en/circular -->
+<div id="spinner" style="display: none;">
+    <img src="/opentree/static/images/spinner.gif" />
+</div>
+
+</body>
+</html>
