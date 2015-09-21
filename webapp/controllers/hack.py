@@ -1,7 +1,7 @@
 def oticache():
     response.view = 'generic.json'
     if len(request.args) != 1:
-        raise HTTP(503, 'expecting 1 study ID')
+        raise HTTP(400, 'expecting 1 study ID')
     d = {
  "ot_102": {
   "matched_studies": [
@@ -7281,5 +7281,5 @@ def oticache():
     study_id = request.args[0]
     r = d.get(study_id)
     if r is None:
-        raise HTTP(503, 'Unknown study ID {s} this could be a valid study, but simply one that was not in the synthesis'.format(s=study_id))
+        raise HTTP(400, 'Unknown study ID {s} this could be a valid study, but simply one that was not in the synthesis'.format(s=study_id))
     return r
