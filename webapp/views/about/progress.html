@@ -104,9 +104,13 @@ circle.taxo-release-marker {
       <div id="warnings-panel" 
            style="display: none; background-color: #fdd; padding: 1em; border: 1px solid #fcc;"></div>
 
+      <div id="stacked-bar-div"></div>
+
+      <h3 id="comment-header">Comments <i></i></h3>
+      {{=plugin_localcomments(filter='url',url=request.url)}}
+
 </div><!-- end of .container -->
 
-      <div id="stacked-bar-div" />
 <script type="text/javascript">
 // pass statistics as JSON to client for stepping, plotting, etc.
 // NOTE that these are correctly date-sorted from the server!
