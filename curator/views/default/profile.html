@@ -15,10 +15,12 @@ left_sidebar_enabled,right_sidebar_enabled=False,False
 
 response.title = "User profile"
 if active_user_found:
-    subtitle_markup = '%s <a style="font-weight: normal; font-size: 0.75em;" href="%s" target="_blank" title="Open GitHub profile in a new window"><img style="width:16px; height:16px; margin-right: 3px;" src="%s" />%s</a>' % (
+subtitle_markup = """%s<span style="font-weight: normal; font-size: 0.7em;">
+                        (<a href="%s" target="_blank" 
+                           title="Open GitHub profile in a new window" 
+                           >%s <span style="color: #333;">on GitHub</span></a>)</span>""" % (
             user_info.get('name', user_info.get('login', '???')), 
             user_info.get('html_url'), 
-            URL('static','images/GitHub-Mark-32px.png'),
             user_info.get('login'),
         )
     if is_current_user_profile:
