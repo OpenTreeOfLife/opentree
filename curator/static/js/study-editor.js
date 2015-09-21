@@ -2695,8 +2695,8 @@ var studyScoringRules = {
             description: "There should be a license or waiver on the data.",
             test: function(studyData) {
                 // check that a license or waiver exists
-                if (getStudyLicenseInfo(studyData)) {
-                    console.log('study has license');
+                if (getStudyLicenseInfo(studyData.nexml)) {
+                    ///console.log('study has license');
                     return true;
                 } else {
                   return false;
