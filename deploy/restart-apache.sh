@@ -63,3 +63,12 @@ fi
 
 echo "Restarting apache httpd..."
 sudo apache2ctl graceful || "Sudo failed"
+
+echo "(Re)starting web2py session sweeper..."
+# The sessions2trash.py utility script runs in the background, deleting expired
+# sessions every 5 minutes. See documentation at
+#   http://web2py.com/books/default/chapter/29/13/deployment-recipes#Cleaning-up-sessions
+# Find and kill any instance that's already running
+sudo pkill -f sessions2trash
+# Now run a fresh instance in the background
+sudo nohup python $OPENTREE_HOME/web2py/web2py.py -S opentree -M -R $OPENTREE_HOME/web2py/scripts/sessions2trash.py &
