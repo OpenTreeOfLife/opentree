@@ -13,6 +13,8 @@ def call(): return service()
 ### end requires
 
 def index():
+    if len(request.args) == 0:
+        redirect('./static/statictoppage.html')
     # interpret incoming URL as a tree view, in this format
     #   http://[hostname]/opentree/[{viewer}/]{domSource}@{nodeID}/{taxon name}
     # some valid examples:
