@@ -498,7 +498,10 @@ def index():
     # retrieve related comments, based on the chosen filter
     print("retrieving local comments using this filter:")
     print(filter)
-    if filter == 'synthtree_id,synthtree_node_id':
+    if filter == 'skip_comments':
+        # sometimes we just want the markup/UI (eg, an empty page that's quickly updated by JS)
+        comments = [ ]
+    elif filter == 'synthtree_id,synthtree_node_id':
         comments = get_local_comments({
             "Synthetic tree id": synthtree_id, 
             "Synthetic tree node id": synthtree_node_id})
