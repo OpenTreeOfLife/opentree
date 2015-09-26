@@ -200,7 +200,8 @@ function loadCollectionList(option) {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.COLLECTIONS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' );
+                    matchPattern = new RegExp( $.trim(match), 'i' ),
+                    wholeSlugMatchPattern = new RegExp( '^'+ $.trim(match) +'$' );
                 var order = viewModel.listFilters.COLLECTIONS.order();
                 var filter = viewModel.listFilters.COLLECTIONS.filter();
 
@@ -223,8 +224,10 @@ function loadCollectionList(option) {
                     viewModel, 
                     function(collection) {
                         // match entered text against pub reference (author, title, journal name, DOI)
-                        var id, name, description, creator, contributors;
                         var id = $.trim(collection['id']);
+                        var idParts = id.split('/');
+                        var ownerSlug = idParts[0];
+                        var titleSlug = (idParts.length === 2) ? idParts[1] : '';
                         var name = $.trim(collection['name']);
                         var description = $.trim(collection['description']);
                         // extract names and IDs of all stakeholders (incl. creator!)
@@ -243,18 +246,18 @@ function loadCollectionList(option) {
                             contributors = "";
                         }
 
-                        if (!matchPattern.test(id) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
+                        if (!wholeSlugMatchPattern.test(id) && !wholeSlugMatchPattern.test(ownerSlug) && !wholeSlugMatchPattern.test(titleSlug) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
                             return false;
                         }
                         
                         // check for preset filters
                         switch (filter) {
                             case 'All tree collections':
-                                // nothing to do here, all studies pass
+                                // nothing to do here, all collections pass
                                 break;
 
                             case 'Collections I own':
-                                // show only matching studies
+                                // show only matching collections
                                 var userIsTheCreator = false;
                                 if (('creator' in collection) && ('login' in collection.creator)) { 
                                     // compare to logged-in userid provide in the main page
@@ -375,7 +378,8 @@ function loadCollectionList(option) {
 
 function getViewLink(collection) {
     // shows this collection in a popup viewer/editor
-    var html = '<a class="" href="#" title="'+ collection.id +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'+ collection.name +'</a>';
+    var html = '<a class="" href="#" title="'+ collection.id +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
+        + collection.name +' <span style="color: #aaa;">&bullet;&nbsp;'+ collection.id +'</span></a>';
     return html;
 }
 function getTreeCount(collection) {
