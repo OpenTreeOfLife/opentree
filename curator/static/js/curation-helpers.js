@@ -482,64 +482,8 @@ function showCollectionViewer( collection, options ) {
         //console.log(collection);
     } else {
         // this should *never* happen
-        //TODO: alert("showCollectionViewer(): No collection specified!");
-        //TODO: return;
-        // a dummy object for testing, with core JSON in its inner 'data' member
-        collection = { 'data': 
-            {
-                "url": "https://raw.githubusercontent.com/OpenTreeOfLife/collections/jimallman/trees-about-bees.json",
-                "name": "Trees about bees",
-                "description": "We're gathering these with an eye toward local synthesis in Anthophila (Apoidea). Contributions welcome!",
-                "creator": {"login": "jimallman", "name": "Jim Allman"},
-                "contributors": [
-                    {"login": "pmidford2", "name": "Peter Midford"},
-                    {"login": "kcranston", "name": "Karen Cranston"}
-                ],
-                "decisions": [
-                    {
-                        "name": "Andrenidae from Foster, 2002", 
-                        "studyID": "ot_23532", 
-                        "treeID": "tree9870",
-                        "SHA": "1234567890abcdef",
-                        "decision": "INCLUDED",
-                        "comments": "Lots of good analysis here!"
-                    }, 
-                    {
-                        "name": "Apidae from Winkle, 1998", 
-                        "studyID": "ot_12345", 
-                        "treeID": "tree999",
-                        "SHA": "1234567890abcdef",
-                        "decision": "EXCLUDED",
-                        "comments": "Questionable methods and major gaps. Let's not use this."
-                    }, 
-                    {
-                        "name": "Colletidae gene tree (also Winkle)", 
-                        "studyID": "ot_12345", 
-                        "treeID": "tree888",
-                        "SHA": "1234567890abcdef",
-                        "decision": "INCLUDED",
-                        "comments": "This should tie together some loose ends."
-                    }, 
-                    {
-                        "name": "Megachilidae supertree", 
-                        "studyID": "ot_2222", 
-                        "treeID": "tree7777",
-                        "SHA": "1234567890abcdef",
-                        "decision": "UNDECIDED",
-                        "comments": "Intriguing! Waiting for more information from authors..."
-                    }, 
-                    {
-                        "name": "A. mellifera supertree #2", 
-                        "studyID": "ot_2222", 
-                        "treeID": "tree7778",
-                        "SHA": "1234567890abcdef",
-                        "decision": "UNDECIDED",
-                        "comments": "Added by automatic query 'Harvest recent Apis mellifera'"
-                    }
-                ]
-            }
-        }
-
+        alert("showCollectionViewer(): No collection specified!");
+        return;
     }
 
     // add any missing 'rank' properties
