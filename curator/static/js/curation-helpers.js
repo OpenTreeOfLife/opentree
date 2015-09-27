@@ -500,6 +500,7 @@ function showCollectionViewer( collection, options ) {
                         "name": "Andrenidae from Foster, 2002", 
                         "studyID": "ot_23532", 
                         "treeID": "tree9870",
+                        "SHA": "1234567890abcdef",
                         "decision": "INCLUDED",
                         "comments": "Lots of good analysis here!"
                     }, 
@@ -507,6 +508,7 @@ function showCollectionViewer( collection, options ) {
                         "name": "Apidae from Winkle, 1998", 
                         "studyID": "ot_12345", 
                         "treeID": "tree999",
+                        "SHA": "1234567890abcdef",
                         "decision": "EXCLUDED",
                         "comments": "Questionable methods and major gaps. Let's not use this."
                     }, 
@@ -514,6 +516,7 @@ function showCollectionViewer( collection, options ) {
                         "name": "Colletidae gene tree (also Winkle)", 
                         "studyID": "ot_12345", 
                         "treeID": "tree888",
+                        "SHA": "1234567890abcdef",
                         "decision": "INCLUDED",
                         "comments": "This should tie together some loose ends."
                     }, 
@@ -521,6 +524,7 @@ function showCollectionViewer( collection, options ) {
                         "name": "Megachilidae supertree", 
                         "studyID": "ot_2222", 
                         "treeID": "tree7777",
+                        "SHA": "1234567890abcdef",
                         "decision": "UNDECIDED",
                         "comments": "Intriguing! Waiting for more information from authors..."
                     }, 
@@ -528,6 +532,7 @@ function showCollectionViewer( collection, options ) {
                         "name": "A. mellifera supertree #2", 
                         "studyID": "ot_2222", 
                         "treeID": "tree7778",
+                        "SHA": "1234567890abcdef",
                         "decision": "UNDECIDED",
                         "comments": "Added by automatic query 'Harvest recent Apis mellifera'"
                     }
@@ -811,7 +816,7 @@ function addTreeToCollection( collection, inputType ) {
                             "name": foundTreeName,
                             "studyID": studyID,
                             "treeID": treeID,
-                            //"commitSHA": "",    // TODO
+                            "SHA": "",    // TODO: capture this (already expected by server-side validation)
                             "comments": foundTreeComments
                         };
                         //console.log(treeEntry);
