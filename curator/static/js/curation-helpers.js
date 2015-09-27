@@ -802,9 +802,10 @@ function addTreeToCollection( collection, inputType ) {
                         // walk its properties and use them in our collection JSON
                         var foundStudy = responseObj['matched_studies'][0];
                         var foundTree = foundStudy['matched_trees'][0];
-                        var foundTreeName = (foundTree['@label'] || "Untitled ("+ treeID +")" );
+                        var compactStudyRef = fullToCompactReference(foundStudy['ot:studyPublicationReference']);
+                        var foundTreeName = (foundTree['@label'] || ("Tree "+ treeID +" from "+ compactStudyRef));
                         var foundTreeComments = "from "
-                            + fullToCompactReference(foundStudy['ot:studyPublicationReference']);
+                            + compactStudyRef;
                         var treeEntry = {
                             "decision": "INCLUDED",
                             "name": foundTreeName,
