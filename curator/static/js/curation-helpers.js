@@ -555,7 +555,8 @@ function showCollectionViewer( collection, options ) {
         });
         $('#tree-collection-viewer').off('hide').on('hide', function () {
             if (currentlyEditingCollectionID !== null) {
-                showInfoMessage("Please save (or cancel) your changes to this collection!");
+                //showInfoMessage("Please save (or cancel) your changes to this collection!");
+                alert("Please save (or cancel) your changes to this collection!");
                 return false;
             }
             collectionViewerIsInUse = false;
