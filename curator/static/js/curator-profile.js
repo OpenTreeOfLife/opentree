@@ -121,7 +121,9 @@ function updateListFiltersWithHistory() {
 
 $(document).ready(function() {
     bindHelpPanels();
-    loadCollectionList();
+    if (isCurrentUserProfile) {
+        loadCollectionList();
+    }
     
     // NOTE that our initial state is set in the main page template, so we 
     // can build it from incoming URL in web2py. Try to recapture this state,
@@ -195,7 +197,8 @@ function loadCollectionList(option) {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.COLLECTIONS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' );
+                    matchPattern = new RegExp( $.trim(match), 'i' ),
+                    wholeSlugMatchPattern = new RegExp( '^'+ $.trim(match) +'$' );
                 var order = viewModel.listFilters.COLLECTIONS.order();
                 var filter = viewModel.listFilters.COLLECTIONS.filter();
 
@@ -204,8 +207,10 @@ function loadCollectionList(option) {
                     viewModel, 
                     function(collection) {
                         // match entered text against pub reference (author, title, journal name, DOI)
-                        var id, name, description, creator, contributors;
                         var id = $.trim(collection['id']);
+                        var idParts = id.split('/');
+                        var ownerSlug = idParts[0];
+                        var titleSlug = (idParts.length === 2) ? idParts[1] : '';
                         var name = $.trim(collection['name']);
                         var description = $.trim(collection['description']);
                         // extract names and IDs of all stakeholders (incl. creator!)
@@ -223,15 +228,14 @@ function loadCollectionList(option) {
                         } else {
                             contributors = "";
                         }
-
-                        if (!matchPattern.test(id) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
+                        if (!wholeSlugMatchPattern.test(id) && !wholeSlugMatchPattern.test(ownerSlug) && !wholeSlugMatchPattern.test(titleSlug) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
                             return false;
                         }
                         
                         // check for preset filters
                         switch (filter) {
                             case 'Collections they own':
-                                // show only matching studies
+                                // show only matching collections
                                 var userIsTheCreator = false;
                                 if (('creator' in collection) && ('login' in collection.creator)) { 
                                     // compare to logged-in userid provide in the main page
@@ -352,7 +356,8 @@ function loadCollectionList(option) {
 
 function getViewLink(collection) {
     // shows this collection in a popup viewer/editor
-    var html = '<a class="" href="#" title="'+ collection.id +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'+ collection.name +'</a>';
+    var html = '<a class="" href="#" title="'+ collection.id +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
+        + collection.name +' <span style="color: #aaa;">&bullet;&nbsp;'+ collection.id +'</span></a>';
     return html;
 }
 function getTreeCount(collection) {
@@ -386,4 +391,26 @@ function getLastModification(collection) {
 function filterByCurator( curatorID ) {
     // replace the filter text with this curator's userid
     viewModel.listFilters.COLLECTIONS.match( curatorID );
+}
+
+function promptToEditProfile() {
+    var gitHubProfileURL = 'https://github.com/settings/profile';
+    var msg = 'You can personalize this curator page by editing your GitHub profile:\n'
+             +'   Name and profile picture\n'
+             +'   Affiliation ("Company" on GitHub)\n'
+             +'   Website ("URL" on GitHub)\n'
+             +'   Email ("Public email" on GitHub)\n\n'
+             +'Would you like to do this now?'
+    if (confirm(msg)) {
+        var newWindow = window.open(gitHubProfileURL , '_blank' );
+        if (newWindow) {
+            // if blocked by popup blocker, this is undefined
+            newWindow.focus();
+        } else {
+            alert(
+                'The new window was blocked. You can edit your GitHub profile at this URL:'
+               +'\n\n   '+ gitHubProfileURL
+            );
+        }
+    }
 }

@@ -435,7 +435,7 @@ function fetchAndShowCollection( collectionID ) {
         success: function( data ) {  // success callback
             // N.B. this includes the core collection JSON, plus a wrapper that
             // has history and other supporting values.
-            showCollectionViewer(data);
+            showCollectionViewer(data, {MAINTAIN_SCROLL: true});
         },
         error: function( jqXHR, textStatus, errorThrown ) {
             showErrorMessage("Unable to load collection '"+ collectionID +"'");
@@ -460,6 +460,7 @@ function showCollectionViewer( collection, options ) {
     // TODO: allow options for initial display, etc.?
     options = options || {};
 
+    var newListScrollPosition = 0;
     if ($stashedCollectionViewerTemplate === null) {
         // Stash the pristine markup before binding this popup for the first time
         $stashedCollectionViewerTemplate = $('#tree-collection-viewer').clone();
@@ -469,6 +470,9 @@ function showCollectionViewer( collection, options ) {
             .find('#tree-collection-decisions > tr.single-tree-row').eq(0).clone();
     } else {
         // Replace with pristine markup to avoid weird results in later popups
+        if (options.MAINTAIN_SCROLL) {
+            newListScrollPosition = $('#tree-list-holder').scrollTop();
+        }
         $('#tree-collection-viewer').contents().replaceWith(
             $stashedCollectionViewerTemplate.clone().contents()
         );
@@ -482,59 +486,8 @@ function showCollectionViewer( collection, options ) {
         //console.log(collection);
     } else {
         // this should *never* happen
-        //TODO: alert("showCollectionViewer(): No collection specified!");
-        //TODO: return;
-        // a dummy object for testing, with core JSON in its inner 'data' member
-        collection = { 'data': 
-            {
-                "url": "https://raw.githubusercontent.com/OpenTreeOfLife/collections/jimallman/trees-about-bees.json",
-                "name": "Trees about bees",
-                "description": "We're gathering these with an eye toward local synthesis in Anthophila (Apoidea). Contributions welcome!",
-                "creator": {"login": "jimallman", "name": "Jim Allman"},
-                "contributors": [
-                    {"login": "pmidford2", "name": "Peter Midford"},
-                    {"login": "kcranston", "name": "Karen Cranston"}
-                ],
-                "decisions": [
-                    {
-                        "name": "Andrenidae from Foster, 2002", 
-                        "studyID": "ot_23532", 
-                        "treeID": "tree9870",
-                        "decision": "INCLUDED",
-                        "comments": "Lots of good analysis here!"
-                    }, 
-                    {
-                        "name": "Apidae from Winkle, 1998", 
-                        "studyID": "ot_12345", 
-                        "treeID": "tree999",
-                        "decision": "EXCLUDED",
-                        "comments": "Questionable methods and major gaps. Let's not use this."
-                    }, 
-                    {
-                        "name": "Colletidae gene tree (also Winkle)", 
-                        "studyID": "ot_12345", 
-                        "treeID": "tree888",
-                        "decision": "INCLUDED",
-                        "comments": "This should tie together some loose ends."
-                    }, 
-                    {
-                        "name": "Megachilidae supertree", 
-                        "studyID": "ot_2222", 
-                        "treeID": "tree7777",
-                        "decision": "UNDECIDED",
-                        "comments": "Intriguing! Waiting for more information from authors..."
-                    }, 
-                    {
-                        "name": "A. mellifera supertree #2", 
-                        "studyID": "ot_2222", 
-                        "treeID": "tree7778",
-                        "decision": "UNDECIDED",
-                        "comments": "Added by automatic query 'Harvest recent Apis mellifera'"
-                    }
-                ]
-            }
-        }
-
+        alert("showCollectionViewer(): No collection specified!");
+        return;
     }
 
     // add any missing 'rank' properties
@@ -549,21 +502,12 @@ function showCollectionViewer( collection, options ) {
         ko.applyBindings(collection, el);
     });
 
-    var updateCollectionDisplay = function() {
-        /* TODO: anything to do here? maybe not.
-        if (highlightNodeID) {
-            // scroll this node into view (once popup is properly place in the DOM)
-            ///setTimeout(function() {
-            scrollToTreeNode(tree['@id'], highlightNodeID);
-            ///}, 250);
-        }
-        if (options.HIGHLIGHT_AMBIGUOUS_LABELS) {
-            // TODO: visibly mark the Label Types widget, and show internal labels in red
-            console.warn(">>>> Now I'd highlight the LabelTypes widget!");
-        }
-        */
+    var updateCollectionDisplay = function(options) {
+        options = options || {};
         // (re)bind widgets, esp. for adding trees
         var $popup = $('#tree-collection-viewer');
+        var currentListScrollPosition = $('#tree-list-holder').scrollTop();
+        var newListScrollPosition = (options.MAINTAIN_SCROLL) ? currentListScrollPosition : 0;
         var $newTreeStartButton = $popup.find('#new-collection-tree-start');
         var $newTreeCancelButton = $popup.find('#new-collection-tree-cancel');
         var $newTreeOptionsPanels = $popup.find('.new-collection-tree-options');
@@ -583,6 +527,7 @@ function showCollectionViewer( collection, options ) {
             $newTreeByURLButton.attr('disabled', 'disabled')
                 .addClass('btn-info-disabled');
             updateNewCollTreeUI();
+            updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
             return false;
         });
         $newTreeCancelButton.click(function() {
@@ -590,13 +535,24 @@ function showCollectionViewer( collection, options ) {
                                .removeClass('btn-info-disabled');
             $newTreeCancelButton.hide();
             $newTreeOptionsPanels.hide();
+            updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
             return false;
         });
+
+        updateCollectionEditorHeight();
+        // now we can restore the original scroll position (or not)
+        $('#tree-list-holder').scrollTop(newListScrollPosition);
     }
 
     if (collectionViewerIsInUse) {
-        // trigger its 'shown' event to 
+        // trigger its 'shown' event to update the UI
         updateCollectionDisplay();
+        if (options.MAINTAIN_SCROLL) {
+            $('#tree-list-holder').scrollTop(newListScrollPosition);
+        } else if (options.SCROLL_TO_BOTTOM) {
+            // scroll to an absurdly high number (move to bottom of list)
+            $('#tree-list-holder').scrollTop(1000000);
+        }
     } else {
         $('#tree-collection-viewer').off('show').on('show', function () {
             collectionViewerIsInUse = true;
@@ -606,7 +562,8 @@ function showCollectionViewer( collection, options ) {
         });
         $('#tree-collection-viewer').off('hide').on('hide', function () {
             if (currentlyEditingCollectionID !== null) {
-                showInfoMessage("Please save (or cancel) your changes to this collection!");
+                //showInfoMessage("Please save (or cancel) your changes to this collection!");
+                alert("Please save (or cancel) your changes to this collection!");
                 return false;
             }
             collectionViewerIsInUse = false;
@@ -618,6 +575,43 @@ function showCollectionViewer( collection, options ) {
         $('#tree-collection-viewer').modal('show');
     }
 }
+function updateCollectionEditorHeight(options) {
+    /* Revisit height and placement of the editor popup. If the list is
+     * long enough, we should take the full height of the window, with all
+     * non-list UI available and any scrollbars restricted to the list
+     * area.
+     */
+    options = options || {};
+    var $popup = $('#tree-collection-viewer');
+    // let the rounded top and bottom edges of the popup leave the page
+    var outOfBoundsHeight = 8;  // px each on top and bottom
+    // leave room at the bottom for error messages, etc.
+    var footerMessageHeight = 40;
+    var currentWindowHeight = $(window).height();
+    var maxPopupHeight = (currentWindowHeight + (outOfBoundsHeight*2) - footerMessageHeight);
+    //var $popupBody = $popup.find('.modal-body');
+    var $listHolder = $('#tree-list-holder');
+    var currentListScrollPosition = $listHolder.scrollTop();
+    // NOTE that MAINTAIN_SCROLL only gives good results if this is called
+    // directly, vs. as part of a full updateCollectionDisplay()
+    var newListScrollPosition = (options.MAINTAIN_SCROLL) ? currentListScrollPosition : 0;
+    var currentListHeight = $listHolder.height();
+    var currentPopupHeight = $popup.height();
+    // how tall is the rest of the popup?
+    var otherPopupHeight = currentPopupHeight - currentListHeight;
+    var maxListHeight = maxPopupHeight - otherPopupHeight;
+    //$popupBody.css({ 'max-height': 'none' });
+    $listHolder.css({ 'max-height': maxListHeight +'px' });
+    var popupTopY = (currentWindowHeight / 2) - ($popup.height() / 2) - (footerMessageHeight/2);
+    $popup.css({ 'top': popupTopY +'px' });
+    // restore (or set) new list scroll position
+    $listHolder.scrollTop(newListScrollPosition);
+}
+$(window).resize( function () {
+    if (collectionViewerIsInUse) {
+        updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
+    }
+});
 
 // Use a known-good URL fragment to extract a collection ID from its API URL
 var collectionURLSplitterAPI = '/v2/collection/';
@@ -802,20 +796,21 @@ function addTreeToCollection( collection, inputType ) {
                         // walk its properties and use them in our collection JSON
                         var foundStudy = responseObj['matched_studies'][0];
                         var foundTree = foundStudy['matched_trees'][0];
-                        var foundTreeName = (foundTree['@label'] || "Untitled ("+ treeID +")" );
+                        var compactStudyRef = fullToCompactReference(foundStudy['ot:studyPublicationReference']);
+                        var foundTreeName = (foundTree['@label'] || ("Tree "+ treeID +" from "+ compactStudyRef));
                         var foundTreeComments = "from "
-                            + fullToCompactReference(foundStudy['ot:studyPublicationReference']);
+                            + compactStudyRef;
                         var treeEntry = {
                             "decision": "INCLUDED",
                             "name": foundTreeName,
                             "studyID": studyID,
                             "treeID": treeID,
-                            //"commitSHA": "",    // TODO
+                            "SHA": "",    // TODO: capture this (already expected by server-side validation)
                             "comments": foundTreeComments
                         };
                         //console.log(treeEntry);
                         collection.data.decisions.push(treeEntry);
-                        showCollectionViewer( collection );  // to refresh the list
+                        showCollectionViewer( collection, {SCROLL_TO_BOTTOM: true} );  // to refresh the list
                         showSuccessMessage('Tree found and added to this collection.');
                         break;
 
@@ -913,7 +908,7 @@ function moveInTreeCollection( tree, collection, newPosition ) {
     decisionList.splice(newPosition, 0, grabbedItem);
 
     resetTreeCollectionRanking( collection );
-    showCollectionViewer( collection );  // to refresh the list
+    showCollectionViewer( collection, {MAINTAIN_SCROLL: true} );  // to refresh the list
 }
 
 function showCollectionMoveUI( decision, itsElement, collection ) {
@@ -1117,7 +1112,7 @@ function editCollection( collection ) {
     if (userIsLoggedIn()) {
         if ('data' in collection && 'url' in collection.data) {
             currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
-            showCollectionViewer( collection );  // to refresh the UI
+            showCollectionViewer( collection, {MAINTAIN_SCROLL: true} );  // to refresh the UI
             pushPageExitWarning();
             return;
         }
@@ -1176,28 +1171,43 @@ function promptForSaveCollectionComments( collection ) {
     }
 }
 function promptForDeleteCollectionComments( collection ) {
-    if ($.isPlainObject(collection) && ('versionHistory' in collection)) {
-        // stash current collection ID (so we can hide editor)
-        var collectionID = currentlyEditingCollectionID;
-        currentlyEditingCollectionID = null;
-        $('#tree-collection-viewer').modal('hide');
+    // this button should work from a collection list *or* collection editor
+    if ($.isPlainObject(collection) && ('versionHistory' in collection || 'lastModified' in collection)) {
+        // it has a history and should really be deleted; show a modal popup to gather comments (or cancel)
+        if ('versionHistory' in collection) {
+            // this is a collection in the editor
+            // stash current collection ID (so we can hide editor)
+            var collectionID = currentlyEditingCollectionID;
+            currentlyEditingCollectionID = null;
+            $('#tree-collection-viewer').modal('hide');
 
-        // this collection has been saved; show a modal popup to gather comments (or cancel)
-        $('#delete-collection-comments-popup').modal('show');
-        // buttons there do the remaining work
-        $('#delete-collection-comments-submit')
-            .unbind('click')
-            .click(function() {
-                $('#delete-collection-comments-popup').modal('hide'); 
-                deleteTreeCollection( collection ); 
-            });
-        $('#delete-collection-comments-cancel')
-            .unbind('click')
-            .click(function() {
-                currentlyEditingCollectionID = collectionID;
-                $('#tree-collection-viewer').modal('show');
-                return true;
-            });
+            // this collection has been saved; show a modal popup to gather comments (or cancel)
+            $('#delete-collection-comments-popup').modal('show');
+            // buttons there do the remaining work
+            $('#delete-collection-comments-submit')
+                .unbind('click')
+                .click(function() {
+                    $('#delete-collection-comments-popup').modal('hide'); 
+                    deleteTreeCollection( collection ); 
+                });
+            $('#delete-collection-comments-cancel')
+                .unbind('click')
+                .click(function() {
+                    currentlyEditingCollectionID = collectionID;
+                    $('#tree-collection-viewer').modal('show');
+                    return true;
+                });
+        } else {   // 'lastModified' was found instead
+            // this is a collection in a list
+            $('#delete-collection-comments-popup').modal('show');
+            // buttons there do the remaining work
+            $('#delete-collection-comments-submit')
+                .unbind('click')
+                .click(function() {
+                    $('#delete-collection-comments-popup').modal('hide'); 
+                    deleteTreeCollection( collection ); 
+                });
+        }
     } else {
         // new collection hasn't been saved; just close the editor
         currentlyEditingCollectionID = null;
@@ -1347,7 +1357,19 @@ function saveTreeCollection( collection ) {
 }
 function deleteTreeCollection( collection ) {
     // user has already confirmed and provided commit msg
-    var collectionID = getCollectionIDFromURL( collection.data.url );
+    var collectionID, lastCommitSHA;
+    if ('versionHistory' in collection) {
+        // this is a single collection in the editor
+        collectionID = getCollectionIDFromURL( collection.data.url );
+        lastCommitSHA = collection.sha;
+    } else if ('lastModified' in collection) {
+        // this is minimal data from a collections list
+        collectionID = collection.id;
+        lastCommitSHA = collection.lastModified.sha;
+    } else {
+        alert('Missing history for this collection!');
+        return false;
+    }
     var removeURL = API_remove_collection_DELETE_url.replace('{COLLECTION_ID}', collectionID);
     // gather commit message (if any) from pre-save popup
     var commitMessage;
@@ -1366,7 +1388,7 @@ function deleteTreeCollection( collection ) {
         author_name: userDisplayName,
         author_email: userEmail,
         auth_token: userAuthToken,
-        starting_commit_SHA: collection.sha,
+        starting_commit_SHA: lastCommitSHA,
         commit_msg: commitMessage
     });
     removeURL += ('?'+ qsVars);

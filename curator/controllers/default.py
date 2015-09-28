@@ -214,8 +214,9 @@ def _get_opentree_activity( userid=None, username=None ):
 
     # Use GitHub API to gather comments from this user, as shown in
     #   https://github.com/OpenTreeOfLife/feedback/issues/created_by/jimallman
+    # N.B. that this is limited to 100 most recent items!
     all_comments = _fetch_github_api(verb='GET', 
-        url='/repos/OpenTreeOfLife/feedback/issues/comments')
+        url='/repos/OpenTreeOfLife/feedback/issues/comments?per_page=100')
     for comment in all_comments:
         if comment.get('user', None):
             comment_author = comment.get('user').get('login')
@@ -224,12 +225,12 @@ def _get_opentree_activity( userid=None, username=None ):
                 activity_found = True
 
     # Again, for all feedback issues created by them
+    # N.B. that this is probably limited to 100 most recent items!
     created_issues = _fetch_github_api(verb='GET', 
-        url='/repos/OpenTreeOfLife/feedback/issues?state=all&creator={0}'.format(userid))
+        url='/repos/OpenTreeOfLife/feedback/issues?state=all&creator={0}&per_page=100'.format(userid))
     activity['issues'] = created_issues
     if len(created_issues) > 0:
         activity_found = True
-
 
     # fetch a list of all studies that contribute to synthesis
     fetch_url = method_dict['getSynthesisSourceList_url']
