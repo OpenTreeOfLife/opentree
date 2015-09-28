@@ -1127,28 +1127,43 @@ function promptForSaveCollectionComments( collection ) {
     }
 }
 function promptForDeleteCollectionComments( collection ) {
-    if ($.isPlainObject(collection) && ('versionHistory' in collection)) {
-        // stash current collection ID (so we can hide editor)
-        var collectionID = currentlyEditingCollectionID;
-        currentlyEditingCollectionID = null;
-        $('#tree-collection-viewer').modal('hide');
+    // this button should work from a collection list *or* collection editor
+    if ($.isPlainObject(collection) && ('versionHistory' in collection || 'lastModified' in collection)) {
+        // it has a history and should really be deleted; show a modal popup to gather comments (or cancel)
+        if ('versionHistory' in collection) {
+            // this is a collection in the editor
+            // stash current collection ID (so we can hide editor)
+            var collectionID = currentlyEditingCollectionID;
+            currentlyEditingCollectionID = null;
+            $('#tree-collection-viewer').modal('hide');
 
-        // this collection has been saved; show a modal popup to gather comments (or cancel)
-        $('#delete-collection-comments-popup').modal('show');
-        // buttons there do the remaining work
-        $('#delete-collection-comments-submit')
-            .unbind('click')
-            .click(function() {
-                $('#delete-collection-comments-popup').modal('hide'); 
-                deleteTreeCollection( collection ); 
-            });
-        $('#delete-collection-comments-cancel')
-            .unbind('click')
-            .click(function() {
-                currentlyEditingCollectionID = collectionID;
-                $('#tree-collection-viewer').modal('show');
-                return true;
-            });
+            // this collection has been saved; show a modal popup to gather comments (or cancel)
+            $('#delete-collection-comments-popup').modal('show');
+            // buttons there do the remaining work
+            $('#delete-collection-comments-submit')
+                .unbind('click')
+                .click(function() {
+                    $('#delete-collection-comments-popup').modal('hide'); 
+                    deleteTreeCollection( collection ); 
+                });
+            $('#delete-collection-comments-cancel')
+                .unbind('click')
+                .click(function() {
+                    currentlyEditingCollectionID = collectionID;
+                    $('#tree-collection-viewer').modal('show');
+                    return true;
+                });
+        } else {   // 'lastModified' was found instead
+            // this is a collection in a list
+            $('#delete-collection-comments-popup').modal('show');
+            // buttons there do the remaining work
+            $('#delete-collection-comments-submit')
+                .unbind('click')
+                .click(function() {
+                    $('#delete-collection-comments-popup').modal('hide'); 
+                    deleteTreeCollection( collection ); 
+                });
+        }
     } else {
         // new collection hasn't been saved; just close the editor
         currentlyEditingCollectionID = null;
@@ -1298,7 +1313,19 @@ function saveTreeCollection( collection ) {
 }
 function deleteTreeCollection( collection ) {
     // user has already confirmed and provided commit msg
-    var collectionID = getCollectionIDFromURL( collection.data.url );
+    var collectionID, lastCommitSHA;
+    if ('versionHistory' in collection) {
+        // this is a single collection in the editor
+        collectionID = getCollectionIDFromURL( collection.data.url );
+        lastCommitSHA = collection.sha;
+    } else if ('lastModified' in collection) {
+        // this is minimal data from a collections list
+        collectionID = collection.id;
+        lastCommitSHA = collection.lastModified.sha;
+    } else {
+        alert('Missing history for this collection!');
+        return false;
+    }
     var removeURL = API_remove_collection_DELETE_url.replace('{COLLECTION_ID}', collectionID);
     // gather commit message (if any) from pre-save popup
     var commitMessage;
@@ -1317,7 +1344,7 @@ function deleteTreeCollection( collection ) {
         author_name: userDisplayName,
         author_email: userEmail,
         auth_token: userAuthToken,
-        starting_commit_SHA: collection.sha,
+        starting_commit_SHA: lastCommitSHA,
         commit_msg: commitMessage
     });
     removeURL += ('?'+ qsVars);

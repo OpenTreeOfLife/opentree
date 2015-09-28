@@ -484,7 +484,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             <!-- action buttons, from right to left -->
 
            <!-- ko if: userIsEditingCollection($data) -->
-            <!-- DELETE button -->
+            <!-- DELETE button (for now, this only appears in the My Collections list)
             <button data-bind="click: promptForDeleteCollectionComments,
                                visible: true"
                 title="Delete this tree collection"
@@ -492,6 +492,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 style="margin-left: 14px;">
                 Delete <i class="icon-remove icon-white"></i>
             </button>
+            -->
            <!-- /ko -->
 
            <!-- ko if: !userIsEditingCollection($data) -->
