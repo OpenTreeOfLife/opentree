@@ -532,6 +532,7 @@ function showCollectionViewer( collection, options ) {
             $newTreeByURLButton.attr('disabled', 'disabled')
                 .addClass('btn-info-disabled');
             updateNewCollTreeUI();
+            updateCollectionEditorHeight();
             return false;
         });
         $newTreeCancelButton.click(function() {
@@ -539,8 +540,11 @@ function showCollectionViewer( collection, options ) {
                                .removeClass('btn-info-disabled');
             $newTreeCancelButton.hide();
             $newTreeOptionsPanels.hide();
+            updateCollectionEditorHeight();
             return false;
         });
+
+        updateCollectionEditorHeight();
     }
 
     if (collectionViewerIsInUse) {
@@ -568,6 +572,36 @@ function showCollectionViewer( collection, options ) {
         $('#tree-collection-viewer').modal('show');
     }
 }
+function updateCollectionEditorHeight() {
+    /* Revisit height and placement of the editor popup. If the list is
+     * long enough, we should take the full height of the window, with all
+     * non-list UI available and any scrollbars restricted to the list
+     * area.
+     */
+    var $popup = $('#tree-collection-viewer');
+    // let the rounded top and bottom edges of the popup leave the page
+    var outOfBoundsHeight = 8;  // px each on top and bottom
+    // leave room at the bottom for error messages, etc.
+    var footerMessageHeight = 40;
+    var currentWindowHeight = $(window).height();
+    var maxPopupHeight = (currentWindowHeight + (outOfBoundsHeight*2) - footerMessageHeight);
+    //var $popupBody = $popup.find('.modal-body');
+    var $listHolder = $('#tree-collection-decision-holder');
+    var currentListHeight = $listHolder.height();
+    var currentPopupHeight = $popup.height();
+    // how tall is the rest of the popup?
+    var otherPopupHeight = currentPopupHeight - currentListHeight;
+    var maxListHeight = maxPopupHeight - otherPopupHeight;
+    //$popupBody.css({ 'max-height': 'none' });
+    $listHolder.css({ 'max-height': maxListHeight +'px' });
+    var popupTopY = (currentWindowHeight / 2) - ($popup.height() / 2) - (footerMessageHeight/2);
+    $popup.css({ 'top': popupTopY +'px' });
+}
+$(window).resize( function () {
+    if (collectionViewerIsInUse) {
+        updateCollectionEditorHeight();
+    }
+});
 
 // Use a known-good URL fragment to extract a collection ID from its API URL
 var collectionURLSplitterAPI = '/v2/collection/';

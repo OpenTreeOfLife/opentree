@@ -476,10 +476,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         </p>
       </div>
     </div>
-    <div class="modal-body">
+    <div class="modal-body" style="max-height: none;">
       <div class="tab-pane active">
           <form class="form-inline" 
-                style="overflow: hidden; margin-bottom: 0px; margin-top: -12px; padding-top: 12px;">
+                style="overflow: hidden; margin-bottom: 0px; margin-top: -12px; padding-top: 12px; margin-right: -6px;">
            <div class="collection-actions">
             <!-- action buttons, from right to left -->
 
@@ -615,7 +615,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->
                 <table id="tree-collection-decision-holder" 
                        class="table table-condensed table-hover"
-                       style="margin-bottom: 2px;"
+                       style="margin-bottom: 2px; display: block; overflow: auto;"
                        data-bind="visible: true"><!-- TODO: hide if no trees found -->
                   <thead>
                     <tr>
