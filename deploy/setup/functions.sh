@@ -98,13 +98,21 @@ function git_refresh() {
         before=`cd $repo_dir; git log | head -1`
         # What if branch doesn't exist locally, or doesn't track origin branch?
         # This will need some tweaking...
-	tmpbranch=origin/master
+        tmpbranch=origin/master
         (cd $repo_dir && \
-	 git checkout -q $tmpbranch && \
-	 git fetch origin && \
-	 git branch --track -f $branch origin/$branch && \
-	 git checkout $branch && \
-	 git merge origin/$branch) || echo "*** git failure ***"
+         git checkout -q $tmpbranch && \
+         git fetch origin && \
+         git branch --track -f $branch origin/$branch && \
+         git checkout $branch && \
+         git merge origin/$branch)
+         if [ $? = 1 ] ; then
+             # non-zero result should fail dramatically
+            echo "
+            ***** git failure (see details above)! *****
+            To discard unwanted local changes, try this:
+            $ ssh $OPENTREE_TAG \"cd $repo_dir; git reset --hard; git status\"
+            " && exit 1
+         fi
         after=`cd $repo_dir; git log | head -1`
         if [ "$before" = "$after" ] ; then
             echo "Repository $reponame is unchanged since last time"

@@ -66,13 +66,6 @@ git config --global user.email api@opentreeoflife.org
 echo "...fetching $WEBAPP repo..."
 git_refresh OpenTreeOfLife $WEBAPP || true
 
-# Modify the requirements list
-cp -p $APPROOT/requirements.txt $APPROOT/requirements.txt.save
-if grep --invert-match "distribute" \
-      $APPROOT/requirements.txt >requirements.txt.new ; then
-    mv requirements.txt.new $APPROOT/requirements.txt
-fi
-
 if [ "${PEYOTL_LOG_FILE_PATH:0:1}" != "/" ]; then
     PEYOTL_LOG_FILE_PATH="$OTHOME"/"$PEYOTL_LOG_FILE_PATH"
 fi
@@ -84,7 +77,7 @@ py_package_setup_install peyotl || true
 (cd $APPROOT/ot-celery; pip install -r requirements.txt ; python setup.py develop)
 
 (cd web2py/applications; \
-    rm -f ./phylesystem ; \
+    rm -rf ./phylesystem ; \
     ln -sf ../../repo/$WEBAPP ./phylesystem)
 
 # ---------- DOC STORE ----------
