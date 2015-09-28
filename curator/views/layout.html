@@ -612,10 +612,12 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                   <button id="show-all-trees-button" class="btn btn-small" onclick="alert('COMING SOON'); return false;">&nbsp; Show all tree decisions &nbsp;</button>
                 </div>
                 -->
+              <div id="tree-list-holder"
+                   style="overflow: auto;">
       <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->
                 <table id="tree-collection-decision-holder" 
                        class="table table-condensed table-hover"
-                       style="margin-bottom: 2px; display: block; overflow: auto;"
+                       style="margin-bottom: 2px;"
                        data-bind="visible: true"><!-- TODO: hide if no trees found -->
                   <thead>
                     <tr>
@@ -728,17 +730,18 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 </table>
       <!-- /ko -->
       <!-- ko if: !('decisions' in $data.data) || ($data.data.decisions.length === 0) -->
-            <div class="empty-list-prompt" style="margin-bottom: 4px;">
-          <!-- ko if: userIsEditingCollection($data) -->
-                This collection is empty! Add trees using the buttons below, or
-                by visiting trees in the curation app.
-          <!-- /ko -->
-          <!-- ko if: !userIsEditingCollection($data) -->
-                This collection is empty! Add trees by clicking Edit above, or
-                by visiting trees in the curation app.
-          <!-- /ko -->
-            </div>
+                <div class="empty-list-prompt" style="margin-bottom: 4px;">
+              <!-- ko if: userIsEditingCollection($data) -->
+                    This collection is empty! Add trees using the buttons below, or
+                    by visiting trees in the curation app.
+              <!-- /ko -->
+              <!-- ko if: !userIsEditingCollection($data) -->
+                    This collection is empty! Add trees by clicking Edit above, or
+                    by visiting trees in the curation app.
+              <!-- /ko -->
+                </div>
       <!-- /ko -->
+              </div><!-- /#tree-list-holder -->
 
           <!-- ko if: userIsEditingCollection($data) -->
             <!-- TODO: Put add-collection widgets! -->

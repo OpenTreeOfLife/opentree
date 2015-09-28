@@ -586,7 +586,7 @@ function updateCollectionEditorHeight() {
     var currentWindowHeight = $(window).height();
     var maxPopupHeight = (currentWindowHeight + (outOfBoundsHeight*2) - footerMessageHeight);
     //var $popupBody = $popup.find('.modal-body');
-    var $listHolder = $('#tree-collection-decision-holder');
+    var $listHolder = $('#tree-list-holder');
     var currentListHeight = $listHolder.height();
     var currentPopupHeight = $popup.height();
     // how tall is the rest of the popup?
