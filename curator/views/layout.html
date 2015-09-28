@@ -617,7 +617,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->
                 <table id="tree-collection-decision-holder" 
                        class="table table-condensed table-hover"
-                       style="margin-bottom: 2px;"
+                       style="margin-bottom: 2px; position: relative;"
                        data-bind="visible: true"><!-- TODO: hide if no trees found -->
                   <thead>
                     <tr>
