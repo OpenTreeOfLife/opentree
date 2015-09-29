@@ -797,12 +797,16 @@ function addTreeToCollection( collection, inputType ) {
                         var foundStudy = responseObj['matched_studies'][0];
                         var foundTree = foundStudy['matched_trees'][0];
                         var compactStudyRef = fullToCompactReference(foundStudy['ot:studyPublicationReference']);
-                        var foundTreeName = (foundTree['@label'] || ("Tree "+ treeID +" from "+ compactStudyRef));
+                        var foundTreeName = $.trim(foundTree['@label']);
+                        // suppress annoying repetition of tree, eg. "Tree tree3 of Smith, 2001"
+                        var defaultTreeName = (treeID.indexOf('tree') === 0) ? 
+                            (treeID +" from "+ compactStudyRef) :
+                            ("Tree "+ treeID +" from "+ compactStudyRef);
                         var foundTreeComments = "from "
                             + compactStudyRef;
                         var treeEntry = {
                             "decision": "INCLUDED",
-                            "name": foundTreeName,
+                            "name": (foundTreeName || defaultTreeName),
                             "studyID": studyID,
                             "treeID": treeID,
                             "SHA": "",    // TODO: capture this (already expected by server-side validation)
