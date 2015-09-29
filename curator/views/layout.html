@@ -625,7 +625,14 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                   <thead>
                     <tr>
                         <th width="76">Rank</th><!-- ranking -->
-                        <th width="*">Tree name (click to view)</th><!-- also comments! -->
+                        <th width="*">
+                          <!-- ko if: userIsEditingCollection($data) -->
+                            Tree name and description
+                          <!-- /ko -->
+                          <!-- ko if: !userIsEditingCollection($data) -->
+                            Tree name (click to view, mouse-over for description)
+                          <!-- /ko -->
+                        </th>
                     </tr>
                   </thead>
                   <tbody id="tree-collection-decisions" 
@@ -720,12 +727,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             <!-- /ko -->
                             <!-- ko if: !userIsEditingCollection($parent) -->
                               <a data-bind="html: name,
-                                            attr: { href: getTreeViewURL($data) }"
+                                            attr: { href: getTreeViewURL($data), title: comments }"
                                  href="#" target="_blank"><!--NAME--></a>
-                              <br/>
-                              <p data-bind="html: comments"
-                                 style="color: #999; margin-bottom: 4px;">
-                                <!--COMMENTS--></p>
                             <!-- /ko -->
                           </td>
                       </tr>
