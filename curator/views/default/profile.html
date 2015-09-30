@@ -372,13 +372,13 @@ elif active_user_found:
 
       <tbody data-bind="foreach: { data: viewModel.filteredCollections().pagedItems(), as: 'collection' }">
         <tr>
-            <td data-bind="html: getViewLink(collection)">&nbsp;</td>
-            <td data-bind="html: getTreeCount(collection)">&nbsp;</td>
-            <td data-bind="html: getLastModification(collection)">&nbsp;</td>
-            <td data-bind="html: getCuratorRole(collection)">&nbsp;</td>
+            <td data-bind="html: getCollectionViewLink(collection)">&nbsp;</td>
+            <td data-bind="html: getCollectionTreeCount(collection)">&nbsp;</td>
+            <td data-bind="html: getCollectionLastModification(collection)">&nbsp;</td>
+            <td data-bind="html: getCollectionCuratorRole(collection)">&nbsp;</td>
             <td>&nbsp;
                 <button data-bind="click: promptForDeleteCollectionComments,
-                                   visible: isCurrentUserProfile && getCuratorRole(collection) === 'Owner'"
+                                   visible: isCurrentUserProfile && getCollectionCuratorRole(collection) === 'Owner'"
                     title="Delete this tree collection"
                     class="pull-right btn btn-mini btn-danger row-controls-ghosted"
                     style="margin-left: 14px; display: none;">

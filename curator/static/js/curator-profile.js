@@ -354,45 +354,6 @@ function loadCollectionList(option) {
     });
 }
 
-function getViewLink(collection) {
-    // shows this collection in a popup viewer/editor
-    var html = '<a class="" href="#" title="'+ collection.id +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
-        + collection.name +' <span style="color: #aaa;">&bullet;&nbsp;'+ collection.id +'</span></a>';
-    return html;
-}
-function getTreeCount(collection) {
-    return collection.decisions.length || 0;
-}
-function getCuratorRole(collection) {
-    // return 'Owner' | 'Collaborator' | 'None'
-    var userIsTheCreator = false;
-    var userIsAContributor = false;
-    if (('creator' in collection) && ('login' in collection.creator)) { 
-        // compare to logged-in userid provide in the main page
-        if (collection.creator.login === curatorLogin) {
-            return 'Owner';
-        }
-    }
-    if (('contributors' in collection) && $.isArray(collection.contributors)) { 
-        // compare to logged-in userid provide in the main page
-        $.each(collection.contributors, function(i, c) {
-            if (c.login === curatorLogin) {
-                return 'Contributor';
-            }
-        });
-    }
-    return 'None'; 
-}
-function getLastModification(collection) {
-    // nicely formatted for display, with details on mouseover 
-    return '<span title="'+ collection.lastModified.display_date +'">'+ collection.lastModified.relative_date +'</a'+'>';
-}
-
-function filterByCurator( curatorID ) {
-    // replace the filter text with this curator's userid
-    viewModel.listFilters.COLLECTIONS.match( curatorID );
-}
-
 function promptToEditProfile() {
     var gitHubProfileURL = 'https://github.com/settings/profile';
     var msg = 'You can personalize this curator page by editing your GitHub profile:\n'
