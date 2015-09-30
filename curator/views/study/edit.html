@@ -598,7 +598,7 @@ body {
                       {{ else: }}
                         <th>Tree name (click to view)</th>
                       {{ pass }}
-                        <th>Inference method(s)</th>
+                        <th>Inference method</th>
                         <th>Ingroup clade</th>
                         <th>Tree root</th>
                         <th>OTUs mapped</th>
@@ -633,7 +633,7 @@ body {
                                 Review ambiguous labels
                             </a>
                         </td>
-                        <td data-bind="text: tree['^ot:inferenceMethods'].join(',') || 'Unspecified',
+                        <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
@@ -2211,23 +2211,9 @@ body {
                 <input type="text" data-bind="value: $data['^ot:treeDescription']"
                     class="input-xxlarge" style="margin-bottom: 2px;"
                     placeholder="Add a brief note about this tree">
-              <br/>
-                <label>Tree type: </label>
-                <select data-bind="options: treeTypes,
-                    optionsValue: function(item) {
-                        return item.value;
-                    },
-                    optionsText: function(item) {
-                        return item.label || item.value;
-                    },
-                    value: $data['^ot:treeType'],
-                    event: { keyup: nudge.TREES, change: nudge.TREES },
-                    css: viewModel.ticklers.TREES
-                    ">TYPE</select>
-
               <div style="padding: 0 4px;">
                 <label>Inference method: </label>
-                <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny -->
+                <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny --> 
                 <select id="inference-method-select"
                         onchange="(this); return false;"
                         data-bind="options: [
@@ -2239,14 +2225,14 @@ body {
                                        'Least squares ',
                                        'Three-taxon analysis',
                                        'Other (specify)'
-                                   ],
+                                   ], 
                                    optionsCaption: 'Choose a method...',
-                                   event: { change: updateInferenceMethodWidgets },
+                                   event: { change: updateInferenceMethodWidgets }, 
                                    css: viewModel.ticklers.TREES">
                 </select>
-                <input type="text" id="inference-method-other"
+                <input type="text" id="inference-method-other" 
                        placeholder="Other (specify)"
-                       data-bind="event: { change: updateInferenceMethodWidgets },
+                       data-bind="event: { change: updateInferenceMethodWidgets }, 
                                   css: viewModel.ticklers.TREES"></input>
               <br/>
                 <label for="testtest">Root node: </label>
@@ -2386,11 +2372,8 @@ body {
                 <strong  data-bind="text: $data['^ot:treeDescription'] || 'None'">TYPE</strong>
               </div>
               <div class="pull-left" style="clear: left; width: 48%;">
-                <label>Tree type: </label>
-                <strong data-bind="text: $data['^ot:treeType'] || 'Unspecified'">TYPE</strong>
-              <br/>
-                <label>Inference method(s): </label>
-                <strong  data-bind="text: $data['^ot:inferenceMethods'].join(', ') || 'Unspecified'">TYPE</strong>
+                <label>Inference method: </label>
+                <strong data-bind="text: $data['^ot:curatedType'] || 'Unspecified'">TYPE</strong>
               <br/>
                 <label for="testtest">Root node: </label>
                <!-- TODO: tag(s) for this tree? -->
