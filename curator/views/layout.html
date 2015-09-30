@@ -707,6 +707,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                                       style="margin-left: 4px;">
                                   <i class="icon-remove icon-white"></i>
                               </button>
+                              <a data-bind="html: name,
+                                            attr: { href: getTreeViewURL($data) }"
+                                 title="View this tree in a new window"
+                                 href="#" target="_blank"><!--NAME--></a>
+                             <!-- this is no longer editable
                               <input type="text"
                                      class="input-large" 
                                      style="width: 320px; margin-right: 10px; margin-bottom: 2px;"
@@ -716,13 +721,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                                                 "
                               >
                               </input>
-                              <a data-bind="attr: { href: getTreeViewURL($data) }"
-                                 title="View this tree in a new window"
-                                 href="#" target="_blank">(link)</a>
+                              -->
                               <br/>
                               <textarea data-bind="value: comments"
-                                        style="width: 400px; color: #333; margin-bottom: 4px;"
-                                        placeholder="Describe this tree">
+                                        style="width: 400px; color: #333; margin-bottom: 4px; height: 2em;"
+                                        placeholder="Describe your reasons for including this tree">
                                 <!--COMMENTS--></textarea>
                             <!-- /ko -->
                             <!-- ko if: !userIsEditingCollection($parent) -->
