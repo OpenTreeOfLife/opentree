@@ -797,16 +797,14 @@ function addTreeToCollection( collection, inputType ) {
                         var foundStudy = responseObj['matched_studies'][0];
                         var foundTree = foundStudy['matched_trees'][0];
                         var compactStudyRef = fullToCompactReference(foundStudy['ot:studyPublicationReference']);
+                        // capture the current tree name and study reference
+                        // TODO: update these as studies change?
                         var foundTreeName = $.trim(foundTree['@label']);
-                        // suppress annoying repetition of tree, eg. "Tree tree3 of Smith, 2001"
-                        var defaultTreeName = (treeID.indexOf('tree') === 0) ? 
-                            (treeID +" from "+ compactStudyRef) :
-                            ("Tree "+ treeID +" from "+ compactStudyRef);
-                        var foundTreeComments = "from "
-                            + compactStudyRef;
+                        var treeAndStudy = (foundTreeName || treeID) +' ('+ compactStudyRef +')';
+                        var foundTreeComments = ""; // TODO: can we copy the tree's description?
                         var treeEntry = {
                             "decision": "INCLUDED",
-                            "name": (foundTreeName || defaultTreeName),
+                            "name": treeAndStudy,
                             "studyID": studyID,
                             "treeID": treeID,
                             "SHA": "",    // TODO: capture this (already expected by server-side validation)
