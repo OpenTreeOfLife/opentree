@@ -2206,12 +2206,6 @@ body {
          <form class="form-inline" style="overflow: hidden; margin-bottom: 0px;">
           {{ if viewOrEdit == 'EDIT': }}
             <!-- editable tree properties here -->
-
-                <label>Description: </label>
-                <input type="text" data-bind="value: $data['^ot:treeDescription']"
-                    class="input-xxlarge" style="margin-bottom: 2px;"
-                    placeholder="Add a brief note about this tree">
-
               <div style="padding: 0 4px;">
                 <label>Inference method: </label>
                 <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny --> 
@@ -2368,10 +2362,6 @@ body {
 
           {{ else: }}
             <!-- read-only tree properties here -->
-              <div class="pull-left">
-                <label>Description: </label>
-                <strong  data-bind="text: $data['^ot:treeDescription'] || 'None'">TYPE</strong>
-              </div>
               <div class="pull-left" style="clear: left; width: 48%;">
                 <label>Inference method: </label>
                 <strong data-bind="text: $data['^ot:curatedType'] || 'Unspecified'">TYPE</strong>
