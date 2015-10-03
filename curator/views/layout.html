@@ -178,7 +178,66 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
   var userEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
   var userAuthToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
 
+  // Manage depth (z-index) of "stacked" Bootstrap modals
+  var highestModalDepth = 1000;
+
   jQuery(document).ready(function(){ 
+
+    // delegate shared modal stacking
+    $('body').on('show', '.modal', function (evt) {
+        if (evt.target !== this) {
+            // ignore $().tab('show') events!
+            return;
+        }
+        var $modal = $(this);
+        if ($modal.is(':visible')) {
+            // ignore redundant 'show' events if it's already showing
+            return;
+        }
+        highestModalDepth += 100;
+        //console.warn($modal.attr('id') +" >> modal PUSH: "+ highestModalDepth);
+        // set my elements accordingly!
+        $modal.css('z-index', highestModalDepth + 40);
+        // NOTE: Its backdrop is not yet in the DOM, but will be very shortly
+        var startTime = new Date().getTime();
+        var stopTime = startTime + 1000;
+        var highestDepth = highestModalDepth; // preserve its current value!
+        var intervalID = setInterval(
+            function() {
+                /* diagnostics (just in case...)
+                console.log("interval "+ intervalID +" starting... highestDepth="+ highestDepth);
+                console.log($('.modal-backdrop').length +" backdrops");
+                console.log($('.modal-backdrop[style*=z-index]').length +" used backdrops");
+                console.log($('.modal-backdrop').not('[style*=z-index]').length +" new backdrops");
+                */
+                var $newBackdrop = $('.modal-backdrop').not('[style*=z-index]').eq(0);
+                if ($newBackdrop.length === 0) {
+                    //console.error("> NO new backdrops found...");
+                } else {
+                    //console.warn("> FOUND a new backdrop!");
+                    $newBackdrop.css('z-index', highestDepth);
+                    clearInterval(intervalID);
+                }
+                // self-destruct after 1 second in any case
+                var rightNow = new Date().getTime();
+                if (rightNow > stopTime) {
+                    //console.log("KILLING interval "+ intervalID);
+                    clearInterval(intervalID);
+                }
+            },
+            50  // runs 20 times/sec until it finds its backdrop or dies
+        );
+    });
+    $('body').on('hide', '.modal', function (evt) {
+        if (evt.target !== this) {
+            // ignore $().tab('hide') events!
+            return;
+        }
+        var $modal = $(this);
+        highestModalDepth -= 100;
+        //console.warn($modal.attr('id') +" >> modal POP: "+ highestModalDepth);
+    });
+
     {{ if 'auth' in globals(): }}
       // add marker classes to final nav link (for logged-in user)
       var $authNavbar = jQuery('ul#auth-navbar');

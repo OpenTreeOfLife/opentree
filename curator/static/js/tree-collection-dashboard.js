@@ -375,25 +375,3 @@ function loadCollectionList(option) {
         }
     });
 }
-
-function getViewLink(collection) {
-    // shows this collection in a popup viewer/editor
-    var html = '<a class="" href="#" title="'+ collection.id +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
-        + collection.name +' <span style="color: #aaa;">&bullet;&nbsp;'+ collection.id +'</span></a>';
-    return html;
-}
-function getTreeCount(collection) {
-    return collection.decisions.length || 0;
-}
-function getCreatorLink(collection) {
-    return '<a href="#" onclick="filterByCurator(\''+ collection.creator.name +'\'); return false;"'+'>'+ collection.creator.name +'</a'+'>';
-}
-function getLastModification(collection) {
-    // nicely formatted for display, with details on mouseover 
-    return '<span title="'+ collection.lastModified.display_date +'">'+ collection.lastModified.relative_date +'</a'+'>';
-}
-
-function filterByCurator( curatorID ) {
-    // replace the filter text with this curator's userid
-    viewModel.listFilters.COLLECTIONS.match( curatorID );
-}

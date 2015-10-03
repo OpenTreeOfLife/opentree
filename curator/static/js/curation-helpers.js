@@ -1453,6 +1453,53 @@ function cancelChangesToCollection(collection) {
     }
     popPageExitWarning();
 }
+
+
+function getCollectionViewLink(collection) {
+    // shows this collection in a popup viewer/editor
+    var html = '<a class="" href="#" title="'+ collection.id +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
+        + collection.name +' <span style="color: #aaa;">&bullet;&nbsp;'+ collection.id +'</span></a>';
+    return html;
+}
+function getCollectionTreeCount(collection) {
+    return collection.decisions.length || 0;
+}
+function getCollectionCreatorLink(collection) {
+    //return '<a href="#" onclick="filterCollectionsByCurator(\''+ collection.creator.name +'\'); return false;"'+'>'+ collection.creator.name +'</a'+'>';
+    // link to the creator's profile page
+    return '<a href="/curator/profile/'+ collection.creator.login +'" target="_blank">'+ 
+                collection.creator.name +'</a'+'>';
+}
+function getCollectionCuratorRole(collection) {
+    // return 'Owner' | 'Collaborator' | 'None'
+    var userIsTheCreator = false;
+    var userIsAContributor = false;
+    if (('creator' in collection) && ('login' in collection.creator)) { 
+        // compare to logged-in userid provide in the main page
+        if (collection.creator.login === curatorLogin) {
+            return 'Owner';
+        }
+    }
+    if (('contributors' in collection) && $.isArray(collection.contributors)) { 
+        // compare to logged-in userid provide in the main page
+        $.each(collection.contributors, function(i, c) {
+            if (c.login === curatorLogin) {
+                return 'Contributor';
+            }
+        });
+    }
+    return 'None'; 
+}
+function getCollectionLastModification(collection) {
+    // nicely formatted for display, with details on mouseover 
+    return '<span title="'+ collection.lastModified.display_date +'">'+ collection.lastModified.relative_date +'</a'+'>';
+}
+
+function filterCollectionsByCurator( curatorID ) {
+    // replace the filter text with this curator's userid
+    viewModel.listFilters.COLLECTIONS.match( curatorID );
+}
+
 function userIsLoggedIn() {
     return userLogin !== 'ANONYMOUS';
 }
