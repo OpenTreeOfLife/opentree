@@ -199,16 +199,33 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         // set my elements accordingly!
         $modal.css('z-index', highestModalDepth + 40);
         // NOTE: Its backdrop is not yet in the DOM, but will be very shortly
-        setTimeout(
+        var startTime = new Date().getTime();
+        var stopTime = startTime + 1000;
+        var highestDepth = highestModalDepth; // preserve its current value!
+        var intervalID = setInterval(
             function() {
-                var $newBackdrop = $('.modal-backdrop').last();
-                if (($newBackdrop.length === 0) || $newBackdrop.is('[style*=z-index]')){
-                    console.error("> couldn't get the new backdrop!");
+                /* diagnostics (just in case...)
+                console.log("interval "+ intervalID +" starting... highestDepth="+ highestDepth);
+                console.log($('.modal-backdrop').length +" backdrops");
+                console.log($('.modal-backdrop[style*=z-index]').length +" used backdrops");
+                console.log($('.modal-backdrop').not('[style*=z-index]').length +" new backdrops");
+                */
+                var $newBackdrop = $('.modal-backdrop').not('[style*=z-index]').eq(0);
+                if ($newBackdrop.length === 0) {
+                    //console.error("> NO new backdrops found...");
                 } else {
-                    $newBackdrop.css('z-index', highestModalDepth);
+                    //console.warn("> FOUND a new backdrop!");
+                    $newBackdrop.css('z-index', highestDepth);
+                    clearInterval(intervalID);
+                }
+                // self-destruct after 1 second in any case
+                var rightNow = new Date().getTime();
+                if (rightNow > stopTime) {
+                    //console.log("KILLING interval "+ intervalID);
+                    clearInterval(intervalID);
                 }
             },
-            0
+            50  // runs 20 times/sec until it finds its backdrop or dies
         );
     });
     $('body').on('hide', '.modal', function (evt) {

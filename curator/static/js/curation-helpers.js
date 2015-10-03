@@ -1465,7 +1465,10 @@ function getCollectionTreeCount(collection) {
     return collection.decisions.length || 0;
 }
 function getCollectionCreatorLink(collection) {
-    return '<a href="#" onclick="filterCollectionsByCurator(\''+ collection.creator.name +'\'); return false;"'+'>'+ collection.creator.name +'</a'+'>';
+    //return '<a href="#" onclick="filterCollectionsByCurator(\''+ collection.creator.name +'\'); return false;"'+'>'+ collection.creator.name +'</a'+'>';
+    // link to the creator's profile page
+    return '<a href="/curator/profile/'+ collection.creator.login +'" target="_blank">'+ 
+                collection.creator.name +'</a'+'>';
 }
 function getCollectionCuratorRole(collection) {
     // return 'Owner' | 'Collaborator' | 'None'

@@ -8,6 +8,11 @@
 response.title = (viewOrEdit == 'EDIT') and "Edit Study" or "View Study"
 }}
 
+{{# Pivot (in some places) based on whether the user is a logged-in user or
+  # a visitor browsing tree collections.
+isLoggedIn = (auth.user) and True or False
+}}
+
 {{left_sidebar_enabled,right_sidebar_enabled=False,False}}
 {{response.subtitle = "loading study %s..." % request.args[0]}}
 
@@ -1890,6 +1895,12 @@ body {
             'match': "",
             'scope': "Anywhere in the study",
             'submitter': "Submitted by all"
+        },
+        'COLLECTIONS': {
+            // NOTE 'match' and 'filter' are currently unused
+            'match': "",
+            'order': "Most recently modified",
+            'filter': "All tree collections"
         }
     };
     var filterDefaults = null;
@@ -2195,7 +2206,10 @@ body {
           <li><a href="#tree-phylogram" data-toggle="tab">Phylogram</a></li>
           <li><a href="#tree-legend" data-toggle="tab">Legend</a></li>
           <li><a href="#tree-collections" data-toggle="tab">
-                Collections <span class="badge badge-info" style="">3</span> 
+                Collections
+                <span class="badge badge-info" style=""
+                      data-bind="html: getAssociatedCollectionsCount(),
+                                 css: viewModel.ticklers.COLLECTIONS_LIST">&nbsp;</span> 
               </a>
           </li>
 
@@ -2204,6 +2218,10 @@ body {
     <div class="modal-body tab-content">
       <div class="tab-pane active" id="tree-properties">
          <form class="form-inline" style="overflow: hidden; margin-bottom: 0px;">
+              <input type="hidden" id="current-study-id" 
+                     data-bind="value: viewModel.nexml['^ot:studyId']">
+              <input type="hidden" id="current-tree-id" 
+                     data-bind="value: $data['@id']">
           {{ if viewOrEdit == 'EDIT': }}
             <!-- editable tree properties here -->
               <div style="padding: 0 4px;">
@@ -2517,127 +2535,56 @@ body {
 
         <p>
         A collection is a list of trees, chosen for synthesis or any other purpose. Each collection has a nominal owner, but any user can choose to collaborate (add and manage trees) or simply follow its progress. 
-        <br/>
-        <span class="interesting-value" style="font-weight: bold;">NOTE that these are inactive placeholders!</span>
         </p>
 
+      <div id="collection-list-holder" style="max-height: 200px; overflow-y: auto;">
         <table class="table table-condensed table-hover"
-            data-bind="visible: true"><!-- TODO: hide if no collections found -->
+               style="margin-bottom: 2px;"
+               data-bind="visible: true"><!-- TODO: hide if no collections found -->
           <thead>
             <tr>
+              {{ if isLoggedIn: }}
+                <th>Collection name (click to edit)</th>
+              {{ else: }}
                 <th>Collection name (click to view)</th>
-                <th>Description</th>
-                <!--
-                <td>&nbsp;</td>
-                -->
+              {{ pass }}
+                <th>How many trees</th>
+                <th>Last modified</th>
+                <th>Owner</th>
             </tr>
           </thead>
-          <tbody Xdata-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
-          <!-- TODO
-            <tr data-bind="if: true">
-                <td>
-                    <a href="#" data-bind="click: showTreeWithHistory,
-                        text: tree['@label'],
-                        css: viewModel.ticklers.TREES">&nbsp;</a>
-                    <br/>
-                    <a data-bind="if: unresolvedConflictsFoundInTree( tree ), 
-                                  css: viewModel.ticklers.TREES,
-                                  click: showConflictingNodesInTreeViewer,
-                                  visible: true" 
-                       class="suggestion-prompt" style="display: none;"
-                       href="#">
-                        Show conflicting nodes
-                    </a> 
-                    <br/>
-                    <a data-bind="if: ambiguousLabelsFoundInTree( tree ), 
-                                  css: viewModel.ticklers.TREES,
-                                  click: showAmbiguousLabelsInTreeViewer,
-                                  visible: true" 
-                       class="suggestion-prompt" style="display: none;"
-                       href="#">
-                        Review ambiguous labels
-                    </a> 
-                </td>
-                <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
-                        css: viewModel.ticklers.TREES">&nbsp;</td>
-                <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
-                        css: viewModel.ticklers.TREES">&nbsp;</td>
-                <td data-bind="html: getRootedDescriptionForTree(tree),
-                                  click: showArbitraryRootExplanationInTreeViewer,
-                                  css: viewModel.ticklers.TREES"
-                       style="cursor: pointer;">&nbsp;</td>
-                <td data-bind="html: getMappedTallyForTree(tree),
-                        css: viewModel.ticklers.TREES">&nbsp;</td>
-                <td>   *** TODO: show to owner only! ***
-                    <button data-bind="click: removeTree,
-                                       visible: true"
-                        class="pull-right btn btn-mini btn-danger row-controls-ghosted"
-                        style="display: none;">
-                        <i class="icon-remove icon-white"></i>
-                    </button>
-                </td>
-            </tr>
-            -->
-        <!-- EXAMPLES of collection entries -->
+          <tbody data-bind="foreach: { data: viewModel.filteredCollections ? 
+                                               viewModel.filteredCollections() : [ ],
+                                       as: 'collection' },
+                            css: viewModel.ticklers.COLLECTIONS_LIST">
             <tr>
-                <td><a href="#" 
-                       onclick="$('#tree-viewer').modal('hide'); showCollectionViewer(); return false;"
-                    >Clarifying Porifera placement</a></td>
-                <!--
-                <td style="text-align: right;">
-                    <a href="#">Follow</a>
-                    |
-                    <a href="#">Duplicate</a>
-                    |
-                    <a href="#">Synthesis report</a>
-                </td>
-                -->
-                <td style="color: #999;">
-                    An example collection with a very specific purpose.
-                </td>
-            </tr>
-            <tr>
-                <td><a href="#" 
-                       onclick="$('#tree-viewer').modal('hide'); showCollectionViewer(); return false;"
-                    >Trees about bees</a></td>
-                <!--
-                <td style="text-align: right;">
-                    <a href="#">Follow</a>
-                    |
-                    <a href="#">Duplicate</a>
-                    |
-                    <a href="#">Synthesis report</a>
-                </td>
-                -->
-                <td style="color: #999;">
-                    A shared collection focused on a clade of interest.
-                </td>
-            </tr>
-            <tr>
-                <td><a href="#" 
-                       onclick="$('#tree-viewer').modal('hide'); showCollectionViewer(); return false;"
-                    >OpenTree draft tree synthesis</a></td>
-                <!--
-                <td style="text-align: right;">
-                    <a href="#">Follow</a>
-                    |
-                    <a href="#">Duplicate</a>
-                    |
-                    <a href="#">Synthesis report</a>
-                </td>
-                -->
-                <td style="color: #999;">
-                    This key collection is the basis for the project's main synthetic tree.
-                </td>
+                <td data-bind="html: getCollectionViewLink(collection)">&nbsp;</td>
+                <td data-bind="html: getCollectionTreeCount(collection)">&nbsp;</td>
+                <td data-bind="html: getCollectionLastModification(collection)">&nbsp;</td>
+                <td data-bind="html: getCollectionCreatorLink(collection)">&nbsp;</td>
             </tr>
           </tbody>
         </table>
+      </div>
+
+        <h4 style="visible: false; text-align: center; color: #ccc; padding: 0.5em; margin: 0.5em 0;"
+           data-bind="visible: !(viewModel.filteredCollections),
+                      css: viewModel.ticklers.COLLECTIONS_LIST">
+           <em>Loading collections list...</em>
+        </h4>
+        <div class="empty-list-prompt" 
+             data-bind="visible: viewModel.filteredCollections && 
+                                 (viewModel.filteredCollections()().length === 0),
+                        css: viewModel.ticklers.COLLECTIONS_LIST">
+            This tree has not been included in any collections yet. Use the buttons below to 
+            add it to a new or existing collection.
+        </div>
 
         <!-- ADD TO EXISTING button -->
         <button Xdata-bind="click: TODO-create-a-new-collection,
                             visible: true"
             class="btn btn-info"
-            style="margin-top: -24px;">
+            style="margin-top: 6px;">
             Add tree to an existing collection
             <i class="icon-book icon-white"></i> 
         </button>
@@ -2646,7 +2593,7 @@ body {
         <button Xdata-bind="click: TODO-create-a-new-collection,
                             visible: true"
             class="btn btn-info"
-            style="margin-top: -24px; margin-left: 8px;">
+            style="margin-top: 6px; margin-left: 8px;">
             Add tree to a new collection
             <i class="icon-pencil icon-white"></i> 
         </button>
