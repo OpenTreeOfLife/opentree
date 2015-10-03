@@ -15,6 +15,8 @@ FORCE_COMPILE=$3
 mkdir -p downloads
 mkdir -p repo
 
+dependency_changed=no
+
 # ---------- NEO4J ----------
 if [ ! -r downloads/neo4j.tgz ]; then
     wget --no-verbose -O downloads/neo4j.tgz "http://dist.neo4j.org/neo4j-community-1.9.5-unix.tar.gz?edition=community&version=1.9.5&distribution=tarball&dlid=2824963"
@@ -24,18 +26,25 @@ fi
 # Set up neo4j services
 
 if git_refresh FePhyFoFum jade || [ ! -d ~/.m2/repository/org/opentree/jade ]; then
+    dependency_changed=yes
     (cd repo/jade; sh mvn_install.sh)
 fi
 
 if git_refresh OpenTreeOfLife ot-base || [ ! -d ~/.m2/repository/org/opentree/ot-base ]; then
+    dependency_changed=yes
     (cd repo/ot-base; sh mvn_install.sh)
 fi
 
-# I think the following is for the benefit of oti
-if git_refresh OpenTreeOfLife taxomachine || [ ! -d ~/.m2/repository/org/opentree/taxomachine ]; then
-    (cd repo/taxomachine; sh mvn_install.sh)
-    # Kludge. It would be better to handle dependencies using 'make' or something like that.
-    rm -f neo4j-taxomachine/plugins/taxomachine*.jar
+# I think the following is only for the benefit of oti
+if [ $WHICH_APP = oti ]; then
+    if git_refresh OpenTreeOfLife taxomachine || [ ! -d ~/.m2/repository/org/opentree/taxomachine ]; then
+        dependency_changed=yes
+        (cd repo/taxomachine; sh install_as_maven_artifact.sh)
+        # Kludge to force re-creation of the plugin as well. It would
+        # be better to handle dependencies using 'make' or something
+        # like that.
+        rm -f neo4j-taxomachine/plugins/taxomachine*.jar
+    fi
 fi
 
 #jar=opentree-neo4j-plugins-0.0.1-SNAPSHOT.jar
@@ -56,13 +65,19 @@ function make_neo4j_instance {
         mv neo4j-community-* neo4j-$APP
     fi
 
-    # Get plugin from git repository
-    if git_refresh OpenTreeOfLife $APP || [ ! -r neo4j-$APP/plugins/$jar ] || [ $FORCE_COMPILE = "yes" ]; then
+    # Get plugin from git repository & compile it
+    if git_refresh OpenTreeOfLife $APP || \
+            [ ! -r neo4j-$APP/plugins/$jar ] || \
+            [ $FORCE_COMPILE = "yes" ] ||\
+            [ $dependency_changed = "yes" ]; then
     
         echo "attempting to recompile "$APP" plugins"
         # Create and install the plugins .jar file
-        # Compilation takes about 4 minutes... ugh
-        (cd repo/$APP; ./mvn_serverplugins.sh)
+        if [ $APP = treemachine ]; then
+            (cd repo/$APP; ./compile_server_plugins.sh)
+        else
+            (cd repo/$APP; ./mvn_serverplugins.sh)
+        fi
     fi
 
     # Stop any running server.  (The database may be empty at this point.)
