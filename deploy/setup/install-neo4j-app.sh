@@ -73,7 +73,7 @@ function make_neo4j_instance {
     
         echo "attempting to recompile "$APP" plugins"
         # Create and install the plugins .jar file
-        if [ $APP = treemachine ]; then
+        if [ $APP = taxomachine ]; then
             (cd repo/$APP; ./compile_server_plugins.sh)
         else
             (cd repo/$APP; ./mvn_serverplugins.sh)
