@@ -15,6 +15,8 @@ FORCE_COMPILE=$3
 mkdir -p downloads
 mkdir -p repo
 
+# This is absolutely the wrong way to handle dependencies.
+# A rewrite is in order, perhaps using 'make'.
 dependency_changed=no
 
 # ---------- NEO4J ----------
@@ -22,22 +24,27 @@ if [ ! -r downloads/neo4j.tgz ]; then
     wget --no-verbose -O downloads/neo4j.tgz "http://dist.neo4j.org/neo4j-community-1.9.5-unix.tar.gz?edition=community&version=1.9.5&distribution=tarball&dlid=2824963"
 fi
 
-# ---------- NEO4J WITH TREEMACHINE / TAXOMACHINE PLUGINS ----------
+# ---------- DEPENDENCIES ----------
 # Set up neo4j services
 
-if git_refresh FePhyFoFum jade || [ ! -d ~/.m2/repository/org/opentree/jade ]; then
+if git_refresh FePhyFoFum jade || \
+        [ ! -d ~/.m2/repository/org/opentree/jade ]; then
     dependency_changed=yes
     (cd repo/jade; sh mvn_install.sh)
 fi
 
-if git_refresh OpenTreeOfLife ot-base || [ ! -d ~/.m2/repository/org/opentree/ot-base ]; then
+if git_refresh OpenTreeOfLife ot-base || \
+        [ ! -d ~/.m2/repository/org/opentree/ot-base ] || \
+        [ $dependency_changed = "yes" ]; then
     dependency_changed=yes
     (cd repo/ot-base; sh mvn_install.sh)
 fi
 
 # I think the following is only for the benefit of oti
 if [ $WHICH_APP = oti ]; then
-    if git_refresh OpenTreeOfLife taxomachine || [ ! -d ~/.m2/repository/org/opentree/taxomachine ]; then
+    if git_refresh OpenTreeOfLife taxomachine || \
+            [ ! -d ~/.m2/repository/org/opentree/taxomachine ] || \
+            [ $dependency_changed = "yes" ]; then
         dependency_changed=yes
         (cd repo/taxomachine; sh install_as_maven_artifact.sh)
         # Kludge to force re-creation of the plugin as well. It would
@@ -46,6 +53,8 @@ if [ $WHICH_APP = oti ]; then
         rm -f neo4j-taxomachine/plugins/taxomachine*.jar
     fi
 fi
+
+# ---------- NEO4J WITH TREEMACHINE / TAXOMACHINE / OTI PLUGINS ----------
 
 #jar=opentree-neo4j-plugins-0.0.1-SNAPSHOT.jar
 VERSION=0.0.1-SNAPSHOT
