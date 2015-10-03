@@ -43,6 +43,8 @@ function opentree_branch {
 OPENTREE_ADMIN=admin
 OPENTREE_IDENTITY=opentree.pem
 OPENTREE_DOCSTORE=phylesystem
+COLLECTIONS_REPO=collections
+FAVORITES_REPO=favorites-1
 OPENTREE_GH_IDENTITY=opentree-gh.pem
 OPENTREE_COMPONENTS=most
 OPENTREE_USER=opentree
@@ -105,6 +107,8 @@ if [ ! -r $OPENTREE_IDENTITY ]; then err "$OPENTREE_IDENTITY not found"; fi
 # Extraneous http:// is needed for now, but should get phased out
 [ "x$OTI_BASE_URL" != x ] || OTI_BASE_URL=http://$OPENTREE_NEO4J_HOST/oti
 [ "x$OPENTREE_API_BASE_URL" != x ] || OPENTREE_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/api/v1
+[ "x$COLLECTIONS_API_BASE_URL" != x ] || COLLECTIONS_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/v2
+[ "x$FAVORITES_API_BASE_URL" != x ] || FAVORITES_API_BASE_URL=$OPENTREE_PUBLIC_DOMAIN/v2
 
 [ "x$OPENTREE_DEFAULT_APPLICATION" != x ] || OPENTREE_DEFAULT_APPLICATION=opentree
 
@@ -244,7 +248,7 @@ function push_opentree {
     if [ $TREEVIEW_GITHUB_CLIENT_ID = ID_NOT_PROVIDED ]; then echo "WARNING: Missing GitHub client ID! Tree-view feedback will be disabled."; fi
 
     if [ $DRYRUN = "yes" ]; then echo "[opentree]"; return; fi
-    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${OPENTREE_DEFAULT_APPLICATION}" "$CONTROLLER" "${CURATION_GITHUB_CLIENT_ID}" "${CURATION_GITHUB_REDIRECT_URI}" "${TREEVIEW_GITHUB_CLIENT_ID}" "${TREEVIEW_GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OPENTREE_API_BASE_URL}"
+    ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-web2py-apps.sh "$OPENTREE_HOST" "${OPENTREE_PUBLIC_DOMAIN}" "${OPENTREE_DEFAULT_APPLICATION}" "$CONTROLLER" "${CURATION_GITHUB_CLIENT_ID}" "${CURATION_GITHUB_REDIRECT_URI}" "${TREEVIEW_GITHUB_CLIENT_ID}" "${TREEVIEW_GITHUB_REDIRECT_URI}" "${TREEMACHINE_BASE_URL}" "${TAXOMACHINE_BASE_URL}" "${OTI_BASE_URL}" "${OPENTREE_API_BASE_URL}" "${COLLECTIONS_API_BASE_URL}" "${FAVORITES_API_BASE_URL}"
     # place the files with secret GitHub API keys for curator and webapp (tree browser feedback) apps
     # N.B. This includes the final domain name, since we'll need different keys for dev.opentreeoflife.org, www.opentreeoflife.org, etc.
     keyfile=~/.ssh/opentree/treeview-GITHUB_CLIENT_SECRET-$OPENTREE_PUBLIC_DOMAIN
@@ -303,7 +307,7 @@ function push_phylesystem_api {
 
     echo "Doc store is $OPENTREE_DOCSTORE"
     ${SSH} "$OT_USER@$OPENTREE_HOST" ./setup/install-api.sh "$OPENTREE_HOST" \
-           $OPENTREE_DOCSTORE $CONTROLLER $OTI_BASE_URL $OPENTREE_API_BASE_URL $OPENTREE_DEFAULT_APPLICATION
+           $OPENTREE_DOCSTORE $COLLECTIONS_REPO $FAVORITES_REPO $CONTROLLER $OTI_BASE_URL $OPENTREE_API_BASE_URL $COLLECTIONS_API_BASE_URL $FAVORITES_API_BASE_URL $OPENTREE_DEFAULT_APPLICATION
 }
 
 function index {
