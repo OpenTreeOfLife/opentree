@@ -816,3 +816,22 @@ tr.after-shims th {
 .profile-header .control-group > .controls {
     margin-top: -8px;
 }
+
+/* Prepend search icon in the input field */
+.navbar-search .left-inner-addon {
+    position: relative;
+    display: inline-block;
+}
+.navbar-search .left-inner-addon .search-query {
+    padding-left: 24px;
+}
+.navbar-search .left-inner-addon .search-query:focus,
+.navbar-search .left-inner-addon .search-query.focused {
+    padding-left: 25px;
+}
+.navbar-search .left-inner-addon i {
+    position: absolute;
+    top: 7px;
+    left: 8px;
+    pointer-events: none;
+}

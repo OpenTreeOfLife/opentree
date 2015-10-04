@@ -2531,10 +2531,39 @@ body {
         </tr>
        </table>
       </div>
-      <div class="tab-pane" id="tree-collections">
+      <div class="tab-pane" id="tree-collections" style="min-height: 320px;">
 
-        <p>
-        A collection is a list of trees, chosen for synthesis or any other purpose. Each collection has a nominal owner, but any user can choose to collaborate (add and manage trees) or simply follow its progress. 
+        <!-- ADD TO EXISTING button -->
+        <button onclick="addTreeToExistingCollection(this); return false;"
+            class="btn btn-info pull-left"
+            style="margin-right: 8px;">
+            Add tree to an existing collection
+            <i class="icon-book icon-white"></i> 
+        </button>
+        <form id="collection-search-form" class="navbar-search" autocomplete="off" 
+              style="display: none; margin-top: 0;">
+            <div class="left-inner-addon">
+                <i class="icon-search"></i>
+                <input type="text" name="collection-search" class="search-query" placeholder="Match by name, id, owner, description..." autocomplete="off" style="width: 260px;">
+            </div>
+            <!-- then show dropdown when results are ready... -->
+            <div class="">
+                <ul id="collection-search-results" class="dropdown-menu" role="menu">
+                    ...
+                </ul>
+            </div>
+        </form>
+
+        <!-- CREATE NEW button -->
+        <button  onclick="addTreeToNewCollection(); return false;"
+            class="btn btn-info pull-right"
+            style="margin-left: 8px;">
+            Add tree to a new collection
+            <i class="icon-pencil icon-white"></i> 
+        </button>
+
+        <p style="clear: both; padding-top: 0.5em;">
+        A collection is a list of trees, chosen for synthesis or any other purpose. Each collection has a nominal owner, but any user can choose to collaborate (add and manage trees) or simply follow its progress. This tree is currently included in the collections listed below.
         </p>
 
       <div id="collection-list-holder" style="max-height: 200px; overflow-y: auto;">
@@ -2576,27 +2605,9 @@ body {
              data-bind="visible: viewModel.filteredCollections && 
                                  (viewModel.filteredCollections()().length === 0),
                         css: viewModel.ticklers.COLLECTIONS_LIST">
-            This tree has not been included in any collections yet. Use the buttons below to 
+            This tree has not been included in any collections yet. Use the buttons above to 
             add it to a new or existing collection.
         </div>
-
-        <!-- ADD TO EXISTING button -->
-        <button Xdata-bind="click: TODO-create-a-new-collection,
-                            visible: true"
-            class="btn btn-info"
-            style="margin-top: 6px;">
-            Add tree to an existing collection
-            <i class="icon-book icon-white"></i> 
-        </button>
-
-        <!-- CREATE NEW button -->
-        <button Xdata-bind="click: TODO-create-a-new-collection,
-                            visible: true"
-            class="btn btn-info"
-            style="margin-top: 6px; margin-left: 8px;">
-            Add tree to a new collection
-            <i class="icon-pencil icon-white"></i> 
-        </button>
 
       </div>
     </div>

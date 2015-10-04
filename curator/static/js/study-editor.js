@@ -3141,6 +3141,18 @@ function showTreeViewer( tree, options ) {
         ko.applyBindings(tree,el);
     });
 
+    // enable collection search (in tree-viewer popup)
+    console.warn('BINDING COLLECTION SEARCH');
+    $('input[name=collection-search]').unbind('keyup change')
+                                      .bind('keyup change', setCollectionSearchFuse )
+                                      .unbind('keydown')  // block errant form submission
+                                      .bind('keydown', function(e) { return e.which !== 13; });
+    $('#collection-search-form').unbind('submit').submit(function() {
+        searchForMatchingCollections();
+        return false;
+    });
+    resetExistingCollectionPrompt();
+
     var updateTreeDisplay = function() {
         if (viewOrEdit == 'EDIT') {
             if (treeTagsInitialized) {
@@ -7579,7 +7591,7 @@ function loadCollectionList(option) {
                                 if (d.decision !== 'INCLUDED') {
                                     return;
                                 }
-                                if (d.studyID !== currentStudyID) {
+                                if (d.studyID === currentStudyID) {
                                     if (d.treeID === currentTreeID) {
                                         foundCurrentTree = true;
                                         return false; // stop checking trees
@@ -7740,4 +7752,227 @@ function getAssociatedCollectionsCount() {
     }
     // an empty space will collapse (hide) the indicator if we're not ready
     return '';
+}
+
+function addTreeToExistingCollection(clicked) {
+    // show the autocomplete widget and mute this button
+    var $btn = $(clicked);
+    $btn.addClass('disabled');
+    var $collectionPrompt = $('#collection-search-form');
+    $collectionPrompt.show()
+    $collectionPrompt.find('input').eq(0).focus();
+}
+function resetExistingCollectionPrompt() {
+    var $collectionPrompt = $('#collection-search-form');
+    var $btn = $collectionPrompt.prev('.btn');
+    $btn.removeClass('disabled');
+    $collectionPrompt.hide();
+    $collectionPrompt.find('input').val('');
+    $('#collection-search-results').html('');
+    $('#collection-search-results').hide();
+}
+
+/* More autocomplete behavior for tree-collection search.
+ */
+clearTimeout(collectionSearchTimeoutID);  // in case there's a lingering search from last page!
+var collectionSearchTimeoutID = null;
+var collectionSearchDelay = 250; // milliseconds
+var hopefulCollectionSearchString = null;
+function setCollectionSearchFuse(e) {
+    if (collectionSearchTimeoutID) {
+        // kill any pending search, apparently we're still typing
+        clearTimeout(collectionSearchTimeoutID);
+    }
+    // reset the timeout for another n milliseconds
+    collectionSearchTimeoutID = setTimeout(searchForMatchingCollections, collectionSearchDelay);
+
+    /* If the last key pressed was the ENTER key, stash the current (trimmed)
+     * string and auto-jump if it's a valid taxon name.
+     */
+    if (e.type === 'keyup') {
+        switch (e.which) {
+            case 13:
+                hopefulCollectionSearchString = $('input[name=taxon-search]').val().trim();
+                // TODO? jumpToExactMatch();  // use existing menu, if found
+                break;
+            case 17:
+                // do nothing (probably a second ENTER key)
+                break;
+            case 39:
+            case 40:
+                // down or right arrow should try to tab to first result
+                $('#collection-search-results a:eq(0)').focus();
+                break;
+            default:
+                hopefulCollectionSearchString = null;
+        }
+    } else {
+        hopefulCollectionSearchString = null;
+    }
+}
+
+var showingResultsForCollectionSearchText = '';
+function searchForMatchingCollections() {
+    // clear any pending search timeout and ID
+    clearTimeout(collectionSearchTimeoutID);
+    collectionSearchTimeoutID = null;
+
+    var $input = $('input[name=collection-search]');
+    var searchText = $input.val().trimLeft();
+
+    if (searchText.length === 0) {
+        $('#collection-search-results').html('');
+        return false;
+    } else if (searchText.length < 2) {
+        $('#collection-search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+        $('#search-results').dropdown('toggle');
+        return false;
+    }
+
+    // is this unchanged from last time? no need to search again..
+    if (searchText == showingResultsForCollectionSearchText) {
+        ///console.log("Search text and context UNCHANGED!");
+        return false;
+    }
+
+    // search local viewModel.allCollections for any matches
+    var searchNotAvailable = (!viewModel.allCollections || viewModel.allCollections.length === 0);
+    var statusMsg;
+    if (searchNotAvailable) {
+        // block search (no collection data in the view model)
+        statusMsg = 'Unable to search (no collections found)';
+    } else {
+        // stash our search text to use for later comparison (to avoid redundant searches)
+        showingResultsForCollectionSearchText = searchText; // trimmed above
+        statusMsg = 'Search in progress...';
+    }
+
+    $('#collection-search-results').html('<li class="disabled"><a><span class="text-warning">'
+        + statusMsg +'</span></a></li>');
+    $('#collection-search-results').show();
+    $('#collection-search-results').dropdown('toggle');
+
+    if (searchNotAvailable) {
+        return false;
+    }
+
+    var matchPattern = new RegExp( $.trim(searchText), 'i' ),
+        wholeSlugMatchPattern = new RegExp( '^'+ $.trim(searchText) +'$' );
+
+    var matchingCollections = ko.utils.arrayFilter(
+        viewModel.allCollections,
+        function(collection) {
+            // skip collections that already include this tree
+            if ($.inArray(collection, viewModel.filteredCollections()()) !== -1) {
+                console.warn("SKIPPING collection that's already listed!");
+                return false;
+            }
+            // match entered text against collections (id, owner, description...)
+            var id = $.trim(collection['id']);
+            var idParts = id.split('/');
+            var ownerSlug = idParts[0];
+            var titleSlug = (idParts.length === 2) ? idParts[1] : '';
+            var name = $.trim(collection['name']);
+            var description = $.trim(collection['description']);
+            // extract names and IDs of all stakeholders (incl. creator!)
+            if ($.isPlainObject(collection['creator'])) {
+                creator = $.trim(collection['creator'].name)
+                    +'|'+ $.trim(collection['creator'].login);
+            } else {
+                creator = "";
+            }
+            if ($.isArray(collection['contributors'])) {
+                contributors = "";
+                $.each(collection['contributors'], function(i,c) {
+                    contributors += ('|'+ $.trim(c.name) +'|'+ $.trim(c.login));
+                });
+            } else {
+                contributors = "";
+            }
+            // skip collections that don't match on any field
+            if (!wholeSlugMatchPattern.test(id) && !wholeSlugMatchPattern.test(ownerSlug) && !wholeSlugMatchPattern.test(titleSlug) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
+                return false;
+            }
+            return true;
+        }
+    );
+
+    $('#collection-search-results').html('');
+    var maxResults = 10;
+    var visibleResults = 0;
+    if (matchingCollections.length > 0) {
+        // show all sorted results, up to our preset maximum
+        $.each(matchingCollections, function(i, collection) {
+            if (visibleResults >= maxResults) {
+                return false;
+            }
+            $('#collection-search-results').append(
+                '<li>'+ getCollectionViewLink(collection) +'</li>'
+            );
+            visibleResults++;
+        });
+
+        $('#collection-search-results a')
+            .click(function(e) {
+                var $link = $(this);
+                // Override its default onclick behavior to add the tree, then
+                // refresh the associated-collections list.
+                //
+                // hide menu and reset search field
+                $('#collection-search-results').html('');
+                $('#collection-search-results').hide();
+                $('input[name=collection-search]').val('');
+                nudgeTickler('COLLECTIONS_LIST');
+                // retrieve the collection ID from its 'title' attribute
+                var itsCollectionID = $link.attr('title');
+                // insert this tree before opening the editor
+                fetchAndShowCollection( itsCollectionID, addCurrentTreeToCollection );
+                return false;
+            });
+        $('#collection-search-results').dropdown('toggle');
+    } else {
+        $('#collection-search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+        $('#collection-search-results').dropdown('toggle');
+    }
+
+    return false;
+}
+
+function addCurrentTreeToCollection( collection ) {
+    // gather default information about the current study and tree
+    var currentStudyID = $('#current-study-id').val();
+    var currentTreeID = $('#current-tree-id').val();
+    var currentStudy = viewModel.nexml;
+    var currentTree = getTreeByID(currentTreeID);
+    var compactStudyRef = fullToCompactReference(currentStudy['^ot:studyPublicationReference']);
+    if (compactStudyRef === '(Untitled)') {
+        // strip the original parentheses to avoid extras
+        compactStudyRef = 'study has no reference';
+    }
+    // capture the current tree name and study reference
+    // TODO: update these as studies change?
+    var currentTreeName = $.trim(currentTree['@label']);
+    var treeAndStudy = (currentTreeName || currentTreeID) +' ('+ compactStudyRef +')';
+    var treeEntry = {
+        "decision": "INCLUDED",
+        "name": treeAndStudy,
+        "studyID": currentStudyID,
+        "treeID": currentTreeID,
+        "SHA": "",    // TODO: capture this (already expected by server-side validation)
+        "comments": ""
+    };
+    if ('data' in collection) {
+        collection.data.decisions.push(treeEntry);
+    } else {
+        collection.decisions.push(treeEntry);
+    }
+    // to refresh the list
+    //showCollectionViewer( collection, {SCROLL_TO_BOTTOM: true} );
+    editCollection( collection, {SCROLL_TO_BOTTOM: true} );
+}
+
+function addTreeToNewCollection() {
+    var c = createNewTreeCollection(); 
+    addCurrentTreeToCollection(c);
+    showCollectionViewer( c, {SCROLL_TO_BOTTOM: true} );
 }
