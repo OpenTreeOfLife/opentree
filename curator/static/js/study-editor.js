@@ -3259,7 +3259,7 @@ function showTreeViewer( tree, options ) {
             // delay load, so we see its modal blocker *above* the tree viewer
             setTimeout(function() {
                 if (viewModel.allCollections && viewModel.allCollections.length) {
-                    loadCollectionList('REFRESH');
+                    nudgeTickler('COLLECTIONS_LIST');
                 } else { 
                     loadCollectionList('INIT');
                 }
