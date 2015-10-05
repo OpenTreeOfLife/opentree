@@ -420,7 +420,7 @@ var userLogin;
 var userDisplayName;
 var singlePropertySearchForTrees_url;
 
-function fetchAndShowCollection( collectionID ) {
+function fetchAndShowCollection( collectionID, specialHandling ) {
     /* Fetch a known-good collection from the tree-collections API, and open it
      * in a popup.  This should always get the lastest version from the docstore, 
      * complete with its commit history and merged edits from other users.
@@ -435,7 +435,12 @@ function fetchAndShowCollection( collectionID ) {
         success: function( data ) {  // success callback
             // N.B. this includes the core collection JSON, plus a wrapper that
             // has history and other supporting values.
-            showCollectionViewer(data, {MAINTAIN_SCROLL: true});
+            if (specialHandling) {
+                // e.g., add a tree to this collection as it loads
+                specialHandling(data);
+            } else {
+                showCollectionViewer(data, {MAINTAIN_SCROLL: true});
+            }
         },
         error: function( jqXHR, textStatus, errorThrown ) {
             showErrorMessage("Unable to load collection '"+ collectionID +"'");
@@ -457,7 +462,7 @@ var $stashedCollectionContributorElement = null;
 var $stashedCollectionDecisionElement = null;
 
 function showCollectionViewer( collection, options ) {
-    // TODO: allow options for initial display, etc.?
+    // allow options for initial display, etc.
     options = options || {};
 
     var newListScrollPosition = 0;
@@ -507,7 +512,14 @@ function showCollectionViewer( collection, options ) {
         // (re)bind widgets, esp. for adding trees
         var $popup = $('#tree-collection-viewer');
         var currentListScrollPosition = $('#tree-list-holder').scrollTop();
-        var newListScrollPosition = (options.MAINTAIN_SCROLL) ? currentListScrollPosition : 0;
+        var newListScrollPosition;
+        if (options.MAINTAIN_SCROLL) {
+            newListScrollPosition = currentListScrollPosition;
+        } else if (options.SCROLL_TO_BOTTOM) {
+            newListScrollPosition = 1000000;
+        } else {
+            newListScrollPosition = 0;
+        }
         var $newTreeStartButton = $popup.find('#new-collection-tree-start');
         var $newTreeCancelButton = $popup.find('#new-collection-tree-cancel');
         var $newTreeOptionsPanels = $popup.find('.new-collection-tree-options');
@@ -546,19 +558,13 @@ function showCollectionViewer( collection, options ) {
 
     if (collectionViewerIsInUse) {
         // trigger its 'shown' event to update the UI
-        updateCollectionDisplay();
-        if (options.MAINTAIN_SCROLL) {
-            $('#tree-list-holder').scrollTop(newListScrollPosition);
-        } else if (options.SCROLL_TO_BOTTOM) {
-            // scroll to an absurdly high number (move to bottom of list)
-            $('#tree-list-holder').scrollTop(1000000);
-        }
+        updateCollectionDisplay(options);
     } else {
         $('#tree-collection-viewer').off('show').on('show', function () {
             collectionViewerIsInUse = true;
         });
         $('#tree-collection-viewer').off('shown').on('shown', function () {
-            updateCollectionDisplay();
+            updateCollectionDisplay(options);
         });
         $('#tree-collection-viewer').off('hide').on('hide', function () {
             if (currentlyEditingCollectionID !== null) {
@@ -681,6 +687,8 @@ function createNewTreeCollection() {
     }
 
     editCollection( wrappedNewCollection );
+    // the caller may want to manipulate this further
+    return wrappedNewCollection;
 }
 
 function updateNewCollectionID( collection ) {
@@ -1045,7 +1053,7 @@ function stripTreeCollectionRanking( collection ) {
     // remove explicit 'rank' properties before saving a collection, since the
     // JSON array already has the current order
     var decisionList = ('data' in collection) ? collection.data.decisions : collection.decisions;
-    $.each(collection.data.decisions, function(i, decision) {
+    $.each(decisionList, function(i, decision) {
         delete decision['rank'];
     });
 }
@@ -1109,12 +1117,13 @@ function copyCollection( collection ) {
     }
 }
 
-function editCollection( collection ) {
+function editCollection( collection, editorOptions ) {
     // toggle to full editing UI (or login if user is anonymous)
+    editorOptions = editorOptions || {MAINTAIN_SCROLL: true};
     if (userIsLoggedIn()) {
         if ('data' in collection && 'url' in collection.data) {
             currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
-            showCollectionViewer( collection, {MAINTAIN_SCROLL: true} );  // to refresh the UI
+            showCollectionViewer( collection, editorOptions );  // to refresh the UI
             pushPageExitWarning();
             return;
         }
@@ -1498,6 +1507,14 @@ function getCollectionLastModification(collection) {
 function filterCollectionsByCurator( curatorID ) {
     // replace the filter text with this curator's userid
     viewModel.listFilters.COLLECTIONS.match( curatorID );
+}
+
+function getCollectionByID( collectionsArray, targetID ) {
+    var matches = $.grep( collectionsArray, function(c) {
+        var itsID = ('data' in c) ? c.data.id : c.id;
+        return (itsID === targetID);
+    });
+    return (matches.length === 0) ? null : matches[0];
 }
 
 function userIsLoggedIn() {
