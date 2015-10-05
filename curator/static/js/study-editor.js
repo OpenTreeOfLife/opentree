@@ -7740,12 +7740,18 @@ function getAssociatedCollectionsCount() {
 }
 
 function addTreeToExistingCollection(clicked) {
-    // show the autocomplete widget and mute this button
-    var $btn = $(clicked);
-    $btn.addClass('disabled');
-    var $collectionPrompt = $('#collection-search-form');
-    $collectionPrompt.show()
-    $collectionPrompt.find('input').eq(0).focus();
+    if (userIsLoggedIn()) {
+        // show the autocomplete widget and mute this button
+        var $btn = $(clicked);
+        $btn.addClass('disabled');
+        var $collectionPrompt = $('#collection-search-form');
+        $collectionPrompt.show()
+        $collectionPrompt.find('input').eq(0).focus();
+    } else {
+        if (confirm('This requires login via Github. OK to proceed?')) {
+            loginAndReturn(); 
+        }
+    }
 }
 function resetExistingCollectionPrompt() {
     var $collectionPrompt = $('#collection-search-form');
@@ -7957,7 +7963,13 @@ function addCurrentTreeToCollection( collection ) {
 }
 
 function addTreeToNewCollection() {
-    var c = createNewTreeCollection(); 
-    addCurrentTreeToCollection(c);
-    showCollectionViewer( c, {SCROLL_TO_BOTTOM: true} );
+    if (userIsLoggedIn()) {
+        var c = createNewTreeCollection(); 
+        addCurrentTreeToCollection(c);
+        showCollectionViewer( c, {SCROLL_TO_BOTTOM: true} );
+    } else {
+        if (confirm('This requires login via Github. OK to proceed?')) {
+            loginAndReturn(); 
+        }
+    }
 }
