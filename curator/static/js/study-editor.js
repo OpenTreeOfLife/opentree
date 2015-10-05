@@ -7740,12 +7740,18 @@ function getAssociatedCollectionsCount() {
 }
 
 function addTreeToExistingCollection(clicked) {
-    // show the autocomplete widget and mute this button
-    var $btn = $(clicked);
-    $btn.addClass('disabled');
-    var $collectionPrompt = $('#collection-search-form');
-    $collectionPrompt.show()
-    $collectionPrompt.find('input').eq(0).focus();
+    if (userIsLoggedIn()) {
+        // show the autocomplete widget and mute this button
+        var $btn = $(clicked);
+        $btn.addClass('disabled');
+        var $collectionPrompt = $('#collection-search-form');
+        $collectionPrompt.show()
+        $collectionPrompt.find('input').eq(0).focus();
+    } else {
+        if (confirm('This requires login via Github. OK to proceed?')) {
+            loginAndReturn(); 
+        }
+    }
 }
 function resetExistingCollectionPrompt() {
     var $collectionPrompt = $('#collection-search-form');
@@ -7889,6 +7895,11 @@ function searchForMatchingCollections() {
         // show all sorted results, up to our preset maximum
         $.each(matchingCollections, function(i, collection) {
             if (visibleResults >= maxResults) {
+                $('#collection-search-results').append(
+                    '<li class="disabled"><a><span class="text-warning">'
+                      +'Refine your search text to see other results'
+                   +'</span></a></li>'
+                );
                 return false;
             }
             $('#collection-search-results').append(
@@ -7897,7 +7908,7 @@ function searchForMatchingCollections() {
             visibleResults++;
         });
 
-        $('#collection-search-results a')
+        $('#collection-search-results li:not(.disabled) a')
             .click(function(e) {
                 var $link = $(this);
                 // Override its default onclick behavior to add the tree, then
@@ -7957,7 +7968,13 @@ function addCurrentTreeToCollection( collection ) {
 }
 
 function addTreeToNewCollection() {
-    var c = createNewTreeCollection(); 
-    addCurrentTreeToCollection(c);
-    showCollectionViewer( c, {SCROLL_TO_BOTTOM: true} );
+    if (userIsLoggedIn()) {
+        var c = createNewTreeCollection(); 
+        addCurrentTreeToCollection(c);
+        showCollectionViewer( c, {SCROLL_TO_BOTTOM: true} );
+    } else {
+        if (confirm('This requires login via Github. OK to proceed?')) {
+            loginAndReturn(); 
+        }
+    }
 }

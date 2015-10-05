@@ -2534,8 +2534,13 @@ body {
       <div class="tab-pane" id="tree-collections" style="min-height: 320px;">
 
         <!-- ADD TO EXISTING button -->
-        <button onclick="addTreeToExistingCollection(this); return false;"
-            class="btn btn-info pull-left"
+        <button class="btn btn-info pull-left"
+            onclick="addTreeToExistingCollection(this); return false;"
+          {{ if isLoggedIn: }}
+            title="Add this tree to any collection"
+          {{ else: }}
+            title="Add this tree to any collection (requires login)"
+          {{ pass }}
             style="margin-right: 8px;">
             Add tree to an existing collection
             <i class="icon-book icon-white"></i> 
@@ -2555,8 +2560,13 @@ body {
         </form>
 
         <!-- CREATE NEW button -->
-        <button  onclick="addTreeToNewCollection(); return false;"
-            class="btn btn-info pull-right"
+        <button class="btn btn-info pull-right"
+            onclick="addTreeToNewCollection(); return false;"
+          {{ if isLoggedIn: }}
+            title="Create a collection and add this tree"
+          {{ else: }}
+            title="Create a collection and add this tree (requires login)"
+          {{ pass }}
             style="margin-left: 8px;">
             Add tree to a new collection
             <i class="icon-pencil icon-white"></i> 
