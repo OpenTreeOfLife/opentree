@@ -7895,6 +7895,11 @@ function searchForMatchingCollections() {
         // show all sorted results, up to our preset maximum
         $.each(matchingCollections, function(i, collection) {
             if (visibleResults >= maxResults) {
+                $('#collection-search-results').append(
+                    '<li class="disabled"><a><span class="text-warning">'
+                      +'Refine your search text to see other results'
+                   +'</span></a></li>'
+                );
                 return false;
             }
             $('#collection-search-results').append(
@@ -7903,7 +7908,7 @@ function searchForMatchingCollections() {
             visibleResults++;
         });
 
-        $('#collection-search-results a')
+        $('#collection-search-results li:not(.disabled) a')
             .click(function(e) {
                 var $link = $(this);
                 // Override its default onclick behavior to add the tree, then
