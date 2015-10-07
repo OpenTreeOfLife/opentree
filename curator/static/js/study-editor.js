@@ -6404,14 +6404,6 @@ function nudgeTickler( name ) {
     }
 }
 
-function removeFromArray( doomedValue, theArray ) {
-    // removes just one matching value, if found
-    var index = $.inArray( doomedValue, theArray );
-    if (index !== -1) {
-        theArray.splice( index, 1 );
-    }
-}
-
 function getFastLookup( lookupName ) {
     // return (or build) a flat list of Nexson elements by ID
     if (lookupName in viewModel.fastLookups) {
