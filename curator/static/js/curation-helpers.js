@@ -822,6 +822,7 @@ function addTreeToCollection( collection, inputType ) {
                         collection.data.decisions.push(treeEntry);
                         showCollectionViewer( collection, {SCROLL_TO_BOTTOM: true} );  // to refresh the list
                         showSuccessMessage('Tree found and added to this collection.');
+                        addPendingCollectionChange( 'ADD', studyID, treeID );
                         break;
 
                     default:
@@ -917,6 +918,7 @@ function moveInTreeCollection( tree, collection, newPosition ) {
     var grabbedItem = decisionList.splice( oldPosition, 1 )[0];
     decisionList.splice(newPosition, 0, grabbedItem);
 
+    addPendingCollectionChange( 'REORDER' );
     resetTreeCollectionRanking( collection );
     showCollectionViewer( collection, {MAINTAIN_SCROLL: true} );  // to refresh the list
 }
@@ -1070,6 +1072,7 @@ function removeTreeFromCollection(tree, collection) {
         decisionList.splice(oldPosition, 1);
         resetTreeCollectionRanking( collection );
         showCollectionViewer( collection );  // to refresh the list
+        addPendingCollectionChange( 'REMOVE', tree.studyID, tree.treeID );
     }
 }
 
@@ -1083,6 +1086,58 @@ function userIsEditingCollection( collection ) {
     console.warn(collection);
     return false;
 }
+
+// keep track of pending tree-collection changes, for easy commit messages
+var pendingCollectionChanges = [ ];
+function addPendingCollectionChange( action, studyID, treeID ) {
+    debugger;
+    var msg;
+    switch(action) {
+        case 'ADD':
+            msg = ('Tree '+ treeID +' from study '+ studyID +' added.');
+            break;
+        case 'REMOVE':
+            msg = ('Tree '+ treeID +' from study '+ studyID +' removed.');
+            break;
+        case 'REORDER':
+            // ignore ids for this message
+            msg = ('Changed ranking of trees.');
+            break;
+        default:
+            console.error('UNKNOWN collection change: '+ action);
+            return;
+    }
+    pendingCollectionChanges.push({
+        action: action,
+        treeID: treeID,
+        studyID: studyID,
+        msg: msg
+    });
+}
+function compressPendingCollectionChanges() {
+    // Adjust history for brevity and clarity.
+    // keep only the most recent REORDER action
+    var reorders = $.grep(pendingCollectionChanges, function(change) {
+        return (change.action === 'REORDER');
+    });
+    $.each(reorders, function(i, change) {
+        if (i === (reorders.length - 1)) return;
+        removeFromArray(change, pendingCollectionChanges);
+    });
+    // TODO: remove ADD/REMOVE pairs for a single tree?
+}
+function clearPendingCollectionChanges() {
+    pendingCollectionChanges = [ ];
+}
+/*
+addPendingCollectionChange( 'REORDER' );
+addPendingCollectionChange( 'ADD', 'ot_123', 'tree456' );
+addPendingCollectionChange( 'REORDER' );
+addPendingCollectionChange( 'REMOVE', 'ot_123', 'tree456' );
+addPendingCollectionChange( 'ADD', 'ot_987', 'tree654' );
+addPendingCollectionChange( 'REORDER' );
+compressPendingCollectionChanges();
+*/
 
 function copyCollection( collection ) {
     // create a user-owned copy (or login if user is anonymous)
@@ -1156,6 +1211,8 @@ function validateCollectionData( collection ) {
     }
     return true;
 }
+
+
 function promptForSaveCollectionComments( collection ) {
     // show a modal popup to gather comments (or cancel)
     if (validateCollectionData( collection )) {
@@ -1164,6 +1221,33 @@ function promptForSaveCollectionComments( collection ) {
         currentlyEditingCollectionID = null;
         $('#tree-collection-viewer').modal('hide');
 
+        // build default commit msg based on pending edits
+        var firstLine, moreLines;
+        compressPendingCollectionChanges();
+        switch(pendingCollectionChanges.length) {
+            case 0:
+                // prompt for custom message
+                firstLine = "";
+                moreLines = "";
+                break;
+
+            case 1:
+                // build a simple one-line commit message
+                firstLine = pendingCollectionChanges[0].msg;
+                moreLines = "";
+                break;
+
+            default:
+                // build a more comprehensive message
+                firstLine = "Multiple tree operations (see below)";
+                var allMessages = $.map(pendingCollectionChanges, function(change) {
+                    return change.msg;
+                });
+                moreLines = allMessages.join('\n');
+        }
+        $('#save-collection-comment-first-line').val(firstLine);
+        $('#save-collection-comment-more-lines').val(moreLines);
+
         $('#save-collection-comments-popup').modal('show');
         // buttons there do the remaining work
         $('#save-collection-comments-submit')
@@ -1171,6 +1255,7 @@ function promptForSaveCollectionComments( collection ) {
             .click(function() {
                 $('#save-collection-comments-popup').modal('hide'); 
                 saveTreeCollection( collection ); 
+                clearPendingCollectionChanges();
             });
         $('#save-collection-comments-cancel')
             .unbind('click')
@@ -1200,6 +1285,7 @@ function promptForDeleteCollectionComments( collection ) {
                 .click(function() {
                     $('#delete-collection-comments-popup').modal('hide'); 
                     deleteTreeCollection( collection ); 
+                    clearPendingCollectionChanges();
                 });
             $('#delete-collection-comments-cancel')
                 .unbind('click')
@@ -1217,11 +1303,13 @@ function promptForDeleteCollectionComments( collection ) {
                 .click(function() {
                     $('#delete-collection-comments-popup').modal('hide'); 
                     deleteTreeCollection( collection ); 
+                    clearPendingCollectionChanges();
                 });
         }
     } else {
         // new collection hasn't been saved; just close the editor
         currentlyEditingCollectionID = null;
+        clearPendingCollectionChanges();
         $('#tree-collection-viewer').modal('hide');
     }
 }
@@ -1431,6 +1519,7 @@ function deleteTreeCollection( collection ) {
 
             // OK, looks like the operation was a success
             currentlyEditingCollectionID = null; // enables closing this window
+            clearPendingCollectionChanges();
             popPageExitWarning();
             // refresh any collection list on the current page
             if (typeof loadCollectionList === 'function') {
@@ -1460,6 +1549,7 @@ function cancelChangesToCollection(collection) {
         currentlyEditingCollectionID = null;
         $('#tree-collection-viewer').modal('hide');
     }
+    clearPendingCollectionChanges();
     popPageExitWarning();
 }
 
@@ -1520,3 +1610,12 @@ function getCollectionByID( collectionsArray, targetID ) {
 function userIsLoggedIn() {
     return userLogin !== 'ANONYMOUS';
 }
+
+function removeFromArray( doomedValue, theArray ) {
+    // removes just one matching value, if found
+    var index = $.inArray( doomedValue, theArray );
+    if (index !== -1) {
+        theArray.splice( index, 1 );
+    }
+}
+
