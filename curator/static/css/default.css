@@ -439,7 +439,7 @@ div.flash {
     right: 0;
     bottom: 0;
     margin-bottom: 0;
-    z-index: 1100;  /* above modal screen and popups */
+    z-index: 11000;  /* above modal screens and popups */
 }
 
 div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:pointer;}
