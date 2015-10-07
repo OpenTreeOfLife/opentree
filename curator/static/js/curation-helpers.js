@@ -1090,6 +1090,7 @@ function userIsEditingCollection( collection ) {
 // keep track of pending tree-collection changes, for easy commit messages
 var pendingCollectionChanges = [ ];
 function addPendingCollectionChange( action, studyID, treeID ) {
+    debugger;
     var msg;
     switch(action) {
         case 'ADD':

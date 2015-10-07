@@ -7775,7 +7775,7 @@ function setCollectionSearchFuse(e) {
     if (e.type === 'keyup') {
         switch (e.which) {
             case 13:
-                hopefulCollectionSearchString = $('input[name=taxon-search]').val().trim();
+                hopefulCollectionSearchString = $('input[name=collection-search]').val().trim();
                 // TODO? jumpToExactMatch();  // use existing menu, if found
                 break;
             case 17:
@@ -7954,6 +7954,8 @@ function addCurrentTreeToCollection( collection ) {
     } else {
         collection.decisions.push(treeEntry);
     }
+    addPendingCollectionChange( 'ADD', currentStudyID, currentTreeID );
+    
     // to refresh the list
     //showCollectionViewer( collection, {SCROLL_TO_BOTTOM: true} );
     editCollection( collection, {SCROLL_TO_BOTTOM: true} );
