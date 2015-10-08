@@ -1090,7 +1090,6 @@ function userIsEditingCollection( collection ) {
 // keep track of pending tree-collection changes, for easy commit messages
 var pendingCollectionChanges = [ ];
 function addPendingCollectionChange( action, studyID, treeID ) {
-    debugger;
     var msg;
     switch(action) {
         case 'ADD':
@@ -1556,7 +1555,7 @@ function cancelChangesToCollection(collection) {
 
 function getCollectionViewLink(collection) {
     // shows this collection in a popup viewer/editor
-    var html = '<a class="" href="#" title="'+ collection.id +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
+    var html = '<a class="" href="#" title="'+ (collection.description || "(no description provided)") +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
         + collection.name +' <span style="color: #aaa;">&bullet;&nbsp;'+ collection.id +'</span></a>';
     return html;
 }
