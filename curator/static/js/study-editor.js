@@ -7911,8 +7911,8 @@ function searchForMatchingCollections() {
                 $('#collection-search-results').hide();
                 $('input[name=collection-search]').val('');
                 nudgeTickler('COLLECTIONS_LIST');
-                // retrieve the collection ID from its 'title' attribute
-                var itsCollectionID = $link.attr('title');
+                // retrieve the collection ID from the link's text
+                var itsCollectionID = $link.find('.collection-id').text();
                 // insert this tree before opening the editor
                 fetchAndShowCollection( itsCollectionID, addCurrentTreeToCollection );
                 return false;
