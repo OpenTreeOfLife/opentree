@@ -1556,7 +1556,7 @@ function cancelChangesToCollection(collection) {
 function getCollectionViewLink(collection) {
     // shows this collection in a popup viewer/editor
     var html = '<a class="" href="#" title="'+ (collection.description || "(no description provided)") +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
-        + collection.name +' <span style="color: #aaa;">&bullet;&nbsp;'+ collection.id +'</span></a>';
+        + collection.name +' <span style="color: #aaa;">&bullet;&nbsp;<span class="collection-id">'+ collection.id +'</span></span></a>';
     return html;
 }
 function getCollectionTreeCount(collection) {
