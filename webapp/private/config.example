@@ -31,6 +31,8 @@ collections_api_base_url = //devapi.opentreeoflife.org/v2
 favorites_api_base_url = //devapi.opentreeoflife.org/v2
 # a single shared base URL for all v2 APIs (mainly to allow switching domain)
 v2_api = //devapi.opentreeoflife.org/v2
+collections_api_base_url = //devapi.opentreeoflife.org/v2
+favorites_api_base_url = //devapi.opentreeoflife.org/v2
 # Cached versions of some APIs will speed up repeated calls (see below).
 # These use a simple web2py cache implemented in phylesystem-api
 CACHED_treemachine = http://opentree.myserver.org/cached/treemachine
