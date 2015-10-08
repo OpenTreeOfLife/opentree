@@ -8,6 +8,11 @@
 response.title = (viewOrEdit == 'EDIT') and "Edit Study" or "View Study"
 }}
 
+{{# Pivot (in some places) based on whether the user is a logged-in user or
+  # a visitor browsing tree collections.
+isLoggedIn = (auth.user) and True or False
+}}
+
 {{left_sidebar_enabled,right_sidebar_enabled=False,False}}
 {{response.subtitle = "loading study %s..." % request.args[0]}}
 
@@ -638,8 +643,8 @@ body {
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
                         <td data-bind="html: getRootedDescriptionForTree(tree),
-                                          click: showArbitraryRootExplanationInTreeViewer,
-                                          css: viewModel.ticklers.TREES"
+                                       click: showArbitraryRootExplanationInTreeViewer,
+                                       css: viewModel.ticklers.TREES"
                                style="cursor: pointer;">&nbsp;</td>
                         <td data-bind="html: getMappedTallyForTree(tree),
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
@@ -1857,10 +1862,7 @@ body {
     var studyID = '{{= studyID }}';
     var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
     var viewOrEdit = '{{= viewOrEdit }}';
-    var authorName = '{{= auth.user and auth.user.name or 'ANONYMOUS' }}';
-    var authorSafeID = '{{= auth.user and auth.user.username.encode('ascii', 'ignore') or 'ANONYMOUS' }}';
-    var authorEmail = '{{= auth.user and auth.user.email or 'ANONYMOUS' }}';
-    var authToken = '{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}';
+
     var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
     var API_update_study_PUT_url = '{{=API_update_study_PUT_url}}';
     var API_remove_study_DELETE_url = '{{=API_remove_study_DELETE_url}}';
@@ -1893,6 +1895,12 @@ body {
             'match': "",
             'scope': "Anywhere in the study",
             'submitter': "Submitted by all"
+        },
+        'COLLECTIONS': {
+            // NOTE 'match' and 'filter' are currently unused
+            'match': "",
+            'order': "Most recently modified",
+            'filter': "All tree collections"
         }
     };
     var filterDefaults = null;
@@ -1925,12 +1933,18 @@ body {
     var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
     var getContextForNames_url = "{{=getContextForNames_url}}";
     var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
-    var phylesystem_config_url = "{{=phylesystem_config_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";
     var getMRCAForNodes_url = "{{=getMRCAForNodes_url}}";
     var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
     var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
+
+    var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}"; 
+    var singlePropertySearchForTrees_url = "{{=singlePropertySearchForTrees_url}}"; 
+    var API_create_collection_POST_url = "{{=API_create_collection_POST_url}}"; 
+    var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}"; 
+    var API_update_collection_PUT_url = "{{=API_update_collection_PUT_url}}";
+    var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}"; 
 </script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
 
@@ -2172,7 +2186,7 @@ body {
 <div class="modal hide fade modal-tree-viewer tabbable" id="tree-viewer" style="display: none;">
   <!-- KO binding here to 'tree' (as $data below) -->
     <div class="modal-header" style="padding-bottom: 0;">
-      <a class="close" onclick="$('#tree-viewer').modal('hide'); false;">×</a>
+      <a class="close" onclick="$('#tree-viewer').modal('hide'); return false;">×</a>
       <h3 id='dialog-heading'>
         {{ if viewOrEdit == 'EDIT': }}
             Edit tree
@@ -2191,16 +2205,28 @@ body {
           <li class="active"><a href="#tree-properties" data-toggle="tab">Properties</a></li>
           <li><a href="#tree-phylogram" data-toggle="tab">Phylogram</a></li>
           <li><a href="#tree-legend" data-toggle="tab">Legend</a></li>
+          <li><a href="#tree-collections" data-toggle="tab">
+                Collections
+                <span class="badge badge-info" style=""
+                      data-bind="html: getAssociatedCollectionsCount(),
+                                 css: viewModel.ticklers.COLLECTIONS_LIST">&nbsp;</span> 
+              </a>
+          </li>
+
        </ul>
     </div>
     <div class="modal-body tab-content">
       <div class="tab-pane active" id="tree-properties">
          <form class="form-inline" style="overflow: hidden; margin-bottom: 0px;">
+              <input type="hidden" id="current-study-id" 
+                     data-bind="value: viewModel.nexml['^ot:studyId']">
+              <input type="hidden" id="current-tree-id" 
+                     data-bind="value: $data['@id']">
           {{ if viewOrEdit == 'EDIT': }}
             <!-- editable tree properties here -->
               <div style="padding: 0 4px;">
                 <label>Inference method: </label>
-                <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny -->
+                <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny --> 
                 <select id="inference-method-select"
                         onchange="(this); return false;"
                         data-bind="options: [
@@ -2212,14 +2238,14 @@ body {
                                        'Least squares ',
                                        'Three-taxon analysis',
                                        'Other (specify)'
-                                   ],
+                                   ], 
                                    optionsCaption: 'Choose a method...',
-                                   event: { change: updateInferenceMethodWidgets },
+                                   event: { change: updateInferenceMethodWidgets }, 
                                    css: viewModel.ticklers.TREES">
                 </select>
-                <input type="text" id="inference-method-other"
+                <input type="text" id="inference-method-other" 
                        placeholder="Other (specify)"
-                       data-bind="event: { change: updateInferenceMethodWidgets },
+                       data-bind="event: { change: updateInferenceMethodWidgets }, 
                                   css: viewModel.ticklers.TREES"></input>
               <br/>
                 <label for="testtest">Root node: </label>
@@ -2354,7 +2380,7 @@ body {
 
           {{ else: }}
             <!-- read-only tree properties here -->
-              <div class="pull-left" style="width: 48%;">
+              <div class="pull-left" style="clear: left; width: 48%;">
                 <label>Inference method: </label>
                 <strong data-bind="text: $data['^ot:curatedType'] || 'Unspecified'">TYPE</strong>
               <br/>
@@ -2505,6 +2531,95 @@ body {
         </tr>
        </table>
       </div>
+      <div class="tab-pane" id="tree-collections" style="min-height: 320px;">
+
+        <!-- ADD TO EXISTING button -->
+        <button class="btn btn-info pull-left"
+            onclick="addTreeToExistingCollection(this); return false;"
+          {{ if isLoggedIn: }}
+            title="Add this tree to any collection"
+          {{ else: }}
+            title="Add this tree to any collection (requires login)"
+          {{ pass }}
+            style="margin-right: 8px;">
+            Add tree to an existing collection
+            <i class="icon-book icon-white"></i> 
+        </button>
+        <form id="collection-search-form" class="navbar-search" autocomplete="off" 
+              style="display: none; margin-top: 0;">
+            <div class="left-inner-addon">
+                <i class="icon-search"></i>
+                <input type="text" name="collection-search" class="search-query" placeholder="Match by name, id, owner, description..." autocomplete="off" style="width: 260px;">
+            </div>
+            <!-- then show dropdown when results are ready... -->
+            <div class="">
+                <ul id="collection-search-results" class="dropdown-menu" role="menu">
+                    ...
+                </ul>
+            </div>
+        </form>
+
+        <!-- CREATE NEW button -->
+        <button class="btn btn-info pull-right"
+            onclick="addTreeToNewCollection(); return false;"
+          {{ if isLoggedIn: }}
+            title="Create a collection and add this tree"
+          {{ else: }}
+            title="Create a collection and add this tree (requires login)"
+          {{ pass }}
+            style="margin-left: 8px;">
+            Add tree to a new collection
+            <i class="icon-pencil icon-white"></i> 
+        </button>
+
+        <p style="clear: both; padding-top: 0.5em;">
+        A collection is a list of trees, chosen for synthesis or any other purpose. Each collection has a nominal owner, but any user can choose to collaborate (add and manage trees) or simply follow its progress. This tree is currently included in the collections listed below.
+        </p>
+
+      <div id="collection-list-holder" style="max-height: 200px; overflow-y: auto;">
+        <table class="table table-condensed table-hover"
+               style="margin-bottom: 2px;"
+               data-bind="visible: true"><!-- TODO: hide if no collections found -->
+          <thead>
+            <tr>
+              {{ if isLoggedIn: }}
+                <th>Collection name (click to edit)</th>
+              {{ else: }}
+                <th>Collection name (click to view)</th>
+              {{ pass }}
+                <th>How many trees</th>
+                <th>Last modified</th>
+                <th>Owner</th>
+            </tr>
+          </thead>
+          <tbody data-bind="foreach: { data: viewModel.filteredCollections ? 
+                                               viewModel.filteredCollections() : [ ],
+                                       as: 'collection' },
+                            css: viewModel.ticklers.COLLECTIONS_LIST">
+            <tr>
+                <td data-bind="html: getCollectionViewLink(collection)">&nbsp;</td>
+                <td data-bind="html: getCollectionTreeCount(collection)">&nbsp;</td>
+                <td data-bind="html: getCollectionLastModification(collection)">&nbsp;</td>
+                <td data-bind="html: getCollectionCreatorLink(collection)">&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+        <h4 style="visible: false; text-align: center; color: #ccc; padding: 0.5em; margin: 1.5em 0;"
+           data-bind="visible: !(viewModel.filteredCollections),
+                      css: viewModel.ticklers.COLLECTIONS_LIST">
+           <em>Loading collections list...</em>
+        </h4>
+        <div class="empty-list-prompt" 
+             data-bind="visible: viewModel.filteredCollections && 
+                                 (viewModel.filteredCollections()().length === 0),
+                        css: viewModel.ticklers.COLLECTIONS_LIST">
+            This tree has not been included in any collections yet. Use the buttons above to 
+            add it to a new or existing collection.
+        </div>
+
+      </div>
     </div>
     <div class="modal-footer">
       <div id="tree-phylogram-options" class="pull-left form-inline" style="display: none;">
@@ -2519,6 +2634,6 @@ body {
               Radial tree layout
           </label>
       </div>
-      <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); false;">Close</a>
+      <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>
 </div>

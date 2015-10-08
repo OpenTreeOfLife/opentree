@@ -150,6 +150,18 @@ def get_user_display_name():
     # no name or id found (this should never happen)
     return 'UNKNOWN'
 
+def get_user_login():
+    # simply return the login (username)
+    from gluon import current
+    auth = current.session.auth or None
+    if (not auth) or (not auth.get('user', None)):
+        return 'ANONYMOUS'
+    if auth.user.username:
+        # compact userid is our last resort
+        return auth.user.username
+    # no name or id found (this should never happen)
+    return 'UNKNOWN'
+
 def get_domain_banner_text(request):
     # Add an optional CSS banner to indicate a test domain, or none if
     # we're on a production server.

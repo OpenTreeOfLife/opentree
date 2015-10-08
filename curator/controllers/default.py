@@ -7,6 +7,8 @@ from applications.opentree.modules.opentreewebapputil import(
 # 'opentree'. Any name changes will be needed here as well!
 
 from peyotl.manip import merge_otus_and_trees, iter_trees
+import requests
+from pprint import pprint
 import json
 #import pdb
 # this file is released under public domain and you can use without limitations
@@ -36,6 +38,14 @@ def index():
         # anonymous visitor, show a general info page
         return view_dict
 
+def collections():
+    """
+    Show a filtered list of all tree collections in the system.
+    """
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict['maintenance_info'] = get_maintenance_info(request)
+    return view_dict
+    
 def error():
     return dict()
 
@@ -59,6 +69,272 @@ def user():
     """
     return dict(form=auth())
 
+def profile():
+    """
+    shows a personalized profile for any user (default = the current logged-in user) 
+    http://..../{app}/default/profile/[username]
+    """
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict['maintenance_info'] = get_maintenance_info(request)
+
+    # if the URL has a [username], try to load their information
+    if len(request.args) > 0:
+        # try to load a profile for the specified userid, using the GitHub API
+        specified_userid = request.args[0]
+        view_dict['userid'] = specified_userid
+        view_dict['active_user_found'] = False
+
+        # fetch the JSON for this user's activities
+        json_response = _fetch_github_api(verb='GET', 
+            url='/users/{0}'.format(specified_userid))
+
+        error_msg = json_response.get('message', None)
+        view_dict['error_msg'] = error_msg
+        if error_msg:
+            # pass error to the page for display
+            print("ERROR FETCHING INFO FOR USERID: ", specified_userid)
+            print(error_msg)
+            view_dict['user_info'] = None
+            view_dict['opentree_activity'] = None 
+        else:
+            # pass user info to the page for display
+            view_dict['user_info'] = json_response
+            activity = _get_opentree_activity( 
+                userid=specified_userid, 
+                username=view_dict['user_info'].get('name', specified_userid)
+            )
+            if activity:
+                view_dict['active_user_found'] = True
+            else:
+                view_dict['active_user_found'] = False
+                view_dict['error_msg'] = 'Not active in OpenTree'
+            view_dict['opentree_activity'] = activity
+        
+        view_dict['is_current_user_profile'] = False
+        if view_dict['active_user_found'] == True and auth.is_logged_in():
+            current_userid = auth.user and auth.user.github_login or None
+            if specified_userid == current_userid:
+                view_dict['is_current_user_profile'] = True
+
+        return view_dict
+
+    else:
+        # No userid was provided in the URL. Instead, we should try to show the
+        # current user's profile if they're logged in (or try to force a login).
+        if auth.is_logged_in():
+            current_userid = auth.user and auth.user.github_login or None
+            view_dict['userid'] = current_userid
+            json_response = _fetch_github_api(verb='GET', 
+                url='/users/{0}'.format(current_userid))
+            error_msg = view_dict['error_msg'] = json_response.get('message', None)
+            if error_msg:
+                # pass error to the page for display
+                print("ERROR FETCHING INFO FOR USERID: ", current_userid)
+                print(error_msg)
+                view_dict['user_info'] = None
+                view_dict['opentree_activity'] = None
+                view_dict['active_user_found'] = False
+            else:
+                # pass user info to the page for display
+                view_dict['user_info'] = json_response
+                activity = _get_opentree_activity( 
+                    userid=current_userid, 
+                    username=view_dict['user_info'].get('name', current_userid)
+                )
+                if activity:
+                    view_dict['active_user_found'] = True
+                else:
+                    view_dict['active_user_found'] = False
+                    view_dict['error_msg'] = 'Not active in OpenTree'
+                view_dict['opentree_activity'] = activity
+
+            view_dict['is_current_user_profile'] = True
+
+            return view_dict
+        else:
+            # try to force a login and return here
+            redirect(URL('curator', 'user', 'login',
+                     vars=dict(_next=URL(args=request.args, vars=request.vars))))
+
+def _fetch_github_api(verb='GET', url=None, data=None):
+    # Wrapper for all (synchronous) calls to GitHub APIs
+    #   'verb' should be GET or POST (when in doubt, send GET headers below)
+    #   'url' should be root-relative (assume GitHub API)
+    #   'data' could be passed via GET [TODO] or POST
+    GH_BASE_URL = 'https://api.github.com'
+    oauth_token_path = os.path.expanduser('~/.ssh/OPENTREEAPI_OAUTH_TOKEN')
+    try:
+        OPENTREEAPI_AUTH_TOKEN = open(oauth_token_path).read().strip()
+    except:
+        OPENTREEAPI_AUTH_TOKEN = ''
+        print("OAuth token (%s) not found!" % oauth_token_path)
+
+    # if the current user is logged in, use their auth token instead
+    USER_AUTH_TOKEN = auth.user and auth.user.github_auth_token or None
+
+    # Specify the media-type from GitHub, to freeze v3 API responses and get
+    # the comment body as markdown (vs. plaintext or HTML)
+    PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json'
+    # to get markdown AND html body, use 'application/vnd.github.v3.full+json'
+
+    GH_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
+    GH_GET_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
+                      'Accept': PREFERRED_MEDIA_TYPE}
+    GH_POST_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
+                       'Content-Type': 'application/json',
+                       'Accept': PREFERRED_MEDIA_TYPE}
+
+    url = '{0}{1}'.format(GH_BASE_URL, url)
+    if verb == 'POST':
+        resp = requests.post( url, headers=GH_POST_HEADERS)
+    else:
+        resp = requests.get( url, headers=GH_GET_HEADERS)
+
+    # Assume we always return JSON, even if it's an error message
+    return resp.json()
+    
+
+def _get_opentree_activity( userid=None, username=None ):
+    # Fetch information about a user's studies, comments, and collections in the
+    # OpenTree project. If a dict was provided, add this information to it; else
+    # bundle up the information and return it directly
+    if not userid:
+        return None
+    activity_found = False
+    activity = {
+        'curator_since': None,
+        'comments':[], 
+        'issues': [], 
+        'added_studies':[], 
+        'curated_studies': [], 
+        'curated_studies_in_synthesis': [], 
+        'collections':[]
+    }
+    method_dict = get_opentree_services_method_urls(request)
+
+    # Use GitHub API to gather comments from this user, as shown in
+    #   https://github.com/OpenTreeOfLife/feedback/issues/created_by/jimallman
+    # N.B. that this is limited to 100 most recent items!
+    all_comments = _fetch_github_api(verb='GET', 
+        url='/repos/OpenTreeOfLife/feedback/issues/comments?per_page=100')
+    for comment in all_comments:
+        if comment.get('user', None):
+            comment_author = comment.get('user').get('login')
+            if comment_author == userid:
+                activity.get('comments').append( comment )
+                activity_found = True
+
+    # Again, for all feedback issues created by them
+    # N.B. that this is probably limited to 100 most recent items!
+    created_issues = _fetch_github_api(verb='GET', 
+        url='/repos/OpenTreeOfLife/feedback/issues?state=all&creator={0}&per_page=100'.format(userid))
+    activity['issues'] = created_issues
+    if len(created_issues) > 0:
+        activity_found = True
+
+    # fetch a list of all studies that contribute to synthesis
+    fetch_url = method_dict['getSynthesisSourceList_url']
+    if fetch_url.startswith('//'):
+        # Prepend scheme to a scheme-relative URL
+        fetch_url = "http:%s" % fetch_url
+    # as usual, this needs to be a POST (pass empty fetch_args)
+    source_list = requests.post(
+        url=fetch_url,
+        data={}
+    ).json()
+
+    # split these source descriptions, which are in the form '{STUDY_ID_PREFIX}_{STUDY_NUMERIC_ID}_{TREE_ID}_{COMMIT_SHA}'
+    contributing_study_info = { }   # store (unique) study IDs as keys, commit SHAs as values
+
+    for source_desc in source_list:
+        if source_desc == 'taxonomy':
+            continue
+        source_parts = source_desc.split('_')
+        # add default prefix 'pg' to study ID, if not found
+        if source_parts[0].isdigit():
+            # prepend with default namespace 'pg'
+            study_id = 'pg_%s' % source_parts[0]
+        else:
+            study_id = '_'.join(source_parts[0:2])
+        if len(source_parts) == 4:
+            commit_SHA_in_synthesis = source_parts[3]
+        else:
+            commit_SHA_in_synthesis = None
+        contributing_study_info[ study_id ] = commit_SHA_in_synthesis
+    
+    # Use oti to gather studies curated and created by this user.
+    fetch_url = method_dict['findAllStudies_url']
+    if fetch_url.startswith('//'):
+        # Prepend scheme to a scheme-relative URL
+        fetch_url = "http:%s" % fetch_url
+    all_studies = requests.post(
+        url=fetch_url,
+        data={'verbose': True}  # include curator list
+    ).json()
+
+    for study in all_studies:
+        study_curators = study['ot:curatorName']
+        # TODO: improve oti to handle multiple curator names!
+        if type(study_curators) is not list:
+            study_curators = [study_curators]
+        if username in study_curators:
+            activity_found = True
+            activity['curated_studies'].append(study)
+            # first curator name is its original contributor
+            if study_curators[0] == username:
+                activity['added_studies'].append(study)
+            # does this contribute to synthesis?
+            if contributing_study_info.has_key( study['ot:studyId'] ):
+                activity['curated_studies_in_synthesis'].append(study)
+
+    # TODO: fetch collections once we have a home for them
+
+    if activity_found:
+        try:
+            # search the repo stats (for each phylesystem shard!) for their earliest contribution
+            earliest_activity_date = None  # TODO: make this today? or tomorrow? MAXTIME?
+            fetch_url = method_dict['phylesystem_config_url']
+            if fetch_url.startswith('//'):
+                # Prepend scheme to a scheme-relative URL
+                fetch_url = "http:%s" % fetch_url
+            phylesystem_config = requests.get( url=fetch_url ).json()
+            shard_list = phylesystem_config['shards']
+            # if GitHub is rebuilding stats cache for any shard, poke them all but ignore dates
+            rebuilding_cache = False
+            for shard in shard_list:
+                shard_name = shard['name']
+                shard_contributors = _fetch_github_api(verb='GET', 
+                    url='/repos/OpenTreeOfLife/{0}/stats/contributors'.format(shard_name))
+                if type(shard_contributors) is not list:
+                    # Flag this, but try to fetch remaining shards (to nudge the cache)
+                    rebuilding_cache = True
+                else:
+                    for contrib_info in shard_contributors:
+                        if contrib_info['author']['login'] == userid:
+                            # look for the earliest week here
+                            for week in contrib_info['weeks']:
+                                if earliest_activity_date:
+                                    earliest_activity_date = min(earliest_activity_date, week['w'])
+                                else:
+                                    earliest_activity_date = week['w']
+                            break  # skip any remaining records
+
+            if rebuilding_cache:
+                activity['curator_since'] = 'Generating data, please try again in a moment...'
+            elif not earliest_activity_date: 
+                activity['curator_since'] = 'This user has not curated any studies.'
+            else:
+                # show a very approximate date (stats are just weekly)
+                from datetime import datetime
+                d = datetime.fromtimestamp(earliest_activity_date)
+                activity['curator_since'] = d.strftime("%B %Y")
+        except:
+            # probably JSONDecodeError due to misconfiguration of the API server
+            activity['curator_since'] = "Unable to determine this user's first activity"
+
+        return activity
+    else:
+        return None
 
 def download():
     """
@@ -202,7 +478,6 @@ def to_nexson():
     N.B. Further documentation is available in curator/README.md
     '''
     _LOG = get_logger(request, 'to_nexson')
-    ##pdb.set_trace()
     orig_args = {}
     is_upload = False
     # several of our NexSON use "uploadid" instead of "uploadId" so we should accept either

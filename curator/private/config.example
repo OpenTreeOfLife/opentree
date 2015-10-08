@@ -59,6 +59,8 @@ getMRCAForNodes_url = {treemachine_domain}/getMRCA
 getDraftTreeSubtreeForNodes_url = {treemachine_domain}/getDraftTreeSubtreeForNodes
 findAllStudies_url = {oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
+singlePropertySearchForTrees_url = {oti_domain}/singlePropertySearchForTrees
+findAllTreeCollections_url = {opentree_api_domain}/../../v2/collections/find_collections
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #
@@ -75,3 +77,7 @@ API_load_file_GET_url = {opentree_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
 API_update_file_PUT_url = {opentree_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
 API_remove_file_DELETE_url = {opentree_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
 
+API_create_collection_POST_url = {opentree_api_domain}/collection
+API_load_collection_GET_url = {opentree_api_domain}/collection/{COLLECTION_ID}
+API_update_collection_PUT_url = {opentree_api_domain}/collection/{COLLECTION_ID}
+API_remove_collection_DELETE_url = {opentree_api_domain}/collection/{COLLECTION_ID}

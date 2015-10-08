@@ -55,6 +55,7 @@ var API_create_file_POST_url;
 var API_load_file_GET_url;
 var API_update_file_PUT_url;
 var API_remove_file_DELETE_url;
+var findAllTreeCollections_url;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -518,9 +519,9 @@ $(document).ready(function() {
         formData: {
             // these are ADDED to the form's native widgets
             // https://github.com/blueimp/jQuery-File-Upload/wiki/How-to-submit-additional-Form-Data
-            author_name: authorName,
-            author_email: authorEmail,
-            auth_token: authToken
+            author_name: userDisplayName,
+            author_email: userEmail,
+            auth_token: userAuthToken
         },
         */
         add: function(e, data) {
@@ -616,7 +617,7 @@ function loadSelectedStudy() {
         url: fetchURL,
         data: {
             'output_nexml2json': '1.0.0',  // '0.0', '1.0', '1.2', '1.2.1'
-            'auth_token': authToken
+            'auth_token': userAuthToken
         },
         error: function(jqXHR, textStatus, errorThrown) {
             // report errors or malformed data, if any
@@ -955,6 +956,7 @@ function loadSelectedStudy() {
                 'SUPPORTING_FILES': ko.observable(1),
                 'OTU_MAPPING_HINTS': ko.observable(1),
                 'VISIBLE_OTU_MAPPINGS': ko.observable(1),
+                'COLLECTIONS_LIST': ko.observable(1),
                 // TODO: add more as needed...
                 'STUDY_HAS_CHANGED': ko.observable(1)
             }
@@ -988,6 +990,12 @@ function loadSelectedStudy() {
                     'match': ko.observable( listFilterDefaults.ANNOTATIONS.match ),
                     'scope': ko.observable( listFilterDefaults.ANNOTATIONS.scope ),
                     'submitter': ko.observable( listFilterDefaults.ANNOTATIONS.submitter )
+                },
+                'COLLECTIONS': {
+                    // NOTE 'match' and 'filter' are currently unused
+                    'match': ko.observable( listFilterDefaults.COLLECTIONS.match ),
+                    'order': ko.observable( listFilterDefaults.COLLECTIONS.order ),
+                    'filter': ko.observable( listFilterDefaults.COLLECTIONS.filter )
                 }
             };
 
@@ -1362,7 +1370,7 @@ function loadSelectedStudy() {
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
                 enableSaveButton();
-                addPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
+                pushPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
                 updateQualityDisplay();
             });
 
@@ -1796,9 +1804,9 @@ function saveFormDataToStudyJSON() {
 
     // add non-Nexson values to the query string
     var qsVars = $.param({
-        author_name: authorName,
-        author_email: authorEmail,
-        auth_token: authToken,
+        author_name: userDisplayName,
+        author_email: userEmail,
+        auth_token: userAuthToken,
         starting_commit_SHA: viewModel.startingCommitSHA,
         commit_msg: commitMessage
     });
@@ -1847,7 +1855,7 @@ function saveFormDataToStudyJSON() {
                 viewModel.versions(putResponse['versionHistory'] || [ ]);
             }
             if (putResponse['merge_needed']) {
-                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
+                var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Study merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 return;
@@ -1856,7 +1864,7 @@ function saveFormDataToStudyJSON() {
             hideModalScreen();
             showSuccessMessage('Study saved to remote storage.');
 
-            removePageExitWarning();
+            popPageExitWarning();
             disableSaveButton();
             // TODO: should we expect fresh JSON to refresh the form?
         }
@@ -1899,9 +1907,9 @@ function removeStudy() {
 
     // add auth-token to the query string (no body allowed!)
     var qsVars = $.param({
-        author_name: authorName,
-        author_email: authorEmail,
-        auth_token: authToken,
+        author_name: userDisplayName,
+        author_email: userEmail,
+        auth_token: userAuthToken,
         starting_commit_SHA: viewModel.startingCommitSHA,
         commit_msg: commitMessage
     });
@@ -2977,6 +2985,7 @@ var studyScoringRules = {
 function scoreStudy( studyData ) {
     // TODO: specify viewModel (fastest)? or JSON version?
     // apply studyScoringRules below, recording score, comments
+    var verbose = false; // set to true for chatty scoring
 
     var scoreInfo = {
         rawOverallScore: 0.0,
@@ -2996,10 +3005,10 @@ function scoreStudy( studyData ) {
         scoreInfo.scoredCriteria[cName] = criterionScoreInfo;
 
         criterionRules = studyScoringRules[cName];
-        console.log("Checking study against rules for "+ cName +"...");
+        if (verbose) console.log("Checking study against rules for "+ cName +"...");
         for (i = 0; i < criterionRules.length; i++) {
             rule = criterionRules[i];
-            console.log("  rule.weight = "+ rule.weight);
+            if (verbose) console.log("  rule.weight = "+ rule.weight);
 
             // bump up max scores for this criterion and the overall study
             criterionScoreInfo.highestPossibleScore += rule.weight;
@@ -3014,7 +3023,7 @@ function scoreStudy( studyData ) {
 
             if (rule.test( studyData )) {
                 // passed this test
-                console.log("  PASSED this rule: "+ rule.description);
+                if (verbose) console.log("  PASSED this rule: "+ rule.description);
                 criterionScoreInfo.score += rule.weight;
                 scoreInfo.rawOverallScore += rule.weight;
 
@@ -3024,7 +3033,7 @@ function scoreStudy( studyData ) {
 
             } else {
                 // failed this test
-                console.log("  FAILED this rule: "+ rule.description);
+                if (verbose) console.log("  FAILED this rule: "+ rule.description);
                 ruleScoreInfo.message = rule.failureMessage;
                 ruleScoreInfo.success = false;
                 ruleScoreInfo.suggestedAction = rule.suggestedAction;
@@ -3074,6 +3083,7 @@ ko.dirtyFlag = function(root, isInitiallyDirty) {
 // can hold it open and step through nodes or trees.
 var treeViewerIsInUse = false;
 var treeTagsInitialized = false;
+var $stashedTreeCollectionElement = null;
 function showTreeViewer( tree, options ) {
     // if options.HIGHLIGHT_NODE_ID exists, try to scroll to this node
     options = options || {};
@@ -3112,14 +3122,36 @@ function showTreeViewer( tree, options ) {
         viewModel.nodeLabelModeDescription = ko.observable('');
     }
 
+    if ($stashedTreeCollectionElement === null) {
+        // save the template and use the original
+        $stashedTreeCollectionElement = $('#collection-list-holder')
+            .find('tbody tr').eq(0).clone();
+    } else {
+        // apply the saved template
+        $('#collection-list-holder tbody').empty()
+                                          .append( $stashedTreeCollectionElement.clone() );
+    }
+
     // bind just the selected tree to the modal HTML
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
-    var $boundElements = $('#tree-viewer').find('.modal-body, .modal-header h3');
+    var $boundElements = $('#tree-viewer').find('.modal-body, .modal-header h3, .nav-tabs .badge');
     // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
     $.each($boundElements, function(i, el) {
         ko.cleanNode(el);
         ko.applyBindings(tree,el);
     });
+
+    // enable collection search (in tree-viewer popup)
+    console.warn('BINDING COLLECTION SEARCH');
+    $('input[name=collection-search]').unbind('keyup change')
+                                      .bind('keyup change', setCollectionSearchFuse )
+                                      .unbind('keydown')  // block errant form submission
+                                      .bind('keydown', function(e) { return e.which !== 13; });
+    $('#collection-search-form').unbind('submit').submit(function() {
+        searchForMatchingCollections();
+        return false;
+    });
+    resetExistingCollectionPrompt();
 
     var updateTreeDisplay = function() {
         if (viewOrEdit == 'EDIT') {
@@ -3224,6 +3256,14 @@ function showTreeViewer( tree, options ) {
     } else {
         $('#tree-viewer').off('show').on('show', function () {
             treeViewerIsInUse = true;
+            // delay load, so we see its modal blocker *above* the tree viewer
+            setTimeout(function() {
+                if (viewModel.allCollections && viewModel.allCollections.length) {
+                    nudgeTickler('COLLECTIONS_LIST');
+                } else { 
+                    loadCollectionList('INIT');
+                }
+            }, 10);
         });
         $('#tree-viewer').off('shown').on('shown', function () {
             updateTreeDisplay();
@@ -3242,8 +3282,22 @@ function showTreeViewer( tree, options ) {
             //var oldTabTarget = $(e.relatedTarget).attr('href').split('#')[1];
             switch (newTabTarget) {
                 case 'tree-properties':
+                    $('#tree-phylogram-options').hide();
+                    break;
                 case 'tree-legend':
                     $('#tree-phylogram-options').hide();
+                    break;
+                case 'tree-collections':
+                    $('#tree-phylogram-options').hide();
+                    /* alternate loading of collections list when 
+                     * Tree > Collections subtab is chosen.
+                     *
+                    if (viewModel.allCollections && viewModel.allCollections.length) {
+                        loadCollectionList('REFRESH');
+                    } else { 
+                        loadCollectionList('INIT');
+                    }
+                     */
                     break;
                 case 'tree-phylogram':
                     $('#tree-phylogram-options').show();
@@ -4140,7 +4194,7 @@ function clearNewTreeUploadWidget() {
 }
 function generateTreeUploadID() {
     // generate a new/unique upload ID for this attempt
-    var personalTimestamp = authorSafeID + '.'+ new Date().getTime();
+    var personalTimestamp = userLoginASCII + '.'+ new Date().getTime();
     return personalTimestamp;
 }
 function submitNewTree( form ) {
@@ -6322,6 +6376,10 @@ var nudge = {
     'EDGE_DIRECTIONS': function( data, event ) {
         nudgeTickler( 'EDGE_DIRECTIONS');
         return true;
+    },
+    'COLLECTIONS_LIST': function( data, event ) {
+        nudgeTickler( 'COLLECTIONS_LIST');
+        return true;
     }
 }
 function nudgeTickler( name ) {
@@ -6340,15 +6398,9 @@ function nudgeTickler( name ) {
     var oldValue = tickler.peek();
     tickler( oldValue + 1 );
 
-    // always nudge the main 'dirty flag' tickler
-    viewModel.ticklers.STUDY_HAS_CHANGED( viewModel.ticklers.STUDY_HAS_CHANGED.peek() + 1 );
-}
-
-function removeFromArray( doomedValue, theArray ) {
-    // removes just one matching value, if found
-    var index = $.inArray( doomedValue, theArray );
-    if (index !== -1) {
-        theArray.splice( index, 1 );
+    // if this reflects changes to the study, nudge the main 'dirty flag' tickler
+    if (name !== 'COLLECTIONS_LIST') {
+        viewModel.ticklers.STUDY_HAS_CHANGED( viewModel.ticklers.STUDY_HAS_CHANGED.peek() + 1 );
     }
 }
 
@@ -7431,4 +7483,492 @@ function remindAboutAddingLateData(evt) {
     remindedAboutAddingLateData = true;
 
     return false;
+}
+
+function loadCollectionList(option) {
+    // Used for both initial list and refresh (to reflect adding/deleting collections).
+    option = option ? option: 'INIT'; // or 'REFRESH'
+
+    var effectiveFilters = {};
+    if (option === 'REFRESH') {
+        // preserve current filter values
+        for (var fName in viewModel.listFilters.COLLECTIONS) {
+            effectiveFilters[fName] = ko.unwrap(viewModel.listFilters.COLLECTIONS[fName]);
+        }
+    } else {
+        // use default filter values (defined in main page)
+        for (var fName in viewModel.listFilters.COLLECTIONS) {
+            effectiveFilters[fName] = listFilterDefaults.COLLECTIONS[fName];
+        }
+    }
+
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        url: findAllTreeCollections_url,
+        data: null,
+        success: function( data, textStatus, jqXHR ) {
+            // this should be properly parsed JSON
+
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                showErrorMessage('Sorry, there was an error loading the list of tree collections.');
+                return;
+            }
+            if (typeof data !== 'object' || !($.isArray(data))) {
+                showErrorMessage('Sorry, there is a problem with the tree-collection data.');
+                return;
+            }
+            
+            viewModel.allCollections = data;
+
+            // enable sorting and filtering for lists in the editor
+            // UI widgets bound to these variables will trigger the
+            // computed display lists below..
+            //
+            // use default (or preserved) filters, as determined above
+            viewModel.listFilters.COLLECTIONS.match( effectiveFilters['match'] );
+            viewModel.listFilters.COLLECTIONS.order( effectiveFilters['order'] );
+            viewModel.listFilters.COLLECTIONS.filter( effectiveFilters['filter'] );
+
+            // maintain a persistent array to preserve pagination (reset when computed)
+            viewModel._filteredCollections = ko.observableArray( ); //.asPaged(20);
+            viewModel.filteredCollections = ko.computed(function() {
+                // filter raw tree list, returning a
+                // new paged observableArray
+                //updateClearSearchWidget( '#collection-list-filter', viewModel.listFilters.COLLECTIONS.match );
+                //updateListFiltersWithHistory();
+                var ticklers = [ viewModel.ticklers.COLLECTIONS_LIST() ];
+
+                /* NOTE that we're not currently using most of the
+                 * collection filters below. These were copied from the main
+                 * collections page (/curator/collections), but the filter UI
+                 * has not been added as this seems like overkill
+                 * (and clutter) for what will typically be a short list.
+                 */
+                var match = viewModel.listFilters.COLLECTIONS.match(),
+                    matchPattern = new RegExp( $.trim(match), 'i' ),
+                    wholeSlugMatchPattern = new RegExp( '^'+ $.trim(match) +'$' );
+                var order = viewModel.listFilters.COLLECTIONS.order();
+                var filter = viewModel.listFilters.COLLECTIONS.filter();
+
+                var showEmptyListWarningForAnonymousUser = false;
+                switch (filter) {
+                    case 'Collections I own':
+                    case 'Collections I participate in':
+                        if (!userIsLoggedIn()) {
+                            showEmptyListWarningForAnonymousUser = true;
+                        }
+                }
+                if (showEmptyListWarningForAnonymousUser) {
+                    $('#empty-collection-list-warning').show();
+                } else {
+                    $('#empty-collection-list-warning').hide();
+                }
+
+                // map old array to new and return it
+                var currentStudyID = $('#current-study-id').val();
+                var currentTreeID = $('#current-tree-id').val();
+                var filteredList = ko.utils.arrayFilter( 
+                    viewModel.allCollections, 
+                    function(collection) {
+                        // this basic filter just checks for matching tree+study ids
+                        var foundCurrentTree = false;
+                        $.each(collection.decisions, function(i, d) {
+                            if (d.decision !== 'INCLUDED') {
+                                return;
+                            }
+                            if (d.studyID === currentStudyID) {
+                                if (d.treeID === currentTreeID) {
+                                    foundCurrentTree = true;
+                                    return false; // stop checking trees
+                                }
+                            }
+                        });
+                        return foundCurrentTree;
+                    }
+/* multi-filter function, based on main collections page (assumes UI for these filters)
+                    function(collection) {
+                        // match entered text against collections (id, owner, description...)
+                        var id = $.trim(collection['id']);
+                        var idParts = id.split('/');
+                        var ownerSlug = idParts[0];
+                        var titleSlug = (idParts.length === 2) ? idParts[1] : '';
+                        var name = $.trim(collection['name']);
+                        var description = $.trim(collection['description']);
+                        // extract names and IDs of all stakeholders (incl. creator!)
+                        if ($.isPlainObject(collection['creator'])) {
+                            creator = $.trim(collection['creator'].name)
+                                +'|'+ $.trim(collection['creator'].login);
+                        } else {
+                            creator = "";
+                        }
+                        if ($.isArray(collection['contributors'])) {
+                            contributors = "";
+                            $.each(collection['contributors'], function(i,c) {
+                                contributors += ('|'+ $.trim(c.name) +'|'+ $.trim(c.login));
+                            });
+                        } else {
+                            contributors = "";
+                        }
+                        if (!wholeSlugMatchPattern.test(id) && !wholeSlugMatchPattern.test(ownerSlug) && !wholeSlugMatchPattern.test(titleSlug) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
+                            return false;
+                        }
+                        
+                        // check for preset filters
+                        switch (filter) {
+                            case 'All tree collections':
+                                // nothing to do here, all collections pass
+                                break;
+
+                            case 'Collections I own':
+                                // show only matching collections
+                                var userIsTheCreator = false;
+                                if (('creator' in collection) && ('login' in collection.creator)) { 
+                                    // compare to logged-in userid provide in the main page
+                                    if (collection.creator.login === userLogin) {
+                                        userIsTheCreator = true;
+                                    }
+                                }
+                                return userIsTheCreator;
+
+                            case 'Collections I participate in':
+                                var userIsTheCreator = false;
+                                var userIsAContributor = false;
+                                if (('creator' in collection) && ('login' in collection.creator)) { 
+                                    // compare to logged-in userid provide in the main page
+                                    if (collection.creator.login === userLogin) {
+                                        userIsTheCreator = true;
+                                    }
+                                }
+                                if (('contributors' in collection) && $.isArray(collection.contributors)) { 
+                                    // compare to logged-in userid provide in the main page
+                                    $.each(collection.contributors, function(i, c) {
+                                        if (c.login === userLogin) {
+                                            userIsAContributor = true;
+                                        }
+                                    });
+                                }
+                                return (userIsTheCreator || userIsAContributor);
+
+                            case 'Collections I follow':
+                                // TODO: implement this once we have a favorites API
+                                break;
+
+                            default:
+                                console.log("Unexpected filter for tree collection: ["+ filter +"]");
+                                return false;
+                        }
+
+                        return true;
+                    }
+*/
+                );  // END of list filtering
+                        
+                // apply selected sort order
+                switch(order) {
+                    /* REMINDER: in sort functions, results are as follows:
+                     *  -1 = a comes before b
+                     *   0 = no change
+                     *   1 = b comes before a
+                     */
+                    case 'Most recently modified':
+                        filteredList.sort(function(a,b) { 
+                            var aMod = a.lastModified.ISO_date;
+                            var bMod = b.lastModified.ISO_date;
+                            if (aMod === bMod) return 0;
+                            return (aMod < bMod)? 1 : -1;
+                        });
+                        break;
+
+                    case 'Most recently modified (reversed)':
+                        filteredList.sort(function(a,b) { 
+                            var aMod = a.lastModified.ISO_date;
+                            var bMod = b.lastModified.ISO_date;
+                            if (aMod === bMod) return 0;
+                            return (aMod > bMod)? 1 : -1;
+                        });
+                        break;
+
+                    case 'By owner/name':
+                        filteredList.sort(function(a,b) { 
+                            // first element is the ID with user-name/collection-name
+                            if (a.id === b.id) return 0;
+                            return (a.id < b.id) ? -1 : 1;
+                        });
+                        break;
+
+                    case 'By owner/name (reversed)':
+                        filteredList.sort(function(a,b) { 
+                            // first element is the ID with user-name/collection-name
+                            if (a.id === b.id) return 0;
+                            return (a.id > b.id) ? -1 : 1;
+                        });
+                        break;
+
+                    // TODO: add a filter for 'Has un-merged changes'?
+                    
+                    default:
+                        console.warn("Unexpected order for collection list: ["+ order +"]");
+                        return null;
+
+                }
+                viewModel._filteredCollections( filteredList );
+                //viewModel._filteredCollections.goToPage(1);
+                return viewModel._filteredCollections;
+            }); // END of filteredCollections
+            nudgeTickler('COLLECTIONS_LIST');
+        }
+    });
+}
+
+function getAssociatedCollectionsCount() {
+    // used mainly to supply a display string in the Tree > Collections indicator
+    if (viewModel.filteredCollections) { 
+        return ( viewModel.filteredCollections()().length ).toString();
+    }
+    // an empty space will collapse (hide) the indicator if we're not ready
+    return '';
+}
+
+function addTreeToExistingCollection(clicked) {
+    if (userIsLoggedIn()) {
+        // show the autocomplete widget and mute this button
+        var $btn = $(clicked);
+        $btn.addClass('disabled');
+        var $collectionPrompt = $('#collection-search-form');
+        $collectionPrompt.show()
+        $collectionPrompt.find('input').eq(0).focus();
+    } else {
+        if (confirm('This requires login via Github. OK to proceed?')) {
+            loginAndReturn(); 
+        }
+    }
+}
+function resetExistingCollectionPrompt() {
+    var $collectionPrompt = $('#collection-search-form');
+    var $btn = $collectionPrompt.prev('.btn');
+    $btn.removeClass('disabled');
+    $collectionPrompt.hide();
+    $collectionPrompt.find('input').val('');
+    $('#collection-search-results').html('');
+    $('#collection-search-results').hide();
+}
+
+/* More autocomplete behavior for tree-collection search.
+ */
+clearTimeout(collectionSearchTimeoutID);  // in case there's a lingering search from last page!
+var collectionSearchTimeoutID = null;
+var collectionSearchDelay = 250; // milliseconds
+var hopefulCollectionSearchString = null;
+function setCollectionSearchFuse(e) {
+    if (collectionSearchTimeoutID) {
+        // kill any pending search, apparently we're still typing
+        clearTimeout(collectionSearchTimeoutID);
+    }
+    // reset the timeout for another n milliseconds
+    collectionSearchTimeoutID = setTimeout(searchForMatchingCollections, collectionSearchDelay);
+
+    /* If the last key pressed was the ENTER key, stash the current (trimmed)
+     * string and auto-jump if it's a valid taxon name.
+     */
+    if (e.type === 'keyup') {
+        switch (e.which) {
+            case 13:
+                hopefulCollectionSearchString = $('input[name=collection-search]').val().trim();
+                // TODO? jumpToExactMatch();  // use existing menu, if found
+                break;
+            case 17:
+                // do nothing (probably a second ENTER key)
+                break;
+            case 39:
+            case 40:
+                // down or right arrow should try to tab to first result
+                $('#collection-search-results a:eq(0)').focus();
+                break;
+            default:
+                hopefulCollectionSearchString = null;
+        }
+    } else {
+        hopefulCollectionSearchString = null;
+    }
+}
+
+var showingResultsForCollectionSearchText = '';
+function searchForMatchingCollections() {
+    // clear any pending search timeout and ID
+    clearTimeout(collectionSearchTimeoutID);
+    collectionSearchTimeoutID = null;
+
+    var $input = $('input[name=collection-search]');
+    var searchText = $input.val().trimLeft();
+
+    if (searchText.length === 0) {
+        $('#collection-search-results').html('');
+        return false;
+    } else if (searchText.length < 2) {
+        $('#collection-search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+        $('#search-results').dropdown('toggle');
+        return false;
+    }
+
+    // is this unchanged from last time? no need to search again..
+    if (searchText == showingResultsForCollectionSearchText) {
+        ///console.log("Search text and context UNCHANGED!");
+        return false;
+    }
+
+    // search local viewModel.allCollections for any matches
+    var searchNotAvailable = (!viewModel.allCollections || viewModel.allCollections.length === 0);
+    var statusMsg;
+    if (searchNotAvailable) {
+        // block search (no collection data in the view model)
+        statusMsg = 'Unable to search (no collections found)';
+    } else {
+        // stash our search text to use for later comparison (to avoid redundant searches)
+        showingResultsForCollectionSearchText = searchText; // trimmed above
+        statusMsg = 'Search in progress...';
+    }
+
+    $('#collection-search-results').html('<li class="disabled"><a><span class="text-warning">'
+        + statusMsg +'</span></a></li>');
+    $('#collection-search-results').show();
+    $('#collection-search-results').dropdown('toggle');
+
+    if (searchNotAvailable) {
+        return false;
+    }
+
+    var matchPattern = new RegExp( $.trim(searchText), 'i' ),
+        wholeSlugMatchPattern = new RegExp( '^'+ $.trim(searchText) +'$' );
+
+    var matchingCollections = ko.utils.arrayFilter(
+        viewModel.allCollections,
+        function(collection) {
+            // skip collections that already include this tree
+            if ($.inArray(collection, viewModel.filteredCollections()()) !== -1) {
+                console.warn("SKIPPING collection that's already listed!");
+                return false;
+            }
+            // match entered text against collections (id, owner, description...)
+            var id = $.trim(collection['id']);
+            var idParts = id.split('/');
+            var ownerSlug = idParts[0];
+            var titleSlug = (idParts.length === 2) ? idParts[1] : '';
+            var name = $.trim(collection['name']);
+            var description = $.trim(collection['description']);
+            // extract names and IDs of all stakeholders (incl. creator!)
+            if ($.isPlainObject(collection['creator'])) {
+                creator = $.trim(collection['creator'].name)
+                    +'|'+ $.trim(collection['creator'].login);
+            } else {
+                creator = "";
+            }
+            if ($.isArray(collection['contributors'])) {
+                contributors = "";
+                $.each(collection['contributors'], function(i,c) {
+                    contributors += ('|'+ $.trim(c.name) +'|'+ $.trim(c.login));
+                });
+            } else {
+                contributors = "";
+            }
+            // skip collections that don't match on any field
+            if (!wholeSlugMatchPattern.test(id) && !wholeSlugMatchPattern.test(ownerSlug) && !wholeSlugMatchPattern.test(titleSlug) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
+                return false;
+            }
+            return true;
+        }
+    );
+
+    $('#collection-search-results').html('');
+    var maxResults = 10;
+    var visibleResults = 0;
+    if (matchingCollections.length > 0) {
+        // show all sorted results, up to our preset maximum
+        $.each(matchingCollections, function(i, collection) {
+            if (visibleResults >= maxResults) {
+                $('#collection-search-results').append(
+                    '<li class="disabled"><a><span class="text-warning">'
+                      +'Refine your search text to see other results'
+                   +'</span></a></li>'
+                );
+                return false;
+            }
+            $('#collection-search-results').append(
+                '<li>'+ getCollectionViewLink(collection) +'</li>'
+            );
+            visibleResults++;
+        });
+
+        $('#collection-search-results li:not(.disabled) a')
+            .click(function(e) {
+                var $link = $(this);
+                // Override its default onclick behavior to add the tree, then
+                // refresh the associated-collections list.
+                //
+                // hide menu and reset search field
+                $('#collection-search-results').html('');
+                $('#collection-search-results').hide();
+                $('input[name=collection-search]').val('');
+                nudgeTickler('COLLECTIONS_LIST');
+                // retrieve the collection ID from its 'title' attribute
+                var itsCollectionID = $link.attr('title');
+                // insert this tree before opening the editor
+                fetchAndShowCollection( itsCollectionID, addCurrentTreeToCollection );
+                return false;
+            });
+        $('#collection-search-results').dropdown('toggle');
+    } else {
+        $('#collection-search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+        $('#collection-search-results').dropdown('toggle');
+    }
+
+    return false;
+}
+
+function addCurrentTreeToCollection( collection ) {
+    // gather default information about the current study and tree
+    var currentStudyID = $('#current-study-id').val();
+    var currentTreeID = $('#current-tree-id').val();
+    var currentStudy = viewModel.nexml;
+    var currentTree = getTreeByID(currentTreeID);
+    var compactStudyRef = fullToCompactReference(currentStudy['^ot:studyPublicationReference']);
+    if (compactStudyRef === '(Untitled)') {
+        // strip the original parentheses to avoid extras
+        compactStudyRef = 'study has no reference';
+    }
+    // capture the current tree name and study reference
+    // TODO: update these as studies change?
+    var currentTreeName = $.trim(currentTree['@label']);
+    var treeAndStudy = (currentTreeName || currentTreeID) +' ('+ compactStudyRef +')';
+    var treeEntry = {
+        "decision": "INCLUDED",
+        "name": treeAndStudy,
+        "studyID": currentStudyID,
+        "treeID": currentTreeID,
+        "SHA": "",    // TODO: capture this (already expected by server-side validation)
+        "comments": ""
+    };
+    if ('data' in collection) {
+        collection.data.decisions.push(treeEntry);
+    } else {
+        collection.decisions.push(treeEntry);
+    }
+    addPendingCollectionChange( 'ADD', currentStudyID, currentTreeID );
+    
+    // to refresh the list
+    //showCollectionViewer( collection, {SCROLL_TO_BOTTOM: true} );
+    editCollection( collection, {SCROLL_TO_BOTTOM: true} );
+}
+
+function addTreeToNewCollection() {
+    if (userIsLoggedIn()) {
+        var c = createNewTreeCollection(); 
+        addCurrentTreeToCollection(c);
+        showCollectionViewer( c, {SCROLL_TO_BOTTOM: true} );
+    } else {
+        if (confirm('This requires login via Github. OK to proceed?')) {
+            loginAndReturn(); 
+        }
+    }
 }

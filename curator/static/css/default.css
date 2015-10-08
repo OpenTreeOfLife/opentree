@@ -439,7 +439,7 @@ div.flash {
     right: 0;
     bottom: 0;
     margin-bottom: 0;
-    z-index: 1100;  /* above modal screen and popups */
+    z-index: 11000;  /* above modal screens and popups */
 }
 
 div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:pointer;}
@@ -790,7 +790,48 @@ tr.table-shims td {
 tr.after-shims th {
     border-top: 0;
 }
+.collection-actions {
+    position: relative;
+    top: -8px;
+}
+.collection-move-panel {
+    position: absolute;
+    margin-left: 2px;
+    z-index: 1;
+    border-radius: 5px;
+    background-color: #fff;
+    -webkit-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
+    -moz-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
+    box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
+}
+.collection-move-panel button {
+    opacity: 1.0;
+}
 
 .form-horizontal.metadata-readonly .control-group {
   margin-bottom: 12px;
+}
+
+.profile-header .control-group > .control-label, 
+.profile-header .control-group > .controls {
+    margin-top: -8px;
+}
+
+/* Prepend search icon in the input field */
+.navbar-search .left-inner-addon {
+    position: relative;
+    display: inline-block;
+}
+.navbar-search .left-inner-addon .search-query {
+    padding-left: 24px;
+}
+.navbar-search .left-inner-addon .search-query:focus,
+.navbar-search .left-inner-addon .search-query.focused {
+    padding-left: 25px;
+}
+.navbar-search .left-inner-addon i {
+    position: absolute;
+    top: 7px;
+    left: 8px;
+    pointer-events: none;
 }
