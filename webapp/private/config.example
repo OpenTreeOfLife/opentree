@@ -35,6 +35,7 @@ favorites_api_base_url = //devapi.opentreeoflife.org/v2
 # These use a simple web2py cache implemented in phylesystem-api
 CACHED_treemachine = http://opentree.myserver.org/cached/treemachine
 CACHED_taxomachine = http://opentree.myserver.org/cached/taxomachine
+CACHED_oti = http://opentree.myserver.org/cached/oti
 # N.B. This one spans all v2 APIs, including some things that are probably too
 # big or ephemeral to reasonable cache. Use with care!
 CACHED_v2_api = http://opentree.myserver.org/cached/v2
@@ -55,7 +56,7 @@ doTNRSForAutocomplete_url = {taxomachine_domain}/autocompleteQuery
 getContextsJSON_url = {CACHED_taxomachine_domain}/getContextsJSON
 getNodeIDForOttolID_url = {treemachine_domain}/getNodeIDForottId
 getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
-findAllStudies_url = {oti_domain}/findAllStudies
+findAllStudies_url = {CACHED_oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
 # Include one phylesystem-api method to download NexSON from Bibliographic References page
 API_load_study_GET_url = {opentree_api_domain}/study/{STUDY_ID}
