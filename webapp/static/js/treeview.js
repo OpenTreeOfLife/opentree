@@ -825,6 +825,33 @@ function showObjectProperties( objInfo, options ) {
                             // don't keep sending requests for the same source! we manage this with 'loadStatus'
                             sourceMetadata['loadStatus'] = 'PENDING';
                             ///console.warn('>>>>>>>>>>>>>>> sourceDetails NOT FOUND for sourceID '+ sourceID +', FETCHING NOW...');
+                            $.getJSON(
+                                '/hack/oticache/'+ sourceMetadata.study_id,
+                                function(data) {    // JSONP callback
+                                    // reset this locally, to MAKE SURE we've got the right box
+                                    ///console.warn('<<<<<<<<<<<<<<< BACK FROM FETCH for sourceID '+ sourceID);
+                                    var cbSourceMetadata = argus.treeData.sourceToMetaMap[ sourceID ];
+                                    // ignore this if not requested, or already complete
+                                    if (cbSourceMetadata['loadStatus'] === 'PENDING') {
+                                        if (data.matched_studies && (data.matched_studies.length > 0)) {
+                                            if (data.matched_studies.length > 1) {
+                                                console.log(">>>> EXPECTED to find one matching study for id '"+ (cbSourceMetadata).study_id +"', not multiple:");
+                                                console.log(data);
+                                            }
+                                            var studyInfo = data.matched_studies[0];
+                                            cbSourceMetadata['sourceDetails'] = studyInfo;
+                                            cbSourceMetadata['loadStatus'] = 'COMPLETE';
+                                            // Nudge for a refresh of the properties display?
+                                            showObjectProperties( objInfo );
+                                        } else {
+                                            console.log(">>>> EXPECTED to find a matching study for id '"+ (cbSourceMetadata).study_id +"', not this:");
+                                            console.log(data);
+                                            cbSourceMetadata['loadStatus'] = 'FAILED';
+                                        }
+                                    }
+                                }
+                            );
+/* SKIPPING THIS in favor of mtholder's quick OTI "stand-in" above
                             $.post(
                                 singlePropertySearchForStudies_url, // JSONP fetch URL
                                 {   // POSTed data
@@ -856,6 +883,7 @@ function showObjectProperties( objInfo, options ) {
                                     }
                                 }
                             );
+*/
                         }
                     }
                 });
