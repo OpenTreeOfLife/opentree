@@ -4163,7 +4163,10 @@ function updateNewTreeUploadForm() {
         readyToSubmit = false;
     }
 
-    var chosenFile = $.trim( $('#treeupload').val() );
+    //var chosenFile = $.trim( $('#treeupload').val() );
+    // NO, this is routinely cleared by the upload widget; the file-name
+    // display (white on blue) alongside, is actually a safer test.
+    var chosenFile = $.trim( $('#upload-tree-info').text() );
     var pastedText = $.trim( $('#new-tree-text').val() );
     // either of these is acceptable
     if (pastedText === '' && chosenFile === '') {
