@@ -835,3 +835,8 @@ tr.after-shims th {
     left: 8px;
     pointer-events: none;
 }
+.alert pre.error-details {
+    /* manage very large server responses in footer */
+    overflow: scroll;
+    max-height: 400px;
+}
