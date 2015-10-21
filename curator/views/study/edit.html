@@ -199,8 +199,8 @@ body {
       <li><a href="#OTU-Mapping" data-toggle="tab">OTU Mapping <span class="badge badge-important" style="display: none;">?</span></a></li>
     <!--
       <li><a href="#Annotations" data-toggle="tab">Annotations <span class="badge badge-important" style="display: none;">?</span></a></li>
-    -->
       <li><a href="#Tools" data-toggle="tab">Tools <span class="badge badge-important" style="display: none;">?</span></a></li>
+    -->
       <li><a href="#History" data-toggle="tab">History <span class="badge badge-important" style="display: none;">?</span></a></li>
     </ul>
 
@@ -501,8 +501,8 @@ body {
 <!--
                     <textarea id="save-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
 -->
-                    <div id="comment-editor"><textarea data-bind="value: viewModel.nexml['^ot:comment'], 
-                                                                  valueUpdate: ['afterkeydown', 'input'], 
+                    <div id="comment-editor"><textarea data-bind="value: viewModel.nexml['^ot:comment'],
+                                                                  valueUpdate: ['afterkeydown', 'input'],
                                                                   event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }"
                                                        placeholder="Enter notes for viewers and other curators here (as markdown)."
                                                        rows="8"
@@ -908,8 +908,8 @@ body {
                           <!-- /ko -->
                         </td>
                         <td>
-                            <div><textarea data-bind="value: file.description.$, 
-                                                      valueUpdate: ['afterkeydown', 'input'], 
+                            <div><textarea data-bind="value: file.description.$,
+                                                      valueUpdate: ['afterkeydown', 'input'],
                                                       event: { keyup: nudge.SUPPORTING_FILES, change: nudge.SUPPORTING_FILES }"
                                            placeholder="Describe this file's format and purpose."
                                            rows="2"
@@ -1939,12 +1939,12 @@ body {
     var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
 
-    var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}"; 
-    var singlePropertySearchForTrees_url = "{{=singlePropertySearchForTrees_url}}"; 
-    var API_create_collection_POST_url = "{{=API_create_collection_POST_url}}"; 
-    var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}"; 
+    var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}";
+    var singlePropertySearchForTrees_url = "{{=singlePropertySearchForTrees_url}}";
+    var API_create_collection_POST_url = "{{=API_create_collection_POST_url}}";
+    var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}";
     var API_update_collection_PUT_url = "{{=API_update_collection_PUT_url}}";
-    var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}"; 
+    var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}";
 </script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
 
@@ -2209,7 +2209,7 @@ body {
                 Collections
                 <span class="badge badge-info" style=""
                       data-bind="html: getAssociatedCollectionsCount(),
-                                 css: viewModel.ticklers.COLLECTIONS_LIST">&nbsp;</span> 
+                                 css: viewModel.ticklers.COLLECTIONS_LIST">&nbsp;</span>
               </a>
           </li>
 
@@ -2218,15 +2218,15 @@ body {
     <div class="modal-body tab-content">
       <div class="tab-pane active" id="tree-properties">
          <form class="form-inline" style="overflow: hidden; margin-bottom: 0px;">
-              <input type="hidden" id="current-study-id" 
+              <input type="hidden" id="current-study-id"
                      data-bind="value: viewModel.nexml['^ot:studyId']">
-              <input type="hidden" id="current-tree-id" 
+              <input type="hidden" id="current-tree-id"
                      data-bind="value: $data['@id']">
           {{ if viewOrEdit == 'EDIT': }}
             <!-- editable tree properties here -->
               <div style="padding: 0 4px;">
                 <label>Inference method: </label>
-                <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny --> 
+                <!-- Offer preset inference methods, found in http://en.wikipedia.org/wiki/Bayesian_inference_in_phylogeny -->
                 <select id="inference-method-select"
                         onchange="(this); return false;"
                         data-bind="options: [
@@ -2238,14 +2238,14 @@ body {
                                        'Least squares ',
                                        'Three-taxon analysis',
                                        'Other (specify)'
-                                   ], 
+                                   ],
                                    optionsCaption: 'Choose a method...',
-                                   event: { change: updateInferenceMethodWidgets }, 
+                                   event: { change: updateInferenceMethodWidgets },
                                    css: viewModel.ticklers.TREES">
                 </select>
-                <input type="text" id="inference-method-other" 
+                <input type="text" id="inference-method-other"
                        placeholder="Other (specify)"
-                       data-bind="event: { change: updateInferenceMethodWidgets }, 
+                       data-bind="event: { change: updateInferenceMethodWidgets },
                                   css: viewModel.ticklers.TREES"></input>
               <br/>
                 <label for="testtest">Root node: </label>
@@ -2543,9 +2543,9 @@ body {
           {{ pass }}
             style="margin-right: 8px;">
             Add tree to an existing collection
-            <i class="icon-book icon-white"></i> 
+            <i class="icon-book icon-white"></i>
         </button>
-        <form id="collection-search-form" class="navbar-search" autocomplete="off" 
+        <form id="collection-search-form" class="navbar-search" autocomplete="off"
               style="display: none; margin-top: 0;">
             <div class="left-inner-addon">
                 <i class="icon-search"></i>
@@ -2569,7 +2569,7 @@ body {
           {{ pass }}
             style="margin-left: 8px;">
             Add tree to a new collection
-            <i class="icon-pencil icon-white"></i> 
+            <i class="icon-pencil icon-white"></i>
         </button>
 
         <p style="clear: both; padding-top: 0.5em;">
@@ -2592,7 +2592,7 @@ body {
                 <th>Owner</th>
             </tr>
           </thead>
-          <tbody data-bind="foreach: { data: viewModel.filteredCollections ? 
+          <tbody data-bind="foreach: { data: viewModel.filteredCollections ?
                                                viewModel.filteredCollections() : [ ],
                                        as: 'collection' },
                             css: viewModel.ticklers.COLLECTIONS_LIST">
@@ -2611,11 +2611,11 @@ body {
                       css: viewModel.ticklers.COLLECTIONS_LIST">
            <em>Loading collections list...</em>
         </h4>
-        <div class="empty-list-prompt" 
-             data-bind="visible: viewModel.filteredCollections && 
+        <div class="empty-list-prompt"
+             data-bind="visible: viewModel.filteredCollections &&
                                  (viewModel.filteredCollections()().length === 0),
                         css: viewModel.ticklers.COLLECTIONS_LIST">
-            This tree has not been included in any collections yet. Use the buttons above to 
+            This tree has not been included in any collections yet. Use the buttons above to
             add it to a new or existing collection.
         </div>
 
