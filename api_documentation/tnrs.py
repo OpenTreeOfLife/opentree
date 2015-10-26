@@ -9,7 +9,7 @@ methods_list = []
 methods_list.append({
     "anchor_name" : "match_names",
     "method_name" : "match_names",
-    "short_description" : "Returns a list of potential matches to known taxonomic names.",
+    "short_description" : "Returns a list of potential matches to known taxonomic names. Currently limited to 1000 names passed in the \"names\" argument.",
     "http_verb" : "POST",
     "relative_url" : "/tnrs/match_names",
     "neo4j_service_url" : "http://api.opentreeoflife.org/v2/tnrs/match_names",
