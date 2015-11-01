@@ -164,8 +164,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         }
 
         function makeSafeForWeb2pyURL(str) {
-            // replace characters considered unsafe (blocked) by web2py in a URL
-            return str.replace(/[:(), .]+/g, '-').replace(/[\[\]\+]+/g,'');
+            // For example, "Odynerus o'neili" becomes "Odynerus-oneili"
+            // remove (elide) apostrophes rather than replace with '-'
+            str = str.replace(/['"]/g, '');
+            // replace other characters considered unsafe (blocked) by web2py in a URL
+            return str.replace(/[:(), .']+/g, '-').replace(/[\[\]\+]+/g,'');
         }
         function historyStateToURL( stateObj ) {
             var safeNodeName = null;
@@ -288,7 +291,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                                 var safeURL = historyStateToURL({
                                     nodeID: $link.attr('href'), 
                                     domSource: 'ottol',
-                                    nodeName: $link.html(),
+                                    nodeName: makeSafeForWeb2pyURL($link.text()),
                                     viewer: 'argus'
                                 });
                                 $link.attr('href', safeURL);
