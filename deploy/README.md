@@ -114,11 +114,12 @@ Suppose the neo4j .db directory is data/newlocaldb.db. If your
 ~/.ssh/config is prepared as described above you would say:
 
     tar -C {txxxmachine}/data/newlocaldb.db -czf newlocaldb.db.tgz .
-    scp -p newlocaldb.db.tgz host:downloads/{app}-{20151104}.db.tgz
+    scp -p newlocaldb.db.tgz {host}:downloads/{app}-{20151104}.db.tgz
 
 where {txxxmachine} is the neo4j directory for the application, {app}
-is taxomachine or treemachine, and {20151104} is date on which the
-database was generated (for identification purposes).
+is taxomachine or treemachine, {host} is the name of the instance (or
+an alias as configured in ~/.ssh/config), and {20151104} is date on
+which the database was generated (for identification purposes).
 
 Check for available disk space before doing this.  Delete old database
 versions as needed (assuming they are either archived elsewhere, or
@@ -176,14 +177,16 @@ Updating the files.opentreeoflife.org web site
 
     ./push.sh -c {configfile} files
 
-This copies the contents of the files.opentreeoflife.org
+This copies the contents of the local files.opentreeoflife.org
 directory out to the web root for the files.opentreeoflife.org vhost.
-The location is determined by the value of FILES_HOST, which can be
+Files present remotely but not locally are not disturbed.
+The destination is determined by the value of FILES_HOST, which can be
 set in the configuration file if desired.
 
-This operation leaves in place any files that are already there.  The
-large files (such as the synthetic tree) are not in github and are
-at present (2014-07-08) managed manually.
+The local files.opentreeoflife.org should be a clone of the
+files.opentreeoflife.org github repository.  The large files (such as
+the synthetic tree) are not in github and are at present (2015-11-04)
+managed manually.
 
 Notifying users of scheduled downtime
 -------------------------------------
