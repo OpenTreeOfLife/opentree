@@ -39,7 +39,7 @@ not the server).
 Set its file permissions to 600.
 
 It is useful, but not strictly necessary, to set up host aliases in
-your ~/.ssh/config with IdentityFile set to the location of the ssh
+your ~/.ssh/config file with IdentityFile set to the location of the ssh
 private key and User set to 'opentree'.
 
 To support secure (HTTPS) web connections to Open Tree, put the required files on the server:
@@ -129,7 +129,7 @@ Next, unpack the database, make it available to neo4j, and restart the
 neo4j service.  Again, before doing this, make sure there is adequate
 disk space.
 
-    ./push.sh -c {configfile} install-db {app}-{20151104}.db.tgz {app}
+    ./push.sh -c {configfile} install-db downloads/{app}-{20151104}.db.tgz {app}
 
 The previous version of the graph.db directory is moved to
 graph.db.previous for disaster recovery.  The graph.db.previous
@@ -147,7 +147,7 @@ something like this:
     ssh -i ~/.ssh/opentree/opentree.pem opentree@ot83.opentreeoflife.org
     scp ot74.opentreeoflife.org:downloads/treemachine-20151104.db.tgz downloads/
     exit
-    ./push.sh -c {configfile} install-db downloads/treemachine-20151104.db.tgz treemachine
+    ./push.sh -c {ot83-configfile} install-db downloads/treemachine-20151104.db.tgz treemachine
 
 (ssh / command / exit could be done with ssh with command on command line.)
 
