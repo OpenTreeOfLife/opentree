@@ -969,8 +969,17 @@ function showObjectProperties( objInfo, options ) {
 
                     //var supportingStudyIDs = [ ];  // don't repeat studies under 'Supported by', but gather trees for each!
                     var supportedByTaxonomy = false;
+                    var supportingTaxonomyVersion, supportingTaxonomyVersionURL;
                     var ottInfo = argus.treeData.sourceToMetaMap['taxonomy'];
-                    var supportingTaxonomyVersion = ottInfo ? ottInfo['version'] : null;
+                    if ('version' in ottInfo) {
+                        supportingTaxonomyVersion = ottInfo['version'];
+                        var simpleVersion = supportingTaxonomyVersion.split('draft')[0];
+                        supportingTaxonomyVersionURL = '/about/taxonomy-version/ott'
+                            + simpleVersion;
+                    } else {
+                        supportingTaxonomyVersion = 'Not found';
+                        supportingTaxonomyVersionURL = '/about/taxonomy-version';
+                    }
                     var supportingStudyInfo = { };  // don't repeat studies under 'Supported by', but gather trees for each *then* generate output
                     // if we're still waiting on fetched study info, add a message to the properties window
                     var waitingForStudyInfo = false;
@@ -1091,7 +1100,9 @@ function showObjectProperties( objInfo, options ) {
                     }
                     if (supportedByTaxonomy) {
                         $details.append('<dt>Supported by taxonomy</dt>');
-                        $details.append('<dd>'+ supportingTaxonomyVersion +' &nbsp;<a href="http://files.opentreeoflife.org/ott/" target="_blank">(OTT and version information)</a></dd>');
+                        $details.append('<dd>'+ supportingTaxonomyVersion 
+                                +' &nbsp;<a href="'+ supportingTaxonomyVersionURL
+                                +'" target="_blank">(OTT and version information)</a></dd>');
                     }
                     $details.find('.full-ref-toggle').unbind('click').click(function() {
                         var $itsReference = $(this).nextAll('.full-ref, .full-ref-curator');
