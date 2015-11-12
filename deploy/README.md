@@ -30,9 +30,9 @@ didn't want to learn how to use them.
 These files should be kept in directory ```~/.ssh/opentree/```, so that configuration can be shared easily among your team. See the [deployed-systems README](https://github.com/OpenTreeOfLife/deployed-servers/blob/master/README.md) for details.
 
 Go to Amazon or some other "cloud" provider, and reserve one or more instances
-running Debian GNU/Linux (version 8 'jessie' has been working for us).  As of 2014-07-08 we're using 4G servers that don't
-run big neo4j databases (e.g. browser/curator only), 
-8G for those that do (phylesystem-api/oti/taxomachine/treemachine).
+running Debian GNU/Linux (version 8 'jessie' has been working for us).  As of 2014-07-08 servers that don't
+run big neo4j databases (e.g. browser/curator only) have 4G of RAM, 
+those that do (phylesystem-api/oti/taxomachine/treemachine) have 8G of RAM.
 
 Put the ssh private key somewhere, e.g. in ~/.ssh/opentree/opentree.pem (on your own machine, 
 not the server).
