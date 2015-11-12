@@ -20,45 +20,67 @@ For more information about our current deployment practices, see the notes and c
 How to deploy a new server
 --------------------------
 
+The so-called 'deployment system' is a set of ad hoc shell script for
+managing Open Tree servers remotely.  By way of apology, it would
+probably better to situate these scripts within a vagrant/ansible
+setup or some other structured solution, but I was in a hurry and
+didn't want to learn how to use them.
+
 **Note: We're now using a single, common approach to managing sensitive files (private keys and API "secrets").** 
 These files should be kept in directory ```~/.ssh/opentree/```, so that configuration can be shared easily among your team. See the [deployed-systems README](https://github.com/OpenTreeOfLife/deployed-servers/blob/master/README.md) for details.
 
-Go to Amazon or some other cloud provider, and reserve one or more instances
-running Debian GNU/Linux (version 7.5 has been working for us, but others ought to as well).  As of 2014-07-08 we're using m3.medium servers that don't
-run big neo4j databases (e.g. browser/curator only), 
-m3.large for those that do (taxomachine/treemachine).
+Go to Amazon or some other "cloud" provider, and reserve one or more instances
+running Debian GNU/Linux (version 8 'jessie' has been working for us).  As of 2014-07-08 servers that don't
+run big neo4j databases (e.g. browser/curator only) have 4G of RAM, 
+those that do (phylesystem-api/oti/taxomachine/treemachine) have 8G of RAM.
 
 Put the ssh private key somewhere, e.g. in ~/.ssh/opentree/opentree.pem (on your own machine, 
 not the server).
 Set its file permissions to 600.
 
-To support secure (HTTPS) web connections, put the required files on the server:
+It is useful, but not strictly necessary, to set up host aliases in
+your ~/.ssh/config file with IdentityFile set to the location of the ssh
+private key and User set to 'opentree'.
+
+To support secure (HTTPS) web connections to Open Tree, put the required files on the server:
  - Our Apache config currently expects to find the **SSL private keyfile** (from your local filesystem) at `/etc/ssl/private/opentreeoflife.org.key`. 
  - You'll also need to push the **combined public SSL cert file** (setup/ssl-certs/STAR_opentreeoflife_org.pem) to its expected location `/etc/ssl/certs/opentree/STAR_opentreeoflife_org.pem`.
 
-If running the API, put the private key for the github account somewhere (e.g. in ~/.ssh/opentree/), so that the API can push changes to study files out to github.
+If running the phylesystem API, put the private key for the github account somewhere (e.g. in ~/.ssh/opentree/), so that the API can push changes to study files out to github.
 
 Create one configuration file for each server.  A configuration is just a shell script that sets some variables.  See sample.config in this directory for documentation on how to prepare a configuration file.
 
-Run the setup script, which is called 'push.sh', as
+There are configuration files for the Open Tree project's servers in [the 'deployed-systems' github repository](https://github.com/OpenTreeOfLife/deployed-systems).
 
-     ./push.sh -c {configfile}
+Run the management script, which is called 'push.sh', as
+
+     ./push.sh -c {configfile} [arguments]
 
 All manipulation of the server, other than ad hoc temporary patches and debugging, should be done through the push script.  If you find you need functionality that it doesn't provide, please create a github issue.
 
 The push.sh script starts by pushing out a script to be run as the admin user (setup/as_admin.sh).  This script installs prerequisite software and creates an unprivileged 'opentree' user.  Then further scripts run as user 'opentree'.  The only privileged operation thereafter is restarting Apache.
+
+With no arguments, push.sh installs or all components configured for this server.
 
 After this, on each invocation of push.sh, the contents of the setup/
 directory are synchronized from setup/ in the current directory - not from github. All other software is fetched from specified branches on github.
 
 The script may be re-run, and it tries to save time by avoiding reexecution of steps it has already performed based on sources that haven't changed.  If you're debugging you can re-run it repeatedly every time you want to try a change. (Unfortunately, at present it always reads from master branches of repos, but this is supposed to change soon.)
 
+Smoke test
+----------
+
+This command will check for basic infrastructure setup, and then write
+'x'.  It makes for a basic test of the mechanics of the deployment system.
+
+    ./push.sh -c {configfile} echo x
+
 Updating and debugging
 ----------------------
 
 The contents of the setup/ directory are pushed out to the server every time push.sh runs.  This makes debugging deployment scripts easy, since that directory doesn't need to be pushed out to github first.  Application files from the various repositories are refreshed as needed from github.
 
-You can deploy individual components by giving them as an argument to
+You can deploy an individual component by giving it as an argument to
 the 'push.sh' command.  For example:
 
     ./push.sh -c {configfile} treemachine
@@ -67,37 +89,65 @@ stops treemachine's neo4j instance, updates its treemachine plugin, and restarts
 
 For a list of components, see [sample.config](sample.config).
 
-Setting up the API and studies repo
+Setting up the phylesystem API and studies repo
 -----------------------------------
 
-    ./push.sh -c {configfile} push-api
+    ./push.sh -c {configfile} phylesystem-api
 
-This requires OPENTREE_GH_IDENTITY, as set in the configuration file, to point to the file containing the ssh private key for github access.
+In order for the API to be able to write studies, and not just read
+them, this command requires OPENTREE_GH_IDENTITY, as set in the configuration
+file, to point to the file containing the ssh private key for github
+access.
 
-How to push the neo4j databases
+How to push a neo4j database
 -------------------------------
 
-If the server is to run treemachine or taxomachine (optional; ordinarily this requires a 'big' server), the appropriate database has to be pushed out to the server and installed, as a separate step.  Create a compressed tar file of the neo4j database directory (which by default is called 'graph.db' although you can call it whatever you like locally).  Then copy it to the server using push.sh.  Suppose the neo4j .db directory is data/newlocaldb.db. The you would say:
+If the server is to run one of the neo4j applications (optional;
+ordinarily this requires a 'big' server), the appropriate neo4j
+database has to be created offline (e.g. locally), pushed out
+to the server, and then installed.  
+
+Create a compressed tar file of the neo4j database directory (which by
+default is called 'graph.db' although you can call it whatever you
+like locally).  Then copy it to the server using rsync or scp.
+Suppose the neo4j .db directory is data/newlocaldb.db. If your
+~/.ssh/config is prepared as described above you would say:
 
     tar -C {txxxmachine}/data/newlocaldb.db -czf newlocaldb.db.tgz .
-    ./push.sh -c {configfile} pushdb newlocaldb.db.tgz {app}
+    scp -p newlocaldb.db.tgz {host}:downloads/{app}-{20151104}.db.tgz
 
-where {txxxmachine} is the neo4j directory for the application and {app} is taxomachine or treemachine.
+where {txxxmachine} is the neo4j directory for the application, {app}
+is taxomachine or treemachine, {host} is the name of the instance (or
+an alias as configured in ~/.ssh/config), and {20151104} is date on
+which the database was generated (for identification purposes).
 
-New versions of the database can be pushed out in this way as desired, replacing the previous version each time.  The previous version is kept for disaster recovery, but if it needs to be reinstalled, that has to be done manually.
+Check for available disk space before doing this.  Delete old database
+versions as needed (assuming they are either archived elsewhere, or
+provably unneeded).
 
-Installing a new database version
+Next, unpack the database, make it available to neo4j, and restart the
+neo4j service.  Again, before doing this, make sure there is adequate
+disk space.
+
+    ./push.sh -c {configfile} install-db downloads/{app}-{20151104}.db.tgz {app}
+
+The previous version of the graph.db directory is moved to
+graph.db.previous for disaster recovery.  The graph.db.previous
+directory can be deleted to recover disk space.
+
+
+Installing a new database from another AWS instance
 ---------------------------------
 
-WORK IN PROGRESS
-
-As an optimization, instead of doing pushdb as above you can copy a
-.db.tgz file from another server (AWS), something like this:
+Bandwidth to Amazon tends to be limited.  As an optimization, instead
+of copying the same database from a local machine to two different AWS
+instances, you can copy a .db.tgz file from another server (AWS),
+something like this:
 
     ssh -i ~/.ssh/opentree/opentree.pem opentree@ot83.opentreeoflife.org
-    scp ot74.opentreeoflife.org:downloads/treemachine.db.tgz downloads/
+    scp ot74.opentreeoflife.org:downloads/treemachine-20151104.db.tgz downloads/
     exit
-    ./push.sh -c {configfile} install-db downloads/treemachine.db.tgz treemachine
+    ./push.sh -c {ot83-configfile} install-db downloads/treemachine-20151104.db.tgz treemachine
 
 (ssh / command / exit could be done with ssh with command on command line.)
 
@@ -105,18 +155,6 @@ Before you can do the scp it will be necessary for the machine running
 scp to have a .ssh/id_rsa, and the one delivering the bits to have a
 .ssh/authorized_keys that contains the corresponding public key.
 Run ssh_keygen if necessary to create keys.
-
-Following this, do 
-
-Initializing the OTI database
------------------------------
-
-WORK IN PROGRESS
-
-OTI's neo4j database needs to be initialized as a copy of the
-taxomachine database.  Set up taxomachine and copy over its database, then:
-
-    ./push.sh -c {configfile} install-db downloads/taxomachine.db.tgz oti
 
 Indexing all the studies (OTI database)
 ---------------------------------------
@@ -139,14 +177,16 @@ Updating the files.opentreeoflife.org web site
 
     ./push.sh -c {configfile} files
 
-This copies the contents of the files.opentreeoflife.org
+This copies the contents of the local files.opentreeoflife.org
 directory out to the web root for the files.opentreeoflife.org vhost.
-The location is determined by the value of FILES_HOST, which can be
+Files present remotely but not locally are not disturbed.
+The destination is determined by the value of FILES_HOST, which can be
 set in the configuration file if desired.
 
-This operation leaves in place any files that are already there.  The
-large files (such as the synthetic tree) are not in github and are
-at present (2014-07-08) managed manually.
+The local files.opentreeoflife.org should be a clone of the
+files.opentreeoflife.org github repository.  The large files (such as
+the synthetic tree) are not in github and are at present (2015-11-04)
+managed manually.
 
 Notifying users of scheduled downtime
 -------------------------------------

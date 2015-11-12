@@ -154,7 +154,7 @@ fi
 # ---------- PYTHON VIRTUALENV ----------
 # Get virtualenv
 if [ `which virtualenv`x = x ]; then
-    apt_get_install python-virtualenv
+    apt_get_install python-virtualenv virtualenv
 fi
 
 # ---------- JAVA ----------
