@@ -932,6 +932,11 @@ function showObjectProperties( objInfo, options ) {
                                               + 'title="Interim Register of Marine and Nonmarine Genera" target="_blank">IRMNG: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
+                            case 'WORMS':
+                                displayVal = '<a href="http://www.marinespecies.org/aphia.php?p=taxdetails&id='+ sourceInfo.taxSourceId +'" '
+                                              + 'title="World Registry of Marine Species" target="_blank">WoRMS: '+ sourceInfo.taxSourceId +'</a>';
+                                break;
+
                             case 'MB':
                                 displayVal = '<a href="http://www.mycobank.org/MB/'+ sourceInfo.taxSourceId +'/" '
                                               + 'title="Mycobank" target="_blank">Mycobank: '+ sourceInfo.taxSourceId +'</a>';
