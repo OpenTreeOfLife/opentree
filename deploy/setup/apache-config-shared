@@ -60,18 +60,18 @@
 
     # phylesystem-api is provided via web2py
     RewriteEngine on
-    RewriteRule ^/v2/study/(.*) /phylesystem/v1/study/$1 [PT,L]
+    RewriteRule ^/v2/study/(.*) /phylesystem/v1/study/$1 [PT]
 
     # collections-api is provided via web2py
     RewriteEngine on
-    RewriteRule ^/v2/collections/(.*) /phylesystem/v1/collections/$1 [PT,L]
-    RewriteRule ^/v2/collection/(.*)  /phylesystem/v1/collection/$1 [PT,L]
+    RewriteRule ^/v2/collections/(.*) /phylesystem/v1/collections/$1 [PT]
+    RewriteRule ^/v2/collection/(.*)  /phylesystem/v1/collection/$1 [PT]
 
     # ------------------------------------------------------------
     # Explicit routing for /cached/* URLs (in phylesystem-api)
 
     RewriteEngine on
-    RewriteRule ^/cached/(.*) /phylesystem/default/cached/$1 [PT,L]
+    RewriteRule ^/cached/(.*) /phylesystem/default/cached/$1 [PT]
 
     # ------------------------------------------------------------
     # Redirect all other traffic (presumably intended for our web2py apps) to HTTPS
