@@ -15,31 +15,6 @@
     # TEMPORARY REDIRECT to maintenance page
     #RedirectMatch 302 ^(.*)$ http://opentreeoflife.github.io/maintenance.html
 
-    # See http://stackoverflow.com/questions/13216837/install-web2py-in-virtual-hosting
-    # NOTE that we can only specify WSGIDaemonProcess once, so this has been
-    # retained in the main HTTP configuration 'apache-config-vhost'!
-    #WSGIDaemonProcess web2py user=opentree group=opentree display-name=%{GROUP}
-    WSGIProcessGroup web2py
-    WSGIScriptAlias / /home/opentree/web2py/wsgihandler.py
-
-    # We don't want the scriptalias to override mappings for
-    #  treemachine and taxomachine... seems not to.
-
-    <Directory /home/opentree/web2py>
-      AllowOverride None
-      Order Allow,Deny
-      Deny from all
-      <Files wsgihandler.py>
-        Allow from all
-      </Files>
-    </Directory>
-
-    AliasMatch ^/([^/]+)/static/(.*)            /home/opentree/web2py/applications/$1/static/$2
-    <Directory /home/opentree/web2py/applications/*/static/>
-      Order Allow,Deny
-      Allow from all
-    </Directory>
-
     # See https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs
 
     # 7474 = treemachine neo4j
@@ -97,6 +72,13 @@
 
     RewriteEngine on
     RewriteRule ^/cached/(.*) /phylesystem/default/cached/$1 [PT]
+
+    # ------------------------------------------------------------
+    # Redirect all other traffic (presumably intended for our web2py apps) to HTTPS
+    RewriteEngine on
+    RewriteCond %{SERVER_PORT} !^443$
+    RewriteRule ^/(.*) https://%{HTTP_HOST}/$1 [NC,R=301,L]
+
 
     # ------------------------------------------------------------
     # v1 API retained for transition period (ending Nov 2014 ?)

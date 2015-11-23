@@ -92,7 +92,7 @@ def download_subtree():
             fetch_args = {'node_id': node_or_ottol_id}
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
-            fetch_url = "http:%s" % fetch_url
+            fetch_url = "https:%s" % fetch_url
 
         # apparently this needs to be a POST, or it just describes the API
         tree_response = fetch(fetch_url, data=fetch_args)
@@ -124,7 +124,7 @@ def fetch_current_synthetic_tree_ids():
         fetch_url = method_dict['getDraftTreeID_url']
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
-            fetch_url = "http:%s" % fetch_url
+            fetch_url = "https:%s" % fetch_url
 
         fetch_args = {'startingTaxonOTTId': ""}
         # this needs to be a POST (pass fetch_args or ''); if GET, it just describes the API

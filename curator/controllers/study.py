@@ -92,7 +92,7 @@ def _get_latest_synthesis_sha_for_study_id( study_id ):
         fetch_url = method_dict['getSynthesisSourceList_url']
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
-            fetch_url = "http:%s" % fetch_url
+            fetch_url = "https:%s" % fetch_url
         # as usual, this needs to be a POST (pass empty fetch_args)
         source_list_response = fetch(fetch_url, data='')
         source_list = simplejson.loads( source_list_response )

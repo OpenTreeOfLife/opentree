@@ -30,13 +30,6 @@
       Allow from 127.0.0.1
     </LocationMatch>
 
-    # See http://stackoverflow.com/questions/13216837/install-web2py-in-virtual-hosting
-    #
-    # NOTE that we can only specify WSGIDaemonProcess once, so this has been
-    # retained in 'apache-config-vhost'. All other WSGI directives are shared
-    # across both vhosts
-    WSGIDaemonProcess web2py user=opentree group=opentree display-name=%{GROUP}
-
     # OPENTREE SHARED CONFIGURATION
     Include /etc/apache2/opentree-config-shared
 
