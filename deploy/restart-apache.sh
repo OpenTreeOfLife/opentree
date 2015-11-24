@@ -8,30 +8,8 @@ OPENTREE_HOME=$(bash <<< "echo ~$OPENTREE_USER")
 
 if apt-cache policy apache2 | egrep -q "Installed: 2.2"; then
 
-# Obscolescent code, apache 2.2
-
-if [ ! -r /etc/apache2/sites-available/opentree ] || \
-   ! cmp "$OPENTREE_HOME/setup/apache-config-vhost" /etc/apache2/sites-available/opentree; then
-    echo "Installing opentree vhost config"
-    sudo cp -p "$OPENTREE_HOME/setup/apache-config-vhost" /etc/apache2/sites-available/opentree || "Sudo failed"
-fi
-
-if [ ! -r /etc/apache2/sites-available/opentree-ssl ] || \
-   ! cmp "$OPENTREE_HOME/setup/apache-config-vhost-ssl" /etc/apache2/sites-available/opentree-ssl; then
-    echo "Installing opentree ssl vhost config"
-    sudo cp -p "$OPENTREE_HOME/setup/apache-config-vhost-ssl" /etc/apache2/sites-available/opentree-ssl || "Sudo failed"
-fi
-
-TMP=/tmp/$$.tmp
-sed -e s+/home/opentree+$OPENTREE_HOME+ <"$OPENTREE_HOME/setup/apache-config-shared" >$TMP
-if [ ! -r /etc/apache2/opentree-config-shared ] || \
-   ! cmp $TMP /etc/apache2/opentree-config-shared; then
-    echo "Installing opentree vhosts shared config"
-    sudo cp -p $TMP /etc/apache2/opentree-config-shared || "Sudo failed"
-fi
-rm $TMP
-
-# -------------------------------------------------------
+echo "This project requires apache 2.4 or higher! Please upgrade apache and try again."
+exit 1
 
 else
 
