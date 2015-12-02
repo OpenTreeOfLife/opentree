@@ -236,7 +236,7 @@ def _get_opentree_activity( userid=None, username=None ):
     fetch_url = method_dict['getSynthesisSourceList_url']
     if fetch_url.startswith('//'):
         # Prepend scheme to a scheme-relative URL
-        fetch_url = "http:%s" % fetch_url
+        fetch_url = "https:%s" % fetch_url
     # as usual, this needs to be a POST (pass empty fetch_args)
     source_list = requests.post(
         url=fetch_url,
@@ -266,7 +266,7 @@ def _get_opentree_activity( userid=None, username=None ):
     fetch_url = method_dict['findAllStudies_url']
     if fetch_url.startswith('//'):
         # Prepend scheme to a scheme-relative URL
-        fetch_url = "http:%s" % fetch_url
+        fetch_url = "https:%s" % fetch_url
     all_studies = requests.post(
         url=fetch_url,
         data={'verbose': True}  # include curator list
@@ -296,7 +296,7 @@ def _get_opentree_activity( userid=None, username=None ):
             fetch_url = method_dict['phylesystem_config_url']
             if fetch_url.startswith('//'):
                 # Prepend scheme to a scheme-relative URL
-                fetch_url = "http:%s" % fetch_url
+                fetch_url = "https:%s" % fetch_url
             phylesystem_config = requests.get( url=fetch_url ).json()
             shard_list = phylesystem_config['shards']
             # if GitHub is rebuilding stats cache for any shard, poke them all but ignore dates

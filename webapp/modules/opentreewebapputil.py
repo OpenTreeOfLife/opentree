@@ -215,7 +215,7 @@ def fetch_current_TNRS_context_names(request):
         fetch_url = method_dict['getContextsJSON_url']
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
-            fetch_url = "http:%s" % fetch_url
+            fetch_url = "https:%s" % fetch_url
 
         # as usual, this needs to be a POST (pass empty fetch_args)
         contextnames_response = fetch(fetch_url, data='')
