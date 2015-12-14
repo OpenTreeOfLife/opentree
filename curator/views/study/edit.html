@@ -1434,6 +1434,7 @@ body {
                     <select class="input-block-level" style="margin-bottom: 8px;" name="mapping-search-context"
                             data-bind="value: getOTUMappingHints().data.searchContext.$,
                               valueUpdate: ['afterkeydown', 'input'],
+                              css: viewModel.ticklers.OTU_MAPPING_HINTS,
                               event: { keyup: updateMappingHints, change: updateMappingHints }
                               ">
                     {{ # generate our contextNames list based on newly fetched names
