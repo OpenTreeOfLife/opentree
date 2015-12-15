@@ -2348,6 +2348,10 @@ function getRootedStatusForTree( tree ) {
     return biologicalRootMessage;
 }
 
+function branchLengthsFoundInTree( tree ) {
+    // ASSUMES that all edges have length, or none
+    return ('@length' in tree.edge[0]);
+}
 var branchLengthModeDescriptions = [
     { value: 'ot:undefined', text: "Choose one..." },
     { value: 'ot:substitutionCount', text: "Expected number of changes per site" },
@@ -2359,8 +2363,12 @@ var branchLengthModeDescriptions = [
 ]
 function getBranchLengthModeDescriptionForTree( tree ) {
     var rawModeValue = tree['^ot:branchLengthMode'];
-    if (!rawModeValue) {
-        return 'Unspecified';
+    if (!rawModeValue || (rawModeValue === 'ot:undefined')) {
+        if (branchLengthsFoundInTree(tree)) {
+            return 'Unspecified (needs review)';
+        } else {
+            return 'No branch lengths found';
+        }
     }
     var description = rawModeValue;
     $.each( branchLengthModeDescriptions, function( i, item ) {
@@ -2820,9 +2828,7 @@ var studyScoringRules = {
                 var branchLengthFieldsPresent = true;
                 $.each(allTrees, function(i, tree) {
                     // check if there are branch lengths (assume if one edge has length, they all have lengths)
-                    // TODO: change this next line to the new branch length test function
-                    var edgesHaveLength = ('@length' in tree.edge[0]);
-                    if (edgesHaveLength) {
+                    if (branchLengthsFoundInTree(tree)) {
                       // check that ot:branchLengthMode set
                       var brlenMode = tree['^ot:branchLengthMode'];
                       switch( brlenMode ) {
@@ -3505,8 +3511,6 @@ function drawTree( treeOrID, options ) {
         }
     }
 
-    var treeEdgesHaveLength = ('@length' in tree.edge[0]);
-
     vizInfo.vis = null;
     d3.selectAll('svg').remove();
 
@@ -3540,7 +3544,7 @@ function drawTree( treeOrID, options ) {
             height: viewHeight,
             // simplify display by omitting scales or variable-length branches
             skipTicks: true,
-            skipBranchLengthScaling: (hidingBranchLengths || usingRadialTreeLayout || !(treeEdgesHaveLength)) ?  true : false,
+            skipBranchLengthScaling: (hidingBranchLengths || usingRadialTreeLayout || !(branchLengthsFoundInTree(tree))) ?  true : false,
             children : function(d) {
                 var parentID = d['@id'];
                 var itsChildren = [];
