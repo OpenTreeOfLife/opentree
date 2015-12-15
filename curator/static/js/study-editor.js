@@ -1554,15 +1554,16 @@ function toggleBranchLengthsInViewer(cb) {
 var usingRadialTreeLayout = false;
 function toggleRadialTreeLayoutInViewer(cb) {
     // checkbox enables/disables radial tree layout in tree-view popup
+    // fetch tree ID from popup's widgets
+    var currentTreeID = $('#tree-tags').attr('treeid');
+    var currentTree = getTreeByID(currentTreeID);
     usingRadialTreeLayout = $(cb).is(':checked');
     // disable/enable the branch-lengths checkbox
-    if (usingRadialTreeLayout) {
+    if (usingRadialTreeLayout || !(branchLengthsFoundInTree(currentTree))) {
         $('#branch-length-toggle').attr('disabled', 'disabled');
     } else {
         $('#branch-length-toggle').removeAttr('disabled');
     }
-    // fetch tree ID from popup's widgets
-    var currentTreeID = $('#tree-tags').attr('treeid');
     if (currentTreeID) {
         drawTree(currentTreeID)
     } else {
@@ -3140,7 +3141,7 @@ function showTreeViewer( tree, options ) {
 
     // bind just the selected tree to the modal HTML
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
-    var $boundElements = $('#tree-viewer').find('.modal-body, .modal-header h3, .nav-tabs .badge');
+    var $boundElements = $('#tree-viewer').find('.modal-body, .modal-header h3, .nav-tabs .badge, .modal-footer');
     // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
     $.each($boundElements, function(i, el) {
         ko.cleanNode(el);

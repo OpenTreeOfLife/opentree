@@ -2634,6 +2634,7 @@ body {
       <div id="tree-phylogram-options" class="pull-left form-inline" style="display: none;">
           <label class="checkbox" style="margin-left: 25px;" for="branch-length-toggle">
               <input type="checkbox" id="branch-length-toggle"
+                     data-bind="enable: branchLengthsFoundInTree($data)"
                      onclick="toggleBranchLengthsInViewer(this); return true;" />
               Cladogram (hide branch lengths)
           </label>
