@@ -2303,6 +2303,7 @@ body {
               <br/>
                -->
 
+            <div style="margin-top: 6px;" data-bind="visible: viewModel.ticklers.TREES() && branchLengthsFoundInTree( $data )">
                 <label>Branch length mode: </label>
                 <select data-bind="options: branchLengthModeDescriptions,
                     optionsValue: function(item) {
@@ -2316,22 +2317,29 @@ body {
                     css: viewModel.ticklers.TREES
                     ">TYPE</select>
 
-            <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:time'" >
-                <label style="margin-left: 10px;">Time unit: </label>
-                <select data-bind="options: ['Myr'],
-                    value: $data['^ot:branchLengthTimeUnit'],
-                    event: { keyup: nudge.TREES, change: nudge.TREES },
-                    css: viewModel.ticklers.TREES
-                    ">TYPE</select>
-            </span>
+                <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:time'" >
+                    <label style="margin-left: 10px;">Time unit: </label>
+                    <select data-bind="options: ['Myr'],
+                        value: $data['^ot:branchLengthTimeUnit'],
+                        event: { keyup: nudge.TREES, change: nudge.TREES },
+                        css: viewModel.ticklers.TREES
+                        ">TYPE</select>
+                </span>
 
-            <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:other'" >
-                <input type="text" data-bind="value: $data['^ot:branchLengthDescription'],
-                    valueUpdate: ['afterkeydown', 'input'],
-                    event: { keyup: nudge.TREES, change: nudge.TREES },
-                    css: viewModel.ticklers.TREES
-                " placeholder="Describe here"></input>
-            </span>
+                <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:other'" >
+                    <input type="text" data-bind="value: $data['^ot:branchLengthDescription'],
+                        valueUpdate: ['afterkeydown', 'input'],
+                        event: { keyup: nudge.TREES, change: nudge.TREES },
+                        css: viewModel.ticklers.TREES
+                    " placeholder="Describe here"></input>
+                </span>
+            </div>
+
+           <!-- NOTE that a virtual element with 'ko if: ...' didn't work here! -->
+            <div style="margin-top: 6px;" data-bind="visible: viewModel.ticklers.TREES() && !branchLengthsFoundInTree( $data )">
+                <label>Branch length mode: </label>
+                <strong data-bind="css: viewModel.ticklers.TREES(), text: getBranchLengthModeDescriptionForTree($data)"></strong>
+            </div>
 
            <!-- NOTE that a virtual element with 'ko if: ...' didn't work here! -->
             <div data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree( $data )"
