@@ -39,6 +39,10 @@
 var API_create_study_POST_url;
 var singlePropertySearchForStudies_url;
 
+// Keep track of duplicate studies found (if any)
+// N.B. Set this to null for a pending test!
+var duplicateStudiesBasedOnDOI = null;
+
 $(document).ready(function() {
     // set initial state for all details
     updateImportOptions();
@@ -47,7 +51,12 @@ $(document).ready(function() {
     $('input, textarea, select').unbind('change').change(updateImportOptions);
     $('input, textarea').unbind('keyup').keyup(updateImportOptions);
 
-    // significant changes in the DOI field should test for duplicates
+    // any change to the DOI field should also disable Continue
+    $('input[name=publication-DOI]').unbind('change keyup').bind('change keyup', function() {
+        duplicateStudiesBasedOnDOI = null;
+        updateImportOptions();
+    });
+    // normalize to URL and test for duplicates after significant changes in the DOI field
     $('input[name=publication-DOI]').unbind('blur').blur(validateAndTestDOI);
 });
 
@@ -98,9 +107,9 @@ function updateImportOptions() {
     }
     
     // Enable Continue button IF we have a working set of choices, else disable it.
-    //  * user is importing from TreeBASE and has  entered a TreeBASE ID
+    //  * user is importing from TreeBASE and has entered a unique, valid TreeBASE ID
     //    OR
-    //  * user is uploading data and has  entered a DOI/URL
+    //  * user is uploading data and has entered a unique, valid DOI/URL
     //  * license option is chosen and (if "another license") complete
     var creationAllowed = true;
     var chosenImportLocation = $('[name=import-from-location]:checked').val();
@@ -138,9 +147,28 @@ function updateImportOptions() {
             $treebaseOnlyElements.hide();
             
             // Are we ready to continue?
-            if ($.trim($('input[name=publication-DOI]').val()) === '') {
+            var testDOI = $.trim($('input[name=publication-DOI]').val());
+            // test it normalized as URL (in case this is pending)
+console.log('>>> checking testDOI: '+ testDOI);
+            //var isTestableURL = urlPattern.test(testDOI);
+            // NO, this might be a new value, about to be normalized and tested!
+            // console.log('>>> isTestableURL? '+ isTestableURL);
+            var isTestableDOI = minimalDOIPattern.test(testDOI);
+console.log('>>> isTestableDOI? '+ isTestableDOI);
+console.log('>>> do we have an array of dupes? '+ $.isArray(duplicateStudiesBasedOnDOI));
+            if (!isTestableDOI) {
                 creationAllowed = false;
-                errMsg = 'You must enter a DOI (preferred) or URL to continue.';
+                errMsg = 'You must enter a valid DOI (preferred) or URL to continue.';
+            } else {
+                if ($.isArray(duplicateStudiesBasedOnDOI)) {
+                    if (duplicateStudiesBasedOnDOI.length > 0) {
+                        creationAllowed = false;
+                        errMsg = 'This study already exists in our system! Click the link(s) above to review it.';
+                    }
+                } else {
+                    creationAllowed = false;
+                    errMsg = 'Please wait while we test for duplicate studies (based on DOI)...';
+                }
             }
             break;
 
@@ -313,6 +341,9 @@ function formatDOIAsURL() {
     $('input[name=publication-DOI]').val( newValue );
 }
 function testDOIForDuplicates( ) {
+    // Clear any old list of duplicates, pending new results
+    duplicateStudiesBasedOnDOI = null;
+    updateImportOptions();  // re-do validation, disables Continue button
     // REMINDER: This is usually a full DOI, but not always. Test any valid URL!
     var studyDOI = $('input[name=publication-DOI]').val();
     // Don't bother showing matches for empty or invalid DOI/URL; in fact, clear the list!
@@ -322,14 +353,16 @@ function testDOIForDuplicates( ) {
         checkForDuplicateStudies(
             studyDOI,
             function( matchingStudyIDs ) {  // success callback
+                // Update the persistent list variable (needed for validation).
+                duplicateStudiesBasedOnDOI = matchingStudyIDs;
                 // Warn of duplicates and show links to other studies with this DOI
-                console.warn(">>> found "+ matchingStudyIDs.length +" matching study ids");
-                if (matchingStudyIDs.length === 0) {
+                console.warn(">>> found "+ duplicateStudiesBasedOnDOI.length +" matching study ids");
+                if (duplicateStudiesBasedOnDOI.length === 0) {
                     $('#duplicate-DOI-warning').hide();
                 } else {
                     var $linkList = $('#duplicate-study-links');
                     $linkList.empty();
-                    $.each( matchingStudyIDs, function(i, studyID) {
+                    $.each( duplicateStudiesBasedOnDOI, function(i, studyID) {
                         var viewURL = getViewURLFromStudyID( studyID );
                         $linkList.append(
                             '<li><a href="{LINK}" target="_blank">{LINK}</a></li>'.replace(/{LINK}/g, viewURL)
@@ -337,10 +370,12 @@ function testDOIForDuplicates( ) {
                     })
                     $('#duplicate-DOI-warning').show();
                 }
+                updateImportOptions();  // re-do validation, possibly enables Continue button
+                hideFooterMessage();
             }
         );
     } else {
-        // Clear any old list of duplicates
+        // Clear any old list of duplicates; force a fresh check once we have a valid DOI/URL
         console.warn(">>> Not a valid DOI/URL! hiding old dupe list");
         $('#duplicate-DOI-warning').hide();
     }
