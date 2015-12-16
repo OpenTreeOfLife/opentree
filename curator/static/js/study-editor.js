@@ -6844,14 +6844,14 @@ function updateDOIFromLookup(evt) {
 
 var minimalDOIPattern = new RegExp('10\\..+')
 //var urlDOIPattern = new RegExp('http://dx.doi.org/10[.\\d]{2,}\\b')
-var urlPattern = new RegExp('http(s?)://\.*')
+var urlPattern = new RegExp('http(s?)://\\S+');
 function formatDOIAsURL() {
     var oldValue = viewModel.nexml['^ot:studyPublication']['@href'];
     // IF it's already in the form of a URL, do nothing
     if (urlPattern.test(oldValue) === true) {
         return;
     }
-    // IF it's a reasonable "naked" DOI, do nothing
+    // IF it's not a reasonable "naked" DOI, do nothing
     var possibleDOIs = oldValue.match(minimalDOIPattern);
     if( possibleDOIs === null ) {
         // no possible DOI found
@@ -6865,22 +6865,33 @@ function formatDOIAsURL() {
     nudgeTickler('GENERAL_METADATA');
 }
 function testDOIForDuplicates( doi ) {
+    // REMINDER: This is usually a full DOI, but not always. Test any valid URL!
     if (!doi) {
         // by default, this should check the current study DOI
         var studyDOI = ('^ot:studyPublication' in viewModel.nexml) ? viewModel.nexml['^ot:studyPublication']['@href'] : "";
         doi = studyDOI;
     }
-    checkForDuplicateStudies(
-        doi,
-        function( matchingStudyIDs ) {  // success callback
-            // remove this study's ID, if found
-            matchingStudyIDs = $.grep(matchingStudyIDs, function (testID) { return testID !==  studyID });
-            // update the viewModel and trigger fresh tests+prompts
-            viewModel.duplicateStudyIDs( matchingStudyIDs );
-            console.log( viewModel.duplicateStudyIDs() );
-            nudgeTickler('GENERAL_METADATA');
-        }
-    );
+    // Don't bother showing matches for empty or invalid DOI/URL; in fact, clear the list!
+    doi = $.trim(doi);  // remove leading/trailing whitespace!
+    var isTestableURL = urlPattern.test(doi);
+    if (isTestableURL) {
+        checkForDuplicateStudies(
+            doi,
+            function( matchingStudyIDs ) {  // success callback
+                // remove this study's ID, if found
+                matchingStudyIDs = $.grep(matchingStudyIDs, function (testID) { return testID !==  studyID });
+                console.warn(">>> found "+ matchingStudyIDs.length +" matching study ids");
+                // update the viewModel and trigger fresh tests+prompts
+                viewModel.duplicateStudyIDs( matchingStudyIDs );
+                nudgeTickler('GENERAL_METADATA');
+            }
+        );
+    } else {
+        // Clear any old list of duplicates
+        console.warn(">>> Not a valid DOI/URL! clearing old dupe list");
+        viewModel.duplicateStudyIDs( [ ] );
+        nudgeTickler('GENERAL_METADATA');
+    }
 }
 function validateAndTestDOI() {
     formatDOIAsURL();
