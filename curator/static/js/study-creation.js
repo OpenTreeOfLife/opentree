@@ -293,14 +293,14 @@ function createStudyFromForm( evt ) {
 /* Adapt DOI grooming and dupe-check from study-curation (edit) page */
 var minimalDOIPattern = new RegExp('10\\..+')
 //var urlDOIPattern = new RegExp('http://dx.doi.org/10[.\\d]{2,}\\b')
-var urlPattern = new RegExp('http(s?)://\.*')
+var urlPattern = new RegExp('http(s?)://\\S+');
 function formatDOIAsURL() {
     var oldValue = $.trim($('input[name=publication-DOI]').val());
     // IF it's already in the form of a URL, do nothing
     if (urlPattern.test(oldValue) === true) {
         return;
     }
-    // IF it's a reasonable "naked" DOI, do nothing
+    // IF it's not a reasonable "naked" DOI, do nothing
     var possibleDOIs = oldValue.match(minimalDOIPattern);
     if( possibleDOIs === null ) {
         // no possible DOI found
@@ -313,26 +313,37 @@ function formatDOIAsURL() {
     $('input[name=publication-DOI]').val( newValue );
 }
 function testDOIForDuplicates( ) {
+    // REMINDER: This is usually a full DOI, but not always. Test any valid URL!
     var studyDOI = $('input[name=publication-DOI]').val();
-    checkForDuplicateStudies(
-        studyDOI,
-        function( matchingStudyIDs ) {  // success callback
-            // Warn of duplicates and show links to other studies with this DOI
-            if (matchingStudyIDs.length === 0) {
-                $('#duplicate-DOI-warning').hide();
-            } else {
-                var $linkList = $('#duplicate-study-links');
-                $linkList.empty();
-                $.each( matchingStudyIDs, function(i, studyID) {
-                    var viewURL = getViewURLFromStudyID( studyID );
-                    $linkList.append(
-                        '<li><a href="{LINK}" target="_blank">{LINK}</a></li>'.replace(/{LINK}/g, viewURL)
-                    );
-                })
-                $('#duplicate-DOI-warning').show();
+    // Don't bother showing matches for empty or invalid DOI/URL; in fact, clear the list!
+    studyDOI = $.trim(studyDOI);  // remove leading/trailing whitespace!
+    var isTestableURL = urlPattern.test(studyDOI);
+    if (isTestableURL) {
+        checkForDuplicateStudies(
+            studyDOI,
+            function( matchingStudyIDs ) {  // success callback
+                // Warn of duplicates and show links to other studies with this DOI
+                console.warn(">>> found "+ matchingStudyIDs.length +" matching study ids");
+                if (matchingStudyIDs.length === 0) {
+                    $('#duplicate-DOI-warning').hide();
+                } else {
+                    var $linkList = $('#duplicate-study-links');
+                    $linkList.empty();
+                    $.each( matchingStudyIDs, function(i, studyID) {
+                        var viewURL = getViewURLFromStudyID( studyID );
+                        $linkList.append(
+                            '<li><a href="{LINK}" target="_blank">{LINK}</a></li>'.replace(/{LINK}/g, viewURL)
+                        );
+                    })
+                    $('#duplicate-DOI-warning').show();
+                }
             }
-        }
-    );
+        );
+    } else {
+        // Clear any old list of duplicates
+        console.warn(">>> Not a valid DOI/URL! hiding old dupe list");
+        $('#duplicate-DOI-warning').hide();
+    }
 }
 function validateAndTestDOI() {
     formatDOIAsURL();
