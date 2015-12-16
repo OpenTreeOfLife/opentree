@@ -1369,8 +1369,10 @@ function loadSelectedStudy() {
 
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
-                enableSaveButton();
-                pushPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
+                if (viewOrEdit == 'EDIT') {
+                    enableSaveButton();
+                    pushPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
+                }
                 updateQualityDisplay();
             });
 
