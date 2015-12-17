@@ -6876,11 +6876,11 @@ function testDOIForDuplicates( doi ) {
     var isTestableURL = urlPattern.test(doi);
     if (isTestableURL) {
         checkForDuplicateStudies(
+            'DOI',
             doi,
             function( matchingStudyIDs ) {  // success callback
                 // remove this study's ID, if found
                 matchingStudyIDs = $.grep(matchingStudyIDs, function (testID) { return testID !==  studyID });
-                console.warn(">>> found "+ matchingStudyIDs.length +" matching study ids");
                 // update the viewModel and trigger fresh tests+prompts
                 viewModel.duplicateStudyIDs( matchingStudyIDs );
                 nudgeTickler('GENERAL_METADATA');
@@ -6888,7 +6888,6 @@ function testDOIForDuplicates( doi ) {
         );
     } else {
         // Clear any old list of duplicates
-        console.warn(">>> Not a valid DOI/URL! clearing old dupe list");
         viewModel.duplicateStudyIDs( [ ] );
         nudgeTickler('GENERAL_METADATA');
     }

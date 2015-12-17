@@ -25,6 +25,14 @@ body {
     <div id="import-method-TREEBASE_ID" class="featured-label-child">
         <input class="span4" type="text" name="treebase-id" placeholder="Enter its TreeBASE ID" 
                style="margin-bottom: 12px;"></input>
+        <div id="duplicate-treebase-warning" style="display: none;">
+            <p class="static-form-value interesting-value">
+            There are already studies in Open Tree database with this TreeBASE ID.
+            Click the links below to see each one in a new browser window. 
+            </p>
+            <ul id="duplicate-treebase-links" class="static-form-value interesting-value">
+            </ul>
+        </div>
     </div>
 
     <!-- WAS import-option-NEXML -->
