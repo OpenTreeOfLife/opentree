@@ -348,7 +348,20 @@ function restoreModalEnforcedFocus() {
     $.fn.modal.Constructor.prototype.enforceFocus = activeEnforceFocus;
 }
 
-function checkForDuplicateStudies( testDOI, successCallback ) {
+function checkForDuplicateStudies( idType, testIdentifier, successCallback ) {
+    // Our test has minor variations based on identifier type
+    var queryData;
+    switch( idType ) {
+        case 'DOI':
+           queryData = ('{"property": "ot:studyPublication", "value": '+ JSON.stringify(testIdentifier) +', "exact": true }');
+           break;
+        case 'TreeBASE':
+           queryData = ('{"property": "ot:dataDeposit", "value": '+ JSON.stringify(testIdentifier) +', "exact": true }');
+           break;
+        default:
+           console.error("checkForDuplicateStudies(): ERROR, unknown idType: '"+ idType +"'!");
+           return;
+    }
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: 'POST',
@@ -356,8 +369,7 @@ function checkForDuplicateStudies( testDOI, successCallback ) {
         // crossdomain: true,
         contentType: "application/json; charset=utf-8",
         url: singlePropertySearchForStudies_url,
-        data: ('{"property": "ot:studyPublication", "value": '+ 
-            JSON.stringify(testDOI) +', "exact": true }'),
+        data: queryData,
         processData: false,
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any

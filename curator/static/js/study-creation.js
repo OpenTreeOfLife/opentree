@@ -39,6 +39,11 @@
 var API_create_study_POST_url;
 var singlePropertySearchForStudies_url;
 
+// Keep track of duplicate studies found (if any)
+// N.B. Set this to null for a pending test!
+var duplicateStudiesBasedOnTreeBASEUrl = null;
+var duplicateStudiesBasedOnDOI = null;
+
 $(document).ready(function() {
     // set initial state for all details
     updateImportOptions();
@@ -47,7 +52,17 @@ $(document).ready(function() {
     $('input, textarea, select').unbind('change').change(updateImportOptions);
     $('input, textarea').unbind('keyup').keyup(updateImportOptions);
 
-    // significant changes in the DOI field should test for duplicates
+    // any change to the TreeBASE ID or DOI fields should also disable Continue
+    $('input[name=treebase-id]').unbind('change keyup').bind('change keyup', function() {
+        duplicateStudiesBasedOnTreeBASEUrl = null;
+        updateImportOptions();
+    });
+    $('input[name=publication-DOI]').unbind('change keyup').bind('change keyup', function() {
+        duplicateStudiesBasedOnDOI = null;
+        updateImportOptions();
+    });
+    // normalize to URL and test for duplicates after significant changes in the DOI field
+    $('input[name=treebase-id]').unbind('blur').blur(validateAndTestTreeBaseID);
     $('input[name=publication-DOI]').unbind('blur').blur(validateAndTestDOI);
 });
 
@@ -64,6 +79,38 @@ function disableDetails($panel) {
     $panel.unbind('click').click(function() {
         showErrorMessage('Please choose this study creation method (radio button above) to edit these settings.');
     });
+}
+
+/* A TreeBASE id should be an integer, possibly starting with 's' or 'S'
+ * or we can adapt this regex found at http://identifiers.org/treebase/
+ *    '^TB[1,2]?:[A-Z][a-z]?\\d+$'
+ */
+var treeBaseIdPattern = new RegExp('^((TB[1,2]?:)?[sS])?\\d+$');
+
+function normalizeTreeBASEInputToSimpleID( id ) {
+    // Strip any TB: (or TB2:) prefix from the TreeBASE ID
+    // e.g. 'S15468'
+    var id = $.trim(id);
+    var idParts = id.split(':');
+    var simpleID = (idParts.length === 1) ? idParts[0] : idParts[1];
+    // Add the initial 'S' if not found
+    if (simpleID.indexOf('S') !== 0) {
+        simpleID = ('S'+ simpleID);
+    }
+    if (treeBaseIdPattern.test(simpleID) === false) {
+        return null;
+    }
+    return simpleID;
+}
+        
+function normalizeTreeBASEInputToURL( id ) {
+    // Turn a simple TreeBASE ID into a permanent URL (mostly so we can test for duplicate studies)
+    // e.g. 'http://purl.org/phylo/treebase/phylows/study/TB2:S15468'
+    var id = normalizeTreeBASEInputToSimpleID(id);
+    if (treeBaseIdPattern.test(id) === false) {
+        return null;
+    }
+    return ('http://purl.org/phylo/treebase/phylows/study/TB2:'+ id);
 }
 
 function updateImportOptions() {
@@ -98,9 +145,9 @@ function updateImportOptions() {
     }
     
     // Enable Continue button IF we have a working set of choices, else disable it.
-    //  * user is importing from TreeBASE and has  entered a TreeBASE ID
+    //  * user is importing from TreeBASE and has entered a unique, valid TreeBASE ID
     //    OR
-    //  * user is uploading data and has  entered a DOI/URL
+    //  * user is uploading data and has entered a unique, valid DOI/URL
     //  * license option is chosen and (if "another license") complete
     var creationAllowed = true;
     var chosenImportLocation = $('[name=import-from-location]:checked').val();
@@ -114,18 +161,27 @@ function updateImportOptions() {
             $treebaseOnlyElements.show();
 
             // Are we ready to continue?
-            if ($.trim($('input[name=treebase-id]').val()) === '') {
+            var testIdentifier = $.trim($('input[name=treebase-id]').val());
+            if (testIdentifier === '') {
                 creationAllowed = false;
                 errMsg = 'You must enter a TreeBASE ID to continue.';
             } else {
-                var testIdentifier = $.trim($('input[name=treebase-id]').val());
-                // a TreeBASE id should be an integer, possibly starting with 's' or 'S'
-                // Or we can use this regex found here: http://identifiers.org/treebase/
-                //var treeBaseIdPattern = new RegExp('^TB[1,2]?:[A-Z][a-z]?\\d+$');
-                var treeBaseIdPattern = new RegExp('^((TB[1,2]?:)?[sS])?\\d+$');
-                if (treeBaseIdPattern.test(testIdentifier) === false) {
+                // test it normalized as URL (in case this is pending)
+                // NOTE that this might be not yet normalized and tested!
+                var isTestableID = treeBaseIdPattern.test(testIdentifier);
+                if (!isTestableID) {
                     creationAllowed = false;
                     errMsg = 'TreeBASE ID should conform to one of these patterns: 123, S123, TB:S123, TB1:S123, TB2:S123';
+                } else {
+                    if ($.isArray(duplicateStudiesBasedOnTreeBASEUrl)) {
+                        if (duplicateStudiesBasedOnTreeBASEUrl.length > 0) {
+                            creationAllowed = false;
+                            errMsg = 'This study already exists in our system! Click the link(s) above to review it.';
+                        }
+                    } else {
+                        creationAllowed = false;
+                        errMsg = 'Please wait while we test for duplicate studies (based on TreeBASE ID)...';
+                    }
                 }
             }
 
@@ -138,9 +194,23 @@ function updateImportOptions() {
             $treebaseOnlyElements.hide();
             
             // Are we ready to continue?
-            if ($.trim($('input[name=publication-DOI]').val()) === '') {
+            var testDOI = $.trim($('input[name=publication-DOI]').val());
+            // test it normalized as URL (in case this is pending)
+            // NOTE that this might be a new value (simple DOI, vs. URL), not yet normalized and tested!
+            var isTestableDOI = minimalDOIPattern.test(testDOI);
+            if (!isTestableDOI) {
                 creationAllowed = false;
-                errMsg = 'You must enter a DOI (preferred) or URL to continue.';
+                errMsg = 'You must enter a valid DOI (preferred) or URL to continue.';
+            } else {
+                if ($.isArray(duplicateStudiesBasedOnDOI)) {
+                    if (duplicateStudiesBasedOnDOI.length > 0) {
+                        creationAllowed = false;
+                        errMsg = 'This study already exists in our system! Click the link(s) above to review it.';
+                    }
+                } else {
+                    creationAllowed = false;
+                    errMsg = 'Please wait while we test for duplicate studies (based on DOI)...';
+                }
             }
             break;
 
@@ -227,10 +297,8 @@ function createStudyFromForm( evt ) {
         'import-method-TREEBASE_ID' : 'import-method-PUBLICATION_DOI';
     console.log("importMethod: ["+ importMethod +"]");
 
-    // strip any TB: (or TB2:) prefix from the TreeBASE ID
     var rawTreeBaseId = $.trim($('[name=treebase-id]').val()) || '';
-    var idParts = rawTreeBaseId.split(':');
-    var groomedTreeBaseId = (idParts.length === 1) ? idParts[0] : idParts[1];
+    var groomedTreeBaseId = normalizeTreeBASEInputToSimpleID(rawTreeBaseId);
 
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
@@ -313,6 +381,9 @@ function formatDOIAsURL() {
     $('input[name=publication-DOI]').val( newValue );
 }
 function testDOIForDuplicates( ) {
+    // Clear any old list of duplicates, pending new results
+    duplicateStudiesBasedOnDOI = null;
+    updateImportOptions();  // re-do validation, disables Continue button
     // REMINDER: This is usually a full DOI, but not always. Test any valid URL!
     var studyDOI = $('input[name=publication-DOI]').val();
     // Don't bother showing matches for empty or invalid DOI/URL; in fact, clear the list!
@@ -320,16 +391,18 @@ function testDOIForDuplicates( ) {
     var isTestableURL = urlPattern.test(studyDOI);
     if (isTestableURL) {
         checkForDuplicateStudies(
+            'DOI',
             studyDOI,
             function( matchingStudyIDs ) {  // success callback
+                // Update the persistent list variable (needed for validation).
+                duplicateStudiesBasedOnDOI = matchingStudyIDs;
                 // Warn of duplicates and show links to other studies with this DOI
-                console.warn(">>> found "+ matchingStudyIDs.length +" matching study ids");
-                if (matchingStudyIDs.length === 0) {
+                if (duplicateStudiesBasedOnDOI.length === 0) {
                     $('#duplicate-DOI-warning').hide();
                 } else {
                     var $linkList = $('#duplicate-study-links');
                     $linkList.empty();
-                    $.each( matchingStudyIDs, function(i, studyID) {
+                    $.each( duplicateStudiesBasedOnDOI, function(i, studyID) {
                         var viewURL = getViewURLFromStudyID( studyID );
                         $linkList.append(
                             '<li><a href="{LINK}" target="_blank">{LINK}</a></li>'.replace(/{LINK}/g, viewURL)
@@ -337,15 +410,60 @@ function testDOIForDuplicates( ) {
                     })
                     $('#duplicate-DOI-warning').show();
                 }
+                updateImportOptions();  // re-do validation, possibly enables Continue button
+                hideFooterMessage();
             }
         );
     } else {
-        // Clear any old list of duplicates
-        console.warn(">>> Not a valid DOI/URL! hiding old dupe list");
+        // Clear any old list of duplicates; force a fresh check once we have a valid DOI/URL
         $('#duplicate-DOI-warning').hide();
     }
 }
 function validateAndTestDOI() {
     formatDOIAsURL();
     testDOIForDuplicates();
+}
+
+function testTreeBaseIDForDuplicates() {
+    // Clear any old list of duplicates, pending new results
+    duplicateStudiesBasedOnTreeBASEUrl = null;
+    updateImportOptions();  // re-do validation, disables Continue button
+    var studyIdentifier = $('input[name=treebase-id]').val();
+    // Don't bother showing matches for empty or invalid DOI/URL; in fact, clear the list!
+    studyIdentifier = $.trim(studyIdentifier);  // remove leading/trailing whitespace!
+    var isTestableID = treeBaseIdPattern.test(studyIdentifier);
+    if (isTestableID) {
+        var treeBaseURL = normalizeTreeBASEInputToURL(studyIdentifier);
+        checkForDuplicateStudies(
+            'TreeBASE',
+            treeBaseURL,
+            function( matchingStudyIDs ) {  // success callback
+                // Update the persistent list variable (needed for validation).
+                duplicateStudiesBasedOnTreeBASEUrl = matchingStudyIDs;
+                // Warn of duplicates and show links to other studies with this DOI
+                if (duplicateStudiesBasedOnTreeBASEUrl.length === 0) {
+                    $('#duplicate-treebase-warning').hide();
+                } else {
+                    var $linkList = $('#duplicate-treebase-links');
+                    $linkList.empty();
+                    $.each( duplicateStudiesBasedOnTreeBASEUrl, function(i, studyID) {
+                        var viewURL = getViewURLFromStudyID( studyID );
+                        $linkList.append(
+                            '<li><a href="{LINK}" target="_blank">{LINK}</a></li>'.replace(/{LINK}/g, viewURL)
+                        );
+                    })
+                    $('#duplicate-treebase-warning').show();
+                }
+                updateImportOptions();  // re-do validation, possibly enables Continue button
+                hideFooterMessage();
+            }
+        );
+    } else {
+        // Clear any old list of duplicates; force a fresh check once we have a valid TreeBase ID
+        $('#duplicate-treebase-warning').hide();
+    }
+}
+function validateAndTestTreeBaseID() {
+    // don't change the input value, just test for dupes
+    testTreeBaseIDForDuplicates();
 }
