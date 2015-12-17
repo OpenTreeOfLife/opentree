@@ -197,7 +197,7 @@ function updateImportOptions() {
             var testDOI = $.trim($('input[name=publication-DOI]').val());
             // test it normalized as URL (in case this is pending)
             // NOTE that this might be a new value (simple DOI, vs. URL), not yet normalized and tested!
-            var isTestableDOI = minimalDOIPattern.test(testDOI);
+            var isTestableDOI = urlPattern.test(testDOI) || minimalDOIPattern.test(testDOI);
             if (!isTestableDOI) {
                 creationAllowed = false;
                 errMsg = 'You must enter a valid DOI (preferred) or URL to continue.';
