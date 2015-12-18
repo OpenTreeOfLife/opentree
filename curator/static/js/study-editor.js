@@ -7474,9 +7474,12 @@ function inferSearchContextFromAvailableOTUs() {
             if (inferredContext) {
                 // update BOTH search-context drop-down menus to show this result
                 $('select[name=taxon-search-context]').val(inferredContext);
-                // tweak the model's OTU mapping, then refresh the UI
-                getOTUMappingHints().data.searchContext.$ = inferredContext;
-                updateMappingHints();
+                // Tweak the model's OTU mapping, then refresh the UI
+                // N.B. We check first to avoid adding an unnecessary unsaved-data warning!
+                if (getOTUMappingHints().data.searchContext.$ !== inferredContext) {
+                    getOTUMappingHints().data.searchContext.$ = inferredContext;
+                    updateMappingHints();
+                }
             } else {
                 showErrorMessage('Sorry, no search context was inferred.');
             }
