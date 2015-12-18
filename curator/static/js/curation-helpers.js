@@ -246,6 +246,10 @@ function loadMissingFocalCladeNames() {
 
 var pageExitWarnings = [ ];
 var defaultPageExitWarning = "WARNING: This page contains unsaved changes.";
+var expectedPageExitWarningIDs = [
+    'UNSAVED_STUDY_CHANGES',
+    'UNSAVED_COLLECTION_CHANGES'
+];
 
 var confirmOnPageExit = function (e) 
 {
@@ -253,7 +257,8 @@ var confirmOnPageExit = function (e)
     e = e || window.event;
 
     // use the topmost (most recently added) message on the stack
-    var message = pageExitWarnings[pageExitWarnings.length - 1];
+    var messageInfo = pageExitWarnings[pageExitWarnings.length - 1];
+    var message = messageInfo.text;
 
     // For IE6-8 and Firefox prior to version 4
     if (e) 
@@ -265,20 +270,39 @@ var confirmOnPageExit = function (e)
     return message;
 };
 
-function pushPageExitWarning( warningText ) {
-    // add the desired text to our stack of warnings
-    pageExitWarnings.push( warningText || defaultPageExitWarning );
-    // assign the function that returns the string
+function pushPageExitWarning( warningID, warningText ) {
+    // Add the desired message (just once!) to our stack of warnings.
+    if ($.inArray(warningID, expectedPageExitWarningIDs) === -1) {
+        console.error("pushPageExitWarning(): UNKNOWN warning ID '"+ warningID +"'!");
+        return;
+    }
+    var matchingWarnings = $.grep(pageExitWarnings, function(msgInfo) {
+        return (msgInfo.id === warningID); 
+    })
+    var alreadyFound = matchingWarnings.length > 0;
+    if (!alreadyFound) {
+        pageExitWarnings.push({
+            id: warningID,
+            text: (warningText || defaultPageExitWarning)
+        });
+    }
+    // in any case, assign the function that returns the string
     window.onbeforeunload = confirmOnPageExit;
 }
-function popPageExitWarning() {
-    // remove the topmost message from our stack of warnings
-    pageExitWarnings.pop();
+function popPageExitWarning( warningID ) {
+    // remove the matching message from our stack of warnings
+    if ($.inArray(warningID, expectedPageExitWarningIDs) === -1) {
+        console.error("popPageExitWarning(): UNKNOWN warning ID '"+ warningID +"'!");
+        return;
+    }
+    pageExitWarnings = $.grep(pageExitWarnings, function(msgInfo) {
+        return (msgInfo.id !== warningID); 
+    })
     if (pageExitWarnings.length === 0) {
         // turn it off - remove the function entirely
         window.onbeforeunload = null;
     } else {
-        // prepare to show the previous (underlying) message
+        // prepare to show the topmost remaining message
         window.onbeforeunload = confirmOnPageExit;
     }
 }
@@ -1190,7 +1214,8 @@ function editCollection( collection, editorOptions ) {
         if ('data' in collection && 'url' in collection.data) {
             currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
             showCollectionViewer( collection, editorOptions );  // to refresh the UI
-            pushPageExitWarning();
+            pushPageExitWarning('UNSAVED_COLLECTION_CHANGES', 
+                                "WARNING: This page contains unsaved changes.");
             return;
         }
         console.warn("can't edit malformed collection:");
@@ -1448,7 +1473,7 @@ function saveTreeCollection( collection ) {
             }
             // presume success from here on
             showSuccessMessage('Collection saved to remote storage.');
-            popPageExitWarning();
+            popPageExitWarning('UNSAVED_COLLECTION_CHANGES');
             // refresh any collection list on the current page
             if (typeof loadCollectionList === 'function') {
                 loadCollectionList('REFRESH');
@@ -1531,7 +1556,7 @@ function deleteTreeCollection( collection ) {
             // OK, looks like the operation was a success
             currentlyEditingCollectionID = null; // enables closing this window
             clearPendingCollectionChanges();
-            popPageExitWarning();
+            popPageExitWarning('UNSAVED_COLLECTION_CHANGES');
             // refresh any collection list on the current page
             if (typeof loadCollectionList === 'function') {
                 loadCollectionList('REFRESH');
@@ -1561,7 +1586,7 @@ function cancelChangesToCollection(collection) {
         $('#tree-collection-viewer').modal('hide');
     }
     clearPendingCollectionChanges();
-    popPageExitWarning();
+    popPageExitWarning('UNSAVED_COLLECTION_CHANGES');
 }
 
 

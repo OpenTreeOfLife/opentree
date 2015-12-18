@@ -1371,7 +1371,8 @@ function loadSelectedStudy() {
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
                 if (viewOrEdit == 'EDIT') {
                     enableSaveButton();
-                    pushPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
+                    pushPageExitWarning('UNSAVED_STUDY_CHANGES',  
+                                        "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page.");
                 }
                 updateQualityDisplay();
             });
@@ -1867,7 +1868,7 @@ function saveFormDataToStudyJSON() {
             hideModalScreen();
             showSuccessMessage('Study saved to remote storage.');
 
-            popPageExitWarning();
+            popPageExitWarning('UNSAVED_STUDY_CHANGES');
             disableSaveButton();
             // TODO: should we expect fresh JSON to refresh the form?
         }
