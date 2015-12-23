@@ -95,8 +95,12 @@ def get_taxon_info(ottid, api_base):
 def display_taxon_info(info, limit, output):
     if u'ot:ottId' in info:
         id = info[u'ot:ottId']
+        start_el(output, 'h1')
+        output.write('<strong>%s</strong> in the Open Tree taxonomy' % get_display_name(info))
+        end_el(output, 'h1')
+
         start_el(output, 'p', 'taxon')
-        output.write('Taxon: ')
+        output.write('Taxon details: ')
         display_basic_info(info, output)
         output.write(' (OTT id %s)' % id)
         end_el(output, 'p')
@@ -172,6 +176,13 @@ def write_suppressed(output):
     output.write("*")
     end_el(output, 'span')
 
+def get_display_name(info):
+    if u'unique_name' in info and len(info[u'unique_name']) > 0:
+        return info[u'unique_name']
+    elif u'ot:ottTaxonName' in info:
+        return info[u'ot:ottTaxonName']
+    return u'Unnamed taxon'
+
 def display_basic_info(info, output):
     # Might be better to put rank as a separate column in a table.  That way the
     # names will line up
@@ -179,11 +190,7 @@ def display_basic_info(info, output):
         output.write(info[u'rank'] + ' ')
 
     # Taxon name
-    if u'unique_name' in info and len(info[u'unique_name']) > 0:
-        text = info[u'unique_name']
-    elif u'ot:ottTaxonName' in info:
-        text = info[u'ot:ottTaxonName']
-    output.write(link_to_taxon(info[u'ot:ottId'], text))
+    output.write(link_to_taxon(info[u'ot:ottId'], get_display_name(info)))
 
     # Sources
     start_el(output, 'span', 'sources')
@@ -264,7 +271,14 @@ for flag in ott29_exclude_flags_list:
 
 local_stylesheet = """
   <style type="text/css">
+    h1 {
+        color: #999;
+    }
+    h1 strong {
+        color: #000;
+    }
     li {
+        list-style: none;
     }
     span.flags {
         padding-left: 1em;
