@@ -93,6 +93,8 @@ def get_taxon_info(ottid, api_base):
     return response.json()
 
 def display_taxon_info(info, limit, output):
+    included_children_output = StringIO.StringIO()
+    suppressed_children_output = StringIO.StringIO()
     if u'ot:ottId' in info:
         id = info[u'ot:ottId']
         start_el(output, 'h1')
@@ -132,44 +134,57 @@ def display_taxon_info(info, limit, output):
             end_el(output, 'p')
         else:
             output.write('missing lineage field %s\n', info.keys())
+        any_included = False
         any_suppressed = False
         if u'children' in info:
             children = sorted(info[u'children'], key=priority)
             if len(children) > 0:
-                output.write('<h3>Children</h3>')
                 if limit == None: limit = 200
-                start_el(output, 'ul', 'children')
-                i = 0
+
+                # Generate initial output for two lists of children
+                suppressed_children_output.write('<h3>Children suppressed from the synthetic tree</h3>')
+                start_el(suppressed_children_output, 'ul', 'children')
+                nth_suppressed_child = 0
+                included_children_output.write('<h3>Children included in the synthetic tree</h3>')
+                start_el(included_children_output, 'ul', 'children')
+                nth_included_child = 0
+
                 for child in children[:limit]:
-                    i += 1
-                    odd_or_even = (i % 2) and 'odd' or 'even'
                     if ishidden(child):
-                        start_el(output, 'li', 'child suppressed %s' % odd_or_even)
-                        write_suppressed(output)
+                        nth_suppressed_child += 1
+                        odd_or_even = (nth_suppressed_child % 2) and 'odd' or 'even'
+                        start_el(suppressed_children_output, 'li', 'child suppressed %s' % odd_or_even)
+                        #write_suppressed(suppressed_children_output)
+                        suppressed_children_output.write(' ')
+                        display_basic_info(child, suppressed_children_output)
+                        end_el(suppressed_children_output, 'li')
                         any_suppressed = True
                     else:
-                        start_el(output, 'li', 'child exposed %s' % odd_or_even)
-                        start_el(output, 'span', 'exposedmarker')
-                        output.write("  ")
-                        end_el(output, 'span')
-                    output.write(' ')
-                    display_basic_info(child, output)
-                    end_el(output, 'li')
-                if len(children) > limit:
-                    start_el(output, 'li', 'more_children')
-                    output.write('... %s' % link_to_taxon(id,
-                                                          ('%s more children' %
-                                                           (len(children)-limit)),
-                                                          limit=100000))
-                    end_el(output, 'li')
-                end_el(output, 'ul')
-        output.write("\n")
+                        nth_included_child += 1
+                        odd_or_even = (nth_included_child % 2) and 'odd' or 'even'
+                        start_el(included_children_output, 'li', 'child exposed %s' % odd_or_even)
+                        start_el(included_children_output, 'span', 'exposedmarker')
+                        included_children_output.write("  ")
+                        end_el(included_children_output, 'span')
+                        included_children_output.write(' ')
+                        display_basic_info(child, included_children_output)
+                        end_el(included_children_output, 'li')
+                        any_included = True
+
+                end_el(suppressed_children_output, 'ul')
+                end_el(included_children_output, 'ul')
+        if any_included:
+            output.write(included_children_output.getvalue())
         if any_suppressed:
-            start_el(output, 'p', 'footer suppressed')
-            output.write("'")
-            write_suppressed(output)
-            output.write("' = suppressed from synthetic tree\n")
+            output.write(suppressed_children_output.getvalue())
+        if len(children) > limit:
+            start_el(output, 'p', 'more_children')
+            output.write('... %s' % link_to_taxon(id,
+                                                  ('%s more children' %
+                                                   (len(children)-limit)),
+                                                  limit=100000))
             end_el(output, 'p')
+        output.write("\n")
     else:
         output.write('? losing')
         output.write(cgi.escape(simplejson.dumps(info, sort_keys=True, indent=4)))
@@ -335,12 +350,12 @@ if __name__ == '__main__':
     if "limit" in form: limit = form["limit"].value
     if "api_base" in form: api_base = form["api_base"].value
     # Content-type information is not helpful in our current setup?
-    sys.stdout.write('Content-type: text/html\r\n')
-    sys.stdout.write('\r\n')
+    #sys.stdout.write('Content-type: text/html\r\n')
+    #sys.stdout.write('\r\n')
     output = sys.stdout
     start_el(output, 'html')
     start_el(output, 'head', '')
-    output.write('<link rel="stylesheet" href="//opentreeoflife.github.io/css/main.css" />')
+    output.write('<link rel="stylesheet" href="http://opentreeoflife.github.io/css/main.css" />')
     output.write(local_stylesheet)
     end_el(output, 'head')
     start_el(output, 'body')
