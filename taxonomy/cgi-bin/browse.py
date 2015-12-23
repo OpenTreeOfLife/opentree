@@ -262,6 +262,18 @@ ott29_exclude_flags = {}
 for flag in ott29_exclude_flags_list:
     ott29_exclude_flags[flag.upper()] = True
 
+local_stylesheet = """
+  <style type="text/css">
+    li {
+    }
+    span.flags {
+        padding-left: 1em;
+        font-family: monospace;
+        color: #999;
+    }
+  </style>
+"""
+
 if __name__ == '__main__':
     form = cgi.FieldStorage()
     id = name = limit = api_base = None
@@ -274,7 +286,8 @@ if __name__ == '__main__':
     output = sys.stdout
     start_el(output, 'html')
     start_el(output, 'head', '')
-    output.write('<link rel="stylesheet" href="http://opentreeoflife.github.io/css/main.css" />')
+    output.write('<link rel="stylesheet" href="//opentreeoflife.github.io/css/main.css" />')
+    output.write(local_stylesheet)
     end_el(output, 'head')
     start_el(output, 'body')
     print browse(id, name, limit, api_base)
