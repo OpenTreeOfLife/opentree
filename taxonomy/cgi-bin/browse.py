@@ -340,7 +340,7 @@ if __name__ == '__main__':
     output = sys.stdout
     start_el(output, 'html')
     start_el(output, 'head', '')
-    output.write('<link rel="stylesheet" href="http://opentreeoflife.github.io/css/main.css" />')
+    output.write('<link rel="stylesheet" href="//opentreeoflife.github.io/css/main.css" />')
     output.write(local_stylesheet)
     end_el(output, 'head')
     start_el(output, 'body')
