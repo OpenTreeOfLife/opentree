@@ -96,11 +96,15 @@ def display_taxon_info(info, limit, output):
     if u'ot:ottId' in info:
         id = info[u'ot:ottId']
         start_el(output, 'h1')
-        output.write('<strong>%s</strong> in the Open Tree taxonomy' % get_display_name(info))
+        output.write('Open Tree taxonomy: <strong>%s</strong>' % get_display_name(info))
         end_el(output, 'h1')
 
+        start_el(output, 'p', 'legend')
+        output.write('See the OTT wiki for <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags">an explanation of the taxon flags used</a> below, e.g., <span class="flag">extinct</span>\n')
+        end_el(output, 'p')
+
+        output.write('<h3>Taxon details</h3>')
         start_el(output, 'p', 'taxon')
-        output.write('Taxon details: ')
         display_basic_info(info, output)
         output.write(' (OTT id %s)' % id)
         end_el(output, 'p')
@@ -111,13 +115,14 @@ def display_taxon_info(info, limit, output):
             if name in synonyms:
                 synonyms.remove(name)
             if len(synonyms) > 0:
+                output.write('<h3>Synonym(s)</h3>')
                 start_el(output, 'p', 'synonyms')
-                output.write("Synonym(s): %s\n" % ', '.join(map(link_to_name, synonyms)))
+                output.write("%s\n" % ', '.join(map(link_to_name, synonyms)))
                 end_el(output, 'p')
         if u'taxonomic_lineage' in info:
             first = True
+            output.write('<h3>Lineage</h3>')
             start_el(output, 'p', 'lineage')
-            output.write('Lineage: ')
             for ancestor in info[u'taxonomic_lineage']:
                 if not first:
                     output.write(' &lt; ')
@@ -131,17 +136,19 @@ def display_taxon_info(info, limit, output):
         if u'children' in info:
             children = sorted(info[u'children'], key=priority)
             if len(children) > 0:
-                start_el(output, 'p', 'children')
-                output.write('Children:\n')
+                output.write('<h3>Children</h3>')
                 if limit == None: limit = 200
                 start_el(output, 'ul', 'children')
+                i = 0
                 for child in children[:limit]:
+                    i += 1
+                    odd_or_even = (i % 2) and 'odd' or 'even'
                     if ishidden(child):
-                        start_el(output, 'li', 'child suppressed')
+                        start_el(output, 'li', 'child suppressed %s' % odd_or_even)
                         write_suppressed(output)
                         any_suppressed = True
                     else:
-                        start_el(output, 'li', 'child exposed')
+                        start_el(output, 'li', 'child exposed %s' % odd_or_even)
                         start_el(output, 'span', 'exposedmarker')
                         output.write("  ")
                         end_el(output, 'span')
@@ -156,7 +163,6 @@ def display_taxon_info(info, limit, output):
                                                           limit=100000))
                     end_el(output, 'li')
                 end_el(output, 'ul')
-                end_el(output, 'p')
         output.write("\n")
         if any_suppressed:
             start_el(output, 'p', 'footer suppressed')
@@ -164,9 +170,6 @@ def display_taxon_info(info, limit, output):
             write_suppressed(output)
             output.write("' = suppressed from synthetic tree\n")
             end_el(output, 'p')
-        start_el(output, 'p', 'footer flags')
-        output.write('<a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags">explanation of flags</a>\n')
-        end_el(output, 'p')
     else:
         output.write('? losing')
         output.write(cgi.escape(simplejson.dumps(info, sort_keys=True, indent=4)))
@@ -200,7 +203,7 @@ def display_basic_info(info, output):
 
     # Flags
     start_el(output, 'span', 'flags')
-    output.write('%s ' % ', '.join(map(lambda f:f.lower(), info[u'flags'])))
+    output.write('%s ' % ', '.join(map(lambda f:'<span class="flag">%s</span>' % f.lower(), info[u'flags'])))
     end_el(output, 'span')
     output.write('\n')
 
@@ -277,11 +280,47 @@ local_stylesheet = """
     h1 strong {
         color: #000;
     }
-    li {
+    h3 {
+        margin-bottom: 0.3em;
+    }
+    .legend {
+        font-style: italic;
+    }
+    .legend .flag {
+        font-style: normal;
+    }
+    h4,
+    p.taxon,
+    p.synonyms,
+    p.lineage,
+    ul.children {
+        margin-top: 0.25em;
+        margin-left: 2em;
+    }
+    ul.children {
+        padding-left: 0;
+    }
+    ul.children li {
         list-style: none;
+        padding: 0.25em;
+        /* align text with other details; pad for bg color and indent second line */
+        margin-left: -0.5em;
+        padding-left: 2.5em;
+        text-indent: -2em;
+    }
+    li.odd {
+        background-color: #fff;
+    }
+    li.even {
+        background-color: #f5f5f5;
+    }
+    span.name {
+        font-weight: bold;
     }
     span.flags {
         padding-left: 1em;
+    }
+    span.flag {
         font-family: monospace;
         color: #999;
     }
@@ -301,7 +340,7 @@ if __name__ == '__main__':
     output = sys.stdout
     start_el(output, 'html')
     start_el(output, 'head', '')
-    output.write('<link rel="stylesheet" href="//opentreeoflife.github.io/css/main.css" />')
+    output.write('<link rel="stylesheet" href="http://opentreeoflife.github.io/css/main.css" />')
     output.write(local_stylesheet)
     end_el(output, 'head')
     start_el(output, 'body')
