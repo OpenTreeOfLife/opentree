@@ -353,12 +353,12 @@ if __name__ == '__main__':
     if "limit" in form: limit = form["limit"].value
     if "api_base" in form: api_base = form["api_base"].value
     # Content-type information is not helpful in our current setup?
-    #sys.stdout.write('Content-type: text/html\r\n')
-    #sys.stdout.write('\r\n')
+    sys.stdout.write('Content-type: text/html\r\n')
+    sys.stdout.write('\r\n')
     output = sys.stdout
     start_el(output, 'html')
     start_el(output, 'head', '')
-    output.write('<link rel="stylesheet" href="http://opentreeoflife.github.io/css/main.css" />')
+    output.write('<link rel="stylesheet" href="//opentreeoflife.github.io/css/main.css" />')
     output.write(local_stylesheet)
     end_el(output, 'head')
     start_el(output, 'body')
