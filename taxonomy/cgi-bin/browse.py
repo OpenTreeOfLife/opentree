@@ -125,9 +125,12 @@ def display_taxon_info(info, limit, output):
             first = True
             output.write('<h3>Lineage</h3>')
             start_el(output, 'p', 'lineage')
+            # N.B. we reverse the list order to show the root first!
+            if info[u'taxonomic_lineage']:
+                info[u'taxonomic_lineage'].reverse()
             for ancestor in info[u'taxonomic_lineage']:
                 if not first:
-                    output.write(' &lt; ')
+                    output.write(' &gt; ')
                 output.write(link_to_taxon(ancestor[u'ot:ottId'], ancestor[u'ot:ottTaxonName']))
                 first = False
             output.write('\n')
