@@ -167,10 +167,10 @@ def display_taxon_info(info, limit, output):
             output.write('missing lineage field %s\n', info.keys())
         any_included = False
         any_suppressed = False
+        if limit == None: limit = 200
         if u'children' in info:
             children = sorted(info[u'children'], key=priority)
             if len(children) > 0:
-                if limit == None: limit = 200
 
                 # Generate initial output for two lists of children
                 suppressed_children_output.write('<h3>Children suppressed from the synthetic tree</h3>')
@@ -208,13 +208,15 @@ def display_taxon_info(info, limit, output):
             output.write(included_children_output.getvalue())
         if any_suppressed:
             output.write(suppressed_children_output.getvalue())
-        if len(children) > limit:
-            start_el(output, 'p', 'more_children')
-            output.write('... %s' % link_to_taxon(id,
-                                                  ('%s more children' %
-                                                   (len(children)-limit)),
-                                                  limit=100000))
-            end_el(output, 'p')
+        if u'children' in info:
+            children = info[u'children']
+            if children != None and len(children) > limit:
+                start_el(output, 'p', 'more_children')
+                output.write('... %s' % link_to_taxon(id,
+                                                      ('%s more children' %
+                                                       (len(children)-limit)),
+                                                      limit=100000))
+                end_el(output, 'p')
         output.write("\n")
     else:
         report_invalid_arg(output, info)
