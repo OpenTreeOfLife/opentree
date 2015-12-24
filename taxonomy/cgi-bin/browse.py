@@ -383,7 +383,7 @@ if __name__ == '__main__':
     if "limit" in form: limit = form["limit"].value
     if "api_base" in form: api_base = form["api_base"].value
     # Content-type information is not helpful in our current setup?
-    sys.stdout.write('Content-type: text/html\r\n')
+    sys.stdout.write('Content-type: text/html; charset=utf8\r\n')
     sys.stdout.write('\r\n')
     output = sys.stdout
     start_el(output, 'html')
@@ -392,6 +392,6 @@ if __name__ == '__main__':
     output.write(local_stylesheet)
     end_el(output, 'head')
     start_el(output, 'body')
-    print browse(id, name, limit, api_base)
+    print browse(id, name, limit, api_base).encode('utf-8')
     end_el(output, 'body')
     end_el(output, 'html')
