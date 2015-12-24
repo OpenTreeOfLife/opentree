@@ -34,24 +34,52 @@ headers = {
 # Main entry point.  Returns HTML as a string.
 
 def browse(id=None, name=None, limit=None, api_base=None):
-    if id != None: id = int(id)
-    if limit != None: limit = int(limit)
+    output = StringIO.StringIO()
+    try:
+        if id != None: id = int(id)
+    except ValueError:
+        report_invalid_arg(output, "Argument 'id' should be an integer!")
+        return output.getvalue()
+    try:
+        if limit != None: limit = int(limit)
+    except ValueError:
+        report_invalid_arg(output, "Argument 'limit' should be an integer!")
+        return output.getvalue()
     if api_base == None: api_base = default_api_base_url
 
-    output = StringIO.StringIO()
     #output.write('<pre>\n')
     if id != None:
         browse_by_id(id, limit, api_base, output)
     elif name != None:
         browse_by_name(name, limit, api_base, output)
     else:
-        output.write('bogus invocation\n')
+        start_el(output, 'h1')
+        output.write('Open Tree taxonomy: <strong class="error">missing argument</strong>')
+        end_el(output, 'h1')
+        output.write('<p class="error">Please specify a taxon name or ID, or try one of these starting points: </p>\n')
+        start_el(output, 'ul')
+        output.write('<li><a href="browse?name=Eukaryota">Eukaryota</a></li>\n')
+        output.write('<li><a href="browse?name=cellular-organisms">cellular organisms</a></li>\n')
+        output.write('<li><a href="browse?name=Mammalia">Mammalia</a></li>\n')
+        end_el(output, 'ul')
     #output.write('</pre>\n')
 
     return output.getvalue()
 
+def report_invalid_arg(output, info):
+    start_el(output, 'h1')
+    output.write('Open Tree taxonomy: <strong class="error">invalid argument</strong>')
+    end_el(output, 'h1')
+    output.write('<p class="error">There was a problem with the name or ID provided:</p>\n')
+    start_el(output, 'pre', 'error')
+    output.write(cgi.escape(simplejson.dumps(info, sort_keys=True, indent=4)))
+    end_el(output, 'pre')
+
 def browse_by_name(name, limit, api_base, output):
     result = look_up_name(name, api_base)
+    if result is None:
+        report_invalid_arg(output, "No taxa found matching name '%s'" % name)
+        return None
     matches = result[u'matches']
     if len(matches) == 0:
         output.write('no TNRS matches for %s\n' % cgi.escape(name))
@@ -189,8 +217,7 @@ def display_taxon_info(info, limit, output):
             end_el(output, 'p')
         output.write("\n")
     else:
-        output.write('? losing')
-        output.write(cgi.escape(simplejson.dumps(info, sort_keys=True, indent=4)))
+        report_invalid_arg(output, info)
 
 def write_suppressed(output):
     start_el(output, 'span', 'suppressedmarker')
@@ -306,6 +333,9 @@ local_stylesheet = """
     }
     .legend .flag {
         font-style: normal;
+    }
+    .error {
+        color: #933;
     }
     h4,
     p.taxon,
