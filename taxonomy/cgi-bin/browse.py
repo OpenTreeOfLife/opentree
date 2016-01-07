@@ -47,22 +47,13 @@ def browse(id=None, name=None, limit=None, api_base=None):
         return output.getvalue()
     if api_base == None: api_base = default_api_base_url
 
-    #output.write('<pre>\n')
     if id != None:
         browse_by_id(id, limit, api_base, output)
-    elif name != None:
-        browse_by_name(name, limit, api_base, output)
+    elif name is None:
+        # bump them to our default taxon (root of synthetic tree)
+        browse_by_name('cellular organisms', limit, api_base, output)
     else:
-        start_el(output, 'h1')
-        output.write('Open Tree taxonomy: <strong class="error">missing argument</strong>')
-        end_el(output, 'h1')
-        output.write('<p class="error">Please specify a taxon name or ID, or try one of these starting points: </p>\n')
-        start_el(output, 'ul')
-        output.write('<li><a href="browse?name=Eukaryota">Eukaryota</a></li>\n')
-        output.write('<li><a href="browse?name=cellular-organisms">cellular organisms</a></li>\n')
-        output.write('<li><a href="browse?name=Mammalia">Mammalia</a></li>\n')
-        end_el(output, 'ul')
-    #output.write('</pre>\n')
+        browse_by_name(name, limit, api_base, output)
 
     return output.getvalue()
 
