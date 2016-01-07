@@ -131,7 +131,7 @@ def display_taxon_info(info, limit, output, api_base):
         end_el(output, 'h1')
 
         start_el(output, 'p', 'legend')
-        output.write('Current OT taxonomy version is %s (<a target="_blank" href="https://devtree.opentreeoflife.org/about/taxonomy-version/%s">click for more information</a>)' % (get_taxonomy_version(api_base), get_taxonomy_version(api_base),))
+        output.write('The current taxonomy version is <a target="_blank" href="https://devtree.opentreeoflife.org/about/taxonomy-version/%s">%s (click for more information)</a>. ' % (get_taxonomy_version(api_base), get_taxonomy_version(api_base),))
         output.write('See the OTT wiki for <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags">an explanation of the taxon flags used</a> below, e.g., <span class="flag">extinct</span>\n')
         end_el(output, 'p')
 
