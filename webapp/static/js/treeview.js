@@ -93,7 +93,7 @@ function updateTreeView( State ) {
                 if (textStatus === 'error') {
                     var errMsg;
                     if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
-                        // the requested OTT taxon is bogus, or not found in the target tree
+                        // the requested OTT taxon is not found in the target tree
                         errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy but not in our tree'
                                 +' synthesis database. This can happen for a variety of reasons, but the most probable is that it'
                                 +' is flagged as <em>incertae sedis</em>.'
@@ -957,7 +957,10 @@ function showObjectProperties( objInfo, options ) {
                                 displayVal = '<a href="/opentree/argus/ottol@'+ sourceInfo.taxSourceId +'" '
                                               + 'title="OTT Taxonomy" target="_blank">OTT: '+ sourceInfo.taxSourceId +'</a>';
                                 */
+                                displayVal = '<a href="/taxonomy/browse/' + sourceInfo.taxSourceId + '" ' + 'title="OTT Taxonomy" target="_blank">OTT: ' + sourceInfo.taxSourceId + '</a>';
+                                /*
                                 displayVal = '<span style="color: #777;" title="Open Tree of Life Reference Taxonomy (no URL provided)">'+ sourceInfo.taxSource.trim() +': '+ sourceInfo.taxSourceId +'</span>';
+                                */
                                 break;
 
                             default:
@@ -1011,6 +1014,8 @@ function showObjectProperties( objInfo, options ) {
                         if (typeof moreInfo === 'object' && 'sourceDetails' in moreInfo) {
                             // Study details, fetched via AJAX as needed
 
+                            // adapt to various forms of meta-map key
+                            metaMapValues = parseMetaMapKey( rawVal );
                             if (!(metaMapValues.studyID in supportingStudyInfo)) {
                                 // add this study now, plus an empty trees collection
                                 supportingStudyInfo[ metaMapValues.studyID ] = $.extend({ supportingTrees: {} }, moreInfo.sourceDetails);
@@ -1105,7 +1110,7 @@ function showObjectProperties( objInfo, options ) {
                     }
                     if (supportedByTaxonomy) {
                         $details.append('<dt>Supported by taxonomy</dt>');
-                        $details.append('<dd>'+ supportingTaxonomyVersion 
+                        $details.append('<dd>'+ supportingTaxonomyVersion
                                 +' &nbsp;<a href="'+ supportingTaxonomyVersionURL
                                 +'" target="_blank">(OTT and version information)</a></dd>');
                     }
@@ -1151,7 +1156,7 @@ function showObjectProperties( objInfo, options ) {
                           + '<a target="_blank" href="http://files.opentreeoflife.org/trees/">download the entire synthetic tree as Newick</a></dd>');
         } else {
             $details.append('<dt><a id="extract-subtree" href="#">Download subtree as Newick string</a></dt>');
-          
+
             // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
             var idType = (objSource == 'ottol') ? 'ottol-id' : 'node-id';
             var fetchID = (objSource == 'ottol') ? fullNode.sourceID : (fullNode.nodeid || fullNode.nodeID);
@@ -1169,8 +1174,8 @@ function showObjectProperties( objInfo, options ) {
         }
 
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
-        if ((displayName.indexOf('Unnamed ') !== 0) && 
-            (displayName.indexOf('(untitled ') !== 0) && 
+        if ((displayName.indexOf('Unnamed ') !== 0) &&
+            (displayName.indexOf('(untitled ') !== 0) &&
             (displayName.indexOf('[') !== 0)) {
             // Attempt to find a page for this taxon in the Encyclopedia of Life website
             // N.B. This 'external-links' list can hold similar entries.
