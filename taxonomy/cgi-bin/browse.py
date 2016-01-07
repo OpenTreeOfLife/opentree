@@ -330,6 +330,7 @@ local_stylesheet = """
         text-indent: -25px;
         /* maintain pleasing placement of Open Tree logo */
         height: auto;
+        line-height: 1.0em;
         min-height: 32px;
     }
     h1 strong {
