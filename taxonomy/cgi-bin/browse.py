@@ -47,22 +47,13 @@ def browse(id=None, name=None, limit=None, api_base=None):
         return output.getvalue()
     if api_base == None: api_base = default_api_base_url
 
-    #output.write('<pre>\n')
     if id != None:
         browse_by_id(id, limit, api_base, output)
-    elif name != None:
-        browse_by_name(name, limit, api_base, output)
+    elif name is None:
+        # bump them to our default taxon (root of synthetic tree)
+        browse_by_name('cellular organisms', limit, api_base, output)
     else:
-        start_el(output, 'h1')
-        output.write('Open Tree taxonomy: <strong class="error">missing argument</strong>')
-        end_el(output, 'h1')
-        output.write('<p class="error">Please specify a taxon name or ID, or try one of these starting points: </p>\n')
-        start_el(output, 'ul')
-        output.write('<li><a href="browse?name=Eukaryota">Eukaryota</a></li>\n')
-        output.write('<li><a href="browse?name=cellular-organisms">cellular organisms</a></li>\n')
-        output.write('<li><a href="browse?name=Mammalia">Mammalia</a></li>\n')
-        end_el(output, 'ul')
-    #output.write('</pre>\n')
+        browse_by_name(name, limit, api_base, output)
 
     return output.getvalue()
 
@@ -110,7 +101,17 @@ def look_up_name(name, api_base):
 def browse_by_id(id, limit, api_base, output):
     info = get_taxon_info(id, api_base)
     #print simplejson.dumps(info, sort_keys=True, indent=4)
-    display_taxon_info(info, limit, output)
+    display_taxon_info(info, limit, output, api_base)
+
+def get_taxonomy_version(api_base):
+    response = requests.post(api_base + 'v2/taxonomy/about',
+                             headers=headers,
+                             data={})
+    response.raise_for_status()
+    version_info = response.json().get('source','')
+    if 'draft' in version_info:
+        version_info = version_info.split('draft')[0];
+    return version_info
 
 def get_taxon_info(ottid, api_base):
     d=simplejson.dumps({'ott_id': ottid, 'include_children': True, 'include_lineage': True})
@@ -120,7 +121,7 @@ def get_taxon_info(ottid, api_base):
     response.raise_for_status()
     return response.json()
 
-def display_taxon_info(info, limit, output):
+def display_taxon_info(info, limit, output, api_base):
     included_children_output = StringIO.StringIO()
     suppressed_children_output = StringIO.StringIO()
     if u'ot:ottId' in info:
@@ -130,6 +131,7 @@ def display_taxon_info(info, limit, output):
         end_el(output, 'h1')
 
         start_el(output, 'p', 'legend')
+        output.write('The current taxonomy version is <a target="_blank" href="https://devtree.opentreeoflife.org/about/taxonomy-version/%s">%s (click for more information)</a>. ' % (get_taxonomy_version(api_base), get_taxonomy_version(api_base),))
         output.write('See the OTT wiki for <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags">an explanation of the taxon flags used</a> below, e.g., <span class="flag">extinct</span>\n')
         end_el(output, 'p')
 
@@ -137,6 +139,9 @@ def display_taxon_info(info, limit, output):
         start_el(output, 'p', 'taxon')
         display_basic_info(info, output)
         output.write(' (OTT id %s)' % id)
+        synth_tree_url = "/opentree/ottol@%s" % id
+        output.write('<br/><a target="_blank" href="%s">View this taxon in the latest synthetic tree</a>' % cgi.escape(synth_tree_url))
+
         end_el(output, 'p')
 
         if u'synonyms' in info:
@@ -323,6 +328,15 @@ local_stylesheet = """
   <style type="text/css">
     h1 {
         color: #999;
+        /* indent multi-line heading (a very long taxon name) */
+        padding-left: 55px;
+        text-indent: -25px;
+        /* maintain pleasing placement of Open Tree logo */
+        height: auto;
+        padding-top: 0.35em;
+        line-height: 1.0em;
+        min-height: 32px;
+        background-position: left 5px;
     }
     h1 strong {
         color: #000;

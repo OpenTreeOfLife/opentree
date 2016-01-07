@@ -1,7 +1,7 @@
 QUERY=name=Opisthokonta
 
 test:
-	@QUERY_STRING=$(QUERY) ./browse.py | grep Holozoa
+	@QUERY_STRING=$(QUERY) python ./browse.py | grep Holozoa
 
 # For testing on OS X with the apple built-in apache installation
 # (enable with 'sudo apachectl start')
