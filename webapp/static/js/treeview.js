@@ -953,14 +953,7 @@ function showObjectProperties( objInfo, options ) {
                                 break;
 
                             case 'OTT':
-                                /* browse the OTT taxonomy in *local* window? or in a new one?
-                                displayVal = '<a href="/opentree/argus/ottol@'+ sourceInfo.taxSourceId +'" '
-                                              + 'title="OTT Taxonomy" target="_blank">OTT: '+ sourceInfo.taxSourceId +'</a>';
-                                */
-                                displayVal = '<a href="/taxonomy/browse/' + sourceInfo.taxSourceId + '" ' + 'title="OTT Taxonomy" target="_blank">OTT: ' + sourceInfo.taxSourceId + '</a>';
-                                /*
-                                displayVal = '<span style="color: #777;" title="Open Tree of Life Reference Taxonomy (no URL provided)">'+ sourceInfo.taxSource.trim() +': '+ sourceInfo.taxSourceId +'</span>';
-                                */
+                                displayVal = '<a href="/taxonomy/browse?id=' + sourceInfo.taxSourceId + '" ' + 'title="OTT Taxonomy" target="_blank">OTT: ' + sourceInfo.taxSourceId + '</a>';
                                 break;
 
                             default:
