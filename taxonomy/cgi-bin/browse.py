@@ -120,6 +120,11 @@ def display_taxon_info(info, limit, output):
         output.write('Open Tree taxonomy: <strong>%s</strong>' % get_display_name(info))
         end_el(output, 'h1')
 
+        start_el(output, 'p')
+        synth_tree_url = "/opentree/ottol@%s" % id
+        output.write('  <a target="_blank" href="%s">view in latest synthetic tree</a>' % cgi.escape(synth_tree_url))
+        end_el(output, 'p')
+
         start_el(output, 'p', 'legend')
         output.write('See the OTT wiki for <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags">an explanation of the taxon flags used</a> below, e.g., <span class="flag">extinct</span>\n')
         end_el(output, 'p')
@@ -128,8 +133,6 @@ def display_taxon_info(info, limit, output):
         start_el(output, 'p', 'taxon')
         display_basic_info(info, output)
         output.write(' (OTT id %s)' % id)
-        synth_tree_url = "/opentree/ottol@%s" % id
-        output.write('  <a target="_blank" href="%s">view in latest synthetic tree</a>' % cgi.escape(synth_tree_url))
         end_el(output, 'p')
 
         if u'synonyms' in info:
