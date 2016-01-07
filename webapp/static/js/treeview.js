@@ -1,5 +1,5 @@
-/*    
-@licstart  The following is the entire license notice for the JavaScript code in this page. 
+/*
+@licstart  The following is the entire license notice for the JavaScript code in this page.
 
     Copyright (c) 2013, Cody Hinchliff
     Copyright (c) 2013, Joseph W. Brown
@@ -33,7 +33,7 @@
 */
 
 /*
- * Subscribe to history changes (adapted from History.js boilerplate) 
+ * Subscribe to history changes (adapted from History.js boilerplate)
  */
 
 var History = window.History; // Note: capital H refers to History.js!
@@ -93,13 +93,13 @@ function updateTreeView( State ) {
                 if (textStatus === 'error') {
                     var errMsg;
                     if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
-                        // the requested OTT taxon is bogus, or not found in the target tree
+                        // the requested OTT taxon is not found in the target tree
                         errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy but not in our tree'
                                 +' synthesis database. This can happen for a variety of reasons, but the most probable is that it'
                                 +' is flagged as <em>incertae sedis</em>.'
                                 +'<br/><br/>If you think this is an error, please'
                                 +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
-                        // TODO: Explain in more detail: Why wasn't this used? 
+                        // TODO: Explain in more detail: Why wasn't this used?
                         showErrorInArgusViewer( errMsg );
                     } else {
                         errMsg = "Something went wrong on the server. Please wait a moment and reload this page.";
@@ -114,7 +114,7 @@ function updateTreeView( State ) {
         argus.displayNode({"nodeID": ottolID,
                            "domSource": State.data.domSource});
     }
-    
+
     // we'll finish updating the page in a callback from argusObj.loadData()
 
     // update all login links to use the new URL
@@ -128,7 +128,7 @@ if ( History && History.enabled && pageUsesHistory ) {
         var State = History.getState(); // Note: We are using History.getState() instead of event.state
         //History.log(State.data, State.title, State.url);
         updateTreeView( State );
-    }); 
+    });
 }
 
 function getCommentIndexURL( rawURL ) {
@@ -145,7 +145,7 @@ function currentScreenSize() {
     // layout and behavior, and this function makes it easy to stay in sync
     // with the CSS.
     //
-    // ASSUMES that we have these three indicators in the current DOM! 
+    // ASSUMES that we have these three indicators in the current DOM!
     if ($('#screen-size-indicator .visible-phone').is(':visible')) {
         return 'PHONE';
     } else if ($('#screen-size-indicator .visible-tablet').is(':visible')) {
@@ -238,10 +238,10 @@ function loadLocalComments( chosenFilter ) {
 
 $(document).ready(function() {
     // set default starting node and view, if the URL doesn't specify
-    // NOTE that we override this (using $.extend) with values set in the 
+    // NOTE that we override this (using $.extend) with values set in the
     // main page template, so we can build it from incoming URL in web2py.
     var initialState = $.extend({
-        viewer: 'argus', 
+        viewer: 'argus',
         domSource: syntheticTreeID,                  // from main HTML view
         nodeID: syntheticTreeDefaultStartingNodeID,  // from main HTML view
         nodeName: '',  // names will be updated/corrected by argus callback
@@ -266,7 +266,7 @@ $(document).ready(function() {
     if ( History && History.enabled && pageUsesHistory ) {
         // if there's no prior state, go to the initial target node in the synthetic tree
         var priorState = History.getState();
-       
+
         // Check first for incoming URL that might override prior history
         if (initialState.forcedByURL || !(priorState.data.nodeID)) {
             // apply the state as specified in the URL (or defaults, if prior history is incomplete)
@@ -289,7 +289,7 @@ $(document).ready(function() {
     // add splitter between argus + provenance panel (using jquery.splitter plugin)
     var viewSplitter = $('#viewer-collection').split({
         orientation:'vertical',
-        limit: 280,             // don't come closer than this to edge 
+        limit: 280,             // don't come closer than this to edge
         position:'70%'          // initial position
     });
 
@@ -320,7 +320,7 @@ $(document).ready(function() {
 var activeToggleFade = 0.5;
 var readyToggleFade = 1.0;
 var toggleFadeSpeed = 'fast';
-function toggleCommentsPanel( hideOrShow ) { 
+function toggleCommentsPanel( hideOrShow ) {
     // can be forced by passing hideOrShow ('HIDE'|'SHOW')
     if ($('#viewer-collection').hasClass('active-comments') && (hideOrShow !== 'SHOW')) {
         ///console.log('HIDING comments');
@@ -354,7 +354,7 @@ function toggleCommentsPanel( hideOrShow ) {
                              toggleCommentsPanel('HIDE');
                          });
                 }
-            }, 
+            },
             10
         );
     }
@@ -394,14 +394,14 @@ function togglePropertiesPanel( hideOrShow ) {
                              togglePropertiesPanel('HIDE');
                          });
                 }
-            }, 
+            },
             10
         );
     }
 }
 
 function fixLoginLinks() {
-    // update all login links to return directly to the current URL (NOTE that this 
+    // update all login links to return directly to the current URL (NOTE that this
     // doesn't seem to work for Logout)
     var currentURL;
     try {
@@ -488,7 +488,7 @@ function buildNodeNameFromTreeData( node ) {
             + (moreThanTwoDescendants ? ' + ...' : '')   // hint at additional descendants
             + compoundNodeNameSuffix);
 };
-  
+
 // recursively populate any missing (implied) node names (called immediately after argus loads treeData)
 function buildAllMissingNodeNames( node ) {
     if (!node.name) {
@@ -541,7 +541,7 @@ function URLToHistoryState( url ) {
             urlState[key] = value;
         }
     }
-    
+
     // fail if critical information is missing
     if (typeof(urlState.nodeID) === 'undefined') {
         return null;
@@ -574,7 +574,7 @@ function showObjectProperties( objInfo, options ) {
     // OR pass a reliable identifier?
     var objType = '';  // 'node' | 'edge' | ?
     var objName = '';      // eg, 'Chordata'
-    var objID = null; 
+    var objID = null;
     var objSource = null;  // eg, 'ottol' (a domSource)
     var displayID = null;  // eg, 'ottol@2345' or 'otol.draft.22@4'
 
@@ -617,19 +617,19 @@ function showObjectProperties( objInfo, options ) {
             case 'node':
             case 'edge':
                 /* Try to spell out any available properties / provenance, based on
-                 * type. Note that we're going to conflate node and edge properties, 
+                 * type. Note that we're going to conflate node and edge properties,
                  * since this is generally a 1:1 relationship, but:
                  *   - clicking an edge trigger will highlight edge properties
                  *   - if there are multiple edges, others will be dimmed
                  */
                 var fullNode, parentNode, nodeSection, edgeSection;
-   
+
                 // try to fetch the node from treeData, using ID (preferred) or name
-                fullNode = argus.getArgusNodeByID( objID ); 
+                fullNode = argus.getArgusNodeByID( objID );
                 if (!fullNode) {
                     console.log("WARNING: can't find node by ID, trying to match its name...");
                     fullNode = getTreeDataNode( function(node) {
-                        return (node.name === objName); 
+                        return (node.name === objName);
                     });
                 }
                 if (fullNode && fullNode.parentNodeID) {
@@ -678,8 +678,8 @@ function showObjectProperties( objInfo, options ) {
                     /* show ALL taxonomic sources (taxonomies + IDs) for this node
                      * TODO: Handle whatever schemes we use for multiple sources; for now,
                      * they look like one of the following (in order of preference):
-                      
-                       EXAMPLE w/ multiple sources (new format):  
+
+                       EXAMPLE w/ multiple sources (new format):
                        fullNode.taxSourceArray: [
                            { "foreignID": "2", "taxSource": "ncbi" },
                            { "foreignID": "3", "taxSource": "gbif" }
@@ -725,7 +725,7 @@ function showObjectProperties( objInfo, options ) {
                             }
                         );
                     }
-                    
+
                     // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
                     if (typeof fullNode.taxRank !== 'undefined') {
                         nodeSection.displayedProperties['Taxonomic rank'] = fullNode.taxRank;
@@ -872,7 +872,7 @@ function showObjectProperties( objInfo, options ) {
                     function(data) {    // JSONP callback
                         if (data.result && (data.result.length > 0) && data.result[0].icon && data.result[0].icon.uid) {
                             $('#provenance-panel .provenance-title').after(
-                                '<img class="taxon-image" src="/phylopic_proxy/assets/images/submissions/'+ data.result[0].icon.uid 
+                                '<img class="taxon-image" src="/phylopic_proxy/assets/images/submissions/'+ data.result[0].icon.uid
                                 +'.icon.png" title="Click for image credits"/>'       // 'thumb.png' = 64px, 'icon.png' = 32px and blue
                             );
                             $('#provenance-panel .taxon-image').unbind('click').click(function() {
@@ -884,7 +884,7 @@ function showObjectProperties( objInfo, options ) {
             }
     }
 
-    var sectionPos, sectionCount = orderedSections.length, 
+    var sectionPos, sectionCount = orderedSections.length,
         aSection, dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
     for (sectionPos = 0; sectionPos < sectionCount; sectionPos++) {
         var aSection = orderedSections[sectionPos];
@@ -952,12 +952,15 @@ function showObjectProperties( objInfo, options ) {
                                               + 'title="Schäferhoff et al. 2010" target="_blank">Schäferhoff et al. 2010: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 
-                            case 'OTT': 
+                            case 'OTT':
                                 /* browse the OTT taxonomy in *local* window? or in a new one?
                                 displayVal = '<a href="/opentree/argus/ottol@'+ sourceInfo.taxSourceId +'" '
                                               + 'title="OTT Taxonomy" target="_blank">OTT: '+ sourceInfo.taxSourceId +'</a>';
                                 */
+                                displayVal = '<a href="/taxonomy/browse/' + sourceInfo.taxSourceId + '" ' + 'title="OTT Taxonomy" target="_blank">OTT: ' + sourceInfo.taxSourceId + '</a>';
+                                /*
                                 displayVal = '<span style="color: #777;" title="Open Tree of Life Reference Taxonomy (no URL provided)">'+ sourceInfo.taxSource.trim() +': '+ sourceInfo.taxSourceId +'</span>';
+                                */
                                 break;
 
                             default:
@@ -1007,14 +1010,14 @@ function showObjectProperties( objInfo, options ) {
 
                         if (typeof moreInfo === 'object' && 'sourceDetails' in moreInfo) {
                             // Study details, fetched via AJAX as needed
-                            
+
                             // adapt to various forms of meta-map key
                             metaMapValues = parseMetaMapKey( rawVal );
                             if (!(metaMapValues.studyID in supportingStudyInfo)) {
                                 // add this study now, plus an empty trees collection
                                 supportingStudyInfo[ metaMapValues.studyID ] = $.extend({ supportingTrees: {} }, moreInfo.sourceDetails);
                             }
-                            // add the current tree 
+                            // add the current tree
                             supportingStudyInfo[ metaMapValues.studyID ].supportingTrees[ metaMapValues.treeID ] = {};
                             // TODO: add more info in data objects, e.g., a descriptive tree label
 
@@ -1043,9 +1046,9 @@ function showObjectProperties( objInfo, options ) {
                         $details.append('<dt class="loading-supporting-studies">Loading supporting studies...</dt>');
                     } else {
                         // we have all the details, try to show supporting studies
-                        for (studyID in supportingStudyInfo) { 
+                        for (studyID in supportingStudyInfo) {
                             ///console.log(">>> study data for "+ studyID +" is COMPLETE, adding it now...");
-                            var studyInfo = supportingStudyInfo[ studyID ]; 
+                            var studyInfo = supportingStudyInfo[ studyID ];
                             var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pURL, pID, pCurator;
                             // assemble and display study info
                             pRef = studyInfo['ot:studyPublicationReference'];
@@ -1055,7 +1058,7 @@ function showObjectProperties( objInfo, options ) {
                                 displayVal = '<div class="full-ref">'+ pRef +'</div>';
 
                                 /* compact ref logic, if needed later
-                                pCompactYear = pRef.match(/(\d{4})/)[0];  
+                                pCompactYear = pRef.match(/(\d{4})/)[0];
                                     // capture the first valid year
                                 pCompactPrimaryAuthor = pRef.split(pCompactYear)[0].split(',')[0];
                                     // split on the year to get authors (before), and capture the first surname
@@ -1069,7 +1072,7 @@ function showObjectProperties( objInfo, options ) {
                             if (pURL) {
                                 displayVal += 'Full publication: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pURL +'</a><br/>';
                             }
-                            
+
                             pID = studyInfo['ot:studyId'];
                             if (pID) {
                                 /* Phylografter link
@@ -1098,7 +1101,7 @@ function showObjectProperties( objInfo, options ) {
                     }
                     if (supportedByTaxonomy) {
                         $details.append('<dt>Supported by taxonomy</dt>');
-                        $details.append('<dd>'+ supportingTaxonomyVersion 
+                        $details.append('<dd>'+ supportingTaxonomyVersion
                                 +' &nbsp;<a href="'+ supportingTaxonomyVersionURL
                                 +'" target="_blank">(OTT and version information)</a></dd>');
                     }
@@ -1112,7 +1115,7 @@ function showObjectProperties( objInfo, options ) {
                         return false;
                     });
                     break;
-            
+
                 default:
                     // general approach, just show the raw value
                     displayVal = aSection.displayedProperties[dLabel];
@@ -1144,7 +1147,7 @@ function showObjectProperties( objInfo, options ) {
                           + '<a target="_blank" href="http://files.opentreeoflife.org/trees/">download the entire synthetic tree as Newick</a></dd>');
         } else {
             $details.append('<dt><a id="extract-subtree" href="#">Download subtree as Newick string</a></dt>');
-          
+
             // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
             var idType = (objSource == 'ottol') ? 'ottol-id' : 'node-id';
             var fetchID = (objSource == 'ottol') ? fullNode.sourceID : (fullNode.nodeid || fullNode.nodeID);
@@ -1162,15 +1165,15 @@ function showObjectProperties( objInfo, options ) {
         }
 
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
-        if ((displayName.indexOf('Unnamed ') !== 0) && 
-            (displayName.indexOf('(untitled ') !== 0) && 
+        if ((displayName.indexOf('Unnamed ') !== 0) &&
+            (displayName.indexOf('(untitled ') !== 0) &&
             (displayName.indexOf('[') !== 0)) {
             // Attempt to find a page for this taxon in the Encyclopedia of Life website
             // N.B. This 'external-links' list can hold similar entries.
-            
+
             // Make this name safe for use in our EOL search URL
             // (prefer '+' to '%20', but carefully encode other characters)
-            var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');  
+            var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');
             $details.after('<ul class="external-links"><li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">Search EOL for \''+ displayName +'\'</a></li></ul>');
         }
     }
@@ -1179,9 +1182,9 @@ function showObjectProperties( objInfo, options ) {
 
 function getTreeDataNode( filterFunc, testNode ) {
     // helper method to retrieve a matching node from n-level treeData (tree-view JSON)
-    if (!testNode) { 
+    if (!testNode) {
         // start at top-most node in tree, if not specified
-        testNode = argus.treeData; 
+        testNode = argus.treeData;
     }
     // test the target node against our requirements (eg, a particular node ID)
     if (filterFunc(testNode)) {
@@ -1252,10 +1255,10 @@ function nodeDataLoaded( nodeTree ) {
 
     // nudge static viewer to show second line, if any
     snapViewerFrameToMainTitle();
-    
+
     // now that we have all view data, update the comments and comment editor
     loadLocalComments();
-    
+
     // update properties (provenance) panel to show the target node
     // NOTE that we won't show it automatically if we're on a narrow screen
     showObjectProperties( targetNode, (currentScreenSize() === 'PHONE' ? 'HIDDEN' : null) );
@@ -1283,11 +1286,11 @@ if (false) {
     // replaceState modifies the current history entry (no extra junk in Back/Fwd navigation)
     History.replaceState({state:3}, "State 3", "?state=3"); // logs {state:3}, "State 3", "?state=3"
 
-    // NOTE that the state object can include anything, eg, 
+    // NOTE that the state object can include anything, eg,
     newState = {
-        viewer:'argus', 
-        domSource:'ottol', 
-        nodeID:'12321', 
+        viewer:'argus',
+        domSource:'ottol',
+        nodeID:'12321',
         viewport:'24,201,0,800'
     }
     History.pushState(newState, "Something changed!", "?state=4"); // logs {}, '', "?state=4"
@@ -1297,12 +1300,12 @@ if (false) {
 
     History.back(); // logs {state:3}, "State 3", "?state=3"
     History.back(); // logs {state:1}, "State 1", "?state=1"
-    History.forward(); 
+    History.forward();
     History.go(2); // this is *relative* to the current index (position) in history! ie, .go(-1) is the same at back()
 }
 
 function showErrorInArgusViewer( msg, details ) {
-    var errorHTML; 
+    var errorHTML;
     if (!details) {
         errorHTML = '<p style="margin: 8px 12px;">'+ msg +'</p>';
     } else {
@@ -1326,7 +1329,7 @@ function parseMetaMapKey( key ) {
         treeID: null,
         commitSHA: null
     };
-    
+
     var keyParts = key.split('_');
     // N.B. Study ID might have a prefix!
     if (isNaN( parseInt( keyParts[0] ) )) {
