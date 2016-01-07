@@ -1371,7 +1371,8 @@ function loadSelectedStudy() {
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
                 if (viewOrEdit == 'EDIT') {
                     enableSaveButton();
-                    pushPageExitWarning( "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page." );
+                    pushPageExitWarning('UNSAVED_STUDY_CHANGES',  
+                                        "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page.");
                 }
                 updateQualityDisplay();
             });
@@ -1867,7 +1868,7 @@ function saveFormDataToStudyJSON() {
             hideModalScreen();
             showSuccessMessage('Study saved to remote storage.');
 
-            popPageExitWarning();
+            popPageExitWarning('UNSAVED_STUDY_CHANGES');
             disableSaveButton();
             // TODO: should we expect fresh JSON to refresh the form?
         }
@@ -7473,9 +7474,12 @@ function inferSearchContextFromAvailableOTUs() {
             if (inferredContext) {
                 // update BOTH search-context drop-down menus to show this result
                 $('select[name=taxon-search-context]').val(inferredContext);
-                // tweak the model's OTU mapping, then refresh the UI
-                getOTUMappingHints().data.searchContext.$ = inferredContext;
-                updateMappingHints();
+                // Tweak the model's OTU mapping, then refresh the UI
+                // N.B. We check first to avoid adding an unnecessary unsaved-data warning!
+                if (getOTUMappingHints().data.searchContext.$ !== inferredContext) {
+                    getOTUMappingHints().data.searchContext.$ = inferredContext;
+                    updateMappingHints();
+                }
             } else {
                 showErrorMessage('Sorry, no search context was inferred.');
             }
