@@ -24,7 +24,7 @@ import sys
 import cgi, cgitb, StringIO
 
 import requests
-import simplejson
+import json
 
 headers = {
     'content-type' : 'application/json',
@@ -63,7 +63,7 @@ def report_invalid_arg(output, info):
     end_el(output, 'h1')
     output.write('<p class="error">There was a problem with the name or ID provided:</p>\n')
     start_el(output, 'pre', 'error')
-    output.write(cgi.escape(simplejson.dumps(info, sort_keys=True, indent=4)))
+    output.write(cgi.escape(json.dumps(info, sort_keys=True, indent=4)))
     end_el(output, 'pre')
 
 def browse_by_name(name, limit, api_base, output):
@@ -88,7 +88,7 @@ def browse_by_name(name, limit, api_base, output):
 def look_up_name(name, api_base):
     response = requests.post(api_base + 'v2/tnrs/match_names',
                              headers=headers,
-                             data=simplejson.dumps({'names':[name]}))
+                             data=json.dumps({'names':[name]}))
     response.raise_for_status()
     answer = response.json()
     results = answer[u'results']
@@ -100,7 +100,7 @@ def look_up_name(name, api_base):
 
 def browse_by_id(id, limit, api_base, output):
     info = get_taxon_info(id, api_base)
-    #print simplejson.dumps(info, sort_keys=True, indent=4)
+    #print json.dumps(info, sort_keys=True, indent=4)
     display_taxon_info(info, limit, output, api_base)
 
 def get_taxonomy_version(api_base):
@@ -114,7 +114,7 @@ def get_taxonomy_version(api_base):
     return version_info
 
 def get_taxon_info(ottid, api_base):
-    d=simplejson.dumps({'ott_id': ottid, 'include_children': True, 'include_lineage': True})
+    d=json.dumps({'ott_id': ottid, 'include_children': True, 'include_lineage': True})
     response = requests.post(api_base + 'v2/taxonomy/taxon',
                              headers=headers,
                              data=d)
