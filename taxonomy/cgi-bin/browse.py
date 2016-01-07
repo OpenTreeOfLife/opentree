@@ -101,7 +101,17 @@ def look_up_name(name, api_base):
 def browse_by_id(id, limit, api_base, output):
     info = get_taxon_info(id, api_base)
     #print simplejson.dumps(info, sort_keys=True, indent=4)
-    display_taxon_info(info, limit, output)
+    display_taxon_info(info, limit, output, api_base)
+
+def get_taxonomy_version(api_base):
+    response = requests.post(api_base + 'v2/taxonomy/about',
+                             headers=headers,
+                             data={})
+    response.raise_for_status()
+    version_info = response.json().get('source','')
+    if 'draft' in version_info:
+        version_info = version_info.split('draft')[0];
+    return version_info
 
 def get_taxon_info(ottid, api_base):
     d=simplejson.dumps({'ott_id': ottid, 'include_children': True, 'include_lineage': True})
@@ -111,7 +121,7 @@ def get_taxon_info(ottid, api_base):
     response.raise_for_status()
     return response.json()
 
-def display_taxon_info(info, limit, output):
+def display_taxon_info(info, limit, output, api_base):
     included_children_output = StringIO.StringIO()
     suppressed_children_output = StringIO.StringIO()
     if u'ot:ottId' in info:
@@ -121,6 +131,7 @@ def display_taxon_info(info, limit, output):
         end_el(output, 'h1')
 
         start_el(output, 'p', 'legend')
+        output.write('Current OT taxonomy version is %s (<a target="_blank" href="https://devtree.opentreeoflife.org/about/taxonomy-version/%s">click for more information</a>)' % (get_taxonomy_version(api_base), get_taxonomy_version(api_base),))
         output.write('See the OTT wiki for <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags">an explanation of the taxon flags used</a> below, e.g., <span class="flag">extinct</span>\n')
         end_el(output, 'p')
 
