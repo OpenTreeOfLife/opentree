@@ -138,7 +138,7 @@ def display_taxon_info(info, limit, output):
         display_basic_info(info, output)
         output.write(' (OTT id %s)' % id)
         synth_tree_url = "/opentree/ottol@%s/%s" % (id, get_display_name(info))
-        output.write('  <a href="%s">view in latest synthetic tree</a>' % cgi.escape(synth_tree_url)
+        output.write('  <a href="%s">view in latest synthetic tree</a>' % cgi.escape(synth_tree_url))
         end_el(output, 'p')
 
         if u'synonyms' in info:
