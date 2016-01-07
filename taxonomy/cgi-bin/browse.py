@@ -321,6 +321,12 @@ local_stylesheet = """
   <style type="text/css">
     h1 {
         color: #999;
+        /* indent multi-line heading (a very long taxon name) */
+        padding-left: 55px;
+        text-indent: -25px;
+        /* maintain pleasing placement of Open Tree logo */
+        height: auto;
+        min-height: 32px;
     }
     h1 strong {
         color: #000;
