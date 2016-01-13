@@ -2276,20 +2276,31 @@ body {
                 <label for="testtest">Ingroup clade: </label>
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data),
                                    css: viewModel.ticklers.TREES"></strong>
-              <br/>
-              <label>MRCA for this tree's ingroup (from <strong>taxonomy</strong>):</label>
-                <strong data-bind="html: $data['^ot:MRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:MRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:MRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>',
+
+
+
+            <div style="background-color: #eee; border-radius: 8px; max-width: 800px; padding: 8px 10px 0px; margin-bottom: 4px;">
+              <label>MRCA in <strong>taxonomy</strong> of OTUs in this tree's ingroup:</label>
+              <strong data-bind="html: $data['^ot:MRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:MRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:MRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>',
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
                    <!-- button text WAS: Update MRCA -->
-                   <a class="btn btn-small btn-info Xbtn-info-disabled"
-                      data-bind="click: updateTaxonomicMRCAForTree">Test</a>
+              <a class="btn btn-mini btn-info"
+                 data-bind="click: updateTaxonomicMRCAForTree">Test</a>
               <br/>
-              <label>MRCA for this tree's ingroup (from latest <strong>synthetic tree</strong>):</label>
-                <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>',
+              <label>MRCA in <strong>synthetic tree</strong> of OTUs in this tree's ingroup:</label>
+              <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>',
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
-                   <a class="btn btn-small btn-info Xbtn-info-disabled"
-                      data-bind="click: updateSyntheticMRCAForTree">Test</a>
-              <br/>
+              <a class="btn btn-mini btn-info"
+                 data-bind="click: updateSyntheticMRCAForTree">Test</a>
+              <p style="font-style: italic;padding-bottom: 8px;">
+                 Use the consistency checks above to test for incorrect OTU
+                 mapping. If the MRCA is much more inclusive than expected,
+                 then one or more of the OTU mappings is probably incorrect,
+                 due to overzealous fuzzy matching, incorrect choice between
+                 homonyms, or an error in the taxonomy. Please adjust or remove
+                 these mappings.
+              </p>
+            </div>
 
                 <label>Mapped leaf nodes: </label>
                 <span data-bind="html: getMappedTallyForTree($data),
