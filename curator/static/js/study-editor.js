@@ -7353,7 +7353,7 @@ function showStudyCommentPreview() {
         crossdomain: true,
         type: 'POST',
         url: render_markdown_url,
-        data: viewModel.nexml['^ot:comment'],
+        data: {'src': viewModel.nexml['^ot:comment']},
         success: function( data, textstatus, jqxhr ) {
             $('#comment-preview').show();
         },
