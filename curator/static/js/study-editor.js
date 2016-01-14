@@ -6321,17 +6321,31 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
         return false;
     }
 
+    var fetchURL, POSTdata;
+    switch (options.TREE_SOURCE) {
+        case 'synth':
+            fetchURL = getDraftTreeMRCAForNodes_url;
+            POSTdata = {
+                "ottIds": mappedIngroupOttIds,
+                "treeSource": options.TREE_SOURCE
+            };
+            break;
+        case 'taxonomy':
+        default:
+            fetchURL = getTaxonomicMRCAForNodes_url;
+            POSTdata = {
+                "ott_ids": mappedIngroupOttIds,
+                "include_lineage": false
+            };
+            break;
+    }
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
-        url: getMRCAForNodes_url,
+        url: fetchURL,
         // TODO: url: getDraftTreeSubtreeForNodes_url,
         type: 'POST',
         dataType: 'json',
-        data: JSON.stringify({
-            //"nodeIds": [ ]
-            "ottIds": mappedIngroupOttIds,
-            "treeSource": options.TREE_SOURCE
-        }),  // data (asterisk required for completion suggestions)
+        data: JSON.stringify(POSTdata),
         crossDomain: true,
         contentType: "application/json; charset=utf-8",
         complete: function( jqXHR, textStatus ) {
@@ -6343,15 +6357,14 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
             }
             // Analyse the response and try to show a sensible taxon name, then
             // Store the result in one or more NexSON properties?
-            // TODO: CONFIRM these property names!
             var responseJSON = $.parseJSON(jqXHR.responseText);
             /* N.B. The response object has different properties, depending on
              * which treeSource was specified (from the OT taxonomy or the
              * latest synthetic tree)
              */
             if (options.TREE_SOURCE === 'taxonomy') {
-                tree['^ot:MRCAName'] = responseJSON['mrca_unique_name'] || responseJSON['mrca_name'] || '???';
-                tree['^ot:MRCAOttId'] = responseJSON['mrca_ott_id'] || null;
+                tree['^ot:MRCAName']  = 'lica' in responseJSON ? responseJSON['lica']['ot:ottTaxonName'] : '???';
+                tree['^ot:MRCAOttId'] = 'lica' in responseJSON ? responseJSON['lica']['ot:ottId'] : '???';
             } else {  // ASSUME 'synth'
                 tree['^ot:nearestTaxonMRCAName'] = responseJSON['nearest_taxon_mrca_unique_name'] || responseJSON['nearest_taxon_mrca_name'] || '???';
                 tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['nearest_taxon_mrca_ott_id'] || null;
