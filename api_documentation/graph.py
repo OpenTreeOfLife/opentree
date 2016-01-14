@@ -12,8 +12,8 @@ methods_list.append({
     "short_description" : "Get information about the graph of life itself.",
     "http_verb" : "POST",
     "relative_url" : "/graph/about",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/v2/graph/about",
-    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/graph/about""",
+    "neo4j_service_url" : "https://api.opentreeoflife.org/v2/graph/about",
+    "example_command" : """curl -X POST https://api.opentreeoflife.org/v2/graph/about""",
     "example_result" : "",
 })
 
@@ -23,7 +23,7 @@ methods_list.append({
     "method_name" : "source_tree",
     "deprecated": True,
     "short_description": "Source trees used in synthesis are currently only available by a download",
-    "further_info": ({'url': "http://files.opentreeoflife.org/preprocessed/v3.0/", 
+    "further_info": ({'url': "https://files.opentreeoflife.org/preprocessed/v3.0/", 
                       'link_name': 'Page with the download links'},
                      {'url': "https://github.com/OpenTreeOfLife/treemachine/issues/170", 
                       'link_name': "GitHub issue describing decision to deprecate this service"},
@@ -43,7 +43,7 @@ methods_list.append({
     "short_description" : "Get information about a node in the graph of life.",
     "http_verb" : "POST",
     "relative_url" : "/graph/node_info",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/v2/graph/node_info",
-    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/graph/node_info -H "content-type:application/json" -d '{"ott_id":810751}'""",
+    "neo4j_service_url" : "https://api.opentreeoflife.org/v2/graph/node_info",
+    "example_command" : """curl -X POST https://api.opentreeoflife.org/v2/graph/node_info -H "content-type:application/json" -d '{"ott_id":810751}'""",
     "example_result" : "",
 })
