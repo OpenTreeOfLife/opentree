@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 # Brutally primitive reference taxonomy browser.
 # Basically just a simple shim on the taxomachine 'taxon' method.
