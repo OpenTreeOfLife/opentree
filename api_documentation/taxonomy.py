@@ -12,8 +12,8 @@ methods_list.append({
     "short_description" : "Return information about the taxonomy, including version.",
     "http_verb" : "POST",
     "relative_url" : "/taxonomy/about",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/about",
-    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/taxonomy/about""",
+    "neo4j_service_url" : "https://api.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/about",
+    "example_command" : """curl -X POST https://api.opentreeoflife.org/v2/taxonomy/about""",
     "example_result" : "",
 })
 
@@ -24,8 +24,8 @@ methods_list.append({
     "short_description" : "Given a set of ott ids, get the taxon that is the least inclusive common ancestor (the LICA) of all the identified taxa.",
     "http_verb" : "POST",
     "relative_url" : "/taxonomy/lica",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/lica",
-    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/taxonomy/lica \\\n-H 'content-type:application/json' -d \\\n'{"ott_ids":[515698,590452,409712,643717]}'""",
+    "neo4j_service_url" : "https://api.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/lica",
+    "example_command" : """curl -X POST https://api.opentreeoflife.org/v2/taxonomy/lica \\\n-H 'content-type:application/json' -d \\\n'{"ott_ids":[515698,590452,409712,643717]}'""",
     "example_result" : "",
 })
 
@@ -36,8 +36,8 @@ methods_list.append({
     "short_description" : "Given an ott id, return complete taxonomy subtree descended from specified taxon.",
     "http_verb" : "POST",
     "relative_url" : "/taxonomy/subtree",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/subtree",
-    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/taxonomy/subtree \\\n-H 'Content-type:application/json' -d '{"ott_id":515698}'""",
+    "neo4j_service_url" : "https://api.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/subtree",
+    "example_command" : """curl -X POST https://api.opentreeoflife.org/v2/taxonomy/subtree \\\n-H 'Content-type:application/json' -d '{"ott_id":515698}'""",
     "example_result" : "",
 })
 
@@ -48,7 +48,7 @@ methods_list.append({
     "short_description" : "Given an ott id, return information about the specified taxon.",
     "http_verb" : "POST",
     "relative_url" : "/taxonomy/taxon",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/taxon",
-    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/taxonomy/taxon \\\n-H 'content-type:application/json' -d '{"ott_id":515698}'""",
+    "neo4j_service_url" : "https://api.opentreeoflife.org/taxomachine/ext/taxonomy/graphdb/taxon",
+    "example_command" : """curl -X POST https://api.opentreeoflife.org/v2/taxonomy/taxon \\\n-H 'content-type:application/json' -d '{"ott_id":515698}'""",
     "example_result" : "",
 })

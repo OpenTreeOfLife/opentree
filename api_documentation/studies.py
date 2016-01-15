@@ -12,8 +12,8 @@ methods_list.append({
     "short_description" : "Return a list of studies that match a given property. If no property provided, returns a list of all studies.",
     "http_verb" : "POST",
     "relative_url" : "/studies/find_studies",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/v2/studies/find_studies",
-    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/studies/find_studies \\\n-H "content-type:application/json" -d \\\n'{"property":"ot:studyId","value":"pg_719","verbose":true}'""",
+    "neo4j_service_url" : "https://api.opentreeoflife.org/v2/studies/find_studies",
+    "example_command" : """curl -X POST https://api.opentreeoflife.org/v2/studies/find_studies \\\n-H "content-type:application/json" -d \\\n'{"property":"ot:studyId","value":"pg_719","verbose":true}'""",
     "example_result" : "",
 })
 
@@ -24,8 +24,8 @@ methods_list.append({
     "short_description" : "Return a list of trees (and the studies that contain them) that match a given property.",
     "http_verb" : "POST",
     "relative_url" : "/studies/find_trees",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/v2/studies/find_trees",
-    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/studies/find_trees \\\n-H "content-type:application/json" -d \\\n'{"property":"ot:ottTaxonName","value":"Garcinia"}'""",
+    "neo4j_service_url" : "https://api.opentreeoflife.org/v2/studies/find_trees",
+    "example_command" : """curl -X POST https://api.opentreeoflife.org/v2/studies/find_trees \\\n-H "content-type:application/json" -d \\\n'{"property":"ot:ottTaxonName","value":"Garcinia"}'""",
     "example_result" : "",
 })
 
@@ -36,8 +36,8 @@ methods_list.append({
     "short_description" : "Return a list of properties that can be used to search studies and trees.",
     "http_verb" : "POST",
     "relative_url" : "/studies/properties",
-    "neo4j_service_url" : "http://api.opentreeoflife.org/v2/studies/properties",
-    "example_command" : """curl -X POST http://api.opentreeoflife.org/v2/studies/properties""",
+    "neo4j_service_url" : "https://api.opentreeoflife.org/v2/studies/properties",
+    "example_command" : """curl -X POST https://api.opentreeoflife.org/v2/studies/properties""",
     "example_result" : "",
 })
 
@@ -48,7 +48,7 @@ methods_list.append({
     "short_description" : "Return a study.",
     "http_verb" : "GET",
     "relative_url" : "/study/{STUDY_ID}",
-    "example_command" : "curl http://api.opentreeoflife.org/v2/study/pg_1144",
+    "example_command" : "curl https://api.opentreeoflife.org/v2/study/pg_1144",
     "example_result" : "",
     "long_description" : """Given a studyID, return a JSON object. The 'data' property of that
 object will hold the [NexSON](http://purl.org/opentree/nexson) of that study. 
@@ -63,7 +63,7 @@ methods_list.append({
     "short_description" : "Return a tree from within a study.",
     "http_verb" : "GET",
     "relative_url" : "/study/{STUDY_ID}/tree/{TREE_ID}",
-    "example_command" : "curl http://api.opentreeoflife.org/v2/study/pg_1144/tree/tree2324",
+    "example_command" : "curl https://api.opentreeoflife.org/v2/study/pg_1144/tree/tree2324",
     "example_result" : "",
     "long_description" : """Given a studyID and the ID of one of its trees, return a JSON object for the tree. More detailed documentation of the possible arguments and return values (including as NEXUS or newick) are at [phylesystem-api/docs/README.md](https://github.com/OpenTreeOfLife/phylesystem-api/blob/master/docs/README.md#fine-grained-access-via-get)""",
     "parameters" : []

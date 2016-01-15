@@ -118,7 +118,7 @@ The Open Tree of Life APIs include services to access the following types of dat
 
 The base URL for all services:
 
-	http://api.opentreeoflife.org/v2
+	https://api.opentreeoflife.org/v2
 
 **Caveats**
 
