@@ -4915,6 +4915,8 @@ var failedMappingOTUs = ko.observableArray([]); // ignore these until we have ne
 var proposedOTUMappings = ko.observable({}); // stored any labels proposed by server, keyed by OTU id
 var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-editing UI to refresh!
 
+// keep track of the last (de)selected list item (its position)
+var lastClickedTogglePosition = null;
 function toggleMappingForOTU(otu, evt) {
     var $toggle = $(evt.target);
     if ($toggle.is(':checked')) {
@@ -4922,8 +4924,41 @@ function toggleMappingForOTU(otu, evt) {
     } else {
         otu['selectedForAction'] = false;
     }
+    // determine the position (nth checkbox) of this OTU in the visible list
+    var $visibleToggles = $toggle.closest('table').find('.map-toggle');
+    var newListPosition = $.inArray(evt.target, $visibleToggles);
+    if (evt.shiftKey && typeof(lastClickedTogglePosition) === 'number') {
+        forceMappingForRangeOfOTUs( otu['selectedForAction'], lastClickedTogglePosition, newListPosition );
+    }
+    // in any case, make this the new range-starter
+    lastClickedTogglePosition = newListPosition;
     return true;  // update the checkbox
 }
+function forceMappingForRangeOfOTUs( newState, posA, posB ) {
+    // update selected state for all checkboxes in this range
+    var $allMappingToggles = $('input.map-toggle');
+    var $togglesInRange;
+    if (posB > posA) {
+        $togglesInRange = $allMappingToggles.slice(posA, posB+1);
+    } else {
+        $togglesInRange = $allMappingToggles.slice(posB, posA+1);
+    }
+    $togglesInRange.each(function() {
+        var $cb = $(this);
+        if (newState === true) {
+            if ($cb.is(':checked') == false) {
+                $cb.prop('checked', true);
+                $cb.triggerHandler('click');
+            }
+        } else {
+            if ($cb.is(':checked') == true) {
+                $cb.prop('checked', false);
+                $cb.triggerHandler('click');
+            }
+        }
+    });
+}
+
 function toggleAllMappingCheckboxes(cb) {
     var $bigToggle = $(cb);
     var $allMappingToggles = $('input.map-toggle');
