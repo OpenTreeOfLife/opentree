@@ -1242,6 +1242,9 @@ function loadSelectedStudy() {
                     }
                 });
 
+                // clear any stale last-selected OTU (it's likely moved)
+                lastClickedTogglePosition = null;
+                
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
