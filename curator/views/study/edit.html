@@ -1171,16 +1171,21 @@ body {
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
-                    <tr data-bind="if: true">
+                    <tr data-bind="if: true,
+                                   css: viewModel.ticklers.OTU_MAPPING_HINTS() +' '+ (otu['selectedForAction'] ? 'warning' : '')">
                       {{ if viewOrEdit == 'EDIT': }}
-                         <td style="text-align: left;">
+                         <td style="text-align: left;"
+                             onmousedown="return false;"
+                             data-bind="click: toggleMappingForOTU">
                              <input type="checkbox" class="map-toggle"
                                     data-bind="checked: $data['selectedForAction'],
                                                click: toggleMappingForOTU,
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS" />
                          </td>
                       {{ pass }}
-                        <td data-bind="text: otu['^ot:originalLabel']">&nbsp;</td>
+                        <td onmousedown="return false;"
+                            data-bind="text: otu['^ot:originalLabel'],
+                                       click: toggleMappingForOTU">&nbsp;</td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted" title="Show this OTU in all trees"
                                      data-bind="click: showOTUInContext, css: viewModel.ticklers.OTU_MAPPING_HINTS">
