@@ -2421,7 +2421,7 @@ function getInGroupCladeDescriptionForTree( tree ) {
             nodeName = $.trim(otu['^ot:ottTaxonName']) || 'Unlabeled OTU';
         }
     }
-
+    // TODO: return link to taxo-browser?
     return nodeName;
 }
 
