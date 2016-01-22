@@ -801,7 +801,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             <!-- /ko -->
                             <!-- ko if: !userIsEditingCollection($parent) -->
                               <a data-bind="html: name,
-                                            attr: { href: getTreeViewURL($data), title: comments }"
+                                            attr: { href: getTreeViewURL($data), title: comments || '(no description provided)' }"
                                  href="#" target="_blank"><!--NAME--></a>
                             <!-- /ko -->
                           </td>

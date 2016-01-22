@@ -1171,16 +1171,21 @@ body {
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
-                    <tr data-bind="if: true">
+                    <tr data-bind="if: true,
+                                   css: viewModel.ticklers.OTU_MAPPING_HINTS() +' '+ (otu['selectedForAction'] ? 'warning' : '')">
                       {{ if viewOrEdit == 'EDIT': }}
-                         <td style="text-align: left;">
+                         <td style="text-align: left;"
+                             onmousedown="return false;"
+                             data-bind="click: toggleMappingForOTU">
                              <input type="checkbox" class="map-toggle"
                                     data-bind="checked: $data['selectedForAction'],
                                                click: toggleMappingForOTU,
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS" />
                          </td>
                       {{ pass }}
-                        <td data-bind="text: otu['^ot:originalLabel']">&nbsp;</td>
+                        <td onmousedown="return false;"
+                            data-bind="text: otu['^ot:originalLabel'],
+                                       click: toggleMappingForOTU">&nbsp;</td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted" title="Show this OTU in all trees"
                                      data-bind="click: showOTUInContext, css: viewModel.ticklers.OTU_MAPPING_HINTS">
@@ -1243,18 +1248,17 @@ body {
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length === 1) -->
                            {{ # show mapped label }}
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" data-bind="click: approveProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
-                                    <i class="icon-ok"></i>
-                                </button>
                                 <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <a data-bind="text: proposedMapping(otu)[0].name,
+                            <a class="btn btn-mini"
+                                                  style="padding: 0px 4px;"
+                                                  data-bind="click: approveProposedOTULabel">
+                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: proposedMapping(otu)[0].name,
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                                attr: getAttrsForMappingOption(proposedMapping(otu)[0])"
                                     href="#"
-                                    onclick="return false;"
                                 >PROPOSED LABEL</a>
                           <!-- /ko -->
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length > 1) -->
@@ -1268,10 +1272,13 @@ body {
                             <ul class="mapping-options"
                                 data-bind="foreach: makeArray(proposedMapping(otu)),
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS">
-                                <li><a data-bind="text: $data.originalMatch.unique_name,
-                                                  click: approveProposedOTUMappingOption,
+                                <li><a class="btn btn-mini"
+                                                      style="padding: 0px 4px;"
+                                                      data-bind="click: approveProposedOTUMappingOption">
+                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.unique_name,
                                                   attr: getAttrsForMappingOption($data)"
-                                       href="#"></a></li>
+                                       href="#"></a>
+                                </li>
                             </ul>
                           <!-- /ko -->
                           <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['^ot:ottTaxonName']) -->
@@ -1280,12 +1287,12 @@ body {
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <strong data-bind="text: $.trim(otu['^ot:ottTaxonName']),
+                            <strong data-bind="html: getTaxobrowserLink(otu['^ot:ottTaxonName'], otu['^ot:ottId']),
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS",
                                 >MAPPED LABEL</strong>
                           <!-- /ko -->
                       {{ else: }}
-                            <strong data-bind="text: $.trim(otu['^ot:ottTaxonName'])">MAPPED LABEL</strong>
+                            <strong data-bind="html: getTaxobrowserLink(otu['^ot:ottTaxonName'], otu['^ot:ottId'])">MAPPED LABEL</strong>
                       {{ pass }}
                          <!-- /ko -->
                         </td>
@@ -1935,8 +1942,9 @@ body {
     var getContextForNames_url = "{{=getContextForNames_url}}";
     var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";
-    var getMRCAForNodes_url = "{{=getMRCAForNodes_url}}";
+
     var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
+    var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";
     var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
 
@@ -1993,7 +2001,7 @@ body {
         </p>
         <ul class="mapping-options" style="padding-left: 20px;">
             <li>
-                <div class="key-note">most possible matches are green</div>
+                <div class="key-note">possible matches are green</div>
                 <a class="badge badge-success"
                    style="opacity: 1.0;"
                    title="100% match of original label"
@@ -2024,7 +2032,7 @@ body {
                 >Psathyrella</a>
             </li>
             <li>
-                <div class="key-note">taxon-name homonyms are amber</div>
+                <div class="key-note">homonyms are amber</div>
                 <a class="badge badge-warning"
                    style="opacity: 1;"
                    title="Taxon-name homonym"
@@ -2033,13 +2041,19 @@ body {
             </li>
         </ul>
         <p>
-            Roll over each match to learn more about it. Click a match to
-            map this OTU to this taxon. If none of these options is a good
-            match, click
+            Click <button
+            class="btn btn-mini row-controls-ghosted"
+            type="button" onclick="return true;"><i class="icon-ok"></i>
+            </button> to
+            map the OTU to this taxon. Click
             <button class="btn btn-mini row-controls-ghosted"
                     type="button" onclick="return false;"><i class="icon-remove"></i>
             </button>
-            to clear the list and modify the original label used for mapping.
+            to reject all mappings; then try modifying the original label and re-mapping.
+        </p>
+        <p>
+          Roll over each match to learn more about it. Click a name to
+          open the taxonomy browser for that taxon.
         </p>
     </div>
     <div class="modal-footer">
@@ -2276,20 +2290,31 @@ body {
                 <label for="testtest">Ingroup clade: </label>
                 <strong data-bind="text: getInGroupCladeDescriptionForTree($data),
                                    css: viewModel.ticklers.TREES"></strong>
-              <br/>
-              <label>MRCA for this tree's ingroup (from <strong>taxonomy</strong>):</label>
-                <strong data-bind="html: $data['^ot:MRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:MRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:MRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>',
+
+
+
+            <div style="background-color: #eee; border-radius: 8px; max-width: 800px; padding: 8px 10px 0px; margin-bottom: 4px;">
+              <label>MRCA in <strong>taxonomy</strong> of OTUs in this tree's ingroup:</label>
+              <strong data-bind="html: $data['^ot:MRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:MRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:MRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>',
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
                    <!-- button text WAS: Update MRCA -->
-                   <a class="btn btn-small btn-info Xbtn-info-disabled"
-                      data-bind="click: updateTaxonomicMRCAForTree">Test</a>
+              <a class="btn btn-mini btn-info"
+                 data-bind="click: updateTaxonomicMRCAForTree">Test</a>
               <br/>
-              <label>MRCA for this tree's ingroup (from latest <strong>synthetic tree</strong>):</label>
-                <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>',
+              <label>MRCA in <strong>synthetic tree</strong> of OTUs in this tree's ingroup:</label>
+              <strong data-bind="html: $data['^ot:nearestTaxonMRCAName'] ? '<'+'a href=\'/opentree/argus/ottol@'+ $data['^ot:nearestTaxonMRCAOttId'] +'\' target=\'_blank\'>'+ $data['^ot:nearestTaxonMRCAName'] +'<'+'/a>' : '<'+'em>Unknown<'+'/em>',
                                    css: viewModel.ticklers.TREES"></strong> &nbsp;
-                   <a class="btn btn-small btn-info Xbtn-info-disabled"
-                      data-bind="click: updateSyntheticMRCAForTree">Test</a>
-              <br/>
+              <a class="btn btn-mini btn-info"
+                 data-bind="click: updateSyntheticMRCAForTree">Test</a>
+              <p style="font-style: italic;padding-bottom: 8px;">
+                 Use the consistency checks above to test for incorrect OTU
+                 mapping. If the MRCA is much more inclusive than expected,
+                 then one or more of the OTU mappings is probably incorrect,
+                 due to overzealous fuzzy matching, incorrect choice between
+                 homonyms, or an error in the taxonomy. Please adjust or remove
+                 these mappings.
+              </p>
+            </div>
 
                 <label>Mapped leaf nodes: </label>
                 <span data-bind="html: getMappedTallyForTree($data),
@@ -2646,4 +2671,7 @@ body {
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>
-</div>
+</div
+ml
+
+>
