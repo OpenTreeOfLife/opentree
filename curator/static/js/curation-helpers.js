@@ -446,6 +446,14 @@ should also be made in other copy
 */
 function getTaxobrowserLink(displayName, ottID) {
     // ASSUMES we will always have the ottid, else check for unique name
+    if (!ottID) {
+        // show just the name (static text, possibly an empty string)
+        return displayName;
+    }
+    if (!displayName) {
+        // empty or missing name? show the raw ID
+        displayName = 'OTT: {OTT_ID}'.replace('OTT_ID',ottID)
+    }
     var url = '<a href="/taxonomy/browse?id={OTT_ID}" \
                   title="OTT Taxonomy" \
                   target="taxobrowser">{DISPLAY_NAME}</a>';
