@@ -1709,38 +1709,40 @@ body {
 
           <div class="tab-pane" id="Analyses">
            <div class="span8"><!-- main column... -->
-            <ul class="suggestion-list"></ul>
 
-            <div style="margin-bottom: 100px;">
+             <p>
+             How do trees in this study conflict with the Open Tree of Life
+             synthetic tree or taxonomy?
+             </p>
 
-                <table class="table Xtable-condensed bare-top-row">
-                  <tbody>
-                    <tr style="opacity: 0.5;">
-                        <td width="100">
-                            <img class="tool-icon" alt="treemachine" src="{{=URL('static','images/tools/treemachine-icon.png')}}" />
-                        </td>
-                        <td width="125"><a href="http://blog.opentreeoflife.org/what-is-the-tree-of-life/" target="_blank">Open Tree of Life (treemachine)</a></td>
-                        <td>
-                            This runs automatically for any study in the
-                            system. <strong>This study fails</strong>, possibly
-                            because it has no preferred tree (marked for
-                            synthesis) or needs additional OTU mapping for
-                            synthesis.
-                        </td>
-                    </tr>
-                    <tr style="opacity: 0.5;">
-                        <td>
-                            <img class="tool-icon" alt="MIAPA validator" src="{{=URL('static','images/tools/miapa-icon.png')}}" />
-                        </td>
-                        <td><a href="https://github.com/miapa/miapa/blob/master/checklist/MIAPA-checklist.md" target="_blank">MIAPA Validator</a></td>
-                        <td>
-                            This runs automatically against any study in the system. <strong>This study passes!</strong>
-                        </td>
-                    </tr>
-                  </tbody>
-                </table>
+             <label>Tree to analyze: </label>
+             <select id="tree-select"
+                     onchange="(this); return false;"
+                     data-bind="options: [
+                                    'tree1 ',
+                                    'tree2 ',
+                                ],
+                                optionsCaption: 'Choose a tree from this study...',
+                                event: { change: updateInferenceMethodWidgets },
+                                css: viewModel.ticklers.TREES">
+             </select>
 
-            </div>
+             <label>Analyze against: </label>
+             <select id="reference-select"
+                     onchange="(this); return false;"
+                     data-bind="options: [
+                                    'Synthetic Tree of Life ',
+                                    'Open Tree Taxonomy ',
+                                ],
+                                optionsCaption: 'Choose a target...',
+                                event: { change: updateInferenceMethodWidgets },
+                                css: viewModel.ticklers.TREES">
+             </select>
+
+             <p>
+             Results
+            </p>
+            
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
 
