@@ -1710,39 +1710,30 @@ body {
           <div class="tab-pane" id="Analyses">
            <div class="span8"><!-- main column... -->
 
-             <p>
-             How do trees in this study conflict with the Open Tree of Life
-             synthetic tree or taxonomy?
-             </p>
+             <form class="form-inline">
+                 <label>Analyze tree</label>
+                 <select id="tree-select"
+                         onchange="(this); return false;"
+                         data-bind="options: viewModel.elementTypes.tree.gatherAll(viewModel.nexml),
+                                    optionsValue: '@id',
+                                    optionsText: '@label',
+                                    optionsCaption: 'Choose a tree from this study...',
+                                    css: viewModel.ticklers.TREES">
+                 </select>
 
-             <label>Tree to analyze: </label>
-             <select id="tree-select"
-                     onchange="(this); return false;"
-                     data-bind="options: [
-                                    'tree1 ',
-                                    'tree2 ',
-                                ],
-                                optionsCaption: 'Choose a tree from this study...',
-                                event: { change: updateInferenceMethodWidgets },
-                                css: viewModel.ticklers.TREES">
-             </select>
-
-             <label>Analyze against: </label>
-             <select id="reference-select"
-                     onchange="(this); return false;"
-                     data-bind="options: [
-                                    'Synthetic Tree of Life ',
-                                    'Open Tree Taxonomy ',
-                                ],
-                                optionsCaption: 'Choose a target...',
-                                event: { change: updateInferenceMethodWidgets },
-                                css: viewModel.ticklers.TREES">
-             </select>
+                 <label>against target</label>
+                 <select id="reference-select">
+                     <option value="">Choose a target...</option>
+                     <option value="synth">Synthetic Tree of Life</option>
+                     <option value="taxonomy">Open Tree Taxonomy</option>
+                 </select>
+                 <button class="btn btn-info" data-bind="click: fetchTreeConflictStatus">GO!</button>
+             </form>
 
              <p>
              Results
             </p>
-            
+
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
 

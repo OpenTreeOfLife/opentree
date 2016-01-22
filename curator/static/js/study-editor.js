@@ -1371,7 +1371,7 @@ function loadSelectedStudy() {
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
                 if (viewOrEdit == 'EDIT') {
                     enableSaveButton();
-                    pushPageExitWarning('UNSAVED_STUDY_CHANGES',  
+                    pushPageExitWarning('UNSAVED_STUDY_CHANGES',
                                         "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page.");
                 }
                 updateQualityDisplay();
@@ -1613,6 +1613,16 @@ function testConflictSummary(conflictInfo) {
 function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
     // Expects inputTreeID from the current study (concatenate these!)
     // Expects referenceTreeID of 'taxonomy' or 'synth'
+    if (typeof(inputTreeID) !== 'string') {
+        inputTreeID = $('#tree-select').val();
+    }
+    if (typeof(referenceTreeID) !== 'string') {
+        referenceTreeID = $('#reference-select').val();
+    }
+    if (!inputTreeID || !referenceTreeID) {
+        showErrorMessage("Please choose both input and reference trees.")
+        return;
+    }
     var fullInputTreeID = (studyID +"%23"+ inputTreeID);
     var fullReferenceTreeID;
     switch(referenceTreeID) {
@@ -2249,6 +2259,22 @@ function normalizeTree( tree ) {
 
     // pre-select first node among conflicting siblings
     resolveSiblingOnlyConflictsInTree(tree);
+}
+
+function getAllTreeIDs() {
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+    return $.map(allTrees, function(tree, i) {
+        return tree['@id'];
+    });
+}
+function getAllTreeLabels() {
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+    return $.map(allTrees, function(tree, i) {
+        if (tree['@label']) {
+            return tree['@label'];
+        }
+        return "Untitled ("+ tree['@id'] +")";
+    });
 }
 
 function getPreferredTreeIDs() {
@@ -3364,7 +3390,7 @@ function showTreeViewer( tree, options ) {
             setTimeout(function() {
                 if (viewModel.allCollections && viewModel.allCollections.length) {
                     nudgeTickler('COLLECTIONS_LIST');
-                } else { 
+                } else {
                     loadCollectionList('INIT');
                 }
             }, 10);
@@ -3393,12 +3419,12 @@ function showTreeViewer( tree, options ) {
                     break;
                 case 'tree-collections':
                     $('#tree-phylogram-options').hide();
-                    /* alternate loading of collections list when 
+                    /* alternate loading of collections list when
                      * Tree > Collections subtab is chosen.
                      *
                     if (viewModel.allCollections && viewModel.allCollections.length) {
                         loadCollectionList('REFRESH');
-                    } else { 
+                    } else {
                         loadCollectionList('INIT');
                     }
                      */
@@ -6196,7 +6222,7 @@ function moveOrMergeLocalMessage(msg, parentElement, nexml) {
                 throw "expected (old) '@sourceForTree' not found!";
             }
 
-            // look for matching file information in the main nexml 
+            // look for matching file information in the main nexml
             var nexmlFilesMessage = getSupportingFiles(nexml);
             if (!nexmlFilesMessage) {
                 throw 'nexml supporting-files info not found!';
@@ -7654,7 +7680,7 @@ function loadCollectionList(option) {
                 showErrorMessage('Sorry, there is a problem with the tree-collection data.');
                 return;
             }
-            
+
             viewModel.allCollections = data;
 
             // enable sorting and filtering for lists in the editor
@@ -7704,8 +7730,8 @@ function loadCollectionList(option) {
                 // map old array to new and return it
                 var currentStudyID = $('#current-study-id').val();
                 var currentTreeID = $('#current-tree-id').val();
-                var filteredList = ko.utils.arrayFilter( 
-                    viewModel.allCollections, 
+                var filteredList = ko.utils.arrayFilter(
+                    viewModel.allCollections,
                     function(collection) {
                         // this basic filter just checks for matching tree+study ids
                         var foundCurrentTree = false;
@@ -7749,7 +7775,7 @@ function loadCollectionList(option) {
                         if (!wholeSlugMatchPattern.test(id) && !wholeSlugMatchPattern.test(ownerSlug) && !wholeSlugMatchPattern.test(titleSlug) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
                             return false;
                         }
-                        
+
                         // check for preset filters
                         switch (filter) {
                             case 'All tree collections':
@@ -7759,7 +7785,7 @@ function loadCollectionList(option) {
                             case 'Collections I own':
                                 // show only matching collections
                                 var userIsTheCreator = false;
-                                if (('creator' in collection) && ('login' in collection.creator)) { 
+                                if (('creator' in collection) && ('login' in collection.creator)) {
                                     // compare to logged-in userid provide in the main page
                                     if (collection.creator.login === userLogin) {
                                         userIsTheCreator = true;
@@ -7770,13 +7796,13 @@ function loadCollectionList(option) {
                             case 'Collections I participate in':
                                 var userIsTheCreator = false;
                                 var userIsAContributor = false;
-                                if (('creator' in collection) && ('login' in collection.creator)) { 
+                                if (('creator' in collection) && ('login' in collection.creator)) {
                                     // compare to logged-in userid provide in the main page
                                     if (collection.creator.login === userLogin) {
                                         userIsTheCreator = true;
                                     }
                                 }
-                                if (('contributors' in collection) && $.isArray(collection.contributors)) { 
+                                if (('contributors' in collection) && $.isArray(collection.contributors)) {
                                     // compare to logged-in userid provide in the main page
                                     $.each(collection.contributors, function(i, c) {
                                         if (c.login === userLogin) {
@@ -7799,7 +7825,7 @@ function loadCollectionList(option) {
                     }
 */
                 );  // END of list filtering
-                        
+
                 // apply selected sort order
                 switch(order) {
                     /* REMINDER: in sort functions, results are as follows:
@@ -7808,7 +7834,7 @@ function loadCollectionList(option) {
                      *   1 = b comes before a
                      */
                     case 'Most recently modified':
-                        filteredList.sort(function(a,b) { 
+                        filteredList.sort(function(a,b) {
                             var aMod = a.lastModified.ISO_date;
                             var bMod = b.lastModified.ISO_date;
                             if (aMod === bMod) return 0;
@@ -7817,7 +7843,7 @@ function loadCollectionList(option) {
                         break;
 
                     case 'Most recently modified (reversed)':
-                        filteredList.sort(function(a,b) { 
+                        filteredList.sort(function(a,b) {
                             var aMod = a.lastModified.ISO_date;
                             var bMod = b.lastModified.ISO_date;
                             if (aMod === bMod) return 0;
@@ -7826,7 +7852,7 @@ function loadCollectionList(option) {
                         break;
 
                     case 'By owner/name':
-                        filteredList.sort(function(a,b) { 
+                        filteredList.sort(function(a,b) {
                             // first element is the ID with user-name/collection-name
                             if (a.id === b.id) return 0;
                             return (a.id < b.id) ? -1 : 1;
@@ -7834,7 +7860,7 @@ function loadCollectionList(option) {
                         break;
 
                     case 'By owner/name (reversed)':
-                        filteredList.sort(function(a,b) { 
+                        filteredList.sort(function(a,b) {
                             // first element is the ID with user-name/collection-name
                             if (a.id === b.id) return 0;
                             return (a.id > b.id) ? -1 : 1;
@@ -7842,7 +7868,7 @@ function loadCollectionList(option) {
                         break;
 
                     // TODO: add a filter for 'Has un-merged changes'?
-                    
+
                     default:
                         console.warn("Unexpected order for collection list: ["+ order +"]");
                         return null;
@@ -7859,7 +7885,7 @@ function loadCollectionList(option) {
 
 function getAssociatedCollectionsCount() {
     // used mainly to supply a display string in the Tree > Collections indicator
-    if (viewModel.filteredCollections) { 
+    if (viewModel.filteredCollections) {
         return ( viewModel.filteredCollections()().length ).toString();
     }
     // an empty space will collapse (hide) the indicator if we're not ready
@@ -7876,7 +7902,7 @@ function addTreeToExistingCollection(clicked) {
         $collectionPrompt.find('input').eq(0).focus();
     } else {
         if (confirm('This requires login via Github. OK to proceed?')) {
-            loginAndReturn(); 
+            loginAndReturn();
         }
     }
 }
@@ -8090,7 +8116,7 @@ function addCurrentTreeToCollection( collection ) {
         collection.decisions.push(treeEntry);
     }
     addPendingCollectionChange( 'ADD', currentStudyID, currentTreeID );
-    
+
     // to refresh the list
     //showCollectionViewer( collection, {SCROLL_TO_BOTTOM: true} );
     editCollection( collection, {SCROLL_TO_BOTTOM: true} );
@@ -8098,12 +8124,12 @@ function addCurrentTreeToCollection( collection ) {
 
 function addTreeToNewCollection() {
     if (userIsLoggedIn()) {
-        var c = createNewTreeCollection(); 
+        var c = createNewTreeCollection();
         addCurrentTreeToCollection(c);
         showCollectionViewer( c, {SCROLL_TO_BOTTOM: true} );
     } else {
         if (confirm('This requires login via Github. OK to proceed?')) {
-            loginAndReturn(); 
+            loginAndReturn();
         }
     }
 }
