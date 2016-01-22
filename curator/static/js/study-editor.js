@@ -1648,7 +1648,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
         type: 'GET',
         dataType: 'json',
         // crossdomain: true,
-        contentType: "application/json; charset=utf-8",
+        //contentType: "application/json; charset=utf-8",
         url: conflictURL,
         //processData: false,
         //data: {"nexml":'+ JSON.stringify(viewModel.nexml) +'},
