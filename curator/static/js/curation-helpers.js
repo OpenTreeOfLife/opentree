@@ -454,11 +454,20 @@ function getTaxobrowserLink(displayName, ottID) {
         // empty or missing name? show the raw ID
         displayName = 'OTT: {OTT_ID}'.replace('OTT_ID',ottID)
     }
-    var url = '<a href="/taxonomy/browse?id={OTT_ID}" \
-                  title="OTT Taxonomy" \
-                  target="taxobrowser">{DISPLAY_NAME}</a>';
-    return  url.replace('{OTT_ID}', ottID)
+    var link = '<a href="{TAXO_BROWSER_URL}" \
+                   title="OTT Taxonomy" \
+                   target="taxobrowser">{DISPLAY_NAME}</a>';
+    return link.replace('{TAXO_BROWSER_URL}', getTaxobrowserURL(ottID))
+        .replace('{OTT_ID}', ottID)
         .replace('{DISPLAY_NAME}', displayName);
+}
+
+function getTaxobrowserURL(ottID) {
+    if (!ottID) {
+        return null;
+    }
+    var url = '/taxonomy/browse?id={OTT_ID}';
+    return url.replace('{OTT_ID}', ottID);
 }
 
 function slugify(str) {
