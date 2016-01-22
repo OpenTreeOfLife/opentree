@@ -1574,6 +1574,100 @@ function toggleRadialTreeLayoutInViewer(cb) {
     }
 }
 
+/* Support conflict display in the tree viewer */
+function getTreeConflictSummary(conflictInfo) {
+    // Expects a JS object from conflict service; returns an object with
+    // summary tallies of each node status.
+    var totalNodesSupportedBy = 0;
+    var totalNodesConflictingWith = 0;
+    var totalNodesResolving = 0;
+    for (var nodeid in conflictInfo) {
+        switch(conflictInfo[nodeid].status) {
+            case '=':
+                totalNodesSupportedBy++;
+                break;
+            case '<>':
+                totalNodesConflictingWith++;
+                break;
+            case '<':
+                totalNodesResolving++;
+                break;
+            default:
+                console.error("ERROR: unknown conflict status '"+ (conflictInfo[nodeid].status) +"'!");
+        }
+    }
+    return {
+        'supported': totalNodesSupportedBy,
+        'conflicting': totalNodesConflictingWith,
+        'resolving': totalNodesResolving
+    };
+}
+function testConflictSummary(conflictInfo) {
+    // show results in the JS console
+    var summaryInfo = getTreeConflictSummary(conflictInfo);
+    console.warn("Node status summary");
+    console.warn("  "+ summaryInfo.supported +" nodes supported");
+    console.warn("  "+ summaryInfo.conflicting +" nodes in conflict");
+    console.warn("  "+ summaryInfo.resolving +" nodes resolving");
+}
+function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
+    // Expects inputTreeID from the current study (concatenate these!)
+    // Expects referenceTreeID of 'taxonomy' or 'synth'
+    var fullInputTreeID = (studyID +"%23"+ inputTreeID);
+    var fullReferenceTreeID;
+    switch(referenceTreeID) {
+        case 'taxonomy':
+            fullReferenceTreeID = 'ott';
+            break;
+        case 'synth':
+            fullReferenceTreeID = 'synth';
+            break;
+        default:
+            console.error('fetchTreeConflictStatus(): ERROR, expecting either "taxonomy"or "synth" as referenceTreeID!');
+            return;
+    }
+    var conflictURL = treeConflictStatus_url
+        .replace('&amp;', '&')  // restore naked ampersand for query-string args
+        .replace('{TREE1_ID}', fullInputTreeID)
+        .replace('{TREE2_ID}', fullReferenceTreeID)
+    // TODO: call this URL and try to show a summary report
+    console.warn("Trying to fetch a conflict report from this URL:");
+    console.warn(conflictURL);
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        type: 'GET',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: conflictURL,
+        //processData: false,
+        //data: {"nexml":'+ JSON.stringify(viewModel.nexml) +'},
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                if (jqXHR.status >= 500) {
+                    // major server-side error, just show raw response for tech support
+                    var errMsg = 'Sorry, there was an error saving this study. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                    hideModalScreen();
+                    showErrorMessage(errMsg);
+                    return;
+                }
+                // Server blocked the save due to major validation errors!
+                var data = $.parseJSON(jqXHR.responseText);
+                // TODO: this should be properly parsed JSON, show it more sensibly
+                // (but for now, repeat the crude feedback used above)
+                var errMsg = 'Sorry, there was an error in the conflict data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+            var conflictInfo = $.parseJSON(jqXHR.responseText);
+            testConflictSummary(conflictInfo);
+        }
+    });
+}
+
+
 function updateMappingStatus() {
     // update mapping status+details based on the current state of things
     var detailsHTML, showBatchApprove, showBatchReject, needsAttention;

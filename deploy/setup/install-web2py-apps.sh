@@ -118,6 +118,7 @@ sed "s+github_client_id = .*+github_client_id = $CURATION_GITHUB_CLIENT_ID+;
      s+opentree_api = .*+opentree_api = $OPENTREE_API_BASE_URL+
      s+collections_api_base_url = .*+opentree_api = $COLLECTIONS_API_BASE_URL+
      s+favorites_api_base_url = .*+opentree_api = $FAVORITES_API_BASE_URL+
+     s+conflict_api = .*+conflict_api = $CONFLICT_API_BASE_URL+
      s+secure_sessions_with_HTTPS = .*+secure_sessions_with_HTTPS = $SSL_CERTS_FOUND+
     " < $configfile > tmp.tmp
 mv tmp.tmp $configfile
