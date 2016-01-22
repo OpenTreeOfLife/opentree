@@ -3461,6 +3461,7 @@ function drawTree( treeOrID, options ) {
         } else {
             delete node.ambiguousLabel;
         }
+        // TODO: decorate with conflict information here?
 
         // reset x of all nodes, to avoid gradual "creeping" to the right
         node.x = 0;
