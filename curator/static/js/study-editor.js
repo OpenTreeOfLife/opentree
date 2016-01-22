@@ -5216,7 +5216,7 @@ function requestTaxonMapping( otuToMap ) {
     var originalLabel = $.trim(otuToMap['^ot:originalLabel']) || null;
     // use the manually edited label (if any), or the hint-adjusted version
     var editedLabel = $.trim(otuToMap['^ot:altLabel']);
-    var searchText = (editedLabel !== '') ? editedLabel : adjustedLabel(originalLabel);
+    var searchText = (editedLabel !== '') ? editedLabel : $.trim(adjustedLabel(originalLabel));
 
     if (searchText.length === 0) {
         console.log("No name to match!"); // TODO
