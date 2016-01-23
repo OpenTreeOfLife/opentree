@@ -4914,11 +4914,12 @@ function matchScoreToOpacity(score) {
      * This is best accomplished by remapping to a curve, e.g.
      *   OPACITY = SCORE^2 + 0.15
      *   OPACITY = 0.8 * SCORE^2 + 0.2
+     *   OPACITY = 0.8 * SCORE + 0.2
      * The effect we want is full opacity (1.0) for a 1.0 score, fading rapidly
      * for the common (higher) scores, with a floor of ~0.2 opacity (enough to
      * show color and maintain legibility).
      */
-    return 0.8 * (score * score) + 0.2;
+    return (0.8 * score) + 0.2;
 }
 
 var autoMappingInProgress = ko.observable(false);
