@@ -458,7 +458,6 @@ function getTaxobrowserLink(displayName, ottID) {
                    title="OTT Taxonomy" \
                    target="taxobrowser">{DISPLAY_NAME}</a>';
     return link.replace('{TAXO_BROWSER_URL}', getTaxobrowserURL(ottID))
-        .replace('{OTT_ID}', ottID)
         .replace('{DISPLAY_NAME}', displayName);
 }
 
