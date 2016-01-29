@@ -1242,6 +1242,9 @@ function loadSelectedStudy() {
                     }
                 });
 
+                // clear any stale last-selected OTU (it's likely moved)
+                lastClickedTogglePosition = null;
+                
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
@@ -4915,35 +4918,83 @@ var failedMappingOTUs = ko.observableArray([]); // ignore these until we have ne
 var proposedOTUMappings = ko.observable({}); // stored any labels proposed by server, keyed by OTU id
 var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-editing UI to refresh!
 
+// keep track of the last (de)selected list item (its position)
+var lastClickedTogglePosition = null;
 function toggleMappingForOTU(otu, evt) {
-    var $toggle = $(evt.target);
-    if ($toggle.is(':checked')) {
-        otu['selectedForAction'] = true;
+    var $toggle, newState;
+    // allow triggering this from anywhere in the row
+    if ($(evt.target).is(':checkbox')) {
+        $toggle = $(evt.target);
+        // N.B. user's click (or the caller) has already set its state!
+        newState = $toggle.is(':checked');
     } else {
-        otu['selectedForAction'] = false;
+        $toggle = $(evt.target).closest('tr').find('input.map-toggle');
+        // clicking elsewhere should toggle checkbox state!
+        newState = !($toggle.is(':checked'));
+        forceToggleCheckbox($toggle, newState);
     }
+    // add (or remove) highlight color that works with hover-color
+    if (newState) {
+        $toggle.closest('tr').addClass('warning');
+    } else {
+        $toggle.closest('tr').removeClass('warning');
+    }
+    // if this is the original click event; check for a range!
+    if (typeof(evt.shiftKey) !== 'undefined') {
+        // determine the position (nth checkbox) of this OTU in the visible list
+        var $visibleToggles = $toggle.closest('table').find('input.map-toggle');
+        var newListPosition = $.inArray( $toggle[0], $visibleToggles);
+        if (evt.shiftKey && typeof(lastClickedTogglePosition) === 'number') {
+            forceMappingForRangeOfOTUs( otu['selectedForAction'], lastClickedTogglePosition, newListPosition );
+        }
+        // in any case, make this the new range-starter
+        lastClickedTogglePosition = newListPosition;
+    }
+    evt.stopPropagation();
     return true;  // update the checkbox
 }
-function toggleAllMappingCheckboxes(cb) {
-    var $bigToggle = $(cb);
+function forceMappingForRangeOfOTUs( newState, posA, posB ) {
+    // update selected state for all checkboxes in this range
     var $allMappingToggles = $('input.map-toggle');
-    if ($bigToggle.is(':checked')) {
-        $allMappingToggles.each(function() {
-            var $cb = $(this);
+    var $togglesInRange;
+    if (posB > posA) {
+        $togglesInRange = $allMappingToggles.slice(posA, posB+1);
+    } else {
+        $togglesInRange = $allMappingToggles.slice(posB, posA+1);
+    }
+    $togglesInRange.each(function() {
+        forceToggleCheckbox(this, newState);
+    });
+}
+
+function forceToggleCheckbox(cb, newState) {
+    var $cb = $(cb);
+    switch(newState) {
+        case (true):
             if ($cb.is(':checked') == false) {
                 $cb.prop('checked', true);
                 $cb.triggerHandler('click');
             }
-        });
-    } else {
-        $allMappingToggles.each(function() {
-            var $cb = $(this);
+            break;
+        case (false):
             if ($cb.is(':checked')) {
                 $cb.prop('checked', false);
                 $cb.triggerHandler('click');
             }
-        });
+            break;
+        default:
+            console.error("forceToggleCheckbox() invalid newState <"+ typeof(newState) +">:");
+            console.error(newState);
+            return;
     }
+}
+function toggleAllMappingCheckboxes(cb) {
+    var $bigToggle = $(cb);
+    var $allMappingToggles = $('input.map-toggle');
+    var newState = $bigToggle.is(':checked');
+    $allMappingToggles.each(function() {
+        forceToggleCheckbox(this, newState);
+    });
     return true;
 }
 
