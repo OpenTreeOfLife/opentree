@@ -1248,18 +1248,17 @@ body {
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length === 1) -->
                            {{ # show mapped label }}
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" data-bind="click: approveProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
-                                    <i class="icon-ok"></i>
-                                </button>
                                 <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <a data-bind="text: proposedMapping(otu)[0].name,
+                            <a class="btn btn-mini"
+                                                  style="padding: 0px 4px;"
+                                                  data-bind="click: approveProposedOTULabel">
+                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: proposedMapping(otu)[0].name,
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                                attr: getAttrsForMappingOption(proposedMapping(otu)[0])"
                                     href="#"
-                                    onclick="return false;"
                                 >PROPOSED LABEL</a>
                           <!-- /ko -->
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length > 1) -->
@@ -1273,10 +1272,13 @@ body {
                             <ul class="mapping-options"
                                 data-bind="foreach: makeArray(proposedMapping(otu)),
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS">
-                                <li><a data-bind="text: $data.originalMatch.unique_name,
-                                                  click: approveProposedOTUMappingOption,
+                                <li><a class="btn btn-mini"
+                                                      style="padding: 0px 4px;"
+                                                      data-bind="click: approveProposedOTUMappingOption">
+                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.unique_name,
                                                   attr: getAttrsForMappingOption($data)"
-                                       href="#"></a></li>
+                                       href="#"></a>
+                                </li>
                             </ul>
                           <!-- /ko -->
                           <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['^ot:ottTaxonName']) -->
@@ -1285,12 +1287,12 @@ body {
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <strong data-bind="text: $.trim(otu['^ot:ottTaxonName']),
+                            <strong data-bind="html: getTaxobrowserLink(otu['^ot:ottTaxonName'], otu['^ot:ottId']),
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS",
                                 >MAPPED LABEL</strong>
                           <!-- /ko -->
                       {{ else: }}
-                            <strong data-bind="text: $.trim(otu['^ot:ottTaxonName'])">MAPPED LABEL</strong>
+                            <strong data-bind="html: getTaxobrowserLink(otu['^ot:ottTaxonName'], otu['^ot:ottId'])">MAPPED LABEL</strong>
                       {{ pass }}
                          <!-- /ko -->
                         </td>
@@ -1999,7 +2001,7 @@ body {
         </p>
         <ul class="mapping-options" style="padding-left: 20px;">
             <li>
-                <div class="key-note">most possible matches are green</div>
+                <div class="key-note">possible matches are green</div>
                 <a class="badge badge-success"
                    style="opacity: 1.0;"
                    title="100% match of original label"
@@ -2030,7 +2032,7 @@ body {
                 >Psathyrella</a>
             </li>
             <li>
-                <div class="key-note">taxon-name homonyms are amber</div>
+                <div class="key-note">homonyms are amber</div>
                 <a class="badge badge-warning"
                    style="opacity: 1;"
                    title="Taxon-name homonym"
@@ -2039,13 +2041,19 @@ body {
             </li>
         </ul>
         <p>
-            Roll over each match to learn more about it. Click a match to
-            map this OTU to this taxon. If none of these options is a good
-            match, click
+            Click <button
+            class="btn btn-mini row-controls-ghosted"
+            type="button" onclick="return true;"><i class="icon-ok"></i>
+            </button> to
+            map the OTU to this taxon. Click
             <button class="btn btn-mini row-controls-ghosted"
                     type="button" onclick="return false;"><i class="icon-remove"></i>
             </button>
-            to clear the list and modify the original label used for mapping.
+            to reject all mappings; then try modifying the original label and re-mapping.
+        </p>
+        <p>
+          Roll over each match to learn more about it. Click a name to
+          open the taxonomy browser for that taxon.
         </p>
     </div>
     <div class="modal-footer">
@@ -2663,4 +2671,7 @@ body {
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>
-</div>
+</div
+ml
+
+>
