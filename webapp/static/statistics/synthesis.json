@@ -24,14 +24,12 @@
         "tip_count": 2339460
     },
     "2015-10-24T00Z": {
-        "===": "TODO: CONFIRM initial info gleaned from the v4 README[1] and the draft-tree download page[2].",
-        "===": "[1] https://github.com/OpenTreeOfLife/germinator/blob/master/doc/ot-synthesis-v4.md",
-        "===": "[2] http://files.opentreeoflife.org/trees/",
+        "===": "tree_count and tip_count from https://api.opentreeoflife.org/v2/tree_of_life/about",
+        "===": "total_OTU_count calculated from Processed_newicks/*.tre",
         "version": "v4",
         "OTT_version": "ott2.9draft12",
-        "===": "TODO: Read these tallies from the download file.",
-        "tree_count": 999, 
-        "total_OTU_count": 99999, 
-        "tip_count": 9999999
+        "tree_count": 482, 
+        "total_OTU_count": 41029, 
+        "tip_count": 2424255
     }
 }
