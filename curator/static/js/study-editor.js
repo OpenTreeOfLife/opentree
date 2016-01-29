@@ -4910,10 +4910,16 @@ function getAttrsForMappingOption( optionData ) {
     return attrs;
 }
 function matchScoreToOpacity(score) {
-    // remap scores (generally from 0.75 to 1.0) to be more visible
-    var distanceFromPerfect = 1.0 - score;
-    var visibleDistance = distanceFromPerfect * 1.5;
-    return (1.0 - visibleDistance);
+    /* Remap scores (generally from 0.75 to 1.0, but 0.1 is possible!) to be more visible
+     * This is best accomplished by remapping to a curve, e.g.
+     *   OPACITY = SCORE^2 + 0.15
+     *   OPACITY = 0.8 * SCORE^2 + 0.2
+     *   OPACITY = 0.8 * SCORE + 0.2
+     * The effect we want is full opacity (1.0) for a 1.0 score, fading rapidly
+     * for the common (higher) scores, with a floor of ~0.2 opacity (enough to
+     * show color and maintain legibility).
+     */
+    return (0.8 * score) + 0.2;
 }
 
 var autoMappingInProgress = ko.observable(false);
