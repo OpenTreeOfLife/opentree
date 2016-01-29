@@ -20,7 +20,8 @@
         "version": "v3",
         "OTT_version": "ott2.8draft5",
         "tree_count": 478, 
-        "total_OTU_count": 63393, 
+        "===": "revised downward from 63393 by JAR 2016-01-29",
+        "total_OTU_count": 41580,
         "tip_count": 2339460
     },
     "2015-10-24T00Z": {
