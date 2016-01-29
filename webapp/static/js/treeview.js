@@ -94,9 +94,13 @@ function updateTreeView( State ) {
                     var errMsg;
                     if (jqXHR.responseText.indexOf('TaxonNotFoundException') !== -1) {
                         // the requested OTT taxon is not found in the target tree
-                        errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy but not in our tree'
-                                +' synthesis database. This can happen for a variety of reasons, but the most probable is that it'
-                                +' is flagged as <em>incertae sedis</em>.'
+                        var taxobrowserlink = getTaxobrowserLink('taxonomy browser',ottolID)
+                        errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy'
+                                +' but not in our tree synthesis database. This can happen for a variety of reasons,'
+                                +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
+                                +' causes it to be pruned from the synthetic tree. See the '
+                                +taxobrowserlink
+                                +' for more information about this taxon.'
                                 +'<br/><br/>If you think this is an error, please'
                                 +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
                         // TODO: Explain in more detail: Why wasn't this used?
