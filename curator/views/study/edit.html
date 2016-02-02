@@ -1252,7 +1252,8 @@ body {
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <a class="btn btn-mini"
+                            <span style="white-space: nowrap;">
+                                <a class="btn btn-mini"
                                                   style="padding: 0px 4px;"
                                                   data-bind="click: approveProposedOTULabel">
                                 <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: proposedMapping(otu)[0].name,
@@ -1260,6 +1261,7 @@ body {
                                                attr: getAttrsForMappingOption(proposedMapping(otu)[0])"
                                     href="#"
                                 >PROPOSED LABEL</a>
+                            </span>
                           <!-- /ko -->
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length > 1) -->
                            {{ # show available choices for mapping this OTU }}
@@ -1272,7 +1274,7 @@ body {
                             <ul class="mapping-options"
                                 data-bind="foreach: makeArray(proposedMapping(otu)),
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS">
-                                <li><a class="btn btn-mini"
+                                <li style="white-space: nowrap;"><a class="btn btn-mini"
                                                       style="padding: 0px 4px;"
                                                       data-bind="click: approveProposedOTUMappingOption">
                                 <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.unique_name,
@@ -1409,11 +1411,11 @@ body {
                 <div class="mapping-batch-operations" style="display: none;">
                     <button id="batch-approve" class="btn btn-small pull-left"
                             onclick="approveAllVisibleMappings(); return false;">
-                        <i class="icon-ok"></i> <strong>Approve all</strong> and continue
+                        <i class="icon-ok"></i> <strong>Auto-approve</strong> (continue)
                     </button>
                     <button id="batch-reject" class="btn btn-small pull-right"
                             onclick="rejectAllVisibleMappings(); return false;">
-                        <i class="icon-remove"></i> <strong>Reject all</strong> and pause
+                        <i class="icon-remove"></i> <strong>Reject all</strong> (pause)
                     </button>
                 </div>
             </div>

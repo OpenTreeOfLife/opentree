@@ -5128,11 +5128,22 @@ function approveAllVisibleMappings() {
             itsMappingInfo;
         if ($.isArray(approvedMapping)) {
             if (approvedMapping.length === 1) {
-                // apply the first (only) value
+                // test the first (only) value for possible approval
+                var onlyMapping = approvedMapping[0];
+                if (onlyMapping.originalMatch.is_synonym) {
+                    return;  // synonyms require manual review
+                }
+                if (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.unique_name) {
+                    return;  // taxon-name homonyms require manual review
+                }
+                if (onlyMapping.originalMatch.score < 1.0) {
+                    return;  // non-exact matches require manual review
+                }
+                // still here? then this mapping looks good enough for auto-approval
                 delete proposedOTUMappings()[ OTUid ];
                 mapOTUToTaxon( OTUid, approvedMapping[0], {POSTPONE_UI_CHANGES: true} );
             } else {
-                // do nothing if there are multiple possibilities
+                return; // multiple possibilities require manual review
             }
         } else {
             // apply the inner value of an observable (accessor) function
