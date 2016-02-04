@@ -1624,8 +1624,8 @@ function updateMappingStatus() {
                         +' <button class="btn btn-mini disabled"><i class="icon-ok"></i></button>'
                         +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
                         +'</span>'
-                        +' buttons to approve or reject each suggested mapping, or'
-                        +' or the buttons below to approve or reject the suggestions for all visible OTUs.<'+'/p>';
+                        +' buttons to accept or reject each suggested mapping,'
+                        +' or the buttons below to accept or reject the suggestions for all visible OTUs.<'+'/p>';
                 showBatchApprove = true;
                 showBatchReject = true;
                 needsAttention = true;
@@ -1637,7 +1637,7 @@ function updateMappingStatus() {
                     // we can add more by including 'All trees'
                     detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
                             +'Mapping is suspended because all OTUs in this '
-                            +'study\'s preferred trees have approved labels already. To continue, '
+                            +'study\'s preferred trees have accepted labels already. To continue, '
                             +'reject some mapped labels with the '
                             +'<span class="btn-group" style="margin: -2px 0;">'
                             +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
@@ -1649,7 +1649,7 @@ function updateMappingStatus() {
                 } else {
                     // we're truly done with mapping (in all trees)
                     detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
-                            +'Mapping is suspended because all OTUs in this study have approved '
+                            +'Mapping is suspended because all OTUs in this study have accepted '
                             +'labels already.. To continue, use the '
                             +'<span class="btn-group" style="margin: -2px 0;">'
                             +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
@@ -1663,7 +1663,7 @@ function updateMappingStatus() {
 
                 /* TODO: replace this stuff with if/else block above
                  */
-                detailsHTML = '<p'+'>Mapping is suspended because all selected OTUs have approved '
+                detailsHTML = '<p'+'>Mapping is suspended because all selected OTUs have accepted '
                         +' labels already. To continue, select additional OTUs to map, or use the '
                         +'<span class="btn-group" style="margin: -2px 0;">'
                         +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
