@@ -8,19 +8,20 @@
         "total_OTU_count": null, 
         "tip_count": null
     },
-    "2014-09-20T00Z": {
+    "2014-09-14T00Z": {
         "version": "v2",
-        "===": "Using initial stats gathered on 2015-01-16T23Z, which should be accurate here. Release date is based on .tgz file modification date.",
-        "OTT_version": "ott2.8",
-        "tree_count": 429, 
-        "total_OTU_count": 60933, 
-        "tip_count": null
+        "===": "tree_count and tip_count from graph/about service",
+        "OTT_version": "ott2.8draft5",
+        "tree_count": 484, 
+        "total_OTU_count": null, 
+        "tip_count": 2339516
     },
     "2015-05-06T00Z": {
         "version": "v3",
         "OTT_version": "ott2.8draft5",
         "tree_count": 478, 
-        "total_OTU_count": 63393, 
+        "===": "revised downward from 63393 by JAR 2016-01-29",
+        "total_OTU_count": 41580,
         "tip_count": 2339460
     },
     "2015-10-24T00Z": {
