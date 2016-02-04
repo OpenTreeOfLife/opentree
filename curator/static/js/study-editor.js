@@ -1615,7 +1615,7 @@ function updateMappingStatus() {
                         +' <button class="btn btn-mini disabled"><i class="icon-ok"></i></button>'
                         +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
                         +'</span>'
-                        +' buttons to accept or reject each suggested mapping, or'
+                        +' buttons to accept or reject each suggested mapping,'
                         +' or the buttons below to accept or reject the suggestions for all visible OTUs.<'+'/p>';
                 showBatchApprove = true;
                 showBatchReject = true;
