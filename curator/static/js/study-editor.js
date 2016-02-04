@@ -1178,10 +1178,19 @@ function loadSelectedStudy() {
                             var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
                             var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
                             if (aMapStatus === bMapStatus) {
-                                if (!aMapStatus) { // not yet mapped
-                                    // Try to retain their prior precedence in
-                                    // the list (avoid items jumping around)
-                                    return (a.priorPosition < b.priorPosition) ? -1:1;
+                                if (!aMapStatus) { // both OTUs are currently un-mapped
+                                    // Force failed mappings to the bottom of the list
+                                    var aFailedMapping = (failedMappingOTUs.indexOf(a['@id']) !== -1);
+                                    var bFailedMapping = (failedMappingOTUs.indexOf(b['@id']) !== -1);
+                                    if (aFailedMapping === bFailedMapping) {
+                                        // Try to retain their prior precedence in
+                                        // the list (avoid items jumping around)
+                                        return (a.priorPosition < b.priorPosition) ? -1:1;
+                                    } 
+                                    if (aFailedMapping) {
+                                        return 1;   // force a (failed) below b
+                                    } 
+                                    return -1;   // force b (failed) below a
                                 } else {
                                     return 0;
                                 }
@@ -5128,11 +5137,22 @@ function approveAllVisibleMappings() {
             itsMappingInfo;
         if ($.isArray(approvedMapping)) {
             if (approvedMapping.length === 1) {
-                // apply the first (only) value
+                // test the first (only) value for possible approval
+                var onlyMapping = approvedMapping[0];
+                if (onlyMapping.originalMatch.is_synonym) {
+                    return;  // synonyms require manual review
+                }
+                if (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.unique_name) {
+                    return;  // taxon-name homonyms require manual review
+                }
+                if (onlyMapping.originalMatch.score < 1.0) {
+                    return;  // non-exact matches require manual review
+                }
+                // still here? then this mapping looks good enough for auto-approval
                 delete proposedOTUMappings()[ OTUid ];
                 mapOTUToTaxon( OTUid, approvedMapping[0], {POSTPONE_UI_CHANGES: true} );
             } else {
-                // do nothing if there are multiple possibilities
+                return; // multiple possibilities require manual review
             }
         } else {
             // apply the inner value of an observable (accessor) function
