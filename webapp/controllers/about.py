@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 import json
 from datetime import datetime
-from opentreewebapputil import (get_opentree_services_method_urls, 
+from opentreewebapputil import (get_opentree_services_method_urls,
                                 fetch_current_TNRS_context_names,
                                 get_data_deposit_message,)
 
@@ -23,6 +23,10 @@ default_view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(
 
 def open_tree_of_life():
     # URL is /opentree/about/open-tree-of-life
+    return default_view_dict
+
+def faq():
+    # URL is /opentree/about/faq
     return default_view_dict
 
 def the_synthetic_tree():
@@ -53,7 +57,7 @@ def references():
 def progress():
     view_dict = default_view_dict.copy()
 
-    # Load each JSON document into a list or dict, so we can compile daily entries. 
+    # Load each JSON document into a list or dict, so we can compile daily entries.
     # NB: For simplicity and uniformity, filter these to use only simple dates
     # with no time component!
     # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
@@ -188,7 +192,7 @@ def progress():
             else:
                 num_otu_in_ott = ott_synth_version_info.get('visible_taxon_count', 0)
 
-        # N.B. Some days (esp. early in history) might not have any synthesis data, 
+        # N.B. Some days (esp. early in history) might not have any synthesis data,
         # or incomplete data (if synthesis was prior to gathering detailed stats)
         if synth_v:  # ignore empty dict (no data found)
             if synth_v.get('total_OTU_count') is None:
@@ -249,7 +253,7 @@ def _force_to_simple_date_string( date_string ):
 def synthesis_release():
     view_dict = default_view_dict.copy()
 
-    # Load each JSON document into a list or dict, so we can compile daily entries. 
+    # Load each JSON document into a list or dict, so we can compile daily entries.
     # NB: For simplicity and uniformity, filter these to use only simple dates
     # with no time component!
     # EXAMPLE u'2015-01-16T23Z' ==> u'2015-01-16'
@@ -274,8 +278,8 @@ def synthesis_release():
     if len(request.args) == 0:
         release_date = sorted(synth.keys(), reverse=False)[-1]
         release_version = synth[release_date].get('version')
-        redirect(URL('opentree', 'about', 'synthesis_release', 
-            vars={}, 
+        redirect(URL('opentree', 'about', 'synthesis_release',
+            vars={},
             args=[release_version]))
 
     synth_release_version = request.args[0]
@@ -311,8 +315,8 @@ def taxonomy_version():
     # Get OTT version from URL, or bounce to the latest version by default
     if len(request.args) == 0:
         taxonomy_version = sorted([v.get('version') for v in ott], reverse=False)[-1]
-        redirect(URL('opentree', 'about', 'taxonomy_version', 
-            vars={}, 
+        redirect(URL('opentree', 'about', 'taxonomy_version',
+            vars={},
             args=[taxonomy_version]))
 
     taxo_version = request.args[0]
@@ -343,7 +347,7 @@ def taxonomy_version():
             synth_ott_version = synth_ott_version.split('draft')[0]
         if synth_ott_version == taxo_version:
             related_releases.append(synth[date]['version'])
-    view_dict['related_synth_releases'] = related_releases 
+    view_dict['related_synth_releases'] = related_releases
 
     return view_dict
 
@@ -461,7 +465,7 @@ def fetch_current_synthesis_source_data():
             fetch_url = "https:%s" % fetch_url
 
         # as usual, this needs to be a POST (pass empty fetch_args)
-        study_metadata_response = fetch(fetch_url, data={"verbose": True}) 
+        study_metadata_response = fetch(fetch_url, data={"verbose": True})
         # TODO: add more friendly label to tree metadata? if so, add "includeTreeMetadata":True above
         study_metadata = simplejson.loads( study_metadata_response )
 
@@ -488,13 +492,13 @@ def fetch_current_synthesis_source_data():
 
         # TODO: encode data to utf-8?
         ## context_names += [n.encode('utf-8') for n in contextnames_json[gname] ]
-        
+
         # translate data-deposit DOIs/URLs into friendlier forms
         for study in contributing_studies:
             raw_deposit_doi = study.get('ot:dataDeposit', None)
             if raw_deposit_doi:
                 study['friendlyDepositMessage'] = get_data_deposit_message(raw_deposit_doi)
-        
+
         return contributing_studies
 
     except Exception, e:
