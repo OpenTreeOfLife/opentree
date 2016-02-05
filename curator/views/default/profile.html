@@ -113,7 +113,8 @@ if error_msg:
             An organization with this name was found on GitHub, but is not an OpenTree participant. Please check the URL above and try again.
           {{ else: }}
             A user with this name was found on GitHub, but we did not find any OpenTree activity.
-            Either the user has not contributed to OpenTree, or the user does not have a valid email address associated with their GitHub account.
+            Either the user has not contributed to OpenTree, or the user does not have a public email address associated with their GitHub account
+            (required to associate curation activity with users).
           {{ pass }}
     </p>
 {{ else:
