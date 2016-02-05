@@ -1653,8 +1653,10 @@ function displayConflictSummary(conflictInfo) {
     // show results in the Analyses tab
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     var $reportArea = $('#analysis-results');
+    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ $('#tree-select').val()
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
+           .append('<p><a href="'+ treeURL +'" target="conflicttree">Open labelled tree in new window</a></p>')
            .append('<p>Of the <span class="node-count-display">n</span> internal nodes in this tree, here is how they compare to the <span class="reference-tree-display">taxonomy / synthetic tree</span>.</p>');
     var nodeCount = summaryInfo.aligned.total
         + summaryInfo.conflicting.total
@@ -1665,20 +1667,43 @@ function displayConflictSummary(conflictInfo) {
     $reportArea.find('.reference-tree-display').html(chosenTargetName);
 
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.aligned.total
-        +' <strong>aligned</strong> nodes that can be mapped to nodes in the target</p>');
+        +' <strong>aligned</strong> nodes that can be mapped to nodes in the target'
+        +' <a href="#" onclick="$(\'#report-aligned-nodes\').toggle(); return false;">(hide/show node list)</a></p>');
+    $reportArea.append('<ul id="report-aligned-nodes" class="conflict-report-node-list"></ul>');
+    var $nodeList = $reportArea.find('#report-aligned-nodes');
+    for (var nodeid in summaryInfo.aligned.nodes) {
+        var nodeInfo = summaryInfo.aligned.nodes[nodeid];
+        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
+            'Unnamed node ('+ nodeInfo.witness +')'
+        $nodeList.append('<li>'+ nodeName +'</li>');
+    }
+
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.resolving.total
-        +' <strong>resolving</strong> nodes that resolve polytomies present in the target</p>');
+        +' <strong>resolving</strong> nodes that resolve polytomies within these clades in the target'
+        +' <a href="#" onclick="$(\'#report-resolving-nodes\').toggle(); return false;">(hide/show target node list)</a></p>');
+    $reportArea.append('<ul id="report-resolving-nodes" class="conflict-report-node-list"></ul>');
+    var $nodeList = $reportArea.find('#report-resolving-nodes');
+    for (var nodeid in summaryInfo.resolving.nodes) {
+        var nodeInfo = summaryInfo.resolving.nodes[nodeid];
+        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
+            'Unnamed node ('+ nodeInfo.witness +')'
+        $nodeList.append('<li>'+ nodeName +'</li>');
+    }
+
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.conflicting.total
-        +' <strong>conflicting</strong> nodes that conflict with nodes in the target</p>');
+        +' <strong>conflicting</strong> nodes that conflict with nodes in the target'
+        +' <a href="#" onclick="$(\'#report-conflicting-nodes\').toggle(); return false;">(hide/show target node list)</a></p>');
+    $reportArea.append('<ul id="report-conflicting-nodes" class="conflict-report-node-list"></ul>');
+    var $nodeList = $reportArea.find('#report-conflicting-nodes');
+    for (var nodeid in summaryInfo.conflicting.nodes) {
+        var nodeInfo = summaryInfo.conflicting.nodes[nodeid];
+        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
+            'Unnamed node ('+ nodeInfo.witness +')'
+        $nodeList.append('<li>'+ nodeName +'</li>');
+    }
+
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.undetermined.total
         +' <strong>undetermined</strong> nodes that cannot be aligned to the target at all</p>');
-/*
-    .html(
-      "  "+ summaryInfo.aligned +" aligned nodes\n"+
-      "  "+ summaryInfo.resolving +" resolving nodes\n"+
-      "  "+ summaryInfo.conflicting +" conflicting nodes"
-    );
-    */
   }
 function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
     // Expects inputTreeID from the current study (concatenate these!)
