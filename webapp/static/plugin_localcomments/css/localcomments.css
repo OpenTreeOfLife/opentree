@@ -39,6 +39,9 @@ div.plugin_localcomments .byline .controls {
     font-size: 110%;
     padding: 4px 8px 0;
 }
+.plugin_localcomments .issue-supporting-reference {
+    padding-bottom: 12px;
+}
 .plugin_localcomments ul .issue {
     margin-bottom: 4px;
 }
@@ -93,7 +96,8 @@ div.plugin_localcomments .byline .controls {
     width: 38%;
     vertical-align: baseline;
 }
-.plugin_localcomments div.reply #issue_title {
+.plugin_localcomments div.reply #issue_title,
+.plugin_localcomments div.reply #reference_url {
     display: block;
     width: 98%;
 }

@@ -3,7 +3,7 @@ opentree
 
 This is the repository for the Open Tree of Life web applications, one of many subsystems making up the Open Tree of Life project code.
 
-For the deployment system, API documentation, API tests, and other material whose scope covers the overall Open Tree system, please see the [germinator repository](https://github.com/OpenTreeOfLife/germinator).
+For Open Tree of Life documentation, see [the germinator repository's wiki](https://github.com/OpenTreeOfLife/germinator/wiki). The 'deployment system' and web API documentation sources that formerly resided in this repository now live in the [germinator repository](https://github.com/OpenTreeOfLife/germinator).
 
 The following instructions have not been reviewed in a long time. For local installation a better place to start might be [this wiki page](https://github.com/OpenTreeOfLife/opentree/wiki/Installing-a-local-curator-and-tree-browser-test-server).
 

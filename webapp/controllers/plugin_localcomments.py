@@ -50,12 +50,10 @@ function capture_form() {
     if ($parentIssueContainer.length > 0) {
         threadParentID = $parentIssueContainer.find('div:eq(0)').attr('id').split('r')[1];
     }
-    console.log('threadParentID:'+ threadParentID);
     var isThreadStarter = threadParentID == 0;
     if (isThreadStarter) {
         //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'General comment' );
         jQuery('div.plugin_localcomments select[name=feedback_type]').show();
-        //jQuery('div.plugin_localcomments select[name=intended_scope]').show();
         jQuery('div.plugin_localcomments select[name=issue_title]').show();
 
         // hide/show form widgets based on the chosen feedback type
@@ -90,11 +88,25 @@ function capture_form() {
     } else {
         // jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'Reply or general comment' );
         jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
-        // jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
         jQuery('div.plugin_localcomments select[name=issue_title]').hide();
     }
+    // we only show 'intended scope' for phylo corrections
+    jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
     // always hide expertise checkbox and surrounding label (not currently needed)
     jQuery('div.plugin_localcomments label.expertise-option').hide();
+
+    // show/hide some fields based on feedback type
+    var $referenceURLField = jQuery('div.plugin_localcomments input[name="reference_url"]'); 
+    $referenceURLField.hide();
+    jQuery('div.plugin_localcomments select[name="feedback_type"]').unbind('change').change(function(){
+        if (jQuery(this).val() === 'Error in phylogeny') {
+            jQuery('div.plugin_localcomments select[name=intended_scope]').show();
+            $referenceURLField.show();
+        } else {
+            jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
+            $referenceURLField.hide();
+        }
+    });
 
     // update the Login link, if shown
     if (typeof(fixLoginLinks) === 'function') {
@@ -110,10 +122,18 @@ function capture_form() {
             alert("Please enter your name (and preferably an email address) so we can stay in touch.");
             return false;
         }
-        var $fbTypeField = $form.find('select[name="feedback_type"]');
-        if ($fbTypeField.is(':visible') && ($.trim($fbTypeField.val()) === '')) {
-            alert("Please choose a feedback type for this topic.");
-            return false;
+        var $fbTypeField = $form.find('select[name="feedback_type"]'); 
+        if ($fbTypeField.is(':visible')) {
+            if ($.trim($fbTypeField.val()) === '') {
+                alert("Please choose a feedback type for this topic.");
+                return false;
+            } else if ($.trim($fbTypeField.val()) === 'Error in phylogeny'){
+                var $referenceURLField = $form.find('input[name="reference_url"]'); 
+                if ($.trim($referenceURLField.val()) === '') {
+                    alert("Please provide a supporting reference (URL).");
+                    return false;
+                }
+            }
         }
         var $titleField = $form.find('input[name="issue_title"]');
         if ($titleField.is(':visible') && ($.trim($titleField.val()) === '')) {
@@ -140,7 +160,8 @@ function capture_form() {
                'title': $form.find('input[name="issue_title"]').val(),
                'body': $form.find('textarea[name="body"]').val(),
                'feedback_type': $form.find('select[name="feedback_type"]').val(),
-               // 'intended_scope': $form.find('select[name="intended_scope"]').val(),
+               'reference_url': $form.find('input[name="reference_url"]').val(),
+               'intended_scope': $form.find('select[name="intended_scope"]').val(),
                'claimed_expertise': $form.find(':checkbox[name="claimed_expertise"]').is(':checked'),
                'visitor_name': $form.find('input[name="visitor_name"]').val(),
                'visitor_email': $form.find('input[name="visitor_email"]').val()
@@ -314,7 +335,8 @@ def index():
     thread_parent_id = request.vars['thread_parent_id'] # can be None
     comment_id = request.vars['comment_id'] # used for some operations (eg, delete)
     feedback_type = request.vars['feedback_type'] # used for new comments
-    #intended_scope = request.vars['intended_scope'] # used for new comments
+    reference_url = request.vars['reference_url'] # used for phylo corrections only
+    intended_scope = request.vars['intended_scope'] # used for new comments
     issue_title = request.vars['title'] # used for new issues (threads)
     claims_expertise = request.vars['claimed_expertise'] # used for new comments
     threads = [ ]
@@ -405,6 +427,7 @@ def index():
                     # not sure why this doesn't work... db.auth record is not a mapping!?
                     ('title' in comment) and DIV( comment['title'], A(T('on GitHub'), _href=comment['html_url'], _target='_blank'), _class='topic-title') or '',
                     DIV( XML(markdown(get_visible_comment_body(comment['body'] or ''), extras={'link-patterns':None}, link_patterns=[(link_regex, link_replace)]).encode('utf-8'), sanitize=False),_class=(issue_node and 'body issue-body' or 'body comment-body')),
+                    DIV( A(T('Supporting reference (opens in a new window)'), _href=metadata.get('Supporting reference'), _target='_blank'), _class='body issue-supporting-reference' ) if metadata.get('Supporting reference') else '',
                     DIV(
                         A(T(author_display_name), _href=author_link, _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
@@ -498,7 +521,8 @@ def index():
                 "Synthetic tree node id": synthtree_node_id,
                 "Source tree id": sourcetree_id,
                 "Open Tree Taxonomy id": ottol_id,
-                #"Intended scope": intended_scope
+                "Intended scope": intended_scope,
+                "Supporting reference": reference_url or 'None'
             })
             msg_data = {
                 "title": issue_title,
@@ -568,17 +592,16 @@ def index():
                             OPTION('General comment', _value='General comment'),
                         _name='feedback_type',value='',_style='width: auto;'),
                         T(' '),
-                        #SELECT(
-                            #OPTION('about node placement in the synthetic tree', _value='Re: synthetic tree'),
-                            #OPTION('about node placement in the source tree', _value='Re: source tree'),
-                            #OPTION('about taxon data in OTT', _value='Re: OTT taxon'),
-                            #OPTION('general feedback (none of the above)', _value=''),
-                        #_name='intended_scope',value='',_style='width: auto;'),
+                        SELECT(
+                            OPTION('about node placement in the synthetic tree', _value='Re: synthetic tree'),
+                            OPTION('about node placement in the source tree', _value='Re: source tree'),
+                            OPTION('about taxon data in OTT', _value='Re: OTT taxon'),
+                            OPTION('something else', _value=''),
+                        _name='intended_scope',value='Re: synthetic tree',_style='width: auto;'),
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
-                        INPUT(_type='text',_id='issue_title',_name='issue_title',_value='',_placeholder="Short title"),   # should appear for proper issues only
-                        INPUT(_type='text',_id='doi',_name='doi',_value='',_placeholder="DOI of the paper containing the tree"),   # should appear for tree suggestions only
-                        INPUT(_type='text',_id='tree_id',_name='tree_id',_value='',_placeholder="Which tree from this paper (e.g. Figure 3)"),   # should appear for proper issues only
-                        TEXTAREA(_name='body',_placeholder="Add more detail; optionally using Markdown for formatting (click 'Markdown help' below to learn more)."),
+                        INPUT(_type='text',_id='issue_title',_name='issue_title',_value='',_placeholder="Give this topic a title"),   # should appear for proper issues only
+                        TEXTAREA(_name='body',_placeholder="Add more to this topic, using Markdown (click 'Markdown help' below to learn more)."),
+                        INPUT(_type='text',_id='reference_url',_name='reference_url',_value='',_placeholder="Provide a supporting reference URL"),   # should appear for phylo corrections only
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
                         INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
@@ -827,15 +850,16 @@ full_footer = """
 ================================================
 Metadata   |   Do not edit below this line
 :------------|:----------
-Author   |   %(Author)s
-Upvotes   |   %(Upvotes)d
-URL   |   %(URL)s
-Target node label   |   %(Target node label)s
-Synthetic tree id   |   %(Synthetic tree id)s
-Synthetic tree node id   |   %(Synthetic tree node id)s
-Source tree id(s)   |   %(Source tree id)s
-Open Tree Taxonomy id   |   %(Open Tree Taxonomy id)s
-Intended scope   |   %(Intended scope)s
+Author   |   %(Author)s 
+Upvotes   |   %(Upvotes)d 
+URL   |   %(URL)s 
+Target node label   |   %(Target node label)s 
+Synthetic tree id   |   %(Synthetic tree id)s 
+Synthetic tree node id   |   %(Synthetic tree node id)s 
+Source tree id(s)   |   %(Source tree id)s 
+Open Tree Taxonomy id   |   %(Open Tree Taxonomy id)s 
+Intended scope   |   %(Intended scope)s 
+Supporting reference   |   %(Supporting reference)s 
 """
 reply_footer = """
 ================================================
