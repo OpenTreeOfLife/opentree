@@ -1178,10 +1178,25 @@ function loadSelectedStudy() {
                             var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
                             var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
                             if (aMapStatus === bMapStatus) {
+<<<<<<< Updated upstream
                                 if (!aMapStatus) { // not yet mapped
                                     // Try to retain their prior precedence in
                                     // the list (avoid items jumping around)
                                     return (a.priorPosition < b.priorPosition) ? -1:1;
+                                if (!aMapStatus) { // both OTUs are currently un-mapped
+                                    // Force failed mappings to the bottom of the list
+                                    var aFailedMapping = (failedMappingOTUs.indexOf(a['@id']) !== -1);
+                                    var bFailedMapping = (failedMappingOTUs.indexOf(b['@id']) !== -1);
+                                    if (aFailedMapping === bFailedMapping) {
+                                        // Try to retain their prior precedence in
+                                        // the list (avoid items jumping around)
+                                        return (a.priorPosition < b.priorPosition) ? -1:1;
+                                    }
+                                    if (aFailedMapping) {
+                                        return 1;   // force a (failed) below b
+                                    }
+                                    return -1;   // force b (failed) below a
+>>>>>>> Stashed changes
                                 } else {
                                     return 0;
                                 }
@@ -1242,6 +1257,11 @@ function loadSelectedStudy() {
                     }
                 });
 
+<<<<<<< Updated upstream
+                // clear any stale last-selected OTU (it's likely moved)
+                lastClickedTogglePosition = null;
+
+>>>>>>> Stashed changes
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
@@ -1641,8 +1661,10 @@ function displayConflictSummary(conflictInfo) {
     // show results in the Analyses tab
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     var $reportArea = $('#analysis-results');
+    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ $('#tree-select').val()
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
+           .append('<p><a href="'+ treeURL +'" target="conflicttree">Open labelled tree in new window</a></p>')
            .append('<p>Of the <span class="node-count-display">n</span> internal nodes in this tree, here is how they compare to the <span class="reference-tree-display">taxonomy / synthetic tree</span>.</p>');
     var nodeCount = summaryInfo.aligned.total
         + summaryInfo.conflicting.total
@@ -1653,20 +1675,43 @@ function displayConflictSummary(conflictInfo) {
     $reportArea.find('.reference-tree-display').html(chosenTargetName);
 
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.aligned.total
-        +' <strong>aligned</strong> nodes that can be mapped to nodes in the target</p>');
+        +' <strong>aligned</strong> nodes that can be mapped to nodes in the target'
+        +' <a href="#" onclick="$(\'#report-aligned-nodes\').toggle(); return false;">(hide/show node list)</a></p>');
+    $reportArea.append('<ul id="report-aligned-nodes" class="conflict-report-node-list"></ul>');
+    var $nodeList = $reportArea.find('#report-aligned-nodes');
+    for (var nodeid in summaryInfo.aligned.nodes) {
+        var nodeInfo = summaryInfo.aligned.nodes[nodeid];
+        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
+            'Unnamed node ('+ nodeInfo.witness +')'
+        $nodeList.append('<li>'+ nodeName +'</li>');
+    }
+
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.resolving.total
-        +' <strong>resolving</strong> nodes that resolve polytomies present in the target</p>');
+        +' <strong>resolving</strong> nodes that resolve polytomies within these clades in the target'
+        +' <a href="#" onclick="$(\'#report-resolving-nodes\').toggle(); return false;">(hide/show target node list)</a></p>');
+    $reportArea.append('<ul id="report-resolving-nodes" class="conflict-report-node-list"></ul>');
+    var $nodeList = $reportArea.find('#report-resolving-nodes');
+    for (var nodeid in summaryInfo.resolving.nodes) {
+        var nodeInfo = summaryInfo.resolving.nodes[nodeid];
+        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
+            'Unnamed node ('+ nodeInfo.witness +')'
+        $nodeList.append('<li>'+ nodeName +'</li>');
+    }
+
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.conflicting.total
-        +' <strong>conflicting</strong> nodes that conflict with nodes in the target</p>');
+        +' <strong>conflicting</strong> nodes that conflict with nodes in the target'
+        +' <a href="#" onclick="$(\'#report-conflicting-nodes\').toggle(); return false;">(hide/show target node list)</a></p>');
+    $reportArea.append('<ul id="report-conflicting-nodes" class="conflict-report-node-list"></ul>');
+    var $nodeList = $reportArea.find('#report-conflicting-nodes');
+    for (var nodeid in summaryInfo.conflicting.nodes) {
+        var nodeInfo = summaryInfo.conflicting.nodes[nodeid];
+        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
+            'Unnamed node ('+ nodeInfo.witness +')'
+        $nodeList.append('<li>'+ nodeName +'</li>');
+    }
+
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.undetermined.total
         +' <strong>undetermined</strong> nodes that cannot be aligned to the target at all</p>');
-/*
-    .html(
-      "  "+ summaryInfo.aligned +" aligned nodes\n"+
-      "  "+ summaryInfo.resolving +" resolving nodes\n"+
-      "  "+ summaryInfo.conflicting +" conflicting nodes"
-    );
-    */
   }
 function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
     // Expects inputTreeID from the current study (concatenate these!)

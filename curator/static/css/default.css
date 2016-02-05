@@ -6,24 +6,24 @@ body {
    the desire to have a nice, big, fat search box.
 */
 .header {
-	margin: 2px; 
+	margin: 2px;
 	height: 85px;
 }
 .headerlogo {
 	float: left;
 }
-.sidebar-search {	
+.sidebar-search {
     background-color: #ffc;
     border: 1px solid #dda;
     border-radius: 4px;
     margin: -3px;
     padding: 8px 4px;
 }
-.sidebar-search form {	
+.sidebar-search form {
     margin: 0;
 }
 #search-results i {
-    display: block; 
+    display: block;
     margin: 8px 0 0;
 }
 .search-result {
@@ -68,7 +68,7 @@ body {
 #provenance-panel .panel-edges {
     background-color: #eee;
 }
-.vizcontent div.viewer-frame, 
+.vizcontent div.viewer-frame,
 #comments-panel,
 #provenance-panel {
     float: left;
@@ -102,32 +102,32 @@ div.viewer-frame {
 }
 
 /* slide these using marker classes on #viewer-collection */
-.active-comments #comments-panel {   
-    margin-left: 0; 
-    margin-right: 0; 
+.active-comments #comments-panel {
+    margin-left: 0;
+    margin-right: 0;
 }
 .active-comments div.viewer-frame {
     width: 50%;  /* TODO: adapt to narrower window!? */
     margin-left: 0;
-    margin-right: 0; 
+    margin-right: 0;
 }
-.active-comments #provenance-panel {    
+.active-comments #provenance-panel {
     margin-left: 0;
-    margin-right: -100%; 
+    margin-right: -100%;
 }
 
-.active-properties #comments-panel {   
-    margin-left: -50%; 
-    margin-right: 0; 
+.active-properties #comments-panel {
+    margin-left: -50%;
+    margin-right: 0;
 }
 .active-properties div.viewer-frame {
     width: 50%;
     margin-left: 0;
-    margin-right: 0; 
+    margin-right: 0;
 }
-.active-properties #provenance-panel {    
+.active-properties #provenance-panel {
     margin-left: 0;
-    margin-right: 0; 
+    margin-right: 0;
 }
 
 /* overrides for tablet-sized displays (matching Bootstrap media queries) */
@@ -157,22 +157,22 @@ div.viewer-frame {
     }
 
     /* slide these using marker classes on #viewer-collection */
-    .active-comments #comments-panel {   
-        margin-left: 0; 
+    .active-comments #comments-panel {
+        margin-left: 0;
         margin-right: 0;
     }
     .active-comments div.viewer-frame {
         width: 100%;
-        margin-left: 0; 
+        margin-left: 0;
         margin-right: -90%;
     }
-    .active-comments #provenance-panel {    
-        margin-left: 90%; 
+    .active-comments #provenance-panel {
+        margin-left: 90%;
         margin-right: -180%;
     }
 
-    .active-properties #comments-panel {   
-        margin-left: -90%; 
+    .active-properties #comments-panel {
+        margin-left: -90%;
         margin-right: 0;
     }
     .active-properties div.viewer-frame {
@@ -180,7 +180,7 @@ div.viewer-frame {
         margin-left: -90%;
         margin-right: 0;
     }
-    .active-properties #provenance-panel {    
+    .active-properties #provenance-panel {
         margin-left: 0;
         margin-right: 0;
     }
@@ -348,7 +348,7 @@ a.full-ref-toggle:hover {
     font-size: 90%;
     margin-bottom: 4px;
 }
-.full-study-ref, 
+.full-study-ref,
 .compact-study-ref {
     /* font-weight: bold; */
 }
@@ -425,11 +425,11 @@ div#r0 {
     float: right;
 }
 #screen-size-indicator {
-    position: absolute; 
-    left: 0; 
-    top: 0; 
+    position: absolute;
+    left: 0;
+    top: 0;
     padding: 1px 6px;
-    background: red; 
+    background: red;
     color: white;
 }
 
@@ -500,7 +500,7 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
     color: #999;
 }
 .wireframe {
-    /* 
+    /*
     border: 1px dashed silver;
     background-color: #ffc;
      */
@@ -544,12 +544,12 @@ table.bare-top-row tr:first-child td {
 }
 
 img.tool-icon {
-    width: 100px; 
-    height: 100px; 
-    background-color: #f5f5f5; 
+    width: 100px;
+    height: 100px;
+    background-color: #f5f5f5;
     border-radius: 8px;
     /*
-    border: 1px solid #ccc; 
+    border: 1px solid #ccc;
     */
 }
 
@@ -582,13 +582,13 @@ tr:hover .row-controls-ghosted {
     overflow: hidden;
 }
 .clear-search {
-    opacity: 0.5; 
-    margin-top: 2px; 
-    margin-left: -24px; 
+    opacity: 0.5;
+    margin-top: 2px;
+    margin-left: -24px;
     cursor: pointer;
 }
 .clear-search:hover {
-    opacity: 1.0; 
+    opacity: 1.0;
 }
 .help-box,
 .help-toggle,
@@ -638,7 +638,7 @@ tr:hover .row-controls-ghosted {
 .current-ref-values {
     background-color: #eee;
     margin: 0px -4px 2px;
-    padding: 6px 8px; 
+    padding: 6px 8px;
     border-radius: 8px;
     margin-bottom: 2px;
 }
@@ -678,14 +678,14 @@ tr:hover .row-controls-ghosted {
     box-sizing: border-box;
     -moz-box-sizing: border-box;
     webkit-box-sizing: border-box;
-    display: block; 
-    white-space: pre-wrap;  
-    white-space: -moz-pre-wrap; 
-    white-space: -pre-wrap; 
-    white-space: -o-pre-wrap; 
-    word-wrap: break-word; 
-    word-break: break-word; 
-    width: 100%; 
+    display: block;
+    white-space: pre-wrap;
+    white-space: -moz-pre-wrap;
+    white-space: -pre-wrap;
+    white-space: -o-pre-wrap;
+    word-wrap: break-word;
+    word-break: break-word;
+    width: 100%;
     margin-left: -5px;
     overflow-x: auto;
 }
@@ -718,14 +718,14 @@ tr:hover .row-controls-ghosted {
     padding: 4px;
 }
 #server-details {
-    display: none; 
-    clear: both; 
-    margin: 4px 0; 
-    background-color: #f5f5f5; 
-    padding: 6px 8px; 
+    display: none;
+    clear: both;
+    margin: 4px 0;
+    background-color: #f5f5f5;
+    padding: 6px 8px;
     border-radius: 8px;
 }
-#server-details .shard-name, 
+#server-details .shard-name,
 #server-details .setting-name {
     color: #888;
 }
@@ -763,7 +763,7 @@ div.structure-only {
     margin: 0;
 }
 ul.mapping-options {
-    list-style: none; 
+    list-style: none;
     margin: 0 0 8px 0;
     position: relative; /* choices should float above right sidebar */
 }
@@ -812,7 +812,7 @@ tr.after-shims th {
   margin-bottom: 12px;
 }
 
-.profile-header .control-group > .control-label, 
+.profile-header .control-group > .control-label,
 .profile-header .control-group > .controls {
     margin-top: -8px;
 }
@@ -839,4 +839,10 @@ tr.after-shims th {
     /* manage very large server responses in footer */
     overflow: scroll;
     max-height: 400px;
+}
+
+/* styles for conflict and other analyses */
+.conflict-report-node-list {
+	  display: none;
+		margin-left: 4em;
 }
