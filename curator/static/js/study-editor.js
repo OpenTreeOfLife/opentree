@@ -1581,16 +1581,23 @@ function getTreeConflictSummary(conflictInfo) {
     var totalNodesSupportedBy = 0;
     var totalNodesConflictingWith = 0;
     var totalNodesResolving = 0;
+    var totalNodesPartialPathOf = 0;
     for (var nodeid in conflictInfo) {
         switch(conflictInfo[nodeid].status) {
             case '=':
+            case 'supported_by':
                 totalNodesSupportedBy++;
                 break;
             case '<>':
+            case 'conflicts_with':
                 totalNodesConflictingWith++;
                 break;
             case '<':
+            case 'resolves':
                 totalNodesResolving++;
+                break;
+            case 'partial_path_of':
+                totalNodesPartialPathOf++;
                 break;
             default:
                 console.error("ERROR: unknown conflict status '"+ (conflictInfo[nodeid].status) +"'!");
@@ -1598,6 +1605,7 @@ function getTreeConflictSummary(conflictInfo) {
     }
     return {
         'supported': totalNodesSupportedBy,
+        'partial': totalNodesPartialPathOf,
         'conflicting': totalNodesConflictingWith,
         'resolving': totalNodesResolving
     };
@@ -1607,9 +1615,24 @@ function testConflictSummary(conflictInfo) {
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     console.warn("Node status summary");
     console.warn("  "+ summaryInfo.supported +" nodes supported");
+    console.warn("  "+ summaryInfo.partial +" nodes partial-path-of");
     console.warn("  "+ summaryInfo.conflicting +" nodes in conflict");
     console.warn("  "+ summaryInfo.resolving +" nodes resolving");
 }
+function displayConflictSummary(conflictInfo) {
+    // show results in the Analyses tab
+    var summaryInfo = getTreeConflictSummary(conflictInfo);
+    var $reportArea = $('#analysis-results');
+    $reportArea.empty()
+           .append('<h4>Tree conflict summary</h4>')
+           .append('<pre class="rendered-comment"></pre>');
+    $reportArea.find('pre').html(
+      "  "+ summaryInfo.supported +" nodes supported\n"+
+      "  "+ summaryInfo.partial +" nodes partial-path-of\n"+
+      "  "+ summaryInfo.conflicting +" nodes in conflict\n"+
+      "  "+ summaryInfo.resolving +" nodes resolving"
+    );
+  }
 function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
     // Expects inputTreeID from the current study (concatenate these!)
     // Expects referenceTreeID of 'taxonomy' or 'synth'
@@ -1657,7 +1680,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
             if (textStatus !== 'success') {
                 if (jqXHR.status >= 500) {
                     // major server-side error, just show raw response for tech support
-                    var errMsg = 'Sorry, there was an error saving this study. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                    var errMsg = 'Sorry, there was an error generating a conflict report. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
                     hideModalScreen();
                     showErrorMessage(errMsg);
                     return;
@@ -1672,7 +1695,8 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
                 return;
             }
             var conflictInfo = $.parseJSON(jqXHR.responseText);
-            testConflictSummary(conflictInfo);
+            //testConflictSummary(conflictInfo);  // shows in JS console
+            displayConflictSummary(conflictInfo);
         }
     });
 }
