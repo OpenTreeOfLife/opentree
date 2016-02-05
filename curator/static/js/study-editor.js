@@ -1578,60 +1578,95 @@ function toggleRadialTreeLayoutInViewer(cb) {
 function getTreeConflictSummary(conflictInfo) {
     // Expects a JS object from conflict service; returns an object with
     // summary tallies of each node status.
-    var totalNodesSupportedBy = 0;
-    var totalNodesConflictingWith = 0;
-    var totalNodesResolving = 0;
-    var totalNodesPartialPathOf = 0;
+    // treat supported_by and partial_path_of the same
+    var summary = {
+        'aligned': {
+            total: 0,
+            nodes: {}
+        },
+        'conflicting': {
+            total: 0,
+            nodes: {}
+        },
+        'resolving': {
+            total: 0,
+            nodes: {}
+        },
+        'undetermined': {
+            total: 0
+            // do we need to build a node list here?
+        }
+    }
+    //var totalNodesPartialPathOf = 0;
     for (var nodeid in conflictInfo) {
         switch(conflictInfo[nodeid].status) {
-            case '=':
             case 'supported_by':
-                totalNodesSupportedBy++;
-                break;
-            case '<>':
-            case 'conflicts_with':
-                totalNodesConflictingWith++;
-                break;
-            case '<':
-            case 'resolves':
-                totalNodesResolving++;
-                break;
             case 'partial_path_of':
-                totalNodesPartialPathOf++;
+                summary.aligned.total++;
+                summary.aligned.nodes[nodeid] = conflictInfo[nodeid];
+                break;
+            case 'conflicts_with':
+                summary.conflicting.total++;
+                summary.conflicting.nodes[nodeid] = conflictInfo[nodeid];
+                break;
+            case 'resolves':
+                summary.resolving.total++;
+                summary.resolving.nodes[nodeid] = conflictInfo[nodeid];
                 break;
             default:
                 console.error("ERROR: unknown conflict status '"+ (conflictInfo[nodeid].status) +"'!");
         }
     }
-    return {
-        'supported': totalNodesSupportedBy,
-        'partial': totalNodesPartialPathOf,
-        'conflicting': totalNodesConflictingWith,
-        'resolving': totalNodesResolving
-    };
+    // subtract from all internal nodes to count undetermined nodes
+    var inputTreeID = $('#tree-select').val();
+    var tree = getTreeByID( inputTreeID );
+    var nodeCounts = getNodeCounts(tree);
+    var internalNodeCount = nodeCounts.totalNodes - nodeCounts.totalTips;
+    summary.undetermined.total = internalNodeCount
+        - summary.aligned.total
+        - summary.conflicting.total
+        - summary.resolving.total;
+    return summary;
 }
 function testConflictSummary(conflictInfo) {
     // show results in the JS console
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     console.warn("Node status summary");
-    console.warn("  "+ summaryInfo.supported +" nodes supported");
-    console.warn("  "+ summaryInfo.partial +" nodes partial-path-of");
-    console.warn("  "+ summaryInfo.conflicting +" nodes in conflict");
-    console.warn("  "+ summaryInfo.resolving +" nodes resolving");
+    console.warn("  "+ summaryInfo.aligned +" aligned nodes");
+    console.warn("  "+ summaryInfo.conflicting +" conflicting nodes");
+    console.warn("  "+ summaryInfo.resolving +" resolving nodes");
 }
+
 function displayConflictSummary(conflictInfo) {
     // show results in the Analyses tab
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     var $reportArea = $('#analysis-results');
     $reportArea.empty()
-           .append('<h4>Tree conflict summary</h4>')
-           .append('<pre class="rendered-comment"></pre>');
-    $reportArea.find('pre').html(
-      "  "+ summaryInfo.supported +" nodes supported\n"+
-      "  "+ summaryInfo.partial +" nodes partial-path-of\n"+
-      "  "+ summaryInfo.conflicting +" nodes in conflict\n"+
-      "  "+ summaryInfo.resolving +" nodes resolving"
+           .append('<h4>Conflict summary</h4>')
+           .append('<p>Of the <span class="node-count-display">n</span> internal nodes in this tree, here is how they compare to the <span class="reference-tree-display">taxonomy / synthetic tree</span>.</p>');
+    var nodeCount = summaryInfo.aligned.total
+        + summaryInfo.conflicting.total
+        + summaryInfo.resolving.total
+        + summaryInfo.undetermined.total;
+    $reportArea.find('.node-count-display').html(nodeCount);
+    var chosenTargetName = $('#reference-select option:selected').html();
+    $reportArea.find('.reference-tree-display').html(chosenTargetName);
+
+    $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.aligned.total
+        +' <strong>aligned</strong> nodes that can be mapped to nodes in the target</p>');
+    $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.resolving.total
+        +' <strong>resolving</strong> nodes that resolve polytomies present in the target</p>');
+    $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.conflicting.total
+        +' <strong>conflicting</strong> nodes that conflict with nodes in the target</p>');
+    $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.undetermined.total
+        +' <strong>undetermined</strong> nodes that cannot be aligned to the target at all</p>');
+/*
+    .html(
+      "  "+ summaryInfo.aligned +" aligned nodes\n"+
+      "  "+ summaryInfo.resolving +" resolving nodes\n"+
+      "  "+ summaryInfo.conflicting +" conflicting nodes"
     );
+    */
   }
 function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
     // Expects inputTreeID from the current study (concatenate these!)
