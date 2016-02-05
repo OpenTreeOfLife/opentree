@@ -199,8 +199,8 @@ body {
       <li><a href="#OTU-Mapping" data-toggle="tab">OTU Mapping <span class="badge badge-important" style="display: none;">?</span></a></li>
     <!--
       <li><a href="#Annotations" data-toggle="tab">Annotations <span class="badge badge-important" style="display: none;">?</span></a></li>
-      <li><a href="#Tools" data-toggle="tab">Tools <span class="badge badge-important" style="display: none;">?</span></a></li>
     -->
+      <li><a href="#Analyses" data-toggle="tab">Analyses <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#History" data-toggle="tab">History <span class="badge badge-important" style="display: none;">?</span></a></li>
     </ul>
 
@@ -1716,45 +1716,33 @@ body {
            </div><!-- end of full-width column... -->
           </div><!-- /.tab-pane -->
 
-          <div class="tab-pane" id="Tools">
+          <div class="tab-pane" id="Analyses">
            <div class="span8"><!-- main column... -->
-            <ul class="suggestion-list"></ul>
 
-            <div style="margin-bottom: 100px;">
+             <form class="form-inline">
+                 <label>Analyze tree</label>
+                 <select id="tree-select"
+                         onchange="(this); return false;"
+                         data-bind="options: viewModel.elementTypes.tree.gatherAll(viewModel.nexml),
+                                    optionsValue: '@id',
+                                    optionsText: '@label',
+                                    optionsCaption: 'Choose a tree from this study...',
+                                    css: viewModel.ticklers.TREES">
+                 </select>
 
-                <table class="table Xtable-condensed bare-top-row">
-                  <tbody>
-                    <tr>
-                        <td colspan="3" style="color: #c33; font-weight: bold; font-size: 1.25em; text-align: center;">
-                            NOTE: The tools shown below are non-functional placeholders!
-                        </td>
-                    </tr>
-                    <tr style="opacity: 0.5;">
-                        <td width="100">
-                            <img class="tool-icon" alt="treemachine" src="{{=URL('static','images/tools/treemachine-icon.png')}}" />
-                        </td>
-                        <td width="125"><a href="http://blog.opentreeoflife.org/what-is-the-tree-of-life/" target="_blank">Open Tree of Life (treemachine)</a></td>
-                        <td>
-                            This runs automatically for any study in the
-                            system. <strong>This study fails</strong>, possibly
-                            because it has no preferred tree (marked for
-                            synthesis) or needs additional OTU mapping for
-                            synthesis.
-                        </td>
-                    </tr>
-                    <tr style="opacity: 0.5;">
-                        <td>
-                            <img class="tool-icon" alt="MIAPA validator" src="{{=URL('static','images/tools/miapa-icon.png')}}" />
-                        </td>
-                        <td><a href="https://github.com/miapa/miapa/blob/master/checklist/MIAPA-checklist.md" target="_blank">MIAPA Validator</a></td>
-                        <td>
-                            This runs automatically against any study in the system. <strong>This study passes!</strong>
-                        </td>
-                    </tr>
-                  </tbody>
-                </table>
+                 <label>against target</label>
+                 <select id="reference-select">
+                     <option value="">Choose a target...</option>
+                     <option value="synth">Synthetic Tree of Life</option>
+                     <option value="taxonomy">Open Tree Taxonomy</option>
+                 </select>
+                 <button class="btn btn-info" data-bind="click: fetchTreeConflictStatus">GO!</button>
+             </form>
 
+            <div id="analysis-results">
+              <em>Analysis results will appear here...</em>
             </div>
+
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
 
@@ -1766,16 +1754,13 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
                 <p>
-                  The <strong>Tools</strong> listed here can modify your NexSON
-                  files or use them in powerful ways.
+                  The <strong>Analysis</strong> tab reports the results of conflict
+                  analysis - how trees in this study agree / conflict with the
+                  synthetic tree or the OpenTree Taxonomy.
                 </p>
                 <p>
-                  Each tool will explain whether it applies to this NexSON
-                  file; if not, it will suggest additions or improvements that
-                  would make it compatible.
-                </p>
-                <p>
-                  [TODO] Suggest how to use tools, add new ones, register a new tool..?
+                  In the future, there will be other analyses here. Have a suggestion?
+                  Add an <a href="https://github.com/OpenTreeOfLife/opentree/issues">issue<a/>.
                 </p>
             </div>
 
@@ -1949,6 +1934,7 @@ body {
     var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";
     var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
+    var treeConflictStatus_url = "{{=treeConflictStatus_url}}";
 
     var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}";
     var API_create_collection_POST_url = "{{=API_create_collection_POST_url}}";
