@@ -358,7 +358,6 @@ def index():
                     child_comments = resp.json()
                 except:
                     child_comments = resp.json
-                print("found {0} child comments".format(len(child_comments)))
             except:
                 # WE need logging in the web app!
                 try:
@@ -464,14 +463,12 @@ def index():
         # delete the specified comment or close an issue...
         try:
             if issue_or_comment == 'issue':
-                print("CLOSING ISSUE: ")
-                print(comment_id)
+                print("CLOSING ISSUE {0}".format(comment_id))
                 close_issue(comment_id)
                 clear_local_comments()
                 return 'closed'
             else:
-                print("DELETING COMMENT: ")
-                print(comment_id)
+                print("DELETING COMMENT {0}".format(comment_id))
                 delete_comment(comment_id)
                 clear_local_comments()
                 return 'deleted'
@@ -564,8 +561,6 @@ def index():
         return node(new_msg)                
 
     # retrieve related comments, based on the chosen filter
-    print("retrieving local comments using this filter:")
-    print(filter)
     if filter == 'skip_comments':
         # sometimes we just want the markup/UI (eg, an empty page that's quickly updated by JS)
         comments = [ ]
@@ -585,7 +580,7 @@ def index():
     for comment in comments:
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
         threads.append(comment)
-    pprint('{0} threads loaded'.format(len(threads)))
+
     return DIV(script,
                DIV(FORM(# anonymous users should see be encouraged to login or add a name-or-email to their comments
                         '' if auth.user_id else A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
@@ -685,18 +680,18 @@ def add_or_update_comment(msg_data, comment_id=None, parent_issue_id=None ):
     if comment_id:
         # edit an existing comment
         url = '{0}/repos/OpenTreeOfLife/feedback/issues/comments/{1}'.format(GH_BASE_URL, comment_id)
-        print('URL for editing an existing comment:')
-        print(url)
-        resp = requests.patch( url,
+        #print('URL for editing an existing comment:')
+        #print(url)
+        resp = requests.patch( url, 
             headers=GH_POST_HEADERS,
             data=json.dumps(msg_data)
         )
     else:
         # create a new comment
         url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}/comments'.format(GH_BASE_URL, parent_issue_id)
-        print('URL for adding a new comment:')
-        print(url)
-        resp = requests.post( url,
+        #print('URL for adding a new comment:')
+        #print(url)
+        resp = requests.post( url, 
             headers=GH_POST_HEADERS,
             data=json.dumps(msg_data)
         )
@@ -711,9 +706,9 @@ def add_or_update_comment(msg_data, comment_id=None, parent_issue_id=None ):
 def close_issue(issue_id):
     # close a thread (issue) on GitHub
     url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}'.format(GH_BASE_URL, issue_id)
-    print('URL for closing an existing issue:')
-    print(url)
-    resp = requests.patch( url,
+    #print('URL for closing an existing issue:')
+    #print(url)
+    resp = requests.patch( url, 
         headers=GH_POST_HEADERS,
         data=json.dumps({"state":"closed"})
     )
@@ -728,9 +723,9 @@ def close_issue(issue_id):
 def delete_comment(comment_id):
     # delete a comment on GitHub
     url = '{0}/repos/OpenTreeOfLife/feedback/issues/comments/{1}'.format(GH_BASE_URL, comment_id)
-    print('URL for deleting an existing comment:')
-    print(url)
-    resp = requests.delete( url,
+    #print('URL for deleting an existing comment:')
+    #print(url)
+    resp = requests.delete( url, 
         headers=GH_GET_HEADERS
     )
     ##pprint(resp)
@@ -778,7 +773,7 @@ def get_local_comments(location={}):
         search_text = '{0}"{1} | {2} " '.format( search_text, k, v )
     search_text = urllib.quote_plus(search_text.encode('utf-8'), safe='~')
     #print search_text
-    print('>> calling GitHub API for local issues...')
+    #print('>> calling GitHub API for local issues...')
     url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+state:open&sort=created&order=desc'
     ##TODO: search only within body?
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
