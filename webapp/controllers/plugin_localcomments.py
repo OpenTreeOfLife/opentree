@@ -123,17 +123,22 @@ function capture_form() {
             return false;
         }
         var $fbTypeField = $form.find('select[name="feedback_type"]'); 
+        var $fbScopeField = $form.find('select[name="intended_scope"]'); 
         if ($fbTypeField.is(':visible')) {
             if ($.trim($fbTypeField.val()) === '') {
                 alert("Please choose a feedback type for this topic.");
                 return false;
-            } else if ($.trim($fbTypeField.val()) === 'Error in phylogeny'){
+            } 
+            /* TODO: Should the supporting-reference URL be required? 
+                     Decide this based on the phylo-error "scope"? i.e., `$fbScopeField.val()`
+            else if ($.trim($fbTypeField.val()) === 'Error in phylogeny'){
                 var $referenceURLField = $form.find('input[name="reference_url"]'); 
                 if ($.trim($referenceURLField.val()) === '') {
                     alert("Please provide a supporting reference (URL).");
                     return false;
                 }
             }
+            */
         }
         var $titleField = $form.find('input[name="issue_title"]');
         if ($titleField.is(':visible') && ($.trim($titleField.val()) === '')) {
@@ -422,12 +427,15 @@ def index():
         # NOTE the funky constructor required to use this below
 
         try:   # TODO: if not comment.deleted:
+            # N.B. some missing information (e.g. supporting URL) will appear here as a string like "None"
+            supporting_reference_url = metadata.get('Supporting reference', None)
+            has_supporting_reference_url = supporting_reference_url and (supporting_reference_url != u'None')
             markup = LI(
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
                     ('title' in comment) and DIV( comment['title'], A(T('on GitHub'), _href=comment['html_url'], _target='_blank'), _class='topic-title') or '',
                     DIV( XML(markdown(get_visible_comment_body(comment['body'] or ''), extras={'link-patterns':None}, link_patterns=[(link_regex, link_replace)]).encode('utf-8'), sanitize=False),_class=(issue_node and 'body issue-body' or 'body comment-body')),
-                    DIV( A(T('Supporting reference (opens in a new window)'), _href=metadata.get('Supporting reference'), _target='_blank'), _class='body issue-supporting-reference' ) if metadata.get('Supporting reference') else '',
+                    DIV( A(T('Supporting reference (opens in a new window)'), _href=supporting_reference_url, _target='_blank'), _class='body issue-supporting-reference' ) if has_supporting_reference_url else '',
                     DIV(
                         A(T(author_display_name), _href=author_link, _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
@@ -459,13 +467,16 @@ def index():
                 print("CLOSING ISSUE: ")
                 print(comment_id)
                 close_issue(comment_id)
+                clear_local_comments()
                 return 'closed'
             else:
                 print("DELETING COMMENT: ")
                 print(comment_id)
                 delete_comment(comment_id)
+                clear_local_comments()
                 return 'deleted'
         except:
+            clear_local_comments()  # hopefully a cleaner result
             return error()
     elif thread_parent_id:
         # add a new comment using the submitted vars
@@ -549,7 +560,8 @@ def index():
                 "body": "{0}\n{1}".format(msg_body, footer)
             }
             new_msg = add_or_update_comment(msg_data, parent_issue_id=thread_parent_id)
-        return node(new_msg)
+        clear_local_comments()
+        return node(new_msg)                
 
     # retrieve related comments, based on the chosen filter
     print("retrieving local comments using this filter:")
@@ -794,30 +806,32 @@ def clear_local_comments():
     # Examine the JSON payload (now in request.vars) to see if we can clear
     # only the affected localcomments. If not, play it safe and clear all
     # comments in the cache.
-    trigger_action = request.vars.get('action', None)
-    print(">>> clear_local_comments(): trigger_action is [%s]" % trigger_action)
-
-    if trigger_action in ['created', 'TODO']:
-        issue_with_metadata = request.vars.issue
-    elif trigger_action in ['FOO', 'BAR']:
-        # different payload structure for some events?
-        issue_with_metadata = request.vars.issue
+    if 'markdown_body' in request.vars:
+        # If we receive issue Markdown, parse it to recover metadata fields.
+        # N.B. this is not currently used, but handy to keep in mind!
+        metadata = parse_comment_metadata(request.vars.markdown_body)
+        local_url = metadata.get('URL', None)
+        local_ott_id = metadata.get('Open Tree Taxonomy id', None)
+        local_synth_node_id = metadata.get('Synthetic tree node id', None)
     else:
-        # fall back to most likely payload structure
-        print(">>> Unexpected trigger_action [%s]!" % trigger_action)
-        issue_with_metadata = request.vars.issue
+        # normally we'll examine the request vars as-is
+        metadata = request.vars;
+        local_url = metadata.get('url', None)
+        local_ott_id = metadata.get('ottol_id', None)
+        local_synth_node_id = metadata.get('synthtree_node_id', None)
 
-    metadata = parse_comment_metadata(issue_with_metadata.get('body', ''))
-    if metadata:
-        # Clobber any cached comment keyed to its metadata. N.B. that we err on
-        # the side of clobbering, since reloading is no big deal, but we definitely
-        # don't want to show stale comments from the cache.
-        if metadata['URL']:
-            # Extract a root-relative URL from markdown strings like
+    if local_url or local_ott_id or local_synth_node_id:
+        # Clobber any cached comment keyed to its metadata, in a way that 
+        # handles Markdown or the more typical form variables.
+        # N.B. that we err on the side of clobbering, since reloading the
+        # comment cache is no big deal, while we definitely don't want to show
+        # stale (cached) comments!
+        if local_url:
+            # Extract a root-relative URL from markdown strings like 
             # "[devtree.opentreeoflife.org/opentree/argus/otol.draft.22@132](http://devtree.opentreeoflife.org/opentree/argus/otol.draft.22@132)"
-            markdown_url = metadata['URL']
-            print('markdown_url:')
-            print(markdown_url)
+            markdown_url = local_url
+            #print('markdown_url:')
+            #print(markdown_url)
             parts = markdown_url.split('[')
             if len(parts) > 1:
                 markdown_url = parts[1]
@@ -829,13 +843,13 @@ def clear_local_comments():
                 # assume we have an absolute URL, and remove three slashes
                 parts = markdown_url.split('/')[3:]
                 root_relative_url = '/' + '/'.join(parts)
-            print('root_relative_url:')
-            print(root_relative_url)
+            #print('root_relative_url:')
+            #print(root_relative_url)
             clear_matching_cache_keys("^localcomments:.*'url': '%s'.*" % root_relative_url)
-        if metadata['Open Tree Taxonomy id']:
-            clear_matching_cache_keys("^localcomments:.*'ottol_id': '%s'.*" % metadata['Open Tree Taxonomy id'])
-        if metadata['Synthetic tree node id']:
-            clear_matching_cache_keys("^localcomments:.*'synthtree_node_id': '%s'.*" % metadata['Synthetic tree node id'])
+        if local_ott_id:
+            clear_matching_cache_keys("^localcomments:.*'ottol_id': '%s'.*" % local_ott_id)
+        if local_synth_node_id:
+            clear_matching_cache_keys("^localcomments:.*'synthtree_node_id': '%s'.*" % local_synth_node_id)
     else:
         # Play it safe and clobber *all* local comments in cache.
         print(">>> No metadata found. CLEARING ALL cached localcomments!")
