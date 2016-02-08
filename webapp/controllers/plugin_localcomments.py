@@ -93,17 +93,22 @@ function capture_form() {
             return false;
         }
         var $fbTypeField = $form.find('select[name="feedback_type"]'); 
+        var $fbScopeField = $form.find('select[name="intended_scope"]'); 
         if ($fbTypeField.is(':visible')) {
             if ($.trim($fbTypeField.val()) === '') {
                 alert("Please choose a feedback type for this topic.");
                 return false;
-            } else if ($.trim($fbTypeField.val()) === 'Error in phylogeny'){
+            } 
+            /* TODO: Should the supporting-reference URL be required? 
+                     Decide this based on the phylo-error "scope"? i.e., `$fbScopeField.val()`
+            else if ($.trim($fbTypeField.val()) === 'Error in phylogeny'){
                 var $referenceURLField = $form.find('input[name="reference_url"]'); 
                 if ($.trim($referenceURLField.val()) === '') {
                     alert("Please provide a supporting reference (URL).");
                     return false;
                 }
             }
+            */
         }
         var $titleField = $form.find('input[name="issue_title"]'); 
         if ($titleField.is(':visible') && ($.trim($titleField.val()) === '')) {
@@ -390,12 +395,13 @@ def index():
         # NOTE the funky constructor required to use this below
 
         try:   # TODO: if not comment.deleted:
+            # N.B. some missing information (e.g. supporting URL) will appear here as a string like "None"
             markup = LI(
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
                     ('title' in comment) and DIV( comment['title'], A(T('on GitHub'), _href=comment['html_url'], _target='_blank'), _class='topic-title') or '',
                     DIV( XML(markdown(get_visible_comment_body(comment['body'] or ''), extras={'link-patterns':None}, link_patterns=[(link_regex, link_replace)]).encode('utf-8'), sanitize=False),_class=(issue_node and 'body issue-body' or 'body comment-body')),
-                    DIV( A(T('Supporting reference (opens in a new window)'), _href=metadata.get('Supporting reference'), _target='_blank'), _class='body issue-supporting-reference' ) if metadata.get('Supporting reference') else '',
+                    DIV( A(T('Supporting reference (opens in a new window)'), _href=metadata.get('Supporting reference'), _target='_blank'), _class='body issue-supporting-reference' ) if (metadata.get('Supporting reference') != u'None') else '',
                     DIV(
                         A(T(author_display_name), _href=author_link, _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
