@@ -1792,12 +1792,16 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
     );
 }
 
-function addConflictInfoToTree( treeID, conflictInfo ) {
+function addConflictInfoToTree( treeOrID, conflictInfo ) {
     // remove any stale info first
-    removeConflictInfoFromTree( treeID );
+    removeConflictInfoFromTree( treeOrID );
 
-    console.log("ADDING conflict info to tree '"+ treeID +"'");
-    var tree = getTreeByID( treeID );
+    var tree = null;
+    if (typeof(treeOrID) === 'object') {
+        tree = treeOrID;
+    } else {
+        tree = getTreeByID(treeOrID);
+    }
     if (!tree) {
         // this should *never* happen
         alert("addConflictInfoToTree(): No tree specified!");
@@ -1814,9 +1818,13 @@ function addConflictInfoToTree( treeID, conflictInfo ) {
         localNode.conflictDetails = conflictInfo[nodeID];
     }
 }
-function removeConflictInfoFromTree( treeID ) {
-    console.log("REMOVING conflict info from tree '"+ treeID +"'");
-    var tree = getTreeByID( treeID );
+function removeConflictInfoFromTree( treeOrID ) {
+    var tree = null;
+    if (typeof(treeOrID) === 'object') {
+        tree = treeOrID;
+    } else {
+        tree = getTreeByID(treeOrID);
+    }
     if (!tree) {
         // this should *never* happen
         alert("removeConflictInfoFromTree(): No tree specified!");
@@ -1992,6 +2000,7 @@ function scrubNexsonForTransport( nexml ) {
         cleanupAdHocRoot(tree);
         clearD3PropertiesFromTree(tree);
         clearMRCATestResults(tree);
+        removeConflictInfoFromTree(tree);
     });
 
     // coerce some non-string values
