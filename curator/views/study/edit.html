@@ -1248,14 +1248,17 @@ body {
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length === 1) -->
                            {{ # show mapped label }}
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                                <button class="btn btn-mini" 
+                                        data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS"
+                                        title="Click to reject this OTU mapping">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
                             <span style="white-space: nowrap;">
                                 <a class="btn btn-mini"
-                                                  style="padding: 0px 4px;"
-                                                  data-bind="click: approveProposedOTULabel">
+                                   style="padding: 0px 4px;"
+                                   title="Click to accept this OTU mapping"
+                                   data-bind="click: approveProposedOTULabel">
                                 <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: proposedMapping(otu)[0].name,
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                                attr: getAttrsForMappingOption(proposedMapping(otu)[0])"
@@ -1266,7 +1269,9 @@ body {
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length > 1) -->
                            {{ # show available choices for mapping this OTU }}
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                                <button class="btn btn-mini" 
+                                        data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS"
+                                        title="Click to reject all mappings for this OTU">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
@@ -1276,7 +1281,8 @@ body {
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <li style="white-space: nowrap;"><a class="btn btn-mini"
                                                       style="padding: 0px 4px;"
-                                                      data-bind="click: approveProposedOTUMappingOption">
+                                                      data-bind="click: approveProposedOTUMappingOption"
+                                                      title="Click to accept this OTU mapping">
                                 <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.unique_name,
                                                   attr: getAttrsForMappingOption($data)"
                                        href="#"></a>
