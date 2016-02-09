@@ -1242,11 +1242,6 @@ function loadSelectedStudy() {
                     }
                 });
 
-<<<<<<< Updated upstream
-                // clear any stale last-selected OTU (it's likely moved)
-                lastClickedTogglePosition = null;
-
->>>>>>> Stashed changes
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
