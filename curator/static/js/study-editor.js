@@ -131,6 +131,7 @@ if ( History && History.enabled ) {
         // treatment of initial URLs.
         var currentTab = State.data.tab;
         var currentTree = State.data.tree;
+        var conflictReferenceTree = State.data.conflict;
         var activeFilter = null;
         var filterDefaults = null;
 
@@ -168,6 +169,9 @@ if ( History && History.enabled ) {
             var tree = getTreeByID(currentTree);
             if (tree) {
                 showTreeViewer(tree);
+                if (conflictReferenceTree) {
+                    fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree);
+                }
             } else {
                 var errMsg = 'The requested tree (\''+ currentTree +'\') was not found. It has probably been deleted from this study.';
                 hideModalScreen();
@@ -1574,6 +1578,7 @@ function toggleRadialTreeLayoutInViewer(cb) {
     }
 }
 
+
 /* Support conflict display in the tree viewer */
 function getTreeConflictSummary(conflictInfo) {
     // Expects a JS object from conflict service; returns an object with
@@ -1765,6 +1770,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
 }
 
 function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
+    // show summary stats in the Analyses tab
     fetchTreeConflictStatus(
         inputTreeID, 
         referenceTreeID, 
@@ -1774,13 +1780,52 @@ function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
     );
 }
 function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
+    // color nodes+edges in the tree-view popup
     fetchTreeConflictStatus(
         inputTreeID, 
         referenceTreeID, 
         function(inputTreeID, referenceTreeID, conflictInfo) {
-            // TODO: Show results in the current tree-view popup
+            // Show results in the current tree-view popup
+            addConflictInfoToTree( inputTreeID, conflictInfo )
+            drawTree(inputTreeID);
         }
     );
+}
+
+function addConflictInfoToTree( treeID, conflictInfo ) {
+    // remove any stale info first
+    removeConflictInfoFromTree( treeID );
+
+    console.log("ADDING conflict info to tree '"+ treeID +"'");
+    var tree = getTreeByID( treeID );
+    if (!tree) {
+        // this should *never* happen
+        alert("addConflictInfoToTree(): No tree specified!");
+        return;
+    }
+    if (!conflictInfo) {
+        // this should *never* happen
+        alert("addConflictInfoToTree(): No conflict info provided!");
+        return;
+    }
+    // add information provided to any specified local node
+    for (var nodeID in conflictInfo) {
+        var localNode = getTreeNodeByID( tree, nodeID );
+        localNode.conflictDetails = conflictInfo[nodeID];
+    }
+}
+function removeConflictInfoFromTree( treeID ) {
+    console.log("REMOVING conflict info from tree '"+ treeID +"'");
+    var tree = getTreeByID( treeID );
+    if (!tree) {
+        // this should *never* happen
+        alert("removeConflictInfoFromTree(): No tree specified!");
+        return;
+    }
+    // simply clear all conflictDetails properties from all nodes
+    $.each(tree.node, function(i, node) {
+        delete node.conflictDetails;
+    });
 }
 
 function updateMappingStatus() {
