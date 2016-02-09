@@ -1178,25 +1178,10 @@ function loadSelectedStudy() {
                             var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
                             var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
                             if (aMapStatus === bMapStatus) {
-<<<<<<< Updated upstream
                                 if (!aMapStatus) { // not yet mapped
                                     // Try to retain their prior precedence in
                                     // the list (avoid items jumping around)
                                     return (a.priorPosition < b.priorPosition) ? -1:1;
-                                if (!aMapStatus) { // both OTUs are currently un-mapped
-                                    // Force failed mappings to the bottom of the list
-                                    var aFailedMapping = (failedMappingOTUs.indexOf(a['@id']) !== -1);
-                                    var bFailedMapping = (failedMappingOTUs.indexOf(b['@id']) !== -1);
-                                    if (aFailedMapping === bFailedMapping) {
-                                        // Try to retain their prior precedence in
-                                        // the list (avoid items jumping around)
-                                        return (a.priorPosition < b.priorPosition) ? -1:1;
-                                    }
-                                    if (aFailedMapping) {
-                                        return 1;   // force a (failed) below b
-                                    }
-                                    return -1;   // force b (failed) below a
->>>>>>> Stashed changes
                                 } else {
                                     return 0;
                                 }
