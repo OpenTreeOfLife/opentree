@@ -175,6 +175,28 @@ body {
   /* stroke: #f00; */
 }
 
+/* Conflict-info colors should take precedence */
+.node.conflict-supported_by circle,
+.node.conflict-partial_path_of circle {
+  fill: purple;
+}
+.link.conflict-supported_by,
+.link.conflict-partial_path_of {
+  stroke: purple;
+}
+.node.conflict-conflicts_with circle {
+  fill: orange;
+}
+.link.conflict-conflicts_with {
+  stroke: orange;
+}
+.node.conflict-resolves circle {
+  fill: green;
+}
+.link.conflict-resolves {
+  stroke: green;
+}
+
 /* force proper styles for Bootstrap Tags Input */
 .bootstrap-tagsinput input {
     border: none !important;

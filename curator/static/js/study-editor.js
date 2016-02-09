@@ -1772,8 +1772,8 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
 function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
     // show summary stats in the Analyses tab
     fetchTreeConflictStatus(
-        inputTreeID, 
-        referenceTreeID, 
+        inputTreeID,
+        referenceTreeID,
         function(inputTreeID, referenceTreeID, conflictInfo) {
             displayConflictSummary(conflictInfo);
         }
@@ -1782,8 +1782,8 @@ function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
 function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
     // color nodes+edges in the tree-view popup
     fetchTreeConflictStatus(
-        inputTreeID, 
-        referenceTreeID, 
+        inputTreeID,
+        referenceTreeID,
         function(inputTreeID, referenceTreeID, conflictInfo) {
             // Show results in the current tree-view popup
             addConflictInfoToTree( inputTreeID, conflictInfo )
@@ -3731,8 +3731,6 @@ function drawTree( treeOrID, options ) {
         } else {
             delete node.ambiguousLabel;
         }
-        // TODO: decorate with conflict information here?
-
         // reset x of all nodes, to avoid gradual "creeping" to the right
         node.x = 0;
         node.length = 0;  // ie, branch length
@@ -3874,6 +3872,9 @@ function drawTree( treeOrID, options ) {
                     default:
                         itsClass += ' unresolved-exemplar';
                 }
+            }
+            if (d.conflictDetails) {
+                itsClass += " conflict-"+ d.conflictDetails.status;
             }
             return itsClass;
         });
