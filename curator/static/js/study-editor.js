@@ -1642,6 +1642,7 @@ function displayConflictSummary(conflictInfo) {
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     var $reportArea = $('#analysis-results');
     var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ $('#tree-select').val()
+      +"&conflict="+ $('#reference-select').val();
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
            .append('<p><a href="'+ treeURL +'" target="conflicttree">Open labelled tree in new window</a></p>')
@@ -1692,8 +1693,9 @@ function displayConflictSummary(conflictInfo) {
 
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.undetermined.total
         +' <strong>undetermined</strong> nodes that cannot be aligned to the target at all</p>');
-  }
-function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
+}
+
+function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
     // Expects inputTreeID from the current study (concatenate these!)
     // Expects referenceTreeID of 'taxonomy' or 'synth'
     if (typeof(inputTreeID) !== 'string') {
@@ -1707,22 +1709,19 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
         return;
     }
     var fullInputTreeID = (studyID +"%23"+ inputTreeID);
-    var fullReferenceTreeID;
     switch(referenceTreeID) {
-        case 'taxonomy':
-            fullReferenceTreeID = 'ott';
-            break;
+        case 'ott':
         case 'synth':
-            fullReferenceTreeID = 'synth';
+            // these are the only ids allowed for now
             break;
         default:
-            console.error('fetchTreeConflictStatus(): ERROR, expecting either "taxonomy"or "synth" as referenceTreeID!');
+            console.error('fetchTreeConflictStatus(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
             return;
     }
     var conflictURL = treeConflictStatus_url
         .replace('&amp;', '&')  // restore naked ampersand for query-string args
         .replace('{TREE1_ID}', fullInputTreeID)
-        .replace('{TREE2_ID}', fullReferenceTreeID)
+        .replace('{TREE2_ID}', referenceTreeID)
     // TODO: call this URL and try to show a summary report
     console.warn("Trying to fetch a conflict report from this URL:");
     console.warn(conflictURL);
@@ -1756,11 +1755,33 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
             }
             var conflictInfo = $.parseJSON(jqXHR.responseText);
             //testConflictSummary(conflictInfo);  // shows in JS console
-            displayConflictSummary(conflictInfo);
+            if (typeof callback !== 'function') {
+                console.error("fetchTreeConflictStatus() expected a callback function!");
+                return;
+            }
+            callback(inputTreeID, referenceTreeID, conflictInfo);
         }
     });
 }
 
+function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
+    fetchTreeConflictStatus(
+        inputTreeID, 
+        referenceTreeID, 
+        function(inputTreeID, referenceTreeID, conflictInfo) {
+            displayConflictSummary(conflictInfo);
+        }
+    );
+}
+function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
+    fetchTreeConflictStatus(
+        inputTreeID, 
+        referenceTreeID, 
+        function(inputTreeID, referenceTreeID, conflictInfo) {
+            // TODO: Show results in the current tree-view popup
+        }
+    );
+}
 
 function updateMappingStatus() {
     // update mapping status+details based on the current state of things
