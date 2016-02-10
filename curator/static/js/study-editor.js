@@ -131,6 +131,7 @@ if ( History && History.enabled ) {
         // treatment of initial URLs.
         var currentTab = State.data.tab;
         var currentTree = State.data.tree;
+        var conflictReferenceTree = State.data.conflict;
         var activeFilter = null;
         var filterDefaults = null;
 
@@ -168,6 +169,9 @@ if ( History && History.enabled ) {
             var tree = getTreeByID(currentTree);
             if (tree) {
                 showTreeViewer(tree);
+                if (conflictReferenceTree) {
+                    fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree);
+                }
             } else {
                 var errMsg = 'The requested tree (\''+ currentTree +'\') was not found. It has probably been deleted from this study.';
                 hideModalScreen();
@@ -1586,6 +1590,7 @@ function toggleRadialTreeLayoutInViewer(cb) {
     }
 }
 
+
 /* Support conflict display in the tree viewer */
 function getTreeConflictSummary(conflictInfo) {
     // Expects a JS object from conflict service; returns an object with
@@ -1610,23 +1615,23 @@ function getTreeConflictSummary(conflictInfo) {
         }
     }
     //var totalNodesPartialPathOf = 0;
-    for (var nodeid in conflictInfo) {
-        switch(conflictInfo[nodeid].status) {
+    for (var nodeid in conflictInfo.detailsByNodeID) {
+        switch(conflictInfo.detailsByNodeID[nodeid].status) {
             case 'supported_by':
             case 'partial_path_of':
                 summary.aligned.total++;
-                summary.aligned.nodes[nodeid] = conflictInfo[nodeid];
+                summary.aligned.nodes[nodeid] = conflictInfo.detailsByNodeID[nodeid];
                 break;
             case 'conflicts_with':
                 summary.conflicting.total++;
-                summary.conflicting.nodes[nodeid] = conflictInfo[nodeid];
+                summary.conflicting.nodes[nodeid] = conflictInfo.detailsByNodeID[nodeid];
                 break;
             case 'resolves':
                 summary.resolving.total++;
-                summary.resolving.nodes[nodeid] = conflictInfo[nodeid];
+                summary.resolving.nodes[nodeid] = conflictInfo.detailsByNodeID[nodeid];
                 break;
             default:
-                console.error("ERROR: unknown conflict status '"+ (conflictInfo[nodeid].status) +"'!");
+                console.error("ERROR: unknown conflict status '"+ (conflictInfo.detailsByNodeID[nodeid].status) +"'!");
         }
     }
     // subtract from all internal nodes to count undetermined nodes
@@ -1654,6 +1659,7 @@ function displayConflictSummary(conflictInfo) {
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     var $reportArea = $('#analysis-results');
     var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ $('#tree-select').val()
+      +"&conflict="+ $('#reference-select').val();
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
            .append('<p><a href="'+ treeURL +'" target="conflicttree">Open labelled tree in new window</a></p>')
@@ -1668,7 +1674,8 @@ function displayConflictSummary(conflictInfo) {
 
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.aligned.total
         +' <strong>aligned</strong> nodes that can be mapped to nodes in the target'
-        +' <a href="#" onclick="$(\'#report-aligned-nodes\').toggle(); return false;">(hide/show node list)</a></p>');
+        + (summaryInfo.aligned.total > 0 ? ' <a href="#" onclick="$(\'#report-aligned-nodes\').toggle(); return false;">(hide/show node list)</a>' : '')
+        +'</p>');
     $reportArea.append('<ul id="report-aligned-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-aligned-nodes');
     for (var nodeid in summaryInfo.aligned.nodes) {
@@ -1680,7 +1687,8 @@ function displayConflictSummary(conflictInfo) {
 
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.resolving.total
         +' <strong>resolving</strong> nodes that resolve polytomies within these clades in the target'
-        +' <a href="#" onclick="$(\'#report-resolving-nodes\').toggle(); return false;">(hide/show target node list)</a></p>');
+        + (summaryInfo.resolving.total > 0 ? ' <a href="#" onclick="$(\'#report-resolving-nodes\').toggle(); return false;">(hide/show target node list)</a>' : '')
+        +'</p>');
     $reportArea.append('<ul id="report-resolving-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-resolving-nodes');
     for (var nodeid in summaryInfo.resolving.nodes) {
@@ -1692,7 +1700,8 @@ function displayConflictSummary(conflictInfo) {
 
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.conflicting.total
         +' <strong>conflicting</strong> nodes that conflict with nodes in the target'
-        +' <a href="#" onclick="$(\'#report-conflicting-nodes\').toggle(); return false;">(hide/show target node list)</a></p>');
+        + (summaryInfo.conflicting.total > 0 ? ' <a href="#" onclick="$(\'#report-conflicting-nodes\').toggle(); return false;">(hide/show target node list)</a>' : '')
+        +'</p>');
     $reportArea.append('<ul id="report-conflicting-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-conflicting-nodes');
     for (var nodeid in summaryInfo.conflicting.nodes) {
@@ -1704,8 +1713,9 @@ function displayConflictSummary(conflictInfo) {
 
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.undetermined.total
         +' <strong>undetermined</strong> nodes that cannot be aligned to the target at all</p>');
-  }
-function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
+}
+
+function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
     // Expects inputTreeID from the current study (concatenate these!)
     // Expects referenceTreeID of 'taxonomy' or 'synth'
     if (typeof(inputTreeID) !== 'string') {
@@ -1719,22 +1729,23 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
         return;
     }
     var fullInputTreeID = (studyID +"%23"+ inputTreeID);
-    var fullReferenceTreeID;
+    var referenceTreeName;
     switch(referenceTreeID) {
-        case 'taxonomy':
-            fullReferenceTreeID = 'ott';
+        // these are the only ids allowed for now
+        case 'ott':
+            referenceTreeName = 'Open Tree Taxonomy';
             break;
         case 'synth':
-            fullReferenceTreeID = 'synth';
+            referenceTreeName = 'Synthetic Tree of Life';
             break;
         default:
-            console.error('fetchTreeConflictStatus(): ERROR, expecting either "taxonomy"or "synth" as referenceTreeID!');
+            console.error('fetchTreeConflictStatus(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
             return;
     }
     var conflictURL = treeConflictStatus_url
         .replace('&amp;', '&')  // restore naked ampersand for query-string args
         .replace('{TREE1_ID}', fullInputTreeID)
-        .replace('{TREE2_ID}', fullReferenceTreeID)
+        .replace('{TREE2_ID}', referenceTreeID)
     // TODO: call this URL and try to show a summary report
     console.warn("Trying to fetch a conflict report from this URL:");
     console.warn(conflictURL);
@@ -1766,13 +1777,131 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID) {
                 showErrorMessage(errMsg);
                 return;
             }
-            var conflictInfo = $.parseJSON(jqXHR.responseText);
+            // wrap the returned info with additional conflict metadata
+            var conflictInfo = {
+                inputTreeID: inputTreeID,
+                referenceTreeID: referenceTreeID,
+                referenceTreeName: referenceTreeName,
+                detailsByNodeID: $.parseJSON(jqXHR.responseText)
+            }
             //testConflictSummary(conflictInfo);  // shows in JS console
-            displayConflictSummary(conflictInfo);
+            if (typeof callback !== 'function') {
+                console.error("fetchTreeConflictStatus() expected a callback function!");
+                return;
+            }
+            callback(conflictInfo);
         }
     });
 }
 
+function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
+    // show summary stats in the Analyses tab
+    fetchTreeConflictStatus(
+        inputTreeID,
+        referenceTreeID,
+        function(conflictInfo) {
+            displayConflictSummary(conflictInfo);
+        }
+    );
+}
+function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
+    /* TODO: Reconsider this, if we can do it quickly and maintain SELECT value
+    if (treeViewerIsInUse) {
+        // hide stale conflict info in tree viewer
+        var tree = getTreeByID(inputTreeID);
+        hideTreeConflictDetails(tree);
+    }
+    */
+    // color nodes+edges in the tree-view popup
+    fetchTreeConflictStatus(
+        inputTreeID,
+        referenceTreeID,
+        function(conflictInfo) {
+            // Show results in the current tree-view popup
+            addConflictInfoToTree( inputTreeID, conflictInfo )
+            drawTree(inputTreeID);
+        }
+    );
+}
+function showTreeConflictDetailsFromPopup(tree) {
+    // call the above from the tree-view popup
+    if (!tree) {
+        // this should *never* happen
+        alert("showTreeConflictDetailsFromPopup(): No tree specified!");
+        return;
+    }
+    var newReferenceTreeID = $('#treeview-reference-select').val();
+    if (!newReferenceTreeID) {
+        hideTreeConflictDetails( tree );
+    } else {
+        fetchAndShowTreeConflictDetails(tree['@id'], newReferenceTreeID);
+    }
+}
+function hideTreeConflictDetails( tree ) {
+    // ASSUMES the tree is already in view
+    removeConflictInfoFromTree(tree);
+    drawTree(tree);
+}
+
+function addConflictInfoToTree( treeOrID, conflictInfo ) {
+    // remove any stale info first
+    removeConflictInfoFromTree( treeOrID );
+
+    var tree = null;
+    if (typeof(treeOrID) === 'object') {
+        tree = treeOrID;
+    } else {
+        tree = getTreeByID(treeOrID);
+    }
+    if (!tree) {
+        // this should *never* happen
+        alert("addConflictInfoToTree(): No tree specified!");
+        return;
+    }
+    if (!conflictInfo) {
+        // this should *never* happen
+        alert("addConflictInfoToTree(): No conflict info provided!");
+        return;
+    }
+    // Add general information on the tree itself...
+    tree.conflictDetails = {
+        inputTreeID: conflictInfo.inputTreeID,
+        referenceTreeID: conflictInfo.referenceTreeID,
+        referenceTreeName: conflictInfo.referenceTreeName
+    };
+    // ... and more details to any specified local node
+    for (var nodeID in conflictInfo.detailsByNodeID) {
+        var localNode = getTreeNodeByID( tree, nodeID );
+        localNode.conflictDetails = conflictInfo.detailsByNodeID[nodeID];
+    }
+    if (treeViewerIsInUse) {
+        // update the reference-tree selector
+        $('#treeview-reference-select').val(tree.conflictDetails.referenceTreeID);
+    }
+}
+function removeConflictInfoFromTree( treeOrID ) {
+    var tree = null;
+    if (typeof(treeOrID) === 'object') {
+        tree = treeOrID;
+    } else {
+        tree = getTreeByID(treeOrID);
+    }
+    if (!tree) {
+        // this should *never* happen
+        alert("removeConflictInfoFromTree(): No tree specified!");
+        return;
+    }
+    // Clear conflict information from the tree itself...
+    delete tree.conflictDetails;
+    // and from all its nodes
+    $.each(tree.node, function(i, node) {
+        delete node.conflictDetails;
+    });
+    if (treeViewerIsInUse) {
+        // update the reference-tree selector
+        $('#treeview-reference-select').val('');
+    }
+}
 
 function updateMappingStatus() {
     // update mapping status+details based on the current state of things
@@ -1938,6 +2067,7 @@ function scrubNexsonForTransport( nexml ) {
         cleanupAdHocRoot(tree);
         clearD3PropertiesFromTree(tree);
         clearMRCATestResults(tree);
+        removeConflictInfoFromTree(tree);
     });
 
     // coerce some non-string values
@@ -3677,8 +3807,6 @@ function drawTree( treeOrID, options ) {
         } else {
             delete node.ambiguousLabel;
         }
-        // TODO: decorate with conflict information here?
-
         // reset x of all nodes, to avoid gradual "creeping" to the right
         node.x = 0;
         node.length = 0;  // ie, branch length
@@ -3820,6 +3948,9 @@ function drawTree( treeOrID, options ) {
                     default:
                         itsClass += ' unresolved-exemplar';
                 }
+            }
+            if (d.conflictDetails) {
+                itsClass += " conflict-"+ d.conflictDetails.status;
             }
             return itsClass;
         });
@@ -5846,6 +5977,11 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
             labelTypeDescription = labelInfo.labelType;
     }
     nodeInfoBox.append('<div class="node-label-type">'+ labelTypeDescription +'</div>');
+    if (node.conflictDetails) {
+        // desribe its status in the current conflict analysis
+        var conflictDescriptionHTML = getNodeConflictDescription(tree, node);
+        nodeInfoBox.append(conflictDescriptionHTML);
+    }
 
     if (viewOrEdit === 'EDIT') {
         nodeInfoBox.after('<li class="divider"></li>');
@@ -5863,6 +5999,67 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     $('#tree-viewer *[data-dismiss=modal], .modal-backdrop').click( hideNodeOptionsMenu );
     $('#tree-viewer .modal-body').scroll( hideNodeOptionsMenu );
 }
+
+function getNodeConflictDescription(tree, node) {
+    var witnessURL = "",
+        missingWitnessDescription = "";
+    // Build "witness" node URLs based on the chosen reference tree.
+    switch (tree.conflictDetails.referenceTreeID) {
+        case 'ott':
+            if (node.conflictDetails.witness) {
+                // EXAMPLE: https://tree.opentreeoflife.org/taxonomy/browse?id=770315
+                witnessURL = "/taxonomy/browse?id={NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+            } else {
+                missingWitnessDescription = "anonymous taxonomy node"; // unlikely!
+            }
+            break;
+        case 'synth':
+            if (node.conflictDetails.witness) {
+                // EXAMPLE:  https://tree.opentreeoflife.org/opentree/argus/ottol@770315/Homo-sapiens
+                witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+            } else {
+                missingWitnessDescription = "anonymous synth node";
+            }
+            break;
+        default:
+            console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+            return;
+    }
+
+    var conflictHTML = "";
+    switch(node.conflictDetails.status) {
+      case 'supported_by':
+      case 'partial_path_of':
+          if (witnessURL) {
+              conflictHTML = 'Supported by <a href="'+ witnessURL +'" target="_blank">'+ 
+                  (node.conflictDetails.witness_name || "???") +'</a>';
+          } else {
+              conflictHTML = 'Supported by '+ missingWitnessDescription;
+          }
+          break;
+      case 'conflicts_with':
+          if (witnessURL) {
+              conflictHTML = 'Conflicts with <a href="'+ witnessURL +'" target="_blank">'+ 
+                  (node.conflictDetails.witness_name || "???") +'</a>';
+          } else {
+              conflictHTML = 'Conflicts with '+ missingWitnessDescription;
+          }
+          break;
+      case 'resolves':
+          if (witnessURL) {
+              conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+ 
+                  (node.conflictDetails.witness_name || "???") +'</a>';
+          } else {
+              conflictHTML = 'Resolves '+ missingWitnessDescription;
+          }
+          break;
+      default:
+          console.error("ERROR: unknown conflict status '"+ (conflictInfo[nodeid].status) +"'!");
+    }
+
+    return '<div class="node-conflict-status-'+ node.conflictDetails.status +'">'+ conflictHTML +'</div>';
+}
+
 
 function hideNodeOptionsMenu( ) {
     var nodeMenuHolder = $('#node-menu-holder');
@@ -5895,6 +6092,11 @@ function showEdgeOptionsMenu( tree, edge, nodePageOffset, importantNodeIDs ) {
     var nodeInfoBox = nodeMenu.find('.node-information');
     nodeInfoBox.append('<span class="node-name"><span style="font-weight: normal;">Source: </span>'+ getTreeNodeLabel(tree, edge.source, importantNodeIDs).label +'</span>');
     nodeInfoBox.append('<br/><span class="node-name"><span style="font-weight: normal;">Target: </span>'+ getTreeNodeLabel(tree, edge.target, importantNodeIDs).label +'</span>');
+    if (edge.target.conflictDetails) {
+        // desribe its status in the current conflict analysis
+        var conflictDescriptionHTML = getNodeConflictDescription(tree, edge.target);
+        nodeInfoBox.append(conflictDescriptionHTML);
+    }
     if ('length' in edge.target) {
         nodeInfoBox.append('<div>Edge length: '+ edge.target.length +'</div>');
     }

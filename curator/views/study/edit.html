@@ -175,6 +175,40 @@ body {
   /* stroke: #f00; */
 }
 
+/* Conflict-info colors should take precedence */
+.node.conflict-supported_by circle,
+.node.conflict-partial_path_of circle {
+  fill: purple;
+}
+.link.conflict-supported_by,
+.link.conflict-partial_path_of {
+  stroke: purple;
+}
+.node-conflict-status-supported_by,
+.node-conflict-status-partial_path_of {
+  color: purple;
+}
+
+.node.conflict-conflicts_with circle {
+  fill: orange;
+}
+.link.conflict-conflicts_with {
+  stroke: orange;
+}
+.node-conflict-status-conflicts_with {
+  color: orange;
+}
+
+.node.conflict-resolves circle {
+  fill: green;
+}
+.link.conflict-resolves {
+  stroke: green;
+}
+.node-conflict-status-resolves {
+  color: green;
+}
+
 /* force proper styles for Bootstrap Tags Input */
 .bootstrap-tagsinput input {
     border: none !important;
@@ -1740,9 +1774,9 @@ body {
                  <select id="reference-select">
                      <option value="">Choose a target...</option>
                      <option value="synth">Synthetic Tree of Life</option>
-                     <option value="taxonomy">Open Tree Taxonomy</option>
+                     <option value="ott">Open Tree Taxonomy</option>
                  </select>
-                 <button class="btn btn-info" data-bind="click: fetchTreeConflictStatus">GO!</button>
+                 <button class="btn btn-info" data-bind="click: fetchAndShowTreeConflictSummary">GO!</button>
              </form>
 
             <div id="analysis-results">
@@ -2662,6 +2696,16 @@ body {
                      onclick="toggleRadialTreeLayoutInViewer(this); return true;" />
               Radial tree layout
           </label>
+
+          <label style="margin-left: 25px; position: relative; top: 1px;">Show conflict versus</label>
+          <select id="treeview-reference-select" data-bind="value: $data.conflictDetails ? $data.conflictDetails.referenceTreeID : ''">
+              <option value="">Choose a target...</option>
+              <option value="synth">Synthetic Tree of Life</option>
+              <option value="ott">Open Tree Taxonomy</option>
+          </select>
+          <button class="btn btn-info" data-bind="click: showTreeConflictDetailsFromPopup">GO!</button>
+          <button class="btn" data-bind="click: hideTreeConflictDetails">Hide conflict</button>
+
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>
