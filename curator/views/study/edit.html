@@ -2675,6 +2675,16 @@ body {
                      onclick="toggleRadialTreeLayoutInViewer(this); return true;" />
               Radial tree layout
           </label>
+
+          <label style="margin-left: 25px; position: relative; top: 1px;">Show conflict versus</label>
+          <select id="treeview-reference-select" data-bind="value: $data.conflictDetails ? $data.conflictDetails.referenceTreeID : ''">
+              <option value="">Choose a target...</option>
+              <option value="synth">Synthetic Tree of Life</option>
+              <option value="ott">Open Tree Taxonomy</option>
+          </select>
+          <button class="btn btn-info" data-bind="click: showTreeConflictDetailsFromPopup">GO!</button>
+          <button class="btn" data-bind="click: hideTreeConflictDetails">Hide conflict</button>
+
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>

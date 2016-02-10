@@ -1801,6 +1801,25 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
         }
     );
 }
+function showTreeConflictDetailsFromPopup(tree) {
+    // call the above from the tree-view popup
+    if (!tree) {
+        // this should *never* happen
+        alert("showTreeConflictDetailsFromPopup(): No tree specified!");
+        return;
+    }
+    var newReferenceTreeID = $('#treeview-reference-select').val();
+    if (!newReferenceTreeID) {
+        hideTreeConflictDetails( tree );
+    } else {
+        fetchAndShowTreeConflictDetails(tree['@id'], newReferenceTreeID);
+    }
+}
+function hideTreeConflictDetails( tree ) {
+    // ASSUMES the tree is already in view
+    removeConflictInfoFromTree(tree);
+    drawTree(tree);
+}
 
 function addConflictInfoToTree( treeOrID, conflictInfo ) {
     // remove any stale info first
@@ -1832,6 +1851,10 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     for (var nodeID in conflictInfo.detailsByNodeID) {
         var localNode = getTreeNodeByID( tree, nodeID );
         localNode.conflictDetails = conflictInfo.detailsByNodeID[nodeID];
+    }
+    if (treeViewerIsInUse) {
+        // update the reference-tree selector
+        $('#treeview-reference-select').val(tree.conflictDetails.referenceTreeID);
     }
 }
 function removeConflictInfoFromTree( treeOrID ) {
