@@ -1603,23 +1603,23 @@ function getTreeConflictSummary(conflictInfo) {
         }
     }
     //var totalNodesPartialPathOf = 0;
-    for (var nodeid in conflictInfo) {
-        switch(conflictInfo[nodeid].status) {
+    for (var nodeid in conflictInfo.detailsByNodeID) {
+        switch(conflictInfo.detailsByNodeID[nodeid].status) {
             case 'supported_by':
             case 'partial_path_of':
                 summary.aligned.total++;
-                summary.aligned.nodes[nodeid] = conflictInfo[nodeid];
+                summary.aligned.nodes[nodeid] = conflictInfo.detailsByNodeID[nodeid];
                 break;
             case 'conflicts_with':
                 summary.conflicting.total++;
-                summary.conflicting.nodes[nodeid] = conflictInfo[nodeid];
+                summary.conflicting.nodes[nodeid] = conflictInfo.detailsByNodeID[nodeid];
                 break;
             case 'resolves':
                 summary.resolving.total++;
-                summary.resolving.nodes[nodeid] = conflictInfo[nodeid];
+                summary.resolving.nodes[nodeid] = conflictInfo.detailsByNodeID[nodeid];
                 break;
             default:
-                console.error("ERROR: unknown conflict status '"+ (conflictInfo[nodeid].status) +"'!");
+                console.error("ERROR: unknown conflict status '"+ (conflictInfo.detailsByNodeID[nodeid].status) +"'!");
         }
     }
     // subtract from all internal nodes to count undetermined nodes
@@ -1714,10 +1714,14 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
         return;
     }
     var fullInputTreeID = (studyID +"%23"+ inputTreeID);
+    var referenceTreeName;
     switch(referenceTreeID) {
+        // these are the only ids allowed for now
         case 'ott':
+            referenceTreeName = 'Open Tree Taxonomy';
+            break;
         case 'synth':
-            // these are the only ids allowed for now
+            referenceTreeName = 'Synthetic Tree of Life';
             break;
         default:
             console.error('fetchTreeConflictStatus(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
@@ -1758,13 +1762,19 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
                 showErrorMessage(errMsg);
                 return;
             }
-            var conflictInfo = $.parseJSON(jqXHR.responseText);
+            // wrap the returned info with additional conflict metadata
+            var conflictInfo = {
+                inputTreeID: inputTreeID,
+                referenceTreeID: referenceTreeID,
+                referenceTreeName: referenceTreeName,
+                detailsByNodeID: $.parseJSON(jqXHR.responseText)
+            }
             //testConflictSummary(conflictInfo);  // shows in JS console
             if (typeof callback !== 'function') {
                 console.error("fetchTreeConflictStatus() expected a callback function!");
                 return;
             }
-            callback(inputTreeID, referenceTreeID, conflictInfo);
+            callback(conflictInfo);
         }
     });
 }
@@ -1774,7 +1784,7 @@ function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
     fetchTreeConflictStatus(
         inputTreeID,
         referenceTreeID,
-        function(inputTreeID, referenceTreeID, conflictInfo) {
+        function(conflictInfo) {
             displayConflictSummary(conflictInfo);
         }
     );
@@ -1784,7 +1794,7 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
     fetchTreeConflictStatus(
         inputTreeID,
         referenceTreeID,
-        function(inputTreeID, referenceTreeID, conflictInfo) {
+        function(conflictInfo) {
             // Show results in the current tree-view popup
             addConflictInfoToTree( inputTreeID, conflictInfo )
             drawTree(inputTreeID);
@@ -1812,10 +1822,16 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
         alert("addConflictInfoToTree(): No conflict info provided!");
         return;
     }
-    // add information provided to any specified local node
-    for (var nodeID in conflictInfo) {
+    // Add general information on the tree itself...
+    tree.conflictDetails = {
+        inputTreeID: conflictInfo.inputTreeID,
+        referenceTreeID: conflictInfo.referenceTreeID,
+        referenceTreeName: conflictInfo.referenceTreeName
+    };
+    // ... and more details to any specified local node
+    for (var nodeID in conflictInfo.detailsByNodeID) {
         var localNode = getTreeNodeByID( tree, nodeID );
-        localNode.conflictDetails = conflictInfo[nodeID];
+        localNode.conflictDetails = conflictInfo.detailsByNodeID[nodeID];
     }
 }
 function removeConflictInfoFromTree( treeOrID ) {
@@ -1830,7 +1846,9 @@ function removeConflictInfoFromTree( treeOrID ) {
         alert("removeConflictInfoFromTree(): No tree specified!");
         return;
     }
-    // simply clear all conflictDetails properties from all nodes
+    // Clear conflict information from the tree itself...
+    delete tree.conflictDetails;
+    // and from all its nodes
     $.each(tree.node, function(i, node) {
         delete node.conflictDetails;
     });
@@ -5841,6 +5859,11 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
             labelTypeDescription = labelInfo.labelType;
     }
     nodeInfoBox.append('<div class="node-label-type">'+ labelTypeDescription +'</div>');
+    if (node.conflictDetails) {
+        // desribe its status in the current conflict analysis
+        var conflictDescriptionHTML = getNodeConflictDescription(tree, node);
+        nodeInfoBox.append(conflictDescriptionHTML);
+    }
 
     if (viewOrEdit === 'EDIT') {
         nodeInfoBox.after('<li class="divider"></li>');
@@ -5858,6 +5881,46 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     $('#tree-viewer *[data-dismiss=modal], .modal-backdrop').click( hideNodeOptionsMenu );
     $('#tree-viewer .modal-body').scroll( hideNodeOptionsMenu );
 }
+
+function getNodeConflictDescription(tree, node) {
+    var witnessURL;
+    // Build "witness" node URLs based on the chosen reference tree.
+    switch (tree.conflictDetails.referenceTreeID) {
+        case 'ott':
+            // EXAMPLE: https://tree.opentreeoflife.org/taxonomy/browse?id=770315
+            witnessURL = "/taxonomy/browse?id={NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+            break;
+        case 'synth':
+            // EXAMPLE:  https://tree.opentreeoflife.org/opentree/argus/ottol@770315/Homo-sapiens
+            witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+            break;
+        default:
+            console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+            return;
+    }
+
+    var conflictHTML = "";
+    switch(node.conflictDetails.status) {
+      case 'supported_by':
+      case 'partial_path_of':
+          conflictHTML = 'Supported by <a href="'+
+            witnessURL +'" target="_blank">'+ (node.conflictDetails.witness_name || "???") +'</a>';
+          break;
+      case 'conflicts_with':
+          conflictHTML = 'Conflicts with <a href="'+
+            witnessURL +'" target="_blank">'+ (node.conflictDetails.witness_name || "???") +'</a>';
+          break;
+      case 'resolves':
+          conflictHTML = 'Resolves <a href="'+
+            witnessURL +'" target="_blank">'+ (node.conflictDetails.witness_name || "???") +'</a>';
+          break;
+      default:
+          console.error("ERROR: unknown conflict status '"+ (conflictInfo[nodeid].status) +"'!");
+    }
+
+    return '<div class="node-conflict-status-'+ node.conflictDetails.status +'">'+ conflictHTML +'</div>';
+}
+
 
 function hideNodeOptionsMenu( ) {
     var nodeMenuHolder = $('#node-menu-holder');
@@ -5890,6 +5953,11 @@ function showEdgeOptionsMenu( tree, edge, nodePageOffset, importantNodeIDs ) {
     var nodeInfoBox = nodeMenu.find('.node-information');
     nodeInfoBox.append('<span class="node-name"><span style="font-weight: normal;">Source: </span>'+ getTreeNodeLabel(tree, edge.source, importantNodeIDs).label +'</span>');
     nodeInfoBox.append('<br/><span class="node-name"><span style="font-weight: normal;">Target: </span>'+ getTreeNodeLabel(tree, edge.target, importantNodeIDs).label +'</span>');
+    if (edge.target.conflictDetails) {
+        // desribe its status in the current conflict analysis
+        var conflictDescriptionHTML = getNodeConflictDescription(tree, edge.target);
+        nodeInfoBox.append(conflictDescriptionHTML);
+    }
     if ('length' in edge.target) {
         nodeInfoBox.append('<div>Edge length: '+ edge.target.length +'</div>');
     }
