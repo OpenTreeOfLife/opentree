@@ -1662,7 +1662,8 @@ function displayConflictSummary(conflictInfo) {
 
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.aligned.total
         +' <strong>aligned</strong> nodes that can be mapped to nodes in the target'
-        +' <a href="#" onclick="$(\'#report-aligned-nodes\').toggle(); return false;">(hide/show node list)</a></p>');
+        + (summaryInfo.aligned.total > 0 ? ' <a href="#" onclick="$(\'#report-aligned-nodes\').toggle(); return false;">(hide/show node list)</a>' : '')
+        +'</p>');
     $reportArea.append('<ul id="report-aligned-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-aligned-nodes');
     for (var nodeid in summaryInfo.aligned.nodes) {
@@ -1674,7 +1675,8 @@ function displayConflictSummary(conflictInfo) {
 
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.resolving.total
         +' <strong>resolving</strong> nodes that resolve polytomies within these clades in the target'
-        +' <a href="#" onclick="$(\'#report-resolving-nodes\').toggle(); return false;">(hide/show target node list)</a></p>');
+        + (summaryInfo.resolving.total > 0 ? ' <a href="#" onclick="$(\'#report-resolving-nodes\').toggle(); return false;">(hide/show target node list)</a>' : '')
+        +'</p>');
     $reportArea.append('<ul id="report-resolving-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-resolving-nodes');
     for (var nodeid in summaryInfo.resolving.nodes) {
@@ -1686,7 +1688,8 @@ function displayConflictSummary(conflictInfo) {
 
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.conflicting.total
         +' <strong>conflicting</strong> nodes that conflict with nodes in the target'
-        +' <a href="#" onclick="$(\'#report-conflicting-nodes\').toggle(); return false;">(hide/show target node list)</a></p>');
+        + (summaryInfo.conflicting.total > 0 ? ' <a href="#" onclick="$(\'#report-conflicting-nodes\').toggle(); return false;">(hide/show target node list)</a>' : '')
+        +'</p>');
     $reportArea.append('<ul id="report-conflicting-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-conflicting-nodes');
     for (var nodeid in summaryInfo.conflicting.nodes) {
