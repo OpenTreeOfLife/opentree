@@ -1793,6 +1793,13 @@ function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
     );
 }
 function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
+    /* TODO: Reconsider this, if we can do it quickly and maintain SELECT value
+    if (treeViewerIsInUse) {
+        // hide stale conflict info in tree viewer
+        var tree = getTreeByID(inputTreeID);
+        hideTreeConflictDetails(tree);
+    }
+    */
     // color nodes+edges in the tree-view popup
     fetchTreeConflictStatus(
         inputTreeID,
@@ -1878,6 +1885,10 @@ function removeConflictInfoFromTree( treeOrID ) {
     $.each(tree.node, function(i, node) {
         delete node.conflictDetails;
     });
+    if (treeViewerIsInUse) {
+        // update the reference-tree selector
+        $('#treeview-reference-select').val('');
+    }
 }
 
 function updateMappingStatus() {
