@@ -5883,16 +5883,25 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
 }
 
 function getNodeConflictDescription(tree, node) {
-    var witnessURL;
+    var witnessURL = "",
+        missingWitnessDescription = "";
     // Build "witness" node URLs based on the chosen reference tree.
     switch (tree.conflictDetails.referenceTreeID) {
         case 'ott':
-            // EXAMPLE: https://tree.opentreeoflife.org/taxonomy/browse?id=770315
-            witnessURL = "/taxonomy/browse?id={NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+            if (node.conflictDetails.witness) {
+                // EXAMPLE: https://tree.opentreeoflife.org/taxonomy/browse?id=770315
+                witnessURL = "/taxonomy/browse?id={NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+            } else {
+                missingWitnessDescription = "anonymous taxonomy node"; // unlikely!
+            }
             break;
         case 'synth':
-            // EXAMPLE:  https://tree.opentreeoflife.org/opentree/argus/ottol@770315/Homo-sapiens
-            witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+            if (node.conflictDetails.witness) {
+                // EXAMPLE:  https://tree.opentreeoflife.org/opentree/argus/ottol@770315/Homo-sapiens
+                witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+            } else {
+                missingWitnessDescription = "anonymous synth node";
+            }
             break;
         default:
             console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
@@ -5903,16 +5912,28 @@ function getNodeConflictDescription(tree, node) {
     switch(node.conflictDetails.status) {
       case 'supported_by':
       case 'partial_path_of':
-          conflictHTML = 'Supported by <a href="'+
-            witnessURL +'" target="_blank">'+ (node.conflictDetails.witness_name || "???") +'</a>';
+          if (witnessURL) {
+              conflictHTML = 'Supported by <a href="'+ witnessURL +'" target="_blank">'+ 
+                  (node.conflictDetails.witness_name || "???") +'</a>';
+          } else {
+              conflictHTML = 'Supported by '+ missingWitnessDescription;
+          }
           break;
       case 'conflicts_with':
-          conflictHTML = 'Conflicts with <a href="'+
-            witnessURL +'" target="_blank">'+ (node.conflictDetails.witness_name || "???") +'</a>';
+          if (witnessURL) {
+              conflictHTML = 'Conflicts with <a href="'+ witnessURL +'" target="_blank">'+ 
+                  (node.conflictDetails.witness_name || "???") +'</a>';
+          } else {
+              conflictHTML = 'Conflicts with '+ missingWitnessDescription;
+          }
           break;
       case 'resolves':
-          conflictHTML = 'Resolves <a href="'+
-            witnessURL +'" target="_blank">'+ (node.conflictDetails.witness_name || "???") +'</a>';
+          if (witnessURL) {
+              conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+ 
+                  (node.conflictDetails.witness_name || "???") +'</a>';
+          } else {
+              conflictHTML = 'Resolves '+ missingWitnessDescription;
+          }
           break;
       default:
           console.error("ERROR: unknown conflict status '"+ (conflictInfo[nodeid].status) +"'!");
