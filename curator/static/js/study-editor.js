@@ -3298,6 +3298,30 @@ function showTreeViewer( tree, options ) {
             ///console.log('@@@@@ hidden');
         });
 
+        // show or disable the full-screen widgets
+        var $fullScreenToggle = $('button#enter-full-screen');
+        if ($.fullscreen.isNativelySupported()) {
+            // ie, the current browser supports full-screen APIs
+            $fullScreenToggle.show();
+            $(document).bind('fscreenchange', function(e, state, elem) {
+                if ($.fullscreen.isFullScreen()) {
+                    $('#enter-full-screen').hide();
+                    $('#exit-full-screen').show();
+                } else {
+                    $('#enter-full-screen').show();
+                    $('#exit-full-screen').hide();
+                }
+            });
+        } else {
+            // dim and disable the full-screen toggle
+            $fullScreenToggle.css("opacity: 0.5;")
+                             .click(function() {
+                                alert("This browser does not support full-screen display.");
+                                return false;
+                             })
+                             .show();
+        }
+
         // hide or show footer options based on tab chosen
         $treeViewerTabs.off('shown').on('shown', function (e) {
             var newTabTarget = $(e.target).attr('href').split('#')[1];
