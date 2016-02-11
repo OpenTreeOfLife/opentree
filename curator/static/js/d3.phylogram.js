@@ -162,8 +162,8 @@ if (!d3) { throw "d3 wasn't included!"};
     return coordAngle
   }
 
-  /* Moving this style to inline CSS (views/study/edit.html)
   d3.phylogram.styleTreeNodes = function(vis) {
+    /* Moving this style to inline CSS (views/study/edit.html)
     vis.selectAll('g.node circle')
         .attr("r", 3.5);
 
@@ -175,8 +175,8 @@ if (!d3) { throw "d3 wasn't included!"};
 
     vis.selectAll('g.root.node circle')
         .attr("r", 4.5);
+    */
   }
-  */
 
   function scaleBranchLengths(nodes, w) {
     // Visit all nodes and adjust y pos width distance metric
