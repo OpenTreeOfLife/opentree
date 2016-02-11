@@ -3301,6 +3301,7 @@ function showTreeViewer( tree, options ) {
             ///console.log('@@@@@ hidden');
         });
 
+        /* DISABLING this until we can iron out collections UI, node/edge info, etc.
         // show or disable the full-screen widgets
         var $fullScreenToggle = $('button#enter-full-screen');
         if ($.fullscreen.isNativelySupported()) {
@@ -3329,6 +3330,7 @@ function showTreeViewer( tree, options ) {
                              })
                              .show();
         }
+        */
 
         // hide or show footer options based on tab chosen
         $treeViewerTabs.off('shown').on('shown', function (e) {
