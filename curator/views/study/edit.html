@@ -75,17 +75,24 @@ body {
 /* D3 tree view */
 
 .node circle {
-  fill: steelblue;
+  fill: #000;
+  r: 3.5px;
+}
+.node.outgroup circle {
+  fill: #999;
+  r: 2.5px;
 }
 .node circle:hover {
   stroke-opacity: 0.5;
 }
 .node.leaf circle {
   fill: #777;
+  r: 3.5px;
 }
 /* preferred ot:specifiedRoot */
 .node.specifiedRoot circle {
   fill: steelblue;
+  r: 4.5px;
 }
 .node.specifiedRoot text {
   fill: steelblue;
@@ -93,7 +100,7 @@ body {
 }
 /* even more preferred ot:specifiedRoot */
 .node.inGroupClade circle {
-  fill: black;
+  fill: #000;
 }
 .node.inGroupClade text {
   fill: black;
@@ -133,7 +140,7 @@ body {
     color: #888;
 }
 .dropdown-menu > li.node-information .node-type.inGroupClade {
-    color: steelblue;
+    color: #000;
 }
 .dropdown-menu > li.node-information .node-type.specifiedRoot {
     color: steelblue;
@@ -157,16 +164,14 @@ body {
 
 .link {
   fill: none;
-  stroke: steelblue;
-  stroke-width: 1.0px;
+  stroke: #000;
+  stroke-width: 2.0px;
 }
 .link.outgroup {
-  stroke: steelblue;
-  stroke-width: 0.75px;
+  stroke: #999;
+  stroke-width: 0.5px;
 }
 .link.ingroup {
-  stroke: #000;
-  stroke-width: 1.25px;
 }
 .link.update {
   /* stroke: #ccf; */
@@ -178,35 +183,35 @@ body {
 /* Conflict-info colors should take precedence */
 .node.conflict-supported_by circle,
 .node.conflict-partial_path_of circle {
-  fill: purple;
+  fill: #c3c;
 }
 .link.conflict-supported_by,
 .link.conflict-partial_path_of {
-  stroke: purple;
+  stroke: #c3c;
 }
 .node-conflict-status-supported_by,
 .node-conflict-status-partial_path_of {
-  color: purple;
+  color: #c3c;
 }
 
 .node.conflict-conflicts_with circle {
-  fill: orange;
+  fill: #e80;
 }
 .link.conflict-conflicts_with {
-  stroke: orange;
+  stroke: #e80;
 }
 .node-conflict-status-conflicts_with {
-  color: orange;
+  color: #e80;
 }
 
 .node.conflict-resolves circle {
-  fill: green;
+  fill: #0b0;
 }
 .link.conflict-resolves {
-  stroke: green;
+  stroke: #0b0;
 }
 .node-conflict-status-resolves {
-  color: green;
+  color: #0b0;
 }
 
 /* force proper styles for Bootstrap Tags Input */
@@ -2703,8 +2708,8 @@ body {
               <option value="synth">Synthetic Tree of Life</option>
               <option value="ott">Open Tree Taxonomy</option>
           </select>
-          <button class="btn btn-info" data-bind="click: showTreeConflictDetailsFromPopup">GO!</button>
-          <button class="btn" data-bind="click: hideTreeConflictDetails">Hide conflict</button>
+          <button class="btn btn-info" data-bind="click: showConflictDetailsWithHistory">GO!</button>
+          <button class="btn" data-bind="click: hideConflictDetailsWithHistory">Hide conflict</button>
 
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>

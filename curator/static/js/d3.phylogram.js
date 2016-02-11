@@ -163,15 +163,19 @@ if (!d3) { throw "d3 wasn't included!"};
   }
 
   d3.phylogram.styleTreeNodes = function(vis) {
-
+    /* Moving this style to inline CSS (views/study/edit.html)
     vis.selectAll('g.node circle')
+        .attr("r", 3.5);
+
+    vis.selectAll('g.node.outgroup circle')
         .attr("r", 2.5);
 
     vis.selectAll('g.leaf.node circle')
-        .attr("r", 4.5);
+        .attr("r", 3.5);
 
     vis.selectAll('g.root.node circle')
         .attr("r", 4.5);
+    */
   }
 
   function scaleBranchLengths(nodes, w) {

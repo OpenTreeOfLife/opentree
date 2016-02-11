@@ -171,6 +171,8 @@ if ( History && History.enabled ) {
                 showTreeViewer(tree);
                 if (conflictReferenceTree) {
                     fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree);
+                } else {
+                    hideTreeConflictDetails(currentTree);
                 }
             } else {
                 var errMsg = 'The requested tree (\''+ currentTree +'\') was not found. It has probably been deleted from this study.';
@@ -1901,6 +1903,49 @@ function removeConflictInfoFromTree( treeOrID ) {
         // update the reference-tree selector
         $('#treeview-reference-select').val('');
     }
+}
+
+function showConflictDetailsWithHistory(tree, referenceTreeID) {
+    // triggered from tree-view popup UI, works via History
+    if (typeof referenceTreeID !== 'string') {
+        referenceTreeID = $('#treeview-reference-select').val();
+    }
+    if (History && History.enabled) {
+        // update tree view in history (if available) and show it
+        var oldState = History.getState().data;
+        var newState = $.extend(
+            cloneFromSimpleObject( oldState ),
+            {
+                'tab': 'Trees',
+                'tree': tree['@id'],
+                'conflict': referenceTreeID
+            }
+        );
+        History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree +'&conflict='+ newState.conflict) );
+    } else {
+        // show conflict normally (ignore browser history)
+        showTreeConflictDetailsFromPopup(tree);
+    }
+}
+function hideConflictDetailsWithHistory(tree) {
+    // remove conflict info from history (if available) and hide it
+    if (History && History.enabled) {
+        // update tree view in history (if available) and show it
+        var oldState = History.getState().data;
+        var newState = $.extend(
+            cloneFromSimpleObject( oldState ),
+            {
+                'tab': 'Trees',
+                'tree': tree['@id'],
+                'conflict': null
+            }
+        );
+        History.pushState( newState, (window.document.title), '?tab=trees&tree='+ newState.tree );
+    } else {
+        // hide conflict normally (ignore browser history)
+        hideTreeConflictDetails(tree);
+    }
+    fixLoginLinks();
 }
 
 function updateMappingStatus() {
@@ -3926,6 +3971,11 @@ function drawTree( treeOrID, options ) {
     vizInfo.vis.selectAll('.node')
         .attr("class", function(d) {
             var itsClass = "node";
+            if (d.ingroup) {
+                itsClass += " ingroup";
+            } else {
+                itsClass += " outgroup";
+            }
             if (!d.children) {
                 itsClass += " leaf";
             }
