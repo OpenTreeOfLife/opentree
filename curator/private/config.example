@@ -35,6 +35,7 @@ treemachine = http://dev.opentreeoflife.org/treemachine:7474
 taxomachine = http://dev.opentreeoflife.org/taxomachine:7476
 oti = http://dev.opentreeoflife.org/oti
 opentree_api = http://dev.opentreeoflife.org/phylesystem/v1
+conflict_api = http://dev.opentreeoflife.org/conflict
 
 # Building on the URLs above, complete the public-facing URL for all methods
 # (again, these should work from both server- and client-side code)
@@ -61,6 +62,7 @@ findAllStudies_url = {oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
 singlePropertySearchForTrees_url = {oti_domain}/singlePropertySearchForTrees
 findAllTreeCollections_url = {opentree_api_domain}/../../v2/collections/find_collections
+treeConflictStatus_url = {conflict_api_domain}/conflict-status?tree1={TREE1_ID}&tree2={TREE2_ID}
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #
