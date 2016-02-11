@@ -3914,6 +3914,11 @@ function drawTree( treeOrID, options ) {
     vizInfo.vis.selectAll('.node')
         .attr("class", function(d) {
             var itsClass = "node";
+            if (d.ingroup) {
+                itsClass += " ingroup";
+            } else {
+                itsClass += " outgroup";
+            }
             if (!d.children) {
                 itsClass += " leaf";
             }
