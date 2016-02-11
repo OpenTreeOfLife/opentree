@@ -50,21 +50,33 @@ function capture_form() {
     if ($parentIssueContainer.length > 0) {
         threadParentID = $parentIssueContainer.find('div:eq(0)').attr('id').split('r')[1];
     }
-    console.log('threadParentID:'+ threadParentID);
     var isThreadStarter = threadParentID == 0;
     if (isThreadStarter) {
         //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'General comment' );
         jQuery('div.plugin_localcomments select[name=feedback_type]').show();
-        jQuery('div.plugin_localcomments select[name=intended_scope]').show();
         jQuery('div.plugin_localcomments select[name=issue_title]').show();
     } else {
         //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'Reply or general comment' );
         jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
-        jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
         jQuery('div.plugin_localcomments select[name=issue_title]').hide();
     }
+    // we only show 'intended scope' for phylo corrections
+    jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
     // always hide expertise checkbox and surrounding label (not currently needed)
     jQuery('div.plugin_localcomments label.expertise-option').hide();
+
+    // show/hide some fields based on feedback type
+    var $referenceURLField = jQuery('div.plugin_localcomments input[name="reference_url"]'); 
+    $referenceURLField.hide();
+    jQuery('div.plugin_localcomments select[name="feedback_type"]').unbind('change').change(function(){
+        if (jQuery(this).val() === 'Error in phylogeny') {
+            jQuery('div.plugin_localcomments select[name=intended_scope]').show();
+            $referenceURLField.show();
+        } else {
+            jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
+            $referenceURLField.hide();
+        }
+    });
 
     // update the Login link, if shown
     if (typeof(fixLoginLinks) === 'function') {
@@ -81,9 +93,22 @@ function capture_form() {
             return false;
         }
         var $fbTypeField = $form.find('select[name="feedback_type"]'); 
-        if ($fbTypeField.is(':visible') && ($.trim($fbTypeField.val()) === '')) {
-            alert("Please choose a feedback type for this topic.");
-            return false;
+        var $fbScopeField = $form.find('select[name="intended_scope"]'); 
+        if ($fbTypeField.is(':visible')) {
+            if ($.trim($fbTypeField.val()) === '') {
+                alert("Please choose a feedback type for this topic.");
+                return false;
+            } 
+            /* TODO: Should the supporting-reference URL be required? 
+                     Decide this based on the phylo-error "scope"? i.e., `$fbScopeField.val()`
+            else if ($.trim($fbTypeField.val()) === 'Error in phylogeny'){
+                var $referenceURLField = $form.find('input[name="reference_url"]'); 
+                if ($.trim($referenceURLField.val()) === '') {
+                    alert("Please provide a supporting reference (URL).");
+                    return false;
+                }
+            }
+            */
         }
         var $titleField = $form.find('input[name="issue_title"]'); 
         if ($titleField.is(':visible') && ($.trim($titleField.val()) === '')) {
@@ -110,6 +135,7 @@ function capture_form() {
                'title': $form.find('input[name="issue_title"]').val(),
                'body': $form.find('textarea[name="body"]').val(),
                'feedback_type': $form.find('select[name="feedback_type"]').val(),
+               'reference_url': $form.find('input[name="reference_url"]').val(),
                'intended_scope': $form.find('select[name="intended_scope"]').val(),
                'claimed_expertise': $form.find(':checkbox[name="claimed_expertise"]').is(':checked'),
                'visitor_name': $form.find('input[name="visitor_name"]').val(),
@@ -282,6 +308,7 @@ def index():
     thread_parent_id = request.vars['thread_parent_id'] # can be None
     comment_id = request.vars['comment_id'] # used for some operations (eg, delete)
     feedback_type = request.vars['feedback_type'] # used for new comments
+    reference_url = request.vars['reference_url'] # used for phylo corrections only
     intended_scope = request.vars['intended_scope'] # used for new comments
     issue_title = request.vars['title'] # used for new issues (threads)
     claims_expertise = request.vars['claimed_expertise'] # used for new comments
@@ -299,7 +326,6 @@ def index():
                     child_comments = resp.json()
                 except:
                     child_comments = resp.json
-                print("found {0} child comments".format(len(child_comments)))
             except:
                 # WE need logging in the web app!
                 try:
@@ -368,11 +394,15 @@ def index():
         # NOTE the funky constructor required to use this below
 
         try:   # TODO: if not comment.deleted:
+            # N.B. some missing information (e.g. supporting URL) will appear here as a string like "None"
+            supporting_reference_url = metadata.get('Supporting reference', None)
+            has_supporting_reference_url = supporting_reference_url and (supporting_reference_url != u'None')
             markup = LI(
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
                     ('title' in comment) and DIV( comment['title'], A(T('on GitHub'), _href=comment['html_url'], _target='_blank'), _class='topic-title') or '',
                     DIV( XML(markdown(get_visible_comment_body(comment['body'] or ''), extras={'link-patterns':None}, link_patterns=[(link_regex, link_replace)]).encode('utf-8'), sanitize=False),_class=(issue_node and 'body issue-body' or 'body comment-body')),
+                    DIV( A(T('Supporting reference (opens in a new window)'), _href=supporting_reference_url, _target='_blank'), _class='body issue-supporting-reference' ) if has_supporting_reference_url else '',
                     DIV(
                         A(T(author_display_name), _href=author_link, _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
@@ -401,16 +431,17 @@ def index():
         # delete the specified comment or close an issue...
         try:
             if issue_or_comment == 'issue':
-                print("CLOSING ISSUE: ")
-                print(comment_id)
+                print("CLOSING ISSUE {0}".format(comment_id))
                 close_issue(comment_id)
+                clear_local_comments()
                 return 'closed'
             else:
-                print("DELETING COMMENT: ")
-                print(comment_id)
+                print("DELETING COMMENT {0}".format(comment_id))
                 delete_comment(comment_id)
+                clear_local_comments()
                 return 'deleted'
         except:
+            clear_local_comments()  # hopefully a cleaner result
             return error()
     elif thread_parent_id:
         # add a new comment using the submitted vars
@@ -466,7 +497,8 @@ def index():
                 "Synthetic tree node id": synthtree_node_id,
                 "Source tree id": sourcetree_id,
                 "Open Tree Taxonomy id": ottol_id,
-                "Intended scope": intended_scope
+                "Intended scope": intended_scope,
+                "Supporting reference": reference_url or 'None'
             })
             msg_data = {
                 "title": issue_title,
@@ -493,11 +525,10 @@ def index():
                 "body": "{0}\n{1}".format(msg_body, footer)
             }
             new_msg = add_or_update_comment(msg_data, parent_issue_id=thread_parent_id)
+        clear_local_comments()
         return node(new_msg)                
 
     # retrieve related comments, based on the chosen filter
-    print("retrieving local comments using this filter:")
-    print(filter)
     if filter == 'skip_comments':
         # sometimes we just want the markup/UI (eg, an empty page that's quickly updated by JS)
         comments = [ ]
@@ -517,7 +548,7 @@ def index():
     for comment in comments:
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
         threads.append(comment)
-    pprint('{0} threads loaded'.format(len(threads)))
+
     return DIV(script,
                DIV(FORM(# anonymous users should see be encouraged to login or add a name-or-email to their comments
                         '' if auth.user_id else A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
@@ -538,11 +569,12 @@ def index():
                             OPTION('about node placement in the synthetic tree', _value='Re: synthetic tree'),
                             OPTION('about node placement in the source tree', _value='Re: source tree'),
                             OPTION('about taxon data in OTT', _value='Re: OTT taxon'),
-                            OPTION('general feedback (none of the above)', _value=''),
-                        _name='intended_scope',value='',_style='width: auto;'),
+                            OPTION('something else', _value=''),
+                        _name='intended_scope',value='Re: synthetic tree',_style='width: auto;'),
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
                         INPUT(_type='text',_id='issue_title',_name='issue_title',_value='',_placeholder="Give this topic a title"),   # should appear for proper issues only
                         TEXTAREA(_name='body',_placeholder="Add more to this topic, using Markdown (click 'Markdown help' below to learn more)."),
+                        INPUT(_type='text',_id='reference_url',_name='reference_url',_value='',_placeholder="Provide a supporting reference URL"),   # should appear for phylo corrections only
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
                         INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
@@ -614,8 +646,8 @@ def add_or_update_comment(msg_data, comment_id=None, parent_issue_id=None ):
     if comment_id:
         # edit an existing comment
         url = '{0}/repos/OpenTreeOfLife/feedback/issues/comments/{1}'.format(GH_BASE_URL, comment_id)
-        print('URL for editing an existing comment:')
-        print(url)
+        #print('URL for editing an existing comment:')
+        #print(url)
         resp = requests.patch( url, 
             headers=GH_POST_HEADERS,
             data=json.dumps(msg_data)
@@ -623,8 +655,8 @@ def add_or_update_comment(msg_data, comment_id=None, parent_issue_id=None ):
     else:
         # create a new comment
         url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}/comments'.format(GH_BASE_URL, parent_issue_id)
-        print('URL for adding a new comment:')
-        print(url)
+        #print('URL for adding a new comment:')
+        #print(url)
         resp = requests.post( url, 
             headers=GH_POST_HEADERS,
             data=json.dumps(msg_data)
@@ -640,8 +672,8 @@ def add_or_update_comment(msg_data, comment_id=None, parent_issue_id=None ):
 def close_issue(issue_id):
     # close a thread (issue) on GitHub
     url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}'.format(GH_BASE_URL, issue_id)
-    print('URL for closing an existing issue:')
-    print(url)
+    #print('URL for closing an existing issue:')
+    #print(url)
     resp = requests.patch( url, 
         headers=GH_POST_HEADERS,
         data=json.dumps({"state":"closed"})
@@ -657,8 +689,8 @@ def close_issue(issue_id):
 def delete_comment(comment_id):
     # delete a comment on GitHub
     url = '{0}/repos/OpenTreeOfLife/feedback/issues/comments/{1}'.format(GH_BASE_URL, comment_id)
-    print('URL for deleting an existing comment:')
-    print(url)
+    #print('URL for deleting an existing comment:')
+    #print(url)
     resp = requests.delete( url, 
         headers=GH_GET_HEADERS
     )
@@ -707,7 +739,7 @@ def get_local_comments(location={}):
         search_text = '{0}"{1} | {2} " '.format( search_text, k, v )
     search_text = urllib.quote_plus(search_text.encode('utf-8'), safe='~')
     #print search_text
-    print('>> calling GitHub API for local issues...')
+    #print('>> calling GitHub API for local issues...')
     url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+state:open&sort=created&order=desc'
     ##TODO: search only within body?
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
@@ -735,30 +767,32 @@ def clear_local_comments():
     # Examine the JSON payload (now in request.vars) to see if we can clear
     # only the affected localcomments. If not, play it safe and clear all 
     # comments in the cache.
-    trigger_action = request.vars.get('action', None)
-    print(">>> clear_local_comments(): trigger_action is [%s]" % trigger_action)
-
-    if trigger_action in ['created', 'TODO']:
-        issue_with_metadata = request.vars.issue
-    elif trigger_action in ['FOO', 'BAR']:
-        # different payload structure for some events?
-        issue_with_metadata = request.vars.issue
+    if 'markdown_body' in request.vars:
+        # If we receive issue Markdown, parse it to recover metadata fields.
+        # N.B. this is not currently used, but handy to keep in mind!
+        metadata = parse_comment_metadata(request.vars.markdown_body)
+        local_url = metadata.get('URL', None)
+        local_ott_id = metadata.get('Open Tree Taxonomy id', None)
+        local_synth_node_id = metadata.get('Synthetic tree node id', None)
     else:
-        # fall back to most likely payload structure
-        print(">>> Unexpected trigger_action [%s]!" % trigger_action)
-        issue_with_metadata = request.vars.issue
+        # normally we'll examine the request vars as-is
+        metadata = request.vars;
+        local_url = metadata.get('url', None)
+        local_ott_id = metadata.get('ottol_id', None)
+        local_synth_node_id = metadata.get('synthtree_node_id', None)
 
-    metadata = parse_comment_metadata(issue_with_metadata.get('body', ''))
-    if metadata:
-        # Clobber any cached comment keyed to its metadata. N.B. that we err on
-        # the side of clobbering, since reloading is no big deal, but we definitely
-        # don't want to show stale comments from the cache.
-        if metadata['URL']:
+    if local_url or local_ott_id or local_synth_node_id:
+        # Clobber any cached comment keyed to its metadata, in a way that 
+        # handles Markdown or the more typical form variables.
+        # N.B. that we err on the side of clobbering, since reloading the
+        # comment cache is no big deal, while we definitely don't want to show
+        # stale (cached) comments!
+        if local_url:
             # Extract a root-relative URL from markdown strings like 
             # "[devtree.opentreeoflife.org/opentree/argus/otol.draft.22@132](http://devtree.opentreeoflife.org/opentree/argus/otol.draft.22@132)"
-            markdown_url = metadata['URL']
-            print('markdown_url:')
-            print(markdown_url)
+            markdown_url = local_url
+            #print('markdown_url:')
+            #print(markdown_url)
             parts = markdown_url.split('[')
             if len(parts) > 1:
                 markdown_url = parts[1]
@@ -770,13 +804,13 @@ def clear_local_comments():
                 # assume we have an absolute URL, and remove three slashes
                 parts = markdown_url.split('/')[3:]
                 root_relative_url = '/' + '/'.join(parts)
-            print('root_relative_url:')
-            print(root_relative_url)
+            #print('root_relative_url:')
+            #print(root_relative_url)
             clear_matching_cache_keys("^localcomments:.*'url': '%s'.*" % root_relative_url)
-        if metadata['Open Tree Taxonomy id']:
-            clear_matching_cache_keys("^localcomments:.*'ottol_id': '%s'.*" % metadata['Open Tree Taxonomy id'])
-        if metadata['Synthetic tree node id']:
-            clear_matching_cache_keys("^localcomments:.*'synthtree_node_id': '%s'.*" % metadata['Synthetic tree node id'])
+        if local_ott_id:
+            clear_matching_cache_keys("^localcomments:.*'ottol_id': '%s'.*" % local_ott_id)
+        if local_synth_node_id:
+            clear_matching_cache_keys("^localcomments:.*'synthtree_node_id': '%s'.*" % local_synth_node_id)
     else:
         # Play it safe and clobber *all* local comments in cache.
         print(">>> No metadata found. CLEARING ALL cached localcomments!")
@@ -800,6 +834,7 @@ Synthetic tree node id   |   %(Synthetic tree node id)s
 Source tree id(s)   |   %(Source tree id)s 
 Open Tree Taxonomy id   |   %(Open Tree Taxonomy id)s 
 Intended scope   |   %(Intended scope)s 
+Supporting reference   |   %(Supporting reference)s 
 """
 reply_footer = """
 ================================================
