@@ -3191,6 +3191,8 @@ function showTreeViewer( tree, options ) {
             treeTagsInitialized = true;
         }
 
+        updateTreeViewerHeight({MAINTAIN_SCROLL: true});
+
         updateEdgesInTree( tree );
 
         drawTree(tree, {
@@ -3291,12 +3293,44 @@ function showTreeViewer( tree, options ) {
             updateTreeDisplay();
         });
         $('#tree-viewer').off('hide').on('hide', function () {
+            $.fullscreen.exit();
             treeViewerIsInUse = false;
             hideTreeWithHistory(tree);
         });
         $('#tree-viewer').off('hidden').on('hidden', function () {
             ///console.log('@@@@@ hidden');
         });
+
+        /* DISABLING this until we can iron out collections UI, node/edge info, etc.
+        // show or disable the full-screen widgets
+        var $fullScreenToggle = $('button#enter-full-screen');
+        if ($.fullscreen.isNativelySupported()) {
+            // ie, the current browser supports full-screen APIs
+            $fullScreenToggle.show();
+            $(document).bind('fscreenchange', function(e, state, elem) {
+                if ($.fullscreen.isFullScreen()) {
+                    $('#enter-full-screen').hide();
+                    $('#exit-full-screen').show();
+                } else {
+                    $('#enter-full-screen').show();
+                    $('#exit-full-screen').hide();
+                }
+                // let screen redraw, THEN adjust height to fit
+                // TODO: Do this more safely instead? measure screen vs. DIV, etc.
+                setTimeout( function() {
+                    updateTreeViewerHeight({MAINTAIN_SCROLL: true});
+                }, 1500 );
+            });
+        } else {
+            // dim and disable the full-screen toggle
+            $fullScreenToggle.css("opacity: 0.5;")
+                             .click(function() {
+                                alert("This browser does not support full-screen display.");
+                                return false;
+                             })
+                             .show();
+        }
+        */
 
         // hide or show footer options based on tab chosen
         $treeViewerTabs.off('shown').on('shown', function (e) {
@@ -3340,6 +3374,56 @@ function showTreeViewer( tree, options ) {
         $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
     }
 }
+function updateTreeViewerHeight(options) {
+    /* Revisit height and placement of the single-tree popup, which should 
+     * take the full height of the window, with all header and footer UI
+     * available and any scrollbars restricted to the SVG viewport.
+     */
+    options = options || {};
+    var currentWindowHeight = $(window).height();
+    var $popup = $('#tree-viewer');
+    var $popupBody = $popup.find('.modal-body');
+    var currentBodyScrollPosition = $popupBody.scrollTop();
+    // NOTE that MAINTAIN_SCROLL only gives good results if this is called
+    // directly, vs. as part of a full update of the tree viewer
+    var newBodyScrollPosition = (options.MAINTAIN_SCROLL) ? currentBodyScrollPosition : 0;
+    var currentBodyHeight = $popupBody.height();
+    if ($.fullscreen.isFullScreen()) {
+        // check the appointed full-screen element, nothing else
+        var $fullScreenArea = $popup.find('#full-screen-area');
+        var fullScreenAreaHeight = $fullScreenArea.height();
+        // How much room to leave for header and footer?  N.B. that we're
+        // forced to max size, so we need to measure them directly.
+        var $header = $popup.find('.modal-header');
+        var $footer = $popup.find('.modal-footer');
+        var bodyPadding = $popupBody.outerHeight() - $popupBody.height();
+        var newBodyHeight = fullScreenAreaHeight - $header.outerHeight() - $footer.outerHeight() - bodyPadding;
+        // force height to the new size, to fill available area
+        $popupBody.css({ 'height': newBodyHeight +'px', 'max-height': newBodyHeight +'px' });
+    } else {
+        // measure for a well-behaved popup (margins, etc)
+        var topBackgroundHeight = 8;
+        // leave room at the bottom for error messages, etc.?
+        var footerMessageHeight = 36;
+        var maxPopupHeight = (currentWindowHeight - topBackgroundHeight - footerMessageHeight);
+        var currentPopupHeight = $popup.height();
+        // how tall is the rest of the popup?
+        var headerAndFooterHeight = currentPopupHeight - currentBodyHeight;
+        var maxBodyHeight = maxPopupHeight - headerAndFooterHeight;
+        // restore original height setting, but allow new max-height
+        $popupBody.css({ 'height': '75%', 'max-height': maxBodyHeight +'px' });
+        // position the popup itself
+        var popupTopY = (currentWindowHeight / 2) - ($popup.height() / 2) - (footerMessageHeight/2);
+        $popup.css({ 'top': popupTopY +'px' });
+    }
+    // restore (or set) new list scroll position
+    $popupBody.scrollTop(newBodyScrollPosition);
+}
+$(window).resize( function () {
+    if (treeViewerIsInUse) {
+        updateTreeViewerHeight({MAINTAIN_SCROLL: true});
+    }
+});
 
 function findOTUInTrees( otu, trees ) {
     // return an array of otu-context objects; each has a tree ID and node ID
