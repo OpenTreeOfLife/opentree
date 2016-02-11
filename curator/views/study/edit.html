@@ -38,6 +38,9 @@ response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.iframe-tr
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.fileupload.js'))
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/css/jquery.fileupload.css'))
 
+# support for fullscreen display (tree viewer)
+response.files.append(URL('static','js/jquery.fullscreen.min.js'))
+
 # minimal Bootstrap Tags Input (jQuery plugin)
 response.files.append(URL('static','js/bootstrap-tagsinput.min.js'))
 response.files.append(URL('static','css/bootstrap-tagsinput.css'))
@@ -2232,9 +2235,14 @@ body {
 
 <!-- hidden template for the tree-viewer (editor) -->
 <div class="modal hide fade modal-tree-viewer tabbable" id="tree-viewer" style="display: none;">
+  <div id="full-screen-area">
   <!-- KO binding here to 'tree' (as $data below) -->
     <div class="modal-header" style="padding-bottom: 0;">
       <a class="close" onclick="$('#tree-viewer').modal('hide'); return false;">×</a>
+      <button id="enter-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;" 
+              onclick="$('#full-screen-area').fullscreen(); return false;"><i class="icon-fullscreen"></i> Full screen</button>
+      <button id="exit-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;" 
+              onclick="$.fullscreen.exit(); return false;"><i class="icon-resize-small"></i> Exit full screen</button>
       <h3 id='dialog-heading'>
         {{ if viewOrEdit == 'EDIT': }}
             Edit tree
@@ -2714,7 +2722,5 @@ body {
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>
-</div
-ml
-
->
+  </div><!-- /#full-screen-area -->
+</div>
