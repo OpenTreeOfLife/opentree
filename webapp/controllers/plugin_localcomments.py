@@ -555,7 +555,7 @@ def index():
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
                         INPUT(_type='text',_id='issue_title',_name='issue_title',_value='',_placeholder="Give this topic a title"),   # should appear for proper issues only
                         TEXTAREA(_name='body',_placeholder="Add more to this topic, using Markdown (click 'Markdown help' below to learn more)."),
-                        INPUT(_type='text',_id='reference_url',_name='reference_url',_value='',_placeholder="Provide a supporting reference (URL or DOI)"),   # should appear for phylo corrections only
+                        INPUT(_type='text',_id='reference_url',_name='reference_url',_value='',_placeholder="Provide a supporting article or web site (URL or DOI)"),   # should appear for phylo corrections only
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
                         INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
