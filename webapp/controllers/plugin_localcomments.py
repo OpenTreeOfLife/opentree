@@ -66,12 +66,17 @@ function capture_form() {
     $referenceURLField.hide();
     jQuery('div.plugin_localcomments select[name="feedback_type"]').unbind('change').change(function(){
         switch (jQuery(this).val()) {
-            case 'Correction to relationships in the synthetic tree':
             case 'Suggest a phylogeny to incorporate':
+                $referenceURLField.attr('placeholder',"Provide a database reference or published article (URL or DOI)");
+                $referenceURLField.show();
+                break;
+            case 'Correction to relationships in the synthetic tree':
             case 'Correction to names (taxonomy)':
+                $referenceURLField.attr('placeholder',"Provide a supporting article or web site (URL or DOI)");
                 $referenceURLField.show();
                 break;
             default:
+                $referenceURLField.attr('placeholder',"...");
                 $referenceURLField.hide();
         }
     });
@@ -81,33 +86,66 @@ function capture_form() {
         fixLoginLinks();
     }
 
-    jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
-        var $form = jQuery(this).closest('form');
-
-        // validate form fields
+    function validateFeedbackForm(options) {
+        // Return true (if all inputs are valid), or false
+        if (!options) options = {VERBOSE: false};
+        var $form = $('div.plugin_localcomments form:eq(0)');
+        var prompt = "Please provide data for all visible fields";
+        var problemsFound = false;
+        // validate form fields based on feedback type
         var $visitorNameField = $form.find('input[name="visitor_name"]'); 
         if ($visitorNameField.is(':visible') && ($.trim($visitorNameField.val()) === '')) {
-            alert("Please enter your name (and preferably an email address) so we can stay in touch.");
-            return false;
+            //prompt = "Please enter your name (and preferably an email address) so we can stay in touch.";
+            problemsFound = true;
         }
         var $fbTypeField = $form.find('select[name="feedback_type"]'); 
         if ($fbTypeField.is(':visible') && ($.trim($fbTypeField.val()) === '')) {
-            alert("Please choose a feedback type for this topic.");
-            return false;
+            //prompt = "Please choose a feedback type for this topic.";
+            problemsFound = true;
         }
         var $titleField = $form.find('input[name="issue_title"]'); 
         if ($titleField.is(':visible') && ($.trim($titleField.val()) === '')) {
-            alert("Please give this topic a title.");
-            return false;
+            //prompt = "Please give this topic a title.";
+            problemsFound = true;
         }
         var $bodyField = $form.find('textarea[name="body"]'); 
         if ($.trim($bodyField.val()) === '') {
-            alert("Please enter some text for this "+ (isThreadStarter ? 'issue' : 'comment') +".");
-            return false;
+            //prompt = "Please enter some text for this "+ (isThreadStarter ? 'issue' : 'comment') +".";
+            problemsFound = true;
         }
         var $referenceURLField = $form.find('input[name="reference_url"]'); 
         if ($referenceURLField.is(':visible') && ($.trim($referenceURLField.val()) === '')) {
-            alert("Please provide a supporting reference (DOI or URL).");
+            //prompt = "Please provide a supporting reference (DOI or URL).";
+            problemsFound = true;
+        }
+
+        if (problemsFound && options.VERBOSE) {
+            // Show an alert to prompt corrective action
+            alert(prompt);
+        }
+
+        // return true only if all's well
+        return !(problemsFound);
+    }
+    function updateFeedbackButton(evt) {
+        var $btn = jQuery('div.plugin_localcomments form:eq(0) :submit');
+        if (validateFeedbackForm({VERBOSE: false})) {
+            $btn.removeClass('disabled');
+        } else {
+            $btn.addClass('disabled');
+        }
+    }
+    // update now, and after any change to input widgets
+    updateFeedbackButton();
+    jQuery('div.plugin_localcomments :input')
+        .unbind('change.validation keyup.validation')
+        .bind('change.validation keyup.validation', updateFeedbackButton);
+
+    jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
+        var $form = jQuery(this).closest('form');
+
+        if (!validateFeedbackForm({VERBOSE: true})) {
+            // something's wrong
             return false;
         }
 
@@ -551,11 +589,11 @@ def index():
                             OPTION('Correction to names (taxonomy)'),
                             OPTION('Bug report (website behavior)'),
                             OPTION('New feature request'),
-                        _name='feedback_type',value='',_style='width: 100%;'),
+                        _name='feedback_type',value='',_style='width: 100%; margin-right: -4px;'),
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
                         INPUT(_type='text',_id='issue_title',_name='issue_title',_value='',_placeholder="Give this topic a title"),   # should appear for proper issues only
                         TEXTAREA(_name='body',_placeholder="Add more to this topic, using Markdown (click 'Markdown help' below to learn more)."),
-                        INPUT(_type='text',_id='reference_url',_name='reference_url',_value='',_placeholder="Provide a supporting reference (URL or DOI)"),   # should appear for phylo corrections only
+                        INPUT(_type='text',_id='reference_url',_name='reference_url',_value='',_placeholder="..."),   # visibility (and placeholder) depends on feedback type
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
                         INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
@@ -567,7 +605,7 @@ def index():
                             SPAN(' | ',_style='margin-right: 6px'),
                             A(T('Markdown help'),_href='https://help.github.com/articles/markdown-basics',
                               _target='_blank',_style='margin-right: 10px'),
-                            INPUT(_type='submit',_value=T('Post'),_class='btn btn-small',_style=''), 
+                            INPUT(_type='submit',_value=T('Post'),_class='btn btn-info btn-small',_style=''), 
                             _class='msg-footer'),
                         _method='post',_action=URL(r=request,args=[])),_class='reply'),
                SUL(*[node(comment) for comment in threads]),_class='plugin_localcomments')
