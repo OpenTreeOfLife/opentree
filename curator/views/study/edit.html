@@ -2569,12 +2569,24 @@ body {
          </td>
         </tr>
         <tr>
+          <td colspan="4" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">Conflict versus reference tree</strong></td>
+          <td colspan="2" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">OTUs with conflicting mapping</strong></td>
+        </tr>
+        <tr>
          <td align="right">
+            Supported by
          </td>
          <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-supported-by.png')}}" alt="outgroup style" />
          </td>
-         <td colspan="3" align="right">
-             OTU with conflicting mapping (unresolved):
+         <td align="right">
+            Resolves
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-resolves.png')}}" alt="outgroup style" />
+         </td>
+         <td align="right">
+             Unresolved
          </td>
          <td>
           <img src="{{=URL('static','images/tree-viewer-legend-tips-conflicting.png')}}" alt="outgroup style" />
@@ -2582,23 +2594,30 @@ body {
         </tr>
         <tr>
          <td align="right">
+            Conflicts with
          </td>
          <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-conflicts-with.png')}}" alt="outgroup style" />
          </td>
-         <td colspan="3" align="right">
-             OTU with conflicting mapping (chosen exemplar):
+         <td align="right">
+            Undetermined
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-undetermined.png')}}" alt="outgroup style" />
+         </td>
+         <td align="right">
+             Chosen exemplar
          </td>
          <td>
           <img src="{{=URL('static','images/tree-viewer-legend-tips-exemplar.png')}}" alt="outgroup style" />
          </td>
         </tr>
         <tr>
+         <td colspan="4">
+            &nbsp;
+         </td>
          <td align="right">
-         </td>
-         <td>
-         </td>
-         <td colspan="3" align="right">
-             OTU with conflicting mapping (non-exemplar):
+             Non-exemplar
          </td>
          <td>
           <img src="{{=URL('static','images/tree-viewer-legend-tips-non-exemplar.png')}}" alt="outgroup style" />
