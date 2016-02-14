@@ -279,7 +279,8 @@
   "tax_rank" : "no rank",
   "ott_id" : "5839486",
   "tax_sources" : {
-    "ncbi" : "1549675"
+    "ncbi" : "1549675",
+    "url" : "http://dx.doi.org/10.1186/1471-2148-14-23"
   },
   "path_to_root" : [ {
     "tax_sources" : {
