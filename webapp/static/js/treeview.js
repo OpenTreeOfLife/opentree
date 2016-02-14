@@ -1163,16 +1163,17 @@ function showObjectProperties( objInfo, options ) {
             var idType = (objSource == 'ottol') ? 'ottol-id' : 'node-id';
             var fetchID = (objSource == 'ottol') ? fullNode.sourceID : (fullNode.ot_node_id || fullNode.nodeID);
             // Choose from among the collection of objSources
+            var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
+            var downloadURL = '/opentree/default/download_subtree/'+ idType +'/'+ fetchID +'/'+ superSafeDisplayName;
             $('#extract-subtree')
                 .css('color','')  // restore normal link color
                 .unbind('click').click(function() {
                     // Make this name safe for use in our subtree download URL
-                    var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
-                    var downloadURL = '/opentree/default/download_subtree/'+ idType +'/'+ fetchID +'/'+ superSafeDisplayName;
                     ///console.log(downloadURL);
                     window.location = downloadURL;
                     return false;
-                });
+                }).
+                attr('href', downloadURL);
         }
 
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
