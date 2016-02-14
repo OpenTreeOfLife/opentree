@@ -679,41 +679,46 @@ function showObjectProperties( objInfo, options ) {
                         objName = buildNodeNameFromTreeData( fullNode );
                     }
 
-                    /* show ALL taxonomic sources (taxonomies + IDs) for this node
-                     * TODO: Handle whatever schemes we use for multiple sources; for now,
-                     * they look like one of the following (in order of preference):
-
-                       EXAMPLE w/ multiple sources (new format):
-                       fullNode.taxSourceArray: [
-                           { "foreignID": "2", "taxSource": "ncbi" },
-                           { "foreignID": "3", "taxSource": "gbif" }
-                       ]
-
-                       EXAMPLE w/ multiple sources (old format):
-                       fullNode.taxSource: "ncbi:2157,gbif:6101330"
-
-                       EXAMPLE w/ one source:
-                       fullNode.taxSource: "gbif:6101330"
-
+                    /* Show ALL taxonomic sources (taxonomies + IDs) for this node.
+                     * N.B. In ArguSON "v3", these can be either CURIEs or URLs:
+                     *   ["ncbi:123", "gbif:456", "http://dx.doi.org/10.1186/1471-2148-14-23"]
+                     * https://github.com/OpenTreeOfLife/germinator/wiki/%22Arguson%22-format
                      */
-                    if (fullNode.taxSourceArray && fullNode.taxSourceArray.length > 0) {
+                    if (fullNode.tax_sources && $.isPlainObject(fullNode.tax_sources)) {
+                        // TODO: REMOVE this if we move the scheme above; this is
+                        // a temporary alternative path for the current Arguson test file.
                         nodeSection.displayedProperties['Source taxonomy'] = [];
-                        for (var tsPos = 0; tsPos < fullNode.taxSourceArray.length; tsPos++) {
-                            var taxSourceInfo = fullNode.taxSourceArray[tsPos];
-                            nodeSection.displayedProperties['Source taxonomy'].push({
-                                taxSource: taxSourceInfo.taxSource,
-                                taxSourceId: taxSourceInfo.foreignID
-                            });
+                        for (var src in fullNode.tax_sources) {
+                            var id = fullNode.tax_sources[src];
+                            var info = { taxSource: src };
+                            if (src === 'url') {
+                                info.taxSourceURL = id;
+                            } else {
+                                info.taxSourceID = id;
+                            }
+                            nodeSection.displayedProperties['Source taxonomy'].push(info);
                         }
-                    } else if (fullNode.taxSource) {
+
+                    } else if (fullNode.tax_sources && fullNode.tax_sources.length > 0) {
                         nodeSection.displayedProperties['Source taxonomy'] = [];
-                        var taxSources = fullNode.taxSource.split(',');
-                        for (var tsPos = 0; tsPos < taxSources.length; tsPos++) {
-                            var taxSourceInfo = taxSources[tsPos].split(':');
-                            if (taxSourceInfo.length === 2) {
+                        for (var tsPos = 0; tsPos < fullNode.tax_sources.length; tsPos++) {
+                            var taxSourceInfo = fullNode.tax_sources[tsPos];
+                            // Is this source a URL or CURIE?
+                            if (taxSourceInfo.indexOf('//') === -1) {  // CURIE
+                                var CURIEparts = taxSourceInfo.split(':');
+                                if (CURIEparts.length === 2) {
+                                    nodeSection.displayedProperties['Source taxonomy'].push({
+                                        taxSource: CURIEparts[0],
+                                        taxSourceId: CURIEparts[1]
+                                    });
+                                } else {
+                                    console.error('showObjectProperties(): ERROR, expected a CURIE or URL:');
+                                    console.error(taxSourceInfo);
+                                }
+                            } else {   // URL
                                 nodeSection.displayedProperties['Source taxonomy'].push({
-                                    taxSource: taxSourceInfo[0],
-                                    taxSourceId: taxSourceInfo[1]
+                                    taxSource: 'URL',
+                                    taxSourceURL: taxSourceInfo
                                 });
                             }
                         }
@@ -911,6 +916,12 @@ function showObjectProperties( objInfo, options ) {
                         var sourceInfo = sourceList[i];
                         // build boilerplate URLs for common taxonomies
                         switch(sourceInfo.taxSource.trim().toUpperCase()) {
+                            case 'URL':
+                                // we have just a bare URL to show
+                                displayVal = '<a href="'+ sourceInfo.taxSourceURL +'"'
+                                              + ' target="_blank">'+ sourceInfo.taxSourceURL +'</a>';
+                                break;
+
                             case 'NCBI':
                                 displayVal = '<a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id='+ sourceInfo.taxSourceId +'" '
                                               + 'title="NCBI Taxonomy" target="_blank">NCBI: '+ sourceInfo.taxSourceId +'</a>';
