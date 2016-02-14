@@ -182,7 +182,7 @@ function loadLocalComments( chosenFilter ) {
         fetchArgs.synthtree_id = argus.domSource;
         fetchArgs.synthtree_node_id = targetNode.ot_node_id;
         fetchArgs.sourcetree_id = targetNode.taxSource;
-        fetchArgs.ottol_id = targetNode.ottId;
+        fetchArgs.ottol_id = targetNode.ott_id;
 
         commentLabel = buildNodeNameFromTreeData( targetNode );
         /* OR should comment label reflect the current filter?
@@ -724,20 +724,21 @@ function showObjectProperties( objInfo, options ) {
                         }
                     }
 
-                    if (fullNode.ottId) {
+                    if (fullNode.ott_id) {
                         nodeSection.displayedProperties['Reference taxonomy'] = [];
                         //nodeSection.displayedProperties['OTT ID'] = fullNode.ottolId;
                         nodeSection.displayedProperties['Reference taxonomy'].push(
                             {
                                 taxSource: "OTT",
-                                taxSourceId: fullNode.ottId
+                                taxSourceId: fullNode.ott_id
                             }
                         );
                     }
 
                     // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
-                    if (typeof fullNode.taxRank !== 'undefined') {
-                        nodeSection.displayedProperties['Taxonomic rank'] = fullNode.taxRank;
+                    if (typeof fullNode.tax_rank !== 'undefined') {
+                        // TODO: Omit this is value is 'no rank'?
+                        nodeSection.displayedProperties['Taxonomic rank'] = fullNode.tax_rank;
                     }
 
                     if (typeof fullNode.n_tip_descendants !== 'undefined') {
