@@ -50,8 +50,8 @@ var incomingOttolID = null;
 
 function getSupportingSourceIDs( node ) {
     // handle different properties used here (each should hold an array of source-ids)
-    if (typeof node.supportedBy !== 'undefined') {
-        return (node.supportedBy.length > 0) ? node.supportedBy : null;
+    if (typeof node.supported_by !== 'undefined') {
+        return (node.supported_by.length > 0) ? node.supported_by : null;
     }
     if (typeof node.supporting_sources !== 'undefined') {
         return (node.supporting_sources.length > 0) ? node.supporting_sources : null;
@@ -180,7 +180,7 @@ function loadLocalComments( chosenFilter ) {
 
         var targetNode = argus.treeData;
         fetchArgs.synthtree_id = argus.domSource;
-        fetchArgs.synthtree_node_id = targetNode.nodeid;
+        fetchArgs.synthtree_node_id = targetNode.ot_node_id;
         fetchArgs.sourcetree_id = targetNode.taxSource;
         fetchArgs.ottol_id = targetNode.ottId;
 
@@ -597,12 +597,12 @@ function showObjectProperties( objInfo, options ) {
         objName = objInfo.nodeName;
         objID = objInfo.nodeID;
         objSource = objInfo.domSource || '?';
-    } else if (typeof(objInfo.nodeid) !== 'undefined') {
+    } else if (typeof(objInfo.ot_node_id) !== 'undefined') {
         // this is minimal node info (nodeID, domSource, nodeName) from an argus node
         // OR it's an edge with metadata for it and its adjacent (child) node
         objType = (objInfo.type) ? objInfo.type : 'node';
         objName = objInfo.name;
-        objID = objInfo.nodeid;
+        objID = objInfo.ot_node_id;
         objSource = objInfo.domSource || '?';
     } else {
         // what's this?
@@ -735,11 +735,11 @@ function showObjectProperties( objInfo, options ) {
                         nodeSection.displayedProperties['Taxonomic rank'] = fullNode.taxRank;
                     }
 
-                    if (typeof fullNode.nTipDescendants !== 'undefined') {
-                        if (fullNode.nTipDescendants === 0) {
+                    if (typeof fullNode.n_tip_descendants !== 'undefined') {
+                        if (fullNode.n_tip_descendants === 0) {
                             nodeSection.displayedProperties['Leaf node (no descendant tips)'] = '';
                         } else {
-                            nodeSection.displayedProperties['Descendant tips'] = (fullNode.nTipDescendants || 0).toLocaleString();
+                            nodeSection.displayedProperties['Descendant tips'] = (fullNode.n_tip_descendants || 0).toLocaleString();
                             // OR 'Clade members'? 'Leaf taxa'?
                         }
                     }
@@ -759,7 +759,7 @@ function showObjectProperties( objInfo, options ) {
 
                     // add another section to explain an "orphaned" taxon (unconnected to other nodes in the tree)
                     if (('hasChildren' in fullNode) && (fullNode.hasChildren === false)
-                     && ('pathToRoot' in fullNode) && (fullNode.pathToRoot.length === 0)) {
+                     && ('path_to_root' in fullNode) && (fullNode.path_to_root.length === 0)) {
                         orphanSection = {
                             name: 'Where is the surrounding tree?',
                             displayedProperties: {},
@@ -1139,7 +1139,7 @@ function showObjectProperties( objInfo, options ) {
         // main download page if it's too large (based on the number of
         // descendant tips)
         var maxTipsForNewickSubtree = 10000;
-        if ((typeof fullNode.nTipDescendants !== 'number') || (fullNode.nTipDescendants > maxTipsForNewickSubtree)) {
+        if ((typeof fullNode.n_tip_descendants !== 'number') || (fullNode.n_tip_descendants > maxTipsForNewickSubtree)) {
             // when in doubt (e.g. nodes on the rootward path), offer the full download
             $details.append('<dt>Download subtree as Newick string</dt>');
             $details.append('<dd>This tree is too large to download through webservices, but you can '
@@ -1149,7 +1149,7 @@ function showObjectProperties( objInfo, options ) {
 
             // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
             var idType = (objSource == 'ottol') ? 'ottol-id' : 'node-id';
-            var fetchID = (objSource == 'ottol') ? fullNode.sourceID : (fullNode.nodeid || fullNode.nodeID);
+            var fetchID = (objSource == 'ottol') ? fullNode.sourceID : (fullNode.ot_node_id || fullNode.nodeID);
             // Choose from among the collection of objSources
             $('#extract-subtree')
                 .css('color','')  // restore normal link color
@@ -1192,7 +1192,7 @@ function getTreeDataNode( filterFunc, testNode ) {
     if (testNode === argus.treeData) {
         // check for a matching ancestor (walk the path toward the root node)
         var foundAncestor = null;
-        $.each(testNode.pathToRoot, function(i, testNode) {
+        $.each(testNode.path_to_root, function(i, testNode) {
             if (filterFunc(testNode)) {
                 foundAncestor = testNode;
                 return false;

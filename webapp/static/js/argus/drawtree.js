@@ -41,7 +41,7 @@
 //      domSource = "ottol"  The name of the source of trees. Currently only "ottol" is supported.
 //      nodeID = the ID for the node (according to the system of the service indicated by domSource)
 //          if nodeID or domSource are lacking, they will *both* be parsed out of the URL query string (location.search)
-//              from nodeid and domsource url-encoded GET parameters. If they are not found there, the defaults are
+//              from ot_node_id and domsource url-encoded GET parameters. If they are not found there, the defaults are
 //              domSource="ottol" and nodeID = "805080"
 //      container - DOM element that will contain the argus object
 function createArgus(spec) {
@@ -87,7 +87,7 @@ function createArgus(spec) {
                         toks = qListStr.split("&");
                         for (i = 0; i < toks.length; i++) {
                             arg = toks[i].split("=");
-                            if (arg[0] === "nodeid") {
+                            if (arg[0] === "ot_node_id") {
                                 ret.nodeID = arg[1];
                             } else if (arg[0] === "domsource") {
                                 ret.domSource = arg[1];
@@ -182,21 +182,21 @@ function createArgus(spec) {
         // use Javascript pseudo-classes (defined below) to make tree operations more sensible
         makeNodeTree: function(key, value) {
             // expects to get root JSON object? or each object (or key/val pair) as it's parsed?
-            if (value.nodeid) {
+            if (value.ot_node_id) {
                 // it's a tree node!
 
                 // assign parent ID to children, for fast tree traversal
                 if (value.children) {
                     for (var i = 0; i < value.children.length; i++) {
-                        value.children[i].parentNodeID = value.nodeid;
+                        value.children[i].parentNodeID = value.ot_node_id;
                     }
                 }
 
-                if (value.pathToRoot) {
+                if (value.path_to_root) {
                     // assign parent IDs up the "root-ward" chain of nodes
                     var testChild = value;
-                    $.each(value.pathToRoot, function(i, testParent) {
-                        testChild.parentNodeID = testParent.nodeid;
+                    $.each(value.path_to_root, function(i, testParent) {
+                        testChild.parentNodeID = testParent.ot_node_id;
                         testChild = testParent;  // and move to *its* parent
                     });
                 }
@@ -213,7 +213,7 @@ function createArgus(spec) {
         getArgusNodeByID: function ( nodeID ) {
             // NOTE depends on treeview.js methods
             return getTreeDataNode( function(node) {
-                return (node.nodeid === nodeID); 
+                return (node.ot_node_id === nodeID); 
             });
         },
         // TODO: add a method to get node by OTT id?
@@ -306,7 +306,7 @@ function createArgus(spec) {
 
                 // slightly different, this is which column of nodes will hold this one
                 // (where 0 = the right-most (leaf nodes) column, higher = further left)
-                node.treeColumn = node.isLocalLeafNode() ? 0 : (argusObj.treeData.maxnodedepth - node.nodeDepth);
+                node.treeColumn = node.isLocalLeafNode() ? 0 : (argusObj.treeData.max_node_depth - node.nodeDepth);
                 // TODO: pre-calculate node.x from this, if it never changes..?
                 
                 if (node.children) {
@@ -327,7 +327,7 @@ function createArgus(spec) {
                     // group children based on type of edge support
                     for (var i = 0; i < nchildren; i++) {
                         var testChild = node.children[i],
-                            sb = testChild.supportedBy;
+                            sb = testChild.supported_by;
                         testChild.supportedByTaxonomy = $.inArray('taxonomy', sb) !== -1,
                         testChild.supportedByPhylogeny = sb.length > (testChild.supportedByTaxonomy ? 1 : 0);
 
@@ -375,9 +375,9 @@ function createArgus(spec) {
                                         nodes: [ ],
                                         firstName: testChild.name,
                                         lastName: testChild.name,
-                                        parentNodeID: node.nodeid
+                                        parentNodeID: node.ot_node_id
                                     });
-                                    clusters[node.nodeid].push(newCluster);
+                                    clusters[node.ot_node_id].push(newCluster);
                                     currentCluster = newCluster;
                                     nInCurrentCluster = 0;
                                 } 
@@ -390,9 +390,9 @@ function createArgus(spec) {
                                 nodes: [ ],
                                 firstName: '',
                                 lastName: '',
-                                parentNodeID: node.nodeid
+                                parentNodeID: node.ot_node_id
                             });
-                            clusters[ node.nodeid ] = [ newCluster ];
+                            clusters[ node.ot_node_id ] = [ newCluster ];
                             currentCluster = newCluster;
                             nInCurrentCluster = 0;
                         }
@@ -422,8 +422,8 @@ function createArgus(spec) {
                         node.displayList.push(nodesWithoutPhyloSupport[i]);
                     }
                     // add minimized clusters to the display list
-                    if (clusters[node.nodeid]) {
-                        node.displayList = node.displayList.concat( clusters[node.nodeid]);
+                    if (clusters[node.ot_node_id]) {
+                        node.displayList = node.displayList.concat( clusters[node.ot_node_id]);
                     }
                 }
 
@@ -448,7 +448,7 @@ function createArgus(spec) {
 
             //spec.container.text("proxy returned data..." + treeData);
             // calculate view-specific geometry parameters
-            pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.nleaves);
+            pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.n_leaves);
             pheight += argusObjRef.nubDistScalar * argusObjRef.minTipRadius;
 
             // for a narrow tree, push topmost nodes down away from the anchored widgets
@@ -464,7 +464,7 @@ function createArgus(spec) {
             // provide enough room for anchored widgets, more if needed for the tree
             pheight = Math.max(pheight, 20 * argusObjRef.nodeHeight);
 
-            pwidth = argusObjRef.nodesWidth * (node.maxnodedepth + 1);
+            pwidth = argusObjRef.nodesWidth * (node.max_node_depth + 1);
             pwidth += 1.5 * argusObjRef.tipOffset + argusObjRef.xLabelMargin;
 
             argusObjRef.xOffset = pwidth - argusObjRef.nodesWidth - argusObjRef.tipOffset;
@@ -956,11 +956,11 @@ function createArgus(spec) {
         var curLeaf = obj.curLeaf;
         var currentYoffset = obj.currentYoffset || argusObj.yOffset;
         // build IDs for visible elements (to move or create)
-        var nodeCircleElementID = 'node-circle-'+ node.nodeid;
-        var nodeLabelElementID = 'node-label-'+ node.nodeid;
-        var nodeSpineElementID = 'spine-'+ node.nodeid;
-        var nodeTriggerBranchElementID = 'node-branch-trigger-'+ node.nodeid;
-        var nodeVisibleBranchElementID = 'node-branch-'+ node.nodeid;
+        var nodeCircleElementID = 'node-circle-'+ node.ot_node_id;
+        var nodeLabelElementID = 'node-label-'+ node.ot_node_id;
+        var nodeSpineElementID = 'spine-'+ node.ot_node_id;
+        var nodeTriggerBranchElementID = 'node-branch-trigger-'+ node.ot_node_id;
+        var nodeVisibleBranchElementID = 'node-branch-'+ node.ot_node_id;
         // manipulate the existing elements, if any
         var circle = paper.getById(nodeCircleElementID);
         var label = paper.getById(nodeLabelElementID);
@@ -1019,7 +1019,7 @@ function createArgus(spec) {
         if (node.isLocalLeafNode()) {
             node.r = node.isActualLeafNode() ? (this.minTipRadius * 0.7) : this.minTipRadius;
         } else {
-            node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.nTipDescendants);
+            node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.n_tip_descendants);
         }
         var nodeFill = this.nodeColor; 
         var nodeStroke = this.pathColor;
@@ -1054,10 +1054,10 @@ function createArgus(spec) {
                 "fill": nodeFill
             }));
 
-            $(circle.node).on('click contextmenu', getClickHandlerNode(node.nodeid, domSource, node.name));
+            $(circle.node).on('click contextmenu', getClickHandlerNode(node.ot_node_id, domSource, node.name));
             // copy source data into the circle element (for use by highlight)
             circle.data('sourceNodeInfo', {
-                'nodeID': node.nodeid,
+                'nodeID': node.ot_node_id,
                 'nodeName': node.name,
                 'domSource': domSource
             });
@@ -1065,10 +1065,10 @@ function createArgus(spec) {
             // if this node has cycles, record it; we will draw them once the tree is done
             var nAltParents = (node.altrels === undefined ? 0 : node.altrels.length);
             if (nAltParents > 0) {
-                this.nodesWithCycles.push(node.nodeid);
+                this.nodesWithCycles.push(node.ot_node_id);
             }
             // store the node for fast access later
-            this.nodesHash[node.nodeid] = node;
+            this.nodesHash[node.ot_node_id] = node;
         }
 
         // label position varies based on which column we're in
@@ -1140,7 +1140,7 @@ function createArgus(spec) {
             // draw/update its "upward" branch to the parent's spine
             // TODO: nudge (vs create) if this already exists!
             var lineDashes, lineColor,
-                sb = node.supportedBy,
+                sb = node.supported_by,
                 supportedByTaxonomy = $.inArray('taxonomy', sb) !== -1, 
                 supportedByPhylogeny = sb.length > (supportedByTaxonomy ? 1 : 0);
 
@@ -1193,7 +1193,7 @@ function createArgus(spec) {
 
                 // copy node data into the path element (for use by highlight)
                 triggerBranch.data('sourceNodeInfo', {
-                    'nodeID': node.nodeid,
+                    'nodeID': node.ot_node_id,
                     'nodeName': node.name,
                     'domSource': domSource
                 });
@@ -1203,23 +1203,23 @@ function createArgus(spec) {
             // draw a series of ancestor nodes
             this.targetNodeY = node.y;
 
-            if (node.pathToRoot) {
+            if (node.path_to_root) {
                 // try to draw upward path w/ up to 3 nodes, plus trailing edge if there's more
                 var upwardNode;
                 var maxUpwardNodes = 3;
                 var alphaStep = 0.15;
                 var xyStep = 25;
-                for (i = 0; i < node.pathToRoot.length; i++) {
+                for (i = 0; i < node.path_to_root.length; i++) {
                     var startX = node.x - (xyStep * i);
                     var startY = node.y - (xyStep * i);
                     var endX = startX - xyStep;
                     var endY = startY - xyStep;
                     var pathOpacity = 1.0 - (alphaStep * (i+1));
-                    var ancestorNode = node.pathToRoot[i];
+                    var ancestorNode = node.path_to_root[i];
                     // build IDs for visible elements (to move or create)
-                    nodeCircleElementID = 'node-circle-'+ ancestorNode.nodeid;
-                    nodeLabelElementID = 'node-label-'+ ancestorNode.nodeid;
-                    var nodeBranchElementID = 'node-branch-'+ ancestorNode.nodeid;
+                    nodeCircleElementID = 'node-circle-'+ ancestorNode.ot_node_id;
+                    nodeLabelElementID = 'node-label-'+ ancestorNode.ot_node_id;
+                    var nodeBranchElementID = 'node-branch-'+ ancestorNode.ot_node_id;
                     // manipulate the existing elements, if any
                     circle = paper.getById(nodeCircleElementID);
                     label = paper.getById(nodeLabelElementID);
@@ -1274,10 +1274,10 @@ function createArgus(spec) {
                             label.id = (nodeLabelElementID);
 
                             // add handlers and metadata
-                            $(circle.node).bind('click contextmenu', getClickHandlerNode(ancestorNode.nodeid, domSource, ancestorNode.name));
+                            $(circle.node).bind('click contextmenu', getClickHandlerNode(ancestorNode.ot_node_id, domSource, ancestorNode.name));
                             // copy source data into the circle element (for use by highlight)
                             circle.data('sourceNodeInfo', {
-                                'nodeID': ancestorNode.nodeid,
+                                'nodeID': ancestorNode.ot_node_id,
                                 'nodeName': ancestorNode.name,
                                 'domSource': domSource
                             });
@@ -1410,7 +1410,7 @@ function createArgus(spec) {
             "domSource": this.domSource,
             "curLeaf": 0,
             "isTargetNode": true,
-            "parentNodeX": this.xOffset - (this.nodesWidth * targetNode.treeColumn),   // * node.maxnodedepth),
+            "parentNodeX": this.xOffset - (this.nodesWidth * targetNode.treeColumn),   // * node.max_node_depth),
             "currentYoffset": this.yOffset,
             "depthFromTargetNode": 0
         });
@@ -1765,8 +1765,8 @@ function alphaSortByName(a,b) {
     return 0;
 }
 function sortByDescendantCount(a,b) {
-    if (a.nTipDescendants > b.nTipDescendants) return 1;
-    if (a.nTipDescendants < b.nTipDescendants) return -1;
+    if (a.n_tip_descendants > b.n_tip_descendants) return 1;
+    if (a.n_tip_descendants < b.n_tip_descendants) return -1;
     return 0;
 }
 
@@ -1790,16 +1790,16 @@ function ArgusNode() { // constructor
     this.y = 0;
 };
 ArgusNode.prototype.getClusters = function() {
-    return argus.clusters[this.nodeid] || [ ];
+    return argus.clusters[this.ot_node_id] || [ ];
 };
 ArgusNode.prototype.isLocalLeafNode = function() {
     return (typeof this.children === 'undefined');
 };
 ArgusNode.prototype.isActualLeafNode = function() {
-    return this.nTipDescendants === 0;
+    return this.n_tip_descendants === 0;
 };
 ArgusNode.prototype.isVisibleLeafNode = function() {
-    return this.hasChildren === false || this.nleaves === 0;
+    return this.hasChildren === false || this.n_leaves === 0;
 };
 ArgusNode.prototype.updateDisplayBounds = function() {
     // update my layout properties and store results (for faster access)
