@@ -678,7 +678,7 @@ function showObjectProperties( objInfo, options ) {
                      * https://github.com/OpenTreeOfLife/germinator/wiki/%22Arguson%22-format
                      */
                     if (fullNode.tax_sources && $.isPlainObject(fullNode.tax_sources)) {
-                        // TODO: REMOVE this if we move the scheme above; this is
+                        // TODO: REMOVE THIS if we adopt the scheme above; this is
                         // a temporary alternative path for the current Arguson test file.
                         nodeSection.displayedProperties['Source taxonomy'] = [];
                         for (var src in fullNode.tax_sources) {
