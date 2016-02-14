@@ -49,14 +49,7 @@ var argus;
 var incomingOttolID = null;
 
 function getSupportingSourceIDs( node ) {
-    // handle different properties used here (each should hold an array of source-ids)
-    if (typeof node.supported_by !== 'undefined') {
-        return (node.supported_by.length > 0) ? node.supported_by : null;
-    }
-    if (typeof node.supporting_sources !== 'undefined') {
-        return (node.supporting_sources.length > 0) ? node.supporting_sources : null;
-    }
-    return null;
+    return $.isPlainObject(node.supported_by) ? node.supported_by : null;
 }
 function updateTreeView( State ) {
     /* N.B. This should respond identically to state changes in HTML5 History,
@@ -825,7 +818,7 @@ function showObjectProperties( objInfo, options ) {
             }
             if (objSupporters) {
                 // fetch full supporting info, then display it
-                $.each(objSupporters, function(i, sourceID) {
+                $.each(objSupporters, function(sourceID, sourceDetails) {
                     if (sourceID === 'taxonomy') {
                         // this supporting data is already in arguson
                     } else {
@@ -895,7 +888,7 @@ function showObjectProperties( objInfo, options ) {
     }
 
     var sectionPos, sectionCount = orderedSections.length,
-        aSection, dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
+        aSection, dLabel, dValues, i, displayVal = '', moreInfo;
     for (sectionPos = 0; sectionPos < sectionCount; sectionPos++) {
         var aSection = orderedSections[sectionPos];
         // We now treat the node and edge as a single target, so no distinction is required
@@ -985,8 +978,6 @@ function showObjectProperties( objInfo, options ) {
                     break;
 
                 case 'Supported by':
-
-                    //var supportingStudyIDs = [ ];  // don't repeat studies under 'Supported by', but gather trees for each!
                     var supportedByTaxonomy = false;
                     var supportingTaxonomyVersion, supportingTaxonomyVersionURL;
                     var ottInfo = argus.treeData.sourceToMetaMap['taxonomy'];
@@ -1003,27 +994,25 @@ function showObjectProperties( objInfo, options ) {
                     // if we're still waiting on fetched study info, add a message to the properties window
                     var waitingForStudyInfo = false;
 
-                    dValues = String(aSection.displayedProperties[dLabel]).split(',');
-                    for (i = 0; i < dValues.length; i++) {
-                        rawVal = dValues[i];
+                    $.each( aSection.displayedProperties[dLabel], function(sourceID, sourceDetails) {
                         var metaMapValues = null;
-                        if (rawVal === 'taxonomy') {
+                        if (sourceID === 'taxonomy') {
                             // this will be added below any supporting studies+trees
                             supportedByTaxonomy = true;
-                            metaMapValues = parseMetaMapKey( 'taxonomy' );
-                            continue;
+                            //metaMapValues = parseMetaMapKey( 'taxonomy' );
+                            return false;
                         }
 
                         // look for study information in the metaMap
                         if (metaMap) {
-                            moreInfo = metaMap[ rawVal ];
+                            moreInfo = metaMap[ sourceID ];
                         }
 
                         if (typeof moreInfo === 'object' && 'sourceDetails' in moreInfo) {
                             // Study details, fetched via AJAX as needed
 
                             // adapt to various forms of meta-map key
-                            metaMapValues = parseMetaMapKey( rawVal );
+                            metaMapValues = parseMetaMapKey( sourceID );
                             if (!(metaMapValues.studyID in supportingStudyInfo)) {
                                 // add this study now, plus an empty trees collection
                                 supportingStudyInfo[ metaMapValues.studyID ] = $.extend({ supportingTrees: {} }, moreInfo.sourceDetails);
@@ -1044,10 +1033,11 @@ function showObjectProperties( objInfo, options ) {
                             waitingForStudyInfo = true;
                         } else {
                             // when in doubt, just show the raw value
-                            console.error("! Expecting to find moreInfo and a study (dLabel="+ dLabel +", rawVal="+ rawVal +")");
+                            console.error("! Expecting to find moreInfo and a study (dLabel="+ dLabel +", sourceID="+ sourceID +", sourceDetails="+ sourceDetails +")");
                             waitingForStudyInfo = true;
                         }
-                    }
+                    });
+
                     // Now that we've gathered all trees for all studies, show organized results by study, with taxonomy LAST if found
 
                     // clear any previously added 'Supported by' information (probably still fetching details)
@@ -1095,8 +1085,8 @@ function showObjectProperties( objInfo, options ) {
                                 );
                                 for (var treeID in studyInfo.supportingTrees) {
                                     displayVal += (
-                                        '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree=tree'+ treeID +'" '
-                                      + 'target="_blank" title="Link to this supporting tree in curation app">tree'+ treeID +'</a>'
+                                        '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree='+ treeID +'" '
+                                      + 'target="_blank" title="Link to this supporting tree in curation app">'+ treeID +'</a>'
                                     );
                                 }
                             }

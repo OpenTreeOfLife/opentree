@@ -1141,8 +1141,8 @@ function createArgus(spec) {
             // TODO: nudge (vs create) if this already exists!
             var lineDashes, lineColor,
                 sb = node.supported_by,
-                supportedByTaxonomy = $.inArray('taxonomy', sb) !== -1, 
-                supportedByPhylogeny = sb.length > (supportedByTaxonomy ? 1 : 0);
+                supportedByTaxonomy = 'taxonomy' in sb, 
+                supportedByPhylogeny = Object.keys(sb).length > (supportedByTaxonomy ? 1 : 0);
 
             if (supportedByTaxonomy && supportedByPhylogeny) {
                 //lineDashes = '--..';
