@@ -970,8 +970,8 @@ function showObjectProperties( objInfo, options ) {
 
                             case 'OTT':
                                 //displayVal = '<a href="/taxonomy/browse?id=' + sourceInfo.taxSourceId + '" ' + 'title="OTT Taxonomy" target="_blank">OTT: ' + sourceInfo.taxSourceId + '</a>';
-                                displayName = 'OTT: ' + sourceInfo.taxSourceId
-                                displayVal = getTaxobrowserLink(displayName, sourceInfo.taxSourceId)
+                                var ottDisplayName = 'OTT: ' + sourceInfo.taxSourceId
+                                displayVal = getTaxobrowserLink(ottDisplayName, sourceInfo.taxSourceId)
                                 break;
 
                             default:
