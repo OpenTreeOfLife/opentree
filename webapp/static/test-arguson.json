@@ -1,0 +1,811 @@
+{
+  "name" : "Galloanserae",
+  "ot_node_id" : "ott5839486",
+  "children" : [ {
+    "tax_sources" : {
+      "irmng" : "10908",
+      "worms" : "2681",
+      "gbif" : "1108",
+      "ncbi" : "8826"
+    },
+    "uniqname" : "Anseriformes",
+    "n_leaves" : 4,
+    "children" : [ {
+      "tax_sources" : {
+        "irmng" : "104228",
+        "gbif" : "2988",
+        "ncbi" : "8827"
+      },
+      "uniqname" : "Anhimidae",
+      "n_leaves" : 2,
+      "children" : [ {
+        "tax_sources" : {
+          "irmng" : "1299142",
+          "gbif" : "2497982",
+          "ncbi" : "56279"
+        },
+        "uniqname" : "Anhima",
+        "n_leaves" : 0,
+        "has_children" : true,
+        "supported_by" : {
+          "taxonomy" : "2.9draft12"
+        },
+        "name" : "Anhima",
+        "ott_id" : "1086565",
+        "tax_rank" : "genus",
+        "terminal" : {
+          "pg_2866_tree6656" : "ott767829"
+        },
+        "n_tip_descendants" : 1,
+        "ot_node_id" : "ott1086565"
+      }, {
+        "tax_sources" : {
+          "irmng" : "1265741",
+          "gbif" : "5959221",
+          "ncbi" : "8828"
+        },
+        "uniqname" : "Chauna (genus in Deuterostomia)",
+        "n_leaves" : 0,
+        "has_children" : true,
+        "supported_by" : {
+          "taxonomy" : "2.9draft12"
+        },
+        "name" : "Chauna",
+        "ott_id" : "241847",
+        "tax_rank" : "genus",
+        "terminal" : {
+          "pg_420_tree522" : "ott860132",
+          "pg_2866_tree6656" : "ott860132"
+        },
+        "n_tip_descendants" : 2,
+        "ot_node_id" : "ott241847"
+      } ],
+      "supported_by" : {
+        "pg_2866_tree6656" : "node1161184",
+        "taxonomy" : "2.9draft12"
+      },
+      "name" : "Anhimidae",
+      "ott_id" : "241842",
+      "tax_rank" : "family",
+      "terminal" : {
+        "pg_420_tree522" : "ott860132"
+      },
+      "n_tip_descendants" : 3,
+      "ot_node_id" : "ott241842"
+    }, {
+      "n_leaves" : 2,
+      "children" : [ {
+        "tax_sources" : {
+          "irmng" : "106578",
+          "gbif" : "7219",
+          "ncbi" : "45650"
+        },
+        "uniqname" : "Anseranatidae",
+        "n_leaves" : 0,
+        "has_children" : true,
+        "supported_by" : {
+          "taxonomy" : "2.9draft12"
+        },
+        "name" : "Anseranatidae",
+        "ott_id" : "732899",
+        "tax_rank" : "family",
+        "terminal" : {
+          "pg_420_tree522" : "ott714464",
+          "pg_2866_tree6656" : "ott714464"
+        },
+        "n_tip_descendants" : 1,
+        "ot_node_id" : "ott732899"
+      }, {
+        "tax_sources" : {
+          "irmng" : "104622",
+          "worms" : "136973",
+          "gbif" : "2986",
+          "ncbi" : "8830"
+        },
+        "partial_path_of" : {
+          "pg_420_tree522" : "node208789"
+        },
+        "uniqname" : "Anatidae",
+        "n_leaves" : 0,
+        "has_children" : true,
+        "supported_by" : {
+          "pg_2866_tree6656" : "node1160948",
+          "taxonomy" : "2.9draft12"
+        },
+        "name" : "Anatidae",
+        "ott_id" : "765193",
+        "tax_rank" : "family",
+        "n_tip_descendants" : 239,
+        "ot_node_id" : "ott765193"
+      } ],
+      "supported_by" : {
+        "pg_420_tree522" : "node208788",
+        "pg_2866_tree6656" : "node1160947"
+      },
+      "name" : "",
+      "n_tip_descendants" : 240,
+      "ot_node_id" : "mrcaott30843ott714464"
+    } ],
+    "supported_by" : {
+      "pg_420_tree522" : "node208787",
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Anseriformes",
+    "ott_id" : "241841",
+    "tax_rank" : "order",
+    "n_tip_descendants" : 243,
+    "ot_node_id" : "ott241841"
+  }, {
+    "tax_sources" : {
+      "irmng" : "11922",
+      "worms" : "225848",
+      "gbif" : "723",
+      "ncbi" : "8976"
+    },
+    "uniqname" : "Galliformes",
+    "n_leaves" : 5,
+    "children" : [ {
+      "tax_sources" : {
+        "irmng" : "104295",
+        "gbif" : "9318",
+        "ncbi" : "8977"
+      },
+      "uniqname" : "Megapodiidae",
+      "n_leaves" : 3,
+      "children" : [ {
+        "tax_sources" : {
+          "irmng" : "1022614",
+          "gbif" : "4847836"
+        },
+        "uniqname" : "Sylviornis",
+        "n_leaves" : 0,
+        "has_children" : true,
+        "supported_by" : {
+          "taxonomy" : "2.9draft12"
+        },
+        "name" : "Sylviornis",
+        "ott_id" : "3596034",
+        "tax_rank" : "genus",
+        "n_tip_descendants" : 1,
+        "ot_node_id" : "ott3596034"
+      }, {
+        "partial_path_of" : {
+          "pg_2577_tree5980" : "node1015925"
+        },
+        "n_leaves" : 0,
+        "has_children" : true,
+        "descendant_name_list" : [ "Macrocephalon", "Megapodius" ],
+        "supported_by" : {
+          "ot_118_tree1" : "node2"
+        },
+        "name" : "",
+        "n_tip_descendants" : 19,
+        "ot_node_id" : "mrcaott227301ott750781"
+      }, {
+        "partial_path_of" : {
+          "pg_2577_tree5980" : "node1015922"
+        },
+        "n_leaves" : 0,
+        "has_children" : true,
+        "descendant_name_list" : [ "Talegalla", "Leipoa" ],
+        "supported_by" : {
+          "ot_118_tree1" : "node31"
+        },
+        "name" : "",
+        "terminal" : {
+          "pg_420_tree522" : "ott943280"
+        },
+        "n_tip_descendants" : 7,
+        "ot_node_id" : "mrcaott109888ott176333"
+      } ],
+      "supported_by" : {
+        "pg_420_tree522" : "node208773",
+        "pg_2577_tree5980" : "node1015921",
+        "taxonomy" : "2.9draft12"
+      },
+      "name" : "Megapodiidae",
+      "ott_id" : "620981",
+      "tax_rank" : "family",
+      "n_tip_descendants" : 27,
+      "ot_node_id" : "ott620981"
+    }, {
+      "n_leaves" : 2,
+      "children" : [ {
+        "tax_sources" : {
+          "irmng" : "104046",
+          "gbif" : "5237",
+          "ncbi" : "8982"
+        },
+        "partial_path_of" : {
+          "pg_2577_tree5980" : "node1015929"
+        },
+        "uniqname" : "Cracidae",
+        "n_leaves" : 0,
+        "has_children" : true,
+        "supported_by" : {
+          "taxonomy" : "2.9draft12"
+        },
+        "name" : "Cracidae",
+        "ott_id" : "109893",
+        "tax_rank" : "family",
+        "n_tip_descendants" : 60,
+        "ot_node_id" : "ott109893"
+      }, {
+        "n_leaves" : 0,
+        "has_children" : true,
+        "descendant_name_list" : [ "Numididae", "Phasianidae" ],
+        "supported_by" : {
+          "pg_420_tree522" : "node208777",
+          "pg_2577_tree5980" : "node1015934"
+        },
+        "name" : "",
+        "terminal" : {
+          "pg_2573_tree5959" : "ott696271",
+          "pg_2822_tree6569" : "ott696271"
+        },
+        "n_tip_descendants" : 365,
+        "ot_node_id" : "mrcaott4765ott104461"
+      } ],
+      "supported_by" : {
+        "pg_420_tree522" : "node208776",
+        "pg_2577_tree5980" : "node1015928"
+      },
+      "name" : "",
+      "terminal" : {
+        "pg_2573_tree5959" : "ott696271",
+        "pg_2822_tree6569" : "ott696271"
+      },
+      "n_tip_descendants" : 425,
+      "ot_node_id" : "mrcaott4765ott75785"
+    } ],
+    "supported_by" : {
+      "pg_420_tree522" : "node208772",
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Galliformes",
+    "ott_id" : "837585",
+    "tax_rank" : "order",
+    "terminal" : {
+      "pg_2573_tree5959" : "ott696271",
+      "pg_2822_tree6569" : "ott696271"
+    },
+    "n_tip_descendants" : 452,
+    "ot_node_id" : "ott837585"
+  } ],
+  "max_node_depth" : 3,
+  "n_tip_descendants" : 695,
+  "n_leaves" : 9,
+  "uniqname" : "Galloanserae",
+  "tax_rank" : "no rank",
+  "ott_id" : "5839486",
+  "tax_sources" : {
+    "ncbi" : "1549675"
+  },
+  "path_to_root" : [ {
+    "tax_sources" : {
+      "ncbi" : "8825"
+    },
+    "partial_path_of" : {
+      "pg_2573_tree5959" : "node1011373"
+    },
+    "uniqname" : "Neognathae",
+    "supported_by" : {
+      "pg_420_tree522" : "node208483",
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Neognathae",
+    "ott_id" : "241846",
+    "tax_rank" : "superorder",
+    "terminal" : {
+      "pg_2822_tree6569" : "ott696271"
+    },
+    "ot_node_id" : "ott241846"
+  }, {
+    "tax_sources" : {
+      "irmng" : "1142",
+      "worms" : "1836",
+      "gbif" : "212",
+      "ncbi" : "8782"
+    },
+    "partial_path_of" : {
+      "pg_2573_tree5959" : "node1011373"
+    },
+    "uniqname" : "Aves",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Aves",
+    "ott_id" : "81461",
+    "tax_rank" : "class",
+    "terminal" : {
+      "pg_2822_tree6569" : "ott696271"
+    },
+    "ot_node_id" : "ott81461"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "436492"
+    },
+    "partial_path_of" : {
+      "pg_2573_tree5959" : "node1011373"
+    },
+    "uniqname" : "Coelurosauria",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Coelurosauria",
+    "ott_id" : "664351",
+    "tax_rank" : "no rank",
+    "terminal" : {
+      "pg_2822_tree6569" : "ott696271"
+    },
+    "ot_node_id" : "ott664351"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "436491"
+    },
+    "partial_path_of" : {
+      "pg_2573_tree5959" : "node1011373"
+    },
+    "uniqname" : "Theropoda",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Theropoda",
+    "ott_id" : "664350",
+    "tax_rank" : "no rank",
+    "terminal" : {
+      "pg_2822_tree6569" : "ott696271"
+    },
+    "ot_node_id" : "ott664350"
+  }, {
+    "tax_sources" : {
+      "irmng" : "10565",
+      "ncbi" : "436489"
+    },
+    "partial_path_of" : {
+      "pg_2573_tree5959" : "node1011373"
+    },
+    "uniqname" : "Saurischia",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Saurischia",
+    "ott_id" : "90223",
+    "tax_rank" : "order",
+    "terminal" : {
+      "pg_2822_tree6569" : "ott696271"
+    },
+    "ot_node_id" : "ott90223"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "436486"
+    },
+    "partial_path_of" : {
+      "pg_2573_tree5959" : "node1011373"
+    },
+    "uniqname" : "Dinosauria",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Dinosauria",
+    "ott_id" : "90215",
+    "tax_rank" : "no rank",
+    "terminal" : {
+      "pg_2822_tree6569" : "ott696271"
+    },
+    "ot_node_id" : "ott90215"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "8492"
+    },
+    "uniqname" : "Archosauria",
+    "supported_by" : {
+      "pg_2573_tree5959" : "node1011369",
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Archosauria",
+    "ott_id" : "335588",
+    "tax_rank" : "no rank",
+    "terminal" : {
+      "pg_2822_tree6569" : "ott696271"
+    },
+    "ot_node_id" : "ott335588"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "1329799"
+    },
+    "uniqname" : "Archelosauria",
+    "supported_by" : {
+      "pg_2573_tree5959" : "node1011365",
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Archelosauria",
+    "ott_id" : "4947372",
+    "tax_rank" : "no rank",
+    "terminal" : {
+      "pg_2822_tree6569" : "ott696271"
+    },
+    "ot_node_id" : "ott4947372"
+  }, {
+    "tax_sources" : {
+      "worms" : "342632",
+      "ncbi" : "32561"
+    },
+    "uniqname" : "Sauria (order in phylum Opisthokonta)",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Sauria",
+    "ott_id" : "329823",
+    "tax_rank" : "order",
+    "terminal" : {
+      "pg_2822_tree6569" : "ott696271"
+    },
+    "ot_node_id" : "ott329823"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "8457"
+    },
+    "uniqname" : "Sauropsida",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Sauropsida",
+    "ott_id" : "639642",
+    "tax_rank" : "no rank",
+    "terminal" : {
+      "pg_2822_tree6569" : "ott696271"
+    },
+    "ot_node_id" : "ott639642"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "32524"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142002"
+    },
+    "uniqname" : "Amniota",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Amniota",
+    "ott_id" : "229560",
+    "tax_rank" : "no rank",
+    "ot_node_id" : "ott229560"
+  }, {
+    "tax_sources" : {
+      "worms" : "1831",
+      "ncbi" : "32523"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142002"
+    },
+    "uniqname" : "Tetrapoda (superclass in Deuterostomia)",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Tetrapoda",
+    "ott_id" : "229562",
+    "tax_rank" : "superclass",
+    "ot_node_id" : "ott229562"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "1338369"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142002"
+    },
+    "uniqname" : "Dipnotetrapodomorpha",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Dipnotetrapodomorpha",
+    "ott_id" : "4940726",
+    "tax_rank" : "no rank",
+    "ot_node_id" : "ott4940726"
+  }, {
+    "tax_sources" : {
+      "irmng" : "1531",
+      "worms" : "163509",
+      "gbif" : "238",
+      "ncbi" : "8287"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142002"
+    },
+    "uniqname" : "Sarcopterygii",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Sarcopterygii",
+    "ott_id" : "458402",
+    "tax_rank" : "class",
+    "ot_node_id" : "ott458402"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "117571"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142002"
+    },
+    "uniqname" : "Euteleostomi",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Euteleostomi",
+    "ott_id" : "114654",
+    "tax_rank" : "no rank",
+    "ot_node_id" : "ott114654"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "117570"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142002"
+    },
+    "uniqname" : "Teleostomi",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Teleostomi",
+    "ott_id" : "114656",
+    "tax_rank" : "no rank",
+    "ot_node_id" : "ott114656"
+  }, {
+    "tax_sources" : {
+      "worms" : "1828",
+      "ncbi" : "7776"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142002"
+    },
+    "uniqname" : "Gnathostomata (superclass in phylum Chordata)",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Gnathostomata",
+    "ott_id" : "278114",
+    "tax_rank" : "superclass",
+    "ot_node_id" : "ott278114"
+  }, {
+    "tax_sources" : {
+      "worms" : "146419",
+      "ncbi" : "7742"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142002"
+    },
+    "uniqname" : "Vertebrata (subphylum in phylum Opisthokonta)",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12",
+      "pg_2710_tree6291" : "node1094053"
+    },
+    "name" : "Vertebrata",
+    "ott_id" : "801601",
+    "tax_rank" : "subphylum",
+    "ot_node_id" : "ott801601"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "89593"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142002"
+    },
+    "uniqname" : "Craniata (subphylum in Deuterostomia)",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12",
+      "pg_2710_tree6291" : "node1094053"
+    },
+    "name" : "Craniata",
+    "ott_id" : "947318",
+    "tax_rank" : "subphylum",
+    "ot_node_id" : "ott947318"
+  }, {
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142002"
+    },
+    "supported_by" : {
+      "pg_2710_tree6291" : "node1094052"
+    },
+    "ot_node_id" : "mrcaott42ott658"
+  }, {
+    "tax_sources" : {
+      "irmng" : "148",
+      "worms" : "1821",
+      "gbif" : "44",
+      "ncbi" : "7711"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142001"
+    },
+    "uniqname" : "Chordata",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12",
+      "pg_2710_tree6291" : "node1094050"
+    },
+    "name" : "Chordata",
+    "ott_id" : "125642",
+    "tax_rank" : "phylum",
+    "ot_node_id" : "ott125642"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "33511"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1142001"
+    },
+    "uniqname" : "Deuterostomia",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12",
+      "pg_2710_tree6291" : "node1094042"
+    },
+    "name" : "Deuterostomia",
+    "ott_id" : "147604",
+    "tax_rank" : "no rank",
+    "ot_node_id" : "ott147604"
+  }, {
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1141989"
+    },
+    "supported_by" : {
+      "pg_2710_tree6291" : "node1094041"
+    },
+    "ot_node_id" : "mrcaott24ott42"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "33213"
+    },
+    "partial_path_of" : {
+      "pg_2822_tree6569" : "node1141989"
+    },
+    "uniqname" : "Bilateria",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12",
+      "pg_2710_tree6291" : "node1094029"
+    },
+    "name" : "Bilateria",
+    "ott_id" : "117569",
+    "tax_rank" : "no rank",
+    "ot_node_id" : "ott117569"
+  }, {
+    "supported_by" : {
+      "pg_2710_tree6291" : "node1094003"
+    },
+    "conflicts_with" : {
+      "pg_2822_tree6569" : "node1142006"
+    },
+    "ot_node_id" : "mrcaott24ott150"
+  }, {
+    "supported_by" : {
+      "pg_2710_tree6291" : "node1094001"
+    },
+    "conflicts_with" : {
+      "pg_2822_tree6569" : "node1142006"
+    },
+    "ot_node_id" : "mrcaott24ott212873"
+  }, {
+    "supported_by" : {
+      "pg_2710_tree6291" : "node1093981"
+    },
+    "conflicts_with" : {
+      "pg_2822_tree6569" : "node1142007"
+    },
+    "ot_node_id" : "mrcaott24ott3989"
+  }, {
+    "tax_sources" : {
+      "irmng" : "11",
+      "worms" : "2",
+      "silva" : "D14357/#4",
+      "gbif" : "1",
+      "ncbi" : "33208"
+    },
+    "uniqname" : "Metazoa",
+    "supported_by" : {
+      "pg_2822_tree6569" : "node1141988",
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Metazoa",
+    "ott_id" : "691846",
+    "tax_rank" : "kingdom",
+    "ot_node_id" : "ott691846"
+  }, {
+    "supported_by" : {
+      "pg_2822_tree6569" : "node1141987"
+    },
+    "ot_node_id" : "mrcaott24ott34294"
+  }, {
+    "tax_sources" : {
+      "silva" : "D14357/#3"
+    },
+    "uniqname" : "Holozoa",
+    "supported_by" : {
+      "pg_2822_tree6569" : "node1141986",
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Holozoa",
+    "ott_id" : "5246131",
+    "tax_rank" : "no rank",
+    "ot_node_id" : "ott5246131"
+  }, {
+    "tax_sources" : {
+      "irmng" : "183",
+      "silva" : "D11377/#2",
+      "ncbi" : "33154"
+    },
+    "uniqname" : "Opisthokonta",
+    "supported_by" : {
+      "pg_2822_tree6569" : "node1141985",
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Opisthokonta",
+    "ott_id" : "332573",
+    "tax_rank" : "phylum",
+    "ot_node_id" : "ott332573"
+  }, {
+    "tax_sources" : {
+      "silva" : "D11377/#1",
+      "ncbi" : "2759"
+    },
+    "uniqname" : "Eukaryota",
+    "supported_by" : {
+      "taxonomy" : "2.9draft12"
+    },
+    "name" : "Eukaryota",
+    "ott_id" : "304358",
+    "tax_rank" : "domain",
+    "ot_node_id" : "ott304358"
+  }, {
+    "tax_sources" : {
+      "ncbi" : "131567"
+    },
+    "uniqname" : "cellular organisms",
+    "name" : "cellular organisms",
+    "ott_id" : "93302",
+    "tax_rank" : "no rank",
+    "ot_node_id" : "ott93302"
+  } ],
+  "supported_by" : {
+    "pg_420_tree522" : "node208771",
+    "taxonomy" : "2.9draft12"
+  },
+  "terminal" : {
+    "pg_2573_tree5959" : "ott696271",
+    "pg_2822_tree6569" : "ott696271"
+  },
+  "sourceToMetaMap" : {
+    "pg_2573_tree5959" : {
+      "git_sha" : "c6ce2f9067e9c74ca7b1f770623bde9b6de8bd1f",
+      "tree_id" : "tree5959",
+      "study_id" : "pg_2573"
+    },
+    "pg_2822_tree6569" : {
+      "git_sha" : "c6ce2f9067e9c74ca7b1f770623bde9b6de8bd1f",
+      "tree_id" : "tree6569",
+      "study_id" : "pg_2822"
+    },
+    "pg_420_tree522" : {
+      "git_sha" : "c6ce2f9067e9c74ca7b1f770623bde9b6de8bd1f",
+      "tree_id" : "tree522",
+      "study_id" : "pg_420"
+    },
+    "pg_2577_tree5980" : {
+      "git_sha" : "c6ce2f9067e9c74ca7b1f770623bde9b6de8bd1f",
+      "tree_id" : "tree5980",
+      "study_id" : "pg_2577"
+    },
+    "taxonomy" : {
+      "name" : "ott",
+      "version" : "2.9draft12"
+    },
+    "pg_2866_tree6656" : {
+      "git_sha" : "c6ce2f9067e9c74ca7b1f770623bde9b6de8bd1f",
+      "tree_id" : "tree6656",
+      "study_id" : "pg_2866"
+    },
+    "ot_118_tree1" : {
+      "git_sha" : "c6ce2f9067e9c74ca7b1f770623bde9b6de8bd1f",
+      "tree_id" : "tree1",
+      "study_id" : "ot_118"
+    }
+  }
+}
