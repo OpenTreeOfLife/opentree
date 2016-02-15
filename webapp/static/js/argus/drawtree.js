@@ -260,12 +260,12 @@ function createArgus(spec) {
             // default is the classic "tree 4 in phylografter"
             ds = o.domSource === undefined ? "4" : o.domSource;
             ajaxData = {
-                "treeID": ds,
+                "tree_id": ds,
                 "format": "arguson",
-                "maxDepth": String(this.currMaxDepth)
+                "max_depth": String(this.currMaxDepth)
             };
             if (o.nodeID !== undefined) {
-                ajaxData.subtreeNodeID = String(o.nodeID);
+                ajaxData.ot_node_id = String(o.nodeID);
             }
         } else {
             /* TODO: Restore the ability to fetch conflict information from taxomachine?
