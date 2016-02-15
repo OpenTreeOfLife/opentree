@@ -57,7 +57,6 @@ getSourceTree_url = {treemachine_domain}/getSourceTree
 getDraftSubtree_url = {v2_api_domain}/tree_of_life/subtree
 doTNRSForAutocomplete_url = {taxomachine_domain}/autocompleteQuery
 getContextsJSON_url = {CACHED_taxomachine_domain}/getContextsJSON
-getNodeIDForOttolID_url = {treemachine_domain}/getNodeIDForottId
 getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
 findAllStudies_url = {oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies

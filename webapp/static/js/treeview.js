@@ -64,12 +64,15 @@ function updateTreeView( State ) {
     // fetch the matching synth-tree node ID, then notify argus (trigger data load and/or view change)
     var ottolID = State.data.nodeID;
     if (argus.useSyntheticTree && State.data.domSource == 'ottol') {
-        // we'll need to convert to a more volatile node ID for the current tree
+        // convert this (by convention) to a node ID in the current tree
 
         // @TEMP - save this and we'll add it dataTree when it arrives
         incomingOttolID = ottolID;
+        var treeNodeID = "ott"+ incomingOttolID;
+        argus.displayNode({"nodeID": treeNodeID,
+                           "domSource": syntheticTreeID});  // from main HTML view
 
-        var treeNodeID;
+        /* NO LONGER NEEDED if ottid always translates to node id as shown above!
         $.ajax({
             type: 'POST',
             url: getNodeIDForOttolID_url,
@@ -106,6 +109,7 @@ function updateTreeView( State ) {
             },
             dataType: 'json'  // should return just the node ID (number)
         });
+        */
     } else {
         // use ottol ID if we're browsing the taxonomy
         argus.displayNode({"nodeID": ottolID,

@@ -50,7 +50,6 @@ doTNRSForAutocomplete_url = {taxomachine_domain}/autocompleteQuery
 doTNRSForMappingOTUs_url = {taxomachine_domain}/contextQuery
 getContextsJSON_url = {taxomachine_domain}/getContextsJSON
 getContextForNames_url = {taxomachine_domain}/getContextForNames
-getNodeIDForOttolID_url = {treemachine_domain}/getNodeIDForottId
 phylesystem_config_url = {opentree_api_domain}/phylesystem_config
 render_markdown_url = {opentree_api_domain}/render_markdown
 getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
