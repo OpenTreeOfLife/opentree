@@ -48,7 +48,9 @@ CACHED_v2_api = http://opentree.myserver.org/cached/v2
 # are handled in the ProxyPass statement.
 [method_urls]
 getDraftTreeID_url = {treemachine_domain}/getDraftTreeID
-getSyntheticTree_url = {CACHED_treemachine_domain}/getSyntheticTree  
+#getSyntheticTree_url = {CACHED_treemachine_domain}/getSyntheticTree
+# For now, this service lags the rest with a v1 URL
+getSyntheticTree_url = {treemachine_domain}/../../treemachine/v1/getSyntheticTree
 # Use the root-relative URL below to test against a sample ArguSON file
 ##getSyntheticTree_url = /static/test-arguson.json
 getSourceTree_url = {treemachine_domain}/getSourceTree  
