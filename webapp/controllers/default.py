@@ -133,13 +133,8 @@ def fetch_current_synthetic_tree_ids():
         ids_response = urllib2.urlopen(req).read()
 
         ids_json = simplejson.loads( ids_response )
-        draftTreeName = str(ids_json['draftTreeName']).encode('utf-8')
-        # Try to be compatible with different versions of treemachine
-        startNodeID = None
-        if 'startingNodeID' in ids_json:
-            startNodeID = str(ids_json['startingNodeID']).encode('utf-8')
-        elif 'startNodeID' in ids_json:
-            startNodeID = str(ids_json['startNodeID']).encode('utf-8')
+        draftTreeName = str(ids_json['tree_id']).encode('utf-8')
+        startNodeID = str(ids_json['root_ot_node_id']).encode('utf-8')
         return (draftTreeName, startNodeID)
 
     except Exception, e:
