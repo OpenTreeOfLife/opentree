@@ -293,6 +293,7 @@ function createArgus(spec) {
          //
         var dataStr = JSON.stringify(o.data);
         var domSource = o.domSource === undefined ? "ottol" : o.domSource;
+        var ottID = o.data['ot_node_id'] || 0;
         var argusLoadSuccess = function (json, textStatus, jqXHR) {
             var argusObjRef = this;
             argusObjRef.treeData = json; // $.parseJSON(dataStr);
@@ -591,13 +592,12 @@ function createArgus(spec) {
         };
         var argusLoadFailure = function (jqXHR, textStatus, errorThrown) {
             // Was this a taxon that didn't make it into synthesis, or some other error?
-            var testTaxonID = o.nodeID;
             $.ajax({
                 url: getTaxonInfo_url,
                 type: 'POST',
                 crossDomain: true,
                 contentType: 'application/json',
-                data: { "ott_id": testTaxonID },
+                data: { "ott_id": ottID },  // set above, defaults to 0 (invalid ID) if not an OTT taxon
                 complete: function( jqXHR, textStatus ) {
                     hideSpinner();
                     // report errors or malformed data, if any
