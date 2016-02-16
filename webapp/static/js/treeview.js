@@ -70,6 +70,7 @@ function updateTreeView( State ) {
         incomingOttolID = ottolID;
         var treeNodeID = "ott"+ incomingOttolID;
         argus.displayNode({"nodeID": treeNodeID,
+                           "ott_id": incomingOttolID,
                            "domSource": syntheticTreeID});  // from main HTML view
 
         /* NO LONGER NEEDED if ottid always translates to node id as shown above!
@@ -113,6 +114,7 @@ function updateTreeView( State ) {
     } else {
         // use ottol ID if we're browsing the taxonomy
         argus.displayNode({"nodeID": ottolID,
+                           "ott_id": ottolID,
                            "domSource": State.data.domSource});
     }
 

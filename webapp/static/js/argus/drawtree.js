@@ -267,6 +267,9 @@ function createArgus(spec) {
             if (o.nodeID !== undefined) {
                 ajaxData.ot_node_id = String(o.nodeID);
             }
+            if (o.ott_id !== undefined) {
+                ajaxData.ott_id = o.ott_id;
+            }
         } else {
             /* TODO: Restore the ability to fetch conflict information from taxomachine?
             url = getConflictTaxJsonAltRel_url.replace('{nodeID}', o.nodeID);
@@ -670,6 +673,7 @@ function createArgus(spec) {
 
         var ajaxInfo = this.buildAjaxCallInfo({
             "nodeID": o.nodeID,
+            "ott_id": o.ott_id || "0";
             "domSource": this.domSource
         });
 
