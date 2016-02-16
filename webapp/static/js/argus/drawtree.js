@@ -293,7 +293,7 @@ function createArgus(spec) {
          //
         var dataStr = JSON.stringify(o.data);
         var domSource = o.domSource === undefined ? "ottol" : o.domSource;
-        var ajaxSuccess = function (json, textStatus, jqXHR) {
+        var argusLoadSuccess = function (json, textStatus, jqXHR) {
             var argusObjRef = this;
             argusObjRef.treeData = json; // $.parseJSON(dataStr);
             //var node = argusObjRef.treeData[0];
@@ -589,6 +589,48 @@ function createArgus(spec) {
             // draw the cycles
             argusObjRef.drawCycles();
         };
+        var argusLoadFailure = function (jqXHR, textStatus, errorThrown) {
+            // Was this a taxon that didn't make it into synthesis, or some other error?
+            var testTaxonID = "TODO";
+            $.ajax({
+                url: getTaxonInfo_url,
+                type: 'POST',
+                crossDomain: true,
+                contentType: 'application/json',
+                data: { "ott_id": testTaxonID },
+                complete: function( jqXHR, textStatus ) {
+                    hideSpinner();
+                    // report errors or malformed data, if any
+                    var errMsg;
+                    if (textStatus !== 'success') {
+                        // major server-side error, just show raw response for tech support
+                        errMsg = 'Sorry, there was an error checking for taxon status. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
+                        hideModalScreen();
+                        showErrorMessage(errMsg);
+                        return;
+                    } 
+                    // check to see if we got a taxon record, or an error in JSON
+                    var json = $.parseJSON(jqXHR.responseText);
+                    if (json['ott_id'] === testTaxonID) {
+                        // the requested taxon exists in OTT, but is not found in the target tree
+                        var taxobrowserlink = getTaxobrowserLink('taxonomy browser',ottolID)
+                        errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy'
+                                +' but not in our tree synthesis database. This can happen for a variety of reasons,'
+                                +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
+                                +' causes it to be pruned from the synthetic tree. See the '
+                                +taxobrowserlink
+                                +' for more information about this taxon.'
+                                +'<br/><br/>If you think this is an error, please'
+                                +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
+                        showErrorInArgusViewer( errMsg );
+                    } else {
+                        // this is not a valid taxon id!
+                        errMsg = 'Whoops! The call to get the tree around a node did not work out the way we were hoping it would.';
+                        showErrorInArgusViewer( errMsg, jqXHR.responseText );
+                    }
+                }
+            });
+        };
         $.ajax({
             url: o.url,
             type: o.httpMethod === undefined ? "POST" : o.httpMethod,
@@ -606,16 +648,8 @@ function createArgus(spec) {
                     return JSON.parse(data, argusObj.makeNodeTree);
                 }
             },
-            success: ajaxSuccess,
-            error: function (jqXHR, textStatus, errorThrown) {
-                hideSpinner();
-                $(".flash").html("Error: Node lookup failed").slideDown();
-                $(this.container).css('height','500px');
-                $(this.container).html('<p style="margin: 8px 12px;">Whoops! The call to get the tree around a node did not work out the way we were hoping it would. '
-                                     + '<a href="#" onclick="$(\'#error-details\').show(); return false;">Show details</a></p>'
-                                     + '<p id="error-details" style="margin: 8px 12px; font-style: italic; display: none;"><b>['+ textStatus +'] '+ errorThrown +'</b>'
-                                     + '<br/><br/>'+ jqXHR.responseText +'</p>');
-            }
+            success: argusLoadSuccess,
+            error: argusLoadFailure
         });
     };
 
