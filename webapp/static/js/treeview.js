@@ -179,7 +179,7 @@ function loadLocalComments( chosenFilter ) {
 
         var targetNode = argus.treeData;
         fetchArgs.synthtree_id = argus.domSource;
-        fetchArgs.synthtree_node_id = targetNode.ot_node_id;
+        fetchArgs.synthtree_node_id = targetNode.node_id;
         fetchArgs.sourcetree_id = targetNode.taxSource;
         fetchArgs.ottol_id = targetNode.ott_id;
 
@@ -596,12 +596,12 @@ function showObjectProperties( objInfo, options ) {
         objName = objInfo.nodeName;
         objID = objInfo.nodeID;
         objSource = objInfo.domSource || '?';
-    } else if (typeof(objInfo.ot_node_id) !== 'undefined') {
+    } else if (typeof(objInfo.node_id) !== 'undefined') {
         // this is minimal node info (nodeID, domSource, nodeName) from an argus node
         // OR it's an edge with metadata for it and its adjacent (child) node
         objType = (objInfo.type) ? objInfo.type : 'node';
         objName = objInfo.name;
-        objID = objInfo.ot_node_id;
+        objID = objInfo.node_id;
         objSource = objInfo.domSource || '?';
     } else {
         // what's this?
@@ -1157,7 +1157,7 @@ function showObjectProperties( objInfo, options ) {
 
             // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
             var idType = (objSource == 'ottol') ? 'ottol-id' : 'node-id';
-            var fetchID = (objSource == 'ottol') ? fullNode.sourceID : (fullNode.ot_node_id || fullNode.nodeID);
+            var fetchID = (objSource == 'ottol') ? fullNode.sourceID : (fullNode.node_id || fullNode.nodeID);
             // Choose from among the collection of objSources
             var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
             var downloadURL = '/opentree/default/download_subtree/'+ idType +'/'+ fetchID +'/'+ superSafeDisplayName;
