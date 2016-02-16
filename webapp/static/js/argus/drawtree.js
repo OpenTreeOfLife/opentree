@@ -296,7 +296,7 @@ function createArgus(spec) {
          //
         var dataStr = JSON.stringify(o.data);
         var domSource = o.domSource === undefined ? "ottol" : o.domSource;
-        var ottID = o.data['ott_id'] || 0;
+        var ottID = Number(o.data['ott_id']) || 0;
         var argusLoadSuccess = function (json, textStatus, jqXHR) {
             var argusObjRef = this;
             argusObjRef.treeData = json; // $.parseJSON(dataStr);
@@ -614,7 +614,7 @@ function createArgus(spec) {
                     } 
                     // check to see if we got a taxon record, or an error in JSON
                     var json = $.parseJSON(jqXHR.responseText);
-                    if (json['ott_id'] === testTaxonID) {
+                    if (json['ott_id'] === ottID) {
                         // the requested taxon exists in OTT, but is not found in the target tree
                         var taxobrowserlink = getTaxobrowserLink('taxonomy browser',ottolID)
                         errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy'
