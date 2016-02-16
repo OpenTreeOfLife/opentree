@@ -24,7 +24,7 @@ github_redirect_uri = YOUR_REDIRECT_URI_HERE
 # (NOTE that these are used by both server- and client-side code)
 [domains]
 treemachine = http://opentree.myserver.org
-taxomachine = http://opentree.myserver.org/taxomachine
+taxomachine = http://opentree.myserver.org
 oti = http://opentree.myserver.org/oti
 opentree_api = http://opentree.myserver.org/phylesystem/v1
 # a single shared base URL for all v2 APIs (mainly to allow switching domain)
@@ -56,14 +56,13 @@ getSyntheticTree_url = {treemachine_domain}/treemachine/v1/getSyntheticTree
 ##getSyntheticTree_url = /static/test-arguson.json
 getSourceTree_url = {treemachine_domain}/getSourceTree  
 getDraftSubtree_url = {treemachine_domain}/v3/tree_of_life/subtree
-doTNRSForAutocomplete_url = {taxomachine_domain}/autocompleteQuery
-getContextsJSON_url = {taxomachine_domain}/getContextsJSON
+doTNRSForAutocomplete_url = {taxomachine_domain}/taxomachine/v1/autocompleteQuery
+getContextsJSON_url = {taxomachine_domain}/taxomachine/v1/getContextsJSON
 # TODO: restore this to CACHED_taxomachine_domain once all taxo calls are using v3 APIs
 # OR https://api.opentreeoflife.org/taxomachine/v1/getContexts
 getSynthesisSourceList_url = {treemachine_domain}/treemachine/v1/getSynthesisSourceList
 findAllStudies_url = {oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
-# TODO: restore this to taxomachine_domain once all taxo calls are using v3 APIs
-getTaxonInfo_url = {treemachine_domain}/v3/taxonomy/taxon_info
+getTaxonInfo_url = {taxomachine_domain}/v3/taxonomy/taxon_info
 # Include one phylesystem-api method to download NexSON from Bibliographic References page
 API_load_study_GET_url = {opentree_api_domain}/study/{STUDY_ID}
