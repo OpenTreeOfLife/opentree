@@ -616,7 +616,7 @@ function createArgus(spec) {
                     var json = $.parseJSON(jqXHR.responseText);
                     if (json['ott_id'] === ottID) {
                         // the requested taxon exists in OTT, but is not found in the target tree
-                        var taxobrowserlink = getTaxobrowserLink('taxonomy browser',ottolID)
+                        var taxobrowserlink = getTaxobrowserLink('taxonomy browser', ottID)
                         errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy'
                                 +' but not in our tree synthesis database. This can happen for a variety of reasons,'
                                 +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
