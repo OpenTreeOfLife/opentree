@@ -601,7 +601,7 @@ function createArgus(spec) {
                 crossDomain: true,
                 contentType: 'application/json',
                 dataType: 'json',
-                data: { "ott_id": ottID },  // set above, defaults to 0 (invalid ID) if not an OTT taxon
+                data: JSON.stringify({ "ott_id": ottID }),  // set above, defaults to 0 (invalid ID) if not an OTT taxon
                 complete: function( jqXHR, textStatus ) {
                     hideSpinner();
                     // report errors or malformed data, if any
