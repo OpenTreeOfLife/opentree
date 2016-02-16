@@ -296,7 +296,7 @@ function createArgus(spec) {
          //
         var dataStr = JSON.stringify(o.data);
         var domSource = o.domSource === undefined ? "ottol" : o.domSource;
-        var ottID = o.data['ot_node_id'] || 0;
+        var ottID = o.data['ott_id'] || 0;
         var argusLoadSuccess = function (json, textStatus, jqXHR) {
             var argusObjRef = this;
             argusObjRef.treeData = json; // $.parseJSON(dataStr);
