@@ -673,7 +673,7 @@ function createArgus(spec) {
 
         var ajaxInfo = this.buildAjaxCallInfo({
             "nodeID": o.nodeID,
-            "ott_id": o.ott_id || "0";
+            "ott_id": o.ott_id || "0",
             "domSource": this.domSource
         });
 
