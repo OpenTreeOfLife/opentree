@@ -595,6 +595,7 @@ function createArgus(spec) {
         };
         var argusLoadFailure = function (jqXHR, textStatus, errorThrown) {
             // Was this a taxon that didn't make it into synthesis, or some other error?
+            var mainFetchXHR = jqXHR;
             $.ajax({
                 url: getTaxonInfo_url,
                 type: 'POST',
@@ -614,7 +615,8 @@ function createArgus(spec) {
                     } 
                     // check to see if we got a taxon record, or an error in JSON
                     var json = $.parseJSON(jqXHR.responseText);
-                    if (json['ott_id'] === ottID) {
+                    // if (json['ott_id'] === ottID) { TODO: use this when we switch to v3 taxonomy API!
+                    if (json['ot:ottId'] === ottID) {
                         // the requested taxon exists in OTT, but is not found in the target tree
                         var taxobrowserlink = getTaxobrowserLink('taxonomy browser', ottID)
                         errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy'
@@ -627,9 +629,9 @@ function createArgus(spec) {
                                 +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
                         showErrorInArgusViewer( errMsg );
                     } else {
-                        // this is not a valid taxon id!
+                        // this is not a valid taxon id! Show the *original* error response from the failed argus fetch.
                         errMsg = 'Whoops! The call to get the tree around a node did not work out the way we were hoping it would.';
-                        showErrorInArgusViewer( errMsg, jqXHR.responseText );
+                        showErrorInArgusViewer( errMsg, mainFetchXHR.responseText );
                     }
                 }
             });
