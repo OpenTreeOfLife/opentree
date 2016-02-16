@@ -605,7 +605,6 @@ function createArgus(spec) {
                     if (textStatus !== 'success') {
                         // major server-side error, just show raw response for tech support
                         errMsg = 'Sorry, there was an error checking for taxon status. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
-                        hideModalScreen();
                         showErrorMessage(errMsg);
                         return;
                     } 
