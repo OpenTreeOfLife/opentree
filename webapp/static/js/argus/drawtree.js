@@ -591,7 +591,7 @@ function createArgus(spec) {
         };
         var argusLoadFailure = function (jqXHR, textStatus, errorThrown) {
             // Was this a taxon that didn't make it into synthesis, or some other error?
-            var testTaxonID = "TODO";
+            var testTaxonID = o.nodeID;
             $.ajax({
                 url: getTaxonInfo_url,
                 type: 'POST',
@@ -604,7 +604,7 @@ function createArgus(spec) {
                     var errMsg;
                     if (textStatus !== 'success') {
                         // major server-side error, just show raw response for tech support
-                        errMsg = 'Sorry, there was an error checking for taxon status. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
+                        errMsg = 'Sorry, there was an error checking for taxon status.';
                         showErrorInArgusViewer(errMsg);
                         return;
                     } 
