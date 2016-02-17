@@ -40,12 +40,10 @@ opentree_api = http://dev.opentreeoflife.org/phylesystem/v1
 # (again, these should work from both server- and client-side code)
 #
 # NOTE: In our example setup, all service methods are proxied through Apache as
-# URLs within the main opentree site. So we assume that partial paths '/db/data/' 
+# URLs within the main opentree site. So we assume that partial paths '/db/data/'
 # are handled in the ProxyPass statement.
 [method_urls]
-getDraftTreeID_url = {treemachine_domain}/getDraftTreeID
-getSyntheticTree_url = {treemachine_domain}/getSyntheticTree  
-getSourceTree_url = {treemachine_domain}/getSourceTree  
+getSourceTree_url = {treemachine_domain}/getSourceTree
 doTNRSForAutocomplete_url = {taxomachine_domain}/autocompleteQuery
 doTNRSForMappingOTUs_url = {taxomachine_domain}/contextQuery
 getContextsJSON_url = {taxomachine_domain}/getContextsJSON
@@ -55,7 +53,6 @@ render_markdown_url = {opentree_api_domain}/render_markdown
 getSynthesisSourceList_url = {treemachine_domain}/getSynthesisSourceList
 getTaxonomicMRCAForNodes_url = {taxomachine_domain}/../../v2/taxonomy/lica
 getDraftTreeMRCAForNodes_url = {treemachine_domain}/getMRCA
-getDraftTreeSubtreeForNodes_url = {treemachine_domain}/getDraftTreeSubtreeForNodes
 findAllStudies_url = {oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
 singlePropertySearchForTrees_url = {oti_domain}/singlePropertySearchForTrees
