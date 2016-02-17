@@ -111,7 +111,7 @@ function createArgus(spec) {
         spec.taxomachineDomain = "http://opentree-dev.bio.ku.edu:7476";
     }
     if (spec.useTreemachine === undefined) {
-        spec.useTreemachine = false; //@TEMP should the default really be taxomachine?
+        spec.useTreemachine = true; // for now, this is always true
     }
     if (spec.useSyntheticTree === undefined) {
         spec.useSyntheticTree = true;
@@ -261,7 +261,8 @@ function createArgus(spec) {
             if (this.useSyntheticTree) {
                 url = getSyntheticTree_url;
             } else {
-                url = getSourceTree_url;
+                console.error('buildAjaxCallInfo(): we need another URL!?');
+                return;
             }
             // default is the classic "tree 4 in phylografter"
             ds = o.domSource === undefined ? "4" : o.domSource;
