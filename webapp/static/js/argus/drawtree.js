@@ -182,7 +182,7 @@ function createArgus(spec) {
         // use Javascript pseudo-classes (defined below) to make tree operations more sensible
         makeNodeTree: function(key, value) {
             // expects to get root JSON object? or each object (or key/val pair) as it's parsed?
-            if ($.isPlainObject(value) && 'unique_name' in value) {
+            if ($.isPlainObject(value) && 'name' in value) {
                 // it's a tree node!
 
                 // assign parent ID to children, for fast tree traversal
