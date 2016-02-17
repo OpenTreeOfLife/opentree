@@ -134,7 +134,7 @@ def fetch_current_synthetic_tree_ids():
 
         ids_json = simplejson.loads( ids_response )
         draftTreeName = str(ids_json['synth_id']).encode('utf-8')
-        startNodeID = str(ids_json['root_ot_node_id']).encode('utf-8')
+        startNodeID = str(ids_json['root_node_id']).encode('utf-8')
         return (draftTreeName, startNodeID)
 
     except Exception, e:

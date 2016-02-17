@@ -111,7 +111,7 @@ function createArgus(spec) {
         spec.taxomachineDomain = "http://opentree-dev.bio.ku.edu:7476";
     }
     if (spec.useTreemachine === undefined) {
-        spec.useTreemachine = false; //@TEMP should the default really be taxomachine?
+        spec.useTreemachine = true; // for now, this is always true
     }
     if (spec.useSyntheticTree === undefined) {
         spec.useSyntheticTree = true;
@@ -182,12 +182,6 @@ function createArgus(spec) {
         // use Javascript pseudo-classes (defined below) to make tree operations more sensible
         makeNodeTree: function(key, value) {
             // expects to get root JSON object? or each object (or key/val pair) as it's parsed?
-            
-            if ($.isPlainObject(value) && ('max_node_depth' in value) && !('node_id' in value)) {
-                // FIX UP root node if it's missing node_id property (TODO: Remove this when no longer needed.)
-                value.node_id = "ott"+ value.ott_id;
-            }
-
             if (value.node_id) {
                 // it's a tree node!
 
@@ -261,7 +255,8 @@ function createArgus(spec) {
             if (this.useSyntheticTree) {
                 url = getSyntheticTree_url;
             } else {
-                url = getSourceTree_url;
+                console.error('buildAjaxCallInfo(): we need another URL!?');
+                return;
             }
             // default is the classic "tree 4 in phylografter"
             ds = o.domSource === undefined ? "4" : o.domSource;
@@ -272,8 +267,6 @@ function createArgus(spec) {
             };
             if (o.nodeID !== undefined) {
                 ajaxData.node_id = String(o.nodeID);     // for later analysis
-                ajaxData.ot_node_id = String(o.nodeID);  // for /treemachine/v1/getSyntheticTree
-                // TODO: remove 'ot_node_id' if we normalize this method?
             }
             if (o.ott_id !== undefined) {
                 ajaxData.ott_id = o.ott_id;

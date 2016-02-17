@@ -43,7 +43,8 @@ opentree_api = http://dev.opentreeoflife.org/phylesystem/v1
 # URLs within the main opentree site. So we assume that partial paths '/db/data/'
 # are handled in the ProxyPass statement.
 [method_urls]
-getSourceTree_url = {treemachine_domain}/getSourceTree
+getDraftTreeID_url = {treemachine_domain}/getDraftTreeID
+getSyntheticTree_url = {treemachine_domain}/getSyntheticTree
 doTNRSForAutocomplete_url = {taxomachine_domain}/autocompleteQuery
 doTNRSForMappingOTUs_url = {taxomachine_domain}/contextQuery
 getContextsJSON_url = {taxomachine_domain}/getContextsJSON
