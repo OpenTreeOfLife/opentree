@@ -183,7 +183,7 @@ function createArgus(spec) {
         makeNodeTree: function(key, value) {
             // expects to get root JSON object? or each object (or key/val pair) as it's parsed?
             
-            if (('max_node_depth' in value) && !('node_id' in value)) {
+            if ($.isPlainObject(value) && ('max_node_depth' in value) && !('node_id' in value)) {
                 // FIX UP root node if it's missing node_id property (TODO: Remove this when no longer needed.)
                 value.node_id = "ott"+ value.ott_id;
             }
