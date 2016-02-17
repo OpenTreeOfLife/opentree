@@ -422,14 +422,14 @@ def fetch_current_synthesis_source_data():
         source_list_response = fetch(fetch_url, data={'source_list':True})
         source_data = simplejson.loads( source_list_response )
         source_id_list = source_data.get('sources', [ ])
-
+        source_id_map = source_data.get('source_id_map')
         # split these source descriptions, which are in the form '{STUDY_ID_PREFIX}_{STUDY_NUMERIC_ID}_{TREE_ID}_{COMMIT_SHA}'
         contributing_study_info = { }   # store (unique) study IDs as keys, commit SHAs as values
 
         for source_id in source_id_list:
             if source_id == 'taxonomy':
                 continue
-            source_details = source_data.source_id_map.get( source_id )
+            source_details = source_id_map.get( source_id )
             study_id = source_details.get('study_id')
             # N.B. assume that all study IDs have a two-letter prefix!
             tree_id = source_details.get('tree_id')
