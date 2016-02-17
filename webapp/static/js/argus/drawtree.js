@@ -272,8 +272,6 @@ function createArgus(spec) {
             };
             if (o.nodeID !== undefined) {
                 ajaxData.node_id = String(o.nodeID);     // for later analysis
-                ajaxData.ot_node_id = String(o.nodeID);  // for /treemachine/v1/getSyntheticTree
-                // TODO: remove 'ot_node_id' if we normalize this method?
             }
             if (o.ott_id !== undefined) {
                 ajaxData.ott_id = o.ott_id;
