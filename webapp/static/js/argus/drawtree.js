@@ -260,12 +260,14 @@ function createArgus(spec) {
             // default is the classic "tree 4 in phylografter"
             ds = o.domSource === undefined ? "4" : o.domSource;
             ajaxData = {
-                "tree_id": ds,
+                "synth_id": ds,   // WAS 'tree_id'
                 "format": "arguson",
                 "max_depth": String(this.currMaxDepth)
             };
             if (o.nodeID !== undefined) {
-                ajaxData.node_id = String(o.nodeID);
+                ajaxData.node_id = String(o.nodeID);     // for later analysis
+                ajaxData.ot_node_id = String(o.nodeID);  // for /treemachine/v1/getSyntheticTree
+                // TODO: remove 'ot_node_id' if we normalize this method?
             }
             if (o.ott_id !== undefined) {
                 ajaxData.ott_id = o.ott_id;
