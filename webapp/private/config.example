@@ -49,7 +49,7 @@ CACHED_v2_api = http://opentree.myserver.org/cached/v2
 [method_urls]
 # For now, some treemachine services lag the rest, with v1 URLs
 # getDraftTreeID_url = {treemachine_domain}/getDraftTreeID
-getDraftTreeID_url = {treemachine_domain}/treemachine/v1/getDraftTreeID
+getDraftTreeID_url = {treemachine_domain}/v3/tree_of_life/about
 #getSyntheticTree_url = {CACHED_treemachine_domain}/getSyntheticTree
 getSyntheticTree_url = {treemachine_domain}/treemachine/v1/getSyntheticTree
 getDraftSubtree_url = {treemachine_domain}/v3/tree_of_life/subtree
