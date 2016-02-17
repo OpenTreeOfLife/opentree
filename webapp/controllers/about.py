@@ -419,8 +419,9 @@ def fetch_current_synthesis_source_data():
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
         # as usual, this needs to be a POST (pass empty fetch_args)
-        source_list_response = fetch(fetch_url, data='')
-        source_list = simplejson.loads( source_list_response )
+        source_list_response = fetch(fetch_url, data={'source_list':True})
+        source_data = simplejson.loads( source_list_response )
+        source_list = source_data.get('sources', [ ])
 
         # split these source descriptions, which are in the form '{STUDY_ID_PREFIX}_{STUDY_NUMERIC_ID}_{TREE_ID}_{COMMIT_SHA}'
         contributing_study_info = { }   # store (unique) study IDs as keys, commit SHAs as values
