@@ -126,14 +126,14 @@ def fetch_current_synthetic_tree_ids():
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
 
-        fetch_args = {'startingTaxonOTTId': ""}
+        fetch_args = {}  // 
         # this needs to be a POST (pass fetch_args or ''); if GET, it just describes the API
         # N.B. that gluon.tools.fetch() can't be used here, since it won't send "raw" JSON data as treemachine expects
         req = urllib2.Request(url=fetch_url, data=simplejson.dumps(fetch_args), headers={"Content-Type": "application/json"}) 
         ids_response = urllib2.urlopen(req).read()
 
         ids_json = simplejson.loads( ids_response )
-        draftTreeName = str(ids_json['tree_id']).encode('utf-8')
+        draftTreeName = str(ids_json['synth_id']).encode('utf-8')
         startNodeID = str(ids_json['root_ot_node_id']).encode('utf-8')
         return (draftTreeName, startNodeID)
 
