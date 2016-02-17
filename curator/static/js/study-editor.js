@@ -1186,10 +1186,10 @@ function loadSelectedStudy() {
                                         // Try to retain their prior precedence in
                                         // the list (avoid items jumping around)
                                         return (a.priorPosition < b.priorPosition) ? -1:1;
-                                    } 
+                                    }
                                     if (aFailedMapping) {
                                         return 1;   // force a (failed) below b
-                                    } 
+                                    }
                                     return -1;   // force b (failed) below a
                                 } else {
                                     return 0;
@@ -1253,7 +1253,7 @@ function loadSelectedStudy() {
 
                 // clear any stale last-selected OTU (it's likely moved)
                 lastClickedTogglePosition = null;
-                
+
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
@@ -3375,7 +3375,7 @@ function showTreeViewer( tree, options ) {
     }
 }
 function updateTreeViewerHeight(options) {
-    /* Revisit height and placement of the single-tree popup, which should 
+    /* Revisit height and placement of the single-tree popup, which should
      * take the full height of the window, with all header and footer UI
      * available and any scrollbars restricted to the SVG viewport.
      */
@@ -6491,7 +6491,7 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
         case 'synth':
             fetchURL = getDraftTreeMRCAForNodes_url;
             POSTdata = {
-                "ottIds": mappedIngroupOttIds,
+                "ott_ids": mappedIngroupOttIds,
                 "treeSource": options.TREE_SOURCE
             };
             break;
@@ -6507,7 +6507,6 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         url: fetchURL,
-        // TODO: url: getDraftTreeSubtreeForNodes_url,
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify(POSTdata),
@@ -6531,8 +6530,8 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
                 tree['^ot:MRCAName']  = 'lica' in responseJSON ? responseJSON['lica']['ot:ottTaxonName'] : '???';
                 tree['^ot:MRCAOttId'] = 'lica' in responseJSON ? responseJSON['lica']['ot:ottId'] : '???';
             } else {  // ASSUME 'synth'
-                tree['^ot:nearestTaxonMRCAName'] = responseJSON['nearest_taxon_mrca_unique_name'] || responseJSON['nearest_taxon_mrca_name'] || '???';
-                tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['nearest_taxon_mrca_ott_id'] || null;
+                tree['^ot:nearestTaxonMRCAName'] = responseJSON['nearest_taxon']['unique_name'] || '???';
+                tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['nearest_taxon']['ott_id'] || null;
             }
             nudgeTickler('TREES');
         }
