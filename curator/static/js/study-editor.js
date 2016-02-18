@@ -281,7 +281,8 @@ function hideTreeWithHistory() {
             cloneFromSimpleObject( oldState ),
             {
                 'tab': 'Trees',
-                'tree': null
+                'tree': null,
+                'conflict': null
             }
         );
         History.pushState( newState, (window.document.title), '?tab=trees' );
@@ -1760,10 +1761,20 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
                     return;
                 }
                 // Server blocked the save due to major validation errors!
-                var data = $.parseJSON(jqXHR.responseText);
-                // TODO: this should be properly parsed JSON, show it more sensibly
-                // (but for now, repeat the crude feedback used above)
-                var errMsg = 'Sorry, there was an error in the conflict data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                var data;
+                try {
+                    // TODO: if it's properly parsed JSON, show it more sensibly
+                    data = $.parseJSON(jqXHR.responseText);
+                } catch(e) {
+                    // probably a raw stack trace from the service, just show it literally
+                }
+                var errMsg;
+                if (jqXHR.responseText.indexOf('No mapped OTUs') !== -1) {
+                    errMsg = 'Conflict analysis requires OTUs in the current tree to be mapped to the OpenTree taxonomy. For best results, use the OTU Mapping tools for most or all of the tips of this tree.';
+                } else {
+                    // (but for now, repeat the crude feedback used above)
+                    errMsg = 'Sorry, there was an error in the conflict data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                }
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 return;
