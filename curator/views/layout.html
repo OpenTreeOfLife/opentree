@@ -1,18 +1,18 @@
 <!DOCTYPE html>
-{{ 
+{{
 from applications.opentree.modules.opentreewebapputil import get_user_login, get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch
 }}
 <html lang="{{=T.accepted_language or 'en'}}" class="no-js"><!-- no-js need it for modernzr -->
   <head>
-    
-    <meta charset="utf-8" />	  	
+
+    <meta charset="utf-8" />
     <!-- www.phpied.com/conditional-comments-block-downloads/ -->
-    <!--[if IE]><![endif]-->    
-    <!-- Always force latest IE rendering engine 
-	 (even in intranet) & Chrome Frame 
+    <!--[if IE]><![endif]-->
+    <!-- Always force latest IE rendering engine
+	 (even in intranet) & Chrome Frame
 	 Remove this if you use the .htaccess -->
     <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-    
+
     <title>{{=response.title or request.application}}</title>
     {{response.files.append(URL('static','css/bootstrap.css'))}}
     <style type="text/css">
@@ -21,8 +21,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     {{response.files.append(URL('static','css/bootstrap-responsive.css'))}}
 
     <script type="text/javascript">
-        /*    
-        @licstart  The following is the entire license notice for the JavaScript code in this page. 
+        /*
+        @licstart  The following is the entire license notice for the JavaScript code in this page.
 
         Copyright (c) 2013, Jonathan Rees
         Copyright (c) 2013, Mark Holder
@@ -64,30 +64,30 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       {{response.files.append(URL('static','js/html5shiv.js'))}}
     <![endif]-->
 
-    
+
     <!-- http://dev.w3.org/html5/markup/meta.name.html -->
-    <meta name="application-name" content="{{=request.application}}" />	
-    
-    <!-- Speaking of Google, don't forget to set your site up: 
+    <meta name="application-name" content="{{=request.application}}" />
+
+    <!-- Speaking of Google, don't forget to set your site up:
 	 http://google.com/webmasters -->
     <meta name="google-site-verification" content="" />
-    
+
     <!--  Mobile Viewport Fix
-	  j.mp/mobileviewport & davidbcalhoun.com/2010/viewport-metatag 
+	  j.mp/mobileviewport & davidbcalhoun.com/2010/viewport-metatag
 	  device-width: Occupy full width of the screen in its current orientation
 	  initial-scale = 1.0 retains dimensions instead of zooming out if page height > device height
 	  maximum-scale = 1.0 retains dimensions instead of zooming in if page width < device width
       -->
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-    
+
     <!-- All JavaScript at the bottom, except for Modernizr which enables HTML5 elements & feature detects -->
     <script src="{{=URL('static','js/modernizr.custom.js')}}"></script>
-    
+
     <script type='text/javascript'>
         var applicationName = '{{=request.application}}';
         var phylesystem_config_url = '{{=phylesystem_config_url or "URL_NOT_SPECIFIED"}}';
     </script>
-    
+
     {{#------  require CSS and JS files for this page (read info in base.css) ------}}
       {{#response.files.append(URL('static','css/skeleton.css'))}}
       {{#response.files.append(URL('static','css/web2py.css'))}}
@@ -195,7 +195,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       }
   }
 
-  jQuery(document).ready(function(){ 
+  jQuery(document).ready(function(){
 
     // delegate shared modal stacking, based on Bootstrap classes
     $('body').on('show', '.modal', function (evt) {
@@ -270,7 +270,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $menu.prepend('<li><a href="/curator/profile" rel="nofollow">My curator profile</a><li>');
         $menu.prepend('<li><a href="/curator/profile#collections" rel="nofollow">My collections</a><li>');
       }
-      
+
       // tweak validation errors to show proper Bootstrap classes
       jQuery('div.error').addClass('alert').addClass('alert-error');
     {{ pass }}
@@ -281,7 +281,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     {{ # TODO: consider the simpler block used in 'opentree/webapp'
     #using sidebars need to know what sidebar you want to use
     #prior of using it, because of static width size of content, you can use
-    #left_sidebar, right_sidebar, both or none (False left and right)    
+    #left_sidebar, right_sidebar, both or none (False left and right)
     left_sidebar_enabled = globals().get('left_sidebar_enabled',False)
     right_sidebar_enabled = globals().get('right_sidebar_enabled',False)
     if left_sidebar_enabled and right_sidebar_enabled: width_content='63%'
@@ -304,14 +304,14 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     -->
                                    <link rel="shortcut icon" href="/favicon.ico">
   </head>
-  
-  <!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->	
+
+  <!-- paulirish.com/2008/conditional-stylesheets-vs-css-hacks-answer-neither/ -->
   <!--[if lt IE 7 ]> <body class="ie6"> <![endif]-->
   <!--[if IE 7 ]>    <body class="ie7"> <![endif]-->
   <!--[if IE 8 ]>    <body class="ie8"> <![endif]-->
   <!--[if IE 9 ]>    <body class="ie9"> <![endif]-->
   <!--[if (gt IE 9)|!(IE)]><!--> <body> <!--<![endif]-->
-    
+
 {{ if get_domain_banner_text(request): }}
   <div class="ribbon-banner" title="{{= get_domain_banner_hovertext(request) }}">{{= get_domain_banner_text(request) }}</div>
 {{ pass }}
@@ -347,6 +347,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                         <li><a href="/curator/study/create">Import from TreeBASE</a></li><!-- just an alias, to encourage imports -->
                     </ul>
                 </li>
+                <li class="Xweb2py-menu-first"><a href="/curator/collections">Tree collections</a></li>
+                <!--
                 <li class="dropdown">
                     <a href="/curator#TODO" class="dropdown-toggle" data-toggle="dropdown">Tree collections  <b class="caret"></b></a>
                     <ul class="dropdown-menu">
@@ -355,7 +357,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                         <li><a href="/curator#TODO">Add new collection</a></li>
                     </ul>
                 </li>
-                <!-- 
                 <li class="dropdown">
                     <a href="/curator/stree" class="dropdown-toggle" data-toggle="dropdown">Source Trees  <b class="caret"></b></a>
                     <ul class="dropdown-menu">
@@ -382,7 +383,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
 
 <!--
     <div class="topbar">
-      <div class="container">    
+      <div class="container">
         <div class="sixteen columns">
           <div id="navbar">{{='auth' in globals() and auth.navbar(separators=(' ',' | ',''))}}</div>
           {{is_mobile=request.user_agent().is_mobile}}
@@ -398,10 +399,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             if response.flash: }}
         <span class="message">{{=response.flash}}</span>
          {{ pass }}</div> <!-- notification div (adapted for Bootstrap) -->
-    
+
     <!--
     <div class="header">
-      <div class="container">         
+      <div class="container">
         <div class="sixteen columns">
           <h2 style="margin:0; padding: .25em;
 		     background-color:#F0F0F0; color:SteelBlue;">
@@ -410,9 +411,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         </div>
       </div>
     </div>--><!-- /.header -->
-	
+
     <!--<div class="main">-->
-    <div class="container">                 
+    <div class="container">
     <section id="main" class="main row">
         {{if left_sidebar_enabled:}}
         <div class="Xfour Xcolumns span3 left-sidebar">
@@ -422,7 +423,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
           {{end}}
         </div>
         {{pass}}
-        
+
         <div class="{{=middle_columns}} Xcolumns Xcenter">
           <!--<div style="margin:0 1em 0 1em;">-->
           {{ if response.title: }}
@@ -436,20 +437,20 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
           {{end}}
           <!--</div>-->
         </div>
-        
+
         {{if right_sidebar_enabled:}}
         <div class="Xfour Xcolumns span3">
           {{block right_sidebar}}
           <h3>Right Sidebar</h3>
           <p></p>
           {{end}}
-        </div>    
+        </div>
         {{pass}}
-        
+
     </section><!-- #main.main row -->
     </div><!-- .container -->
       <!--</div>--><!-- main -->
-	
+
 <!-- Footer ================================================== -->
 <footer class="footer" id="footer">
   <div class="container">
@@ -467,14 +468,14 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             <a href="http://www.web2py.com/" target="_blank" >web2py</a>
         </div>
         <div id="server-details">
-            Configuration for the <strong>{{= request.application }}</strong> web2py app: 
+            Configuration for the <strong>{{= request.application }}</strong> web2py app:
             <dl>
                <dt id="shard-list">phylesystem shard(s):</dt>
-            {{ # N.B. This list will be populated by AJAX only when shown }} 
+            {{ # N.B. This list will be populated by AJAX only when shown }}
                <dt id="deployed-branch">deployed branch of opentree webapps:</dt>
                    <dd><strong class="setting-name">{{= get_currently_deployed_opentree_branch(request) }}
                    </strong></dd>
-            
+
             {{ # format non-sensitive config data for display
                conf = get_conf(request)
                for sec in conf.sections(): }}
@@ -494,10 +495,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
 	<script src="{{=URL('static','js/dd_belatedpng.js')}}"></script>
 	<script> DD_belatedPNG.fix('img, .png_bg'); //fix any <img> or .png_bg background-images </script>
 	<![endif]-->
-    
-    <!-- asynchronous google analytics: mathiasbynens.be/notes/async-analytics-snippet 
+
+    <!-- asynchronous google analytics: mathiasbynens.be/notes/async-analytics-snippet
 	 change the UA-XXXXX-X to be your site's ID -->
-    <!--   
+    <!--
 	   <script>
 	     var _gaq = [['_setAccount', 'UA-XXXXX-X'], ['_trackPageview']];
 	     (function(d, t) {
@@ -508,7 +509,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
 	     s.parentNode.insertBefore(g, s);
 	     })(document, 'script');
 	   </script>
-	   -->    
+	   -->
     <div id="modal-screen" class="modal hide Xfade" data-keyboard="false" data-backdrop="static">
         <div id="modal-screen-message"></div>
         <div id="modal-screen-busy-bar" class="progress progress-striped active" style="margin: 2px;">
@@ -517,7 +518,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div>
 
   <!-- hidden template for the tree-collection-viewer (editor) -->
-  <div class="modal hide fade" id="tree-collection-viewer" 
+  <div class="modal hide fade" id="tree-collection-viewer"
        Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
    <!-- TODO: KO binding here to 'collection' (as $data below) -->
     <div class="modal-header" style="padding-bottom: 0;">
@@ -525,9 +526,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       <h3 id='dialog-heading'>
             <span style="color: #999;">Tree collection</span>
            <!-- ko if: userIsEditingCollection($data) -->
-            <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; 
+            <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000;
                                       font-weight: bold; width: 50%; margin-bottom: 0px;"
-                   data-bind="value: $data.data['name'], 
+                   data-bind="value: $data.data['name'],
                               valueUpdate: ['afterkeydown', 'input'],
                               event: { keyup: updateNewCollectionID, change: updateNewCollectionID }
                               "
@@ -539,10 +540,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       </h3>
       <div style="color: #999; position: relative;">
         <p style="position: absolute; width: 170px; text-align: right;">
-            Collection ID: 
+            Collection ID:
         </p>
         <p style="margin-left: 180px;">
-            <span id="collection-id-display" 
+            <span id="collection-id-display"
                   data-bind="text: getCollectionIDFromURL($data.data.url)">&nbsp;</span>
            <!-- ko if: ('external_url' in $data) -->
             <a data-bind="attr: { href: $data['external_url'] }" target="_blank">(on GitHub)</a>
@@ -552,7 +553,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div>
     <div class="modal-body" style="max-height: none;">
       <div class="tab-pane active">
-          <form class="form-inline" 
+          <form class="form-inline"
                 style="overflow: hidden; margin-bottom: 0px; margin-top: -12px; padding-top: 12px; margin-right: -6px;">
            <div class="collection-actions">
             <!-- action buttons, from right to left -->
@@ -635,44 +636,44 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <input type="text"
                     class="input-xlarge" style="width: 500px; margin-bottom: 2px;"
                     placeholder="Describe this collection's focus or purpose"
-                    data-bind="value: $data.data['description'], 
+                    data-bind="value: $data.data['description'],
                                valueUpdate: ['afterkeydown', 'input']
                                "
                 ></input>
               <!-- /ko -->
               <!-- ko if: !userIsEditingCollection($data) -->
-                <div style="background-color: #eee; width: 500px; 
+                <div style="background-color: #eee; width: 500px;
                             margin: 0px 0px 2px -1px;
                             border-radius: 4px; padding: 5px 8px;"
-                     data-bind="html: $data.data['description'] || '&nbsp;'" 
+                     data-bind="html: $data.data['description'] || '&nbsp;'"
                 ></div>
               <!-- /ko -->
 
                 <label style="clear: left; margin-top: 6px;">Created by </label>
                 <strong><a href="https://github.com/jimallman" target="_blank"
-                           data-bind="text: $data.data.creator['name'], 
-                                      attr: { 
-                                        href: ('https://github.com/'+ $data.data.creator['login']) 
+                           data-bind="text: $data.data.creator['name'],
+                                      attr: {
+                                        href: ('https://github.com/'+ $data.data.creator['login'])
                                       }
                                       "
                         >&nbsp;</a></strong>, with
               <!-- list collaborators (links) in a popup -->
-              <div id="collection-collab-toggle" Xclass="btn-group" 
+              <div id="collection-collab-toggle" Xclass="btn-group"
                    style="display: inline-block; position: relative;">
-                <strong id="collection-collab-toggle" class="dropdown-toggle" 
+                <strong id="collection-collab-toggle" class="dropdown-toggle"
                         style="cursor: pointer;"
                         data-toggle="dropdown">
-                    <span data-bind="text: $data.data.contributors.length">0</span> 
+                    <span data-bind="text: $data.data.contributors.length">0</span>
                     collaborator<span data-bind="if: $data.data.contributors.length != 1">s</span>
                    <span class="caret" style="vertical-align: middle;"></span>
                 </strong>
-                <ul id="tree-collection-contributors" class="dropdown-menu" 
+                <ul id="tree-collection-contributors" class="dropdown-menu"
                     data-bind="foreach: { data: $data.data.contributors, as: 'contributor' }">
                     <li>
                         <a target="_blank"
-                           data-bind="text: contributor['name'], 
-                                      attr: { 
-                                        href: ('https://github.com/'+ contributor['login']) 
+                           data-bind="text: contributor['name'],
+                                      attr: {
+                                        href: ('https://github.com/'+ contributor['login'])
                                       }
                                       "
                         >&nbsp;</a>
@@ -689,7 +690,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
               <div id="tree-list-holder"
                    style="overflow: auto;">
       <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->
-                <table id="tree-collection-decision-holder" 
+                <table id="tree-collection-decision-holder"
                        class="table table-condensed table-hover"
                        style="margin-bottom: 2px; position: relative;"
                        data-bind="visible: true"><!-- TODO: hide if no trees found -->
@@ -706,19 +707,19 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                         </th>
                     </tr>
                   </thead>
-                  <tbody id="tree-collection-decisions" 
+                  <tbody id="tree-collection-decisions"
                          data-bind="foreach: { data: $data.data.decisions, as: 'decision' }">
                       <tr class="single-tree-row">
                           <td>
                           <!-- ko if: userIsEditingCollection($parent) -->
-                            <input type="text" 
+                            <input type="text"
                                    data-bind="value: $data['rank'],
                                               valueUpdate: ['afterkeydown', 'input'],
                                               event: {
                         keyup: function() {showCollectionMoveUI($data, $element, $parent)},
                         change: function() {showCollectionMoveUI($data, $element, $parent)}
                                               }"
-                                   style="color: #999; width: 24px; 
+                                   style="color: #999; width: 24px;
                                           margin-left: -4px; text-align: right;"
                                    value=""
                              />&nbsp;
@@ -784,10 +785,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                                  href="#" target="_blank"><!--NAME--></a>
                              <!-- this is no longer editable
                               <input type="text"
-                                     class="input-large" 
+                                     class="input-large"
                                      style="width: 320px; margin-right: 10px; margin-bottom: 2px;"
                                      placeholder="Name this tree"
-                                     data-bind="value: name, 
+                                     data-bind="value: name,
                                                 valueUpdate: ['afterkeydown', 'input']
                                                 "
                               >
@@ -826,7 +827,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
           <!-- ko if: userIsEditingCollection($data) -->
             <!-- TODO: Put add-collection widgets! -->
             <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
-              <button id="new-collection-tree-start" type="submit" 
+              <button id="new-collection-tree-start" type="submit"
                       class="btn btn-info Xbtn-info-disabled"
                       onclick="return false;"
               >Add tree to this collection
@@ -842,8 +843,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <input type="text" name="study-id"
                     class="input-small" style="margin-bottom: 2px;"
                     placeholder="ot_123"
-                    data-bind="value: '', 
-                               valueUpdate: ['afterkeydown', 'input'], 
+                    data-bind="value: '',
+                               valueUpdate: ['afterkeydown', 'input'],
                                event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
                                "
                 ></input>
@@ -851,12 +852,12 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <input type="text" name="tree-id"
                     class="input-small" style="margin-bottom: 2px;"
                     placeholder="tree456"
-                    data-bind="value: '', 
-                               valueUpdate: ['afterkeydown', 'input'], 
+                    data-bind="value: '',
+                               valueUpdate: ['afterkeydown', 'input'],
                                event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
                                "
                 ></input>
-                <button class="btn btn-info" 
+                <button class="btn btn-info"
                         Xonclick="addTreeToCollection('FROM_IDS'); return false;"
                         data-bind="click: function() {addTreeToCollection($data, 'FROM_IDS'); return false;}"
                 >
@@ -869,12 +870,12 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <input type="text"  name="tree-url"
                     class="input-xlarge" style="width: 385px; margin-bottom: 2px;"
                     placeholder=".../curator/study/view/pg_2826/?tab=trees&tree=tree6573"
-                    data-bind="value: '', 
-                               valueUpdate: ['afterkeydown', 'input'], 
+                    data-bind="value: '',
+                               valueUpdate: ['afterkeydown', 'input'],
                                event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
                                "
                 ></input>
-                <button class="btn btn-info" 
+                <button class="btn btn-info"
                         Xonclick="addTreeToCollection('FROM_URL'); return false;"
                         data-bind="click: function() {addTreeToCollection($data, 'FROM_URL'); return false;}"
                 >
@@ -906,8 +907,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         <textarea id="save-collection-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
     </div>
     <div class="modal-footer">
-      <button id="save-collection-comments-submit" 
-              class="btn btn-info pull-right" style="margin-left: 20px;" 
+      <button id="save-collection-comments-submit"
+              class="btn btn-info pull-right" style="margin-left: 20px;"
               onclick="return false;">Save Collection</button>
       <a id="save-collection-comments-cancel" data-dismiss="modal" class="btn" >Cancel</a>
     </div>
@@ -930,8 +931,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         <textarea id="delete-collection-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
     </div>
     <div class="modal-footer">
-      <button id="delete-collection-comments-submit" 
-              class="btn btn-danger pull-right" style="margin-left: 20px;" 
+      <button id="delete-collection-comments-submit"
+              class="btn btn-danger pull-right" style="margin-left: 20px;"
               onclick="return false;">Delete Collection</button>
       <a id="delete-collection-comments-cancel" data-dismiss="modal" class="btn" >Cancel</a>
     </div>
@@ -940,7 +941,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
 
 {{ if ('maintenance_info' in locals()) and maintenance_info.get('maintenance_notice', None):
    # N.b. Check to make sure it's in the view-dict, or error pages etc. will fail }}
-    <div id="maintenance-notice" class="modal hide fade" 
+    <div id="maintenance-notice" class="modal hide fade"
          Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
