@@ -38,6 +38,9 @@ response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.iframe-tr
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.fileupload.js'))
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/css/jquery.fileupload.css'))
 
+# support for fullscreen display (tree viewer)
+response.files.append(URL('static','js/jquery.fullscreen.min.js'))
+
 # minimal Bootstrap Tags Input (jQuery plugin)
 response.files.append(URL('static','js/bootstrap-tagsinput.min.js'))
 response.files.append(URL('static','css/bootstrap-tagsinput.css'))
@@ -75,17 +78,24 @@ body {
 /* D3 tree view */
 
 .node circle {
-  fill: steelblue;
+  fill: #000;
+  r: 3.5px;
+}
+.node.outgroup circle {
+  fill: #999;
+  r: 2.5px;
 }
 .node circle:hover {
   stroke-opacity: 0.5;
 }
 .node.leaf circle {
   fill: #777;
+  r: 3.5px;
 }
 /* preferred ot:specifiedRoot */
 .node.specifiedRoot circle {
   fill: steelblue;
+  r: 4.5px;
 }
 .node.specifiedRoot text {
   fill: steelblue;
@@ -93,7 +103,7 @@ body {
 }
 /* even more preferred ot:specifiedRoot */
 .node.inGroupClade circle {
-  fill: black;
+  fill: #000;
 }
 .node.inGroupClade text {
   fill: black;
@@ -133,7 +143,7 @@ body {
     color: #888;
 }
 .dropdown-menu > li.node-information .node-type.inGroupClade {
-    color: steelblue;
+    color: #000;
 }
 .dropdown-menu > li.node-information .node-type.specifiedRoot {
     color: steelblue;
@@ -157,22 +167,54 @@ body {
 
 .link {
   fill: none;
-  stroke: steelblue;
-  stroke-width: 1.0px;
+  stroke: #000;
+  stroke-width: 2.0px;
 }
 .link.outgroup {
-  stroke: steelblue;
-  stroke-width: 0.75px;
+  stroke: #999;
+  stroke-width: 0.5px;
 }
 .link.ingroup {
-  stroke: #000;
-  stroke-width: 1.25px;
 }
 .link.update {
   /* stroke: #ccf; */
 }
 .link.enter {
   /* stroke: #f00; */
+}
+
+/* Conflict-info colors should take precedence */
+.node.conflict-supported_by circle,
+.node.conflict-partial_path_of circle {
+  fill: #36f;
+}
+.link.conflict-supported_by,
+.link.conflict-partial_path_of {
+  stroke: #36f;
+}
+.node-conflict-status-supported_by,
+.node-conflict-status-partial_path_of {
+  color: #36f;
+}
+
+.node.conflict-conflicts_with circle {
+  fill: #e80;
+}
+.link.conflict-conflicts_with {
+  stroke: #e80;
+}
+.node-conflict-status-conflicts_with {
+  color: #e80;
+}
+
+.node.conflict-resolves circle {
+  fill: #0b0;
+}
+.link.conflict-resolves {
+  stroke: #0b0;
+}
+.node-conflict-status-resolves {
+  color: #0b0;
 }
 
 /* force proper styles for Bootstrap Tags Input */
@@ -1248,14 +1290,17 @@ body {
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length === 1) -->
                            {{ # show mapped label }}
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                                <button class="btn btn-mini" 
+                                        data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS"
+                                        title="Click to reject this OTU mapping">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
                             <span style="white-space: nowrap;">
                                 <a class="btn btn-mini"
-                                                  style="padding: 0px 4px;"
-                                                  data-bind="click: approveProposedOTULabel">
+                                   style="padding: 0px 4px;"
+                                   title="Click to accept this OTU mapping"
+                                   data-bind="click: approveProposedOTULabel">
                                 <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: proposedMapping(otu)[0].name,
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                                attr: getAttrsForMappingOption(proposedMapping(otu)[0])"
@@ -1266,7 +1311,9 @@ body {
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length > 1) -->
                            {{ # show available choices for mapping this OTU }}
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                                <button class="btn btn-mini" 
+                                        data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS"
+                                        title="Click to reject all mappings for this OTU">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
@@ -1276,7 +1323,8 @@ body {
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS">
                                 <li style="white-space: nowrap;"><a class="btn btn-mini"
                                                       style="padding: 0px 4px;"
-                                                      data-bind="click: approveProposedOTUMappingOption">
+                                                      data-bind="click: approveProposedOTUMappingOption"
+                                                      title="Click to accept this OTU mapping">
                                 <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.unique_name,
                                                   attr: getAttrsForMappingOption($data)"
                                        href="#"></a>
@@ -1734,9 +1782,9 @@ body {
                  <select id="reference-select">
                      <option value="">Choose a target...</option>
                      <option value="synth">Synthetic Tree of Life</option>
-                     <option value="taxonomy">Open Tree Taxonomy</option>
+                     <option value="ott">Open Tree Taxonomy</option>
                  </select>
-                 <button class="btn btn-info" data-bind="click: fetchTreeConflictStatus">GO!</button>
+                 <button class="btn btn-info" data-bind="click: fetchAndShowTreeConflictSummary">GO!</button>
              </form>
 
             <div id="analysis-results">
@@ -1921,9 +1969,9 @@ body {
 
     var treemachine_domain = "{{=treemachine_domain}}";
     var taxomachine_domain = "{{=taxomachine_domain}}";
-    var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
-    var getSyntheticTree_url = "{{=getSyntheticTree_url}}";
-    var getSourceTree_url = "{{=getSourceTree_url}}";
+    // var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
+    // var getSyntheticTree_url = "{{=getSyntheticTree_url}}";
+    // var getSourceTree_url = "{{=getSourceTree_url}}";
     var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
     var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
     var getContextForNames_url = "{{=getContextForNames_url}}";
@@ -2187,9 +2235,14 @@ body {
 
 <!-- hidden template for the tree-viewer (editor) -->
 <div class="modal hide fade modal-tree-viewer tabbable" id="tree-viewer" style="display: none;">
+  <div id="full-screen-area">
   <!-- KO binding here to 'tree' (as $data below) -->
     <div class="modal-header" style="padding-bottom: 0;">
       <a class="close" onclick="$('#tree-viewer').modal('hide'); return false;">×</a>
+      <button id="enter-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;" 
+              onclick="$('#full-screen-area').fullscreen(); return false;"><i class="icon-fullscreen"></i> Full screen</button>
+      <button id="exit-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;" 
+              onclick="$.fullscreen.exit(); return false;"><i class="icon-resize-small"></i> Exit full screen</button>
       <h3 id='dialog-heading'>
         {{ if viewOrEdit == 'EDIT': }}
             Edit tree
@@ -2516,12 +2569,24 @@ body {
          </td>
         </tr>
         <tr>
+          <td colspan="4" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">Conflict versus reference tree</strong></td>
+          <td colspan="2" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">OTUs with conflicting mapping</strong></td>
+        </tr>
+        <tr>
          <td align="right">
+            Aligned
          </td>
          <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-supported-by.png')}}" alt="outgroup style" />
          </td>
-         <td colspan="3" align="right">
-             OTU with conflicting mapping (unresolved):
+         <td align="right">
+            Resolves
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-resolves.png')}}" alt="outgroup style" />
+         </td>
+         <td align="right">
+             Unresolved
          </td>
          <td>
           <img src="{{=URL('static','images/tree-viewer-legend-tips-conflicting.png')}}" alt="outgroup style" />
@@ -2529,23 +2594,30 @@ body {
         </tr>
         <tr>
          <td align="right">
+            Conflicts with
          </td>
          <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-conflicts-with.png')}}" alt="outgroup style" />
          </td>
-         <td colspan="3" align="right">
-             OTU with conflicting mapping (chosen exemplar):
+         <td align="right">
+            Undetermined
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-undetermined.png')}}" alt="outgroup style" />
+         </td>
+         <td align="right">
+             Chosen exemplar
          </td>
          <td>
           <img src="{{=URL('static','images/tree-viewer-legend-tips-exemplar.png')}}" alt="outgroup style" />
          </td>
         </tr>
         <tr>
+         <td colspan="4">
+            &nbsp;
+         </td>
          <td align="right">
-         </td>
-         <td>
-         </td>
-         <td colspan="3" align="right">
-             OTU with conflicting mapping (non-exemplar):
+             Non-exemplar
          </td>
          <td>
           <img src="{{=URL('static','images/tree-viewer-legend-tips-non-exemplar.png')}}" alt="outgroup style" />
@@ -2656,10 +2728,18 @@ body {
                      onclick="toggleRadialTreeLayoutInViewer(this); return true;" />
               Radial tree layout
           </label>
+
+          <label style="margin-left: 25px; position: relative; top: 1px;">Show conflict versus</label>
+          <select id="treeview-reference-select" data-bind="value: $data.conflictDetails ? $data.conflictDetails.referenceTreeID : ''">
+              <option value="">Choose a target...</option>
+              <option value="synth">Synthetic Tree of Life</option>
+              <option value="ott">Open Tree Taxonomy</option>
+          </select>
+          <button id="treeview-fetch-conflict" class="btn btn-info" data-bind="click: showConflictDetailsWithHistory">GO!</button>
+          <button id="treeview-clear-conflict" class="btn" data-bind="click: hideConflictDetailsWithHistory">Hide conflict</button>
+
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>
-</div
-ml
-
->
+  </div><!-- /#full-screen-area -->
+</div>

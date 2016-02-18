@@ -52,7 +52,6 @@ function capture_form() {
     }
     var isThreadStarter = threadParentID == 0;
     if (isThreadStarter) {
-        //jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'General comment' );
         jQuery('div.plugin_localcomments select[name=feedback_type]').show();
         jQuery('div.plugin_localcomments select[name=issue_title]').show();
 
@@ -86,12 +85,13 @@ function capture_form() {
         jQuery('div.plugin_localcomments select[name=feedback_type]').change();
 
     } else {
+<<<<<<< HEAD
         // jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'Reply or general comment' );
+=======
+>>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
         jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
         jQuery('div.plugin_localcomments select[name=issue_title]').hide();
     }
-    // we only show 'intended scope' for phylo corrections
-    jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
     // always hide expertise checkbox and surrounding label (not currently needed)
     jQuery('div.plugin_localcomments label.expertise-option').hide();
 
@@ -99,12 +99,19 @@ function capture_form() {
     var $referenceURLField = jQuery('div.plugin_localcomments input[name="reference_url"]'); 
     $referenceURLField.hide();
     jQuery('div.plugin_localcomments select[name="feedback_type"]').unbind('change').change(function(){
-        if (jQuery(this).val() === 'Error in phylogeny') {
-            jQuery('div.plugin_localcomments select[name=intended_scope]').show();
-            $referenceURLField.show();
-        } else {
-            jQuery('div.plugin_localcomments select[name=intended_scope]').hide();
-            $referenceURLField.hide();
+        switch (jQuery(this).val()) {
+            case 'Suggest a phylogeny to incorporate':
+                $referenceURLField.attr('placeholder',"Provide a database reference or published article (URL or DOI)");
+                $referenceURLField.show();
+                break;
+            case 'Correction to relationships in the synthetic tree':
+            case 'Correction to names (taxonomy)':
+                $referenceURLField.attr('placeholder',"Provide a supporting article or web site (URL or DOI)");
+                $referenceURLField.show();
+                break;
+            default:
+                $referenceURLField.attr('placeholder',"...");
+                $referenceURLField.hide();
         }
     });
 
@@ -113,41 +120,74 @@ function capture_form() {
         fixLoginLinks();
     }
 
+<<<<<<< HEAD
     jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
         var $form = jQuery(this).closest('form');
 
         // validate form fields
         var $visitorNameField = $form.find('input[name="visitor_name"]');
+=======
+    function validateFeedbackForm(options) {
+        // Return true (if all inputs are valid), or false
+        if (!options) options = {VERBOSE: false};
+        var $form = $('div.plugin_localcomments form:eq(0)');
+        var prompt = "Please provide data for all visible fields";
+        var problemsFound = false;
+        // validate form fields based on feedback type
+        var $visitorNameField = $form.find('input[name="visitor_name"]'); 
+>>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
         if ($visitorNameField.is(':visible') && ($.trim($visitorNameField.val()) === '')) {
-            alert("Please enter your name (and preferably an email address) so we can stay in touch.");
-            return false;
+            //prompt = "Please enter your name (and preferably an email address) so we can stay in touch.";
+            problemsFound = true;
         }
         var $fbTypeField = $form.find('select[name="feedback_type"]'); 
-        var $fbScopeField = $form.find('select[name="intended_scope"]'); 
-        if ($fbTypeField.is(':visible')) {
-            if ($.trim($fbTypeField.val()) === '') {
-                alert("Please choose a feedback type for this topic.");
-                return false;
-            } 
-            /* TODO: Should the supporting-reference URL be required? 
-                     Decide this based on the phylo-error "scope"? i.e., `$fbScopeField.val()`
-            else if ($.trim($fbTypeField.val()) === 'Error in phylogeny'){
-                var $referenceURLField = $form.find('input[name="reference_url"]'); 
-                if ($.trim($referenceURLField.val()) === '') {
-                    alert("Please provide a supporting reference (URL).");
-                    return false;
-                }
-            }
-            */
+        if ($fbTypeField.is(':visible') && ($.trim($fbTypeField.val()) === '')) {
+            //prompt = "Please choose a feedback type for this topic.";
+            problemsFound = true;
         }
         var $titleField = $form.find('input[name="issue_title"]');
         if ($titleField.is(':visible') && ($.trim($titleField.val()) === '')) {
-            alert("Please give this topic a title.");
-            return false;
+            //prompt = "Please give this topic a title.";
+            problemsFound = true;
         }
         var $bodyField = $form.find('textarea[name="body"]');
         if ($.trim($bodyField.val()) === '') {
-            alert("Please enter some text for this "+ (isThreadStarter ? 'issue' : 'comment') +".");
+            //prompt = "Please enter some text for this "+ (isThreadStarter ? 'issue' : 'comment') +".";
+            problemsFound = true;
+        }
+        var $referenceURLField = $form.find('input[name="reference_url"]'); 
+        if ($referenceURLField.is(':visible') && ($.trim($referenceURLField.val()) === '')) {
+            //prompt = "Please provide a supporting reference (DOI or URL).";
+            problemsFound = true;
+        }
+
+        if (problemsFound && options.VERBOSE) {
+            // Show an alert to prompt corrective action
+            alert(prompt);
+        }
+
+        // return true only if all's well
+        return !(problemsFound);
+    }
+    function updateFeedbackButton(evt) {
+        var $btn = jQuery('div.plugin_localcomments form:eq(0) :submit');
+        if (validateFeedbackForm({VERBOSE: false})) {
+            $btn.removeClass('disabled');
+        } else {
+            $btn.addClass('disabled');
+        }
+    }
+    // update now, and after any change to input widgets
+    updateFeedbackButton();
+    jQuery('div.plugin_localcomments :input')
+        .unbind('change.validation keyup.validation')
+        .bind('change.validation keyup.validation', updateFeedbackButton);
+
+    jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
+        var $form = jQuery(this).closest('form');
+
+        if (!validateFeedbackForm({VERBOSE: true})) {
+            // something's wrong
             return false;
         }
 
@@ -165,8 +205,7 @@ function capture_form() {
                'title': $form.find('input[name="issue_title"]').val(),
                'body': $form.find('textarea[name="body"]').val(),
                'feedback_type': $form.find('select[name="feedback_type"]').val(),
-               'reference_url': $form.find('input[name="reference_url"]').val(),
-               'intended_scope': $form.find('select[name="intended_scope"]').val(),
+               'reference_url': $referenceURLField.is(':visible') ? $form.find('input[name="reference_url"]').val() : '',
                'claimed_expertise': $form.find(':checkbox[name="claimed_expertise"]').is(':checked'),
                'visitor_name': $form.find('input[name="visitor_name"]').val(),
                'visitor_email': $form.find('input[name="visitor_email"]').val()
@@ -341,7 +380,6 @@ def index():
     comment_id = request.vars['comment_id'] # used for some operations (eg, delete)
     feedback_type = request.vars['feedback_type'] # used for new comments
     reference_url = request.vars['reference_url'] # used for phylo corrections only
-    intended_scope = request.vars['intended_scope'] # used for new comments
     issue_title = request.vars['title'] # used for new issues (threads)
     claims_expertise = request.vars['claimed_expertise'] # used for new comments
     threads = [ ]
@@ -439,7 +477,6 @@ def index():
                         A(T(author_display_name), _href=author_link, _target='_blank'),
                         # SPAN(' [local expertise]',_class='badge') if comment.claimed_expertise else '',
                         SPAN(' ',metadata.get('Feedback type'),' ',_class='badge') if metadata.get('Feedback type') else '',
-                        SPAN(' ',metadata.get('Intended scope'),' ',_class='badge') if metadata.get('Intended scope') else '',
                         T(' - %s',prettydate(utc_to_local(datetime.strptime(comment['created_at'], GH_DATETIME_FORMAT)),T)),
                         SPAN(
                             issue_node and A(T(child_comments and 'Hide comments' or 'Show/add comments'),_class='toggle',_href='#') or '',
@@ -519,8 +556,13 @@ def index():
                 # expand hidden link
                 url_link = '[{0}]({1}{2})'.format(url, request.get('env').get('http_origin'), url)
 
+<<<<<<< HEAD
             # add full metadata for an issue
             footer = build_comment_metadata_footer(metadata={
+=======
+            # add full metadata for an issue 
+            footer = build_comment_metadata_footer(comment_type='starter', metadata={
+>>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
                 "Author": author_link,
                 "Upvotes": 0,
                 "URL": url_link,
@@ -529,7 +571,6 @@ def index():
                 "Synthetic tree node id": synthtree_node_id,
                 "Source tree id": sourcetree_id,
                 "Open Tree Taxonomy id": ottol_id,
-                "Intended scope": intended_scope,
                 "Supporting reference": reference_url or 'None'
             })
             msg_data = {
@@ -548,7 +589,7 @@ def index():
             if len(re.compile('\s+').sub('',msg_body))<1:
                 return ''
             # add abbreviated metadata for a comment
-            footer = build_comment_metadata_footer(metadata={
+            footer = build_comment_metadata_footer(comment_type='reply', metadata={
                 "Author" : author_link,
                 "Upvotes" : 0,
             })
@@ -592,6 +633,7 @@ def index():
                         SELECT( #this option lets us know what labels to use in the GitHub issue tracker
                         # labels get created if they do not already exist
                             OPTION('What kind of feedback is this?', _value=''),
+<<<<<<< HEAD
                             OPTION('Feedback on tree of life', _value='Synthesis feedback'),
                             OPTION('Suggest tree for incorporation', _value='Tree suggestion'),
                             OPTION('New feature request', _value='Feature request'),
@@ -605,10 +647,19 @@ def index():
                             OPTION('about taxon data in OTT', _value='Re: OTT taxon'),
                             OPTION('something else', _value=''),
                         _name='intended_scope',value='Re: synthetic tree',_style='width: auto;'),
+=======
+                            OPTION('General feedback'),
+                            OPTION('Correction to relationships in the synthetic tree'),
+                            OPTION('Suggest a phylogeny to incorporate'),
+                            OPTION('Correction to names (taxonomy)'),
+                            OPTION('Bug report (website behavior)'),
+                            OPTION('New feature request'),
+                        _name='feedback_type',value='',_style='width: 100%; margin-right: -4px;'),
+>>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
                         INPUT(_type='text',_id='issue_title',_name='issue_title',_value='',_placeholder="Give this topic a title"),   # should appear for proper issues only
                         TEXTAREA(_name='body',_placeholder="Add more to this topic, using Markdown (click 'Markdown help' below to learn more)."),
-                        INPUT(_type='text',_id='reference_url',_name='reference_url',_value='',_placeholder="Provide a supporting reference URL"),   # should appear for phylo corrections only
+                        INPUT(_type='text',_id='reference_url',_name='reference_url',_value='',_placeholder="..."),   # visibility (and placeholder) depends on feedback type
                         INPUT(_type='hidden',_name='synthtree_id',_value=synthtree_id),
                         INPUT(_type='hidden',_name='synthtree_node_id',_value=synthtree_node_id),
                         INPUT(_type='hidden',_name='sourcetree_id',_value=sourcetree_id),
@@ -620,7 +671,11 @@ def index():
                             SPAN(' | ',_style='margin-right: 6px'),
                             A(T('Markdown help'),_href='https://help.github.com/articles/markdown-basics',
                               _target='_blank',_style='margin-right: 10px'),
+<<<<<<< HEAD
                             INPUT(_type='submit',_value=T('Post'),_class='btn btn-small',_style=''),
+=======
+                            INPUT(_type='submit',_value=T('Post'),_class='btn btn-info btn-small',_style=''), 
+>>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
                             _class='msg-footer'),
                         _method='post',_action=URL(r=request,args=[])),_class='reply'),
                SUL(*[node(comment) for comment in threads]),_class='plugin_localcomments')
@@ -867,7 +922,6 @@ Synthetic tree id   |   %(Synthetic tree id)s
 Synthetic tree node id   |   %(Synthetic tree node id)s 
 Source tree id(s)   |   %(Source tree id)s 
 Open Tree Taxonomy id   |   %(Open Tree Taxonomy id)s 
-Intended scope   |   %(Intended scope)s 
 Supporting reference   |   %(Supporting reference)s 
 """
 reply_footer = """
@@ -883,10 +937,15 @@ Upvotes   |   %(Upvotes)s
 # TODO: Move 'Feedback type' from labels to footer?
 #   Feedback type   |   %(Feedback type)s
 
+<<<<<<< HEAD
 def build_comment_metadata_footer(metadata={}):
     # build full footer (for starter) or abbreviated (for replies),
+=======
+def build_comment_metadata_footer(comment_type='starter', metadata={}):
+    # build full footer (for starter) or abbreviated (for replies), 
+>>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
     # and return the string
-    if 'Intended scope' in metadata:
+    if comment_type == 'starter':
         # it's a thread starter (a proper GitHub issue)
         footer_template = full_footer
     else:
