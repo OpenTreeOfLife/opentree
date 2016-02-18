@@ -1647,16 +1647,26 @@ function testConflictSummary(conflictInfo) {
 }
 
 // returns a link to the witness node (in synth tree browser or OTT browser)
-function getWitnessLink(witnessID, targetType) {
+function getWitnessLink(nodeInfo, targetType) {
+  var link;
+  if (targetType == "synth") {
 
+  }
+  else if (targetType == "ott") {
+    link = getTaxobrowserLink(nodeInfo.witness_name,nodeInfo.witness)
+  }
+  else {
+    link = nodeInfo.witness_name
+  }
 }
 
 function displayConflictSummary(conflictInfo) {
     // show results in the Analyses tab
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     var $reportArea = $('#analysis-results');
+    var targetTree = $('#reference-select').val()
     var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ $('#tree-select').val()
-      +"&conflict="+ $('#reference-select').val();
+      +"&conflict="+ targetTree;
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
            .append('<p><a href="'+ treeURL +'" target="conflicttree">Open labelled tree in new window</a></p>')
