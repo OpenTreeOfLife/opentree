@@ -6272,10 +6272,10 @@ function getNodeConflictDescription(tree, node) {
       case 'supported_by':
       case 'partial_path_of':
           if (witnessURL) {
-              conflictHTML = 'Supported by <a href="'+ witnessURL +'" target="_blank">'+
+              conflictHTML = 'Aligned with <a href="'+ witnessURL +'" target="_blank">'+
                   (node.conflictDetails.witness_name || "???") +'</a>';
           } else {
-              conflictHTML = 'Supported by '+ missingWitnessDescription;
+              conflictHTML = 'Aligned with '+ missingWitnessDescription;
           }
           break;
       case 'conflicts_with':
