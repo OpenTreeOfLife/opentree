@@ -1645,6 +1645,11 @@ function testConflictSummary(conflictInfo) {
     console.warn("  "+ summaryInfo.resolving +" resolving nodes");
 }
 
+// returns a link to the witness node (in synth tree browser or OTT browser)
+function getWitnessLink(witnessID, targetType) {
+
+}
+
 function displayConflictSummary(conflictInfo) {
     // show results in the Analyses tab
     var summaryInfo = getTreeConflictSummary(conflictInfo);
@@ -1663,47 +1668,86 @@ function displayConflictSummary(conflictInfo) {
     var chosenTargetName = $('#reference-select option:selected').html();
     $reportArea.find('.reference-tree-display').html(chosenTargetName);
 
+    // show aligned nodes
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.aligned.total
         +' <strong>aligned</strong> nodes that can be mapped to nodes in the target'
         + (summaryInfo.aligned.total > 0 ? ' <a href="#" onclick="$(\'#report-aligned-nodes\').toggle(); return false;">(hide/show node list)</a>' : '')
         +'</p>');
     $reportArea.append('<ul id="report-aligned-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-aligned-nodes');
+    var namedNodes = 0
     for (var nodeid in summaryInfo.aligned.nodes) {
         var nodeInfo = summaryInfo.aligned.nodes[nodeid];
-        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
-            'Unnamed node ('+ nodeInfo.witness +')'
-        $nodeList.append('<li>'+ nodeName +'</li>');
+        if ('witness' in nodeInfo) {
+          var nodeName = nodeInfo.witness_name + ' [aligned to tree ' + nodeid + ']'
+          $nodeList.append('<li>'+ nodeName +'</li>');
+          ++namedNodes
+        }
+        //var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' : 'Unnamed node ('+ nodeInfo.witness +')'
+    }
+    if (namedNodes == 0) {
+      $nodeList.append('<li>all target nodes unnamed (so there is not anything interesting to show here)</li>')
+    }
+    else {
+      var unnamedNodes = summaryInfo.aligned.total - namedNodes
+      if (unnamedNodes > 0) {
+        $nodeList.append('<li>plus ' + unnamedNodes + ' more unnamed target nodes aligned to nodes in this tree</li>')
+      }
     }
 
+    // resolving nodes
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.resolving.total
         +' <strong>resolving</strong> nodes that resolve polytomies within these clades in the target'
         + (summaryInfo.resolving.total > 0 ? ' <a href="#" onclick="$(\'#report-resolving-nodes\').toggle(); return false;">(hide/show target node list)</a>' : '')
         +'</p>');
     $reportArea.append('<ul id="report-resolving-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-resolving-nodes');
+    var namedNodes = 0
     for (var nodeid in summaryInfo.resolving.nodes) {
         var nodeInfo = summaryInfo.resolving.nodes[nodeid];
-        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
-            'Unnamed node ('+ nodeInfo.witness +')'
-        $nodeList.append('<li>'+ nodeName +'</li>');
+        if ('witness' in nodeInfo) {
+          var nodeName = nodeInfo.witness_name + ' [resolved by tree ' + nodeid + ']'
+          $nodeList.append('<li>'+ nodeName +'</li>');
+          ++namedNodes
+        }
+    }
+    if (namedNodes == 0) {
+      $nodeList.append('<li>all target nodes unnamed (so there is not anything interesting to show here)</li>')
+    }
+    else {
+      var unnamedNodes = summaryInfo.resolving.total - namedNodes
+      if (unnamedNodes > 0) {
+        $nodeList.append('<li>plus ' + unnamedNodes + ' more unnamed target nodes resolved by nodes in this tree</li>')
+      }
     }
 
+    // conflicting nodes
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.conflicting.total
         +' <strong>conflicting</strong> nodes that conflict with nodes in the target'
         + (summaryInfo.conflicting.total > 0 ? ' <a href="#" onclick="$(\'#report-conflicting-nodes\').toggle(); return false;">(hide/show target node list)</a>' : '')
         +'</p>');
     $reportArea.append('<ul id="report-conflicting-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-conflicting-nodes');
+    var namedNodes = 0
     for (var nodeid in summaryInfo.conflicting.nodes) {
         var nodeInfo = summaryInfo.conflicting.nodes[nodeid];
-        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
-            'Unnamed node ('+ nodeInfo.witness +')'
+        var nodeName = nodeInfo.witness_name + ' [conflicts with tree ' + nodeid + ']'
         $nodeList.append('<li>'+ nodeName +'</li>');
+        ++namedNodes
+    }
+    if (namedNodes == 0) {
+      $nodeList.append('<li>all target nodes unnamed (so there is not anything interesting to show here)</li>')
+    }
+    else {
+      var unnamedNodes = summaryInfo.conflicting.total - namedNodes
+      if (unnamedNodes > 0) {
+        $nodeList.append('<li>plus ' + unnamedNodes + ' more nodes that resolve unnamed nodes in the target</li>')
+      }
     }
 
+
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.undetermined.total
-        +' <strong>undetermined</strong> nodes that cannot be aligned to the target at all</p>');
+        +' <strong>undetermined</strong> nodes that cannot be aligned to the target at all (these are often unmapped OTUs)</p>');
 }
 
 function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
