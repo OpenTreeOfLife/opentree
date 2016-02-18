@@ -78,17 +78,24 @@ body {
 /* D3 tree view */
 
 .node circle {
-  fill: steelblue;
+  fill: #000;
+  r: 3.5px;
+}
+.node.outgroup circle {
+  fill: #999;
+  r: 2.5px;
 }
 .node circle:hover {
   stroke-opacity: 0.5;
 }
 .node.leaf circle {
   fill: #777;
+  r: 3.5px;
 }
 /* preferred ot:specifiedRoot */
 .node.specifiedRoot circle {
   fill: steelblue;
+  r: 4.5px;
 }
 .node.specifiedRoot text {
   fill: steelblue;
@@ -96,7 +103,7 @@ body {
 }
 /* even more preferred ot:specifiedRoot */
 .node.inGroupClade circle {
-  fill: black;
+  fill: #000;
 }
 .node.inGroupClade text {
   fill: black;
@@ -136,7 +143,7 @@ body {
     color: #888;
 }
 .dropdown-menu > li.node-information .node-type.inGroupClade {
-    color: steelblue;
+    color: #000;
 }
 .dropdown-menu > li.node-information .node-type.specifiedRoot {
     color: steelblue;
@@ -160,22 +167,54 @@ body {
 
 .link {
   fill: none;
-  stroke: steelblue;
-  stroke-width: 1.0px;
+  stroke: #000;
+  stroke-width: 2.0px;
 }
 .link.outgroup {
-  stroke: steelblue;
-  stroke-width: 0.75px;
+  stroke: #999;
+  stroke-width: 0.5px;
 }
 .link.ingroup {
-  stroke: #000;
-  stroke-width: 1.25px;
 }
 .link.update {
   /* stroke: #ccf; */
 }
 .link.enter {
   /* stroke: #f00; */
+}
+
+/* Conflict-info colors should take precedence */
+.node.conflict-supported_by circle,
+.node.conflict-partial_path_of circle {
+  fill: #36f;
+}
+.link.conflict-supported_by,
+.link.conflict-partial_path_of {
+  stroke: #36f;
+}
+.node-conflict-status-supported_by,
+.node-conflict-status-partial_path_of {
+  color: #36f;
+}
+
+.node.conflict-conflicts_with circle {
+  fill: #e80;
+}
+.link.conflict-conflicts_with {
+  stroke: #e80;
+}
+.node-conflict-status-conflicts_with {
+  color: #e80;
+}
+
+.node.conflict-resolves circle {
+  fill: #0b0;
+}
+.link.conflict-resolves {
+  stroke: #0b0;
+}
+.node-conflict-status-resolves {
+  color: #0b0;
 }
 
 /* force proper styles for Bootstrap Tags Input */
@@ -202,8 +241,8 @@ body {
       <li><a href="#OTU-Mapping" data-toggle="tab">OTU Mapping <span class="badge badge-important" style="display: none;">?</span></a></li>
     <!--
       <li><a href="#Annotations" data-toggle="tab">Annotations <span class="badge badge-important" style="display: none;">?</span></a></li>
-      <li><a href="#Tools" data-toggle="tab">Tools <span class="badge badge-important" style="display: none;">?</span></a></li>
     -->
+      <li><a href="#Analyses" data-toggle="tab">Analyses <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#History" data-toggle="tab">History <span class="badge badge-important" style="display: none;">?</span></a></li>
     </ul>
 
@@ -1725,45 +1764,33 @@ body {
            </div><!-- end of full-width column... -->
           </div><!-- /.tab-pane -->
 
-          <div class="tab-pane" id="Tools">
+          <div class="tab-pane" id="Analyses">
            <div class="span8"><!-- main column... -->
-            <ul class="suggestion-list"></ul>
 
-            <div style="margin-bottom: 100px;">
+             <form class="form-inline">
+                 <label>Analyze tree</label>
+                 <select id="tree-select"
+                         onchange="(this); return false;"
+                         data-bind="options: viewModel.elementTypes.tree.gatherAll(viewModel.nexml),
+                                    optionsValue: '@id',
+                                    optionsText: '@label',
+                                    optionsCaption: 'Choose a tree from this study...',
+                                    css: viewModel.ticklers.TREES">
+                 </select>
 
-                <table class="table Xtable-condensed bare-top-row">
-                  <tbody>
-                    <tr>
-                        <td colspan="3" style="color: #c33; font-weight: bold; font-size: 1.25em; text-align: center;">
-                            NOTE: The tools shown below are non-functional placeholders!
-                        </td>
-                    </tr>
-                    <tr style="opacity: 0.5;">
-                        <td width="100">
-                            <img class="tool-icon" alt="treemachine" src="{{=URL('static','images/tools/treemachine-icon.png')}}" />
-                        </td>
-                        <td width="125"><a href="http://blog.opentreeoflife.org/what-is-the-tree-of-life/" target="_blank">Open Tree of Life (treemachine)</a></td>
-                        <td>
-                            This runs automatically for any study in the
-                            system. <strong>This study fails</strong>, possibly
-                            because it has no preferred tree (marked for
-                            synthesis) or needs additional OTU mapping for
-                            synthesis.
-                        </td>
-                    </tr>
-                    <tr style="opacity: 0.5;">
-                        <td>
-                            <img class="tool-icon" alt="MIAPA validator" src="{{=URL('static','images/tools/miapa-icon.png')}}" />
-                        </td>
-                        <td><a href="https://github.com/miapa/miapa/blob/master/checklist/MIAPA-checklist.md" target="_blank">MIAPA Validator</a></td>
-                        <td>
-                            This runs automatically against any study in the system. <strong>This study passes!</strong>
-                        </td>
-                    </tr>
-                  </tbody>
-                </table>
+                 <label>against target</label>
+                 <select id="reference-select">
+                     <option value="">Choose a target...</option>
+                     <option value="synth">Synthetic Tree of Life</option>
+                     <option value="ott">Open Tree Taxonomy</option>
+                 </select>
+                 <button class="btn btn-info" data-bind="click: fetchAndShowTreeConflictSummary">GO!</button>
+             </form>
 
+            <div id="analysis-results">
+              <em>Analysis results will appear here...</em>
             </div>
+
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
 
@@ -1775,16 +1802,13 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
                 <p>
-                  The <strong>Tools</strong> listed here can modify your NexSON
-                  files or use them in powerful ways.
+                  The <strong>Analysis</strong> tab reports the results of conflict
+                  analysis - how trees in this study agree / conflict with the
+                  synthetic tree or the OpenTree Taxonomy.
                 </p>
                 <p>
-                  Each tool will explain whether it applies to this NexSON
-                  file; if not, it will suggest additions or improvements that
-                  would make it compatible.
-                </p>
-                <p>
-                  [TODO] Suggest how to use tools, add new ones, register a new tool..?
+                  In the future, there will be other analyses here. Have a suggestion?
+                  Add an <a href="https://github.com/OpenTreeOfLife/opentree/issues">issue<a/>.
                 </p>
             </div>
 
@@ -1945,9 +1969,9 @@ body {
 
     var treemachine_domain = "{{=treemachine_domain}}";
     var taxomachine_domain = "{{=taxomachine_domain}}";
-    var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
-    var getSyntheticTree_url = "{{=getSyntheticTree_url}}";
-    var getSourceTree_url = "{{=getSourceTree_url}}";
+    // var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
+    // var getSyntheticTree_url = "{{=getSyntheticTree_url}}";
+    // var getSourceTree_url = "{{=getSourceTree_url}}";
     var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
     var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
     var getContextForNames_url = "{{=getContextForNames_url}}";
@@ -1958,6 +1982,7 @@ body {
     var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";
     var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
+    var treeConflictStatus_url = "{{=treeConflictStatus_url}}";
 
     var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}";
     var singlePropertySearchForTrees_url = "{{=singlePropertySearchForTrees_url}}";
@@ -2544,12 +2569,24 @@ body {
          </td>
         </tr>
         <tr>
+          <td colspan="4" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">Conflict versus reference tree</strong></td>
+          <td colspan="2" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">OTUs with conflicting mapping</strong></td>
+        </tr>
+        <tr>
          <td align="right">
+            Aligned
          </td>
          <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-supported-by.png')}}" alt="outgroup style" />
          </td>
-         <td colspan="3" align="right">
-             OTU with conflicting mapping (unresolved):
+         <td align="right">
+            Resolves
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-resolves.png')}}" alt="outgroup style" />
+         </td>
+         <td align="right">
+             Unresolved
          </td>
          <td>
           <img src="{{=URL('static','images/tree-viewer-legend-tips-conflicting.png')}}" alt="outgroup style" />
@@ -2557,23 +2594,30 @@ body {
         </tr>
         <tr>
          <td align="right">
+            Conflicts with
          </td>
          <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-conflicts-with.png')}}" alt="outgroup style" />
          </td>
-         <td colspan="3" align="right">
-             OTU with conflicting mapping (chosen exemplar):
+         <td align="right">
+            Undetermined
+         </td>
+         <td>
+          <img src="{{=URL('static','images/tree-viewer-legend-conflict-undetermined.png')}}" alt="outgroup style" />
+         </td>
+         <td align="right">
+             Chosen exemplar
          </td>
          <td>
           <img src="{{=URL('static','images/tree-viewer-legend-tips-exemplar.png')}}" alt="outgroup style" />
          </td>
         </tr>
         <tr>
+         <td colspan="4">
+            &nbsp;
+         </td>
          <td align="right">
-         </td>
-         <td>
-         </td>
-         <td colspan="3" align="right">
-             OTU with conflicting mapping (non-exemplar):
+             Non-exemplar
          </td>
          <td>
           <img src="{{=URL('static','images/tree-viewer-legend-tips-non-exemplar.png')}}" alt="outgroup style" />
@@ -2684,6 +2728,16 @@ body {
                      onclick="toggleRadialTreeLayoutInViewer(this); return true;" />
               Radial tree layout
           </label>
+
+          <label style="margin-left: 25px; position: relative; top: 1px;">Show conflict versus</label>
+          <select id="treeview-reference-select" data-bind="value: $data.conflictDetails ? $data.conflictDetails.referenceTreeID : ''">
+              <option value="">Choose a target...</option>
+              <option value="synth">Synthetic Tree of Life</option>
+              <option value="ott">Open Tree Taxonomy</option>
+          </select>
+          <button id="treeview-fetch-conflict" class="btn btn-info" data-bind="click: showConflictDetailsWithHistory">GO!</button>
+          <button id="treeview-clear-conflict" class="btn" data-bind="click: hideConflictDetailsWithHistory">Hide conflict</button>
+
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>
