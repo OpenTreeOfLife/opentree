@@ -1656,7 +1656,7 @@ function testConflictSummary(conflictInfo) {
 function getWitnessLink(nodeInfo, targetType) {
   var link;
   if (targetType == "synth") {
-
+    link = getSynthTreeViewerLinkForTaxon(nodeInfo.witness_name,nodeInfo.witness)
   }
   else if (targetType == "ott") {
     link = getTaxobrowserLink(nodeInfo.witness_name,nodeInfo.witness)
@@ -1664,6 +1664,7 @@ function getWitnessLink(nodeInfo, targetType) {
   else {
     link = nodeInfo.witness_name
   }
+  return link
 }
 
 function displayConflictSummary(conflictInfo) {
@@ -1696,7 +1697,8 @@ function displayConflictSummary(conflictInfo) {
     for (var nodeid in summaryInfo.aligned.nodes) {
         var nodeInfo = summaryInfo.aligned.nodes[nodeid];
         if ('witness' in nodeInfo) {
-          var nodeName = nodeInfo.witness_name + ' [aligned to tree ' + nodeid + ']'
+          var witnessLink = getWitnessLink(nodeInfo,targetTree)
+          var nodeName = witnessLink + ' [aligned to tree ' + nodeid + ']'
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
