@@ -1724,8 +1724,9 @@ function displayConflictSummary(conflictInfo) {
     var namedNodes = 0
     for (var nodeid in summaryInfo.resolving.nodes) {
         var nodeInfo = summaryInfo.resolving.nodes[nodeid];
+        var witnessLink = getWitnessLink(nodeInfo,targetTree)
         if ('witness' in nodeInfo) {
-          var nodeName = nodeInfo.witness_name + ' [resolved by tree ' + nodeid + ']'
+          var nodeName = witnessLink + ' [resolved by tree ' + nodeid + ']'
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
@@ -1750,7 +1751,8 @@ function displayConflictSummary(conflictInfo) {
     var namedNodes = 0
     for (var nodeid in summaryInfo.conflicting.nodes) {
         var nodeInfo = summaryInfo.conflicting.nodes[nodeid];
-        var nodeName = nodeInfo.witness_name + ' [conflicts with tree ' + nodeid + ']'
+        var witnessLink = getWitnessLink(nodeInfo,targetTree)
+        var nodeName = witnessLink + ' [conflicts with tree ' + nodeid + ']'
         $nodeList.append('<li>'+ nodeName +'</li>');
         ++namedNodes
     }
