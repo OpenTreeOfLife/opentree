@@ -13,6 +13,7 @@ Disallow: /curator/study/create/
 Disallow: /phylesystem/
 Disallow: /treemachine/
 Disallow: /taxomachine/
+Disallow: /taxonomy/
 Disallow: /oti/
 Disallow: /api/
 Disallow: /cached/

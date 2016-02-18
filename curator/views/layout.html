@@ -801,7 +801,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             <!-- /ko -->
                             <!-- ko if: !userIsEditingCollection($parent) -->
                               <a data-bind="html: name,
-                                            attr: { href: getTreeViewURL($data), title: comments }"
+                                            attr: { href: getTreeViewURL($data), title: comments || '(no description provided)' }"
                                  href="#" target="_blank"><!--NAME--></a>
                             <!-- /ko -->
                           </td>
@@ -850,7 +850,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <label>and tree ID</label>
                 <input type="text" name="tree-id"
                     class="input-small" style="margin-bottom: 2px;"
-                    placeholder="456"
+                    placeholder="tree456"
                     data-bind="value: '', 
                                valueUpdate: ['afterkeydown', 'input'], 
                                event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }

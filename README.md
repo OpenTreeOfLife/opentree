@@ -1,16 +1,15 @@
 opentree
 ========
 
-Umbrella repo for opentree web site and services. Includes code for constructing the synthetic taxonomy.
+This is the repository for the Open Tree of Life web applications, one of many subsystems making up the Open Tree of Life project code.
 
-[![Visit our IRC channel](https://kiwiirc.com/buttons/irc.freenode.net/opentreeoflife.png)](https://kiwiirc.com/client/irc.freenode.net/?nick=guest|?#opentreeoflife)
+For Open Tree of Life documentation, see [the germinator repository's wiki](https://github.com/OpenTreeOfLife/germinator/wiki). The 'deployment system' and web API documentation sources that formerly resided in this repository now live in the [germinator repository](https://github.com/OpenTreeOfLife/germinator).
 
-We maintain the #opentreeoflife chat (IRC) channel on [Freenode](http://freenode.net/). Clicking the button above will join the channel as user __guest__, using the web-based [KiwiIRC](https://kiwiirc.com/) client. It is a [logged](http://irclog.perlgeek.de/opentreeoflife/today) channel.
-
+The following instructions have not been reviewed in a long time. For local installation a better place to start might be [this wiki page](https://github.com/OpenTreeOfLife/opentree/wiki/Installing-a-local-curator-and-tree-browser-test-server).
 
 Installation
 ============
-Instructions coming soon. In the meantime, see the phylografter instructions for
+See the phylografter instructions for
 more details about using web2py.
 
 We strongly recommend using a virtual environment to manage the version of

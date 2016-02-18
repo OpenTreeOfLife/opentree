@@ -38,6 +38,9 @@ response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.iframe-tr
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.fileupload.js'))
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/css/jquery.fileupload.css'))
 
+# support for fullscreen display (tree viewer)
+response.files.append(URL('static','js/jquery.fullscreen.min.js'))
+
 # minimal Bootstrap Tags Input (jQuery plugin)
 response.files.append(URL('static','js/bootstrap-tagsinput.min.js'))
 response.files.append(URL('static','css/bootstrap-tagsinput.css'))
@@ -1210,16 +1213,21 @@ body {
                     </tr>
                   </thead>
                   <tbody data-bind="foreach: { data: viewModel.filteredOTUs().pagedItems(), as: 'otu' }">
-                    <tr data-bind="if: true">
+                    <tr data-bind="if: true,
+                                   css: viewModel.ticklers.OTU_MAPPING_HINTS() +' '+ (otu['selectedForAction'] ? 'warning' : '')">
                       {{ if viewOrEdit == 'EDIT': }}
-                         <td style="text-align: left;">
+                         <td style="text-align: left;"
+                             onmousedown="return false;"
+                             data-bind="click: toggleMappingForOTU">
                              <input type="checkbox" class="map-toggle"
                                     data-bind="checked: $data['selectedForAction'],
                                                click: toggleMappingForOTU,
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS" />
                          </td>
                       {{ pass }}
-                        <td data-bind="text: otu['^ot:originalLabel']">&nbsp;</td>
+                        <td onmousedown="return false;"
+                            data-bind="text: otu['^ot:originalLabel'],
+                                       click: toggleMappingForOTU">&nbsp;</td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted" title="Show this OTU in all trees"
                                      data-bind="click: showOTUInContext, css: viewModel.ticklers.OTU_MAPPING_HINTS">
@@ -1282,24 +1290,30 @@ body {
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length === 1) -->
                            {{ # show mapped label }}
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" data-bind="click: approveProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
-                                    <i class="icon-ok"></i>
-                                </button>
-                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                                <button class="btn btn-mini" 
+                                        data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS"
+                                        title="Click to reject this OTU mapping">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <a data-bind="text: proposedMapping(otu)[0].name,
+                            <span style="white-space: nowrap;">
+                                <a class="btn btn-mini"
+                                   style="padding: 0px 4px;"
+                                   title="Click to accept this OTU mapping"
+                                   data-bind="click: approveProposedOTULabel">
+                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: proposedMapping(otu)[0].name,
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS,
                                                attr: getAttrsForMappingOption(proposedMapping(otu)[0])"
                                     href="#"
-                                    onclick="return false;"
                                 >PROPOSED LABEL</a>
+                            </span>
                           <!-- /ko -->
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length > 1) -->
                            {{ # show available choices for mapping this OTU }}
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                                <button class="btn btn-mini" 
+                                        data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS"
+                                        title="Click to reject all mappings for this OTU">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
@@ -1307,10 +1321,14 @@ body {
                             <ul class="mapping-options"
                                 data-bind="foreach: makeArray(proposedMapping(otu)),
                                            css: viewModel.ticklers.OTU_MAPPING_HINTS">
-                                <li><a data-bind="text: $data.originalMatch.unique_name,
-                                                  click: approveProposedOTUMappingOption,
+                                <li style="white-space: nowrap;"><a class="btn btn-mini"
+                                                      style="padding: 0px 4px;"
+                                                      data-bind="click: approveProposedOTUMappingOption"
+                                                      title="Click to accept this OTU mapping">
+                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.unique_name,
                                                   attr: getAttrsForMappingOption($data)"
-                                       href="#"></a></li>
+                                       href="#"></a>
+                                </li>
                             </ul>
                           <!-- /ko -->
                           <!-- ko if: viewModel.ticklers.OTU_MAPPING_HINTS() && $.trim(otu['^ot:ottTaxonName']) -->
@@ -1319,12 +1337,12 @@ body {
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <strong data-bind="text: $.trim(otu['^ot:ottTaxonName']),
+                            <strong data-bind="html: getTaxobrowserLink(otu['^ot:ottTaxonName'], otu['^ot:ottId']),
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS",
                                 >MAPPED LABEL</strong>
                           <!-- /ko -->
                       {{ else: }}
-                            <strong data-bind="text: $.trim(otu['^ot:ottTaxonName'])">MAPPED LABEL</strong>
+                            <strong data-bind="html: getTaxobrowserLink(otu['^ot:ottTaxonName'], otu['^ot:ottId'])">MAPPED LABEL</strong>
                       {{ pass }}
                          <!-- /ko -->
                         </td>
@@ -1441,11 +1459,11 @@ body {
                 <div class="mapping-batch-operations" style="display: none;">
                     <button id="batch-approve" class="btn btn-small pull-left"
                             onclick="approveAllVisibleMappings(); return false;">
-                        <i class="icon-ok"></i> <strong>Approve all</strong> and continue
+                        <i class="icon-ok"></i> Accept exact matches
                     </button>
                     <button id="batch-reject" class="btn btn-small pull-right"
                             onclick="rejectAllVisibleMappings(); return false;">
-                        <i class="icon-remove"></i> <strong>Reject all</strong> and pause
+                        <i class="icon-remove"></i> Reject all and pause
                     </button>
                 </div>
             </div>
@@ -2019,7 +2037,7 @@ body {
         </p>
         <ul class="mapping-options" style="padding-left: 20px;">
             <li>
-                <div class="key-note">most possible matches are green</div>
+                <div class="key-note">possible matches are green</div>
                 <a class="badge badge-success"
                    style="opacity: 1.0;"
                    title="100% match of original label"
@@ -2050,7 +2068,7 @@ body {
                 >Psathyrella</a>
             </li>
             <li>
-                <div class="key-note">taxon-name homonyms are amber</div>
+                <div class="key-note">homonyms are amber</div>
                 <a class="badge badge-warning"
                    style="opacity: 1;"
                    title="Taxon-name homonym"
@@ -2059,13 +2077,19 @@ body {
             </li>
         </ul>
         <p>
-            Roll over each match to learn more about it. Click a match to
-            map this OTU to this taxon. If none of these options is a good
-            match, click
+            Click <button
+            class="btn btn-mini row-controls-ghosted"
+            type="button" onclick="return true;"><i class="icon-ok"></i>
+            </button> to
+            map the OTU to this taxon. Click
             <button class="btn btn-mini row-controls-ghosted"
                     type="button" onclick="return false;"><i class="icon-remove"></i>
             </button>
-            to clear the list and modify the original label used for mapping.
+            to reject all mappings; then try modifying the original label and re-mapping.
+        </p>
+        <p>
+          Roll over each match to learn more about it. Click a name to
+          open the taxonomy browser for that taxon.
         </p>
     </div>
     <div class="modal-footer">
@@ -2149,7 +2173,7 @@ body {
     </div>
     <div class="modal-body">
       <p>
-        <a href="http://opentree.wikispaces.com/NexSON" target="_blank"><strong>NexSON</strong></a> is a format used extensively in the Open Tree project. It's based on the <a href="http://badgerfish.ning.com/" target="_blank">Badgerfish</a> convention for converting NeXML to JSON, with additional improvement for faster processing. It includes both original and mapped OTU labels.
+        <a href="https://github.com/OpenTreeOfLife/phylesystem-api/wiki/NexSON" target="_blank"><strong>NexSON</strong></a> is a format used extensively in the Open Tree project. It's based on the <a href="http://badgerfish.ning.com/" target="_blank">Badgerfish</a> convention for converting NeXML to JSON, with additional improvement for faster processing. It includes both original and mapped OTU labels.
       </p>
       <p style="margin-top: 1.5em;">
         <a href="http://nexml.org/" target="_blank"><strong>NeXML</strong></a> is an XML serialization of the older NEXUS format. It retains some of NexSON's richness but is compatible with more third-party software. NeXML includes both original and mapped OTU labels, with the original labels repeated in <code>label</code> attributes.
@@ -2211,9 +2235,14 @@ body {
 
 <!-- hidden template for the tree-viewer (editor) -->
 <div class="modal hide fade modal-tree-viewer tabbable" id="tree-viewer" style="display: none;">
+  <div id="full-screen-area">
   <!-- KO binding here to 'tree' (as $data below) -->
     <div class="modal-header" style="padding-bottom: 0;">
       <a class="close" onclick="$('#tree-viewer').modal('hide'); return false;">×</a>
+      <button id="enter-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;" 
+              onclick="$('#full-screen-area').fullscreen(); return false;"><i class="icon-fullscreen"></i> Full screen</button>
+      <button id="exit-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;" 
+              onclick="$.fullscreen.exit(); return false;"><i class="icon-resize-small"></i> Exit full screen</button>
       <h3 id='dialog-heading'>
         {{ if viewOrEdit == 'EDIT': }}
             Edit tree
@@ -2712,4 +2741,5 @@ body {
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>
+  </div><!-- /#full-screen-area -->
 </div>
