@@ -16,16 +16,16 @@ left_sidebar_enabled,right_sidebar_enabled=False,False
 response.title = "User profile"
 if active_user_found:
 subtitle_markup = """%s<span style="font-weight: normal; font-size: 0.7em;">
-                        (<a href="%s" target="_blank" 
-                           title="Open GitHub profile in a new window" 
+                        (<a href="%s" target="_blank"
+                           title="Open GitHub profile in a new window"
                            >%s <span style="color: #333;">on GitHub</span></a>)</span>""" % (
-            user_info.get('name', user_info.get('login', '???')), 
-            user_info.get('html_url'), 
+            user_info.get('name', user_info.get('login', '???')),
+            user_info.get('html_url'),
             user_info.get('login'),
         )
     if is_current_user_profile:
         subtitle_markup += XML("""
-        &nbsp; <button class="btn btn-info btn-mini" 
+        &nbsp; <button class="btn btn-info btn-mini"
                 onclick="promptToEditProfile(); return false;"
                 title="Edit your profile information on GitHub">
               Edit <i class="icon-edit icon-white"></i>
@@ -38,12 +38,12 @@ pass
 response.subtitle = XML(subtitle_markup)
 }}
 
-{{### Add support scripts for single-page editor 
+{{### Add support scripts for single-page editor
 
-# JSON support for older browsers (esp. IE7) 
+# JSON support for older browsers (esp. IE7)
 response.files.append(URL('static','js/json2.js'))
 
-# Knockout.js for binding JSON model to editing UI 
+# Knockout.js for binding JSON model to editing UI
 response.files.append(URL('static','js/knockout-2.3.0.js'))
 
 # KO plugin for paginated lists
@@ -57,12 +57,12 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
 {{extend 'layout.html'}}
 <script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script type='text/javascript'>
-    var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}"; 
-    var singlePropertySearchForTrees_url = "{{=singlePropertySearchForTrees_url}}"; 
-    var API_create_collection_POST_url = "{{=API_create_collection_POST_url}}"; 
-    var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}"; 
+    var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}";
+    var singlePropertySearchForTrees_url = "{{=singlePropertySearchForTrees_url}}";
+    var API_create_collection_POST_url = "{{=API_create_collection_POST_url}}";
+    var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}";
     var API_update_collection_PUT_url = "{{=API_update_collection_PUT_url}}";
-    var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}"; 
+    var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}";
 
     // If inbound URL specifies tab, tree, or filter settings, record them here
     var initialState = {{= XML( dict(request.vars) ) }};
@@ -102,31 +102,32 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
 }
 </style>
 {{
-if error_msg: 
-   if error_msg == 'Not Found': 
+if error_msg:
+   if error_msg == 'Not Found':
        # no such user found on GitHub }}
     <p class="interesting-value">Sorry, we can't find user '{{= userid}}' on GitHub. Please check the URL above and try again.</p>
-{{ elif error_msg == 'Not active in OpenTree': 
+{{ elif error_msg == 'Not active in OpenTree':
        # user exists, but isn't active in OpenTree }}
     <p class="interesting-value">
           {{ if user_info.get('type', '') == 'Organization': }}
             An organization with this name was found on GitHub, but is not an OpenTree participant. Please check the URL above and try again.
           {{ else: }}
-            A user with this name was found on GitHub, but is not an active OpenTree participant. Please check the URL above and try again.
-
+            A user with this name was found on GitHub, but we did not find any OpenTree activity.
+            Either the user has not contributed to OpenTree, or the user does not have a public email address associated with their GitHub account
+            (required to associate curation activity with users).
           {{ pass }}
     </p>
-{{ else: 
+{{ else:
      # some other error }}
     <h2>{{= error_msg }}</h2>
     <p class="interesting-value">There was a problem retrieving this user's profile. Please try again.</p>
-{{ pass  
-elif active_user_found: 
+{{ pass
+elif active_user_found:
    # active user data loaded successfully from GitHub }}
 <div class="row">
  <div class="span2">
-    <img src="{{= user_info.get('avatar_url', '') }}" 
-         alt="{{= user_info.get('name', user_info.get('login', 'User')) }} avatar" 
+    <img src="{{= user_info.get('avatar_url', '') }}"
+         alt="{{= user_info.get('name', user_info.get('login', 'User')) }} avatar"
          style="width: 105px; height: 105px; padding: 0 0 30px 0;">
  </div>
  <div class="span10 wireframe user-profile">
@@ -185,7 +186,7 @@ elif active_user_found:
     </div>
 {{ pass }}
 
-  {{ if not opentree_activity: 
+  {{ if not opentree_activity:
        # this user (or organization) has no activity to show }}
     <div class="control-group">
         <div class="controls">
@@ -221,7 +222,7 @@ elif active_user_found:
                 &nbsp;
                 &nbsp;
                 <span class="interesting-value" style="font-weight: normal;">
-                    N.B. Study counts here are dubious, pending  
+                    N.B. Study counts here are dubious, pending
                     <a href="https://github.com/OpenTreeOfLife/oti/issues/35" target="_blank">
                         needed fixes to oti</a>
                 </span>
@@ -319,7 +320,7 @@ elif active_user_found:
   {{ else: }}
          onclick="createNewTreeCollection(); return false;"
   {{ pass }}
-      >Create new tree collection 
+      >Create new tree collection
           <i class="icon-circle-arrow-up Xicon-plusXicon-upload icon-white"></i></a>
 {{ pass }}
 
@@ -393,18 +394,18 @@ elif active_user_found:
          data-bind="visible: viewModel.filteredCollections().pagedItems().length === 0">
      {{ if is_current_user_profile: }}
         No matching collections found! You can <a href="/curator/profile">clear all
-        filters</a>, create a new collection using the button above, or 
+        filters</a>, create a new collection using the button above, or
         <a href="/curator/collections">collaborate with others</a> to add collections here.
      {{ else: }}
         No matching collections found! Try <a href="/curator/profile">clearing all
         filters</a> to see more.
      {{ pass }}
-    </div> 
+    </div>
 
 </div><!-- /#collection-list-container -->
 
 {{ pass }}
-    
+
  </div>
 </div>
 {{ pass }}

@@ -581,6 +581,12 @@ tr:hover .row-controls-ghosted {
     margin: 0.75em 0 0;
     overflow: hidden;
 }
+#OTU-Mapping .btn-mini [class="icon-ok"] {
+    opacity: 0;
+}
+#OTU-Mapping .btn-mini:hover [class="icon-ok"] {
+    opacity: 0.5;
+}
 .clear-search {
     opacity: 0.5;
     margin-top: 2px;

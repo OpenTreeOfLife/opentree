@@ -1191,10 +1191,19 @@ function loadSelectedStudy() {
                             var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
                             var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
                             if (aMapStatus === bMapStatus) {
-                                if (!aMapStatus) { // not yet mapped
-                                    // Try to retain their prior precedence in
-                                    // the list (avoid items jumping around)
-                                    return (a.priorPosition < b.priorPosition) ? -1:1;
+                                if (!aMapStatus) { // both OTUs are currently un-mapped
+                                    // Force failed mappings to the bottom of the list
+                                    var aFailedMapping = (failedMappingOTUs.indexOf(a['@id']) !== -1);
+                                    var bFailedMapping = (failedMappingOTUs.indexOf(b['@id']) !== -1);
+                                    if (aFailedMapping === bFailedMapping) {
+                                        // Try to retain their prior precedence in
+                                        // the list (avoid items jumping around)
+                                        return (a.priorPosition < b.priorPosition) ? -1:1;
+                                    } 
+                                    if (aFailedMapping) {
+                                        return 1;   // force a (failed) below b
+                                    } 
+                                    return -1;   // force b (failed) below a
                                 } else {
                                     return 0;
                                 }
@@ -1255,6 +1264,9 @@ function loadSelectedStudy() {
                     }
                 });
 
+                // clear any stale last-selected OTU (it's likely moved)
+                lastClickedTogglePosition = null;
+                
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
@@ -2080,8 +2092,8 @@ function updateMappingStatus() {
                         +' <button class="btn btn-mini disabled"><i class="icon-ok"></i></button>'
                         +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
                         +'</span>'
-                        +' buttons to approve or reject each suggested mapping, or'
-                        +' or the buttons below to approve or reject the suggestions for all visible OTUs.<'+'/p>';
+                        +' buttons to accept or reject each suggested mapping,'
+                        +' or the buttons below to accept or reject the suggestions for all visible OTUs.<'+'/p>';
                 showBatchApprove = true;
                 showBatchReject = true;
                 needsAttention = true;
@@ -2093,7 +2105,7 @@ function updateMappingStatus() {
                     // we can add more by including 'All trees'
                     detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
                             +'Mapping is suspended because all OTUs in this '
-                            +'study\'s preferred trees have approved labels already. To continue, '
+                            +'study\'s preferred trees have accepted labels already. To continue, '
                             +'reject some mapped labels with the '
                             +'<span class="btn-group" style="margin: -2px 0;">'
                             +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
@@ -2105,7 +2117,7 @@ function updateMappingStatus() {
                 } else {
                     // we're truly done with mapping (in all trees)
                     detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
-                            +'Mapping is suspended because all OTUs in this study have approved '
+                            +'Mapping is suspended because all OTUs in this study have accepted '
                             +'labels already.. To continue, use the '
                             +'<span class="btn-group" style="margin: -2px 0;">'
                             +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
@@ -2119,7 +2131,7 @@ function updateMappingStatus() {
 
                 /* TODO: replace this stuff with if/else block above
                  */
-                detailsHTML = '<p'+'>Mapping is suspended because all selected OTUs have approved '
+                detailsHTML = '<p'+'>Mapping is suspended because all selected OTUs have accepted '
                         +' labels already. To continue, select additional OTUs to map, or use the '
                         +'<span class="btn-group" style="margin: -2px 0;">'
                         +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
@@ -2907,7 +2919,7 @@ function getInGroupCladeDescriptionForTree( tree ) {
             nodeName = $.trim(otu['^ot:ottTaxonName']) || 'Unlabeled OTU';
         }
     }
-
+    // TODO: return link to taxo-browser?
     return nodeName;
 }
 
@@ -3665,6 +3677,8 @@ function showTreeViewer( tree, options ) {
             treeTagsInitialized = true;
         }
 
+        updateTreeViewerHeight({MAINTAIN_SCROLL: true});
+
         updateEdgesInTree( tree );
 
         drawTree(tree, {
@@ -3765,12 +3779,44 @@ function showTreeViewer( tree, options ) {
             updateTreeDisplay();
         });
         $('#tree-viewer').off('hide').on('hide', function () {
+            $.fullscreen.exit();
             treeViewerIsInUse = false;
             hideTreeWithHistory(tree);
         });
         $('#tree-viewer').off('hidden').on('hidden', function () {
             ///console.log('@@@@@ hidden');
         });
+
+        /* DISABLING this until we can iron out collections UI, node/edge info, etc.
+        // show or disable the full-screen widgets
+        var $fullScreenToggle = $('button#enter-full-screen');
+        if ($.fullscreen.isNativelySupported()) {
+            // ie, the current browser supports full-screen APIs
+            $fullScreenToggle.show();
+            $(document).bind('fscreenchange', function(e, state, elem) {
+                if ($.fullscreen.isFullScreen()) {
+                    $('#enter-full-screen').hide();
+                    $('#exit-full-screen').show();
+                } else {
+                    $('#enter-full-screen').show();
+                    $('#exit-full-screen').hide();
+                }
+                // let screen redraw, THEN adjust height to fit
+                // TODO: Do this more safely instead? measure screen vs. DIV, etc.
+                setTimeout( function() {
+                    updateTreeViewerHeight({MAINTAIN_SCROLL: true});
+                }, 1500 );
+            });
+        } else {
+            // dim and disable the full-screen toggle
+            $fullScreenToggle.css("opacity: 0.5;")
+                             .click(function() {
+                                alert("This browser does not support full-screen display.");
+                                return false;
+                             })
+                             .show();
+        }
+        */
 
         // hide or show footer options based on tab chosen
         $treeViewerTabs.off('shown').on('shown', function (e) {
@@ -3814,6 +3860,56 @@ function showTreeViewer( tree, options ) {
         $treeViewerTabs.filter('[href*=tree-phylogram]').tab('show');
     }
 }
+function updateTreeViewerHeight(options) {
+    /* Revisit height and placement of the single-tree popup, which should 
+     * take the full height of the window, with all header and footer UI
+     * available and any scrollbars restricted to the SVG viewport.
+     */
+    options = options || {};
+    var currentWindowHeight = $(window).height();
+    var $popup = $('#tree-viewer');
+    var $popupBody = $popup.find('.modal-body');
+    var currentBodyScrollPosition = $popupBody.scrollTop();
+    // NOTE that MAINTAIN_SCROLL only gives good results if this is called
+    // directly, vs. as part of a full update of the tree viewer
+    var newBodyScrollPosition = (options.MAINTAIN_SCROLL) ? currentBodyScrollPosition : 0;
+    var currentBodyHeight = $popupBody.height();
+    if ($.fullscreen.isFullScreen()) {
+        // check the appointed full-screen element, nothing else
+        var $fullScreenArea = $popup.find('#full-screen-area');
+        var fullScreenAreaHeight = $fullScreenArea.height();
+        // How much room to leave for header and footer?  N.B. that we're
+        // forced to max size, so we need to measure them directly.
+        var $header = $popup.find('.modal-header');
+        var $footer = $popup.find('.modal-footer');
+        var bodyPadding = $popupBody.outerHeight() - $popupBody.height();
+        var newBodyHeight = fullScreenAreaHeight - $header.outerHeight() - $footer.outerHeight() - bodyPadding;
+        // force height to the new size, to fill available area
+        $popupBody.css({ 'height': newBodyHeight +'px', 'max-height': newBodyHeight +'px' });
+    } else {
+        // measure for a well-behaved popup (margins, etc)
+        var topBackgroundHeight = 8;
+        // leave room at the bottom for error messages, etc.?
+        var footerMessageHeight = 36;
+        var maxPopupHeight = (currentWindowHeight - topBackgroundHeight - footerMessageHeight);
+        var currentPopupHeight = $popup.height();
+        // how tall is the rest of the popup?
+        var headerAndFooterHeight = currentPopupHeight - currentBodyHeight;
+        var maxBodyHeight = maxPopupHeight - headerAndFooterHeight;
+        // restore original height setting, but allow new max-height
+        $popupBody.css({ 'height': '75%', 'max-height': maxBodyHeight +'px' });
+        // position the popup itself
+        var popupTopY = (currentWindowHeight / 2) - ($popup.height() / 2) - (footerMessageHeight/2);
+        $popup.css({ 'top': popupTopY +'px' });
+    }
+    // restore (or set) new list scroll position
+    $popupBody.scrollTop(newBodyScrollPosition);
+}
+$(window).resize( function () {
+    if (treeViewerIsInUse) {
+        updateTreeViewerHeight({MAINTAIN_SCROLL: true});
+    }
+});
 
 function findOTUInTrees( otu, trees ) {
     // return an array of otu-context objects; each has a tree ID and node ID
@@ -5393,13 +5489,23 @@ function getAttrsForMappingOption( optionData ) {
         // keep default label with matching score
         attrs.class += ' badge-success';
     }
+    // each should also link to the taxonomy browser
+    attrs.href = getTaxobrowserURL(optionData['ottId']);
+    attrs.target = '_blank';
+    attrs.title += ' (click for more information)'
     return attrs;
 }
 function matchScoreToOpacity(score) {
-    // remap scores (generally from 0.75 to 1.0) to be more visible
-    var distanceFromPerfect = 1.0 - score;
-    var visibleDistance = distanceFromPerfect * 1.5;
-    return (1.0 - visibleDistance);
+    /* Remap scores (generally from 0.75 to 1.0, but 0.1 is possible!) to be more visible
+     * This is best accomplished by remapping to a curve, e.g.
+     *   OPACITY = SCORE^2 + 0.15
+     *   OPACITY = 0.8 * SCORE^2 + 0.2
+     *   OPACITY = 0.8 * SCORE + 0.2
+     * The effect we want is full opacity (1.0) for a 1.0 score, fading rapidly
+     * for the common (higher) scores, with a floor of ~0.2 opacity (enough to
+     * show color and maintain legibility).
+     */
+    return (0.8 * score) + 0.2;
 }
 
 var autoMappingInProgress = ko.observable(false);
@@ -5408,35 +5514,83 @@ var failedMappingOTUs = ko.observableArray([]); // ignore these until we have ne
 var proposedOTUMappings = ko.observable({}); // stored any labels proposed by server, keyed by OTU id
 var bogusEditedLabelCounter = ko.observable(1);  // this just nudges the label-editing UI to refresh!
 
+// keep track of the last (de)selected list item (its position)
+var lastClickedTogglePosition = null;
 function toggleMappingForOTU(otu, evt) {
-    var $toggle = $(evt.target);
-    if ($toggle.is(':checked')) {
-        otu['selectedForAction'] = true;
+    var $toggle, newState;
+    // allow triggering this from anywhere in the row
+    if ($(evt.target).is(':checkbox')) {
+        $toggle = $(evt.target);
+        // N.B. user's click (or the caller) has already set its state!
+        newState = $toggle.is(':checked');
     } else {
-        otu['selectedForAction'] = false;
+        $toggle = $(evt.target).closest('tr').find('input.map-toggle');
+        // clicking elsewhere should toggle checkbox state!
+        newState = !($toggle.is(':checked'));
+        forceToggleCheckbox($toggle, newState);
     }
+    // add (or remove) highlight color that works with hover-color
+    if (newState) {
+        $toggle.closest('tr').addClass('warning');
+    } else {
+        $toggle.closest('tr').removeClass('warning');
+    }
+    // if this is the original click event; check for a range!
+    if (typeof(evt.shiftKey) !== 'undefined') {
+        // determine the position (nth checkbox) of this OTU in the visible list
+        var $visibleToggles = $toggle.closest('table').find('input.map-toggle');
+        var newListPosition = $.inArray( $toggle[0], $visibleToggles);
+        if (evt.shiftKey && typeof(lastClickedTogglePosition) === 'number') {
+            forceMappingForRangeOfOTUs( otu['selectedForAction'], lastClickedTogglePosition, newListPosition );
+        }
+        // in any case, make this the new range-starter
+        lastClickedTogglePosition = newListPosition;
+    }
+    evt.stopPropagation();
     return true;  // update the checkbox
 }
-function toggleAllMappingCheckboxes(cb) {
-    var $bigToggle = $(cb);
+function forceMappingForRangeOfOTUs( newState, posA, posB ) {
+    // update selected state for all checkboxes in this range
     var $allMappingToggles = $('input.map-toggle');
-    if ($bigToggle.is(':checked')) {
-        $allMappingToggles.each(function() {
-            var $cb = $(this);
+    var $togglesInRange;
+    if (posB > posA) {
+        $togglesInRange = $allMappingToggles.slice(posA, posB+1);
+    } else {
+        $togglesInRange = $allMappingToggles.slice(posB, posA+1);
+    }
+    $togglesInRange.each(function() {
+        forceToggleCheckbox(this, newState);
+    });
+}
+
+function forceToggleCheckbox(cb, newState) {
+    var $cb = $(cb);
+    switch(newState) {
+        case (true):
             if ($cb.is(':checked') == false) {
                 $cb.prop('checked', true);
                 $cb.triggerHandler('click');
             }
-        });
-    } else {
-        $allMappingToggles.each(function() {
-            var $cb = $(this);
+            break;
+        case (false):
             if ($cb.is(':checked')) {
                 $cb.prop('checked', false);
                 $cb.triggerHandler('click');
             }
-        });
+            break;
+        default:
+            console.error("forceToggleCheckbox() invalid newState <"+ typeof(newState) +">:");
+            console.error(newState);
+            return;
     }
+}
+function toggleAllMappingCheckboxes(cb) {
+    var $bigToggle = $(cb);
+    var $allMappingToggles = $('input.map-toggle');
+    var newState = $bigToggle.is(':checked');
+    $allMappingToggles.each(function() {
+        forceToggleCheckbox(this, newState);
+    });
     return true;
 }
 
@@ -5560,11 +5714,22 @@ function approveAllVisibleMappings() {
             itsMappingInfo;
         if ($.isArray(approvedMapping)) {
             if (approvedMapping.length === 1) {
-                // apply the first (only) value
+                // test the first (only) value for possible approval
+                var onlyMapping = approvedMapping[0];
+                if (onlyMapping.originalMatch.is_synonym) {
+                    return;  // synonyms require manual review
+                }
+                if (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.unique_name) {
+                    return;  // taxon-name homonyms require manual review
+                }
+                if (onlyMapping.originalMatch.score < 1.0) {
+                    return;  // non-exact matches require manual review
+                }
+                // still here? then this mapping looks good enough for auto-approval
                 delete proposedOTUMappings()[ OTUid ];
                 mapOTUToTaxon( OTUid, approvedMapping[0], {POSTPONE_UI_CHANGES: true} );
             } else {
-                // do nothing if there are multiple possibilities
+                return; // multiple possibilities require manual review
             }
         } else {
             // apply the inner value of an observable (accessor) function
@@ -5709,7 +5874,7 @@ function requestTaxonMapping( otuToMap ) {
     var originalLabel = $.trim(otuToMap['^ot:originalLabel']) || null;
     // use the manually edited label (if any), or the hint-adjusted version
     var editedLabel = $.trim(otuToMap['^ot:altLabel']);
-    var searchText = (editedLabel !== '') ? editedLabel : adjustedLabel(originalLabel);
+    var searchText = (editedLabel !== '') ? editedLabel : $.trim(adjustedLabel(originalLabel));
 
     if (searchText.length === 0) {
         console.log("No name to match!"); // TODO

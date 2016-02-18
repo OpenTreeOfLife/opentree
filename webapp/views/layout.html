@@ -1,7 +1,10 @@
 <!DOCTYPE html>
-{{ 
+{{
 from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch
 }}
+
+<script src="{{=URL('static','js/webapp-helpers.js')}}"></script>
+
 <html lang="en">
   <head>
     <meta charset="utf-8">
@@ -17,8 +20,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
     </style>
 
     <script type="text/javascript">
-        /*    
-        @licstart  The following is the entire license notice for the JavaScript code in this page. 
+        /*
+        @licstart  The following is the entire license notice for the JavaScript code in this page.
 
         Copyright (c) 2013, Jonathan Rees
         Copyright (c) 2013, Mark Holder
@@ -64,7 +67,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
     {{response.files.append(URL('static','plugin_layouts/superfish.js'))}}
     <!-- css for comments -->
     {{response.files.append(URL('static','plugin_localcomments/css/localcomments.css'))}}
-    
+
     <!-- js dependencies for argus -->
     {{if globals().get('treemachine_domain',False):}}  <!-- TODO: add a proper test here, to omit while in /opentree/appadmin -->
     <script type="text/javascript">
@@ -109,7 +112,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
 
     <!-- js improved date parsing & formatting -->
     {{response.files.append(URL('static','js/moment.min.js'))}}
-    
+
     <!-- support for web2py AJAX (incl. link to static/js/jquery.js) -->
     {{include 'web2py_ajax.html'}}
 
@@ -206,7 +209,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
             // is this unchanged from last time? no need to search again..
             if ((searchText == showingResultsForSearchText) && (searchContextName == showingResultsForSearchContextName)) {
                 ///console.log("Search text and context UNCHANGED!");
-                return false; 
+                return false;
             }
 
             // stash these to use for later comparison (to avoid redundant searches)
@@ -218,12 +221,12 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
             $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
             $('#search-results').dropdown('toggle');
             if (typeof snapViewerFrameToMainTitle === 'function') snapViewerFrameToMainTitle();
-            
+
             $.ajax({
                 url: doTNRSForAutocomplete_url,  // NOTE that actual server-side method name might be quite different!
                 type: 'POST',
                 dataType: 'json',
-                data: JSON.stringify({ 
+                data: JSON.stringify({
                     "queryString": searchText,
                     "contextName": searchContextName
                 }),  // data (asterisk required for completion suggestions)
@@ -279,7 +282,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                                 visibleResults++;
                             }
                         }
-                        
+
                         $('#search-results a')
                             .click(function(e) {
                                 // suppress normal dropdown logic and jump to link normally (TODO: Why is this needed?)
@@ -289,7 +292,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                                 var $link = $(this);
                                 //// WAS constructed literal ('/opentree/'+ "ottol" +'@'+ itsNodeID +'/'+ itsName)
                                 var safeURL = historyStateToURL({
-                                    nodeID: $link.attr('href'), 
+                                    nodeID: $link.attr('href'),
                                     domSource: 'ottol',
                                     nodeName: makeSafeForWeb2pyURL($link.text()),
                                     viewer: 'argus'
@@ -334,7 +337,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         });
 
     </script>
-    
+
     {{
     # using sidebars need to know what sidebar you want to use
     left_sidebar_enabled = globals().get('left_sidebar_enabled',False)
@@ -351,7 +354,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
     -->
                                    <link rel="shortcut icon" href="/favicon.ico">
   </head>
-  
+
 <body>
 {{ if get_domain_banner_text(request): }}
   <div class="ribbon-banner" title="{{= get_domain_banner_hovertext(request) }}">{{= get_domain_banner_text(request) }}</div>
@@ -418,8 +421,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                     {{ except: }}
                             <option selected="selected">ERROR loading context values</option>
                        {{ pass }}
-                <!-- 
-                NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted 
+                <!--
+                NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted
                 by the server, ie, there's no distinction between visible and occult values.
                 -->
                 </select>
@@ -442,9 +445,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         <div class="span3 left-sidebar">
             <div class="header">
               <div class="headerlogo">
-                {{=A(IMG(_src=URL('static','images/logo.png'), 
+                {{=A(IMG(_src=URL('static','images/logo.png'),
                         _alt="Open Tree of Life logo",
-                        _width="144", 
+                        _width="144",
                         _height="74",
                         _valign="middle"),
                     _href="http://opentreeoflife.org/")}}
@@ -472,7 +475,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         </div>
         {{pass}}
     </section>
-    
+
 </div><!-- /.container -->
 
 <!-- Footer ================================================== -->
@@ -492,7 +495,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
             <a href="http://www.web2py.com/" target="_blank" >web2py</a>
         </div>
         <div id="server-details" style="display: none; clear: both; margin: 4px 0; background-color: #f5f5f5; padding: 6px 8px; border-radius: 8px;">
-            Configuration for the <strong>{{= request.application }}</strong> web2py app: 
+            Configuration for the <strong>{{= request.application }}</strong> web2py app:
             <dl>
                <dt id="deployed-branch">deployed branch of opentree webapps:</dt>
                    <dd><strong style="color: #888;">{{= get_currently_deployed_opentree_branch(request) }}
