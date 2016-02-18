@@ -169,10 +169,11 @@ if ( History && History.enabled ) {
             var tree = getTreeByID(currentTree);
             if (tree) {
                 showTreeViewer(tree);
+                // omit conflict spinner when handling inbound URLs; it conflicts with others
                 if (conflictReferenceTree) {
-                    fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree);
+                    fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree, {SHOW_SPINNER: false});
                 } else {
-                    hideTreeConflictDetails(currentTree);
+                    hideTreeConflictDetails(currentTree, {SHOW_SPINNER: false});
                 }
             } else {
                 var errMsg = 'The requested tree (\''+ currentTree +'\') was not found. It has probably been deleted from this study.';
@@ -1715,6 +1716,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
         referenceTreeID = $('#reference-select').val();
     }
     if (!inputTreeID || !referenceTreeID) {
+        hideModalScreen()
         showErrorMessage("Please choose both input and reference trees.")
         return;
     }
@@ -1729,6 +1731,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
             referenceTreeName = 'Synthetic Tree of Life';
             break;
         default:
+            hideModalScreen()
             console.error('fetchTreeConflictStatus(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
             return;
     }
@@ -1736,9 +1739,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
         .replace('&amp;', '&')  // restore naked ampersand for query-string args
         .replace('{TREE1_ID}', fullInputTreeID)
         .replace('{TREE2_ID}', referenceTreeID)
-    // TODO: call this URL and try to show a summary report
-    console.warn("Trying to fetch a conflict report from this URL:");
-    console.warn(conflictURL);
+    // call this URL and try to show a summary report
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: 'GET',
@@ -1776,16 +1777,19 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
             }
             //testConflictSummary(conflictInfo);  // shows in JS console
             if (typeof callback !== 'function') {
+                hideModalScreen();
                 console.error("fetchTreeConflictStatus() expected a callback function!");
                 return;
             }
             callback(conflictInfo);
+            hideModalScreen();
         }
     });
 }
 
 function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
     // show summary stats in the Analyses tab
+    showModalScreen( "Generating conflict summary&hellip;", {SHOW_BUSY_BAR: true} );
     fetchTreeConflictStatus(
         inputTreeID,
         referenceTreeID,
@@ -1794,7 +1798,8 @@ function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
         }
     );
 }
-function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
+function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) {
+    if (!options) options = {SHOW_SPINNER: true};
     /* TODO: Reconsider this, if we can do it quickly and maintain SELECT value
     if (treeViewerIsInUse) {
         // hide stale conflict info in tree viewer
@@ -1803,6 +1808,9 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
     }
     */
     // color nodes+edges in the tree-view popup
+    if (options.SHOW_SPINNER) {
+        showModalScreen( "Updating tree display&hellip;", {SHOW_BUSY_BAR: true} );
+    }
     fetchTreeConflictStatus(
         inputTreeID,
         referenceTreeID,
@@ -1810,6 +1818,9 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
             // Show results in the current tree-view popup
             addConflictInfoToTree( inputTreeID, conflictInfo )
             drawTree(inputTreeID);
+            if (options.SHOW_SPINNER) {
+                hideModalScreen();
+            }
         }
     );
 }
@@ -1827,10 +1838,17 @@ function showTreeConflictDetailsFromPopup(tree) {
         fetchAndShowTreeConflictDetails(tree['@id'], newReferenceTreeID);
     }
 }
-function hideTreeConflictDetails( tree ) {
+function hideTreeConflictDetails( tree, options ) {
     // ASSUMES the tree is already in view
+    if (!options) options = {SHOW_SPINNER: true};
+    if (options.SHOW_SPINNER) {
+        showModalScreen( "Updating tree display&hellip;", {SHOW_BUSY_BAR: true} );
+    }
     removeConflictInfoFromTree(tree);
     drawTree(tree);
+    if (options.SHOW_SPINNER) {
+        hideModalScreen();
+    }
 }
 
 function addConflictInfoToTree( treeOrID, conflictInfo ) {
