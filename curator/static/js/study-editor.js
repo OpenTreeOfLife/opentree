@@ -1896,6 +1896,7 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     if (treeViewerIsInUse) {
         // update the reference-tree selector
         $('#treeview-reference-select').val(tree.conflictDetails.referenceTreeID);
+        $('#treeview-clear-conflict').show();
     }
 }
 function removeConflictInfoFromTree( treeOrID ) {
@@ -1919,6 +1920,7 @@ function removeConflictInfoFromTree( treeOrID ) {
     if (treeViewerIsInUse) {
         // update the reference-tree selector
         $('#treeview-reference-select').val('');
+        $('#treeview-clear-conflict').hide();
     }
 }
 
@@ -1926,6 +1928,10 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
     // triggered from tree-view popup UI, works via History
     if (typeof referenceTreeID !== 'string') {
         referenceTreeID = $('#treeview-reference-select').val();
+    }
+    if (!referenceTreeID) {
+        showErrorMessage('Please choose a target (reference) tree for comparison');
+        return;
     }
     if (History && History.enabled) {
         // update tree view in history (if available) and show it

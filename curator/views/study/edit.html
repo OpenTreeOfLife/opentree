@@ -2706,8 +2706,8 @@ body {
               <option value="synth">Synthetic Tree of Life</option>
               <option value="ott">Open Tree Taxonomy</option>
           </select>
-          <button class="btn btn-info" data-bind="click: showConflictDetailsWithHistory">GO!</button>
-          <button class="btn" data-bind="click: hideConflictDetailsWithHistory">Hide conflict</button>
+          <button id="treeview-fetch-conflict" class="btn btn-info" data-bind="click: showConflictDetailsWithHistory">GO!</button>
+          <button id="treeview-clear-conflict" class="btn" data-bind="click: hideConflictDetailsWithHistory">Hide conflict</button>
 
       </div>
       <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
