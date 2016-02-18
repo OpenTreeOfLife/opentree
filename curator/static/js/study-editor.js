@@ -169,10 +169,11 @@ if ( History && History.enabled ) {
             var tree = getTreeByID(currentTree);
             if (tree) {
                 showTreeViewer(tree);
+                // omit conflict spinner when handling inbound URLs; it conflicts with others
                 if (conflictReferenceTree) {
-                    fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree);
+                    fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree, {SHOW_SPINNER: false});
                 } else {
-                    hideTreeConflictDetails(currentTree);
+                    hideTreeConflictDetails(currentTree, {SHOW_SPINNER: false});
                 }
             } else {
                 var errMsg = 'The requested tree (\''+ currentTree +'\') was not found. It has probably been deleted from this study.';
@@ -280,7 +281,8 @@ function hideTreeWithHistory() {
             cloneFromSimpleObject( oldState ),
             {
                 'tab': 'Trees',
-                'tree': null
+                'tree': null,
+                'conflict': null
             }
         );
         History.pushState( newState, (window.document.title), '?tab=trees' );
@@ -320,7 +322,7 @@ function updateListFiltersWithHistory() {
                 filterDefaults = listFilterDefaults.OTUS;
                 break;
             default:
-                console.warn('updateListFiltersWithHistory(): No filters in this tab: '+ oldState.tab);
+                //console.warn('updateListFiltersWithHistory(): No filters in this tab: '+ oldState.tab);
                 return;
         }
         var newState = cloneFromSimpleObject( oldState );
@@ -420,6 +422,10 @@ function fixLoginLinks() {
         updateLoginHref(this, viewURL);
     });
 }
+
+var studyHasUnsavedChanges = false;
+// this flag is always false in VIEW, and should be switched carefully(!) in EDIT
+
 var initialState;
 $(document).ready(function() {
     bindHistoryAwareWidgets();
@@ -437,6 +443,7 @@ $(document).ready(function() {
     }
     // N.B. We'll apply this once we've loaded the selected study, then clear it
 
+    studyHasUnsavedChanges = false;
     disableSaveButton();
     loadSelectedStudy();
 
@@ -1388,6 +1395,7 @@ function loadSelectedStudy() {
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
                 if (viewOrEdit == 'EDIT') {
+                    studyHasUnsavedChanges = true;
                     enableSaveButton();
                     pushPageExitWarning('UNSAVED_STUDY_CHANGES',
                                         "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page.");
@@ -1656,16 +1664,32 @@ function testConflictSummary(conflictInfo) {
     console.warn("  "+ summaryInfo.resolving +" resolving nodes");
 }
 
+// returns a link to the witness node (in synth tree browser or OTT browser)
+function getWitnessLink(nodeInfo, targetType) {
+  var link;
+  if (targetType == "synth") {
+    link = getSynthTreeViewerLinkForTaxon(nodeInfo.witness_name,nodeInfo.witness)
+  }
+  else if (targetType == "ott") {
+    link = getTaxobrowserLink(nodeInfo.witness_name,nodeInfo.witness)
+  }
+  else {
+    link = nodeInfo.witness_name
+  }
+  return link
+}
+
 function displayConflictSummary(conflictInfo) {
     // show results in the Analyses tab
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     var $reportArea = $('#analysis-results');
+    var targetTree = $('#reference-select').val()
     var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ $('#tree-select').val()
-      +"&conflict="+ $('#reference-select').val();
+      +"&conflict="+ targetTree;
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
            .append('<p><a href="'+ treeURL +'" target="conflicttree">Open labelled tree in new window</a></p>')
-           .append('<p>Of the <span class="node-count-display">n</span> internal nodes in this tree, here is how they compare to the <span class="reference-tree-display">taxonomy / synthetic tree</span>.</p>');
+           .append('<p>Of the <span class="node-count-display">n</span> internal nodes in this tree, here is how they compare to the <span class="reference-tree-display">taxonomy / synthetic tree</span> (=target). Nodes in the input tree or the synthetic tree may be unnamed / undefined if they are not associated with taxonomic names.</p>');
     var nodeCount = summaryInfo.aligned.total
         + summaryInfo.conflicting.total
         + summaryInfo.resolving.total
@@ -1674,47 +1698,91 @@ function displayConflictSummary(conflictInfo) {
     var chosenTargetName = $('#reference-select option:selected').html();
     $reportArea.find('.reference-tree-display').html(chosenTargetName);
 
+    // show aligned nodes
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.aligned.total
         +' <strong>aligned</strong> nodes that can be mapped to nodes in the target'
         + (summaryInfo.aligned.total > 0 ? ' <a href="#" onclick="$(\'#report-aligned-nodes\').toggle(); return false;">(hide/show node list)</a>' : '')
         +'</p>');
     $reportArea.append('<ul id="report-aligned-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-aligned-nodes');
+    var namedNodes = 0
     for (var nodeid in summaryInfo.aligned.nodes) {
         var nodeInfo = summaryInfo.aligned.nodes[nodeid];
-        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
-            'Unnamed node ('+ nodeInfo.witness +')'
-        $nodeList.append('<li>'+ nodeName +'</li>');
+        if ('witness' in nodeInfo) {
+          var witnessLink = getWitnessLink(nodeInfo,targetTree)
+          var nodeName = witnessLink + ' [aligned to tree ' + nodeid + ']'
+          $nodeList.append('<li>'+ nodeName +'</li>');
+          ++namedNodes
+        }
+        //var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' : 'Unnamed node ('+ nodeInfo.witness +')'
+    }
+    if (namedNodes == 0) {
+      $nodeList.append('<li>all target nodes unnamed (so there is not anything interesting to show here)</li>')
+    }
+    else {
+      var unnamedNodes = summaryInfo.aligned.total - namedNodes
+      if (unnamedNodes > 0) {
+        $nodeList.append('<li>plus ' + unnamedNodes + ' more unnamed target nodes aligned to nodes in this tree</li>')
+      }
     }
 
+    // resolving nodes
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.resolving.total
         +' <strong>resolving</strong> nodes that resolve polytomies within these clades in the target'
         + (summaryInfo.resolving.total > 0 ? ' <a href="#" onclick="$(\'#report-resolving-nodes\').toggle(); return false;">(hide/show target node list)</a>' : '')
         +'</p>');
     $reportArea.append('<ul id="report-resolving-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-resolving-nodes');
+    var namedNodes = 0
     for (var nodeid in summaryInfo.resolving.nodes) {
         var nodeInfo = summaryInfo.resolving.nodes[nodeid];
-        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
-            'Unnamed node ('+ nodeInfo.witness +')'
-        $nodeList.append('<li>'+ nodeName +'</li>');
+        if ('witness' in nodeInfo) {
+          var nodeName = nodeInfo.witness_name + ' [resolved by tree ' + nodeid + ']'
+          $nodeList.append('<li>'+ nodeName +'</li>');
+          ++namedNodes
+        }
+    }
+    if (namedNodes == 0) {
+      $nodeList.append('<li>all target nodes unnamed (so there is not anything interesting to show here)</li>')
+    }
+    else {
+      var unnamedNodes = summaryInfo.resolving.total - namedNodes
+      if (unnamedNodes > 0) {
+        $nodeList.append('<li>plus ' + unnamedNodes + ' more unnamed target nodes resolved by nodes in this tree</li>')
+      }
     }
 
+    // conflicting nodes
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.conflicting.total
         +' <strong>conflicting</strong> nodes that conflict with nodes in the target'
         + (summaryInfo.conflicting.total > 0 ? ' <a href="#" onclick="$(\'#report-conflicting-nodes\').toggle(); return false;">(hide/show target node list)</a>' : '')
         +'</p>');
     $reportArea.append('<ul id="report-conflicting-nodes" class="conflict-report-node-list"></ul>');
     var $nodeList = $reportArea.find('#report-conflicting-nodes');
+    var namedNodes = 0
     for (var nodeid in summaryInfo.conflicting.nodes) {
         var nodeInfo = summaryInfo.conflicting.nodes[nodeid];
-        var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' :
-            'Unnamed node ('+ nodeInfo.witness +')'
+        var nodeName = nodeInfo.witness_name + ' [conflicts with tree ' + nodeid + ']'
         $nodeList.append('<li>'+ nodeName +'</li>');
+        ++namedNodes
+    }
+    if (namedNodes == 0) {
+      $nodeList.append('<li>all target nodes unnamed (so there is not anything interesting to show here)</li>')
+    }
+    else {
+      var unnamedNodes = summaryInfo.conflicting.total - namedNodes
+      if (unnamedNodes > 0) {
+        $nodeList.append('<li>plus ' + unnamedNodes + ' more nodes that resolve unnamed nodes in the target</li>')
+      }
     }
 
+
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.undetermined.total
-        +' <strong>undetermined</strong> nodes that cannot be aligned to the target at all</p>');
+        +' <strong>undetermined</strong> nodes that cannot be aligned to the target at all (these are often unmapped OTUs)</p>');
+
+    if (studyHasUnsavedChanges) {
+        showInfoMessage('REMINDER: Conflict analysis uses the last-saved version of this study!');
+    }
 }
 
 function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
@@ -1727,6 +1795,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
         referenceTreeID = $('#reference-select').val();
     }
     if (!inputTreeID || !referenceTreeID) {
+        hideModalScreen()
         showErrorMessage("Please choose both input and reference trees.")
         return;
     }
@@ -1741,6 +1810,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
             referenceTreeName = 'Synthetic Tree of Life';
             break;
         default:
+            hideModalScreen()
             console.error('fetchTreeConflictStatus(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
             return;
     }
@@ -1748,9 +1818,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
         .replace('&amp;', '&')  // restore naked ampersand for query-string args
         .replace('{TREE1_ID}', fullInputTreeID)
         .replace('{TREE2_ID}', referenceTreeID)
-    // TODO: call this URL and try to show a summary report
-    console.warn("Trying to fetch a conflict report from this URL:");
-    console.warn(conflictURL);
+    // call this URL and try to show a summary report
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: 'GET',
@@ -1771,10 +1839,20 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
                     return;
                 }
                 // Server blocked the save due to major validation errors!
-                var data = $.parseJSON(jqXHR.responseText);
-                // TODO: this should be properly parsed JSON, show it more sensibly
-                // (but for now, repeat the crude feedback used above)
-                var errMsg = 'Sorry, there was an error in the conflict data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                var data;
+                try {
+                    // TODO: if it's properly parsed JSON, show it more sensibly
+                    data = $.parseJSON(jqXHR.responseText);
+                } catch(e) {
+                    // probably a raw stack trace from the service, just show it literally
+                }
+                var errMsg;
+                if (jqXHR.responseText.indexOf('No mapped OTUs') !== -1) {
+                    errMsg = 'Conflict analysis requires OTUs in the current tree to be mapped to the OpenTree taxonomy. For best results, use the OTU Mapping tools for most or all of the tips of this tree.';
+                } else {
+                    // (but for now, repeat the crude feedback used above)
+                    errMsg = 'Sorry, there was an error in the conflict data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                }
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 return;
@@ -1788,16 +1866,19 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
             }
             //testConflictSummary(conflictInfo);  // shows in JS console
             if (typeof callback !== 'function') {
+                hideModalScreen();
                 console.error("fetchTreeConflictStatus() expected a callback function!");
                 return;
             }
             callback(conflictInfo);
+            hideModalScreen();
         }
     });
 }
 
 function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
     // show summary stats in the Analyses tab
+    showModalScreen( "Generating conflict summary&hellip;", {SHOW_BUSY_BAR: true} );
     fetchTreeConflictStatus(
         inputTreeID,
         referenceTreeID,
@@ -1806,7 +1887,8 @@ function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
         }
     );
 }
-function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
+function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) {
+    if (!options) options = {SHOW_SPINNER: true};
     /* TODO: Reconsider this, if we can do it quickly and maintain SELECT value
     if (treeViewerIsInUse) {
         // hide stale conflict info in tree viewer
@@ -1815,6 +1897,9 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
     }
     */
     // color nodes+edges in the tree-view popup
+    if (options.SHOW_SPINNER) {
+        showModalScreen( "Updating tree display&hellip;", {SHOW_BUSY_BAR: true} );
+    }
     fetchTreeConflictStatus(
         inputTreeID,
         referenceTreeID,
@@ -1822,6 +1907,9 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID) {
             // Show results in the current tree-view popup
             addConflictInfoToTree( inputTreeID, conflictInfo )
             drawTree(inputTreeID);
+            if (options.SHOW_SPINNER) {
+                hideModalScreen();
+            }
         }
     );
 }
@@ -1839,10 +1927,17 @@ function showTreeConflictDetailsFromPopup(tree) {
         fetchAndShowTreeConflictDetails(tree['@id'], newReferenceTreeID);
     }
 }
-function hideTreeConflictDetails( tree ) {
+function hideTreeConflictDetails( tree, options ) {
     // ASSUMES the tree is already in view
+    if (!options) options = {SHOW_SPINNER: true};
+    if (options.SHOW_SPINNER) {
+        showModalScreen( "Updating tree display&hellip;", {SHOW_BUSY_BAR: true} );
+    }
     removeConflictInfoFromTree(tree);
     drawTree(tree);
+    if (options.SHOW_SPINNER) {
+        hideModalScreen();
+    }
 }
 
 function addConflictInfoToTree( treeOrID, conflictInfo ) {
@@ -1879,6 +1974,7 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     if (treeViewerIsInUse) {
         // update the reference-tree selector
         $('#treeview-reference-select').val(tree.conflictDetails.referenceTreeID);
+        $('#treeview-clear-conflict').show();
     }
 }
 function removeConflictInfoFromTree( treeOrID ) {
@@ -1902,6 +1998,7 @@ function removeConflictInfoFromTree( treeOrID ) {
     if (treeViewerIsInUse) {
         // update the reference-tree selector
         $('#treeview-reference-select').val('');
+        $('#treeview-clear-conflict').hide();
     }
 }
 
@@ -1909,6 +2006,13 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
     // triggered from tree-view popup UI, works via History
     if (typeof referenceTreeID !== 'string') {
         referenceTreeID = $('#treeview-reference-select').val();
+    }
+    if (!referenceTreeID) {
+        showErrorMessage('Please choose a target (reference) tree for comparison');
+        return;
+    }
+    if (studyHasUnsavedChanges) {
+        showInfoMessage('REMINDER: Conflict analysis uses the last-saved version of this study!');
     }
     if (History && History.enabled) {
         // update tree view in history (if available) and show it
@@ -2244,6 +2348,7 @@ function saveFormDataToStudyJSON() {
             showSuccessMessage('Study saved to remote storage.');
 
             popPageExitWarning('UNSAVED_STUDY_CHANGES');
+            studyHasUnsavedChanges = false;
             disableSaveButton();
             // TODO: should we expect fresh JSON to refresh the form?
         }
@@ -6165,7 +6270,7 @@ function getNodeConflictDescription(tree, node) {
       case 'supported_by':
       case 'partial_path_of':
           if (witnessURL) {
-              conflictHTML = 'Supported by <a href="'+ witnessURL +'" target="_blank">'+ 
+              conflictHTML = 'Supported by <a href="'+ witnessURL +'" target="_blank">'+
                   (node.conflictDetails.witness_name || "???") +'</a>';
           } else {
               conflictHTML = 'Supported by '+ missingWitnessDescription;
@@ -6173,7 +6278,7 @@ function getNodeConflictDescription(tree, node) {
           break;
       case 'conflicts_with':
           if (witnessURL) {
-              conflictHTML = 'Conflicts with <a href="'+ witnessURL +'" target="_blank">'+ 
+              conflictHTML = 'Conflicts with <a href="'+ witnessURL +'" target="_blank">'+
                   (node.conflictDetails.witness_name || "???") +'</a>';
           } else {
               conflictHTML = 'Conflicts with '+ missingWitnessDescription;
@@ -6181,7 +6286,7 @@ function getNodeConflictDescription(tree, node) {
           break;
       case 'resolves':
           if (witnessURL) {
-              conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+ 
+              conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+
                   (node.conflictDetails.witness_name || "???") +'</a>';
           } else {
               conflictHTML = 'Resolves '+ missingWitnessDescription;
@@ -7047,6 +7152,7 @@ function nudgeTickler( name ) {
     // if this reflects changes to the study, nudge the main 'dirty flag' tickler
     if (name !== 'COLLECTIONS_LIST') {
         viewModel.ticklers.STUDY_HAS_CHANGED( viewModel.ticklers.STUDY_HAS_CHANGED.peek() + 1 );
+        ///console.warn('STUDY_HAS_CHANGED');
     }
 }
 
