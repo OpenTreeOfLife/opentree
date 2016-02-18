@@ -1715,6 +1715,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
         referenceTreeID = $('#reference-select').val();
     }
     if (!inputTreeID || !referenceTreeID) {
+        hideModalScreen()
         showErrorMessage("Please choose both input and reference trees.")
         return;
     }
@@ -1729,6 +1730,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
             referenceTreeName = 'Synthetic Tree of Life';
             break;
         default:
+            hideModalScreen()
             console.error('fetchTreeConflictStatus(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
             return;
     }
@@ -1736,9 +1738,7 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
         .replace('&amp;', '&')  // restore naked ampersand for query-string args
         .replace('{TREE1_ID}', fullInputTreeID)
         .replace('{TREE2_ID}', referenceTreeID)
-    // TODO: call this URL and try to show a summary report
-    console.warn("Trying to fetch a conflict report from this URL:");
-    console.warn(conflictURL);
+    // call this URL and try to show a summary report
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         type: 'GET',
@@ -1776,16 +1776,19 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
             }
             //testConflictSummary(conflictInfo);  // shows in JS console
             if (typeof callback !== 'function') {
+                hideModalScreen();
                 console.error("fetchTreeConflictStatus() expected a callback function!");
                 return;
             }
             callback(conflictInfo);
+            hideModalScreen();
         }
     });
 }
 
 function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
     // show summary stats in the Analyses tab
+    showModalScreen( "Generating conflict summary&hellip;", {SHOW_BUSY_BAR: true} );
     fetchTreeConflictStatus(
         inputTreeID,
         referenceTreeID,
