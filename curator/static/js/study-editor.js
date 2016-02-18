@@ -1653,7 +1653,7 @@ function displayConflictSummary(conflictInfo) {
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
            .append('<p><a href="'+ treeURL +'" target="conflicttree">Open labelled tree in new window</a></p>')
-           .append('<p>Of the <span class="node-count-display">n</span> internal nodes in this tree, here is how they compare to the <span class="reference-tree-display">taxonomy / synthetic tree</span>.</p>');
+           .append('<p>Of the <span class="node-count-display">n</span> internal nodes in this tree, here is how they compare to the <span class="reference-tree-display">taxonomy / synthetic tree</span> (=target). Nodes in the input tree or the synthetic tree may be unnamed / undefined if they are not associated with taxonomic names.</p>');
     var nodeCount = summaryInfo.aligned.total
         + summaryInfo.conflicting.total
         + summaryInfo.resolving.total
@@ -6000,7 +6000,7 @@ function getNodeConflictDescription(tree, node) {
       case 'supported_by':
       case 'partial_path_of':
           if (witnessURL) {
-              conflictHTML = 'Supported by <a href="'+ witnessURL +'" target="_blank">'+ 
+              conflictHTML = 'Supported by <a href="'+ witnessURL +'" target="_blank">'+
                   (node.conflictDetails.witness_name || "???") +'</a>';
           } else {
               conflictHTML = 'Supported by '+ missingWitnessDescription;
@@ -6008,7 +6008,7 @@ function getNodeConflictDescription(tree, node) {
           break;
       case 'conflicts_with':
           if (witnessURL) {
-              conflictHTML = 'Conflicts with <a href="'+ witnessURL +'" target="_blank">'+ 
+              conflictHTML = 'Conflicts with <a href="'+ witnessURL +'" target="_blank">'+
                   (node.conflictDetails.witness_name || "???") +'</a>';
           } else {
               conflictHTML = 'Conflicts with '+ missingWitnessDescription;
@@ -6016,7 +6016,7 @@ function getNodeConflictDescription(tree, node) {
           break;
       case 'resolves':
           if (witnessURL) {
-              conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+ 
+              conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+
                   (node.conflictDetails.witness_name || "???") +'</a>';
           } else {
               conflictHTML = 'Resolves '+ missingWitnessDescription;
