@@ -322,7 +322,7 @@ function updateListFiltersWithHistory() {
                 filterDefaults = listFilterDefaults.OTUS;
                 break;
             default:
-                console.warn('updateListFiltersWithHistory(): No filters in this tab: '+ oldState.tab);
+                //console.warn('updateListFiltersWithHistory(): No filters in this tab: '+ oldState.tab);
                 return;
         }
         var newState = cloneFromSimpleObject( oldState );
@@ -422,6 +422,10 @@ function fixLoginLinks() {
         updateLoginHref(this, viewURL);
     });
 }
+
+var studyHasUnsavedChanges = false;
+// this flag is always false in VIEW, and should be switched carefully(!) in EDIT
+
 var initialState;
 $(document).ready(function() {
     bindHistoryAwareWidgets();
@@ -439,6 +443,7 @@ $(document).ready(function() {
     }
     // N.B. We'll apply this once we've loaded the selected study, then clear it
 
+    studyHasUnsavedChanges = false;
     disableSaveButton();
     loadSelectedStudy();
 
@@ -1378,6 +1383,7 @@ function loadSelectedStudy() {
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
                 if (viewOrEdit == 'EDIT') {
+                    studyHasUnsavedChanges = true;
                     enableSaveButton();
                     pushPageExitWarning('UNSAVED_STUDY_CHANGES',
                                         "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page.");
@@ -1705,6 +1711,10 @@ function displayConflictSummary(conflictInfo) {
 
     $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.undetermined.total
         +' <strong>undetermined</strong> nodes that cannot be aligned to the target at all</p>');
+
+    if (studyHasUnsavedChanges) {
+        showInfoMessage('REMINDER: Conflict analysis uses the last-saved version of this study!');
+    }
 }
 
 function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
@@ -1932,6 +1942,9 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
     if (!referenceTreeID) {
         showErrorMessage('Please choose a target (reference) tree for comparison');
         return;
+    }
+    if (studyHasUnsavedChanges) {
+        showInfoMessage('REMINDER: Conflict analysis uses the last-saved version of this study!');
     }
     if (History && History.enabled) {
         // update tree view in history (if available) and show it
@@ -2267,6 +2280,7 @@ function saveFormDataToStudyJSON() {
             showSuccessMessage('Study saved to remote storage.');
 
             popPageExitWarning('UNSAVED_STUDY_CHANGES');
+            studyHasUnsavedChanges = false;
             disableSaveButton();
             // TODO: should we expect fresh JSON to refresh the form?
         }
@@ -6917,6 +6931,7 @@ function nudgeTickler( name ) {
     // if this reflects changes to the study, nudge the main 'dirty flag' tickler
     if (name !== 'COLLECTIONS_LIST') {
         viewModel.ticklers.STUDY_HAS_CHANGED( viewModel.ticklers.STUDY_HAS_CHANGED.peek() + 1 );
+        ///console.warn('STUDY_HAS_CHANGED');
     }
 }
 
