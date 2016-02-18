@@ -7,7 +7,7 @@ function fullToCompactReference( fullReference ) {
     if ($.trim(fullReference) !== "") {
         // capture the first valid year in the reference
         var yearMatches = fullReference.match(/(\d{4})/);
-        var compactYear = yearMatches ? yearMatches[0] : "[no year]";  
+        var compactYear = yearMatches ? yearMatches[0] : "[no year]";
         // split on the year to get authors (before), and capture the first surname
         var compactPrimaryAuthor = fullReference.split(compactYear)[0].split(',')[0];
         var compactReference = compactPrimaryAuthor +", "+ compactYear;    // eg, "Smith, 1999";
@@ -30,7 +30,7 @@ function showSuccessMessage(msg) {
 var footerMessageCloseID = null;
 function showFooterMessage(msg, msgType) {
     var $flashArea = $('.flash');  // should be just one
-    
+
     // hide any previous message and clear its timeout
     $flashArea.hide();
     clearTimeout(footerMessageCloseID);
@@ -49,18 +49,18 @@ function showFooterMessage(msg, msgType) {
             $flashArea.removeClass( className );
         }
     });
-    
+
     // add and enable the close widget
     $flashArea.append('<button type="button" id="closeflash" class="close" data-dismiss="alert">&times;</button>');
     $flashArea.find('#closeflash')
         .unbind('click')
         .click( hideFooterMessage );
-        
+
     // some message types should close automatically
     switch( msgType ) {
         case 'info':
         case 'success':
-            footerMessageCloseID = setTimeout( hideFooterMessage, 5000 ); 
+            footerMessageCloseID = setTimeout( hideFooterMessage, 5000 );
             break;
         case 'error':
             // these should stay until user dismisses
@@ -129,7 +129,7 @@ function makeArray( val ) {
 }
 
 function updateClearSearchWidget( searchFieldSelector, observable ) {
-    // Add/remove clear widget based on field's contents (or its 
+    // Add/remove clear widget based on field's contents (or its
     // underlying observable, if provided).
     var $search = $(searchFieldSelector);
     if ($search.length === 0) {
@@ -155,7 +155,7 @@ function updateClearSearchWidget( searchFieldSelector, observable ) {
             $clear = $search.next('.clear-search');
         }
         $clear.unbind('click').click(function() {
-           $(this).prev().val('').trigger('change'); 
+           $(this).prev().val('').trigger('change');
            return false;
         });
     }
@@ -174,8 +174,8 @@ function getPageNumbers( pagedArray ) {
 
 function isVisiblePage( pageNum, pagedArray ) {
     var howManyPages = Math.ceil(pagedArray().length / pagedArray.pageSize);
-    if (howManyPages <= 12) { 
-        return true; 
+    if (howManyPages <= 12) {
+        return true;
     }
     // show first, last, and nearby pages
     if (pageNum < 3) {
@@ -186,7 +186,7 @@ function isVisiblePage( pageNum, pagedArray ) {
     }
     var currentPage = pagedArray.current();
     if (Math.abs(currentPage - pageNum) < 3) {
-        return true; 
+        return true;
     }
     return false;
 }
@@ -216,7 +216,7 @@ function loadMissingFocalCladeNames() {
                         var matchingOttID = data['name'] || '???';
                         console.log( matchingOttID );
                     }
-                    
+
                     // replace another missing name (if any)...
                     loadMissingFocalCladeNames();
                 );
@@ -230,11 +230,11 @@ function loadMissingFocalCladeNames() {
  * Cross-browser (as of 2013) support for a "safety net" when trying to leave a
  * page with unsaved changes. This should also protect against the Back button,
  * swipe gestures in Chrome, etc.
- *  
+ *
  * Call pushPageExitWarning(), popPageExitWarning() to add/remove this
  * protection as needed.
  *
- * Adapted from  
+ * Adapted from
  * http://stackoverflow.com/questions/1119289/how-to-show-the-are-you-sure-you-want-to-navigate-away-from-this-page-when-ch/1119324#1119324
  *
  * UPDATE (August 2015): Now we have use cases with unsaved changes in both
@@ -251,7 +251,7 @@ var expectedPageExitWarningIDs = [
     'UNSAVED_COLLECTION_CHANGES'
 ];
 
-var confirmOnPageExit = function (e) 
+var confirmOnPageExit = function (e)
 {
     // If we haven't been passed the event get the window.event
     e = e || window.event;
@@ -261,7 +261,7 @@ var confirmOnPageExit = function (e)
     var message = messageInfo.text;
 
     // For IE6-8 and Firefox prior to version 4
-    if (e) 
+    if (e)
     {
         e.returnValue = message;
     }
@@ -277,7 +277,7 @@ function pushPageExitWarning( warningID, warningText ) {
         return;
     }
     var matchingWarnings = $.grep(pageExitWarnings, function(msgInfo) {
-        return (msgInfo.id === warningID); 
+        return (msgInfo.id === warningID);
     })
     var alreadyFound = matchingWarnings.length > 0;
     if (!alreadyFound) {
@@ -296,7 +296,7 @@ function popPageExitWarning( warningID ) {
         return;
     }
     pageExitWarnings = $.grep(pageExitWarnings, function(msgInfo) {
-        return (msgInfo.id !== warningID); 
+        return (msgInfo.id !== warningID);
     })
     if (pageExitWarnings.length === 0) {
         // turn it off - remove the function entirely
@@ -310,7 +310,7 @@ function popPageExitWarning( warningID ) {
 function bindHelpPanels() {
     // Enable toggling of help panels anywhere in the page.
     var $helpToggles = $('.help-toggle');
-    
+
     $.each($helpToggles, function(index, toggle) {
         var $toggle = $(toggle);
         var toggleType = $toggle.parent().is('.help-box') ? 'HIDE' : 'SHOW';
@@ -360,7 +360,7 @@ function hideModalScreen() {
  * modals. Since our event-blocking screen sometimes overlaps with other
  * modals, we should suspend some behavior to avoid runaway JS as they fight
  * for input focus. See discussion at:
- *   https://github.com/twbs/bootstrap/issues/4781 
+ *   https://github.com/twbs/bootstrap/issues/4781
  *   http://stackoverflow.com/questions/13649459/twitter-bootstrap-multiple-modal-error
  */
 var activeEnforceFocus = $.fn.modal.Constructor.prototype.enforceFocus;
@@ -422,7 +422,7 @@ function checkForDuplicateStudies( idType, testIdentifier, successCallback ) {
                     matchingStudyIDs.push( obj['ot:studyId'] );
                 });
             } else {
-                var errMsg = 'Sorry, there was an error checking for duplicate studies. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">Missing or malformed "matching_studies" in JSON response:\n\n'+ 
+                var errMsg = 'Sorry, there was an error checking for duplicate studies. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">Missing or malformed "matching_studies" in JSON response:\n\n'+
                     jqXHR.responseText+'</pre>';
                 hideModalScreen();
                 showErrorMessage(errMsg);
@@ -439,6 +439,36 @@ function getViewURLFromStudyID( studyID ) {
         .replace('{STUDY_ID}', studyID);
 }
 
+/*
+Returns a hyperlink to the taxonomy browser for a given OTT taxon
+Note that this function replicated in the webapp, so changes made here
+should also be made in other copy
+*/
+function getTaxobrowserLink(displayName, ottID) {
+    // ASSUMES we will always have the ottid, else check for unique name
+    if (!ottID) {
+        // show just the name (static text, possibly an empty string)
+        return displayName;
+    }
+    if (!displayName) {
+        // empty or missing name? show the raw ID
+        displayName = 'OTT: {OTT_ID}'.replace('OTT_ID',ottID)
+    }
+    var link = '<a href="{TAXO_BROWSER_URL}" \
+                   title="OTT Taxonomy" \
+                   target="taxobrowser">{DISPLAY_NAME}</a>';
+    return link.replace('{TAXO_BROWSER_URL}', getTaxobrowserURL(ottID))
+        .replace('{DISPLAY_NAME}', displayName);
+}
+
+function getTaxobrowserURL(ottID) {
+    if (!ottID) {
+        return null;
+    }
+    var url = '/taxonomy/browse?id={OTT_ID}';
+    return url.replace('{OTT_ID}', ottID);
+}
+
 function slugify(str) {
     // Convert any string into a simplified "slug" suitable for use in URL or query-string
     return str.toLowerCase()
@@ -447,7 +477,7 @@ function slugify(str) {
               .replace(/-+/g, '-');         // collapse dashes
 }
 
-/* 
+/*
  *
  */
 
@@ -458,7 +488,7 @@ var singlePropertySearchForTrees_url;
 
 function fetchAndShowCollection( collectionID, specialHandling ) {
     /* Fetch a known-good collection from the tree-collections API, and open it
-     * in a popup.  This should always get the lastest version from the docstore, 
+     * in a popup.  This should always get the lastest version from the docstore,
      * complete with its commit history and merged edits from other users.
      */
     showModalScreen( "Loading tree collection...", {SHOW_BUSY_BAR:true});
@@ -534,7 +564,7 @@ function showCollectionViewer( collection, options ) {
     // add any missing 'rank' properties
     ensureTreeCollectionRanking( collection );
 
-    // bind just the selected collection to the modal HTML 
+    // bind just the selected collection to the modal HTML
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
     var $boundElements = $('#tree-collection-viewer').find('.modal-body, .modal-header');
     // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
@@ -767,14 +797,14 @@ function addTreeToCollection( collection, inputType ) {
               + 'http://devtree.opentreeoflife.org/curator/study/edit/<strong>pg_2889</strong>'
               + '/?tab=trees&tree=<strong>tree6698</strong>');
             return false;
-        } 
+        }
     }
 
     // check to see if this tree is already in the collection; if so, bail w/ a message
     var alreadyInCollection = false;
     $.each(collection.data.decisions, function(i, decision) {
         if ((decision.treeID === treeID) && (decision.studyID === studyID)) {
-            showErrorMessage("This tree is already in the collection as '<strong>"+ 
+            showErrorMessage("This tree is already in the collection as '<strong>"+
                 decision.name +"</strong>'");
             // TODO: scroll the list to show this tree!? highlight it?
             alreadyInCollection = true;
@@ -793,12 +823,12 @@ function addTreeToCollection( collection, inputType ) {
         // crossdomain: true,
         contentType: "application/json; charset=utf-8",
         url: singlePropertySearchForTrees_url,
-        // data: ('{"property": "ot:studyId", "value": '+ 
+        // data: ('{"property": "ot:studyId", "value": '+
         //    JSON.stringify(studyID) +', "exact": true, "verbose": true }'),
         data: JSON.stringify({
-            property: "oti_tree_id", 
-            value: (String(studyID) +'_'+ String(treeID)), 
-            exact: true, 
+            property: "oti_tree_id",
+            value: (String(studyID) +'_'+ String(treeID)),
+            exact: true,
             verbose: true }),
         processData: false,
         complete: function( jqXHR, textStatus ) {
@@ -871,7 +901,7 @@ function addTreeToCollection( collection, inputType ) {
                         return;
                 }
             } else {
-                var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">Missing or malformed "matching_studies" in JSON response:\n\n'+ 
+                var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">Missing or malformed "matching_studies" in JSON response:\n\n'+
                     jqXHR.responseText+'</pre>';
                 hideModalScreen();
                 showErrorMessage(errMsg);
@@ -911,7 +941,7 @@ function moveInTreeCollection( tree, collection, newPosition ) {
             newPosition = Math.min(decisionList.length, oldPosition + 1);
             break;
 
-        default:  
+        default:
             // stated rank should be an integer or int-as-string
             if (isNaN(Number(tree['rank'])) || ($.trim(tree['rank']) == '')) {
                 // don't move if it's not a valid rank!
@@ -944,13 +974,13 @@ function moveInTreeCollection( tree, collection, newPosition ) {
                 newPosition = decisionList.length - 1;
             } else {
                 // displace the first matching tree
-                nextTree = sameRankOrHigher[0]; 
+                nextTree = sameRankOrHigher[0];
                 newPosition = decisionList.indexOf( nextTree );
             }
             break;
     }
 
-    // just grab the moving item and move (or append) it 
+    // just grab the moving item and move (or append) it
     var grabbedItem = decisionList.splice( oldPosition, 1 )[0];
     decisionList.splice(newPosition, 0, grabbedItem);
 
@@ -996,7 +1026,7 @@ function showCollectionMoveUI( decision, itsElement, collection ) {
                      .unbind('click').click(function() {
                         // sort all trees by rank-as-number, in ascending order
                         var decisionList = collection.data.decisions;
-                        decisionList.sort(function(a,b) { 
+                        decisionList.sort(function(a,b) {
                             // N.B. This works even if there's no such property.
                             var aStatedRank = Number(a['rank']);
                             var bStatedRank = Number(b['rank']);
@@ -1202,7 +1232,7 @@ function copyCollection( collection ) {
         // from this point, it's treated like a new collection
     } else {
         if (confirm('Copying a tree collection requires login via Github. OK to proceed?')) {
-            loginAndReturn(); 
+            loginAndReturn();
         }
     }
 }
@@ -1214,7 +1244,7 @@ function editCollection( collection, editorOptions ) {
         if ('data' in collection && 'url' in collection.data) {
             currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
             showCollectionViewer( collection, editorOptions );  // to refresh the UI
-            pushPageExitWarning('UNSAVED_COLLECTION_CHANGES', 
+            pushPageExitWarning('UNSAVED_COLLECTION_CHANGES',
                                 "WARNING: This page contains unsaved changes.");
             return;
         }
@@ -1222,7 +1252,7 @@ function editCollection( collection, editorOptions ) {
         console.warn(collection);
     } else {
         if (confirm('Editing a tree collection requires login via Github. OK to proceed?')) {
-            loginAndReturn(); 
+            loginAndReturn();
         }
     }
 }
@@ -1289,8 +1319,8 @@ function promptForSaveCollectionComments( collection ) {
         $('#save-collection-comments-submit')
             .unbind('click')
             .click(function() {
-                $('#save-collection-comments-popup').modal('hide'); 
-                saveTreeCollection( collection ); 
+                $('#save-collection-comments-popup').modal('hide');
+                saveTreeCollection( collection );
                 clearPendingCollectionChanges();
             });
         $('#save-collection-comments-cancel')
@@ -1319,8 +1349,8 @@ function promptForDeleteCollectionComments( collection ) {
             $('#delete-collection-comments-submit')
                 .unbind('click')
                 .click(function() {
-                    $('#delete-collection-comments-popup').modal('hide'); 
-                    deleteTreeCollection( collection ); 
+                    $('#delete-collection-comments-popup').modal('hide');
+                    deleteTreeCollection( collection );
                     clearPendingCollectionChanges();
                 });
             $('#delete-collection-comments-cancel')
@@ -1337,8 +1367,8 @@ function promptForDeleteCollectionComments( collection ) {
             $('#delete-collection-comments-submit')
                 .unbind('click')
                 .click(function() {
-                    $('#delete-collection-comments-popup').modal('hide'); 
-                    deleteTreeCollection( collection ); 
+                    $('#delete-collection-comments-popup').modal('hide');
+                    deleteTreeCollection( collection );
                     clearPendingCollectionChanges();
                 });
         }
@@ -1361,8 +1391,8 @@ function saveTreeCollection( collection ) {
         createOrUpdate = 'CREATE';
     }
 
-    showModalScreen( 
-        (createOrUpdate === 'UPDATE') ? "Saving tree collection..." : "Adding tree collection...", 
+    showModalScreen(
+        (createOrUpdate === 'UPDATE') ? "Saving tree collection..." : "Adding tree collection...",
         {SHOW_BUSY_BAR:true}
     );
 
@@ -1423,7 +1453,7 @@ function saveTreeCollection( collection ) {
     } else {
         commitMessage = $.trim(firstLine) +"\n\n"+ $.trim(moreLines);
     }
-    
+
     // add non-JSON values to the query string
     var qsVars = $.param({
         author_name: userDisplayName,
@@ -1537,7 +1567,7 @@ function deleteTreeCollection( collection ) {
         // crossdomain: true,
         contentType: "application/json; charset=utf-8",
         url: removeURL, // modified API call, see above
-        data: {},   // sadly not recognized for DELETE, using query-string instead 
+        data: {},   // sadly not recognized for DELETE, using query-string instead
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
@@ -1602,20 +1632,20 @@ function getCollectionTreeCount(collection) {
 function getCollectionCreatorLink(collection) {
     //return '<a href="#" onclick="filterCollectionsByCurator(\''+ collection.creator.name +'\'); return false;"'+'>'+ collection.creator.name +'</a'+'>';
     // link to the creator's profile page
-    return '<a href="/curator/profile/'+ collection.creator.login +'" target="_blank">'+ 
+    return '<a href="/curator/profile/'+ collection.creator.login +'" target="_blank">'+
                 collection.creator.name +'</a'+'>';
 }
 function getCollectionCuratorRole(collection) {
     // return 'Owner' | 'Collaborator' | 'None'
     var userIsTheCreator = false;
     var userIsAContributor = false;
-    if (('creator' in collection) && ('login' in collection.creator)) { 
+    if (('creator' in collection) && ('login' in collection.creator)) {
         // compare to logged-in userid provide in the main page
         if (collection.creator.login === curatorLogin) {
             return 'Owner';
         }
     }
-    if (('contributors' in collection) && $.isArray(collection.contributors)) { 
+    if (('contributors' in collection) && $.isArray(collection.contributors)) {
         // compare to logged-in userid provide in the main page
         $.each(collection.contributors, function(i, c) {
             if (c.login === curatorLogin) {
@@ -1623,10 +1653,10 @@ function getCollectionCuratorRole(collection) {
             }
         });
     }
-    return 'None'; 
+    return 'None';
 }
 function getCollectionLastModification(collection) {
-    // nicely formatted for display, with details on mouseover 
+    // nicely formatted for display, with details on mouseover
     return '<span title="'+ collection.lastModified.display_date +'">'+ collection.lastModified.relative_date +'</a'+'>';
 }
 
@@ -1654,4 +1684,3 @@ function removeFromArray( doomedValue, theArray ) {
         theArray.splice( index, 1 );
     }
 }
-
