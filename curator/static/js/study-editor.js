@@ -341,27 +341,27 @@ function updateListFiltersWithHistory() {
         }
 
         // Compare old and new states (or query-strings?) and bail if nothing interesting has changed
-        console.log('=== CHECKING OLD VS. NEW STATE ===');
+        ///console.log('=== CHECKING OLD VS. NEW STATE ===');
         var interestingChangesFound = false;
         for (prop in oldState) {
             if (newState[prop] !== oldState[prop]) {
-                console.log('oldState.'+ prop +' WAS '+ oldState[prop] +' <'+ typeof( oldState[prop] ) +'>, IS '+ newState[prop] +' <'+ typeof( newState[prop] ) +'>');
+                ///console.log('oldState.'+ prop +' WAS '+ oldState[prop] +' <'+ typeof( oldState[prop] ) +'>, IS '+ newState[prop] +' <'+ typeof( newState[prop] ) +'>');
                 interestingChangesFound = true;
             }
         }
         for (prop in newState) {
             if (!(prop in oldState)) {
-                console.log('newState.'+ prop +' NOT FOUND in oldState');
+                ///console.log('newState.'+ prop +' NOT FOUND in oldState');
                 interestingChangesFound = true;
             }
         }
         if (interestingChangesFound) {
-            console.log('=== INTERESTING! ===');
+            ///console.log('=== INTERESTING! ===');
             //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
             var newQueryString = '?'+ $.param(newQSValues);
             History.pushState( newState, (window.document.title), newQueryString );
         } else {
-            console.log('=== BORING... ===');
+            ///console.log('=== BORING... ===');
         }
     }
 }
@@ -1115,6 +1115,9 @@ function loadSelectedStudy() {
 
                 var chosenTrees;
                 switch(scope) {
+                    case 'In all trees':
+                        chosenTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+                        break;
                     case 'In preferred trees':
                         chosenTrees = getPreferredTrees()
                         break;
@@ -1150,18 +1153,13 @@ function loadSelectedStudy() {
                         // check nodes against trees, if filtered
                         switch (scope) {
                             case 'In all trees':
-                                // nothing to do here, all nodes pass
-                                break;
-
+                                // N.B. Even here, we want to hide (but not preserve) OTUs that don't appear in any tree
                             case 'In preferred trees':
                             case 'In non-preferred trees':
                                 // check selected trees for this node
-                                var chosenTrees = (scope === 'In preferred trees') ?  getPreferredTrees() : getNonPreferredTrees();
                                 var foundInMatchingTree = false;
                                 var otuID = otu['@id'];
-
                                 foundInMatchingTree = otuID in chosenTreeNodeIDs;
-
                                 if (!foundInMatchingTree) return false;
                                 break;
 
