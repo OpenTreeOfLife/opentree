@@ -85,10 +85,6 @@ function capture_form() {
         jQuery('div.plugin_localcomments select[name=feedback_type]').change();
 
     } else {
-<<<<<<< HEAD
-        // jQuery('div.plugin_localcomments select[name=feedback_type] option:eq(1)').text( 'Reply or general comment' );
-=======
->>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
         jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
         jQuery('div.plugin_localcomments select[name=issue_title]').hide();
     }
@@ -120,13 +116,6 @@ function capture_form() {
         fixLoginLinks();
     }
 
-<<<<<<< HEAD
-    jQuery('div.plugin_localcomments :submit').unbind('click').click(function(){
-        var $form = jQuery(this).closest('form');
-
-        // validate form fields
-        var $visitorNameField = $form.find('input[name="visitor_name"]');
-=======
     function validateFeedbackForm(options) {
         // Return true (if all inputs are valid), or false
         if (!options) options = {VERBOSE: false};
@@ -135,7 +124,6 @@ function capture_form() {
         var problemsFound = false;
         // validate form fields based on feedback type
         var $visitorNameField = $form.find('input[name="visitor_name"]'); 
->>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
         if ($visitorNameField.is(':visible') && ($.trim($visitorNameField.val()) === '')) {
             //prompt = "Please enter your name (and preferably an email address) so we can stay in touch.";
             problemsFound = true;
@@ -556,13 +544,8 @@ def index():
                 # expand hidden link
                 url_link = '[{0}]({1}{2})'.format(url, request.get('env').get('http_origin'), url)
 
-<<<<<<< HEAD
-            # add full metadata for an issue
-            footer = build_comment_metadata_footer(metadata={
-=======
             # add full metadata for an issue 
             footer = build_comment_metadata_footer(comment_type='starter', metadata={
->>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
                 "Author": author_link,
                 "Upvotes": 0,
                 "URL": url_link,
@@ -633,21 +616,6 @@ def index():
                         SELECT( #this option lets us know what labels to use in the GitHub issue tracker
                         # labels get created if they do not already exist
                             OPTION('What kind of feedback is this?', _value=''),
-<<<<<<< HEAD
-                            OPTION('Feedback on tree of life', _value='Synthesis feedback'),
-                            OPTION('Suggest tree for incorporation', _value='Tree suggestion'),
-                            OPTION('New feature request', _value='Feature request'),
-                            OPTION('Bug report (website behavior)', _value='Bug report'),
-                            OPTION('General comment', _value='General comment'),
-                        _name='feedback_type',value='',_style='width: auto;'),
-                        T(' '),
-                        SELECT(
-                            OPTION('about node placement in the synthetic tree', _value='Re: synthetic tree'),
-                            OPTION('about node placement in the source tree', _value='Re: source tree'),
-                            OPTION('about taxon data in OTT', _value='Re: OTT taxon'),
-                            OPTION('something else', _value=''),
-                        _name='intended_scope',value='Re: synthetic tree',_style='width: auto;'),
-=======
                             OPTION('General feedback'),
                             OPTION('Correction to relationships in the synthetic tree'),
                             OPTION('Suggest a phylogeny to incorporate'),
@@ -655,7 +623,6 @@ def index():
                             OPTION('Bug report (website behavior)'),
                             OPTION('New feature request'),
                         _name='feedback_type',value='',_style='width: 100%; margin-right: -4px;'),
->>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
                         LABEL(INPUT(_type='checkbox',_name=T('claimed_expertise')), T(' I claim expertise in this area'),_style='float: right;',_class='expertise-option'),
                         INPUT(_type='text',_id='issue_title',_name='issue_title',_value='',_placeholder="Give this topic a title"),   # should appear for proper issues only
                         TEXTAREA(_name='body',_placeholder="Add more to this topic, using Markdown (click 'Markdown help' below to learn more)."),
@@ -671,11 +638,7 @@ def index():
                             SPAN(' | ',_style='margin-right: 6px'),
                             A(T('Markdown help'),_href='https://help.github.com/articles/markdown-basics',
                               _target='_blank',_style='margin-right: 10px'),
-<<<<<<< HEAD
-                            INPUT(_type='submit',_value=T('Post'),_class='btn btn-small',_style=''),
-=======
                             INPUT(_type='submit',_value=T('Post'),_class='btn btn-info btn-small',_style=''), 
->>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
                             _class='msg-footer'),
                         _method='post',_action=URL(r=request,args=[])),_class='reply'),
                SUL(*[node(comment) for comment in threads]),_class='plugin_localcomments')
@@ -937,13 +900,8 @@ Upvotes   |   %(Upvotes)s
 # TODO: Move 'Feedback type' from labels to footer?
 #   Feedback type   |   %(Feedback type)s
 
-<<<<<<< HEAD
-def build_comment_metadata_footer(metadata={}):
-    # build full footer (for starter) or abbreviated (for replies),
-=======
 def build_comment_metadata_footer(comment_type='starter', metadata={}):
     # build full footer (for starter) or abbreviated (for replies), 
->>>>>>> 5bb691485eb89025ba2ad531e0ad480d26e1293d
     # and return the string
     if comment_type == 'starter':
         # it's a thread starter (a proper GitHub issue)
