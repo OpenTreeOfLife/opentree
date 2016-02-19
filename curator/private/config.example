@@ -62,7 +62,7 @@ findAllStudies_url = {oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
 singlePropertySearchForTrees_url = {oti_domain}/singlePropertySearchForTrees
 findAllTreeCollections_url = {opentree_api_domain}/../../v2/collections/find_collections
-treeConflictStatus_url = {conflict_api_domain}/conflict-status?tree1={TREE1_ID}&tree2={TREE2_ID}
+treeConflictStatus_url = {conflict_api_domain}/conflict-status?tree1={TREE1_ID}&tree2={TREE2_ID}&use_cache={USE_CACHE}
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #

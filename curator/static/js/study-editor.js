@@ -1787,7 +1787,7 @@ function displayConflictSummary(conflictInfo) {
     }
 }
 
-function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
+function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCachedResponse) {
     // Expects inputTreeID from the current study (concatenate these!)
     // Expects referenceTreeID of 'taxonomy' or 'synth'
     if (typeof(inputTreeID) !== 'string') {
@@ -1795,6 +1795,9 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
     }
     if (typeof(referenceTreeID) !== 'string') {
         referenceTreeID = $('#reference-select').val();
+    }
+    if (typeof(useCachedResponse) !== 'boolean') {
+        useCachedResponse = false;  // when in doubt, get fresh conflict information
     }
     if (!inputTreeID || !referenceTreeID) {
         hideModalScreen()
@@ -1817,9 +1820,10 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
             return;
     }
     var conflictURL = treeConflictStatus_url
-        .replace('&amp;', '&')  // restore naked ampersand for query-string args
+        .replace(/&amp;/g, '&')  // restore all naked ampersands (for query-string args)
         .replace('{TREE1_ID}', fullInputTreeID)
         .replace('{TREE2_ID}', referenceTreeID)
+        .replace('{USE_CACHE}', String(useCachedResponse))
     // call this URL and try to show a summary report
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
@@ -1886,7 +1890,8 @@ function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
         referenceTreeID,
         function(conflictInfo) {
             displayConflictSummary(conflictInfo);
-        }
+        },
+        false  // don't reuse a cached response
     );
 }
 function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) {
@@ -1912,7 +1917,8 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) 
             if (options.SHOW_SPINNER) {
                 hideModalScreen();
             }
-        }
+        },
+        false  // don't reuse a cached response
     );
 }
 function showTreeConflictDetailsFromPopup(tree) {
