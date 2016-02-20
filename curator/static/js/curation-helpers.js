@@ -1675,15 +1675,17 @@ function getCollectionCuratorRole(collection) {
             return 'Owner';
         }
     }
+    var roleFound = 'None';
     if (('contributors' in collection) && $.isArray(collection.contributors)) {
         // compare to logged-in userid provide in the main page
         $.each(collection.contributors, function(i, c) {
             if (c.login === curatorLogin) {
-                return 'Contributor';
+                roleFound = 'Contributor';
+                return false;
             }
         });
     }
-    return 'None';
+    return roleFound;
 }
 function getCollectionLastModification(collection) {
     // nicely formatted for display, with details on mouseover
