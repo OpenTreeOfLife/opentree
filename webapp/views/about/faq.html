@@ -18,9 +18,9 @@
       </div>
       <div id="collapseOne" class="panel-collapse collapse " role="tabpanel" aria-labelledby="headingOne">
         <div class="panel-body">
-          The synthetic tree does not currently record branch lengths or dates.
+          The synthetic tree does not currently summarize branch lengths or dates.
           The tree is constructed by an automated procedure from information found in
-          published phylogenetic trees. These trees rarely have branch lengths or dates.
+          published phylogenetic trees. These trees, as uploaded, often lack branch lengths or dates.
           When branch lengths are present, their meaning is not consistent across studies and it
           is not clear how one would calibrate them when combining trees.
         </div>
@@ -69,20 +69,26 @@
 
   <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
 
-    <!--Questions about the taxonomy tree -->
-    <h3 id="synth-tree">Taxonomy questions</h3>
+    <!--Questions about the open tree taxonomy -->
+    <h3 id="synth-tree">Questions about the Open Tree Taxonomy</h3>
 
     <div class="panel panel-default">
       <div class="panel-heading" role="tab" id="taxonomyOne">
         <h4 class="panel-title">
           <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-            A taxonomy  question
+            How do I add new species to the taxonomy?
           </a>
         </h4>
       </div>
       <div id="collapseFour" class="panel-collapse collapse" role="tabpanel" aria-labelledby="taxonomyOne">
         <div class="panel-body">
-          A taxonomy answer.
+          <p>We do not currently support adding new taxa in the user interface. This
+          is something that we do want to support eventually, but in a way that
+          new taxa have sufficent supporting information. Not every label on an
+          input tree is a good taxon (for example, they have typos, or include lab codes, or
+          represent individual organisms instead of taxa), so we don't want to make
+          it too easy to simply add unmappable OTUs as new taxa. </p>
+          <p>If you do want to propose that a given tree label is 
         </div>
       </div>
     </div> <!-- end of question -->
