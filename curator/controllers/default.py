@@ -208,7 +208,8 @@ def _get_opentree_activity( userid=None, username=None ):
         'added_studies':[], 
         'curated_studies': [], 
         'curated_studies_in_synthesis': [], 
-        'collections':[]
+        'added_collections':[],
+        'curated_collections':[]
     }
     method_dict = get_opentree_services_method_urls(request)
 
@@ -287,7 +288,6 @@ def _get_opentree_activity( userid=None, username=None ):
             if contributing_study_info.has_key( study['ot:studyId'] ):
                 activity['curated_studies_in_synthesis'].append(study)
 
-    # TODO: fetch collections once we have a home for them
     # Use oti to gather collections curated and created by this user.
     fetch_url = method_dict['findAllTreeCollections_url']
     if fetch_url.startswith('//'):
@@ -296,11 +296,13 @@ def _get_opentree_activity( userid=None, username=None ):
     all_collections = requests.get(url=fetch_url).json()
     for collection in all_collections:
         # gather all participants and check against their GitHub userids
+        if userid == collection.get('creator', {}).get('login', None):
+            activity_found = True
+            activity['added_collections'].append(collection)
         contributor_ids = [c.get('login', None) for c in collection.get('contributors', [ ])]
-        contributor_ids.append(collection.get('creator', {}).get('login', None))
         if userid in contributor_ids:
             activity_found = True
-            activity['collections'].append(collection)
+            activity['curated_collections'].append(collection)
 
     if activity_found:
         try:

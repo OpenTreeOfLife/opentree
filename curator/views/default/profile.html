@@ -259,6 +259,19 @@ elif active_user_found:
 {{ pass }}
 
     <div class="control-group">
+        <label class="control-label">Tree collections</label>
+        <div class="controls">
+            <p class="static-form-value">
+                {{= len( opentree_activity.get('added_collections', []) ) }}
+                <span style="font-weight: normal;">added</span>, 
+                {{= len( opentree_activity.get('curated_collections', []) ) }}
+                <span style="font-weight: normal;">curated (details below)</span> 
+            </p>
+            <!--  TODO: add markers for top 5%, etc. -->
+        </div>
+    </div>
+
+    <div class="control-group">
         <label class="control-label">Feedback</label>
         <div class="controls">
             <p class="static-form-value">
