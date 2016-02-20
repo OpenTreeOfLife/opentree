@@ -212,6 +212,24 @@ elif active_user_found:
         </div>
     </div>
 
+    <div class="control-group">
+        <label class="control-label">Studies</label>
+        <div class="controls">
+            <p class="static-form-value">
+                <span class="interesting-value" style="font-weight: normal;">
+                    Reliable counts are coming soon, pending
+                    <a href="https://github.com/OpenTreeOfLife/oti/issues/35" target="_blank">
+                        needed fixes to oti</a>.
+                </span>
+            </p>
+            <p>
+                For now, you can 
+                <a target="_blank" href="/curator/?match={{= user_info.get('name', user_info.get('login')) }}">
+                   see this curator's studies
+                </a> in the curation dashboard.
+            </p>
+        </div>
+    </div>
 {{# TODO: Restore these stats once OTI has been fixed, see https://github.com/OpenTreeOfLife/oti/issues/35 }}
 {{ if False: }}
     <div class="control-group">
