@@ -15,7 +15,7 @@ left_sidebar_enabled,right_sidebar_enabled=False,False
 
 response.title = "User profile"
 if active_user_found:
-subtitle_markup = """%s<span style="font-weight: normal; font-size: 0.7em;">
+    subtitle_markup = """%s<span style="font-weight: normal; font-size: 0.7em;">
                         (<a href="%s" target="_blank"
                            title="Open GitHub profile in a new window"
                            >%s <span style="color: #333;">on GitHub</span></a>)</span>""" % (
@@ -83,9 +83,9 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
             initialState[prop] = filterDefaults[prop];
         }
     }
-    var curatorLogin = '{{= user_info.get('login')}}';
+    var curatorLogin = '{{= user_info and user_info.get('login') or ''}}';
+    var activeUserFound = {{= active_user_found and 'true' or 'false' }};
     var isCurrentUserProfile = {{= is_current_user_profile and 'true' or 'false' }};
-
 </script>
 <script src="{{=URL('static','js/curator-profile.js')}}"></script>
 <style type="text/css">
@@ -222,14 +222,17 @@ elif active_user_found:
                         needed fixes to oti</a>.
                 </span>
             </p>
+            {{ if user_info: }}
             <p>
                 For now, you can 
                 <a target="_blank" href="/curator/?match={{= user_info.get('name', user_info.get('login')) }}">
                    see this curator's studies
                 </a> in the curation dashboard.
             </p>
+            {{ pass }}
         </div>
     </div>
+
 {{# TODO: Restore these stats once OTI has been fixed, see https://github.com/OpenTreeOfLife/oti/issues/35 }}
 {{ if False: }}
     <div class="control-group">
