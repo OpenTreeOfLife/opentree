@@ -7733,6 +7733,7 @@ function getConflictingNodesInTree( tree ) {
     // distinguish siblings-only from more interesting conflicts.
     // N.B. Siblings will be reconciled on the server in any case, but this
     // will help us to show consistent UI when siblings are obviously in conflict.
+    // TODO: Mark monophyletic sets (incl. siblings-only)?
     for (taxonID in taxonMappings) {
         // is there more than one node for this taxon?
         var itsMappings = taxonMappings[taxonID];
@@ -7759,9 +7760,16 @@ function getConflictingNodesInTree( tree ) {
         }
         if (foundInterestingConflicts) {
             itsMappings['siblingsOnly'] = false;
+            if (false) {
+                // TODO: look more closely to determine (and mark) monophyletic sets
+                itsMappings['monophyletic'] = true;
+            } else {
+                itsMappings['monophyletic'] = false;
+            }
             conflictingNodes[ taxonID ] = itsMappings;
         } else if (foundSiblingConflicts) {
             itsMappings['siblingsOnly'] = true;
+            itsMappings['monophyletic'] = false;
             conflictingNodes[ taxonID ] = itsMappings;
         }
     }
@@ -7841,6 +7849,7 @@ function clearTaxonExemplar( treeID, chosenNodeID, options ) {
 function resolveSiblingOnlyConflictsInTree(tree) {
     // Find and resolve all simple conflicts between sibling nodes (select the
     // first as exemplar).
+    // TODO: change to resolveMonophyleticConflictsInTree()
     var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_SIBLINGS_ONLY: true} );
     for (var taxonID in conflictData) {
         var conflictInfo = conflictData[taxonID];
