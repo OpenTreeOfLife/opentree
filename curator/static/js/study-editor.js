@@ -3245,7 +3245,7 @@ var studyScoringRules = {
             },
             weight: 0.2,
             successMessage: "No undefined internal node labels found.",
-            failureMessage: "Undefined internal node labels found! Assign a type to internal node lables.",
+            failureMessage: "Undefined internal node labels found! Assign a type to internal node labels.",
             suggestedAction: "Assign a type to all undefined internal node labels."
         },
         {
