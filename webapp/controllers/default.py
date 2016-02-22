@@ -110,9 +110,9 @@ def download_subtree():
     finally:
         response.headers['Content-Type'] = 'text/plain'
         if id_type == 'ottol-id':
-            response.headers['Content-Disposition'] = "attachment; filename=subtree-ottol-%s-%s.txt" % (node_or_ottol_id, node_name)
+            response.headers['Content-Disposition'] = "attachment; filename=subtree-ottol-%s-%s.tre" % (node_or_ottol_id, node_name)
         else:
-            response.headers['Content-Disposition'] = "attachment; filename=subtree-node-%s-%s.txt" % (node_or_ottol_id, node_name)
+            response.headers['Content-Disposition'] = "attachment; filename=subtree-node-%s-%s.tre" % (node_or_ottol_id, node_name)
         return s.getvalue()
 
 def fetch_current_synthetic_tree_ids():
