@@ -2639,8 +2639,8 @@ function normalizeTree( tree ) {
 
     removeDuplicateTags( tree );
 
-    // pre-select first node among conflicting siblings
-    resolveSiblingOnlyConflictsInTree(tree);
+    // pre-select first node among monophyletic sets
+    resolveMonophyleticConflictsInTree(tree);
 }
 
 function getAllTreeIDs() {
@@ -3209,7 +3209,7 @@ var studyScoringRules = {
                 var startTime = new Date();
                 $.each(getPreferredTrees(), function(i, tree) {
                     // disregard sibling-only conflicts (will be resolved on the server)
-                    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_SIBLINGS_ONLY: false} );
+                    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
                     if ( !($.isEmptyObject(conflictData)) ) {
                         conflictingNodesFound = true;
                         return false;
@@ -3602,10 +3602,10 @@ function showTreeViewer( tree, options ) {
     var highlightNodeID = options.HIGHLIGHT_NODE_ID || null;
 
     if (tree) {
-        // Clean up sibling-only conflicts before annoying the user. (We do
+        // Clean up mononphyletic conflicts before annoying the user. (We do
         // this here since OTU mapping or other changes may have introduced new
         // conflicts, and we don't want to waste the curator's time with them.)
-        resolveSiblingOnlyConflictsInTree(tree);
+        resolveMonophyleticConflictsInTree(tree);
     }
 
     if (!tree) {
@@ -3956,7 +3956,7 @@ function showOTUInContext() {
 
 function showConflictingNodesInTreeViewer(tree) {
     // If there are no conflicts, fall back to simple tree view
-    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_SIBLINGS_ONLY: false} );
+    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
     if (!isPreferredTree(tree) || $.isEmptyObject(conflictData)) {
         showTreeWithHistory(tree);
         return;
@@ -7653,8 +7653,8 @@ function validateAndTestDOI() {
 }
 
 function unresolvedConflictsFoundInTree( tree ) {
-    // N.B. This checks for UNRESOLVED and INTERESTING (non-sibling) conflicts
-    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_SIBLINGS_ONLY: false} );
+    // N.B. This checks for UNRESOLVED and INTERESTING (non-monophyletic) conflicts
+    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
     return $.isEmptyObject(conflictData) ? false : true;
 }
 function isConflictingNode( tree, node ) {
@@ -7675,9 +7675,11 @@ function isConflictingNode( tree, node ) {
 function getUnresolvedConflictsInTree( tree, options ) {
     // Filter from full conflict data to include just those node-sets that
     // have't been resolved, ie, curator has not chosen an exemplar.
-    var includeSiblingOnlyConflicts = options && ('INCLUDE_SIBLINGS_ONLY' in options) ? options.INCLUDE_SIBLINGS_ONLY : false;
+    var includeMonophyleticConflicts = options && ('INCLUDE_MONOPHYLETIC' in options) ? options.INCLUDE_MONOPHYLETIC : false;
     var unresolvedConflicts = {};
+var startTime = new Date();
     var allConflicts = getConflictingNodesInTree( tree );
+console.log(">>>>>> total elapsed to gather conflicting nodes: "+ (new Date() - startTime) +" ms");
     for (var taxonID in allConflicts) {
         var allNodesAlreadyMarked = true; // we can disprove this from any node
         var itsMappings = allConflicts[taxonID];
@@ -7688,10 +7690,10 @@ function getUnresolvedConflictsInTree( tree, options ) {
             }
         });
         if (!(allNodesAlreadyMarked)) {
-            if (includeSiblingOnlyConflicts) {
+            if (includeMonophyleticConflicts) {
                 unresolvedConflicts[ taxonID ] = itsMappings;
-            } else if (!(itsMappings.siblingsOnly)) {
-                // ignore conflicts just between siblings
+            } else if (!(itsMappings.monophyletic)) {
+                // ignore sets that constitute a clade
                 unresolvedConflicts[ taxonID ] = itsMappings;
             }
         }
@@ -7700,8 +7702,8 @@ function getUnresolvedConflictsInTree( tree, options ) {
 }
 function getConflictingNodesInTree( tree ) {
     // Return sets of nodes that ultimately map to a single OT taxon (via
-    // multiple OTUs) and are not siblings. A curator should choose the
-    // 'exemplar' node to avoid problems in synthesis.
+    // multiple OTUs) and are not monophyletic (incl. siblings). A curator
+    // should choose the 'exemplar' node to avoid problems in synthesis.
     var conflictingNodes = { };
     // N.B. OTUs should be unique within a tree. We're looking for OTUs that
     // are mapped to the same OTT taxon id.
@@ -7734,43 +7736,117 @@ function getConflictingNodesInTree( tree ) {
     });
 
     // Gather all mappings that have multiple appearances, but mark them to
-    // distinguish siblings-only from more interesting conflicts.
-    // N.B. Siblings will be reconciled on the server in any case, but this
-    // will help us to show consistent UI when siblings are obviously in conflict.
+    // distinguish monophyletic (incl. siblings-only) sets from more
+    // interesting conflicts.
+    // N.B. These trivial conflicts will be reconciled on the server in any
+    // case, but this we we can show consistent UI and save curator effort.
     for (taxonID in taxonMappings) {
+        ///console.log('>>>> taxonID '+ taxonID +'...');
         // is there more than one node for this taxon?
         var itsMappings = taxonMappings[taxonID];
-        var foundSiblingConflicts = false;
-        var foundInterestingConflicts = false;  // interesting == not just siblings
+        itsMappings.monophyletic = false;
         if (itsMappings.length > 1) {
-            // are all of the nodes siblings? use fast edge lookup!
-            var matchParent = null;
-            $.each(itsMappings, function(i, item) {
-                var upwardEdge = getTreeEdgesByID(tree, item.nodeID, 'TARGET')[0];
-                // N.B. Due to NexSON constraints, assume exactly one upward edge!
-                var itsParentID = upwardEdge['@source'];
-                if (!matchParent) {
-                    matchParent = itsParentID;
-                } else {
-                    if (itsParentID === matchParent) {
-                        foundSiblingConflicts = true;
-                    } else {
-                        foundInterestingConflicts = true;
-                        return false;  // no need to check remaining mappings
-                    }
-                }
+            var conflictingNodeIDs = $.map(itsMappings, function(m) {
+                return m.nodeID;
             });
+            if (tipsAreMonophyletic(conflictingNodeIDs, tree)) {
+                itsMappings.monophyletic = true;
+                ///console.log('>>>> checking for monophyly... YES');
+            } else {
+                ///console.log('>>>> checking for monophyly... NO');
+            }
         }
-        if (foundInterestingConflicts) {
-            itsMappings['siblingsOnly'] = false;
-            conflictingNodes[ taxonID ] = itsMappings;
-        } else if (foundSiblingConflicts) {
-            itsMappings['siblingsOnly'] = true;
-            conflictingNodes[ taxonID ] = itsMappings;
-        }
+        conflictingNodes[ taxonID ] = itsMappings;
     }
 
     return conflictingNodes;
+}
+function tipsAreMonophyletic(tipIDs, tree) {
+    ///return false;
+    // general fast check for monophyly in a specified tree
+    if (tipIDs.length < 2) {
+        return true;
+    }
+    /* Find the least-inclusive common ancestor for all the specified tips,
+     * then recurse to see if all these tips (and only these tips) are found in
+     * its clade.
+     */
+    var licaID = getCommonAncestorNodeID(tipIDs, tree);
+    var licaTipIDs = getAllMemberTipIDs(licaID, tree);
+    // For monophyly, this list of IDs must *exactly* match our initial tip-ID list.
+    if (licaTipIDs.length !== tipIDs.length) return false;
+    var differenceFound = false;
+    $.grep(licaTipIDs, function(el) {
+        if ($.inArray(el, tipIDs) == -1) {
+            differenceFound = true;
+            return false;  // stops checking ids
+        }
+    });
+    return (!differenceFound);
+}
+function getAllMemberTipIDs(cladeTopNodeID, tree, memberTipIDsSoFar) {
+    // recurse through subclades to gather all tip IDs under the given node
+    if (!memberTipIDsSoFar) { memberTipIDsSoFar = [ ] };  // used for recursion
+    var sourceLookup = getFastLookup('EDGES_BY_SOURCE_ID');
+    var childEdges = sourceLookup[ cladeTopNodeID ];
+    if (childEdges) {
+        $.each(childEdges, function(i, edge) {
+            var testChildID = edge['@target'];
+            getAllMemberTipIDs(testChildID, tree, memberTipIDsSoFar);
+        });
+    } else {
+        // this is a tip!
+        memberTipIDsSoFar.push( cladeTopNodeID );
+    }
+    return memberTipIDsSoFar;
+}
+function getCommonAncestorNodeID(tipIDs, tree) {
+    // Find and return the least-inclusive common ancestor (its ID) for the tip/leaf IDs provided
+    var foundLICA = null;
+    var ancestorsByTipID = {};
+    $.each(tipIDs, function(i, tipID) {
+        ancestorsByTipID[ tipID ] = getAncestorNodeIDs(tipID, tree);
+    });
+    ///console.log('>>> ancestorsByTipID:');
+    ///console.log(ancestorsByTipID);
+    var firstTipID = tipIDs[0];
+    var firstTipAncestorIDs = ancestorsByTipID[ firstTipID ];
+    // One of these is our LICA... but which? Test against the other tips!
+    delete ancestorsByTipID[ firstTipID ];
+    $.each(firstTipAncestorIDs, function(i, testAncestorID) {
+        // the first one that exists in every list is the LICA
+        var notFound = false;
+        for (var testTipID in ancestorsByTipID) {
+            var itsAncestorIDs = ancestorsByTipID[ testTipID ];
+            if ($.inArray(testAncestorID, itsAncestorIDs) === -1) {
+                // this was not found in another tip's ancestors! try the next
+                return true;
+            }
+        }
+        foundLICA = testAncestorID;
+        return false; // stop searching!
+    });
+    ///console.log('>>> foundLICA:');
+    ///console.log(foundLICA);
+    return foundLICA;
+}
+function getAncestorNodeIDs(nodeID, tree) {
+    var ancestorIDs = [ ];
+    var testNodeID = nodeID;
+    while (testNodeID) {
+        var parentID = getParentNodeID(testNodeID, tree)
+        if (parentID) {
+            ancestorIDs.push( parentID );
+        }
+        testNodeID = parentID;
+    }
+    ///console.log('>>>> ancestor nodes for '+ nodeID +': '+ ancestorIDs);
+    return ancestorIDs;
+}
+function getParentNodeID(nodeID, tree) {
+    var upwardEdge = getTreeEdgesByID(tree, nodeID, 'TARGET')[0];
+    // N.B. Due to NexSON constraints, assume exactly one upward edge!
+    return upwardEdge ? upwardEdge['@source'] : null;
 }
 function markTaxonExemplar( treeID, chosenNodeID, options ) {
     // find all conflicting nodes and set flag for each
@@ -7842,13 +7918,14 @@ function clearTaxonExemplar( treeID, chosenNodeID, options ) {
         drawTree(treeID);
     }
 }
-function resolveSiblingOnlyConflictsInTree(tree) {
-    // Find and resolve all simple conflicts between sibling nodes (select the
-    // first as exemplar).
-    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_SIBLINGS_ONLY: true} );
+function resolveMonophyleticConflictsInTree(tree) {
+    // Find and resolve all simple conflicts between sibling nodes, and any
+    // others where the conflicting nodes constitute a clade. In all cases, our
+    // choice is arbitrary; we simply select the first node found as the exemplar.
+    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_MONOPHYLETIC: true} );
     for (var taxonID in conflictData) {
         var conflictInfo = conflictData[taxonID];
-        if (conflictInfo.siblingsOnly) {
+        if (conflictInfo.monophyletic) {
             var firstConflictingNodeID = conflictInfo[0].nodeID;
             markTaxonExemplar( tree['@id'], firstConflictingNodeID, {REDRAW_TREE: false});
         }
