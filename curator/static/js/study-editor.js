@@ -977,6 +977,7 @@ function loadSelectedStudy() {
             // support fast lookup of elements by ID, for largest trees
             viewModel.fastLookups = {
                 'NODES_BY_ID': null,
+                'TREES_BY_OTU_ID': null,
                 'OTUS_BY_ID': null,
                 'EDGES_BY_SOURCE_ID': null,
                 'EDGES_BY_TARGET_ID': null
@@ -1983,6 +1984,25 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
         $('#treeview-clear-conflict').show();
     }
 }
+
+function removeTaxonMappingInfoFromTree( treeOrID ) {
+    // Cache of information about nodes per mapped taxon
+    var tree = null;
+    if (typeof(treeOrID) === 'object') {
+        tree = treeOrID;
+    } else {
+        tree = getTreeByID(treeOrID);
+    }
+    if (!tree) {
+        // this should *never* happen
+        alert("removeTaxonMappingInfoFromTree(): No tree specified!");
+        return;
+    }
+    // Clear conflict information from the tree itself...
+    delete tree.taxonMappingInfo;
+    ///console.log('CLOBBERED taxon mapping info for tree '+ tree['@id']);
+}
+
 function removeConflictInfoFromTree( treeOrID ) {
     var tree = null;
     if (typeof(treeOrID) === 'object') {
@@ -2223,6 +2243,7 @@ function scrubNexsonForTransport( nexml ) {
         clearD3PropertiesFromTree(tree);
         clearMRCATestResults(tree);
         removeConflictInfoFromTree(tree);
+        removeTaxonMappingInfoFromTree(tree);
     });
 
     // coerce some non-string values
@@ -4407,6 +4428,7 @@ function addTreeNodeBetween( tree, nodeID_A, nodeID_B ) {
 
             // force rebuild of node+edge lookups
             clearFastLookup('NODES_BY_ID');
+            clearFastLookup('TREES_BY_OTU_ID');
             clearFastLookup('EDGES_BY_SOURCE_ID');
             clearFastLookup('EDGES_BY_TARGET_ID');
 
@@ -4508,6 +4530,7 @@ function removeAdHocRootElements( tree ) {
 
     // force rebuild of node+edge lookups
     clearFastLookup('NODES_BY_ID');
+    clearFastLookup('TREES_BY_OTU_ID');
     clearFastLookup('EDGES_BY_SOURCE_ID');
     clearFastLookup('EDGES_BY_TARGET_ID');
 }
@@ -4556,6 +4579,7 @@ function updateEdgesInTree( tree ) {
     clearFastLookup('EDGES_BY_TARGET_ID');
     // set (or remove) ot:isLeaf flags on all nodes
     updateLeafNodeFlags(tree);
+    removeTaxonMappingInfoFromTree( tree );  // clear cached info
 }
 
 function sweepEdgePolarity( tree, startNodeID, upstreamNeighborID, inGroupClade, insideInGroupClade ) {
@@ -4626,6 +4650,13 @@ function getTreeNodeByID(tree, id) {
     var lookup = getFastLookup('NODES_BY_ID');
     return lookup[ id ] || null;
 }
+function getTreeContainingOTUID(tree, id) {
+    // There should be only one matching (or none) within a tree
+    // (NOTE that we now use a flat collection across all trees, so disregard 'tree' argument)
+    var lookup = getFastLookup('TREES_BY_OTU_ID');
+    return lookup[ id ] || null;
+}
+
 function getTreeEdgesByID(tree, id, sourceOrTarget) {
     // look for any edges associated with the specified *node* ID; return
     // an array of 0, 1, or more matching edges within a tree
@@ -5347,6 +5378,7 @@ function removeTree( tree ) {
 
     // force rebuild of all tree-related lookups
     buildFastLookup('NODES_BY_ID');
+    buildFastLookup('TREES_BY_OTU_ID');
     buildFastLookup('OTUS_BY_ID');
     buildFastLookup('EDGES_BY_SOURCE_ID');
     buildFastLookup('EDGES_BY_TARGET_ID');
@@ -6080,6 +6112,11 @@ function mapOTUToTaxon( otuID, mappingInfo, options ) {
 
     // Clear any proposed/adjusted label (this is trumped by mapping to OTT)
     delete otu['^ot:altLabel'];
+    
+    var tree = getTreeContainingOTUID(otuID);
+    if (tree) {
+        removeTaxonMappingInfoFromTree( tree );  // clear cached info
+    }
 
     if (!options.POSTPONE_UI_CHANGES) {
         nudgeTickler('OTU_MAPPING_HINTS');
@@ -6104,6 +6141,11 @@ function unmapOTUFromTaxon( otuOrID, options ) {
     }
     if ('^ot:ottTaxonName' in otu) {
         delete otu['^ot:ottTaxonName'];
+    }
+    
+    var tree = getTreeContainingOTUID( otu['@id'] );
+    if (tree) {
+        removeTaxonMappingInfoFromTree( tree );  // clear cached info
     }
 
     if (!options.POSTPONE_UI_CHANGES) {
@@ -7182,12 +7224,7 @@ function buildFastLookup( lookupName ) {
 
             case 'NODES_BY_ID':
                 // assumes that all node ids are unique, across all trees
-                var allTrees = [];
-                $.each(viewModel.nexml.trees, function(i, treesCollection) {
-                    $.each(treesCollection.tree, function(i, tree) {
-                        allTrees.push( tree );
-                    });
-                });
+                var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                 $.each(allTrees, function( i, tree ) {
                     $.each(tree.node, function( i, node ) {
                         var itsID = node['@id'];
@@ -7195,6 +7232,20 @@ function buildFastLookup( lookupName ) {
                             console.warn("Duplicate node ID '"+ itsID +"' found!");
                         }
                         newLookup[ itsID ] = node;
+                    });
+                });
+                break;
+
+            case 'TREES_BY_OTU_ID':
+                // assumes that all OTU ids are unique, across all trees
+                var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+                $.each(allTrees, function( i, tree ) {
+                    $.each(tree.node, function( i, node ) {
+                        var itsID = node['@otu'];
+                        if (itsID in newLookup) {
+                            console.warn("Duplicate otu ID '"+ itsID +"' found!");
+                        }
+                        newLookup[ itsID ] = tree;
                     });
                 });
                 break;
@@ -7700,6 +7751,7 @@ console.log(">>>>>> total elapsed to gather conflicting nodes: "+ (new Date() - 
     }
     return unresolvedConflicts;
 }
+
 function getConflictingNodesInTree( tree ) {
     // Return sets of nodes that ultimately map to a single OT taxon (via
     // multiple OTUs) and are not monophyletic (incl. siblings). A curator
@@ -7713,7 +7765,14 @@ function getConflictingNodesInTree( tree ) {
         return conflictingNodes;
     }
 
-    var taxonMappings = { };
+    // Pull from cached information, if any (else populate the cache)
+    if (tree.taxonMappingInfo) {
+        ///console.log('!!!!! using cached taxon-mapping info');
+        return tree.taxonMappingInfo;
+    }
+    ///console.log('..... building fresh taxon-mapping info');
+
+    var taxonMappings = tree.taxonMappingInfo = { };
     $.each(tree.node, function( i, node ) {
         if ('@otu' in node) {
             var otuID = node['@otu'];
@@ -7739,7 +7798,7 @@ function getConflictingNodesInTree( tree ) {
     // distinguish monophyletic (incl. siblings-only) sets from more
     // interesting conflicts.
     // N.B. These trivial conflicts will be reconciled on the server in any
-    // case, but this we we can show consistent UI and save curator effort.
+    // case, but this way we can show consistent UI and save curator effort.
     for (taxonID in taxonMappings) {
         ///console.log('>>>> taxonID '+ taxonID +'...');
         // is there more than one node for this taxon?
@@ -7875,6 +7934,7 @@ function markTaxonExemplar( treeID, chosenNodeID, options ) {
         var mappedNode = getTreeNodeByID(treeID, mapping.nodeID);
         mappedNode['^ot:isTaxonExemplar'] = (mapping.nodeID === chosenNodeID) ? true : false;
     });
+    removeTaxonMappingInfoFromTree( tree );  // clear cached info
     nudgeTickler('TREES');
     if (options.REDRAW_TREE) {
         // update color of conflicting nodes (exemplars vs. others)
@@ -7912,6 +7972,7 @@ function clearTaxonExemplar( treeID, chosenNodeID, options ) {
         var mappedNode = getTreeNodeByID(treeID, mapping.nodeID);
         delete mappedNode['^ot:isTaxonExemplar'];
     });
+    removeTaxonMappingInfoFromTree( tree );  // clear cached info
     nudgeTickler('TREES');
     if (options.REDRAW_TREE) {
         // update color of conflicting nodes (exemplars vs. others)
@@ -7930,6 +7991,7 @@ function resolveMonophyleticConflictsInTree(tree) {
             markTaxonExemplar( tree['@id'], firstConflictingNodeID, {REDRAW_TREE: false});
         }
     }
+    removeTaxonMappingInfoFromTree( tree );  // clear cached info
 }
 
 var nodeLabelModes = [
