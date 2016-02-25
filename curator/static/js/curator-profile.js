@@ -48,6 +48,7 @@ var History = window.History; // Note: capital H refers to History.js!
 // these variables should already be defined in the main HTML page
 var findAllTreeCollections_url;
 var curatorLogin; // userid for the *profiled* curator (NOT the current user)
+var activeUserFound; // is the specified user an active OpenTree participant?
 var isCurrentUserProfile; // does this profile belong to the current user?
 
 // working space for parsed JSON objects (incl. sub-objects)
@@ -121,7 +122,7 @@ function updateListFiltersWithHistory() {
 
 $(document).ready(function() {
     bindHelpPanels();
-    if (isCurrentUserProfile) {
+    if (activeUserFound) {
         loadCollectionList();
     }
     
