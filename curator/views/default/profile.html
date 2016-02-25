@@ -210,9 +210,7 @@ elif active_user_found:
         <div class="controls">
             <p class="static-form-value">
                 <span class="interesting-value" style="font-weight: normal;">
-                    Reliable counts are coming soon, pending
-                    <a href="https://github.com/OpenTreeOfLife/oti/issues/35" target="_blank">
-                        needed fixes to oti</a>.
+                    Reliable counts are coming soon.
                 </span>
             </p>
             {{ if user_info: }}
@@ -276,10 +274,16 @@ elif active_user_found:
         <label class="control-label">Tree collections</label>
         <div class="controls">
             <p class="static-form-value">
-                {{= len( opentree_activity.get('added_collections', []) ) }}
+                {{ how_many_added = len( opentree_activity.get('added_collections', []) )
+                   how_many_curated = len( opentree_activity.get('curated_collections', []) )
+                }}
+                {{= how_many_added }}
                 <span style="font-weight: normal;">added</span>, 
-                {{= len( opentree_activity.get('curated_collections', []) ) }}
-                <span style="font-weight: normal;">curated (details below)</span> 
+                {{= how_many_curated }}
+                <span style="font-weight: normal;">curated</span>
+                {{ if (how_many_added + how_many_curated) > 0: }}
+                    <span style="font-weight: normal;"> (details below)</span>
+                {{ pass }}
             </p>
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
