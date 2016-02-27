@@ -4154,20 +4154,34 @@ function drawTree( treeOrID, options ) {
                 var itsChildren = [];
                 var childEdges = getTreeEdgesByID(null, parentID, 'SOURCE');
 
-                // If this node has one child, it's probably a latent root-node that
-                // should be hidden in the tree view.
-                if (childEdges.length === 1) {
-                    // treat ITS child node as my immediate child in the displayed tree
-                    var onlyChildNodeID = childEdges[0]['@target'];
-                    childEdges = getTreeEdgesByID(null, onlyChildNodeID, 'SOURCE');
-                }
-
                 $.each(childEdges, function(index, edge) {
                     var childID = edge['@target'];
                     var childNode = getTreeNodeByID(null, childID);
-                    if (!('@id' in childNode)) {
-                        console.error(">>>>>>> childNode is a <"+ typeof(childNode) +">");
-                        console.error(childNode);
+                    /* If this child is a non-interesting "knuckle" (an unlabeled internal node 
+                     * with just one child and no branch length), include *its* child instead.
+                     *
+                     * This might apply for a latent (currently unused) root node that we're preserving, 
+                     * or just a boring knuckle in the input tree.
+                     *
+                     * N.B. that we should err on the side of showing the original child, if skipping it
+                     * might hide useful information!
+                     */
+                    if (!('@length' in edge)) {
+                        // its edge is not interesting
+                        var grandchildEdges = getTreeEdgesByID(null, childID, 'SOURCE');
+                        if (grandchildEdges.length === 1) {
+                            // it's a knuckle, with just one child that might be more interesting
+                            var itsLabelInfo = getTreeNodeLabel(tree, childNode);
+                            if (itsLabelInfo.labelType === 'node id') {
+                                // the node has no interesting label, so use its only child instead!
+                                var grandchildNode = getTreeNodeByID(null, grandchildEdges[0]['@target']);
+                                if (!grandchildNode) {
+                                    console.error("Expected to find a 'grandchild' node with ID '"+ grandchildEdges[0]['@target'] +"'!");
+                                } else {
+                                    childNode = grandchildNode;
+                                }
+                            }
+                        }
                     }
                     itsChildren.push( childNode );
                 });
