@@ -3,20 +3,48 @@
 <div class="container">
   <h1 id="main-title">FAQs</h1>
 
+  <p>These questions come from workshops, presentations, our feedback issue tracker,
+    our mailing lists, and some from a Reddit AMA that we did a while back. </p>
+
+    <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+
+      <!--Questions about the synthetic tree -->
+      <h3 id="synth-tree">General questions</h3>
+
+      <div class="panel panel-default">
+        <div class="panel-heading" role="tab">
+          <h5 class="panel-title">
+            <a role="button" data-toggle="collapse" data-parent="#accordion" href="#howToCite" aria-expanded="false" aria-controls="howToCite">
+              How do I cite Open Tree of Life?
+            </a>
+          </h5>
+        </div>
+        <div id="howToCite" class="panel-collapse collapse " role="tabpanel" aria-labelledby="headingOne">
+          <div class="panel-body">
+            <p>To cite the synthetic tree as a whole, cite the PNAS paper. You might also want to
+            cite the website and access date if you are referring to a particular version
+            of the tree. If you are using a subtree from OpenTree, you should also cite the
+            phylogenies used to create that subtree (instructions on how to do that).</p>
+          </div>
+        </div>
+      </div> <!-- end of question -->
+
+    </div> <!-- end of div class panel-group for General Questions -->
+
   <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
 
     <!--Questions about the synthetic tree -->
-    <h3 id="synth-tree">Synthetic tree questions</h3>
+    <h3 id="synth-tree">Synthetic tree of life</h3>
 
     <div class="panel panel-default">
-      <div class="panel-heading" role="tab" id="brlens">
-        <h4 class="panel-title">
-          <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-            Where are branch lengths and/or dates?
+      <div class="panel-heading" role="tab">
+        <h5 class="panel-title">
+          <a role="button" data-toggle="collapse" data-parent="#accordion" href="#branchLengths" aria-expanded="false" aria-controls="branchLengths">
+            Are there branch lengths and/or dates on the synthetic tree?
           </a>
-        </h4>
+        </h5>
       </div>
-      <div id="collapseOne" class="panel-collapse collapse " role="tabpanel" aria-labelledby="headingOne">
+      <div id="branchLengths" class="panel-collapse collapse " role="tabpanel" aria-labelledby="headingOne">
         <div class="panel-body">
           The synthetic tree does not currently summarize branch lengths or dates.
           The tree is constructed by an automated procedure from information found in
@@ -29,28 +57,47 @@
 
     <div class="panel panel-default">
       <div class="panel-heading" role="tab" id="headingTwo">
-        <h4 class="panel-title">
-          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+        <h5 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#updateFrequency" aria-expanded="false" aria-controls="updateFrequency">
+            How frequently do you update the synthetic tree?
+          </a>
+        </h5>
+      </div>
+      <div id="updateFrequency" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+        <div class="panel-body">
+          <p>The update frequency has been pretty slow up to spring 2016. Starting in March 2016,
+          we will be able to update the tree much more frequently (at least once per month).</p>
+        </div>
+      </div>
+    </div> <!-- end of question -->
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="headingTwo">
+        <h5 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#treeDepth" aria-expanded="false" aria-controls="treeDepth">
             How do I see to a tree depth greater than 3 (e.g. for a screenshot)?
           </a>
-        </h4>
+        </h5>
       </div>
-      <div id="collapseTwo" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
+      <div id="treeDepth" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingTwo">
         <div class="panel-body">
-          We only have the one tree viewer right now, and it is limited to depth of three for performance reasons.
+          Our tree viewer it is limited to depth of three for performance reasons.
+          As the tree becomes better resolved through addition of more phylogenies,
+          there will be fewer polytomies (clades with thousands of taxa), so we
+          should be able to adjust this.
         </div>
       </div>
     </div> <!-- end of question -->
 
     <div class="panel panel-default">
       <div class="panel-heading" role="tab" id="headingThree">
-        <h4 class="panel-title">
-          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+        <h5 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#differentViewer" aria-expanded="false" aria-controls="differentViewer">
             Can I switch to a different tree viewer?
           </a>
-        </h4>
+        </h5>
       </div>
-      <div id="collapseThree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+      <div id="differentViewer" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
         <div class="panel-body">
           We only have the one tree viewer right now. The folks behind OneZoom are interested
           in visualizing our data, and we hope providing the data will perhaps inspire
@@ -61,49 +108,161 @@
       </div>
     </div> <!-- end of question -->
 
-  </div> <!-- end of div class panel-group -->
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab">
+        <h5 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#requestTree" aria-expanded="false" aria-controls="requestTree">
+            Why don't you have the tree from Publication X in the synthetic tree?
+          </a>
+        </h5>
+      </div>
+      <div id="requestTree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+        <div class="panel-body">
+          <p>The tree may not be in our database of trees (either because no one has
+          uploaded the tree, or because the authors did not publish a tree file with
+          their publication). If the tree is in our database, then it might not be
+          sufficently curated, or it may not be in one of the tree collections that
+          we use for synthesis. See Questions about tree curation for related questions.</p>
+        </div>
+      </div>
+    </div> <!-- end of question -->
 
-</div>
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab">
+        <h5 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#synthesisMethod" aria-expanded="false" aria-controls="synthesisMethod">
+            How do you build the synthetic tree?
+          </a>
+        </h5>
+      </div>
+      <div id="synthesisMethod" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+        <div class="panel-body">
+          <p>For versions before March 2016, see the PNAS paper (in particular the
+            supplemental material). In March 2016, we switched to a new method based
+          on ??. You can see details of this method IN SOME SECRET DOCUMENTATION LOCATION.</p>
+        </div>
+      </div>
+    </div> <!-- end of question -->
 
-<div class="container">
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab">
+        <h5 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#somethingWrong" aria-expanded="false" aria-controls="somethingWrong">
+            Something is wrong in the synthetic tree. How do I fix / report this?
+          </a>
+        </h5>
+      </div>
+      <div id="somethingWrong" class="panel-collapse collapse" role="tabpanel" aria-labelledby="headingThree">
+        <div class="panel-body">
+          <p>Many things are wrong in the synthetic tree. If you don't see the relationships
+            that you expect, the best way to correct this is to upload a tree that
+            contains the expected relationships (or to contact the authors of such a tree
+            and have them upload). You can also leave feedback, which helps the community
+            of curators to know where new trees would be most useful. Note that we do
+          not make manual changes to the tree, so leaving feedback will not cause a change without
+        the supporting tree being in our database.</p>
+        </div>
+      </div>
+    </div> <!-- end of question -->
+
+  </div> <!-- end of div class panel-group for Synthetic Tree Questions-->
 
   <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
 
     <!--Questions about the open tree taxonomy -->
-    <h3 id="synth-tree">Questions about the Open Tree Taxonomy</h3>
+    <h3 id="synth-tree">Open Tree Taxonomy</h3>
 
     <div class="panel panel-default">
       <div class="panel-heading" role="tab" id="taxonomyOne">
-        <h4 class="panel-title">
-          <a role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
-            How do I add new species to the taxonomy?
+        <h5 class="panel-title">
+          <a role="button" data-toggle="collapse" data-parent="#accordion" href="#addNewTaxa" aria-expanded="false" aria-controls="addNewTaxa">
+            How do I add new taxon to the taxonomy?
           </a>
-        </h4>
+        </h5>
       </div>
-      <div id="collapseFour" class="panel-collapse collapse" role="tabpanel" aria-labelledby="taxonomyOne">
+      <div id="addNewTaxa" class="panel-collapse collapse" role="tabpanel" aria-labelledby="taxonomyOne">
         <div class="panel-body">
-          <p>We do not currently support adding new taxa in the user interface. This
-          is something that we do want to support eventually, but in a way that
-          new taxa have sufficent supporting information. Not every label on an
-          input tree is a good taxon (for example, they have typos, or include lab codes, or
-          represent individual organisms instead of taxa), so we don't want to make
-          it too easy to simply add unmappable OTUs as new taxa. </p>
-          <p>If you do want to propose that a given tree label is 
+          <p>We do not currently have an interface for adding new taxa, but we do
+             plans to allow users to propose new taxa based on input phylogenies.
+          The best way to see new taxa in Open Tree is to propose changes to one of our
+        input taxonomies (NCBI, GBIF, Index Fungorum, WoRMS, etc). If you have a suggestion
+        for what sort of evidence we could request to support the addition of new taxa, please
+        leave us some feedback.</p>
         </div>
       </div>
     </div> <!-- end of question -->
 
     <div class="panel panel-default">
       <div class="panel-heading" role="tab" id="taxonomyTwo">
-        <h4 class="panel-title">
+        <h5 class="panel-title">
           <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#collapseFive" aria-expanded="false" aria-controls="collapseFive">
             Another taxonomy question.
           </a>
-        </h4>
+        </h5>
       </div>
       <div id="collapseFive" class="panel-collapse collapse" role="tabpanel" aria-labelledby="taxonomyTwo">
         <div class="panel-body">
           Another taxonomy question.
+        </div>
+      </div>
+    </div> <!-- end of question -->
+
+  </div> <!-- end of div class panel-group -->
+
+  <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
+
+    <!--Questions about the adding trees to opentree -->
+    <h3 id="synth-tree">Adding phylogenies</h3>
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="taxonomyOne">
+        <h5 class="panel-title">
+          <a role="button" data-toggle="collapse" data-parent="#accordion" href="#addNewTree" aria-expanded="false" aria-controls="addNewTree">
+            How do I add new tree to the database?
+          </a>
+        </h5>
+      </div>
+      <div id="addNewTree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="taxonomyOne">
+        <div class="panel-body">
+          <p>Select 'Add/Browse' trees in the menu above, then Add a New Study. Anyone
+            can upload trees from a published study. See link for documentation on
+          the tree curation interface.</p>
+        </div>
+      </div>
+    </div> <!-- end of question -->
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="taxonomyOne">
+        <h5 class="panel-title">
+          <a role="button" data-toggle="collapse" data-parent="#accordion" href="#addUnpublishedTree" aria-expanded="false" aria-controls="addUnpublishedTree">
+            Can I add an unpublished tree?
+          </a>
+        </h5>
+      </div>
+      <div id="addUnpublishedTree" class="panel-collapse collapse" role="tabpanel" aria-labelledby="taxonomyOne">
+        <div class="panel-body">
+          <p>We only take published trees into the database. This is so we have
+            access to information about how each tree was constructed. Note that
+            preprints and theses are ok - we just need a link to the DOI or a URL
+            for the publication. Also note that our database of trees is
+            <a href="https://github.com/opentreeoflife/phylesystem">publicly
+          accessible on GitHub</a> and we do not support infrastructure for private data. </p>
+        </div>
+      </div>
+    </div> <!-- end of question -->
+
+    <div class="panel panel-default">
+      <div class="panel-heading" role="tab" id="taxonomyTwo">
+        <h5 class="panel-title">
+          <a class="collapsed" role="button" data-toggle="collapse" data-parent="#accordion" href="#addTreeToSynth" aria-expanded="false" aria-controls="addTreeToSynth">
+            How do I add a tree in your database to the synthetic tree?
+          </a>
+        </h5>
+      </div>
+      <div id="addTreeToSynth" class="panel-collapse collapse" role="tabpanel" aria-labelledby="taxonomyTwo">
+        <div class="panel-body">
+          <p>Add the tree to one of the tree collections. (Some text about how we choose
+          collections to include in synthesis).</p>
         </div>
       </div>
     </div> <!-- end of question -->
