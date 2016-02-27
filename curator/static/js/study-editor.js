@@ -3227,7 +3227,6 @@ var studyScoringRules = {
                 var ambiguousLabelsFound = false;
                 var startTime = new Date();
                 $.each(allTrees, function(i, tree) {
-                    // disregard sibling-only duplicates (will be resolved on the server)
                     var ambiguousLabelData = getAmbiguousLabelsInTree( tree );
                     if ( !($.isEmptyObject(ambiguousLabelData)) ) {
                         ambiguousLabelsFound = true;
@@ -7963,7 +7962,8 @@ function updateNodeLabelMode(tree) {
     nudgeTickler('TREES');
 }
 function ambiguousLabelsFoundInTree( tree ) {
-    // N.B. This checks for UNRESOLVED and INTERESTING (non-sibling) conflicts
+    // N.B. This checks for cases where there are node labels but the node
+    // label type has not been defined by a curator
     var labelData = getAmbiguousLabelsInTree( tree );
     return $.isEmptyObject(labelData) ? false : true;
 }
