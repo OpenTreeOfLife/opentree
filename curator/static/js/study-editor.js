@@ -3218,7 +3218,7 @@ var studyScoringRules = {
             suggestedAction: "Designate an exemplar for each set of tips mapped to the same taxon."
         },
         {
-            description: "Trees should not have undefined internal node labels.",
+            description: "Internal node labels should have a defined type.",
             test: function(studyData) {
                 // TODO: opt-out if study not intended for synthesis?
                 // TODO: skip non-preferred trees?
@@ -3238,8 +3238,8 @@ var studyScoringRules = {
             },
             weight: 0.2,
             successMessage: "No undefined internal node labels found.",
-            failureMessage: "Undefined internal node labels found! Assign a type to internal node labels.",
-            suggestedAction: "Assign a type to all undefined internal node labels."
+            failureMessage: "Undefined internal node labels: assign a label type.",
+            suggestedAction: "Assign a type to undefined internal node labels."
         },
         {
             description: "Tree roots should be confirmed by a curator.",
@@ -3362,9 +3362,9 @@ var studyScoringRules = {
                 return (branchLengthFieldsPresent);
             },
             weight: 0.2,
-            successMessage: "Branch length meaning well-defined (or tree does not have branch lengths).",
+            successMessage: "Branch length meaning / units defined (or tree does not have branch lengths).",
             failureMessage: "Tree has branch length but meaning and / or units undefined.",
-            suggestedAction: "Check that branch length type and units set for all trees."
+            suggestedAction: "Set branch length type and units for all trees."
         }
     ],
     /*
