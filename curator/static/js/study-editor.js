@@ -1198,10 +1198,10 @@ function loadSelectedStudy() {
                                         // Try to retain their prior precedence in
                                         // the list (avoid items jumping around)
                                         return (a.priorPosition < b.priorPosition) ? -1:1;
-                                    } 
+                                    }
                                     if (aFailedMapping) {
                                         return 1;   // force a (failed) below b
-                                    } 
+                                    }
                                     return -1;   // force b (failed) below a
                                 } else {
                                     return 0;
@@ -1265,7 +1265,7 @@ function loadSelectedStudy() {
 
                 // clear any stale last-selected OTU (it's likely moved)
                 lastClickedTogglePosition = null;
-                
+
                 viewModel._filteredOTUs( filteredList );
                 viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
@@ -2661,7 +2661,7 @@ function normalizeTree( tree ) {
     removeDuplicateTags( tree );
 
     // pre-select first node among monophyletic sets
-    resolveMonophyleticConflictsInTree(tree);
+    resolveMonophyleticDuplicatesInTree(tree);
 }
 
 function getAllTreeIDs() {
@@ -3215,7 +3215,7 @@ var studyScoringRules = {
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         },
         {
-            description: "Preferred trees should not have conflicting (non-monophyletic) tips mapped to a single taxon.",
+            description: "Preferred trees should not have duplicate (non-monophyletic) tips mapped to a single taxon.",
             test: function(studyData) {
                 // check for opt-out flag
                 var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
@@ -3226,26 +3226,26 @@ var studyScoringRules = {
 
                 // check preferred trees (synthesis candidates) only
                 //var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
-                var conflictingNodesFound = false;
+                var duplicateNodesFound = false;
                 var startTime = new Date();
                 $.each(getPreferredTrees(), function(i, tree) {
-                    // disregard sibling-only conflicts (will be resolved on the server)
-                    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
-                    if ( !($.isEmptyObject(conflictData)) ) {
-                        conflictingNodesFound = true;
+                    // disregard monophyletic duplicates (will be resolved on the server)
+                    var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
+                    if ( !($.isEmptyObject(duplicateData)) ) {
+                        duplicateNodesFound = true;
                         return false;
                     }
                 });
                 console.log("total elapsed: "+ (new Date() - startTime) +" ms");
-                return !(conflictingNodesFound);
+                return !(duplicateNodesFound);
             },
             weight: 0.2,
-            successMessage: "No conflicting nodes (non-monophyletic tips mapped to same taxon) found in preferred trees.",
-            failureMessage: "Conflicting nodes found! Choose an 'exemplar' for each duplicate taxon in preferred trees.",
-            suggestedAction: "Review all conflicting instances of a mapped taxon and choose an exemplar."
+            successMessage: "No duplicate tips with conflicting placement found in preferred trees.",
+            failureMessage: "Duplicate taxa found: designate an 'exemplar' for each set of tips mapped to the same taxon.",
+            suggestedAction: "Designate an exemplar for each set of tips mapped to the same taxon."
         },
         {
-            description: "Trees should not have undefined internal node labels.",
+            description: "Internal node labels should have a defined type.",
             test: function(studyData) {
                 // TODO: opt-out if study not intended for synthesis?
                 // TODO: skip non-preferred trees?
@@ -3254,7 +3254,6 @@ var studyScoringRules = {
                 var ambiguousLabelsFound = false;
                 var startTime = new Date();
                 $.each(allTrees, function(i, tree) {
-                    // disregard sibling-only conflicts (will be resolved on the server)
                     var ambiguousLabelData = getAmbiguousLabelsInTree( tree );
                     if ( !($.isEmptyObject(ambiguousLabelData)) ) {
                         ambiguousLabelsFound = true;
@@ -3266,8 +3265,8 @@ var studyScoringRules = {
             },
             weight: 0.2,
             successMessage: "No undefined internal node labels found.",
-            failureMessage: "Undefined internal node labels found! Assign a type to internal node labels.",
-            suggestedAction: "Assign a type to all undefined internal node labels."
+            failureMessage: "Undefined internal node labels: assign a label type.",
+            suggestedAction: "Assign a type to undefined internal node labels."
         },
         {
             description: "Tree roots should be confirmed by a curator.",
@@ -3390,9 +3389,9 @@ var studyScoringRules = {
                 return (branchLengthFieldsPresent);
             },
             weight: 0.2,
-            successMessage: "Branch length meaning well-defined (or tree does not have branch lengths).",
+            successMessage: "Branch length meaning / units defined (or tree does not have branch lengths).",
             failureMessage: "Tree has branch length but meaning and / or units undefined.",
-            suggestedAction: "Check that branch length type and units set for all trees."
+            suggestedAction: "Set branch length type and units for all trees."
         }
     ],
     /*
@@ -3626,7 +3625,7 @@ function showTreeViewer( tree, options ) {
         // Clean up mononphyletic conflicts before annoying the user. (We do
         // this here since OTU mapping or other changes may have introduced new
         // conflicts, and we don't want to waste the curator's time with them.)
-        resolveMonophyleticConflictsInTree(tree);
+        resolveMonophyleticDuplicatesInTree(tree);
     }
 
     if (!tree) {
@@ -3886,7 +3885,7 @@ function showTreeViewer( tree, options ) {
     }
 }
 function updateTreeViewerHeight(options) {
-    /* Revisit height and placement of the single-tree popup, which should 
+    /* Revisit height and placement of the single-tree popup, which should
      * take the full height of the window, with all header and footer UI
      * available and any scrollbars restricted to the SVG viewport.
      */
@@ -3975,28 +3974,28 @@ function showOTUInContext() {
     })
 }
 
-function showConflictingNodesInTreeViewer(tree) {
-    // If there are no conflicts, fall back to simple tree view
-    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
-    if (!isPreferredTree(tree) || $.isEmptyObject(conflictData)) {
+function showDuplicateNodesInTreeViewer(tree) {
+    // If there are no duplicates, fall back to simple tree view
+    var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
+    if (!isPreferredTree(tree) || $.isEmptyObject(duplicateData)) {
         showTreeWithHistory(tree);
         return;
     }
-    // Convert conflict object to standard node playlist?
+    // Convert duplicate object to standard node playlist?
     var treeID = tree['@id'];
-    var conflictPlaylist = $.map(conflictData, function(taxonInstances, taxonID) {
+    var duplicatePlaylist = $.map(duplicateData, function(taxonInstances, taxonID) {
         // convert this taxon to a series of simple objects
         return $.map(taxonInstances, function(instance) {
             return $.extend( { treeID: treeID }, instance );
         });
     });
     showTreeViewer(null, {
-        HIGHLIGHT_PLAYLIST: conflictPlaylist,
-        HIGHLIGHT_PROMPT: ("Showing all nodes mapped to '<strong>MAPPED_TAXON</strong>'. Choose the exemplar node."),
+        HIGHLIGHT_PLAYLIST: duplicatePlaylist,
+        HIGHLIGHT_PROMPT: ("Showing all tips mapped to '<strong>MAPPED_TAXON</strong>'. Choose an exemplar."),
         HIGHLIGHT_POSITION: 0
     });
-    // TODO: Modify prompt text as we move through conflicting taxa?
-    // TODO: Prune conflicting taxa from this playlist as curator chooses exemplar nodes?
+    // TODO: Modify prompt text as we move through duplicate taxa?
+    // TODO: Prune duplicate taxa from this playlist as curator chooses exemplar nodes?
 }
 
 function scrollToTreeNode( treeID, nodeID ) {
@@ -4163,10 +4162,10 @@ function drawTree( treeOrID, options ) {
                 $.each(childEdges, function(index, edge) {
                     var childID = edge['@target'];
                     var childNode = getTreeNodeByID(null, childID);
-                    /* If this child is a non-interesting "knuckle" (an unlabeled internal node 
+                    /* If this child is a non-interesting "knuckle" (an unlabeled internal node
                      * with just one child and no branch length), include *its* child instead.
                      *
-                     * This might apply for a latent (currently unused) root node that we're preserving, 
+                     * This might apply for a latent (currently unused) root node that we're preserving,
                      * or just a boring knuckle in the input tree.
                      *
                      * N.B. that we should err on the side of showing the original child, if skipping it
@@ -4215,7 +4214,7 @@ function drawTree( treeOrID, options ) {
             if (d['@id'] === inGroupClade) {
                 itsClass += " inGroupClade";
             }
-            if (isConflictingNode(tree, d)) {
+            if (isDuplicateNode(tree, d)) {
                 switch(d['^ot:isTaxonExemplar']) {
                     case true:
                         itsClass += ' exemplar';
@@ -5789,7 +5788,7 @@ function approveAllVisibleMappings() {
     });
     proposedOTUMappings.valueHasMutated();
     nudgeTickler('OTU_MAPPING_HINTS');
-    nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
+    nudgeTickler('TREES');  // to hide/show duplicate-taxon prompts in tree list
     startAutoMapping();
 }
 function rejectAllVisibleMappings() {
@@ -6126,7 +6125,7 @@ function mapOTUToTaxon( otuID, mappingInfo, options ) {
 
     // Clear any proposed/adjusted label (this is trumped by mapping to OTT)
     delete otu['^ot:altLabel'];
-    
+
     var tree = getTreeContainingOTUID(otuID);
     if (tree) {
         removeTaxonMappingInfoFromTree( tree );  // clear cached info
@@ -6134,7 +6133,7 @@ function mapOTUToTaxon( otuID, mappingInfo, options ) {
 
     if (!options.POSTPONE_UI_CHANGES) {
         nudgeTickler('OTU_MAPPING_HINTS');
-        nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
+        nudgeTickler('TREES');  // to hide/show duplicate-taxon prompts in tree list
     }
 }
 
@@ -6156,7 +6155,7 @@ function unmapOTUFromTaxon( otuOrID, options ) {
     if ('^ot:ottTaxonName' in otu) {
         delete otu['^ot:ottTaxonName'];
     }
-    
+
     var tree = getTreeContainingOTUID( otu['@id'] );
     if (tree) {
         removeTaxonMappingInfoFromTree( tree );  // clear cached info
@@ -6164,7 +6163,7 @@ function unmapOTUFromTaxon( otuOrID, options ) {
 
     if (!options.POSTPONE_UI_CHANGES) {
         nudgeTickler('OTU_MAPPING_HINTS');
-        nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
+        nudgeTickler('TREES');  // to hide/show duplicate-taxon prompts in tree list
     }
 }
 
@@ -6195,7 +6194,7 @@ function clearSelectedMappings() {
     clearFailedOTUList();
     proposedOTUMappings.valueHasMutated();
     nudgeTickler('OTU_MAPPING_HINTS');
-    nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
+    nudgeTickler('TREES');  // to hide/show duplicate-taxon prompts in tree list
 }
 
 function clearAllMappings() {
@@ -6211,7 +6210,7 @@ function clearAllMappings() {
         clearFailedOTUList();
         proposedOTUMappings.valueHasMutated();
         nudgeTickler('OTU_MAPPING_HINTS');
-        nudgeTickler('TREES');  // to hide/show conflicting-taxon prompts in tree list
+        nudgeTickler('TREES');  // to hide/show duplicate-taxon prompts in tree list
     }
 }
 
@@ -6235,7 +6234,7 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     var nodeInfoBox = nodeMenu.find('.node-information');
     var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
     nodeInfoBox.append('<span class="node-name">'+ labelInfo.label +'</span>');
-    if (isConflictingNode( tree, node )) {
+    if (isDuplicateNode( tree, node )) {
         if (node['^ot:isTaxonExemplar'] === true) {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); clearTaxonExemplar( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Clear exemplar for mapped taxon</a></li>');
         } else {
@@ -7717,37 +7716,37 @@ function validateAndTestDOI() {
     testDOIForDuplicates();
 }
 
-function unresolvedConflictsFoundInTree( tree ) {
-    // N.B. This checks for UNRESOLVED and INTERESTING (non-monophyletic) conflicts
-    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
-    return $.isEmptyObject(conflictData) ? false : true;
+function unresolvedDuplicatesFoundInTree( tree ) {
+    // N.B. This checks for UNRESOLVED and INTERESTING (non-sibling) duplicates
+    var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
+    return $.isEmptyObject(duplicateData) ? false : true;
 }
-function isConflictingNode( tree, node ) {
-    ///console.log("isConflictingNode( "+ tree['@id'] +", "+ node['@id'] +")...");
-    // N.B. This checks for ALL conflicts (incl. resolved and sibling-only)
-    var conflictInfo = getConflictingNodesInTree( tree );
-    var foundNodeInConflictData = false;
-    for (var taxonID in conflictInfo) {
-        $.each(conflictInfo[taxonID], function(i, mapping) {
+function isDuplicateNode( tree, node ) {
+    ///console.log("isDuplicateNode( "+ tree['@id'] +", "+ node['@id'] +")...");
+    // N.B. This checks for ALL duplicates (incl. resolved and sibling-only)
+    var duplicateInfo = getDuplicateNodesInTree( tree );
+    var foundNodeInduplicateData = false;
+    for (var taxonID in duplicateInfo) {
+        $.each(duplicateInfo[taxonID], function(i, mapping) {
             if (mapping.nodeID === node['@id']) {
-                foundNodeInConflictData = true;
+                foundNodeInduplicateData = true;
                 return false;
             }
         });
     }
-    return foundNodeInConflictData;
+    return foundNodeInduplicateData;
 }
-function getUnresolvedConflictsInTree( tree, options ) {
-    // Filter from full conflict data to include just those node-sets that
+function getUnresolvedDuplicatesInTree( tree, options ) {
+    // Filter from full duplicate data to include just those node-sets that
     // have't been resolved, ie, curator has not chosen an exemplar.
-    var includeMonophyleticConflicts = options && ('INCLUDE_MONOPHYLETIC' in options) ? options.INCLUDE_MONOPHYLETIC : false;
-    var unresolvedConflicts = {};
-var startTime = new Date();
-    var allConflicts = getConflictingNodesInTree( tree );
-console.log(">>>>>> total elapsed to gather conflicting nodes: "+ (new Date() - startTime) +" ms");
-    for (var taxonID in allConflicts) {
+    var includeMonophyleticDuplicates = options && ('INCLUDE_MONOPHYLETIC' in options) ? options.INCLUDE_MONOPHYLETIC : false;
+    var unresolvedDuplicates = {};
+    var startTime = new Date();
+    var allDuplicates = getDuplicateNodesInTree( tree );
+    console.log(">>>>>> total elapsed to gather conflicting nodes: "+ (new Date() - startTime) +" ms");
+    for (var taxonID in allDuplicates) {
         var allNodesAlreadyMarked = true; // we can disprove this from any node
-        var itsMappings = allConflicts[taxonID];
+        var itsMappings = allDuplicates[taxonID];
         $.each(itsMappings, function(i, mapping) {
             if (!(mapping.curatorHasMarkedNode)) {
                 allNodesAlreadyMarked = false;
@@ -7755,37 +7754,34 @@ console.log(">>>>>> total elapsed to gather conflicting nodes: "+ (new Date() - 
             }
         });
         if (!(allNodesAlreadyMarked)) {
-            if (includeMonophyleticConflicts) {
-                unresolvedConflicts[ taxonID ] = itsMappings;
+            if (includeMonophyleticDuplicates) {
+                unresolvedDuplicates[ taxonID ] = itsMappings;
             } else if (!(itsMappings.monophyletic)) {
-                // ignore sets that constitute a clade
-                unresolvedConflicts[ taxonID ] = itsMappings;
+                // ignore duplicates just between siblings
+                unresolvedDuplicates[ taxonID ] = itsMappings;
             }
         }
     }
-    return unresolvedConflicts;
+    return unresolvedDuplicates;
 }
 
-function getConflictingNodesInTree( tree ) {
+function getDuplicateNodesInTree( tree ) {
     // Return sets of nodes that ultimately map to a single OT taxon (via
-    // multiple OTUs) and are not monophyletic (incl. siblings). A curator
-    // should choose the 'exemplar' node to avoid problems in synthesis.
-    var conflictingNodes = { };
-    // N.B. OTUs should be unique within a tree. We're looking for OTUs that
-    // are mapped to the same OTT taxon id.
+    // multiple OTUs) and are not siblings. A curator should choose the
+    // 'exemplar' node to avoid problems in synthesis.
+    var duplicateNodes = { };
 
     if (!isPreferredTree(tree)) {
         // ignoring these for now...
-        ///console.log('<<<<< getConflictingNodesInTree (treeid='+ tree['@id'] +'...) IGNORING non-preferred tree!');
-        return conflictingNodes;
+        return duplicateNodes;
     }
 
     // Pull from cached information, if any (else populate the cache)
     if (tree.taxonMappingInfo) {
-        ///console.log('!!!!! getConflictingNodesInTree (treeid='+ tree['@id'] +'...) using cached taxon-mapping info');
+        ///console.log('!!!!! getDuplicateNodesInTree (treeid='+ tree['@id'] +'...) using cached taxon-mapping info');
         return tree.taxonMappingInfo;
     }
-    ///console.log('..... getConflictingNodesInTree (treeid='+ tree['@id'] +'...) building fresh taxon-mapping info');
+    ///console.log('..... getDuplicateNodesInTree (treeid='+ tree['@id'] +'...) building fresh taxon-mapping info');
 
     var taxonMappings = { };
     $.each(tree.node, function( i, node ) {
@@ -7808,36 +7804,37 @@ function getConflictingNodesInTree( tree ) {
             }
         }
     });
-    ///console.log('..... found '+ Object.keys(taxonMappings).length  +' total mapped taxa');
-    // Gather all mappings that have multiple appearances, but mark them to
-    // distinguish monophyletic (incl. siblings-only) sets from more
-    // interesting conflicts.
-    // N.B. These trivial conflicts will be reconciled on the server in any
-    // case, but this way we can show consistent UI and save curator effort.
+    // Gather all duplicate mappings, but mark them to distinguish trivial cases
+    // (the duplicates are monophyletic) from more interesting cases (there is
+    // ambiguity about placement of the OT taxon because duplicates in multiple
+    // places in the tree)
+    // N.B. Siblings will be reconciled on the server in any case, but this
+    // will help us to show consistent UI when siblings are obviously duplicates.
     for (taxonID in taxonMappings) {
         ///console.log('>>>> taxonID '+ taxonID +'...');
         // is there more than one node for this taxon?
         var itsMappings = taxonMappings[taxonID];
         itsMappings.monophyletic = false;
         if (itsMappings.length > 1) {
-            var conflictingNodeIDs = $.map(itsMappings, function(m) {
+            var duplicateNodeIDs = $.map(itsMappings, function(m) {
                 return m.nodeID;
             });
-            if (tipsAreMonophyletic(conflictingNodeIDs, tree)) {
+            if (tipsAreMonophyletic(duplicateNodeIDs, tree)) {
                 itsMappings.monophyletic = true;
                 ///console.log('>>>> checking for monophyly... YES');
             } else {
                 ///console.log('>>>> checking for monophyly... NO');
             }
-            conflictingNodes[ taxonID ] = itsMappings;
+            duplicateNodes[ taxonID ] = itsMappings;
         }
     }
-    ///console.log('..... found '+ Object.keys(conflictingNodes).length  +' conflicting nodes');
-    
+    ///console.log('..... found '+ Object.keys(duplicateNodes).length  +' conflicting nodes');
+
     // cache the result for next time
-    tree.taxonMappingInfo = conflictingNodes;
-    return conflictingNodes;
+    tree.taxonMappingInfo = duplicateNodes;
+    return duplicateNodes;
 }
+
 function tipsAreMonophyletic(tipIDs, tree) {
     ///return false;
     // general fast check for monophyly in a specified tree
@@ -7926,7 +7923,7 @@ function getParentNodeID(nodeID, tree) {
     return upwardEdge ? upwardEdge['@source'] : null;
 }
 function markTaxonExemplar( treeID, chosenNodeID, options ) {
-    // find all conflicting nodes and set flag for each
+    // find all duplicate nodes and set flag for each
     options = options || {REDRAW_TREE: true};
     var chosenNode = getTreeNodeByID(treeID, chosenNodeID);
     if (!chosenNode) {
@@ -7942,8 +7939,8 @@ function markTaxonExemplar( treeID, chosenNodeID, options ) {
         return;  // do nothing (this is not good)
     }
     var tree = getTreeByID(treeID);
-    var conflictData = getConflictingNodesInTree(tree);
-    var itsMappings = conflictData[taxonID];
+    var duplicateData = getDuplicateNodesInTree(tree);
+    var itsMappings = duplicateData[taxonID];
     if (!itsMappings) {
         console.error("markTaxonExemplar("+ treeID +","+ chosenNodeID +"): No mappings list found!");
         return;  // do nothing (this is not good)
@@ -7955,12 +7952,12 @@ function markTaxonExemplar( treeID, chosenNodeID, options ) {
     removeTaxonMappingInfoFromTree( tree );  // clear cached info
     nudgeTickler('TREES');
     if (options.REDRAW_TREE) {
-        // update color of conflicting nodes (exemplars vs. others)
+        // update color of duplicate nodes (exemplars vs. others)
         drawTree(treeID);
     }
     // TODO: what happens now?
-    //      - move to next conflicting taxon, if any?
-    //      - remove this set of mappings, or regenerate conflictData?
+    //      - move to next duplicate taxon, if any?
+    //      - remove this set of mappings, or regenerate duplicateData?
     //      - update the prompt in tree popup to say DONE, or MOVING ON...?
 }
 function clearTaxonExemplar( treeID, chosenNodeID, options ) {
@@ -7980,8 +7977,8 @@ function clearTaxonExemplar( treeID, chosenNodeID, options ) {
         return;  // do nothing (this is not good)
     }
     var tree = getTreeByID(treeID);
-    var conflictData = getConflictingNodesInTree(tree);
-    var itsMappings = conflictData[taxonID];
+    var duplicateData = getDuplicateNodesInTree(tree);
+    var itsMappings = duplicateData[taxonID];
     if (!itsMappings) {
         console.error("clearTaxonExemplar("+ treeID +","+ chosenNodeID +"): No mappings list found!");
         return;  // do nothing (this is not good)
@@ -7993,20 +7990,19 @@ function clearTaxonExemplar( treeID, chosenNodeID, options ) {
     removeTaxonMappingInfoFromTree( tree );  // clear cached info
     nudgeTickler('TREES');
     if (options.REDRAW_TREE) {
-        // update color of conflicting nodes (exemplars vs. others)
+        // update color of duplicate nodes (exemplars vs. others)
         drawTree(treeID);
     }
 }
-function resolveMonophyleticConflictsInTree(tree) {
-    // Find and resolve all simple conflicts between sibling nodes, and any
-    // others where the conflicting nodes constitute a clade. In all cases, our
-    // choice is arbitrary; we simply select the first node found as the exemplar.
-    var conflictData = getUnresolvedConflictsInTree( tree, {INCLUDE_MONOPHYLETIC: true} );
-    for (var taxonID in conflictData) {
-        var conflictInfo = conflictData[taxonID];
-        if (conflictInfo.monophyletic) {
-            var firstConflictingNodeID = conflictInfo[0].nodeID;
-            markTaxonExemplar( tree['@id'], firstConflictingNodeID, {REDRAW_TREE: false});
+function resolveMonophyleticDuplicatesInTree(tree) {
+    // Find and resolve all trivial duplciates - sibling nodes mapped to same OT
+    // taxon - by selecting the first as the exemplar.
+    var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: true} );
+    for (var taxonID in duplicateData) {
+        var duplicateInfo = duplicateData[taxonID];
+        if (duplicateInfo.monophyletic) {
+            var firstDuplicateNodeID = duplicateInfo[0].nodeID;
+            markTaxonExemplar( tree['@id'], firstDuplicateNodeID, {REDRAW_TREE: false});
         }
     }
     removeTaxonMappingInfoFromTree( tree );  // clear cached info
@@ -8125,7 +8121,8 @@ function updateNodeLabelMode(tree) {
     nudgeTickler('TREES');
 }
 function ambiguousLabelsFoundInTree( tree ) {
-    // N.B. This checks for UNRESOLVED and INTERESTING (non-sibling) conflicts
+    // N.B. This checks for cases where there are node labels but the node
+    // label type has not been defined by a curator
     var labelData = getAmbiguousLabelsInTree( tree );
     return $.isEmptyObject(labelData) ? false : true;
 }

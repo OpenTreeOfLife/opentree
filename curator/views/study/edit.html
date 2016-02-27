@@ -662,13 +662,13 @@ body {
                                 text: tree['@label'],
                                 css: viewModel.ticklers.TREES">&nbsp;</a>
                             <br/>
-                            <a data-bind="if: unresolvedConflictsFoundInTree( tree ),
+                            <a data-bind="if: unresolvedDuplicatesFoundInTree( tree ),
                                           css: viewModel.ticklers.TREES,
-                                          click: showConflictingNodesInTreeViewer,
+                                          click: showDuplicateNodesInTreeViewer,
                                           visible: true"
                                class="suggestion-prompt" style="display: none;"
                                href="#">
-                                Show conflicting nodes
+                                Show duplicate tips
                             </a>
                             <br/>
                             <a data-bind="if: ambiguousLabelsFoundInTree( tree ),
@@ -1290,7 +1290,7 @@ body {
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length === 1) -->
                            {{ # show mapped label }}
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" 
+                                <button class="btn btn-mini"
                                         data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS"
                                         title="Click to reject this OTU mapping">
                                     <i class="icon-remove"></i>
@@ -1311,7 +1311,7 @@ body {
                           <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length > 1) -->
                            {{ # show available choices for mapping this OTU }}
                             <div class="btn-group pull-right">
-                                <button class="btn btn-mini" 
+                                <button class="btn btn-mini"
                                         data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.OTU_MAPPING_HINTS"
                                         title="Click to reject all mappings for this OTU">
                                     <i class="icon-remove"></i>
@@ -2232,9 +2232,9 @@ body {
   <!-- KO binding here to 'tree' (as $data below) -->
     <div class="modal-header" style="padding-bottom: 0;">
       <a class="close" onclick="$('#tree-viewer').modal('hide'); return false;">×</a>
-      <button id="enter-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;" 
+      <button id="enter-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;"
               onclick="$('#full-screen-area').fullscreen(); return false;"><i class="icon-fullscreen"></i> Full screen</button>
-      <button id="exit-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;" 
+      <button id="exit-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;"
               onclick="$.fullscreen.exit(); return false;"><i class="icon-resize-small"></i> Exit full screen</button>
       <h3 id='dialog-heading'>
         {{ if viewOrEdit == 'EDIT': }}
@@ -2563,7 +2563,7 @@ body {
         </tr>
         <tr>
           <td colspan="4" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">Conflict versus reference tree</strong></td>
-          <td colspan="2" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">OTUs with conflicting mapping</strong></td>
+          <td colspan="2" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">OTUs with duplicate mappings</strong></td>
         </tr>
         <tr>
          <td align="right">
@@ -2582,7 +2582,7 @@ body {
              Unresolved
          </td>
          <td>
-          <img src="{{=URL('static','images/tree-viewer-legend-tips-conflicting.png')}}" alt="outgroup style" />
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-duplicate.png')}}" alt="outgroup style" />
          </td>
         </tr>
         <tr>
