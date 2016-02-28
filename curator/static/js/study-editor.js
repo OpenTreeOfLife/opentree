@@ -7770,17 +7770,18 @@ function getConflictingNodesInTree( tree ) {
 
     if (!isPreferredTree(tree)) {
         // ignoring these for now...
+        ///console.log('<<<<< getConflictingNodesInTree (treeid='+ tree['@id'] +'...) IGNORING non-preferred tree!');
         return conflictingNodes;
     }
 
     // Pull from cached information, if any (else populate the cache)
     if (tree.taxonMappingInfo) {
-        ///console.log('!!!!! using cached taxon-mapping info');
+        ///console.log('!!!!! getConflictingNodesInTree (treeid='+ tree['@id'] +'...) using cached taxon-mapping info');
         return tree.taxonMappingInfo;
     }
-    ///console.log('..... building fresh taxon-mapping info');
+    ///console.log('..... getConflictingNodesInTree (treeid='+ tree['@id'] +'...) building fresh taxon-mapping info');
 
-    var taxonMappings = tree.taxonMappingInfo = { };
+    var taxonMappings = { };
     $.each(tree.node, function( i, node ) {
         if ('@otu' in node) {
             var otuID = node['@otu'];
@@ -7801,7 +7802,7 @@ function getConflictingNodesInTree( tree ) {
             }
         }
     });
-
+    ///console.log('..... found '+ Object.keys(taxonMappings).length  +' total mapped taxa');
     // Gather all mappings that have multiple appearances, but mark them to
     // distinguish monophyletic (incl. siblings-only) sets from more
     // interesting conflicts.
@@ -7822,10 +7823,13 @@ function getConflictingNodesInTree( tree ) {
             } else {
                 ///console.log('>>>> checking for monophyly... NO');
             }
+            conflictingNodes[ taxonID ] = itsMappings;
         }
-        conflictingNodes[ taxonID ] = itsMappings;
     }
-
+    ///console.log('..... found '+ Object.keys(conflictingNodes).length  +' conflicting nodes');
+    
+    // cache the result for next time
+    tree.taxonMappingInfo = conflictingNodes;
     return conflictingNodes;
 }
 function tipsAreMonophyletic(tipIDs, tree) {
