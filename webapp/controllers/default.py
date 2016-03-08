@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import urllib2
+import socket
 from opentreewebapputil import (get_opentree_services_method_urls, 
                                 fetch_current_TNRS_context_names)
 
@@ -153,8 +154,13 @@ def phylopic_proxy():
     phylopic_url = 'http://phylopic.org/%s' % phylopic_url
     try:
         req = urllib2.Request(url=phylopic_url) 
-        resp = urllib2.urlopen(req).read()
+        resp = urllib2.urlopen(req, timeout=10).read()
+        # N.B. timeout value is in seconds!
         return resp
-    except:
-        raise HTTP(503, 'The attempt to fetch an image from phylopic failed')
+    except urllib2.URLError, e:
+        # this includes possible timeout from urllib2
+        raise HTTP(503, 'The attempt to fetch an image from phylopic failed (probable timeout)')
+    except socket.timeout, e:
+        # report underlying socket timeouts!
+        raise HTTP(504, 'The attempt to fetch an image from phylopic timed out')
 
