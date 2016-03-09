@@ -1978,6 +1978,23 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
         var localNode = getTreeNodeByID( tree, nodeID );
         localNode.conflictDetails = conflictInfo.detailsByNodeID[nodeID];
     }
+    // ... and pseudo-support to all taxonomically mapped leaf nodes
+    $.each(tree.node, function(i, node) {
+        if (node['^ot:isLeaf']) {
+            if ('@otu' in node) {
+                var otu = getOTUByID( node['@otu'] );
+                var mappedLabel = $.trim(otu['^ot:ottTaxonName']);
+                if (('^ot:ottId' in otu) && (mappedLabel !== '')) {
+                    node.conflictDetails = {
+                        status: 'mapped_to_taxon',
+                        witness: Number(otu['^ot:ottId']),
+                        witness_name: mappedLabel
+                    }
+                }
+            }
+        }
+    });
+
     if (treeViewerIsInUse) {
         // update the reference-tree selector
         $('#treeview-reference-select').val(tree.conflictDetails.referenceTreeID);
@@ -6330,6 +6347,7 @@ function getNodeConflictDescription(tree, node) {
     switch(node.conflictDetails.status) {
       case 'supported_by':
       case 'partial_path_of':
+      case 'mapped_to_taxon':
           if (witnessURL) {
               conflictHTML = 'Aligned with <a href="'+ witnessURL +'" target="_blank">'+
                   (node.conflictDetails.witness_name || "???") +'</a>';
@@ -6354,7 +6372,7 @@ function getNodeConflictDescription(tree, node) {
           }
           break;
       default:
-          console.error("ERROR: unknown conflict status '"+ (conflictInfo[nodeid].status) +"'!");
+          console.error("ERROR: unknown conflict status '"+ node.conflictDetails.status +"'!");
     }
 
     return '<div class="node-conflict-status-'+ node.conflictDetails.status +'">'+ conflictHTML +'</div>';
