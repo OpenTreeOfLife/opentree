@@ -1786,7 +1786,7 @@ function displayConflictSummary(conflictInfo) {
     }
 }
 
-function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
+function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback, useCachedResponse) {
     // Expects inputTreeID from the current study (concatenate these!)
     // Expects referenceTreeID of 'taxonomy' or 'synth'
     if (typeof(inputTreeID) !== 'string') {
@@ -1794,6 +1794,9 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
     }
     if (typeof(referenceTreeID) !== 'string') {
         referenceTreeID = $('#reference-select').val();
+    }
+    if (typeof(useCachedResponse) !== 'boolean') {
+        useCachedResponse = false;  // when in doubt, get fresh conflict information
     }
     if (!inputTreeID || !referenceTreeID) {
         hideModalScreen()
@@ -1816,9 +1819,10 @@ function fetchTreeConflictStatus(inputTreeID, referenceTreeID, callback) {
             return;
     }
     var conflictURL = treeConflictStatus_url
-        .replace('&amp;', '&')  // restore naked ampersand for query-string args
+        .replace(/&amp;/g, '&')  // restore all naked ampersands (for query-string args)
         .replace('{TREE1_ID}', fullInputTreeID)
         .replace('{TREE2_ID}', referenceTreeID)
+        .replace('{USE_CACHE}', String(useCachedResponse))
     // call this URL and try to show a summary report
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
@@ -1885,7 +1889,8 @@ function fetchAndShowTreeConflictSummary(inputTreeID, referenceTreeID) {
         referenceTreeID,
         function(conflictInfo) {
             displayConflictSummary(conflictInfo);
-        }
+        },
+        false  // don't reuse a cached response
     );
 }
 function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) {
@@ -1911,7 +1916,8 @@ function fetchAndShowTreeConflictDetails(inputTreeID, referenceTreeID, options) 
             if (options.SHOW_SPINNER) {
                 hideModalScreen();
             }
-        }
+        },
+        false  // don't reuse a cached response
     );
 }
 function showTreeConflictDetailsFromPopup(tree) {
@@ -1972,6 +1978,23 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
         var localNode = getTreeNodeByID( tree, nodeID );
         localNode.conflictDetails = conflictInfo.detailsByNodeID[nodeID];
     }
+    // ... and pseudo-support to all taxonomically mapped leaf nodes
+    $.each(tree.node, function(i, node) {
+        if (node['^ot:isLeaf']) {
+            if ('@otu' in node) {
+                var otu = getOTUByID( node['@otu'] );
+                var mappedLabel = $.trim(otu['^ot:ottTaxonName']);
+                if (('^ot:ottId' in otu) && (mappedLabel !== '')) {
+                    node.conflictDetails = {
+                        status: 'mapped_to_taxon',
+                        witness: Number(otu['^ot:ottId']),
+                        witness_name: mappedLabel
+                    }
+                }
+            }
+        }
+    });
+
     if (treeViewerIsInUse) {
         // update the reference-tree selector
         $('#treeview-reference-select').val(tree.conflictDetails.referenceTreeID);
@@ -6325,6 +6348,7 @@ function getNodeConflictDescription(tree, node) {
     switch(node.conflictDetails.status) {
       case 'supported_by':
       case 'partial_path_of':
+      case 'mapped_to_taxon':
           if (witnessURL) {
               conflictHTML = 'Aligned with <a href="'+ witnessURL +'" target="_blank">'+
                   (node.conflictDetails.witness_name || "???") +'</a>';
@@ -6349,7 +6373,7 @@ function getNodeConflictDescription(tree, node) {
           }
           break;
       default:
-          console.error("ERROR: unknown conflict status '"+ (conflictInfo[nodeid].status) +"'!");
+          console.error("ERROR: unknown conflict status '"+ node.conflictDetails.status +"'!");
     }
 
     return '<div class="node-conflict-status-'+ node.conflictDetails.status +'">'+ conflictHTML +'</div>';
