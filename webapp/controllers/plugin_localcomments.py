@@ -345,7 +345,8 @@ def index():
         child_comments = [ ]
         if comment.get('comments') and comment.get('comments') > 0:
             get_children_url = comment['comments_url']
-            resp = requests.get( get_children_url, headers=GH_GET_HEADERS)
+            resp = requests.get( get_children_url, headers=GH_GET_HEADERS, timeout=10)
+            # N.B. Timeout is in seconds, and watches for *any* new data within that time (vs. whole response)
             try:
                 resp.raise_for_status()
                 try:
@@ -763,7 +764,8 @@ def get_local_comments(location={}):
     ##TODO: search only within body?
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
     url = url.format(GH_BASE_URL, search_text)
-    resp = requests.get(url, headers=GH_GET_HEADERS)
+    resp = requests.get(url, headers=GH_GET_HEADERS, timeout=10)  
+    # N.B. Timeout is in seconds, and watches for *any* new data within that time (vs. whole response)
     ##print(url)
     ##print(resp)
     try:
