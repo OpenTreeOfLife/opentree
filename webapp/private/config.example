@@ -50,14 +50,17 @@ CACHED_v2_api = http://opentree.myserver.org/cached/v2
 # For now, some treemachine services lag the rest, with v1 URLs
 # getDraftTreeID_url = {treemachine_domain}/getDraftTreeID
 getDraftTreeID_url = {treemachine_domain}/v3/tree_of_life/about
-#getSyntheticTree_url = {CACHED_treemachine_domain}/getSyntheticTree
-getSyntheticTree_url = {treemachine_domain}/treemachine/v1/getSyntheticTree
+getSyntheticTree_url = {CACHED_treemachine_domain}/v3/tree_of_life/subtree
 getDraftSubtree_url = {treemachine_domain}/v3/tree_of_life/subtree
 doTNRSForAutocomplete_url = {taxomachine_domain}/taxomachine/v1/autocompleteQuery
+
 getContextsJSON_url = {taxomachine_domain}/taxomachine/v1/getContextsJSON
 # TODO: restore this to CACHED_taxomachine_domain once all taxo calls are using v3 APIs
 # OR https://api.opentreeoflife.org/taxomachine/v1/getContexts
+
 getSynthesisSourceList_url = {treemachine_domain}/v3/tree_of_life/about
+# TODO: use CACHED_treemachine_domain for this!?
+
 findAllStudies_url = {oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
 #getTaxonInfo_url = {taxomachine_domain}/v3/taxonomy/taxon_info

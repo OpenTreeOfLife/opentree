@@ -88,9 +88,12 @@ def download_subtree():
         # use the appropriate web service for this ID type
         fetch_url = method_dict['getDraftSubtree_url']
         if id_type == 'ottol-id':
-            fetch_args = {'ott_id': node_or_ottol_id}
+            fetch_args = {'ott_id': Number(node_or_ottol_id)}
         else:
             fetch_args = {'node_id': node_or_ottol_id}
+        fetch_args['format'] = 'newick';
+        fetch_args['height_limit'] = -1;  # TODO: allow for dynamic height, based on max tips?
+
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
@@ -135,7 +138,7 @@ def fetch_current_synthetic_tree_ids():
 
         ids_json = simplejson.loads( ids_response )
         draftTreeName = str(ids_json['synth_id']).encode('utf-8')
-        startNodeID = str(ids_json['root_node_id']).encode('utf-8')
+        startNodeID = str(ids_json['root']['node_id']).encode('utf-8')
         return (draftTreeName, startNodeID)
 
     except Exception, e:
