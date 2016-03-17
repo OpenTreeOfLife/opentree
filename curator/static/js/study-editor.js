@@ -7133,8 +7133,7 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
         case 'synth':
             fetchURL = getDraftTreeMRCAForNodes_url;
             POSTdata = {
-                "ott_ids": mappedIngroupOttIds,
-                "treeSource": options.TREE_SOURCE
+                "ott_ids": mappedIngroupOttIds
             };
             break;
         case 'taxonomy':
@@ -7172,8 +7171,16 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
                 tree['^ot:MRCAName']  = 'lica' in responseJSON ? responseJSON['lica']['ot:ottTaxonName'] : '???';
                 tree['^ot:MRCAOttId'] = 'lica' in responseJSON ? responseJSON['lica']['ot:ottId'] : '???';
             } else {  // ASSUME 'synth'
-                tree['^ot:nearestTaxonMRCAName'] = responseJSON['nearest_taxon']['unique_name'] || '???';
-                tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['nearest_taxon']['ott_id'] || null;
+                var nearestTaxonInfo;
+                if ('nearest_taxon' in responseJSON) {
+                    // MRCA was an unlabeled internal node; show the nearest taxon instead
+                    nearestTaxonInfo = responseJSON['nearest_taxon'];
+                } else {
+                    // MRCA is also a proper taxon, read directly from its node-info
+                    nearestTaxonInfo = responseJSON['mrca']['taxon'];
+                }
+                tree['^ot:nearestTaxonMRCAName'] = nearestTaxonInfo['unique_name'] || '???';
+                tree['^ot:nearestTaxonMRCAOttId'] = nearestTaxonInfo['ott_id'] || null;
             }
             nudgeTickler('TREES');
         }
