@@ -460,12 +460,42 @@ function getTaxobrowserLink(displayName, ottID) {
     return link.replace('{TAXO_BROWSER_URL}', getTaxobrowserURL(ottID))
         .replace('{DISPLAY_NAME}', displayName);
 }
-
 function getTaxobrowserURL(ottID) {
     if (!ottID) {
         return null;
     }
     var url = '/taxonomy/browse?id={OTT_ID}';
+    return url.replace('{OTT_ID}', ottID);
+}
+
+/* Return a link (or URL) to a taxon in the synthetic-tree browser 
+ * N.B. This uses a txon-based URL that assumes the latest synthesic tree.
+ *
+ * TODO: Add a similar pair of functions for unnamed nodes (requires synth-tree ID):
+ *      getSynthTreeViewerLinkForNodeID
+ *      getSynthTreeViewerURLForNodeID
+ */
+function getSynthTreeViewerLinkForTaxon(displayName, ottID) {
+    // ASSUMES we will always have the ottid, else check for unique name
+    if (!ottID) {
+        // show just the name (static text, possibly an empty string)
+        return displayName;
+    }
+    if (!displayName) {
+        // empty or missing name? show the raw ID
+        displayName = 'OTT: {OTT_ID}'.replace('OTT_ID',ottID)
+    }
+    var link = '<a href="{SYNTH_VIEWER_URL}" \
+                   title="See this taxon in the latest synthetic tree" \
+                   target="synthbrowser">{DISPLAY_NAME}</a>';
+    return link.replace('{SYNTH_VIEWER_URL}', getSynthTreeViewerURLForTaxon(ottID))
+        .replace('{DISPLAY_NAME}', displayName);
+}
+function getSynthTreeViewerURLForTaxon(ottID) {
+    if (!ottID) {
+        return null;
+    }
+    var url = '/opentree/argus/ottol@{OTT_ID}';
     return url.replace('{OTT_ID}', ottID);
 }
 
@@ -1645,15 +1675,17 @@ function getCollectionCuratorRole(collection) {
             return 'Owner';
         }
     }
+    var roleFound = 'None';
     if (('contributors' in collection) && $.isArray(collection.contributors)) {
         // compare to logged-in userid provide in the main page
         $.each(collection.contributors, function(i, c) {
             if (c.login === curatorLogin) {
-                return 'Contributor';
+                roleFound = 'Contributor';
+                return false;
             }
         });
     }
-    return 'None';
+    return roleFound;
 }
 function getCollectionLastModification(collection) {
     // nicely formatted for display, with details on mouseover
