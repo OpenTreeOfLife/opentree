@@ -27,18 +27,12 @@ treemachine = http://opentree.myserver.org
 taxomachine = http://opentree.myserver.org
 oti = http://opentree.myserver.org/oti
 opentree_api = http://opentree.myserver.org/phylesystem/v1
-# a single shared base URL for all v2 APIs (mainly to allow switching domain)
-v2_api = //devapi.opentreeoflife.org/v2
 collections_api_base_url = //devapi.opentreeoflife.org/v2
 favorites_api_base_url = //devapi.opentreeoflife.org/v2
 # Cached versions of some APIs will speed up repeated calls (see below).
 # These use a simple web2py cache implemented in phylesystem-api
 CACHED_treemachine = http://opentree.myserver.org/cached/treemachine
 CACHED_taxomachine = http://opentree.myserver.org/cached/taxomachine
-# N.B. This one spans all v2 APIs, including some things that are probably too
-# big or ephemeral to reasonable cache. Use with care!
-CACHED_v2_api = http://opentree.myserver.org/cached/v2
- 
 
 # Building on the URLs above, complete the public-facing URL for all methods
 # (again, these should work from both server- and client-side code)
