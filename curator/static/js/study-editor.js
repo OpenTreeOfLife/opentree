@@ -5964,11 +5964,10 @@ function requestTaxonMapping( otuToMap ) {
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({
-            "queryString": searchText,
-            "includeDubious": false,
-            "includeDeprecated": false,
-            "doApproximateMatching": (singleTaxonMapping || usingFuzzyMatching) ? true : false,
-            "contextName": searchContextName
+            "names": [searchText],
+            "include_suppressed": false,
+            "do_approximate_matching": (singleTaxonMapping || usingFuzzyMatching) ? true : false,
+            "context_name": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
         contentType: "application/json; charset=utf-8",
@@ -6076,11 +6075,11 @@ function requestTaxonMapping( otuToMap ) {
                     $.each(candidateMatches, function(i, match) {
                         // convert to expected structure for proposed mappings
                         candidateMappingList.push({
-                            name: match['ot:ottTaxonName'],       // matched name
-                            ottId: String(match['ot:ottId']),     // matched OTT id (as string)
-                            nodeId: match.matched_node_id,        // number
-                            exact: false,                               // boolean (ignoring this for now)
-                            higher: false,                               // boolean
+                            name: match['unique_name'] || match['name'],       // matched name
+                            ottId: match['ott_id'],     // matched OTT id (as number!)
+                            nodeId: match['matched_node_id'],        // number
+                            //exact: false,                               // boolean (ignoring this for now)
+                            //higher: false,                               // boolean
                             // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
                             originalMatch: match,
                             otuID: otuID
@@ -7168,8 +7167,15 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
              * latest synthetic tree)
              */
             if (options.TREE_SOURCE === 'taxonomy') {
-                tree['^ot:MRCAName']  = 'lica' in responseJSON ? responseJSON['lica']['ot:ottTaxonName'] : '???';
-                tree['^ot:MRCAOttId'] = 'lica' in responseJSON ? responseJSON['lica']['ot:ottId'] : '???';
+                // TODO: REMOVE this test and assume 'mrca' as in the v3 API documentation
+                var mrcaInfo;
+                if ('mrca' in responseJSON) {
+                    mrcaInfo = responseJSON['mrca'];
+                } else if ('taxon' in responseJSON) {
+                    mrcaInfo = responseJSON['taxon'];
+                }
+                tree['^ot:MRCAName']  = mrcaInfo['unique_name'] || mrcaInfo['name'] || '???';
+                tree['^ot:MRCAOttId'] = mrcaInfo['ott_id'] || '???';
             } else {  // ASSUME 'synth'
                 var nearestTaxonInfo;
                 if ('nearest_taxon' in responseJSON) {
