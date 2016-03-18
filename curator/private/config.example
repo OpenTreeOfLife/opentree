@@ -55,7 +55,8 @@ render_markdown_url = {opentree_api_domain}/render_markdown
 getSynthesisSourceList_url = {treemachine_domain}/treemachine/v1/getSynthesisSourceList
 getTaxonomicMRCAForNodes_url = {taxomachine_domain}/v3/taxonomy/mrca
 getDraftTreeMRCAForNodes_url = {treemachine_domain}/v3/tree_of_life/mrca
-findAllStudies_url = {oti_domain}/findAllStudies
+findAllStudies_url = {oti_domain}/v3/studies/find_studies
+# TODO: use CACHED_oti_domain for this?
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
 singlePropertySearchForTrees_url = {oti_domain}/singlePropertySearchForTrees
 findAllTreeCollections_url = {opentree_api_domain}/../../v2/collections/find_collections

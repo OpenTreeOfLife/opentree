@@ -457,7 +457,7 @@ def fetch_current_synthesis_source_data():
 
         # filter just the metadata for studies contributing to synthesis
         contributing_studies = [ ]
-        for study in study_metadata:
+        for study in study_metadata['matched_studies']:
             # Add any missing study-ID prefixes (assume 'pg') so we can compare
             # with the prefixed IDs provided by getSynthesisSourceList.
             id_parts = study['ot:studyId'].split('_')

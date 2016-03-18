@@ -190,41 +190,6 @@ function isVisiblePage( pageNum, pagedArray ) {
     }
     return false;
 }
-/*
-var cladeNameTimeoutID = null;
-function loadMissingFocalCladeNames() {
-    // temporary behavior to AJAX-load missing taxon names wherever we
-    // display 'ot:focalClade' values (bare OTT ids, which nobody knows)
-    if (cladeNameTimeoutID) {
-        clearTimeout( cladeNameTimeoutID );
-    }
-    cladeNameTimeoutID = setTimeout(function() {
-        var $missingNames = $('.focal-clade-name:empty');
-        if ($missingNames.length > 0) {
-            var $nameWidget = $missingNames[0];
-            var $ottID = $nameWidget.parent().find('.focal-clade-id').val();
-            if (!$ottID || ($ottID === '')) {
-                $nameWidget.val('');
-            } else {
-                $.ajax(
-                    type: 'POST',
-                    dataType: 'json',
-                    url: findAllStudies_url,
-                    data: {"ottId": $oddID.toString()},
-                    success: function( data, textStatus, jqXHR ) {
-                        console.log("got the taxon name: ");
-                        var matchingOttID = data['name'] || '???';
-                        console.log( matchingOttID );
-                    }
-
-                    // replace another missing name (if any)...
-                    loadMissingFocalCladeNames();
-                );
-            }
-        }
-    }, 100);
-}
-*/
 
 /*
  * Cross-browser (as of 2013) support for a "safety net" when trying to leave a

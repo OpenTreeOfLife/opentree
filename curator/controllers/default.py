@@ -262,7 +262,7 @@ def _get_opentree_activity( userid=None, username=None ):
     all_studies = requests.post(
         url=fetch_url,
         data={'verbose': True}  # include curator list
-    ).json()
+    ).json().get('matched_studies', [ ])
 
     for study in all_studies:
         study_curators = study['ot:curatorName']
