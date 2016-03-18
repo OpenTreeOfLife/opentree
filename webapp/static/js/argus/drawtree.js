@@ -299,7 +299,13 @@ function createArgus(spec) {
          //
         var dataStr = JSON.stringify(o.data);
         var domSource = o.domSource === undefined ? "ottol" : o.domSource;
-        var ottID = Number(o.data['ott_id']) || 0;
+        var ottID;
+        if ('ott_id' in o.data) {
+            ottID = Number(o.data.ott_id);
+        } else if (o.data.node_id.indexOf('ott') === 0) {
+            // strip leading 'ott' from node_id to recover numeric OTT id
+            ottID = Number( o.data.node_id.replace('ott','') ) || 0;
+        }
         var argusLoadSuccess = function (json, textStatus, jqXHR) {
             var argusObjRef = this;
             argusObjRef.treeData = json; // $.parseJSON(dataStr);
@@ -619,7 +625,7 @@ function createArgus(spec) {
                     // check to see if we got a taxon record, or an error in JSON
                     var json = $.parseJSON(jqXHR.responseText);
                     // if (json['ott_id'] === ottID) { TODO: use this when we switch to v3 taxonomy API!
-                    if (json['ot:ottId'] === ottID) {
+                    if (json['ott_id'] === ottID) {
                         // the requested taxon exists in OTT, but is not found in the target tree
                         var taxobrowserlink = getTaxobrowserLink('taxonomy browser', ottID)
                         errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy'

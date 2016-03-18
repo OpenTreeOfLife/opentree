@@ -7457,9 +7457,6 @@ function searchForMatchingTaxa() {
     // stash these to use for later comparison (to avoid redundant searches)
     var queryText = searchText; // trimmed above
     var queryContextName = searchContextName;
-
-    // proper version queries treemachine API
-    // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
     $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
     $('#search-results').show();
     $('#search-results').dropdown('toggle');
@@ -7469,10 +7466,9 @@ function searchForMatchingTaxa() {
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({
-            "queryString": searchText,
-            "includeDubious": false,
-            "includeDeprecated": false,
-            "contextName": searchContextName
+            "name": searchText,
+            "context_name": searchContextName,
+            "include_suppressed": false
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
         contentType: "application/json; charset=utf-8",
@@ -7487,25 +7483,18 @@ function searchForMatchingTaxa() {
             /*
              * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
              * with these properties:
-             *      ottId   // taxon ID in OTT taxonomic tree
-             *      nodeId  // ie, neo4j node ID
-             *      exact   // matches the entered text exactly? T/F
-             *      name    // taxon name
-             *      higher  // points to a genus or higher taxon? T/F
+             *      ott_id         // taxon ID in OTT taxonomic tree
+             *      unique_name    // the taxon name, or unique name if it has one
+             *      is_higher      // points to a genus or higher taxon? T/F
              */
             if (data && data.length && data.length > 0) {
                 // sort results to show exact match(es) first, then higher taxa, then others
                 // initial sort on higher taxa (will be overridden by exact matches)
+                // N.B. As of the v3 APIs, an exact match will be returned as the only result.
                 data.sort(function(a,b) {
-                    if (a.higher === b.higher) return 0;
-                    if (a.higher) return -1;
-                    if (b.higher) return 1;
-                });
-                // final sort on exact matches (overrides higher taxa)
-                data.sort(function(a,b) {
-                    if (a.exact === b.exact) return 0;
-                    if (a.exact) return -1;
-                    if (b.exact) return 1;
+                    if (a.is_higher === b.is_higher) return 0;
+                    if (a.is_higher) return -1;
+                    if (b.is_higher) return 1;
                 });
 
                 // show all sorted results, up to our preset maximum
@@ -7515,9 +7504,8 @@ function searchForMatchingTaxa() {
                         break;
                     }
                     var match = data[mpos];
-                    var matchingName = match.name;
-                    //
-                    var matchingID = match.ottId;
+                    var matchingName = match.unique_name;
+                    var matchingID = match.ott_id;
                     if ($.inArray(matchingID, matchingNodeIDs) === -1) {
                         // we're not showing this yet; add it now
                         $('#search-results').append(

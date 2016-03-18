@@ -46,18 +46,14 @@ CACHED_taxomachine = http://opentree.myserver.org/cached/taxomachine
 getDraftTreeID_url = {treemachine_domain}/v3/tree_of_life/about
 getSyntheticTree_url = {CACHED_treemachine_domain}/v3/tree_of_life/subtree
 getDraftSubtree_url = {treemachine_domain}/v3/tree_of_life/subtree
-doTNRSForAutocomplete_url = {taxomachine_domain}/taxomachine/v1/autocompleteQuery
-
-getContextsJSON_url = {taxomachine_domain}/taxomachine/v1/getContextsJSON
-# TODO: restore this to CACHED_taxomachine_domain once all taxo calls are using v3 APIs
-# OR https://api.opentreeoflife.org/taxomachine/v1/getContexts
+doTNRSForAutocomplete_url = {taxomachine_domain}/v3/tnrs/autocomplete_name
+getContextsJSON_url = {CACHED_taxomachine_domain}/v3/tnrs/contexts
 
 getSynthesisSourceList_url = {treemachine_domain}/v3/tree_of_life/about
 # TODO: use CACHED_treemachine_domain for this!?
 
 findAllStudies_url = {oti_domain}/findAllStudies
 singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
-#getTaxonInfo_url = {taxomachine_domain}/v3/taxonomy/taxon_info
-getTaxonInfo_url = {taxomachine_domain}/v2/taxonomy/taxon
+getTaxonInfo_url = {taxomachine_domain}/v3/taxonomy/taxon_info
 # Include one phylesystem-api method to download NexSON from Bibliographic References page
 API_load_study_GET_url = {opentree_api_domain}/study/{STUDY_ID}

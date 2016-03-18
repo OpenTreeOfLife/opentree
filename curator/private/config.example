@@ -36,6 +36,8 @@ taxomachine = http://dev.opentreeoflife.org/taxomachine:7476
 oti = http://dev.opentreeoflife.org/oti
 opentree_api = http://dev.opentreeoflife.org/phylesystem/v1
 conflict_api = http://dev.opentreeoflife.org/conflict
+CACHED_taxomachine = https://test.opentreeoflife.org
+CACHED_oti = //devapi.opentreeoflife.org/cached/oti/v1
 
 # Building on the URLs above, complete the public-facing URL for all methods
 # (again, these should work from both server- and client-side code)
@@ -44,9 +46,9 @@ conflict_api = http://dev.opentreeoflife.org/conflict
 # URLs within the main opentree site. So we assume that partial paths '/db/data/'
 # are handled in the ProxyPass statement.
 [method_urls]
-doTNRSForAutocomplete_url = {taxomachine_domain}/autocompleteQuery
+doTNRSForAutocomplete_url = {taxomachine_domain}/v3/tnrs/autocomplete_name
 doTNRSForMappingOTUs_url = {taxomachine_domain}/contextQuery
-getContextsJSON_url = {taxomachine_domain}/getContextsJSON
+getContextsJSON_url = {CACHED_taxomachine_domain}/v3/tnrs/contexts
 getContextForNames_url = {taxomachine_domain}/getContextForNames
 phylesystem_config_url = {opentree_api_domain}/phylesystem_config
 render_markdown_url = {opentree_api_domain}/render_markdown
