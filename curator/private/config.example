@@ -36,6 +36,7 @@ taxomachine = http://dev.opentreeoflife.org/taxomachine:7476
 oti = http://dev.opentreeoflife.org/oti
 opentree_api = http://dev.opentreeoflife.org/phylesystem
 conflict_api = http://dev.opentreeoflife.org/conflict
+CACHED_treemachine = https://test.opentreeoflife.org
 CACHED_taxomachine = https://test.opentreeoflife.org
 CACHED_oti = https://devapi.opentreeoflife.org
 
