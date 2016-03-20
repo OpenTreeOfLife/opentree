@@ -34,10 +34,10 @@ github_redirect_uri = YOUR_REDIRECT_URI_HERE
 treemachine = http://dev.opentreeoflife.org/treemachine:7474
 taxomachine = http://dev.opentreeoflife.org/taxomachine:7476
 oti = http://dev.opentreeoflife.org/oti
-opentree_api = http://dev.opentreeoflife.org/phylesystem/v1
+opentree_api = http://dev.opentreeoflife.org/phylesystem
 conflict_api = http://dev.opentreeoflife.org/conflict
 CACHED_taxomachine = https://test.opentreeoflife.org
-CACHED_oti = //devapi.opentreeoflife.org/cached/oti/v1
+CACHED_oti = https://devapi.opentreeoflife.org
 
 # Building on the URLs above, complete the public-facing URL for all methods
 # (again, these should work from both server- and client-side code)
@@ -50,34 +50,35 @@ doTNRSForAutocomplete_url = {taxomachine_domain}/v3/tnrs/autocomplete_name
 doTNRSForMappingOTUs_url = {taxomachine_domain}/v3/tnrs/match_names
 getContextsJSON_url = {CACHED_taxomachine_domain}/v3/tnrs/contexts
 getContextForNames_url = {taxomachine_domain}/v3/tnrs/infer_context
-phylesystem_config_url = {opentree_api_domain}/phylesystem_config
-render_markdown_url = {opentree_api_domain}/render_markdown
-getSynthesisSourceList_url = {treemachine_domain}/treemachine/v1/getSynthesisSourceList
+getSynthesisSourceList_url = {CACHED_treemachine_domain}/v3/tree_of_life/about
 getTaxonomicMRCAForNodes_url = {taxomachine_domain}/v3/taxonomy/mrca
 getDraftTreeMRCAForNodes_url = {treemachine_domain}/v3/tree_of_life/mrca
 findAllStudies_url = {oti_domain}/v3/studies/find_studies
-# TODO: use CACHED_oti_domain for this?
-singlePropertySearchForStudies_url = {oti_domain}/singlePropertySearchForStudies
-singlePropertySearchForTrees_url = {oti_domain}/singlePropertySearchForTrees
-findAllTreeCollections_url = {opentree_api_domain}/../../v2/collections/find_collections
+# TODO: Can we use CACHED_oti_domain for this?
+singlePropertySearchForStudies_url = {oti_domain}/v3/studies/find_studies
+singlePropertySearchForTrees_url = {oti_domain}/v3/studies/find_trees
+findAllTreeCollections_url = {opentree_api_domain}/v3/collections/find_collections
 treeConflictStatus_url = {conflict_api_domain}/conflict-status?tree1={TREE1_ID}&tree2={TREE2_ID}&use_cache={USE_CACHE}
+# NOTE that some general utility methods are called from original v1 code.
+phylesystem_config_url = {opentree_api_domain}/phylesystem/v1/phylesystem_config
+render_markdown_url = {opentree_api_domain}/phylesystem/v1/render_markdown
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #
 # NOTE that we shouldn't need '?jsoncallback=?' on URLs for the Open Tree API, since
 # it now supports cross-domain requests via CORS
 
-API_create_study_POST_url = {opentree_api_domain}/study
-API_load_study_GET_url = {opentree_api_domain}/study/{STUDY_ID}
-API_update_study_PUT_url = {opentree_api_domain}/study/{STUDY_ID}
-API_remove_study_DELETE_url = {opentree_api_domain}/study/{STUDY_ID}
+API_create_study_POST_url = {opentree_api_domain}/v3/study
+API_load_study_GET_url = {opentree_api_domain}/v3/study/{STUDY_ID}
+API_update_study_PUT_url = {opentree_api_domain}/v3/study/{STUDY_ID}
+API_remove_study_DELETE_url = {opentree_api_domain}/v3/study/{STUDY_ID}
 
-API_create_file_POST_url = {opentree_api_domain}/study/{STUDY_ID}/file
-API_load_file_GET_url = {opentree_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
-API_update_file_PUT_url = {opentree_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
-API_remove_file_DELETE_url = {opentree_api_domain}/study/{STUDY_ID}/file/{FILE_ID}
+API_create_file_POST_url = {opentree_api_domain}/v3/study/{STUDY_ID}/file
+API_load_file_GET_url = {opentree_api_domain}/v3/study/{STUDY_ID}/file/{FILE_ID}
+API_update_file_PUT_url = {opentree_api_domain}/v3/study/{STUDY_ID}/file/{FILE_ID}
+API_remove_file_DELETE_url = {opentree_api_domain}/v3/study/{STUDY_ID}/file/{FILE_ID}
 
-API_create_collection_POST_url = {opentree_api_domain}/collection
-API_load_collection_GET_url = {opentree_api_domain}/collection/{COLLECTION_ID}
-API_update_collection_PUT_url = {opentree_api_domain}/collection/{COLLECTION_ID}
-API_remove_collection_DELETE_url = {opentree_api_domain}/collection/{COLLECTION_ID}
+API_create_collection_POST_url = {opentree_api_domain}/v3/collection
+API_load_collection_GET_url = {opentree_api_domain}/v3/collection/{COLLECTION_ID}
+API_update_collection_PUT_url = {opentree_api_domain}/v3/collection/{COLLECTION_ID}
+API_remove_collection_DELETE_url = {opentree_api_domain}/v3/collection/{COLLECTION_ID}
