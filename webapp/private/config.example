@@ -42,12 +42,16 @@ CACHED_oti = https://opentree.myserver.org/cached
 # URLs within the main opentree site. So we assume that partial paths '/db/data/' 
 # are handled in the ProxyPass statement.
 [method_urls]
-getDraftTreeID_url = {CACHED_treemachine_domain}/v3/tree_of_life/about
-getSyntheticTree_url = {CACHED_treemachine_domain}/v3/tree_of_life/subtree
+getDraftTreeID_url = {treemachine_domain}/v3/tree_of_life/about
+# TODO: RESTORE to CACHED_ base URL
+getSyntheticTree_url = {treemachine_domain}/v3/tree_of_life/subtree
+# TODO: RESTORE to CACHED_ base URL
 getDraftSubtree_url = {treemachine_domain}/v3/tree_of_life/subtree
 doTNRSForAutocomplete_url = {taxomachine_domain}/v3/tnrs/autocomplete_name
-getContextsJSON_url = {CACHED_taxomachine_domain}/v3/tnrs/contexts
-getSynthesisSourceList_url = {CACHED_treemachine_domain}/v3/tree_of_life/about
+getContextsJSON_url = {taxomachine_domain}/v3/tnrs/contexts
+# TODO: RESTORE to CACHED_ base URL
+getSynthesisSourceList_url = {treemachine_domain}/v3/tree_of_life/about
+# TODO: RESTORE to CACHED_ base URL
 findAllStudies_url = {oti_domain}/v3/studies/find_studies
 # TODO: Can we use CACHED_oti_domain for this?
 singlePropertySearchForStudies_url = {oti_domain}/v3/studies/find_studies
