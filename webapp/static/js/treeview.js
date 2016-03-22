@@ -455,10 +455,10 @@ function buildNodeNameFromTreeData( node ) {
         return node.name || nameOfLastResort;
     }
     // unnamed nodes should show two descendant names as tip taxa (eg, 'dog, cat')
-    if (node.descendantNameList) {
+    if (node.descendant_name_list) {
         // children aren't in view, but their names are here
-        return (compoundNodeNamePrefix + node.descendantNameList.slice(0,2).join(compoundNodeNameDelimiter)
-                + (node.descendantNameList.length > 2 ? ' + ...' : '')   // hint at additional descendants
+        return (compoundNodeNamePrefix + node.descendant_name_list.slice(0,2).join(compoundNodeNameDelimiter)
+                + (node.descendant_name_list.length > 2 ? ' + ...' : '')   // hint at additional descendants
                 + compoundNodeNameSuffix);
     }
     // we'll need to build a name from visible children and/or their descendantNamesList
@@ -494,6 +494,9 @@ function buildNodeNameFromTreeData( node ) {
 
 // recursively populate any missing (implied) node names (called immediately after argus loads treeData)
 function buildAllMissingNodeNames( node ) {
+    if ('taxon' in node) {
+        node.name = node.taxon.name;
+    }
     if (!node.name) {
         node.name = buildNodeNameFromTreeData(node);
     }
@@ -612,7 +615,7 @@ function showObjectProperties( objInfo, options ) {
     if (argus.treeData) {
 
         // fetch additional information used to detail provenance for nodes and edges
-        metaMap = argus.treeData.sourceToMetaMap;
+        metaMap = argus.treeData.source_id_map;
 
         // Gather data for all displayed properties, storing each in the most
         // appropriate section
@@ -740,11 +743,12 @@ function showObjectProperties( objInfo, options ) {
                         nodeSection.displayedProperties['Taxonomic rank'] = fullNode.tax_rank;
                     }
 
-                    if (typeof fullNode.n_tip_descendants !== 'undefined') {
-                        if (fullNode.n_tip_descendants === 0) {
+                    if (typeof fullNode.num_tips !== 'undefined') {
+                        //if (fullNode.num_tips === 0) {
+                        if (fullNode.isActualLeafNode()) {
                             nodeSection.displayedProperties['Leaf node (no descendant tips)'] = '';
                         } else {
-                            nodeSection.displayedProperties['Descendant tips'] = (fullNode.n_tip_descendants || 0).toLocaleString();
+                            nodeSection.displayedProperties['Descendant tips'] = (fullNode.num_tips || 0).toLocaleString();
                             // OR 'Clade members'? 'Leaf taxa'?
                         }
                     }
@@ -764,7 +768,7 @@ function showObjectProperties( objInfo, options ) {
 
                     // add another section to explain an "orphaned" taxon (unconnected to other nodes in the tree)
                     if (('hasChildren' in fullNode) && (fullNode.hasChildren === false)
-                     && ('path_to_root' in fullNode) && (fullNode.path_to_root.length === 0)) {
+                     && ('lineage' in fullNode) && (fullNode.lineage.length === 0)) {
                         orphanSection = {
                             name: 'Where is the surrounding tree?',
                             displayedProperties: {},
@@ -829,7 +833,7 @@ function showObjectProperties( objInfo, options ) {
                         // this supporting data is already in arguson
                     } else {
                         // it's a study; call the index to get full details
-                        sourceMetadata = argus.treeData.sourceToMetaMap[ sourceID ];
+                        sourceMetadata = argus.treeData.source_id_map[ sourceID ];
                         if ((typeof sourceMetadata['sourceDetails'] === 'undefined') && (sourceMetadata['loadStatus'] !== 'PENDING')) {
                             // don't keep sending requests for the same source! we manage this with 'loadStatus'
                             sourceMetadata['loadStatus'] = 'PENDING';
@@ -844,7 +848,7 @@ function showObjectProperties( objInfo, options ) {
                                 function(data) {    // JSONP callback
                                     // reset this locally, to MAKE SURE we've got the right box
                                     ///console.warn('<<<<<<<<<<<<<<< BACK FROM FETCH for sourceID '+ sourceID);
-                                    var cbSourceMetadata = argus.treeData.sourceToMetaMap[ sourceID ];
+                                    var cbSourceMetadata = argus.treeData.source_id_map[ sourceID ];
                                     // ignore this if not requested, or already complete
                                     if (cbSourceMetadata['loadStatus'] === 'PENDING') {
                                         if (data.matched_studies && (data.matched_studies.length > 0)) {
@@ -986,7 +990,7 @@ function showObjectProperties( objInfo, options ) {
                 case 'Supported by':
                     var supportedByTaxonomy = false;
                     var supportingTaxonomyVersion, supportingTaxonomyVersionURL;
-                    var ottInfo = argus.treeData.sourceToMetaMap['taxonomy'];
+                    var ottInfo = argus.treeData.source_id_map['taxonomy'];
                     if ('version' in ottInfo) {
                         supportingTaxonomyVersion = ottInfo['version'];
                         var simpleVersion = supportingTaxonomyVersion.split('draft')[0];
@@ -1147,7 +1151,7 @@ function showObjectProperties( objInfo, options ) {
         // main download page if it's too large (based on the number of
         // descendant tips)
         var maxTipsForNewickSubtree = 10000;
-        if ((typeof fullNode.n_tip_descendants !== 'number') || (fullNode.n_tip_descendants > maxTipsForNewickSubtree)) {
+        if ((typeof fullNode.num_tips !== 'number') || (fullNode.num_tips > maxTipsForNewickSubtree)) {
             // when in doubt (e.g. nodes on the rootward path), offer the full download
             $details.append('<dt>Download subtree as Newick string</dt>');
             $details.append('<dd>This tree is too large to download through webservices, but you can '
@@ -1201,7 +1205,7 @@ function getTreeDataNode( filterFunc, testNode ) {
     if (testNode === argus.treeData) {
         // check for a matching ancestor (walk the path toward the root node)
         var foundAncestor = null;
-        $.each(testNode.path_to_root, function(i, testNode) {
+        $.each(testNode.lineage, function(i, testNode) {
             if (filterFunc(testNode)) {
                 foundAncestor = testNode;
                 return false;

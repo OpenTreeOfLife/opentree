@@ -192,10 +192,10 @@ function createArgus(spec) {
                     }
                 }
 
-                if (value.path_to_root) {
+                if (value.lineage) {
                     // assign parent IDs up the "root-ward" chain of nodes
                     var testChild = value;
-                    $.each(value.path_to_root, function(i, testParent) {
+                    $.each(value.lineage, function(i, testParent) {
                         testChild.parentNodeID = testParent.node_id;
                         testChild = testParent;  // and move to *its* parent
                     });
@@ -308,9 +308,23 @@ function createArgus(spec) {
         }
         var argusLoadSuccess = function (json, textStatus, jqXHR) {
             var argusObjRef = this;
-            argusObjRef.treeData = json; // $.parseJSON(dataStr);
-            //var node = argusObjRef.treeData[0];
+            argusObjRef.treeData = json.arguson;
+            // Determine the maximum node depth (height_limit or less) found in this subtree
             var node = argusObjRef.treeData;
+            var getSubtreeDepth = function(node) {
+                // find the deepest of its childrens' subtrees
+                var maxChildDepth = 0,
+                    childDepth;
+                if (node.children) {
+                    for (var i = 0; i < node.children.length; i++) {
+                        childDepth = getSubtreeDepth( node.children[i] );
+                        maxChildDepth = Math.max(childDepth, maxChildDepth);
+                    }
+                }
+                // add this node to depth, plus that of its deepest child
+                return maxChildDepth + 1;
+            }
+            argusObjRef.treeData.max_node_depth = getSubtreeDepth(node) - 1;
 
             // final setup of tree-view object hierarchy
             // recursive marking of depth in local tree
@@ -341,8 +355,8 @@ function createArgus(spec) {
                     for (var i = 0; i < nchildren; i++) {
                         var testChild = node.children[i],
                             sb = testChild.supported_by;
-                        testChild.supportedByTaxonomy = $.inArray('taxonomy', sb) !== -1,
-                        testChild.supportedByPhylogeny = sb.length > (testChild.supportedByTaxonomy ? 1 : 0);
+                        testChild.supportedByTaxonomy = ('taxonomy' in sb),
+                        testChild.supportedByPhylogeny = Object.keys(sb).length > (testChild.supportedByTaxonomy ? 1 : 0);
 
                         if (testChild.supportedByPhylogeny && testChild.supportedByTaxonomy) {
                             nodesWithHybridSupport.push(testChild);
@@ -451,17 +465,16 @@ function createArgus(spec) {
             // clear the cluster registry first
             argusObj.clusters = {}; 
 
-            setupArgusNode(node, 0);
-
-
             // recursively populate any missing (implied) node names
             buildAllMissingNodeNames(node);
+
+            setupArgusNode(node, 0);
 
             var pheight, pwidth, sourcelabel, anchoredbg;
 
             //spec.container.text("proxy returned data..." + treeData);
             // calculate view-specific geometry parameters
-            pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.n_leaves);
+            pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.num_tips);
             pheight += argusObjRef.nubDistScalar * argusObjRef.minTipRadius;
 
             // for a narrow tree, push topmost nodes down away from the anchored widgets
@@ -1068,7 +1081,7 @@ function createArgus(spec) {
         if (node.isLocalLeafNode()) {
             node.r = node.isActualLeafNode() ? (this.minTipRadius * 0.7) : this.minTipRadius;
         } else {
-            node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.n_tip_descendants);
+            node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.num_tips);
         }
         var nodeFill = this.nodeColor; 
         var nodeStroke = this.pathColor;
@@ -1252,19 +1265,19 @@ function createArgus(spec) {
             // draw a series of ancestor nodes
             this.targetNodeY = node.y;
 
-            if (node.path_to_root) {
+            if (node.lineage) {
                 // try to draw upward path w/ up to 3 nodes, plus trailing edge if there's more
                 var upwardNode;
                 var maxUpwardNodes = 3;
                 var alphaStep = 0.15;
                 var xyStep = 25;
-                for (i = 0; i < node.path_to_root.length; i++) {
+                for (i = 0; i < node.lineage.length; i++) {
                     var startX = node.x - (xyStep * i);
                     var startY = node.y - (xyStep * i);
                     var endX = startX - xyStep;
                     var endY = startY - xyStep;
                     var pathOpacity = 1.0 - (alphaStep * (i+1));
-                    var ancestorNode = node.path_to_root[i];
+                    var ancestorNode = node.lineage[i];
                     // build IDs for visible elements (to move or create)
                     nodeCircleElementID = 'node-circle-'+ ancestorNode.node_id;
                     nodeLabelElementID = 'node-label-'+ ancestorNode.node_id;
@@ -1814,8 +1827,8 @@ function alphaSortByName(a,b) {
     return 0;
 }
 function sortByDescendantCount(a,b) {
-    if (a.n_tip_descendants > b.n_tip_descendants) return 1;
-    if (a.n_tip_descendants < b.n_tip_descendants) return -1;
+    if (a.num_tips > b.num_tips) return 1;
+    if (a.num_tips < b.num_tips) return -1;
     return 0;
 }
 
@@ -1845,10 +1858,10 @@ ArgusNode.prototype.isLocalLeafNode = function() {
     return (typeof this.children === 'undefined');
 };
 ArgusNode.prototype.isActualLeafNode = function() {
-    return this.n_tip_descendants === 0;
+    return this.num_tips === 0;
 };
 ArgusNode.prototype.isVisibleLeafNode = function() {
-    return this.hasChildren === false || this.n_leaves === 0;
+    return this.hasChildren === false || this.num_tips === 0;
 };
 ArgusNode.prototype.updateDisplayBounds = function() {
     // update my layout properties and store results (for faster access)
