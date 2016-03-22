@@ -505,6 +505,11 @@ function buildAllMissingNodeNames( node ) {
             buildAllMissingNodeNames( node.children[i] );
         }
     }
+    if (node.lineage) {
+        for (var i = 0; i < node.lineage.length; i++) {
+            buildAllMissingNodeNames( node.lineage[i] );
+        }
+    }
 }
 
 var spinnerSelector = '#spinner';
