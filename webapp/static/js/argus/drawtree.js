@@ -263,7 +263,7 @@ function createArgus(spec) {
             ajaxData = {
                 "synth_id": ds,   // TODO: Omit this paramter if it causes trouble!
                 "format": "arguson",
-                "height_limit": String(this.currMaxDepth)
+                "height_limit": this.currMaxDepth
             };
             // send *either* OTT id or node id (but not both)
             if (o.nodeID !== undefined) {

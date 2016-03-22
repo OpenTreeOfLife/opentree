@@ -446,7 +446,7 @@ function historyStateToPageHeading( stateObj ) {
 }
 
 function buildNodeNameFromTreeData( node ) {
-    var nameOfLastResort = "(untitled node)";
+    var nameOfLastResort = "(unnamed node)";
     var compoundNodeNameDelimiter = ' + ';
     var compoundNodeNamePrefix = '[';
     var compoundNodeNameSuffix = ']';
@@ -686,61 +686,64 @@ function showObjectProperties( objInfo, options ) {
                      *   ["ncbi:123", "gbif:456", "http://dx.doi.org/10.1186/1471-2148-14-23"]
                      * https://github.com/OpenTreeOfLife/germinator/wiki/%22Arguson%22-format
                      */
-                    if (fullNode.tax_sources && $.isPlainObject(fullNode.tax_sources)) {
-                        // TODO: REMOVE THIS if we adopt the scheme above; this is
-                        // a temporary alternative path for the current Arguson test file.
-                        nodeSection.displayedProperties['Source taxonomy'] = [];
-                        for (var src in fullNode.tax_sources) {
-                            var id = fullNode.tax_sources[src];
-                            var info = { taxSource: src };
-                            if (src === 'url') {
-                                info.taxSourceURL = id;
-                            } else {
-                                info.taxSourceID = id;
-                            }
-                            nodeSection.displayedProperties['Source taxonomy'].push(info);
-                        }
-
-                    } else if (fullNode.tax_sources && fullNode.tax_sources.length > 0) {
-                        nodeSection.displayedProperties['Source taxonomy'] = [];
-                        for (var tsPos = 0; tsPos < fullNode.tax_sources.length; tsPos++) {
-                            var taxSourceInfo = fullNode.tax_sources[tsPos];
-                            // Is this source a URL or CURIE?
-                            if (taxSourceInfo.indexOf('//') === -1) {  // CURIE
-                                var CURIEparts = taxSourceInfo.split(':');
-                                if (CURIEparts.length === 2) {
-                                    nodeSection.displayedProperties['Source taxonomy'].push({
-                                        taxSource: CURIEparts[0],
-                                        taxSourceId: CURIEparts[1]
-                                    });
+                    var itsTaxon = fullNode.taxon;
+                    if (itsTaxon) {
+                        if (itsTaxon.tax_sources && $.isPlainObject(itsTaxon.tax_sources)) {
+                            // TODO: REMOVE THIS if we adopt the scheme above; this is
+                            // a temporary alternative path for the current Arguson test file.
+                            nodeSection.displayedProperties['Source taxonomy'] = [];
+                            for (var src in itsTaxon.tax_sources) {
+                                var id = itsTaxon.tax_sources[src];
+                                var info = { taxSource: src };
+                                if (src === 'url') {
+                                    info.taxSourceURL = id;
                                 } else {
-                                    console.error('showObjectProperties(): ERROR, expected a CURIE or URL:');
-                                    console.error(taxSourceInfo);
+                                    info.taxSourceID = id;
                                 }
-                            } else {   // URL
-                                nodeSection.displayedProperties['Source taxonomy'].push({
-                                    taxSource: 'URL',
-                                    taxSourceURL: taxSourceInfo
-                                });
+                                nodeSection.displayedProperties['Source taxonomy'].push(info);
+                            }
+
+                        } else if (itsTaxon.tax_sources && itsTaxon.tax_sources.length > 0) {
+                            nodeSection.displayedProperties['Source taxonomy'] = [];
+                            for (var tsPos = 0; tsPos < itsTaxon.tax_sources.length; tsPos++) {
+                                var taxSourceInfo = itsTaxon.tax_sources[tsPos];
+                                // Is this source a URL or CURIE?
+                                if (taxSourceInfo.indexOf('//') === -1) {  // CURIE
+                                    var CURIEparts = taxSourceInfo.split(':');
+                                    if (CURIEparts.length === 2) {
+                                        nodeSection.displayedProperties['Source taxonomy'].push({
+                                            taxSource: CURIEparts[0],
+                                            taxSourceId: CURIEparts[1]
+                                        });
+                                    } else {
+                                        console.error('showObjectProperties(): ERROR, expected a CURIE or URL:');
+                                        console.error(taxSourceInfo);
+                                    }
+                                } else {   // URL
+                                    nodeSection.displayedProperties['Source taxonomy'].push({
+                                        taxSource: 'URL',
+                                        taxSourceURL: taxSourceInfo
+                                    });
+                                }
                             }
                         }
-                    }
 
-                    if (fullNode.ott_id) {
-                        nodeSection.displayedProperties['Reference taxonomy'] = [];
-                        //nodeSection.displayedProperties['OTT ID'] = fullNode.ottolId;
-                        nodeSection.displayedProperties['Reference taxonomy'].push(
-                            {
-                                taxSource: "OTT",
-                                taxSourceId: fullNode.ott_id
-                            }
-                        );
-                    }
+                        if (itsTaxon.ott_id) {
+                            nodeSection.displayedProperties['Reference taxonomy'] = [];
+                            //nodeSection.displayedProperties['OTT ID'] = itsTaxon.ottolId;
+                            nodeSection.displayedProperties['Reference taxonomy'].push(
+                                {
+                                    taxSource: "OTT",
+                                    taxSourceId: itsTaxon.ott_id
+                                }
+                            );
+                        }
 
-                    // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
-                    if (typeof fullNode.tax_rank !== 'undefined') {
-                        // TODO: Omit this is value is 'no rank'?
-                        nodeSection.displayedProperties['Taxonomic rank'] = fullNode.tax_rank;
+                        // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
+                        if (typeof itsTaxon.tax_rank !== 'undefined') {
+                            // TODO: Omit this is value is 'no rank'?
+                            nodeSection.displayedProperties['Taxonomic rank'] = itsTaxon.tax_rank;
+                        }
                     }
 
                     if (typeof fullNode.num_tips !== 'undefined') {
@@ -1009,7 +1012,6 @@ function showObjectProperties( objInfo, options ) {
                         if (sourceID === 'taxonomy') {
                             // this will be added below any supporting studies+trees
                             supportedByTaxonomy = true;
-                            //metaMapValues = parseMetaMapKey( 'taxonomy' );
                             return false;
                         }
 
@@ -1178,7 +1180,7 @@ function showObjectProperties( objInfo, options ) {
 
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
         if ((displayName.indexOf('Unnamed ') !== 0) &&
-            (displayName.indexOf('(untitled ') !== 0) &&
+            (displayName.indexOf('(unnamed ') !== 0) &&
             (displayName.indexOf('[') !== 0)) {
             // Attempt to find a page for this taxon in the Encyclopedia of Life website
             // N.B. This 'external-links' list can hold similar entries.
@@ -1336,21 +1338,15 @@ function parseMetaMapKey( key ) {
     // Adapt to various forms of meta-map key and return any components found as an object
     // EXAMPLE: '1234_987' is '{STUDY-ID}_{TREE-ID}'
     // EXAMPLE: 'pg_1144_5800_ba25a3fef742afd8cf52459e8d054737d062fe37' is '{STUDY-ID-WITH-PREFIX}_{TREE-ID}_{COMMIT-SHA}'
+    // EXAMPLE: 'pg_2448@tree5223' is '{STUDY-ID}@{TREE-ID}'
     var props = {
         studyID: null,
         treeID: null,
         commitSHA: null
     };
 
-    var keyParts = key.split('_');
-    // N.B. Study ID might have a prefix!
-    if (isNaN( parseInt( keyParts[0] ) )) {
-        // remove and concatenate the first TWO parts
-        props.studyID = keyParts.shift() +'_'+ keyParts.shift();
-    } else {
-        // remove just the FIRST part
-        props.studyID = keyParts.shift();
-    }
+    var keyParts = key.split('@');
+    props.studyID = keyParts.shift();
     // Next value should be the supporting tree id
     props.treeID = keyParts.shift();
     // Any remaining part should be a commit SHA
