@@ -312,14 +312,23 @@ function createArgus(spec) {
             // Determine the maximum node depth (height_limit or less) found in this subtree
             var node = argusObjRef.treeData;
             var getSubtreeDepth = function(node) {
-                // find the deepest of its childrens' subtrees
+                /* Find the deepest of its childrens' subtrees. While we're
+                 * traversing the tree, let's also set each node's num_tips_in_view!
+                 */
                 var maxChildDepth = 0,
-                    childDepth;
+                    descendantTipsInView = 0;
                 if (node.children) {
                     for (var i = 0; i < node.children.length; i++) {
-                        childDepth = getSubtreeDepth( node.children[i] );
+                        var childNode = node.children[i];
+                        var childDepth = getSubtreeDepth( childNode );
                         maxChildDepth = Math.max(childDepth, maxChildDepth);
+                        // Count any tips found, and descendant tips for internal nodes
+                        descendantTipsInView += (childNode.num_tips_in_view || 1);
                     }
+                    node.num_tips_in_view = descendantTipsInView;
+                } else {
+                    // This node is a tip in the current view!
+                    node.num_tips_in_view = 0;
                 }
                 // add this node to depth, plus that of its deepest child
                 return maxChildDepth + 1;
@@ -474,7 +483,7 @@ function createArgus(spec) {
 
             //spec.container.text("proxy returned data..." + treeData);
             // calculate view-specific geometry parameters
-            pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.num_tips);
+            pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.num_tips_in_view);
             pheight += argusObjRef.nubDistScalar * argusObjRef.minTipRadius;
 
             // for a narrow tree, push topmost nodes down away from the anchored widgets
@@ -1861,7 +1870,7 @@ ArgusNode.prototype.isActualLeafNode = function() {
     return this.num_tips === 0;
 };
 ArgusNode.prototype.isVisibleLeafNode = function() {
-    return this.hasChildren === false || this.num_tips === 0;
+    return this.hasChildren === false || this.num_tips_in_view === 0;
 };
 ArgusNode.prototype.updateDisplayBounds = function() {
     // update my layout properties and store results (for faster access)
