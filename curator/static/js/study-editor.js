@@ -5549,7 +5549,7 @@ function getAttrsForMappingOption( optionData ) {
     if (optionData.originalMatch.is_synonym) {
         attrs.title = ('Matched on synonym '+ optionData.originalMatch.matched_name);
         attrs.class += ' badge-info';
-    } else if (optionData.originalMatch.matched_name !== optionData.originalMatch.unique_name) {
+    } else if (optionData.originalMatch.matched_name !== optionData.originalMatch.taxon.unique_name) {
         attrs.title = ('Taxon-name homonym');
         attrs.class += ' badge-warning';
     } else {
@@ -5786,7 +5786,7 @@ function approveAllVisibleMappings() {
                 if (onlyMapping.originalMatch.is_synonym) {
                     return;  // synonyms require manual review
                 }
-                if (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.unique_name) {
+                if (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.taxon.unique_name) {
                     return;  // taxon-name homonyms require manual review
                 }
                 if (onlyMapping.originalMatch.score < 1.0) {
@@ -6048,7 +6048,7 @@ function requestTaxonMapping( otuToMap ) {
                     var otuMapping = {
                         name: resultToMap['ot:ottTaxonName'],       // matched name
                         ottId: String(resultToMap['ot:ottId']),     // matched OTT id (as string)
-                        nodeId: resultToMap.matched_node_id,        // number
+                        //nodeId: resultToMap.matched_node_id,        // number
                         exact: false,                               // boolean (ignoring this for now)
                         higher: false                               // boolean
                         // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
@@ -6075,9 +6075,8 @@ function requestTaxonMapping( otuToMap ) {
                     $.each(candidateMatches, function(i, match) {
                         // convert to expected structure for proposed mappings
                         candidateMappingList.push({
-                            name: match['unique_name'] || match['name'],       // matched name
-                            ottId: match['ott_id'],     // matched OTT id (as number!)
-                            nodeId: match['matched_node_id'],        // number
+                            name: match.taxon['unique_name'] || match.taxon['name'],       // matched name
+                            ottId: match.taxon['ott_id'],     // matched OTT id (as number!)
                             //exact: false,                               // boolean (ignoring this for now)
                             //higher: false,                               // boolean
                             // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
@@ -6115,7 +6114,6 @@ function mapOTUToTaxon( otuID, mappingInfo, options ) {
      *   "ottId" : "759046",
      *
      *   // these may also be present, but aren't important here
-     *     "nodeId" : 3325605,
      *     "exact" : false,
      *     "higher" : true
      * }
@@ -7273,7 +7271,7 @@ function buildFastLookup( lookupName ) {
                     $.each(tree.node, function( i, node ) {
                         var itsID = node['@id'];
                         if (itsID in newLookup) {
-                            console.warn("Duplicate node ID '"+ itsID +"' found!");
+                            console.warn("Duplicate node ID '"+ itsID +"' found ["+ lookupName +"]");
                         }
                         newLookup[ itsID ] = node;
                     });
@@ -7287,7 +7285,7 @@ function buildFastLookup( lookupName ) {
                     $.each(tree.node, function( i, node ) {
                         var itsID = node['@otu'];
                         if (itsID in newLookup) {
-                            console.warn("Duplicate otu ID '"+ itsID +"' found!");
+                            console.warn("Duplicate otu ID '"+ itsID +"' found ["+ lookupName +"]");
                         }
                         newLookup[ itsID ] = tree;
                     });
@@ -7301,7 +7299,7 @@ function buildFastLookup( lookupName ) {
                     $.each(otusCollection.otu, function( i, otu ) {
                         var itsID = otu['@id'];
                         if (itsID in newLookup) {
-                            console.warn("Duplicate otu ID '"+ itsID +"' found!");
+                            console.warn("Duplicate otu ID '"+ itsID +"' found ["+ lookupName +"]");
                         }
                         newLookup[ itsID ] = otu;
                     });
