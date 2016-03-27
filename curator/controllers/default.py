@@ -493,6 +493,16 @@ def to_nexson():
     N.B. Further documentation is available in curator/README.md
     '''
     _LOG = get_logger(request, 'to_nexson')
+
+    # permissive CORS handling of requests from another domain (e.g. Tree Illustrator)
+    if request.env.request_method == 'OPTIONS':
+        if request.env.http_access_control_request_method:
+             response.headers['Access-Control-Allow-Methods'] = request.env.http_access_control_request_method
+        if request.env.http_access_control_request_headers:
+             response.headers['Access-Control-Allow-Headers'] = request.env.http_access_control_request_headers
+        ##pprint('RESPONDING TO OPTIONS')
+        raise HTTP(200, **(response.headers))
+
     orig_args = {}
     is_upload = False
     # several of our NexSON use "uploadid" instead of "uploadId" so we should accept either
