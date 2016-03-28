@@ -892,6 +892,7 @@ function showObjectProperties( objInfo, options ) {
                     },
                     function(data) {    // JSONP callback
                         if (data.result && (data.result.length > 0) && data.result[0].icon && data.result[0].icon.uid) {
+                            $('#provenance-panel .taxon-image').remove();  // clear any old image
                             $('#provenance-panel .provenance-title').after(
                                 '<img class="taxon-image" src="/phylopic_proxy/assets/images/submissions/'+ data.result[0].icon.uid
                                 +'.icon.png" title="Click for image credits"/>'       // 'thumb.png' = 64px, 'icon.png' = 32px and blue
