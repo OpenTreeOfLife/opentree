@@ -427,9 +427,9 @@ def fetch_current_synthesis_source_data():
         contributing_study_info = { }   # store (unique) study IDs as keys, commit SHAs as values
 
         for source_id in source_id_list:
-            if source_id == 'taxonomy':
-                continue
             source_details = source_id_map.get( source_id )
+            if 'taxonomy' in source_details:
+                continue
             study_id = source_details.get('study_id')
             # N.B. assume that all study IDs have a two-letter prefix!
             tree_id = source_details.get('tree_id')

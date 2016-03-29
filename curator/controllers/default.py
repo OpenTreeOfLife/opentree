@@ -248,7 +248,7 @@ def _get_opentree_activity( userid=None, username=None ):
     
     contributing_study_info = { }   # build a dict with unique study IDs as keys, commit SHAs as values
     for source_id, source_details in source_id_map.iteritems():
-        if source_id == 'taxonomy':
+        if 'taxonomy' in source_details:
             continue
         study_id = source_details.get('study_id')
         commit_SHA_in_synthesis = source_details.get('git_sha')

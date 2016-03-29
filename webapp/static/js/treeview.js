@@ -837,11 +837,11 @@ function showObjectProperties( objInfo, options ) {
             if (objSupporters) {
                 // fetch full supporting info, then display it
                 $.each(objSupporters, function(sourceID, sourceDetails) {
-                    if (sourceID === 'taxonomy') {
+                    sourceMetadata = argus.treeData.source_id_map[ sourceID ];
+                    if ('taxonomy' in sourceMetadata) {
                         // this supporting data is already in arguson
                     } else {
                         // it's a study; call the index to get full details
-                        sourceMetadata = argus.treeData.source_id_map[ sourceID ];
                         if ((typeof sourceMetadata['sourceDetails'] === 'undefined') && (sourceMetadata['loadStatus'] !== 'PENDING')) {
                             // don't keep sending requests for the same source! we manage this with 'loadStatus'
                             sourceMetadata['loadStatus'] = 'PENDING';
@@ -999,15 +999,20 @@ function showObjectProperties( objInfo, options ) {
                 case 'Supported by':
                     var supportedByTaxonomy = false;
                     var supportingTaxonomyVersion, supportingTaxonomyVersionURL;
-                    var ottInfo = argus.treeData.source_id_map['taxonomy'];
-                    if ('version' in ottInfo) {
-                        supportingTaxonomyVersion = ottInfo['version'];
-                        var simpleVersion = supportingTaxonomyVersion.split('draft')[0];
-                        supportingTaxonomyVersionURL = '/about/taxonomy-version/ott'
-                            + simpleVersion;
-                    } else {
-                        supportingTaxonomyVersion = 'Not found';
-                        supportingTaxonomyVersionURL = '/about/taxonomy-version';
+                    var ottInfo = $.map( argus.treeData.source_id_map, function( value, key ) {
+                        // return info only for taxonomic sources
+                        return ('taxonomy' in value) ? value : null;
+                    })[0];
+                    if (ottInfo && 'taxonomy' in ottInfo) {
+                        supportingTaxonomyVersion = ottInfo['taxonomy'];
+                        if (supportingTaxonomyVersion) {
+                            var simpleVersion = supportingTaxonomyVersion.split('draft')[0];
+                            supportingTaxonomyVersionURL = '/about/taxonomy-version/ott'
+                                + simpleVersion;
+                        } else {
+                            supportingTaxonomyVersion = 'Not found';
+                            supportingTaxonomyVersionURL = '/about/taxonomy-version';
+                        }
                     }
                     var supportingStudyInfo = { };  // don't repeat studies under 'Supported by', but gather trees for each *then* generate output
                     // if we're still waiting on fetched study info, add a message to the properties window
@@ -1015,11 +1020,6 @@ function showObjectProperties( objInfo, options ) {
 
                     $.each( aSection.displayedProperties[dLabel], function(sourceID, sourceDetails) {
                         var metaMapValues = null;
-                        if (sourceID === 'taxonomy') {
-                            // this will be added below any supporting studies+trees
-                            supportedByTaxonomy = true;
-                            return false;
-                        }
 
                         // look for study information in the metaMap
                         if (metaMap) {
@@ -1027,7 +1027,12 @@ function showObjectProperties( objInfo, options ) {
                         }
 
                         if (typeof moreInfo === 'object' && 'sourceDetails' in moreInfo) {
-                            // Study details, fetched via AJAX as needed
+                            // Study details (fetched via AJAX as needed), or something else?
+                            if ('taxonomy' in moreInfo) {
+                                // this will be added below any supporting studies+trees
+                                supportedByTaxonomy = true;
+                                return false;
+                            }
 
                             // adapt to various forms of meta-map key
                             metaMapValues = parseMetaMapKey( sourceID );
@@ -1042,13 +1047,15 @@ function showObjectProperties( objInfo, options ) {
                         } else if (moreInfo && !('study' in moreInfo)) {
                             if (moreInfo['loadStatus'] === 'PENDING') {
                                 ///console.log('>>> study data is PENDING...');
+                                waitingForStudyInfo = true;
+                            } else if ('taxonomy' in moreInfo) {
+                                // no problem, taxo sources are not loaded via AJAX
                             } else {
                                 console.error("! expected a study, but found mysterious stuff in metaMap:");
                                 for (p2 in moreInfo) {
                                     console.error("  "+ p2 +" = "+ moreInfo[p2]);
                                 }
                             }
-                            waitingForStudyInfo = true;
                         } else {
                             // when in doubt, just show the raw value
                             console.error("! Expecting to find moreInfo and a study (dLabel="+ dLabel +", sourceID="+ sourceID +", sourceDetails="+ sourceDetails +")");
