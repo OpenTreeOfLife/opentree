@@ -907,7 +907,7 @@ function showObjectProperties( objInfo, options ) {
     }
 
     var sectionPos, sectionCount = orderedSections.length,
-        aSection, dLabel, dValues, i, displayVal = '', moreInfo;
+        aSection, dLabel, i, displayVal = '', moreInfo;
     for (sectionPos = 0; sectionPos < sectionCount; sectionPos++) {
         var aSection = orderedSections[sectionPos];
         // We now treat the node and edge as a single target, so no distinction is required
@@ -1026,13 +1026,15 @@ function showObjectProperties( objInfo, options ) {
                             moreInfo = metaMap[ sourceID ];
                         }
 
-                        if (typeof moreInfo === 'object' && 'sourceDetails' in moreInfo) {
-                            // Study details (fetched via AJAX as needed), or something else?
+                        if (typeof moreInfo === 'object') {
                             if ('taxonomy' in moreInfo) {
                                 // this will be added below any supporting studies+trees
                                 supportedByTaxonomy = true;
                                 return false;
                             }
+                        }
+                        if (typeof moreInfo === 'object' && 'sourceDetails' in moreInfo) {
+                            // Study details (fetched via AJAX as needed)
 
                             // adapt to various forms of meta-map key
                             metaMapValues = parseMetaMapKey( sourceID );

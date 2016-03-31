@@ -179,6 +179,8 @@ function createArgus(spec) {
         highlightedNodeInfo: null,
         targetNodeY: 0,  // used to center the view (vertically) on the target node
 
+        supportingTaxonomyVersion: null,
+
         // use Javascript pseudo-classes (defined below) to make tree operations more sensible
         makeNodeTree: function(key, value) {
             // expects to get root JSON object? or each object (or key/val pair) as it's parsed?
@@ -335,6 +337,19 @@ function createArgus(spec) {
             }
             argusObjRef.treeData.max_node_depth = getSubtreeDepth(node) - 1;
 
+            // get the supporting taxonomy (OTT) version for comparison below
+            var ottInfo = $.map( argus.treeData.source_id_map, function( value, key ) {
+                // return info only for taxonomic sources
+                return ('taxonomy' in value) ? value : null;
+            })[0];
+            if (ottInfo && 'taxonomy' in ottInfo) {
+                argus.supportingTaxonomyVersion = ottInfo['taxonomy'];
+            }
+            if (!argus.supportingTaxonomyVersion) {
+                alert("No supporting OTT version found!");
+                return;
+            }
+
             // final setup of tree-view object hierarchy
             // recursive marking of depth in local tree
             var setupArgusNode = function (node, depth) {
@@ -364,7 +379,7 @@ function createArgus(spec) {
                     for (var i = 0; i < nchildren; i++) {
                         var testChild = node.children[i],
                             sb = testChild.supported_by;
-                        testChild.supportedByTaxonomy = ('taxonomy' in sb),
+                        testChild.supportedByTaxonomy = (argus.supportingTaxonomyVersion in sb);
                         testChild.supportedByPhylogeny = Object.keys(sb).length > (testChild.supportedByTaxonomy ? 1 : 0);
 
                         if (testChild.supportedByPhylogeny && testChild.supportedByTaxonomy) {
@@ -1212,7 +1227,7 @@ function createArgus(spec) {
             // TODO: nudge (vs create) if this already exists!
             var lineDashes, lineColor,
                 sb = node.supported_by,
-                supportedByTaxonomy = 'taxonomy' in sb, 
+                supportedByTaxonomy = argus.supportingTaxonomyVersion in sb,
                 supportedByPhylogeny = Object.keys(sb).length > (supportedByTaxonomy ? 1 : 0);
 
             if (supportedByTaxonomy && supportedByPhylogeny) {
