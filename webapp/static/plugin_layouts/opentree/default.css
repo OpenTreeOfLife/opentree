@@ -73,7 +73,7 @@ body {
 #provenance-panel {
     float: left;
     height: 100%;
-    transition: 0.4s all ease; /* TODO: test using 4s */
+    /* transition: 0.4s all ease; */
 }
 .vizcontent div.viewer-frame {
 	padding: 0px;
