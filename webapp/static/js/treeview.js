@@ -935,6 +935,7 @@ function showObjectProperties( objInfo, options ) {
                 case 'Source taxonomy':
                 case 'Reference taxonomy':
                     var sourceList = aSection.displayedProperties[dLabel];
+                    $details.append('<dt>'+ dLabel +'</dt>');
                     for (i = 0; i < sourceList.length; i++) {
                         var sourceInfo = sourceList[i];
                         // build boilerplate URLs for common taxonomies
@@ -1001,7 +1002,6 @@ function showObjectProperties( objInfo, options ) {
                                 break;
                         }
 
-                        $details.append('<dt>'+ dLabel +'</dt>');
                         $details.append('<dd>'+ displayVal +'</dd>');
                     }
                     break;
