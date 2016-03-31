@@ -757,6 +757,10 @@ function showObjectProperties( objInfo, options ) {
                         }
                     }
 
+                    if (fullNode.node_id) {
+                        nodeSection.displayedProperties['Node id in synthetic tree'] = fullNode.node_id;
+                    }
+
                     if (typeof fullNode.num_tips !== 'undefined') {
                         //if (fullNode.num_tips === 0) {
                         if (fullNode.isActualLeafNode()) {
