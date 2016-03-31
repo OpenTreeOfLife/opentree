@@ -2678,7 +2678,7 @@ function normalizeTree( tree ) {
     removeDuplicateTags( tree );
 
     // pre-select first node among duplicate siblings
-    resolveSiblingOnlyDuplicatesInTree(tree);
+    resolveMonophyleticDuplicatesInTree(tree);
 }
 
 function getAllTreeIDs() {
@@ -8015,7 +8015,7 @@ function resolveMonophyleticDuplicatesInTree(tree) {
     // Find and resolve all simple conflicts between sibling nodes, and any
     // others where the conflicting nodes constitute a clade. In all cases, our
     // choice is arbitrary; we simply select the first node found as the exemplar.
-    var duplicateData = getUnresolvedConflictsInTree( tree, {INCLUDE_MONOPHYLETIC: true} );
+    var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: true} );
     for (var taxonID in duplicateData) {
         var duplicateInfo = duplicateData[taxonID];
         if (duplicateInfo.monophyletic) {
