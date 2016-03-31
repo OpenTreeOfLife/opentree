@@ -665,13 +665,13 @@ body {
                                 text: tree['@label'],
                                 css: viewModel.ticklers.TREES">&nbsp;</a>
                             <br/>
-                            <a data-bind="if: unresolvedConflictsFoundInTree( tree ),
+                            <a data-bind="if: unresolvedDuplicatesFoundInTree( tree ),
                                           css: viewModel.ticklers.TREES,
-                                          click: showConflictingNodesInTreeViewer,
+                                          click: showDuplicateNodesInTreeViewer,
                                           visible: true"
                                class="suggestion-prompt" style="display: none;"
                                href="#">
-                                Show conflicting nodes
+                                Show duplicate tips
                             </a>
                             <br/>
                             <a data-bind="if: ambiguousLabelsFoundInTree( tree ),
@@ -2561,7 +2561,7 @@ body {
         </tr>
         <tr>
           <td colspan="4" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">Conflict versus reference tree</strong></td>
-          <td colspan="2" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">OTUs with conflicting mapping</strong></td>
+          <td colspan="2" style="height:auto;"><strong style="display: block; background-color: #ddd; padding: 2px 6px; border-radius: 4px;">OTUs with duplicate mappings</strong></td>
         </tr>
         <tr>
          <td align="right">
@@ -2580,7 +2580,7 @@ body {
              Unresolved
          </td>
          <td>
-          <img src="{{=URL('static','images/tree-viewer-legend-tips-conflicting.png')}}" alt="outgroup style" />
+          <img src="{{=URL('static','images/tree-viewer-legend-tips-duplicate.png')}}" alt="outgroup style" />
          </td>
         </tr>
         <tr>
