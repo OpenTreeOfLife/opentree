@@ -936,6 +936,7 @@ function showObjectProperties( objInfo, options ) {
                 case 'Reference taxonomy':
                     var sourceList = aSection.displayedProperties[dLabel];
                     $details.append('<dt>'+ dLabel +'</dt>');
+                    var sourceLinks = [ ];
                     for (i = 0; i < sourceList.length; i++) {
                         var sourceInfo = sourceList[i];
                         // build boilerplate URLs for common taxonomies
@@ -1002,8 +1003,10 @@ function showObjectProperties( objInfo, options ) {
                                 break;
                         }
 
-                        $details.append('<dd>'+ displayVal +'</dd>');
+                        sourceLinks.push( displayVal );
                     }
+                    $details.append('<dd>'+ sourceLinks.join('<br/>') +'</dd>');
+
                     break;
 
                 case 'Supported by':
