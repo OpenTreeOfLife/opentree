@@ -758,7 +758,7 @@ function showObjectProperties( objInfo, options ) {
                     }
 
                     if (fullNode.node_id) {
-                        var nodeLink = getSynthTreeViewerLinkForNodeID(null, syntheticTreeID, fullNode.node_id);
+                        var nodeLink = getSynthTreeViewerLinkForNodeID(fullNode.node_id, syntheticTreeID, fullNode.node_id);
                         nodeSection.displayedProperties['Node id in synthetic tree'] = nodeLink;
                     }
 

@@ -54,7 +54,7 @@ function getSynthTreeViewerLinkForNodeID(displayName, synthID, nodeID) {
                                             .replace('{NODE_ID}', nodeID);
     }
     var link = '<a href="{SYNTH_VIEWER_URL}" \
-                   title="See this node in the latest synthetic tree" \
+                   title="See this node in the current synthetic tree" \
                    target="synthbrowser">{DISPLAY_NAME}</a>';
     return link.replace('{SYNTH_VIEWER_URL}', getSynthTreeViewerURLForNodeID(synthID, nodeID))
         .replace('{DISPLAY_NAME}', displayName);
