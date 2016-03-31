@@ -329,6 +329,7 @@ function toggleCommentsPanel( hideOrShow ) {
     if ($('#viewer-collection').hasClass('active-comments') && (hideOrShow !== 'SHOW')) {
         ///console.log('HIDING comments');
         $('#viewer-collection').removeClass('active-comments');
+        $('#argusCanvasContainer.viewer-frame').css('width', '');
         $('.comments-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.comments-indicator').attr('title', 'Show comments for this node');
         $('.comments-indicator .widget-prompt').text(' Show comments');
@@ -337,6 +338,8 @@ function toggleCommentsPanel( hideOrShow ) {
     } else {
         ///console.log('SHOWING comments');
         $('#viewer-collection').removeClass('active-properties');
+        var vcWidth = $('#viewer-collection').width();
+        $('#argusCanvasContainer.viewer-frame').css('width', Math.max(vcWidth - 480, vcWidth / 2));
         $('.properties-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.properties-indicator').attr('title', 'Show properties for the current selection');
         $('.properties-indicator .widget-prompt').text('Show properties ');
@@ -368,6 +371,7 @@ function togglePropertiesPanel( hideOrShow ) {
     if ($('#viewer-collection').hasClass('active-properties') && (hideOrShow !== 'SHOW')) {
         ///console.log('HIDING properties');
         $('#viewer-collection').removeClass('active-properties');
+        $('#argusCanvasContainer.viewer-frame').css('width', '');
         $('.properties-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.properties-indicator').attr('title', 'Show properties for the current selection');
         $('.properties-indicator .widget-prompt').text('Show properties ');
@@ -376,6 +380,8 @@ function togglePropertiesPanel( hideOrShow ) {
     } else {
         ///console.log('SHOWING properties');
         $('#viewer-collection').removeClass('active-comments');
+        var vcWidth = $('#viewer-collection').width();
+        $('#argusCanvasContainer.viewer-frame').css('width', Math.max(vcWidth - 480, vcWidth / 2));
         $('.comments-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.comments-indicator').attr('title', 'Show comments for this node');
         $('.comments-indicator .widget-prompt').text(' Show comments');
@@ -1268,6 +1274,11 @@ function snapViewerFrameToMainTitle() {
 }
 $(window).resize( function () {
     snapViewerFrameToMainTitle();
+    if ($('#viewer-collection').hasClass('active-comments') || $('#viewer-collection').hasClass('active-properties')) {
+        // resize main tree area to match
+        var vcWidth = $('#viewer-collection').width();
+        $('#argusCanvasContainer.viewer-frame').css('width', Math.max(vcWidth - 480, vcWidth / 2));
+    }
 });
 
 $('a.btn-navbar[data-target=".nav-collapse"], a.dropdown-toggle').click(function () {
