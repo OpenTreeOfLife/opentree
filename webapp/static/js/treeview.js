@@ -758,7 +758,8 @@ function showObjectProperties( objInfo, options ) {
                     }
 
                     if (fullNode.node_id) {
-                        nodeSection.displayedProperties['Node id in synthetic tree'] = fullNode.node_id;
+                        var nodeLink = getSynthTreeViewerLinkForNodeID(null, syntheticTreeID, fullNode.node_id);
+                        nodeSection.displayedProperties['Node id in synthetic tree'] = nodeLink;
                     }
 
                     if (typeof fullNode.num_tips !== 'undefined') {
