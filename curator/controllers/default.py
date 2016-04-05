@@ -239,30 +239,21 @@ def _get_opentree_activity( userid=None, username=None ):
         # Prepend scheme to a scheme-relative URL
         fetch_url = "https:%s" % fetch_url
     # as usual, this needs to be a POST (pass empty fetch_args)
-    source_list = requests.post(
+    source_data = requests.post(
         url=fetch_url,
-        data={}
+        data={'include_source_list':True}
     ).json()
-
-    # split these source descriptions, which are in the form '{STUDY_ID_PREFIX}_{STUDY_NUMERIC_ID}_{TREE_ID}_{COMMIT_SHA}'
-    contributing_study_info = { }   # store (unique) study IDs as keys, commit SHAs as values
-
-    for source_desc in source_list:
-        if source_desc == 'taxonomy':
-            continue
-        source_parts = source_desc.split('_')
-        # add default prefix 'pg' to study ID, if not found
-        if source_parts[0].isdigit():
-            # prepend with default namespace 'pg'
-            study_id = 'pg_%s' % source_parts[0]
-        else:
-            study_id = '_'.join(source_parts[0:2])
-        if len(source_parts) == 4:
-            commit_SHA_in_synthesis = source_parts[3]
-        else:
-            commit_SHA_in_synthesis = None
-        contributing_study_info[ study_id ] = commit_SHA_in_synthesis
+    source_id_map = source_data.get('source_id_map')
+    # N.B. We can ignore the munged ids in source_data['source_list']
     
+    contributing_study_info = { }   # build a dict with unique study IDs as keys, commit SHAs as values
+    for source_id, source_details in source_id_map.iteritems():
+        if 'taxonomy' in source_details:
+            continue
+        study_id = source_details.get('study_id')
+        commit_SHA_in_synthesis = source_details.get('git_sha')
+        contributing_study_info[ study_id ] = commit_SHA_in_synthesis
+
     # Use oti to gather studies curated and created by this user.
     fetch_url = method_dict['findAllStudies_url']
     if fetch_url.startswith('//'):
@@ -271,7 +262,7 @@ def _get_opentree_activity( userid=None, username=None ):
     all_studies = requests.post(
         url=fetch_url,
         data={'verbose': True}  # include curator list
-    ).json()
+    ).json().get('matched_studies', [ ])
 
     for study in all_studies:
         study_curators = study['ot:curatorName']

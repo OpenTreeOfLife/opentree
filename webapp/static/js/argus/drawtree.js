@@ -41,7 +41,7 @@
 //      domSource = "ottol"  The name of the source of trees. Currently only "ottol" is supported.
 //      nodeID = the ID for the node (according to the system of the service indicated by domSource)
 //          if nodeID or domSource are lacking, they will *both* be parsed out of the URL query string (location.search)
-//              from nodeid and domsource url-encoded GET parameters. If they are not found there, the defaults are
+//              from node_id and domsource url-encoded GET parameters. If they are not found there, the defaults are
 //              domSource="ottol" and nodeID = "805080"
 //      container - DOM element that will contain the argus object
 function createArgus(spec) {
@@ -87,7 +87,7 @@ function createArgus(spec) {
                         toks = qListStr.split("&");
                         for (i = 0; i < toks.length; i++) {
                             arg = toks[i].split("=");
-                            if (arg[0] === "nodeid") {
+                            if (arg[0] === "node_id") {
                                 ret.nodeID = arg[1];
                             } else if (arg[0] === "domsource") {
                                 ret.domSource = arg[1];
@@ -111,7 +111,7 @@ function createArgus(spec) {
         spec.taxomachineDomain = "http://opentree-dev.bio.ku.edu:7476";
     }
     if (spec.useTreemachine === undefined) {
-        spec.useTreemachine = false; //@TEMP should the default really be taxomachine?
+        spec.useTreemachine = true; // for now, this is always true
     }
     if (spec.useSyntheticTree === undefined) {
         spec.useSyntheticTree = true;
@@ -179,24 +179,26 @@ function createArgus(spec) {
         highlightedNodeInfo: null,
         targetNodeY: 0,  // used to center the view (vertically) on the target node
 
+        supportingTaxonomyVersion: null,
+
         // use Javascript pseudo-classes (defined below) to make tree operations more sensible
         makeNodeTree: function(key, value) {
             // expects to get root JSON object? or each object (or key/val pair) as it's parsed?
-            if (value.nodeid) {
+            if (value.node_id) {
                 // it's a tree node!
 
                 // assign parent ID to children, for fast tree traversal
                 if (value.children) {
                     for (var i = 0; i < value.children.length; i++) {
-                        value.children[i].parentNodeID = value.nodeid;
+                        value.children[i].parentNodeID = value.node_id;
                     }
                 }
 
-                if (value.pathToRoot) {
+                if (value.lineage) {
                     // assign parent IDs up the "root-ward" chain of nodes
                     var testChild = value;
-                    $.each(value.pathToRoot, function(i, testParent) {
-                        testChild.parentNodeID = testParent.nodeid;
+                    $.each(value.lineage, function(i, testParent) {
+                        testChild.parentNodeID = testParent.node_id;
                         testChild = testParent;  // and move to *its* parent
                     });
                 }
@@ -213,7 +215,7 @@ function createArgus(spec) {
         getArgusNodeByID: function ( nodeID ) {
             // NOTE depends on treeview.js methods
             return getTreeDataNode( function(node) {
-                return (node.nodeid === nodeID); 
+                return (node.node_id === nodeID); 
             });
         },
         // TODO: add a method to get node by OTT id?
@@ -255,17 +257,23 @@ function createArgus(spec) {
             if (this.useSyntheticTree) {
                 url = getSyntheticTree_url;
             } else {
-                url = getSourceTree_url;
+                console.error('buildAjaxCallInfo(): we need another URL!?');
+                return;
             }
             // default is the classic "tree 4 in phylografter"
             ds = o.domSource === undefined ? "4" : o.domSource;
             ajaxData = {
-                "treeID": ds,
+                "synth_id": ds,   // TODO: Omit this paramter if it causes trouble!
                 "format": "arguson",
-                "maxDepth": String(this.currMaxDepth)
+                "height_limit": this.currMaxDepth
             };
+            // send *either* OTT id or node id (but not both)
             if (o.nodeID !== undefined) {
-                ajaxData.subtreeNodeID = String(o.nodeID);
+                ajaxData.node_id = String(o.nodeID);     // for later analysis
+            } else {
+                if (o.ott_id !== undefined) {
+                    ajaxData.ott_id = Number(o.ott_id);
+                }
             }
         } else {
             /* TODO: Restore the ability to fetch conflict information from taxomachine?
@@ -293,11 +301,54 @@ function createArgus(spec) {
          //
         var dataStr = JSON.stringify(o.data);
         var domSource = o.domSource === undefined ? "ottol" : o.domSource;
-        var ajaxSuccess = function (json, textStatus, jqXHR) {
+        var ottID;
+        if ('ott_id' in o.data) {
+            ottID = Number(o.data.ott_id);
+        } else if (o.data.node_id.indexOf('ott') === 0) {
+            // strip leading 'ott' from node_id to recover numeric OTT id
+            ottID = Number( o.data.node_id.replace('ott','') ) || 0;
+        }
+        var argusLoadSuccess = function (json, textStatus, jqXHR) {
             var argusObjRef = this;
-            argusObjRef.treeData = json; // $.parseJSON(dataStr);
-            //var node = argusObjRef.treeData[0];
+            argusObjRef.treeData = json.arguson;
+            // Determine the maximum node depth (height_limit or less) found in this subtree
             var node = argusObjRef.treeData;
+            var getSubtreeDepth = function(node) {
+                /* Find the deepest of its childrens' subtrees. While we're
+                 * traversing the tree, let's also set each node's num_tips_in_view!
+                 */
+                var maxChildDepth = 0,
+                    descendantTipsInView = 0;
+                if (node.children) {
+                    for (var i = 0; i < node.children.length; i++) {
+                        var childNode = node.children[i];
+                        var childDepth = getSubtreeDepth( childNode );
+                        maxChildDepth = Math.max(childDepth, maxChildDepth);
+                        // Count any tips found, and descendant tips for internal nodes
+                        descendantTipsInView += (childNode.num_tips_in_view || 1);
+                    }
+                    node.num_tips_in_view = descendantTipsInView;
+                } else {
+                    // This node is a tip in the current view!
+                    node.num_tips_in_view = 0;
+                }
+                // add this node to depth, plus that of its deepest child
+                return maxChildDepth + 1;
+            }
+            argusObjRef.treeData.max_node_depth = getSubtreeDepth(node) - 1;
+
+            // get the supporting taxonomy (OTT) version for comparison below
+            var ottInfo = $.map( argus.treeData.source_id_map, function( value, key ) {
+                // return info only for taxonomic sources
+                return ('taxonomy' in value) ? value : null;
+            })[0];
+            if (ottInfo && 'taxonomy' in ottInfo) {
+                argus.supportingTaxonomyVersion = ottInfo['taxonomy'];
+            }
+            if (!argus.supportingTaxonomyVersion) {
+                alert("No supporting OTT version found!");
+                return;
+            }
 
             // final setup of tree-view object hierarchy
             // recursive marking of depth in local tree
@@ -306,7 +357,7 @@ function createArgus(spec) {
 
                 // slightly different, this is which column of nodes will hold this one
                 // (where 0 = the right-most (leaf nodes) column, higher = further left)
-                node.treeColumn = node.isLocalLeafNode() ? 0 : (argusObj.treeData.maxnodedepth - node.nodeDepth);
+                node.treeColumn = node.isLocalLeafNode() ? 0 : (argusObj.treeData.max_node_depth - node.nodeDepth);
                 // TODO: pre-calculate node.x from this, if it never changes..?
                 
                 if (node.children) {
@@ -327,9 +378,9 @@ function createArgus(spec) {
                     // group children based on type of edge support
                     for (var i = 0; i < nchildren; i++) {
                         var testChild = node.children[i],
-                            sb = testChild.supportedBy;
-                        testChild.supportedByTaxonomy = $.inArray('taxonomy', sb) !== -1,
-                        testChild.supportedByPhylogeny = sb.length > (testChild.supportedByTaxonomy ? 1 : 0);
+                            sb = testChild.supported_by;
+                        testChild.supportedByTaxonomy = (argus.supportingTaxonomyVersion in sb);
+                        testChild.supportedByPhylogeny = Object.keys(sb).length > (testChild.supportedByTaxonomy ? 1 : 0);
 
                         if (testChild.supportedByPhylogeny && testChild.supportedByTaxonomy) {
                             nodesWithHybridSupport.push(testChild);
@@ -375,9 +426,9 @@ function createArgus(spec) {
                                         nodes: [ ],
                                         firstName: testChild.name,
                                         lastName: testChild.name,
-                                        parentNodeID: node.nodeid
+                                        parentNodeID: node.node_id
                                     });
-                                    clusters[node.nodeid].push(newCluster);
+                                    clusters[node.node_id].push(newCluster);
                                     currentCluster = newCluster;
                                     nInCurrentCluster = 0;
                                 } 
@@ -390,9 +441,9 @@ function createArgus(spec) {
                                 nodes: [ ],
                                 firstName: '',
                                 lastName: '',
-                                parentNodeID: node.nodeid
+                                parentNodeID: node.node_id
                             });
-                            clusters[ node.nodeid ] = [ newCluster ];
+                            clusters[ node.node_id ] = [ newCluster ];
                             currentCluster = newCluster;
                             nInCurrentCluster = 0;
                         }
@@ -422,8 +473,8 @@ function createArgus(spec) {
                         node.displayList.push(nodesWithoutPhyloSupport[i]);
                     }
                     // add minimized clusters to the display list
-                    if (clusters[node.nodeid]) {
-                        node.displayList = node.displayList.concat( clusters[node.nodeid]);
+                    if (clusters[node.node_id]) {
+                        node.displayList = node.displayList.concat( clusters[node.node_id]);
                     }
                 }
 
@@ -438,17 +489,16 @@ function createArgus(spec) {
             // clear the cluster registry first
             argusObj.clusters = {}; 
 
-            setupArgusNode(node, 0);
-
-
             // recursively populate any missing (implied) node names
             buildAllMissingNodeNames(node);
+
+            setupArgusNode(node, 0);
 
             var pheight, pwidth, sourcelabel, anchoredbg;
 
             //spec.container.text("proxy returned data..." + treeData);
             // calculate view-specific geometry parameters
-            pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.nleaves);
+            pheight = ((2 * argusObjRef.minTipRadius) + argusObjRef.yNodeMargin) * (node.num_tips_in_view);
             pheight += argusObjRef.nubDistScalar * argusObjRef.minTipRadius;
 
             // for a narrow tree, push topmost nodes down away from the anchored widgets
@@ -464,7 +514,7 @@ function createArgus(spec) {
             // provide enough room for anchored widgets, more if needed for the tree
             pheight = Math.max(pheight, 20 * argusObjRef.nodeHeight);
 
-            pwidth = argusObjRef.nodesWidth * (node.maxnodedepth + 1);
+            pwidth = argusObjRef.nodesWidth * (node.max_node_depth + 1);
             pwidth += 1.5 * argusObjRef.tipOffset + argusObjRef.xLabelMargin;
 
             argusObjRef.xOffset = pwidth - argusObjRef.nodesWidth - argusObjRef.tipOffset;
@@ -589,6 +639,49 @@ function createArgus(spec) {
             // draw the cycles
             argusObjRef.drawCycles();
         };
+        var argusLoadFailure = function (jqXHR, textStatus, errorThrown) {
+            // Was this a taxon that didn't make it into synthesis, or some other error?
+            var mainFetchXHR = jqXHR;
+            $.ajax({
+                url: getTaxonInfo_url,
+                type: 'POST',
+                crossDomain: true,
+                contentType: 'application/json',
+                dataType: 'json',
+                data: JSON.stringify({ "ott_id": ottID }),  // set above, defaults to 0 (invalid ID) if not an OTT taxon
+                complete: function( jqXHR, textStatus ) {
+                    hideSpinner();
+                    // report errors or malformed data, if any
+                    var errMsg;
+                    if (textStatus !== 'success') {
+                        // major server-side error, just show raw response for tech support
+                        errMsg = 'Sorry, there was an error checking for taxon status.';
+                        showErrorInArgusViewer(errMsg);
+                        return;
+                    } 
+                    // check to see if we got a taxon record, or an error in JSON
+                    var json = $.parseJSON(jqXHR.responseText);
+                    // if (json['ott_id'] === ottID) { TODO: use this when we switch to v3 taxonomy API!
+                    if (json['ott_id'] === ottID) {
+                        // the requested taxon exists in OTT, but is not found in the target tree
+                        var taxobrowserlink = getTaxobrowserLink('taxonomy browser', ottID)
+                        errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy'
+                                +' but not in our tree synthesis database. This can happen for a variety of reasons,'
+                                +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
+                                +' causes it to be pruned from the synthetic tree. See the '
+                                +taxobrowserlink
+                                +' for more information about this taxon.'
+                                +'<br/><br/>If you think this is an error, please'
+                                +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
+                        showErrorInArgusViewer( errMsg );
+                    } else {
+                        // this is not a valid taxon id! Show the *original* error response from the failed argus fetch.
+                        errMsg = 'Whoops! The call to get the tree around a node did not work out the way we were hoping it would.';
+                        showErrorInArgusViewer( errMsg, mainFetchXHR.responseText );
+                    }
+                }
+            });
+        };
         $.ajax({
             url: o.url,
             type: o.httpMethod === undefined ? "POST" : o.httpMethod,
@@ -606,16 +699,8 @@ function createArgus(spec) {
                     return JSON.parse(data, argusObj.makeNodeTree);
                 }
             },
-            success: ajaxSuccess,
-            error: function (jqXHR, textStatus, errorThrown) {
-                hideSpinner();
-                $(".flash").html("Error: Node lookup failed").slideDown();
-                $(this.container).css('height','500px');
-                $(this.container).html('<p style="margin: 8px 12px;">Whoops! The call to get the tree around a node did not work out the way we were hoping it would. '
-                                     + '<a href="#" onclick="$(\'#error-details\').show(); return false;">Show details</a></p>'
-                                     + '<p id="error-details" style="margin: 8px 12px; font-style: italic; display: none;"><b>['+ textStatus +'] '+ errorThrown +'</b>'
-                                     + '<br/><br/>'+ jqXHR.responseText +'</p>');
-            }
+            success: argusLoadSuccess,
+            error: argusLoadFailure
         });
     };
 
@@ -637,6 +722,7 @@ function createArgus(spec) {
 
         var ajaxInfo = this.buildAjaxCallInfo({
             "nodeID": o.nodeID,
+            "ott_id": o.ott_id || "0",
             "domSource": this.domSource
         });
 
@@ -956,11 +1042,11 @@ function createArgus(spec) {
         var curLeaf = obj.curLeaf;
         var currentYoffset = obj.currentYoffset || argusObj.yOffset;
         // build IDs for visible elements (to move or create)
-        var nodeCircleElementID = 'node-circle-'+ node.nodeid;
-        var nodeLabelElementID = 'node-label-'+ node.nodeid;
-        var nodeSpineElementID = 'spine-'+ node.nodeid;
-        var nodeTriggerBranchElementID = 'node-branch-trigger-'+ node.nodeid;
-        var nodeVisibleBranchElementID = 'node-branch-'+ node.nodeid;
+        var nodeCircleElementID = 'node-circle-'+ node.node_id;
+        var nodeLabelElementID = 'node-label-'+ node.node_id;
+        var nodeSpineElementID = 'spine-'+ node.node_id;
+        var nodeTriggerBranchElementID = 'node-branch-trigger-'+ node.node_id;
+        var nodeVisibleBranchElementID = 'node-branch-'+ node.node_id;
         // manipulate the existing elements, if any
         var circle = paper.getById(nodeCircleElementID);
         var label = paper.getById(nodeLabelElementID);
@@ -1019,7 +1105,7 @@ function createArgus(spec) {
         if (node.isLocalLeafNode()) {
             node.r = node.isActualLeafNode() ? (this.minTipRadius * 0.7) : this.minTipRadius;
         } else {
-            node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.nTipDescendants);
+            node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.num_tips);
         }
         var nodeFill = this.nodeColor; 
         var nodeStroke = this.pathColor;
@@ -1054,10 +1140,10 @@ function createArgus(spec) {
                 "fill": nodeFill
             }));
 
-            $(circle.node).on('click contextmenu', getClickHandlerNode(node.nodeid, domSource, node.name));
+            $(circle.node).on('click contextmenu', getClickHandlerNode(node.node_id, domSource, node.name));
             // copy source data into the circle element (for use by highlight)
             circle.data('sourceNodeInfo', {
-                'nodeID': node.nodeid,
+                'nodeID': node.node_id,
                 'nodeName': node.name,
                 'domSource': domSource
             });
@@ -1065,10 +1151,10 @@ function createArgus(spec) {
             // if this node has cycles, record it; we will draw them once the tree is done
             var nAltParents = (node.altrels === undefined ? 0 : node.altrels.length);
             if (nAltParents > 0) {
-                this.nodesWithCycles.push(node.nodeid);
+                this.nodesWithCycles.push(node.node_id);
             }
             // store the node for fast access later
-            this.nodesHash[node.nodeid] = node;
+            this.nodesHash[node.node_id] = node;
         }
 
         // label position varies based on which column we're in
@@ -1140,9 +1226,9 @@ function createArgus(spec) {
             // draw/update its "upward" branch to the parent's spine
             // TODO: nudge (vs create) if this already exists!
             var lineDashes, lineColor,
-                sb = node.supportedBy,
-                supportedByTaxonomy = $.inArray('taxonomy', sb) !== -1, 
-                supportedByPhylogeny = sb.length > (supportedByTaxonomy ? 1 : 0);
+                sb = node.supported_by,
+                supportedByTaxonomy = argus.supportingTaxonomyVersion in sb,
+                supportedByPhylogeny = Object.keys(sb).length > (supportedByTaxonomy ? 1 : 0);
 
             if (supportedByTaxonomy && supportedByPhylogeny) {
                 //lineDashes = '--..';
@@ -1193,7 +1279,7 @@ function createArgus(spec) {
 
                 // copy node data into the path element (for use by highlight)
                 triggerBranch.data('sourceNodeInfo', {
-                    'nodeID': node.nodeid,
+                    'nodeID': node.node_id,
                     'nodeName': node.name,
                     'domSource': domSource
                 });
@@ -1203,23 +1289,23 @@ function createArgus(spec) {
             // draw a series of ancestor nodes
             this.targetNodeY = node.y;
 
-            if (node.pathToRoot) {
+            if (node.lineage) {
                 // try to draw upward path w/ up to 3 nodes, plus trailing edge if there's more
                 var upwardNode;
                 var maxUpwardNodes = 3;
                 var alphaStep = 0.15;
                 var xyStep = 25;
-                for (i = 0; i < node.pathToRoot.length; i++) {
+                for (i = 0; i < node.lineage.length; i++) {
                     var startX = node.x - (xyStep * i);
                     var startY = node.y - (xyStep * i);
                     var endX = startX - xyStep;
                     var endY = startY - xyStep;
                     var pathOpacity = 1.0 - (alphaStep * (i+1));
-                    var ancestorNode = node.pathToRoot[i];
+                    var ancestorNode = node.lineage[i];
                     // build IDs for visible elements (to move or create)
-                    nodeCircleElementID = 'node-circle-'+ ancestorNode.nodeid;
-                    nodeLabelElementID = 'node-label-'+ ancestorNode.nodeid;
-                    var nodeBranchElementID = 'node-branch-'+ ancestorNode.nodeid;
+                    nodeCircleElementID = 'node-circle-'+ ancestorNode.node_id;
+                    nodeLabelElementID = 'node-label-'+ ancestorNode.node_id;
+                    var nodeBranchElementID = 'node-branch-'+ ancestorNode.node_id;
                     // manipulate the existing elements, if any
                     circle = paper.getById(nodeCircleElementID);
                     label = paper.getById(nodeLabelElementID);
@@ -1274,10 +1360,10 @@ function createArgus(spec) {
                             label.id = (nodeLabelElementID);
 
                             // add handlers and metadata
-                            $(circle.node).bind('click contextmenu', getClickHandlerNode(ancestorNode.nodeid, domSource, ancestorNode.name));
+                            $(circle.node).bind('click contextmenu', getClickHandlerNode(ancestorNode.node_id, domSource, ancestorNode.name));
                             // copy source data into the circle element (for use by highlight)
                             circle.data('sourceNodeInfo', {
-                                'nodeID': ancestorNode.nodeid,
+                                'nodeID': ancestorNode.node_id,
                                 'nodeName': ancestorNode.name,
                                 'domSource': domSource
                             });
@@ -1410,7 +1496,7 @@ function createArgus(spec) {
             "domSource": this.domSource,
             "curLeaf": 0,
             "isTargetNode": true,
-            "parentNodeX": this.xOffset - (this.nodesWidth * targetNode.treeColumn),   // * node.maxnodedepth),
+            "parentNodeX": this.xOffset - (this.nodesWidth * targetNode.treeColumn),   // * node.max_node_depth),
             "currentYoffset": this.yOffset,
             "depthFromTargetNode": 0
         });
@@ -1765,8 +1851,8 @@ function alphaSortByName(a,b) {
     return 0;
 }
 function sortByDescendantCount(a,b) {
-    if (a.nTipDescendants > b.nTipDescendants) return 1;
-    if (a.nTipDescendants < b.nTipDescendants) return -1;
+    if (a.num_tips > b.num_tips) return 1;
+    if (a.num_tips < b.num_tips) return -1;
     return 0;
 }
 
@@ -1790,16 +1876,16 @@ function ArgusNode() { // constructor
     this.y = 0;
 };
 ArgusNode.prototype.getClusters = function() {
-    return argus.clusters[this.nodeid] || [ ];
+    return argus.clusters[this.node_id] || [ ];
 };
 ArgusNode.prototype.isLocalLeafNode = function() {
     return (typeof this.children === 'undefined');
 };
 ArgusNode.prototype.isActualLeafNode = function() {
-    return this.nTipDescendants === 0;
+    return this.num_tips === 0;
 };
 ArgusNode.prototype.isVisibleLeafNode = function() {
-    return this.hasChildren === false || this.nleaves === 0;
+    return this.hasChildren === false || this.num_tips_in_view === 0;
 };
 ArgusNode.prototype.updateDisplayBounds = function() {
     // update my layout properties and store results (for faster access)
