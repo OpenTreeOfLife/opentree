@@ -73,7 +73,7 @@ body {
 #provenance-panel {
     float: left;
     height: 100%;
-    transition: 0.4s all ease; /* TODO: test using 4s */
+    /* transition: 0.4s all ease; */
 }
 .vizcontent div.viewer-frame {
 	padding: 0px;
@@ -85,6 +85,7 @@ body {
 #comments-panel,
 #provenance-panel {
     width: 50%;
+    max-width: 480px;
 }
 #comments-panel {
     margin-left: -50%;
@@ -107,7 +108,7 @@ div.viewer-frame {
     margin-right: 0; 
 }
 .active-comments div.viewer-frame {
-    width: 50%;  /* TODO: adapt to narrower window!? */
+    width: 50%;  /* N.B. Javascript will override this */
     margin-left: 0;
     margin-right: 0; 
 }
@@ -121,7 +122,7 @@ div.viewer-frame {
     margin-right: 0; 
 }
 .active-properties div.viewer-frame {
-    width: 50%;
+    width: 50%;  /* N.B. Javascript will override this */
     margin-left: 0;
     margin-right: 0; 
 }

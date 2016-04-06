@@ -76,10 +76,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         var taxomachine_domain = "{{=taxomachine_domain}}";
         var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
         var getSyntheticTree_url = "{{=getSyntheticTree_url}}";
-        var getSourceTree_url = "{{=getSourceTree_url}}";
-        var getDraftSubtree_url = "{{=getDraftSubtree_url}}";
+        var getTaxonInfo_url = "{{=getTaxonInfo_url}}";
         var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
-        var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
         var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
     </script>
     {{pass}}
@@ -215,9 +213,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
             // stash these to use for later comparison (to avoid redundant searches)
             var queryText = searchText; // trimmed above
             var queryContextName = searchContextName;
-
-            // proper version queries treemachine API
-            // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
             $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
             $('#search-results').dropdown('toggle');
             if (typeof snapViewerFrameToMainTitle === 'function') snapViewerFrameToMainTitle();
@@ -227,8 +222,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                 type: 'POST',
                 dataType: 'json',
                 data: JSON.stringify({
-                    "queryString": searchText,
-                    "contextName": searchContextName
+                    "name": searchText,
+                    "context_name": searchContextName
                 }),  // data (asterisk required for completion suggestions)
                 crossDomain: true,
                 contentType: 'application/json',
@@ -243,25 +238,18 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                     /*
                      * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
                      * with these properties:
-                     *      ottId   // taxon ID in OTT taxonomic tree
-                     *      nodeId  // ie, neo4j node ID
-                     *      exact   // matches the entered text exactly? T/F
-                     *      name    // taxon name
-                     *      higher  // points to a genus or higher taxon? T/F
+                     *      ott_id         // taxon ID in OTT taxonomic tree
+                     *      unique_name    // the taxon name, or unique name if it has one
+                     *      is_higher      // points to a genus or higher taxon? T/F
                      */
                     if (data && data.length && data.length > 0) {
-                        // sort results to show exact match(es) first, then higher taxa, then others
-                        // initial sort on higher taxa (will be overridden by exact matches)
+                        // Sort results to show exact match(es) first, then higher taxa, then others
+                        // initial sort on higher taxa (will be overridden by exact matches).
+                        // N.B. As of the v3 APIs, an exact match will be returned as the only result.
                         data.sort(function(a,b) {
-                            if (a.higher === b.higher) return 0;
-                            if (a.higher) return -1;
-                            if (b.higher) return 1;
-                        });
-                        // final sort on exact matches (overrides higher taxa)
-                        data.sort(function(a,b) {
-                            if (a.exact === b.exact) return 0;
-                            if (a.exact) return -1;
-                            if (b.exact) return 1;
+                            if (a.is_higher === b.is_higher) return 0;
+                            if (a.is_higher) return -1;
+                            if (b.is_higher) return 1;
                         });
 
                         // show all sorted results, up to our preset maximum
@@ -271,8 +259,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                                 break;
                             }
                             var match = data[mpos];
-                            var matchingName = match.name;  // N.B. this will be its unique name, if found
-                            var matchingID = match.ottId;
+                            var matchingName = match.unique_name;
+                            var matchingID = match.ott_id;
                             if ($.inArray(matchingID, matchingNodeIDs) === -1) {
                                 // we're not showing this yet; add it now
                                 $('#search-results').append(

@@ -37,7 +37,6 @@
 
 // these variables should already be defined in the main HTML page
 var API_create_study_POST_url;
-var singlePropertySearchForStudies_url;
 
 // Keep track of duplicate studies found (if any)
 // N.B. Set this to null for a pending test!

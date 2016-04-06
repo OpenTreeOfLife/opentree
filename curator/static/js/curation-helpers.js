@@ -190,41 +190,6 @@ function isVisiblePage( pageNum, pagedArray ) {
     }
     return false;
 }
-/*
-var cladeNameTimeoutID = null;
-function loadMissingFocalCladeNames() {
-    // temporary behavior to AJAX-load missing taxon names wherever we
-    // display 'ot:focalClade' values (bare OTT ids, which nobody knows)
-    if (cladeNameTimeoutID) {
-        clearTimeout( cladeNameTimeoutID );
-    }
-    cladeNameTimeoutID = setTimeout(function() {
-        var $missingNames = $('.focal-clade-name:empty');
-        if ($missingNames.length > 0) {
-            var $nameWidget = $missingNames[0];
-            var $ottID = $nameWidget.parent().find('.focal-clade-id').val();
-            if (!$ottID || ($ottID === '')) {
-                $nameWidget.val('');
-            } else {
-                $.ajax(
-                    type: 'POST',
-                    dataType: 'json',
-                    url: findAllStudies_url,
-                    data: {"ottId": $oddID.toString()},
-                    success: function( data, textStatus, jqXHR ) {
-                        console.log("got the taxon name: ");
-                        var matchingOttID = data['name'] || '???';
-                        console.log( matchingOttID );
-                    }
-
-                    // replace another missing name (if any)...
-                    loadMissingFocalCladeNames();
-                );
-            }
-        }
-    }, 100);
-}
-*/
 
 /*
  * Cross-browser (as of 2013) support for a "safety net" when trying to leave a
@@ -468,12 +433,8 @@ function getTaxobrowserURL(ottID) {
     return url.replace('{OTT_ID}', ottID);
 }
 
-/* Return a link (or URL) to a taxon in the synthetic-tree browser 
- * N.B. This uses a txon-based URL that assumes the latest synthesic tree.
- *
- * TODO: Add a similar pair of functions for unnamed nodes (requires synth-tree ID):
- *      getSynthTreeViewerLinkForNodeID
- *      getSynthTreeViewerURLForNodeID
+/* Return a link (or URL) to a taxon in the synthetic-tree browser
+ * N.B. This uses a taxon-based URL that assumes the latest synthesic tree.
  */
 function getSynthTreeViewerLinkForTaxon(displayName, ottID) {
     // ASSUMES we will always have the ottid, else check for unique name
@@ -497,6 +458,35 @@ function getSynthTreeViewerURLForTaxon(ottID) {
     }
     var url = '/opentree/argus/ottol@{OTT_ID}';
     return url.replace('{OTT_ID}', ottID);
+}
+
+/* Return a link (or URL) to a non-taxon node in the synthetic-tree browser
+ * N.B. This uses a synth-based URL that requires the id of a synthetic tree.
+ */
+function getSynthTreeViewerLinkForNodeID(displayName, synthID, nodeID) {
+    // ASSUMES we will always have the nodeid, else check for unique name
+    if (!synthID || !nodeID) {
+        // show just the name (static text, possibly an empty string)
+        return displayName || nodeID || '???';
+    }
+    if (!displayName) {
+        // empty or missing name? show the raw ID
+        displayName = '{SYNTH_ID}@{NODE_ID}'.replace('{SYNTH_ID}', synthID)
+                                            .replace('{NODE_ID}', nodeID);
+    }
+    var link = '<a href="{SYNTH_VIEWER_URL}" \
+                   title="See this node in the current synthetic tree" \
+                   target="synthbrowser">{DISPLAY_NAME}</a>';
+    return link.replace('{SYNTH_VIEWER_URL}', getSynthTreeViewerURLForNodeID(synthID, nodeID))
+        .replace('{DISPLAY_NAME}', displayName);
+}
+function getSynthTreeViewerURLForNodeID(synthID, nodeID) {
+    if (!synthID || !nodeID) {
+        return null;
+    }
+    var url = '/opentree/argus/{SYNTH_ID}@{NODE_ID}';
+    return url.replace('{SYNTH_ID}', synthID)
+              .replace('{NODE_ID}', nodeID);
 }
 
 function slugify(str) {
