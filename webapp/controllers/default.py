@@ -88,9 +88,12 @@ def download_subtree():
         # use the appropriate web service for this ID type
         fetch_url = method_dict['getDraftSubtree_url']
         if id_type == 'ottol-id':
-            fetch_args = {'ott_id': node_or_ottol_id}
+            fetch_args = {'ott_id': Number(node_or_ottol_id)}
         else:
             fetch_args = {'node_id': node_or_ottol_id}
+        fetch_args['format'] = 'newick';
+        fetch_args['height_limit'] = -1;  # TODO: allow for dynamic height, based on max tips?
+
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
@@ -127,20 +130,15 @@ def fetch_current_synthetic_tree_ids():
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
 
-        fetch_args = {'startingTaxonOTTId': ""}
+        fetch_args = {}
         # this needs to be a POST (pass fetch_args or ''); if GET, it just describes the API
         # N.B. that gluon.tools.fetch() can't be used here, since it won't send "raw" JSON data as treemachine expects
         req = urllib2.Request(url=fetch_url, data=simplejson.dumps(fetch_args), headers={"Content-Type": "application/json"}) 
         ids_response = urllib2.urlopen(req).read()
 
         ids_json = simplejson.loads( ids_response )
-        draftTreeName = str(ids_json['draftTreeName']).encode('utf-8')
-        # Try to be compatible with different versions of treemachine
-        startNodeID = None
-        if 'startingNodeID' in ids_json:
-            startNodeID = str(ids_json['startingNodeID']).encode('utf-8')
-        elif 'startNodeID' in ids_json:
-            startNodeID = str(ids_json['startNodeID']).encode('utf-8')
+        draftTreeName = str(ids_json['synth_id']).encode('utf-8')
+        startNodeID = str(ids_json['root']['node_id']).encode('utf-8')
         return (draftTreeName, startNodeID)
 
     except Exception, e:

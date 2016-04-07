@@ -219,14 +219,15 @@ function loadStudyList() {
                 showErrorMessage('Sorry, there was an error loading the list of studies.');
                 return;
             }
-            if (typeof data !== 'object' || !($.isArray(data))) {
+            if (typeof data !== 'object' || !($.isArray(data['matched_studies']))) {
                 showErrorMessage('Sorry, there is a problem with the study-list data.');
                 return;
             }
             
-            sortStudiesByDOI(data);
+            var matchedStudies = data['matched_studies'];
+            sortStudiesByDOI(matchedStudies);
 
-            viewModel = data; /// ko.mapping.fromJS( fakeStudyList );  // ..., mappingOptions);
+            viewModel = matchedStudies; /// ko.mapping.fromJS( fakeStudyList );  // ..., mappingOptions);
 
             // enable sorting and filtering for lists in the editor
             viewModel.listFilters = {

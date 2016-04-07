@@ -1328,7 +1328,7 @@ body {
                                                       style="padding: 0px 4px;"
                                                       data-bind="click: approveProposedOTUMappingOption"
                                                       title="Click to accept this OTU mapping">
-                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.unique_name,
+                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.taxon.unique_name,
                                                   attr: getAttrsForMappingOption($data)"
                                        href="#"></a>
                                 </li>
@@ -1972,18 +1972,13 @@ body {
 
     var treemachine_domain = "{{=treemachine_domain}}";
     var taxomachine_domain = "{{=taxomachine_domain}}";
-    // var getDraftTreeID_url = "{{=getDraftTreeID_url}}";
-    // var getSyntheticTree_url = "{{=getSyntheticTree_url}}";
-    // var getSourceTree_url = "{{=getSourceTree_url}}";
     var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
     var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
     var getContextForNames_url = "{{=getContextForNames_url}}";
-    var getNodeIDForOttolID_url = "{{=getNodeIDForOttolID_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";
 
     var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
     var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";
-    var getDraftTreeSubtreeForNodes_url = "{{=getDraftTreeSubtreeForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
     var treeConflictStatus_url = "{{=treeConflictStatus_url}}";
 </script>

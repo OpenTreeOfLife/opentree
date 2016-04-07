@@ -423,31 +423,22 @@ def fetch_current_synthesis_source_data():
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
         # as usual, this needs to be a POST (pass empty fetch_args)
-        source_list_response = fetch(fetch_url, data='')
-        source_list = simplejson.loads( source_list_response )
-
+        source_list_response = fetch(fetch_url, data={'include_source_list':True})
+        source_data = simplejson.loads( source_list_response )
+        source_id_list = source_data.get('source_list', [ ])
+        source_id_map = source_data.get('source_id_map')
         # split these source descriptions, which are in the form '{STUDY_ID_PREFIX}_{STUDY_NUMERIC_ID}_{TREE_ID}_{COMMIT_SHA}'
         contributing_study_info = { }   # store (unique) study IDs as keys, commit SHAs as values
 
-        for source_desc in source_list:
-            if source_desc == 'taxonomy':
+        for source_id in source_id_list:
+            source_details = source_id_map.get( source_id )
+            if 'taxonomy' in source_details:
                 continue
-            source_parts = source_desc.split('_')
-            # add default prefix 'pg' to study ID, if not found
-            if source_parts[0].isdigit():
-                # prepend with default namespace 'pg'
-                study_id = 'pg_%s' % source_parts[0]
-            else:
-                study_id = '_'.join(source_parts[0:2])
-            if len(source_parts) == 4:
-                tree_id = source_parts[2]
-                commit_SHA_in_synthesis = source_parts[3]
-            else:
-                tree_id = source_parts[1]
-                if len(source_parts) == 3:
-                    commit_SHA_in_synthesis = source_parts[2]
-                else:
-                    commit_SHA_in_synthesis = None
+            study_id = source_details.get('study_id')
+            # N.B. assume that all study IDs have a two-letter prefix!
+            tree_id = source_details.get('tree_id')
+            commit_SHA_in_synthesis = source_details.get('git_sha')
+            # N.B. assume that any listed study has been used!
 
             if study_id in contributing_study_info.keys():
                 contributing_study_info[ study_id ]['tree_ids'].append( tree_id )
@@ -456,7 +447,6 @@ def fetch_current_synthesis_source_data():
                     'tree_ids': [ tree_id, ],
                     'commit_SHA_in_synthesis': commit_SHA_in_synthesis
                 }
-
 
         # fetch the oti metadata (esp. DOI and full reference text) for each
         fetch_url = method_dict['findAllStudies_url']
@@ -471,7 +461,7 @@ def fetch_current_synthesis_source_data():
 
         # filter just the metadata for studies contributing to synthesis
         contributing_studies = [ ]
-        for study in study_metadata:
+        for study in study_metadata['matched_studies']:
             # Add any missing study-ID prefixes (assume 'pg') so we can compare
             # with the prefixed IDs provided by getSynthesisSourceList.
             id_parts = study['ot:studyId'].split('_')

@@ -2677,7 +2677,7 @@ function normalizeTree( tree ) {
 
     removeDuplicateTags( tree );
 
-    // pre-select first node among monophyletic sets
+    // pre-select first node among duplicate siblings
     resolveMonophyleticDuplicatesInTree(tree);
 }
 
@@ -5548,7 +5548,7 @@ function getAttrsForMappingOption( optionData ) {
     if (optionData.originalMatch.is_synonym) {
         attrs.title = ('Matched on synonym '+ optionData.originalMatch.matched_name);
         attrs.class += ' badge-info';
-    } else if (optionData.originalMatch.matched_name !== optionData.originalMatch.unique_name) {
+    } else if (optionData.originalMatch.matched_name !== optionData.originalMatch.taxon.unique_name) {
         attrs.title = ('Taxon-name homonym');
         attrs.class += ' badge-warning';
     } else {
@@ -5785,7 +5785,7 @@ function approveAllVisibleMappings() {
                 if (onlyMapping.originalMatch.is_synonym) {
                     return;  // synonyms require manual review
                 }
-                if (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.unique_name) {
+                if (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.taxon.unique_name) {
                     return;  // taxon-name homonyms require manual review
                 }
                 if (onlyMapping.originalMatch.score < 1.0) {
@@ -5963,11 +5963,10 @@ function requestTaxonMapping( otuToMap ) {
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({
-            "queryString": searchText,
-            "includeDubious": false,
-            "includeDeprecated": false,
-            "doApproximateMatching": (singleTaxonMapping || usingFuzzyMatching) ? true : false,
-            "contextName": searchContextName
+            "names": [searchText],
+            "include_suppressed": false,
+            "do_approximate_matching": (singleTaxonMapping || usingFuzzyMatching) ? true : false,
+            "context_name": searchContextName
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
         contentType: "application/json; charset=utf-8",
@@ -6048,7 +6047,7 @@ function requestTaxonMapping( otuToMap ) {
                     var otuMapping = {
                         name: resultToMap['ot:ottTaxonName'],       // matched name
                         ottId: String(resultToMap['ot:ottId']),     // matched OTT id (as string)
-                        nodeId: resultToMap.matched_node_id,        // number
+                        //nodeId: resultToMap.matched_node_id,        // number
                         exact: false,                               // boolean (ignoring this for now)
                         higher: false                               // boolean
                         // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
@@ -6075,11 +6074,10 @@ function requestTaxonMapping( otuToMap ) {
                     $.each(candidateMatches, function(i, match) {
                         // convert to expected structure for proposed mappings
                         candidateMappingList.push({
-                            name: match['ot:ottTaxonName'],       // matched name
-                            ottId: String(match['ot:ottId']),     // matched OTT id (as string)
-                            nodeId: match.matched_node_id,        // number
-                            exact: false,                               // boolean (ignoring this for now)
-                            higher: false,                               // boolean
+                            name: match.taxon['unique_name'] || match.taxon['name'],       // matched name
+                            ottId: match.taxon['ott_id'],     // matched OTT id (as number!)
+                            //exact: false,                               // boolean (ignoring this for now)
+                            //higher: false,                               // boolean
                             // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
                             originalMatch: match,
                             otuID: otuID
@@ -6115,7 +6113,6 @@ function mapOTUToTaxon( otuID, mappingInfo, options ) {
      *   "ottId" : "759046",
      *
      *   // these may also be present, but aren't important here
-     *     "nodeId" : 3325605,
      *     "exact" : false,
      *     "higher" : true
      * }
@@ -7132,8 +7129,7 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
         case 'synth':
             fetchURL = getDraftTreeMRCAForNodes_url;
             POSTdata = {
-                "ottIds": mappedIngroupOttIds,
-                "treeSource": options.TREE_SOURCE
+                "ott_ids": mappedIngroupOttIds
             };
             break;
         case 'taxonomy':
@@ -7148,7 +7144,6 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
         url: fetchURL,
-        // TODO: url: getDraftTreeSubtreeForNodes_url,
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify(POSTdata),
@@ -7169,11 +7164,26 @@ function updateMRCAForTree(tree, options) {  // TODO? (tree, options) {
              * latest synthetic tree)
              */
             if (options.TREE_SOURCE === 'taxonomy') {
-                tree['^ot:MRCAName']  = 'lica' in responseJSON ? responseJSON['lica']['ot:ottTaxonName'] : '???';
-                tree['^ot:MRCAOttId'] = 'lica' in responseJSON ? responseJSON['lica']['ot:ottId'] : '???';
+                // TODO: REMOVE this test and assume 'mrca' as in the v3 API documentation
+                var mrcaInfo;
+                if ('mrca' in responseJSON) {
+                    mrcaInfo = responseJSON['mrca'];
+                } else if ('taxon' in responseJSON) {
+                    mrcaInfo = responseJSON['taxon'];
+                }
+                tree['^ot:MRCAName']  = mrcaInfo['unique_name'] || mrcaInfo['name'] || '???';
+                tree['^ot:MRCAOttId'] = mrcaInfo['ott_id'] || '???';
             } else {  // ASSUME 'synth'
-                tree['^ot:nearestTaxonMRCAName'] = responseJSON['nearest_taxon_mrca_unique_name'] || responseJSON['nearest_taxon_mrca_name'] || '???';
-                tree['^ot:nearestTaxonMRCAOttId'] = responseJSON['nearest_taxon_mrca_ott_id'] || null;
+                var nearestTaxonInfo;
+                if ('nearest_taxon' in responseJSON) {
+                    // MRCA was an unlabeled internal node; show the nearest taxon instead
+                    nearestTaxonInfo = responseJSON['nearest_taxon'];
+                } else {
+                    // MRCA is also a proper taxon, read directly from its node-info
+                    nearestTaxonInfo = responseJSON['mrca']['taxon'];
+                }
+                tree['^ot:nearestTaxonMRCAName'] = nearestTaxonInfo['unique_name'] || '???';
+                tree['^ot:nearestTaxonMRCAOttId'] = nearestTaxonInfo['ott_id'] || null;
             }
             nudgeTickler('TREES');
         }
@@ -7260,7 +7270,7 @@ function buildFastLookup( lookupName ) {
                     $.each(tree.node, function( i, node ) {
                         var itsID = node['@id'];
                         if (itsID in newLookup) {
-                            console.warn("Duplicate node ID '"+ itsID +"' found!");
+                            console.warn("Duplicate node ID '"+ itsID +"' found ["+ lookupName +"]");
                         }
                         newLookup[ itsID ] = node;
                     });
@@ -7274,7 +7284,7 @@ function buildFastLookup( lookupName ) {
                     $.each(tree.node, function( i, node ) {
                         var itsID = node['@otu'];
                         if (itsID in newLookup) {
-                            console.warn("Duplicate otu ID '"+ itsID +"' found!");
+                            console.warn("Duplicate otu ID '"+ itsID +"' found ["+ lookupName +"]");
                         }
                         newLookup[ itsID ] = tree;
                     });
@@ -7288,7 +7298,7 @@ function buildFastLookup( lookupName ) {
                     $.each(otusCollection.otu, function( i, otu ) {
                         var itsID = otu['@id'];
                         if (itsID in newLookup) {
-                            console.warn("Duplicate otu ID '"+ itsID +"' found!");
+                            console.warn("Duplicate otu ID '"+ itsID +"' found ["+ lookupName +"]");
                         }
                         newLookup[ itsID ] = otu;
                     });
@@ -7450,9 +7460,6 @@ function searchForMatchingTaxa() {
     // stash these to use for later comparison (to avoid redundant searches)
     var queryText = searchText; // trimmed above
     var queryContextName = searchContextName;
-
-    // proper version queries treemachine API
-    // $ curl -X POST http://opentree-dev.bio.ku.edu:7476/db/data/ext/TNRS/graphdb/doTNRSForNames -H "Content-Type: Application/json" -d '{"queryString":"Drosophila","contextName":"Fungi"}'
     $('#search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
     $('#search-results').show();
     $('#search-results').dropdown('toggle');
@@ -7462,10 +7469,9 @@ function searchForMatchingTaxa() {
         type: 'POST',
         dataType: 'json',
         data: JSON.stringify({
-            "queryString": searchText,
-            "includeDubious": false,
-            "includeDeprecated": false,
-            "contextName": searchContextName
+            "name": searchText,
+            "context_name": searchContextName,
+            "include_suppressed": false
         }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
         contentType: "application/json; charset=utf-8",
@@ -7480,25 +7486,18 @@ function searchForMatchingTaxa() {
             /*
              * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
              * with these properties:
-             *      ottId   // taxon ID in OTT taxonomic tree
-             *      nodeId  // ie, neo4j node ID
-             *      exact   // matches the entered text exactly? T/F
-             *      name    // taxon name
-             *      higher  // points to a genus or higher taxon? T/F
+             *      ott_id         // taxon ID in OTT taxonomic tree
+             *      unique_name    // the taxon name, or unique name if it has one
+             *      is_higher      // points to a genus or higher taxon? T/F
              */
             if (data && data.length && data.length > 0) {
                 // sort results to show exact match(es) first, then higher taxa, then others
                 // initial sort on higher taxa (will be overridden by exact matches)
+                // N.B. As of the v3 APIs, an exact match will be returned as the only result.
                 data.sort(function(a,b) {
-                    if (a.higher === b.higher) return 0;
-                    if (a.higher) return -1;
-                    if (b.higher) return 1;
-                });
-                // final sort on exact matches (overrides higher taxa)
-                data.sort(function(a,b) {
-                    if (a.exact === b.exact) return 0;
-                    if (a.exact) return -1;
-                    if (b.exact) return 1;
+                    if (a.is_higher === b.is_higher) return 0;
+                    if (a.is_higher) return -1;
+                    if (b.is_higher) return 1;
                 });
 
                 // show all sorted results, up to our preset maximum
@@ -7508,9 +7507,8 @@ function searchForMatchingTaxa() {
                         break;
                     }
                     var match = data[mpos];
-                    var matchingName = match.name;
-                    //
-                    var matchingID = match.ottId;
+                    var matchingName = match.unique_name;
+                    var matchingID = match.ott_id;
                     if ($.inArray(matchingID, matchingNodeIDs) === -1) {
                         // we're not showing this yet; add it now
                         $('#search-results').append(
@@ -7739,6 +7737,7 @@ function unresolvedDuplicatesFoundInTree( tree ) {
     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
     return $.isEmptyObject(duplicateData) ? false : true;
 }
+
 function isDuplicateNode( tree, node ) {
     ///console.log("isDuplicateNode( "+ tree['@id'] +", "+ node['@id'] +")...");
     // N.B. This checks for ALL duplicates (incl. resolved and sibling-only)
@@ -7775,7 +7774,7 @@ function getUnresolvedDuplicatesInTree( tree, options ) {
             if (includeMonophyleticDuplicates) {
                 unresolvedDuplicates[ taxonID ] = itsMappings;
             } else if (!(itsMappings.monophyletic)) {
-                // ignore duplicates just between siblings
+                // ignore sets that constitute a clade
                 unresolvedDuplicates[ taxonID ] = itsMappings;
             }
         }
@@ -7785,7 +7784,7 @@ function getUnresolvedDuplicatesInTree( tree, options ) {
 
 function getDuplicateNodesInTree( tree ) {
     // Return sets of nodes that ultimately map to a single OT taxon (via
-    // multiple OTUs) and are not siblings. A curator should choose the
+    // multiple OTUs) and are not monophyletic. A curator should choose the
     // 'exemplar' node to avoid problems in synthesis.
     var duplicateNodes = { };
 
@@ -7822,12 +7821,13 @@ function getDuplicateNodesInTree( tree ) {
             }
         }
     });
+
     // Gather all duplicate mappings, but mark them to distinguish trivial cases
     // (the duplicates are monophyletic) from more interesting cases (there is
     // ambiguity about placement of the OT taxon because duplicates in multiple
     // places in the tree)
-    // N.B. Siblings will be reconciled on the server in any case, but this
-    // will help us to show consistent UI when siblings are obviously duplicates.
+    // N.B. Trivial duplicates will be reconciled on the server in any case, but this
+    // will help us to show consistent UI when monophyletic duplicates.
     for (taxonID in taxonMappings) {
         ///console.log('>>>> taxonID '+ taxonID +'...');
         // is there more than one node for this taxon?
@@ -8013,8 +8013,8 @@ function clearTaxonExemplar( treeID, chosenNodeID, options ) {
     }
 }
 function resolveMonophyleticDuplicatesInTree(tree) {
-    // Find and resolve all trivial duplciates - sibling nodes mapped to same OT
-    // taxon - by selecting the first as the exemplar.
+    // Find and resolve all trivial duplicates - sibling nodes mapped to same OT
+    // taxon, or other monophyletic sets - by selecting the first as the exemplar.
     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: true} );
     for (var taxonID in duplicateData) {
         var duplicateInfo = duplicateData[taxonID];

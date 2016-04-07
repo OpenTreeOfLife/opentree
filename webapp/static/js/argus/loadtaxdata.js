@@ -33,7 +33,6 @@
 */
 
 // the location of the TNRS query service
-//url = "http://localhost:7474/db/data/ext/TNRS/graphdb/doTNRSForNames";
 url = doTNRSForNames_url;   // passed from main HTML page template
 
 /*

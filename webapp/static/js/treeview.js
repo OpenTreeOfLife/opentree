@@ -49,14 +49,7 @@ var argus;
 var incomingOttolID = null;
 
 function getSupportingSourceIDs( node ) {
-    // handle different properties used here (each should hold an array of source-ids)
-    if (typeof node.supportedBy !== 'undefined') {
-        return (node.supportedBy.length > 0) ? node.supportedBy : null;
-    }
-    if (typeof node.supporting_sources !== 'undefined') {
-        return (node.supporting_sources.length > 0) ? node.supporting_sources : null;
-    }
-    return null;
+    return $.isPlainObject(node.supported_by) ? node.supported_by : null;
 }
 function updateTreeView( State ) {
     /* N.B. This should respond identically to state changes in HTML5 History,
@@ -71,12 +64,16 @@ function updateTreeView( State ) {
     // fetch the matching synth-tree node ID, then notify argus (trigger data load and/or view change)
     var ottolID = State.data.nodeID;
     if (argus.useSyntheticTree && State.data.domSource == 'ottol') {
-        // we'll need to convert to a more volatile node ID for the current tree
+        // convert this (by convention) to a node ID in the current tree
 
         // @TEMP - save this and we'll add it dataTree when it arrives
         incomingOttolID = ottolID;
+        var treeNodeID = "ott"+ incomingOttolID;
+        argus.displayNode({"nodeID": treeNodeID,
+                           "ott_id": incomingOttolID,
+                           "domSource": syntheticTreeID});  // from main HTML view
 
-        var treeNodeID;
+        /* NO LONGER NEEDED if ottid always translates to node id as shown above!
         $.ajax({
             type: 'POST',
             url: getNodeIDForOttolID_url,
@@ -113,9 +110,11 @@ function updateTreeView( State ) {
             },
             dataType: 'json'  // should return just the node ID (number)
         });
+        */
     } else {
         // use ottol ID if we're browsing the taxonomy
         argus.displayNode({"nodeID": ottolID,
+                           "ott_id": ottolID,
                            "domSource": State.data.domSource});
     }
 
@@ -180,9 +179,9 @@ function loadLocalComments( chosenFilter ) {
 
         var targetNode = argus.treeData;
         fetchArgs.synthtree_id = argus.domSource;
-        fetchArgs.synthtree_node_id = targetNode.nodeid;
+        fetchArgs.synthtree_node_id = targetNode.node_id;
         fetchArgs.sourcetree_id = targetNode.taxSource;
-        fetchArgs.ottol_id = targetNode.ottId;
+        fetchArgs.ottol_id = targetNode.ott_id;
 
         commentLabel = buildNodeNameFromTreeData( targetNode );
         /* OR should comment label reflect the current filter?
@@ -329,6 +328,7 @@ function toggleCommentsPanel( hideOrShow ) {
     if ($('#viewer-collection').hasClass('active-comments') && (hideOrShow !== 'SHOW')) {
         ///console.log('HIDING comments');
         $('#viewer-collection').removeClass('active-comments');
+        $('#argusCanvasContainer.viewer-frame').css('width', '');
         $('.comments-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.comments-indicator').attr('title', 'Show comments for this node');
         $('.comments-indicator .widget-prompt').text(' Show comments');
@@ -337,6 +337,8 @@ function toggleCommentsPanel( hideOrShow ) {
     } else {
         ///console.log('SHOWING comments');
         $('#viewer-collection').removeClass('active-properties');
+        var vcWidth = $('#viewer-collection').width();
+        $('#argusCanvasContainer.viewer-frame').css('width', Math.max(vcWidth - 480, vcWidth / 2));
         $('.properties-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.properties-indicator').attr('title', 'Show properties for the current selection');
         $('.properties-indicator .widget-prompt').text('Show properties ');
@@ -368,6 +370,7 @@ function togglePropertiesPanel( hideOrShow ) {
     if ($('#viewer-collection').hasClass('active-properties') && (hideOrShow !== 'SHOW')) {
         ///console.log('HIDING properties');
         $('#viewer-collection').removeClass('active-properties');
+        $('#argusCanvasContainer.viewer-frame').css('width', '');
         $('.properties-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.properties-indicator').attr('title', 'Show properties for the current selection');
         $('.properties-indicator .widget-prompt').text('Show properties ');
@@ -376,6 +379,8 @@ function togglePropertiesPanel( hideOrShow ) {
     } else {
         ///console.log('SHOWING properties');
         $('#viewer-collection').removeClass('active-comments');
+        var vcWidth = $('#viewer-collection').width();
+        $('#argusCanvasContainer.viewer-frame').css('width', Math.max(vcWidth - 480, vcWidth / 2));
         $('.comments-indicator .badge').fadeTo('fast', readyToggleFade);
         $('.comments-indicator').attr('title', 'Show comments for this node');
         $('.comments-indicator .widget-prompt').text(' Show comments');
@@ -447,7 +452,7 @@ function historyStateToPageHeading( stateObj ) {
 }
 
 function buildNodeNameFromTreeData( node ) {
-    var nameOfLastResort = "(untitled node)";
+    var nameOfLastResort = "(unnamed node)";
     var compoundNodeNameDelimiter = ' + ';
     var compoundNodeNamePrefix = '[';
     var compoundNodeNameSuffix = ']';
@@ -456,10 +461,10 @@ function buildNodeNameFromTreeData( node ) {
         return node.name || nameOfLastResort;
     }
     // unnamed nodes should show two descendant names as tip taxa (eg, 'dog, cat')
-    if (node.descendantNameList) {
+    if (node.descendant_name_list) {
         // children aren't in view, but their names are here
-        return (compoundNodeNamePrefix + node.descendantNameList.slice(0,2).join(compoundNodeNameDelimiter)
-                + (node.descendantNameList.length > 2 ? ' + ...' : '')   // hint at additional descendants
+        return (compoundNodeNamePrefix + node.descendant_name_list.slice(0,2).join(compoundNodeNameDelimiter)
+                + (node.descendant_name_list.length > 2 ? ' + ...' : '')   // hint at additional descendants
                 + compoundNodeNameSuffix);
     }
     // we'll need to build a name from visible children and/or their descendantNamesList
@@ -495,12 +500,20 @@ function buildNodeNameFromTreeData( node ) {
 
 // recursively populate any missing (implied) node names (called immediately after argus loads treeData)
 function buildAllMissingNodeNames( node ) {
+    if ('taxon' in node) {
+        node.name = node.taxon.name;
+    }
     if (!node.name) {
         node.name = buildNodeNameFromTreeData(node);
     }
     if (node.children) {
         for (var i = 0; i < node.children.length; i++) {
             buildAllMissingNodeNames( node.children[i] );
+        }
+    }
+    if (node.lineage) {
+        for (var i = 0; i < node.lineage.length; i++) {
+            buildAllMissingNodeNames( node.lineage[i] );
         }
     }
 }
@@ -597,12 +610,12 @@ function showObjectProperties( objInfo, options ) {
         objName = objInfo.nodeName;
         objID = objInfo.nodeID;
         objSource = objInfo.domSource || '?';
-    } else if (typeof(objInfo.nodeid) !== 'undefined') {
+    } else if (typeof(objInfo.node_id) !== 'undefined') {
         // this is minimal node info (nodeID, domSource, nodeName) from an argus node
         // OR it's an edge with metadata for it and its adjacent (child) node
         objType = (objInfo.type) ? objInfo.type : 'node';
         objName = objInfo.name;
-        objID = objInfo.nodeid;
+        objID = objInfo.node_id;
         objSource = objInfo.domSource || '?';
     } else {
         // what's this?
@@ -613,7 +626,7 @@ function showObjectProperties( objInfo, options ) {
     if (argus.treeData) {
 
         // fetch additional information used to detail provenance for nodes and edges
-        metaMap = argus.treeData.sourceToMetaMap;
+        metaMap = argus.treeData.source_id_map;
 
         // Gather data for all displayed properties, storing each in the most
         // appropriate section
@@ -679,67 +692,82 @@ function showObjectProperties( objInfo, options ) {
                         objName = buildNodeNameFromTreeData( fullNode );
                     }
 
-                    /* show ALL taxonomic sources (taxonomies + IDs) for this node
-                     * TODO: Handle whatever schemes we use for multiple sources; for now,
-                     * they look like one of the following (in order of preference):
-
-                       EXAMPLE w/ multiple sources (new format):
-                       fullNode.taxSourceArray: [
-                           { "foreignID": "2", "taxSource": "ncbi" },
-                           { "foreignID": "3", "taxSource": "gbif" }
-                       ]
-
-                       EXAMPLE w/ multiple sources (old format):
-                       fullNode.taxSource: "ncbi:2157,gbif:6101330"
-
-                       EXAMPLE w/ one source:
-                       fullNode.taxSource: "gbif:6101330"
-
+                    /* Show ALL taxonomic sources (taxonomies + IDs) for this node.
+                     * N.B. In ArguSON "v3", these can be either CURIEs or URLs:
+                     *   ["ncbi:123", "gbif:456", "http://dx.doi.org/10.1186/1471-2148-14-23"]
+                     * https://github.com/OpenTreeOfLife/germinator/wiki/%22Arguson%22-format
                      */
-                    if (fullNode.taxSourceArray && fullNode.taxSourceArray.length > 0) {
-                        nodeSection.displayedProperties['Source taxonomy'] = [];
-                        for (var tsPos = 0; tsPos < fullNode.taxSourceArray.length; tsPos++) {
-                            var taxSourceInfo = fullNode.taxSourceArray[tsPos];
-                            nodeSection.displayedProperties['Source taxonomy'].push({
-                                taxSource: taxSourceInfo.taxSource,
-                                taxSourceId: taxSourceInfo.foreignID
-                            });
-                        }
-                    } else if (fullNode.taxSource) {
-                        nodeSection.displayedProperties['Source taxonomy'] = [];
-                        var taxSources = fullNode.taxSource.split(',');
-                        for (var tsPos = 0; tsPos < taxSources.length; tsPos++) {
-                            var taxSourceInfo = taxSources[tsPos].split(':');
-                            if (taxSourceInfo.length === 2) {
-                                nodeSection.displayedProperties['Source taxonomy'].push({
-                                    taxSource: taxSourceInfo[0],
-                                    taxSourceId: taxSourceInfo[1]
-                                });
+                    var itsTaxon = fullNode.taxon;
+                    if (itsTaxon) {
+                        if (itsTaxon.tax_sources && $.isPlainObject(itsTaxon.tax_sources)) {
+                            // TODO: REMOVE THIS if we adopt the scheme above; this is
+                            // a temporary alternative path for the current Arguson test file.
+                            nodeSection.displayedProperties['Source taxonomy'] = [];
+                            for (var src in itsTaxon.tax_sources) {
+                                var id = itsTaxon.tax_sources[src];
+                                var info = { taxSource: src };
+                                if (src === 'url') {
+                                    info.taxSourceURL = id;
+                                } else {
+                                    info.taxSourceID = id;
+                                }
+                                nodeSection.displayedProperties['Source taxonomy'].push(info);
+                            }
+
+                        } else if (itsTaxon.tax_sources && itsTaxon.tax_sources.length > 0) {
+                            nodeSection.displayedProperties['Source taxonomy'] = [];
+                            for (var tsPos = 0; tsPos < itsTaxon.tax_sources.length; tsPos++) {
+                                var taxSourceInfo = itsTaxon.tax_sources[tsPos];
+                                // Is this source a URL or CURIE?
+                                if (taxSourceInfo.indexOf('//') === -1) {  // CURIE
+                                    var CURIEparts = taxSourceInfo.split(':');
+                                    if (CURIEparts.length === 2) {
+                                        nodeSection.displayedProperties['Source taxonomy'].push({
+                                            taxSource: CURIEparts[0],
+                                            taxSourceId: CURIEparts[1]
+                                        });
+                                    } else {
+                                        console.error('showObjectProperties(): ERROR, expected a CURIE or URL:');
+                                        console.error(taxSourceInfo);
+                                    }
+                                } else {   // URL
+                                    nodeSection.displayedProperties['Source taxonomy'].push({
+                                        taxSource: 'URL',
+                                        taxSourceURL: taxSourceInfo
+                                    });
+                                }
                             }
                         }
+
+                        if (itsTaxon.ott_id) {
+                            nodeSection.displayedProperties['Reference taxonomy'] = [];
+                            //nodeSection.displayedProperties['OTT ID'] = itsTaxon.ottolId;
+                            nodeSection.displayedProperties['Reference taxonomy'].push(
+                                {
+                                    taxSource: "OTT",
+                                    taxSourceId: itsTaxon.ott_id
+                                }
+                            );
+                        }
+
+                        // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
+                        if (typeof itsTaxon.tax_rank !== 'undefined') {
+                            // TODO: Omit this is value is 'no rank'?
+                            nodeSection.displayedProperties['Taxonomic rank'] = itsTaxon.tax_rank;
+                        }
                     }
 
-                    if (fullNode.ottId) {
-                        nodeSection.displayedProperties['Reference taxonomy'] = [];
-                        //nodeSection.displayedProperties['OTT ID'] = fullNode.ottolId;
-                        nodeSection.displayedProperties['Reference taxonomy'].push(
-                            {
-                                taxSource: "OTT",
-                                taxSourceId: fullNode.ottId
-                            }
-                        );
+                    if (fullNode.node_id) {
+                        var nodeLink = getSynthTreeViewerLinkForNodeID(fullNode.node_id, syntheticTreeID, fullNode.node_id);
+                        nodeSection.displayedProperties['Node id in synthetic tree'] = nodeLink;
                     }
 
-                    // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
-                    if (typeof fullNode.taxRank !== 'undefined') {
-                        nodeSection.displayedProperties['Taxonomic rank'] = fullNode.taxRank;
-                    }
-
-                    if (typeof fullNode.nTipDescendants !== 'undefined') {
-                        if (fullNode.nTipDescendants === 0) {
+                    if (typeof fullNode.num_tips !== 'undefined') {
+                        //if (fullNode.num_tips === 0) {
+                        if (fullNode.isActualLeafNode()) {
                             nodeSection.displayedProperties['Leaf node (no descendant tips)'] = '';
                         } else {
-                            nodeSection.displayedProperties['Descendant tips'] = (fullNode.nTipDescendants || 0).toLocaleString();
+                            nodeSection.displayedProperties['Descendant tips'] = (fullNode.num_tips || 0).toLocaleString();
                             // OR 'Clade members'? 'Leaf taxa'?
                         }
                     }
@@ -759,7 +787,7 @@ function showObjectProperties( objInfo, options ) {
 
                     // add another section to explain an "orphaned" taxon (unconnected to other nodes in the tree)
                     if (('hasChildren' in fullNode) && (fullNode.hasChildren === false)
-                     && ('pathToRoot' in fullNode) && (fullNode.pathToRoot.length === 0)) {
+                     && ('lineage' in fullNode) && (fullNode.lineage.length === 0)) {
                         orphanSection = {
                             name: 'Where is the surrounding tree?',
                             displayedProperties: {},
@@ -819,12 +847,12 @@ function showObjectProperties( objInfo, options ) {
             }
             if (objSupporters) {
                 // fetch full supporting info, then display it
-                $.each(objSupporters, function(i, sourceID) {
-                    if (sourceID === 'taxonomy') {
+                $.each(objSupporters, function(sourceID, sourceDetails) {
+                    sourceMetadata = argus.treeData.source_id_map[ sourceID ];
+                    if ('taxonomy' in sourceMetadata) {
                         // this supporting data is already in arguson
                     } else {
                         // it's a study; call the index to get full details
-                        sourceMetadata = argus.treeData.sourceToMetaMap[ sourceID ];
                         if ((typeof sourceMetadata['sourceDetails'] === 'undefined') && (sourceMetadata['loadStatus'] !== 'PENDING')) {
                             // don't keep sending requests for the same source! we manage this with 'loadStatus'
                             sourceMetadata['loadStatus'] = 'PENDING';
@@ -839,7 +867,7 @@ function showObjectProperties( objInfo, options ) {
                                 function(data) {    // JSONP callback
                                     // reset this locally, to MAKE SURE we've got the right box
                                     ///console.warn('<<<<<<<<<<<<<<< BACK FROM FETCH for sourceID '+ sourceID);
-                                    var cbSourceMetadata = argus.treeData.sourceToMetaMap[ sourceID ];
+                                    var cbSourceMetadata = argus.treeData.source_id_map[ sourceID ];
                                     // ignore this if not requested, or already complete
                                     if (cbSourceMetadata['loadStatus'] === 'PENDING') {
                                         if (data.matched_studies && (data.matched_studies.length > 0)) {
@@ -875,6 +903,7 @@ function showObjectProperties( objInfo, options ) {
                     },
                     function(data) {    // JSONP callback
                         if (data.result && (data.result.length > 0) && data.result[0].icon && data.result[0].icon.uid) {
+                            $('#provenance-panel .taxon-image').remove();  // clear any old image
                             $('#provenance-panel .provenance-title').after(
                                 '<img class="taxon-image" src="/phylopic_proxy/assets/images/submissions/'+ data.result[0].icon.uid
                                 +'.icon.png" title="Click for image credits"/>'       // 'thumb.png' = 64px, 'icon.png' = 32px and blue
@@ -889,7 +918,7 @@ function showObjectProperties( objInfo, options ) {
     }
 
     var sectionPos, sectionCount = orderedSections.length,
-        aSection, dLabel, dValues, i, rawVal, displayVal = '', moreInfo;
+        aSection, dLabel, i, displayVal = '', moreInfo;
     for (sectionPos = 0; sectionPos < sectionCount; sectionPos++) {
         var aSection = orderedSections[sectionPos];
         // We now treat the node and edge as a single target, so no distinction is required
@@ -907,10 +936,18 @@ function showObjectProperties( objInfo, options ) {
                 case 'Source taxonomy':
                 case 'Reference taxonomy':
                     var sourceList = aSection.displayedProperties[dLabel];
+                    $details.append('<dt>'+ dLabel +'</dt>');
+                    var sourceLinks = [ ];
                     for (i = 0; i < sourceList.length; i++) {
                         var sourceInfo = sourceList[i];
                         // build boilerplate URLs for common taxonomies
                         switch(sourceInfo.taxSource.trim().toUpperCase()) {
+                            case 'URL':
+                                // we have just a bare URL to show
+                                displayVal = '<a href="'+ sourceInfo.taxSourceURL +'"'
+                                              + ' target="_blank">'+ sourceInfo.taxSourceURL +'</a>';
+                                break;
+
                             case 'NCBI':
                                 displayVal = '<a href="http://www.ncbi.nlm.nih.gov/Taxonomy/Browser/wwwtax.cgi?id='+ sourceInfo.taxSourceId +'" '
                                               + 'title="NCBI Taxonomy" target="_blank">NCBI: '+ sourceInfo.taxSourceId +'</a>';
@@ -958,8 +995,8 @@ function showObjectProperties( objInfo, options ) {
 
                             case 'OTT':
                                 //displayVal = '<a href="/taxonomy/browse?id=' + sourceInfo.taxSourceId + '" ' + 'title="OTT Taxonomy" target="_blank">OTT: ' + sourceInfo.taxSourceId + '</a>';
-                                displayName = 'OTT: ' + sourceInfo.taxSourceId
-                                displayVal = getTaxobrowserLink(displayName, sourceInfo.taxSourceId)
+                                var ottDisplayName = 'OTT: ' + sourceInfo.taxSourceId
+                                displayVal = getTaxobrowserLink(ottDisplayName, sourceInfo.taxSourceId)
                                 break;
 
                             default:
@@ -967,54 +1004,55 @@ function showObjectProperties( objInfo, options ) {
                                 break;
                         }
 
-                        $details.append('<dt>'+ dLabel +'</dt>');
-                        $details.append('<dd>'+ displayVal +'</dd>');
+                        sourceLinks.push( displayVal );
                     }
+                    $details.append('<dd>'+ sourceLinks.join('<br/>') +'</dd>');
+
                     break;
 
                 case 'Supported by':
-
-                    //var supportingStudyIDs = [ ];  // don't repeat studies under 'Supported by', but gather trees for each!
                     var supportedByTaxonomy = false;
                     var supportingTaxonomyVersion, supportingTaxonomyVersionURL;
-                    var ottInfo = argus.treeData.sourceToMetaMap['taxonomy'];
-                    if ('version' in ottInfo) {
-                        supportingTaxonomyVersion = ottInfo['version'];
-                        var simpleVersion = supportingTaxonomyVersion.split('draft')[0];
-                        supportingTaxonomyVersionURL = '/about/taxonomy-version/ott'
-                            + simpleVersion;
-                    } else {
-                        supportingTaxonomyVersion = 'Not found';
-                        supportingTaxonomyVersionURL = '/about/taxonomy-version';
+                    var ottInfo = $.map( argus.treeData.source_id_map, function( value, key ) {
+                        // return info only for taxonomic sources
+                        return ('taxonomy' in value) ? value : null;
+                    })[0];
+                    if (ottInfo && 'taxonomy' in ottInfo) {
+                        supportingTaxonomyVersion = ottInfo['taxonomy'];
+                        if (supportingTaxonomyVersion) {
+                            var simpleVersion = supportingTaxonomyVersion.split('draft')[0];
+                            supportingTaxonomyVersionURL = '/about/taxonomy-version/ott'
+                                + simpleVersion;
+                        } else {
+                            supportingTaxonomyVersion = 'Not found';
+                            supportingTaxonomyVersionURL = '/about/taxonomy-version';
+                        }
                     }
                     var supportingStudyInfo = { };  // don't repeat studies under 'Supported by', but gather trees for each *then* generate output
                     // if we're still waiting on fetched study info, add a message to the properties window
                     var waitingForStudyInfo = false;
                     var studiesWithErrors = [];
 
-                    dValues = String(aSection.displayedProperties[dLabel]).split(',');
-                    for (i = 0; i < dValues.length; i++) {
-                        rawVal = dValues[i];
+                    $.each( aSection.displayedProperties[dLabel], function(sourceID, sourceDetails) {
                         var metaMapValues = null;
-                        if (rawVal === 'taxonomy') {
-                            // this will be added below any supporting studies+trees
-                            supportedByTaxonomy = true;
-                            metaMapValues = parseMetaMapKey( 'taxonomy' );
-                            continue;
-                        }
 
                         // look for study information in the metaMap
                         if (metaMap) {
-                            moreInfo = metaMap[ rawVal ];
+                            moreInfo = metaMap[ sourceID ];
                         }
 
-                        // adapt to various forms of meta-map key
-                        metaMapValues = parseMetaMapKey( rawVal );
+                        if (typeof moreInfo === 'object') {
+                            if ('taxonomy' in moreInfo) {
+                                // this will be added below any supporting studies+trees
+                                supportedByTaxonomy = true;
+                                return false;
+                            }
+                        }
                         if (typeof moreInfo === 'object' && 'sourceDetails' in moreInfo) {
-                            // Study details, fetched via AJAX as needed
+                            // Study details (fetched via AJAX as needed)
 
                             // adapt to various forms of meta-map key
-                            metaMapValues = parseMetaMapKey( rawVal );
+                            metaMapValues = parseMetaMapKey( sourceID );
                             if (!(metaMapValues.studyID in supportingStudyInfo)) {
                                 // add this study now, plus an empty trees collection
                                 supportingStudyInfo[ metaMapValues.studyID ] = $.extend({ supportingTrees: {} }, moreInfo.sourceDetails);
@@ -1026,21 +1064,23 @@ function showObjectProperties( objInfo, options ) {
                         } else if (moreInfo && !('study' in moreInfo)) {
                             if (moreInfo['loadStatus'] === 'PENDING') {
                                 ///console.log('>>> study data is PENDING...');
+                                waitingForStudyInfo = true;
+                            } else if ('taxonomy' in moreInfo) {
+                                // no problem, taxo sources are not loaded via AJAX
                             } else {
                                 console.error("! expected a study, but found mysterious stuff in metaMap:");
                                 for (p2 in moreInfo) {
                                     console.error("  "+ p2 +" = "+ moreInfo[p2]);
                                 }
                             }
-                            waitingForStudyInfo = true;
-                            studiesWithErrors.push( metaMapValues.studyID );
                         } else {
                             // when in doubt, just show the raw value
-                            console.error("! Expecting to find moreInfo and a study (dLabel="+ dLabel +", rawVal="+ rawVal +")");
+                            console.error("! Expecting to find moreInfo and a study (dLabel="+ dLabel +", sourceID="+ sourceID +", sourceDetails="+ sourceDetails +")");
                             waitingForStudyInfo = true;
                             studiesWithErrors.push( metaMapValues.studyID );
                         }
-                    }
+                    });
+
                     // Now that we've gathered all trees for all studies, show organized results by study, with taxonomy LAST if found
 
                     // clear any previously added 'Supported by' information (probably still fetching details)
@@ -1092,8 +1132,8 @@ function showObjectProperties( objInfo, options ) {
                                 );
                                 for (var treeID in studyInfo.supportingTrees) {
                                     displayVal += (
-                                        '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree=tree'+ treeID +'" '
-                                      + 'target="_blank" title="Link to this supporting tree in curation app">tree'+ treeID +'</a>'
+                                        '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree='+ treeID +'" '
+                                      + 'target="_blank" title="Link to this supporting tree in curation app">'+ treeID +'</a>'
                                     );
                                 }
                             }
@@ -1148,7 +1188,7 @@ function showObjectProperties( objInfo, options ) {
         // main download page if it's too large (based on the number of
         // descendant tips)
         var maxTipsForNewickSubtree = 10000;
-        if ((typeof fullNode.nTipDescendants !== 'number') || (fullNode.nTipDescendants > maxTipsForNewickSubtree)) {
+        if ((typeof fullNode.num_tips !== 'number') || (fullNode.num_tips > maxTipsForNewickSubtree)) {
             // when in doubt (e.g. nodes on the rootward path), offer the full download
             $details.append('<dt>Download subtree as Newick string</dt>');
             $details.append('<dd>This tree is too large to download through webservices, but you can '
@@ -1158,23 +1198,24 @@ function showObjectProperties( objInfo, options ) {
 
             // we can fetch a subtree using an ottol id (if available) or Neo4j node ID
             var idType = (objSource == 'ottol') ? 'ottol-id' : 'node-id';
-            var fetchID = (objSource == 'ottol') ? fullNode.sourceID : (fullNode.nodeid || fullNode.nodeID);
+            var fetchID = (objSource == 'ottol') ? fullNode.sourceID : (fullNode.node_id || fullNode.nodeID);
             // Choose from among the collection of objSources
+            var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
+            var downloadURL = '/opentree/default/download_subtree/'+ idType +'/'+ fetchID +'/'+ superSafeDisplayName;
             $('#extract-subtree')
                 .css('color','')  // restore normal link color
                 .unbind('click').click(function() {
                     // Make this name safe for use in our subtree download URL
-                    var superSafeDisplayName = makeSafeForWeb2pyURL(displayName);
-                    var downloadURL = '/opentree/default/download_subtree/'+ idType +'/'+ fetchID +'/'+ superSafeDisplayName;
                     ///console.log(downloadURL);
                     window.location = downloadURL;
                     return false;
-                });
+                }).
+                attr('href', downloadURL);
         }
 
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
         if ((displayName.indexOf('Unnamed ') !== 0) &&
-            (displayName.indexOf('(untitled ') !== 0) &&
+            (displayName.indexOf('(unnamed ') !== 0) &&
             (displayName.indexOf('[') !== 0)) {
             // Attempt to find a page for this taxon in the Encyclopedia of Life website
             // N.B. This 'external-links' list can hold similar entries.
@@ -1201,7 +1242,7 @@ function getTreeDataNode( filterFunc, testNode ) {
     if (testNode === argus.treeData) {
         // check for a matching ancestor (walk the path toward the root node)
         var foundAncestor = null;
-        $.each(testNode.pathToRoot, function(i, testNode) {
+        $.each(testNode.lineage, function(i, testNode) {
             if (filterFunc(testNode)) {
                 foundAncestor = testNode;
                 return false;
@@ -1277,6 +1318,11 @@ function snapViewerFrameToMainTitle() {
 }
 $(window).resize( function () {
     snapViewerFrameToMainTitle();
+    if ($('#viewer-collection').hasClass('active-comments') || $('#viewer-collection').hasClass('active-properties')) {
+        // resize main tree area to match
+        var vcWidth = $('#viewer-collection').width();
+        $('#argusCanvasContainer.viewer-frame').css('width', Math.max(vcWidth - 480, vcWidth / 2));
+    }
 });
 
 $('a.btn-navbar[data-target=".nav-collapse"], a.dropdown-toggle').click(function () {
@@ -1332,21 +1378,15 @@ function parseMetaMapKey( key ) {
     // Adapt to various forms of meta-map key and return any components found as an object
     // EXAMPLE: '1234_987' is '{STUDY-ID}_{TREE-ID}'
     // EXAMPLE: 'pg_1144_5800_ba25a3fef742afd8cf52459e8d054737d062fe37' is '{STUDY-ID-WITH-PREFIX}_{TREE-ID}_{COMMIT-SHA}'
+    // EXAMPLE: 'pg_2448@tree5223' is '{STUDY-ID}@{TREE-ID}'
     var props = {
         studyID: null,
         treeID: null,
         commitSHA: null
     };
 
-    var keyParts = key.split('_');
-    // N.B. Study ID might have a prefix!
-    if (isNaN( parseInt( keyParts[0] ) )) {
-        // remove and concatenate the first TWO parts
-        props.studyID = keyParts.shift() +'_'+ keyParts.shift();
-    } else {
-        // remove just the FIRST part
-        props.studyID = keyParts.shift();
-    }
+    var keyParts = key.split('@');
+    props.studyID = keyParts.shift();
     // Next value should be the supporting tree id
     props.treeID = keyParts.shift();
     // Any remaining part should be a commit SHA

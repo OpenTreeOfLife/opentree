@@ -3,6 +3,7 @@ User-agent: *
 # N.B. 'Allow' is not supported by all crawlers, but captures our intent here.
 # Block the main tree viewer, but index About pages
 Disallow: /opentree/
+Disallow: /default/
 Allow: /about/
 Allow: /contact
 # Index visible information for published studies 
@@ -20,6 +21,10 @@ Disallow: /cached/
 # Block access to admin pages, login, logout
 Disallow: /admin/
 Disallow: /user/
+Disallow: /v3/
 Disallow: /v2/
 Disallow: /v1/
 Crawl-delay: 60
+# Problem cases maybe:
+# GET /curator/study/view/pg_400 - baidu
+# GET /curator/study/view/pg_754?tab=trees&tree=tree1392 - ahrefs
