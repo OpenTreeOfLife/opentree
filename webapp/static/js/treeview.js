@@ -1191,8 +1191,8 @@ function showObjectProperties( objInfo, options ) {
         if ((typeof fullNode.num_tips !== 'number') || (fullNode.num_tips > maxTipsForNewickSubtree)) {
             // when in doubt (e.g. nodes on the rootward path), offer the full download
             $details.append('<dt>Download subtree as Newick string</dt>');
-            $details.append('<dd>This tree is too large to download through webservices, but you can '
-                          + '<a target="_blank" href="http://files.opentreeoflife.org/trees/">download the entire synthetic tree as Newick</a></dd>');
+            $details.append('<dd>This tree is too large to download through webservices. See '
+                          + '<a href="/about/synthesis_release">release notes</a> for download links</dd>');
         } else {
             $details.append('<dt><a id="extract-subtree" href="#">Download subtree as Newick string</a></dt>');
 
