@@ -1,5 +1,5 @@
 {{response.title = "Synthesis release {v} - Open Tree of Life".format(v=release_version)
-  ### response.files.append("/curator/static/js/d3.v3.js") 
+  ### response.files.append("/curator/static/js/d3.v3.js")
   response.files.append("/curator/static/js/d3.v3.min.js") }}
 {{extend 'layout.html'}}
 {{import urllib}}
@@ -75,7 +75,7 @@ circle.taxo-release-marker {
 */
 </style>
 <div class="container">
-    <h1 id="main-title" style="display: inline-block; padding-bottom: 12px;">Synthesis release 
+    <h1 id="main-title" style="display: inline-block; padding-bottom: 12px;">Synthesis release
     </h1>
                   &nbsp;
                   <select id="synthesis-release-version-chooser" style="">
@@ -117,8 +117,6 @@ circle.taxo-release-marker {
               </div>
             {{ pass }}
 
-              <p>Information and downloads for all synthesis releases can be found at <a href="http://files.opentreeoflife.org/trees/">http://files.opentreeoflife.org/trees/</a>.</p>
-
           </div>
       </div>
 
@@ -131,7 +129,7 @@ circle.taxo-release-marker {
 <script type="text/javascript">
 // pass statistics as JSON to client for stepping, plotting, etc.
 // NOTE that these are correctly date-sorted from the server!
-{{ if synthesis_stats: 
+{{ if synthesis_stats:
     # NOTE that we use XML() here to decode HTML entities like &quot; }}
 var synthesis_stats = {{= XML(json.dumps(synthesis_stats)) }};
 {{ else: }}
@@ -155,11 +153,11 @@ var currentPhylesystemProfileDate = null;
 var releaseVersion = '{{= release_version }}';
 
 $(document).ready(function() {
-    // show current profiles, or a notice if no data was found 
+    // show current profiles, or a notice if no data was found
     if (synthesis_stats) {
         // load and sort its keys (profile dates) in chronological order
         sortedSynthesisProfileKeys = $.map(
-            synthesis_stats, 
+            synthesis_stats,
             function( ignoreValue, profileDate ) {
                 return profileDate; // its JSON property
             }
@@ -173,7 +171,7 @@ $(document).ready(function() {
             releaseVersion = synthesis_stats[currentSynthesisProfileDate].version;
         }
         // update the link to the Progress page to use this date
-        $('#progressPageLink').attr('href', 
+        $('#progressPageLink').attr('href',
                                     '/about/progress?highlight='+ currentSynthesisProfileDate);
 
         /* format nicely and add to page title
@@ -282,7 +280,7 @@ function showCurrentSynthesisProfile() {
                     taxoVersion = taxoVersion.split('draft')[0];
                 }
                 itsValue = '<a href="/about/taxonomy-version/'+ taxoVersion
-                         +'" title="Click to see details for this taxonomy version">' 
+                         +'" title="Click to see details for this taxonomy version">'
                          + taxoVersion
                          + '</a>';
                 break;
