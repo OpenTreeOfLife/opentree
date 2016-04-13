@@ -4008,7 +4008,7 @@ function showDuplicateNodesInTreeViewer(tree) {
     });
     showTreeViewer(null, {
         HIGHLIGHT_PLAYLIST: duplicatePlaylist,
-        HIGHLIGHT_PROMPT: ("Showing all tips mapped to '<strong>MAPPED_TAXON</strong>'. Choose an exemplar."),
+        HIGHLIGHT_PROMPT: ("Showing all tips mapped to '<strong>MAPPED_TAXON</strong>'." + (viewOrEdit === 'EDIT' ? " Choose an exemplar." : "")),
         HIGHLIGHT_POSITION: 0
     });
     // TODO: Modify prompt text as we move through duplicate taxa?
@@ -6248,7 +6248,8 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     var nodeInfoBox = nodeMenu.find('.node-information');
     var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
     nodeInfoBox.append('<span class="node-name">'+ labelInfo.label +'</span>');
-    if (isDuplicateNode( tree, node )) {
+
+    if ((viewOrEdit === 'EDIT') && isDuplicateNode( tree, node )) {
         if (node['^ot:isTaxonExemplar'] === true) {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); clearTaxonExemplar( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Clear exemplar for mapped taxon</a></li>');
         } else {
