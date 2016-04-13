@@ -6416,7 +6416,7 @@ function showEdgeOptionsMenu( tree, edge, nodePageOffset, importantNodeIDs ) {
         nodeInfoBox.append('<div>Edge length: '+ edge.target.length +'</div>');
     }
 
-    var availableForRooting = (edge.source['@id'] !== importantNodeIDs.treeRoot) && (edge.target['@id'] !== importantNodeIDs.treeRoot);
+    var availableForRooting = (edge.source['@id'] !== getAdHocRootID(tree)) && (edge.target['@id'] !== getAdHocRootID(tree));
     if (availableForRooting && (viewOrEdit === 'EDIT')) {
         nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', [\''+ edge.source['@id'] +'\', \''+ edge.target['@id'] +'\'] ); return false;">Re-root from this edge</a></li>');
     }
