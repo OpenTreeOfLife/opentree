@@ -3258,7 +3258,7 @@ var studyScoringRules = {
             },
             weight: 0.2,
             successMessage: "No duplicate tips with conflicting placement found in preferred trees.",
-            failureMessage: "Duplicate taxa found: designate an 'exemplar' for each set of tips mapped to the same taxon.",
+            failureMessage: "Duplicate tips found with conflicting mapping (no exemplar chosen).",
             suggestedAction: "Designate an exemplar for each set of tips mapped to the same taxon."
         },
         {
@@ -3282,7 +3282,7 @@ var studyScoringRules = {
             },
             weight: 0.2,
             successMessage: "No undefined internal node labels found.",
-            failureMessage: "Undefined internal node labels: assign a label type.",
+            failureMessage: "Internal node labels found with no label type assigned.",
             suggestedAction: "Assign a type to undefined internal node labels."
         },
         {
