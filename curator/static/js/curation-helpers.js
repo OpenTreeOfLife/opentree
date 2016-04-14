@@ -706,7 +706,7 @@ $(window).resize( function () {
 });
 
 // Use a known-good URL fragment to extract a collection ID from its API URL
-var collectionURLSplitterAPI = '/v2/collection/';
+var collectionURLSplitterAPI = '/collection/';
 // Fall back to raw-data URL in some cases
 var collectionURLSplitterRaw = '/collections/';
 
