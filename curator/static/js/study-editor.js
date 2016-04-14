@@ -3257,8 +3257,8 @@ var studyScoringRules = {
                 return !(duplicateNodesFound);
             },
             weight: 0.2,
-            successMessage: "No duplicate tips with conflicting placement found in preferred trees.",
-            failureMessage: "Duplicate tips found with conflicting mapping (no exemplar chosen).",
+            successMessage: "No duplicate tips (mapped to the same taxon) found in preferred trees.",
+            failureMessage: "Multiple tips map to the same taxon (no exemplar chosen).",
             suggestedAction: "Designate an exemplar for each set of tips mapped to the same taxon."
         },
         {
