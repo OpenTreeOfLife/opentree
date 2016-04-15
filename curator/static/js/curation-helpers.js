@@ -706,7 +706,7 @@ $(window).resize( function () {
 });
 
 // Use a known-good URL fragment to extract a collection ID from its API URL
-var collectionURLSplitterAPI = '/v2/collection/';
+var collectionURLSplitterAPI = '/collection/';
 // Fall back to raw-data URL in some cases
 var collectionURLSplitterRaw = '/collections/';
 
@@ -1223,6 +1223,13 @@ addPendingCollectionChange( 'ADD', 'ot_987', 'tree654' );
 addPendingCollectionChange( 'REORDER' );
 compressPendingCollectionChanges();
 */
+
+function shareCollection( collection ) {
+    // provide a direct URL to the collection (to copy/paste or email)
+    var collectionID = getCollectionIDFromURL( collection.data.url );
+    var directURL = window.location.protocol +'//'+ window.location.hostname +'/curator/collections/'+ collectionID;
+    window.prompt("This URL will open the current collection automatically (no login required).", directURL);
+}
 
 function copyCollection( collection ) {
     // create a user-owned copy (or login if user is anonymous)
