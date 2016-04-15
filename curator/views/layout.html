@@ -580,13 +580,12 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
 
            <!-- ko if: !userIsEditingCollection($data) -->
             <!-- DUPLICATE button -->
-            <button data-bind="click: copyCollection,
-                                visible: true,
-                                attr: {'title': userIsLoggedIn() ? 'Copy this collection (you will own the copy)' : 'Copy this collection (requires login)'}"
-                title=""
+            <button data-bind="click: shareCollection,
+                               visible: true"
+                title="Show the direct URL for this collection"
                 class="pull-right btn btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
-                <i class="icon-share"></i>
+                Share <i class="icon-share"></i>
             </button>
 
            <!-- ko if: ('external_url' in $data) -->
@@ -596,7 +595,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                class="pull-right btn btn-mini row-controls-ghosted"
                style="margin-left: 4px;"
                href="#" target="_blank">
-                <i class="icon-download"></i>
+               Download <i class="icon-download"></i>
             </a>
            <!-- /ko -->
 
@@ -609,6 +608,16 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <i class="icon-list-alt"></i>
             </button>
             -->
+
+            <!-- DUPLICATE button -->
+            <button data-bind="click: copyCollection,
+                                visible: true,
+                                attr: {'title': userIsLoggedIn() ? 'Copy this collection (you will own the copy)' : 'Copy this collection (requires login)'}"
+                title=""
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                Save a copy <i class="icon-repeat"></i>
+            </button>
            <!-- /ko -->
 
             <!-- EDIT button -->
