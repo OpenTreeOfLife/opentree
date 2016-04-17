@@ -554,7 +554,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             <span id="collection-id-display"
                   data-bind="text: getCollectionIDFromURL($data.data.url)">&nbsp;</span>
            <!-- ko if: ('external_url' in $data) -->
-            <a data-bind="attr: { href: $data['external_url'] }" target="_blank">(on GitHub)</a>
+            <a data-bind="attr: { href: getFullGitHubURLForCollection($data) }" target="_blank">(on GitHub)</a>
            <!-- /ko -->
         </p>
       </div>
