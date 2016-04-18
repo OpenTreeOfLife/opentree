@@ -713,6 +713,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             Tree (click to view, mouse-over for description)
                           <!-- /ko -->
                         </th>
+                        <th width="32">
+                            Version
+                        </th>
                     </tr>
                   </thead>
                   <tbody id="tree-collection-decisions"
@@ -812,6 +815,29 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                               <a data-bind="html: name,
                                             attr: { href: getTreeViewURL($data), title: comments || '(no description provided)' }"
                                  href="#" target="_blank"><!--NAME--></a>
+                            <!-- /ko -->
+                          </td>
+                          <td>
+                            <!-- ko if: userIsEditingCollection($parent) -->
+                              <a class="pull-right btn btn-mini row-controls-ghosted"><i class="icon-tag"></i></a>
+                              <!-- other possibilities: icon-lock, icon-bookmark, icon-time -->
+                            <!-- /ko -->
+                            <!-- ko if: !userIsEditingCollection($parent) -->
+                              <a class="pull-right row-controls-ghosted" style="position: relative; top: 4px; right: 5px;"
+                                 data-bind="attr: {href: '#TODO'}">
+                                <!-- ko if: $data.sha -->
+                                  <i class="icon-tag" title=""
+                                     data-bind="attr: {title: 'Pinned to version 0123456789ABCDEF'}"></i>
+                                <!-- /ko -->
+                                <!-- ko if: !$data.sha -->
+                                <!--<span title="No version specified (use latest on branch 'master')">&mdash;</span>-->
+                                  <i class="icon-fast-forward" title="Use latest on branch 'master'"></i>
+                                <!-- /ko -->
+                              </a>
+                              <!--
+                              <i class="pull-right row-controls-ghosted icon-tag" style="position: relative; top: 4px; right: 5px;"></i>
+                              <span class="pull-right row-controls-ghosted" style="position: relative; top: 4px; right: 5px;">—</span>
+                              -->
                             <!-- /ko -->
                           </td>
                       </tr>
