@@ -119,38 +119,15 @@ def profile():
         return view_dict
 
     else:
-        # No userid was provided in the URL. Instead, we should try to show the
+        # No userid was provided in the URL. Instead, we should try to bounce to the
         # current user's profile if they're logged in (or try to force a login).
         if auth.is_logged_in():
             current_userid = auth.user and auth.user.github_login or None
-            view_dict['userid'] = current_userid
-            json_response = _fetch_github_api(verb='GET', 
-                url='/users/{0}'.format(current_userid))
-            error_msg = view_dict['error_msg'] = json_response.get('message', None)
-            if error_msg:
-                # pass error to the page for display
-                print("ERROR FETCHING INFO FOR USERID: ", current_userid)
-                print(error_msg)
-                view_dict['user_info'] = None
-                view_dict['opentree_activity'] = None
-                view_dict['active_user_found'] = False
-            else:
-                # pass user info to the page for display
-                view_dict['user_info'] = json_response
-                activity = _get_opentree_activity( 
-                    userid=current_userid, 
-                    username=view_dict['user_info'].get('name', current_userid)
-                )
-                if activity:
-                    view_dict['active_user_found'] = True
-                else:
-                    view_dict['active_user_found'] = False
-                    view_dict['error_msg'] = 'Not active in OpenTree'
-                view_dict['opentree_activity'] = activity
-
-            view_dict['is_current_user_profile'] = True
-
-            return view_dict
+            # redirect to the fully expanded profile URL
+            expanded_url = URL('curator', 'default', 'profile', 
+                args=(current_userid,),
+                vars=request.vars)
+            redirect(expanded_url)
         else:
             # try to force a login and return here
             redirect(URL('curator', 'user', 'login',
