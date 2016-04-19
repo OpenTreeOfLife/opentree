@@ -271,11 +271,16 @@ $(document).ready(function() {
         var priorState = History.getState();
 
         // Check first for incoming URL that might override prior history
-        if (initialState.forcedByURL || !(priorState.data.nodeID)) {
-            // apply the state as specified in the URL (or defaults, if prior history is incomplete)
+        if (initialState.forcedByURL) {
+            // apply the state as specified in the URL 
             ///console.log("Applying state from incoming URL...");
             initialState.nudge = new Date().getTime();
             History.pushState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
+        } else if (!(priorState.data.nodeID)) {
+            // replace incomplete" prior history (if found) with default view
+            ///console.log("Correcting incomplete state with default view...");
+            initialState.nudge = new Date().getTime();
+            History.replaceState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
         } else {
             // nudge the (existing) browser state to view it again
             ///console.log("Nudging state (and hopefully initial view)...");

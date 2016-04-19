@@ -3264,8 +3264,8 @@ var studyScoringRules = {
                 return !(duplicateNodesFound);
             },
             weight: 0.2,
-            successMessage: "No duplicate tips with conflicting placement found in preferred trees.",
-            failureMessage: "Duplicate taxa found: designate an 'exemplar' for each set of tips mapped to the same taxon.",
+            successMessage: "No duplicate tips (mapped to the same taxon) found in preferred trees.",
+            failureMessage: "Multiple tips map to the same taxon (no exemplar chosen).",
             suggestedAction: "Designate an exemplar for each set of tips mapped to the same taxon."
         },
         {
@@ -3289,7 +3289,7 @@ var studyScoringRules = {
             },
             weight: 0.2,
             successMessage: "No undefined internal node labels found.",
-            failureMessage: "Undefined internal node labels: assign a label type.",
+            failureMessage: "Internal node labels found with no label type assigned.",
             suggestedAction: "Assign a type to undefined internal node labels."
         },
         {
@@ -4015,7 +4015,7 @@ function showDuplicateNodesInTreeViewer(tree) {
     });
     showTreeViewer(null, {
         HIGHLIGHT_PLAYLIST: duplicatePlaylist,
-        HIGHLIGHT_PROMPT: ("Showing all tips mapped to '<strong>MAPPED_TAXON</strong>'. Choose an exemplar."),
+        HIGHLIGHT_PROMPT: ("Showing all tips mapped to '<strong>MAPPED_TAXON</strong>'." + (viewOrEdit === 'EDIT' ? " Choose an exemplar." : "")),
         HIGHLIGHT_POSITION: 0
     });
     // TODO: Modify prompt text as we move through duplicate taxa?
@@ -6255,7 +6255,8 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     var nodeInfoBox = nodeMenu.find('.node-information');
     var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
     nodeInfoBox.append('<span class="node-name">'+ labelInfo.label +'</span>');
-    if (isDuplicateNode( tree, node )) {
+
+    if ((viewOrEdit === 'EDIT') && isDuplicateNode( tree, node )) {
         if (node['^ot:isTaxonExemplar'] === true) {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); clearTaxonExemplar( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Clear exemplar for mapped taxon</a></li>');
         } else {
@@ -6423,7 +6424,7 @@ function showEdgeOptionsMenu( tree, edge, nodePageOffset, importantNodeIDs ) {
         nodeInfoBox.append('<div>Edge length: '+ edge.target.length +'</div>');
     }
 
-    var availableForRooting = (edge.source['@id'] !== importantNodeIDs.treeRoot) && (edge.target['@id'] !== importantNodeIDs.treeRoot);
+    var availableForRooting = (edge.source['@id'] !== getAdHocRootID(tree)) && (edge.target['@id'] !== getAdHocRootID(tree));
     if (availableForRooting && (viewOrEdit === 'EDIT')) {
         nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', [\''+ edge.source['@id'] +'\', \''+ edge.target['@id'] +'\'] ); return false;">Re-root from this edge</a></li>');
     }
