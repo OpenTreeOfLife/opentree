@@ -2225,7 +2225,14 @@ function validateFormData() {
 
 function promptForSaveComments() {
     // show a modal popup to gather comments (or cancel)
-    $('#save-comments-popup').modal('show');
+    // check for valid user email address and show modal with warning if none
+    if (userEmail != 'ANONYMOUS') {
+      console.log('email: '+ userEmail);
+      $('#save-comments-popup').modal('show');
+    }
+    else {
+      $('#save-comments-popup-no-email').modal('show');
+    }
     // buttons there do the remaining work
 }
 
