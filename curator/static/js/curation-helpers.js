@@ -1334,7 +1334,14 @@ function promptForSaveCollectionComments( collection ) {
         $('#save-collection-comment-first-line').val(firstLine);
         $('#save-collection-comment-more-lines').val(moreLines);
 
-        $('#save-collection-comments-popup').modal('show');
+        if (userEmail != 'ANONYMOUS') {
+          // console.log('email: '+ userEmail);
+          $('#save-collection-comments-popup').modal('show');
+        }
+        else {
+          $('#save-collection-comments-popup-no-email').modal('show');
+        }
+
         // buttons there do the remaining work
         $('#save-collection-comments-submit')
             .unbind('click')
