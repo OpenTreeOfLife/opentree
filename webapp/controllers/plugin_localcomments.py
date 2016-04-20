@@ -19,7 +19,7 @@ def SUL(*a,**b): return UL(*[u for u in a if u],**b)
 script=SCRIPT("""
 var action = null;
 var formhtml = null;
-function delete_all_forms() { 
+function delete_all_forms() {
     jQuery('div.plugin_localcomments div.reply').each(function() {
         if ($(this).closest('.issue').length === 0) {
             // this is the space for new topics, with a separate link
@@ -31,8 +31,8 @@ function delete_all_forms() {
         $(this).find('a.reply').unbind('click').click(function() {
             $formHolder = $(this).parent();
             delete_all_forms();
-            $formHolder.html(formhtml); 
-            capture_form(); 
+            $formHolder.html(formhtml);
+            capture_form();
             return false;
         });
     });
@@ -54,6 +54,36 @@ function capture_form() {
     if (isThreadStarter) {
         jQuery('div.plugin_localcomments select[name=feedback_type]').show();
         jQuery('div.plugin_localcomments select[name=issue_title]').show();
+
+        // hide/show form widgets based on the chosen feedback type
+        console.log("SETTING UP SELECT");
+        console.log("exists? "+ jQuery('div.plugin_localcomments select[name=feedback_type]').length);
+        jQuery('div.plugin_localcomments select[name=feedback_type]')
+            .unbind('change')
+            .change(function(){
+                console.log("SELECT CHANGED");
+                var $select = $(this);
+                switch($select.val()) {
+                    case '':
+                        // hide all UI until they choose a feedback type
+                        jQuery('div.plugin_localcomments [name=doi]').hide();
+                        jQuery('div.plugin_localcomments [name=tree_id]').hide();
+                        jQuery('div.plugin_localcomments [name=body]').hide();
+                        break;
+                    case 'Tree suggestion':
+                        // show fields for paper and tree
+                        jQuery('div.plugin_localcomments [name=doi]').show();
+                        jQuery('div.plugin_localcomments [name=tree_id]').show();
+                        jQuery('div.plugin_localcomments [name=body]').show();
+                        break;
+                    default:
+                        jQuery('div.plugin_localcomments [name=doi]').hide();
+                        jQuery('div.plugin_localcomments [name=tree_id]').hide();
+                        jQuery('div.plugin_localcomments [name=body]').show();
+                }
+            });
+        jQuery('div.plugin_localcomments select[name=feedback_type]').change();
+
     } else {
         jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
         jQuery('div.plugin_localcomments select[name=issue_title]').hide();
@@ -103,12 +133,12 @@ function capture_form() {
             //prompt = "Please choose a feedback type for this topic.";
             problemsFound = true;
         }
-        var $titleField = $form.find('input[name="issue_title"]'); 
+        var $titleField = $form.find('input[name="issue_title"]');
         if ($titleField.is(':visible') && ($.trim($titleField.val()) === '')) {
             //prompt = "Please give this topic a title.";
             problemsFound = true;
         }
-        var $bodyField = $form.find('textarea[name="body"]'); 
+        var $bodyField = $form.find('textarea[name="body"]');
         if ($.trim($bodyField.val()) === '') {
             //prompt = "Please enter some text for this "+ (isThreadStarter ? 'issue' : 'comment') +".";
             problemsFound = true;
@@ -153,7 +183,7 @@ function capture_form() {
             {
                ////$'thread_parent_id': form.find('input[name="thread_parent_id"]').val(),
                'issue_or_comment': (isThreadStarter ? 'issue' : 'comment'),
-               'thread_parent_id': threadParentID,    ///$form.parent().prev().attr('id').split('r')[1], 
+               'thread_parent_id': threadParentID,    ///$form.parent().prev().attr('id').split('r')[1],
                'synthtree_id': $form.find('input[name="synthtree_id"]').val(),
                'synthtree_node_id': $form.find('input[name="synthtree_node_id"]').val(),
                'sourcetree_id': $form.find('input[name="sourcetree_id"]').val(),
@@ -168,8 +198,8 @@ function capture_form() {
                'visitor_name': $form.find('input[name="visitor_name"]').val(),
                'visitor_email': $form.find('input[name="visitor_email"]').val()
             },
-            function(data,r){ 
-               if(data) { 
+            function(data,r){
+               if(data) {
                    var $refreshArea;
                    if (isThreadStarter) {
                        $refreshArea = $form.parent().nextAll('ul');
@@ -179,10 +209,10 @@ function capture_form() {
                        $refreshArea = $form.parent().prevAll('ul');
                        // add the new comment (LI) to the end of the list
                        $refreshArea.append(data);
-                   } 
+                   }
                    $form.find('textarea[name="body"]').val('');
                    //$form.find('input[name="thread_parent_id"]').val('0');
-                   plugin_localcomments_init(); 
+                   plugin_localcomments_init();
                    delete_all_forms();
                }
             },
@@ -193,6 +223,7 @@ function capture_form() {
 }
 
 function plugin_localcomments_init() {
+  // bind client-side widgets to get desired behavior
   jQuery('div.plugin_localcomments .toggle').unbind('click').click(function(){
      var $toggle = $(this);
      var $parentIssue = $toggle.closest('li.issue');
@@ -205,6 +236,7 @@ function plugin_localcomments_init() {
      }
      return false;
   });
+
   jQuery('div.plugin_localcomments .delete').unbind('click').click(function(){
     delete_all_forms();
     var $commentDiv = jQuery(this).closest('.msg-wrapper');
@@ -225,7 +257,7 @@ function plugin_localcomments_init() {
   });
 }
 jQuery(document).ready(function() {
-  action = jQuery('div.plugin_localcomments form').attr('action');  
+  action = jQuery('div.plugin_localcomments form').attr('action');
   formhtml = jQuery('div.plugin_localcomments form').parent().html();
   delete_all_forms();  // important! creates .reply buttons before init() below
   plugin_localcomments_init();
@@ -241,7 +273,7 @@ def sqlform():
     # comments = db().select(db.plugin_localcomments_comment.ALL, orderby=~db.plugin_localcomments_comment.created_on)  # =~ is DESCENDING ORDER
     form = SQLFORM(db.plugin_localcomments_comment)
     return dict(form=form)
-    
+
 def show_type_icon(type):
     iconClass = "icon-comment"
     if type == 'Error in phylogeny':
@@ -256,8 +288,8 @@ def show_type_icon(type):
 
 @auth.requires_membership(role='editor')
 def grid():
-    db.plugin_localcomments_comment.intended_scope.readable = True
-    db.plugin_localcomments_comment.intended_scope.represent = lambda scope, row: scope and scope.capitalize() or XML(T('&mdash;'))
+    #db.plugin_localcomments_comment.intended_scope.readable = True
+    #db.plugin_localcomments_comment.intended_scope.represent = lambda scope, row: scope and scope.capitalize() or XML(T('&mdash;'))
     db.plugin_localcomments_comment.feedback_type.represent = lambda row, value: show_type_icon(value)
 
     grid = SQLFORM.grid( db.plugin_localcomments_comment,
@@ -277,18 +309,18 @@ def grid():
         deletable=False,  # we'll flip the hidden flag, but not truly delete..?
         orderby=~db.plugin_localcomments_comment.created_on,
 
-        fields=[ 
-            #db.plugin_localcomments_comment.id, 
-            db.plugin_localcomments_comment.feedback_type, 
-            db.plugin_localcomments_comment.body, 
-            db.plugin_localcomments_comment.url, 
-            db.plugin_localcomments_comment.ottol_id, 
-            db.plugin_localcomments_comment.synthtree_id, 
+        fields=[
+            #db.plugin_localcomments_comment.id,
+            db.plugin_localcomments_comment.feedback_type,
+            db.plugin_localcomments_comment.body,
+            db.plugin_localcomments_comment.url,
+            db.plugin_localcomments_comment.ottol_id,
+            db.plugin_localcomments_comment.synthtree_id,
             db.plugin_localcomments_comment.synthtree_node_id,
             db.plugin_localcomments_comment.created_on,
-            db.plugin_localcomments_comment.intended_scope,
+            #db.plugin_localcomments_comment.intended_scope,
         ],
-        headers = { 
+        headers = {
             # NOTE the funky key format used here
             'plugin_localcomments_comment.feedback_type' : 'Type',
         }
@@ -301,12 +333,12 @@ def grid():
 
     )
     return locals()
-    
+
 def smartgrid():
     # comments = db().select(db.plugin_localcomments_comment.ALL, orderby=~db.plugin_localcomments_comment.created_on)  # =~ is DESCENDING ORDER
     grid = SQLFORM.smartgrid(db.plugin_localcomments_comment)
     return locals()
-    
+
 
 def index():
     # this is a tricky function that does simple display, handles POSTed comments, moderation, etc.
@@ -324,7 +356,7 @@ def index():
     filter = request.vars['filter']
 
     # if anonymous user submitted identifying information, remember it
-    visitor_name = request.vars['visitor_name'] 
+    visitor_name = request.vars['visitor_name']
     if visitor_name:
         session['visitor_name'] = visitor_name
     visitor_email = request.vars['visitor_email']
@@ -402,7 +434,7 @@ def index():
         current_user_id = auth.user and auth.user.github_login or None
 
         # Cook up some reasonably strong regular expressions to detect bare
-        # URLs and wrap them in hyperlinks. Adapted from 
+        # URLs and wrap them in hyperlinks. Adapted from
         # http://stackoverflow.com/questions/1071191/detect-urls-in-a-string-and-wrap-with-a-href-tag
         link_regex = re.compile(  r'''
                              (?x)( # verbose identify URLs within text
@@ -487,9 +519,9 @@ def index():
         # build useful links for some footer fields
         if auth.user:
             author_link = '[{0}]({1})'.format(auth.user.name, auth.user.github_url)
-        elif visitor_name and visitor_email: 
+        elif visitor_name and visitor_email:
             author_link = '[{0}](mailto:{1})'.format(visitor_name, visitor_email)
-        elif visitor_name: 
+        elif visitor_name:
             # no email provided
             author_link = visitor_name
         elif visitor_email:
@@ -559,7 +591,7 @@ def index():
         comments = [ ]
     elif filter == 'synthtree_id,synthtree_node_id':
         comments = get_local_comments({
-            "Synthetic tree id": synthtree_id, 
+            "Synthetic tree id": synthtree_id,
             "Synthetic tree node id": synthtree_node_id})
     elif filter == 'sourcetree_id':
         comments = get_local_comments({"Source tree id(s)": sourcetree_id})
@@ -568,7 +600,7 @@ def index():
     else:   # fall back to url
         comments = get_local_comments({"URL": url})
 
-    #pprint(comments) 
+    #pprint(comments)
 
     for comment in comments:
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
@@ -580,9 +612,10 @@ def index():
                         '' if auth.user_id else T(' or '),
                         '' if auth.user_id else INPUT(_type='text',_id='visitor_name',_name='visitor_name',_value=session.get('visitor_name',''),_placeholder="Enter your name"),
                         '' if auth.user_id else T(' '),
-                        '' if auth.user_id else INPUT(_type='text',_id='visitor_email',_name='visitor_email',_value=session.get('visitor_email',''),_placeholder="Your email (visible on GitHub)"),
+                        '' if auth.user_id else INPUT(_type='text',_id='visitor_email',_name='visitor_email',_value=session.get('visitor_email',''),_placeholder="Your email (will be public)"),
                         '' if auth.user_id else BR(),
-                        SELECT(
+                        SELECT( #this option lets us know what labels to use in the GitHub issue tracker
+                        # labels get created if they do not already exist
                             OPTION('What kind of feedback is this?', _value=''),
                             OPTION('General feedback'),
                             OPTION('Correction to relationships in the synthetic tree'),
@@ -642,14 +675,14 @@ def add_or_update_issue(msg_data, issue_id=None):
     if issue_id:
         # edit an existing issue via the GitHub API
         url = '{0}/repos/OpenTreeOfLife/feedback/issues/{1}'.format(GH_BASE_URL)
-        resp = requests.patch( url, 
+        resp = requests.patch( url,
             headers=GH_POST_HEADERS,
             data=json.dumps(msg_data)
         )
     else:
         # create a new issue
         url = '{0}/repos/OpenTreeOfLife/feedback/issues'.format(GH_BASE_URL)
-        resp = requests.post( url, 
+        resp = requests.post( url,
             headers=GH_POST_HEADERS,
             data=json.dumps(msg_data)
         )
@@ -745,16 +778,16 @@ def clear_matching_cache_keys(key_pattern):
     pprint("===")
     pprint("  %d items removed" % (item_count_before - item_count_after,))
 
-@cache(key=build_localcomments_key(request), 
-       time_expire=60*5, 
+@cache(key=build_localcomments_key(request),
+       time_expire=60*5,
        cache_model=cache.ram)
 def get_local_comments(location={}):
-    # Use the Search API to get all comments for this location. 
+    # Use the Search API to get all comments for this location.
     # See https://developer.github.com/v3/search/#search-issues
     # build and encode search text (location "filter")
     print('>> its cache key would be:')
     print(build_localcomments_key(request))
-    search_text = '' 
+    search_text = ''
     for k,v in location.items():
         search_text = '{0}"{1} | {2} " '.format( search_text, k, v )
     search_text = urllib.quote_plus(search_text.encode('utf-8'), safe='~')
@@ -786,7 +819,7 @@ def get_local_comments(location={}):
 
 def clear_local_comments():
     # Examine the JSON payload (now in request.vars) to see if we can clear
-    # only the affected localcomments. If not, play it safe and clear all 
+    # only the affected localcomments. If not, play it safe and clear all
     # comments in the cache.
     if 'markdown_body' in request.vars:
         # If we receive issue Markdown, parse it to recover metadata fields.
@@ -838,7 +871,7 @@ def clear_local_comments():
         clear_matching_cache_keys("^localcomments:")
 
 
-# Build and parse metadata for comments (stored as markdown in GitHub). 
+# Build and parse metadata for comments (stored as markdown in GitHub).
 # The full footer is used for a thread starter (GitHub issue), while replies
 # (appended GitHub comments) use an abbreviated version.
 
@@ -860,14 +893,14 @@ reply_footer = """
 ================================================
 Metadata   |   Do not edit below this line
 :------------|:----------
-Author   |   %(Author)s 
-Upvotes   |   %(Upvotes)s 
+Author   |   %(Author)s
+Upvotes   |   %(Upvotes)s
 """
 
 # TODO: Restore the expertise flag to both footers?
-#   Claimed Expertise   |   %(Claimed Expertise)s 
+#   Claimed Expertise   |   %(Claimed Expertise)s
 # TODO: Move 'Feedback type' from labels to footer?
-#   Feedback type   |   %(Feedback type)s 
+#   Feedback type   |   %(Feedback type)s
 
 def build_comment_metadata_footer(comment_type='starter', metadata={}):
     # build full footer (for starter) or abbreviated (for replies), 
@@ -910,7 +943,7 @@ def get_visible_comment_body(comment_body):
             break
         visible_lines.append(line)
     return '\n'.join(visible_lines)
-    
+
 # Time-zone converstion from UTC to local time (needed for GitHub date-strings),
 # adapted from code found here: http://stackoverflow.com/a/13287083
 import calendar

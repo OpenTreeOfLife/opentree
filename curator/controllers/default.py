@@ -486,6 +486,7 @@ def to_nexson():
     _LOG = get_logger(request, 'to_nexson')
     if request.env.request_method == 'OPTIONS':
         raise HTTP(200, T('Preflight approved!'))
+
     orig_args = {}
     is_upload = False
     # several of our NexSON use "uploadid" instead of "uploadId" so we should accept either
