@@ -706,7 +706,7 @@ $(window).resize( function () {
 });
 
 // Use a known-good URL fragment to extract a collection ID from its API URL
-var collectionURLSplitterAPI = '/v2/collection/';
+var collectionURLSplitterAPI = '/collection/';
 // Fall back to raw-data URL in some cases
 var collectionURLSplitterRaw = '/collections/';
 
@@ -719,6 +719,22 @@ function getCollectionIDFromURL(url) {
         fromRawData = fromRawData.split('.json')[0];
     }
     return fromAPI || fromRawData;
+}
+
+function getFullGitHubURLForCollection(collection) {
+    /* Munge the downloadable `external_url` to get a link to full blob+history on GitHub, for example
+     *   https://raw.githubusercontent.com/OpenTreeOfLife/collections-0/master/collections-by-owner/jimallman/newtest-2.json
+     * ...becomes this:
+     *   https://github.com/OpenTreeOfLife/collections-0/blob/master/collections-by-owner/jimallman/newtest-2.json
+     * More specifically, we just need to change this early path:
+     *   https://raw.githubusercontent.com/OpenTreeOfLife/collections-#/
+     * ... to this:
+     *   https://github.com/OpenTreeOfLife/collections-#/blob/
+     */
+    if (collection.external_url) {
+        return collection.external_url.replace( /.*collections-(\d*)\// , "https://github.com/OpenTreeOfLife/collections-$1/blob/");
+    }
+    return '';
 }
 
 function updateNewCollTreeUI() {
