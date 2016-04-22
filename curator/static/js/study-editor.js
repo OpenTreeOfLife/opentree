@@ -2224,16 +2224,26 @@ function validateFormData() {
 }
 
 function promptForSaveComments() {
-    // show a modal popup to gather comments (or cancel)
-    // check for valid user email address and show modal with warning if none
-    if (userEmail != 'ANONYMOUS') {
-      console.log('email: '+ userEmail);
-      $('#save-comments-popup').modal('show');
-    }
-    else {
-      $('#save-comments-popup-no-email').modal('show');
-    }
-    // buttons there do the remaining work
+  // show a modal popup to gather comments (or cancel)
+
+  //include a warning message if the user has no public email
+  var warningNoEmailMsg = ""
+  if (userEmail != 'ANONYMOUS') {
+    // console.log('email: '+ userEmail);
+  }
+  else {
+    warningNoEmailMsg = '<strong>Warning</strong>: You have not provided a '+
+      'public email address in your GitHub profile. You can still edit data'+
+      'but this activity will not be shown on your GitHub or OpenTree profiles '+
+      '(and cannot be linked back at a later date). See '+
+      '<a href=https://github.com/OpenTreeOfLife/opentree/wiki/OpenTree-user-accounts-and-GitHub>'+
+      'the help page</a> for details.'
+  }
+
+  $('#save-comment-noemail-warning').val(warningNoEmailMsg);
+
+  $('#save-comments-popup').modal('show');
+  // buttons there do the remaining work
 }
 
 function promptForDeleteComments() {

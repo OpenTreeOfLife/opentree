@@ -2104,37 +2104,8 @@ body {
         </p>
         <input type="text" id="save-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
         <textarea id="save-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
-    </div>
-    <div class="modal-footer">
-      <button class="btn btn-info pull-right" style="margin-left: 20px;"
-              onclick="$('#save-comments-popup').modal('hide'); saveFormDataToStudyJSON(); return false;">Save Study</button>
-      <a data-dismiss="modal" class="btn" >Cancel</a>
-    </div>
-</div>
-
-<!-- hidden template for gathering comments when saving the study -->
-<!-- this version when we don't have user email and want to show warning -->
-<div class="modal hide fade modal-save-comments" id="save-comments-popup-no-email" style="display: none;">
-    <div class="modal-header">
-      <a data-dismiss="modal" class="close">×</a>
-      <h3 id='dialog-heading'>
-         Add a comment for these changes
-      </h3>
-    </div>
-    <div class="modal-body">
-        <p>
-            Add a brief description of the work you've done.
-            This will appear in the History tab.
-        </p>
-        <input type="text" id="save-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
-        <textarea id="save-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
-          <p>
-              <div class="help-box"><strong>Warning</strong>: You have not provided a public email
-                address in your GitHub profile. You can still edit data, but this activity will not be shown on your GitHub or OpenTree profiles (and cannot be
-                linked back at a later date). See <a href=https://github.com/OpenTreeOfLife/opentree/wiki/OpenTree-user-accounts-and-GitHub>the help page</a> for details.
-              </div>
-          </p>
-    </div>
+        <p id="save-comment-noemail-warning" class="help-box"></p>
+  </div>
     <div class="modal-footer">
       <button class="btn btn-info pull-right" style="margin-left: 20px;"
               onclick="$('#save-comments-popup').modal('hide'); saveFormDataToStudyJSON(); return false;">Save Study</button>
