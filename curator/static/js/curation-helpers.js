@@ -706,7 +706,7 @@ $(window).resize( function () {
 });
 
 // Use a known-good URL fragment to extract a collection ID from its API URL
-var collectionURLSplitterAPI = '/v2/collection/';
+var collectionURLSplitterAPI = '/collection/';
 // Fall back to raw-data URL in some cases
 var collectionURLSplitterRaw = '/collections/';
 
@@ -1335,20 +1335,13 @@ function promptForSaveCollectionComments( collection ) {
         $('#save-collection-comment-more-lines').val(moreLines);
 
         //include a warning message if the user has no public email
-        var warningNoEmailMsg = ""
-        if (userEmail != 'ANONYMOUS') {
+        if (userEmail == 'ANONYMOUS') {
+          $('#save-collection-noemail-warning').show();
           // console.log('email: '+ userEmail);
         }
         else {
-          warningNoEmailMsg = '<strong>Warning</strong>: You have not provided a '+
-            'public email address in your GitHub profile. You can still edit data'+
-            'but this activity will not be shown on your GitHub or OpenTree profiles '+
-            '(and cannot be linked back at a later date). See '+
-            '<a href=https://github.com/OpenTreeOfLife/opentree/wiki/OpenTree-user-accounts-and-GitHub>'+
-            'the help page</a> for details.'
+          $('#save-collection-noemail-warning').hide();
         }
-
-        $('#save-collection-comment-noemail-warning').val(warningNoEmailMsg);
 
         $('#save-collection-comments-popup').modal('show');
 
