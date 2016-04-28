@@ -1350,7 +1350,17 @@ function promptForSaveCollectionComments( collection ) {
         $('#save-collection-comment-first-line').val(firstLine);
         $('#save-collection-comment-more-lines').val(moreLines);
 
+        //include a warning message if the user has no public email
+        if (userEmail == 'ANONYMOUS') {
+          $('#save-collection-noemail-warning').show();
+          // console.log('email: '+ userEmail);
+        }
+        else {
+          $('#save-collection-noemail-warning').hide();
+        }
+
         $('#save-collection-comments-popup').modal('show');
+
         // buttons there do the remaining work
         $('#save-collection-comments-submit')
             .unbind('click')

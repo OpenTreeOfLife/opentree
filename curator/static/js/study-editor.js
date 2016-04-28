@@ -2224,9 +2224,19 @@ function validateFormData() {
 }
 
 function promptForSaveComments() {
-    // show a modal popup to gather comments (or cancel)
-    $('#save-comments-popup').modal('show');
-    // buttons there do the remaining work
+  // show a modal popup to gather comments (or cancel)
+  // console.log('email: '+ userEmail);
+
+  //include a warning message if the user has no public email
+  if (userEmail == 'ANONYMOUS') {
+    $('#save-study-noemail-warning').show();
+  }
+  else {
+    $('#save-study-noemail-warning').hide();
+  }
+
+  $('#save-comments-popup').modal('show');
+  // buttons there do the remaining work
 }
 
 function promptForDeleteComments() {
