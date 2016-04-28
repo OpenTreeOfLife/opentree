@@ -1357,13 +1357,16 @@ function promptForSaveCollectionComments( collection ) {
         $('#save-collection-comment-first-line').val(firstLine);
         $('#save-collection-comment-more-lines').val(moreLines);
 
-        if (userEmail != 'ANONYMOUS') {
+        //include a warning message if the user has no public email
+        if (userEmail == 'ANONYMOUS') {
+          $('#save-collection-noemail-warning').show();
           // console.log('email: '+ userEmail);
-          $('#save-collection-comments-popup').modal('show');
         }
         else {
-          $('#save-collection-comments-popup-no-email').modal('show');
+          $('#save-collection-noemail-warning').hide();
         }
+
+        $('#save-collection-comments-popup').modal('show');
 
         // buttons there do the remaining work
         $('#save-collection-comments-submit')
