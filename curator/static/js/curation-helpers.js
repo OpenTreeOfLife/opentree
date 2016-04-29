@@ -1240,6 +1240,27 @@ addPendingCollectionChange( 'REORDER' );
 compressPendingCollectionChanges();
 */
 
+function getCollectionDirectURL( collection ) {
+    // provide a direct URL to the collection (to copy/paste or email)
+    var collectionID = getCollectionIDFromURL( collection.data.url );
+    var directURL = window.location.protocol +'//'+ window.location.hostname +'/curator/collections/'+ collectionID;
+    return directURL;
+}
+function shareCollection( collection ) {
+    var directURL = getCollectionDirectURL(collection);
+    window.prompt("This URL will open the current collection automatically (no login required).", directURL);
+}
+
+function getCollectionHistoryURL( collection ) {
+    // provide a URL to the collection on GitHub (for full history)
+    // ASSUMES that its 'external_url' property points to the JSON file on 'raw.githubusercontent.com'
+    // ASSUMES that collection is currently on branch 'master'
+    var historyURL = collection.external_url
+                        .replace('raw.githubusercontent.com', 'github.com')
+                        .replace('master','commits/master');
+    return historyURL;
+}
+
 function copyCollection( collection ) {
     // create a user-owned copy (or login if user is anonymous)
     if (userIsLoggedIn()) {
