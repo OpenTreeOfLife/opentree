@@ -548,14 +548,12 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       </h3>
       <div style="color: #999; position: relative;">
         <p style="position: absolute; width: 170px; text-align: right;">
-            Collection ID:
+            Collection ID (direct link):
         </p>
         <p style="margin-left: 180px;">
-            <span id="collection-id-display"
-                  data-bind="text: getCollectionIDFromURL($data.data.url)">&nbsp;</span>
-           <!-- ko if: ('external_url' in $data) -->
-            <a data-bind="attr: { href: getFullGitHubURLForCollection($data) }" target="_blank">(on GitHub)</a>
-           <!-- /ko -->
+            <a id="collection-id-display"
+               data-bind="text: getCollectionIDFromURL($data.data.url),
+                          attr: { href: getCollectionDirectURL($data) }">&nbsp;</a>
         </p>
       </div>
     </div>
@@ -563,7 +561,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       <div class="tab-pane active">
           <form class="form-inline"
                 style="overflow: hidden; margin-bottom: 0px; margin-top: -12px; padding-top: 12px; margin-right: -6px;">
-           <div class="collection-actions">
+           <div class="collection-actions" style="padding-right: 8px;">
             <!-- action buttons, from right to left -->
 
            <!-- ko if: userIsEditingCollection($data) -->
@@ -578,8 +576,21 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             -->
            <!-- /ko -->
 
+           <!-- ko if: ('external_url' in $data) -->
+            <!-- HISTORY button -->
+            <a data-bind="attr: { href: getCollectionHistoryURL($data) }"
+               title="See full version history on GitHub"
+               class="pull-right btn btn-mini row-controls-ghosted"
+               style="margin-left: 4px;"
+               href="#" target="_blank">
+               History 
+               <img src="/curator/static/images/GitHub-Mark-32px.png" 
+                    style="width: 14px; height: 14px; padding-left: 2px; margin-top: -2px;"/>
+            </a>
+           <!-- /ko -->
+
            <!-- ko if: !userIsEditingCollection($data) -->
-            <!-- DUPLICATE button -->
+            <!-- SHARE button -->
             <button data-bind="click: shareCollection,
                                visible: true"
                 title="Show the direct URL for this collection"
