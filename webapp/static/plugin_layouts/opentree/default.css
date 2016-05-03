@@ -104,7 +104,7 @@ div.viewer-frame {
 
 /* slide these using marker classes on #viewer-collection */
 .active-comments #comments-panel {   
-    margin-left: 0; 
+    margin-left: -1px;  /* ensures visibility in scaled browser */
     margin-right: 0; 
 }
 .active-comments div.viewer-frame {
@@ -128,7 +128,7 @@ div.viewer-frame {
 }
 .active-properties #provenance-panel {    
     margin-left: 0;
-    margin-right: 0; 
+    margin-right: -1px;  /* ensures visibility in scaled browser */
 }
 
 /* overrides for tablet-sized displays (matching Bootstrap media queries) */
