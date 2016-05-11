@@ -1294,6 +1294,190 @@ function copyCollection( collection ) {
     }
 }
 
+// If user chooses to edit a collection, load the study list (just once!)
+var studyListForLookup = null;
+function loadStudyListForLookup() {
+    var $popup = $('#tree-collection-viewer');
+    var $newTreeStartButton = $popup.find('#new-collection-tree-start');
+    // if list is available, enable "Add tree" button and return
+    if (studyListForLookup) {
+        $newTreeStartButton.attr('disabled', null)
+                           .removeClass('btn-info-disabled');
+        return true;
+    }
+    // disable "Add tree" button until the list is loaded
+    $newTreeStartButton.attr('disabled', 'disabled')
+                       .addClass('btn-info-disabled');
+
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        url: findAllStudies_url,
+        data: { verbose: true },
+        success: function( data, textStatus, jqXHR ) {
+            // this should be properly parsed JSON
+
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                showErrorMessage('Sorry, there was an error loading the list of studies.');
+                return;
+            }
+            if (typeof data !== 'object' || !($.isArray(data['matched_studies']))) {
+                showErrorMessage('Sorry, there is a problem with the study-list data.');
+                return;
+            }
+            
+            studyListForLookup = data['matched_studies'];
+            debugger;
+            // TODO? sortStudiesByDOI(matchedStudies);
+
+            /*
+            // maintain a persistent array to preserve pagination (reset when computed)
+            viewModel._filteredStudies = ko.observableArray( ).asPaged(20);
+            viewModel.filteredStudies = ko.computed(function() {
+                // filter raw tree list, returning a
+                // new paged observableArray
+                updateClearSearchWidget( '#study-list-filter', viewModel.listFilters.STUDIES.match );
+                updateListFiltersWithHistory();
+
+                var match = viewModel.listFilters.STUDIES.match(),
+                    matchPattern = new RegExp( $.trim(match), 'i' ),
+                    wholeWordMatchPattern = new RegExp( '\\b'+ $.trim(match) +'\\b', 'i' );
+                var workflow = viewModel.listFilters.STUDIES.workflow();
+                var order = viewModel.listFilters.STUDIES.order();
+
+                // map old array to new and return it
+                var filteredList = ko.utils.arrayFilter( 
+                    viewModel, 
+                    function(study) {
+                        // match entered text against pub reference (author, title, journal name, DOI)
+                        var studyID = study['ot:studyId'];
+                        var pubReference = study['ot:studyPublicationReference'];
+                        var pubURL = study['ot:studyPublication'];
+                        var pubYear = study['ot:studyYear'];
+                        var tags = $.isArray(study['ot:tag']) ? study['ot:tag'].join('|') : study['ot:tag'];
+                        var curator = study['ot:curatorName'];
+                        var clade = ('ot:focalCladeOTTTaxonName' in study && 
+                                     ($.trim(study['ot:focalCladeOTTTaxonName']) !== "")) ?
+                                        study['ot:focalCladeOTTTaxonName'] :  // use mapped name if found
+                                        study['ot:focalClade']; // fall back to numeric ID (should be very rare)
+                        if (!wholeWordMatchPattern.test(studyID) && !matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
+                            return false;
+                        }
+                        // check for filtered workflow state
+                        switch (workflow) {
+                            case 'Any workflow state':
+                                // nothing to do here, all studies pass
+                                break;
+
+                            case 'Draft study':
+                            case 'Submitted for synthesis':
+                            case 'Under revision':
+                            case 'Included in synthetic tree':
+                                // show only matching studies
+                                if (study.workflowState !== workflow) { 
+                                    return false; // stop looping on trees
+                                }
+                                break;
+
+                            default:
+                                console.log("Unexpected workflow for study list: ["+ workflow +"]");
+                                return false;
+                        }
+
+                        return true;
+                    }
+                );  // END of list filtering
+                        
+                // apply selected sort order
+                switch(order) {
+                     * REMINDER: in sort functions, results are as follows:
+                     *  -1 = a comes before b
+                     *   0 = no change
+                     *   1 = b comes before a
+                     *
+                    case 'Newest publication first':
+                        filteredList.sort(function(a,b) { 
+                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
+                            return (a['ot:studyYear'] > b['ot:studyYear'])? -1 : 1;
+                        });
+                        break;
+
+                    case 'Oldest publication first':
+                        filteredList.sort(function(a,b) {
+                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
+                            return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
+                        });
+                        break;
+
+                    case 'Sort by primary author':
+                        filteredList.sort(function(a,b) {
+                            var aRef = $.trim(a['ot:studyPublicationReference']);
+                            var bRef = $.trim(b['ot:studyPublicationReference']);
+                            if (aRef.localeCompare) {
+                                return aRef.localeCompare(bRef);
+                            }
+                            // fallback do dumb alpha-sort on older browsers
+                            if (aRef === bRef) return 0;
+                            return (aRef > bRef) ? 1 : -1;
+                        });
+                        break;
+
+                    case 'Sort by primary author (reversed)':
+                        filteredList.sort(function(a,b) {
+                            var bRef = $.trim(b['ot:studyPublicationReference']);
+                            var aRef = $.trim(a['ot:studyPublicationReference']);
+                            if (bRef.localeCompare) {
+                                return bRef.localeCompare(aRef);
+                            }
+                            // fallback do dumb alpha-sort on older browsers
+                            if (aRef === bRef) return 0;
+                            return (aRef < bRef) ? 1 : -1;
+                        });
+                        break;
+
+                    case 'Workflow state':
+                        var displayOrder = {
+                            'Draft study': 1,
+                            'Submitted for synthesis': 2,
+                            'Under revision': 3,
+                            'Included in synthetic tree': 4
+                        };
+                        filteredList.sort(function(a,b) { 
+                            var aDisplayOrder = displayOrder[ a.workflowState ];
+                            var bDisplayOrder = displayOrder[ b.workflowState ];
+                            if (aDisplayOrder === bDisplayOrder) return 0;
+                            return (aDisplayOrder < bDisplayOrder) ? -1 : 1;
+                        });
+                        break;
+
+                    case 'Completeness':
+                        filteredList.sort(function(a,b) { 
+                            if (a.completeness === b.completeness) return 0;
+                            return (a.completeness < b.completeness) ? -1 : 1;
+                        });
+                        break;
+
+                    default:
+                        console.log("Unexpected order for OTU list: ["+ order +"]");
+                        return false;
+
+                }
+                viewModel._filteredStudies( filteredList );
+                viewModel._filteredStudies.goToPage(1);
+                return viewModel._filteredStudies;
+            }); // END of filteredStudies
+            */
+                    
+            // enable "Add tree" button once list has loaded
+            $newTreeStartButton.attr('disabled', null)
+                               .removeClass('btn-info-disabled');
+        }
+    });
+
+    return false; 
+}
+
 function editCollection( collection, editorOptions ) {
     // toggle to full editing UI (or login if user is anonymous)
     editorOptions = editorOptions || {MAINTAIN_SCROLL: true};
@@ -1301,6 +1485,7 @@ function editCollection( collection, editorOptions ) {
         if ('data' in collection && 'url' in collection.data) {
             currentlyEditingCollectionID = getCollectionIDFromURL( collection.data.url );
             showCollectionViewer( collection, editorOptions );  // to refresh the UI
+            loadStudyListForLookup();
             pushPageExitWarning('UNSAVED_COLLECTION_CHANGES',
                                 "WARNING: This page contains unsaved changes.");
             return;
