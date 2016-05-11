@@ -87,6 +87,7 @@ def download_subtree():
 
         # use the appropriate web service for this ID type
         fetch_url = method_dict['getDraftSubtree_url']
+        newick_text = 'NEWICK_NOT_FETCHED'
         if id_type == 'ottol-id':
             fetch_args = {'ott_id': int(node_or_ottol_id)}
         else:
