@@ -54,7 +54,7 @@ getContextForNames_url = {taxomachine_domain}/v3/tnrs/infer_context
 getSynthesisSourceList_url = {CACHED_treemachine_domain}/v3/tree_of_life/about
 getTaxonomicMRCAForNodes_url = {taxomachine_domain}/v3/taxonomy/mrca
 getDraftTreeMRCAForNodes_url = {treemachine_domain}/v3/tree_of_life/mrca
-findAllStudies_url = {oti_domain}/v3/studies/find_studies
+findAllStudies_url = {CACHED_oti_domain}/v3/studies/find_studies
 # TODO: Can we use CACHED_oti_domain for this?
 singlePropertySearchForStudies_url = {oti_domain}/v3/studies/find_studies
 singlePropertySearchForTrees_url = {oti_domain}/v3/studies/find_trees
