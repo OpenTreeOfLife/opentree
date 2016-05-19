@@ -52,6 +52,8 @@ def browse(id=None, name=None, limit=None, api_base=None):
     elif name is None:
         # bump them to our default taxon (root of synthetic tree)
         browse_by_name('cellular organisms', limit, api_base, output)
+    elif name.isdigit():
+        browse_by_id(int(name), limit, api_base, output)
     else:
         browse_by_name(name, limit, api_base, output)
 
@@ -78,7 +80,7 @@ def browse_by_name(name, limit, api_base, output):
     elif len(matches) > 1:
         output.write('Matches for %s: \n' % cgi.escape(name))
         for match in matches:
-            output.write("  %s\n" % link_to_taxon(match[u'ot:ottId'], match[u'unique_name']))
+            output.write("  %s<br/>" % link_to_taxon(match[u'ot:ottId'], match[u'unique_name']))
     else:
         id = matches[0][u'ot:ottId']
         browse_by_id(id, limit, api_base, output)
@@ -124,6 +126,10 @@ def get_taxon_info(ottid, api_base):
 def display_taxon_info(info, limit, output, api_base):
     included_children_output = StringIO.StringIO()
     suppressed_children_output = StringIO.StringIO()
+
+    # Search box
+    output.write('<form action="browse"><p align="right"><input type="text" name="name" placeholder="name or id"/></p></form>')
+
     if u'ot:ottId' in info:
         id = info[u'ot:ottId']
         start_el(output, 'h1')
