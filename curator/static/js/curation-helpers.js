@@ -860,6 +860,9 @@ function searchForMatchingStudy() {
         // Check all preloaded studies for matching text in relevant fields.
         $.each(studyListForLookup, function(i, studyInfo) {
             studyInfo.matchScore = 0;  // init OR reset on later searches
+            if (!('compactReference' in studyInfo)) {
+                studyInfo.compactReference = fullToCompactReference(studyInfo['ot:studyPublicationReference']);
+            }
             $.each(searchTokens, function(i, token) {
                 // Test against all revelant fields (with weighted scores)
                 if (studyInfo['ot:studyId'] === token) {
@@ -874,7 +877,8 @@ function searchForMatchingStudy() {
                     'ot:tag',
                     'ot:focalCladeOTTTaxonName',
                     'ot:studyPublication',
-                    'ot:studyPublicationReference'
+                    'ot:studyPublicationReference',
+                    'compactReference'
                 ];
                 $.each(testForPartialMatch, function(i, testField) {
                     if (testField in studyInfo) {
@@ -883,10 +887,10 @@ function searchForMatchingStudy() {
                         }
                     }
                 });
-                if (studyInfo.matchScore > 0) {
-                    matchingStudies.push( studyInfo );
-                }
             });  // end of token loop
+            if (studyInfo.matchScore > 0) {
+                matchingStudies.push( studyInfo );
+            }
         });  // end of study loop
 
         // Sort matching studies by score
@@ -901,7 +905,7 @@ function searchForMatchingStudy() {
             if (visibleResults > maxResults) {
                 // Add one final prompt
                 $('#study-lookup-results').append(
-                    '<li class="disabled"><a><span class="muted">Some matching studies are hidden. Add more search text to refine your results.</span></a></li>'
+                    '<li class="disabled"><a><span class="muted">Add search text to see hidden matches.</span></a></li>'
                 );
                 return false;
             }
