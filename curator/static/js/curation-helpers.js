@@ -626,6 +626,8 @@ function showCollectionViewer( collection, options ) {
                 .addClass('btn-info-disabled');
             updateNewCollTreeUI();
             updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
+            // (re)bind study and tree lookups
+            loadStudyListForLookup();
             return false;
         });
         $newTreeCancelButton.click(function() {
@@ -742,8 +744,8 @@ function updateNewCollTreeUI() {
     var $addByLookupPanel = $('#new-collection-tree-by-lookup');
     var $submitByLookupButton = $addByLookupPanel.find('button').eq(0);
     var $studyIDField = $addByLookupPanel.find('input[name=study-lookup-id]');
-    var $treeIDField = $addByLookupPanel.find('input[name=tree-lookup-id]');
-    if (($.trim($studyIDField.val()) == '') || ($.trim($treeIDField.val()) == '')) {
+    var $treeSelector = $addByLookupPanel.find('select[name=tree-lookup]');
+    if (($.trim($studyIDField.val()) == '') || ($.trim($treeSelector.val()) == '')) {
         $submitByLookupButton.attr('disabled', 'disabled')
                              .addClass('btn-info-disabled');
     } else {
@@ -754,7 +756,7 @@ function updateNewCollTreeUI() {
     // update by-ID widgets
     var $addByIDsPanel = $('#new-collection-tree-by-ids');
     $studyIDField = $addByIDsPanel.find('input[name=study-id]');
-    $treeIDField = $addByIDsPanel.find('input[name=tree-id]');
+    var $treeIDField = $addByIDsPanel.find('input[name=tree-id]');
     var $submitByIDButton = $addByIDsPanel.find('button').eq(0);
     if (($.trim($studyIDField.val()) == '') || ($.trim($treeIDField.val()) == '')) {
         $submitByIDButton.attr('disabled', 'disabled')
@@ -784,7 +786,6 @@ var studyLookupTimeoutID = null;
 var lookupDelay = 1000; // milliseconds
 var hopefulStudyLookupName = null;
 function setStudyLookupFuse(e) {
-console.log('setStudyLookupFuse STARTING...');
     if (studyLookupTimeoutID) {
         // kill any pending search, apparently we're still typing
         clearTimeout(studyLookupTimeoutID);
@@ -819,7 +820,6 @@ console.log('setStudyLookupFuse STARTING...');
 
 var showingResultsForStudyLookupText = '';
 function searchForMatchingStudy() {
-console.log('searchForMatchingStudy STARTING...');
     // clear any pending lookup timeout and ID
     clearTimeout(studyLookupTimeoutID);
     studyLookupTimeoutID = null;
@@ -857,18 +857,17 @@ console.log('searchForMatchingStudy STARTING...');
     showingResultsForStudyLookupText = queryText;
 
     $('#study-lookup-results').html('');
-    var maxResults = 5;
+    var maxResults = 10;
     var visibleResults = 0;
     if (studyListForLookup && studyListForLookup.length && studyListForLookup.length > 0) {
         // Check all preloaded studies for matching text in relevant fields.
         // Sort some exact matches to the top?
-/*
         studyListForLookup.sort(function(a,b) {
-            if (a.is_higher === b.is_higher) return 0;
-            if (a.is_higher) return -1;
-            if (b.is_higher) return 1;
+            // move exact matching ID to top of list
+            if (a['ot:studyId'] === queryText) return -1;
+            if (b['ot:studyId'] === queryText) return 1;
+            return 0;
         });
-*/
 
         // show all sorted results, up to our preset maximum
         $.each(studyListForLookup, function(i, studyInfo) {
@@ -877,9 +876,29 @@ console.log('searchForMatchingStudy STARTING...');
             }
             // Test against all revelant fields
             var matchFound = false;
-            if (true) {
-                matchFound = true;
-            }
+            var testForExactMatch = [
+                'ot:studyId',
+                'ot:studyYear'
+            ];
+            $.each(testForExactMatch, function(i, testField) {
+                if (studyInfo[testField] === queryText) {
+                    matchFound = true;
+                }
+            });
+            var testForPartialMatch = [
+                'ot:curatorName',
+                'ot:tag',
+                'ot:focalCladeOTTTaxonName',
+                'ot:studyPublication',
+                'ot:studyPublicationReference'
+            ];
+            $.each(testForPartialMatch, function(i, testField) {
+                if (testField in studyInfo) {
+                    if (studyInfo[testField].indexOf( queryText ) !== -1) {
+                        matchFound = true;
+                    }
+                }
+            });
 
             if (matchFound) {
                 var matchURL = getViewURLFromStudyID(studyInfo['ot:studyId']);
@@ -910,7 +929,110 @@ console.log('searchForMatchingStudy STARTING...');
                     .attr({'href': $link.attr('href'), 'title': $link.attr('title')})
                     .html( $link.html() );
                 $('.study-lookup-passive').show();
-                // TODO: enable tree lookup
+                // Load + enable tree lookup
+                $('select[name=tree-lookup]').val('');
+                $('select[name=tree-lookup]').attr('disabled','disabled');
+                updateNewCollTreeUI();
+                $.ajax({
+                    global: false,  // suppress web2py's aggressive error handling
+                    type: 'POST',
+                    dataType: 'json',
+                    // crossdomain: true,
+                    contentType: "application/json; charset=utf-8",
+                    url: singlePropertySearchForTrees_url,
+                    data: ('{"property": "ot:studyId", "value": '+
+                           JSON.stringify(studyID) +', "exact": true, "verbose": true }'),
+                    processData: false,
+                    complete: function( jqXHR, textStatus ) {
+                        // report errors or malformed data, if any
+                        if (textStatus !== 'success') {
+                            if (jqXHR.status >= 500) {
+                                // major server-side error, just show raw response for tech support
+                                var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
+                                //hideModalScreen();
+                                showErrorMessage(errMsg);
+                                return;
+                            }
+                            // Server blocked the save due to major validation errors!
+                            var data = $.parseJSON(jqXHR.responseText);
+                            // TODO: this should be properly parsed JSON, show it more sensibly
+                            // (but for now, repeat the crude feedback used above)
+                            var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [parsed in JS]</pre>';
+                            //hideModalScreen();
+                            showErrorMessage(errMsg);
+                            return;
+                        }
+                        // if we're still here, handle the search results
+                        // IF NOT FOUND, complain and ask for another study
+                        // IF FOUND, use its label/description/SHA(?) to populate the entry
+                        var responseObj = $.parseJSON(jqXHR.responseText);
+                        if ($.isArray(responseObj['matched_studies'])) {
+                            switch(responseObj['matched_studies'].length) {
+                                case 0:
+                                    // no such study
+                                    var errMsg = 'Sorry, there are no trees in the selected study. '
+                                               + 'Please choose another study and try again.';
+                                    //hideModalScreen();
+                                    showErrorMessage(errMsg);
+                                    return;
+
+                                case 1:
+                                    // walk its properties and use them in our collection JSON
+                                    var foundStudy = responseObj['matched_studies'][0];
+                                    var foundTrees = foundStudy['matched_trees'];
+                                    // TODO: Remove all but the prompting OPTION element
+                                    var $treeSelector = $('select[name=tree-lookup]');
+                                    $treeSelector.find('option').remove();
+                                    if (foundTrees.length === 0) {
+                                        // no such study
+                                        var errMsg = 'Sorry, there are no trees in the selected study. '
+                                                   + 'Please choose another study and try again.';
+                                        //hideModalScreen();
+                                        showErrorMessage(errMsg);
+                                        return;
+                                    }
+                                    $.each(foundTrees, function(i, foundTree) {
+                                        var compactStudyRef = fullToCompactReference(foundStudy['ot:studyPublicationReference']);
+                                        // capture the current tree ID, name and study reference
+                                        var foundTreeName = $.trim(foundTree['@label']);
+                                        // recover the simple tree ID from {STUDY_ID}_{TREE_ID}
+                                        var combinedID = $.trim(foundTree['oti_tree_id']);
+                                        var treeID = combinedID.substr(studyID.length + 1);
+                                        var treeAndStudy = (foundTreeName || treeID) +' ('+ compactStudyRef +')';
+                                        var visibleLabel = (foundTreeName || treeID) +' ('+ foundTree['ot:ottTaxonName'] +')';
+                                        var rollOverText = "";
+                                        // TODO: can we copy the tree's description?
+                                        // TODO: pick a SHA from history? or use the latest?
+                                        // Build a new OPTION element for this tree
+                                        var $newOption = $('<option value="'+ treeID
+                                                            +'" title="'+ rollOverText
+                                                            +'">'+ visibleLabel
+                                                            +'</option>');
+                                        $treeSelector.append( $newOption );
+                                    });
+                                    $treeSelector.attr('disabled', null);
+                                    updateNewCollTreeUI();
+                                    return;
+
+                                default:
+                                    var errMsg = 'Sorry, there are multiple trees matching these IDs. '
+                                               + '<strong>This is not expected!</strong> Please '
+                                               + '<a href="/contact" target="_blank">report this error</a> '
+                                               + 'so we can investigate.';
+                                    //hideModalScreen();
+                                    showErrorMessage(errMsg);
+                                    return;
+                            }
+                        } else {
+                            var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">Missing or malformed "matching_studies" in JSON response:\n\n'+
+                                jqXHR.responseText+'</pre>';
+                            hideModalScreen();
+                            showErrorMessage(errMsg);
+                            return;
+                        }
+                    }
+                });
+
             });
         $('#study-lookup-results').dropdown('toggle');
     }
@@ -922,11 +1044,21 @@ console.log('searchForMatchingStudy STARTING...');
     return false;
 }
 function resetStudyLookup() {
-    // TODO: Clear/disable tree lookup
+    // Clear/disable tree lookup
+    var $treeSelector = $('select[name=tree-lookup]');
+    $treeSelector.find('option').remove();
+    var $promptOption = $('<option disabled="disabled" value="">Find the study above first</option>');
+    $treeSelector.append( $promptOption );
+    $('select[name=tree-lookup]').val('');
+    $('select[name=tree-lookup]').attr('disabled','disabled');
+
+    // Toggle the study-lookup widget (vs. indicator)
     $('.study-lookup-passive').hide();
     $('.study-lookup-active').show();
     // N.B. The icon element will shift if its display is set to block
     $('i.study-lookup-active').css('display', 'inline-block');
+
+    updateNewCollTreeUI();
 }
 
 function createNewTreeCollection() {
@@ -977,29 +1109,42 @@ function updateNewCollectionID( collection ) {
 function addTreeToCollection( collection, inputType ) {
     // Test input values against oti (study index), to see if there's a matching tree
     var studyID, treeID, treeURL;
-    if (inputType === 'FROM_IDS') {
-        studyID = $.trim($('#new-collection-tree-by-ids input[name=study-id]').val());
-        treeID =  $.trim($('#new-collection-tree-by-ids input[name=tree-id]').val());
-    } else { // presumably 'FROM_URL'
-        treeURL = $.trim($('#new-collection-tree-by-url input[name=tree-url]').val());
-        // split this to determine the study and tree IDs. EXAMPLES:
-        //  http://devtree.opentreeoflife.org/curator/study/edit/pg_2889/?tab=trees&tree=tree6698
-        //  http://devtree.opentreeoflife.org/curator/study/view/pg_2889/?tab=trees&tree=tree6698
-        var idString = treeURL.split(/(\/view\/|\/edit\/)/)[2] || "";
-        // EXAMPLE: pg_2889/?tab=trees&tree=tree6698
-        // EXAMPLE: pg_2889?tab=trees&tree=tree6698
-        var studyID = $.trim( idString.split(/\/|\?/)[0] );
-        //console.log('>>> studyID = '+ studyID);
-        var treeID = $.trim( idString.split('&tree=')[1] );
-        //console.log('>>> treeID = '+ treeID);
-        if ((studyID === '') || (treeID === '')) {
-            // TODO: prompt for fresh input, perhaps with an example?
-            showErrorMessage('The URL must include both '
-              + '<em>study <strong>and</strong> tree IDs</em>, for example: '
-              + 'http://devtree.opentreeoflife.org/curator/study/edit/<strong>pg_2889</strong>'
-              + '/?tab=trees&tree=<strong>tree6698</strong>');
-            return false;
-        }
+    switch(inputType) {
+        case 'FROM_LOOKUPS':
+            studyID = $.trim($('#new-collection-tree-by-lookup input[name=study-lookup-id]').val());
+            treeID =  $.trim($('#new-collection-tree-by-lookup select[name=tree-lookup]').val());
+            break;
+
+        case 'FROM_IDS':
+            studyID = $.trim($('#new-collection-tree-by-ids input[name=study-id]').val());
+            treeID =  $.trim($('#new-collection-tree-by-ids input[name=tree-id]').val());
+            break;
+
+        case 'FROM_URL':
+            treeURL = $.trim($('#new-collection-tree-by-url input[name=tree-url]').val());
+            // split this to determine the study and tree IDs. EXAMPLES:
+            //  http://devtree.opentreeoflife.org/curator/study/edit/pg_2889/?tab=trees&tree=tree6698
+            //  http://devtree.opentreeoflife.org/curator/study/view/pg_2889/?tab=trees&tree=tree6698
+            var idString = treeURL.split(/(\/view\/|\/edit\/)/)[2] || "";
+            // EXAMPLE: pg_2889/?tab=trees&tree=tree6698
+            // EXAMPLE: pg_2889?tab=trees&tree=tree6698
+            var studyID = $.trim( idString.split(/\/|\?/)[0] );
+            //console.log('>>> studyID = '+ studyID);
+            var treeID = $.trim( idString.split('&tree=')[1] );
+            //console.log('>>> treeID = '+ treeID);
+            if ((studyID === '') || (treeID === '')) {
+                // TODO: prompt for fresh input, perhaps with an example?
+                showErrorMessage('The URL must include both '
+                  + '<em>study <strong>and</strong> tree IDs</em>, for example: '
+                  + 'http://devtree.opentreeoflife.org/curator/study/edit/<strong>pg_2889</strong>'
+                  + '/?tab=trees&tree=<strong>tree6698</strong>');
+                return false;
+            }
+            break;
+
+        default:
+            console.error('addTreeToCollection() - Unknown input type: '+ inputType);
+            return;
     }
 
     // check to see if this tree is already in the collection; if so, bail w/ a message
