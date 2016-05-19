@@ -830,86 +830,88 @@ function searchForMatchingStudy() {
         console.log("Input field not found!");
         return false;
     }
-    var searchText = $input.val().trimLeft();
+    var searchText = $.trim( $input.val() );
+    var searchTokens = tokenizeSearchTextKeepingQuotes(searchText);
 
-    if (searchText.length === 0) {
-        $('#study-lookup-results').html('');
-        return false;
-    } else if (searchText.length < 2) {
+    if ((searchTokens.length === 0) || 
+        (searchTokens.length === 1 && searchTokens[0].length < 2)) {
         $('#study-lookup-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
-        $('#study-lookup-results').dropdown('toggle');
         return false;
     }
 
     // is this unchanged from last time? no need to search again..
     if ((searchText == showingResultsForStudyLookupText)) {
-        console.log("Study-lookup text UNCHANGED!");
+        //console.log("Study-lookup text UNCHANGED!");
         return false;
     }
 
-    // stash these to use for later comparison (to avoid redundant searches)
-    var queryText = searchText; // trimmed above
+    // stash the search-text used to generate these results
+    showingResultsForStudyLookupText = searchText;
     $('#study-lookup-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
     $('#study-lookup-results').show();
     $('#study-lookup-results').dropdown('toggle');
-
-    // stash the search-text used to generate these results
-    showingResultsForStudyLookupText = queryText;
-
     $('#study-lookup-results').html('');
-    var maxResults = 10;
+
+    var maxResults = 5;
     var visibleResults = 0;
+    var matchingStudies = [ ];
+
     if (studyListForLookup && studyListForLookup.length && studyListForLookup.length > 0) {
         // Check all preloaded studies for matching text in relevant fields.
-        // Sort some exact matches to the top?
-        studyListForLookup.sort(function(a,b) {
-            // move exact matching ID to top of list
-            if (a['ot:studyId'] === queryText) return -1;
-            if (b['ot:studyId'] === queryText) return 1;
-            return 0;
-        });
-
-        // show all sorted results, up to our preset maximum
         $.each(studyListForLookup, function(i, studyInfo) {
-            if (visibleResults >= maxResults) {
+            studyInfo.matchScore = 0;  // init OR reset on later searches
+            $.each(searchTokens, function(i, token) {
+                // Test against all revelant fields (with weighted scores)
+                if (studyInfo['ot:studyId'] === token) {
+                    studyInfo.matchScore += 10;
+                };
+                if (studyInfo['ot:studyYear'] === token) {
+                    studyInfo.matchScore += 5;
+                };
+                var tokenRegex = new RegExp(token, "i");  // case-INSENSITIVE
+                var testForPartialMatch = [
+                    'ot:curatorName',
+                    'ot:tag',
+                    'ot:focalCladeOTTTaxonName',
+                    'ot:studyPublication',
+                    'ot:studyPublicationReference'
+                ];
+                $.each(testForPartialMatch, function(i, testField) {
+                    if (testField in studyInfo) {
+                        if (studyInfo[testField].search(tokenRegex) !== -1) {
+                            studyInfo.matchScore += 2;
+                        }
+                    }
+                });
+                if (studyInfo.matchScore > 0) {
+                    matchingStudies.push( studyInfo );
+                }
+            });  // end of token loop
+        });  // end of study loop
+
+        // Sort matching studies by score
+        matchingStudies.sort(function(a,b) {
+            // move high scores to the top of the list
+            if (a.matchScore === b.matchScore) return 0;
+            if (a.matchScore > b.matchScore) return -1;
+            return 1;
+        });
+        // Show the topmost sorted results (and a prompt if there are more hidden matches)
+        $.each(matchingStudies, function(i, studyInfo) {
+            if (visibleResults > maxResults) {
+                // Add one final prompt
+                $('#study-lookup-results').append(
+                    '<li class="disabled"><a><span class="muted">Some matching studies are hidden. Add more search text to refine your results.</span></a></li>'
+                );
                 return false;
             }
-            // Test against all revelant fields
-            var matchFound = false;
-            var testForExactMatch = [
-                'ot:studyId',
-                'ot:studyYear'
-            ];
-            $.each(testForExactMatch, function(i, testField) {
-                if (studyInfo[testField] === queryText) {
-                    matchFound = true;
-                }
-            });
-            var testForPartialMatch = [
-                'ot:curatorName',
-                'ot:tag',
-                'ot:focalCladeOTTTaxonName',
-                'ot:studyPublication',
-                'ot:studyPublicationReference'
-            ];
-            $.each(testForPartialMatch, function(i, testField) {
-                if (testField in studyInfo) {
-                    if (studyInfo[testField].indexOf( queryText ) !== -1) {
-                        matchFound = true;
-                    }
-                }
-            });
-
-            if (matchFound) {
-                var matchURL = getViewURLFromStudyID(studyInfo['ot:studyId']);
-                var matchText = fullToCompactReference(studyInfo['ot:studyPublicationReference']);
-                var mouseOver = studyInfo['ot:studyPublicationReference'];
-                // we're not showing this yet; add it now
-                $('#study-lookup-results').append(
-                    '<li><a href="'+ matchURL +'" title="'+ mouseOver +'">'+ matchText +'</a></li>'
-                );
-                visibleResults++;
-            }
+            var matchURL = getViewURLFromStudyID(studyInfo['ot:studyId']);
+            var matchText = fullToCompactReference(studyInfo['ot:studyPublicationReference']);
+            var mouseOver = studyInfo['ot:studyPublicationReference'];
+            $('#study-lookup-results').append(
+                '<li><a href="'+ matchURL +'" title="'+ mouseOver +'">'+ matchText +'</a></li>'
+            );
+            visibleResults++;
         });
 
         $('#study-lookup-results a')
@@ -917,7 +919,6 @@ function searchForMatchingStudy() {
                 var $link = $(this);
                 var pathParts = $link.attr('href').split('/');
                 var studyID = pathParts[ pathParts.length - 1 ];
-                console.log("CLICKED  matching study "+ studyID);
                 // update hidden field
                 $('input[name=study-lookup-id]').val( studyID );
                 // hide menu and reset search field
@@ -2269,4 +2270,14 @@ function removeFromArray( doomedValue, theArray ) {
     if (index !== -1) {
         theArray.splice( index, 1 );
     }
+}
+
+function tokenizeSearchTextKeepingQuotes( text ) {
+    // adapted from http://stackoverflow.com/a/18703767
+    // EXAMPLE: 'get "something" from "any site"'  ==> ['get', 'someting', 'from', 'any site']
+    var tokens = [ ].concat.apply([ ], text.split('"').map(function(v,i){
+        // toggle behavior based on whether we're inside or outside quotes
+        return i % 2 ? v : v.split(/[\s,]+/);
+    })).filter(Boolean);
+    return tokens;
 }
