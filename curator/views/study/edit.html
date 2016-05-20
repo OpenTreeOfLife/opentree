@@ -1379,10 +1379,10 @@ body {
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
 
-            <button class="help-toggle" style="display: none;">
+            <button class="help-toggle">
                 Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
             </button>
-            <div class="help-box">
+            <div class="help-box" style="display: none;">
               <button class="help-toggle">
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
@@ -1483,8 +1483,22 @@ body {
                 </button>
             </div>
 
-            <div class="well">
-                <h4 style="margin-top: 0;">Mapping options</h4>
+            <div id="mapping-options-prompt" class="well" style="cursor: pointer;"
+                 onclick="showMappingOptions(); return false;">
+                <h4 title="Click to show mapping options" style="margin-top: 0;">
+                    <i class="pull-right icon-chevron-down"></i>
+                    Mapping options
+                </h4>
+                <p style="margin-bottom: 0;">
+                Click here for tools that make mapping faster and more accurate.
+                </p>
+            </div>
+            <div id="mapping-options-panel" class="well" style="display: none;">
+                <h4 title="Click to hide mapping options" style="margin-top: 0; cursor: pointer;"
+                    onclick="hideMappingOptions(); return false;">
+                    <i class="pull-right icon-chevron-up"></i>
+                    Mapping options
+                </h4>
                 <p>
                 The easiest way to improve mapping performance is to provide a
                 narrow context for the search.
@@ -1588,8 +1602,9 @@ body {
                   </div>
                   <div style="margin-top: 1em;">
                       <button type="submit" class="btn"
-                              onclick="addSubstitution(); return false;">Add another substitution
-                        <i class="icon-add "></i></button>
+                              onclick="addSubstitution(); return false;">
+                          <i class="icon-plus"></i> Add another substitution
+                      </button>
                   </div>
 
                  </fieldset>
@@ -1601,6 +1616,20 @@ body {
                 in the <strong>Modified for mapping</strong> column at left.
                 </p>
             </div>
+
+            <div class="well">
+                <h4 style="margin-top: 0;">Adding new taxa</h4>
+                <p>
+                Unmapped taxa are kept in the study, but pruned during
+                synthesis. You can submit unmapped tree labels as new taxa in
+                the Open Tree Taxonomy.
+                </p>
+                <button type="submit" class="btn"
+                        onclick="addSubstitution(); return false;">
+                    <i class="icon-plus"></i> Open new taxa form for selected OTUs
+                </button>
+            </div>
+
         {{ pass }}
 
            </div><!-- end of right col -->
