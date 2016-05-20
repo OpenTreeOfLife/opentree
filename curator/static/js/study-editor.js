@@ -8927,3 +8927,12 @@ function addTreeToNewCollection() {
         }
     }
 }
+
+function showMappingOptions() {
+    $('#mapping-options-prompt').hide();
+    $('#mapping-options-panel').show();
+}
+function hideMappingOptions() {
+    $('#mapping-options-panel').hide();
+    $('#mapping-options-prompt').show();
+}
