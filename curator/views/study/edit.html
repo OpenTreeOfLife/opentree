@@ -1625,7 +1625,7 @@ body {
                 the Open Tree Taxonomy.
                 </p>
                 <button type="submit" class="btn"
-                        onclick="addSubstitution(); return false;">
+                        onclick="showNewTaxaPopup(); return false;">
                     <i class="icon-plus"></i> Open new taxa form for selected OTUs
                 </button>
             </div>
@@ -2254,6 +2254,54 @@ body {
         </div>
         <div id="study-quality-details" style="margin-top: 5px;">
             <!-- details for score criteria will appear here -->
+        </div>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>
+
+<!-- hidden template for new-taxon form (for adding taxa to OT Taxonomy) -->
+<div class="modal hide fade" id="new-taxa-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Adding new taxa
+      </h3>
+    </div>
+    <div class="modal-body">
+        <button class="help-toggle" style="display: none;">
+            Show help <i class="icon-chevron-down Xicon-white"></i>
+        </button>
+        <div class="help-box" style="display: block;">
+            <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+            </button>
+            <p>
+                Once added, these taxa will appear in the Open Tree Taxonomy
+                with the <span style="font-family: monospace; padding: 0 4px 0 2px; font-weight: bold;">from_phylogeny</span>
+                tag. They will appear in the synthetic tree, with links to your
+                curator ID, the current study <strong id="current-study-ref">TODO</strong>,
+                and any sources of evidence that you provide below.
+            </p>
+        </div>
+        <p>
+            Unmapped label 1 of 4
+            <span class="btn-group" style="position: relative; left: 5px; top: -2px;">
+                <a class="btn btn-small disabled" href="#" onclick="return false;">Previous label</a>
+                <a class="btn btn-small" href="#" onclick="return false;">Next label</a>
+            </span>
+        </p>
+        <div style="margin-top: 5px;">
+            <label for="">Unmapped label</label>
+            <label for="">Modified taxon name</label>
+            <label for="">Parent taxon</label>
+            <label for="">Evidence for taxon</label>
+            <br/>
+            <textarea placeholder="Add comments or additional links to support this taxon."></textarea>
+            <br/>
+            <button class="btn">Cancel</button>
+            <button class="btn btn-info">Save and exit</button>
         </div>
     </div>
     <div class="modal-footer">
