@@ -2262,7 +2262,7 @@ body {
 </div>
 
 <!-- hidden template for new-taxon form (for adding taxa to OT Taxonomy) -->
-<div class="modal hide fade" id="new-taxa-popup" style="display: none;">
+<div class="modal hide fade" id="new-taxa-popup" style="width: 640px; display: none;">
     <div class="modal-header">
       <a data-dismiss="modal" class="close">×</a>
       <h3 id='dialog-heading'>
@@ -2292,17 +2292,103 @@ body {
                 <a class="btn btn-small" href="#" onclick="return false;">Next label</a>
             </span>
         </p>
-        <div style="margin-top: 5px;">
-            <label for="">Unmapped label</label>
-            <label for="">Modified taxon name</label>
-            <label for="">Parent taxon</label>
-            <label for="">Evidence for taxon</label>
+<form class="form-horizontal wider-fields">
+    <div class="control-group">
+        <label class="control-label" for="">Unmapped label</label>
+        <div class="controls">
+            <div class="static-form-value"
+                 data-bind="text: 'TODO: fetch from current OTU',
+                            attr:{'title': '' }"
+                 title="">...</div>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label" for="TODO">Modified taxon name</label>
+        <div class="controls">
+            <input data-bind="value: 'TODO',
+                              valueUpdate: ['afterkeydown', 'input'],
+                              event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: validateAndTestDOI },
+                              " type="text" id="TODO" class="input-medium" placeholder="Enter taxon name">
+              <select style="margin-bottom: 0; width: auto;" name="TODO">
+                  <option disabled="disabled" selected="selected" value="">Choose reason for modification...</option>
+                  <option>Typo in original label</option>
+                  <option>Removing extraneous characters</option>
+                  <option>Synonym</option>
+                  <option>Other</option>
+              </select>
+        </div>
+    </div>
+    <div class="control-group">
+        <label class="control-label" for="TODO">Parent taxon</label>
+        <div class="controls">
+          <div class="static-form-value"
+               data-bind="text:  fetch from current OTU',
+                          attr:{'title': '' }"
+               title="">TODO</div>
+          <!-- reuse style and behavior from Metadata > Focal Clade -->
+          <div id="parent-taxon-search-form" class="Xnavbar-search Xpull-right" autocomplete="off" style="Xdisplay: inline-block; position: relative;">
+              <input type="text" name="parent-taxon-search" class="" style="Xwidth: 365px;"
+                  placeholder="Choose the parent taxon..." autocomplete="off">
+              <!-- <input type="submit" style="" name="parent-taxon-search-go" value="Go" onclick="return false;"/> -->
+              <!-- then show dropdown when results are ready... -->
+              <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
+              <select style="margin-bottom: 0; width: auto;" name="parent-taxon-search-context">
+                  {{ # generate our contextNames list based on newly fetched names
+                    try:
+                     for context_name in taxonSearchContextNames:
+                        if context_name == 'All life': }}
+                          <option selected="selected" value="{{= context_name }}">{{= context_name }}</option>
+                     {{ else: }}
+                          <option value="{{= context_name }}">{{= context_name }}</option>
+                     {{ pass }}
+                  {{ pass }}
+                  {{ except: }}
+                          <option selected="selected">ERROR loading context values</option>
+                     {{ pass }}
+              <!--
+              NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted
+              by the server, ie, there's no distinction between visible and occult values.
+              -->
+              </select>
+              <div class="">
+                  <ul id="search-results" class="dropdown-menu" role="menu">
+                      ...
+                  </ul>
+              </div>
+          </div>
+          <input data-bind="value: nexml['^ot:focalClade'], event: { change: nudge.GENERAL_METADATA }, css: viewModel.ticklers.GENERAL_METADATA" type="hidden" id="ot_focalClade" placeholder="">
+
+
+        </div><!-- .controls -->
+    </div>
+    <div class="control-group">
+        <label class="control-label" for="TODO">Evidence for taxon</label>
+        <div class="controls">
+            <select style="margin-bottom: 0; width: auto;" name="TODO">
+                <option disabled="disabled" selected="selected" value="">Choose evidence type...</option>
+                <option>Link to online taxonomy</option>
+                <option>Link (DOI) to publication</option>
+                <option>Other</option>
+            </select>
+            <input data-bind="value: 'TODO',
+                              valueUpdate: ['afterkeydown', 'input'],
+                              event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: validateAndTestDOI },
+                              " type="text" id="TODO" class="input-large" placeholder="Enter evidence here">
             <br/>
-            <textarea placeholder="Add comments or additional links to support this taxon."></textarea>
-            <br/>
+            <label for="TODO" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
+                <input type="checkbox" id="TODO" name="TODO"
+                       style="width: 20px;"
+                       Xonclick="TODO(); return false;"/>
+                Copy this evidence to all labels
+            </label>
+        </div>
+    </div>
+            <textarea class="input-block-level" style="margin-bottom: 8px;"
+                      placeholder="Add comments or additional links to support this taxon."></textarea>
             <button class="btn">Cancel</button>
             <button class="btn btn-info">Save and exit</button>
-        </div>
+</form>
+
     </div>
     <div class="modal-footer">
       <a data-dismiss="modal" class="btn" >Close</a>
