@@ -19,7 +19,7 @@ if active_user_found:
                         (<a href="%s" target="_blank"
                            title="Open GitHub profile in a new window"
                            >%s <span style="color: #333;">on GitHub</span></a>)</span>""" % (
-            user_info.get('name', user_info.get('login', '???')),
+            user_info['name'] or user_info.get('login', '???'),
             user_info.get('html_url'),
             user_info.get('login'),
         )

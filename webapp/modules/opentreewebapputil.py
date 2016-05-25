@@ -141,9 +141,9 @@ def get_user_display_name():
     if auth.user.name:
         # this is a preset display name
         return auth.user.name
-    if auth.user.first_name and auth.user.last_name:
-        # combined first and last is also good
-        return '%s %s' % (auth.user.first_name, auth.user.last_name,)
+    # N.B. that auth.user.first_name and auth.user.last_name fields are not
+    # reliable in our apps! They're included for web2py compatibility, but we
+    # defer to the GitHub User API and use the 'name' field for this.
     if auth.user.username:
         # compact userid is our last resort
         return auth.user.username
