@@ -1379,10 +1379,10 @@ body {
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
 
-            <button class="help-toggle" style="display: none;">
+            <button class="help-toggle">
                 Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
             </button>
-            <div class="help-box">
+            <div class="help-box" style="display: none;">
               <button class="help-toggle">
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
@@ -1483,8 +1483,22 @@ body {
                 </button>
             </div>
 
-            <div class="well">
-                <h4 style="margin-top: 0;">Mapping options</h4>
+            <div id="mapping-options-prompt" class="well" style="cursor: pointer;"
+                 onclick="showMappingOptions(); return false;">
+                <h4 title="Click to show mapping options" style="margin-top: 0;">
+                    <i class="pull-right icon-chevron-down"></i>
+                    Mapping options
+                </h4>
+                <p style="margin-bottom: 0;">
+                Click here for tools that make mapping faster and more accurate.
+                </p>
+            </div>
+            <div id="mapping-options-panel" class="well" style="display: none;">
+                <h4 title="Click to hide mapping options" style="margin-top: 0; cursor: pointer;"
+                    onclick="hideMappingOptions(); return false;">
+                    <i class="pull-right icon-chevron-up"></i>
+                    Mapping options
+                </h4>
                 <p>
                 The easiest way to improve mapping performance is to provide a
                 narrow context for the search.
@@ -1588,8 +1602,9 @@ body {
                   </div>
                   <div style="margin-top: 1em;">
                       <button type="submit" class="btn"
-                              onclick="addSubstitution(); return false;">Add another substitution
-                        <i class="icon-add "></i></button>
+                              onclick="addSubstitution(); return false;">
+                          <i class="icon-plus"></i> Add another substitution
+                      </button>
                   </div>
 
                  </fieldset>
@@ -1601,6 +1616,20 @@ body {
                 in the <strong>Modified for mapping</strong> column at left.
                 </p>
             </div>
+
+            <div class="well">
+                <h4 style="margin-top: 0;">Adding new taxa</h4>
+                <p>
+                Unmapped taxa are kept in the study, but pruned during
+                synthesis. You can submit unmapped tree labels as new taxa in
+                the Open Tree Taxonomy.
+                </p>
+                <button type="submit" class="btn"
+                        onclick="showNewTaxaPopup(); return false;">
+                    <i class="icon-plus"></i> Open new taxa form for selected OTUs
+                </button>
+            </div>
+
         {{ pass }}
 
            </div><!-- end of right col -->
@@ -1811,7 +1840,7 @@ body {
                 </p>
                 <p>
                   In the future, there will be other analyses here. Have a suggestion?
-                  Add an <a href="https://github.com/OpenTreeOfLife/opentree/issues">issue<a/>.
+                  Add an <a href="https://github.com/OpenTreeOfLife/opentree/issues">issue</a>.
                 </p>
             </div>
 
@@ -2229,6 +2258,145 @@ body {
     </div>
     <div class="modal-footer">
       <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>
+
+<!-- hidden template for new-taxon form (for adding taxa to OT Taxonomy) -->
+<div class="modal hide fade" id="new-taxa-popup" style="width: 640px; display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Adding new taxa
+      </h3>
+    </div>
+    <div class="modal-body">
+        <button class="help-toggle" style="display: none;">
+            Show help <i class="icon-chevron-down Xicon-white"></i>
+        </button>
+        <div class="help-box" style="display: block;">
+            <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+            </button>
+            <p>
+                Once added, these taxa will appear in the Open Tree Taxonomy
+                with the <span style="font-family: monospace; padding: 0 4px 0 2px; font-weight: bold;">from_phylogeny</span>
+                tag. They will appear in the synthetic tree, with links to your
+                curator ID, the current study <strong id="current-study-ref">TODO</strong>,
+                and any sources of evidence that you provide below.
+            </p>
+        </div>
+        <p>
+            Unmapped label 1 of 4
+            <span class="btn-group" style="position: relative; left: 5px; top: -2px;">
+                <a class="btn btn-small disabled" href="#" onclick="return false;">Previous label</a>
+                <a class="btn btn-small" href="#" onclick="return false;">Next label</a>
+            </span>
+        </p>
+        <form class="form-horizontal wider-fields" style="margin-bottom: 0px;">
+            <div class="control-group">
+                <label class="control-label" for="">Unmapped label</label>
+                <div class="controls">
+                    <div class="static-form-value"
+                         data-bind="text: 'TODO: fetch from current OTU',
+                                    attr:{'title': '' }"
+                         title="">...</div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="TODO">Modified taxon name</label>
+                <div class="controls">
+                    <input data-bind="value: 'TODO',
+                                      valueUpdate: ['afterkeydown', 'input'],
+                                      event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: validateAndTestDOI },
+                                      " type="text" id="TODO" class="input-medium" placeholder="Enter taxon name">
+                      <select style="margin-bottom: 0; width: auto;" name="TODO">
+                          <option disabled="disabled" selected="selected" value="">Choose reason for modification...</option>
+                          <option>Typo in original label</option>
+                          <option>Removing extraneous characters</option>
+                          <option>Synonym</option>
+                          <option>Other</option>
+                      </select>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="TODO">Parent taxon</label>
+                <div class="controls">
+                  <div class="static-form-value">
+                    <span data-bind="text:  fetch from current OTU',
+                                     attr:{'title': '' }"
+                          title="">???</span>
+                    <span style="font-weight: normal;">
+                        &mdash;
+                        <a href="#TODO" target="_blank">Open in OTT browser</a>
+                    </span>
+                  </div>
+                  <!-- reuse style and behavior from Metadata > Focal Clade -->
+                  <div id="parent-taxon-search-form" class="Xnavbar-search Xpull-right" autocomplete="off" style="Xdisplay: inline-block; position: relative;">
+                      <input type="text" name="parent-taxon-search" class="" style="Xwidth: 365px;"
+                          placeholder="Choose the parent taxon..." autocomplete="off">
+                      <!-- <input type="submit" style="" name="parent-taxon-search-go" value="Go" onclick="return false;"/> -->
+                      <!-- then show dropdown when results are ready... -->
+                      <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
+                      <select style="margin-bottom: 0; width: auto;" name="parent-taxon-search-context">
+                          {{ # generate our contextNames list based on newly fetched names
+                            try:
+                             for context_name in taxonSearchContextNames:
+                                if context_name == 'All life': }}
+                                  <option selected="selected" value="{{= context_name }}">{{= context_name }}</option>
+                             {{ else: }}
+                                  <option value="{{= context_name }}">{{= context_name }}</option>
+                             {{ pass }}
+                          {{ pass }}
+                          {{ except: }}
+                                  <option selected="selected">ERROR loading context values</option>
+                             {{ pass }}
+                      <!--
+                      NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted
+                      by the server, ie, there's no distinction between visible and occult values.
+                      -->
+                      </select>
+                      <div class="">
+                          <ul id="search-results" class="dropdown-menu" role="menu">
+                              ...
+                          </ul>
+                      </div>
+                  </div>
+                  <input data-bind="value: nexml['^ot:focalClade'], event: { change: nudge.GENERAL_METADATA }, css: viewModel.ticklers.GENERAL_METADATA" type="hidden" id="ot_focalClade" placeholder="">
+
+
+                </div><!-- .controls -->
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="TODO">Evidence for taxon</label>
+                <div class="controls">
+                    <select style="margin-bottom: 0; width: auto;" name="TODO">
+                        <option disabled="disabled" selected="selected" value="">Choose evidence type...</option>
+                        <option>Link to online taxonomy</option>
+                        <option>Link (DOI) to publication</option>
+                        <option>Other</option>
+                    </select>
+                    <input data-bind="value: 'TODO',
+                                      valueUpdate: ['afterkeydown', 'input'],
+                                      event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: validateAndTestDOI },
+                                      " type="text" id="TODO" class="input-large" placeholder="Enter evidence here">
+                    <br/>
+                    <label for="TODO" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
+                        <input type="checkbox" id="TODO" name="TODO"
+                               style="width: 20px;"
+                               Xonclick="TODO(); return false;"/>
+                        Copy this evidence to all labels
+                    </label>
+                </div>
+            </div>
+                    <textarea class="input-block-level" style="margin-bottom: 8px;"
+                              placeholder="Add comments or additional links to support this taxon."></textarea>
+        </form>
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-info pull-right" style="margin-left: 20px;"
+              Xonclick="$('#delete-comments-popup').modal('hide'); removeStudy(); return false;">Save and exit</button>
+      <a data-dismiss="modal" class="btn" >Cancel</a>
     </div>
 </div>
 

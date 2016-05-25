@@ -8929,3 +8929,20 @@ function addTreeToNewCollection() {
         }
     }
 }
+
+function showMappingOptions() {
+    $('#mapping-options-prompt').hide();
+    $('#mapping-options-panel').show();
+}
+function hideMappingOptions() {
+    $('#mapping-options-panel').hide();
+    $('#mapping-options-prompt').show();
+}
+
+function showNewTaxaPopup() {
+    // show details in a popup (already bound)
+    $('#new-taxa-popup').modal('show');
+}
+function hideNewTaxaPopup() {
+    $('#new-taxa-popup').modal('hide');
+}
