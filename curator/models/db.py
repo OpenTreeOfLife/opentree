@@ -213,7 +213,8 @@ class GitHubAccount(OAuthAccount):
                                 github_auth_token = access_token,
                                 #   adding more (apparently) standard web2py fields, to make this work..
                                 first_name = user_json['login'],
-                                last_name = ("(%s)" % user_json.get('name', user_json['login'])),
+                                # skip 'name' if it's None!
+                                last_name = ("(%s)" % (user_json['name'] or user_json['login'])),
                                 username = user_json['login'],
                                 #password = 'TOP-SECRET',
                                 registration_key = user_json['login'],  
