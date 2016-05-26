@@ -3256,7 +3256,7 @@ var studyScoringRules = {
                 var duplicateNodesFound = false;
                 var startTime = new Date();
                 $.each(getPreferredTrees(), function(i, tree) {
-                    // disregard sibling-only duplicates (will be resolved on the server)
+                    // disregard monophyletic duplicates (will be resolved on the server)
                     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
                     if ( !($.isEmptyObject(duplicateData)) ) {
                         duplicateNodesFound = true;
@@ -7769,7 +7769,9 @@ function getUnresolvedDuplicatesInTree( tree, options ) {
     // have't been resolved, ie, curator has not chosen an exemplar.
     var includeMonophyleticDuplicates = options && ('INCLUDE_MONOPHYLETIC' in options) ? options.INCLUDE_MONOPHYLETIC : false;
     var unresolvedDuplicates = {};
+    var startTime = new Date();
     var allDuplicates = getDuplicateNodesInTree( tree );
+    console.log(">>>>>> total elapsed to gather conflicting nodes: "+ (new Date() - startTime) +" ms");
     for (var taxonID in allDuplicates) {
         var allNodesAlreadyMarked = true; // we can disprove this from any node
         var itsMappings = allDuplicates[taxonID];
@@ -7804,10 +7806,10 @@ function getDuplicateNodesInTree( tree ) {
 
     // Pull from cached information, if any (else populate the cache)
     if (tree.taxonMappingInfo) {
-        ///console.log('!!!!! getConflictingNodesInTree (treeid='+ tree['@id'] +'...) using cached taxon-mapping info');
+        ///console.log('!!!!! getDuplicateNodesInTree (treeid='+ tree['@id'] +'...) using cached taxon-mapping info');
         return tree.taxonMappingInfo;
     }
-    ///console.log('..... getConflictingNodesInTree (treeid='+ tree['@id'] +'...) building fresh taxon-mapping info');
+    ///console.log('..... getDuplicateNodesInTree (treeid='+ tree['@id'] +'...) building fresh taxon-mapping info');
 
     var taxonMappings = { };
     $.each(tree.node, function( i, node ) {
@@ -7832,7 +7834,7 @@ function getDuplicateNodesInTree( tree ) {
     });
 
     // Gather all duplicate mappings, but mark them to distinguish trivial cases
-    // (the duplicates are siblings) from more interesting cases (there is
+    // (the duplicates are monophyletic) from more interesting cases (there is
     // ambiguity about placement of the OT taxon because duplicates in multiple
     // places in the tree)
     // N.B. Trivial duplicates will be reconciled on the server in any case, but this
@@ -7861,6 +7863,7 @@ function getDuplicateNodesInTree( tree ) {
     tree.taxonMappingInfo = duplicateNodes;
     return duplicateNodes;
 }
+
 function tipsAreMonophyletic(tipIDs, tree) {
     ///return false;
     // general fast check for monophyly in a specified tree
@@ -8021,9 +8024,8 @@ function clearTaxonExemplar( treeID, chosenNodeID, options ) {
     }
 }
 function resolveMonophyleticDuplicatesInTree(tree) {
-    // Find and resolve all simple conflicts between sibling nodes, and any
-    // others where the conflicting nodes constitute a clade. In all cases, our
-    // choice is arbitrary; we simply select the first node found as the exemplar.
+    // Find and resolve all trivial duplicates - sibling nodes mapped to same OT
+    // taxon, or other monophyletic sets - by selecting the first as the exemplar.
     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: true} );
     for (var taxonID in duplicateData) {
         var duplicateInfo = duplicateData[taxonID];

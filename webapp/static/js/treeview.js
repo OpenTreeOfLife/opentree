@@ -1036,6 +1036,7 @@ function showObjectProperties( objInfo, options ) {
                     var supportingStudyInfo = { };  // don't repeat studies under 'Supported by', but gather trees for each *then* generate output
                     // if we're still waiting on fetched study info, add a message to the properties window
                     var waitingForStudyInfo = false;
+                    var studiesWithErrors = [];
 
                     $.each( aSection.displayedProperties[dLabel], function(sourceID, sourceDetails) {
                         var metaMapValues = null;
@@ -1081,6 +1082,7 @@ function showObjectProperties( objInfo, options ) {
                             // when in doubt, just show the raw value
                             console.error("! Expecting to find moreInfo and a study (dLabel="+ dLabel +", sourceID="+ sourceID +", sourceDetails="+ sourceDetails +")");
                             waitingForStudyInfo = true;
+                            studiesWithErrors.push( metaMapValues.studyID );
                         }
                     });
 
@@ -1090,7 +1092,11 @@ function showObjectProperties( objInfo, options ) {
                     $details.find('dt.loading-supporting-studies').remove();
 
                     if (waitingForStudyInfo) {
-                        $details.append('<dt class="loading-supporting-studies">Loading supporting studies...</dt>');
+                        if (studiesWithErrors) {
+                            $details.append('<dt class="loading-supporting-studies">ERROR loading supporting study: '+ studiesWithErrors.join(',') +'</dt>');
+                        } else {
+                            $details.append('<dt class="loading-supporting-studies">Loading supporting studies...</dt>');
+                        }
                     } else {
                         // we have all the details, try to show supporting studies
                         for (studyID in supportingStudyInfo) {
