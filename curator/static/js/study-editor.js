@@ -8937,8 +8937,34 @@ function hideMappingOptions() {
     $('#mapping-options-prompt').show();
 }
 
+function getSelectedOTUs() {
+    /* This includes only visible OTUs, i.e. those in the current filtered and
+       paginated set.
+     */
+    var visibleOTUs = viewModel.filteredOTUs().pagedItems();
+    var selectedOTUs = visibleOTUs.filter(function(otu, i) {
+        return (otu['selectedForAction']) ? true : false;
+    });
+    return selectedOTUs;
+}
+
 function showNewTaxaPopup() {
-    // show details in a popup (already bound)
+    // Try to incorporate any selected labels.
+    var selectedOTUs = getSelectedOTUs();
+    // Bail if nothing is selected (must also be visible!)
+    if (selectedOTUs.length === 0) {
+        showErrorMessage('No labels chosen! Use checkboxes to choose which labels to add as new taxa.');
+        return;
+    }
+    // Warn if some labels are already mapped.
+    hideFooterMessage();
+    var alreadyMapped = selectedOTUs.filter(function(otu, i) {
+        return (otu['^ot:ottId']) ? true : false;
+    });
+    if (alreadyMapped.length > 0) {
+        showInfoMessage('Only un-mapped labels will be considered (ignoring '+ alreadyMapped.length +' already mapped)');
+    }
+    // Show and initialize the popup
     $('#new-taxa-popup').modal('show');
 }
 function hideNewTaxaPopup() {
