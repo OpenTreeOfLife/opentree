@@ -609,7 +609,6 @@ function showCollectionViewer( collection, options ) {
         var $newTreeStartButton = $popup.find('#new-collection-tree-start');
         var $newTreeCancelButton = $popup.find('#new-collection-tree-cancel');
         var $newTreeOptionsPanels = $popup.find('.new-collection-tree-options');
-        var $newTreeByIDsButton = $popup.find('#new-collection-tree-by-ids');
         var $newTreeByURLButton = $popup.find('#new-collection-tree-by-url');
         $newTreeCancelButton.hide();
         $newTreeOptionsPanels.hide();
@@ -620,8 +619,6 @@ function showCollectionViewer( collection, options ) {
             $newTreeOptionsPanels.show();
             // clear all input fields and disable buttons
             $newTreeOptionsPanels.find('input').val('');
-            $newTreeByIDsButton.attr('disabled', 'disabled')
-                .addClass('btn-info-disabled');
             $newTreeByURLButton.attr('disabled', 'disabled')
                 .addClass('btn-info-disabled');
             updateNewCollTreeUI();
@@ -753,18 +750,6 @@ function updateNewCollTreeUI() {
                              .removeClass('btn-info-disabled');
     }
 
-    // update by-ID widgets
-    var $addByIDsPanel = $('#new-collection-tree-by-ids');
-    $studyIDField = $addByIDsPanel.find('input[name=study-id]');
-    var $treeIDField = $addByIDsPanel.find('input[name=tree-id]');
-    var $submitByIDButton = $addByIDsPanel.find('button').eq(0);
-    if (($.trim($studyIDField.val()) == '') || ($.trim($treeIDField.val()) == '')) {
-        $submitByIDButton.attr('disabled', 'disabled')
-                         .addClass('btn-info-disabled');
-    } else {
-        $submitByIDButton.attr('disabled', null)
-                         .removeClass('btn-info-disabled');
-    }
     // update by-URL widgets
     var $addByURLPanel = $('#new-collection-tree-by-url');
     var $urlField = $addByURLPanel.find('input[name=tree-url]');
@@ -1118,11 +1103,6 @@ function addTreeToCollection( collection, inputType ) {
         case 'FROM_LOOKUPS':
             studyID = $.trim($('#new-collection-tree-by-lookup input[name=study-lookup-id]').val());
             treeID =  $.trim($('#new-collection-tree-by-lookup select[name=tree-lookup]').val());
-            break;
-
-        case 'FROM_IDS':
-            studyID = $.trim($('#new-collection-tree-by-ids input[name=study-id]').val());
-            treeID =  $.trim($('#new-collection-tree-by-ids input[name=tree-id]').val());
             break;
 
         case 'FROM_URL':
@@ -1633,144 +1613,6 @@ function bindStudyAndTreeLookups() {
         .bind('keyup change', setStudyLookupFuse )
         .unbind('keydown')
         .bind('keydown', function(e) { return e.which !== 13; });
-
-    /*
-    // maintain a persistent array to preserve pagination (reset when computed)
-    viewModel._filteredStudies = ko.observableArray( ).asPaged(20);
-    viewModel.filteredStudies = ko.computed(function() {
-        // filter raw tree list, returning a
-        // new paged observableArray
-        updateClearSearchWidget( '#study-list-filter', viewModel.listFilters.STUDIES.match );
-        updateListFiltersWithHistory();
-
-        var match = viewModel.listFilters.STUDIES.match(),
-            matchPattern = new RegExp( $.trim(match), 'i' ),
-            wholeWordMatchPattern = new RegExp( '\\b'+ $.trim(match) +'\\b', 'i' );
-        var workflow = viewModel.listFilters.STUDIES.workflow();
-        var order = viewModel.listFilters.STUDIES.order();
-
-        // map old array to new and return it
-        var filteredList = ko.utils.arrayFilter(
-            viewModel,
-            function(study) {
-                // match entered text against pub reference (author, title, journal name, DOI)
-                var studyID = study['ot:studyId'];
-                var pubReference = study['ot:studyPublicationReference'];
-                var pubURL = study['ot:studyPublication'];
-                var pubYear = study['ot:studyYear'];
-                var tags = $.isArray(study['ot:tag']) ? study['ot:tag'].join('|') : study['ot:tag'];
-                var curator = study['ot:curatorName'];
-                var clade = ('ot:focalCladeOTTTaxonName' in study &&
-                             ($.trim(study['ot:focalCladeOTTTaxonName']) !== "")) ?
-                                study['ot:focalCladeOTTTaxonName'] :  // use mapped name if found
-                                study['ot:focalClade']; // fall back to numeric ID (should be very rare)
-                if (!wholeWordMatchPattern.test(studyID) && !matchPattern.test(pubReference) && !matchPattern.test(pubURL) && !matchPattern.test(pubYear) && !matchPattern.test(curator) && !matchPattern.test(tags) && !matchPattern.test(clade)) {
-                    return false;
-                }
-                // check for filtered workflow state
-                switch (workflow) {
-                    case 'Any workflow state':
-                        // nothing to do here, all studies pass
-                        break;
-
-                    case 'Draft study':
-                    case 'Submitted for synthesis':
-                    case 'Under revision':
-                    case 'Included in synthetic tree':
-                        // show only matching studies
-                        if (study.workflowState !== workflow) {
-                            return false; // stop looping on trees
-                        }
-                        break;
-
-                    default:
-                        console.log("Unexpected workflow for study list: ["+ workflow +"]");
-                        return false;
-                }
-
-                return true;
-            }
-        );  // END of list filtering
-
-        // apply selected sort order
-        switch(order) {
-             * REMINDER: in sort functions, results are as follows:
-             *  -1 = a comes before b
-             *   0 = no change
-             *   1 = b comes before a
-             *
-            case 'Newest publication first':
-                filteredList.sort(function(a,b) {
-                    if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
-                    return (a['ot:studyYear'] > b['ot:studyYear'])? -1 : 1;
-                });
-                break;
-
-            case 'Oldest publication first':
-                filteredList.sort(function(a,b) {
-                    if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
-                    return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
-                });
-                break;
-
-            case 'Sort by primary author':
-                filteredList.sort(function(a,b) {
-                    var aRef = $.trim(a['ot:studyPublicationReference']);
-                    var bRef = $.trim(b['ot:studyPublicationReference']);
-                    if (aRef.localeCompare) {
-                        return aRef.localeCompare(bRef);
-                    }
-                    // fallback do dumb alpha-sort on older browsers
-                    if (aRef === bRef) return 0;
-                    return (aRef > bRef) ? 1 : -1;
-                });
-                break;
-
-            case 'Sort by primary author (reversed)':
-                filteredList.sort(function(a,b) {
-                    var bRef = $.trim(b['ot:studyPublicationReference']);
-                    var aRef = $.trim(a['ot:studyPublicationReference']);
-                    if (bRef.localeCompare) {
-                        return bRef.localeCompare(aRef);
-                    }
-                    // fallback do dumb alpha-sort on older browsers
-                    if (aRef === bRef) return 0;
-                    return (aRef < bRef) ? 1 : -1;
-                });
-                break;
-
-            case 'Workflow state':
-                var displayOrder = {
-                    'Draft study': 1,
-                    'Submitted for synthesis': 2,
-                    'Under revision': 3,
-                    'Included in synthetic tree': 4
-                };
-                filteredList.sort(function(a,b) {
-                    var aDisplayOrder = displayOrder[ a.workflowState ];
-                    var bDisplayOrder = displayOrder[ b.workflowState ];
-                    if (aDisplayOrder === bDisplayOrder) return 0;
-                    return (aDisplayOrder < bDisplayOrder) ? -1 : 1;
-                });
-                break;
-
-            case 'Completeness':
-                filteredList.sort(function(a,b) {
-                    if (a.completeness === b.completeness) return 0;
-                    return (a.completeness < b.completeness) ? -1 : 1;
-                });
-                break;
-
-            default:
-                console.log("Unexpected order for OTU list: ["+ order +"]");
-                return false;
-
-        }
-        viewModel._filteredStudies( filteredList );
-        viewModel._filteredStudies.goToPage(1);
-        return viewModel._filteredStudies;
-    }); // END of filteredStudies
-    */
 
     // enable "Add tree" button once list has loaded
     $newTreeStartButton.attr('disabled', null)
