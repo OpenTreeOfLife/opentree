@@ -916,32 +916,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                       <i class="icon-plus icon-white"></i>
                 </button>
             </div>
-            <div id="new-collection-tree-by-ids"
-                 class="new-collection-tree-options" style="display: none; padding-left: 12px;">
-                <label>&hellip; by study ID</label>
-                <input type="text" name="study-id"
-                    class="input-small" style="margin-bottom: 2px;"
-                    placeholder="ot_123"
-                    data-bind="value: '',
-                               valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
-                               "
-                ></input>
-                <label>and tree ID</label>
-                <input type="text" name="tree-id"
-                    class="input-small" style="margin-bottom: 2px;"
-                    placeholder="tree456"
-                    data-bind="value: '',
-                               valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
-                               "
-                ></input>
-                <button class="btn btn-info"
-                        data-bind="click: function() {addTreeToCollection($data, 'FROM_IDS'); return false;}"
-                >
-                      <i class="icon-plus icon-white"></i>
-                </button>
-            </div>
             <div id="new-collection-tree-by-url"
                  class="new-collection-tree-options" style="display: none; padding-left: 12px;">
                 <label>&hellip; by URL</label>

@@ -609,7 +609,6 @@ function showCollectionViewer( collection, options ) {
         var $newTreeStartButton = $popup.find('#new-collection-tree-start');
         var $newTreeCancelButton = $popup.find('#new-collection-tree-cancel');
         var $newTreeOptionsPanels = $popup.find('.new-collection-tree-options');
-        var $newTreeByIDsButton = $popup.find('#new-collection-tree-by-ids');
         var $newTreeByURLButton = $popup.find('#new-collection-tree-by-url');
         $newTreeCancelButton.hide();
         $newTreeOptionsPanels.hide();
@@ -620,8 +619,6 @@ function showCollectionViewer( collection, options ) {
             $newTreeOptionsPanels.show();
             // clear all input fields and disable buttons
             $newTreeOptionsPanels.find('input').val('');
-            $newTreeByIDsButton.attr('disabled', 'disabled')
-                .addClass('btn-info-disabled');
             $newTreeByURLButton.attr('disabled', 'disabled')
                 .addClass('btn-info-disabled');
             updateNewCollTreeUI();
@@ -753,18 +750,6 @@ function updateNewCollTreeUI() {
                              .removeClass('btn-info-disabled');
     }
 
-    // update by-ID widgets
-    var $addByIDsPanel = $('#new-collection-tree-by-ids');
-    $studyIDField = $addByIDsPanel.find('input[name=study-id]');
-    var $treeIDField = $addByIDsPanel.find('input[name=tree-id]');
-    var $submitByIDButton = $addByIDsPanel.find('button').eq(0);
-    if (($.trim($studyIDField.val()) == '') || ($.trim($treeIDField.val()) == '')) {
-        $submitByIDButton.attr('disabled', 'disabled')
-                         .addClass('btn-info-disabled');
-    } else {
-        $submitByIDButton.attr('disabled', null)
-                         .removeClass('btn-info-disabled');
-    }
     // update by-URL widgets
     var $addByURLPanel = $('#new-collection-tree-by-url');
     var $urlField = $addByURLPanel.find('input[name=tree-url]');
@@ -1118,11 +1103,6 @@ function addTreeToCollection( collection, inputType ) {
         case 'FROM_LOOKUPS':
             studyID = $.trim($('#new-collection-tree-by-lookup input[name=study-lookup-id]').val());
             treeID =  $.trim($('#new-collection-tree-by-lookup select[name=tree-lookup]').val());
-            break;
-
-        case 'FROM_IDS':
-            studyID = $.trim($('#new-collection-tree-by-ids input[name=study-id]').val());
-            treeID =  $.trim($('#new-collection-tree-by-ids input[name=tree-id]').val());
             break;
 
         case 'FROM_URL':
