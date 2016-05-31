@@ -8937,6 +8937,10 @@ function hideMappingOptions() {
     $('#mapping-options-prompt').show();
 }
 
+/* A few global vars for the add-new-taxa popup */
+var candidateOTUsForNewTaxa = [ ];
+var currentTaxonCandidate = null;
+
 function getSelectedOTUs() {
     /* This includes only visible OTUs, i.e. those in the current filtered and
        paginated set.
@@ -8956,17 +8960,26 @@ function showNewTaxaPopup() {
         showErrorMessage('No labels chosen! Use checkboxes to choose which labels to add as new taxa.');
         return;
     }
-    // Warn if some labels are already mapped.
-    hideFooterMessage();
-    var alreadyMapped = selectedOTUs.filter(function(otu, i) {
-        return (otu['^ot:ottId']) ? true : false;
+    // (Re)build the persistant list of candidates
+    candidateOTUsForNewTaxa = selectedOTUs.filter(function(otu, i) {
+        return (otu['^ot:ottId']) ? false : true;
     });
-    if (alreadyMapped.length > 0) {
-        showInfoMessage('Only un-mapped labels will be considered (ignoring '+ alreadyMapped.length +' already mapped)');
+    // Warn if some (or all) chosen labels are already mapped!
+    hideFooterMessage();
+    if (candidateOTUsForNewTaxa.length === 0) {
+        showErrorMessage('All chosen labels have already been mapped! Use checkboxes to add more.');
+        return;
+    }
+    var alreadyMapped = selectedOTUs.length - candidateOTUsForNewTaxa.length;
+    if (alreadyMapped > 0) {
+        showInfoMessage('Only un-mapped labels will be considered (ignoring '+ alreadyMapped +' already mapped)');
     }
     // Show and initialize the popup
+    currentTaxonCandidate = candidateOTUsForNewTaxa[0];
     $('#new-taxa-popup').modal('show');
 }
 function hideNewTaxaPopup() {
     $('#new-taxa-popup').modal('hide');
+    // TODO: clear/reset all popup widgets?
 }
+
