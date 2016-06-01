@@ -2286,17 +2286,17 @@ body {
             </p>
         </div>
         <p>
-            Unmapped label 1 of 4
+            Unmapped label <span class="nth-label">-</span> of <span class="total-labels">-</span>
             <span class="btn-group" style="position: relative; left: 5px; top: -2px;">
-                <a class="btn btn-small disabled" href="#" onclick="return false;">Previous label</a>
-                <a class="btn btn-small" href="#" onclick="return false;">Next label</a>
+                <a class="btn btn-small prev-button disabled" href="#" onclick="return false;">Previous label</a>
+                <a class="btn btn-small next-button" href="#" onclick="return false;">Next label</a>
             </span>
         </p>
         <form class="form-horizontal wider-fields" style="margin-bottom: 0px;">
             <div class="control-group">
                 <label class="control-label" for="">Unmapped label</label>
                 <div class="controls">
-                    <div class="static-form-value"
+                    <div class="static-form-value unmapped-label"
                          data-bind="text: 'TODO: fetch from current OTU',
                                     attr:{'title': '' }"
                          title="">...</div>
@@ -2308,14 +2308,16 @@ body {
                     <input data-bind="value: 'TODO',
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: validateAndTestDOI },
-                                      " type="text" id="TODO" class="input-medium" placeholder="Enter taxon name">
-                      <select style="margin-bottom: 0; width: auto;" name="TODO">
-                          <option disabled="disabled" selected="selected" value="">Choose reason for modification...</option>
-                          <option>Typo in original label</option>
-                          <option>Removing extraneous characters</option>
-                          <option>Synonym</option>
-                          <option>Other</option>
-                      </select>
+                                      " type="text" id="TODO" class="input-medium modified-name" placeholder="Enter the preferred name here">
+
+                    <br/>
+                    <select style="margin-bottom: 0; width: auto;" name="modified-name-reason">
+                        <option disabled="disabled" selected="selected" value="">Choose reason for modification...</option>
+                        <option>Typo in original label</option>
+                        <option>Removing extraneous characters</option>
+                        <option>Synonym</option>
+                        <option>Other</option>
+                    </select>
                 </div>
             </div>
             <div class="control-group">
@@ -2324,10 +2326,11 @@ body {
                   <div class="static-form-value">
                     <span data-bind="text:  fetch from current OTU',
                                      attr:{'title': '' }"
+                          class="parent-taxon"
                           title="">???</span>
                     <span style="font-weight: normal;">
                         &mdash;
-                        <a href="#TODO" target="_blank">Open in OTT browser</a>
+                        <a href="#TODO" target="_blank" class="parent-taxon-browse-link">Open in OTT browser</a>
                     </span>
                   </div>
                   <!-- reuse style and behavior from Metadata > Focal Clade -->

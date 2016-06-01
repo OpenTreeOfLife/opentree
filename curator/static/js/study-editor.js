@@ -2298,6 +2298,7 @@ function scrubNexsonForTransport( nexml ) {
     var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
     $.each( allOTUs, function(i, otu) {
         delete otu['selectedForAction'];  // only used in the curation app
+        delete otu['newTaxonMetadata'];
         if ('^ot:altLabel' in otu) {
             var ottId = $.trim(otu['^ot:ottId']);
             if (ottId !== '') {
@@ -8951,6 +8952,99 @@ function getSelectedOTUs() {
     });
     return selectedOTUs;
 }
+function moveToNthTaxonCandidate( pos ) {
+    // move to the n-th otu
+    currentTaxonCandidate = candidateOTUsForNewTaxa[ pos ];
+    if (!currentTaxonCandidate) {
+        console.error("moveToNthTaxonCandidate() - no such candidate OTU!");
+        return;
+    }
+    // add new-taxon metadata, if not found (stored only during this curation session!)
+    if (!('newTaxonMetadata' in currentTaxonCandidate)) {
+        currentTaxonCandidate.newTaxonMetadata = {
+            'modifiedName': currentTaxonCandidate['^ot:originalLabel'],
+            'modifiedNameReason': '',
+            'parentTaxonName': '',
+            'parentTaxonSearchContext': 'All life',
+            'evidenceType': '',
+            'evidence': '',
+            'comments': ''
+        };
+    }
+    refreshTaxonCandidateWidgets();
+    // TODO Update all fields
+}
+function refreshTaxonCandidateWidgets() {
+    // Buttons should reflect the current selected candidate (OTU)
+    var otuCount = candidateOTUsForNewTaxa.length;
+    var chosenPosition = $.inArray(currentTaxonCandidate, candidateOTUsForNewTaxa);
+    if (chosenPosition === -1) {
+        console.error("refreshTaxonCandidateWidgets() - current candidate not in list!");
+        return;
+    }
+    var $popup = $('#new-taxa-popup');
+    var $previousButton = $popup.find('.prev-button');
+    $previousButton.unbind('click');
+    if (chosenPosition === 0) {
+        $previousButton.addClass('disabled');
+    } else {
+        $previousButton.removeClass('disabled');
+        $previousButton.bind('click', function() {
+            moveToNthTaxonCandidate(chosenPosition - 1);
+        });
+    }
+    var $nextButton = $popup.find('.next-button');
+    $nextButton.unbind('click');
+    if (chosenPosition === (otuCount - 1)) {
+        $nextButton.addClass('disabled');
+    } else {
+        $nextButton.removeClass('disabled');
+        $nextButton.bind('click', function() {
+            moveToNthTaxonCandidate(chosenPosition + 1);
+        });
+    }
+    // Update all fields and widgets below
+    var metadata = currentTaxonCandidate.newTaxonMetadata;
+    var $nthLabelIndicator = $popup.find('.nth-label');
+    $nthLabelIndicator.text(chosenPosition + 1);
+    var $totalLabelsIndicator = $popup.find('.total-labels');
+    $totalLabelsIndicator.text(otuCount);
+    var $unmappedLabelIndicator = $popup.find('.unmapped-label');
+    $unmappedLabelIndicator.html(currentTaxonCandidate['^ot:originalLabel']);
+    var $modifiedNameField = $popup.find('[name=modified-name]');
+    $modifiedNameField.val(metadata.modifiedName);
+    var $modifiedNameReasonSelector = $popup.find('[name=modified-name-reason]');
+    $modifiedNameReasonSelector.val(metadata.modifiedNameReason);
+    var $parentTaxonIndicator = $popup.find('.parent-taxon');
+    $parentTaxonIndicator.html(metadata.parentTaxonName);
+    var $parentTaxonLookup = $popup.find('[name=parent-taxon-search]');
+    $parentTaxonLookup.val('');
+    var $parentTaxonSearchContextSelector = $popup.find('[name=parent-context-selector]');
+    // Keep any previous "interesting" selection for parent search context
+    if (metadata.parentTaxonSearchContext !== 'All life') {
+        $parentTaxonSearchContextSelector.val(metadata.parentTaxonSearchContext);
+    }
+    var $parentTaxonBrowseLink = $popup.find('.parent-taxon-browse-link');
+    var parentTaxonName = $parentTaxonLookup.val();
+    if (parentTaxonName !== '') {
+        $parentTaxonBrowseLink.attr('href', "/taxonomy/browse?name="+ parentTaxonName);
+        $parentTaxonBrowseLink.show();
+    } else {
+        $parentTaxonBrowseLink.hide();
+    }
+    var $evidenceTypeSelector = $popup.find('[name=evidence-type-selector]');
+    $evidenceTypeSelector.val(metadata.evidenceType);
+    var $evidenceField = $popup.find('[name=evidence]');
+    $evidenceField.val(metadata.evidence);
+    var $copyToAllLabelsCheckbox = $popup.find('[name=copy-to-all-labels]');
+    var $commentsField = $popup.find('[name=comments]');
+    $commentsField.val(metadata.comments)
+}
+function clearAllTaxonCandidates() {
+    // Clear all vars related to the new-taxa popup
+    candidateOTUsForNewTaxa = [ ];
+    currentTaxonCandidate = null;
+}
 
 function showNewTaxaPopup() {
     // Try to incorporate any selected labels.
@@ -8975,11 +9069,12 @@ function showNewTaxaPopup() {
         showInfoMessage('Only un-mapped labels will be considered (ignoring '+ alreadyMapped +' already mapped)');
     }
     // Show and initialize the popup
-    currentTaxonCandidate = candidateOTUsForNewTaxa[0];
     $('#new-taxa-popup').modal('show');
+    moveToNthTaxonCandidate( 0 );
 }
 function hideNewTaxaPopup() {
     $('#new-taxa-popup').modal('hide');
-    // TODO: clear/reset all popup widgets?
+    clearAllTaxonCandidates();
+    // TODO clear/reset all popup widgets?
 }
 
