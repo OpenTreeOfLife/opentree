@@ -2384,10 +2384,11 @@ body {
 
                 <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:time'" >
                     <label style="margin-left: 10px;">Time unit: </label>
-                    <select data-bind="options: ['Myr'],
-                        value: $data['^ot:branchLengthTimeUnit'],
-                        event: { keyup: nudge.TREES, change: nudge.TREES },
-                        css: viewModel.ticklers.TREES
+                    <select data-bind="options: ['Myr'], 
+                                       optionsCaption: 'Choose a unit of time...',
+                                       value: $data['^ot:branchLengthTimeUnit'],
+                                       event: { keyup: nudge.TREES, change: nudge.TREES },
+                                       css: viewModel.ticklers.TREES
                         ">TYPE</select>
                 </span>
 
