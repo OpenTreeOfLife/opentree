@@ -130,7 +130,9 @@ $(document).ready(function() {
         History.replaceState(initialState, window.document.title, window.location.href);
     }
 
-    /* Extract collection ID from URL, which could look like any of these patterns:
+    /* Extract collection ID (if any) from URL, which could look like any of these patterns:
+     *   /curator/collections/
+     *   /curator/collections
      *   /curator/collections/jimallman/newtest-3
      *   /curator/collections/jimallman/newtest-3#foo
      *   /curator/collections/jimallman/newtest-3/
@@ -141,7 +143,7 @@ $(document).ready(function() {
      *   /curator/collections/jimallman/newtest-3/?match=micro#foo
      * N.B. So far, hashes don't seem to matter much here.
      */
-    var trailingPath = window.location.pathname.split('/collections/')[1];
+    var trailingPath = window.location.pathname.split( RegExp('/collections/?') )[1];
     // strip final slash, if any
     trailingPath = trailingPath.split(/\/$/)[0];
     // check for a valid collection ID, in the form '{user-id}/{collection-id}'
