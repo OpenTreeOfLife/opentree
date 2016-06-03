@@ -8953,12 +8953,14 @@ function getSelectedOTUs() {
     return selectedOTUs;
 }
 function moveToNthTaxonCandidate( pos ) {
-    // move to the n-th otu
-    currentTaxonCandidate = candidateOTUsForNewTaxa[ pos ];
-    if (!currentTaxonCandidate) {
-        console.error("moveToNthTaxonCandidate() - no such candidate OTU!");
+    // look before we leap!
+    var testCandidate = candidateOTUsForNewTaxa[ pos ];
+    if (!testCandidate) {
+        console.error("moveToNthTaxonCandidate("+ pos +") - no such candidate OTU!");
         return;
     }
+    // move to the n-th otu
+    currentTaxonCandidate = testCandidate;
     // add new-taxon metadata, if not found (stored only during this curation session!)
     if (!('newTaxonMetadata' in currentTaxonCandidate)) {
         currentTaxonCandidate.newTaxonMetadata = {
@@ -8971,13 +8973,40 @@ function moveToNthTaxonCandidate( pos ) {
             'comments': ''
         };
     }
-    refreshTaxonCandidateWidgets();
-    // TODO Update all fields
+
+    // Bind just the selected candidate to the editing UI
+    // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
+    var $boundElements = $('#new-taxa-popup').find('.modal-body');
+    // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
+    $.each($boundElements, function(i, el) {
+        ko.cleanNode(el);
+        ko.applyBindings(currentTaxonCandidate, el);
+    });
+}
+function moveToNextTaxonCandidate() {
+    var chosenPosition = getCurrentTaxonCandidatePosition();
+    if (chosenPosition >= (candidateOTUsForNewTaxa.length - 1)) {
+        return; // this will only cause trouble
+    }
+    moveToNthTaxonCandidate(chosenPosition + 1);
+}
+function moveToPreviousTaxonCandidate() {
+    var chosenPosition = getCurrentTaxonCandidatePosition();
+    if (chosenPosition < 1) {
+        return; // this will only cause trouble
+    }
+    moveToNthTaxonCandidate(chosenPosition - 1);
+}
+function getCurrentTaxonCandidatePosition() {
+    var chosenPosition = $.inArray(currentTaxonCandidate, candidateOTUsForNewTaxa);
+    return chosenPosition;
 }
 function refreshTaxonCandidateWidgets() {
+return; // UNUSED!
     // Buttons should reflect the current selected candidate (OTU)
+    /* 
     var otuCount = candidateOTUsForNewTaxa.length;
-    var chosenPosition = $.inArray(currentTaxonCandidate, candidateOTUsForNewTaxa);
+    var chosenPosition = getCurrentTaxonCandidatePosition();
     if (chosenPosition === -1) {
         console.error("refreshTaxonCandidateWidgets() - current candidate not in list!");
         return;
@@ -9004,14 +9033,18 @@ function refreshTaxonCandidateWidgets() {
         });
     }
     // Update all fields and widgets below
-    var metadata = currentTaxonCandidate.newTaxonMetadata;
     var $nthLabelIndicator = $popup.find('.nth-label');
     $nthLabelIndicator.text(chosenPosition + 1);
     var $totalLabelsIndicator = $popup.find('.total-labels');
     $totalLabelsIndicator.text(otuCount);
+    */
+
+    /* Other widgets MOVED to our typical Knockout bindings
     var $unmappedLabelIndicator = $popup.find('.unmapped-label');
     $unmappedLabelIndicator.html(currentTaxonCandidate['^ot:originalLabel']);
-    var $modifiedNameField = $popup.find('[name=modified-name]');
+    var $modifiedNameField = $popup.find('.modified-name');
+
+    var metadata = currentTaxonCandidate.newTaxonMetadata;
     $modifiedNameField.val(metadata.modifiedName);
     var $modifiedNameReasonSelector = $popup.find('[name=modified-name-reason]');
     $modifiedNameReasonSelector.val(metadata.modifiedNameReason);
@@ -9039,6 +9072,7 @@ function refreshTaxonCandidateWidgets() {
     var $copyToAllLabelsCheckbox = $popup.find('[name=copy-to-all-labels]');
     var $commentsField = $popup.find('[name=comments]');
     $commentsField.val(metadata.comments)
+    */
 }
 function clearAllTaxonCandidates() {
     // Clear all vars related to the new-taxa popup
@@ -9048,6 +9082,7 @@ function clearAllTaxonCandidates() {
 
 function showNewTaxaPopup() {
     // Try to incorporate any selected labels.
+    //$stashedCollectionViewerTemplate
     var selectedOTUs = getSelectedOTUs();
     // Bail if nothing is selected (must also be visible!)
     if (selectedOTUs.length === 0) {
@@ -9068,9 +9103,10 @@ function showNewTaxaPopup() {
     if (alreadyMapped > 0) {
         showInfoMessage('Only un-mapped labels will be considered (ignoring '+ alreadyMapped +' already mapped)');
     }
+    
+    moveToNthTaxonCandidate( 0 );
     // Show and initialize the popup
     $('#new-taxa-popup').modal('show');
-    moveToNthTaxonCandidate( 0 );
 }
 function hideNewTaxaPopup() {
     $('#new-taxa-popup').modal('hide');
