@@ -2298,6 +2298,7 @@ function scrubNexsonForTransport( nexml ) {
     var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
     $.each( allOTUs, function(i, otu) {
         delete otu['selectedForAction'];  // only used in the curation app
+        delete otu['newTaxonMetadata'];
         if ('^ot:altLabel' in otu) {
             var ottId = $.trim(otu['^ot:ottId']);
             if (ottId !== '') {
@@ -8939,10 +8940,179 @@ function hideMappingOptions() {
     $('#mapping-options-prompt').show();
 }
 
+/* A few global vars for the add-new-taxa popup */
+var candidateOTUsForNewTaxa = [ ];
+var currentTaxonCandidate = null;
+
+function getSelectedOTUs() {
+    /* This includes only visible OTUs, i.e. those in the current filtered and
+       paginated set.
+     */
+    var visibleOTUs = viewModel.filteredOTUs().pagedItems();
+    var selectedOTUs = visibleOTUs.filter(function(otu, i) {
+        return (otu['selectedForAction']) ? true : false;
+    });
+    return selectedOTUs;
+}
+function moveToNthTaxonCandidate( pos ) {
+    // look before we leap!
+    var testCandidate = candidateOTUsForNewTaxa[ pos ];
+    if (!testCandidate) {
+        console.error("moveToNthTaxonCandidate("+ pos +") - no such candidate OTU!");
+        return;
+    }
+    // move to the n-th otu
+    currentTaxonCandidate = testCandidate;
+    // add new-taxon metadata, if not found (stored only during this curation session!)
+    if (!('newTaxonMetadata' in currentTaxonCandidate)) {
+        currentTaxonCandidate.newTaxonMetadata = {
+            'modifiedName': currentTaxonCandidate['^ot:originalLabel'],
+            'modifiedNameReason': '',
+            'parentTaxonName': '',
+            'parentTaxonSearchContext': 'All life',
+            'evidenceType': '',
+            'evidence': '',
+            'comments': ''
+        };
+    }
+
+    // Bind just the selected candidate to the editing UI
+    // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
+    var $boundElements = $('#new-taxa-popup').find('.modal-body');
+    // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
+    $.each($boundElements, function(i, el) {
+        ko.cleanNode(el);
+        ko.applyBindings(currentTaxonCandidate, el);
+    });
+}
+function moveToNextTaxonCandidate() {
+    var chosenPosition = getCurrentTaxonCandidatePosition();
+    if (chosenPosition >= (candidateOTUsForNewTaxa.length - 1)) {
+        return; // this will only cause trouble
+    }
+    moveToNthTaxonCandidate(chosenPosition + 1);
+}
+function moveToPreviousTaxonCandidate() {
+    var chosenPosition = getCurrentTaxonCandidatePosition();
+    if (chosenPosition < 1) {
+        return; // this will only cause trouble
+    }
+    moveToNthTaxonCandidate(chosenPosition - 1);
+}
+function getCurrentTaxonCandidatePosition() {
+    var chosenPosition = $.inArray(currentTaxonCandidate, candidateOTUsForNewTaxa);
+    return chosenPosition;
+}
+function refreshTaxonCandidateWidgets() {
+return; // UNUSED!
+    // Buttons should reflect the current selected candidate (OTU)
+    /* 
+    var otuCount = candidateOTUsForNewTaxa.length;
+    var chosenPosition = getCurrentTaxonCandidatePosition();
+    if (chosenPosition === -1) {
+        console.error("refreshTaxonCandidateWidgets() - current candidate not in list!");
+        return;
+    }
+    var $popup = $('#new-taxa-popup');
+    var $previousButton = $popup.find('.prev-button');
+    $previousButton.unbind('click');
+    if (chosenPosition === 0) {
+        $previousButton.addClass('disabled');
+    } else {
+        $previousButton.removeClass('disabled');
+        $previousButton.bind('click', function() {
+            moveToNthTaxonCandidate(chosenPosition - 1);
+        });
+    }
+    var $nextButton = $popup.find('.next-button');
+    $nextButton.unbind('click');
+    if (chosenPosition === (otuCount - 1)) {
+        $nextButton.addClass('disabled');
+    } else {
+        $nextButton.removeClass('disabled');
+        $nextButton.bind('click', function() {
+            moveToNthTaxonCandidate(chosenPosition + 1);
+        });
+    }
+    // Update all fields and widgets below
+    var $nthLabelIndicator = $popup.find('.nth-label');
+    $nthLabelIndicator.text(chosenPosition + 1);
+    var $totalLabelsIndicator = $popup.find('.total-labels');
+    $totalLabelsIndicator.text(otuCount);
+    */
+
+    /* Other widgets MOVED to our typical Knockout bindings
+    var $unmappedLabelIndicator = $popup.find('.unmapped-label');
+    $unmappedLabelIndicator.html(currentTaxonCandidate['^ot:originalLabel']);
+    var $modifiedNameField = $popup.find('.modified-name');
+
+    var metadata = currentTaxonCandidate.newTaxonMetadata;
+    $modifiedNameField.val(metadata.modifiedName);
+    var $modifiedNameReasonSelector = $popup.find('[name=modified-name-reason]');
+    $modifiedNameReasonSelector.val(metadata.modifiedNameReason);
+    var $parentTaxonIndicator = $popup.find('.parent-taxon');
+    $parentTaxonIndicator.html(metadata.parentTaxonName);
+    var $parentTaxonLookup = $popup.find('[name=parent-taxon-search]');
+    $parentTaxonLookup.val('');
+    var $parentTaxonSearchContextSelector = $popup.find('[name=parent-context-selector]');
+    // Keep any previous "interesting" selection for parent search context
+    if (metadata.parentTaxonSearchContext !== 'All life') {
+        $parentTaxonSearchContextSelector.val(metadata.parentTaxonSearchContext);
+    }
+    var $parentTaxonBrowseLink = $popup.find('.parent-taxon-browse-link');
+    var parentTaxonName = $parentTaxonLookup.val();
+    if (parentTaxonName !== '') {
+        $parentTaxonBrowseLink.attr('href', "/taxonomy/browse?name="+ parentTaxonName);
+        $parentTaxonBrowseLink.show();
+    } else {
+        $parentTaxonBrowseLink.hide();
+    }
+    var $evidenceTypeSelector = $popup.find('[name=evidence-type-selector]');
+    $evidenceTypeSelector.val(metadata.evidenceType);
+    var $evidenceField = $popup.find('[name=evidence]');
+    $evidenceField.val(metadata.evidence);
+    var $copyToAllLabelsCheckbox = $popup.find('[name=copy-to-all-labels]');
+    var $commentsField = $popup.find('[name=comments]');
+    $commentsField.val(metadata.comments)
+    */
+}
+function clearAllTaxonCandidates() {
+    // Clear all vars related to the new-taxa popup
+    candidateOTUsForNewTaxa = [ ];
+    currentTaxonCandidate = null;
+}
+
 function showNewTaxaPopup() {
-    // show details in a popup (already bound)
+    // Try to incorporate any selected labels.
+    //$stashedCollectionViewerTemplate
+    var selectedOTUs = getSelectedOTUs();
+    // Bail if nothing is selected (must also be visible!)
+    if (selectedOTUs.length === 0) {
+        showErrorMessage('No labels chosen! Use checkboxes to choose which labels to add as new taxa.');
+        return;
+    }
+    // (Re)build the persistant list of candidates
+    candidateOTUsForNewTaxa = selectedOTUs.filter(function(otu, i) {
+        return (otu['^ot:ottId']) ? false : true;
+    });
+    // Warn if some (or all) chosen labels are already mapped!
+    hideFooterMessage();
+    if (candidateOTUsForNewTaxa.length === 0) {
+        showErrorMessage('All chosen labels have already been mapped! Use checkboxes to add more.');
+        return;
+    }
+    var alreadyMapped = selectedOTUs.length - candidateOTUsForNewTaxa.length;
+    if (alreadyMapped > 0) {
+        showInfoMessage('Only un-mapped labels will be considered (ignoring '+ alreadyMapped +' already mapped)');
+    }
+    
+    moveToNthTaxonCandidate( 0 );
+    // Show and initialize the popup
     $('#new-taxa-popup').modal('show');
 }
 function hideNewTaxaPopup() {
     $('#new-taxa-popup').modal('hide');
+    clearAllTaxonCandidates();
+    // TODO clear/reset all popup widgets?
 }
+
