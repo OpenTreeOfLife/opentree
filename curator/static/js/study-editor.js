@@ -9111,10 +9111,18 @@ function showNewTaxaPopup() {
     moveToNthTaxonCandidate( 0 );
     // Show and initialize the popup
     $('#new-taxa-popup').modal('show');
+
+    // Block any method of closing this window if there is unsaved work
+    $('#new-taxa-popup').off('hide').on('hide', function () {
+        if (currentTaxonCandidate || candidateOTUsForNewTaxa.length > 0) {
+            alert("Please submit (or cancel) your proposed taxa!");
+            return false;
+        }
+    });
 }
 function hideNewTaxaPopup() {
-    $('#new-taxa-popup').modal('hide');
     clearAllTaxonCandidates();
+    $('#new-taxa-popup').modal('hide');
     // TODO clear/reset all popup widgets?
 }
 
