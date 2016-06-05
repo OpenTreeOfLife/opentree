@@ -2010,6 +2010,9 @@ body {
     var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
     var treeConflictStatus_url = "{{=treeConflictStatus_url}}";
+
+    var mintNewOTTids_url =  "{{=mintNewOTTids_url}}";
+    var submitNewTaxa_url = "{{=submitNewTaxa_url}}";
 </script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
 
@@ -2329,9 +2332,35 @@ body {
                                    event: { keyup: null, change: null },
                                    options: ['Typo in original label',
                                              'Removing extraneous characters',
+                                             'Taxon subsequently published under this name',
                                              'Synonym',
                                              'Other (explain below)'],
                                    optionsCaption: 'Choose reason for modification...'
+                                   ">
+                    </select>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="TODO">Taxonomic rank</label>
+                <div class="controls">
+                    <select style="margin-bottom: 0; width: auto;" 
+                        data-bind="value: $data.newTaxonMetadata.rank,
+                                   event: { keyup: null, change: null },
+                                   options: [  'Subspecies',
+                                             'Species',
+                                               'Subgenus',
+                                             'Genus',
+                                               'Subtribe',
+                                               'Tribe',
+                                               'Subfamily',
+                                             'Family',
+                                               'Superfamily',
+                                             'Order',
+                                             'Class',
+                                             'Phylum',
+                                             'Kingdom',
+                                             'Domain'
+                                             ]
                                    ">
                     </select>
                 </div>
@@ -2426,7 +2455,7 @@ body {
     </div>
     <div class="modal-footer">
       <button class="btn btn-info pull-right" style="margin-left: 20px;"
-              Xonclick="$('#delete-comments-popup').modal('hide'); removeStudy(); return false;">Save and exit</button>
+              onclick="submitNewTaxa(); return false;">Save and exit</button>
       <a data-dismiss="modal" class="btn" >Cancel</a>
     </div>
 </div>

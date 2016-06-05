@@ -56,6 +56,8 @@ var API_load_file_GET_url;
 var API_update_file_PUT_url;
 var API_remove_file_DELETE_url;
 var findAllTreeCollections_url;
+var mintNewOTTids_url;
+var submitNewTaxa_url;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -8964,6 +8966,7 @@ function moveToNthTaxonCandidate( pos ) {
     // add new-taxon metadata, if not found (stored only during this curation session!)
     if (!('newTaxonMetadata' in currentTaxonCandidate)) {
         currentTaxonCandidate.newTaxonMetadata = {
+            'rank': 'Species',
             'modifiedName': currentTaxonCandidate['^ot:originalLabel'],
             'modifiedNameReason': '',
             'parentTaxonName': '',
@@ -8982,6 +8985,7 @@ function moveToNthTaxonCandidate( pos ) {
         ko.cleanNode(el);
         ko.applyBindings(currentTaxonCandidate, el);
     });
+    bindHelpPanels();
 }
 function moveToNextTaxonCandidate() {
     var chosenPosition = getCurrentTaxonCandidatePosition();
@@ -9112,5 +9116,51 @@ function hideNewTaxaPopup() {
     $('#new-taxa-popup').modal('hide');
     clearAllTaxonCandidates();
     // TODO clear/reset all popup widgets?
+}
+
+function submitNewTaxa() {
+    // TODO: Bundle all new (proposed) taxon info, submit to OTT, report on results
+    var bundle = {};
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        // contentType: "application/json; charset=utf-8",
+        url: submitNewTaxa_url,
+        data: bundle,
+        complete: returnFromNewTaxaSubmission
+    });
+}
+function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
+    console.log('returnFromNewTaxaSubmission(), textStatus = '+ textStatus);
+    // report errors or malformed data, if any
+    var badResponse = false;
+    var responseJSON = null;
+    if (textStatus !== 'success') {
+        badResponse = true;
+    } else {
+        // convert raw response to JSON
+        responseJSON = $.parseJSON(jqXHR.responseText);
+        if (responseJSON['error'] === 1) {
+            badResponse = true;
+        }
+    }
+
+    if (badResponse) {
+        console.warn("jqXHR.status: "+ jqXHR.status);
+        console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+        hideModalScreen();
+        // TODO: handle any resulting mess
+        showErrorMessage(
+            'Sorry, there was an error adding the requested taxa. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">' +
+            'Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>'
+        );
+        return;
+    }
+
+    // TODO: apply the new IDs to the original OTUs
+
+    hideModalScreen(); // TODO?
+    showSuccessMessage('Selected OTUs mapped to new taxa.');
 }
 
