@@ -34,29 +34,35 @@ headers = {
 # Main entry point.  Returns HTML as a string.
 
 def browse(id=None, name=None, limit=None, api_base=None):
+    if api_base == None: api_base = default_api_base_url
     output = StringIO.StringIO()
-    try:
-        if id != None: id = int(id)
-    except ValueError:
-        report_invalid_arg(output, "Argument 'id' should be an integer!")
-        return output.getvalue()
+
     try:
         if limit != None: limit = int(limit)
     except ValueError:
         report_invalid_arg(output, "Argument 'limit' should be an integer!")
         return output.getvalue()
-    if api_base == None: api_base = default_api_base_url
 
-    if id != None:
-        browse_by_id(id, limit, api_base, output)
-    elif name is None:
+    try:
+        if id != None:
+            id = int(id.strip())
+            browse_by_id(id, limit, api_base, output)
+            return output.getvalue()
+    except ValueError:
+        report_invalid_arg(output, "Argument 'id' should be an integer!")
+        return output.getvalue()
+
+    if name is None:
         # bump them to our default taxon (root of synthetic tree)
         browse_by_name('cellular organisms', limit, api_base, output)
-    elif name.isdigit():
-        browse_by_id(int(name), limit, api_base, output)
     else:
-        browse_by_name(name, limit, api_base, output)
-
+        name = name.strip()
+        if name.isdigit():
+            browse_by_id(int(name), limit, api_base, output)
+        elif ':' in name and not ' ' in name:
+            browse_by_qid(name, limit, api_base, output)
+        else:
+            browse_by_name(name, limit, api_base, output)
     return output.getvalue()
 
 def report_invalid_arg(output, info):
@@ -71,7 +77,7 @@ def report_invalid_arg(output, info):
 def browse_by_name(name, limit, api_base, output):
     result = look_up_name(name, api_base)
     if result is None:
-        report_invalid_arg(output, "No taxa found matching name '%s'" % name)
+        report_invalid_arg(output, "No taxon found matching name '%s'" % name)
         return None
     matches = result[u'matches']
     if len(matches) == 0:
@@ -79,49 +85,50 @@ def browse_by_name(name, limit, api_base, output):
         return None
     elif len(matches) > 1:
         output.write('Matches for %s: \n' % cgi.escape(name))
+        start_el(output, 'ul')
         for match in matches:
-            output.write("  %s<br/>" % link_to_taxon(match[u'ot:ottId'], match[u'unique_name']))
+            taxon = match[u'taxon']
+            output.write("  <li> %s" % link_to_taxon(taxon[u'ott_id'], taxon[u'unique_name']))
+        end_el(output, 'ul')
     else:
-        id = matches[0][u'ot:ottId']
+        taxon = matches[0][u'taxon']
+        id = taxon[u'ott_id']
         browse_by_id(id, limit, api_base, output)
 
 # Map taxon name to taxonomy id using match_names service
 
 def look_up_name(name, api_base):
-    response = requests.post(api_base + 'v2/tnrs/match_names',
+    response = requests.post(api_base + 'v3/tnrs/match_names',
                              headers=headers,
-                             data=json.dumps({'names':[name]}))
-    response.raise_for_status()
-    answer = response.json()
-    results = answer[u'results']
-    if len(results) == 0: return None
-    if len(results) > 1:
-        output.write('multiple results - should not happen\n')
-        return None # shouldn't happen
-    return results[0]
+                             data=json.dumps({'names':[name], 'include_suppressed':True}))
+    if response.status_code == 200:
+        answer = response.json()
+        results = answer[u'results']
+        if len(results) == 0: return None
+        # len(results) > 1 shouldn't happen
+        return results[0]
+    else:
+        return error_report(response)
 
 def browse_by_id(id, limit, api_base, output):
-    info = get_taxon_info(id, api_base)
+    info = get_taxon_info(id, 'ott_id', api_base)
     #print json.dumps(info, sort_keys=True, indent=4)
     display_taxon_info(info, limit, output, api_base)
 
-def get_taxonomy_version(api_base):
-    response = requests.post(api_base + 'v2/taxonomy/about',
-                             headers=headers,
-                             data={})
-    response.raise_for_status()
-    version_info = response.json().get('source','')
-    if 'draft' in version_info:
-        version_info = version_info.split('draft')[0];
-    return version_info
+def browse_by_qid(id, limit, api_base, output):
+    info = get_taxon_info(id, 'source_id', api_base)
+    #print json.dumps(info, sort_keys=True, indent=4)
+    display_taxon_info(info, limit, output, api_base)
 
-def get_taxon_info(ottid, api_base):
-    d=json.dumps({'ott_id': ottid, 'include_children': True, 'include_lineage': True})
-    response = requests.post(api_base + 'v2/taxonomy/taxon',
+def get_taxon_info(id, property, api_base):
+    d=json.dumps({property: id, 'include_children': True, 'include_lineage': True})
+    response = requests.post(api_base + 'v3/taxonomy/taxon_info',
                              headers=headers,
                              data=d)
-    response.raise_for_status()
-    return response.json()
+    if response.status_code == 200:
+        return response.json()
+    else:
+        return error_report(response)
 
 def display_taxon_info(info, limit, output, api_base):
     included_children_output = StringIO.StringIO()
@@ -130,14 +137,15 @@ def display_taxon_info(info, limit, output, api_base):
     # Search box
     output.write('<form action="browse"><p align="right"><input type="text" name="name" placeholder="name or id"/></p></form>')
 
-    if u'ot:ottId' in info:
-        id = info[u'ot:ottId']
+    if u'ott_id' in info:
+        id = info[u'ott_id']
         start_el(output, 'h1')
         output.write('Open Tree taxonomy: <strong>%s</strong>' % get_display_name(info))
         end_el(output, 'h1')
 
         start_el(output, 'p', 'legend')
-        output.write('The current taxonomy version is <a target="_blank" href="https://devtree.opentreeoflife.org/about/taxonomy-version/%s">%s (click for more information)</a>. ' % (get_taxonomy_version(api_base), get_taxonomy_version(api_base),))
+        version = get_taxonomy_version(api_base)
+        output.write('The current taxonomy version is <a target="_blank" href="https://devtree.opentreeoflife.org/about/taxonomy-version/%s">%s (click for more information)</a>. ' % (version, version,))
         output.write('See the OTT wiki for <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags">an explanation of the taxon flags used</a> below, e.g., <span class="flag">extinct</span>\n')
         end_el(output, 'p')
 
@@ -146,13 +154,13 @@ def display_taxon_info(info, limit, output, api_base):
         display_basic_info(info, output)
         output.write(' (OTT id %s)' % id)
         synth_tree_url = "/opentree/ottol@%s" % id
-        output.write('<br/><a target="_blank" href="%s">View this taxon in the latest synthetic tree</a>' % cgi.escape(synth_tree_url))
+        output.write('<br/><a target="_blank" href="%s">View this taxon in the current synthetic tree</a>' % cgi.escape(synth_tree_url))
 
         end_el(output, 'p')
 
         if u'synonyms' in info:
             synonyms = info[u'synonyms']
-            name = info[u'ot:ottTaxonName']
+            name = info[u'name']
             if name in synonyms:
                 synonyms.remove(name)
             if len(synonyms) > 0:
@@ -160,17 +168,17 @@ def display_taxon_info(info, limit, output, api_base):
                 start_el(output, 'p', 'synonyms')
                 output.write("%s\n" % ', '.join(map(link_to_name, synonyms)))
                 end_el(output, 'p')
-        if u'taxonomic_lineage' in info:
+        if u'lineage' in info:
             first = True
             output.write('<h3>Lineage</h3>')
             start_el(output, 'p', 'lineage')
             # N.B. we reverse the list order to show the root first!
-            if info[u'taxonomic_lineage']:
-                info[u'taxonomic_lineage'].reverse()
-            for ancestor in info[u'taxonomic_lineage']:
+            if info[u'lineage']:
+                info[u'lineage'].reverse()
+            for ancestor in info[u'lineage']:
                 if not first:
                     output.write(' &gt; ')
-                output.write(link_to_taxon(ancestor[u'ot:ottId'], ancestor[u'ot:ottTaxonName']))
+                output.write(link_to_taxon(ancestor[u'ott_id'], ancestor[u'name']))
                 first = False
             output.write('\n')
             end_el(output, 'p')
@@ -232,6 +240,18 @@ def display_taxon_info(info, limit, output, api_base):
     else:
         report_invalid_arg(output, info)
 
+def get_taxonomy_version(api_base):
+    response = requests.post(api_base + 'v3/taxonomy/about',
+                             headers=headers,
+                             data={})
+    if response.status_code == 200:
+        version_info = response.json().get('source','')
+        if 'draft' in version_info:
+            version_info = version_info.split('draft')[0];
+        return version_info
+    else:
+        return error_report(response)
+
 def write_suppressed(output):
     start_el(output, 'span', 'suppressedmarker')
     output.write("*")
@@ -240,8 +260,8 @@ def write_suppressed(output):
 def get_display_name(info):
     if u'unique_name' in info and len(info[u'unique_name']) > 0:
         return info[u'unique_name']
-    elif u'ot:ottTaxonName' in info:
-        return info[u'ot:ottTaxonName']
+    elif u'name' in info:
+        return info[u'name']
     return u'Unnamed taxon'
 
 def display_basic_info(info, output):
@@ -251,7 +271,7 @@ def display_basic_info(info, output):
         output.write(info[u'rank'] + ' ')
 
     # Taxon name
-    output.write(link_to_taxon(info[u'ot:ottId'], get_display_name(info)))
+    output.write(link_to_taxon(info[u'ott_id'], get_display_name(info)))
 
     # Sources
     start_el(output, 'span', 'sources')
@@ -288,6 +308,12 @@ def source_link(source_id):
         return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(source_id))
     else:
         return source_id
+
+def error_report(response):
+    try:
+        return response.json()
+    except:
+        return response.text
 
 def start_el(output, tag, clas=''):
     output.write('<%s class="%s">' % (tag, clas))
