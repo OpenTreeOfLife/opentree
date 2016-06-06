@@ -2369,17 +2369,17 @@ body {
                 <label class="control-label" for="TODO">Parent taxon</label>
                 <div class="controls">
                   <div class="static-form-value">
-                    <span data-bind="text: ($data.newTaxonMetadata.parentTaxonName || 'None'),
+                    <span data-bind="text: ($data.newTaxonMetadata.parentTaxonName() || 'None'),
                                      attr:{'title': ''}"
                           class="parent-taxon"
                           title="">???</span>
 
-                   <!-- ko if: $data.newTaxonMetadata.parentTaxonName !== '' -->
+                   <!-- ko if: $data.newTaxonMetadata.parentTaxonName() !== '' -->
                     <span style="font-weight: normal;">
                         &mdash;
                         <a href="#" target="_blank" 
                            class="parent-taxon-browse-link"
-                           data-bind="attr: {href: '/taxonomy/browse?name='+ $data.newTaxonMetadata.parentTaxonName}">Open in OTT browser</a>
+                           data-bind="attr: {href: '/taxonomy/browse?id='+ $data.newTaxonMetadata.parentTaxonID()}">Open in OTT browser</a>
                     </span>
                    <!-- /ko -->
                   </div>
@@ -2409,7 +2409,7 @@ body {
                       -->
                       </select>
                       <div class="">
-                          <ul id="search-results" class="dropdown-menu" role="menu">
+                          <ul id="parent-taxon-search-results" class="dropdown-menu" role="menu">
                               ...
                           </ul>
                       </div>
