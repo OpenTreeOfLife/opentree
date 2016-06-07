@@ -2010,6 +2010,9 @@ body {
     var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
     var treeConflictStatus_url = "{{=treeConflictStatus_url}}";
+
+    var mintNewOTTids_url =  "{{=mintNewOTTids_url}}";
+    var submitNewTaxa_url = "{{=submitNewTaxa_url}}";
 </script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
 
@@ -2329,6 +2332,7 @@ body {
                                    event: { keyup: null, change: null },
                                    options: ['Typo in original label',
                                              'Removing extraneous characters',
+                                             'Taxon subsequently published under this name',
                                              'Synonym',
                                              'Other (explain below)'],
                                    optionsCaption: 'Choose reason for modification...'
@@ -2337,20 +2341,45 @@ body {
                 </div>
             </div>
             <div class="control-group">
+                <label class="control-label" for="TODO">Taxonomic rank</label>
+                <div class="controls">
+                    <select style="margin-bottom: 0; width: auto;" 
+                        data-bind="value: $data.newTaxonMetadata.rank,
+                                   event: { keyup: null, change: null },
+                                   options: [  'Subspecies',
+                                             'Species',
+                                               'Subgenus',
+                                             'Genus',
+                                               'Subtribe',
+                                               'Tribe',
+                                               'Subfamily',
+                                             'Family',
+                                               'Superfamily',
+                                             'Order',
+                                             'Class',
+                                             'Phylum',
+                                             'Kingdom',
+                                             'Domain'
+                                             ]
+                                   ">
+                    </select>
+                </div>
+            </div>
+            <div class="control-group">
                 <label class="control-label" for="TODO">Parent taxon</label>
                 <div class="controls">
                   <div class="static-form-value">
-                    <span data-bind="text: ($data.newTaxonMetadata.parentTaxonName || 'None'),
+                    <span data-bind="text: ($data.newTaxonMetadata.parentTaxonName() || 'None'),
                                      attr:{'title': ''}"
                           class="parent-taxon"
                           title="">???</span>
 
-                   <!-- ko if: $data.newTaxonMetadata.parentTaxonName !== '' -->
+                   <!-- ko if: $data.newTaxonMetadata.parentTaxonName() !== '' -->
                     <span style="font-weight: normal;">
                         &mdash;
                         <a href="#" target="_blank" 
                            class="parent-taxon-browse-link"
-                           data-bind="attr: {href: '/taxonomy/browse?name='+ $data.newTaxonMetadata.parentTaxonName}">Open in OTT browser</a>
+                           data-bind="attr: {href: '/taxonomy/browse?id='+ $data.newTaxonMetadata.parentTaxonID()}">Open in OTT browser</a>
                     </span>
                    <!-- /ko -->
                   </div>
@@ -2380,7 +2409,7 @@ body {
                       -->
                       </select>
                       <div class="">
-                          <ul id="search-results" class="dropdown-menu" role="menu">
+                          <ul id="parent-taxon-search-results" class="dropdown-menu" role="menu">
                               ...
                           </ul>
                       </div>
@@ -2394,8 +2423,9 @@ body {
                 <label class="control-label" for="TODO">Evidence for taxon</label>
                 <div class="controls">
                     <select style="margin-bottom: 4px; width: auto;" 
-                        data-bind="value: $data.newTaxonMetadata.evidenceType,
+                        data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidenceType : $data.newTaxonMetadata.evidenceType,
                                    event: { keyup: null, change: null },
+                                   attr: {'disabled': evidenceSourceCandidate},
                                    options: ['Link to online taxonomy',
                                              'Link (DOI) to publication',
                                              'Other (explain below)'],
@@ -2403,15 +2433,17 @@ body {
                                    ">
                     </select>
                     <br/>
-                    <input data-bind="value: $data.newTaxonMetadata.evidence,
+                    <input data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidence : $data.newTaxonMetadata.evidence,
                                       valueUpdate: ['afterkeydown', 'input'],
-                                      event: {keyup: null, change: null, blur: null}
+                                      event: {keyup: null, change: null, blur: null},
+                                      attr: {'disabled': evidenceSourceCandidate}
                                       " type="text" class="input-block-level" placeholder="Enter DOI or URL (add longer comments below)">
                     <br/>
-                    <label for="TODO" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
-                        <input type="checkbox" id="TODO" name="TODO"
+                    <label for="copy-evidence" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
+                        <input type="checkbox" id="copy-evidence" name="TODO"
                                style="width: 20px;"
-                               Xonclick="TODO(); return false;"/>
+                               data-bind="value: (evidenceSourceCandidate() !== null),
+                                          click: toggleEvidenceSourceCandidate" />
                         Copy this evidence to all labels
                     </label>
                 </div>
@@ -2426,8 +2458,9 @@ body {
     </div>
     <div class="modal-footer">
       <button class="btn btn-info pull-right" style="margin-left: 20px;"
-              Xonclick="$('#delete-comments-popup').modal('hide'); removeStudy(); return false;">Save and exit</button>
-      <a data-dismiss="modal" class="btn" >Cancel</a>
+              onclick="submitNewTaxa(); return false;">Save and exit</button>
+      <a data-dismiss="modal" class="btn"
+              onclick="hideNewTaxaPopup(); return false;" >Cancel</a>
     </div>
 </div>
 

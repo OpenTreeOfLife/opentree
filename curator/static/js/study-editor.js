@@ -56,6 +56,8 @@ var API_load_file_GET_url;
 var API_update_file_PUT_url;
 var API_remove_file_DELETE_url;
 var findAllTreeCollections_url;
+var mintNewOTTids_url;
+var submitNewTaxa_url;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -8943,6 +8945,7 @@ function hideMappingOptions() {
 /* A few global vars for the add-new-taxa popup */
 var candidateOTUsForNewTaxa = [ ];
 var currentTaxonCandidate = null;
+var evidenceSourceCandidate = ko.observable(null);
 
 function getSelectedOTUs() {
     /* This includes only visible OTUs, i.e. those in the current filtered and
@@ -8966,10 +8969,12 @@ function moveToNthTaxonCandidate( pos ) {
     // add new-taxon metadata, if not found (stored only during this curation session!)
     if (!('newTaxonMetadata' in currentTaxonCandidate)) {
         currentTaxonCandidate.newTaxonMetadata = {
+            'rank': 'Species',
             'modifiedName': currentTaxonCandidate['^ot:originalLabel'],
             'modifiedNameReason': '',
-            'parentTaxonName': '',
-            'parentTaxonSearchContext': 'All life',
+            'parentTaxonName': ko.observable(''), // watch for changes!
+            'parentTaxonID': ko.observable(''),  
+            'parentTaxonSearchContext': '',
             'evidenceType': '',
             'evidence': '',
             'comments': ''
@@ -8984,6 +8989,16 @@ function moveToNthTaxonCandidate( pos ) {
         ko.cleanNode(el);
         ko.applyBindings(currentTaxonCandidate, el);
     });
+    bindHelpPanels();
+
+    // enable parent-taxon search
+    $('input[name=parent-taxon-search]').unbind('keyup change').bind('keyup change', setParentTaxaSearchFuse );
+    $('select[name=parent-taxon-search-context]').unbind('change').bind('change', searchForMatchingParentTaxa );
+
+    // don't trigger unrelated form submission when pressing ENTER here
+    $('input[name=parent-taxon-search], select[name=parent-taxon-search-context]')
+        .unbind('keydown')
+        .bind('keydown', function(e) { return e.which !== 13; });
 }
 function moveToNextTaxonCandidate() {
     var chosenPosition = getCurrentTaxonCandidatePosition();
@@ -9003,83 +9018,11 @@ function getCurrentTaxonCandidatePosition() {
     var chosenPosition = $.inArray(currentTaxonCandidate, candidateOTUsForNewTaxa);
     return chosenPosition;
 }
-function refreshTaxonCandidateWidgets() {
-return; // UNUSED!
-    // Buttons should reflect the current selected candidate (OTU)
-    /* 
-    var otuCount = candidateOTUsForNewTaxa.length;
-    var chosenPosition = getCurrentTaxonCandidatePosition();
-    if (chosenPosition === -1) {
-        console.error("refreshTaxonCandidateWidgets() - current candidate not in list!");
-        return;
-    }
-    var $popup = $('#new-taxa-popup');
-    var $previousButton = $popup.find('.prev-button');
-    $previousButton.unbind('click');
-    if (chosenPosition === 0) {
-        $previousButton.addClass('disabled');
-    } else {
-        $previousButton.removeClass('disabled');
-        $previousButton.bind('click', function() {
-            moveToNthTaxonCandidate(chosenPosition - 1);
-        });
-    }
-    var $nextButton = $popup.find('.next-button');
-    $nextButton.unbind('click');
-    if (chosenPosition === (otuCount - 1)) {
-        $nextButton.addClass('disabled');
-    } else {
-        $nextButton.removeClass('disabled');
-        $nextButton.bind('click', function() {
-            moveToNthTaxonCandidate(chosenPosition + 1);
-        });
-    }
-    // Update all fields and widgets below
-    var $nthLabelIndicator = $popup.find('.nth-label');
-    $nthLabelIndicator.text(chosenPosition + 1);
-    var $totalLabelsIndicator = $popup.find('.total-labels');
-    $totalLabelsIndicator.text(otuCount);
-    */
-
-    /* Other widgets MOVED to our typical Knockout bindings
-    var $unmappedLabelIndicator = $popup.find('.unmapped-label');
-    $unmappedLabelIndicator.html(currentTaxonCandidate['^ot:originalLabel']);
-    var $modifiedNameField = $popup.find('.modified-name');
-
-    var metadata = currentTaxonCandidate.newTaxonMetadata;
-    $modifiedNameField.val(metadata.modifiedName);
-    var $modifiedNameReasonSelector = $popup.find('[name=modified-name-reason]');
-    $modifiedNameReasonSelector.val(metadata.modifiedNameReason);
-    var $parentTaxonIndicator = $popup.find('.parent-taxon');
-    $parentTaxonIndicator.html(metadata.parentTaxonName);
-    var $parentTaxonLookup = $popup.find('[name=parent-taxon-search]');
-    $parentTaxonLookup.val('');
-    var $parentTaxonSearchContextSelector = $popup.find('[name=parent-context-selector]');
-    // Keep any previous "interesting" selection for parent search context
-    if (metadata.parentTaxonSearchContext !== 'All life') {
-        $parentTaxonSearchContextSelector.val(metadata.parentTaxonSearchContext);
-    }
-    var $parentTaxonBrowseLink = $popup.find('.parent-taxon-browse-link');
-    var parentTaxonName = $parentTaxonLookup.val();
-    if (parentTaxonName !== '') {
-        $parentTaxonBrowseLink.attr('href', "/taxonomy/browse?name="+ parentTaxonName);
-        $parentTaxonBrowseLink.show();
-    } else {
-        $parentTaxonBrowseLink.hide();
-    }
-    var $evidenceTypeSelector = $popup.find('[name=evidence-type-selector]');
-    $evidenceTypeSelector.val(metadata.evidenceType);
-    var $evidenceField = $popup.find('[name=evidence]');
-    $evidenceField.val(metadata.evidence);
-    var $copyToAllLabelsCheckbox = $popup.find('[name=copy-to-all-labels]');
-    var $commentsField = $popup.find('[name=comments]');
-    $commentsField.val(metadata.comments)
-    */
-}
 function clearAllTaxonCandidates() {
     // Clear all vars related to the new-taxa popup
     candidateOTUsForNewTaxa = [ ];
     currentTaxonCandidate = null;
+    evidenceSourceCandidate(null);
 }
 
 function showNewTaxaPopup() {
@@ -9109,10 +9052,247 @@ function showNewTaxaPopup() {
     moveToNthTaxonCandidate( 0 );
     // Show and initialize the popup
     $('#new-taxa-popup').modal('show');
+
+    // Block any method of closing this window if there is unsaved work
+    $('#new-taxa-popup').off('hide').on('hide', function () {
+        if (currentTaxonCandidate || candidateOTUsForNewTaxa.length > 0) {
+            alert("Please submit (or cancel) your proposed taxa!");
+            return false;
+        }
+    });
 }
 function hideNewTaxaPopup() {
-    $('#new-taxa-popup').modal('hide');
     clearAllTaxonCandidates();
+    $('#new-taxa-popup').modal('hide');
     // TODO clear/reset all popup widgets?
+}
+
+function submitNewTaxa() {
+    // TODO: Bundle all new (proposed) taxon info, submit to OTT, report on results
+    var bundle = {};
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        // contentType: "application/json; charset=utf-8",
+        url: submitNewTaxa_url,
+        data: bundle,
+        complete: returnFromNewTaxaSubmission
+    });
+}
+function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
+    console.log('returnFromNewTaxaSubmission(), textStatus = '+ textStatus);
+    // report errors or malformed data, if any
+    var badResponse = false;
+    var responseJSON = null;
+    if (textStatus !== 'success') {
+        badResponse = true;
+    } else {
+        // convert raw response to JSON
+        responseJSON = $.parseJSON(jqXHR.responseText);
+        if (responseJSON['error'] === 1) {
+            badResponse = true;
+        }
+    }
+
+    if (badResponse) {
+        console.warn("jqXHR.status: "+ jqXHR.status);
+        console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+        hideModalScreen();
+        // TODO: handle any resulting mess
+        showErrorMessage(
+            'Sorry, there was an error adding the requested taxa. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">' +
+            'Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>'
+        );
+        return;
+    }
+
+    // TODO: apply the new IDs to the original OTUs
+
+    hideModalScreen(); // TODO?
+    showSuccessMessage('Selected OTUs mapped to new taxa.');
+}
+
+function toggleEvidenceSourceCandidate( otu, event ) {
+    // set a global for this (an observable, to update display)
+    // NOTE that radio-button values are strings, so we convert to boolean below
+    var sharingThisEvidence = $(event.target).is(':checked');
+    if (sharingThisEvidence) {
+        evidenceSourceCandidate(currentTaxonCandidate);
+    } else {
+        evidenceSourceCandidate(null);
+    }
+    return true;
+}
+
+/* Modified autocomplete behavior for parent-taxon search (used when proposing
+ * new taxa for the OT taxonomy). See 'searchTimeoutID' etc. above for the
+ * general taxon search.
+ */
+clearTimeout(parentSearchTimeoutID);  // in case there's a lingering search from last page!
+var parentSearchTimeoutID = null;
+// var searchDelay = 1000; // shared with general behavior above
+var hopefulParentSearchName = null;
+function setParentTaxaSearchFuse(e) {
+    if (parentSearchTimeoutID) {
+        // kill any pending search, apparently we're still typing
+        clearTimeout(parentSearchTimeoutID);
+    }
+    // reset the timeout for another n milliseconds
+    parentSearchTimeoutID = setTimeout(searchForMatchingParentTaxa, searchDelay);
+
+    /* If the last key pressed was the ENTER key, stash the current (trimmed)
+     * string and auto-jump if it's a valid taxon name.
+     */
+    if (e.type === 'keyup') {
+        switch (e.which) {
+            case 13:
+                hopefulParentSearchName = $('input[name=parent-taxon-search]').val().trim();
+                autoApplyExactParentMatch();  // use existing menu, if found
+                break;
+            case 17:
+                // do nothing (probably a second ENTER key)
+                break;
+            case 39:
+            case 40:
+                // down or right arrows should try to select first result
+                $('#parent-taxon-search-results a:eq(0)').focus();
+                break;
+            default:
+                hopefulParentSearchName = null;
+        }
+    } else {
+        hopefulParentSearchName = null;
+    }
+}
+
+var showingResultsForParentSearchText = '';
+var showingResultsForParentSearchContextName = '';
+function searchForMatchingParentTaxa() {
+    // clear any pending search timeout and ID
+    clearTimeout(parentSearchTimeoutID);
+    parentSearchTimeoutID = null;
+
+    var $input = $('input[name=parent-taxon-search]');
+    var searchText = $input.val().trimLeft();
+
+    if (searchText.length === 0) {
+        $('#parent-taxon-search-results').html('');
+        return false;
+    } else if (searchText.length < 2) {
+        $('#parent-taxon-search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+        $('#parent-taxon-search-results').dropdown('toggle');
+        return false;
+    }
+
+    // groom trimmed text based on our search rules
+    var searchContextName = $('select[name=parent-taxon-search-context]').val();
+
+    // is this unchanged from last time? no need to search again..
+    if ((searchText == showingResultsForParentSearchText) && (searchContextName == showingResultsForParentSearchContextName)) {
+        ///console.log("Search text and context UNCHANGED!");
+        return false;
+    }
+
+    // stash these to use for later comparison (to avoid redundant searches)
+    var queryText = searchText; // trimmed above
+    var queryContextName = searchContextName;
+    $('#parent-taxon-search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
+    $('#parent-taxon-search-results').show();
+    $('#parent-taxon-search-results').dropdown('toggle');
+
+    $.ajax({
+        url: doTNRSForAutocomplete_url,  // NOTE that actual server-side method name might be quite different!
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({
+            "name": searchText,
+            "context_name": searchContextName,
+            "include_suppressed": false
+        }),  // data (asterisk required for completion suggestions)
+        crossDomain: true,
+        contentType: "application/json; charset=utf-8",
+        success: function(data) {    // JSONP callback
+            // stash the search-text used to generate these results
+            showingResultsForParentSearchText = queryText;
+            showingResultsForParentSearchContextName = queryContextName;
+
+            $('#parent-taxon-search-results').html('');
+            var maxResults = 100;
+            var visibleResults = 0;
+            /*
+             * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
+             * with these properties:
+             *      ott_id         // taxon ID in OTT taxonomic tree
+             *      unique_name    // the taxon name, or unique name if it has one
+             *      is_higher      // points to a genus or higher taxon? T/F
+             */
+            if (data && data.length && data.length > 0) {
+                // sort results to show exact match(es) first, then higher taxa, then others
+                // initial sort on higher taxa (will be overridden by exact matches)
+                // N.B. As of the v3 APIs, an exact match will be returned as the only result.
+                data.sort(function(a,b) {
+                    if (a.is_higher === b.is_higher) return 0;
+                    if (a.is_higher) return -1;
+                    if (b.is_higher) return 1;
+                });
+
+                // show all sorted results, up to our preset maximum
+                var matchingNodeIDs = [ ];  // ignore any duplicate results (point to the same taxon)
+                for (var mpos = 0; mpos < data.length; mpos++) {
+                    if (visibleResults >= maxResults) {
+                        break;
+                    }
+                    var match = data[mpos];
+                    var matchingName = match.unique_name;
+                    var matchingID = match.ott_id;
+                    if ($.inArray(matchingID, matchingNodeIDs) === -1) {
+                        // we're not showing this yet; add it now
+                        $('#parent-taxon-search-results').append(
+                            '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
+                        );
+                        matchingNodeIDs.push(matchingID);
+                        visibleResults++;
+                    }
+                }
+
+                $('#parent-taxon-search-results a')
+                    .click(function(e) {
+                        var $link = $(this);
+
+                        // Modify this candidate taxon (and indicator)
+                        currentTaxonCandidate.newTaxonMetadata.parentTaxonName($link.text());
+                        currentTaxonCandidate.newTaxonMetadata.parentTaxonID($link.attr('href'));
+
+                        // hide menu and reset search field
+                        $('#parent-taxon-search-results').html('');
+                        $('#parent-taxon-search-results').hide();
+                        $('input[name=parent-taxon-search]').val('');
+                        //nudgeTickler('GENERAL_METADATA');
+                    });
+                $('#parent-taxon-search-results').dropdown('toggle');
+
+                autoApplyExactParentMatch();
+            } else {
+                $('#parent-taxon-search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+                $('#parent-taxon-search-results').dropdown('toggle');
+            }
+        }
+    });
+
+    return false;
+}
+
+function autoApplyExactParentMatch() {
+    // if the user hit the ENTER key, and there's an exact match, apply it automatically
+    if (hopefulParentSearchName) {
+        $('#parent-taxon-search-results a').each(function() {
+            var $link = $(this);
+            if ($link.text().toLowerCase() === hopefulParentSearchName.toLowerCase()) {
+                $link.trigger('click');
+                return false;
+            }
+        });
+    }
 }
 

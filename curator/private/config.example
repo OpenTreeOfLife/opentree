@@ -60,6 +60,8 @@ singlePropertySearchForStudies_url = {oti_domain}/v3/studies/find_studies
 singlePropertySearchForTrees_url = {oti_domain}/v3/studies/find_trees
 findAllTreeCollections_url = {opentree_api_domain}/v3/collections/find_collections
 treeConflictStatus_url = {conflict_api_domain}/v2/conflict/conflict-status?tree1={TREE1_ID}&tree2={TREE2_ID}&use_cache={USE_CACHE}
+mintNewOTTids_url = {taxomachine_domain}/v3/taxonomy/mint_new_ids
+submitNewTaxa_url = {taxomachine_domain}/v3/taxonomy/add_new_taxa
 # NOTE that some general utility methods are called from original v1 code.
 phylesystem_config_url = {opentree_api_domain}/phylesystem/v1/phylesystem_config
 render_markdown_url = {opentree_api_domain}/phylesystem/v1/render_markdown
