@@ -9020,7 +9020,7 @@ function clearAllTaxonCandidates() {
     // Clear all vars related to the new-taxa popup
     candidateOTUsForNewTaxa = [ ];
     currentTaxonCandidate = null;
-    evidenceSourceCandidate = null;
+    evidenceSourceCandidate(null);
 }
 
 function showNewTaxaPopup() {
