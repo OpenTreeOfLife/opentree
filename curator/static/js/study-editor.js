@@ -8943,6 +8943,7 @@ function hideMappingOptions() {
 /* A few global vars for the add-new-taxa popup */
 var candidateOTUsForNewTaxa = [ ];
 var currentTaxonCandidate = null;
+var evidenceSourceCandidate = ko.observable(null);
 
 function getSelectedOTUs() {
     /* This includes only visible OTUs, i.e. those in the current filtered and
@@ -9019,6 +9020,7 @@ function clearAllTaxonCandidates() {
     // Clear all vars related to the new-taxa popup
     candidateOTUsForNewTaxa = [ ];
     currentTaxonCandidate = null;
+    evidenceSourceCandidate = null;
 }
 
 function showNewTaxaPopup() {
@@ -9107,6 +9109,18 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
 
     hideModalScreen(); // TODO?
     showSuccessMessage('Selected OTUs mapped to new taxa.');
+}
+
+function toggleEvidenceSourceCandidate( otu, event ) {
+    // set a global for this (an observable, to update display)
+    // NOTE that radio-button values are strings, so we convert to boolean below
+    var sharingThisEvidence = $(event.target).is(':checked');
+    if (sharingThisEvidence) {
+        evidenceSourceCandidate(currentTaxonCandidate);
+    } else {
+        evidenceSourceCandidate(null);
+    }
+    return true;
 }
 
 /* Modified autocomplete behavior for parent-taxon search (used when proposing

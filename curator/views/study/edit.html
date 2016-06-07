@@ -2423,8 +2423,9 @@ body {
                 <label class="control-label" for="TODO">Evidence for taxon</label>
                 <div class="controls">
                     <select style="margin-bottom: 4px; width: auto;" 
-                        data-bind="value: $data.newTaxonMetadata.evidenceType,
+                        data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidenceType : $data.newTaxonMetadata.evidenceType,
                                    event: { keyup: null, change: null },
+                                   attr: {'disabled': evidenceSourceCandidate},
                                    options: ['Link to online taxonomy',
                                              'Link (DOI) to publication',
                                              'Other (explain below)'],
@@ -2432,15 +2433,16 @@ body {
                                    ">
                     </select>
                     <br/>
-                    <input data-bind="value: $data.newTaxonMetadata.evidence,
+                    <input data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidence : $data.newTaxonMetadata.evidence,
                                       valueUpdate: ['afterkeydown', 'input'],
-                                      event: {keyup: null, change: null, blur: null}
+                                      event: {keyup: null, change: null, blur: null},
+                                      attr: {'disabled': evidenceSourceCandidate}
                                       " type="text" class="input-block-level" placeholder="Enter DOI or URL (add longer comments below)">
                     <br/>
-                    <label for="TODO" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
-                        <input type="checkbox" id="TODO" name="TODO"
+                    <label for="copy-evidence" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
+                        <input type="checkbox" id="copy-evidence" name="TODO"
                                style="width: 20px;"
-                               Xonclick="TODO(); return false;"/>
+                               data-bind="click: toggleEvidenceSourceCandidate" />
                         Copy this evidence to all labels
                     </label>
                 </div>
