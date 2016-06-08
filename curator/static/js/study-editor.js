@@ -8965,19 +8965,6 @@ function moveToNthTaxonCandidate( pos ) {
     // move to the n-th otu
     currentTaxonCandidate = testCandidate;
     // add new-taxon metadata, if not found (stored only during this curation session!)
-    if (!('newTaxonMetadata' in currentTaxonCandidate)) {
-        currentTaxonCandidate.newTaxonMetadata = {
-            'rank': 'Species',
-            'modifiedName': currentTaxonCandidate['^ot:originalLabel'],
-            'modifiedNameReason': '',
-            'parentTaxonName': ko.observable(''), // watch for changes!
-            'parentTaxonID': ko.observable(''),  
-            'parentTaxonSearchContext': '',
-            'evidenceType': '',
-            'evidence': '',
-            'comments': ''
-        };
-    }
 
     // Bind just the selected candidate to the editing UI
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
@@ -9047,6 +9034,23 @@ function showNewTaxaPopup() {
         showInfoMessage('Only un-mapped labels will be considered (ignoring '+ alreadyMapped +' already mapped)');
     }
     
+    // prepare storage for each selected OTU
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        if (!('newTaxonMetadata' in candidate)) {
+            candidate.newTaxonMetadata = {
+                'rank': 'Species',
+                'modifiedName': candidate['^ot:originalLabel'],
+                'modifiedNameReason': '',
+                'parentTaxonName': ko.observable(''), // watch for changes!
+                'parentTaxonID': ko.observable(''),  
+                'parentTaxonSearchContext': '',
+                'evidenceType': '',
+                'evidence': '',
+                'comments': ''
+            };
+        }
+    });
+
     moveToNthTaxonCandidate( 0 );
     // Show and initialize the popup
     $('#new-taxa-popup').modal('show');
@@ -9062,19 +9066,32 @@ function showNewTaxaPopup() {
 function hideNewTaxaPopup() {
     clearAllTaxonCandidates();
     $('#new-taxa-popup').modal('hide');
-    // TODO clear/reset all popup widgets?
 }
 
 function submitNewTaxa() {
-    // TODO: Bundle all new (proposed) taxon info, submit to OTT, report on results
-    var bundle = {};
+    // Bundle all new (proposed) taxon info, submit to OTT, report on results
+    // clone the taxa information (recursive or "deep" clone)
+    //var bundle = $.extend(tree, [ ], candidateOTUsForNewTaxa);
+    //var bundle = candidateOTUsForNewTaxa.concat(); 
+    // unwrap any KO observables within
+    var bundle = ko.toJS(candidateOTUsForNewTaxa);
+    // override with shared evidence, if any
+    if (evidenceSourceCandidate()) {
+        var sharedEvidence = evidenceSourceCandidate().newTaxonMetadata.evidence
+        var sharedType = evidenceSourceCandidate().newTaxonMetadata.evidenceType;
+        $.each(bundle, function(i, candidate) {
+            candidate.newTaxonMetadata.evidence = sharedEvidence;
+            candidate.newTaxonMetadata.evidenceType = sharedType;
+        });
+    }
     $.ajax({
+        url: submitNewTaxa_url,
         type: 'POST',
         dataType: 'json',
+        processData: false,
+        data: JSON.stringify(bundle),
         // crossdomain: true,
         // contentType: "application/json; charset=utf-8",
-        url: submitNewTaxa_url,
-        data: bundle,
         complete: returnFromNewTaxaSubmission
     });
 }
