@@ -8967,19 +8967,6 @@ function moveToNthTaxonCandidate( pos ) {
     // move to the n-th otu
     currentTaxonCandidate = testCandidate;
     // add new-taxon metadata, if not found (stored only during this curation session!)
-    if (!('newTaxonMetadata' in currentTaxonCandidate)) {
-        currentTaxonCandidate.newTaxonMetadata = {
-            'rank': 'Species',
-            'modifiedName': currentTaxonCandidate['^ot:originalLabel'],
-            'modifiedNameReason': '',
-            'parentTaxonName': ko.observable(''), // watch for changes!
-            'parentTaxonID': ko.observable(''),  
-            'parentTaxonSearchContext': '',
-            'evidenceType': '',
-            'evidence': '',
-            'comments': ''
-        };
-    }
 
     // Bind just the selected candidate to the editing UI
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
@@ -9049,6 +9036,23 @@ function showNewTaxaPopup() {
         showInfoMessage('Only un-mapped labels will be considered (ignoring '+ alreadyMapped +' already mapped)');
     }
     
+    // prepare storage for each selected OTU
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        if (!('newTaxonMetadata' in candidate)) {
+            candidate.newTaxonMetadata = {
+                'rank': 'Species',
+                'modifiedName': candidate['^ot:originalLabel'],
+                'modifiedNameReason': '',
+                'parentTaxonName': ko.observable(''), // watch for changes!
+                'parentTaxonID': ko.observable(''),  
+                'parentTaxonSearchContext': '',
+                'evidenceType': '',
+                'evidence': '',
+                'comments': ''
+            };
+        }
+    });
+
     moveToNthTaxonCandidate( 0 );
     // Show and initialize the popup
     $('#new-taxa-popup').modal('show');
@@ -9064,19 +9068,56 @@ function showNewTaxaPopup() {
 function hideNewTaxaPopup() {
     clearAllTaxonCandidates();
     $('#new-taxa-popup').modal('hide');
-    // TODO clear/reset all popup widgets?
 }
 
 function submitNewTaxa() {
-    // TODO: Bundle all new (proposed) taxon info, submit to OTT, report on results
-    var bundle = {};
+    // Bundle all new (proposed) taxon info, submit to OTT, report on results
+    // clone the taxa information (recursive or "deep" clone)
+    //var bundle = $.extend(tree, [ ], candidateOTUsForNewTaxa);
+    //var bundle = candidateOTUsForNewTaxa.concat(); 
+    // unwrap any KO observables within
+    var bundle = {
+        "taxa": [ ],
+        "study_id": studyID,
+        "curator": {
+            'name': userDisplayName, 
+            'login': userLogin, 
+            'email': userEmail
+        }
+    };
+    // override with shared evidence, if any
+    var sharedEvidence = null,
+        sharedEvidenceType = null;
+    if (evidenceSourceCandidate()) {
+        sharedEvidence = evidenceSourceCandidate().newTaxonMetadata.evidence;
+        sharedEvidenceType = evidenceSourceCandidate().newTaxonMetadata.evidenceType;
+    }
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        // repackage its metadata to match the web service
+        var newTaxon = {};
+        newTaxon['tag'] = i;  // used to match results with candidate OTUs
+        newTaxon['name'] = candidate.newTaxonMetadata.modifiedName;
+        newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason;
+        newTaxon['rank'] = candidate.newTaxonMetadata.rank.toLowerCase();
+        newTaxon['parent'] = candidate.newTaxonMetadata.parentTaxonID();
+        if (sharedEvidence !== null) {
+            newTaxon['source'] = sharedEvidence;
+            newTaxon['source_type'] = sharedEvidenceType;
+        } else {
+            newTaxon['source'] = candidate.newTaxonMetadata.evidence;
+            newTaxon['source_type'] = candidate.newTaxonMetadata.evidenceType;
+        }
+        newTaxon['comment'] = candidate.newTaxonMetadata.comments;
+        bundle.taxa.push(newTaxon);
+    });
     $.ajax({
+        url: submitNewTaxa_url,
         type: 'POST',
         dataType: 'json',
+        processData: false,
+        data: JSON.stringify(bundle),
         // crossdomain: true,
-        // contentType: "application/json; charset=utf-8",
-        url: submitNewTaxa_url,
-        data: bundle,
+        contentType: "application/json; charset=utf-8",
         complete: returnFromNewTaxaSubmission
     });
 }
