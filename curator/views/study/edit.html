@@ -2374,14 +2374,13 @@ body {
                           class="parent-taxon"
                           title="">???</span>
 
-                   <!-- ko if: $data.newTaxonMetadata.parentTaxonName() !== '' -->
-                    <span style="font-weight: normal;">
+                    <span style="font-weight: normal;"
+                          data-bind="visible: ($data.newTaxonMetadata.parentTaxonName() !== '')">
                         &mdash;
                         <a href="#" target="_blank" 
                            class="parent-taxon-browse-link"
                            data-bind="attr: {href: '/taxonomy/browse?id='+ $data.newTaxonMetadata.parentTaxonID()}">Open in OTT browser</a>
                     </span>
-                   <!-- /ko -->
                   </div>
                   <!-- reuse style and behavior from Metadata > Focal Clade -->
                   <div id="parent-taxon-search-form" class="Xnavbar-search Xpull-right" autocomplete="off" style="Xdisplay: inline-block; position: relative;">
