@@ -9074,16 +9074,40 @@ function submitNewTaxa() {
     //var bundle = $.extend(tree, [ ], candidateOTUsForNewTaxa);
     //var bundle = candidateOTUsForNewTaxa.concat(); 
     // unwrap any KO observables within
-    var bundle = ko.toJS(candidateOTUsForNewTaxa);
+    var bundle = {
+        "taxa": [ ],
+        "study_id": studyID,
+        "curator": {
+            'name': userDisplayName, 
+            'login': userLogin, 
+            'email': userEmail
+        }
+    };
     // override with shared evidence, if any
+    var sharedEvidence = null,
+        sharedEvidenceType = null;
     if (evidenceSourceCandidate()) {
-        var sharedEvidence = evidenceSourceCandidate().newTaxonMetadata.evidence
-        var sharedType = evidenceSourceCandidate().newTaxonMetadata.evidenceType;
-        $.each(bundle, function(i, candidate) {
-            candidate.newTaxonMetadata.evidence = sharedEvidence;
-            candidate.newTaxonMetadata.evidenceType = sharedType;
-        });
+        sharedEvidence = evidenceSourceCandidate().newTaxonMetadata.evidence;
+        sharedEvidenceType = evidenceSourceCandidate().newTaxonMetadata.evidenceType;
     }
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        // repackage its metadata to match the web service
+        var newTaxon = {};
+        newTaxon['tag'] = i;  // used to match results with candidate OTUs
+        newTaxon['name'] = candidate.newTaxonMetadata.modifiedName;
+        newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason;
+        newTaxon['rank'] = candidate.newTaxonMetadata.rank.toLowerCase();
+        newTaxon['parent'] = candidate.newTaxonMetadata.parentTaxonID();
+        if (sharedEvidence !== null) {
+            newTaxon['source'] = sharedEvidence;
+            newTaxon['source_type'] = sharedEvidenceType;
+        } else {
+            newTaxon['source'] = candidate.newTaxonMetadata.evidence;
+            newTaxon['source_type'] = candidate.newTaxonMetadata.evidenceType;
+        }
+        newTaxon['comment'] = candidate.newTaxonMetadata.comments;
+        bundle.taxa.push(newTaxon);
+    });
     $.ajax({
         url: submitNewTaxa_url,
         type: 'POST',
@@ -9091,7 +9115,7 @@ function submitNewTaxa() {
         processData: false,
         data: JSON.stringify(bundle),
         // crossdomain: true,
-        // contentType: "application/json; charset=utf-8",
+        contentType: "application/json; charset=utf-8",
         complete: returnFromNewTaxaSubmission
     });
 }
