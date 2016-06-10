@@ -2308,18 +2308,19 @@ body {
         </p>
         <form class="form-horizontal wider-fields" style="margin-bottom: 0px;">
             <div class="control-group">
-                <label class="control-label" for="">Unmapped label</label>
+                <label class="control-label" for="">Original label</label>
                 <div class="controls">
                     <div class="static-form-value unmapped-label"
+                         style="color: #888; font-weight: normal;"
                          data-bind="text: $data['^ot:originalLabel'],
                                     attr:{'title': '' }"
                          title="">...</div>
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="TODO">Modified taxon name</label>
+                <label class="control-label" for="new-taxon-name">New taxon name</label>
                 <div class="controls">
-                    <input type="text" id="TODO" class="input-xlarge" 
+                    <input type="text" id="new-taxon-name" class="input-xlarge" 
                            data-bind="value: $data.newTaxonMetadata.modifiedName,
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: {keyup: null, change: null, blur: null}
