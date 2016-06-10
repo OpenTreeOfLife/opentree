@@ -2348,7 +2348,6 @@ body {
                         data-bind="value: $data.newTaxonMetadata.rank,
                                    event: { keyup: null, change: null },
                                    options: [
-                                     'no rank',
                                      'domain',
                                      'superkingdom',
                                      'kingdom',
@@ -2391,8 +2390,11 @@ body {
                                      'form',
                                      'forma',
                                      'subform',
-                                     'samples'
-                                   ]
+                                     'samples',
+                                     '───────────',
+                                     'no rank'
+                                   ],
+                                   optionsAfterRender: disableRankDivider
                                    ">
                     </select>
                 </div>

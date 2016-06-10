@@ -9038,7 +9038,7 @@ function showNewTaxaPopup() {
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
         if (!('newTaxonMetadata' in candidate)) {
             candidate.newTaxonMetadata = {
-                'rank': 'Species',
+                'rank': 'species',
                 'modifiedName': candidate['^ot:originalLabel'],
                 'modifiedNameReason': '',
                 'parentTaxonName': ko.observable(''), // watch for changes!
@@ -9335,3 +9335,9 @@ function autoApplyExactParentMatch() {
     }
 }
 
+function disableRankDivider(option, item) {
+    // disable the divider option in this menu
+    if (item.indexOf('─') === 0) {  // Unicode box character!
+        ko.applyBindingsToNode(option, {disable: true}, 'FOO');
+    }
+}
