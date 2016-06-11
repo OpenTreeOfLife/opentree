@@ -9357,7 +9357,7 @@ function updateEvidenceDetails( ) {
     switch( visibleEvidenceType ) {
         case undefined:
         case '':
-        case 'This study':
+        case 'The taxon is decribed in this study':
             $('#new-taxa-popup .evidence-details').hide();
             break;
         default:

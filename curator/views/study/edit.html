@@ -2447,18 +2447,18 @@ body {
                 </div><!-- .controls -->
             </div>
             <div class="control-group">
-                <label class="control-label" for="TODO">Evidence for taxon</label>
+                <label class="control-label" for="TODO">Source for this taxon</label>
                 <div class="controls">
                     <select style="margin-bottom: 4px; width: auto;"
                         data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidenceType : $data.newTaxonMetadata.evidenceType,
                                    event: { keyup: updateEvidenceDetails,
                                             change: updateEvidenceDetails },
                                    attr: {'disabled': evidenceSourceCandidate},
-                                   options: ['This study',
+                                   options: ['The taxon is decribed in this study',
                                              'Link to online taxonomy',
                                              'Link (DOI) to publication',
                                              'Other (explain below)'],
-                                   optionsCaption: 'Choose evidence type...'
+                                   optionsCaption: 'Choose source type...'
                                    ">
                     </select>
                     <br class="evidence-details"/>
@@ -2471,12 +2471,12 @@ body {
                            class="input-block-level evidence-details"
                            placeholder="Enter DOI or URL (add longer comments below)">
                     <br/>
-                    <label for="copy-evidence" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
+                    <label for="copy-evidence" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px;">
                         <input type="checkbox" id="copy-evidence" name="TODO"
                                style="width: 20px;"
                                data-bind="checked: (evidenceSourceCandidate() !== null),
                                           click: toggleEvidenceSourceCandidate" />
-                        Copy this evidence to all labels
+                        Use this source information for all labels
                     </label>
                 </div>
             </div>
