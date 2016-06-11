@@ -406,9 +406,6 @@ body {
                 </div>
             </div>
                   <input data-bind="value: nexml['^ot:focalClade'], event: { change: nudge.GENERAL_METADATA }, css: viewModel.ticklers.GENERAL_METADATA" type="hidden" id="ot_focalClade" placeholder="">
-                  <!--
-                  <input data-bind="value: nexml['^ot:focalClade'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_focalClade" class="input-small" placeholder="">
-                    -->
                 {{ else: }}
                   <p class="static-form-value">
                     <span data-bind="text: nexml['^ot:focalCladeOTTTaxonName'], attr:{'title': ('ottid:'+ nexml['^ot:focalClade'])}, css: viewModel.ticklers.GENERAL_METADATA">&nbsp;</span>
@@ -2283,9 +2280,9 @@ body {
             <p>
                 Once added, these taxa will appear in the Open Tree Taxonomy
                 with the <span style="font-family: monospace; padding: 0 4px 0 2px; font-weight: bold;">from_phylogeny</span>
-                tag. They will appear in the synthetic tree, with links to your
-                curator ID, the current study <strong id="current-study-ref">TODO</strong>,
-                and any sources of evidence that you provide below.
+                tag, and possibly in the synthetic tree, with links to your
+                curator profile, the current study, and any additional sources of
+                evidence that you provide below.
             </p>
         </div>
         <p>
@@ -2447,30 +2444,32 @@ body {
                           </ul>
                       </div>
                   </div>
-                  <input Xdata-bind="value: nexml['^ot:focalClade'], event: { change: nudge.GENERAL_METADATA }, css: viewModel.ticklers.GENERAL_METADATA" type="hidden" id="ot_focalClade" placeholder="">
-
-
                 </div><!-- .controls -->
             </div>
             <div class="control-group">
                 <label class="control-label" for="TODO">Evidence for taxon</label>
                 <div class="controls">
-                    <select style="margin-bottom: 4px; width: auto;" 
+                    <select style="margin-bottom: 4px; width: auto;"
                         data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidenceType : $data.newTaxonMetadata.evidenceType,
-                                   event: { keyup: null, change: null },
+                                   event: { keyup: updateEvidenceDetails,
+                                            change: updateEvidenceDetails },
                                    attr: {'disabled': evidenceSourceCandidate},
-                                   options: ['Link to online taxonomy',
+                                   options: ['This study',
+                                             'Link to online taxonomy',
                                              'Link (DOI) to publication',
                                              'Other (explain below)'],
                                    optionsCaption: 'Choose evidence type...'
                                    ">
                     </select>
-                    <br/>
+                    <br class="evidence-details"/>
                     <input data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidence : $data.newTaxonMetadata.evidence,
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: {keyup: null, change: null, blur: null},
                                       attr: {'disabled': evidenceSourceCandidate}
-                                      " type="text" class="input-block-level" placeholder="Enter DOI or URL (add longer comments below)">
+                                      "
+                           type="text"
+                           class="input-block-level evidence-details"
+                           placeholder="Enter DOI or URL (add longer comments below)">
                     <br/>
                     <label for="copy-evidence" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
                         <input type="checkbox" id="copy-evidence" name="TODO"

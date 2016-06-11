@@ -8966,6 +8966,7 @@ function moveToNthTaxonCandidate( pos ) {
     currentTaxonCandidate = testCandidate;
     // add new-taxon metadata, if not found (stored only during this curation session!)
 
+
     // Bind just the selected candidate to the editing UI
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
     var $boundElements = $('#new-taxa-popup').find('.modal-body');
@@ -8974,6 +8975,7 @@ function moveToNthTaxonCandidate( pos ) {
         ko.cleanNode(el);
         ko.applyBindings(currentTaxonCandidate, el);
     });
+    updateEvidenceDetails( );
     bindHelpPanels();
 
     // enable parent-taxon search
@@ -8999,6 +9001,12 @@ function moveToPreviousTaxonCandidate() {
     }
     moveToNthTaxonCandidate(chosenPosition - 1);
 }
+/* UNUSED (nudge Knockout bindings instead, if possible)
+function refreshCurrentTaxonCandidate() {
+    var currentPosition = getCurrentTaxonCandidatePosition();
+    moveToNthTaxonCandidate(currentPosition);
+}
+*/
 function getCurrentTaxonCandidatePosition() {
     var chosenPosition = $.inArray(currentTaxonCandidate, candidateOTUsForNewTaxa);
     return chosenPosition;
@@ -9161,6 +9169,7 @@ function toggleEvidenceSourceCandidate( otu, event ) {
     } else {
         evidenceSourceCandidate(null);
     }
+    updateEvidenceDetails();
     return true;
 }
 
@@ -9339,5 +9348,20 @@ function disableRankDivider(option, item) {
     // disable the divider option in this menu
     if (item.indexOf('─') === 0) {  // Unicode box character!
         ko.applyBindingsToNode(option, {disable: true}, 'FOO');
+    }
+}
+function updateEvidenceDetails( ) {
+    var visibleEvidenceType = evidenceSourceCandidate() ?
+            evidenceSourceCandidate().newTaxonMetadata.evidenceType :
+            currentTaxonCandidate.newTaxonMetadata.evidenceType;
+    switch( visibleEvidenceType ) {
+        case undefined:
+        case '':
+        case 'This study':
+            $('#new-taxa-popup .evidence-details').hide();
+            break;
+        default:
+            $('#new-taxa-popup .evidence-details').show();
+            break;
     }
 }
