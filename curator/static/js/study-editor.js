@@ -8943,7 +8943,8 @@ function hideMappingOptions() {
 /* A few global vars for the add-new-taxa popup */
 var candidateOTUsForNewTaxa = [ ];
 var currentTaxonCandidate = null;
-var evidenceSourceCandidate = ko.observable(null);
+var sharedTaxonSources = ko.observableArray(); // sets it to an empty array
+sharedTaxonSources(null); // force to null (no shared source)
 
 function getSelectedOTUs() {
     /* This includes only visible OTUs, i.e. those in the current filtered and
@@ -8966,6 +8967,15 @@ function moveToNthTaxonCandidate( pos ) {
     currentTaxonCandidate = testCandidate;
     // add new-taxon metadata, if not found (stored only during this curation session!)
 
+    if ($stashedTaxonSourceElement === null) {
+        // save the template and use the original
+        $stashedTaxonSourceElement = $('#active-taxon-sources .taxon-sources')
+            .find('.taxon-source').eq(0).clone();
+    } else {
+        // apply the saved template
+        $('#active-taxon-sources .taxon-sources').empty()
+                  .append( $stashedTaxonSourceElement.clone() );
+    }
 
     // Bind just the selected candidate to the editing UI
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
@@ -8975,7 +8985,7 @@ function moveToNthTaxonCandidate( pos ) {
         ko.cleanNode(el);
         ko.applyBindings(currentTaxonCandidate, el);
     });
-    updateEvidenceDetails( );
+    updateTaxonSourceDetails( );
     bindHelpPanels();
 
     // enable parent-taxon search
@@ -9015,9 +9025,10 @@ function clearAllTaxonCandidates() {
     // Clear all vars related to the new-taxa popup
     candidateOTUsForNewTaxa = [ ];
     currentTaxonCandidate = null;
-    evidenceSourceCandidate(null);
+    sharedTaxonSources(null);
 }
 
+var $stashedTaxonSourceElement = null;
 function showNewTaxaPopup() {
     // Try to incorporate any selected labels.
     //$stashedCollectionViewerTemplate
@@ -9041,7 +9052,7 @@ function showNewTaxaPopup() {
     if (alreadyMapped > 0) {
         showInfoMessage('Only un-mapped labels will be considered (ignoring '+ alreadyMapped +' already mapped)');
     }
-    
+
     // prepare storage for each selected OTU
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
         if (!('newTaxonMetadata' in candidate)) {
@@ -9052,10 +9063,11 @@ function showNewTaxaPopup() {
                 'parentTaxonName': ko.observable(''), // watch for changes!
                 'parentTaxonID': ko.observable(''),  
                 'parentTaxonSearchContext': '',
-                'evidenceType': '',
-                'evidence': '',
+                'sources': ko.observableArray(),
                 'comments': ''
             };
+            // add a single source (required)
+            addEmptyTaxonSource(candidate.newTaxonMetadata.sources);
         }
     });
 
@@ -9076,6 +9088,13 @@ function hideNewTaxaPopup() {
     $('#new-taxa-popup').modal('hide');
 }
 
+function getActiveTaxonSources(candidate) {
+    var activeSources = sharedTaxonSources() ?
+            sharedTaxonSources :
+            candidate.newTaxonMetadata.sources;
+    return activeSources;
+}
+
 function submitNewTaxa() {
     // Bundle all new (proposed) taxon info, submit to OTT, report on results
     // clone the taxa information (recursive or "deep" clone)
@@ -9091,13 +9110,7 @@ function submitNewTaxa() {
             'email': userEmail
         }
     };
-    // override with shared evidence, if any
-    var sharedEvidence = null,
-        sharedEvidenceType = null;
-    if (evidenceSourceCandidate()) {
-        sharedEvidence = evidenceSourceCandidate().newTaxonMetadata.evidence;
-        sharedEvidenceType = evidenceSourceCandidate().newTaxonMetadata.evidenceType;
-    }
+
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
         // repackage its metadata to match the web service
         var newTaxon = {};
@@ -9106,13 +9119,27 @@ function submitNewTaxa() {
         newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason;
         newTaxon['rank'] = candidate.newTaxonMetadata.rank.toLowerCase();
         newTaxon['parent'] = candidate.newTaxonMetadata.parentTaxonID();
-        if (sharedEvidence !== null) {
-            newTaxon['source'] = sharedEvidence;
-            newTaxon['source_type'] = sharedEvidenceType;
-        } else {
-            newTaxon['source'] = candidate.newTaxonMetadata.evidence;
-            newTaxon['source_type'] = candidate.newTaxonMetadata.evidenceType;
-        }
+        /* Include all valid sources for this candidate. If curator is sharing
+         * one taxon's sources, ignore any saved as a convenience for the curator.
+         */
+        var activeSources = getActiveTaxonSources(candidate);
+        newTaxon['sources'] = [ ];
+        $.each( activeSources(), function(i, source) {
+            var srcInfo = {
+                'source_type': source.type,
+                'source': null
+            };
+            /* Some source types should supress any value that was kept as a
+             * convenience for the curator.
+             */
+            switch( source.type ) {
+                case 'The taxon is decribed in this study':
+                    srcInfo['source'] = null;
+                default:
+                    srcInfo['source'] = source.value;
+            }
+            newTaxon['sources'].push(srcInfo);
+        });
         newTaxon['comment'] = candidate.newTaxonMetadata.comments;
         bundle.taxa.push(newTaxon);
     });
@@ -9160,16 +9187,16 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
     showSuccessMessage('Selected OTUs mapped to new taxa.');
 }
 
-function toggleEvidenceSourceCandidate( otu, event ) {
-    // set a global for this (an observable, to update display)
-    // NOTE that radio-button values are strings, so we convert to boolean below
-    var sharingThisEvidence = $(event.target).is(':checked');
-    if (sharingThisEvidence) {
-        evidenceSourceCandidate(currentTaxonCandidate);
+function toggleSharedSources( otu, event ) {
+    // Set a global for this (an observable, to update display).
+    // NOTE that radio-button values are strings, so we convert to boolean below!
+    var sharingTheseSources = $(event.target).is(':checked');
+    if (sharingTheseSources) {
+        sharedTaxonSources(currentTaxonCandidate.newTaxonMetadata.sources());
     } else {
-        evidenceSourceCandidate(null);
+        sharedTaxonSources(null);
     }
-    updateEvidenceDetails();
+    updateTaxonSourceDetails();
     return true;
 }
 
@@ -9350,18 +9377,75 @@ function disableRankDivider(option, item) {
         ko.applyBindingsToNode(option, {disable: true}, 'FOO');
     }
 }
-function updateEvidenceDetails( ) {
-    var visibleEvidenceType = evidenceSourceCandidate() ?
-            evidenceSourceCandidate().newTaxonMetadata.evidenceType :
-            currentTaxonCandidate.newTaxonMetadata.evidenceType;
-    switch( visibleEvidenceType ) {
-        case undefined:
-        case '':
-        case 'The taxon is decribed in this study':
-            $('#new-taxa-popup .evidence-details').hide();
-            break;
-        default:
-            $('#new-taxa-popup .evidence-details').show();
-            break;
-    }
+
+function updateActiveTaxonSources() {
+    updateTaxonSourceDetails();
+    updateTaxonSourceTypeOptions();
 }
+
+function updateTaxonSourceDetails( ) {
+    var activeSources = getActiveTaxonSources(currentTaxonCandidate);
+    $.each(activeSources(), function(i, source) {
+        var $details = $('#new-taxa-popup .taxon-source:eq('+i+') .source-details')
+        switch( source.type ) {
+            case undefined:
+            case '':
+            case 'The taxon is decribed in this study':
+                $details.hide();
+                break;
+            default:
+                $details.show();
+                break;
+        }
+    });
+}
+
+function updateTaxonSourceTypeOptions() {
+    // Disable 'this study' option for active sources, if it's already selected
+    // (but don't disable the currently selected option).
+    var activeSources = getActiveTaxonSources(currentTaxonCandidate);
+    var currentStudyFound = false;
+    $.each(activeSources(), function(i, source) {
+        if (source.type === 'The taxon is decribed in this study') {
+            currentStudyFound = true;
+        }
+    });
+    var $sourceTypeOptions = $('#new-taxa-popup .source-type option');
+    $sourceTypeOptions.each(function(i, option) {
+        var $option = $(option);
+        if ($option.val() === 'The taxon is decribed in this study') {
+            // This study has already been listed as a source!
+            if (currentStudyFound && (!$option.is(':selected'))) {
+                $option.attr('disabled', 'disabled');
+            } else {
+                $option.removeAttr('disabled');
+            }
+        }
+    });
+}
+function addEmptyTaxonSource( sourceList ) {
+    // N.B. We should always apply this to an observableArray, so that the
+    // UI will update automatically.
+    if (!ko.isObservable(sourceList)) {
+        sourceList = getActiveTaxonSources(currentTaxonCandidate);
+    }
+    sourceList.push({
+        'type': null,
+        'value': null
+    });
+}
+function removeTaxonSource( sourceList, item ) {
+    // N.B. We should always apply this to an observableArray, so that the
+    // UI will update automatically.
+    if (!ko.isObservable(sourceList)) {
+console.warn("using default taxon source list");
+        sourceList = getActiveTaxonSources(currentTaxonCandidate);
+    }
+    sourceList.remove(item);
+}
+
+// utility to test Knockout binding context
+function test(a,b,c) {
+    debugger;
+}
+

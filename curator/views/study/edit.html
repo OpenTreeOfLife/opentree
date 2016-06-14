@@ -229,6 +229,13 @@ body {
     box-shadow: none !important;
 }
 
+/* simple zebra striping for new-taxon source entries */
+.controls.taxon-source {
+    padding: 5px 8px;
+}
+.controls.taxon-source.odd {
+    background: #f5f5f5;
+}
 </style>
 
 <div class="row">
@@ -2281,8 +2288,8 @@ body {
                 Once added, these taxa will appear in the Open Tree Taxonomy
                 with the <span style="font-family: monospace; padding: 0 4px 0 2px; font-weight: bold;">from_phylogeny</span>
                 tag, and possibly in the synthetic tree, with links to your
-                curator profile, the current study, and any additional sources of
-                evidence that you provide below.
+                curator profile, the current study, and any additional sources
+                that you provide below.
             </p>
         </div>
         <p>
@@ -2446,14 +2453,29 @@ body {
                   </div>
                 </div><!-- .controls -->
             </div>
-            <div class="control-group">
-                <label class="control-label" for="TODO">Source for this taxon</label>
-                <div class="controls">
-                    <select style="margin-bottom: 4px; width: auto;"
-                        data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidenceType : $data.newTaxonMetadata.evidenceType,
-                                   event: { keyup: updateEvidenceDetails,
-                                            change: updateEvidenceDetails },
-                                   attr: {'disabled': evidenceSourceCandidate},
+            <div class="control-group" id="active-taxon-sources"
+                 data-bind="with: getActiveTaxonSources($data)">
+                <label class="control-label" for="TODO">Source(s) for this taxon</label>
+               <div class="taxon-sources"
+                    data-bind="foreach: { data: $data, as: 'source' }">
+                <div class="controls taxon-source"
+                     data-bind="css: { odd: ($index() % 2) === 0 }">
+                    <button data-bind="click: function() {
+                                         removeTaxonSource( $parent, $data );
+                                         updateActiveTaxonSources();
+                                         return false;
+                                       },
+                                       visible: $parent.indexOf(source) !== 0,
+                                       attr: {'disabled': sharedTaxonSources()}"
+                        class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                        style="display: none;">
+                        <i class="icon-remove icon-white"></i>
+                    </button>
+                    <select class="source-type" style="width: auto;"
+                        data-bind="value: source.type,
+                                   event: { keyup: updateActiveTaxonSources,
+                                            change: updateActiveTaxonSources },
+                                   attr: {'disabled': sharedTaxonSources()},
                                    options: ['The taxon is decribed in this study',
                                              'Link to online taxonomy',
                                              'Link (DOI) to publication',
@@ -2461,30 +2483,45 @@ body {
                                    optionsCaption: 'Choose source type...'
                                    ">
                     </select>
-                    <br class="evidence-details"/>
-                    <input data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidence : $data.newTaxonMetadata.evidence,
+                    <br class="source-details"/>
+                    <input data-bind="value: source.value,
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: {keyup: null, change: null, blur: null},
-                                      attr: {'disabled': evidenceSourceCandidate}
+                                      attr: {'disabled': sharedTaxonSources()}
                                       "
                            type="text"
-                           class="input-block-level evidence-details"
-                           placeholder="Enter DOI or URL (add longer comments below)">
-                    <br/>
-                    <label for="copy-evidence" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px;">
-                        <input type="checkbox" id="copy-evidence" name="TODO"
-                               style="width: 20px;"
-                               data-bind="checked: (evidenceSourceCandidate() !== null),
-                                          click: toggleEvidenceSourceCandidate" />
-                        Use this source information for all labels
-                    </label>
+                           class="input-block-level source-details"
+                           style="margin-top: 4px;"
+                           placeholder="Enter DOI or URL (add longer comments below)"
+                    />
+
+                </div><!-- end of .taxon-source -->
+               </div><!-- end of .taxon-sources -->
+
+                <div class="controls">
+                  <button class="btn btn-small btn-info pull-right"
+                          style="margin: 4px 8px 2px;"
+                          data-bind="click: addEmptyTaxonSource,
+                                     attr: {'disabled': sharedTaxonSources()}">
+                    Add another source
+                    <i class="icon-plus icon-white"></i></button>
+                  <label for="copy-evidence" class="featured-label" style="clear: both; margin-top: 0px; padding-left: 20px; text-indent: -20px;">
+                      <input type="checkbox" id="copy-evidence" name="TODO"
+                             style="width: 20px;"
+                             data-bind="checked: $.isArray(sharedTaxonSources()),
+                                        click: toggleSharedSources" />
+                      Use this source information for all labels
+                  </label>
                 </div>
-            </div>
-                    <textarea class="input-block-level" style="margin-bottom: 8px;"
-                        data-bind="value: $data.newTaxonMetadata.comments,
-                                   valueUpdate: ['afterkeydown', 'input'],
-                                   event: { keyup: null, change: null }"
-                              placeholder="Add comments or additional links to support this taxon."></textarea>
+
+            </div><!--  /#active-taxon-sources -->
+
+            <textarea class="input-block-level" style="margin-bottom: 8px;"
+                data-bind="value: $data.newTaxonMetadata.comments,
+                           valueUpdate: ['afterkeydown', 'input'],
+                           event: { keyup: null, change: null }"
+                placeholder="Add comments or additional links to support this taxon.">
+            </textarea>
         </form>
 
     </div>
