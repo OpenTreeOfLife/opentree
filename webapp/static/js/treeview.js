@@ -1192,7 +1192,7 @@ function showObjectProperties( objInfo, options ) {
         // Offer to download Newick string for this subtree, OR link to the
         // main download page if it's too large (based on the number of
         // descendant tips)
-        var maxTipsForNewickSubtree = 10000;
+        var maxTipsForNewickSubtree = 100000;
         if ((typeof fullNode.num_tips !== 'number') || (fullNode.num_tips > maxTipsForNewickSubtree)) {
             // when in doubt (e.g. nodes on the rootward path), offer the full download
             $details.append('<dt>Download subtree as Newick string</dt>');
