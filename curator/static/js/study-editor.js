@@ -9108,7 +9108,8 @@ function submitNewTaxa() {
             'name': userDisplayName, 
             'login': userLogin, 
             'email': userEmail
-        }
+        },
+        "new_ottids_required": candidateOTUsForNewTaxa.length
     };
 
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
