@@ -9125,6 +9125,10 @@ function submitNewTaxa() {
         var activeSources = getActiveTaxonSources(candidate);
         newTaxon['sources'] = [ ];
         $.each( activeSources(), function(i, source) {
+            if (!source.type) {
+                // Ignore sources with no selected type (null, undefined, '')
+                return;
+            }
             var srcInfo = {
                 'source_type': source.type,
                 'source': null
