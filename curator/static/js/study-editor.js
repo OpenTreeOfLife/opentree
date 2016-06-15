@@ -9062,11 +9062,14 @@ function showNewTaxaPopup() {
     // prepare storage for each selected OTU
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
         if (!('newTaxonMetadata' in candidate)) {
+            var startingName = $.trim(candidate['^ot:altLabel']) || 
+                               $.trim(adjustedLabel(candidate['^ot:originalLabel']));
             candidate.newTaxonMetadata = {
                 'rank': 'species',
-                'modifiedName': candidate['^ot:originalLabel'],
+                'initialName': startingName,  // not sent to server
+                'modifiedName': ko.observable( startingName ),
                 'modifiedNameReason': '',
-                'parentTaxonName': ko.observable(''), // watch for changes!
+                'parentTaxonName': ko.observable(''),  // not sent to server
                 'parentTaxonID': ko.observable(''),  
                 'parentTaxonSearchContext': '',
                 'sources': ko.observableArray(),
@@ -9142,7 +9145,7 @@ function submitNewTaxa() {
         // repackage its metadata to match the web service
         var newTaxon = {};
         newTaxon['tag'] = i;  // used to match results with candidate OTUs
-        newTaxon['name'] = candidate.newTaxonMetadata.modifiedName;
+        newTaxon['name'] = candidate.newTaxonMetadata.modifiedName();
         newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason;
         newTaxon['rank'] = candidate.newTaxonMetadata.rank.toLowerCase();
         /* Use shared parent taxon, if any. */
