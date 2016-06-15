@@ -8943,6 +8943,8 @@ function hideMappingOptions() {
 /* A few global vars for the add-new-taxa popup */
 var candidateOTUsForNewTaxa = [ ];
 var currentTaxonCandidate = null;
+var sharedParentTaxonID = ko.observable(null);
+var sharedParentTaxonName = ko.observable(null);
 var sharedTaxonSources = ko.observableArray(); // sets it to an empty array
 sharedTaxonSources(null); // force to null (no shared source)
 
@@ -9025,6 +9027,8 @@ function clearAllTaxonCandidates() {
     // Clear all vars related to the new-taxa popup
     candidateOTUsForNewTaxa = [ ];
     currentTaxonCandidate = null;
+    sharedParentTaxonID(null);
+    sharedParentTaxonName(null);
     sharedTaxonSources(null);
 }
 
@@ -9088,7 +9092,23 @@ function hideNewTaxaPopup() {
     $('#new-taxa-popup').modal('hide');
 }
 
+function getActiveParentTaxonID(candidate) {
+    // return the *observable* property (shared or local)
+    var activeID = sharedParentTaxonID() ?
+            sharedParentTaxonID :
+            candidate.newTaxonMetadata.parentTaxonID;
+    return activeID;
+}
+function getActiveParentTaxonName(candidate) {
+    // return the *observable* property (shared or local)
+    var activeName = sharedParentTaxonName() ?
+            sharedParentTaxonName :
+            candidate.newTaxonMetadata.parentTaxonName;
+    return activeName;
+}
+
 function getActiveTaxonSources(candidate) {
+    // return the *observable* property (shared or local)
     var activeSources = sharedTaxonSources() ?
             sharedTaxonSources :
             candidate.newTaxonMetadata.sources;
@@ -9119,7 +9139,8 @@ function submitNewTaxa() {
         newTaxon['name'] = candidate.newTaxonMetadata.modifiedName;
         newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason;
         newTaxon['rank'] = candidate.newTaxonMetadata.rank.toLowerCase();
-        newTaxon['parent'] = candidate.newTaxonMetadata.parentTaxonID();
+        /* Use shared parent taxon, if any. */
+        newTaxon['parent'] = getActiveParentTaxonID(candidate)();
         /* Include all valid sources for this candidate. If curator is sharing
          * one taxon's sources, ignore any saved as a convenience for the curator.
          */
@@ -9192,6 +9213,21 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
     showSuccessMessage('Selected OTUs mapped to new taxa.');
 }
 
+function toggleSharedParentID( otu, event ) {
+    // Set a global for this (an observable, to update display).
+    // NOTE that radio-button values are strings, so we convert to boolean below!
+    var sharingThisParentID = $(event.target).is(':checked');
+    if (sharingThisParentID) {
+        sharedParentTaxonID(currentTaxonCandidate.newTaxonMetadata.parentTaxonID());
+        sharedParentTaxonName(currentTaxonCandidate.newTaxonMetadata.parentTaxonName());
+        // clobber any pending search text in the field (to avoid confusion)
+        $('input[name=parent-taxon-search]').val("");
+    } else {
+        sharedParentTaxonID(null);
+        sharedParentTaxonName(null);
+    }
+    return true;
+}
 function toggleSharedSources( otu, event ) {
     // Set a global for this (an observable, to update display).
     // NOTE that radio-button values are strings, so we convert to boolean below!

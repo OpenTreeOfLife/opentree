@@ -2407,27 +2407,29 @@ body {
                 <label class="control-label" for="TODO">Parent taxon</label>
                 <div class="controls">
                   <div class="static-form-value">
-                    <span data-bind="text: ($data.newTaxonMetadata.parentTaxonName() || 'None'),
-                                     attr:{'title': ''}"
+                    <span data-bind="text: (getActiveParentTaxonName($data) || 'None'),
+                                     attr:{'title': '', 'disabled': sharedParentTaxonID()}"
                           class="parent-taxon"
                           title="">???</span>
 
                     <span style="font-weight: normal;"
-                          data-bind="visible: ($data.newTaxonMetadata.parentTaxonName() !== '')">
+                          data-bind="visible: getActiveParentTaxonName($data)()">
                         &mdash;
                         <a href="#" target="_blank" 
                            class="parent-taxon-browse-link"
-                           data-bind="attr: {href: '/taxonomy/browse?id='+ $data.newTaxonMetadata.parentTaxonID()}">Open in OTT browser</a>
+                           data-bind="attr: {href: '/taxonomy/browse?id='+ getActiveParentTaxonID($data)}">Open in OTT browser</a>
                     </span>
                   </div>
                   <!-- reuse style and behavior from Metadata > Focal Clade -->
                   <div id="parent-taxon-search-form" class="Xnavbar-search Xpull-right" autocomplete="off" style="Xdisplay: inline-block; position: relative;">
                       <input type="text" name="parent-taxon-search" class="" style="Xwidth: 365px;"
+                          data-bind="attr:{'disabled': sharedParentTaxonID()}"
                           placeholder="Choose the parent taxon..." autocomplete="off">
                       <!-- <input type="submit" style="" name="parent-taxon-search-go" value="Go" onclick="return false;"/> -->
                       <!-- then show dropdown when results are ready... -->
                       <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
-                      <select style="margin-bottom: 0; width: auto;" name="parent-taxon-search-context">
+                      <select style="margin-bottom: 0; width: auto;" name="parent-taxon-search-context"
+                              data-bind="attr:{'disabled': sharedParentTaxonID()}"
                           {{ # generate our contextNames list based on newly fetched names
                             try:
                              for context_name in taxonSearchContextNames:
@@ -2451,6 +2453,13 @@ body {
                           </ul>
                       </div>
                   </div>
+                  <label for="copy-parent-taxon" class="featured-label" style="clear: both; padding-top: 2px; padding-left: 20px; text-indent: -20px;">
+                      <input type="checkbox" id="copy-parent-taxon" name="TODO"
+                             style="width: 20px;"
+                             data-bind="checked: sharedParentTaxonID(),
+                                        click: toggleSharedParentID" />
+                      Use this parent taxon for all labels <em>(un-check to edit)</em>
+                  </label>
                 </div><!-- .controls -->
             </div>
             <div class="control-group" id="active-taxon-sources"
