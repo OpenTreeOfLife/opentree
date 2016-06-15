@@ -2340,7 +2340,8 @@ body {
                                              'Taxon subsequently published under this name',
                                              'Synonym',
                                              'Other (explain below)'],
-                                   optionsCaption: 'Choose reason for modification...'
+                                   optionsCaption: 'Choose reason for modification...',
+                                   attr:{'disabled': ($data.newTaxonMetadata.modifiedName() === $data.newTaxonMetadata.initialName)}
                                    ">
                     </select>
                 </div>
