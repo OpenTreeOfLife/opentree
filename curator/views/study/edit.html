@@ -2429,7 +2429,7 @@ body {
                       <!-- then show dropdown when results are ready... -->
                       <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
                       <select style="margin-bottom: 0; width: auto;" name="parent-taxon-search-context"
-                              data-bind="attr:{'disabled': sharedParentTaxonID()}"
+                              data-bind="attr:{'disabled': sharedParentTaxonID()}">
                           {{ # generate our contextNames list based on newly fetched names
                             try:
                              for context_name in taxonSearchContextNames:
