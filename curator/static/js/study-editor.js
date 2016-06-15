@@ -8989,6 +8989,8 @@ function moveToNthTaxonCandidate( pos ) {
     });
     updateTaxonSourceDetails( );
     bindHelpPanels();
+    //updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+    // N.B. This is already handled, probably during `updateTaxonSourceDetails()`
 
     // enable parent-taxon search
     $('input[name=parent-taxon-search]').unbind('keyup change').bind('keyup change', setParentTaxaSearchFuse );
@@ -9076,9 +9078,11 @@ function showNewTaxaPopup() {
     });
 
     moveToNthTaxonCandidate( 0 );
-    // Show and initialize the popup
-    $('#new-taxa-popup').modal('show');
 
+    // Trigger smart resize each time the window opens
+    $('#new-taxa-popup').off('shown').on('shown', function () {
+        updateNewTaxaPopupHeight();
+    });
     // Block any method of closing this window if there is unsaved work
     $('#new-taxa-popup').off('hide').on('hide', function () {
         if (currentTaxonCandidate || candidateOTUsForNewTaxa.length > 0) {
@@ -9086,6 +9090,8 @@ function showNewTaxaPopup() {
             return false;
         }
     });
+    // Show and initialize the popup
+    $('#new-taxa-popup').modal('show');
 }
 function hideNewTaxaPopup() {
     clearAllTaxonCandidates();
@@ -9439,6 +9445,7 @@ function updateTaxonSourceDetails( ) {
                 break;
         }
     });
+    updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
 }
 
 function updateTaxonSourceTypeOptions() {
@@ -9474,19 +9481,51 @@ function addEmptyTaxonSource( sourceList ) {
         'type': null,
         'value': null
     });
+    updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
 }
 function removeTaxonSource( sourceList, item ) {
     // N.B. We should always apply this to an observableArray, so that the
     // UI will update automatically.
     if (!ko.isObservable(sourceList)) {
-console.warn("using default taxon source list");
         sourceList = getActiveTaxonSources(currentTaxonCandidate);
     }
     sourceList.remove(item);
+    updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
 }
 
-// utility to test Knockout binding context
-function test(a,b,c) {
-    debugger;
+function updateNewTaxaPopupHeight(options) {
+    /* Revisit height and placement of the new-taxon submission tool. If the
+     * list of sources is long enough, we should take the full height of the
+     * window, with all non-list UI available and any scrollbars restricted to
+     * the list area.
+     */
+    options = options || {};
+    var $popup = $('#new-taxa-popup');
+    // let the rounded top and bottom edges of the popup leave the page
+    var outOfBoundsHeight = 8;  // px each on top and bottom
+    // leave room at the bottom for error messages, etc.
+    var footerMessageHeight = 40;
+    var currentWindowHeight = $(window).height();
+    var maxPopupHeight = (currentWindowHeight + (outOfBoundsHeight*2) - footerMessageHeight);
+    var $listHolder = $popup.find('.modal-body');
+    var currentListScrollPosition = $listHolder.scrollTop();
+    // NOTE that MAINTAIN_SCROLL may only gives good results if this is called
+    // directly, vs. as part of a full update...
+    var newListScrollPosition = (options.MAINTAIN_SCROLL) ? currentListScrollPosition : 0;
+    var currentListHeight = $listHolder.height();
+    var currentPopupHeight = $popup.height();
+    // how tall is the rest of the popup?
+    var otherPopupHeight = currentPopupHeight - currentListHeight;
+    var maxListHeight = maxPopupHeight - otherPopupHeight;
+    //$popupBody.css({ 'max-height': 'none' });
+    $listHolder.css({ 'max-height': maxListHeight +'px' });
+    var popupTopY = (currentWindowHeight / 2) - ($popup.height() / 2) - (footerMessageHeight/2);
+    $popup.css({ 'top': popupTopY +'px' });
+    // restore (or set) new list scroll position
+    $listHolder.scrollTop(newListScrollPosition);
 }
-
+$(window).resize( function () {
+    if ($('#new-taxa-popup').is(':visible')) {
+        updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+    }
+});
