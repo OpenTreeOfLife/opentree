@@ -229,6 +229,13 @@ body {
     box-shadow: none !important;
 }
 
+/* simple zebra striping for new-taxon source entries */
+.controls.taxon-source {
+    padding: 5px 8px;
+}
+.controls.taxon-source.odd {
+    background: #f5f5f5;
+}
 </style>
 
 <div class="row">
@@ -406,9 +413,6 @@ body {
                 </div>
             </div>
                   <input data-bind="value: nexml['^ot:focalClade'], event: { change: nudge.GENERAL_METADATA }, css: viewModel.ticklers.GENERAL_METADATA" type="hidden" id="ot_focalClade" placeholder="">
-                  <!--
-                  <input data-bind="value: nexml['^ot:focalClade'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_focalClade" class="input-small" placeholder="">
-                    -->
                 {{ else: }}
                   <p class="static-form-value">
                     <span data-bind="text: nexml['^ot:focalCladeOTTTaxonName'], attr:{'title': ('ottid:'+ nexml['^ot:focalClade'])}, css: viewModel.ticklers.GENERAL_METADATA">&nbsp;</span>
@@ -2283,9 +2287,9 @@ body {
             <p>
                 Once added, these taxa will appear in the Open Tree Taxonomy
                 with the <span style="font-family: monospace; padding: 0 4px 0 2px; font-weight: bold;">from_phylogeny</span>
-                tag. They will appear in the synthetic tree, with links to your
-                curator ID, the current study <strong id="current-study-ref">TODO</strong>,
-                and any sources of evidence that you provide below.
+                tag, and possibly in the synthetic tree, with links to your
+                curator profile, the current study, and any additional sources
+                that you provide below.
             </p>
         </div>
         <p>
@@ -2308,18 +2312,19 @@ body {
         </p>
         <form class="form-horizontal wider-fields" style="margin-bottom: 0px;">
             <div class="control-group">
-                <label class="control-label" for="">Unmapped label</label>
+                <label class="control-label" for="">Original label</label>
                 <div class="controls">
                     <div class="static-form-value unmapped-label"
+                         style="color: #888; font-weight: normal;"
                          data-bind="text: $data['^ot:originalLabel'],
                                     attr:{'title': '' }"
                          title="">...</div>
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="TODO">Modified taxon name</label>
+                <label class="control-label" for="new-taxon-name">New taxon name</label>
                 <div class="controls">
-                    <input type="text" id="TODO" class="input-xlarge" 
+                    <input type="text" id="new-taxon-name" class="input-xlarge" 
                            data-bind="value: $data.newTaxonMetadata.modifiedName,
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: {keyup: null, change: null, blur: null}
@@ -2346,21 +2351,54 @@ body {
                     <select style="margin-bottom: 0; width: auto;" 
                         data-bind="value: $data.newTaxonMetadata.rank,
                                    event: { keyup: null, change: null },
-                                   options: [  'Subspecies',
-                                             'Species',
-                                               'Subgenus',
-                                             'Genus',
-                                               'Subtribe',
-                                               'Tribe',
-                                               'Subfamily',
-                                             'Family',
-                                               'Superfamily',
-                                             'Order',
-                                             'Class',
-                                             'Phylum',
-                                             'Kingdom',
-                                             'Domain'
-                                             ]
+                                   options: [
+                                     'domain',
+                                     'superkingdom',
+                                     'kingdom',
+                                     'subkingdom',
+                                     'division',
+                                     'infrakingdom',
+                                     'superphylum',
+                                     'phylum',
+                                     'subphylum',
+                                     'infraphylum',
+                                     'subdivision',
+                                     'superclass',
+                                     'class',
+                                     'subclass',
+                                     'infraclass',
+                                     'superorder',
+                                     'order',
+                                     'suborder',
+                                     'infraorder',
+                                     'parvorder',
+                                     'section',
+                                     'subsection',
+                                     'superfamily',
+                                     'family',
+                                     'subfamily',
+                                     'supertribe',
+                                     'tribe',
+                                     'subtribe',
+                                     'genus',
+                                     'subgenus',
+                                     'species group',
+                                     'species subgroup',
+                                     'species',
+                                     'infraspecificname',
+                                     'subspecies',
+                                     'natio',
+                                     'variety',
+                                     'varietas',
+                                     'subvariety',
+                                     'form',
+                                     'forma',
+                                     'subform',
+                                     'samples',
+                                     '───────────',
+                                     'no rank'
+                                   ],
+                                   optionsAfterRender: disableRankDivider
                                    ">
                     </select>
                 </div>
@@ -2369,27 +2407,29 @@ body {
                 <label class="control-label" for="TODO">Parent taxon</label>
                 <div class="controls">
                   <div class="static-form-value">
-                    <span data-bind="text: ($data.newTaxonMetadata.parentTaxonName() || 'None'),
-                                     attr:{'title': ''}"
+                    <span data-bind="text: (getActiveParentTaxonName($data) || 'None'),
+                                     attr:{'title': '', 'disabled': sharedParentTaxonID()}"
                           class="parent-taxon"
                           title="">???</span>
 
                     <span style="font-weight: normal;"
-                          data-bind="visible: ($data.newTaxonMetadata.parentTaxonName() !== '')">
+                          data-bind="visible: getActiveParentTaxonName($data)()">
                         &mdash;
                         <a href="#" target="_blank" 
                            class="parent-taxon-browse-link"
-                           data-bind="attr: {href: '/taxonomy/browse?id='+ $data.newTaxonMetadata.parentTaxonID()}">Open in OTT browser</a>
+                           data-bind="attr: {href: '/taxonomy/browse?id='+ getActiveParentTaxonID($data)}">Open in OTT browser</a>
                     </span>
                   </div>
                   <!-- reuse style and behavior from Metadata > Focal Clade -->
                   <div id="parent-taxon-search-form" class="Xnavbar-search Xpull-right" autocomplete="off" style="Xdisplay: inline-block; position: relative;">
                       <input type="text" name="parent-taxon-search" class="" style="Xwidth: 365px;"
+                          data-bind="attr:{'disabled': sharedParentTaxonID()}"
                           placeholder="Choose the parent taxon..." autocomplete="off">
                       <!-- <input type="submit" style="" name="parent-taxon-search-go" value="Go" onclick="return false;"/> -->
                       <!-- then show dropdown when results are ready... -->
                       <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
-                      <select style="margin-bottom: 0; width: auto;" name="parent-taxon-search-context">
+                      <select style="margin-bottom: 0; width: auto;" name="parent-taxon-search-context"
+                              data-bind="attr:{'disabled': sharedParentTaxonID()}"
                           {{ # generate our contextNames list based on newly fetched names
                             try:
                              for context_name in taxonSearchContextNames:
@@ -2413,45 +2453,84 @@ body {
                           </ul>
                       </div>
                   </div>
-                  <input Xdata-bind="value: nexml['^ot:focalClade'], event: { change: nudge.GENERAL_METADATA }, css: viewModel.ticklers.GENERAL_METADATA" type="hidden" id="ot_focalClade" placeholder="">
-
-
+                  <label for="copy-parent-taxon" class="featured-label" style="clear: both; padding-top: 2px; padding-left: 20px; text-indent: -20px;">
+                      <input type="checkbox" id="copy-parent-taxon" name="TODO"
+                             style="width: 20px;"
+                             data-bind="checked: sharedParentTaxonID(),
+                                        click: toggleSharedParentID" />
+                      Use this parent taxon for all labels <em>(un-check to edit)</em>
+                  </label>
                 </div><!-- .controls -->
             </div>
-            <div class="control-group">
-                <label class="control-label" for="TODO">Evidence for taxon</label>
-                <div class="controls">
-                    <select style="margin-bottom: 4px; width: auto;" 
-                        data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidenceType : $data.newTaxonMetadata.evidenceType,
-                                   event: { keyup: null, change: null },
-                                   attr: {'disabled': evidenceSourceCandidate},
-                                   options: ['Link to online taxonomy',
+            <div class="control-group" id="active-taxon-sources"
+                 data-bind="with: getActiveTaxonSources($data)">
+                <label class="control-label" for="TODO">Source(s) for this taxon</label>
+               <div class="taxon-sources"
+                    data-bind="foreach: { data: $data, as: 'source' }">
+                <div class="controls taxon-source"
+                     data-bind="css: { odd: ($index() % 2) === 0 }">
+                    <button data-bind="click: function() {
+                                         removeTaxonSource( $parent, $data );
+                                         updateActiveTaxonSources();
+                                         return false;
+                                       },
+                                       visible: $parent.indexOf(source) !== 0,
+                                       attr: {'disabled': sharedTaxonSources()}"
+                        class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                        style="display: none;">
+                        <i class="icon-remove icon-white"></i>
+                    </button>
+                    <select class="source-type" style="width: auto;"
+                        data-bind="value: source.type,
+                                   event: { keyup: updateActiveTaxonSources,
+                                            change: updateActiveTaxonSources },
+                                   attr: {'disabled': sharedTaxonSources()},
+                                   options: ['The taxon is decribed in this study',
+                                             'Link to online taxonomy',
                                              'Link (DOI) to publication',
                                              'Other (explain below)'],
-                                   optionsCaption: 'Choose evidence type...'
+                                   optionsCaption: 'Choose source type...'
                                    ">
                     </select>
-                    <br/>
-                    <input data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidence : $data.newTaxonMetadata.evidence,
+                    <br class="source-details"/>
+                    <input data-bind="value: source.value,
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: {keyup: null, change: null, blur: null},
-                                      attr: {'disabled': evidenceSourceCandidate}
-                                      " type="text" class="input-block-level" placeholder="Enter DOI or URL (add longer comments below)">
-                    <br/>
-                    <label for="copy-evidence" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
-                        <input type="checkbox" id="copy-evidence" name="TODO"
-                               style="width: 20px;"
-                               data-bind="checked: (evidenceSourceCandidate() !== null),
-                                          click: toggleEvidenceSourceCandidate" />
-                        Copy this evidence to all labels
-                    </label>
+                                      attr: {'disabled': sharedTaxonSources()}
+                                      "
+                           type="text"
+                           class="input-block-level source-details"
+                           style="margin-top: 4px;"
+                           placeholder="Enter DOI or URL (add longer comments below)"
+                    />
+
+                </div><!-- end of .taxon-source -->
+               </div><!-- end of .taxon-sources -->
+
+                <div class="controls">
+                  <button class="btn btn-small btn-info pull-right"
+                          style="margin: 4px 8px 2px;"
+                          data-bind="click: addEmptyTaxonSource,
+                                     attr: {'disabled': sharedTaxonSources()}">
+                    Add another source
+                    <i class="icon-plus icon-white"></i></button>
+                  <label for="copy-evidence" class="featured-label" style="clear: both; padding-top: 2px; padding-left: 20px; text-indent: -20px;">
+                      <input type="checkbox" id="copy-evidence" name="TODO"
+                             style="width: 20px;"
+                             data-bind="checked: $.isArray(sharedTaxonSources()),
+                                        click: toggleSharedSources" />
+                      Use this source information for all labels <em>(un-check to edit)</em>
+                  </label>
                 </div>
-            </div>
-                    <textarea class="input-block-level" style="margin-bottom: 8px;"
-                        data-bind="value: $data.newTaxonMetadata.comments,
-                                   valueUpdate: ['afterkeydown', 'input'],
-                                   event: { keyup: null, change: null }"
-                              placeholder="Add comments or additional links to support this taxon."></textarea>
+
+            </div><!--  /#active-taxon-sources -->
+
+            <textarea class="input-block-level" style="margin-bottom: 8px;"
+                data-bind="value: $data.newTaxonMetadata.comments,
+                           valueUpdate: ['afterkeydown', 'input'],
+                           event: { keyup: null, change: null }"
+                placeholder="Add comments or additional links to support this taxon.">
+            </textarea>
         </form>
 
     </div>
