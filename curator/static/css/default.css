@@ -853,6 +853,10 @@ tr.after-shims th {
 		margin-left: 4em;
 }
 
+#new-taxa-popup {
+    width: 80%;
+    margin: auto -40%;
+}
 #new-taxa-popup .modal-body {
     max-height: 520px;
 }

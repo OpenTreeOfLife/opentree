@@ -230,11 +230,11 @@ body {
 }
 
 /* simple zebra striping for new-taxon source entries */
-.controls.taxon-source {
-    padding: 5px 8px;
+.controls.taxon-source td {
+    padding: 5px 6px;
 }
 .controls.taxon-source.odd {
-    background: #f5f5f5;
+    background: #f3f3f3;
 }
 </style>
 
@@ -2269,7 +2269,7 @@ body {
 </div>
 
 <!-- hidden template for new-taxon form (for adding taxa to OT Taxonomy) -->
-<div class="modal hide fade" id="new-taxa-popup" style="width: 640px; display: none;">
+<div class="modal hide fade" id="new-taxa-popup" style="display: none;">
     <div class="modal-header">
       <a data-dismiss="modal" class="close" onclick="hideNewTaxaPopup(); return false;">×</a>
       <h3 id='dialog-heading'>
@@ -2465,22 +2465,13 @@ body {
             </div>
             <div class="control-group" id="active-taxon-sources"
                  data-bind="with: getActiveTaxonSources($data)">
-                <label class="control-label" for="TODO">Source(s) for this taxon</label>
-               <div class="taxon-sources"
+               <label class="">Source(s) for this taxon</label>
+               <table style="clear: left; width: 100%;">
+                <tbody class="taxon-sources"
                     data-bind="foreach: { data: $data, as: 'source' }">
-                <div class="controls taxon-source"
+                 <tr class="controls taxon-source"
                      data-bind="css: { odd: ($index() % 2) === 0 }">
-                    <button data-bind="click: function() {
-                                         removeTaxonSource( $parent, $data );
-                                         updateActiveTaxonSources();
-                                         return false;
-                                       },
-                                       visible: $parent.indexOf(source) !== 0,
-                                       attr: {'disabled': sharedTaxonSources()}"
-                        class="pull-right btn btn-mini btn-danger row-controls-ghosted"
-                        style="display: none;">
-                        <i class="icon-remove icon-white"></i>
-                    </button>
+                  <td width="250">
                     <select class="source-type" style="width: auto;"
                         data-bind="value: source.type,
                                    event: { keyup: updateActiveTaxonSources,
@@ -2493,7 +2484,8 @@ body {
                                    optionsCaption: 'Choose source type...'
                                    ">
                     </select>
-                    <br class="source-details"/>
+                  </td>
+                  <td width="*">
                     <input data-bind="value: source.value,
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: {keyup: null, change: null, blur: null},
@@ -2501,20 +2493,33 @@ body {
                                       "
                            type="text"
                            class="input-block-level source-details"
-                           style="margin-top: 4px;"
                      /><!-- placeholder text is set by JS, in `updateTaxonSourceDetails` -->
+                  </td>
+                  <td width="30">
+                    <button data-bind="click: function() {
+                                         removeTaxonSource( $parent, $data );
+                                         updateActiveTaxonSources();
+                                         return false;
+                                       },
+                                       visible: $parent.indexOf(source) !== 0,
+                                       attr: {'disabled': sharedTaxonSources()}"
+                        class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                        style="display: none;">
+                        <i class="icon-remove icon-white"></i>
+                    </button>
+                  </td>
+                 </tr><!-- end of .taxon-source -->
+                </tbody><!-- end of .taxon-sources -->
+               </table>
 
-                </div><!-- end of .taxon-source -->
-               </div><!-- end of .taxon-sources -->
-
-                <div class="controls">
+                <div>
                   <button class="btn btn-small btn-info pull-right"
                           style="margin: 4px 8px 2px;"
                           data-bind="click: addEmptyTaxonSource,
                                      attr: {'disabled': sharedTaxonSources()}">
                     Add another source
                     <i class="icon-plus icon-white"></i></button>
-                  <label for="copy-evidence" class="featured-label" style="clear: both; padding-top: 2px; padding-left: 20px; text-indent: -20px;">
+                  <label for="copy-evidence" class="featured-label pull-left" style="margin-top: 6px;">
                       <input type="checkbox" id="copy-evidence" name="TODO"
                              style="width: 20px;"
                              data-bind="checked: $.isArray(sharedTaxonSources()),
