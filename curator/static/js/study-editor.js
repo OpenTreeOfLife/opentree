@@ -9168,7 +9168,7 @@ function submitNewTaxa() {
              * convenience for the curator.
              */
             switch( source.type ) {
-                case 'The taxon is decribed in this study':
+                case 'The taxon is described in this study':
                     srcInfo['source'] = null;
                 default:
                     srcInfo['source'] = source.value;
@@ -9440,7 +9440,7 @@ function updateTaxonSourceDetails( ) {
         switch( source.type ) {
             case undefined:
             case '':
-            case 'The taxon is decribed in this study':
+            case 'The taxon is described in this study':
                 $details.hide();
                 break;
             default:
@@ -9463,14 +9463,14 @@ function updateTaxonSourceTypeOptions() {
     var activeSources = getActiveTaxonSources(currentTaxonCandidate);
     var currentStudyFound = false;
     $.each(activeSources(), function(i, source) {
-        if (source.type === 'The taxon is decribed in this study') {
+        if (source.type === 'The taxon is described in this study') {
             currentStudyFound = true;
         }
     });
     var $sourceTypeOptions = $('#new-taxa-popup .source-type option');
     $sourceTypeOptions.each(function(i, option) {
         var $option = $(option);
-        if ($option.val() === 'The taxon is decribed in this study') {
+        if ($option.val() === 'The taxon is described in this study') {
             // This study has already been listed as a source!
             if (currentStudyFound && (!$option.is(':selected'))) {
                 $option.attr('disabled', 'disabled');
