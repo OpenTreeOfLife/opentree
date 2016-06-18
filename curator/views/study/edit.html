@@ -2339,7 +2339,7 @@ body {
                                              'Removing extraneous characters',
                                              'Taxon subsequently published under this name',
                                              'Synonym',
-                                             'Other (explain below)'],
+                                             'Other (explain in comments below)'],
                                    optionsCaption: 'Choose reason for modification...',
                                    attr:{'disabled': ($data.newTaxonMetadata.modifiedName() === $data.newTaxonMetadata.initialName)}
                                    ">
@@ -2489,7 +2489,7 @@ body {
                                    options: ['The taxon is decribed in this study',
                                              'Link to online taxonomy',
                                              'Link (DOI) to publication',
-                                             'Other (explain below)'],
+                                             'Other'],
                                    optionsCaption: 'Choose source type...'
                                    ">
                     </select>
@@ -2502,8 +2502,7 @@ body {
                            type="text"
                            class="input-block-level source-details"
                            style="margin-top: 4px;"
-                           placeholder="Enter DOI or URL (add longer comments below)"
-                    />
+                     /><!-- placeholder text is set by JS, in `updateTaxonSourceDetails` -->
 
                 </div><!-- end of .taxon-source -->
                </div><!-- end of .taxon-sources -->

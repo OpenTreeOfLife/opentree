@@ -9444,6 +9444,12 @@ function updateTaxonSourceDetails( ) {
                 $details.hide();
                 break;
             default:
+                // show free-form text field with appropriate placeholder text
+                if (source.type === 'Other') {
+                    $details.attr('placeholder', "Describe or link to this source");
+                } else {
+                    $details.attr('placeholder', "Enter DOI or URL");
+                }
                 $details.show();
                 break;
         }
