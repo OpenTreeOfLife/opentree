@@ -153,7 +153,7 @@ def display_taxon_info(info, limit, output, api_base):
         start_el(output, 'p', 'taxon')
         display_basic_info(info, output)
         output.write(' (OTT id %s)' % id)
-        synth_tree_url = "/opentree/ottol@%s" % id
+        synth_tree_url = "/opentree/argus/ottol@%s" % id
         output.write('<br/><a target="_blank" href="%s">View this taxon in the current synthetic tree</a>' % cgi.escape(synth_tree_url))
 
         end_el(output, 'p')
