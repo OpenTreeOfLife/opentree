@@ -9139,6 +9139,7 @@ function submitNewTaxa() {
     //var bundle = candidateOTUsForNewTaxa.concat(); 
     // unwrap any KO observables within
     var bundle = {
+        "user_agent": "opentree-curation-webapp",
         "taxa": [ ],
         "study_id": studyID,
         "curator": {
