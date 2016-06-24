@@ -8967,6 +8967,14 @@ function moveToNthTaxonCandidate( pos ) {
         console.error("moveToNthTaxonCandidate("+ pos +") - no such candidate OTU!");
         return;
     }
+
+    if (currentTaxonCandidate) {
+        // report any validation errors in the current candidate (and don't move)
+        if (!taxonCondidateIsValid(currentTaxonCandidate, {REPORT_ERRORS: true})) {
+            return;
+        }
+    }
+
     // move to the n-th otu
     currentTaxonCandidate = testCandidate;
     // add new-taxon metadata, if not found (stored only during this curation session!)
@@ -9133,6 +9141,7 @@ function submitNewTaxa() {
     //var bundle = candidateOTUsForNewTaxa.concat(); 
     // unwrap any KO observables within
     var bundle = {
+        "user_agent": "opentree-curation-webapp",
         "taxa": [ ],
         "study_id": studyID,
         "curator": {
@@ -9433,6 +9442,7 @@ function disableRankDivider(option, item) {
 function updateActiveTaxonSources() {
     updateTaxonSourceDetails();
     updateTaxonSourceTypeOptions();
+    taxonCondidateIsValid(currentTaxonCandidate);
 }
 
 function updateTaxonSourceDetails( ) {
@@ -9540,3 +9550,78 @@ $(window).resize( function () {
         updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
     }
 });
+
+function taxonCondidateIsValid( candidate, options ) {
+    // Check for essential fields, taking shared info into account
+    if (!options) options = {REPORT_ERRORS: false};
+    var metadata = candidate.newTaxonMetadata;
+    var requiredProperties = {  // non-empty
+        'modifiedName': "Modified name must be a non-empty string",
+        'parentTaxonID': "Please specify the parent taxon for this label",
+        'rank': "Please specify a taxonomic rank (or 'no rank')"
+    };
+    var missingProperty = null;
+    for (var propName in requiredProperties) {
+        var itsValue;
+        switch(propName) {
+            // in some cases, check the shared property instead
+            case 'parentTaxonID':
+                itsValue = sharedParentTaxonID() || ko.unwrap(metadata.parentTaxonID);
+                break;
+            default:
+                itsValue = ko.unwrap(metadata[ propName ]);
+        }
+        if (!itsValue) {
+            missingProperty = propName;
+            break;  // report the first missing property
+        }
+    }
+    if (missingProperty) {
+        // return a hint of what's missing? show an error here?
+        // use the error messages defined above for each field
+        showErrorMessage( requiredProperties[missingProperty] );
+        return false;
+    }
+    // Check for at least one valid source (possibly shared)
+    var validSourceFound = false;
+    var activeSources = ko.unwrap(getActiveTaxonSources(candidate));
+    $.each(activeSources, function(i, source) {
+        // validation details depend on source type
+        switch(source.type) {
+            case '':
+            case null:
+            case undefined:
+                // No source type specified; step to the next one
+                return;
+            case 'The taxon is described in this study':
+                // No further description needed in value field
+                validSourceFound = true;
+                return;
+            default:
+                // look for a non-empty value (at least 4 characters)
+                if (source.value && (source.value.length > 3)) {
+                    validSourceFound = true;
+                }
+                return;
+        }
+    });
+    if (!validSourceFound) {
+        showErrorMessage( "Candidate has no valid sources!" );
+        return false;
+    }
+    hideFooterMessage();
+    return true;
+}
+
+var prevTaxonCandidateAllowed = ko.computed(function() {
+    if (!currentTaxonCandidate) return false;
+    return taxonCondidateIsValid(currentTaxonCandidate) && (getCurrentTaxonCandidatePosition() > 0);
+});
+var nextTaxonCandidateAllowed = ko.computed(function() {
+    if (!currentTaxonCandidate) return false;
+    return taxonCondidateIsValid(currentTaxonCandidate) && (getCurrentTaxonCandidatePosition() < (candidateOTUsForNewTaxa.length - 1));
+});
+
+function test(aaa,bbbb,cccc) {
+    debugger;
+}

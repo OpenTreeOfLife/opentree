@@ -2294,20 +2294,20 @@ body {
         </div>
         <p>
             Selected label <span class="nth-label"
-                 data-bind="text: getCurrentTaxonCandidatePosition() + 1">-</span> 
+                 data-bind="text: getCurrentTaxonCandidatePosition() + 1">-</span>
             of <span class="total-labels"
                  data-bind="text: candidateOTUsForNewTaxa.length">-</span>
             <span class="btn-group" style="position: relative; left: 5px; top: -2px;">
-                <a class="btn btn-small prev-button" 
-                   href="#" onclick="return false;"
-                   data-bind="attr: {'disabled': getCurrentTaxonCandidatePosition() < 1},
+                <button class="btn btn-small prev-button"
+                   onclick="return false;"
+                   data-bind="attr: {'disabled': !prevTaxonCandidateAllowed()},
                               click: moveToPreviousTaxonCandidate"
-                >Previous label</a>
-                <a class="btn btn-small next-button" 
-                   href="#" onclick="return false;"
-                   data-bind="attr: {'disabled': getCurrentTaxonCandidatePosition() >= (candidateOTUsForNewTaxa.length - 1)},
+                >Previous label</button>
+                <button class="btn btn-small next-button"
+                   onclick="return false;"
+                   data-bind="attr: {'disabled': !nextTaxonCandidateAllowed()},
                               click: moveToNextTaxonCandidate"
-                >Next label</a>
+                >Next label</button>
             </span>
         </p>
         <form class="form-horizontal wider-fields" style="margin-bottom: 0px;">
@@ -2324,15 +2324,15 @@ body {
             <div class="control-group">
                 <label class="control-label" for="new-taxon-name">New taxon name</label>
                 <div class="controls">
-                    <input type="text" id="new-taxon-name" class="input-xlarge" 
+                    <input type="text" id="new-taxon-name" class="input-xlarge"
                            data-bind="value: $data.newTaxonMetadata.modifiedName,
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: {keyup: null, change: null, blur: null}
-                                      " 
-                           style="margin-bottom: 4px;" 
+                                      "
+                           style="margin-bottom: 4px;"
                            placeholder="Enter the preferred name here">
                     <br/>
-                    <select style="margin-bottom: 0; width: auto;" 
+                    <select style="margin-bottom: 0; width: auto;"
                         data-bind="value: $data.newTaxonMetadata.modifiedNameReason,
                                    event: { keyup: null, change: null },
                                    options: ['Typo in original label',
@@ -2349,7 +2349,7 @@ body {
             <div class="control-group">
                 <label class="control-label" for="TODO">Taxonomic rank</label>
                 <div class="controls">
-                    <select style="margin-bottom: 0; width: auto;" 
+                    <select style="margin-bottom: 0; width: auto;"
                         data-bind="value: $data.newTaxonMetadata.rank,
                                    event: { keyup: null, change: null },
                                    options: [
@@ -2416,7 +2416,7 @@ body {
                     <span style="font-weight: normal;"
                           data-bind="visible: getActiveParentTaxonName($data)()">
                         &mdash;
-                        <a href="#" target="_blank" 
+                        <a href="#" target="_blank"
                            class="parent-taxon-browse-link"
                            data-bind="attr: {href: '/taxonomy/browse?id='+ getActiveParentTaxonID($data)}">Open in OTT browser</a>
                     </span>
@@ -2488,7 +2488,9 @@ body {
                   <td width="*">
                     <input data-bind="value: source.value,
                                       valueUpdate: ['afterkeydown', 'input'],
-                                      event: {keyup: null, change: null, blur: null},
+                                      event: {keyup: updateActiveTaxonSources,
+                                              change: updateActiveTaxonSources,
+                                              blur: updateActiveTaxonSources},
                                       attr: {'disabled': sharedTaxonSources()}
                                       "
                            type="text"
