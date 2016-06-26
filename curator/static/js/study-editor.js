@@ -56,8 +56,7 @@ var API_load_file_GET_url;
 var API_update_file_PUT_url;
 var API_remove_file_DELETE_url;
 var findAllTreeCollections_url;
-var mintNewOTTids_url;
-var submitNewTaxa_url;
+var API_create_amendment_POST_url;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -9140,6 +9139,7 @@ function submitNewTaxa() {
     // unwrap any KO observables within
     var bundle = {
         "user_agent": "opentree-curation-webapp",
+        "date_created": new Date().toISOString(),
         "taxa": [ ],
         "study_id": studyID,
         "curator": {
@@ -9155,7 +9155,7 @@ function submitNewTaxa() {
         var newTaxon = {};
         newTaxon['tag'] = i;  // used to match results with candidate OTUs
         newTaxon['name'] = candidate.newTaxonMetadata.modifiedName();
-        newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason;
+        newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason || "No change to original label";
         newTaxon['rank'] = candidate.newTaxonMetadata.rank.toLowerCase();
         /* Use shared parent taxon, if any. */
         newTaxon['parent'] = getActiveParentTaxonID(candidate)();
@@ -9187,8 +9187,17 @@ function submitNewTaxa() {
         newTaxon['comment'] = candidate.newTaxonMetadata.comments;
         bundle.taxa.push(newTaxon);
     });
+
+    // add non-JSON values to the query string
+    var qsVars = $.param({
+        author_name: userDisplayName,
+        author_email: userEmail,
+        //starting_commit_SHA: collection.sha,
+        //commit_msg: commitMessage,
+        auth_token: userAuthToken
+    });
     $.ajax({
-        url: submitNewTaxa_url,
+        url: API_create_amendment_POST_url +'?'+ qsVars,
         type: 'POST',
         dataType: 'json',
         processData: false,
@@ -9225,9 +9234,33 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
         return;
     }
 
-    // TODO: apply the new IDs to the original OTUs
+    // Apply the newly minted OTT ids to the original OTUs
+    var tagsToOTTids = responseJSON['tag_to_ottid'];
+    if (!$.isPlainObject(tagsToOTTids)) {
+        hideModalScreen();
+        showErrorMessage(
+            'Sorry, no data was returned mapping OTT ids to OTUs! <a href="#" onclick="toggleFlashErrorDetails(this); return false;">' +
+            'Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>'
+        );
+        return;
+    }
+
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        // REMINDER: we used the nth-position (zero-based) of each OTU as its tag!
+        var OTUid = candidate['@id'];
+        var mintedOTTid = Number(tagsToOTTids[ i ]);  // should already be a number
+        var mappingInfo = {
+             "name" : candidate.newTaxonMetadata.modifiedName(),
+             "ottId" : mintedOTTid
+        };
+        mapOTUToTaxon( OTUid, mappingInfo );
+        delete proposedOTUMappings()[ OTUid ];
+    });
+    proposedOTUMappings.valueHasMutated();
+    nudgeTickler('OTU_MAPPING_HINTS');
 
     hideModalScreen(); // TODO?
+    hideNewTaxaPopup();
     showSuccessMessage('Selected OTUs mapped to new taxa.');
 }
 
