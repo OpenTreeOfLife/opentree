@@ -2291,6 +2291,7 @@ body {
                 that you provide below.
             </p>
         </div>
+       <!-- ko if:currentTaxonCandidate -->>
         <p>
             Selected label <span class="nth-label"
                  data-bind="text: getCurrentTaxonCandidatePosition() + 1">-</span>
@@ -2487,7 +2488,7 @@ body {
                   <td width="*">
                     <input data-bind="value: source.value,
                                       valueUpdate: ['afterkeydown', 'input'],
-                                      event: {keyup: updateActiveTaxonSources,
+                                      event: {keyup: null,
                                               change: updateActiveTaxonSources,
                                               blur: updateActiveTaxonSources},
                                       attr: {'disabled': sharedTaxonSources()}
@@ -2538,6 +2539,7 @@ body {
                 placeholder="Add comments or additional links to support this taxon.">
             </textarea>
         </form>
+        <!-- /ko --><!-- end of 'if there's a candidate' -->
 
     </div>
     <div class="modal-footer">

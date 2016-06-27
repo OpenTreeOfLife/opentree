@@ -8941,7 +8941,7 @@ function hideMappingOptions() {
 
 /* A few global vars for the add-new-taxa popup */
 var candidateOTUsForNewTaxa = [ ];
-var currentTaxonCandidate = null;
+var currentTaxonCandidate = ko.observable(null);
 var sharedParentTaxonID = ko.observable(null);
 var sharedParentTaxonName = ko.observable(null);
 var sharedTaxonSources = ko.observableArray(); // sets it to an empty array
@@ -8965,15 +8965,15 @@ function moveToNthTaxonCandidate( pos ) {
         return;
     }
 
-    if (currentTaxonCandidate) {
+    if (currentTaxonCandidate()) {
         // report any validation errors in the current candidate (and don't move)
-        if (!taxonCondidateIsValid(currentTaxonCandidate, {REPORT_ERRORS: true})) {
+        if (!taxonCondidateIsValid(currentTaxonCandidate(), {REPORT_ERRORS: true})) {
             return;
         }
     }
 
     // move to the n-th otu
-    currentTaxonCandidate = testCandidate;
+    currentTaxonCandidate(testCandidate);
     // add new-taxon metadata, if not found (stored only during this curation session!)
 
     if ($stashedTaxonSourceElement === null) {
@@ -9029,13 +9029,13 @@ function refreshCurrentTaxonCandidate() {
 }
 */
 function getCurrentTaxonCandidatePosition() {
-    var chosenPosition = $.inArray(currentTaxonCandidate, candidateOTUsForNewTaxa);
+    var chosenPosition = $.inArray(currentTaxonCandidate(), candidateOTUsForNewTaxa);
     return chosenPosition;
 }
 function clearAllTaxonCandidates() {
     // Clear all vars related to the new-taxa popup
     candidateOTUsForNewTaxa = [ ];
-    currentTaxonCandidate = null;
+    currentTaxonCandidate(null);
     sharedParentTaxonID(null);
     sharedParentTaxonName(null);
     sharedTaxonSources(null);
@@ -9095,7 +9095,7 @@ function showNewTaxaPopup() {
     });
     // Block any method of closing this window if there is unsaved work
     $('#new-taxa-popup').off('hide').on('hide', function () {
-        if (currentTaxonCandidate || candidateOTUsForNewTaxa.length > 0) {
+        if (currentTaxonCandidate() || candidateOTUsForNewTaxa.length > 0) {
             alert("Please submit (or cancel) your proposed taxa!");
             return false;
         }
@@ -9269,8 +9269,8 @@ function toggleSharedParentID( otu, event ) {
     // NOTE that radio-button values are strings, so we convert to boolean below!
     var sharingThisParentID = $(event.target).is(':checked');
     if (sharingThisParentID) {
-        sharedParentTaxonID(currentTaxonCandidate.newTaxonMetadata.parentTaxonID());
-        sharedParentTaxonName(currentTaxonCandidate.newTaxonMetadata.parentTaxonName());
+        sharedParentTaxonID(currentTaxonCandidate().newTaxonMetadata.parentTaxonID());
+        sharedParentTaxonName(currentTaxonCandidate().newTaxonMetadata.parentTaxonName());
         // clobber any pending search text in the field (to avoid confusion)
         $('input[name=parent-taxon-search]').val("");
     } else {
@@ -9284,7 +9284,7 @@ function toggleSharedSources( otu, event ) {
     // NOTE that radio-button values are strings, so we convert to boolean below!
     var sharingTheseSources = $(event.target).is(':checked');
     if (sharingTheseSources) {
-        sharedTaxonSources(currentTaxonCandidate.newTaxonMetadata.sources());
+        sharedTaxonSources(currentTaxonCandidate().newTaxonMetadata.sources());
     } else {
         sharedTaxonSources(null);
     }
@@ -9428,8 +9428,8 @@ function searchForMatchingParentTaxa() {
                         var $link = $(this);
 
                         // Modify this candidate taxon (and indicator)
-                        currentTaxonCandidate.newTaxonMetadata.parentTaxonName($link.text());
-                        currentTaxonCandidate.newTaxonMetadata.parentTaxonID($link.attr('href'));
+                        currentTaxonCandidate().newTaxonMetadata.parentTaxonName($link.text());
+                        currentTaxonCandidate().newTaxonMetadata.parentTaxonID($link.attr('href'));
 
                         // hide menu and reset search field
                         $('#parent-taxon-search-results').html('');
@@ -9471,13 +9471,15 @@ function disableRankDivider(option, item) {
 }
 
 function updateActiveTaxonSources() {
+    // trigger validation, updates to next/previous buttons
+    currentTaxonCandidate.valueHasMutated();
     updateTaxonSourceDetails();
     updateTaxonSourceTypeOptions();
-    taxonCondidateIsValid(currentTaxonCandidate);
+    taxonCondidateIsValid(currentTaxonCandidate());
 }
 
 function updateTaxonSourceDetails( ) {
-    var activeSources = getActiveTaxonSources(currentTaxonCandidate);
+    var activeSources = getActiveTaxonSources(currentTaxonCandidate());
     $.each(activeSources(), function(i, source) {
         var $details = $('#new-taxa-popup .taxon-source:eq('+i+') .source-details')
         switch( source.type ) {
@@ -9503,7 +9505,7 @@ function updateTaxonSourceDetails( ) {
 function updateTaxonSourceTypeOptions() {
     // Disable 'this study' option for active sources, if it's already selected
     // (but don't disable the currently selected option).
-    var activeSources = getActiveTaxonSources(currentTaxonCandidate);
+    var activeSources = getActiveTaxonSources(currentTaxonCandidate());
     var currentStudyFound = false;
     $.each(activeSources(), function(i, source) {
         if (source.type === 'The taxon is described in this study') {
@@ -9527,7 +9529,7 @@ function addEmptyTaxonSource( sourceList ) {
     // N.B. We should always apply this to an observableArray, so that the
     // UI will update automatically.
     if (!ko.isObservable(sourceList)) {
-        sourceList = getActiveTaxonSources(currentTaxonCandidate);
+        sourceList = getActiveTaxonSources(currentTaxonCandidate());
     }
     sourceList.push({
         'type': null,
@@ -9539,7 +9541,7 @@ function removeTaxonSource( sourceList, item ) {
     // N.B. We should always apply this to an observableArray, so that the
     // UI will update automatically.
     if (!ko.isObservable(sourceList)) {
-        sourceList = getActiveTaxonSources(currentTaxonCandidate);
+        sourceList = getActiveTaxonSources(currentTaxonCandidate());
     }
     sourceList.remove(item);
     updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
@@ -9645,12 +9647,12 @@ function taxonCondidateIsValid( candidate, options ) {
 }
 
 var prevTaxonCandidateAllowed = ko.computed(function() {
-    if (!currentTaxonCandidate) return false;
-    return taxonCondidateIsValid(currentTaxonCandidate) && (getCurrentTaxonCandidatePosition() > 0);
+    if (!currentTaxonCandidate()) return false;
+    return taxonCondidateIsValid(currentTaxonCandidate()) && (getCurrentTaxonCandidatePosition() > 0);
 });
 var nextTaxonCandidateAllowed = ko.computed(function() {
-    if (!currentTaxonCandidate) return false;
-    return taxonCondidateIsValid(currentTaxonCandidate) && (getCurrentTaxonCandidatePosition() < (candidateOTUsForNewTaxa.length - 1));
+    if (!currentTaxonCandidate()) return false;
+    return taxonCondidateIsValid(currentTaxonCandidate()) && (getCurrentTaxonCandidatePosition() < (candidateOTUsForNewTaxa.length - 1));
 });
 
 function test(aaa,bbbb,cccc) {
