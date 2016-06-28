@@ -9077,7 +9077,7 @@ function showNewTaxaPopup() {
                 'modifiedName': ko.observable( adjustedOTULabel ),
                 'modifiedNameReason': '',
                 'parentTaxonName': ko.observable(''),  // not sent to server
-                'parentTaxonID': ko.observable(''),  
+                'parentTaxonID': ko.observable(0),
                 'parentTaxonSearchContext': '',
                 'sources': ko.observableArray(),
                 'comments': ''
@@ -9431,7 +9431,8 @@ function searchForMatchingParentTaxa() {
 
                         // Modify this candidate taxon (and indicator)
                         currentTaxonCandidate().newTaxonMetadata.parentTaxonName($link.text());
-                        currentTaxonCandidate().newTaxonMetadata.parentTaxonID($link.attr('href'));
+                        var numericID = Number($link.attr('href'));
+                        currentTaxonCandidate().newTaxonMetadata.parentTaxonID( numericID );
 
                         // hide menu and reset search field
                         $('#parent-taxon-search-results').html('');
