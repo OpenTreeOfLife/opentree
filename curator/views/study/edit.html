@@ -2338,10 +2338,10 @@ body {
                                    options: ['Typo in original label',
                                              'Removing extraneous characters',
                                              'Taxon subsequently published under this name',
-                                             'Synonym',
+                                             'Label is a synonym',
                                              'Other (explain in comments below)'],
                                    optionsCaption: 'Choose reason for modification...',
-                                   attr:{'disabled': ($data.newTaxonMetadata.modifiedName() === $data.newTaxonMetadata.initialName)}
+                                   attr:{'disabled': ($data.newTaxonMetadata.modifiedName() === $data.newTaxonMetadata.adjustedLabel)}
                                    ">
                     </select>
                 </div>
