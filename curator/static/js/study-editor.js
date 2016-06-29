@@ -9155,7 +9155,7 @@ function submitNewTaxa() {
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
         // repackage its metadata to match the web service
         var newTaxon = {};
-        newTaxon['tag'] = String(i);  // used to match results with candidate OTUs
+        newTaxon['tag'] = candidate['@id'];  // used to match results with candidate OTUs
         newTaxon['original_label'] = $.trim(candidate['^ot:originalLabel']);
         newTaxon['adjusted_label'] = candidate.newTaxonMetadata.adjustedLabel;
         newTaxon['name'] = candidate.newTaxonMetadata.modifiedName();
@@ -9250,9 +9250,9 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
     }
 
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
-        // REMINDER: we used the nth-position (zero-based) of each OTU as its tag!
+        // REMINDER: we used the ID of each OTU as its tag!
         var OTUid = candidate['@id'];
-        var mintedOTTid = Number(tagsToOTTids[ i ]);
+        var mintedOTTid = Number(tagsToOTTids[ OTUid ]);
         // N.B. we convert back from the server's preferred String tags
         var mappingInfo = {
              "name" : candidate.newTaxonMetadata.modifiedName(),
