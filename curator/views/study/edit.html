@@ -2327,10 +2327,12 @@ body {
                     <input type="text" id="new-taxon-name" class="required-field input-xlarge"
                            data-bind="value: $data.newTaxonMetadata.modifiedName,
                                       valueUpdate: ['afterkeydown', 'input'],
-                                      event: {keyup: null, change: null, blur: null}
+                                      event: {keyup: updateTaxonNameCheck, input: updateTaxonNameCheck, change: null, blur: null}
                                       "
                            style="margin-bottom: 4px;"
                            placeholder="Enter the preferred name here">
+                   <span data-bind="text: proposedTaxonNameStatusMessage($data),
+                                    style: {display: 'inline-block', color: proposedTaxonNameStatusColor($data)}">...</span>
                     <br/>
                     <select style="margin-bottom: 0; width: auto;"
                         data-bind="value: $data.newTaxonMetadata.modifiedNameReason,

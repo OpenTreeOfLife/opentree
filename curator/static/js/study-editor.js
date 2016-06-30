@@ -9075,6 +9075,7 @@ function showNewTaxaPopup() {
                 'rank': 'species',
                 'adjustedLabel': adjustedOTULabel,  // as modified by regex or manual edit
                 'modifiedName': ko.observable( adjustedOTULabel ),
+                'modifiedNameStatus': ko.observable('PENDING'),  // will be tested immediately below
                 'modifiedNameReason': '',
                 'parentTaxonName': ko.observable(''),  // not sent to server
                 'parentTaxonID': ko.observable(0),
@@ -9085,6 +9086,12 @@ function showNewTaxaPopup() {
             // add a single source (required)
             addEmptyTaxonSource(candidate.newTaxonMetadata.sources);
         }
+    });
+    // Now that all candidates have metadata, test all names for dupes
+    // N.B. Since names are compared against the other candidates as well as taxonomy,
+    // we should ALL of them now, even if they've passed before.
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        updateTaxonNameCheck( candidate );
     });
 
     moveToNthTaxonCandidate( 0 );
@@ -9621,6 +9628,29 @@ function taxonCondidateIsValid( candidate, options ) {
         }
         return false;
     }
+    // have we confirmed that the proposed taxon name is not already found?
+    switch( metadata.modifiedNameStatus() ) {
+        case 'PENDING':
+            // quietly block validation; tests results should refresh this
+            ///console.warn("Blocking validation based on PENDING name test...");
+            return false;
+        case 'FOUND IN CANDIDATES':
+            if (options.REPORT_ERRORS) {
+                showErrorMessage('There is another candidate taxon with this name! Proposed taxon names must be unique.');
+            }
+            return false;
+        case 'FOUND IN TAXONOMY':
+            if (options.REPORT_ERRORS) {
+                showErrorMessage('There is already a taxon with this name! Homonyms are not currently allowed.');
+            }
+            return false;
+        case 'NOT FOUND':
+            // it's a unique name! no problem here
+            break;
+        default:
+            console.error('Unexpected value found for modifiedNameStatus! ['+ ko.unwrap(metadata.modifiedNameStatus) +']');
+    }
+
     // Check for at least one valid source (possibly shared)
     var validSourceFound = false;
     var activeSources = ko.unwrap(getActiveTaxonSources(candidate));
@@ -9678,6 +9708,120 @@ var nextTaxonCandidateAllowed = ko.computed(function() {
     return taxonCondidateIsValid(currentTaxonCandidate()) && (getCurrentTaxonCandidatePosition() < (candidateOTUsForNewTaxa.length - 1));
 });
 
-function test(aaa,bbbb,cccc) {
-    debugger;
+function updateTaxonNameCheck(candidate) {
+    // report status of last check, or initiate a new check
+    if (!candidate) return false;
+    ///console.log('updateTaxonNameCheck() STARTING...');
+    var testName = candidate.newTaxonMetadata.modifiedName();
+    ///console.log('>> test name is '+ testName);
+    ///console.log('>> previous status is '+ candidate.newTaxonMetadata.modifiedNameStatus());
+    // check first against other proposed names
+    var duplicateNameFound = false;
+    $.each(candidateOTUsForNewTaxa, function(i, compareCandidate) {
+        if (compareCandidate === candidate) {
+            return true; // don't compare to itself! skips to next
+        }
+        var compareName = compareCandidate.newTaxonMetadata.modifiedName();
+        if ($.trim(testName) === $.trim(compareName)) {
+            duplicateNameFound = true;
+            candidate.newTaxonMetadata.modifiedNameStatus('FOUND IN CANDIDATES');
+            return false;
+        }
+    });
+    if (!duplicateNameFound) {
+        // keep checking, this time against the OT taxonomy
+        candidate.newTaxonMetadata.modifiedNameStatus('PENDING');
+        $.ajax({
+            url: doTNRSForMappingOTUs_url,  // NOTE that actual server-side method name might be quite different!
+            type: 'POST',
+            dataType: 'json',
+            data: JSON.stringify({
+                "names": [testName],
+                "include_suppressed": true,
+                "do_approximate_matching": false,
+                "context_name": 'All life',
+            }),
+            crossDomain: true,
+            contentType: "application/json; charset=utf-8",
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.log("!!! something went terribly wrong");
+                console.log(jqXHR.responseText);
+                showErrorMessage("Something went wrong in taxomachine:\n"+ jqXHR.responseText);
+            },
+            success: function(data) {    // JSONP callback
+                // Check for duplicates
+                var resultSetsFound = (data && ('results' in data) && (data.results.length > 0));
+                var candidateMatches = [ ];
+                // Check for expected result sets (preliminary to individual matches below)
+                if (resultSetsFound) {
+                    switch (data.results.length) {
+                        case 0:
+                            ///console.warn('NO SEARCH RESULT SETS FOUND! UNABLE TO CONFIRM DUPLICATE NAMES.');
+                            return;
+                        case 1:
+                            // the expected case
+                            candidateMatches = data.results[0].matches;
+                            break;
+
+                        default:
+                            // ASSUME the first result set has what we need
+                            ///console.warn('MULTIPLE SEARCH RESULT SETS (USING FIRST)');
+                            ///console.warn(data['results']);
+                            candidateMatches = data.results[0].matches;
+                    }
+                }
+                // Check for one or more identical names
+                var duplicateNameFound = false;
+                $.each(candidateMatches, function(i, match) {
+                    // convert to expected structure for proposed mappings
+                    var foundName = (match.taxon['unique_name'] || match.taxon['name'])
+                    ///console.log('>>> found ['+ foundName +']...');
+                    if (!match.is_approximate_match) {
+                        duplicateNameFound = true;
+                        return false;  // stop checking names
+                    }
+                });
+                if (duplicateNameFound) {
+                    ///console.log('>> EXACT MATCH FOUND!');
+                    candidate.newTaxonMetadata.modifiedNameStatus('FOUND IN TAXONOMY');
+                } else {
+                    ///console.log('>> NO EXACT MATCH');
+                    candidate.newTaxonMetadata.modifiedNameStatus('NOT FOUND');
+                }
+            }
+        });
+    }
+    // N.B. We should always return true, for moving directly from this field to Next/Prev/Submit
+    return true;
+}
+
+function proposedTaxonNameStatusMessage(candidate) {
+    if (!candidate) return "?";
+    switch(candidate.newTaxonMetadata.modifiedNameStatus()) {
+        case 'PENDING':
+            return "...";
+        case 'NOT FOUND':
+            return "No duplicates found.";
+        case 'FOUND IN TAXONOMY':
+            return "Already in OT taxonomy!";
+        case 'FOUND IN CANDIDATES':
+            return "Already in proposed taxa!";
+        default:
+            return candidate.newTaxonMetadata.modifiedNameStatus();
+    }
+}
+function proposedTaxonNameStatusColor(candidate) {
+    if (!candidate) return "?";
+    switch(candidate.newTaxonMetadata.modifiedNameStatus()) {
+        case 'PENDING':
+            return 'silver';
+        case 'NOT FOUND':
+            return 'green';
+        case 'FOUND IN TAXONOMY':
+            return 'orange';
+        case 'FOUND IN CANDIDATES':
+            return 'orange';
+        default:
+            return 'purple';
+    }
 }
