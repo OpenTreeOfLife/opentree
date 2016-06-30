@@ -2406,14 +2406,14 @@ body {
             <div class="control-group">
                 <label class="control-label" for="TODO">Parent taxon</label>
                 <div class="controls">
-                  <div class="static-form-value">
+                  <div class="static-form-value"
+                       data-bind="visible: getActiveParentTaxonName($data)()">
                     <span data-bind="text: (getActiveParentTaxonName($data) || 'None'),
                                      attr:{'title': '', 'disabled': sharedParentTaxonID()}"
                           class="parent-taxon"
                           title="">???</span>
 
-                    <span style="font-weight: normal;"
-                          data-bind="visible: getActiveParentTaxonName($data)()">
+                    <span style="font-weight: normal;">
                         &mdash;
                         <a href="#" target="_blank"
                            class="parent-taxon-browse-link"
