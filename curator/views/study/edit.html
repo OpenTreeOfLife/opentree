@@ -2284,14 +2284,13 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
             </button>
             <p>
-                Once added, these taxa will appear in the Open Tree Taxonomy
-                with the <span style="font-family: monospace; padding: 0 4px 0 2px; font-weight: bold;">from_phylogeny</span>
-                tag, and possibly in the synthetic tree, with links to your
-                curator profile, the current study, and any additional sources
-                that you provide below.
+                Once added, these taxa will appear in the Open Tree Taxonomy,
+                and possibly in the synthetic tree, with links to your curator
+                profile, the current study, and any additional sources that you
+                provide below.
             </p>
         </div>
-       <!-- ko if:currentTaxonCandidate -->>
+       <!-- ko if:currentTaxonCandidate -->
         <p>
             Selected label <span class="nth-label"
                  data-bind="text: getCurrentTaxonCandidatePosition() + 1">-</span>
@@ -2309,6 +2308,7 @@ body {
                               click: moveToNextTaxonCandidate"
                 >Next label</button>
             </span>
+            <span class="required-field-marker" style="padding-left: 150px;">* required fields</span>
         </p>
         <form class="form-horizontal wider-fields" style="margin-bottom: 0px;">
             <div class="control-group">
@@ -2322,9 +2322,9 @@ body {
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="new-taxon-name">New taxon name</label>
+                <label class="control-label" for="new-taxon-name">New taxon name <span class="required-field-marker">*</span></label>
                 <div class="controls">
-                    <input type="text" id="new-taxon-name" class="input-xlarge"
+                    <input type="text" id="new-taxon-name" class="required-field input-xlarge"
                            data-bind="value: $data.newTaxonMetadata.modifiedName,
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: {keyup: null, change: null, blur: null}
@@ -2341,15 +2341,16 @@ body {
                                              'Label is a synonym',
                                              'Other (explain in comments below)'],
                                    optionsCaption: 'Choose reason for modification...',
-                                   attr:{'disabled': ($data.newTaxonMetadata.modifiedName() === $data.newTaxonMetadata.adjustedLabel)}
+                                   attr:{'disabled': ($data.newTaxonMetadata.modifiedName() === $data.newTaxonMetadata.adjustedLabel)},
+                                   css: ($data.newTaxonMetadata.modifiedName() === $data.newTaxonMetadata.adjustedLabel) ? '' : 'required-field'
                                    ">
                     </select>
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="TODO">Taxonomic rank</label>
+                <label class="control-label" for="TODO">Taxonomic rank <span class="required-field-marker">*</span></label>
                 <div class="controls">
-                    <select style="margin-bottom: 0; width: auto;"
+                    <select class="required-field" style="margin-bottom: 0; width: auto;"
                         data-bind="value: $data.newTaxonMetadata.rank,
                                    event: { keyup: null, change: null },
                                    options: [
@@ -2405,25 +2406,25 @@ body {
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="TODO">Parent taxon</label>
+                <label class="control-label" for="TODO">Parent taxon <span class="required-field-marker">*</span></label>
                 <div class="controls">
-                  <div class="static-form-value">
+                  <div class="static-form-value"
+                       data-bind="visible: getActiveParentTaxonName($data)()">
                     <span data-bind="text: (getActiveParentTaxonName($data) || 'None'),
                                      attr:{'title': '', 'disabled': sharedParentTaxonID()}"
                           class="parent-taxon"
                           title="">???</span>
 
-                    <span style="font-weight: normal;"
-                          data-bind="visible: getActiveParentTaxonName($data)()">
+                    <span style="font-weight: normal;">
                         &mdash;
                         <a href="#" target="_blank"
                            class="parent-taxon-browse-link"
-                           data-bind="attr: {href: '/taxonomy/browse?id='+ getActiveParentTaxonID($data)}">Open in OTT browser</a>
+                           data-bind="attr: {href: '/taxonomy/browse?id='+ getActiveParentTaxonID($data)()}">Open in OTT browser</a>
                     </span>
                   </div>
                   <!-- reuse style and behavior from Metadata > Focal Clade -->
                   <div id="parent-taxon-search-form" class="Xnavbar-search Xpull-right" autocomplete="off" style="Xdisplay: inline-block; position: relative;">
-                      <input type="text" name="parent-taxon-search" class="" style="Xwidth: 365px;"
+                      <input type="text" name="parent-taxon-search" class="required-field" style="Xwidth: 365px;"
                           data-bind="attr:{'disabled': sharedParentTaxonID()}"
                           placeholder="Choose the parent taxon..." autocomplete="off">
                       <!-- <input type="submit" style="" name="parent-taxon-search-go" value="Go" onclick="return false;"/> -->
@@ -2465,14 +2466,14 @@ body {
             </div>
             <div class="control-group" id="active-taxon-sources"
                  data-bind="with: getActiveTaxonSources($data)">
-               <label class="">Source(s) for this taxon</label>
+               <label class="">Source(s) for this taxon <span class="required-field-marker">*</span></label>
                <table style="clear: left; width: 100%;">
                 <tbody class="taxon-sources"
                     data-bind="foreach: { data: $data, as: 'source' }">
                  <tr class="controls taxon-source"
                      data-bind="css: { odd: ($index() % 2) === 0 }">
                   <td width="250">
-                    <select class="source-type" style="width: auto;"
+                    <select class="required-field source-type" style="width: auto;"
                         data-bind="value: source.type,
                                    event: { keyup: updateActiveTaxonSources,
                                             change: updateActiveTaxonSources },
@@ -2494,7 +2495,7 @@ body {
                                       attr: {'disabled': sharedTaxonSources()}
                                       "
                            type="text"
-                           class="input-block-level source-details"
+                           class="input-block-level source-details required-field"
                      /><!-- placeholder text is set by JS, in `updateTaxonSourceDetails` -->
                   </td>
                   <td width="30">
@@ -2544,7 +2545,7 @@ body {
     </div>
     <div class="modal-footer">
       <button class="btn btn-info pull-right" style="margin-left: 20px;"
-              onclick="submitNewTaxa(); return false;">Submit</button>
+              onclick="if (taxonCondidateIsValid( currentTaxonCandidate(), {REPORT_ERRORS: true} ) && allTaxonCandidatesAreValid({REPORT_ERRORS: true})) submitNewTaxa(); return false;">Submit</button>
       <a data-dismiss="modal" class="btn"
               onclick="hideNewTaxaPopup(); return false;" >Cancel</a>
     </div>

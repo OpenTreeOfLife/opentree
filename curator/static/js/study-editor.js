@@ -9618,7 +9618,9 @@ function taxonCondidateIsValid( candidate, options ) {
     if (missingProperty) {
         // return a hint of what's missing? show an error here?
         // use the error messages defined above for each field
-        showErrorMessage( requiredProperties[missingProperty] );
+        if (options.REPORT_ERRORS) {
+            showErrorMessage( requiredProperties[missingProperty] );
+        }
         return false;
     }
     // Check for at least one valid source (possibly shared)
@@ -9645,11 +9647,28 @@ function taxonCondidateIsValid( candidate, options ) {
         }
     });
     if (!validSourceFound) {
-        showErrorMessage( "Candidate has no valid sources!" );
+        if (options.REPORT_ERRORS) {
+            showErrorMessage( "Candidate has no valid sources!" );
+        }
         return false;
     }
     hideFooterMessage();
     return true;
+}
+
+function allTaxonCandidatesAreValid(options) {
+    if (!options) options = {REPORT_ERRORS: false};
+    var invalidCandidateFound = false;
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        if (!taxonCondidateIsValid( candidate )) {
+            invalidCandidateFound = true;
+            return false;
+        }
+    });
+    if (invalidCandidateFound && options.REPORT_ERRORS) {
+        showErrorMessage("Please review all labels for required data!");
+    }
+    return !(invalidCandidateFound);
 }
 
 var prevTaxonCandidateAllowed = ko.computed(function() {
