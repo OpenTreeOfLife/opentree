@@ -2545,7 +2545,7 @@ body {
     </div>
     <div class="modal-footer">
       <button class="btn btn-info pull-right" style="margin-left: 20px;"
-              onclick="submitNewTaxa(); return false;">Submit</button>
+              onclick="if (taxonCondidateIsValid( currentTaxonCandidate(), {REPORT_ERRORS: true} ) && allTaxonCandidatesAreValid({REPORT_ERRORS: true})) submitNewTaxa(); return false;">Submit</button>
       <a data-dismiss="modal" class="btn"
               onclick="hideNewTaxaPopup(); return false;" >Cancel</a>
     </div>
