@@ -102,6 +102,7 @@ function capture_form() {
                 break;
             case 'Correction to relationships in the synthetic tree':
             case 'Correction to names (taxonomy)':
+            case 'Extinct/extant issue (taxonomy)':
                 $referenceURLField.attr('placeholder',"Provide a supporting article or web site (URL or DOI)");
                 $referenceURLField.show();
                 break;
@@ -621,6 +622,7 @@ def index():
                             OPTION('Correction to relationships in the synthetic tree'),
                             OPTION('Suggest a phylogeny to incorporate'),
                             OPTION('Correction to names (taxonomy)'),
+                            OPTION('Extinct/extant issue (taxonomy)'),
                             OPTION('Bug report (website behavior)'),
                             OPTION('New feature request'),
                         _name='feedback_type',value='',_style='width: 100%; margin-right: -4px;'),
