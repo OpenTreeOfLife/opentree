@@ -48,9 +48,16 @@ var argus;
 // @TEMP - preserve incoming OTT id and source, so we can demo the Extract Subtree feature
 var incomingOttolID = null;
 
+// gets the sources that support this node
 function getSupportingSourceIDs( node ) {
     return $.isPlainObject(node.supported_by) ? node.supported_by : null;
 }
+
+// gets the sources that conflict with this node
+function getConflictingSourceIDs( node ) {
+    return $.isPlainObject(node.conflicts_with) ? node.conflicts_with : null;
+}
+
 function updateTreeView( State ) {
     /* N.B. This should respond identically to state changes in HTML5 History,
      * or to explicit calls from older/simpler browsers.
@@ -272,7 +279,7 @@ $(document).ready(function() {
 
         // Check first for incoming URL that might override prior history
         if (initialState.forcedByURL) {
-            // apply the state as specified in the URL 
+            // apply the state as specified in the URL
             ///console.log("Applying state from incoming URL...");
             initialState.nudge = new Date().getTime();
             History.pushState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
@@ -628,200 +635,209 @@ function showObjectProperties( objInfo, options ) {
     }
 
     // read more data from the existing tree-view JSON?
-    if (argus.treeData) {
+    if (!(argus.treeData)) {
+        console.error(">> WARNING - no treeData to examine?");
+        return;
+    }
 
-        // fetch additional information used to detail provenance for nodes and edges
-        metaMap = argus.treeData.source_id_map;
+    // fetch additional information used to detail provenance for nodes and edges
+    metaMap = argus.treeData.source_id_map;
 
-        // Gather data for all displayed properties, storing each in the most
-        // appropriate section
-        switch(objType) {
-            case 'node':
-            case 'edge':
-                /* Try to spell out any available properties / provenance, based on
-                 * type. Note that we're going to conflate node and edge properties,
-                 * since this is generally a 1:1 relationship, but:
-                 *   - clicking an edge trigger will highlight edge properties
-                 *   - if there are multiple edges, others will be dimmed
-                 */
-                var fullNode, parentNode, nodeSection, edgeSection;
+    // Gather data for all displayed properties, storing each in the most
+    // appropriate section
+    switch(objType) {
+        case 'node':
+        case 'edge':
+            /* Try to spell out any available properties / provenance, based on
+             * type. Note that we're going to conflate node and edge properties,
+             * since this is generally a 1:1 relationship, but:
+             *   - clicking an edge trigger will highlight edge properties
+             *   - if there are multiple edges, others will be dimmed
+             */
+            var fullNode, parentNode, nodeSection, edgeSection;
 
-                // try to fetch the node from treeData, using ID (preferred) or name
-                fullNode = argus.getArgusNodeByID( objID );
-                if (!fullNode) {
-                    console.log("WARNING: can't find node by ID, trying to match its name...");
-                    fullNode = getTreeDataNode( function(node) {
-                        return (node.name === objName);
-                    });
-                }
-                if (fullNode && fullNode.parentNodeID) {
-                    parentNode = argus.getArgusNodeByID( fullNode.parentNodeID );
-                }
+            // try to fetch the node from treeData, using ID (preferred) or name
+            fullNode = argus.getArgusNodeByID( objID );
+            if (!fullNode) {
+                console.log("WARNING: can't find node by ID, trying to match its name...");
+                fullNode = getTreeDataNode( function(node) {
+                    return (node.name === objName);
+                });
+            }
+            if (fullNode && fullNode.parentNodeID) {
+                parentNode = argus.getArgusNodeByID( fullNode.parentNodeID );
+            }
 
-                // Show node and adjacent edge(s), highlighting whichever part
-                // was chosen by the user.
-                //
-                // TODO: show additional edge sections if there are multiple parents,
-                // and highlight (.selected) one if it was chosen
-                nodeSection = {
-                    name: 'Node properties',
+            // Show node and adjacent edge(s), highlighting whichever part
+            // was chosen by the user.
+            //
+            // TODO: show additional edge sections if there are multiple parents,
+            // and highlight (.selected) one if it was chosen
+            nodeSection = {
+                name: 'Node properties',
+                displayedProperties: {},
+                selected: (objType === 'node')
+            };
+            orderedSections.push(nodeSection);
+
+            if (parentNode) {
+                edgeSection = {
+                    name: 'Edge to parent <em>'+ parentNode.name +'</em>',
                     displayedProperties: {},
-                    selected: (objType === 'node')
+                    selected: (objType === 'edge')
                 };
-                orderedSections.push(nodeSection);
+                orderedSections.push(edgeSection);
+            }
 
-                if (parentNode) {
-                    edgeSection = {
-                        name: 'Edge to parent <em>'+ parentNode.name +'</em>',
-                        displayedProperties: {},
-                        selected: (objType === 'edge')
-                    };
-                    orderedSections.push(edgeSection);
+            if (objSource === '?') {
+                // worst case, assume the node is native to the tree we're currently viewing
+                objSource = argus.domSource;
+            }
+
+            if (fullNode) {
+                /* dump all node properties
+                console.log("YES, found the full node... ");
+                for (var pp in fullNode) {
+                    console.log(" fullNode."+ pp +" = "+ fullNode[pp]);
+                }
+                */
+
+                // override incoming name and ID, but only if they're missing
+                if (!objName) {
+                    objName = buildNodeNameFromTreeData( fullNode );
                 }
 
-                if (objSource === '?') {
-                    // worst case, assume the node is native to the tree we're currently viewing
-                    objSource = argus.domSource;
-                }
-
-                if (fullNode) {
-                    /* dump all node properties
-                    console.log("YES, found the full node... ");
-                    for (var pp in fullNode) {
-                        console.log(" fullNode."+ pp +" = "+ fullNode[pp]);
-                    }
-                    */
-
-                    // override incoming name and ID, but only if they're missing
-                    if (!objName) {
-                        objName = buildNodeNameFromTreeData( fullNode );
-                    }
-
-                    /* Show ALL taxonomic sources (taxonomies + IDs) for this node.
-                     * N.B. In ArguSON "v3", these can be either CURIEs or URLs:
-                     *   ["ncbi:123", "gbif:456", "http://dx.doi.org/10.1186/1471-2148-14-23"]
-                     * https://github.com/OpenTreeOfLife/germinator/wiki/%22Arguson%22-format
-                     */
-                    var itsTaxon = fullNode.taxon;
-                    if (itsTaxon) {
-                        if (itsTaxon.tax_sources && $.isPlainObject(itsTaxon.tax_sources)) {
-                            // TODO: REMOVE THIS if we adopt the scheme above; this is
-                            // a temporary alternative path for the current Arguson test file.
-                            nodeSection.displayedProperties['Source taxonomy'] = [];
-                            for (var src in itsTaxon.tax_sources) {
-                                var id = itsTaxon.tax_sources[src];
-                                var info = { taxSource: src };
-                                if (src === 'url') {
-                                    info.taxSourceURL = id;
-                                } else {
-                                    info.taxSourceID = id;
-                                }
-                                nodeSection.displayedProperties['Source taxonomy'].push(info);
+                /* Show ALL taxonomic sources (taxonomies + IDs) for this node.
+                 * N.B. In ArguSON "v3", these can be either CURIEs or URLs:
+                 *   ["ncbi:123", "gbif:456", "http://dx.doi.org/10.1186/1471-2148-14-23"]
+                 * https://github.com/OpenTreeOfLife/germinator/wiki/%22Arguson%22-format
+                 */
+                var itsTaxon = fullNode.taxon;
+                if (itsTaxon) {
+                    if (itsTaxon.tax_sources && $.isPlainObject(itsTaxon.tax_sources)) {
+                        // TODO: REMOVE THIS if we adopt the scheme above; this is
+                        // a temporary alternative path for the current Arguson test file.
+                        nodeSection.displayedProperties['Source taxonomy'] = [];
+                        for (var src in itsTaxon.tax_sources) {
+                            var id = itsTaxon.tax_sources[src];
+                            var info = { taxSource: src };
+                            if (src === 'url') {
+                                info.taxSourceURL = id;
+                            } else {
+                                info.taxSourceID = id;
                             }
+                            nodeSection.displayedProperties['Source taxonomy'].push(info);
+                        }
 
-                        } else if (itsTaxon.tax_sources && itsTaxon.tax_sources.length > 0) {
-                            nodeSection.displayedProperties['Source taxonomy'] = [];
-                            for (var tsPos = 0; tsPos < itsTaxon.tax_sources.length; tsPos++) {
-                                var taxSourceInfo = itsTaxon.tax_sources[tsPos];
-                                // Is this source a URL or CURIE?
-                                if (taxSourceInfo.indexOf('//') === -1) {  // CURIE
-                                    var CURIEparts = taxSourceInfo.split(':');
-                                    if (CURIEparts.length === 2) {
-                                        nodeSection.displayedProperties['Source taxonomy'].push({
-                                            taxSource: CURIEparts[0],
-                                            taxSourceId: CURIEparts[1]
-                                        });
-                                    } else {
-                                        console.error('showObjectProperties(): ERROR, expected a CURIE or URL:');
-                                        console.error(taxSourceInfo);
-                                    }
-                                } else {   // URL
+                    } else if (itsTaxon.tax_sources && itsTaxon.tax_sources.length > 0) {
+                        nodeSection.displayedProperties['Source taxonomy'] = [];
+                        for (var tsPos = 0; tsPos < itsTaxon.tax_sources.length; tsPos++) {
+                            var taxSourceInfo = itsTaxon.tax_sources[tsPos];
+                            // Is this source a URL or CURIE?
+                            if (taxSourceInfo.indexOf('//') === -1) {  // CURIE
+                                var CURIEparts = taxSourceInfo.split(':');
+                                if (CURIEparts.length === 2) {
                                     nodeSection.displayedProperties['Source taxonomy'].push({
-                                        taxSource: 'URL',
-                                        taxSourceURL: taxSourceInfo
+                                        taxSource: CURIEparts[0],
+                                        taxSourceId: CURIEparts[1]
                                     });
+                                } else {
+                                    console.error('showObjectProperties(): ERROR, expected a CURIE or URL:');
+                                    console.error(taxSourceInfo);
                                 }
+                            } else {   // URL
+                                nodeSection.displayedProperties['Source taxonomy'].push({
+                                    taxSource: 'URL',
+                                    taxSourceURL: taxSourceInfo
+                                });
                             }
                         }
-
-                        if (itsTaxon.ott_id) {
-                            nodeSection.displayedProperties['Reference taxonomy'] = [];
-                            //nodeSection.displayedProperties['OTT ID'] = itsTaxon.ottolId;
-                            nodeSection.displayedProperties['Reference taxonomy'].push(
-                                {
-                                    taxSource: "OTT",
-                                    taxSourceId: itsTaxon.ott_id
-                                }
-                            );
-                        }
-
-                        // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
-                        if (typeof itsTaxon.tax_rank !== 'undefined') {
-                            // TODO: Omit this is value is 'no rank'?
-                            nodeSection.displayedProperties['Taxonomic rank'] = itsTaxon.tax_rank;
-                        }
                     }
 
-                    if (fullNode.node_id) {
-                        var nodeLink = getSynthTreeViewerLinkForNodeID(fullNode.node_id, syntheticTreeID, fullNode.node_id);
-                        nodeSection.displayedProperties['Node id in synthetic tree'] = nodeLink;
+                    if (itsTaxon.ott_id) {
+                        nodeSection.displayedProperties['Reference taxonomy'] = [];
+                        //nodeSection.displayedProperties['OTT ID'] = itsTaxon.ottolId;
+                        nodeSection.displayedProperties['Reference taxonomy'].push(
+                            {
+                                taxSource: "OTT",
+                                taxSourceId: itsTaxon.ott_id
+                            }
+                        );
                     }
 
-                    if (typeof fullNode.num_tips !== 'undefined') {
-                        //if (fullNode.num_tips === 0) {
-                        if (fullNode.isActualLeafNode()) {
-                            nodeSection.displayedProperties['Leaf node (no descendant tips)'] = '';
-                        } else {
-                            nodeSection.displayedProperties['Descendant tips'] = (fullNode.num_tips || 0).toLocaleString();
-                            // OR 'Clade members'? 'Leaf taxa'?
-                        }
+                    // show taxonomic rank separate from source taxonomies (we don't know from whence it came)
+                    if (typeof itsTaxon.tax_rank !== 'undefined') {
+                        // TODO: Omit this is value is 'no rank'?
+                        nodeSection.displayedProperties['Taxonomic rank'] = itsTaxon.tax_rank;
                     }
-
-                    // Show ALL source trees (phylo-trees + IDs) for this node
-
-                    // add basic edge properties (TODO: handle multiple edges!?)
-                    var fullNodeSupporters = getSupportingSourceIDs( fullNode );
-                    if (fullNodeSupporters) {
-                        if (edgeSection) {
-                            edgeSection.displayedProperties['Supported by'] = fullNodeSupporters;
-                        } else {
-                            console.log('>>> No edgeSection found for this node:');
-                            console.log(fullNode);
-                        }
-                    }
-
-                    // add another section to explain an "orphaned" taxon (unconnected to other nodes in the tree)
-                    if (('hasChildren' in fullNode) && (fullNode.hasChildren === false)
-                     && ('lineage' in fullNode) && (fullNode.lineage.length === 0)) {
-                        orphanSection = {
-                            name: 'Where is the surrounding tree?',
-                            displayedProperties: {},
-                            selected: true
-                        };
-                        // this should override the highlight of node or edge
-                        if (nodeSection) {
-                            nodeSection.selected = false;
-                        }
-                        orderedSections.push(orphanSection);
-                        orphanSection.displayedProperties[
-                            '<p>This taxon exists in our taxonomy but is not connected to any other taxa in the'
-                           +' synthetic tree. This happens when the taxon is non-monphyletic in contributed'
-                           +' phylogenies. To contribute a phylogeny that supports monophyly of this taxon, use'
-                           +' our <a href="/curator" target="_blank">study curation application</a>.</p>'] = '';
-                        // TODO: Explain in more detail: Why is this disconnected from other nodes?
-                    }
-                } else {
-                    console.log("NO full node found for this node!");
                 }
 
-                break;
+                if (fullNode.node_id) {
+                    var nodeLink = getSynthTreeViewerLinkForNodeID(fullNode.node_id, syntheticTreeID, fullNode.node_id);
+                    nodeSection.displayedProperties['Node id in synthetic tree'] = nodeLink;
+                }
 
-            default:
-                // NOT CURRENTLY USED
-                console.log(">> WARNING - unexpected object type '"+ objType +"'!");
-        }
-    } else {
-        console.log(">> WARNING - no treeData to examine?");
+                if (typeof fullNode.num_tips !== 'undefined') {
+                    //if (fullNode.num_tips === 0) {
+                    if (fullNode.isActualLeafNode()) {
+                        nodeSection.displayedProperties['Leaf node (no descendant tips)'] = '';
+                    } else {
+                        nodeSection.displayedProperties['Descendant tips'] = (fullNode.num_tips || 0).toLocaleString();
+                        // OR 'Clade members'? 'Leaf taxa'?
+                    }
+                }
+
+                // Show ALL source trees (phylo-trees + IDs) for this node
+
+                // add basic edge properties (TODO: handle multiple edges!?)
+                var fullNodeSupporters = getSupportingSourceIDs( fullNode );
+                if (fullNodeSupporters) {
+                    if (edgeSection) {
+                        edgeSection.displayedProperties['Supported by'] = fullNodeSupporters;
+                    } else {
+                        console.log('>>> No edgeSection found for this node:');
+                        console.log(fullNode);
+                    }
+                }
+                var fullNodeConflicts = getConflictingSourceIDs( fullNode );
+                if (fullNodeConflicts) {
+                    if (edgeSection) {
+                        edgeSection.displayedProperties['Conflicts with'] = fullNodeConflicts;
+                    } else {
+                        console.log('>>> No edgeSection found for this node:');
+                        console.log(fullNode);
+                    }
+                }
+
+                // add another section to explain an "orphaned" taxon (unconnected to other nodes in the tree)
+                if (('hasChildren' in fullNode) && (fullNode.hasChildren === false)
+                 && ('lineage' in fullNode) && (fullNode.lineage.length === 0)) {
+                    orphanSection = {
+                        name: 'Where is the surrounding tree?',
+                        displayedProperties: {},
+                        selected: true
+                    };
+                    // this should override the highlight of node or edge
+                    if (nodeSection) {
+                        nodeSection.selected = false;
+                    }
+                    orderedSections.push(orphanSection);
+                    orphanSection.displayedProperties[
+                        '<p>This taxon exists in our taxonomy but is not connected to any other taxa in the'
+                       +' synthetic tree. This happens when the taxon is non-monphyletic in contributed'
+                       +' phylogenies. To contribute a phylogeny that supports monophyly of this taxon, use'
+                       +' our <a href="/curator" target="_blank">study curation application</a>.</p>'] = '';
+                    // TODO: Explain in more detail: Why is this disconnected from other nodes?
+                }
+            } else {
+                console.log("NO full node found for this node!");
+            }
+
+            break;
+
+        default:
+            // NOT CURRENTLY USED
+            console.log(">> WARNING - unexpected object type '"+ objType +"'!");
     }
 
     // start filling in the panel from the top
@@ -840,19 +856,28 @@ function showObjectProperties( objInfo, options ) {
     // remove any old thumbnail image
     $('#provenance-panel .taxon-image').remove();
     // for nodes, load supporting information and a thumbnail silhouette from PhyloPic
+    // TODO: don't think we need this switch statement; only two cases which are treated same
     switch (objType) {
         case 'node':
         case 'edge':
             var fullNode = argus.getArgusNodeByID( objID );
-            var objSupporters = null;
+            var objRelatedSources = null;
+            // combine all supporting and conflicting studies/taxonomies
+            objRelatedSources = $.extend(
+                                          {},
+                                          getSupportingSourceIDs( fullNode || objInfo ),
+                                          getConflictingSourceIDs( fullNode || objInfo )
+                                        );
+/*
             if (fullNode) {
-                objSupporters = getSupportingSourceIDs( fullNode );
+                objRelatedSources = $.merge( $.merge( [], getSupportingSourceIDs( fullNode + ) ), getConflictingSourceIDs( fullNode ) );
             } else {
-                objSupporters = getSupportingSourceIDs( objInfo );
+                objRelatedSources = $.merge( $.merge( [], getSupportingSourceIDs( objInfo ) ), getConflictingSourceIDs( objInfo ) );
             }
-            if (objSupporters) {
+*/
+            if (objRelatedSources) {
                 // fetch full supporting info, then display it
-                $.each(objSupporters, function(sourceID, sourceDetails) {
+                $.each(objRelatedSources, function(sourceID, sourceDetails) {
                     sourceMetadata = argus.treeData.source_id_map[ sourceID ];
                     if ('taxonomy' in sourceMetadata) {
                         // this supporting data is already in arguson
@@ -1016,6 +1041,7 @@ function showObjectProperties( objInfo, options ) {
                     break;
 
                 case 'Supported by':
+                case 'Conflicts with':
                     var supportedByTaxonomy = false;
                     var supportingTaxonomyVersion, supportingTaxonomyVersionURL;
                     var ottInfo = $.map( argus.treeData.source_id_map, function( value, key ) {
