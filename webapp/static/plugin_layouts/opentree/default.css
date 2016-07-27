@@ -362,6 +362,14 @@ a.related-studies-toggle {
 		padding: 6px 0;
 }
 
+/* colors borrowed from curation app (CSS in views/study/edit.html) */
+.panel-content dl dt.supporting-tree {
+	  color: #36f;
+}
+.panel-content dl dt.conflicting-tree {
+	  color: #e80;
+}
+
 p#tree-description {
     color: #aaa;
     font-size: 135%;

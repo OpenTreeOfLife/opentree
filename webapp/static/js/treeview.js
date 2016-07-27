@@ -65,7 +65,7 @@ function getConflictingSourceIDs( node ) {
 
 // gets the sources with the terminal flag
 function getTerminalSourceIDs( node ) {
-  return $.isPlainObject(node.conflicts_with) ? node.conflicts_with : null;
+  return $.isPlainObject(node.terminal) ? node.terminal : null;
 }
 
 function updateTreeView( State ) {
@@ -800,7 +800,11 @@ function showObjectProperties( objInfo, options ) {
                 // Show ALL source trees (phylo-trees + IDs) for this node
 
                 // add basic edge properties (TODO: handle multiple edges!?)
-                var fullNodeSupporters = getSupportingSourceIDs( fullNode );
+                var fullNodeSupporters = $.extend( {},
+                                                   getSupportingSourceIDs( fullNode ),
+                                                   getPartialPathSourceIDs( fullNode ),
+                                                   getTerminalSourceIDs( fullNode )
+                                                 );
                 if (fullNodeSupporters) {
                     if (edgeSection) {
                         edgeSection.displayedProperties['Supporting trees'] = fullNodeSupporters;
@@ -809,6 +813,24 @@ function showObjectProperties( objInfo, options ) {
                         console.log(fullNode);
                     }
                 }
+                // var fullNodePartials = getPartialPathSourceIDs( fullNode );
+                // if (fullNodePartials) {
+                //     if (edgeSection) {
+                //         edgeSection.displayedProperties['??? trees'] = fullNodeConflicts;
+                //     } else {
+                //         console.log('>>> No edgeSection found for this node:');
+                //         console.log(fullNode);
+                //     }
+                // }
+                // var fullNodeTerminals = getTerminalSourceIDs( fullNode );
+                // if (fullNodeTerminals) {
+                //     if (edgeSection) {
+                //         edgeSection.displayedProperties['Supporting trees'] = fullNodeSupporters;
+                //     } else {
+                //         console.log('>>> No edgeSection found for this node:');
+                //         console.log(fullNode);
+                //     }
+                // }
                 var fullNodeConflicts = getConflictingSourceIDs( fullNode );
                 if (fullNodeConflicts) {
                     if (edgeSection) {
@@ -875,16 +897,9 @@ function showObjectProperties( objInfo, options ) {
             // combine all supporting and conflicting studies/taxonomies
             objRelatedSources = $.extend(
                                           {},
-                                          getSupportingSourceIDs( fullNode || objInfo ),
-                                          getConflictingSourceIDs( fullNode || objInfo )
+                                          fullNodeSupporters,
+                                          fullNodeConflicts
                                         );
-/*
-            if (fullNode) {
-                objRelatedSources = $.merge( $.merge( [], getSupportingSourceIDs( fullNode + ) ), getConflictingSourceIDs( fullNode ) );
-            } else {
-                objRelatedSources = $.merge( $.merge( [], getSupportingSourceIDs( objInfo ) ), getConflictingSourceIDs( objInfo ) );
-            }
-*/
             if (objRelatedSources) {
                 // fetch full supporting info, then display it
                 $.each(objRelatedSources, function(sourceID, sourceDetails) {
@@ -1065,7 +1080,7 @@ function showObjectProperties( objInfo, options ) {
                             markerClass = "UNKNOWN-related-tree"
                             console.error("Unknown related-study type: "+ dLabel);
                     }
-                    $details.append('<dt>'+ dLabel +'&nbsp; <a class="related-studies-toggle" data-related-type="'+ markerClass +'" href="#">[show all details]</a></dt>');
+                    $details.append('<dt class="'+ markerClass +'">'+ dLabel +'&nbsp; <a class="related-studies-toggle" data-related-type="'+ markerClass +'" href="#">[show all details]</a></dt>');
 
                     var supportedByTaxonomy = false;
                     var supportingTaxonomyVersion, supportingTaxonomyVersionURL;
