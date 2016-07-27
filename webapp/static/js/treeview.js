@@ -48,14 +48,24 @@ var argus;
 // @TEMP - preserve incoming OTT id and source, so we can demo the Extract Subtree feature
 var incomingOttolID = null;
 
-// gets the sources that support this node
+// gets the sources with the supported_by flag
 function getSupportingSourceIDs( node ) {
     return $.isPlainObject(node.supported_by) ? node.supported_by : null;
 }
 
-// gets the sources that conflict with this node
+// gets the sources with the partial_path_of flag
+function getPartialPathSourceIDs( node ) {
+  return $.isPlainObject(node.partial_path_of) ? node.partial_path_of : null;
+}
+
+// gets the sources with the conflicts_with flag
 function getConflictingSourceIDs( node ) {
     return $.isPlainObject(node.conflicts_with) ? node.conflicts_with : null;
+}
+
+// gets the sources with the terminal flag
+function getTerminalSourceIDs( node ) {
+  return $.isPlainObject(node.conflicts_with) ? node.conflicts_with : null;
 }
 
 function updateTreeView( State ) {
@@ -793,7 +803,7 @@ function showObjectProperties( objInfo, options ) {
                 var fullNodeSupporters = getSupportingSourceIDs( fullNode );
                 if (fullNodeSupporters) {
                     if (edgeSection) {
-                        edgeSection.displayedProperties['Supported by'] = fullNodeSupporters;
+                        edgeSection.displayedProperties['Supporting trees'] = fullNodeSupporters;
                     } else {
                         console.log('>>> No edgeSection found for this node:');
                         console.log(fullNode);
@@ -802,7 +812,7 @@ function showObjectProperties( objInfo, options ) {
                 var fullNodeConflicts = getConflictingSourceIDs( fullNode );
                 if (fullNodeConflicts) {
                     if (edgeSection) {
-                        edgeSection.displayedProperties['Conflicts with'] = fullNodeConflicts;
+                        edgeSection.displayedProperties['Conflicting trees'] = fullNodeConflicts;
                     } else {
                         console.log('>>> No edgeSection found for this node:');
                         console.log(fullNode);
@@ -1040,8 +1050,23 @@ function showObjectProperties( objInfo, options ) {
 
                     break;
 
-                case 'Supported by':
-                case 'Conflicts with':
+                case 'Supporting trees':
+                case 'Conflicting trees':
+                    // use a similar marker class (CSS) to wrangle each category
+                    var markerClass;
+                    switch (dLabel) {
+                        case 'Supporting trees':
+                            markerClass = 'supporting-tree';
+                            break;
+                        case 'Conflicting trees':
+                            markerClass = 'conflicting-tree';
+                            break;
+                        default:
+                            markerClass = "UNKNOWN-related-tree"
+                            console.error("Unknown related-study type: "+ dLabel);
+                    }
+                    $details.append('<dt>'+ dLabel +'&nbsp; <a class="related-studies-toggle" data-related-type="'+ markerClass +'" href="#">[show all details]</a></dt>');
+
                     var supportedByTaxonomy = false;
                     var supportingTaxonomyVersion, supportingTaxonomyVersionURL;
                     var ottInfo = $.map( argus.treeData.source_id_map, function( value, key ) {
@@ -1052,7 +1077,7 @@ function showObjectProperties( objInfo, options ) {
                         supportingTaxonomyVersion = ottInfo['taxonomy'];
                         if (supportingTaxonomyVersion) {
                             var simpleVersion = supportingTaxonomyVersion.split('draft')[0];
-                            supportingTaxonomyVersionURL = '/about/taxonomy-version/ott'
+                            supportingTaxonomyVersionURL = '/about/taxonomy-version/'
                                 + simpleVersion;
                         } else {
                             supportingTaxonomyVersion = 'Not found';
@@ -1075,7 +1100,7 @@ function showObjectProperties( objInfo, options ) {
                             if ('taxonomy' in moreInfo) {
                                 // this will be added below any supporting studies+trees
                                 supportedByTaxonomy = true;
-                                return false;
+                                return; // skip to next source
                             }
                         }
                         if (typeof moreInfo === 'object' && 'sourceDetails' in moreInfo) {
@@ -1116,29 +1141,21 @@ function showObjectProperties( objInfo, options ) {
                     $details.find('dt.loading-supporting-studies').remove();
 
                     if (waitingForStudyInfo) {
-                        $details.append('<dt class="loading-supporting-studies">Loading supporting studies...</dt>');
+                        $details.append('<dt class="loading-supporting-studies">Loading related studies...</dt>');
                     } else {
                         // we have all the details, try to show supporting studies
                         for (studyID in supportingStudyInfo) {
                             ///console.log(">>> study data for "+ studyID +" is COMPLETE, adding it now...");
                             var studyInfo = supportingStudyInfo[ studyID ];
-                            var pRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pURL, pID, pCurator;
+                            var pRef, pCompactRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pURL, pID, pCurator;
                             // assemble and display study info
-                            pRef = studyInfo['ot:studyPublicationReference'];
-                            // be careful, in case we have an incomplete or badly-formatted reference
-                            if (pRef) {
-                                // we'll show full (vs. compact) reference for each study
-                                displayVal = '<div class="full-ref">'+ pRef +'</div>';
-
-                                /* compact ref logic, if needed later
-                                pCompactYear = pRef.match(/(\d{4})/)[0];
-                                    // capture the first valid year
-                                pCompactPrimaryAuthor = pRef.split(pCompactYear)[0].split(',')[0];
-                                    // split on the year to get authors (before), and capture the first surname
-                                pRefCompact = pCompactPrimaryAuthor +", "+ pCompactYear;    // eg, "Smith, 1999";
-                                displayVal += pRefCompact;
-                                */
-                            }
+                            pID = studyInfo['ot:studyId'];
+                            pRef = studyInfo['ot:studyPublicationReference'] || '???';
+                            pCompactRef = fullToCompactReference( pRef );
+                            // show compact reference for each study, with a toggle for more below
+                            displayVal = '<div class="related-study"><div class="compact-ref"><a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pCompactRef +'</a></div>';
+                            displayVal += '<div class="full-study-details" style="display: none;">';
+                            displayVal += '<div class="full-ref">'+ pRef +'</div>';
 
                             // publication URL should always be present, non-empty, and a valid URL
                             pURL = studyInfo['ot:studyPublication'];
@@ -1146,44 +1163,86 @@ function showObjectProperties( objInfo, options ) {
                                 displayVal += 'Full publication: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pURL +'</a><br/>';
                             }
 
-                            pID = studyInfo['ot:studyId'];
-                            if (pID) {
-                                /* Phylografter link
-                                displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
-                                */
+                            /* Phylografter link
+                            displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
+                            */
+                            displayVal += (
+                                'Open Tree curation of this study: <a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pID +'</a><br/>'
+                              + 'Supporting '+ (studyInfo.supportingTrees.length > 1 ? 'trees:' : 'tree:')
+                            );
+                            for (var treeID in studyInfo.supportingTrees) {
                                 displayVal += (
-                                    'Open Tree curation of this study: <a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pID +'</a><br/>'
-                                  + 'Supporting '+ (studyInfo.supportingTrees.length > 1 ? 'trees:' : 'tree:')
+                                    '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree='+ treeID +'" '
+                                  + 'target="_blank" title="Link to this supporting tree in curation app">'+ treeID +'</a>'
                                 );
-                                for (var treeID in studyInfo.supportingTrees) {
-                                    displayVal += (
-                                        '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree='+ treeID +'" '
-                                      + 'target="_blank" title="Link to this supporting tree in curation app">'+ treeID +'</a>'
-                                    );
-                                }
                             }
 
                             pCurator = studyInfo['ot:curatorName'];
                             if (pCurator) {
-                                displayVal += ('<div class="full-ref-curator">Curated by: '+ pCurator +'</div>');
+                                displayVal += ('<div>Curated by: '+ pCurator +'</div>');
                             }
+                            displayVal += '</div>';  // end of .full-study-details
+                            displayVal += '<a class="full-ref-toggle" href="#">[show details]</a>';
+                            displayVal += '</div>';  // end of .related-study
 
-                            $details.append('<dt>'+ dLabel +'</dt>');
-                            $details.append('<dd>'+ displayVal +'</dd>');
+                            //$details.append('<dt>'+ dLabel +'</dt>');
+                            $details.append('<dd class="'+ markerClass +'">'+ displayVal +'</dd>');
                         }
                     }
                     if (supportedByTaxonomy) {
-                        $details.append('<dt>Supported by taxonomy</dt>');
-                        $details.append('<dd>'+ supportingTaxonomyVersion
+                        //$details.append('<dt>Supported by taxonomy</dt>');
+                        $details.append('<dd> <strong style="color: #777;"}>Taxonomy</strong> '
                                 +' &nbsp;<a href="'+ supportingTaxonomyVersionURL
-                                +'" target="_blank">(OTT and version information)</a></dd>');
+                                +'" target="_blank">' + supportingTaxonomyVersion + '</a></dd>');
                     }
                     $details.find('.full-ref-toggle').unbind('click').click(function() {
-                        var $itsReference = $(this).nextAll('.full-ref, .full-ref-curator');
-                        if ($itsReference.is(':visible')) {
-                            $itsReference.hide();
+                        var $toggle = $(this);
+                        var $compactRef = $toggle.prevAll('.compact-ref');
+                        var $fullDetails = $toggle.prevAll('.full-study-details');
+                        if ($fullDetails.is(':visible')) {
+                            $fullDetails.hide();
+                            $compactRef.show();
+                            $toggle.text('[show details]');
                         } else {
-                            $itsReference.show();
+                            $fullDetails.show();
+                            $compactRef.hide();
+                            $toggle.text('[hide details]');
+                        }
+                        return false;
+                    });
+                    $details.find('.related-studies-toggle').unbind('click').click(function() {
+                        var $toggle = $(this);
+                        var markerClass = $toggle.attr('data-related-type');
+                        // force all studies, based on current text
+                        var $relatedStudies = $toggle.closest('dl').find('dd.'+ markerClass +' .related-study');
+                        if ($toggle.text().indexOf('show') !== -1) {
+                            // show all study details below
+                            $relatedStudies.each(function(i, studyBlock) {
+                                var $block = $(studyBlock);
+                                var $compactRef = $block.find('.compact-ref');
+                                var $fullDetails = $block.find('.full-study-details');
+                                var $itsToggle = $block.find('.full-ref-toggle');
+                                if (!$fullDetails.is(':visible')) {
+                                    $fullDetails.show();
+                                    $compactRef.hide();
+                                    $itsToggle.text('[hide details]');
+                                }
+                            });
+                            $toggle.text('[hide all details]');
+                        } else {
+                            // hide all study details below
+                            $relatedStudies.each(function(i, studyBlock) {
+                                var $block = $(studyBlock);
+                                var $compactRef = $block.find('.compact-ref');
+                                var $fullDetails = $block.find('.full-study-details');
+                                var $itsToggle = $block.find('.full-ref-toggle');
+                                if ($fullDetails.is(':visible')) {
+                                    $fullDetails.hide();
+                                    $compactRef.show();
+                                    $itsToggle.text('[show details]');
+                                }
+                            });
+                            $toggle.text('[show all details]');
                         }
                         return false;
                     });

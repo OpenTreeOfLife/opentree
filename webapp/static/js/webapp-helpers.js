@@ -4,6 +4,24 @@
  * should eventually be moved over here.
  */
 
+/*
+* Converts a full reference to a compact reference for display in properties panel
+* duplicates function with same name in curator/static/js/curation_helpers.js,
+* so changes need to be made in both places
+*/
+ function fullToCompactReference( fullReference ) {
+     var compactReference = "(Untitled)";
+     if ($.trim(fullReference) !== "") {
+         // capture the first valid year in the reference
+         var yearMatches = fullReference.match(/(\d{4})/);
+         var compactYear = yearMatches ? yearMatches[0] : "[no year]";
+         // split on the year to get authors (before), and capture the first surname
+         var compactPrimaryAuthor = fullReference.split(compactYear)[0].split(',')[0];
+         var compactReference = compactPrimaryAuthor +", "+ compactYear;    // eg, "Smith, 1999";
+     }
+     return compactReference;
+ }
+
  /*
  * Returns a hyperlink to the taxonomy browser for a given OTT taxon
  * Note that this function replicated curator/static/js/curation-helpers.js,
