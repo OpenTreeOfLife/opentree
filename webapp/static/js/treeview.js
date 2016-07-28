@@ -48,25 +48,6 @@ var argus;
 // @TEMP - preserve incoming OTT id and source, so we can demo the Extract Subtree feature
 var incomingOttolID = null;
 
-// gets the sources with the supported_by flag
-function getSupportingSourceIDs( node ) {
-    return $.isPlainObject(node.supported_by) ? node.supported_by : null;
-}
-
-// gets the sources with the partial_path_of flag
-function getPartialPathSourceIDs( node ) {
-  return $.isPlainObject(node.partial_path_of) ? node.partial_path_of : null;
-}
-
-// gets the sources with the conflicts_with flag
-function getConflictingSourceIDs( node ) {
-    return $.isPlainObject(node.conflicts_with) ? node.conflicts_with : null;
-}
-
-// gets the sources with the terminal flag
-function getTerminalSourceIDs( node ) {
-  return $.isPlainObject(node.terminal) ? node.terminal : null;
-}
 
 function updateTreeView( State ) {
     /* N.B. This should respond identically to state changes in HTML5 History,
@@ -794,14 +775,9 @@ function showObjectProperties( objInfo, options ) {
             }
         }
 
-        // Show ALL source trees (phylo-trees + IDs) for this node
-
-        // add basic edge properties (TODO: handle multiple edges!?)
-        var fullNodeSupporters = $.extend( {},
-                                           getSupportingSourceIDs( fullNode ),
-                                           getPartialPathSourceIDs( fullNode ),
-                                           getTerminalSourceIDs( fullNode )
-                                         );
+        // get the list of ALL support types (supported_by, partial_path_of, terminal)
+        // we may later split this into separate sections for each type
+        var fullNodeSupporters = getSupportingSourceIDs( fullNode );
         if (fullNodeSupporters) {
             if (edgeSection) {
                 edgeSection.displayedProperties['Supporting trees'] = fullNodeSupporters;
