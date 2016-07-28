@@ -364,10 +364,10 @@ a.related-studies-toggle {
 
 /* colors borrowed from curation app (CSS in views/study/edit.html) */
 .panel-content dl dt.supporting-tree {
-	  color: #36f;
+	  /*color: #36f;*/
 }
 .panel-content dl dt.conflicting-tree {
-	  color: #e80;
+	  /*color: #e80;*/
 }
 
 p#tree-description {
