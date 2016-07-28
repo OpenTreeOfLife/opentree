@@ -879,7 +879,6 @@ function showObjectProperties( objInfo, options ) {
     // remove any old thumbnail image
     $('#provenance-panel .taxon-image').remove();
     // for nodes, load supporting information and a thumbnail silhouette from PhyloPic
-    // TODO: don't think we need this switch statement; only two cases which are treated same
     var fullNode = argus.getArgusNodeByID( objID );
     var objRelatedSources = null;
     // combine all supporting and conflicting studies/taxonomies
