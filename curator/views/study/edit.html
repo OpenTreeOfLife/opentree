@@ -663,6 +663,7 @@ body {
                         <td>
                             <a href="#" data-bind="click: showTreeWithHistory,
                                 text: tree['@label'],
+                                attr: { href : getViewURLFromStudyID(studyID) + '/?tab=trees&tree=' + tree['@id'] },
                                 css: viewModel.ticklers.TREES">&nbsp;</a>
                             <br/>
                             <a data-bind="if: unresolvedDuplicatesFoundInTree( tree ),
@@ -2384,7 +2385,7 @@ body {
 
                 <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:time'" >
                     <label style="margin-left: 10px;">Time unit: </label>
-                    <select data-bind="options: ['Myr', 'Kyr', 'Coalescent time units'], 
+                    <select data-bind="options: ['Myr', 'Kyr', 'Coalescent time units'],
                                        optionsCaption: 'Choose a unit of time...',
                                        value: $data['^ot:branchLengthTimeUnit'],
                                        event: { keyup: nudge.TREES, change: nudge.TREES },
