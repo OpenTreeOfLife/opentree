@@ -229,6 +229,13 @@ body {
     box-shadow: none !important;
 }
 
+/* simple zebra striping for new-taxon source entries */
+.controls.taxon-source td {
+    padding: 5px 6px;
+}
+.controls.taxon-source.odd {
+    background: #f3f3f3;
+}
 </style>
 
 <div class="row">
@@ -406,9 +413,6 @@ body {
                 </div>
             </div>
                   <input data-bind="value: nexml['^ot:focalClade'], event: { change: nudge.GENERAL_METADATA }, css: viewModel.ticklers.GENERAL_METADATA" type="hidden" id="ot_focalClade" placeholder="">
-                  <!--
-                  <input data-bind="value: nexml['^ot:focalClade'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_focalClade" class="input-small" placeholder="">
-                    -->
                 {{ else: }}
                   <p class="static-form-value">
                     <span data-bind="text: nexml['^ot:focalCladeOTTTaxonName'], attr:{'title': ('ottid:'+ nexml['^ot:focalClade'])}, css: viewModel.ticklers.GENERAL_METADATA">&nbsp;</span>
@@ -1380,10 +1384,10 @@ body {
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
 
-            <button class="help-toggle" style="display: none;">
+            <button class="help-toggle">
                 Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
             </button>
-            <div class="help-box">
+            <div class="help-box" style="display: none;">
               <button class="help-toggle">
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
@@ -1484,8 +1488,22 @@ body {
                 </button>
             </div>
 
-            <div class="well">
-                <h4 style="margin-top: 0;">Mapping options</h4>
+            <div id="mapping-options-prompt" class="well" style="cursor: pointer;"
+                 onclick="showMappingOptions(); return false;">
+                <h4 title="Click to show mapping options" style="margin-top: 0;">
+                    <i class="pull-right icon-chevron-down"></i>
+                    Mapping options
+                </h4>
+                <p style="margin-bottom: 0;">
+                Click here for tools that make mapping faster and more accurate.
+                </p>
+            </div>
+            <div id="mapping-options-panel" class="well" style="display: none;">
+                <h4 title="Click to hide mapping options" style="margin-top: 0; cursor: pointer;"
+                    onclick="hideMappingOptions(); return false;">
+                    <i class="pull-right icon-chevron-up"></i>
+                    Mapping options
+                </h4>
                 <p>
                 The easiest way to improve mapping performance is to provide a
                 narrow context for the search.
@@ -1589,8 +1607,9 @@ body {
                   </div>
                   <div style="margin-top: 1em;">
                       <button type="submit" class="btn"
-                              onclick="addSubstitution(); return false;">Add another substitution
-                        <i class="icon-add "></i></button>
+                              onclick="addSubstitution(); return false;">
+                          <i class="icon-plus"></i> Add another substitution
+                      </button>
                   </div>
 
                  </fieldset>
@@ -1602,6 +1621,20 @@ body {
                 in the <strong>Modified for mapping</strong> column at left.
                 </p>
             </div>
+
+            <div class="well">
+                <h4 style="margin-top: 0;">Adding new taxa</h4>
+                <p>
+                Unmapped taxa are kept in the study, but pruned during
+                synthesis. You can submit unmapped tree labels as new taxa in
+                the Open Tree Taxonomy.
+                </p>
+                <button type="submit" class="btn"
+                        onclick="showNewTaxaPopup(); return false;">
+                    <i class="icon-plus"></i> Open new taxa form for selected OTUs
+                </button>
+            </div>
+
         {{ pass }}
 
            </div><!-- end of right col -->
@@ -1812,7 +1845,7 @@ body {
                 </p>
                 <p>
                   In the future, there will be other analyses here. Have a suggestion?
-                  Add an <a href="https://github.com/OpenTreeOfLife/opentree/issues">issue<a/>.
+                  Add an <a href="https://github.com/OpenTreeOfLife/opentree/issues">issue</a>.
                 </p>
             </div>
 
@@ -1982,6 +2015,8 @@ body {
     var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
     var treeConflictStatus_url = "{{=treeConflictStatus_url}}";
+
+    var API_create_amendment_POST_url = "{{=API_create_amendment_POST_url}}";
 </script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
 
@@ -2230,6 +2265,292 @@ body {
     </div>
     <div class="modal-footer">
       <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>
+
+<!-- hidden template for new-taxon form (for adding taxa to OT Taxonomy) -->
+<div class="modal hide fade" id="new-taxa-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close" onclick="hideNewTaxaPopup(); return false;">×</a>
+      <h3 id='dialog-heading'>
+         Adding new taxa
+      </h3>
+    </div>
+    <div class="modal-body">
+        <button class="help-toggle" style="display: none;">
+            Show help <i class="icon-chevron-down Xicon-white"></i>
+        </button>
+        <div class="help-box" style="display: block;">
+            <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+            </button>
+            <p>
+                Once added, these taxa will appear in the Open Tree Taxonomy,
+                and possibly in the synthetic tree, with links to your curator
+                profile, the current study, and any additional sources that you
+                provide below.
+            </p>
+        </div>
+       <!-- ko if:currentTaxonCandidate -->
+        <p>
+            Selected label <span class="nth-label"
+                 data-bind="text: getCurrentTaxonCandidatePosition() + 1">-</span>
+            of <span class="total-labels"
+                 data-bind="text: candidateOTUsForNewTaxa.length">-</span>
+            <span class="btn-group" style="position: relative; left: 5px; top: -2px;">
+                <button class="btn btn-small prev-button"
+                   onclick="return false;"
+                   data-bind="attr: {'disabled': !prevTaxonCandidateAllowed()},
+                              click: moveToPreviousTaxonCandidate"
+                >Previous label</button>
+                <button class="btn btn-small next-button"
+                   onclick="return false;"
+                   data-bind="attr: {'disabled': !nextTaxonCandidateAllowed()},
+                              click: moveToNextTaxonCandidate"
+                >Next label</button>
+            </span>
+            <span class="required-field-marker" style="padding-left: 150px;">* required fields</span>
+        </p>
+        <form class="form-horizontal wider-fields" style="margin-bottom: 0px;">
+            <div class="control-group">
+                <label class="control-label" for="">Original label</label>
+                <div class="controls">
+                    <div class="static-form-value unmapped-label"
+                         style="color: #888; font-weight: normal;"
+                         data-bind="text: $data['^ot:originalLabel'],
+                                    attr:{'title': '' }"
+                         title="">...</div>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="new-taxon-name">New taxon name <span class="required-field-marker">*</span></label>
+                <div class="controls">
+                    <input type="text" id="new-taxon-name" class="required-field input-xlarge"
+                           data-bind="value: $data.newTaxonMetadata.modifiedName,
+                                      valueUpdate: ['afterkeydown', 'input'],
+                                      event: {keyup: updateTaxonNameCheck, input: updateTaxonNameCheck, change: null, blur: null}
+                                      "
+                           style="margin-bottom: 4px;"
+                           placeholder="Enter the preferred name here">
+                   <span data-bind="text: proposedTaxonNameStatusMessage($data),
+                                    style: {display: 'inline-block', color: proposedTaxonNameStatusColor($data)}">...</span>
+                    <br/>
+                    <select style="margin-bottom: 0; width: auto;"
+                        data-bind="value: $data.newTaxonMetadata.modifiedNameReason,
+                                   event: { keyup: null, change: null },
+                                   options: ['Typo in original label',
+                                             'Removing extraneous characters',
+                                             'Taxon subsequently published under this name',
+                                             'Label is a synonym',
+                                             'Other (explain in comments below)'],
+                                   optionsCaption: 'Choose reason for modification...',
+                                   attr:{'disabled': ($data.newTaxonMetadata.modifiedName() === $data.newTaxonMetadata.adjustedLabel)},
+                                   css: ($data.newTaxonMetadata.modifiedName() === $data.newTaxonMetadata.adjustedLabel) ? '' : 'required-field'
+                                   ">
+                    </select>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="TODO">Taxonomic rank <span class="required-field-marker">*</span></label>
+                <div class="controls">
+                    <select class="required-field" style="margin-bottom: 0; width: auto;"
+                        data-bind="value: $data.newTaxonMetadata.rank,
+                                   event: { keyup: null, change: null },
+                                   options: [
+                                     'domain',
+                                     'superkingdom',
+                                     'kingdom',
+                                     'subkingdom',
+                                     'division',
+                                     'infrakingdom',
+                                     'superphylum',
+                                     'phylum',
+                                     'subphylum',
+                                     'infraphylum',
+                                     'subdivision',
+                                     'superclass',
+                                     'class',
+                                     'subclass',
+                                     'infraclass',
+                                     'superorder',
+                                     'order',
+                                     'suborder',
+                                     'infraorder',
+                                     'parvorder',
+                                     'section',
+                                     'subsection',
+                                     'superfamily',
+                                     'family',
+                                     'subfamily',
+                                     'supertribe',
+                                     'tribe',
+                                     'subtribe',
+                                     'genus',
+                                     'subgenus',
+                                     'species group',
+                                     'species subgroup',
+                                     'species',
+                                     'infraspecificname',
+                                     'subspecies',
+                                     'natio',
+                                     'variety',
+                                     'varietas',
+                                     'subvariety',
+                                     'form',
+                                     'forma',
+                                     'subform',
+                                     'samples',
+                                     '───────────',
+                                     'no rank'
+                                   ],
+                                   optionsAfterRender: disableRankDivider
+                                   ">
+                    </select>
+                </div>
+            </div>
+            <div class="control-group">
+                <label class="control-label" for="TODO">Parent taxon <span class="required-field-marker">*</span></label>
+                <div class="controls">
+                  <div class="static-form-value"
+                       data-bind="visible: getActiveParentTaxonName($data)()">
+                    <span data-bind="text: (getActiveParentTaxonName($data) || 'None'),
+                                     attr:{'title': '', 'disabled': sharedParentTaxonID()}"
+                          class="parent-taxon"
+                          title="">???</span>
+
+                    <span style="font-weight: normal;">
+                        &mdash;
+                        <a href="#" target="_blank"
+                           class="parent-taxon-browse-link"
+                           data-bind="attr: {href: '/taxonomy/browse?id='+ getActiveParentTaxonID($data)()}">Open in OTT browser</a>
+                    </span>
+                  </div>
+                  <!-- reuse style and behavior from Metadata > Focal Clade -->
+                  <div id="parent-taxon-search-form" class="Xnavbar-search Xpull-right" autocomplete="off" style="Xdisplay: inline-block; position: relative;">
+                      <input type="text" name="parent-taxon-search" class="required-field" style="Xwidth: 365px;"
+                          data-bind="attr:{'disabled': sharedParentTaxonID()}"
+                          placeholder="Choose the parent taxon..." autocomplete="off">
+                      <!-- <input type="submit" style="" name="parent-taxon-search-go" value="Go" onclick="return false;"/> -->
+                      <!-- then show dropdown when results are ready... -->
+                      <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
+                      <select style="margin-bottom: 0; width: auto;" name="parent-taxon-search-context"
+                              data-bind="attr:{'disabled': sharedParentTaxonID()}">
+                          {{ # generate our contextNames list based on newly fetched names
+                            try:
+                             for context_name in taxonSearchContextNames:
+                                if context_name == 'All life': }}
+                                  <option selected="selected" value="{{= context_name }}">{{= context_name }}</option>
+                             {{ else: }}
+                                  <option value="{{= context_name }}">{{= context_name }}</option>
+                             {{ pass }}
+                          {{ pass }}
+                          {{ except: }}
+                                  <option selected="selected">ERROR loading context values</option>
+                             {{ pass }}
+                      <!--
+                      NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted
+                      by the server, ie, there's no distinction between visible and occult values.
+                      -->
+                      </select>
+                      <div class="">
+                          <ul id="parent-taxon-search-results" class="dropdown-menu" role="menu">
+                              ...
+                          </ul>
+                      </div>
+                  </div>
+                  <label for="copy-parent-taxon" class="featured-label" style="clear: both; padding-top: 2px; padding-left: 20px; text-indent: -20px;">
+                      <input type="checkbox" id="copy-parent-taxon" name="TODO"
+                             style="width: 20px;"
+                             data-bind="checked: sharedParentTaxonID(),
+                                        click: toggleSharedParentID" />
+                      Use this parent taxon for all labels <em>(un-check to edit)</em>
+                  </label>
+                </div><!-- .controls -->
+            </div>
+            <div class="control-group" id="active-taxon-sources"
+                 data-bind="with: getActiveTaxonSources($data)">
+               <label class="">Source(s) for this taxon <span class="required-field-marker">*</span></label>
+               <table style="clear: left; width: 100%;">
+                <tbody class="taxon-sources"
+                    data-bind="foreach: { data: $data, as: 'source' }">
+                 <tr class="controls taxon-source"
+                     data-bind="css: { odd: ($index() % 2) === 0 }">
+                  <td width="250">
+                    <select class="required-field source-type" style="width: auto;"
+                        data-bind="value: source.type,
+                                   event: { keyup: updateActiveTaxonSources,
+                                            change: updateActiveTaxonSources },
+                                   attr: {'disabled': sharedTaxonSources()},
+                                   options: ['The taxon is described in this study',
+                                             'Link to online taxonomy',
+                                             'Link (DOI) to publication',
+                                             'Other'],
+                                   optionsCaption: 'Choose source type...'
+                                   ">
+                    </select>
+                  </td>
+                  <td width="*">
+                    <input data-bind="value: source.value,
+                                      valueUpdate: ['afterkeydown', 'input'],
+                                      event: {keyup: null,
+                                              change: updateActiveTaxonSources,
+                                              blur: updateActiveTaxonSources},
+                                      attr: {'disabled': sharedTaxonSources()}
+                                      "
+                           type="text"
+                           class="input-block-level source-details required-field"
+                     /><!-- placeholder text is set by JS, in `updateTaxonSourceDetails` -->
+                  </td>
+                  <td width="30">
+                    <button data-bind="click: function() {
+                                         removeTaxonSource( $parent, $data );
+                                         updateActiveTaxonSources();
+                                         return false;
+                                       },
+                                       visible: $parent.indexOf(source) !== 0,
+                                       attr: {'disabled': sharedTaxonSources()}"
+                        class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                        style="display: none;">
+                        <i class="icon-remove icon-white"></i>
+                    </button>
+                  </td>
+                 </tr><!-- end of .taxon-source -->
+                </tbody><!-- end of .taxon-sources -->
+               </table>
+
+                <div>
+                  <button class="btn btn-small btn-info pull-right"
+                          style="margin: 4px 8px 2px;"
+                          data-bind="click: addEmptyTaxonSource,
+                                     attr: {'disabled': sharedTaxonSources()}">
+                    Add another source
+                    <i class="icon-plus icon-white"></i></button>
+                  <label for="copy-evidence" class="featured-label pull-left" style="margin-top: 6px;">
+                      <input type="checkbox" id="copy-evidence" name="TODO"
+                             style="width: 20px;"
+                             data-bind="checked: $.isArray(sharedTaxonSources()),
+                                        click: toggleSharedSources" />
+                      Use this source information for all labels <em>(un-check to edit)</em>
+                  </label>
+                </div>
+
+            </div><!--  /#active-taxon-sources -->
+
+            <textarea class="input-block-level" style="margin-bottom: 8px;"
+                data-bind="value: $data.newTaxonMetadata.comments,
+                           valueUpdate: ['afterkeydown', 'input'],
+                           event: { keyup: null, change: null }"
+                placeholder="Add comments or additional links to support this taxon.">
+            </textarea>
+        </form>
+        <!-- /ko --><!-- end of 'if there's a candidate' -->
+
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-info pull-right" style="margin-left: 20px;"
+              onclick="if (taxonCondidateIsValid( currentTaxonCandidate(), {REPORT_ERRORS: true} ) && allTaxonCandidatesAreValid({REPORT_ERRORS: true})) submitNewTaxa(); return false;">Submit</button>
+      <a data-dismiss="modal" class="btn"
+              onclick="hideNewTaxaPopup(); return false;" >Cancel</a>
     </div>
 </div>
 

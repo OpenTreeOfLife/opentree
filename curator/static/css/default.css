@@ -852,3 +852,22 @@ tr.after-shims th {
 	  display: none;
 		margin-left: 4em;
 }
+
+#new-taxa-popup {
+    width: 80%;
+    margin: auto -40%;
+}
+#new-taxa-popup .modal-body {
+    max-height: 520px;
+}
+#new-taxa-popup .form-horizontal .control-group {
+    margin-bottom: 10px;
+}
+
+.required-field {
+    border-color: red !important;
+}
+.required-field-marker {
+    color: red !important;
+}
+

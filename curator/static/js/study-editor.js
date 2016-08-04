@@ -56,6 +56,7 @@ var API_load_file_GET_url;
 var API_update_file_PUT_url;
 var API_remove_file_DELETE_url;
 var findAllTreeCollections_url;
+var API_create_amendment_POST_url;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -2298,6 +2299,7 @@ function scrubNexsonForTransport( nexml ) {
     var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
     $.each( allOTUs, function(i, otu) {
         delete otu['selectedForAction'];  // only used in the curation app
+        delete otu['newTaxonMetadata'];
         if ('^ot:altLabel' in otu) {
             var ottId = $.trim(otu['^ot:ottId']);
             if (ottId !== '') {
@@ -8925,5 +8927,901 @@ function addTreeToNewCollection() {
         if (confirm('This requires login via Github. OK to proceed?')) {
             loginAndReturn();
         }
+    }
+}
+
+function showMappingOptions() {
+    $('#mapping-options-prompt').hide();
+    $('#mapping-options-panel').show();
+}
+function hideMappingOptions() {
+    $('#mapping-options-panel').hide();
+    $('#mapping-options-prompt').show();
+}
+
+/* A few global vars for the add-new-taxa popup */
+var candidateOTUsForNewTaxa = [ ];
+var currentTaxonCandidate = ko.observable(null);
+var sharedParentTaxonID = ko.observable(null);
+var sharedParentTaxonName = ko.observable(null);
+var sharedTaxonSources = ko.observableArray(); // sets it to an empty array
+sharedTaxonSources(null); // force to null (no shared source)
+
+function getSelectedOTUs() {
+    /* This includes only visible OTUs, i.e. those in the current filtered and
+       paginated set.
+     */
+    var visibleOTUs = viewModel.filteredOTUs().pagedItems();
+    var selectedOTUs = visibleOTUs.filter(function(otu, i) {
+        return (otu['selectedForAction']) ? true : false;
+    });
+    return selectedOTUs;
+}
+function moveToNthTaxonCandidate( pos ) {
+    // look before we leap!
+    var testCandidate = candidateOTUsForNewTaxa[ pos ];
+    if (!testCandidate) {
+        console.error("moveToNthTaxonCandidate("+ pos +") - no such candidate OTU!");
+        return;
+    }
+
+    if (currentTaxonCandidate()) {
+        // report any validation errors in the current candidate (and don't move)
+        if (!taxonCondidateIsValid(currentTaxonCandidate(), {REPORT_ERRORS: true})) {
+            return;
+        }
+    }
+
+    // move to the n-th otu
+    currentTaxonCandidate(testCandidate);
+    // add new-taxon metadata, if not found (stored only during this curation session!)
+
+    if ($stashedTaxonSourceElement === null) {
+        // save the template and use the original
+        $stashedTaxonSourceElement = $('#active-taxon-sources .taxon-sources')
+            .find('.taxon-source').eq(0).clone();
+    } else {
+        // apply the saved template
+        $('#active-taxon-sources .taxon-sources').empty()
+                  .append( $stashedTaxonSourceElement.clone() );
+    }
+
+    // Bind just the selected candidate to the editing UI
+    // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
+    var $boundElements = $('#new-taxa-popup').find('.modal-body');
+    // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
+    $.each($boundElements, function(i, el) {
+        ko.cleanNode(el);
+        ko.applyBindings(currentTaxonCandidate, el);
+    });
+    updateTaxonSourceDetails( );
+    bindHelpPanels();
+    //updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+    // N.B. This is already handled, probably during `updateTaxonSourceDetails()`
+
+    // enable parent-taxon search
+    $('input[name=parent-taxon-search]').unbind('keyup change').bind('keyup change', setParentTaxaSearchFuse );
+    $('select[name=parent-taxon-search-context]').unbind('change').bind('change', searchForMatchingParentTaxa );
+
+    // don't trigger unrelated form submission when pressing ENTER here
+    $('input[name=parent-taxon-search], select[name=parent-taxon-search-context]')
+        .unbind('keydown')
+        .bind('keydown', function(e) { return e.which !== 13; });
+}
+function moveToNextTaxonCandidate() {
+    var chosenPosition = getCurrentTaxonCandidatePosition();
+    if (chosenPosition >= (candidateOTUsForNewTaxa.length - 1)) {
+        return; // this will only cause trouble
+    }
+    moveToNthTaxonCandidate(chosenPosition + 1);
+}
+function moveToPreviousTaxonCandidate() {
+    var chosenPosition = getCurrentTaxonCandidatePosition();
+    if (chosenPosition < 1) {
+        return; // this will only cause trouble
+    }
+    moveToNthTaxonCandidate(chosenPosition - 1);
+}
+/* UNUSED (nudge Knockout bindings instead, if possible)
+function refreshCurrentTaxonCandidate() {
+    var currentPosition = getCurrentTaxonCandidatePosition();
+    moveToNthTaxonCandidate(currentPosition);
+}
+*/
+function getCurrentTaxonCandidatePosition() {
+    var chosenPosition = $.inArray(currentTaxonCandidate(), candidateOTUsForNewTaxa);
+    return chosenPosition;
+}
+function clearAllTaxonCandidates() {
+    // Clear all vars related to the new-taxa popup
+    candidateOTUsForNewTaxa = [ ];
+    currentTaxonCandidate(null);
+    sharedParentTaxonID(null);
+    sharedParentTaxonName(null);
+    sharedTaxonSources(null);
+}
+
+var $stashedTaxonSourceElement = null;
+function showNewTaxaPopup() {
+    // Try to incorporate any selected labels.
+    //$stashedCollectionViewerTemplate
+    var selectedOTUs = getSelectedOTUs();
+    // Bail if nothing is selected (must also be visible!)
+    if (selectedOTUs.length === 0) {
+        showErrorMessage('No labels chosen! Use checkboxes to choose which labels to add as new taxa.');
+        return;
+    }
+    // (Re)build the persistant list of candidates
+    candidateOTUsForNewTaxa = selectedOTUs.filter(function(otu, i) {
+        return (otu['^ot:ottId']) ? false : true;
+    });
+    // Warn if some (or all) chosen labels are already mapped!
+    hideFooterMessage();
+    if (candidateOTUsForNewTaxa.length === 0) {
+        showErrorMessage('All chosen labels have already been mapped! Use checkboxes to add more.');
+        return;
+    }
+    var alreadyMapped = selectedOTUs.length - candidateOTUsForNewTaxa.length;
+    if (alreadyMapped > 0) {
+        showInfoMessage('Only un-mapped labels will be considered (ignoring '+ alreadyMapped +' already mapped)');
+    }
+
+    // prepare storage for each selected OTU
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        if (!('newTaxonMetadata' in candidate)) {
+            var adjustedOTULabel = $.trim(candidate['^ot:altLabel']) ||
+                                   $.trim(adjustedLabel(candidate['^ot:originalLabel']));
+            candidate.newTaxonMetadata = {
+                'rank': 'species',
+                'adjustedLabel': adjustedOTULabel,  // as modified by regex or manual edit
+                'modifiedName': ko.observable( adjustedOTULabel ),
+                'modifiedNameStatus': ko.observable('PENDING'),  // will be tested immediately below
+                'modifiedNameReason': '',
+                'parentTaxonName': ko.observable(''),  // not sent to server
+                'parentTaxonID': ko.observable(0),
+                'parentTaxonSearchContext': '',
+                'sources': ko.observableArray(),
+                'comments': ''
+            };
+            // add a single source (required)
+            addEmptyTaxonSource(candidate.newTaxonMetadata.sources);
+        }
+    });
+    // Now that all candidates have metadata, test all names for dupes
+    // N.B. Since names are compared against the other candidates as well as taxonomy,
+    // we should ALL of them now, even if they've passed before.
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        updateTaxonNameCheck( candidate );
+    });
+
+    moveToNthTaxonCandidate( 0 );
+
+    // Trigger smart resize each time the window opens
+    $('#new-taxa-popup').off('shown').on('shown', function () {
+        updateNewTaxaPopupHeight();
+    });
+    // Block any method of closing this window if there is unsaved work
+    $('#new-taxa-popup').off('hide').on('hide', function () {
+        if (currentTaxonCandidate() || candidateOTUsForNewTaxa.length > 0) {
+            alert("Please submit (or cancel) your proposed taxa!");
+            return false;
+        }
+    });
+    // Show and initialize the popup
+    $('#new-taxa-popup').modal('show');
+}
+function hideNewTaxaPopup() {
+    clearAllTaxonCandidates();
+    $('#new-taxa-popup').modal('hide');
+}
+
+function getActiveParentTaxonID(candidate) {
+    // return the *observable* property (shared or local)
+    var activeID = sharedParentTaxonID() ?
+            sharedParentTaxonID :
+            candidate.newTaxonMetadata.parentTaxonID;
+    return activeID;
+}
+function getActiveParentTaxonName(candidate) {
+    // return the *observable* property (shared or local)
+    var activeName = sharedParentTaxonName() ?
+            sharedParentTaxonName :
+            candidate.newTaxonMetadata.parentTaxonName;
+    return activeName;
+}
+
+function getActiveTaxonSources(candidate) {
+    // return the *observable* property (shared or local)
+    var activeSources = sharedTaxonSources() ?
+            sharedTaxonSources :
+            candidate.newTaxonMetadata.sources;
+    return activeSources;
+}
+
+function submitNewTaxa() {
+    // Bundle all new (proposed) taxon info, submit to OTT, report on results
+    // clone the taxa information (recursive or "deep" clone)
+    //var bundle = $.extend(tree, [ ], candidateOTUsForNewTaxa);
+    //var bundle = candidateOTUsForNewTaxa.concat(); 
+    // unwrap any KO observables within
+    var bundle = {
+        "user_agent": "opentree-curation-webapp",
+        "date_created": new Date().toISOString(),
+        "taxa": [ ],
+        "study_id": studyID,
+        "curator": {
+            'name': userDisplayName, 
+            'login': userLogin, 
+            'email': userEmail
+        },
+        "new_ottids_required": candidateOTUsForNewTaxa.length
+    };
+
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        // repackage its metadata to match the web service
+        var newTaxon = {};
+        newTaxon['tag'] = candidate['@id'];  // used to match results with candidate OTUs
+        newTaxon['original_label'] = $.trim(candidate['^ot:originalLabel']);
+        newTaxon['adjusted_label'] = candidate.newTaxonMetadata.adjustedLabel;
+        newTaxon['name'] = candidate.newTaxonMetadata.modifiedName();
+        newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason || "No change to original label";
+        newTaxon['rank'] = candidate.newTaxonMetadata.rank.toLowerCase();
+        /* Use shared parent taxon, if any. */
+        newTaxon['parent'] = getActiveParentTaxonID(candidate)();
+        /* Include all valid sources for this candidate. If curator is sharing
+         * one taxon's sources, ignore any saved as a convenience for the curator.
+         */
+        var activeSources = getActiveTaxonSources(candidate);
+        newTaxon['sources'] = [ ];
+        $.each( activeSources(), function(i, source) {
+            if (!source.type) {
+                // Ignore sources with no selected type (null, undefined, '')
+                return;
+            }
+            var srcInfo = {
+                'source_type': source.type,
+                'source': null
+            };
+            /* Some source types should supress any value that was kept as a
+             * convenience for the curator.
+             */
+            switch( source.type ) {
+                case 'The taxon is described in this study':
+                    srcInfo['source'] = null;
+                default:
+                    srcInfo['source'] = source.value;
+            }
+            newTaxon['sources'].push(srcInfo);
+        });
+        newTaxon['comment'] = candidate.newTaxonMetadata.comments;
+        bundle.taxa.push(newTaxon);
+    });
+
+    // add non-JSON values to the query string
+    var qsVars = $.param({
+        author_name: userDisplayName,
+        author_email: userEmail,
+        //starting_commit_SHA: collection.sha,
+        //commit_msg: commitMessage,
+        auth_token: userAuthToken
+    });
+    $.ajax({
+        url: API_create_amendment_POST_url +'?'+ qsVars,
+        type: 'POST',
+        dataType: 'json',
+        processData: false,
+        data: JSON.stringify(bundle),
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        complete: returnFromNewTaxaSubmission
+    });
+}
+function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
+    console.log('returnFromNewTaxaSubmission(), textStatus = '+ textStatus);
+    // report errors or malformed data, if any
+    var badResponse = false;
+    var responseJSON = null;
+    if (textStatus !== 'success') {
+        badResponse = true;
+    } else {
+        // convert raw response to JSON
+        responseJSON = $.parseJSON(jqXHR.responseText);
+        if (responseJSON['error'] === 1) {
+            badResponse = true;
+        }
+    }
+
+    if (badResponse) {
+        console.warn("jqXHR.status: "+ jqXHR.status);
+        console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+        hideModalScreen();
+        // TODO: handle any resulting mess
+        showErrorMessage(
+            'Sorry, there was an error adding the requested taxa. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">' +
+            'Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>'
+        );
+        return;
+    }
+
+    // Apply the newly minted OTT ids to the original OTUs
+    var tagsToOTTids = responseJSON['tag_to_ottid'];
+    if (!$.isPlainObject(tagsToOTTids)) {
+        hideModalScreen();
+        showErrorMessage(
+            'Sorry, no data was returned mapping OTT ids to OTUs! <a href="#" onclick="toggleFlashErrorDetails(this); return false;">' +
+            'Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>'
+        );
+        return;
+    }
+
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        // REMINDER: we used the ID of each OTU as its tag!
+        var OTUid = candidate['@id'];
+        var mintedOTTid = Number(tagsToOTTids[ OTUid ]);
+        // N.B. we convert back from the server's preferred String tags
+        var mappingInfo = {
+             "name" : candidate.newTaxonMetadata.modifiedName(),
+             "ottId" : mintedOTTid
+        };
+        mapOTUToTaxon( OTUid, mappingInfo );
+        delete proposedOTUMappings()[ OTUid ];
+    });
+    proposedOTUMappings.valueHasMutated();
+    nudgeTickler('OTU_MAPPING_HINTS');
+
+    hideModalScreen(); // TODO?
+    hideNewTaxaPopup();
+    showSuccessMessage('Selected OTUs mapped to new taxa.');
+}
+
+function toggleSharedParentID( otu, event ) {
+    // Set a global for this (an observable, to update display).
+    // NOTE that radio-button values are strings, so we convert to boolean below!
+    var sharingThisParentID = $(event.target).is(':checked');
+    if (sharingThisParentID) {
+        sharedParentTaxonID(currentTaxonCandidate().newTaxonMetadata.parentTaxonID());
+        sharedParentTaxonName(currentTaxonCandidate().newTaxonMetadata.parentTaxonName());
+        // clobber any pending search text in the field (to avoid confusion)
+        $('input[name=parent-taxon-search]').val("");
+    } else {
+        sharedParentTaxonID(null);
+        sharedParentTaxonName(null);
+    }
+    return true;
+}
+function toggleSharedSources( otu, event ) {
+    // Set a global for this (an observable, to update display).
+    // NOTE that radio-button values are strings, so we convert to boolean below!
+    var sharingTheseSources = $(event.target).is(':checked');
+    if (sharingTheseSources) {
+        sharedTaxonSources(currentTaxonCandidate().newTaxonMetadata.sources());
+    } else {
+        sharedTaxonSources(null);
+    }
+    updateTaxonSourceDetails();
+    return true;
+}
+
+/* Modified autocomplete behavior for parent-taxon search (used when proposing
+ * new taxa for the OT taxonomy). See 'searchTimeoutID' etc. above for the
+ * general taxon search.
+ */
+clearTimeout(parentSearchTimeoutID);  // in case there's a lingering search from last page!
+var parentSearchTimeoutID = null;
+// var searchDelay = 1000; // shared with general behavior above
+var hopefulParentSearchName = null;
+function setParentTaxaSearchFuse(e) {
+    if (parentSearchTimeoutID) {
+        // kill any pending search, apparently we're still typing
+        clearTimeout(parentSearchTimeoutID);
+    }
+    // reset the timeout for another n milliseconds
+    parentSearchTimeoutID = setTimeout(searchForMatchingParentTaxa, searchDelay);
+
+    /* If the last key pressed was the ENTER key, stash the current (trimmed)
+     * string and auto-jump if it's a valid taxon name.
+     */
+    if (e.type === 'keyup') {
+        switch (e.which) {
+            case 13:
+                hopefulParentSearchName = $('input[name=parent-taxon-search]').val().trim();
+                autoApplyExactParentMatch();  // use existing menu, if found
+                break;
+            case 17:
+                // do nothing (probably a second ENTER key)
+                break;
+            case 39:
+            case 40:
+                // down or right arrows should try to select first result
+                $('#parent-taxon-search-results a:eq(0)').focus();
+                break;
+            default:
+                hopefulParentSearchName = null;
+        }
+    } else {
+        hopefulParentSearchName = null;
+    }
+}
+
+var showingResultsForParentSearchText = '';
+var showingResultsForParentSearchContextName = '';
+function searchForMatchingParentTaxa() {
+    // clear any pending search timeout and ID
+    clearTimeout(parentSearchTimeoutID);
+    parentSearchTimeoutID = null;
+
+    var $input = $('input[name=parent-taxon-search]');
+    var searchText = $input.val().trimLeft();
+
+    if (searchText.length === 0) {
+        $('#parent-taxon-search-results').html('');
+        return false;
+    } else if (searchText.length < 2) {
+        $('#parent-taxon-search-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+        $('#parent-taxon-search-results').dropdown('toggle');
+        return false;
+    }
+
+    // groom trimmed text based on our search rules
+    var searchContextName = $('select[name=parent-taxon-search-context]').val();
+
+    // is this unchanged from last time? no need to search again..
+    if ((searchText == showingResultsForParentSearchText) && (searchContextName == showingResultsForParentSearchContextName)) {
+        ///console.log("Search text and context UNCHANGED!");
+        return false;
+    }
+
+    // stash these to use for later comparison (to avoid redundant searches)
+    var queryText = searchText; // trimmed above
+    var queryContextName = searchContextName;
+    $('#parent-taxon-search-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
+    $('#parent-taxon-search-results').show();
+    $('#parent-taxon-search-results').dropdown('toggle');
+
+    $.ajax({
+        url: doTNRSForAutocomplete_url,  // NOTE that actual server-side method name might be quite different!
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({
+            "name": searchText,
+            "context_name": searchContextName,
+            "include_suppressed": false
+        }),  // data (asterisk required for completion suggestions)
+        crossDomain: true,
+        contentType: "application/json; charset=utf-8",
+        success: function(data) {    // JSONP callback
+            // stash the search-text used to generate these results
+            showingResultsForParentSearchText = queryText;
+            showingResultsForParentSearchContextName = queryContextName;
+
+            $('#parent-taxon-search-results').html('');
+            var maxResults = 100;
+            var visibleResults = 0;
+            /*
+             * The returned JSON 'data' is a simple list of objects. Each object is a matching taxon (or name?)
+             * with these properties:
+             *      ott_id         // taxon ID in OTT taxonomic tree
+             *      unique_name    // the taxon name, or unique name if it has one
+             *      is_higher      // points to a genus or higher taxon? T/F
+             */
+            if (data && data.length && data.length > 0) {
+                // sort results to show exact match(es) first, then higher taxa, then others
+                // initial sort on higher taxa (will be overridden by exact matches)
+                // N.B. As of the v3 APIs, an exact match will be returned as the only result.
+                data.sort(function(a,b) {
+                    if (a.is_higher === b.is_higher) return 0;
+                    if (a.is_higher) return -1;
+                    if (b.is_higher) return 1;
+                });
+
+                // show all sorted results, up to our preset maximum
+                var matchingNodeIDs = [ ];  // ignore any duplicate results (point to the same taxon)
+                for (var mpos = 0; mpos < data.length; mpos++) {
+                    if (visibleResults >= maxResults) {
+                        break;
+                    }
+                    var match = data[mpos];
+                    var matchingName = match.unique_name;
+                    var matchingID = match.ott_id;
+                    if ($.inArray(matchingID, matchingNodeIDs) === -1) {
+                        // we're not showing this yet; add it now
+                        $('#parent-taxon-search-results').append(
+                            '<li><a href="'+ matchingID +'">'+ matchingName +'</a></li>'
+                        );
+                        matchingNodeIDs.push(matchingID);
+                        visibleResults++;
+                    }
+                }
+
+                $('#parent-taxon-search-results a')
+                    .click(function(e) {
+                        var $link = $(this);
+
+                        // Modify this candidate taxon (and indicator)
+                        currentTaxonCandidate().newTaxonMetadata.parentTaxonName($link.text());
+                        var numericID = Number($link.attr('href'));
+                        currentTaxonCandidate().newTaxonMetadata.parentTaxonID( numericID );
+
+                        // hide menu and reset search field
+                        $('#parent-taxon-search-results').html('');
+                        $('#parent-taxon-search-results').hide();
+                        $('input[name=parent-taxon-search]').val('');
+                        //nudgeTickler('GENERAL_METADATA');
+                    });
+                $('#parent-taxon-search-results').dropdown('toggle');
+
+                autoApplyExactParentMatch();
+            } else {
+                $('#parent-taxon-search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+                $('#parent-taxon-search-results').dropdown('toggle');
+            }
+        }
+    });
+
+    return false;
+}
+
+function autoApplyExactParentMatch() {
+    // if the user hit the ENTER key, and there's an exact match, apply it automatically
+    if (hopefulParentSearchName) {
+        $('#parent-taxon-search-results a').each(function() {
+            var $link = $(this);
+            if ($link.text().toLowerCase() === hopefulParentSearchName.toLowerCase()) {
+                $link.trigger('click');
+                return false;
+            }
+        });
+    }
+}
+
+function disableRankDivider(option, item) {
+    // disable the divider option in this menu
+    if (item.indexOf('─') === 0) {  // Unicode box character!
+        ko.applyBindingsToNode(option, {disable: true}, 'FOO');
+    }
+}
+
+function updateActiveTaxonSources() {
+    // trigger validation, updates to next/previous buttons
+    currentTaxonCandidate.valueHasMutated();
+    updateTaxonSourceDetails();
+    updateTaxonSourceTypeOptions();
+    taxonCondidateIsValid(currentTaxonCandidate());
+}
+
+function updateTaxonSourceDetails( ) {
+    var activeSources = getActiveTaxonSources(currentTaxonCandidate());
+    $.each(activeSources(), function(i, source) {
+        var $details = $('#new-taxa-popup .taxon-source:eq('+i+') .source-details')
+        switch( source.type ) {
+            case undefined:
+            case '':
+            case 'The taxon is described in this study':
+                $details.hide();
+                break;
+            default:
+                // show free-form text field with appropriate placeholder text
+                if (source.type === 'Other') {
+                    $details.attr('placeholder', "Describe or link to this source");
+                } else {
+                    $details.attr('placeholder', "Enter DOI or URL");
+                }
+                $details.show();
+                break;
+        }
+    });
+    updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+}
+
+function updateTaxonSourceTypeOptions() {
+    // Disable 'this study' option for active sources, if it's already selected
+    // (but don't disable the currently selected option).
+    var activeSources = getActiveTaxonSources(currentTaxonCandidate());
+    var currentStudyFound = false;
+    $.each(activeSources(), function(i, source) {
+        if (source.type === 'The taxon is described in this study') {
+            currentStudyFound = true;
+        }
+    });
+    var $sourceTypeOptions = $('#new-taxa-popup .source-type option');
+    $sourceTypeOptions.each(function(i, option) {
+        var $option = $(option);
+        if ($option.val() === 'The taxon is described in this study') {
+            // This study has already been listed as a source!
+            if (currentStudyFound && (!$option.is(':selected'))) {
+                $option.attr('disabled', 'disabled');
+            } else {
+                $option.removeAttr('disabled');
+            }
+        }
+    });
+}
+function addEmptyTaxonSource( sourceList ) {
+    // N.B. We should always apply this to an observableArray, so that the
+    // UI will update automatically.
+    if (!ko.isObservable(sourceList)) {
+        sourceList = getActiveTaxonSources(currentTaxonCandidate());
+    }
+    sourceList.push({
+        'type': null,
+        'value': null
+    });
+    updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+}
+function removeTaxonSource( sourceList, item ) {
+    // N.B. We should always apply this to an observableArray, so that the
+    // UI will update automatically.
+    if (!ko.isObservable(sourceList)) {
+        sourceList = getActiveTaxonSources(currentTaxonCandidate());
+    }
+    sourceList.remove(item);
+    updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+}
+
+function updateNewTaxaPopupHeight(options) {
+    /* Revisit height and placement of the new-taxon submission tool. If the
+     * list of sources is long enough, we should take the full height of the
+     * window, with all non-list UI available and any scrollbars restricted to
+     * the list area.
+     */
+    options = options || {};
+    var $popup = $('#new-taxa-popup');
+    // let the rounded top and bottom edges of the popup leave the page
+    var outOfBoundsHeight = 8;  // px each on top and bottom
+    // leave room at the bottom for error messages, etc.
+    var footerMessageHeight = 40;
+    var currentWindowHeight = $(window).height();
+    var maxPopupHeight = (currentWindowHeight + (outOfBoundsHeight*2) - footerMessageHeight);
+    var $listHolder = $popup.find('.modal-body');
+    var currentListScrollPosition = $listHolder.scrollTop();
+    // NOTE that MAINTAIN_SCROLL may only gives good results if this is called
+    // directly, vs. as part of a full update...
+    var newListScrollPosition = (options.MAINTAIN_SCROLL) ? currentListScrollPosition : 0;
+    var currentListHeight = $listHolder.height();
+    var currentPopupHeight = $popup.height();
+    // how tall is the rest of the popup?
+    var otherPopupHeight = currentPopupHeight - currentListHeight;
+    var maxListHeight = maxPopupHeight - otherPopupHeight;
+    //$popupBody.css({ 'max-height': 'none' });
+    $listHolder.css({ 'max-height': maxListHeight +'px' });
+    var popupTopY = (currentWindowHeight / 2) - ($popup.height() / 2) - (footerMessageHeight/2);
+    $popup.css({ 'top': popupTopY +'px' });
+    // restore (or set) new list scroll position
+    $listHolder.scrollTop(newListScrollPosition);
+}
+$(window).resize( function () {
+    if ($('#new-taxa-popup').is(':visible')) {
+        updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+    }
+});
+
+function taxonCondidateIsValid( candidate, options ) {
+    // Check for essential fields, taking shared info into account
+    if (!options) options = {REPORT_ERRORS: false};
+    var metadata = candidate.newTaxonMetadata;
+    var requiredProperties = {  // non-empty
+        'modifiedName': "Modified name must be a non-empty string",
+        'parentTaxonID': "Please specify the parent taxon for this label",
+        'rank': "Please specify a taxonomic rank (or 'no rank')"
+    };
+    var missingProperty = null;
+    for (var propName in requiredProperties) {
+        var itsValue;
+        switch(propName) {
+            // in some cases, check the shared property instead
+            case 'parentTaxonID':
+                itsValue = sharedParentTaxonID() || ko.unwrap(metadata.parentTaxonID);
+                break;
+            default:
+                itsValue = ko.unwrap(metadata[ propName ]);
+        }
+        if (!itsValue) {
+            missingProperty = propName;
+            break;  // report the first missing property
+        }
+    }
+    if (missingProperty) {
+        // return a hint of what's missing? show an error here?
+        // use the error messages defined above for each field
+        if (options.REPORT_ERRORS) {
+            showErrorMessage( requiredProperties[missingProperty] );
+        }
+        return false;
+    }
+    // have we confirmed that the proposed taxon name is not already found?
+    switch( metadata.modifiedNameStatus() ) {
+        case 'PENDING':
+            // quietly block validation; tests results should refresh this
+            ///console.warn("Blocking validation based on PENDING name test...");
+            return false;
+        case 'FOUND IN CANDIDATES':
+            if (options.REPORT_ERRORS) {
+                showErrorMessage('There is another candidate taxon with this name! Proposed taxon names must be unique.');
+            }
+            return false;
+        case 'FOUND IN TAXONOMY':
+            if (options.REPORT_ERRORS) {
+                showErrorMessage('There is already a taxon with this name! Homonyms are not currently allowed.');
+            }
+            return false;
+        case 'NOT FOUND':
+            // it's a unique name! no problem here
+            break;
+        default:
+            console.error('Unexpected value found for modifiedNameStatus! ['+ ko.unwrap(metadata.modifiedNameStatus) +']');
+    }
+
+    // Check for at least one valid source (possibly shared)
+    var validSourceFound = false;
+    var activeSources = ko.unwrap(getActiveTaxonSources(candidate));
+    $.each(activeSources, function(i, source) {
+        // validation details depend on source type
+        switch(source.type) {
+            case '':
+            case null:
+            case undefined:
+                // No source type specified; step to the next one
+                return;
+            case 'The taxon is described in this study':
+                // No further description needed in value field
+                validSourceFound = true;
+                return;
+            default:
+                // look for a non-empty value (at least 4 characters)
+                if (source.value && (source.value.length > 3)) {
+                    validSourceFound = true;
+                }
+                return;
+        }
+    });
+    if (!validSourceFound) {
+        if (options.REPORT_ERRORS) {
+            showErrorMessage( "Candidate has no valid sources!" );
+        }
+        return false;
+    }
+    hideFooterMessage();
+    return true;
+}
+
+function allTaxonCandidatesAreValid(options) {
+    if (!options) options = {REPORT_ERRORS: false};
+    var invalidCandidateFound = false;
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        if (!taxonCondidateIsValid( candidate )) {
+            invalidCandidateFound = true;
+            return false;
+        }
+    });
+    if (invalidCandidateFound && options.REPORT_ERRORS) {
+        showErrorMessage("Please review all labels for required data!");
+    }
+    return !(invalidCandidateFound);
+}
+
+var prevTaxonCandidateAllowed = ko.computed(function() {
+    if (!currentTaxonCandidate()) return false;
+    return taxonCondidateIsValid(currentTaxonCandidate()) && (getCurrentTaxonCandidatePosition() > 0);
+});
+var nextTaxonCandidateAllowed = ko.computed(function() {
+    if (!currentTaxonCandidate()) return false;
+    return taxonCondidateIsValid(currentTaxonCandidate()) && (getCurrentTaxonCandidatePosition() < (candidateOTUsForNewTaxa.length - 1));
+});
+
+function updateTaxonNameCheck(candidate) {
+    // report status of last check, or initiate a new check
+    if (!candidate) return false;
+    ///console.log('updateTaxonNameCheck() STARTING...');
+    var testName = candidate.newTaxonMetadata.modifiedName();
+    ///console.log('>> test name is '+ testName);
+    ///console.log('>> previous status is '+ candidate.newTaxonMetadata.modifiedNameStatus());
+    // check first against other proposed names
+    var duplicateNameFound = false;
+    $.each(candidateOTUsForNewTaxa, function(i, compareCandidate) {
+        if (compareCandidate === candidate) {
+            return true; // don't compare to itself! skips to next
+        }
+        var compareName = compareCandidate.newTaxonMetadata.modifiedName();
+        if ($.trim(testName) === $.trim(compareName)) {
+            duplicateNameFound = true;
+            candidate.newTaxonMetadata.modifiedNameStatus('FOUND IN CANDIDATES');
+            return false;
+        }
+    });
+    if (!duplicateNameFound) {
+        // keep checking, this time against the OT taxonomy
+        candidate.newTaxonMetadata.modifiedNameStatus('PENDING');
+        $.ajax({
+            url: doTNRSForMappingOTUs_url,  // NOTE that actual server-side method name might be quite different!
+            type: 'POST',
+            dataType: 'json',
+            data: JSON.stringify({
+                "names": [testName],
+                "include_suppressed": true,
+                "do_approximate_matching": false,
+                "context_name": 'All life',
+            }),
+            crossDomain: true,
+            contentType: "application/json; charset=utf-8",
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.log("!!! something went terribly wrong");
+                console.log(jqXHR.responseText);
+                showErrorMessage("Something went wrong in taxomachine:\n"+ jqXHR.responseText);
+            },
+            success: function(data) {    // JSONP callback
+                // Check for duplicates
+                var resultSetsFound = (data && ('results' in data) && (data.results.length > 0));
+                var candidateMatches = [ ];
+                // Check for expected result sets (preliminary to individual matches below)
+                if (resultSetsFound) {
+                    switch (data.results.length) {
+                        case 0:
+                            ///console.warn('NO SEARCH RESULT SETS FOUND! UNABLE TO CONFIRM DUPLICATE NAMES.');
+                            return;
+                        case 1:
+                            // the expected case
+                            candidateMatches = data.results[0].matches;
+                            break;
+
+                        default:
+                            // ASSUME the first result set has what we need
+                            ///console.warn('MULTIPLE SEARCH RESULT SETS (USING FIRST)');
+                            ///console.warn(data['results']);
+                            candidateMatches = data.results[0].matches;
+                    }
+                }
+                // Check for one or more identical names
+                var duplicateNameFound = false;
+                $.each(candidateMatches, function(i, match) {
+                    // convert to expected structure for proposed mappings
+                    var foundName = (match.taxon['unique_name'] || match.taxon['name'])
+                    ///console.log('>>> found ['+ foundName +']...');
+                    if (!match.is_approximate_match) {
+                        duplicateNameFound = true;
+                        return false;  // stop checking names
+                    }
+                });
+                if (duplicateNameFound) {
+                    ///console.log('>> EXACT MATCH FOUND!');
+                    candidate.newTaxonMetadata.modifiedNameStatus('FOUND IN TAXONOMY');
+                } else {
+                    ///console.log('>> NO EXACT MATCH');
+                    candidate.newTaxonMetadata.modifiedNameStatus('NOT FOUND');
+                }
+            }
+        });
+    }
+    // N.B. We should always return true, for moving directly from this field to Next/Prev/Submit
+    return true;
+}
+
+function proposedTaxonNameStatusMessage(candidate) {
+    if (!candidate) return "?";
+    switch(candidate.newTaxonMetadata.modifiedNameStatus()) {
+        case 'PENDING':
+            return "...";
+        case 'NOT FOUND':
+            return "No duplicates found.";
+        case 'FOUND IN TAXONOMY':
+            return "Already in OT taxonomy!";
+        case 'FOUND IN CANDIDATES':
+            return "Already in proposed taxa!";
+        default:
+            return candidate.newTaxonMetadata.modifiedNameStatus();
+    }
+}
+function proposedTaxonNameStatusColor(candidate) {
+    if (!candidate) return "?";
+    switch(candidate.newTaxonMetadata.modifiedNameStatus()) {
+        case 'PENDING':
+            return 'silver';
+        case 'NOT FOUND':
+            return 'green';
+        case 'FOUND IN TAXONOMY':
+            return 'orange';
+        case 'FOUND IN CANDIDATES':
+            return 'orange';
+        default:
+            return 'purple';
     }
 }
