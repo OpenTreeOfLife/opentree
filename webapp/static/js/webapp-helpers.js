@@ -4,6 +4,57 @@
  * should eventually be moved over here.
  */
 
+/*
+ * Set of functions that return support & conflict information for nodes
+*/
+
+// get all three of the supporting flags
+function getSupportingSourceIDs ( node ) {
+  return $.extend( {},
+                   getSupportedBySourceIDs( node ),
+                   getPartialPathSourceIDs( node ),
+                   getTerminalSourceIDs( node )
+                 );
+}
+
+// gets the sources with the supported_by flag
+function getSupportedBySourceIDs( node ) {
+   return $.isPlainObject(node.supported_by) ? node.supported_by : null;
+}
+
+// gets the sources with the partial_path_of flag
+function getPartialPathSourceIDs( node ) {
+ return $.isPlainObject(node.partial_path_of) ? node.partial_path_of : null;
+}
+
+// gets the sources with the conflicts_with flag
+function getConflictingSourceIDs( node ) {
+   return $.isPlainObject(node.conflicts_with) ? node.conflicts_with : null;
+}
+
+// gets the sources with the terminal flag
+function getTerminalSourceIDs( node ) {
+ return $.isPlainObject(node.terminal) ? node.terminal : null;
+}
+
+/*
+* Converts a full reference to a compact reference for display in properties panel
+* duplicates function with same name in curator/static/js/curation_helpers.js,
+* so changes need to be made in both places
+*/
+ function fullToCompactReference( fullReference ) {
+     var compactReference = "(Untitled)";
+     if ($.trim(fullReference) !== "") {
+         // capture the first valid year in the reference
+         var yearMatches = fullReference.match(/(\d{4})/);
+         var compactYear = yearMatches ? yearMatches[0] : "[no year]";
+         // split on the year to get authors (before), and capture the first surname
+         var compactPrimaryAuthor = fullReference.split(compactYear)[0].split(',')[0];
+         var compactReference = compactPrimaryAuthor +", "+ compactYear;    // eg, "Smith, 1999";
+     }
+     return compactReference;
+ }
+
  /*
  * Returns a hyperlink to the taxonomy browser for a given OTT taxon
  * Note that this function replicated curator/static/js/curation-helpers.js,

@@ -2,6 +2,9 @@
  * Utilities common to multiple pages in the OpenTree study-curation tool.
  */
 
+// converts full reference to short reference for display purposes
+// duplicates function with same name in webapp/static/js/treeview.js,
+// so changes need to be made in both places
 function fullToCompactReference( fullReference ) {
     var compactReference = "(Untitled)";
     if ($.trim(fullReference) !== "") {
@@ -818,7 +821,7 @@ function searchForMatchingStudy() {
     var searchText = $.trim( $input.val() );
     var searchTokens = tokenizeSearchTextKeepingQuotes(searchText);
 
-    if ((searchTokens.length === 0) || 
+    if ((searchTokens.length === 0) ||
         (searchTokens.length === 1 && searchTokens[0].length < 2)) {
         $('#study-lookup-results').html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
         return false;

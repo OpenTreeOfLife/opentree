@@ -83,3 +83,5 @@ API_create_collection_POST_url = {opentree_api_domain}/v3/collection
 API_load_collection_GET_url = {opentree_api_domain}/v3/collection/{COLLECTION_ID}
 API_update_collection_PUT_url = {opentree_api_domain}/v3/collection/{COLLECTION_ID}
 API_remove_collection_DELETE_url = {opentree_api_domain}/v3/collection/{COLLECTION_ID}
+
+API_create_amendment_POST_url = {opentree_api_domain}/v3/amendment
