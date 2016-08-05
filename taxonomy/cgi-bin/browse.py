@@ -34,16 +34,17 @@ headers = {
 # Main entry point.  Returns HTML as a string.
 
 def browse(id=None, name=None, limit=None, api_base=None):
+    output = StringIO.StringIO()
+
     if api_base == None:
-        name = os.environ['SERVER_NAME']
+        server_name = os.environ.get('SERVER_NAME')
         # Kludge reflecting current Open Tree of Life server configuration
-        if 'devtree.' in name:
-            name = name.replace('devtree.', 'devapi.')
-            api_base = 'https://%s/' % name
+        if server_name != None and 'devtree' in server_name:
+            server_name = server_name.replace('devtree', 'devapi')
+            api_base = 'https://%s/' % server_name
+            output.write('using API server %s\n' % server_name)
         else:
             api_base = default_api_base_url
-
-    output = StringIO.StringIO()
 
     try:
         if limit != None: limit = int(limit)
