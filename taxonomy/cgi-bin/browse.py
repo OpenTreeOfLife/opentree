@@ -17,7 +17,7 @@
 # taxo = APIWrapper().taxomachine
 # print taxo.taxon(12345)
 
-default_api_base_url = 'https://devapi.opentreeoflife.org/'
+default_api_base_url = 'https://api.opentreeoflife.org/'
 
 import os
 import sys
@@ -34,8 +34,17 @@ headers = {
 # Main entry point.  Returns HTML as a string.
 
 def browse(id=None, name=None, limit=None, api_base=None):
-    if api_base == None: api_base = default_api_base_url
     output = StringIO.StringIO()
+
+    if api_base == None:
+        server_name = os.environ.get('SERVER_NAME')
+        # Kludge reflecting current Open Tree of Life server configuration
+        if server_name != None and 'devtree' in server_name:
+            server_name = server_name.replace('devtree', 'devapi')
+            api_base = 'https://%s/' % server_name
+            output.write('using API server %s\n' % server_name)
+        else:
+            api_base = default_api_base_url
 
     try:
         if limit != None: limit = int(limit)
