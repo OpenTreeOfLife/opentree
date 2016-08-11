@@ -92,8 +92,8 @@ div.contributing-studies div.links .tree-links a {
                       ><span>Show links to included trees</span> ({{= len(study['tree_ids']) }})</a>
                   <div class="tree-links">
                      {{ for tree_id in study['tree_ids']: }}
-                     <a target="_blank" href="{{= URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ], vars={'tab':'trees', 'tree': 'tree%s' % tree_id }) }}"
-                        title="Click to see this tree in the curation app">tree{{= tree_id }}</a>
+                     <a target="_blank" href="{{= URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ], vars={'tab':'trees', 'tree': tree_id }) }}"
+                        title="Click to see this tree in the curation app">{{= tree_id }}</a>
                      {{ pass }}
                   </div>
                   <a target="_blank" 
