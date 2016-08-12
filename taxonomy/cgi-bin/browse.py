@@ -332,7 +332,7 @@ def source_link(source_id):
                 # see peyotl for amendment types and prefixes
                 # https://github.com/OpenTreeOfLife/peyotl/blob/3c32582e16be9dcf1029ce3d6481cdb09444890a/peyotl/amendments/amendments_umbrella.py#L33-L34
                 if (len(id_parts) > 1) and id_parts[0] in ('additions', 'changes', 'deletions',):
-                    url = _AMENDMENT_REPO_URL_TEMPLATE.format(source_id)
+                    url = _AMENDMENT_REPO_URL_TEMPLATE.format(possible_amendment_id)
 
     if url != None:
         return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(source_id))
