@@ -2,11 +2,11 @@
 
 # Brutally primitive reference taxonomy browser.
 # Basically just a simple shim on the taxomachine 'taxon' method.
-# Intended to be run as a CGI command, but it can be tested by running it 
+# Intended to be run as a CGI command, but it can be tested by running it
 # directly from the shell; just set the environment QUERY_STRING to be
 # the name or id of the taxon to browse to.
 
-# Apache (or other server) must be configured to be able to run CGI scripts, 
+# Apache (or other server) must be configured to be able to run CGI scripts,
 # and this program must be in the directory where it looks for such scripts.
 # The file name there should be simply 'browse' (not browse.py).
 
@@ -18,6 +18,11 @@
 # print taxo.taxon(12345)
 
 default_api_base_url = 'https://api.opentreeoflife.org/'
+
+# link to taxonomic amendments in the repo that matches the API base URL
+_AMENDMENT_REPO_URL_TEMPLATE = ''
+production_amendment_url_template = 'https://github.com/OpenTreeOfLife/amendments-1/blob/master/amendments/{}.json'
+dev_amendment_url_template =        'https://github.com/OpenTreeOfLife/amendments-0/blob/master/amendments/{}.json'
 
 import os
 import sys
@@ -34,6 +39,7 @@ headers = {
 # Main entry point.  Returns HTML as a string.
 
 def browse(id=None, name=None, limit=None, api_base=None):
+    global _AMENDMENT_REPO_URL_TEMPLATE
     output = StringIO.StringIO()
 
     if api_base == None:
@@ -45,6 +51,11 @@ def browse(id=None, name=None, limit=None, api_base=None):
             output.write('using API server %s\n' % server_name)
         else:
             api_base = default_api_base_url
+
+    if 'devapi' in api_base:
+        _AMENDMENT_REPO_URL_TEMPLATE = dev_amendment_url_template
+    else:
+        _AMENDMENT_REPO_URL_TEMPLATE = production_amendment_url_template
 
     try:
         if limit != None: limit = int(limit)
@@ -295,6 +306,7 @@ def display_basic_info(info, output):
     output.write('\n')
 
 def source_link(source_id):
+    global _AMENDMENT_REPO_URL_TEMPLATE
     if source_id.startswith('http:') or source_id.startswith('https:'):
         url = source_id
     else:
@@ -313,6 +325,15 @@ def source_link(source_id):
                 url = 'http://www.marinespecies.org/aphia.php?p=taxdetails&id=%s' % parts[1]
             elif parts[0] == 'silva':
                 url = 'http://www.arb-silva.de/browser/ssu/silva/%s' % parts[1]
+            else:
+                # check for taxonomic amendments; link each directly to its latest version on GitHub
+                possible_amendment_id = parts[0]  # EXAMPLE source_id: 'additions-10000038-10000038:10000038'
+                id_parts = possible_amendment_id.split('-')
+                # see peyotl for amendment types and prefixes
+                # https://github.com/OpenTreeOfLife/peyotl/blob/3c32582e16be9dcf1029ce3d6481cdb09444890a/peyotl/amendments/amendments_umbrella.py#L33-L34
+                if (len(id_parts) > 1) and id_parts[0] in ('additions', 'changes', 'deletions',):
+                    url = _AMENDMENT_REPO_URL_TEMPLATE.format(possible_amendment_id)
+
     if url != None:
         return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(source_id))
     else:
