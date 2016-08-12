@@ -22,7 +22,7 @@ default_api_base_url = 'https://api.opentreeoflife.org/'
 # link to taxonomic amendments in the repo that matches the API base URL
 _AMENDMENT_REPO_URL_TEMPLATE = ''
 production_amendment_url_template = 'https://github.com/OpenTreeOfLife/amendments-1/blob/master/amendments/{}.json'
-dev_amendment_url_template =        'https://github.com/OpenTreeOfLife/amendments-1/blob/master/amendments/{}.json'
+dev_amendment_url_template =        'https://github.com/OpenTreeOfLife/amendments-0/blob/master/amendments/{}.json'
 
 import os
 import sys
@@ -325,13 +325,14 @@ def source_link(source_id):
                 url = 'http://www.marinespecies.org/aphia.php?p=taxdetails&id=%s' % parts[1]
             elif parts[0] == 'silva':
                 url = 'http://www.arb-silva.de/browser/ssu/silva/%s' % parts[1]
-        elif len(parts) == 1:
-            # check for taxonomic amendments; link to these on GitHub
-            parts = source_id.split('-')
-            # see peyotl for amendment types and prefixes
-            # https://github.com/OpenTreeOfLife/peyotl/blob/3c32582e16be9dcf1029ce3d6481cdb09444890a/peyotl/amendments/amendments_umbrella.py#L33-L34
-            if (len(parts) > 1) and parts[0] in ('additions', 'changes', 'deletions',):
-                url = _AMENDMENT_REPO_URL_TEMPLATE.format(source_id)
+            else:
+                # check for taxonomic amendments; link each directly to its latest version on GitHub
+                possible_amendment_id = parts[0]  # EXAMPLE source_id: 'additions-10000038-10000038:10000038'
+                id_parts = possible_amendment_id.split('-')
+                # see peyotl for amendment types and prefixes
+                # https://github.com/OpenTreeOfLife/peyotl/blob/3c32582e16be9dcf1029ce3d6481cdb09444890a/peyotl/amendments/amendments_umbrella.py#L33-L34
+                if (len(id_parts) > 1) and id_parts[0] in ('additions', 'changes', 'deletions',):
+                    url = _AMENDMENT_REPO_URL_TEMPLATE.format(source_id)
 
     if url != None:
         return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(source_id))
