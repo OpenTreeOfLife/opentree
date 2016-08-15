@@ -13,6 +13,8 @@ from the NEXUS class library. That is a C++ tool by Paul Lewis and Mark Holder.
 
 See install-ncl.sh for details.
 
+`to_nexson` service (non-public API)
+====================================
 If you do install NCL then you should have access to a web-service at `.../curator/default/to_nexson`
 
 You can POST to that URL for conversion of NEXUS, newick, or NeXML to NeXSON
