@@ -634,7 +634,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             <!-- EDIT button -->
             <button data-bind="click: editCollection,
                                visible: !(userIsEditingCollection($data)),
-                               attr: {'title': userIsLoggedIn() ? 'Edit this collection (become a collaborator)' : 'Edit this collection (requires login)'}"
+                               attr: {'title': userIsLoggedIn() ? 'Edit collection, including add/remove trees' : 'Edit this collection (requires login)'}"
                 title=""
                 class="pull-right btn btn-info btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
