@@ -513,7 +513,7 @@ body {
                 </div>
               </div>
 
-              <div class="control-group">
+              <!-- <div class="control-group">
                 <div class="controls">
 
                 {{ if viewOrEdit == 'EDIT': }}
@@ -529,7 +529,7 @@ body {
 
                 </div>
 
-              </div>
+              </div> -->
 
               <div class="control-group">
                 <label class="control-label">Curator notes</label>
@@ -2384,7 +2384,7 @@ body {
 
                 <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:time'" >
                     <label style="margin-left: 10px;">Time unit: </label>
-                    <select data-bind="options: ['Myr', 'Kyr', 'Coalescent time units'], 
+                    <select data-bind="options: ['Myr', 'Kyr', 'Coalescent time units'],
                                        optionsCaption: 'Choose a unit of time...',
                                        value: $data['^ot:branchLengthTimeUnit'],
                                        event: { keyup: nudge.TREES, change: nudge.TREES },
