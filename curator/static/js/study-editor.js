@@ -4791,6 +4791,7 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
         if (itsMappedLabel) {
             labelInfo.label = itsMappedLabel;
             labelInfo.labelType = 'mapped label';
+            labelInfo.originalLabel = otu['^ot:originalLabel'];
         } else {
             var itsOriginalLabel = otu['^ot:originalLabel'];
             labelInfo.label = itsOriginalLabel;
@@ -6290,12 +6291,14 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     }
     // clarify which type of label
     var labelTypeDescription;
+    var origDisambigStr = "";
     switch(labelInfo.labelType) {
         case('mapped label'):
             labelTypeDescription = 'mapped to Open Tree taxonomy';
+            origDisambigStr = labelInfo.originalLabel;
             break;
         case('original label'):
-            labelTypeDescription = 'original OTU label';
+            labelTypeDescription = labelInfo.originalLabel ; //'original OTU label';
             break;
         case('node id'):
             labelTypeDescription = 'unnamed node';
@@ -6304,6 +6307,9 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
             labelTypeDescription = labelInfo.labelType;
     }
     nodeInfoBox.append('<div class="node-label-type">'+ labelTypeDescription +'</div>');
+    if (origDisambigStr) {
+        nodeInfoBox.append('<div class="node-label-type"> Originally labelled "'+ origDisambigStr +'"</div>');
+    }
     if (node.conflictDetails) {
         // desribe its status in the current conflict analysis
         var conflictDescriptionHTML = getNodeConflictDescription(tree, node);
