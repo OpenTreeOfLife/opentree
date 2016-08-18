@@ -34,6 +34,14 @@
                   <a id="progress-highlight-link" 
                      href="/about/progress?highlight={{= taxonomy_version }}">Highlight this version in the history of Open Tree</a>
               </div>
+              <div id="browse-current-ott" class="alert alert-success" style="display: none; position:relative;top:0.5em;">
+                  This is the latest version of the Open Tree taxonomy.
+                  <a href="/taxonomy/browse" target="_blank">Browse this version in a new window</a>
+              </div>
+              <div id="browse-latest-ott" class="alert alert-warning" style="display: none; position:relative;top:0.5em;">
+                  <strong>Note:</strong> This is an older version of the Open Tree taxonomy.
+                  <a href="/taxonomy/browse" target="_blank">Browse the latest version (<strong>{LATEST_OTT_VERSION}</strong>) in a new window</a>
+              </div>
 
               <h3>Statistics</h3>
               <div id="taxonomy-stats-missing" class="alert alert-error" style="display: none;">
@@ -244,17 +252,25 @@ function showCurrentTaxonomyVersion() {
       + '</tr>'
     );
 
-    // Update the Next and Prev buttons (disable if no more)
+    /* Update the Next and Prev buttons (disable if no more), and show the
+     * appropriate link to browse the lastest OTT version.
+     */
     var nthProfile = sortedTaxonomyVersions.indexOf(currentTaxonomyVersion);
     if (nthProfile === 0) {
         $('#prev-taxonomy-version').addClass('disabled');
     } else {
         $('#prev-taxonomy-version').removeClass('disabled');
     }
+    // show the appropriate link to browse the latest OTT version
     if (nthProfile === (sortedTaxonomyVersions.length - 1)) {
         $('#next-taxonomy-version').addClass('disabled');
+        $('#browse-current-ott').show();
     } else {
         $('#next-taxonomy-version').removeClass('disabled');
+        var latestVersion = sortedTaxonomyVersions[sortedTaxonomyVersions.length - 1];
+        var $versionTag = $('#browse-latest-ott').find('a strong');
+        $versionTag.text( $versionTag.text().replace('{LATEST_OTT_VERSION}', latestVersion) );
+        $('#browse-latest-ott').show();
     }
 }
 
