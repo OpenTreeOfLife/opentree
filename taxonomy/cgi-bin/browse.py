@@ -449,6 +449,7 @@ local_stylesheet = """
     span.name {
         font-weight: bold;
     }
+    span.sources, 
     span.flags {
         padding-left: 1em;
     }
