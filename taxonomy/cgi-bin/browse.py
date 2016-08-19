@@ -333,6 +333,12 @@ def source_link(source_id):
                 # https://github.com/OpenTreeOfLife/peyotl/blob/3c32582e16be9dcf1029ce3d6481cdb09444890a/peyotl/amendments/amendments_umbrella.py#L33-L34
                 if (len(id_parts) > 1) and id_parts[0] in ('additions', 'changes', 'deletions',):
                     url = _AMENDMENT_REPO_URL_TEMPLATE.format(possible_amendment_id)
+                    # we use a special displayed format for amendments
+                    type_to_singular_prefix = {'additions':'addition' , 'changes':'change', 'deletions':'deletion'}
+                    prefix = type_to_singular_prefix.get(id_parts[0])
+                    node_id = parts[1]
+                    formatted_id = '%s:%s' % (prefix, node_id)
+                    return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(formatted_id))
 
     if url != None:
         return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(source_id))
