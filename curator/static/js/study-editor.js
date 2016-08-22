@@ -9082,7 +9082,7 @@ function showNewTaxaPopup() {
                 'adjustedLabel': adjustedOTULabel,  // as modified by regex or manual edit
                 'modifiedName': ko.observable( adjustedOTULabel ),
                 'modifiedNameStatus': ko.observable('PENDING'),  // will be tested immediately below
-                'modifiedNameReason': '',
+                'modifiedNameReason': ko.observable(''),
                 'parentTaxonName': ko.observable(''),  // not sent to server
                 'parentTaxonID': ko.observable(0),
                 'parentTaxonSearchContext': '',
@@ -9170,7 +9170,7 @@ function submitNewTaxa() {
         newTaxon['original_label'] = $.trim(candidate['^ot:originalLabel']);
         newTaxon['adjusted_label'] = candidate.newTaxonMetadata.adjustedLabel;
         newTaxon['name'] = candidate.newTaxonMetadata.modifiedName();
-        newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason || "No change to original label";
+        newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason() || "No change to original label";
         newTaxon['rank'] = candidate.newTaxonMetadata.rank.toLowerCase();
         /* Use shared parent taxon, if any. */
         newTaxon['parent'] = getActiveParentTaxonID(candidate)();
@@ -9610,6 +9610,9 @@ function taxonCondidateIsValid( candidate, options ) {
         'parentTaxonID': "Please specify the parent taxon for this label",
         'rank': "Please specify a taxonomic rank (or 'no rank')"
     };
+    if (!newTaxonNameMatchesOriginalLabel(candidate)) {
+        requiredProperties['modifiedNameReason'] = "Please explain why you modified the taxon's original label.";
+    }
     var missingProperty = null;
     for (var propName in requiredProperties) {
         var itsValue;
@@ -9713,6 +9716,22 @@ var nextTaxonCandidateAllowed = ko.computed(function() {
     if (!currentTaxonCandidate()) return false;
     return taxonCondidateIsValid(currentTaxonCandidate()) && (getCurrentTaxonCandidatePosition() < (candidateOTUsForNewTaxa.length - 1));
 });
+
+function newTaxonNameMatchesOriginalLabel(candidate) {
+    var c = candidate || currentTaxonCandidate();
+    if (!c) return false;
+    return $.trim(c.newTaxonMetadata.modifiedName()) === $.trim(c['^ot:originalLabel']);
+}
+var currentTaxonUsesOriginalLabel = ko.computed(function() {
+    // computed wrapper for fast binding
+    return newTaxonNameMatchesOriginalLabel( currentTaxonCandidate() );
+});
+
+function useOriginalLabelForNewTaxon(candidate) {
+    // overwrite the new-taxon name with the original, and clear any reason for renaming
+    candidate.newTaxonMetadata.modifiedName( candidate['^ot:originalLabel'] );
+    candidate.newTaxonMetadata.modifiedNameReason(null);
+}
 
 function updateTaxonNameCheck(candidate) {
     // report status of last check, or initiate a new check
