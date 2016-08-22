@@ -4791,6 +4791,7 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
         if (itsMappedLabel) {
             labelInfo.label = itsMappedLabel;
             labelInfo.labelType = 'mapped label';
+            labelInfo.originalLabel = otu['^ot:originalLabel'];
         } else {
             var itsOriginalLabel = otu['^ot:originalLabel'];
             labelInfo.label = itsOriginalLabel;
@@ -6290,12 +6291,14 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     }
     // clarify which type of label
     var labelTypeDescription;
+    var origDisambigStr = "";
     switch(labelInfo.labelType) {
         case('mapped label'):
             labelTypeDescription = 'mapped to Open Tree taxonomy';
+            origDisambigStr = labelInfo.originalLabel;
             break;
         case('original label'):
-            labelTypeDescription = 'original OTU label';
+            labelTypeDescription = labelInfo.originalLabel ; //'original OTU label';
             break;
         case('node id'):
             labelTypeDescription = 'unnamed node';
@@ -6304,6 +6307,9 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
             labelTypeDescription = labelInfo.labelType;
     }
     nodeInfoBox.append('<div class="node-label-type">'+ labelTypeDescription +'</div>');
+    if (origDisambigStr) {
+        nodeInfoBox.append('<div class="node-label-type"> Originally labelled "'+ origDisambigStr +'"</div>');
+    }
     if (node.conflictDetails) {
         // desribe its status in the current conflict analysis
         var conflictDescriptionHTML = getNodeConflictDescription(tree, node);
@@ -9078,7 +9084,7 @@ function showNewTaxaPopup() {
                 'adjustedLabel': adjustedOTULabel,  // as modified by regex or manual edit
                 'modifiedName': ko.observable( adjustedOTULabel ),
                 'modifiedNameStatus': ko.observable('PENDING'),  // will be tested immediately below
-                'modifiedNameReason': '',
+                'modifiedNameReason': ko.observable(''),
                 'parentTaxonName': ko.observable(''),  // not sent to server
                 'parentTaxonID': ko.observable(0),
                 'parentTaxonSearchContext': '',
@@ -9166,7 +9172,7 @@ function submitNewTaxa() {
         newTaxon['original_label'] = $.trim(candidate['^ot:originalLabel']);
         newTaxon['adjusted_label'] = candidate.newTaxonMetadata.adjustedLabel;
         newTaxon['name'] = candidate.newTaxonMetadata.modifiedName();
-        newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason || "No change to original label";
+        newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason() || "No change to original label";
         newTaxon['rank'] = candidate.newTaxonMetadata.rank.toLowerCase();
         /* Use shared parent taxon, if any. */
         newTaxon['parent'] = getActiveParentTaxonID(candidate)();
@@ -9606,6 +9612,9 @@ function taxonCondidateIsValid( candidate, options ) {
         'parentTaxonID': "Please specify the parent taxon for this label",
         'rank': "Please specify a taxonomic rank (or 'no rank')"
     };
+    if (!newTaxonNameMatchesOriginalLabel(candidate)) {
+        requiredProperties['modifiedNameReason'] = "Please explain why you modified the taxon's original label.";
+    }
     var missingProperty = null;
     for (var propName in requiredProperties) {
         var itsValue;
@@ -9709,6 +9718,22 @@ var nextTaxonCandidateAllowed = ko.computed(function() {
     if (!currentTaxonCandidate()) return false;
     return taxonCondidateIsValid(currentTaxonCandidate()) && (getCurrentTaxonCandidatePosition() < (candidateOTUsForNewTaxa.length - 1));
 });
+
+function newTaxonNameMatchesOriginalLabel(candidate) {
+    var c = candidate || currentTaxonCandidate();
+    if (!c) return false;
+    return $.trim(c.newTaxonMetadata.modifiedName()) === $.trim(c['^ot:originalLabel']);
+}
+var currentTaxonUsesOriginalLabel = ko.computed(function() {
+    // computed wrapper for fast binding
+    return newTaxonNameMatchesOriginalLabel( currentTaxonCandidate() );
+});
+
+function useOriginalLabelForNewTaxon(candidate) {
+    // overwrite the new-taxon name with the original, and clear any reason for renaming
+    candidate.newTaxonMetadata.modifiedName( candidate['^ot:originalLabel'] );
+    candidate.newTaxonMetadata.modifiedNameReason(null);
+}
 
 function updateTaxonNameCheck(candidate) {
     // report status of last check, or initiate a new check
