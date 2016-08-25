@@ -2316,10 +2316,14 @@ body {
                 <label class="control-label" for="">Original label</label>
                 <div class="controls">
                     <div class="static-form-value unmapped-label"
-                         style="color: #888; font-weight: normal;"
+                         style="color: #888; font-weight: normal; display: inline-block;"
                          data-bind="text: $data['^ot:originalLabel'],
                                     attr:{'title': '' }"
                          title="">...</div>
+                     <button class="btn btn-small" style="margin-left: 4px;"
+                             data-bind="click: useOriginalLabelForNewTaxon,
+                                        attr: {'disabled': newTaxonNameMatchesOriginalLabel()}"
+                     >Use as taxon name</button>
                 </div>
             </div>
             <div class="control-group">
@@ -2344,8 +2348,8 @@ body {
                                              'Label is a synonym',
                                              'Other (explain in comments below)'],
                                    optionsCaption: 'Choose reason for modification...',
-                                   attr:{'disabled': ($data.newTaxonMetadata.modifiedName() === $data.newTaxonMetadata.adjustedLabel)},
-                                   css: ($data.newTaxonMetadata.modifiedName() === $data.newTaxonMetadata.adjustedLabel) ? '' : 'required-field'
+                                   attr:{'disabled': newTaxonNameMatchesOriginalLabel()},
+                                   css: (newTaxonNameMatchesOriginalLabel() ? '' : 'required-field')
                                    ">
                     </select>
                 </div>

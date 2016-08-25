@@ -865,7 +865,7 @@ tr.after-shims th {
 }
 
 .required-field {
-    border-color: red !important;
+ /* border-color: red !important; */
 }
 .required-field-marker {
     color: red !important;
