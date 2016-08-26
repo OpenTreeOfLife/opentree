@@ -4454,8 +4454,7 @@ function addTreeNodeBetween( tree, nodeID_A, nodeID_B ) {
                 tree.edge.push(adHocRootEdge);
             } else {
                 detachAdHocRootElements(tree);
-                // undo any reversals in the existing ad-hoc edge
-                adHocRootEdge['@source'] = getAdHocRootID(tree);
+                // N.B. this also undoes any reversal of the existing ad-hoc edge
             }
 
             // re-wire the existing edge (and the new one) with minimal changes
@@ -4528,6 +4527,18 @@ function detachAdHocRootElements( tree ) {
     if (adHocRootNode) {
         var adHocRootEdge = getAdHocEdge(tree);
         if (adHocRootEdge) {
+            // N.B. watch for a reversed ad-hoc edge (flipped source and target)! 
+            //var normalNeighbor = (adHocRootEdge['@source'] === getAdHocRootID(tree)) ? '@target' : '@source';
+            if (adHocRootEdge['@target'] === getAdHocRootID(tree)) {
+                reverseEdgeDirection(adHocRootEdge);
+                // We always clear the fast lookups below, so skip this here.
+                if (adHocRootEdge['@source'] !== getAdHocRootID(tree)) {
+                    // this should never be the case!
+                    console.error('Ad-hoc root node and edge are not attached!');
+                    console.error(adHocRootEdge);
+                }
+            }
+
             var edgesFromRoot = getTreeEdgesByID( tree, getAdHocRootID(tree), 'ANY' );
             $.each(edgesFromRoot, function(index, e) {
                 if (e !== adHocRootEdge) {
