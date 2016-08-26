@@ -5798,7 +5798,9 @@ function getAllVisibleProposedMappings() {
     return visibleProposedMappings; // return a series of IDs
 }
 function approveAllVisibleMappings() {
-    $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
+    var visibleProposedMappings = getAllVisibleProposedMappings();
+    var numOptions = visibleProposedMappings.length;
+    $.each(visibleProposedMappings, function(i, OTUid) {
         var itsMappingInfo = proposedOTUMappings()[ OTUid ];
         var approvedMapping = $.isFunction(itsMappingInfo) ?
             itsMappingInfo() :
@@ -5810,7 +5812,8 @@ function approveAllVisibleMappings() {
                 if (onlyMapping.originalMatch.is_synonym) {
                     return;  // synonyms require manual review
                 }
-                if (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.taxon.unique_name) {
+                // Let's assume a single suggestion is potentially an exact match
+                if ((numOptions > 1) && (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.taxon.unique_name)) {
                     return;  // taxon-name homonyms require manual review
                 }
                 if (onlyMapping.originalMatch.score < 1.0) {
