@@ -5562,7 +5562,7 @@ function updateMappingHints( data ) {
     return true;
 }
 
-function getAttrsForMappingOption( optionData ) {
+function getAttrsForMappingOption( optionData, numOptions ) {
     var attrs = {
         'title': parseInt(optionData.originalMatch.score * 100) +"% match of original label",
         'class': "badge ",
@@ -5572,7 +5572,8 @@ function getAttrsForMappingOption( optionData ) {
     if (optionData.originalMatch.is_synonym) {
         attrs.title = ('Matched on synonym '+ optionData.originalMatch.matched_name);
         attrs.class += ' badge-info';
-    } else if (optionData.originalMatch.matched_name !== optionData.originalMatch.taxon.unique_name) {
+    } else if ((numOptions > 1) && (optionData.originalMatch.matched_name !== optionData.originalMatch.taxon.unique_name)) {
+        // Let's assume a single result is the right answer
         attrs.title = ('Taxon-name homonym');
         attrs.class += ' badge-warning';
     } else {

@@ -1310,7 +1310,7 @@ body {
                                    data-bind="click: approveProposedOTULabel">
                                 <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: proposedMapping(otu)[0].name,
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS,
-                                               attr: getAttrsForMappingOption(proposedMapping(otu)[0])"
+                                               attr: getAttrsForMappingOption(proposedMapping(otu)[0], makeArray(proposedMapping(otu)).length)"
                                     href="#"
                                 >PROPOSED LABEL</a>
                             </span>
@@ -1333,7 +1333,7 @@ body {
                                                       data-bind="click: approveProposedOTUMappingOption"
                                                       title="Click to accept this OTU mapping">
                                 <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.taxon.unique_name,
-                                                  attr: getAttrsForMappingOption($data)"
+                                                  attr: getAttrsForMappingOption($data, makeArray(proposedMapping(otu)).length)"
                                        href="#"></a>
                                 </li>
                             </ul>
