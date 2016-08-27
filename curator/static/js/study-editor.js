@@ -5799,9 +5799,10 @@ function approveAllVisibleMappings() {
                 if (onlyMapping.originalMatch.is_synonym) {
                     return;  // synonyms require manual review
                 }
-                if (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.taxon.unique_name) {
-                    return;  // taxon-name homonyms require manual review
-                }
+                /* N.B. We never present the sole mapping suggestion as a
+                 * taxon-name homonym, so just consider the match score to
+                 * determine whether it's an "exact match".
+                 */
                 if (onlyMapping.originalMatch.score < 1.0) {
                     return;  // non-exact matches require manual review
                 }
