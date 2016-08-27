@@ -5798,9 +5798,7 @@ function getAllVisibleProposedMappings() {
     return visibleProposedMappings; // return a series of IDs
 }
 function approveAllVisibleMappings() {
-    var visibleProposedMappings = getAllVisibleProposedMappings();
-    var numOptions = visibleProposedMappings.length;
-    $.each(visibleProposedMappings, function(i, OTUid) {
+    $.each(getAllVisibleProposedMappings(), function(i, OTUid) {
         var itsMappingInfo = proposedOTUMappings()[ OTUid ];
         var approvedMapping = $.isFunction(itsMappingInfo) ?
             itsMappingInfo() :
@@ -5812,10 +5810,10 @@ function approveAllVisibleMappings() {
                 if (onlyMapping.originalMatch.is_synonym) {
                     return;  // synonyms require manual review
                 }
-                // Let's assume a single suggestion is potentially an exact match
-                if ((numOptions > 1) && (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.taxon.unique_name)) {
-                    return;  // taxon-name homonyms require manual review
-                }
+                /* N.B. We never present the sole mapping suggestion as a
+                 * taxon-name homonym, so just consider the match score to
+                 * determine whether it's an "exact match".
+                 */
                 if (onlyMapping.originalMatch.score < 1.0) {
                     return;  // non-exact matches require manual review
                 }
