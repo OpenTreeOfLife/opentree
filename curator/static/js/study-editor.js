@@ -5562,7 +5562,7 @@ function updateMappingHints( data ) {
     return true;
 }
 
-function getAttrsForMappingOption( optionData ) {
+function getAttrsForMappingOption( optionData, numOptions ) {
     var attrs = {
         'title': parseInt(optionData.originalMatch.score * 100) +"% match of original label",
         'class': "badge ",
@@ -5572,7 +5572,8 @@ function getAttrsForMappingOption( optionData ) {
     if (optionData.originalMatch.is_synonym) {
         attrs.title = ('Matched on synonym '+ optionData.originalMatch.matched_name);
         attrs.class += ' badge-info';
-    } else if (optionData.originalMatch.matched_name !== optionData.originalMatch.taxon.unique_name) {
+    } else if ((numOptions > 1) && (optionData.originalMatch.matched_name !== optionData.originalMatch.taxon.unique_name)) {
+        // Let's assume a single result is the right answer
         attrs.title = ('Taxon-name homonym');
         attrs.class += ' badge-warning';
     } else {
@@ -5809,9 +5810,10 @@ function approveAllVisibleMappings() {
                 if (onlyMapping.originalMatch.is_synonym) {
                     return;  // synonyms require manual review
                 }
-                if (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.taxon.unique_name) {
-                    return;  // taxon-name homonyms require manual review
-                }
+                /* N.B. We never present the sole mapping suggestion as a
+                 * taxon-name homonym, so just consider the match score to
+                 * determine whether it's an "exact match".
+                 */
                 if (onlyMapping.originalMatch.score < 1.0) {
                     return;  // non-exact matches require manual review
                 }
