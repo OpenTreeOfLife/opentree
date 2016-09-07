@@ -7714,22 +7714,35 @@ var minimalDOIPattern = new RegExp('10\\..+')
 var urlPattern = new RegExp('http(s?)://\\S+');
 function formatDOIAsURL() {
     var oldValue = viewModel.nexml['^ot:studyPublication']['@href'];
-    // IF it's already in the form of a URL, do nothing
-    if (urlPattern.test(oldValue) === true) {
+    var newValue = DOItoURL( oldValue );
+    if (newValue === oldValue) {
+        // no change, so no further action needed
         return;
     }
-    // IF it's not a reasonable "naked" DOI, do nothing
-    var possibleDOIs = oldValue.match(minimalDOIPattern);
-    if( possibleDOIs === null ) {
-        // no possible DOI found
-        return;
-    }
-
-    // this is a candidate; try to convert it to URL form
-    var bareDOI = $.trim( possibleDOIs[0] );
-    var newValue = 'http://dx.doi.org/'+ bareDOI;
     viewModel.nexml['^ot:studyPublication']['@href'] = newValue;
     nudgeTickler('GENERAL_METADATA');
+}
+
+/*
+* N.B. this duplicates the function with same name in
+* webapp/static/js/webapp-helpers.js, so any changes should be made in both
+* places.
+*/
+function DOItoURL( doi ) {
+    /* Return the DOI provided (if any) in URL form */
+    if (urlPattern.test(doi) === true) {
+        // It's already in the form of a URL, return unchanged
+        return doi;
+    }
+    // IF it's not a reasonable "naked" DOI, do nothing
+    var possibleDOIs = doi.match(minimalDOIPattern);
+    if( possibleDOIs === null ) {
+        // No possible DOI found, return unchanged
+        return doi;
+    }
+    // This is a candidate; try to convert it to URL form
+    var bareDOI = $.trim( possibleDOIs[0] );
+    return ('http://dx.doi.org/'+ bareDOI);
 }
 function testDOIForDuplicates( doi ) {
     // REMINDER: This is usually a full DOI, but not always. Test any valid URL!
