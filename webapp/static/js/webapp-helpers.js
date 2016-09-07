@@ -118,3 +118,30 @@ function getSynthTreeViewerURLForNodeID(synthID, nodeID) {
     return url.replace('{SYNTH_ID}', synthID)
               .replace('{NODE_ID}', nodeID);
 }
+
+/*
+* Convert DOI to URL and return the result. If no valid DOI is
+* detected, return the incoming string unchanged.
+*
+* N.B. this duplicates the function with same name in
+* curator/static/js/study-editor.js, so any changes should be made in
+* both places
+*/
+var minimalDOIPattern = new RegExp('10\\..+')
+var urlPattern = new RegExp('http(s?)://\\S+');
+function DOItoURL( doi ) {
+    /* Return the DOI provided (if any) in URL form */
+    if (urlPattern.test(doi) === true) {
+        // It's already in the form of a URL, return unchanged
+        return doi;
+    }
+    // IF it's not a reasonable "naked" DOI, do nothing
+    var possibleDOIs = doi.match(minimalDOIPattern);
+    if( possibleDOIs === null ) {
+        // No possible DOI found, return unchanged
+        return doi;
+    }
+    // This is a candidate; try to convert it to URL form
+    var bareDOI = $.trim( possibleDOIs[0] );
+    return ('http://dx.doi.org/'+ bareDOI);
+}
