@@ -81,6 +81,11 @@ function capture_form() {
                 $referenceURLField.hide();
         }
     });
+    // convert a "naked" DOI to an URL, where possible
+    $referenceURLField.unbind('blur').bind('blur', function() {
+        var $doiField = $(this);
+        $doiField.val( DOItoURL($doiField.val()) );
+    });
 
     // update the Login link, if shown
     if (typeof(fixLoginLinks) === 'function') {
