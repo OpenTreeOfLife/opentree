@@ -252,7 +252,7 @@ function loadStudyList() {
                 var match = viewModel.listFilters.STUDIES.match(),
                     matchWithDiacriticals = addDiacriticalVariants(match),
                     matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
-                    wholeWordMatchPattern = new RegExp( '\\b'+ $.trim(match) +'\\b', 'i' );
+                    wholeWordMatchPattern = new RegExp( '\\b'+ $.trim(matchWithDiacriticals) +'\\b', 'i' );
                 console.log('Search text with diacritical variants:\n'+ matchPattern);
                 var workflow = viewModel.listFilters.STUDIES.workflow();
                 var order = viewModel.listFilters.STUDIES.order();
