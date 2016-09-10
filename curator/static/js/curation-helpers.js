@@ -2350,3 +2350,39 @@ function addDiacriticalVariants( searchText ) {
     searchText = searchText.replace(finder, replacer);
     return searchText;
 }
+
+function removeDiacritics( str ) {
+    /* Replace common diacritical variants with a safe (Latin) alternative.
+     * This is the safest way to treat values that will be used on the query
+     * string (via History.js).
+     *
+     * N.B. this takes advantage of our collection of variants above, where the
+     * first option is always a "safe" string comprised only of Latin characters.
+     */
+    var dvCount = diacriticalVariants.length;
+    var combinedVariants = diacriticalVariants.join('|');
+    var finder = new RegExp(combinedVariants, 'g');
+    var replacer = function(/* lots of them, sniffed as 'arguments' below */) {
+        // We'll sniff the incoming args, see <https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/replace#Specifying_a_function_as_a_parameter>
+        var foundMatch = arguments[0];
+        // ... and then args for each parenthesized submatch ...
+        var foundOffset = arguments[arguments.length - 2];
+        var haystack = arguments[arguments.length - 1];
+
+        // For each interesting sequence found, substitute the variant's submatch pattern
+        for (var i = 0; i < dvCount; i++) {
+            var pattern = diacriticalVariants[i];
+            var foundMatch = arguments[i+1];
+            // N.B. we skip the first arg!
+            if (foundMatch) {  // a string, or nothing
+                // extract the first (Latin-only) option from this pattern, for example
+                //  "(ae|æ|ǽ|ǣ)"  =>  "ae"
+                var latinOption = pattern.split('|')[0];
+                latinOption = latinOption.slice(1);    // strip initial '('
+                return latinOption;
+            }
+        }
+    };
+    str = str.replace(finder, replacer);
+    return str;
+}

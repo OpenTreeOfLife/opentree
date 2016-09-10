@@ -111,7 +111,9 @@ function updateListFiltersWithHistory() {
             newState[prop] = ko.unwrap(activeFilter[prop]);
             // Hide default filter settings, for simpler URLs
             if (newState[prop] !== filterDefaults[prop]) {
-                newQSValues[prop] = ko.unwrap(activeFilter[prop]);
+                // Our list filters are smart about recognizing diacritics, so
+                // we can just use their Latin-only counterparts in the URL.
+                newQSValues[prop] = removeDiacritics( ko.unwrap(activeFilter[prop]) );
             }
         }
         //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
