@@ -299,6 +299,7 @@ function loadStudyList() {
                 );  // END of list filtering
                         
                 // apply selected sort order
+                captureListPositions(filteredList);
                 switch(order) {
                     /* REMINDER: in sort functions, results are as follows:
                      *  -1 = a comes before b
@@ -307,16 +308,21 @@ function loadStudyList() {
                      */
                     case 'Newest publication first':
                         filteredList.sort(function(a,b) { 
-                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
+                            if (a['ot:studyYear'] === b['ot:studyYear']) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (a['ot:studyYear'] > b['ot:studyYear'])? -1 : 1;
                         });
                         break;
 
                     case 'Oldest publication first':
                         filteredList.sort(function(a,b) {
-                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
+                            if (a['ot:studyYear'] === b['ot:studyYear']) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
                         });
+                        debugger;
                         break;
 
                     case 'Sort by primary author':
@@ -324,10 +330,16 @@ function loadStudyList() {
                             var aRef = $.trim(a['ot:studyPublicationReference']);
                             var bRef = $.trim(b['ot:studyPublicationReference']);
                             if (aRef.localeCompare) {
-                                return aRef.localeCompare(bRef);
+                                var r = aRef.localeCompare(bRef);
+                                if (r === 0) {
+                                    r = maintainRelativeListPositions(a, b);
+                                } 
+                                return r;
                             }
                             // fallback do dumb alpha-sort on older browsers
-                            if (aRef === bRef) return 0;
+                            if (aRef === bRef) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (aRef > bRef) ? 1 : -1;
                         });
                         break;
@@ -337,10 +349,16 @@ function loadStudyList() {
                             var bRef = $.trim(b['ot:studyPublicationReference']);
                             var aRef = $.trim(a['ot:studyPublicationReference']);
                             if (bRef.localeCompare) {
-                                return bRef.localeCompare(aRef);
+                                var r = bRef.localeCompare(aRef);
+                                if (r === 0) {
+                                    r = maintainRelativeListPositions(a, b);
+                                } 
+                                return r;
                             }
                             // fallback do dumb alpha-sort on older browsers
-                            if (aRef === bRef) return 0;
+                            if (aRef === bRef) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (aRef < bRef) ? 1 : -1;
                         });
                         break;
@@ -355,14 +373,18 @@ function loadStudyList() {
                         filteredList.sort(function(a,b) { 
                             var aDisplayOrder = displayOrder[ a.workflowState ];
                             var bDisplayOrder = displayOrder[ b.workflowState ];
-                            if (aDisplayOrder === bDisplayOrder) return 0;
+                            if (aDisplayOrder === bDisplayOrder) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (aDisplayOrder < bDisplayOrder) ? -1 : 1;
                         });
                         break;
 
                     case 'Completeness':
                         filteredList.sort(function(a,b) { 
-                            if (a.completeness === b.completeness) return 0;
+                            if (a.completeness === b.completeness) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (a.completeness < b.completeness) ? -1 : 1;
                         });
                         break;
@@ -372,6 +394,7 @@ function loadStudyList() {
                         return false;
 
                 }
+                captureListPositions(filteredList);
                 viewModel._filteredStudies( filteredList );
                 viewModel._filteredStudies.goToPage(1);
                 return viewModel._filteredStudies;

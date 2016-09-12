@@ -2130,3 +2130,22 @@ function tokenizeSearchTextKeepingQuotes( text ) {
     })).filter(Boolean);
     return tokens;
 }
+
+/* Use ad-hoc properties to maintain the relative positions of list items which
+ * have been sorted "equally". This ensures identical sorting results across
+ * browsers despite their different ways of handling sorting pairs.
+ */
+function captureListPositions(targetList) {
+    // (Re)set the list-position property for each item
+    $.each(targetList, function(i, item) {
+        item.lastKnownPosition = i;
+    });
+}
+function maintainRelativeListPositions(a, b) {
+    if (typeof a.lastKnownPosition !== 'undefined' && typeof b.lastKnownPosition !== 'undefined') {
+        // the result will maintain their prior relative positions
+        return a.lastKnownPosition - b.lastKnownPosition;
+    }
+    return 0;
+}
+
