@@ -54,36 +54,6 @@ function capture_form() {
     if (isThreadStarter) {
         jQuery('div.plugin_localcomments select[name=feedback_type]').show();
         jQuery('div.plugin_localcomments select[name=issue_title]').show();
-
-        // hide/show form widgets based on the chosen feedback type
-        console.log("SETTING UP SELECT");
-        console.log("exists? "+ jQuery('div.plugin_localcomments select[name=feedback_type]').length);
-        jQuery('div.plugin_localcomments select[name=feedback_type]')
-            .unbind('change')
-            .change(function(){
-                console.log("SELECT CHANGED");
-                var $select = $(this);
-                switch($select.val()) {
-                    case '':
-                        // hide all UI until they choose a feedback type
-                        jQuery('div.plugin_localcomments [name=doi]').hide();
-                        jQuery('div.plugin_localcomments [name=tree_id]').hide();
-                        jQuery('div.plugin_localcomments [name=body]').hide();
-                        break;
-                    case 'Tree suggestion':
-                        // show fields for paper and tree
-                        jQuery('div.plugin_localcomments [name=doi]').show();
-                        jQuery('div.plugin_localcomments [name=tree_id]').show();
-                        jQuery('div.plugin_localcomments [name=body]').show();
-                        break;
-                    default:
-                        jQuery('div.plugin_localcomments [name=doi]').hide();
-                        jQuery('div.plugin_localcomments [name=tree_id]').hide();
-                        jQuery('div.plugin_localcomments [name=body]').show();
-                }
-            });
-        jQuery('div.plugin_localcomments select[name=feedback_type]').change();
-
     } else {
         jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
         jQuery('div.plugin_localcomments select[name=issue_title]').hide();
