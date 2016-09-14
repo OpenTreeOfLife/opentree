@@ -287,7 +287,7 @@ function loadCollectionList(option) {
                      */
                     case 'Most recently modified':
                         filteredList.sort(function(a,b) { 
-                            // coerce any goofy dates to strings
+                            // coerce any missing/goofy dates to strings
                             var aMod = $.trim(a.lastModified.ISO_date);
                             var bMod = $.trim(b.lastModified.ISO_date);
                             if (aMod === bMod) {
@@ -299,7 +299,7 @@ function loadCollectionList(option) {
 
                     case 'Most recently modified (reversed)':
                         filteredList.sort(function(a,b) { 
-                            // coerce any goofy dates to strings
+                            // coerce any missing/goofy dates to strings
                             var aMod = a.lastModified.ISO_date;
                             var bMod = b.lastModified.ISO_date;
                             if (aMod === bMod) {
@@ -312,7 +312,7 @@ function loadCollectionList(option) {
                     case 'By owner/name':
                         filteredList.sort(function(a,b) { 
                             // first element is the ID with user-name/collection-name
-                            // (coerce any goofy values to strings)
+                            // (coerce any missing/goofy values to strings)
                             var aName = $.trim(a.id);
                             var bName = $.trim(b.id);
                             if (aName === bName) {
@@ -326,7 +326,7 @@ function loadCollectionList(option) {
                     case 'By owner/name (reversed)':
                         filteredList.sort(function(a,b) { 
                             // first element is the ID with user-name/collection-name
-                            // (coerce any goofy values to strings)
+                            // (coerce any missing/goofy values to strings)
                             var aName = $.trim(a.id);
                             var bName = $.trim(b.id);
                             if (aName === bName) {
