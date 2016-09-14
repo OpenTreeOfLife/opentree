@@ -535,7 +535,6 @@ function fetchAndShowCollection( collectionID, specialHandling ) {
             showErrorMessage("Unable to load collection '"+ collectionID +"'");
         },
         complete: function( jqXHR, textStatus ) {
-            //debugger;
             hideModalScreen();
         }
     });
@@ -2135,17 +2134,41 @@ function tokenizeSearchTextKeepingQuotes( text ) {
  * have been sorted "equally". This ensures identical sorting results across
  * browsers despite their different ways of handling sorting pairs.
  */
-function captureListPositions(targetList) {
+function captureListPositions(targetList, msg) {
     // (Re)set the list-position property for each item
+    console.log(msg || "FIRST ITEMS (OLD POSITIONS):");
+    /*
+    console.log(targetList[0]['ot:studyId'] +" - "+ targetList[0].lastKnownPosition);
+    console.log(targetList[1]['ot:studyId'] +" - "+ targetList[1].lastKnownPosition);
+    console.log(targetList[2]['ot:studyId'] +" - "+ targetList[2].lastKnownPosition);
+    console.log(targetList[3]['ot:studyId'] +" - "+ targetList[3].lastKnownPosition);
+    */
+    var allStudyIDs = $.map(targetList, function(obj,i) {
+        return (obj['ot:studyId']) || '';
+    });
+    console.log(allStudyIDs.join(','));
+
     $.each(targetList, function(i, item) {
         item.lastKnownPosition = i;
     });
 }
 function maintainRelativeListPositions(a, b) {
+    // Resolve "tied" items in a sort by respecting their (last known) relative positions
     if (typeof a.lastKnownPosition !== 'undefined' && typeof b.lastKnownPosition !== 'undefined') {
         // the result will maintain their prior relative positions
-        return a.lastKnownPosition - b.lastKnownPosition;
+        return (a.lastKnownPosition > b.lastKnownPosition) ? 1 : -1;
     }
     return 0;
 }
+function restoreRelativeListPositions(targetList) {
+    // Restores relative positions after browser-quirky operations like ko.filterArray
+    // N.B. this assumes that we've previously captured these using captureListPositions above.
+    targetList.sort(maintainRelativeListPositions);
+}
 
+function checkForInterestingStudies(a,b) {
+    var interestingIDs = ['tt_35', 'tt_99'];
+    if ($.inArray( a['ot:studyId'], interestingIDs ) === -1) return false;
+    if ($.inArray( b['ot:studyId'], interestingIDs ) === -1) return false;
+    return true;
+}
