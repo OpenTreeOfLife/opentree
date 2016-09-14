@@ -2130,45 +2130,44 @@ function tokenizeSearchTextKeepingQuotes( text ) {
     return tokens;
 }
 
-/* Use ad-hoc properties to maintain the relative positions of list items which
- * have been sorted "equally". This ensures identical sorting results across
- * browsers despite their different ways of handling sorting pairs.
+/* Use ad-hoc `defaultSortOrder` property to maintain the relative positions of
+ * list items which have been sorted "equally". This ensures identical sorting
+ * results across browsers despite their different ways of handling sorting pairs.
  */
-function captureListPositions(targetList, msg) {
-    // (Re)set the list-position property for each item
-    console.log(msg || "FIRST ITEMS (OLD POSITIONS):");
-    /*
-    console.log(targetList[0]['ot:studyId'] +" - "+ targetList[0].lastKnownPosition);
-    console.log(targetList[1]['ot:studyId'] +" - "+ targetList[1].lastKnownPosition);
-    console.log(targetList[2]['ot:studyId'] +" - "+ targetList[2].lastKnownPosition);
-    console.log(targetList[3]['ot:studyId'] +" - "+ targetList[3].lastKnownPosition);
-    */
-    var allStudyIDs = $.map(targetList, function(obj,i) {
-        return (obj['ot:studyId']) || '';
-    });
-    console.log(allStudyIDs.join(','));
-
+function captureDefaultSortOrder(targetList) {
+    // Set a list-position property for each item, to enable "stable" sorting on all browsers.
     $.each(targetList, function(i, item) {
-        item.lastKnownPosition = i;
+        item.defaultSortOrder = i;
     });
 }
 function maintainRelativeListPositions(a, b) {
-    // Resolve "tied" items in a sort by respecting their (last known) relative positions
-    if (typeof a.lastKnownPosition !== 'undefined' && typeof b.lastKnownPosition !== 'undefined') {
+    // Resolve "tied" items in a sort by respecting their original list positions
+    if (typeof a.defaultSortOrder !== 'undefined' && typeof b.defaultSortOrder !== 'undefined') {
         // the result will maintain their prior relative positions
-        return (a.lastKnownPosition > b.lastKnownPosition) ? 1 : -1;
+        return (a.defaultSortOrder > b.defaultSortOrder) ? 1 : -1;
     }
+    /*
+    console.error('defaultSortOrder not found on these items!');
+    console.error(a);
+    console.error(b);
+    */
     return 0;
 }
-function restoreRelativeListPositions(targetList) {
-    // Restores relative positions after browser-quirky operations like ko.filterArray
-    // N.B. this assumes that we've previously captured these using captureListPositions above.
-    targetList.sort(maintainRelativeListPositions);
-}
-
 function checkForInterestingStudies(a,b) {
-    var interestingIDs = ['tt_35', 'tt_99'];
+    return false;
+    /*
+    // match both studies
+    var interestingIDs = ['tt_10', 'tt_25']; // ['pg_2886', 'tt_93'];
     if ($.inArray( a['ot:studyId'], interestingIDs ) === -1) return false;
     if ($.inArray( b['ot:studyId'], interestingIDs ) === -1) return false;
     return true;
+    */
+
+    // match just one study
+    var interestingIDs = ['tt_95'];
+    if ($.inArray( a['ot:studyId'], interestingIDs ) !== -1) return true;
+    if ($.inArray( b['ot:studyId'], interestingIDs ) !== -1) return true;
+    return false;
+    /*
+    */
 }

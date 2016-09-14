@@ -225,8 +225,8 @@ function loadStudyList() {
             }
             
             var matchedStudies = data['matched_studies'];
+            captureDefaultSortOrder(matchedStudies);
             getDuplicateStudiesByDOI(matchedStudies);
-            captureListPositions(matchedStudies, 'SORTED BY DOI?');
 
             viewModel = matchedStudies; /// ko.mapping.fromJS( fakeStudyList );  // ..., mappingOptions);
 
@@ -257,9 +257,6 @@ function loadStudyList() {
                 var order = viewModel.listFilters.STUDIES.order();
 
                 // map old array to new and return it
-                //captureListPositions(viewModel, 'viewModel BEFORE FILTER:');
-                restoreRelativeListPositions(viewModel);
-                captureListPositions(viewModel, 'viewModel AFTER RESTORING RELATIVE POSITIONS:');
                 var filteredList = ko.utils.arrayFilter( 
                     viewModel, 
                     function(study) {
@@ -303,7 +300,6 @@ function loadStudyList() {
                 );  // END of list filtering
                         
                 // apply selected sort order
-                captureListPositions(filteredList, 'filteredList BEFORE SORT ORDER:');
                 switch(order) {
                     /* REMINDER: in sort functions, results are as follows:
                      *  -1 = a comes before b
@@ -312,20 +308,24 @@ function loadStudyList() {
                      */
                     case 'Newest publication first':
                         filteredList.sort(function(a,b) { 
-                            if (checkForInterestingStudies(a,b)) { debugger; }
-                            if (a['ot:studyYear'] === b['ot:studyYear']) {
+                            //if (checkForInterestingStudies(a,b)) { debugger; }
+                            var aYear = isNaN(a['ot:studyYear']) ? Infinity : Number(a['ot:studyYear']);
+                            var bYear = isNaN(b['ot:studyYear']) ? Infinity : Number(b['ot:studyYear']);
+                            if (aYear === bYear) {
                                 return maintainRelativeListPositions(a, b);
                             };
-                            return (a['ot:studyYear'] > b['ot:studyYear'])? -1 : 1;
+                            return (aYear > bYear)? -1 : 1;
                         });
                         break;
 
                     case 'Oldest publication first':
                         filteredList.sort(function(a,b) {
-                            if (a['ot:studyYear'] === b['ot:studyYear']) {
+                            var aYear = isNaN(a['ot:studyYear']) ? Infinity : Number(a['ot:studyYear']);
+                            var bYear = isNaN(b['ot:studyYear']) ? Infinity : Number(b['ot:studyYear']);
+                            if (aYear === bYear) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
+                            return (aYear > bYear)? 1 : -1;
                         });
                         break;
 
@@ -398,7 +398,6 @@ function loadStudyList() {
                         return false;
 
                 }
-                captureListPositions(filteredList, 'filteredList AFTER SORT (order='+ order +':');
                 viewModel._filteredStudies( filteredList );
                 viewModel._filteredStudies.goToPage(1);
                 return viewModel._filteredStudies;
