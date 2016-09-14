@@ -232,7 +232,8 @@ function loadStudyList() {
             }
             
             var matchedStudies = data['matched_studies'];
-            sortStudiesByDOI(matchedStudies);
+            captureDefaultSortOrder(matchedStudies);
+            getDuplicateStudiesByDOI(matchedStudies);
 
             viewModel = matchedStudies; /// ko.mapping.fromJS( fakeStudyList );  // ..., mappingOptions);
 
@@ -316,15 +317,24 @@ function loadStudyList() {
                      */
                     case 'Newest publication first':
                         filteredList.sort(function(a,b) { 
-                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
-                            return (a['ot:studyYear'] > b['ot:studyYear'])? -1 : 1;
+                            //if (checkForInterestingStudies(a,b)) { debugger; }
+                            var aYear = isNaN(a['ot:studyYear']) ? Infinity : Number(a['ot:studyYear']);
+                            var bYear = isNaN(b['ot:studyYear']) ? Infinity : Number(b['ot:studyYear']);
+                            if (aYear === bYear) {
+                                return maintainRelativeListPositions(a, b);
+                            };
+                            return (aYear > bYear)? -1 : 1;
                         });
                         break;
 
                     case 'Oldest publication first':
                         filteredList.sort(function(a,b) {
-                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
-                            return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
+                            var aYear = isNaN(a['ot:studyYear']) ? Infinity : Number(a['ot:studyYear']);
+                            var bYear = isNaN(b['ot:studyYear']) ? Infinity : Number(b['ot:studyYear']);
+                            if (aYear === bYear) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aYear > bYear)? 1 : -1;
                         });
                         break;
 
@@ -333,10 +343,16 @@ function loadStudyList() {
                             var aRef = $.trim(a['ot:studyPublicationReference']);
                             var bRef = $.trim(b['ot:studyPublicationReference']);
                             if (aRef.localeCompare) {
-                                return aRef.localeCompare(bRef);
+                                var r = aRef.localeCompare(bRef);
+                                if (r === 0) {
+                                    r = maintainRelativeListPositions(a, b);
+                                } 
+                                return r;
                             }
                             // fallback do dumb alpha-sort on older browsers
-                            if (aRef === bRef) return 0;
+                            if (aRef === bRef) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (aRef > bRef) ? 1 : -1;
                         });
                         break;
@@ -346,10 +362,16 @@ function loadStudyList() {
                             var bRef = $.trim(b['ot:studyPublicationReference']);
                             var aRef = $.trim(a['ot:studyPublicationReference']);
                             if (bRef.localeCompare) {
-                                return bRef.localeCompare(aRef);
+                                var r = bRef.localeCompare(aRef);
+                                if (r === 0) {
+                                    r = maintainRelativeListPositions(a, b);
+                                } 
+                                return r;
                             }
                             // fallback do dumb alpha-sort on older browsers
-                            if (aRef === bRef) return 0;
+                            if (aRef === bRef) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (aRef < bRef) ? 1 : -1;
                         });
                         break;
@@ -364,14 +386,18 @@ function loadStudyList() {
                         filteredList.sort(function(a,b) { 
                             var aDisplayOrder = displayOrder[ a.workflowState ];
                             var bDisplayOrder = displayOrder[ b.workflowState ];
-                            if (aDisplayOrder === bDisplayOrder) return 0;
+                            if (aDisplayOrder === bDisplayOrder) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (aDisplayOrder < bDisplayOrder) ? -1 : 1;
                         });
                         break;
 
                     case 'Completeness':
                         filteredList.sort(function(a,b) { 
-                            if (a.completeness === b.completeness) return 0;
+                            if (a.completeness === b.completeness) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (a.completeness < b.completeness) ? -1 : 1;
                         });
                         break;
@@ -396,7 +422,7 @@ function loadStudyList() {
 
 /* gather any duplicate studies (with same DOI) */
 var studiesByDOI = {};
-function sortStudiesByDOI(studyList) {
+function getDuplicateStudiesByDOI(studyList) {
     studiesByDOI = {};
     $.each( studyList, function(i, study) {
         var studyID = study['ot:studyId'];

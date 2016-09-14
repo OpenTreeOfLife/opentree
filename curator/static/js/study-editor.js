@@ -1039,8 +1039,6 @@ function loadSelectedStudy() {
                     });
                 });
 
-                console.log("  filtering "+ allTrees.length +" trees...");
-
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter(
                     allTrees,
@@ -1119,6 +1117,7 @@ function loadSelectedStudy() {
 
                 // gather all OTUs from all 'otus' collections
                 var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+                captureDefaultSortOrder(allOTUs);
 
                 var chosenTrees;
                 switch(scope) {
@@ -1187,12 +1186,14 @@ function loadSelectedStudy() {
                      *   1 = b comes before a
                      */
                     case 'Unmapped OTUs first':
-                        // Capture prior position first (for a more stable list during bulk mapping)
+                        /* Capture prior position first (for a more stable list during bulk mapping)
                         $.each(filteredList, function(i, otu) {
                             otu.priorPosition = i;
                         });
+                        */
                         filteredList.sort(function(a,b) {
                             // N.B. This works even if there's no such property.
+                            //if (checkForInterestingStudies(a,b)) { debugger; }
                             var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
                             var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
                             if (aMapStatus === bMapStatus) {
@@ -1203,30 +1204,37 @@ function loadSelectedStudy() {
                                     if (aFailedMapping === bFailedMapping) {
                                         // Try to retain their prior precedence in
                                         // the list (avoid items jumping around)
-                                        return (a.priorPosition < b.priorPosition) ? -1:1;
+                                        /*return (a.priorPosition < b.priorPosition) ? -1:1;
+                                         * Should this supercede our typical use of `maintainRelativeListPositions`?
+                                         */
+                                        return maintainRelativeListPositions(a, b);
                                     }
                                     if (aFailedMapping) {
                                         return 1;   // force a (failed) below b
                                     }
                                     return -1;   // force b (failed) below a
                                 } else {
-                                    return 0;
+                                    //return (a.priorPosition < b.priorPosition) ? -1:1;
+                                    return maintainRelativeListPositions(a, b);
                                 }
                             }
                             if (aMapStatus) return 1;
                             if (bMapStatus) return -1;
                         });
-                        // Toss the outdated prior positions
+                        /* Toss the outdated prior positions
                         $.each(filteredList, function(i, otu) {
                             delete otu.priorPosition;
                         });
+                        */
                         break;
 
                     case 'Mapped OTUs first':
                         filteredList.sort(function(a,b) {
                             var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
                             var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
-                            if (aMapStatus === bMapStatus) return 0;
+                            if (aMapStatus === bMapStatus) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             if (aMapStatus) return -1;
                             return 1;
                         });
@@ -1234,9 +1242,11 @@ function loadSelectedStudy() {
 
                     case 'Original label (A-Z)':
                         filteredList.sort(function(a,b) {
-                            var aOriginal = a['^ot:originalLabel'];
-                            var bOriginal = b['^ot:originalLabel'];
-                            if (aOriginal === bOriginal) return 0;
+                            var aOriginal = $.trim(a['^ot:originalLabel']);
+                            var bOriginal = $.trim(b['^ot:originalLabel']);
+                            if (aOriginal === bOriginal) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             if (aOriginal < bOriginal) return -1;
                             return 1;
                         });
@@ -1244,9 +1254,11 @@ function loadSelectedStudy() {
 
                     case 'Original label (Z-A)':
                         filteredList.sort(function(a,b) {
-                            var aOriginal = a['^ot:originalLabel'];
-                            var bOriginal = b['^ot:originalLabel'];
-                            if (aOriginal === bOriginal) return 0;
+                            var aOriginal = $.trim(a['^ot:originalLabel']);
+                            var bOriginal = $.trim(b['^ot:originalLabel']);
+                            if (aOriginal === bOriginal) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             if (aOriginal > bOriginal) return -1;
                             return 1;
                         });
@@ -2306,6 +2318,7 @@ function scrubNexsonForTransport( nexml ) {
     $.each( allOTUs, function(i, otu) {
         delete otu['selectedForAction'];  // only used in the curation app
         delete otu['newTaxonMetadata'];
+        delete otu['defaultSortOrder'];
         if ('^ot:altLabel' in otu) {
             var ottId = $.trim(otu['^ot:ottId']);
             if (ottId !== '') {
@@ -8518,6 +8531,7 @@ function loadCollectionList(option) {
             }
 
             viewModel.allCollections = data;
+            captureDefaultSortOrder(viewModel.allCollections);
 
             // enable sorting and filtering for lists in the editor
             // UI widgets bound to these variables will trigger the
@@ -8567,6 +8581,7 @@ function loadCollectionList(option) {
                 // map old array to new and return it
                 var currentStudyID = $('#current-study-id').val();
                 var currentTreeID = $('#current-tree-id').val();
+
                 var filteredList = ko.utils.arrayFilter(
                     viewModel.allCollections,
                     function(collection) {
@@ -8672,18 +8687,22 @@ function loadCollectionList(option) {
                      */
                     case 'Most recently modified':
                         filteredList.sort(function(a,b) {
-                            var aMod = a.lastModified.ISO_date;
-                            var bMod = b.lastModified.ISO_date;
-                            if (aMod === bMod) return 0;
+                            var aMod = $.trim(a.lastModified.ISO_date);
+                            var bMod = $.trim(b.lastModified.ISO_date);
+                            if (aMod === bMod) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             return (aMod < bMod)? 1 : -1;
                         });
                         break;
 
                     case 'Most recently modified (reversed)':
                         filteredList.sort(function(a,b) {
-                            var aMod = a.lastModified.ISO_date;
-                            var bMod = b.lastModified.ISO_date;
-                            if (aMod === bMod) return 0;
+                            var aMod = $.trim(a.lastModified.ISO_date);
+                            var bMod = $.trim(b.lastModified.ISO_date);
+                            if (aMod === bMod) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             return (aMod > bMod)? 1 : -1;
                         });
                         break;
@@ -8691,16 +8710,28 @@ function loadCollectionList(option) {
                     case 'By owner/name':
                         filteredList.sort(function(a,b) {
                             // first element is the ID with user-name/collection-name
-                            if (a.id === b.id) return 0;
-                            return (a.id < b.id) ? -1 : 1;
+                            // (coerce any missing/goofy values to strings)
+                            var aName = $.trim(a.id);
+                            var bName = $.trim(b.id);
+                            if (aName === bName) {
+                                // N.B. this should not occur
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aName < bName) ? -1 : 1;
                         });
                         break;
 
                     case 'By owner/name (reversed)':
                         filteredList.sort(function(a,b) {
                             // first element is the ID with user-name/collection-name
-                            if (a.id === b.id) return 0;
-                            return (a.id > b.id) ? -1 : 1;
+                            // (coerce any missing/goofy values to strings)
+                            var aName = $.trim(a.id);
+                            var bName = $.trim(b.id);
+                            if (aName === bName) {
+                                // N.B. this should not occur
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aName > bName) ? -1 : 1;
                         });
                         break;
 
