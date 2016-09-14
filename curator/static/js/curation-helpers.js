@@ -2146,11 +2146,11 @@ function maintainRelativeListPositions(a, b) {
         // the result will maintain their prior relative positions
         return (a.defaultSortOrder > b.defaultSortOrder) ? 1 : -1;
     }
-    /*
+
     console.error('defaultSortOrder not found on these items!');
     console.error(a);
     console.error(b);
-    */
+
     return 0;
 }
 function checkForInterestingStudies(a,b) {
