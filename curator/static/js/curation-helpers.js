@@ -2384,6 +2384,7 @@ function removeDiacritics( str ) {
     };
     str = str.replace(finder, replacer);
     return str;
+}
 
 /* Use ad-hoc `defaultSortOrder` property to maintain the relative positions of
  * list items which have been sorted "equally". This ensures identical sorting
