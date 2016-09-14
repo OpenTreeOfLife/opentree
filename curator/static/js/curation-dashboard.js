@@ -225,7 +225,7 @@ function loadStudyList() {
             }
             
             var matchedStudies = data['matched_studies'];
-            sortStudiesByDOI(matchedStudies);
+            getDuplicateStudiesByDOI(matchedStudies);
             captureListPositions(matchedStudies, 'SORTED BY DOI?');
 
             viewModel = matchedStudies; /// ko.mapping.fromJS( fakeStudyList );  // ..., mappingOptions);
@@ -414,7 +414,7 @@ function loadStudyList() {
 
 /* gather any duplicate studies (with same DOI) */
 var studiesByDOI = {};
-function sortStudiesByDOI(studyList) {
+function getDuplicateStudiesByDOI(studyList) {
     studiesByDOI = {};
     $.each( studyList, function(i, study) {
         var studyID = study['ot:studyId'];
