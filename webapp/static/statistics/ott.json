@@ -2,8 +2,8 @@
     {
         "===": "These 'comments' will be ignored by the app.",
         "===": "Note that releases are listed in reverse chronological order.",
-        "===": taxon_count comes from `wc -l taxonomy.tsv`,
-        "===": visible_taxon_count comes from `cleaned_ott/index.html` in propinquity output,
+        "===": "taxon_count comes from `wc -l taxonomy.tsv`",
+        "===": "visible_taxon_count comes from `cleaned_ott/index.html` in propinquity output",
 
         "version": "ott2.10",
         "date": "",
