@@ -2130,6 +2130,48 @@ function tokenizeSearchTextKeepingQuotes( text ) {
     return tokens;
 }
 
+/* Use ad-hoc `defaultSortOrder` property to maintain the relative positions of
+ * list items which have been sorted "equally". This ensures identical sorting
+ * results across browsers despite their different ways of handling sorting pairs.
+ */
+function captureDefaultSortOrder(targetList) {
+    // Set a list-position property for each item, to enable "stable" sorting on all browsers.
+    $.each(targetList, function(i, item) {
+        item.defaultSortOrder = i;
+    });
+}
+function maintainRelativeListPositions(a, b) {
+    // Resolve "tied" items in a sort by respecting their original list positions
+    if (typeof a.defaultSortOrder !== 'undefined' && typeof b.defaultSortOrder !== 'undefined') {
+        // the result will maintain their prior relative positions
+        return (a.defaultSortOrder > b.defaultSortOrder) ? 1 : -1;
+    }
+
+    console.error('defaultSortOrder not found on these items!');
+    console.error(a);
+    console.error(b);
+
+    return 0;
+}
+function checkForInterestingStudies(a,b) {
+    return false;
+    /*
+    // match both studies
+    var interestingIDs = ['tt_10', 'tt_25']; // ['pg_2886', 'tt_93'];
+    if ($.inArray( a['ot:studyId'], interestingIDs ) === -1) return false;
+    if ($.inArray( b['ot:studyId'], interestingIDs ) === -1) return false;
+    return true;
+    */
+
+    // match just one study
+    var interestingIDs = ['tt_95'];
+    if ($.inArray( a['ot:studyId'], interestingIDs ) !== -1) return true;
+    if ($.inArray( b['ot:studyId'], interestingIDs ) !== -1) return true;
+    return false;
+    /*
+    */
+}
+
 // A pretty comprehensive list of diacritical variants for Latin characters/combinations, adapted from
 // <http://stackoverflow.com/a/18391901>
 /* N.B. The use of Unicode points in this version is cryptic, but might be more robust in older browsers.
@@ -2384,46 +2426,4 @@ function removeDiacritics( str ) {
     };
     str = str.replace(finder, replacer);
     return str;
-}
-
-/* Use ad-hoc `defaultSortOrder` property to maintain the relative positions of
- * list items which have been sorted "equally". This ensures identical sorting
- * results across browsers despite their different ways of handling sorting pairs.
- */
-function captureDefaultSortOrder(targetList) {
-    // Set a list-position property for each item, to enable "stable" sorting on all browsers.
-    $.each(targetList, function(i, item) {
-        item.defaultSortOrder = i;
-    });
-}
-function maintainRelativeListPositions(a, b) {
-    // Resolve "tied" items in a sort by respecting their original list positions
-    if (typeof a.defaultSortOrder !== 'undefined' && typeof b.defaultSortOrder !== 'undefined') {
-        // the result will maintain their prior relative positions
-        return (a.defaultSortOrder > b.defaultSortOrder) ? 1 : -1;
-    }
-
-    console.error('defaultSortOrder not found on these items!');
-    console.error(a);
-    console.error(b);
-
-    return 0;
-}
-function checkForInterestingStudies(a,b) {
-    return false;
-    /*
-    // match both studies
-    var interestingIDs = ['tt_10', 'tt_25']; // ['pg_2886', 'tt_93'];
-    if ($.inArray( a['ot:studyId'], interestingIDs ) === -1) return false;
-    if ($.inArray( b['ot:studyId'], interestingIDs ) === -1) return false;
-    return true;
-    */
-
-    // match just one study
-    var interestingIDs = ['tt_95'];
-    if ($.inArray( a['ot:studyId'], interestingIDs ) !== -1) return true;
-    if ($.inArray( b['ot:studyId'], interestingIDs ) !== -1) return true;
-    return false;
-    /*
-    */
 }
