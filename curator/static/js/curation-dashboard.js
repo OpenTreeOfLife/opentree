@@ -245,7 +245,8 @@ function loadStudyList() {
                     // TODO: add 'pagesize'?
                     'match': ko.observable(""),
                     'workflow': ko.observable("Any workflow state"),
-                    'order': ko.observable("Newest publication first")
+                    'order': ko.observable("Newest publication first"),
+                    'view': ko.observable("Compact view (hide details)")
                 }
             };
             
@@ -264,6 +265,7 @@ function loadStudyList() {
                 console.log('Search text with diacritical variants:\n'+ matchPattern);
                 var workflow = viewModel.listFilters.STUDIES.workflow();
                 var order = viewModel.listFilters.STUDIES.order();
+                var view = viewModel.listFilters.STUDIES.view();
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
@@ -552,6 +554,43 @@ function toggleStudyDetails( clicked ) {
         $fullRef.show();
         $toggle.text('[hide details]');
     }
+}
+function toggleAllStudyDetails( hidingOrShowing ) {
+    // Show (or hide) details for all visible studies
+    var $studyList = $('#study-list-container');
+    var $singleStudyToggles = $studyList.find('a.full-ref-toggle');
+    // IGNORE latent block with no toggle
+    //var $studyDetailBlocks = $studyList.find('div.full-study-ref');
+    var $studyDetailBlocks = $singleStudyToggles.closest('tr').next('tr').find('div.full-study-ref');
+    if ($.inArray(hidingOrShowing, ['SHOWING', 'HIDING']) === -1) {
+        // Operation not specified! Follow the current state of the detail blocks.
+        var $visibleStudyDetailBlocks = $studyDetailBlocks.filter(':visible');
+        if ($visibleStudyDetailBlocks.length === $singleStudyToggles.length) {
+            // all blocks found and currently visible, so we should hide all
+            hidingOrShowing = 'HIDING';
+        } else {
+            // show all blocks by default
+            hidingOrShowing = 'SHOWING';
+        }
+    }
+    $singleStudyToggles.each(function(i, toggle) {
+        var $toggle = $(toggle);
+        var $studyRow = $toggle.closest('tr');
+        var $studyDetailsRow = $studyRow.next('tr:has(.full-study-ref)');
+        if ($studyDetailsRow.length > 0) {
+            // there should always be a corresponding block
+            var detailsBlock = $studyDetailBlocks[i];
+            if ($(detailsBlock).is(':visible')) {
+                if (hidingOrShowing==='HIDING') {
+                    toggleStudyDetails($toggle);
+                }
+            } else {  // block is hidden
+                if (hidingOrShowing==='SHOWING') {
+                    toggleStudyDetails($toggle);
+                }
+            }
+        }
+    });
 }
 
 function filterByCurator( curatorID ) {
