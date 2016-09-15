@@ -3062,9 +3062,10 @@ body {
           </select>
           <button id="treeview-fetch-conflict" class="btn btn-info" data-bind="click: showConflictDetailsWithHistory">GO!</button>
           <button id="treeview-clear-conflict" class="btn" data-bind="click: hideConflictDetailsWithHistory">Hide conflict</button>
-
       </div>
-      <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
+      <button id="print-tree-view" class="btn Xpull-right" style="display: none;" title="Print the current tree view"
+              onclick="printCurrentTreeView(); return false;"><i class="icon-print"></i> Print</button>
+      <a class="btn" style="margin-left: 12px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>
   </div><!-- /#full-screen-area -->
 </div>

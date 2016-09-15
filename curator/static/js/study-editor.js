@@ -3871,6 +3871,31 @@ function showTreeViewer( tree, options ) {
         }
         */
 
+        /* Show or disable the print widget (requires full-screen support).
+         * This is used to briefly maximize the current tree view (SVG
+         * viewport) and print it on demand.
+         */
+        var $printTreeViewButton = $('button#print-tree-view');
+        if ($.fullscreen.isNativelySupported()) {
+            // ie, the current browser supports full-screen APIs
+            $printTreeViewButton.show();
+            $(document).bind('fscreenchange', function(e, state, elem) {
+                if ($.fullscreen.isFullScreen()) {
+                    //$('#exit-full-screen').show();
+                } else {
+                    //$('#exit-full-screen').hide();
+                }
+            });
+        } else {
+            // dim and disable the full-screen toggle
+            $printTreeViewButton.css("opacity: 0.5;")
+                                .click(function() {
+                                    alert("This browser does not support full-screen display, so it cannot print the tree.");
+                                    return false;
+                                })
+                             .show();
+        }
+
         // hide or show footer options based on tab chosen
         $treeViewerTabs.off('shown').on('shown', function (e) {
             var newTabTarget = $(e.target).attr('href').split('#')[1];
@@ -9875,4 +9900,11 @@ function proposedTaxonNameStatusColor(candidate) {
         default:
             return 'purple';
     }
+}
+
+function printCurrentTreeView() {
+    // go to fullscreen; print stuff; then restore view
+    $('#tree-phylogram svg').fullscreen();
+    //window.print();
+    //$.fullscreen.exit();
 }
