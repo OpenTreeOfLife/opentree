@@ -111,7 +111,9 @@ function updateListFiltersWithHistory() {
             newState[prop] = ko.unwrap(activeFilter[prop]);
             // Hide default filter settings, for simpler URLs
             if (newState[prop] !== filterDefaults[prop]) {
-                newQSValues[prop] = ko.unwrap(activeFilter[prop]);
+                // Our list filters are smart about recognizing diacritics, so
+                // we can just use their Latin-only counterparts in the URL.
+                newQSValues[prop] = removeDiacritics( ko.unwrap(activeFilter[prop]) );
             }
         }
         //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
@@ -198,8 +200,9 @@ function loadCollectionList(option) {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.COLLECTIONS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' ),
-                    wholeSlugMatchPattern = new RegExp( '^'+ $.trim(match) +'$' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
+                    wholeSlugMatchPattern = new RegExp( '^'+ $.trim(matchWithDiacriticals) +'$' );
                 var order = viewModel.listFilters.COLLECTIONS.order();
                 var filter = viewModel.listFilters.COLLECTIONS.filter();
 

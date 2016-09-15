@@ -337,7 +337,9 @@ function updateListFiltersWithHistory() {
             newState[prop] = ko.unwrap(activeFilter[prop]);
             // Hide default filter settings, for simpler URLs
             if (newState[prop] !== filterDefaults[prop]) {
-                newQSValues[prop] = ko.unwrap(activeFilter[prop]);
+                // Our list filters are smart about recognizing diacritics, so
+                // we can just use their Latin-only counterparts in the URL.
+                newQSValues[prop] = removeDiacritics( ko.unwrap(activeFilter[prop]) );
             }
         }
 
@@ -1025,7 +1027,8 @@ function loadSelectedStudy() {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.TREES.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' );
 
                 var allTrees = [];
                 $.each(viewModel.nexml.trees, function(i, treesCollection) {
@@ -1068,7 +1071,8 @@ function loadSelectedStudy() {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.FILES.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' );
 
                 // map old array to new and return it
                 var fileDetails = [];
@@ -1108,7 +1112,8 @@ function loadSelectedStudy() {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.OTUS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' );
                 var scope = viewModel.listFilters.OTUS.scope();
                 var order = viewModel.listFilters.OTUS.order();
 
@@ -1281,7 +1286,8 @@ function loadSelectedStudy() {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.ANNOTATIONS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' );
                 var scope = viewModel.listFilters.ANNOTATIONS.scope();
                 var submitter = viewModel.listFilters.ANNOTATIONS.submitter();
 
@@ -8536,8 +8542,9 @@ function loadCollectionList(option) {
                  * (and clutter) for what will typically be a short list.
                  */
                 var match = viewModel.listFilters.COLLECTIONS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' ),
-                    wholeSlugMatchPattern = new RegExp( '^'+ $.trim(match) +'$' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
+                    wholeSlugMatchPattern = new RegExp( '^'+ $.trim(matchWithDiacriticals) +'$' );
                 var order = viewModel.listFilters.COLLECTIONS.order();
                 var filter = viewModel.listFilters.COLLECTIONS.filter();
 
@@ -8828,8 +8835,9 @@ function searchForMatchingCollections() {
         return false;
     }
 
-    var matchPattern = new RegExp( $.trim(searchText), 'i' ),
-        wholeSlugMatchPattern = new RegExp( '^'+ $.trim(searchText) +'$' );
+    var matchWithDiacriticals = addDiacriticalVariants(searchText),
+        matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
+        wholeSlugMatchPattern = new RegExp( '^'+ $.trim(matchWithDiacriticals) +'$' );
 
     var matchingCollections = ko.utils.arrayFilter(
         viewModel.allCollections,
