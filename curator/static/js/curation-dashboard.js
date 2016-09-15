@@ -109,7 +109,14 @@ function updateListFiltersWithHistory() {
             newState[prop] = ko.unwrap(activeFilter[prop]);
             // Hide default filter settings, for simpler URLs
             if (newState[prop] !== filterDefaults[prop]) {
-                newQSValues[prop] = ko.unwrap(activeFilter[prop]);
+                // make any odd characters safe for the query string!
+                // (surprisingly, History doesn't handle Unicode well here)
+                /* N.B. this gets double-encoded; hilarity ensues!
+                newQSValues[prop] = encodeURIComponent( ko.unwrap(activeFilter[prop]) );
+                */
+                // Our list filters are smart about recognizing diacritics, so
+                // we can just use their Latin-only counterparts in the URL.
+                newQSValues[prop] = removeDiacritics( ko.unwrap(activeFilter[prop]) );
             }
         }
         //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
@@ -251,8 +258,10 @@ function loadStudyList() {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.STUDIES.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' ),
-                    wholeWordMatchPattern = new RegExp( '\\b'+ $.trim(match) +'\\b', 'i' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
+                    wholeWordMatchPattern = new RegExp( '\\b'+ $.trim(matchWithDiacriticals) +'\\b', 'i' );
+                console.log('Search text with diacritical variants:\n'+ matchPattern);
                 var workflow = viewModel.listFilters.STUDIES.workflow();
                 var order = viewModel.listFilters.STUDIES.order();
 
