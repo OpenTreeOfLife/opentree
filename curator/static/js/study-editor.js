@@ -3890,6 +3890,31 @@ function showTreeViewer( tree, options ) {
         }
         */
 
+        /* Show or disable the print widget (requires full-screen support).
+         * This is used to briefly maximize the current tree view (SVG
+         * viewport) and print it on demand.
+         */
+        var $printTreeViewButton = $('button#print-tree-view');
+        if ($.fullscreen.isNativelySupported()) {
+            // ie, the current browser supports full-screen APIs
+            $printTreeViewButton.show();
+            $(document).bind('fscreenchange', function(e, state, elem) {
+                if ($.fullscreen.isFullScreen()) {
+                    //$('#exit-full-screen').show();
+                } else {
+                    //$('#exit-full-screen').hide();
+                }
+            });
+        } else {
+            // dim and disable the full-screen toggle
+            $printTreeViewButton.css("opacity: 0.5;")
+                                .click(function() {
+                                    alert("This browser does not support full-screen display, so it cannot print the tree.");
+                                    return false;
+                                })
+                             .show();
+        }
+
         // hide or show footer options based on tab chosen
         $treeViewerTabs.off('shown').on('shown', function (e) {
             var newTabTarget = $(e.target).attr('href').split('#')[1];
@@ -9916,4 +9941,92 @@ function proposedTaxonNameStatusColor(candidate) {
         default:
             return 'purple';
     }
+}
+
+function updateSaveTreeViewLink() {
+    /* This is done on mouseover, so that clicking the link will save
+     * the current tree view as an SVG file. Very loosely adapted from
+     * <http://stackoverflow.com/a/4228053>
+     */
+    // Update the link to use current SVG
+    var $treeViewer = $('#tree-viewer');
+    var $treeStylesheet = $('#tree-view-style');
+    var $treeSVG = $treeViewer.find('#tree-phylogram svg');
+    var $treeTitle = $treeViewer.find('#tree-title');
+    var treeName = $treeTitle.find('span').text();
+    var fileName = slugify( treeName ) +'.svg';
+
+    // confirm SVG has needed attributes (missing in Firefox)
+    $treeSVG.attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
+
+    // confirm SVG has our CSS styles for the tree view (or add them now)
+    if ($treeSVG.find('style').length === 0) {
+        // copy the main page's tree-view stylesheet exactly
+        // N.B. putting it where even Inkscape can find it :-/
+        $treeSVG.prepend( $treeStylesheet[0].outerHTML );
+    }
+
+    // encode the current SVG
+    var base64src = b64EncodeUnicode( $treeSVG[0].outerHTML );
+
+    var $saveLink = $('#save-tree-view');
+    $saveLink.attr('href', 'data:image/svg+xml;base64,\n'+ base64src);
+    $saveLink.attr('download', fileName);
+}
+
+function b64EncodeUnicode(str) {
+    /* Safe encoding for Unicode text, from
+     *  <https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding#The_.22Unicode_Problem.22>
+     */
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode('0x' + p1);
+    }));
+}
+
+function printCurrentTreeView() {
+    /* Print the current tree, sized to fit within a single vertical page
+     * (since Firefox has limited print support for SVG).
+     */
+    var $treeViewer = $('#tree-viewer');
+    var $treeSVG = $treeViewer.find('#tree-phylogram svg');
+    var $treeTitle = $treeViewer.find('#tree-title');
+
+    // set a temporary title (becomes the default filename for a saved PDF)
+    var oldTitle = window.document.title;
+    var treeName = $treeTitle.find('span').text();
+    window.document.title = slugify( treeName );
+
+    // move printing elements to the foreground
+    var $svgHolder = $treeSVG.parent();
+    var $titleHolder = $treeTitle.parent();
+    var $pageBody = $('body');
+    $pageBody.append( $treeSVG );
+    $pageBody.append( $treeTitle );
+
+    // adjust SVG viewport (esp. for Firefox, Chrome doesn't need this)
+    // NOTE that we need to use el.setAttribute to keep mixed-case attribute names!
+    var treeSVG = $treeSVG[0];
+    var oldSVGWidth = treeSVG.getAttribute('width');
+    var oldSVGHeight = treeSVG.getAttribute('height');
+    var oldSVGViewBox = treeSVG.getAttribute('viewBox');
+    treeSVG.setAttribute('width', "8in");
+    treeSVG.setAttribute('height', "10in");
+    treeSVG.setAttribute('viewBox', "0 0 "+ oldSVGWidth +" "+ oldSVGHeight);
+
+    // adjust bg and positioning just for print, then undo
+    $pageBody.addClass('printing-tree-view');
+    window.print();
+    $pageBody.removeClass('printing-tree-view');
+
+    // restore SVG viewport for normal use
+    treeSVG.setAttribute('width', oldSVGWidth);
+    treeSVG.setAttribute('height', oldSVGHeight);
+    treeSVG.setAttribute('viewBox', oldSVGViewBox);
+
+    // put the printed elements back in place
+    $svgHolder.append( $treeSVG );
+    $treeTitle.insertBefore( $titleHolder.find('ul.nav-tabs') );
+
+    // restore the normal doc title
+    window.document.title = oldTitle;
 }
