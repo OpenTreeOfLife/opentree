@@ -9902,7 +9902,53 @@ function proposedTaxonNameStatusColor(candidate) {
     }
 }
 
+function updateSaveTreeViewLink() {
+    /* This is done on mouseover, so that clicking the link will save
+     * the current tree view as an SVG file. Very loosely adapted from
+     * <http://stackoverflow.com/a/4228053>
+     */
+    // Update the link to use current SVG
+    var $treeViewer = $('#tree-viewer');
+    var $treeStylesheet = $('#tree-view-style');
+    var $treeSVG = $treeViewer.find('#tree-phylogram svg');
+    var $treeTitle = $treeViewer.find('#tree-title');
+    var treeName = $treeTitle.find('span').text();
+    var fileName = slugify( treeName ) +'.svg';
+
+    // confirm SVG has needed attributes (missing in Firefox)
+    $treeSVG.attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
+
+    // confirm SVG has our CSS styles for the tree view (or add them now)
+    if ($treeSVG.find('style').length === 0) {
+        // add CSS now, inside the existing `defs` element
+        if ($treeSVG.find('defs').length === 0) {
+            $treeSVG.append('<defs></defs>');
+        }
+        // copy the mainstylesheet exactly
+        $treeSVG.find('defs').eq(0).append( $treeStylesheet[0].outerHTML );
+    }
+
+    // encode the current SVG
+    var base64src = b64EncodeUnicode( $treeSVG[0].outerHTML );
+
+    var $saveLink = $('#save-tree-view');
+    $saveLink.attr('href', 'data:image/svg+xml;base64,\n'+ base64src);
+    $saveLink.attr('download', fileName);
+}
+
+function b64EncodeUnicode(str) {
+    /* Safe encoding for Unicode text, from
+     *  <https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding#The_.22Unicode_Problem.22>
+     */
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode('0x' + p1);
+    }));
+}
+
 function printCurrentTreeView() {
+    /* Print the current tree, sized to fit within a single vertical page
+     * (since Firefox has limited print support for SVG).
+     */
     var $treeViewer = $('#tree-viewer');
     var $treeSVG = $treeViewer.find('#tree-phylogram svg');
     var $treeTitle = $treeViewer.find('#tree-title');
