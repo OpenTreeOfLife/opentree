@@ -9903,8 +9903,46 @@ function proposedTaxonNameStatusColor(candidate) {
 }
 
 function printCurrentTreeView() {
-    // go to fullscreen; print stuff; then restore view
-    $('#tree-phylogram svg').fullscreen();
-    //window.print();
-    //$.fullscreen.exit();
+    var $treeViewer = $('#tree-viewer');
+    var $treeSVG = $treeViewer.find('#tree-phylogram svg');
+    var $treeTitle = $treeViewer.find('#tree-title');
+
+    // set a temporary title (becomes the default filename for a saved PDF)
+    var oldTitle = window.document.title;
+    var treeName = $treeTitle.find('span').text();
+    window.document.title = slugify( treeName );
+
+    // move printing elements to the foreground
+    var $svgHolder = $treeSVG.parent();
+    var $titleHolder = $treeTitle.parent();
+    var $pageBody = $('body');
+    $pageBody.append( $treeSVG );
+    $pageBody.append( $treeTitle );
+
+    // adjust SVG viewport (esp. for Firefox, Chrome doesn't need this)
+    // NOTE that we need to use el.setAttribute to keep mixed-case attribute names!
+    var treeSVG = $treeSVG[0];
+    var oldSVGWidth = treeSVG.getAttribute('width');
+    var oldSVGHeight = treeSVG.getAttribute('height');
+    var oldSVGViewBox = treeSVG.getAttribute('viewBox');
+    treeSVG.setAttribute('width', "8in");
+    treeSVG.setAttribute('height', "10in");
+    treeSVG.setAttribute('viewBox', "0 0 "+ oldSVGWidth +" "+ oldSVGHeight);
+
+    // adjust bg and positioning just for print, then undo
+    $pageBody.addClass('printing-tree-view');
+    window.print();
+    $pageBody.removeClass('printing-tree-view');
+
+    // restore SVG viewport for normal use
+    treeSVG.setAttribute('width', oldSVGWidth);
+    treeSVG.setAttribute('height', oldSVGHeight);
+    treeSVG.setAttribute('viewBox', oldSVGViewBox);
+
+    // put the printed elements back in place
+    $svgHolder.append( $treeSVG );
+    $treeTitle.insertBefore( $titleHolder.find('ul.nav-tabs') );
+
+    // restore the normal doc title
+    window.document.title = oldTitle;
 }
