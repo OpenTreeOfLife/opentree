@@ -9920,12 +9920,9 @@ function updateSaveTreeViewLink() {
 
     // confirm SVG has our CSS styles for the tree view (or add them now)
     if ($treeSVG.find('style').length === 0) {
-        // add CSS now, inside the existing `defs` element
-        if ($treeSVG.find('defs').length === 0) {
-            $treeSVG.append('<defs></defs>');
-        }
-        // copy the mainstylesheet exactly
-        $treeSVG.find('defs').eq(0).append( $treeStylesheet[0].outerHTML );
+        // copy the main page's tree-view stylesheet exactly
+        // N.B. putting it where even Inkscape can find it :-/
+        $treeSVG.prepend( $treeStylesheet[0].outerHTML );
     }
 
     // encode the current SVG
