@@ -2400,6 +2400,9 @@ function removeDiacritics( str ) {
      * N.B. this takes advantage of our collection of variants above, where the
      * first option is always a "safe" string comprised only of Latin characters.
      */
+    if (typeof str !== 'string') {
+        return str;  // return any number, etc. unchanged
+    }
     var dvCount = diacriticalVariants.length;
     var combinedVariants = diacriticalVariants.join('|');
     var finder = new RegExp(combinedVariants, 'g');

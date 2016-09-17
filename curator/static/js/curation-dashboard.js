@@ -412,7 +412,7 @@ function loadStudyList() {
 
                 }
                 viewModel._filteredStudies( filteredList );
-                viewModel._filteredStudies.goToPage( page );
+                viewModel._filteredStudies.goToPage( Number(page) );
                 return viewModel._filteredStudies;
             }); // END of filteredStudies
                     
