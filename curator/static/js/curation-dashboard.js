@@ -246,7 +246,8 @@ function loadStudyList() {
                     'match': ko.observable(""),
                     'workflow': ko.observable("Any workflow state"),
                     'order': ko.observable("Newest publication first"),
-                    'view': ko.observable("Compact view (hide details)")
+                    'view': ko.observable("Compact view (hide details)"),
+                    'page': ko.observable(1),
                 }
             };
             
@@ -266,6 +267,7 @@ function loadStudyList() {
                 var workflow = viewModel.listFilters.STUDIES.workflow();
                 var order = viewModel.listFilters.STUDIES.order();
                 var view = viewModel.listFilters.STUDIES.view();
+                var page = viewModel.listFilters.STUDIES.page();
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
@@ -410,7 +412,7 @@ function loadStudyList() {
 
                 }
                 viewModel._filteredStudies( filteredList );
-                viewModel._filteredStudies.goToPage(1);
+                viewModel._filteredStudies.goToPage( page );
                 return viewModel._filteredStudies;
             }); // END of filteredStudies
                     
