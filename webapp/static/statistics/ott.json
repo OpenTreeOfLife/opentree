@@ -6,7 +6,7 @@
         "===": "visible_taxon_count comes from `cleaned_ott/index.html` in propinquity output",
 
         "version": "ott2.10",
-        "date": "",
+        "date": "2016-09-10",
         "taxon_count":         3453840,
         "visible_taxon_count": 2338745 
     },
