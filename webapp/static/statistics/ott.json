@@ -4,6 +4,7 @@
         "===": "Note that releases are listed in reverse chronological order.",
         "===": "taxon_count comes from `wc -l taxonomy.tsv`",
         "===": "visible_taxon_count comes from `cleaned_ott/index.html` in propinquity output",
+        "===": "For proper sorting, all `date` strings must be in the form {yyyy-mm-dd}!",
 
         "version": "ott2.10",
         "date": "2016-09-10",

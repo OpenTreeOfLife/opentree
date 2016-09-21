@@ -100,13 +100,20 @@ var relatedSynthReleases = {{= XML(json.dumps(related_synth_releases )) }};
 $(document).ready(function() {
     // show current profiles, or a notice if no data was found 
     if (taxonomy_stats) {
-        // load and sort versions in ascending order
+        // N.B. we sort by release date (yyyy-mm-dd), safer than sorting semantic versions
+        taxonomy_stats.sort(function(a,b) {
+            if (a.date < b.date) {
+                return -1;
+            }
+            return 1;
+        });
+        // extract just version strings, oldest first
         sortedTaxonomyVersions = $.map(
             taxonomy_stats, 
             function( versionInfo, i ) {
                 return versionInfo.version;
             }
-        ).sort();
+        );
 
         // start with the profile whose date is in the URL (or latest, by default)
         if (taxonomyVersion) {
