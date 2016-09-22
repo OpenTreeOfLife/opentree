@@ -1288,7 +1288,7 @@ function showObjectProperties( objInfo, options ) {
               + '<li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">'
               +    'Search EOL for \''+ displayName +'\'</a></li>'
               + '<li><a target="onezoom" href="http://www.onezoom.org/life.html/@='+ itsTaxon.ott_id +'" id="link-to-OneZoom">'
-              +    'Browse \''+ displayName +'\' in OneZoom</a></li>'
+              +    'Browse '+ displayName +' in OneZoom</a></li>'
               + '</ul>');
         }
     }
