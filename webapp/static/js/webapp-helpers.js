@@ -90,6 +90,30 @@ function getTerminalSourceIDs( node ) {
      return url.replace('{OTT_ID}', ottID);
  }
 
+/*
+Returns a hyperlink to the source taxonomic amendment for a given OTT taxon
+*/
+function getTaxonomicAmendmentLink(displayName, amendmentID) {
+    // ASSUMES we will always have both arguments
+    if (!(displayName) || !(amendmentID)) {
+        // show just the name (static text, possibly an empty string)
+        return displayName;
+    }
+    var link = '<a href="{AMENDMENT_URL}" \
+                   title="OTT taxonomic amendment" \
+                   target="amendment">{DISPLAY_NAME}</a>';
+    return link.replace('{AMENDMENT_URL}', getTaxonomicAmendmentURL(amendmentID))
+        .replace('{DISPLAY_NAME}', displayName);
+}
+function getTaxonomicAmendmentURL(amendmentID) {
+    if (!amendmentID) {
+        return null;
+    }
+    // N.B. This repo is the same for dev domains and production!
+    var url = 'https://github.com/OpenTreeOfLife/amendments-1/blob/master/amendments/{AMENDMENT_ID}.json';
+    return url.replace('{AMENDMENT_ID}', amendmentID);
+}
+
 /* Return a link (or URL) to a non-taxon node in the synthetic-tree browser
  * N.B. This uses a synth-based URL that requires the id of a synthetic tree.
  */

@@ -1017,7 +1017,22 @@ function showObjectProperties( objInfo, options ) {
                                 break;
 
                             default:
-                                displayVal = '<span style="color: #777;" title="No URL for this taxonomy">'+ sourceInfo.taxSource.trim() +': '+ sourceInfo.taxSourceId +'</span>';
+                                // Check for taxonomic amendments; if found, build a link and a friendly display string
+                                // Adapted from the [taxonomy browser](https://github.com/OpenTreeOfLife/opentree/blob/3627836bec89d46c44a4f605646d9e1dc690d6fc/taxonomy/cgi-bin/browse.py#L329-L341)
+                                var idParts = sourceInfo.taxSource.trim().split('-');
+                                // see peyotl for [amendment types and prefixes](https://github.com/OpenTreeOfLife/peyotl/blob/3c32582e16be9dcf1029ce3d6481cdb09444890a/peyotl/amendments/amendments_umbrella.py#L33-L34)
+                                if ((idParts.length > 1) &&
+                                    ($.inArray(idParts[0], ['additions', 'changes', 'deletions']) !== -1)) {
+                                    var amendmentID = sourceInfo.taxSource.trim();
+                                    var ottID = sourceInfo.taxSourceId;
+                                    // we use a special displayed format for amendments
+                                    var typeToSingularPrefix = {'additions':'addition' , 'changes':'change', 'deletions':'deletion'};
+                                    var prefix = typeToSingularPrefix[ idParts[0] ];
+                                    var amendmentDisplayName = prefix +':'+ ottID;
+                                    displayVal =  getTaxonomicAmendmentLink(amendmentDisplayName, amendmentID);
+                                } else {
+                                    displayVal = '<span style="color: #777;" title="No URL for this taxonomy">'+ sourceInfo.taxSource.trim() +': '+ sourceInfo.taxSourceId +'</span>';
+                                }
                                 break;
                         }
 
