@@ -1284,7 +1284,12 @@ function showObjectProperties( objInfo, options ) {
             // Make this name safe for use in our EOL search URL
             // (prefer '+' to '%20', but carefully encode other characters)
             var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');
-            $details.after('<ul class="external-links"><li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">Search EOL for \''+ displayName +'\'</a></li></ul>');
+            $details.after('<ul class="external-links">' 
+              + '<li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">'
+              +    'Search EOL for \''+ displayName +'\'</a></li>'
+              + '<li><a target="onezoom" href="http://www.onezoom.org/life.html/@='+ itsTaxon.ott_id +'" id="link-to-OneZoom">'
+              +    'Browse \''+ displayName +'\' in OneZoom</a></li>'
+              + '</ul>');
         }
     }
 
