@@ -318,8 +318,8 @@ function loadStudyList() {
                     case 'Newest publication first':
                         filteredList.sort(function(a,b) { 
                             //if (checkForInterestingStudies(a,b)) { debugger; }
-                            var aYear = isNaN(a['ot:studyYear']) ? Infinity : Number(a['ot:studyYear']);
-                            var bYear = isNaN(b['ot:studyYear']) ? Infinity : Number(b['ot:studyYear']);
+                            var aYear = isNaN(a['ot:studyYear']) ? Number.NEGATIVE_INFINITY : Number(a['ot:studyYear']);
+                            var bYear = isNaN(b['ot:studyYear']) ? Number.NEGATIVE_INFINITY : Number(b['ot:studyYear']);
                             if (aYear === bYear) {
                                 return maintainRelativeListPositions(a, b);
                             };
@@ -329,8 +329,8 @@ function loadStudyList() {
 
                     case 'Oldest publication first':
                         filteredList.sort(function(a,b) {
-                            var aYear = isNaN(a['ot:studyYear']) ? Infinity : Number(a['ot:studyYear']);
-                            var bYear = isNaN(b['ot:studyYear']) ? Infinity : Number(b['ot:studyYear']);
+                            var aYear = isNaN(a['ot:studyYear']) ? Number.NEGATIVE_INFINITY : Number(a['ot:studyYear']);
+                            var bYear = isNaN(b['ot:studyYear']) ? Number.NEGATIVE_INFINITY : Number(b['ot:studyYear']);
                             if (aYear === bYear) {
                                 return maintainRelativeListPositions(a, b);
                             }
