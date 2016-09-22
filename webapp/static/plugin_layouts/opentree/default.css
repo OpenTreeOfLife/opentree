@@ -317,6 +317,9 @@ div.viewer-frame {
     margin: 6px 0 12px 8px;
     list-style: none;
 }
+#provenance-panel .properties-section ul.external-links li {
+    margin: 4px 0;
+}
 #provenance-panel .properties-section.selected {
     border: 2px solid #d33;
 }
