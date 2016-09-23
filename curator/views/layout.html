@@ -737,6 +737,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                   </thead>
                   <tbody id="tree-collection-decisions"
                          data-bind="foreach: { data: $data.data.decisions, as: 'decision' }">
+                     <!-- NOTE that we hide any EXCLUDED/UNDECIDED trees (added by other programs) -->
+                     <!-- ko if: $data['decision'] === 'INCLUDED' -->
                       <tr class="single-tree-row">
                           <td>
                           <!-- ko if: userIsEditingCollection($parent) -->
@@ -835,6 +837,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             <!-- /ko -->
                           </td>
                       </tr>
+                     <!-- /ko -->
                   </tbody>
                 </table>
       <!-- /ko -->
