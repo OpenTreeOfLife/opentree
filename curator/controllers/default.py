@@ -412,9 +412,7 @@ def to_nexson():
     import uuid
     from peyotl.nexson_syntax import can_convert_nexson_forms, \
                                      get_ot_study_info_from_nexml, \
-                                     add_resource_meta, \
-                                     convert_nexson_format, \
-                                     BADGER_FISH_NEXSON_VERSION
+                                     add_resource_meta
     from peyotl.manip import count_num_trees
     '''
     Controller for conversion of NEXUS, newick, or NeXML to NeXSON
