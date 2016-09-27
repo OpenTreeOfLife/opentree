@@ -784,7 +784,14 @@ function loadSelectedStudy() {
             if (!(['^ot:studyPublicationReference'] in data.nexml)) {
                 data.nexml['^ot:studyPublicationReference'] = "";
             }
-            if (!(['^ot:studyPublication'] in data.nexml)) {
+            if (['^ot:studyPublication'] in data.nexml) {
+                // Convert a "bare" DOI, if found (e.g. from TreeBASE import)
+                var oldValue = data.nexml['^ot:studyPublication']['@href'];
+                var newValue = DOItoURL( oldValue );
+                if (newValue !== oldValue) {
+                    data.nexml['^ot:studyPublication']['@href'] = newValue;
+                }
+            } else {
                 data.nexml['^ot:studyPublication'] = {
                     '@href': ""
                 };
@@ -815,7 +822,14 @@ function loadSelectedStudy() {
             if (!(['^ot:comment'] in data.nexml)) {
                 data.nexml['^ot:comment'] = "";
             }
-            if (!(['^ot:dataDeposit'] in data.nexml)) {
+            if (['^ot:dataDeposit'] in data.nexml) {
+                // Convert a "bare" DOI, if found (e.g. from TreeBASE import)
+                var oldValue = data.nexml['^ot:dataDeposit']['@href'];
+                var newValue = DOItoURL( oldValue );
+                if (newValue !== oldValue) {
+                    data.nexml['^ot:dataDeposit']['@href'] = newValue;
+                }
+            } else {
                 data.nexml['^ot:dataDeposit'] = {
                     '@href': ""
                 };
@@ -7739,6 +7753,16 @@ function formatDOIAsURL() {
         return;
     }
     viewModel.nexml['^ot:studyPublication']['@href'] = newValue;
+    nudgeTickler('GENERAL_METADATA');
+}
+function formatDataDepositDOIAsURL() {
+    var oldValue = viewModel.nexml['^ot:dataDeposit']['@href'];
+    var newValue = DOItoURL( oldValue );
+    if (newValue === oldValue) {
+        // no change, so no further action needed
+        return;
+    }
+    viewModel.nexml['^ot:dataDeposit']['@href'] = newValue;
     nudgeTickler('GENERAL_METADATA');
 }
 
