@@ -520,6 +520,8 @@ function getFocalCladeLink(study) {
 
     return '<a href="#" onclick="filterByClade(\''+ cladeName +'\'); return false;"'+'>'+ cladeName +'</a'+'>';
 }
+
+var urlPattern = new RegExp('http(s?)://\\S+');
 function getPubLink(study) {
     var urlNotFound = false;
     var pubURL;
@@ -534,7 +536,12 @@ function getPubLink(study) {
     if (urlNotFound) {
         return "";
     }
-    return '<a href="'+ pubURL +'" target="_blank"'+'>'+ pubURL +'</a'+'>';
+    if (urlPattern.test(pubURL) === true) {
+        // It's a proper URL, wrap it in a hyperlink
+        return '<a href="'+ pubURL +'" target="_blank"'+'>'+ pubURL +'</a'+'>';
+    }
+    // It's not a proper URL! Return the bare value.
+    return pubURL;
 }
 /*
 function getSuggestedActions(study) {
