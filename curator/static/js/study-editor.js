@@ -8379,6 +8379,20 @@ function currentStudyVersionContributedToLatestSynthesis() {
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
 }
 
+function getStudyPublicationLink() {
+    var url = $.trim(viewModel.nexml['^ot:studyPublication']['@href']);
+    // If there's no URL, we have nothing to say
+    if (url === '') {
+        return '';
+    }
+    if (urlPattern.test(url) === true) {
+        // It's a proper URL, wrap it in a hyperlink
+        return '<a target="_blank" href="'+ url +'">'+ url +'</a>';
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
+}
+
 function getDataDepositMessage() {
     // Returns HTML explaining where to find this study's data, or an empty
     // string if no URL is found. Some cryptic dataDeposit URLs may require
@@ -8408,8 +8422,12 @@ function getDataDepositMessage() {
 
     // TODO: Add other substitutions?
 
-    // default message simply repeats the dataDeposit URL
-    return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
+    if (urlPattern.test(url) === true) {
+        // Default message simply repeats the dataDeposit URL
+        return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
 }
 
 function showDownloadFormatDetails() {

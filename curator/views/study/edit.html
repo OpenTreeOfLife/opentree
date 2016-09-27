@@ -324,10 +324,10 @@ body {
                   <button type="button" class="btn btn-info" onclick="lookUpDOI(); return false;">Look up DOI...</button>
                 {{ else: }}
                   <p class="static-form-value">
-                  <!-- ko if: nexml['^ot:studyPublication']['@href'] !== '' -->
-                      <a target="_blank" data-bind="text: nexml['^ot:studyPublication']['@href'], attr: { href: nexml['^ot:studyPublication']['@href'] }"></a>
+                 <!-- ko if: getStudyPublicationLink() !== '' -->
+                      <span data-bind="html: getStudyPublicationLink()">&nbsp;</span>
                  <!-- /ko -->
-                 <!-- ko if: nexml['^ot:studyPublication']['@href'] === '' -->
+                 <!-- ko if: getStudyPublicationLink() === '' -->
                       <em>None</em>
                  <!-- /ko -->
                   </p>
