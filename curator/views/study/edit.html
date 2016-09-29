@@ -787,10 +787,11 @@ body {
               </p>
         {{ if viewOrEdit == 'EDIT': }}
               <p>
-                See <strong>Add a tree to this study</strong>, below, to
-                add new trees from a file or pasted text. Mark the tree as
-                <strong>preferred</strong> to nominate it for inclusion in synthesis.
-                Preferred trees will undergo validation, generating warnings
+                See <strong>Add a tree to this study</strong>, below, to add
+                new trees from a file or pasted text. To nominate a tree for
+                inclusion in synthesis, choose <strong>Include this tree</strong> 
+                in the 'Ready for synthesis?' dropdown.
+                Nominated trees will undergo validation, generating warnings
                 for full OTU mapping and other quality checks.
               </p>
               <p>
@@ -799,7 +800,7 @@ body {
               </p>
         {{ else: }}
               <p>
-                Trees marked as <strong>preferred</strong> have been nominated
+                Trees marked <strong>Include this tree</strong> have been nominated
                 for inclusion in synthesis, generally because they
                 best represent the conclusions of the study. Inclusion in synthesis
                 also requires that trees be rooted correctly and have OTUs mapped.
@@ -894,8 +895,8 @@ body {
 -->
 
                   <label class="checkbox">
-                      <input name="newTreesPreferred" type="checkbox" value="true">
-                      Mark this tree as preferred for synthesis
+                      <input name="includeNewTreesInSynthesis" type="checkbox" value="true">
+                      Include uploaded tree(s) in synthesis
                   </label>
 
                   <div Xclass="form-actions" style="margin-top: 1em;">
@@ -1169,7 +1170,7 @@ body {
                             <span data-bind="text: viewModel.listFilters.OTUS.scope">SCOPE</span>
                             <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu" data-bind="foreach: ['In all trees', 'In preferred trees', 'In non-preferred trees']">
+                        <ul class="dropdown-menu" data-bind="foreach: ['In all trees', 'In trees nominated for synthesis', 'In trees not yet nominated']">
                             <li data-bind="css: {'disabled': viewModel.listFilters.OTUS.scope() == $data }">
                                 <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.OTUS.scope($data); }">SCOPE</a>
                             </li>
