@@ -805,7 +805,6 @@ function loadSelectedStudy() {
             if (['^ot:notIntendedForSynthesis'] in data.nexml) {
                 // Remove deprecated ot:notIntendedForSynthesis.
                 delete data.nexml['^ot:notIntendedForSynthesis'];
-                // TODO: Shift "preferred" trees to a per-tree property with default value
             }
             if (!(['^ot:comment'] in data.nexml)) {
                 data.nexml['^ot:comment'] = "";
@@ -825,8 +824,21 @@ function loadSelectedStudy() {
                 }
                 data.nexml['^ot:candidateTreeForSynthesis'] =
                     makeArray(data.nexml['^ot:candidateTreeForSynthesis']);
-            } else {
-                data.nexml['^ot:candidateTreeForSynthesis'] = [ ];
+                /* Shift "preferred" status to a per-tree property with default
+                 * value, then remove the deprecated study property.
+                 */
+                var preferredTreeIDs = data.nexml['^ot:candidateTreeForSynthesis'];
+                var allTrees = viewModel.elementTypes.tree.gatherAll(data.nexml);
+                $.each(allTrees, function( i, tree ) {
+                    if ($.inArray(tree['@id'], preferredTreeIDs) !== -1) {
+                        // this was a preferred tree (chosen for inclusion in synthesis)
+                        tree['^ot:readyForSynthesis'] = 'Include this tree';
+                    } else {
+                        // not a preferred tree, play it safe with default value
+                        tree['^ot:readyForSynthesis'] = 'Not reviewed';
+                    }
+                });
+                delete data.nexml['^ot:candidateTreeForSynthesis'];
             }
             if ('^ot:tag' in data.nexml) {
                 data.nexml['^ot:tag'] = makeArray(data.nexml['^ot:tag']);
@@ -2674,6 +2686,9 @@ function normalizeTree( tree ) {
     if (!(['^ot:unrootedTree'] in tree)) {
         // safest value, forces the curator to assert correctness
         tree['^ot:unrootedTree'] = true;
+    }
+    if (!(['^ot:readyForSynthesis'] in tree)) {
+        tree['^ot:readyForSynthesis'] = 'Not reviewed';
     }
 
     // metadata fields (with empty default values)
