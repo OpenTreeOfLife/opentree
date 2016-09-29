@@ -784,7 +784,14 @@ function loadSelectedStudy() {
             if (!(['^ot:studyPublicationReference'] in data.nexml)) {
                 data.nexml['^ot:studyPublicationReference'] = "";
             }
-            if (!(['^ot:studyPublication'] in data.nexml)) {
+            if (['^ot:studyPublication'] in data.nexml) {
+                // Convert a "bare" DOI, if found (e.g. from TreeBASE import)
+                var oldValue = data.nexml['^ot:studyPublication']['@href'];
+                var newValue = DOItoURL( oldValue );
+                if (newValue !== oldValue) {
+                    data.nexml['^ot:studyPublication']['@href'] = newValue;
+                }
+            } else {
                 data.nexml['^ot:studyPublication'] = {
                     '@href': ""
                 };
@@ -815,7 +822,14 @@ function loadSelectedStudy() {
             if (!(['^ot:comment'] in data.nexml)) {
                 data.nexml['^ot:comment'] = "";
             }
-            if (!(['^ot:dataDeposit'] in data.nexml)) {
+            if (['^ot:dataDeposit'] in data.nexml) {
+                // Convert a "bare" DOI, if found (e.g. from TreeBASE import)
+                var oldValue = data.nexml['^ot:dataDeposit']['@href'];
+                var newValue = DOItoURL( oldValue );
+                if (newValue !== oldValue) {
+                    data.nexml['^ot:dataDeposit']['@href'] = newValue;
+                }
+            } else {
                 data.nexml['^ot:dataDeposit'] = {
                     '@href': ""
                 };
@@ -7741,6 +7755,16 @@ function formatDOIAsURL() {
     viewModel.nexml['^ot:studyPublication']['@href'] = newValue;
     nudgeTickler('GENERAL_METADATA');
 }
+function formatDataDepositDOIAsURL() {
+    var oldValue = viewModel.nexml['^ot:dataDeposit']['@href'];
+    var newValue = DOItoURL( oldValue );
+    if (newValue === oldValue) {
+        // no change, so no further action needed
+        return;
+    }
+    viewModel.nexml['^ot:dataDeposit']['@href'] = newValue;
+    nudgeTickler('GENERAL_METADATA');
+}
 
 /*
 * N.B. this duplicates the function with same name in
@@ -8355,6 +8379,20 @@ function currentStudyVersionContributedToLatestSynthesis() {
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
 }
 
+function getStudyPublicationLink() {
+    var url = $.trim(viewModel.nexml['^ot:studyPublication']['@href']);
+    // If there's no URL, we have nothing to say
+    if (url === '') {
+        return '';
+    }
+    if (urlPattern.test(url) === true) {
+        // It's a proper URL, wrap it in a hyperlink
+        return '<a target="_blank" href="'+ url +'">'+ url +'</a>';
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
+}
+
 function getDataDepositMessage() {
     // Returns HTML explaining where to find this study's data, or an empty
     // string if no URL is found. Some cryptic dataDeposit URLs may require
@@ -8384,8 +8422,12 @@ function getDataDepositMessage() {
 
     // TODO: Add other substitutions?
 
-    // default message simply repeats the dataDeposit URL
-    return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
+    if (urlPattern.test(url) === true) {
+        // Default message simply repeats the dataDeposit URL
+        return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
 }
 
 function showDownloadFormatDetails() {
