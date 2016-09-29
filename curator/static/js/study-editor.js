@@ -8354,6 +8354,10 @@ function currentStudyVersionContributedToLatestSynthesis() {
     // compare SHA values and return true if they match
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
 }
+function treeContributedToLatestSynthesis(tree) {
+    // check for a valid SHA from last synthesis
+    return ($.inArray( tree['@id'], latestSynthesisTreeIDs ) !== -1);
+}
 
 function getDataDepositMessage() {
     // Returns HTML explaining where to find this study's data, or an empty

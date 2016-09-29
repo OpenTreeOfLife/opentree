@@ -517,9 +517,9 @@ body {
                 </div>
               </div>
 
-              <!-- <div class="control-group">
+              <div class="control-group">
                 <div class="controls">
-
+<!--
                 {{ if viewOrEdit == 'EDIT': }}
                   <label class="checkbox">
                     <input type="checkbox" data-bind="checked: nexml['^ot:notIntendedForSynthesis'], event: { click: nudge.GENERAL_METADATA }"> This study should not contribute to synthesis.
@@ -528,12 +528,13 @@ body {
                   <p class="static-form-value" data-bind="css: nexml['^ot:notIntendedForSynthesis'] ? 'interesting-value' : 'boring-value',
                                                           text: nexml['^ot:notIntendedForSynthesis'] ? 'This study should not contribute to synthesis. (This is not typical.)' : 'This study should contribute to synthesis.'"></p>
                 {{ pass }}
+ -->
 
                   <p class="static-form-value interesting-value" data-bind="text: studyContributedToLatestSynthesis() ? (currentStudyVersionContributedToLatestSynthesis() ? 'This version was used to build the latest synthetic tree' : 'This study has changed since building the last synthetic tree.') : 'This study was not used in the latest synthesis.'"></p>
 
                 </div>
 
-              </div> -->
+              </div>
 
               <div class="control-group">
                 <label class="control-label">Curator notes</label>
@@ -655,7 +656,8 @@ body {
                         <th>Ingroup clade</th>
                         <th>Tree root</th>
                         <th>OTUs mapped</th>
-                        <th>Preferred</th>
+                        <th>In current synthesis?</th>
+                        <th>Ready for synthesis?</th>
                       {{ if viewOrEdit == 'EDIT': }}
                         <th>&nbsp;</th>
                       {{ pass }}
@@ -697,14 +699,21 @@ body {
                                style="cursor: pointer;">&nbsp;</td>
                         <td data-bind="html: getMappedTallyForTree(tree),
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
+                        <!-- In current synthesis? -->
+                        <td>
+                            <span data-bind="text: treeContributedToLatestSynthesis(tree) ? 'Yes' : 'No'">?</span>
+                        </td>
+                        <!-- Ready for synthesis? -->
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <input type="checkbox" style="margin: 0px 20px; display: none;"
-            data-bind="attr: {'checked': jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1},
-                       click: togglePreferredTree,
-                       visible: true" /></td>
+                            <select style="width:160px;"
+                                    data-bind="value: tree['^ot:readyForSynthesis'], 
+                                               options: ['Not reviewed', 'Do not use', 'Needs curation', 'Include this tree'],
+                                               css: viewModel.ticklers.TREES">
+                            </select>
+                        </td>
                       {{ else: }}
-                        <td data-bind="text: (jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) ? 'YES' : 'NO'">&nbsp;</td>
+                        <td data-bind="text: tree['^ot:readyForSynthesis'] || '???'">&nbsp;</td>
                       {{ pass }}
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
@@ -1940,6 +1949,7 @@ body {
 <script type='text/javascript'>
     var studyID = '{{= studyID }}';
     var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
+    var latestSynthesisTreeIDs = '{{= ','.join(latestSynthesisTreeIDs) }}'.split(',');
     var viewOrEdit = '{{= viewOrEdit }}';
 
     var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
