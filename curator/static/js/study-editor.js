@@ -665,13 +665,6 @@ function loadSelectedStudy() {
                 return;
             }
             // pull data from bare NexSON repsonse or compound object (data + sha)
-            /*
-            if (response['data']) {
-                console.log("FOUND inner data (compound response)...");
-            } else {
-                console.log("inner data NOT found (bare NexSON)...");
-            }
-            */
             var data = response['data'] || response;
             if (typeof data !== 'object' || typeof(data['nexml']) == 'undefined') {
                 showErrorMessage('Sorry, there is a problem with the study data (missing NexSON).');
@@ -809,8 +802,10 @@ function loadSelectedStudy() {
             if (!(['^ot:focalCladeOTTTaxonName'] in data.nexml)) {
                 data.nexml['^ot:focalCladeOTTTaxonName'] = "";
             }
-            if (!(['^ot:notIntendedForSynthesis'] in data.nexml)) {
-                data.nexml['^ot:notIntendedForSynthesis'] = false;
+            if (['^ot:notIntendedForSynthesis'] in data.nexml) {
+                // Remove deprecated ot:notIntendedForSynthesis.
+                delete data.nexml['^ot:notIntendedForSynthesis'];
+                // TODO: Shift "preferred" trees to a per-tree property with default value
             }
             if (!(['^ot:comment'] in data.nexml)) {
                 data.nexml['^ot:comment'] = "";
@@ -3247,12 +3242,6 @@ var studyScoringRules = {
         {
             description: "For studies nominated for synthesis, there should be at least one preferred tree.",
             test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
                 // check for any candidate tree in the study
                 return getPreferredTrees().length > 0;
             },
@@ -3265,13 +3254,6 @@ var studyScoringRules = {
         {
             description: "Preferred trees should not have duplicate (non-monophyletic) tips mapped to a single taxon.",
             test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
-
                 // check preferred trees (synthesis candidates) only
                 //var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                 var duplicateNodesFound = false;
@@ -3465,13 +3447,6 @@ var studyScoringRules = {
         {
             description: "All tip labels in preferred trees should be mapped to the Open Tree Taxonomy.",
             test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
-
                 // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
                 var unmappedLeafNodes = false;
                 $.each(getPreferredTrees(), function(i, tree) {
@@ -3495,13 +3470,6 @@ var studyScoringRules = {
             // does not currently add to quality score (weight = 0)
             description: "What fraction of tip labels in preferred trees are mapped to the Open Tree Taxonomy.",
             test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
-
                 // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
                 var totalTips = 0;
                 var mappedTips = 0;
