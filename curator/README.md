@@ -63,14 +63,14 @@ The returned object (for the any ot:nexson format invocation) will have 2 keys:
   4. `dateTranslated`: "2014-02-23T05:17:12.607189", 
 and several of the arguments that are sent in in the original invocation 
 are echoed back, including:
-    'newTreesPreferred': true/false
+    'includeNewTreesInSynthesis': true/false
     'dataDeposit': 'http://example.org', 
     'filename': 'avian_ovomucoids.tre', 
     'idPrefix': '', 
     'inputFormat': 'newick', 
     'nexml2json': '0.0.0', 
-Note that even if newTreesPreferred is True, no trees are flagged as
-being candidates for synthesis.
+Note that even if includeNewTreesInSynthesis is True, no trees are flagged for
+inclusion on the server (this is echoed back and done in the curation webapp).
 
 Primarily for the sake of debugging, the intermediates can be fetched using the "output" argument. This can be one of: 'nexson', 'nexml', 'input', 'provenance'
 
