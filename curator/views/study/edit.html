@@ -697,14 +697,16 @@ body {
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
                             <select style="width:160px;"
-                                    data-bind="value: tree['^ot:readyForSynthesis'], 
-                                               options: ['Not reviewed', 'Do not use', 'Needs curation', 'Include this tree'],
+                                    data-bind="value: tree['^ot:candidateForSynthesis'], 
+                                               options: treeCandidateForSynthesisDescriptions,
+                                               optionsValue: 'value',
+                                               optionsText: 'text',
                                                event: { keyup: nudge.TREES, change: nudge.TREES },
                                                css: viewModel.ticklers.TREES">
                             </select>
                         </td>
                       {{ else: }}
-                        <td data-bind="text: tree['^ot:readyForSynthesis'] || '???'">&nbsp;</td>
+                        <td data-bind="text: tree['^ot:candidateForSynthesis'] || '???'">&nbsp;</td>
                       {{ pass }}
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>

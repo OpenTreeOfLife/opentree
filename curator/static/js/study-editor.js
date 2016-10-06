@@ -846,10 +846,10 @@ function loadSelectedStudy() {
                 $.each(allTrees, function( i, tree ) {
                     if ($.inArray(tree['@id'], preferredTreeIDs) !== -1) {
                         // this was a preferred tree (chosen for inclusion in synthesis)
-                        tree['^ot:readyForSynthesis'] = 'Include this tree';
+                        tree['^ot:candidateForSynthesis'] = 'ot:include';
                     } else {
                         // not a preferred tree, play it safe with default value
-                        tree['^ot:readyForSynthesis'] = 'Not reviewed';
+                        tree['^ot:candidateForSynthesis'] = 'ot:notReviewed';
                     }
                 });
                 delete data.nexml['^ot:candidateTreeForSynthesis'];
@@ -2701,8 +2701,8 @@ function normalizeTree( tree ) {
         // safest value, forces the curator to assert correctness
         tree['^ot:unrootedTree'] = true;
     }
-    if (!(['^ot:readyForSynthesis'] in tree)) {
-        tree['^ot:readyForSynthesis'] = 'Not reviewed';
+    if (!(['^ot:candidateForSynthesis'] in tree)) {
+        tree['^ot:candidateForSynthesis'] = 'ot:notReviewed';
     }
 
     // metadata fields (with empty default values)
@@ -2752,6 +2752,36 @@ function getAllTreeLabels() {
     });
 }
 
+var treeCandidateForSynthesisDescriptions = [
+    { value: 'ot:notReviewed',   text: "Not reviewed" },
+    { value: 'ot:doNotInclude',  text: "Do not use" },
+    { value: 'ot:needsCuration', text: "Needs curation" },
+    { value: 'ot:include',       text: "Include this tree" }
+]
+function getCandidateForSynthesisDescriptionForValue( value ) {
+    var description = '';
+    $.each( treeCandidateForSynthesisDescriptions, function( i, item ) {
+        if (item.value === value) {
+            description = item.text;
+            return false;
+        }
+        return true;
+    });
+    return description;
+}
+function getCandidateForSynthesisDescriptionForTree( tree ) {
+    var rawModeValue = tree['^ot:candidateForSynthesis'];
+    var description = '';
+    $.each( treeCandidateForSynthesisDescriptions, function( i, item ) {
+        if (item.value === rawModeValue) {
+            description = item.text;
+            return false;
+        }
+        return true;
+    });
+    return description;
+}
+
 function getTreesNominatedForSynthesis() {
     var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
     return ko.utils.arrayFilter(
@@ -2761,7 +2791,7 @@ function getTreesNominatedForSynthesis() {
 }
 function isReadyForSynthesis( treeOrID ) {
     var tree = ('@id' in treeOrID) ? treeOrID : getTreeByID( treeOrID );
-    if (tree['^ot:readyForSynthesis'] === 'Include this tree') {
+    if (tree['^ot:candidateForSynthesis'] === 'ot:include') {
         return true;
     }
     return false;
@@ -4968,7 +4998,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
             normalizeTree( tree );
             if (responseJSON.includeNewTreesInSynthesis) {
                 // nominate this new tree for synthesis
-                tree['^ot:readyForSynthesis'] = 'Include this tree';
+                tree['^ot:candidateForSynthesis'] = 'ot:include';
             }
         });
     });
