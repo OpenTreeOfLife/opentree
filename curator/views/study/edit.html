@@ -706,7 +706,7 @@ body {
                             </select>
                         </td>
                       {{ else: }}
-                        <td data-bind="text: tree['^ot:candidateForSynthesis'] || '???'">&nbsp;</td>
+                        <td data-bind="text: getCandidateForSynthesisDescriptionForValue(tree['^ot:candidateForSynthesis'])">&nbsp;</td>
                       {{ pass }}
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
