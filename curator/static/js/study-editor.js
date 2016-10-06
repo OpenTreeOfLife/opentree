@@ -4310,6 +4310,25 @@ function drawTree( treeOrID, options ) {
         });
 
     ///console.log("> done re-asserting click behaviors");
+
+    // Finalize SVG height/width/scale/left/top to match rendered labels
+    // (prevents cropping when some labels exceed our estimated `labelWidth` above)
+    var renderedBounds = vizInfo.vis.node().getBBox();
+    var svgNode = d3.select( vizInfo.vis.node().parentNode );
+    // match SVG size to the rendered bounds incl. all labels
+    /*
+    console.warn('old width: '+ svgNode.style('width'));
+    console.warn('new width: '+ renderedBounds.width);
+    console.warn('old height: '+ svgNode.style('height'));
+    console.warn('new height: '+ renderedBounds.height);
+    */
+    if (renderedBounds.height > 0) {
+        svgNode.style('height', parseInt(renderedBounds.height) +'px')
+             //.style('border', '1px solid orange')
+               .style('width', parseInt(renderedBounds.width) +'px');
+        // re-center the main group to allow for assymetric label sizes
+        vizInfo.vis.attr('transform', 'translate('+ -(renderedBounds.x) +','+ -(renderedBounds.y) +')');
+    }
 }
 
 function setTreeRoot( treeOrID, rootingInfo ) {
