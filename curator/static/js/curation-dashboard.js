@@ -232,6 +232,11 @@ function loadStudyList() {
             }
             
             var matchedStudies = data['matched_studies'];
+            // populate and show study total
+            $('#study-count').text( matchedStudies.length );
+            // TODO: $('#tree-count').text( ???? );
+            $('#study-count-holder').show();
+
             captureDefaultSortOrder(matchedStudies);
             getDuplicateStudiesByDOI(matchedStudies);
 
