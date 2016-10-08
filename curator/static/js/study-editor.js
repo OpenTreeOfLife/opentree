@@ -6395,7 +6395,17 @@ function getNodeConflictDescription(tree, node) {
         case 'synth':
             if (node.conflictDetails.witness) {
                 // EXAMPLE:  https://tree.opentreeoflife.org/opentree/argus/ottol@770315/Homo-sapiens
-                witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+                if (isNaN(node.conflictDetails.witness)) {
+                    // it's a synthetic-tree node ID (e.g. 'ott1234' or 'mrcaott123ott456')
+                    witnessURL = "/opentree/argus/synth@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+                    /* N.B. Ideally, instead of 'synth' above we would use the current 
+                     * synth-version (e.g. 'opentree7.0'). But anything other than 
+                     * 'ottol' should show this node ID in the latest synthetic tree.
+                     */
+                } else {
+                    // it's a numeric OTT taxon ID (e.g. '1234')
+                    witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+                }
             } else {
                 missingWitnessDescription = "anonymous synth node";
             }
