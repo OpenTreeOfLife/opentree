@@ -7781,6 +7781,9 @@ function formatDataDepositDOIAsURL() {
 */
 function DOItoURL( doi ) {
     /* Return the DOI provided (if any) in URL form */
+    if (!doi) {  // null, undefined, or empty string
+        return "";
+    }
     if (urlPattern.test(doi) === true) {
         // It's already in the form of a URL, return unchanged
         return doi;
@@ -9610,10 +9613,28 @@ function disableRankDivider(option, item) {
 
 function updateActiveTaxonSources() {
     // trigger validation, updates to next/previous buttons
+    coerceTaxonSourceDOIsToURLs();
     currentTaxonCandidate.valueHasMutated();
     updateTaxonSourceDetails();
     updateTaxonSourceTypeOptions();
     taxonCondidateIsValid(currentTaxonCandidate());
+}
+
+function coerceTaxonSourceDOIsToURLs() {
+    var activeSources = getActiveTaxonSources(currentTaxonCandidate());
+    $.each(activeSources(), function(i, source) {
+        switch( source.type ) {
+            case undefined:
+            case '':
+            case 'The taxon is described in this study':
+            case 'Other':
+                break;
+            default:
+                // its value should be a valid URL (convert simple DOIs)
+                source.value = DOItoURL( source.value );
+                break;
+        }
+    });
 }
 
 function updateTaxonSourceDetails( ) {
