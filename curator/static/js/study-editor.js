@@ -9618,6 +9618,7 @@ function coerceTaxonSourceDOIsToURLs() {
             default:
                 // its value should be a valid URL (convert simple DOIs)
                 source.value = DOItoURL( source.value );
+                activeSources.replace(source, source);
                 break;
         }
     });
