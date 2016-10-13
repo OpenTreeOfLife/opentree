@@ -4316,16 +4316,11 @@ function drawTree( treeOrID, options ) {
     var renderedBounds = vizInfo.vis.node().getBBox();
     var svgNode = d3.select( vizInfo.vis.node().parentNode );
     // match SVG size to the rendered bounds incl. all labels
-    /*
-    console.warn('old width: '+ svgNode.style('width'));
-    console.warn('new width: '+ renderedBounds.width);
-    console.warn('old height: '+ svgNode.style('height'));
-    console.warn('new height: '+ renderedBounds.height);
-    */
     if (renderedBounds.height > 0) {
-        svgNode.style('height', parseInt(renderedBounds.height) +'px')
-             //.style('border', '1px solid orange')
-               .style('width', parseInt(renderedBounds.width) +'px');
+        svgNode.attr({
+            width: renderedBounds.width,
+            height: renderedBounds.height
+        });
         // re-center the main group to allow for assymetric label sizes
         vizInfo.vis.attr('transform', 'translate('+ -(renderedBounds.x) +','+ -(renderedBounds.y) +')');
     }
@@ -10072,7 +10067,9 @@ function printCurrentTreeView() {
     // restore SVG viewport for normal use
     treeSVG.setAttribute('width', oldSVGWidth);
     treeSVG.setAttribute('height', oldSVGHeight);
-    treeSVG.setAttribute('viewBox', oldSVGViewBox);
+    if (oldSVGViewBox) {  // skip if null
+        treeSVG.setAttribute('viewBox', oldSVGViewBox);
+    }
 
     // put the printed elements back in place
     $svgHolder.append( $treeSVG );
