@@ -708,6 +708,33 @@ tr:hover .row-controls-ghosted {
     /* try to make this offsetParent to all its contents */
     position: relative;
 }
+body.printing-tree-view * {
+    display: none;
+}
+body.printing-tree-view svg,
+body.printing-tree-view svg * {
+    display: block;
+    background-color: #fff !important;
+    position: absolute;
+    z-index: 1000000 !important;
+    top: 50px;
+    left: 0;
+    /* border: 1px red solid; */
+}
+body.printing-tree-view #tree-title,
+body.printing-tree-view #tree-title * {
+    display: block;
+    position: absolute;
+    z-index: 1000000 !important;
+    top: 0px;
+    left: 0;
+    background-color: #fff !important;
+    margin: 0;
+    border: 4px solid #fff;
+    width: 100%;
+}
+
+
 #tree-properties .bootstrap-tagsinput {
     margin-bottom: 0px;
 }

@@ -218,7 +218,7 @@ if (!d3) { throw "d3 wasn't included!"};
       });
     var diagonal = options.diagonal || d3.phylogram.rightAngleDiagonal();
     var vis = options.vis || d3.select(selector).append("svg:svg")
-        .attr("width", w + 300)
+        .attr("width", w + 200)
         .attr("height", h + 30)
       .append("svg:g")
         .attr("transform", "translate(120, 20)");
@@ -455,6 +455,19 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("text-anchor", "start");
     }
 
+    /*
+    // Finalize SVG height/width/scale/left/top to match rendered labels
+    // (prevents cropping when some labels exceed our estimated `labelWidth` above)
+    var renderedBounds = vis.node().getBBox();
+    var svgNode = d3.select( vis.node().parentNode );
+    // match SVG size to the rendered bounds incl. all labels
+    svgNode.style('width', renderedBounds.width +'px')
+           .style('border', '1px red solid')
+           .style('height', renderedBounds.height +'px')
+    // re-center the main group to allow for assymetric label sizes
+    vis.attr('transform', 'translate('+ -(renderedBounds.x) +','+ -(renderedBounds.y) +')');
+    */
+
     return {tree: tree, vis: vis}
   }
 
@@ -462,7 +475,7 @@ if (!d3) { throw "d3 wasn't included!"};
     options = options || {}
     var w = options.width || d3.select(selector).style('width') || d3.select(selector).attr('width'),
         r = w / 2,
-        labelWidth = options.skipLabels ? 10 : options.labelWidth || 120;
+        labelWidth = options.skipLabels ? 10 : options.labelWidth || 160;
 
     var vis = d3.select(selector).append("svg:svg")
         .attr("width", r * 2)
@@ -504,6 +517,18 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("text-anchor", function(d) { return d.x < 180 ? "end" : "start"; })
         .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; });
     }
+
+    /*
+    // Finalize SVG height/width/scale/left/top to match rendered labels
+    // (prevents cropping when some labels exceed our estimated `labelWidth` above)
+    var renderedBounds = vis.node().getBBox();
+    var svgNode = d3.select( vis.node().parentNode );
+    // match SVG size to the rendered bounds incl. all labels
+    svgNode.style('width', renderedBounds.width +'px')
+           .style('height', renderedBounds.height +'px')
+    // re-center the main group to allow for assymetric label sizes
+    vis.attr('transform', 'translate('+ -(renderedBounds.x) +','+ -(renderedBounds.y) +')');
+    */
 
     return {tree: tree, vis: vis}
   }

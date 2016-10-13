@@ -70,7 +70,7 @@ response.files.append(URL('static','js/d3.phylogram.js'))
     </div>
 </div>
 
-<style type="text/css">
+<style id="tree-view-style" type="text/css">
 body {
     overflow-y: scroll;
 }
@@ -2567,7 +2567,7 @@ body {
               onclick="$('#full-screen-area').fullscreen(); return false;"><i class="icon-fullscreen"></i> Full screen</button>
       <button id="exit-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;"
               onclick="$.fullscreen.exit(); return false;"><i class="icon-resize-small"></i> Exit full screen</button>
-      <h3 id='dialog-heading'>
+      <h3 id='tree-title'>
         {{ if viewOrEdit == 'EDIT': }}
             Edit tree
             <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
@@ -3062,9 +3062,13 @@ body {
           </select>
           <button id="treeview-fetch-conflict" class="btn btn-info" data-bind="click: showConflictDetailsWithHistory">GO!</button>
           <button id="treeview-clear-conflict" class="btn" data-bind="click: hideConflictDetailsWithHistory">Hide conflict</button>
-
       </div>
-      <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
+      <a id="save-tree-view" class="btn btn-mini" title="Save the current tree view (as SVG)"
+          href-lang='image/svg+xml' target='_blank' href='data:text/plain,NO IMAGE DATA (wait for tree view to render)'
+          download="not-yet-ready.txt" onmouseover="updateSaveTreeViewLink();"><i class="icon-download-alt"></i></a>
+      <button id="print-tree-view" class="btn btn-mini" style="display: none;" title="Print the current tree view"
+              onclick="printCurrentTreeView(); return false;"><i class="icon-print"></i></button>
+      <a class="btn" style="margin-left: 12px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>
   </div><!-- /#full-screen-area -->
 </div>
