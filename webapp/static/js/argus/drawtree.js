@@ -38,7 +38,8 @@
 // factor function -- gradually going to encapsulate argus functions here for better
 //  information hiding and avoiding putting a lot of things into the global namespace
 // Attributes of spec:
-//      domSource = "ottol"  The name of the source of trees. Currently only "ottol" is supported.
+//      domSource = "ottol"  The name of the source of trees. Currently only "ottol" and the latest synthetic tree 
+//          (e.g. "opentree1.2") are supported.
 //      nodeID = the ID for the node (according to the system of the service indicated by domSource)
 //          if nodeID or domSource are lacking, they will *both* be parsed out of the URL query string (location.search)
 //              from node_id and domsource url-encoded GET parameters. If they are not found there, the defaults are

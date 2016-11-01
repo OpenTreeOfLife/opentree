@@ -31,6 +31,8 @@ def index():
     treeview_dict['nodeID'] = ''
     treeview_dict['nodeName'] = ''
     treeview_dict['viewport'] = ''
+    treeview_dict['nudgingToLatestSyntheticTree'] = False
+    treeview_dict['incomingDomSource'] = 'none'
 
     # add a flag to determine whether to force the viewer to this node (vs. using the
     # browser's stored state for this URL, or a default starting node)
@@ -38,7 +40,7 @@ def index():
 
     # handle the first arg (path part) found
     if len(request.args) > 0:
-        if request.args[0] in ['argus','onezoom','phylet']:
+        if request.args[0] in ['argus',]:  # TODO: add 'onezoom','phylet', others?
             treeview_dict['viewer'] = request.args[0]
         elif '@' in request.args[0]:
             treeview_dict['domSource'], treeview_dict['nodeID'] = request.args[0].split('@')
@@ -57,13 +59,24 @@ def index():
         if not treeview_dict['nodeName']:
             treeview_dict['nodeName'] = request.args[2]
 
+    # retrieve latest synthetic-tree ID (and its 'life' node ID)
+    # TODO: Only refresh this periodically? Or only when needed for initial destination?
+    latestSyntheticTreeVersion, startingNodeID = fetch_current_synthetic_tree_ids()
+    treeview_dict['draftTreeName'] = latestSyntheticTreeVersion
+    treeview_dict['startingNodeID'] = startingNodeID
+
+    # replace any invalid 'domSource' (typically this is "ottol" or a synth-tree version) 
+    # with the latest synthetic tree version, and notify the user on the page
+    incomingDomSource = treeview_dict.get('domSource', None)
+    treeview_dict['incomingDomSource'] = incomingDomSource or 'none'
+    if incomingDomSource not in ('ottol', treeview_dict['draftTreeName'], ):
+        treeview_dict['domSource'] = latestSyntheticTreeVersion
+        treeview_dict['nudgingToLatestSyntheticTree'] = True
+
     # when all is said and done, do we have enough information to force the location?
     if treeview_dict['domSource'] and treeview_dict['nodeID']:
         treeview_dict['forcedByURL'] = True
 
-    # retrieve latest synthetic-tree ID (and its 'life' node ID)
-    # TODO: Only refresh this periodically? Or only when needed for initial destination?
-    treeview_dict['draftTreeName'], treeview_dict['startingNodeID'] = fetch_current_synthetic_tree_ids()
     treeview_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     return treeview_dict
 
