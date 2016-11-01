@@ -761,6 +761,7 @@ function showObjectProperties( objInfo, options ) {
         }
 
         if (fullNode.node_id) {
+            // This sets up the node properties correctly, based on server-provided tree version
             var nodeLink = getSynthTreeViewerLinkForNodeID(fullNode.node_id, syntheticTreeID, fullNode.node_id);
             nodeSection.displayedProperties['Node id in synthetic tree'] = nodeLink;
         }
