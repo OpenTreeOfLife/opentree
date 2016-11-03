@@ -46,7 +46,8 @@ var History = window.History; // Note: capital H refers to History.js!
 
 // these variables should already be defined in the main HTML page
 var studyID;
-var latestSynthesisSHA;   // the SHA for this study (if any) that was last used in synthesis
+var latestSynthesisSHA;      // the SHA for this study (if any) that was last used in synthesis
+var latestSynthesisTreeIDs;  // ids of any trees in this study included in the latest synthesis
 var API_load_study_GET_url;
 var API_update_study_PUT_url;
 var API_remove_study_DELETE_url;
@@ -3010,9 +3011,51 @@ function getInGroupCladeDescriptionForTree( tree ) {
     return nodeName;
 }
 
+function getSynthStatusDescriptionForTree( tree ) {
+    // Did this tree contribute to the latest synthesis?
+    var contributedToLastSynth = contributedToLastSynthesis(tree);
+    // Is this tree in a collection that will contribute to the next synthesis?
+    var queuedForNextSynth = queuedForNewSynthesis(tree);
+    // Are there any listed reasons to exclude this tree?
+    var thereAreReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] && (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0);
+
+    if (contributedToLastSynth) {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return "Included despite warnings";
+            } else {
+                return "Included";
+            }
+        } else {
+            return "To be removed";
+        }
+    } else {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return "Queued despite warnings";
+            } else {
+                return "Queued";
+            }
+        } else {
+            if (thereAreReasonsToExclude) {
+                return "Excluded";
+            } else {
+                // This indicates a new, unreviewed tree (or out-of-band collection editing)
+                return "Needs review";
+            }
+        }
+    }
+}
+function contributedToLastSynthesis(tree) {
+    // Check this tree against latest-synth details
+    return ($.inArray(tree['@id'], latestSynthesisTreeIDs) !== -1);
+}
+function queuedForNewSynthesis(tree) {
+    return false; // TODO
+}
 
 /* support classes for objects in arrays
- * (TODO: use these instead of generlc observables?)
+ * (TODO: use these instead of generic observables?)
  */
 function MetaTag( name, type, value ) {
     var self = this;
