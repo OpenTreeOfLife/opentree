@@ -256,7 +256,7 @@ body {
       <li><a href="#History" data-toggle="tab">History <span class="badge badge-important" style="display: none;">?</span></a></li>
     </ul>
 
-    <div class="span4 Xbtn-group" style="float: right; margin-top: -56px;">
+    <div class="span4" style="float: right; margin-top: -56px;">
         {{ if viewOrEdit == 'EDIT': }}
           <button id="save-study-button" class="btn">Save Study</button>
           <input type="hidden" id="return-to-study-list"
@@ -655,8 +655,9 @@ body {
                         <th>Ingroup clade</th>
                         <th>Tree root</th>
                         <th>OTUs mapped</th>
-                        <th>Preferred</th>
+                        <th>Synthesis status</th>
                       {{ if viewOrEdit == 'EDIT': }}
+                        <th>Include in synthesis?</th>
                         <th>&nbsp;</th>
                       {{ pass }}
                     </tr>
@@ -699,12 +700,27 @@ body {
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <input type="checkbox" style="margin: 0px 20px; display: none;"
-            data-bind="attr: {'checked': jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1},
-                       click: togglePreferredTree,
-                       visible: true" /></td>
+                            <span data-bind="text: getSynthStatusDescriptionForTree($data)"></span>
+                        </td>
+                        <td>
+                            <div style="white-space: nowrap;">
+                              <a class="btn btn-mini btn-success row-controls-ghosted">Include</a>
+                              <a class="btn btn-mini btn-danger row-controls-ghosted" disabled="disabled">Exclude</a>
+                              <a class="badge badge-info" href="#" style="padding: 2px 6px;"
+                                 title="Click to see details about this tree in synthesis"
+                                 data-bind="text: (tree['^ot:reasonsToExcludeFromSynthesis'])? (tree['^ot:reasonsToExcludeFromSynthesis'].length) : '?',
+                                            css: {'class': (tree['^ot:reasonsToExcludeFromSynthesis'])? 'badge badge-warning' : 'badge badge-info'}">?</a>
+                            </div>
+                        </td>
                       {{ else: }}
-                        <td data-bind="text: (jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) ? 'YES' : 'NO'">&nbsp;</td>
+                        <td>
+                          <div style="white-space: nowrap;">
+                              <span data-bind="text: getSynthStatusDescriptionForTree($data)"></span>
+                              <a class="badge badge-info" href="#" style="padding: 2px 6px;"
+                                 data-bind="text: (tree['^ot:reasonsToExcludeFromSynthesis'])? (tree['^ot:reasonsToExcludeFromSynthesis'].length) : '?',
+                                            css: {'class': (tree['^ot:reasonsToExcludeFromSynthesis'])? 'badge badge-warning' : 'badge badge-info'}">?</a>
+                          </div>
+                        </td>
                       {{ pass }}
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
@@ -1940,6 +1956,7 @@ body {
 <script type='text/javascript'>
     var studyID = '{{= studyID }}';
     var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
+    var latestSynthesisTreeIDs = {{= XML( json.dumps(latestSynthesisTreeIDs) ) }};
     var viewOrEdit = '{{= viewOrEdit }}';
 
     var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
