@@ -45,9 +45,9 @@ def view():
     view_dict['maintenance_info'] = get_maintenance_info(request)
     #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['studyID'] = request.args[0]
-    view_dict['latestSynthesisSHA'] = _get_latest_synthesis_sha_for_study_id(view_dict['studyID'])
+    view_dict['latestSynthesisSHA'], view_dict['latestSynthesisTreeIDs'] = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
     view_dict['viewOrEdit'] = 'VIEW'
-    view_dict['userCanEdit'] = auth.is_logged_in() and True or False;
+    view_dict['userCanEdit'] = auth.is_logged_in() and True or False
     return view_dict
 
 @auth.requires_login()
@@ -75,13 +75,15 @@ def edit():
     view_dict = get_opentree_services_method_urls(request)
     view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['studyID'] = request.args[0]
-    view_dict['latestSynthesisSHA'] = _get_latest_synthesis_sha_for_study_id(view_dict['studyID'])
+    view_dict['latestSynthesisSHA'], view_dict['latestSynthesisTreeIDs'] = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
     view_dict['viewOrEdit'] = 'EDIT'
     return view_dict
 
 
-def _get_latest_synthesis_sha_for_study_id( study_id ):
-    # Fetch this SHA from treemachine. If not found in contributing studies, return None
+def _get_latest_synthesis_details_for_study_id( study_id ):
+    # Fetch the last synthesis SHA *and* any tree IDs (from this study) from
+    # treemachine. If the study is not found in contributing studies, return
+    # None for both.
     try:
         from gluon.tools import fetch
         import simplejson
@@ -94,33 +96,26 @@ def _get_latest_synthesis_sha_for_study_id( study_id ):
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
         # as usual, this needs to be a POST (pass empty fetch_args)
-        source_list_response = fetch(fetch_url, data='')
-        source_list = simplejson.loads( source_list_response )
+        source_list_response = fetch(fetch_url, data={'include_source_list':True})
+        source_dict = simplejson.loads( source_list_response )['source_id_map']
 
-        # split these source descriptions, which are in the form '{STUDY_ID_PREFIX}_{STUDY_NUMERIC_ID}_{TREE_ID}_{COMMIT_SHA}'
-        contributing_study_info = { }   # store (unique) study IDs as keys, commit SHAs as values
-
-        for source_desc in source_list:
-            if source_desc == 'taxonomy':
-                continue
-            source_parts = source_desc.split('_')
-            # add default prefix 'pg' to study ID, if not found
-            if source_parts[0].isdigit():
-                # prepend with default namespace 'pg'
-                study_id = 'pg_%s' % source_parts[0]
-            else:
-                study_id = '_'.join(source_parts[0:2])
-            if len(source_parts) == 4:
-                commit_SHA_in_synthesis = source_parts[3]
-            else:
-                commit_SHA_in_synthesis = None
-            contributing_study_info[ study_id ] = commit_SHA_in_synthesis
-
-        return contributing_study_info.get( study_id, '')
+        # fetch the full source list, then look for this study and its trees
+        commit_SHA_in_synthesis = None
+        current_study_trees_included = [ ]
+        #print(source_dict)
+        # ignore source descriptions (e.g. "ot_764@tree1"); just read the details
+        for source_details in source_dict.values():
+            if source_details.get('study_id', None) == study_id:
+                # this is the study we're interested in!
+                current_study_trees_included.append( source_details['tree_id'] )
+                if commit_SHA_in_synthesis is None:
+                    commit_SHA_in_synthesis = source_details['git_sha']
+            # keep checking, as each tree will have its own entry
+        return commit_SHA_in_synthesis, current_study_trees_included
 
     except Exception, e:
         # throw 403 or 500 or just leave it
-        raise HTTP(500, T('Unable to retrieve latest synthesis SHA for study {u}'.format(u=study_id)))
+        raise HTTP(500, T('Unable to retrieve latest synthesis details for study {u}'.format(u=study_id)))
 
 @auth.requires_login()
 def delete():
