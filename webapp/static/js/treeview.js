@@ -273,7 +273,7 @@ $(document).ready(function() {
             // apply the state as specified in the URL
             ///console.log("Applying state from incoming URL...");
             initialState.nudge = new Date().getTime();
-            History.pushState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
+            History.replaceState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
         } else if (!(priorState.data.nodeID)) {
             // replace incomplete" prior history (if found) with default view
             ///console.log("Correcting incomplete state with default view...");
@@ -761,6 +761,7 @@ function showObjectProperties( objInfo, options ) {
         }
 
         if (fullNode.node_id) {
+            // This sets up the node properties correctly, based on server-provided tree version
             var nodeLink = getSynthTreeViewerLinkForNodeID(fullNode.node_id, syntheticTreeID, fullNode.node_id);
             nodeSection.displayedProperties['Node id in synthetic tree'] = nodeLink;
         }
