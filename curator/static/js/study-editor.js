@@ -6461,7 +6461,7 @@ function getNodeConflictDescription(tree, node) {
       case 'mapped_to_taxon':
           if (witnessURL) {
               conflictHTML = 'Aligned with <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || "???") +'</a>';
+                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
           } else {
               conflictHTML = 'Aligned with '+ missingWitnessDescription;
           }
@@ -6469,7 +6469,7 @@ function getNodeConflictDescription(tree, node) {
       case 'conflicts_with':
           if (witnessURL) {
               conflictHTML = 'Conflicts with <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || "???") +'</a>';
+                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
           } else {
               conflictHTML = 'Conflicts with '+ missingWitnessDescription;
           }
@@ -6477,7 +6477,7 @@ function getNodeConflictDescription(tree, node) {
       case 'resolves':
           if (witnessURL) {
               conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || "???") +'</a>';
+                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
           } else {
               conflictHTML = 'Resolves '+ missingWitnessDescription;
           }
