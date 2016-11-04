@@ -76,6 +76,8 @@ def index():
     if incomingDomSource not in ('ottol', latestSyntheticTreeVersion, ):
         treeview_dict['domSource'] = latestSyntheticTreeVersion
         treeview_dict['nudgingToLatestSyntheticTree'] = True
+        # mark this as a redirect to a different resource
+        response.status = 303
 
     # when all is said and done, do we have enough information to force the location?
     if treeview_dict['domSource'] and treeview_dict['nodeID']:
