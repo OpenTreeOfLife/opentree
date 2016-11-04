@@ -716,6 +716,10 @@ function createArgus(spec) {
             // proceed directly to display (emulate browser history State object)
             updateTreeView({'data': o});
         }
+        // if we're still showing the initial "nudge" message, hide it now
+        if ($('#nudged-to-latest-synthetic-tree').is(':visible')) {
+            $('#nudged-to-latest-synthetic-tree').fadeOut();
+        }
     };
 
     argusObj.displayNode = function (o) {
