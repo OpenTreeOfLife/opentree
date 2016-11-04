@@ -67,11 +67,17 @@ def index():
 
     # replace any invalid 'domSource' (typically this is "ottol" or a synth-tree version) 
     # with the latest synthetic tree version, and notify the user on the page
-    incomingDomSource = treeview_dict.get('domSource', None)
-    treeview_dict['incomingDomSource'] = incomingDomSource or 'none'
-    if incomingDomSource not in ('ottol', treeview_dict['draftTreeName'], ):
+    #
+    # N.B. that if this is unspecified ('none'), the user requested a shortened
+    # URL (e.g. https://tree.opentreeoflife.org/) that resolves to the latest
+    # synthetic tree.
+    incomingDomSource = treeview_dict.get('domSource', None) or latestSyntheticTreeVersion
+    treeview_dict['incomingDomSource'] = incomingDomSource
+    if incomingDomSource not in ('ottol', latestSyntheticTreeVersion, ):
         treeview_dict['domSource'] = latestSyntheticTreeVersion
         treeview_dict['nudgingToLatestSyntheticTree'] = True
+        # mark this as a redirect to a different resource
+        response.status = 303
 
     # when all is said and done, do we have enough information to force the location?
     if treeview_dict['domSource'] and treeview_dict['nodeID']:
