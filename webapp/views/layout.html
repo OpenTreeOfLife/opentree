@@ -474,7 +474,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
 
 {{ if 'nudgingToLatestSyntheticTree' in locals(): }}
   {{ if nudgingToLatestSyntheticTree: }}
-    <div id="nudged-to-latest-synthetic-tree" class="alert alert-danger" style="position: absolute; margin: 6px 30px;">
+    <div id="nudged-to-latest-synthetic-tree" class="alert alert-info" style="position: absolute; margin: 6px 30px;">
         <strong>Note:</strong> The requested synthetic tree version ('{{= incomingDomSource}}') is no longer available. 
         This view reflects <a href="{{= URL('about', 'synthesis-release') }}">the latest version 
         (<strong>{{= draftTreeName}}</strong>).</a>
