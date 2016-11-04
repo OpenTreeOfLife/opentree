@@ -2004,6 +2004,7 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     tree.conflictDetails = {
         inputTreeID: conflictInfo.inputTreeID,
         referenceTreeID: conflictInfo.referenceTreeID,
+        // TODO: referenceTreeVersion: '',   // e.g. 'opentree7.1' for synth, 'ott2.9' for taxonomy
         referenceTreeName: conflictInfo.referenceTreeName
     };
     // ... and more details to any specified local node
@@ -6436,11 +6437,21 @@ function getNodeConflictDescription(tree, node) {
                 // EXAMPLE:  https://tree.opentreeoflife.org/opentree/argus/ottol@770315/Homo-sapiens
                 if (isNaN(node.conflictDetails.witness)) {
                     // it's a synthetic-tree node ID (e.g. 'ott1234' or 'mrcaott123ott456')
-                    witnessURL = "/opentree/argus/synth@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
-                    /* N.B. Ideally, instead of 'synth' above we would use the current 
-                     * synth-version (e.g. 'opentree7.0'). But anything other than 
-                     * 'ottol' should show this node ID in the latest synthetic tree.
-                     */
+                   /* N.B. Ideally we'd include the current synth-version (e.g. '/opentree7.0@ott123'),
+                    * like so:
+
+                    witnessURL = "/opentree/argus/{SYNTH_VERSION}@{NODE_ID}"
+                        .replace('{SYNTH_VERSION}', referenceTreeVersion)
+                        .replace('{NODE_ID}', node.conflictDetails.witness);
+
+                    * But this is not yet provided by the conflict service. Perhaps we could capture
+                    * this as <tree>.conflictDetails['referenceTreeVersion']
+                    *
+                    * For now, omitting the version entirely (e.g. '/@ott123') will redirect to
+                    * the latest-version URL.
+                    */
+                    witnessURL = "/opentree/argus/@{NODE_ID}"
+                        .replace('{NODE_ID}', node.conflictDetails.witness);
                 } else {
                     // it's a numeric OTT taxon ID (e.g. '1234')
                     witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
