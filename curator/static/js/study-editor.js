@@ -2012,22 +2012,6 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
         var localNode = getTreeNodeByID( tree, nodeID );
         localNode.conflictDetails = conflictInfo.detailsByNodeID[nodeID];
     }
-    // ... and pseudo-support to all taxonomically mapped leaf nodes
-    $.each(tree.node, function(i, node) {
-        if (node['^ot:isLeaf']) {
-            if ('@otu' in node) {
-                var otu = getOTUByID( node['@otu'] );
-                var mappedLabel = $.trim(otu['^ot:ottTaxonName']);
-                if (('^ot:ottId' in otu) && (mappedLabel !== '')) {
-                    node.conflictDetails = {
-                        status: 'mapped_to_taxon',
-                        witness: Number(otu['^ot:ottId']),
-                        witness_name: mappedLabel
-                    }
-                }
-            }
-        }
-    });
 
     if (treeViewerIsInUse) {
         // update the reference-tree selector
