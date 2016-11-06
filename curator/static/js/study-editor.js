@@ -1742,7 +1742,7 @@ function displayConflictSummary(conflictInfo) {
         var nodeInfo = summaryInfo.aligned.nodes[nodeid];
         if ('witness' in nodeInfo) {
           var witnessLink = getWitnessLink(nodeInfo,targetTree)
-          var nodeName = witnessLink + ' [aligned to tree ' + nodeid + ']'
+          var nodeName = 'tree '+ nodeid +' aligned to '+ witnessLink;
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
@@ -1770,7 +1770,7 @@ function displayConflictSummary(conflictInfo) {
         var nodeInfo = summaryInfo.resolving.nodes[nodeid];
         var witnessLink = getWitnessLink(nodeInfo,targetTree)
         if ('witness' in nodeInfo) {
-          var nodeName = witnessLink + ' [resolved by tree ' + nodeid + ']'
+          var nodeName = 'tree '+ nodeid +' resolved by '+ witnessLink;
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
@@ -1796,7 +1796,7 @@ function displayConflictSummary(conflictInfo) {
     for (var nodeid in summaryInfo.conflicting.nodes) {
         var nodeInfo = summaryInfo.conflicting.nodes[nodeid];
         var witnessLink = getWitnessLink(nodeInfo,targetTree)
-        var nodeName = witnessLink + ' [conflicts with tree ' + nodeid + ']'
+        var nodeName = 'tree '+ nodeid +' conflicts with '+ witnessLink;
         $nodeList.append('<li>'+ nodeName +'</li>');
         ++namedNodes
     }
