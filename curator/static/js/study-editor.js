@@ -1696,6 +1696,16 @@ function testConflictSummary(conflictInfo) {
     console.warn("  "+ summaryInfo.resolving +" resolving nodes");
 }
 
+function getTargetTreeNodeLink(nodeID, referenceTreeID) {
+    // return a link to the local (reference) tree node; used in conflict summary
+    var displayName = nodeID;
+    var link = '<a href="#" onclick="showTreeViewer(getTreeByID(\'{TREE_ID}\'), {HIGHLIGHT_NODE_ID:\'{NODE_ID}\'}); return false;" \
+               title="See this node in the selected tree">{DISPLAY_NAME}</a>';
+    return link.replace('{TREE_ID}', referenceTreeID)
+               .replace('{NODE_ID}', nodeID)
+               .replace('{DISPLAY_NAME}', displayName);
+}
+
 // returns a link to the witness node (in synth tree browser or OTT browser)
 function getWitnessLink(nodeInfo, targetType) {
   var link;
@@ -1715,8 +1725,9 @@ function displayConflictSummary(conflictInfo) {
     // show results in the Analyses tab
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     var $reportArea = $('#analysis-results');
-    var targetTree = $('#reference-select').val()
-    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ $('#tree-select').val()
+    var targetTree = $('#reference-select').val();
+    var referenceTreeID = $('#tree-select').val();
+    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ referenceTreeID;
       +"&conflict="+ targetTree;
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
@@ -1741,8 +1752,9 @@ function displayConflictSummary(conflictInfo) {
     for (var nodeid in summaryInfo.aligned.nodes) {
         var nodeInfo = summaryInfo.aligned.nodes[nodeid];
         if ('witness' in nodeInfo) {
-          var witnessLink = getWitnessLink(nodeInfo,targetTree)
-          var nodeName = 'tree '+ nodeid +' aligned to '+ witnessLink;
+          var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
+          var witnessLink = getWitnessLink(nodeInfo, targetTree);
+          var nodeName = 'tree '+ nodeLink +' aligned to '+ witnessLink;
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
@@ -1768,9 +1780,10 @@ function displayConflictSummary(conflictInfo) {
     var namedNodes = 0
     for (var nodeid in summaryInfo.resolving.nodes) {
         var nodeInfo = summaryInfo.resolving.nodes[nodeid];
+        var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
         var witnessLink = getWitnessLink(nodeInfo,targetTree)
         if ('witness' in nodeInfo) {
-          var nodeName = 'tree '+ nodeid +' resolved by '+ witnessLink;
+          var nodeName = 'tree '+ nodeLink +' resolved by '+ witnessLink;
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
@@ -1795,8 +1808,9 @@ function displayConflictSummary(conflictInfo) {
     var namedNodes = 0
     for (var nodeid in summaryInfo.conflicting.nodes) {
         var nodeInfo = summaryInfo.conflicting.nodes[nodeid];
+        var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
         var witnessLink = getWitnessLink(nodeInfo,targetTree)
-        var nodeName = 'tree '+ nodeid +' conflicts with '+ witnessLink;
+        var nodeName = 'tree '+ nodeLink +' conflicts with '+ witnessLink;
         $nodeList.append('<li>'+ nodeName +'</li>');
         ++namedNodes
     }
