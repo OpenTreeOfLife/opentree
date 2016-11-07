@@ -3831,10 +3831,7 @@ function showTreeViewer( tree, options ) {
             }
         }
         if (highlightNodeID) {
-            // scroll this node into view (once popup is properly place in the DOM)
-            ///setTimeout(function() {
             scrollToTreeNode(tree['@id'], highlightNodeID);
-            ///}, 250);
         }
         if (options.HIGHLIGHT_AMBIGUOUS_LABELS) {
             // TODO: visibly mark the Label Types widget, and show internal labels in red
@@ -4094,8 +4091,29 @@ function scrollToTreeNode( treeID, nodeID ) {
         console.error("scrollToTreeNode: MISSING expected $('#nodebox-"+ nodeID +"') !");
         return;
     }
+    /* NOTE that this old method of scrolling now fails, due the the mix of SVG
+     * and HTML used in this page. See https://github.com/jquery/jquery/issues/2895
+     * This is a problem because $.position() depends on $.offsetParent(), which has been
+     * deprecated for SVG elements.  :-/
+     *
+    console.warn("SCROLL TARGET: $('#nodebox-"+ nodeID +"')");
+    console.warn("OFFSET PARENT:");
+    console.warn( $nodeBox.offsetParent()[0] );
+    console.warn("NEW scroll top:  "+ $nodeBox.position().top);
+    console.warn("NEW scroll left: "+ $nodeBox.position().left);
     $scrollingPane.scrollTop( $nodeBox.position().top );
     $scrollingPane.scrollLeft( $nodeBox.position().left );
+    */
+    // Reckon the needed scroll based on *page-relative* values
+    var currentPaneOffset = $scrollingPane.offset();
+    var currentPaneScrollTop = $scrollingPane.scrollTop();
+    var currentPaneScrollLeft = $scrollingPane.scrollLeft();
+    var currentNodeOffset = $nodeBox.offset();
+    var nudgePaneScrollTop =  currentNodeOffset.top -  currentPaneOffset.top - 20;
+    var nudgePaneScrollLeft = currentNodeOffset.left - currentPaneOffset.left - 20;
+    $scrollingPane.scrollTop( currentPaneScrollTop + nudgePaneScrollTop );
+    $scrollingPane.scrollLeft( currentPaneScrollLeft + nudgePaneScrollLeft );
+
     highlightTreeNode( treeID, nodeID );
 }
 
