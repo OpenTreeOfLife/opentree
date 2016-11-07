@@ -1703,6 +1703,16 @@ function testConflictSummary(conflictInfo) {
     console.warn("  "+ summaryInfo.resolving +" resolving nodes");
 }
 
+function getTargetTreeNodeLink(nodeID, referenceTreeID) {
+    // return a link to the local (reference) tree node; used in conflict summary
+    var displayName = nodeID;
+    var link = '<a href="#" onclick="showTreeViewer(getTreeByID(\'{TREE_ID}\'), {HIGHLIGHT_NODE_ID:\'{NODE_ID}\'}); return false;" \
+               title="See this node in the selected tree">{DISPLAY_NAME}</a>';
+    return link.replace('{TREE_ID}', referenceTreeID)
+               .replace('{NODE_ID}', nodeID)
+               .replace('{DISPLAY_NAME}', displayName);
+}
+
 // returns a link to the witness node (in synth tree browser or OTT browser)
 function getWitnessLink(nodeInfo, targetType) {
   var link;
@@ -1722,8 +1732,9 @@ function displayConflictSummary(conflictInfo) {
     // show results in the Analyses tab
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     var $reportArea = $('#analysis-results');
-    var targetTree = $('#reference-select').val()
-    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ $('#tree-select').val()
+    var targetTree = $('#reference-select').val();
+    var referenceTreeID = $('#tree-select').val();
+    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ referenceTreeID;
       +"&conflict="+ targetTree;
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
@@ -1748,8 +1759,9 @@ function displayConflictSummary(conflictInfo) {
     for (var nodeid in summaryInfo.aligned.nodes) {
         var nodeInfo = summaryInfo.aligned.nodes[nodeid];
         if ('witness' in nodeInfo) {
-          var witnessLink = getWitnessLink(nodeInfo,targetTree)
-          var nodeName = witnessLink + ' [aligned to tree ' + nodeid + ']'
+          var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
+          var witnessLink = getWitnessLink(nodeInfo, targetTree);
+          var nodeName = 'tree '+ nodeLink +' aligned to '+ witnessLink;
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
@@ -1775,9 +1787,10 @@ function displayConflictSummary(conflictInfo) {
     var namedNodes = 0
     for (var nodeid in summaryInfo.resolving.nodes) {
         var nodeInfo = summaryInfo.resolving.nodes[nodeid];
+        var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
         var witnessLink = getWitnessLink(nodeInfo,targetTree)
         if ('witness' in nodeInfo) {
-          var nodeName = witnessLink + ' [resolved by tree ' + nodeid + ']'
+          var nodeName = 'tree '+ nodeLink +' resolved by '+ witnessLink;
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
@@ -1802,8 +1815,9 @@ function displayConflictSummary(conflictInfo) {
     var namedNodes = 0
     for (var nodeid in summaryInfo.conflicting.nodes) {
         var nodeInfo = summaryInfo.conflicting.nodes[nodeid];
+        var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
         var witnessLink = getWitnessLink(nodeInfo,targetTree)
-        var nodeName = witnessLink + ' [conflicts with tree ' + nodeid + ']'
+        var nodeName = 'tree '+ nodeLink +' conflicts with '+ witnessLink;
         $nodeList.append('<li>'+ nodeName +'</li>');
         ++namedNodes
     }
@@ -3776,10 +3790,7 @@ function showTreeViewer( tree, options ) {
             }
         }
         if (highlightNodeID) {
-            // scroll this node into view (once popup is properly place in the DOM)
-            ///setTimeout(function() {
             scrollToTreeNode(tree['@id'], highlightNodeID);
-            ///}, 250);
         }
         if (options.HIGHLIGHT_AMBIGUOUS_LABELS) {
             // TODO: visibly mark the Label Types widget, and show internal labels in red
@@ -4039,8 +4050,29 @@ function scrollToTreeNode( treeID, nodeID ) {
         console.error("scrollToTreeNode: MISSING expected $('#nodebox-"+ nodeID +"') !");
         return;
     }
+    /* NOTE that this old method of scrolling now fails, due the the mix of SVG
+     * and HTML used in this page. See https://github.com/jquery/jquery/issues/2895
+     * This is a problem because $.position() depends on $.offsetParent(), which has been
+     * deprecated for SVG elements.  :-/
+     *
+    console.warn("SCROLL TARGET: $('#nodebox-"+ nodeID +"')");
+    console.warn("OFFSET PARENT:");
+    console.warn( $nodeBox.offsetParent()[0] );
+    console.warn("NEW scroll top:  "+ $nodeBox.position().top);
+    console.warn("NEW scroll left: "+ $nodeBox.position().left);
     $scrollingPane.scrollTop( $nodeBox.position().top );
     $scrollingPane.scrollLeft( $nodeBox.position().left );
+    */
+    // Reckon the needed scroll based on *page-relative* values
+    var currentPaneOffset = $scrollingPane.offset();
+    var currentPaneScrollTop = $scrollingPane.scrollTop();
+    var currentPaneScrollLeft = $scrollingPane.scrollLeft();
+    var currentNodeOffset = $nodeBox.offset();
+    var nudgePaneScrollTop =  currentNodeOffset.top -  currentPaneOffset.top - 20;
+    var nudgePaneScrollLeft = currentNodeOffset.left - currentPaneOffset.left - 20;
+    $scrollingPane.scrollTop( currentPaneScrollTop + nudgePaneScrollTop );
+    $scrollingPane.scrollLeft( currentPaneScrollLeft + nudgePaneScrollLeft );
+
     highlightTreeNode( treeID, nodeID );
 }
 

@@ -234,12 +234,24 @@ if (!d3) { throw "d3 wasn't included!"};
                d3.select(this).append("svg:feFlood")
                  //.attr("flood-color", "#ffeedd")  // matches .help-box bg color!
                  .attr("flood-color", "#ffb265")    // darkened to allow tint
-                 .attr("flood-opacity", "0.5")
-                 .attr("result", "tint");
+                 .attr("flood-opacity", "0.5")      // animate this?
+                 .attr("result", "tint")
+               /* Add a sub-element to feFlood to pulse its opacity:
+                * <animate attributeName="flood-opacity" dur="1s" values="0.5;0.8;0.5;0.2;0.5" repeatCount="indefinite"></animate>
+                * */
+                 .append("svg:animate")
+                   .attr("attributeName", "flood-opacity")
+                   .attr("dur", "0.75s")
+                   .attr("values", "0.6;1.0;0.6;0.2;0.6")
+                   .attr("repeatCount","indefinite");
+               d3.select(this).append("svg:feGaussianBlur")
+                 .attr("stdDeviation", "5")        // expand area for highlight effect
+                 .attr("in", "tint")
+                 .attr("result", "blurtint")
                d3.select(this).append("svg:feBlend")
                  .attr("mode", "multiply")
                  .attr("in", "SourceGraphic")
-                 .attr("in2", "tint")
+                 .attr("in2", "blurtint")
                  .attr("in3", "BackgroundImage");
                /* ALTERNATIVE SOLUTION, using feComposite
                d3.select(this).append("svg:feComposite")
@@ -402,9 +414,9 @@ if (!d3) { throw "d3 wasn't included!"};
       vis.selectAll('g.node')
         .append("svg:text")
           .attr('font-family', 'Helvetica Neue, Helvetica, sans-serif')
-          .attr("dx", -6)
-          .attr("dy", -6)
-          .attr("text-anchor", 'end')
+          .attr("dx", function(d) {return (d.labelType === 'node id') ? 0 : -6;})
+          .attr("dy", function(d) {return (d.labelType === 'node id') ? 3 : -6;})
+          .attr("text-anchor", function(d) {return (d.labelType === 'node id') ? 'middle' : 'end';})
           .attr('font-size', '10px')
           .attr('fill', function(d) {
               switch(d.labelType) {
@@ -422,11 +434,10 @@ if (!d3) { throw "d3 wasn't included!"};
                       return '#888';
               }
           })
-          ///.text(function(d) { return d.length; });
           .attr('font-style', function(d) {
               return (d.labelType === 'mapped label' ? 'inherit' : 'italic');
           })
-          .text(function(d) {
+          .html(function(d) {
               // return (d.name + ' ('+d.length+')');
               var nodeLabel = '';
               if (d.labelType === 'node id') {
@@ -442,7 +453,8 @@ if (!d3) { throw "d3 wasn't included!"};
                       nodeLabel = nodeLabel +" ["+ supplementalLabel +"]";
                   }
               }
-              return nodeLabel;
+              // N.B. empty label should hide, but still have layout to support a legible highlight
+              return nodeLabel || '&nbsp; &nbsp; &nbsp; &nbsp;';
           });
 
       vis.selectAll('g.root.node text')
