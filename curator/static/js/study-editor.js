@@ -2005,6 +2005,7 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     tree.conflictDetails = {
         inputTreeID: conflictInfo.inputTreeID,
         referenceTreeID: conflictInfo.referenceTreeID,
+        // TODO: referenceTreeVersion: '',   // e.g. 'opentree7.1' for synth, 'ott2.9' for taxonomy
         referenceTreeName: conflictInfo.referenceTreeName
     };
     // ... and more details to any specified local node
@@ -2012,22 +2013,6 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
         var localNode = getTreeNodeByID( tree, nodeID );
         localNode.conflictDetails = conflictInfo.detailsByNodeID[nodeID];
     }
-    // ... and pseudo-support to all taxonomically mapped leaf nodes
-    $.each(tree.node, function(i, node) {
-        if (node['^ot:isLeaf']) {
-            if ('@otu' in node) {
-                var otu = getOTUByID( node['@otu'] );
-                var mappedLabel = $.trim(otu['^ot:ottTaxonName']);
-                if (('^ot:ottId' in otu) && (mappedLabel !== '')) {
-                    node.conflictDetails = {
-                        status: 'mapped_to_taxon',
-                        witness: Number(otu['^ot:ottId']),
-                        witness_name: mappedLabel
-                    }
-                }
-            }
-        }
-    });
 
     if (treeViewerIsInUse) {
         // update the reference-tree selector
@@ -6479,11 +6464,21 @@ function getNodeConflictDescription(tree, node) {
                 // EXAMPLE:  https://tree.opentreeoflife.org/opentree/argus/ottol@770315/Homo-sapiens
                 if (isNaN(node.conflictDetails.witness)) {
                     // it's a synthetic-tree node ID (e.g. 'ott1234' or 'mrcaott123ott456')
-                    witnessURL = "/opentree/argus/synth@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
-                    /* N.B. Ideally, instead of 'synth' above we would use the current 
-                     * synth-version (e.g. 'opentree7.0'). But anything other than 
-                     * 'ottol' should show this node ID in the latest synthetic tree.
-                     */
+                   /* N.B. Ideally we'd include the current synth-version (e.g. '/opentree7.0@ott123'),
+                    * like so:
+
+                    witnessURL = "/opentree/argus/{SYNTH_VERSION}@{NODE_ID}"
+                        .replace('{SYNTH_VERSION}', referenceTreeVersion)
+                        .replace('{NODE_ID}', node.conflictDetails.witness);
+
+                    * But this is not yet provided by the conflict service. Perhaps we could capture
+                    * this as <tree>.conflictDetails['referenceTreeVersion']
+                    *
+                    * For now, omitting the version entirely (e.g. '/@ott123') will redirect to
+                    * the latest-version URL.
+                    */
+                    witnessURL = "/opentree/argus/@{NODE_ID}"
+                        .replace('{NODE_ID}', node.conflictDetails.witness);
                 } else {
                     // it's a numeric OTT taxon ID (e.g. '1234')
                     witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
@@ -6504,7 +6499,7 @@ function getNodeConflictDescription(tree, node) {
       case 'mapped_to_taxon':
           if (witnessURL) {
               conflictHTML = 'Aligned with <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || "???") +'</a>';
+                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
           } else {
               conflictHTML = 'Aligned with '+ missingWitnessDescription;
           }
@@ -6512,7 +6507,7 @@ function getNodeConflictDescription(tree, node) {
       case 'conflicts_with':
           if (witnessURL) {
               conflictHTML = 'Conflicts with <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || "???") +'</a>';
+                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
           } else {
               conflictHTML = 'Conflicts with '+ missingWitnessDescription;
           }
@@ -6520,7 +6515,7 @@ function getNodeConflictDescription(tree, node) {
       case 'resolves':
           if (witnessURL) {
               conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || "???") +'</a>';
+                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
           } else {
               conflictHTML = 'Resolves '+ missingWitnessDescription;
           }
