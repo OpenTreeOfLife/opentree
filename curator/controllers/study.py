@@ -45,7 +45,10 @@ def view():
     view_dict['maintenance_info'] = get_maintenance_info(request)
     #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['studyID'] = request.args[0]
-    view_dict['latestSynthesisSHA'] = _get_latest_synthesis_sha_for_study_id(view_dict['studyID'])
+    #view_dict['latestSynthesisSHA'] = _get_latest_synthesis_sha_for_study_id(view_dict['studyID'])
+    synth_details = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
+    view_dict['latestSynthesisSHA'] = synth_details.get('sha', '')
+    view_dict['latestSynthesisTreeIDs'] = synth_details.get('tree_ids')
     view_dict['viewOrEdit'] = 'VIEW'
     view_dict['userCanEdit'] = auth.is_logged_in() and True or False;
     return view_dict
@@ -75,13 +78,18 @@ def edit():
     view_dict = get_opentree_services_method_urls(request)
     view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['studyID'] = request.args[0]
-    view_dict['latestSynthesisSHA'] = _get_latest_synthesis_sha_for_study_id(view_dict['studyID'])
+    #view_dict['latestSynthesisSHA'] = _get_latest_synthesis_sha_for_study_id(view_dict['studyID'])
+    synth_details = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
+    view_dict['latestSynthesisSHA'] = synth_details.get('sha')
+    view_dict['latestSynthesisTreeIDs'] = synth_details.get('tree_ids')
     view_dict['viewOrEdit'] = 'EDIT'
     return view_dict
 
 
-def _get_latest_synthesis_sha_for_study_id( study_id ):
-    # Fetch this SHA from treemachine. If not found in contributing studies, return None
+def _get_latest_synthesis_details_for_study_id( study_id ):
+    # Fetch the contributing tree IDs and SHA from treemachine, if found. If
+    # this study is not found in the latest synth sources, return None for
+    # `sha` and an empty list for `tree_ids`.
     try:
         from gluon.tools import fetch
         import simplejson
@@ -94,33 +102,29 @@ def _get_latest_synthesis_sha_for_study_id( study_id ):
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
         # as usual, this needs to be a POST (pass empty fetch_args)
-        source_list_response = fetch(fetch_url, data='')
+        source_list_response = fetch(fetch_url, data={'include_source_list': True})
         source_list = simplejson.loads( source_list_response )
-
-        # split these source descriptions, which are in the form '{STUDY_ID_PREFIX}_{STUDY_NUMERIC_ID}_{TREE_ID}_{COMMIT_SHA}'
-        contributing_study_info = { }   # store (unique) study IDs as keys, commit SHAs as values
-
-        for source_desc in source_list:
-            if source_desc == 'taxonomy':
-                continue
-            source_parts = source_desc.split('_')
-            # add default prefix 'pg' to study ID, if not found
-            if source_parts[0].isdigit():
-                # prepend with default namespace 'pg'
-                study_id = 'pg_%s' % source_parts[0]
-            else:
-                study_id = '_'.join(source_parts[0:2])
-            if len(source_parts) == 4:
-                commit_SHA_in_synthesis = source_parts[3]
-            else:
-                commit_SHA_in_synthesis = None
-            contributing_study_info[ study_id ] = commit_SHA_in_synthesis
-
-        return contributing_study_info.get( study_id, '')
+        source_id_map = source_list.get('source_id_map', {})
+        # find all source trees belonging to this study, compile their tree IDs and compare SHAs
+        sha = ''
+        tree_ids = [ ]
+        for source_id in source_id_map:
+            source_details = source_id_map.get( source_id )
+            src_study_id = source_details.get('study_id', None)
+            if src_study_id == study_id:
+                src_tree_id = source_details.get('tree_id', '')
+                src_sha = source_details.get('git_sha', '')
+                tree_ids.append( src_tree_id )
+                if sha:  # no longer the empty string
+                    # all sources for this study should use the same SHA!
+                    assert src_sha == sha
+                else:    # set the SHA now
+                    sha = src_sha
+        return {'sha': sha, 'tree_ids': tree_ids}
 
     except Exception, e:
         # throw 403 or 500 or just leave it
-        raise HTTP(500, T('Unable to retrieve latest synthesis SHA for study {u}'.format(u=study_id)))
+        raise HTTP(500, T('Unable to retrieve latest synthesis details for study {u}'.format(u=study_id)))
 
 @auth.requires_login()
 def delete():

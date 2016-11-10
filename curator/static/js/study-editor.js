@@ -665,13 +665,6 @@ function loadSelectedStudy() {
                 return;
             }
             // pull data from bare NexSON repsonse or compound object (data + sha)
-            /*
-            if (response['data']) {
-                console.log("FOUND inner data (compound response)...");
-            } else {
-                console.log("inner data NOT found (bare NexSON)...");
-            }
-            */
             var data = response['data'] || response;
             if (typeof data !== 'object' || typeof(data['nexml']) == 'undefined') {
                 showErrorMessage('Sorry, there is a problem with the study data (missing NexSON).');
@@ -816,8 +809,9 @@ function loadSelectedStudy() {
             if (!(['^ot:focalCladeOTTTaxonName'] in data.nexml)) {
                 data.nexml['^ot:focalCladeOTTTaxonName'] = "";
             }
-            if (!(['^ot:notIntendedForSynthesis'] in data.nexml)) {
-                data.nexml['^ot:notIntendedForSynthesis'] = false;
+            if (['^ot:notIntendedForSynthesis'] in data.nexml) {
+                // Remove deprecated ot:notIntendedForSynthesis.
+                delete data.nexml['^ot:notIntendedForSynthesis'];
             }
             if (!(['^ot:comment'] in data.nexml)) {
                 data.nexml['^ot:comment'] = "";
@@ -844,8 +838,21 @@ function loadSelectedStudy() {
                 }
                 data.nexml['^ot:candidateTreeForSynthesis'] =
                     makeArray(data.nexml['^ot:candidateTreeForSynthesis']);
-            } else {
-                data.nexml['^ot:candidateTreeForSynthesis'] = [ ];
+                /* Shift "preferred" status to a per-tree property with default
+                 * value, then remove the deprecated study property.
+                 */
+                var preferredTreeIDs = data.nexml['^ot:candidateTreeForSynthesis'];
+                var allTrees = viewModel.elementTypes.tree.gatherAll(data.nexml);
+                $.each(allTrees, function( i, tree ) {
+                    if ($.inArray(tree['@id'], preferredTreeIDs) !== -1) {
+                        // this was a preferred tree (chosen for inclusion in synthesis)
+                        tree['^ot:candidateForSynthesis'] = 'ot:include';
+                    } else {
+                        // not a preferred tree, play it safe with default value
+                        tree['^ot:candidateForSynthesis'] = 'ot:notReviewed';
+                    }
+                });
+                delete data.nexml['^ot:candidateTreeForSynthesis'];
             }
             if ('^ot:tag' in data.nexml) {
                 data.nexml['^ot:tag'] = makeArray(data.nexml['^ot:tag']);
@@ -1138,11 +1145,11 @@ function loadSelectedStudy() {
                     case 'In all trees':
                         chosenTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                         break;
-                    case 'In preferred trees':
-                        chosenTrees = getPreferredTrees()
+                    case 'In trees nominated for synthesis':
+                        chosenTrees = getTreesNominatedForSynthesis()
                         break;
-                    case 'In non-preferred trees':
-                        chosenTrees = getNonPreferredTrees()
+                    case 'In trees not yet nominated':
+                        chosenTrees = getTreesNotYetNominated()
                         break;
                     default:
                         chosenTrees = [];
@@ -1174,8 +1181,8 @@ function loadSelectedStudy() {
                         switch (scope) {
                             case 'In all trees':
                                 // N.B. Even here, we want to hide (but not preserve) OTUs that don't appear in any tree
-                            case 'In preferred trees':
-                            case 'In non-preferred trees':
+                            case 'In trees nominated for synthesis':
+                            case 'In trees not yet nominated':
                                 // check selected trees for this node
                                 var foundInMatchingTree = false;
                                 var otuID = otu['@id'];
@@ -2178,7 +2185,7 @@ function updateMappingStatus() {
                     // we can add more by including 'All trees'
                     detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
                             +'Mapping is suspended because all OTUs in this '
-                            +'study\'s preferred trees have accepted labels already. To continue, '
+                            +'study\'s nominated trees have accepted labels already. To continue, '
                             +'reject some mapped labels with the '
                             +'<span class="btn-group" style="margin: -2px 0;">'
                             +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
@@ -2693,6 +2700,9 @@ function normalizeTree( tree ) {
         // safest value, forces the curator to assert correctness
         tree['^ot:unrootedTree'] = true;
     }
+    if (!(['^ot:candidateForSynthesis'] in tree)) {
+        tree['^ot:candidateForSynthesis'] = 'ot:notReviewed';
+    }
 
     // metadata fields (with empty default values)
     var metatags = [
@@ -2741,69 +2751,57 @@ function getAllTreeLabels() {
     });
 }
 
-function getPreferredTreeIDs() {
-    preferredTreeIDs = [];
-    var candidateTreeMarkers = ('^ot:candidateTreeForSynthesis' in viewModel.nexml) ?
-        makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'] ) : [];
-
-    $.each(candidateTreeMarkers, function(i, marker) {
-        var treeID = $.trim(marker);
-        switch(treeID) {  // non-empty points to a candidate tree
-            case '':
-            case '0':
-                break;
-            default:
-                preferredTreeIDs.push( treeID );
+var treeCandidateForSynthesisDescriptions = [
+    { value: 'ot:notReviewed',   text: "Not reviewed" },
+    { value: 'ot:doNotInclude',  text: "Do not use" },
+    { value: 'ot:needsCuration', text: "Needs curation" },
+    { value: 'ot:include',       text: "Include this tree" }
+]
+function getCandidateForSynthesisDescriptionForValue( value ) {
+    var description = '';
+    $.each( treeCandidateForSynthesisDescriptions, function( i, item ) {
+        if (item.value === value) {
+            description = item.text;
+            return false;
         }
+        return true;
     });
-    return preferredTreeIDs;
+    return description;
 }
-function getPreferredTrees() {
-    var preferredTreeIDs = getPreferredTreeIDs();
-    var allTrees = [];
-    $.each(viewModel.nexml.trees, function(i, treesCollection) {
-        $.each(treesCollection.tree, function(i, tree) {
-            allTrees.push( tree );
-        });
+function getCandidateForSynthesisDescriptionForTree( tree ) {
+    var rawModeValue = tree['^ot:candidateForSynthesis'];
+    var description = '';
+    $.each( treeCandidateForSynthesisDescriptions, function( i, item ) {
+        if (item.value === rawModeValue) {
+            description = item.text;
+            return false;
+        }
+        return true;
     });
+    return description;
+}
+
+function getTreesNominatedForSynthesis() {
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
     return ko.utils.arrayFilter(
         allTrees,
-        isPreferredTree
+        isReadyForSynthesis
     );
 }
-function isPreferredTree(treeOrID) {
-    var treeID = ('@id' in treeOrID) ? treeOrID['@id'] : treeOrID;
-    var preferredTreeIDs = getPreferredTreeIDs();
-    var isPreferred = ($.inArray(treeID, preferredTreeIDs) !== -1);
-    return isPreferred;
-}
-function togglePreferredTree( tree ) {
-    var treeID = tree['@id'];
-    var alreadyPreferred = ($.inArray( treeID, getPreferredTreeIDs()) !== -1);
-    if (alreadyPreferred) {
-        // remove it from the list of preferred trees
-        removeFromArray( treeID, viewModel.nexml['^ot:candidateTreeForSynthesis'] );
-    } else {
-        // add it to the list of preferred trees
-        viewModel.nexml['^ot:candidateTreeForSynthesis'].push( treeID );
+function isReadyForSynthesis( treeOrID ) {
+    var tree = ('@id' in treeOrID) ? treeOrID : getTreeByID( treeOrID );
+    if (tree['^ot:candidateForSynthesis'] === 'ot:include') {
+        return true;
     }
-    nudgeTickler('TREES');
-    nudgeTickler('OTU_MAPPING_HINTS');
-    return true;  // to allow checkbox updates
+    return false;
 }
-function getNonPreferredTrees() {
-    var preferredTreeIDs = getPreferredTreeIDs();
-    var allTrees = [];
-    $.each(viewModel.nexml.trees, function(i, treesCollection) {
-        $.each(treesCollection.tree, function(i, tree) {
-            allTrees.push( tree );
-        });
-    });
+
+function getTreesNotYetNominated() {
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
     return ko.utils.arrayFilter(
         allTrees,
-        function(tree) {
-            var isPreferred = ($.inArray(tree['@id'], preferredTreeIDs) !== -1);
-            return !isPreferred;
+        function (tree) {
+            return !(isReadyForSynthesis(tree));
         }
     );
 }
@@ -3071,8 +3069,8 @@ function TreeNode() {
  *      min threshold
  *      study data is complete
  *      nice-to-have (what are the finishing touches?)
- *      one preferred tree?
- *      preferred tree(s) is/are rooted? or "unrooted" disclaimer was chosen?
+ *      one tree nominated for synthesis?
+ *      nominated tree(s) is/are rooted? or "unrooted" disclaimer was chosen?
  *
  * integrity
  *      all taxon names mapped (perhaps this score is proportional)
@@ -3258,38 +3256,13 @@ var studyScoringRules = {
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         },
         {
-            description: "For studies nominated for synthesis, there should be at least one preferred tree.",
+            description: "Trees nominated for synthesis should not have duplicate (non-monophyletic) tips mapped to a single taxon.",
             test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
-                // check for any candidate tree in the study
-                return getPreferredTrees().length > 0;
-            },
-            weight: 0.2,
-            successMessage: "There is at least one preferred tree, or this study is not nominated for synthesis.",
-            failureMessage: "There should be at least one preferred tree, or the study should not be nominated for synthesis.",
-            suggestedAction: "Mark at least one tree as preferred, or mark this study as not contributing to synthesis in Metadata."
-                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        },
-        {
-            description: "Preferred trees should not have duplicate (non-monophyletic) tips mapped to a single taxon.",
-            test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
-
-                // check preferred trees (synthesis candidates) only
+                // check nominated trees (synthesis candidates) only
                 //var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                 var duplicateNodesFound = false;
                 var startTime = new Date();
-                $.each(getPreferredTrees(), function(i, tree) {
+                $.each(getTreesNominatedForSynthesis(), function(i, tree) {
                     // disregard sibling-only duplicates (will be resolved on the server)
                     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
                     if ( !($.isEmptyObject(duplicateData)) ) {
@@ -3301,7 +3274,7 @@ var studyScoringRules = {
                 return !(duplicateNodesFound);
             },
             weight: 0.2,
-            successMessage: "No duplicate tips (mapped to the same taxon) found in preferred trees.",
+            successMessage: "No duplicate tips (mapped to the same taxon) found in trees nominated for synthesis.",
             failureMessage: "Multiple tips map to the same taxon (no exemplar chosen).",
             suggestedAction: "Designate an exemplar for each set of tips mapped to the same taxon."
         },
@@ -3309,7 +3282,7 @@ var studyScoringRules = {
             description: "Internal node labels should have a defined type.",
             test: function(studyData) {
                 // TODO: opt-out if study not intended for synthesis?
-                // TODO: skip non-preferred trees?
+                // TODO: skip non-nominated trees?
                 // check all trees
                 var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                 var ambiguousLabelsFound = false;
@@ -3474,20 +3447,13 @@ var studyScoringRules = {
     ],
     */
     'OTU Mapping': [
-        // checks that all preferred tree tips mapped to OTT taxon names (i.e. pass / fail test)
+        // checks that all nominated trees' tips are mapped to OTT taxon names (i.e. pass / fail test)
         {
-            description: "All tip labels in preferred trees should be mapped to the Open Tree Taxonomy.",
+            description: "All tip labels (in trees nominated for synthesis) should be mapped to the Open Tree Taxonomy.",
             test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
-
-                // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
+                // check the proportion of mapped leaf nodes in all nominated trees
                 var unmappedLeafNodes = false;
-                $.each(getPreferredTrees(), function(i, tree) {
+                $.each(getTreesNominatedForSynthesis(), function(i, tree) {
                     nodeCounts = getNodeCounts(tree)
                     if (nodeCounts.mappedTips != nodeCounts.totalTips) {
                       return true; // no need to look at other trees for pass / fail test
@@ -3498,28 +3464,21 @@ var studyScoringRules = {
             },
             weight: 0.5,
             successMessage: "Preferred trees (submitted for synthesis) have all tips mapped to Open Tree Taxonomy.",
-            failureMessage: "There are unmapped tip labels in preferred trees (submitted for synthesis).",
+            failureMessage: "There are unmapped tip labels in trees nominated for synthesis.",
             suggestedAction: "Review all unmapped tips in OTU Mapping."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
         /* commenting this out for now because no way to deal with non pass-fail tests
         {
-            // checks fraction of OTUs mapped in preferred trees
+            // checks fraction of OTUs mapped in nominated trees
             // does not currently add to quality score (weight = 0)
-            description: "What fraction of tip labels in preferred trees are mapped to the Open Tree Taxonomy.",
+            description: "What fraction of tip labels in nominated trees are mapped to the Open Tree Taxonomy.",
             test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
-
-                // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
+                // check the proportion of mapped leaf nodes in all nominated trees
                 var totalTips = 0;
                 var mappedTips = 0;
                 var fractionMapped = 0;
-                $.each(getPreferredTrees(), function(i, tree) {
+                $.each(getTreesNominatedForSynthesis(), function(i, tree) {
                     nodeCounts = getNodeCounts(tree)
                     totalTips += nodeCounts.totalTips
                     mappedTips += nodeCounts.mappedTips
@@ -3529,14 +3488,14 @@ var studyScoringRules = {
                 if (totalTips != 0) {
                   fractionMapped = mappedTips/totalTips;
                 }
-                console.log(mappedTips + "/" + totalTips + " = " + floatToPercent(fractionMapped) + "% of OTUs in preferred trees mapped")
+                console.log(mappedTips + "/" + totalTips + " = " + floatToPercent(fractionMapped) + "% of OTUs in nominated trees mapped")
                 return fractionMapped;
             },
             // would like to update weight based on fractionMapped, but in different scopes
             // with this setup
             weight: 0.5,
             successMessage: "Preferred trees (submitted for synthesis) have all tips mapped to Open Tree Taxonomy.",
-            failureMessage: "There are unmapped tip labels in preferred trees (submitted for synthesis).",
+            failureMessage: "There are unmapped tip labels in trees nominated for synthesis.",
             suggestedAction: "Review all unmapped tips in OTU Mapping."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
@@ -4039,9 +3998,9 @@ function findOTUInTrees( otu, trees ) {
 function showOTUInContext() {
     // use the popup tree viewer to show this node in place (to clarify OTU mapping, etc)
     var otu = this;
-    // start with preferred trees (show best-quality results first)
-    var otuContextsToShow = findOTUInTrees( otu, getPreferredTrees() );
-    $.merge( otuContextsToShow, findOTUInTrees( otu, getNonPreferredTrees() ) );
+    // start with nominated trees (show best-quality results first)
+    var otuContextsToShow = findOTUInTrees( otu, getTreesNominatedForSynthesis() );
+    $.merge( otuContextsToShow, findOTUInTrees( otu, getTreesNotYetNominated() ) );
     // if this OTU is unused, something's very wrong; bail out now
     if (otuContextsToShow.length === 0) {
         alert("This OTU doesn't appear in any tree. (This is not expected.)");
@@ -4060,7 +4019,7 @@ function showOTUInContext() {
 function showDuplicateNodesInTreeViewer(tree) {
     // If there are no duplicates, fall back to simple tree view
     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
-    if (!isPreferredTree(tree) || $.isEmptyObject(duplicateData)) {
+    if (!isReadyForSynthesis(tree) || $.isEmptyObject(duplicateData)) {
         showTreeWithHistory(tree);
         return;
     }
@@ -5068,9 +5027,9 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         treesElement['tree'] = makeArray( treesElement['tree'] );
         $.each( treesElement.tree, function(i, tree) {
             normalizeTree( tree );
-            if (responseJSON.newTreesPreferred) {
-                // mark all new tree(s) as preferred, eg, a candidate for synthesis
-                viewModel.nexml['^ot:candidateTreeForSynthesis'].push( tree['@id'] );
+            if (responseJSON.includeNewTreesInSynthesis) {
+                // nominate this new tree for synthesis
+                tree['^ot:candidateForSynthesis'] = 'ot:include';
             }
         });
     });
@@ -5513,11 +5472,6 @@ function removeTree( tree ) {
     // TODO: remove any captive trees- and OTUs-collections
     // TODO: remove any otus not used elsewhere?
     // TODO: remove related annotation events and agents?
-
-    if ($.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) {
-        // remove its ID from list of preferred (candidate) trees
-        togglePreferredTree( tree );
-    }
 
     // force rebuild of all tree-related lookups
     buildFastLookup('NODES_BY_ID');
@@ -7953,7 +7907,7 @@ function getDuplicateNodesInTree( tree ) {
     // 'exemplar' node to avoid problems in synthesis.
     var duplicateNodes = { };
 
-    if (!isPreferredTree(tree)) {
+    if (!isReadyForSynthesis(tree)) {
         // ignoring these for now...
         return duplicateNodes;
     }
@@ -8456,6 +8410,10 @@ function studyContributedToLatestSynthesis() {
 function currentStudyVersionContributedToLatestSynthesis() {
     // compare SHA values and return true if they match
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
+}
+function treeContributedToLatestSynthesis(tree) {
+    // check for a valid SHA from last synthesis
+    return ($.inArray( tree['@id'], latestSynthesisTreeIDs ) !== -1);
 }
 
 function getStudyPublicationLink() {
