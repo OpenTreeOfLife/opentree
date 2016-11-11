@@ -811,9 +811,8 @@ function loadSelectedStudy() {
                 data.nexml['^ot:focalCladeOTTTaxonName'] = "";
             }
             if (['^ot:notIntendedForSynthesis'] in data.nexml) {
-                // Remove deprecated ot:notIntendedForSynthesis.
+                // Remove deprecated property (now reckoned indirectly, per-tree)
                 delete data.nexml['^ot:notIntendedForSynthesis'];
-                // TODO: Shift "preferred" trees to a per-tree property with default value
             }
             if (!(['^ot:comment'] in data.nexml)) {
                 data.nexml['^ot:comment'] = "";
@@ -2727,15 +2726,8 @@ function getTreesNominatedForSynthesis() {
     var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
     return ko.utils.arrayFilter(
         allTrees,
-        isReadyForSynthesis
+        isQueuedForNewSynthesis
     );
-}
-function isReadyForSynthesis( treeOrID ) {
-    var tree = ('@id' in treeOrID) ? treeOrID : getTreeByID( treeOrID );
-    if (tree['^ot:readyForSynthesis'] === 'Include this tree') {
-        return true;
-    }
-    return false;
 }
 
 function getTreesNotYetNominated() {
@@ -2743,7 +2735,7 @@ function getTreesNotYetNominated() {
     return ko.utils.arrayFilter(
         allTrees,
         function (tree) {
-            return !(isReadyForSynthesis(tree));
+            return !(isQueuedForNewSynthesis(tree));
         }
     );
 }
@@ -2953,7 +2945,7 @@ function getSynthStatusDescriptionForTree( tree ) {
     // Did this tree contribute to the latest synthesis?
     var contributedToLastSynth = contributedToLastSynthesis(tree);
     // Is this tree in a collection that will contribute to the next synthesis?
-    var queuedForNextSynth = queuedForNewSynthesis(tree);
+    var queuedForNextSynth = isQueuedForNewSynthesis(tree);
     // Are there any listed reasons to exclude this tree?
     var thereAreReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] && (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0);
 
@@ -2988,8 +2980,13 @@ function contributedToLastSynthesis(tree) {
     // Check this tree against latest-synth details
     return ($.inArray(tree['@id'], latestSynthesisTreeIDs) !== -1);
 }
-function queuedForNewSynthesis(tree) {
+function isQueuedForNewSynthesis(tree) {
     return false; // TODO
+}
+function nominateTreeForSynthesis( tree, collectionID ) {
+    // 'collectionID' is optional! else use our default synth-input collection
+    // TODO: submit this tree using AJAX, then re-check status and update UI
+    return;
 }
 
 /* support classes for objects in arrays
@@ -4006,7 +4003,7 @@ function showOTUInContext() {
 function showDuplicateNodesInTreeViewer(tree) {
     // If there are no duplicates, fall back to simple tree view
     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
-    if (!isReadyForSynthesis(tree) || $.isEmptyObject(duplicateData)) {
+    if (!isQueuedForNewSynthesis(tree) || $.isEmptyObject(duplicateData)) {
         showTreeWithHistory(tree);
         return;
     }
@@ -4994,8 +4991,9 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         $.each( treesElement.tree, function(i, tree) {
             normalizeTree( tree );
             if (responseJSON.includeNewTreesInSynthesis) {
-                // nominate this new tree for synthesis
-                tree['^ot:readyForSynthesis'] = 'Include this tree';
+                // add this new tree to a synth collection
+                nominateTreeForSynthesis(tree);
+                // TODO: wait on this, until there's some curation?
             }
         });
     });
@@ -7873,7 +7871,7 @@ function getDuplicateNodesInTree( tree ) {
     // 'exemplar' node to avoid problems in synthesis.
     var duplicateNodes = { };
 
-    if (!isReadyForSynthesis(tree)) {
+    if (!isQueuedForNewSynthesis(tree)) {
         // ignoring these for now...
         return duplicateNodes;
     }
