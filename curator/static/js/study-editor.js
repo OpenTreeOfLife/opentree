@@ -4990,11 +4990,6 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         treesElement['tree'] = makeArray( treesElement['tree'] );
         $.each( treesElement.tree, function(i, tree) {
             normalizeTree( tree );
-            if (responseJSON.includeNewTreesInSynthesis) {
-                // add this new tree to a synth collection
-                nominateTreeForSynthesis(tree);
-                // TODO: wait on this, until there's some curation?
-            }
         });
     });
 
