@@ -700,7 +700,8 @@ body {
                               <a class="badge badge-info" href="#" style="padding: 2px 6px;"
                                  title="Click to see details about this tree in synthesis"
                                  data-bind="text: (tree['^ot:reasonsToExcludeFromSynthesis'])? (tree['^ot:reasonsToExcludeFromSynthesis'].length) : '?',
-                                            css: {'class': (tree['^ot:reasonsToExcludeFromSynthesis'])? 'badge badge-warning' : 'badge badge-info'}">?</a>
+                                            css: {'class': (tree['^ot:reasonsToExcludeFromSynthesis'])? 'badge badge-warning' : 'badge badge-info'},
+                                            click: showTreeSynthDetailsPopup">?</a>
                             </div>
                         </td>
                       {{ else: }}
@@ -2271,6 +2272,80 @@ body {
       <a data-dismiss="modal" class="btn" >Close</a>
     </div>
 </div>
+
+
+
+<!-- hidden template for popup describing a tree's status vs. synthesis -->
+<div class="modal hide fade" id="tree-synth-details" style="display: none;">
+    <div class="modal-header" style="padding-bottom: 0;">
+      <a class="close" onclick="$('#tree-synth-details').modal('hide'); return false;">×</a>
+      <h3 Xid="tree-title">
+          Tree <span style="color: #999;">Bayesian</span> (id:<span style="color: #999;">tree4602</span>)
+      </h3>
+    </div>
+    <div class="modal-body" style="max-height: none; padding-bottom: 0px;">
+      <div class="tab-pane active">
+          <form class="form-inline" style="overflow: hidden;margin-bottom: 0px;margin-top: -12px;padding-top: 4px;margin-right: -6px;">
+            <p style="margin-bottom: 0.6em;">
+              This tree was <strong>not included</strong> in the latest synthesis (<a href="#">v4.15</a>),
+              but it is <strong>queued</strong> for the next synthesis, despite the warnings listed below.
+            </p>
+            <p style="margin-bottom: 0.0em;">
+              It <strong>passes</strong> our minimal validation for synthesis:
+            </p>
+            <ul style="margin-bottom: 0.2em;">
+              <li>Its root has been confirmed by a curator.</li>
+              <li>It has more than two rooted OTUs.</li>
+            </ul>
+            <div Xid="tree-list-holder" style="overflow: auto; max-height: 257px;">
+      <p style="margin-top: 0.4em; margin-bottom: 0;">
+  Curators have submitted <strong>2 reasons</strong> to exclude this tree from synthesis:
+</p>
+                <table Xid="tree-collection-decision-holder" class="table table-condensed table-hover" style="margin-bottom: 2px; position: relative;" data-bind="visible: true"><!-- TODO: hide if no trees found -->
+
+                  <tbody Xid="tree-collection-decisions" data-bind="foreach: { data: $data.data.decisions, as: 'decision' }">
+                      <tr class="single-tree-row">
+  <td>
+    <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;}" title="Remove this tree from the collection" class="pull-right btn btn-mini btn-danger row-controls-ghosted" style="margin-left: 4px;">
+      <i class="icon-remove icon-white"></i>
+    </button>
+    <div>The confirmed rooting in Felis does not agree with most published phylogenies.</div>
+  </td>
+</tr>
+<tr class="single-tree-row">
+  <td>
+    <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;}" title="Remove this tree from the collection" class="pull-right btn btn-mini btn-danger row-controls-ghosted" style="margin-left: 4px;">
+      <i class="icon-remove icon-white"></i>
+    </button>
+    <div>This requires more curation, esp. OTU mapping!</div>
+  </td>
+</tr>
+                  </tbody>
+                </table>
+      <!-- /ko -->
+            </div><!-- /#tree-list-holder -->
+
+          <!-- ko if: userIsEditingCollection($data) -->
+            <!-- TODO: Put add-collection widgets! -->
+            <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
+              <button Xid="new-collection-tree-start" type="submit" class="btn btn-small btn-info Xbtn-info-disabled" onclick="return false;"><span data-bind="text: ($data.data.decisions.length > 0) ? 'Add another tree' : 'Add a tree to this collection'">Add another reason to exclude this tree</span>
+                    &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+              </button>
+            </div>
+            <div class="pull-right" style="position: relative; margin: 9px 2px;">
+              <a class="btn btn-success row-controls-ghosted"><strong>Include</strong> this tree in synthesis</a>
+              &nbsp;
+              <a class="btn btn-danger row-controls-ghosted"><strong>Exclude</strong> this tree from synthesis</a>
+            </div>
+          <!-- /ko -->
+            </form>
+          </div>
+    </div><!-- end of .modal-body -->
+    <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
+</div>
+
+
+
 
 <!-- hidden template for new-taxon form (for adding taxa to OT Taxonomy) -->
 <div class="modal hide fade" id="new-taxa-popup" style="display: none;">

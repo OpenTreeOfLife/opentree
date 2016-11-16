@@ -2989,6 +2989,15 @@ function nominateTreeForSynthesis( tree, collectionID ) {
     return;
 }
 
+function showTreeSynthDetailsPopup() {
+    // show details in a popup (already bound)
+    $('#tree-synth-details').modal('show');
+}
+function hideTreeSynthDetailsPopup() {
+    $('#tree-synth-details').modal('hide');
+}
+
+
 /* support classes for objects in arrays
  * (TODO: use these instead of generic observables?)
  */
