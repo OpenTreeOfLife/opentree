@@ -2284,6 +2284,7 @@ function scrubNexsonForTransport( nexml ) {
         clearMRCATestResults(tree);
         removeConflictInfoFromTree(tree);
         removeTaxonMappingInfoFromTree(tree);
+        removeEmptyReasonsToExclude(tree);
     });
 
     // coerce some non-string values
@@ -2702,6 +2703,14 @@ function normalizeTree( tree ) {
 
     removeDuplicateTags( tree );
 
+    // add array of reasons-to-exclude (convert singleton, if found)
+    if ('^ot:reasonsToExcludeFromSynthesis' in tree) {
+        tree['^ot:reasonsToExcludeFromSynthesis'] =
+            makeArray(tree['^ot:reasonsToExcludeFromSynthesis']);
+    } else {
+        tree['^ot:reasonsToExcludeFromSynthesis'] = [ ];
+    }
+
     // pre-select first node among duplicate siblings
     resolveMonophyleticDuplicatesInTree(tree);
 }
@@ -2989,14 +2998,85 @@ function nominateTreeForSynthesis( tree, collectionID ) {
     return;
 }
 
-function showTreeSynthDetailsPopup() {
-    // show details in a popup (already bound)
+var $stashedSynthWarningsElement = null;
+function showTreeSynthDetailsPopup( tree ) {
+    // bind and show details for this tree vs. old and new synthesis
+
+    /* TODO: special init behavior for EDIT vs. VIEW?
+    if (viewOrEdit == 'EDIT') {
+    } else {  // 'VIEW'
+    }
+    */
+
+    if ($stashedSynthWarningsElement === null) {
+        // save the template and use the original
+        $stashedSynthWarningsElement = $('#synth-warnings-holder')
+            .find('tbody tr').eq(0).clone();
+    } else {
+        // apply the saved template
+        $('#synth-warnings-holder tbody').empty()
+                                          .append( $stashedSynthWarningsElement.clone() );
+    }
+
+    // bind just the selected tree to the modal HTML
+    // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
+    var $boundElements = $('#tree-synth-details').find('.modal-body, .modal-header h3, .modal-footer');
+    // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
+    $.each($boundElements, function(i, el) {
+        ko.cleanNode(el);
+        ko.applyBindings(tree,el);
+    });
+
+    /* TODO: use a delayed load, so we see a modal blocker *above* the tree viewer?
+            setTimeout(function() {
+                if (viewModel.allCollections && viewModel.allCollections.length) {
+                    nudgeTickler('COLLECTIONS_LIST');
+                } else {
+                    loadCollectionList('INIT');
+                }
+            }, 10);
+    */
+    $('#tree-synth-details').off('hidden').on('hidden', function () {
+        removeEmptyReasonsToExclude(tree);
+        nudgeTickler('TREES');
+    });
     $('#tree-synth-details').modal('show');
 }
 function hideTreeSynthDetailsPopup() {
     $('#tree-synth-details').modal('hide');
 }
 
+function addReasonToExcludeTree(tree) {
+    // add a (tentative) reason
+    tree['^ot:reasonsToExcludeFromSynthesis'].push({ $: "" });
+    showTreeSynthDetailsPopup(tree);
+    nudgeTickler('TREES');
+}
+function updateReasonToExcludeTree(itsPosition, tree) {
+    // We do this based on position, since duplicate values are possible
+    //tree['^ot:reasonsToExcludeFromSynthesis'][itsPosition] = 'TEST';
+    nudgeTickler('TREES');
+}
+function removeReasonToExcludeTree(itsPosition, tree) {
+    // We do this based on position, since duplicate values are possible
+    tree['^ot:reasonsToExcludeFromSynthesis'].splice(itsPosition, 1);
+    showTreeSynthDetailsPopup(tree);
+    nudgeTickler('TREES');
+}
+function removeEmptyReasonsToExclude(tree) {
+    // call this before saving Nexson
+    if ('^ot:reasonsToExcludeFromSynthesis' in tree) {
+        var warnings = makeArray(tree['^ot:reasonsToExcludeFromSynthesis']);
+        // filter out any empty (whitespace-only) reasons
+        // N.B. that we store the text in a '$' property (per Badgerfish convention)
+        tree['^ot:reasonsToExcludeFromSynthesis'] = warnings.filter(function(item, index) {
+            if ($.trim(item.$) === "") {
+                return false;
+            }
+            return true;
+        });
+    }
+}
 
 /* support classes for objects in arrays
  * (TODO: use these instead of generic observables?)
