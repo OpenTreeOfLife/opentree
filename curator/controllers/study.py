@@ -45,12 +45,9 @@ def view():
     view_dict['maintenance_info'] = get_maintenance_info(request)
     #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['studyID'] = request.args[0]
-    #view_dict['latestSynthesisSHA'] = _get_latest_synthesis_sha_for_study_id(view_dict['studyID'])
-    synth_details = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
-    view_dict['latestSynthesisSHA'] = synth_details.get('sha', '')
-    view_dict['latestSynthesisTreeIDs'] = synth_details.get('tree_ids')
+    view_dict['latestSynthesisSHA'], view_dict['latestSynthesisTreeIDs'] = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
     view_dict['viewOrEdit'] = 'VIEW'
-    view_dict['userCanEdit'] = auth.is_logged_in() and True or False;
+    view_dict['userCanEdit'] = auth.is_logged_in() and True or False
     return view_dict
 
 @auth.requires_login()
@@ -78,18 +75,15 @@ def edit():
     view_dict = get_opentree_services_method_urls(request)
     view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['studyID'] = request.args[0]
-    #view_dict['latestSynthesisSHA'] = _get_latest_synthesis_sha_for_study_id(view_dict['studyID'])
-    synth_details = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
-    view_dict['latestSynthesisSHA'] = synth_details.get('sha')
-    view_dict['latestSynthesisTreeIDs'] = synth_details.get('tree_ids')
+    view_dict['latestSynthesisSHA'], view_dict['latestSynthesisTreeIDs'] = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
     view_dict['viewOrEdit'] = 'EDIT'
     return view_dict
 
 
 def _get_latest_synthesis_details_for_study_id( study_id ):
-    # Fetch the contributing tree IDs and SHA from treemachine, if found. If
-    # this study is not found in the latest synth sources, return None for
-    # `sha` and an empty list for `tree_ids`.
+    # Fetch the last synthesis SHA *and* any tree IDs (from this study) from
+    # treemachine. If the study is not found in contributing studies, return
+    # None for both.
     try:
         from gluon.tools import fetch
         import simplejson
@@ -102,25 +96,22 @@ def _get_latest_synthesis_details_for_study_id( study_id ):
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
         # as usual, this needs to be a POST (pass empty fetch_args)
-        source_list_response = fetch(fetch_url, data={'include_source_list': True})
-        source_list = simplejson.loads( source_list_response )
-        source_id_map = source_list.get('source_id_map', {})
-        # find all source trees belonging to this study, compile their tree IDs and compare SHAs
-        sha = ''
-        tree_ids = [ ]
-        for source_id in source_id_map:
-            source_details = source_id_map.get( source_id )
-            src_study_id = source_details.get('study_id', None)
-            if src_study_id == study_id:
-                src_tree_id = source_details.get('tree_id', '')
-                src_sha = source_details.get('git_sha', '')
-                tree_ids.append( src_tree_id )
-                if sha:  # no longer the empty string
-                    # all sources for this study should use the same SHA!
-                    assert src_sha == sha
-                else:    # set the SHA now
-                    sha = src_sha
-        return {'sha': sha, 'tree_ids': tree_ids}
+        source_list_response = fetch(fetch_url, data={'include_source_list':True})
+        source_dict = simplejson.loads( source_list_response )['source_id_map']
+
+        # fetch the full source list, then look for this study and its trees
+        commit_SHA_in_synthesis = None
+        current_study_trees_included = [ ]
+        #print(source_dict)
+        # ignore source descriptions (e.g. "ot_764@tree1"); just read the details
+        for source_details in source_dict.values():
+            if source_details.get('study_id', None) == study_id:
+                # this is the study we're interested in!
+                current_study_trees_included.append( source_details['tree_id'] )
+                if commit_SHA_in_synthesis is None:
+                    commit_SHA_in_synthesis = source_details['git_sha']
+            # keep checking, as each tree will have its own entry
+        return commit_SHA_in_synthesis, current_study_trees_included
 
     except Exception, e:
         # throw 403 or 500 or just leave it

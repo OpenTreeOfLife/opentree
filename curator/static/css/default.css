@@ -564,11 +564,16 @@ img.tool-icon {
     background-repeat: repeat-x;
 }
 
-tr .row-controls-ghosted {
+tr .row-controls-ghosted,
+tr .row-controls-ghosted.btn[disabled]
+{
     opacity: 0.3;
 }
 tr:hover .row-controls-ghosted {
     opacity: 1.0;
+}
+tr:hover .row-controls-ghosted.btn[disabled] {
+    opacity: 0.65;
 }
 .mapping-needs-attention {
     background-color: #ddf5ff;

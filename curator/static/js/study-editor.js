@@ -46,7 +46,8 @@ var History = window.History; // Note: capital H refers to History.js!
 
 // these variables should already be defined in the main HTML page
 var studyID;
-var latestSynthesisSHA;   // the SHA for this study (if any) that was last used in synthesis
+var latestSynthesisSHA;      // the SHA for this study (if any) that was last used in synthesis
+var latestSynthesisTreeIDs;  // ids of any trees in this study included in the latest synthesis
 var API_load_study_GET_url;
 var API_update_study_PUT_url;
 var API_remove_study_DELETE_url;
@@ -810,7 +811,7 @@ function loadSelectedStudy() {
                 data.nexml['^ot:focalCladeOTTTaxonName'] = "";
             }
             if (['^ot:notIntendedForSynthesis'] in data.nexml) {
-                // Remove deprecated ot:notIntendedForSynthesis.
+                // Remove deprecated property (now reckoned indirectly, per-tree)
                 delete data.nexml['^ot:notIntendedForSynthesis'];
             }
             if (!(['^ot:comment'] in data.nexml)) {
@@ -2310,6 +2311,7 @@ function scrubNexsonForTransport( nexml ) {
         clearMRCATestResults(tree);
         removeConflictInfoFromTree(tree);
         removeTaxonMappingInfoFromTree(tree);
+        removeEmptyReasonsToExclude(tree);
     });
 
     // coerce some non-string values
@@ -2731,6 +2733,14 @@ function normalizeTree( tree ) {
 
     removeDuplicateTags( tree );
 
+    // add array of reasons-to-exclude (convert singleton, if found)
+    if ('^ot:reasonsToExcludeFromSynthesis' in tree) {
+        tree['^ot:reasonsToExcludeFromSynthesis'] =
+            makeArray(tree['^ot:reasonsToExcludeFromSynthesis']);
+    } else {
+        tree['^ot:reasonsToExcludeFromSynthesis'] = [ ];
+    }
+
     // pre-select first node among duplicate siblings
     resolveMonophyleticDuplicatesInTree(tree);
 }
@@ -2751,49 +2761,12 @@ function getAllTreeLabels() {
     });
 }
 
-var treeCandidateForSynthesisDescriptions = [
-    { value: 'ot:notReviewed',   text: "Not reviewed" },
-    { value: 'ot:doNotInclude',  text: "Do not use" },
-    { value: 'ot:needsCuration', text: "Needs curation" },
-    { value: 'ot:include',       text: "Include this tree" }
-]
-function getCandidateForSynthesisDescriptionForValue( value ) {
-    var description = '';
-    $.each( treeCandidateForSynthesisDescriptions, function( i, item ) {
-        if (item.value === value) {
-            description = item.text;
-            return false;
-        }
-        return true;
-    });
-    return description;
-}
-function getCandidateForSynthesisDescriptionForTree( tree ) {
-    var rawModeValue = tree['^ot:candidateForSynthesis'];
-    var description = '';
-    $.each( treeCandidateForSynthesisDescriptions, function( i, item ) {
-        if (item.value === rawModeValue) {
-            description = item.text;
-            return false;
-        }
-        return true;
-    });
-    return description;
-}
-
 function getTreesNominatedForSynthesis() {
     var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
     return ko.utils.arrayFilter(
         allTrees,
-        isReadyForSynthesis
+        isQueuedForNewSynthesis
     );
-}
-function isReadyForSynthesis( treeOrID ) {
-    var tree = ('@id' in treeOrID) ? treeOrID : getTreeByID( treeOrID );
-    if (tree['^ot:candidateForSynthesis'] === 'ot:include') {
-        return true;
-    }
-    return false;
 }
 
 function getTreesNotYetNominated() {
@@ -2801,7 +2774,7 @@ function getTreesNotYetNominated() {
     return ko.utils.arrayFilter(
         allTrees,
         function (tree) {
-            return !(isReadyForSynthesis(tree));
+            return !(isQueuedForNewSynthesis(tree));
         }
     );
 }
@@ -3007,9 +2980,136 @@ function getInGroupCladeDescriptionForTree( tree ) {
     return nodeName;
 }
 
+function getSynthStatusDescriptionForTree( tree ) {
+    // Did this tree contribute to the latest synthesis?
+    var contributedToLastSynth = contributedToLastSynthesis(tree);
+    // Is this tree in a collection that will contribute to the next synthesis?
+    var queuedForNextSynth = isQueuedForNewSynthesis(tree);
+    // Are there any listed reasons to exclude this tree?
+    var thereAreReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] && (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0);
+
+    if (contributedToLastSynth) {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return "Included despite warnings";
+            } else {
+                return "Included";
+            }
+        } else {
+            return "To be removed";
+        }
+    } else {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return "Queued despite warnings";
+            } else {
+                return "Queued";
+            }
+        } else {
+            if (thereAreReasonsToExclude) {
+                return "Excluded";
+            } else {
+                // This indicates a new, unreviewed tree (or out-of-band collection editing)
+                return "Needs review";
+            }
+        }
+    }
+}
+function contributedToLastSynthesis(tree) {
+    // Check this tree against latest-synth details
+    return ($.inArray(tree['@id'], latestSynthesisTreeIDs) !== -1);
+}
+function isQueuedForNewSynthesis(tree) {
+    return false; // TODO
+}
+function nominateTreeForSynthesis( tree, collectionID ) {
+    // 'collectionID' is optional! else use our default synth-input collection
+    // TODO: submit this tree using AJAX, then re-check status and update UI
+    return;
+}
+
+var $stashedSynthWarningsElement = null;
+function showTreeSynthDetailsPopup( tree ) {
+    // bind and show details for this tree vs. old and new synthesis
+
+    /* TODO: special init behavior for EDIT vs. VIEW?
+    if (viewOrEdit == 'EDIT') {
+    } else {  // 'VIEW'
+    }
+    */
+
+    if ($stashedSynthWarningsElement === null) {
+        // save the template and use the original
+        $stashedSynthWarningsElement = $('#synth-warnings-holder')
+            .find('tbody tr').eq(0).clone();
+    } else {
+        // apply the saved template
+        $('#synth-warnings-holder tbody').empty()
+                                          .append( $stashedSynthWarningsElement.clone() );
+    }
+
+    // bind just the selected tree to the modal HTML
+    // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
+    var $boundElements = $('#tree-synth-details').find('.modal-body, .modal-header h3, .modal-footer');
+    // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
+    $.each($boundElements, function(i, el) {
+        ko.cleanNode(el);
+        ko.applyBindings(tree,el);
+    });
+
+    /* TODO: use a delayed load, so we see a modal blocker *above* the tree viewer?
+            setTimeout(function() {
+                if (viewModel.allCollections && viewModel.allCollections.length) {
+                    nudgeTickler('COLLECTIONS_LIST');
+                } else {
+                    loadCollectionList('INIT');
+                }
+            }, 10);
+    */
+    $('#tree-synth-details').off('hidden').on('hidden', function () {
+        removeEmptyReasonsToExclude(tree);
+        nudgeTickler('TREES');
+    });
+    $('#tree-synth-details').modal('show');
+}
+function hideTreeSynthDetailsPopup() {
+    $('#tree-synth-details').modal('hide');
+}
+
+function addReasonToExcludeTree(tree) {
+    // add a (tentative) reason
+    tree['^ot:reasonsToExcludeFromSynthesis'].push({ $: "" });
+    showTreeSynthDetailsPopup(tree);
+    nudgeTickler('TREES');
+}
+function updateReasonToExcludeTree(itsPosition, tree) {
+    // We do this based on position, since duplicate values are possible
+    //tree['^ot:reasonsToExcludeFromSynthesis'][itsPosition] = 'TEST';
+    nudgeTickler('TREES');
+}
+function removeReasonToExcludeTree(itsPosition, tree) {
+    // We do this based on position, since duplicate values are possible
+    tree['^ot:reasonsToExcludeFromSynthesis'].splice(itsPosition, 1);
+    showTreeSynthDetailsPopup(tree);
+    nudgeTickler('TREES');
+}
+function removeEmptyReasonsToExclude(tree) {
+    // call this before saving Nexson
+    if ('^ot:reasonsToExcludeFromSynthesis' in tree) {
+        var warnings = makeArray(tree['^ot:reasonsToExcludeFromSynthesis']);
+        // filter out any empty (whitespace-only) reasons
+        // N.B. that we store the text in a '$' property (per Badgerfish convention)
+        tree['^ot:reasonsToExcludeFromSynthesis'] = warnings.filter(function(item, index) {
+            if ($.trim(item.$) === "") {
+                return false;
+            }
+            return true;
+        });
+    }
+}
 
 /* support classes for objects in arrays
- * (TODO: use these instead of generlc observables?)
+ * (TODO: use these instead of generic observables?)
  */
 function MetaTag( name, type, value ) {
     var self = this;
@@ -4020,6 +4120,7 @@ function showDuplicateNodesInTreeViewer(tree) {
     // If there are no duplicates, fall back to simple tree view
     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
     if (!isReadyForSynthesis(tree) || $.isEmptyObject(duplicateData)) {
+    if (!isQueuedForNewSynthesis(tree) || $.isEmptyObject(duplicateData)) {
         showTreeWithHistory(tree);
         return;
     }
@@ -5027,10 +5128,6 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         treesElement['tree'] = makeArray( treesElement['tree'] );
         $.each( treesElement.tree, function(i, tree) {
             normalizeTree( tree );
-            if (responseJSON.includeNewTreesInSynthesis) {
-                // nominate this new tree for synthesis
-                tree['^ot:candidateForSynthesis'] = 'ot:include';
-            }
         });
     });
 
@@ -7909,7 +8006,7 @@ function getDuplicateNodesInTree( tree ) {
     // 'exemplar' node to avoid problems in synthesis.
     var duplicateNodes = { };
 
-    if (!isReadyForSynthesis(tree)) {
+    if (!isQueuedForNewSynthesis(tree)) {
         // ignoring these for now...
         return duplicateNodes;
     }
