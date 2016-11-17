@@ -4119,7 +4119,6 @@ function showOTUInContext() {
 function showDuplicateNodesInTreeViewer(tree) {
     // If there are no duplicates, fall back to simple tree view
     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
-    if (!isReadyForSynthesis(tree) || $.isEmptyObject(duplicateData)) {
     if (!isQueuedForNewSynthesis(tree) || $.isEmptyObject(duplicateData)) {
         showTreeWithHistory(tree);
         return;
