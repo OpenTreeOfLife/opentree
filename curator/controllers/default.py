@@ -678,7 +678,7 @@ def to_nexson():
                         dfj = get_ot_study_info_from_nexml(NEXML_FILEPATH,
                                                            nexson_syntax_version=NEXSON_VERSION)
                     except:
-                        raise HTTP(501, T("Submitted data is not a valid NeXML file, or cannot be converted."))
+                        raise HTTP(400, T("Submitted data is not a valid NeXML file, or cannot be converted."))
                     out = codecs.open(NEXSON_FILEPATH, 'w', encoding='utf-8')
                     json.dump(dfj, out, indent=0, sort_keys=True)
                     out.write('\n')
