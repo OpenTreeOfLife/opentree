@@ -2288,17 +2288,9 @@ body {
     <div class="modal-body" style="max-height: none; padding-bottom: 0px;">
       <div class="tab-pane active">
           <form class="form-inline" style="overflow: hidden;margin-bottom: 0px;margin-top: -12px;padding-top: 4px;margin-right: -6px;">
-            <p style="margin-bottom: 0.6em;">
-              This tree was <strong>not included</strong> in the latest synthesis (<a href="#">v4.15</a>),
-              but it is <strong>queued</strong> for the next synthesis, despite the warnings listed below.
-            </p>
-            <p style="margin-bottom: 0.0em;">
-              It <strong>passes</strong> our minimal validation for synthesis:
-            </p>
-            <ul style="margin-bottom: 0.2em;">
-              <li>Its root has been confirmed by a curator.</li>
-              <li>It has more than two rooted OTUs.</li>
-            </ul>
+            <p style="margin-bottom: 0.6em;"
+               data-bind="html: getTreeSynthStatusSummary($root)">?</p>
+            <div data-bind="html: getTreeSynthValidationSummary($root)"></div>
           <!-- ko foreach: { data: [$data['^ot:reasonsToExcludeFromSynthesis']], as: 'warnings' }-->
             <div style="overflow: auto; max-height: 257px;">
                 <p style="margin-top: 0.4em; margin-bottom: 0.2em;"

@@ -2985,6 +2985,104 @@ function getSynthStatusDescriptionForTree( tree ) {
         }
     }
 }
+
+function getTreeSynthStatusSummary( tree ) {
+    // This appears in the tree-synth details popup
+    // Did this tree contribute to the latest synthesis?
+    var contributedToLastSynth = contributedToLastSynthesis(tree);
+    // Is this tree in a collection that will contribute to the next synthesis?
+    var queuedForNextSynth = isQueuedForNewSynthesis(tree);
+    // Are there any listed reasons to exclude this tree?
+    var thereAreReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] && (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0);
+    // TODO: fetch and include the latest synth version)?
+    if (contributedToLastSynth) {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return 'This tree <strong>was included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>queued</strong> '
+                      +'for future synthesis, despite the warnings listed below.';
+            } else {
+                return 'This tree <strong>was included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>queued</strong> '
+                      +'for future synthesis.';
+            }
+        } else {
+                return 'This tree <strong>was included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'but it is <strong>not queued</strong> '
+                      +'for future synthesis.';
+        }
+    } else {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'but it is <strong>queued</strong> '
+                      +'for future synthesis, despite the warnings listed below.';
+            } else {
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'but it is <strong>queued</strong> '
+                      +'for future synthesis.';
+            }
+        } else {
+            if (thereAreReasonsToExclude) {
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>not queued</strong> '
+                      +'for future synthesis.';
+            } else {
+                // This indicates a new, unreviewed tree (or out-of-band collection editing)
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>not currently queued</strong> '
+                      +'for future synthesis.';
+            }
+        }
+    }
+}
+function getTreeSynthValidationSummary( tree ) {
+    var rootConfirmed = !(tree['^ot:unrootedTree']); // missing, false, or empty
+    var moreThanTwoMappings = getNodeCounts(tree).mappedTips > 2;
+
+    var firstPara = '<p style="margin-bottom: 0.0em;">';
+    if (rootConfirmed && moreThanTwoMappings) {
+        firstPara += 'It <strong>passes</strong> our minimal validation for synthesis:';
+    } else {
+        firstPara += 'It <strong>fails</strong> our minimal validation for synthesis:';
+    }
+    firstPara += '</p>';
+
+    var testList = '<ul style="margin-bottom: 0.2em;">';
+    if (rootConfirmed) {
+         testList += '  <li>Its root has been confirmed by a curator.</li>'
+    } else {
+         testList += '  <li style="color: #b94a48;">Its root has <strong>not</strong> been confirmed by a curator.</li>'
+    }
+    if (moreThanTwoMappings) {
+         testList += '  <li>It has more than two mapped OTUs.</li>';
+    } else {
+         testList += '  <li style="color: #b94a48;">It has <strong>fewer</strong> than two mapped OTUs.</li>';
+    }
+    testList += '</ul>';
+    return firstPara +'\n'+ testList;
+}
+
+function contributedToLastSynthesis(tree) {
+    // Check this tree against latest-synth details
+    return ($.inArray(tree['@id'], latestSynthesisTreeIDs) !== -1);
+}
+function isQueuedForNewSynthesis(tree) {
+    return false; // TODO
+}
+function nominateTreeForSynthesis( tree, collectionID ) {
+    // 'collectionID' is optional! else use our default synth-input collection
+    // TODO: submit this tree using AJAX, then re-check status and update UI
+    return;
+}
+
 function contributedToLastSynthesis(tree) {
     // Check this tree against latest-synth details
     return ($.inArray(tree['@id'], latestSynthesisTreeIDs) !== -1);
