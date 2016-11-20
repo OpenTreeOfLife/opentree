@@ -58,6 +58,8 @@ var API_update_file_PUT_url;
 var API_remove_file_DELETE_url;
 var findAllTreeCollections_url;
 var API_create_amendment_POST_url;
+var getTreesQueuedForSynthesis_url;
+var treesQueuedForSynthesis;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -3075,20 +3077,70 @@ function contributedToLastSynthesis(tree) {
     return ($.inArray(tree['@id'], latestSynthesisTreeIDs) !== -1);
 }
 function isQueuedForNewSynthesis(tree) {
-    return false; // TODO
-}
-function nominateTreeForSynthesis( tree, collectionID ) {
-    // 'collectionID' is optional! else use our default synth-input collection
-    // TODO: submit this tree using AJAX, then re-check status and update UI
-    return;
+    // Check to see if this tree is listed in last-known input collections
+    /* N.B. that this service "concatenates" all synth-input collections into a
+     * single, artificial "collection" with contributors and decisions/trees,
+     * but no name or description, see
+     * <https://github.com/OpenTreeOfLife/peyotl/blob/33b493e84558ffef381d841986281be352f3da53/peyotl/collections_store/__init__.py#L46>
+     */
+    if (!(treesQueuedForSynthesis) || !('decisions' in treesQueuedForSynthesis)) {
+        console.error("No queued-trees data found!");
+        return false;
+    }
+    var foundTree = false;
+    $.each(treesQueuedForSynthesis.decisions, function(i, treeDecision) {
+        if ((treeDecision.studyID === studyID) &&
+            (treeDecision.treeID === tree['@id'])) {
+            foundTree = true;
+            return false;
+        }
+    });
+    return foundTree;
 }
 
-function contributedToLastSynthesis(tree) {
-    // Check this tree against latest-synth details
-    return ($.inArray(tree['@id'], latestSynthesisTreeIDs) !== -1);
+function testForPossibleTreeInclusion(tree) {
+    // return true if it can be included, else false
+    console.log(tree);
+    return true;
 }
-function isQueuedForNewSynthesis(tree) {
-    return false; // TODO
+function testForPossibleTreeExclusion(tree) {
+    // return true if it can be excluded, else false
+    console.log(tree);
+    return false;
+}
+
+function tryToIncludeTreeInSynth(tree) {
+    console.warn('TRYING TO INCLUDE');
+    console.log(tree);
+    if (isQueuedForNewSynthesis(tree)) {
+        alert("This tree is already included (queued).");
+        return;
+    }
+    console.warn('Now I would add it to the default collection');
+    // call web service to append to default synth-input collection
+    showModalScreen("Adding tree to default collection...", {SHOW_BUSY_BAR:true});
+    // SET CALLBACK to...
+        // elevate response (if not error) to global input-trees variable
+        nudgeTickler('TREES'); // immediate update in popup UI
+        hideModalScreen();
+        $('#tree-synth-details').modal('hide');
+    $('#tree-synth-details').modal('hide');
+}
+function tryToExcludeTreeFromSynth(tree) {
+    console.warn('TRYING TO EXCLUDE');
+    console.log(tree);
+    if (isQueuedForNewSynthesis(tree)) {
+        alert("This tree is already excluded (not yet queued).");
+        return;
+    }
+    console.warn('Now I would remove it from all synth-input collections');
+    showModalScreen("Removing tree from input collections...", {SHOW_BUSY_BAR:true});
+    // call web service to purge from all collections
+    // SET CALLBACK to...
+        // elevate response (if not error) to global input-trees variable
+        nudgeTickler('TREES'); // immediate update in popup UI
+        hideModalScreen();
+        $('#tree-synth-details').modal('hide');
 }
 function nominateTreeForSynthesis( tree, collectionID ) {
     // 'collectionID' is optional! else use our default synth-input collection

@@ -14,7 +14,9 @@
 from applications.opentree.modules.opentreewebapputil import(
     get_opentree_services_method_urls, 
     fetch_current_TNRS_context_names,
+    fetch_trees_queued_for_synthesis,
     get_maintenance_info)
+
 # N.B. This module is shared with tree-browser app, which is aliased as
 # 'opentree'. Any name changes will be needed here as well!
 
@@ -48,6 +50,7 @@ def view():
     view_dict['latestSynthesisSHA'], view_dict['latestSynthesisTreeIDs'] = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
     view_dict['viewOrEdit'] = 'VIEW'
     view_dict['userCanEdit'] = auth.is_logged_in() and True or False
+    view_dict['treesQueuedForSynthesis'] = fetch_trees_queued_for_synthesis(request)
     return view_dict
 
 @auth.requires_login()
@@ -74,6 +77,7 @@ def edit():
     # the header search of the main opentree webapp
     view_dict = get_opentree_services_method_urls(request)
     view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
+    view_dict['treesQueuedForSynthesis'] = fetch_trees_queued_for_synthesis(request)
     view_dict['studyID'] = request.args[0]
     view_dict['latestSynthesisSHA'], view_dict['latestSynthesisTreeIDs'] = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
     view_dict['viewOrEdit'] = 'EDIT'

@@ -695,8 +695,12 @@ body {
                         </td>
                         <td>
                             <div style="white-space: nowrap;">
-                              <a class="btn btn-mini btn-success row-controls-ghosted">Include</a>
-                              <a class="btn btn-mini btn-danger row-controls-ghosted" disabled="disabled">Exclude</a>
+                              <a class="btn btn-mini btn-success row-controls-ghosted"
+                                 data-bind="attr: {disabled: !(testForPossibleTreeInclusion($data))},
+                                            click: tryToIncludeTreeInSynth">Include</a>
+                              <a class="btn btn-mini btn-danger row-controls-ghosted"
+                                 data-bind="attr: {disabled: !(testForPossibleTreeExclusion($data))},
+                                            click: tryToExcludeTreeFromSynth">Exclude</a>
                               <a class="badge" href="#" style="padding: 2px 6px;"
                                  title="Click to see details about this tree in synthesis"
                                  data-bind="text: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0)? (tree['^ot:reasonsToExcludeFromSynthesis'].length) : '?',
@@ -1947,6 +1951,7 @@ body {
     var studyID = '{{= studyID }}';
     var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
     var latestSynthesisTreeIDs = {{= XML( json.dumps(latestSynthesisTreeIDs) ) }};
+    var treesQueuedForSynthesis = {{=XML( json.dumps(treesQueuedForSynthesis) ) }};
     var viewOrEdit = '{{= viewOrEdit }}';
 
     var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
@@ -2016,6 +2021,7 @@ body {
     var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
     var getContextForNames_url = "{{=getContextForNames_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";
+    var getTreesQueuedForSynthesis_url ="{{=getTreesQueuedForSynthesis_url}}";
 
     var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
     var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";
@@ -2340,9 +2346,15 @@ body {
             </div>
             <div class="pull-right" style="position: relative; margin: 9px 2px;"
                  data-bind="visible: (viewOrEdit == 'EDIT')">
-              <a class="btn btn-success row-controls-ghosted" onclick="return false;"><strong>Include</strong> this tree in synthesis</a>
+              <a class="btn btn-success row-controls-ghosted"
+                 data-bind="attr: {disabled: !(testForPossibleTreeInclusion($root))},
+                            click: function() {tryToIncludeTreeInSynth($root)}">
+                <strong>Include</strong> this tree in synthesis</a>
               &nbsp;
-              <a class="btn btn-danger row-controls-ghosted" onclick="return false;"><strong>Exclude</strong> this tree from synthesis</a>
+              <a class="btn btn-danger row-controls-ghosted"
+                 data-bind="attr: {disabled: !(testForPossibleTreeExclusion($root))},
+                            click: function() {tryToExcludeTreeFromSynth($root)}">
+                <strong>Exclude</strong> this tree from synthesis</a>
             </div>
             <div class="pull-right" style="position: relative; margin: 9px 2px;"
                  data-bind="visible: (viewOrEdit == 'VIEW')">
