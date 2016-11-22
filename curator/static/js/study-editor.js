@@ -3129,7 +3129,7 @@ function tryToIncludeTreeInSynth(tree) {
 function tryToExcludeTreeFromSynth(tree) {
     console.warn('TRYING TO EXCLUDE');
     console.log(tree);
-    if (isQueuedForNewSynthesis(tree)) {
+    if (!isQueuedForNewSynthesis(tree)) {
         alert("This tree is already excluded (not yet queued).");
         return;
     }
