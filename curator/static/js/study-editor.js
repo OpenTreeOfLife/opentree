@@ -2991,6 +2991,8 @@ function getSynthStatusDescriptionForTree( tree ) {
     var queuedForNextSynth = isQueuedForNewSynthesis(tree);
     // Are there any listed reasons to exclude this tree?
     var thereAreReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] && (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0);
+    // Does this tree meet minimum standards for synthesis?
+    var validForSynthesis = treeIsValidForSynthesis(tree);
 
     if (contributedToLastSynth) {
         if (queuedForNextSynth) {
@@ -3012,9 +3014,11 @@ function getSynthStatusDescriptionForTree( tree ) {
         } else {
             if (thereAreReasonsToExclude) {
                 return "Excluded";
-            } else {
+            } else if (validForSynthesis) {
                 // This indicates a new, unreviewed tree (or out-of-band collection editing)
                 return "Needs review";
+            } else {
+                return "Needs curation";
             }
         }
     }
@@ -3153,18 +3157,18 @@ function testForPossibleTreeExclusion(tree) {
 
 function tryToIncludeTreeInSynth(tree) {
     if (isQueuedForNewSynthesis(tree)) {
-        showErrorMessage("This tree is already included (queued).");
+        showInfoMessage("This tree is already included (queued).");
         return;
     }
     if (!treeIsValidForSynthesis(tree)) {
         var rootConfirmed = !(tree['^ot:unrootedTree']); // missing, false, or empty
         var moreThanTwoMappings = getNodeCounts(tree).mappedTips > 2;
         if (!rootConfirmed && !moreThanTwoMappings) {
-            showErrorMessage("This tree needs further curation (confirmed root, 3+ OTUs mapped).");
+            showInfoMessage("This tree needs further curation (confirmed root, 3+ OTUs mapped).");
         } else if (!rootConfirmed) {
-            showErrorMessage("This tree needs further curation (confirmed root node).");
+            showInfoMessage("This tree needs further curation (confirmed root node).");
         } else {
-            showErrorMessage("This tree needs further curation (3 or more OTUs mapped).");
+            showInfoMessage("This tree needs further curation (3 or more OTUs mapped).");
         }
         return;
     }
@@ -3202,7 +3206,7 @@ function tryToIncludeTreeInSynth(tree) {
 }
 function tryToExcludeTreeFromSynth(tree) {
     if (!isQueuedForNewSynthesis(tree)) {
-        showErrorMessage("This tree is already excluded (not yet queued)..");
+        showInfoMessage("This tree is already excluded (not yet queued)..");
         return;
     }
     console.warn('Now I would remove it from all synth-input collections');
@@ -5764,7 +5768,7 @@ function addSupportingFileFromURL() {
 
 function removeTree( tree ) {
     // let's be sure, since adding may be slow...
-    if (!confirm("Are you sure you want to delete this tree?")) {
+    if (!confirm("Are you sure you want to delete this tree from the study?")) {
         return;
     }
 
