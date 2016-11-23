@@ -646,10 +646,11 @@ body {
                         <th>Ingroup clade</th>
                         <th>Tree root</th>
                         <th>OTUs mapped</th>
-                        <th>Synthesis status</th>
                       {{ if viewOrEdit == 'EDIT': }}
-                        <th>Include in synthesis?</th>
+                        <th colspan="2">Included in synthesis?</th>
                         <th>&nbsp;</th>
+                      {{ else: }}
+                        <th>Synthesis status</th>
                       {{ pass }}
                     </tr>
                   </thead>
