@@ -59,6 +59,8 @@ var API_remove_file_DELETE_url;
 var findAllTreeCollections_url;
 var API_create_amendment_POST_url;
 var getTreesQueuedForSynthesis_url;
+var includeTreeInSynthesis_url;
+var excludeTreeFromSynthesis_url;
 var treesQueuedForSynthesis;
 
 // working space for parsed JSON objects (incl. sub-objects)
@@ -2781,9 +2783,9 @@ function getNodeCounts(tree) {
         }
         return true;  // skip to next node
     });
-    console.log("total nodes? "+ nodeCounts.totalNodes);
-    console.log("total leaf nodes? "+ nodeCounts.totalTips);
-    console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
+    //console.log("total nodes? "+ nodeCounts.totalNodes);
+    //console.log("total leaf nodes? "+ nodeCounts.totalTips);
+    //console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
 
     return nodeCounts;
 }
@@ -2795,9 +2797,9 @@ function getMappedTallyForTree(tree) {
         return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
     } else {
       nodeCounts = getNodeCounts(tree);
-      console.log("total nodes? "+ nodeCounts.totalNodes);
-      console.log("total leaf nodes? "+ nodeCounts.totalTips);
-      console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
+      //console.log("total nodes? "+ nodeCounts.totalNodes);
+      //console.log("total leaf nodes? "+ nodeCounts.totalTips);
+      //console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
 
       return '<strong>'+ nodeCounts.mappedTips +'</strong><span>'+ thinSpace +'/'+ thinSpace + nodeCounts.totalTips +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(nodeCounts.mappedTips/nodeCounts.totalTips) +'%)</span>';
     }
@@ -3045,6 +3047,12 @@ function getTreeSynthStatusSummary( tree ) {
         }
     }
 }
+function treeIsValidForSynthesis( tree ) {
+    // more compact simple test (some logic repeated in getTreeSynthValidationSummary)
+    var rootConfirmed = !(tree['^ot:unrootedTree']); // missing, false, or empty
+    var moreThanTwoMappings = getNodeCounts(tree).mappedTips > 2;
+    return (rootConfirmed && moreThanTwoMappings);
+}
 function getTreeSynthValidationSummary( tree ) {
     var rootConfirmed = !(tree['^ot:unrootedTree']); // missing, false, or empty
     var moreThanTwoMappings = getNodeCounts(tree).mappedTips > 2;
@@ -3100,52 +3108,104 @@ function isQueuedForNewSynthesis(tree) {
 
 function testForPossibleTreeInclusion(tree) {
     // return true if it can be included, else false
-    console.log(tree);
+    if (isQueuedForNewSynthesis(tree)) {
+        return false;
+    }
+    if (!treeIsValidForSynthesis(tree)) {
+        return false;
+    }
     return true;
 }
 function testForPossibleTreeExclusion(tree) {
     // return true if it can be excluded, else false
-    console.log(tree);
-    return false;
+    return (isQueuedForNewSynthesis(tree));
 }
 
 function tryToIncludeTreeInSynth(tree) {
-    console.warn('TRYING TO INCLUDE');
-    console.log(tree);
     if (isQueuedForNewSynthesis(tree)) {
-        alert("This tree is already included (queued).");
+        showErrorMessage("This tree is already included (queued).");
+        return;
+    }
+    if (!treeIsValidForSynthesis(tree)) {
+        var rootConfirmed = !(tree['^ot:unrootedTree']); // missing, false, or empty
+        var moreThanTwoMappings = getNodeCounts(tree).mappedTips > 2;
+        if (!rootConfirmed && !moreThanTwoMappings) {
+            showErrorMessage("This tree needs further curation (confirmed root, 3+ OTUs mapped).");
+        } else if (!rootConfirmed) {
+            showErrorMessage("This tree needs further curation (confirmed root node).");
+        } else {
+            showErrorMessage("This tree needs further curation (3 or more OTUs mapped).");
+        }
         return;
     }
     console.warn('Now I would add it to the default collection');
     // call web service to append to default synth-input collection
-    showModalScreen("Adding tree to default collection...", {SHOW_BUSY_BAR:true});
-    // SET CALLBACK to...
-        // elevate response (if not error) to global input-trees variable
-        nudgeTickler('TREES'); // immediate update in popup UI
-        hideModalScreen();
-        $('#tree-synth-details').modal('hide');
-    $('#tree-synth-details').modal('hide');
+    showModalScreen("Adding tree to default synthesis collection...", {SHOW_BUSY_BAR:true});
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        url: includeTreeInSynthesis_url,
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({
+            study_id: studyID,
+            tree_id: tree['@id'],
+            author_name: userDisplayName,
+            author_email: userEmail,
+            auth_token: userAuthToken
+        }),
+        crossDomain: true,
+        contentType: "application/json; charset=utf-8",
+        complete: function( jqXHR, textStatus ) {
+            hideModalScreen();
+            if (textStatus !== 'success') {
+                var errMsg = 'Sorry, there was an error including this tree. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                showErrorMessage(errMsg);
+                return;
+            }
+            // elevate response (if not error) to global input-trees variable
+            treesQueuedForSynthesis = $.parseJSON(jqXHR.responseText);
+            nudgeTickler('TREES'); // immediate update in popup UI
+            hideModalScreen();
+            $('#tree-synth-details').modal('hide');
+        }
+    });
 }
 function tryToExcludeTreeFromSynth(tree) {
-    console.warn('TRYING TO EXCLUDE');
-    console.log(tree);
     if (!isQueuedForNewSynthesis(tree)) {
-        alert("This tree is already excluded (not yet queued).");
+        showErrorMessage("This tree is already excluded (not yet queued)..");
         return;
     }
     console.warn('Now I would remove it from all synth-input collections');
-    showModalScreen("Removing tree from input collections...", {SHOW_BUSY_BAR:true});
+    showModalScreen("Removing tree from all synthesis collections...", {SHOW_BUSY_BAR:true});
     // call web service to purge from all collections
-    // SET CALLBACK to...
-        // elevate response (if not error) to global input-trees variable
-        nudgeTickler('TREES'); // immediate update in popup UI
-        hideModalScreen();
-        $('#tree-synth-details').modal('hide');
-}
-function nominateTreeForSynthesis( tree, collectionID ) {
-    // 'collectionID' is optional! else use our default synth-input collection
-    // TODO: submit this tree using AJAX, then re-check status and update UI
-    return;
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        url: excludeTreeFromSynthesis_url,
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({
+            study_id: studyID,
+            tree_id: tree['@id'],
+            author_name: userDisplayName,
+            author_email: userEmail,
+            auth_token: userAuthToken
+        }),
+        crossDomain: true,
+        contentType: "application/json; charset=utf-8",
+        complete: function( jqXHR, textStatus ) {
+            hideModalScreen();
+            if (textStatus !== 'success') {
+                var errMsg = 'Sorry, there was an error excluding this tree. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                showErrorMessage(errMsg);
+                return;
+            }
+            // elevate response (if not error) to global input-trees variable
+            treesQueuedForSynthesis = $.parseJSON(jqXHR.responseText);
+            nudgeTickler('TREES'); // immediate update in popup UI
+            hideModalScreen();
+            $('#tree-synth-details').modal('hide');
+        }
+    });
 }
 
 var $stashedSynthWarningsElement = null;

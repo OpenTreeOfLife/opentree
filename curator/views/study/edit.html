@@ -697,9 +697,11 @@ body {
                             <div style="white-space: nowrap;">
                               <a class="btn btn-mini btn-success row-controls-ghosted"
                                  data-bind="attr: {disabled: !(testForPossibleTreeInclusion($data))},
+                                            css: viewModel.ticklers.TREES,
                                             click: tryToIncludeTreeInSynth">Include</a>
                               <a class="btn btn-mini btn-danger row-controls-ghosted"
                                  data-bind="attr: {disabled: !(testForPossibleTreeExclusion($data))},
+                                            css: viewModel.ticklers.TREES,
                                             click: tryToExcludeTreeFromSynth">Exclude</a>
                               <a class="badge" href="#" style="padding: 2px 6px;"
                                  title="Click to see details about this tree in synthesis"
@@ -2022,6 +2024,8 @@ body {
     var getContextForNames_url = "{{=getContextForNames_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";
     var getTreesQueuedForSynthesis_url ="{{=getTreesQueuedForSynthesis_url}}";
+    var includeTreeInSynthesis_url ="{{=includeTreeInSynthesis_url}}";
+    var excludeTreeFromSynthesis_url ="{{=excludeTreeFromSynthesis_url}}";
 
     var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
     var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";

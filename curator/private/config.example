@@ -64,6 +64,8 @@ treeConflictStatus_url = {conflict_api_domain}/v2/conflict/conflict-status?tree1
 phylesystem_config_url = {opentree_api_domain}/phylesystem/v1/phylesystem_config
 render_markdown_url = {opentree_api_domain}/phylesystem/v1/render_markdown
 getTreesQueuedForSynthesis_url = {opentree_api_domain}/phylesystem/v1/trees_in_synth
+includeTreeInSynthesis_url = {opentree_api_domain}/phylesystem/v1/include_tree_in_synth
+excludeTreeFromSynthesis_url = {opentree_api_domain}/phylesystem/v1/exclude_tree_from_synth
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #
