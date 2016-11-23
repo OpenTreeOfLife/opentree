@@ -58,6 +58,10 @@ var API_update_file_PUT_url;
 var API_remove_file_DELETE_url;
 var findAllTreeCollections_url;
 var API_create_amendment_POST_url;
+var getTreesQueuedForSynthesis_url;
+var includeTreeInSynthesis_url;
+var excludeTreeFromSynthesis_url;
+var treesQueuedForSynthesis;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -2809,9 +2813,9 @@ function getNodeCounts(tree) {
         }
         return true;  // skip to next node
     });
-    console.log("total nodes? "+ nodeCounts.totalNodes);
-    console.log("total leaf nodes? "+ nodeCounts.totalTips);
-    console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
+    //console.log("total nodes? "+ nodeCounts.totalNodes);
+    //console.log("total leaf nodes? "+ nodeCounts.totalTips);
+    //console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
 
     return nodeCounts;
 }
@@ -2823,9 +2827,9 @@ function getMappedTallyForTree(tree) {
         return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
     } else {
       nodeCounts = getNodeCounts(tree);
-      console.log("total nodes? "+ nodeCounts.totalNodes);
-      console.log("total leaf nodes? "+ nodeCounts.totalTips);
-      console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
+      //console.log("total nodes? "+ nodeCounts.totalNodes);
+      //console.log("total leaf nodes? "+ nodeCounts.totalTips);
+      //console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
 
       return '<strong>'+ nodeCounts.mappedTips +'</strong><span>'+ thinSpace +'/'+ thinSpace + nodeCounts.totalTips +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(nodeCounts.mappedTips/nodeCounts.totalTips) +'%)</span>';
     }
@@ -3015,17 +3019,223 @@ function getSynthStatusDescriptionForTree( tree ) {
         }
     }
 }
+
+function getTreeSynthStatusSummary( tree ) {
+    // This appears in the tree-synth details popup
+    // Did this tree contribute to the latest synthesis?
+    var contributedToLastSynth = contributedToLastSynthesis(tree);
+    // Is this tree in a collection that will contribute to the next synthesis?
+    var queuedForNextSynth = isQueuedForNewSynthesis(tree);
+    // Are there any listed reasons to exclude this tree?
+    var thereAreReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] && (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0);
+    // TODO: fetch and include the latest synth version)?
+    if (contributedToLastSynth) {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return 'This tree <strong>was included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>queued</strong> '
+                      +'for future synthesis, despite the warnings listed below.';
+            } else {
+                return 'This tree <strong>was included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>queued</strong> '
+                      +'for future synthesis.';
+            }
+        } else {
+                return 'This tree <strong>was included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'but it is <strong>not queued</strong> '
+                      +'for future synthesis.';
+        }
+    } else {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'but it is <strong>queued</strong> '
+                      +'for future synthesis, despite the warnings listed below.';
+            } else {
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'but it is <strong>queued</strong> '
+                      +'for future synthesis.';
+            }
+        } else {
+            if (thereAreReasonsToExclude) {
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>not queued</strong> '
+                      +'for future synthesis.';
+            } else {
+                // This indicates a new, unreviewed tree (or out-of-band collection editing)
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>not currently queued</strong> '
+                      +'for future synthesis.';
+            }
+        }
+    }
+}
+function treeIsValidForSynthesis( tree ) {
+    // more compact simple test (some logic repeated in getTreeSynthValidationSummary)
+    var rootConfirmed = !(tree['^ot:unrootedTree']); // missing, false, or empty
+    var moreThanTwoMappings = getNodeCounts(tree).mappedTips > 2;
+    return (rootConfirmed && moreThanTwoMappings);
+}
+function getTreeSynthValidationSummary( tree ) {
+    var rootConfirmed = !(tree['^ot:unrootedTree']); // missing, false, or empty
+    var moreThanTwoMappings = getNodeCounts(tree).mappedTips > 2;
+
+    var firstPara = '<p style="margin-bottom: 0.0em;">';
+    if (rootConfirmed && moreThanTwoMappings) {
+        firstPara += 'It <strong>passes</strong> our minimal validation for synthesis:';
+    } else {
+        firstPara += 'It <strong>fails</strong> our minimal validation for synthesis:';
+    }
+    firstPara += '</p>';
+
+    var testList = '<ul style="margin-bottom: 0.2em;">';
+    if (rootConfirmed) {
+         testList += '  <li>Its root has been confirmed by a curator.</li>'
+    } else {
+         testList += '  <li style="color: #b94a48;">Its root has <strong>not</strong> been confirmed by a curator.</li>'
+    }
+    if (moreThanTwoMappings) {
+         testList += '  <li>It has more than two mapped OTUs.</li>';
+    } else {
+         testList += '  <li style="color: #b94a48;">It has <strong>fewer</strong> than two mapped OTUs.</li>';
+    }
+    testList += '</ul>';
+    return firstPara +'\n'+ testList;
+}
+
 function contributedToLastSynthesis(tree) {
     // Check this tree against latest-synth details
     return ($.inArray(tree['@id'], latestSynthesisTreeIDs) !== -1);
 }
 function isQueuedForNewSynthesis(tree) {
-    return false; // TODO
+    // Check to see if this tree is listed in last-known input collections
+    /* N.B. that this service "concatenates" all synth-input collections into a
+     * single, artificial "collection" with contributors and decisions/trees,
+     * but no name or description, see
+     * <https://github.com/OpenTreeOfLife/peyotl/blob/33b493e84558ffef381d841986281be352f3da53/peyotl/collections_store/__init__.py#L46>
+     */
+    if (!(treesQueuedForSynthesis) || !('decisions' in treesQueuedForSynthesis)) {
+        console.error("No queued-trees data found!");
+        return false;
+    }
+    var foundTree = false;
+    $.each(treesQueuedForSynthesis.decisions, function(i, treeDecision) {
+        if ((treeDecision.studyID === studyID) &&
+            (treeDecision.treeID === tree['@id'])) {
+            foundTree = true;
+            return false;
+        }
+    });
+    return foundTree;
 }
-function nominateTreeForSynthesis( tree, collectionID ) {
-    // 'collectionID' is optional! else use our default synth-input collection
-    // TODO: submit this tree using AJAX, then re-check status and update UI
-    return;
+
+function testForPossibleTreeInclusion(tree) {
+    // return true if it can be included, else false
+    if (isQueuedForNewSynthesis(tree)) {
+        return false;
+    }
+    if (!treeIsValidForSynthesis(tree)) {
+        return false;
+    }
+    return true;
+}
+function testForPossibleTreeExclusion(tree) {
+    // return true if it can be excluded, else false
+    return (isQueuedForNewSynthesis(tree));
+}
+
+function tryToIncludeTreeInSynth(tree) {
+    if (isQueuedForNewSynthesis(tree)) {
+        showErrorMessage("This tree is already included (queued).");
+        return;
+    }
+    if (!treeIsValidForSynthesis(tree)) {
+        var rootConfirmed = !(tree['^ot:unrootedTree']); // missing, false, or empty
+        var moreThanTwoMappings = getNodeCounts(tree).mappedTips > 2;
+        if (!rootConfirmed && !moreThanTwoMappings) {
+            showErrorMessage("This tree needs further curation (confirmed root, 3+ OTUs mapped).");
+        } else if (!rootConfirmed) {
+            showErrorMessage("This tree needs further curation (confirmed root node).");
+        } else {
+            showErrorMessage("This tree needs further curation (3 or more OTUs mapped).");
+        }
+        return;
+    }
+    console.warn('Now I would add it to the default collection');
+    // call web service to append to default synth-input collection
+    showModalScreen("Adding tree to default synthesis collection...", {SHOW_BUSY_BAR:true});
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        url: includeTreeInSynthesis_url,
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({
+            study_id: studyID,
+            tree_id: tree['@id'],
+            author_name: userDisplayName,
+            author_email: userEmail,
+            auth_token: userAuthToken
+        }),
+        crossDomain: true,
+        contentType: "application/json; charset=utf-8",
+        complete: function( jqXHR, textStatus ) {
+            hideModalScreen();
+            if (textStatus !== 'success') {
+                var errMsg = 'Sorry, there was an error including this tree. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                showErrorMessage(errMsg);
+                return;
+            }
+            // elevate response (if not error) to global input-trees variable
+            treesQueuedForSynthesis = $.parseJSON(jqXHR.responseText);
+            nudgeTickler('TREES'); // immediate update in popup UI
+            hideModalScreen();
+            $('#tree-synth-details').modal('hide');
+        }
+    });
+}
+function tryToExcludeTreeFromSynth(tree) {
+    if (!isQueuedForNewSynthesis(tree)) {
+        showErrorMessage("This tree is already excluded (not yet queued)..");
+        return;
+    }
+    console.warn('Now I would remove it from all synth-input collections');
+    showModalScreen("Removing tree from all synthesis collections...", {SHOW_BUSY_BAR:true});
+    // call web service to purge from all collections
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        url: excludeTreeFromSynthesis_url,
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({
+            study_id: studyID,
+            tree_id: tree['@id'],
+            author_name: userDisplayName,
+            author_email: userEmail,
+            auth_token: userAuthToken
+        }),
+        crossDomain: true,
+        contentType: "application/json; charset=utf-8",
+        complete: function( jqXHR, textStatus ) {
+            hideModalScreen();
+            if (textStatus !== 'success') {
+                var errMsg = 'Sorry, there was an error excluding this tree. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                showErrorMessage(errMsg);
+                return;
+            }
+            // elevate response (if not error) to global input-trees variable
+            treesQueuedForSynthesis = $.parseJSON(jqXHR.responseText);
+            nudgeTickler('TREES'); // immediate update in popup UI
+            hideModalScreen();
+            $('#tree-synth-details').modal('hide');
+        }
+    });
 }
 
 var $stashedSynthWarningsElement = null;
