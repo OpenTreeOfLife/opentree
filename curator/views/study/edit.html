@@ -690,11 +690,6 @@ body {
                                style="cursor: pointer;">&nbsp;</td>
                         <td data-bind="html: getMappedTallyForTree(tree),
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
-                        <!-- In current synthesis? -->
-                        <td>
-                            <span data-bind="text: treeContributedToLatestSynthesis(tree) ? 'Yes' : 'No'">?</span>
-                        </td>
-                        <!-- Ready for synthesis? -->
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
                             <span data-bind="text: getSynthStatusDescriptionForTree($data),
