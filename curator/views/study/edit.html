@@ -692,7 +692,8 @@ body {
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <span data-bind="text: getSynthStatusDescriptionForTree($data)"></span>
+                            <span data-bind="text: getSynthStatusDescriptionForTree($data),
+                                             css: viewModel.ticklers.TREES"></span>
                         </td>
                         <td>
                             <div style="white-space: nowrap;">
@@ -714,7 +715,8 @@ body {
                       {{ else: }}
                         <td>
                           <div style="white-space: nowrap;">
-                              <span data-bind="text: getSynthStatusDescriptionForTree($data)"></span>
+                              <span data-bind="text: getSynthStatusDescriptionForTree($data),
+                                               css: viewModel.ticklers.TREES"></span>
                               <a class="badge" href="#" style="padding: 2px 6px;"
                                  data-bind="text: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0)? (tree['^ot:reasonsToExcludeFromSynthesis'].length) : '?',
                                             css: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0 ? 'badge badge-warning' : 'badge badge-info') +' '+ viewModel.ticklers.TREES(),

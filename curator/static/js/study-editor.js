@@ -2961,6 +2961,8 @@ function getSynthStatusDescriptionForTree( tree ) {
     var queuedForNextSynth = isQueuedForNewSynthesis(tree);
     // Are there any listed reasons to exclude this tree?
     var thereAreReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] && (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0);
+    // Does this tree meet minimum standards for synthesis?
+    var validForSynthesis = treeIsValidForSynthesis(tree);
 
     if (contributedToLastSynth) {
         if (queuedForNextSynth) {
@@ -2982,9 +2984,11 @@ function getSynthStatusDescriptionForTree( tree ) {
         } else {
             if (thereAreReasonsToExclude) {
                 return "Excluded";
-            } else {
+            } else if (validForSynthesis) {
                 // This indicates a new, unreviewed tree (or out-of-band collection editing)
                 return "Needs review";
+            } else {
+                return "Needs curation";
             }
         }
     }
