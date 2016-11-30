@@ -4644,7 +4644,9 @@ function setTreeRoot( treeOrID, rootingInfo ) {
     //  - a single node (make this the new root)
     //  - a single root-node ID (for the new root)
     //  - an array of nodes or IDs (add a root between these)
-    //  - null (un-root this tree)
+    //  - null (un-root this tree)  [DEPRECATED]
+    // All but the last option should set the tree's rooted status to indicate
+    // a confirmed root. (Un-rooting, if allowed, would do the reverse.)
 
     var tree = null;
     if (typeof(treeOrID) === 'object') {
@@ -4696,6 +4698,7 @@ function setTreeRoot( treeOrID, rootingInfo ) {
 
     // update tree and node properties
     tree['^ot:specifiedRoot'] = newRootNodeID;
+    tree['^ot:unrootedTree'] = false;
     newRootNode['@root'] = true;
     // selective deletion of d3 parent
     delete newRootNode['parent'];
@@ -6619,6 +6622,9 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
 
     if (nodeID == importantNodeIDs.treeRoot) {
         nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
+        if ((viewOrEdit === 'EDIT') && (tree['^ot:unrootedTree'])) {
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Confirm as root of this tree</a></li>');
+        }
     } else {
         if ((viewOrEdit === 'EDIT') && !(node['^ot:isLeaf'])) {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as root of this tree</a></li>');
