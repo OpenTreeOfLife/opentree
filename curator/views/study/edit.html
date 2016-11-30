@@ -731,7 +731,7 @@ body {
                                 class="pull-right btn btn-mini btn-danger row-controls-ghosted"
                                 title="Click to delete this tree from the study"
                                 style="display: none; margin-left: 5px;">
-                                <i class="icon-remove icon-white"></i>
+                                <i class="icon-trash icon-white"></i>
                             </button>
                         </td>
                       {{ pass }}
@@ -1000,11 +1000,11 @@ body {
                                 class="pull-right btn btn-mini btn-danger"
                                 style="opacity: 0.3 !important;"
                                 onclick="alert('You must delete the associated tree(s) to remove this file.'); return false;">
-                                <i class="icon-remove icon-white"></i>
+                                <i class="icon-trash icon-white"></i>
                             </button>
                             <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
                                 class="pull-right btn btn-mini btn-danger row-controls-ghosted">
-                                <i class="icon-remove icon-white"></i>
+                                <i class="icon-trash icon-white"></i>
                             </button>
                         </td>
                     {{ else: }}
@@ -1602,7 +1602,7 @@ body {
                             <td align="center" valign="center">
                                 <a href="#" title="Click to remove this substitution."
                                    data-bind="click: function(data, event) { removeSubstitution(data);  }" />
-                                    <i class="icon-remove"></i></a>
+                                    <i class="icon-trash"></i></a>
                             </td>
                         </tr>
                     </tbody>
@@ -2328,7 +2328,7 @@ body {
                       <td>
                         <button data-bind="click: function() {removeReasonToExcludeTree($index(), $root); return false;},
                                            visible: (viewOrEdit == 'EDIT')" title="Remove this tree from the collection" class="pull-right btn btn-mini btn-danger row-controls-ghosted" style="margin-left: 4px;">
-                          <i class="icon-remove icon-white"></i>
+                          <i class="icon-trash icon-white"></i>
                         </button>
                         <textarea class="input-block-level"
                             style="width: 470px; margin-bottom: 4px;"
@@ -2627,7 +2627,7 @@ body {
                                        attr: {'disabled': sharedTaxonSources()}"
                         class="pull-right btn btn-mini btn-danger row-controls-ghosted"
                         style="display: none;">
-                        <i class="icon-remove icon-white"></i>
+                        <i class="icon-trash icon-white"></i>
                     </button>
                   </td>
                  </tr><!-- end of .taxon-source -->
