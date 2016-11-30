@@ -639,18 +639,17 @@ body {
                     <tr>
                       {{ if viewOrEdit == 'EDIT': }}
                         <th>Tree name (click to edit tree)</th>
+                        <th colspan="2">Included in synthesis?</th>
                       {{ else: }}
                         <th>Tree name (click to view)</th>
+                        <th>Synthesis status</th>
                       {{ pass }}
                         <th>Inference method</th>
                         <th>Ingroup clade</th>
                         <th>Tree root</th>
                         <th>OTUs mapped</th>
                       {{ if viewOrEdit == 'EDIT': }}
-                        <th colspan="2">Included in synthesis?</th>
                         <th>&nbsp;</th>
-                      {{ else: }}
-                        <th>Synthesis status</th>
                       {{ pass }}
                     </tr>
                   </thead>
@@ -680,16 +679,6 @@ body {
                                 Review ambiguous labels
                             </a>
                         </td>
-                        <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
-                                css: viewModel.ticklers.TREES">&nbsp;</td>
-                        <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
-                                css: viewModel.ticklers.TREES">&nbsp;</td>
-                        <td data-bind="html: getRootedDescriptionForTree(tree),
-                                       click: showArbitraryRootExplanationInTreeViewer,
-                                       css: viewModel.ticklers.TREES"
-                               style="cursor: pointer;">&nbsp;</td>
-                        <td data-bind="html: getMappedTallyForTree(tree),
-                                css: viewModel.ticklers.TREES">&nbsp;</td>
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
                             <span data-bind="text: getSynthStatusDescriptionForTree($data),
@@ -724,13 +713,23 @@ body {
                           </div>
                         </td>
                       {{ pass }}
+                        <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
+                                css: viewModel.ticklers.TREES">&nbsp;</td>
+                        <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
+                                css: viewModel.ticklers.TREES">&nbsp;</td>
+                        <td data-bind="html: getRootedDescriptionForTree(tree),
+                                       click: showArbitraryRootExplanationInTreeViewer,
+                                       css: viewModel.ticklers.TREES"
+                               style="cursor: pointer;">&nbsp;</td>
+                        <td data-bind="html: getMappedTallyForTree(tree),
+                                css: viewModel.ticklers.TREES">&nbsp;</td>
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
                             <button data-bind="click: removeTree,
                                                visible: true"
                                 class="pull-right btn btn-mini btn-danger row-controls-ghosted"
                                 title="Click to delete this tree from the study"
-                                style="display: none; margin-left: 5px;">
+                                style="display: none;">
                                 <i class="icon-trash icon-white"></i>
                             </button>
                         </td>
