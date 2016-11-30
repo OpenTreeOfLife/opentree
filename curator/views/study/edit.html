@@ -2345,17 +2345,23 @@ body {
             </div>
 
             <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
+              <div id="add-reason-to-exclude" class="empty-list-prompt" style="margin-bottom: 6px; display:none;">
+                  Why this tree should be excluded? Add your reason(s) here.
+              </div>
               <button type="submit" class="btn btn-small btn-info"
                   data-bind="click: function() {addReasonToExcludeTree($parent); return false;},
                              visible: (viewOrEdit == 'EDIT')"><span data-bind="text: (warnings.length > 0) ? 'Add another reason to exclude this tree' : 'Add a reason to exclude this tree'">?</span>
                     &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
               </button>
+              <div id="override-reasons-to-exclude" class="empty-list-prompt" style="margin-top: 6px; display:none;">
+                  Are you sure you want to override (or remove) the reasons listed above?
+              </div>
             </div>
             <div class="pull-right" style="position: relative; margin: 9px 2px;"
                  data-bind="visible: (viewOrEdit == 'EDIT')">
               <a class="btn btn-success row-controls-ghosted"
                  data-bind="attr: {disabled: !(testForPossibleTreeInclusion($root))},
-                            click: function() {tryToIncludeTreeInSynth($root)}">
+                            click: function() {tryToIncludeTreeInSynth($root, {FORCE_OVERRIDE: true})}">
                 <strong>Include</strong> this tree in synthesis</a>
               &nbsp;
               <a class="btn btn-danger row-controls-ghosted"

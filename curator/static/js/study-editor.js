@@ -1689,10 +1689,12 @@ function getTreeConflictSummary(conflictInfo) {
 function testConflictSummary(conflictInfo) {
     // show results in the JS console
     var summaryInfo = getTreeConflictSummary(conflictInfo);
+    /*
     console.warn("Node status summary");
     console.warn("  "+ summaryInfo.aligned +" aligned nodes");
     console.warn("  "+ summaryInfo.conflicting +" conflicting nodes");
     console.warn("  "+ summaryInfo.resolving +" resolving nodes");
+    */
 }
 
 // returns a link to the witness node (in synth tree browser or OTT browser)
@@ -2982,13 +2984,13 @@ function getSynthStatusDescriptionForTree( tree ) {
                 return "Queued";
             }
         } else {
-            if (thereAreReasonsToExclude) {
+            if (!validForSynthesis) {
+                return "Needs curation";
+            } else if (thereAreReasonsToExclude) {
                 return "Excluded";
-            } else if (validForSynthesis) {
+            } else {
                 // This indicates a new, unreviewed tree (or out-of-band collection editing)
                 return "Needs review";
-            } else {
-                return "Needs curation";
             }
         }
     }
@@ -3125,7 +3127,8 @@ function testForPossibleTreeExclusion(tree) {
     return (isQueuedForNewSynthesis(tree));
 }
 
-function tryToIncludeTreeInSynth(tree) {
+function tryToIncludeTreeInSynth(tree, options) {
+    options = options || {};
     if (isQueuedForNewSynthesis(tree)) {
         showInfoMessage("This tree is already included (queued).");
         return;
@@ -3142,7 +3145,14 @@ function tryToIncludeTreeInSynth(tree) {
         }
         return;
     }
-    console.warn('Now I would add it to the default collection');
+    var howManyReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] ? tree['^ot:reasonsToExcludeFromSynthesis'].length : 0;
+    if (!(options.FORCE_OVERRIDE)) {
+        if (howManyReasonsToExclude > 0) {
+            // if there are no reasons-to-exclude, prompt for one now
+            showTreeSynthDetailsPopup( tree, {PROMPT_FOR_OVERRIDE: true});
+            return;
+        }
+    }
     // call web service to append to default synth-input collection
     showModalScreen("Adding tree to default synthesis collection...", {SHOW_BUSY_BAR:true});
     $.ajax({
@@ -3175,11 +3185,16 @@ function tryToIncludeTreeInSynth(tree) {
     });
 }
 function tryToExcludeTreeFromSynth(tree) {
-    if (!isQueuedForNewSynthesis(tree)) {
-        showInfoMessage("This tree is already excluded (not yet queued)..");
+    var howManyReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] ? tree['^ot:reasonsToExcludeFromSynthesis'].length : 0;
+    if (howManyReasonsToExclude === 0) {
+        // if there are no reasons-to-exclude, prompt for one now
+        showTreeSynthDetailsPopup( tree, {PROMPT_FOR_REASONS: true});
         return;
     }
-    console.warn('Now I would remove it from all synth-input collections');
+    if (!isQueuedForNewSynthesis(tree)) {
+        showInfoMessage("This tree is already excluded, for "+ howManyReasonsToExclude +" reason"+ (howManyReasonsToExclude === 1 ? '': 's') +".");
+        return;
+    }
     showModalScreen("Removing tree from all synthesis collections...", {SHOW_BUSY_BAR:true});
     // call web service to purge from all collections
     $.ajax({
@@ -3213,8 +3228,9 @@ function tryToExcludeTreeFromSynth(tree) {
 }
 
 var $stashedSynthWarningsElement = null;
-function showTreeSynthDetailsPopup( tree ) {
+function showTreeSynthDetailsPopup( tree, options ) {
     // bind and show details for this tree vs. old and new synthesis
+    options = options || {};
 
     /* TODO: special init behavior for EDIT vs. VIEW?
     if (viewOrEdit == 'EDIT') {
@@ -3255,6 +3271,19 @@ function showTreeSynthDetailsPopup( tree ) {
         nudgeTickler('TREES');
     });
     $('#tree-synth-details').modal('show');
+
+    var $addReasonPrompt = $('#tree-synth-details').find('#add-reason-to-exclude');
+    if (options.PROMPT_FOR_REASONS) {
+        $addReasonPrompt.show();
+    } else {
+        $addReasonPrompt.hide();
+    }
+    var $overridePrompt = $('#tree-synth-details').find('#override-reasons-to-exclude');
+    if (options.PROMPT_FOR_OVERRIDE) {
+        $overridePrompt.show();
+    } else {
+        $overridePrompt.hide();
+    }
 }
 function hideTreeSynthDetailsPopup() {
     $('#tree-synth-details').modal('hide');
