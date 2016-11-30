@@ -1170,8 +1170,8 @@ function createArgus(spec) {
             labelY = node.y;
             labelAnchor = 'start';
         } else {
-            labelX = node.x - (node.r * 1.25);
-            labelY = node.y + (node.r * 1.25);
+            labelX = node.x - (node.r + 0.5);
+            labelY = node.y + (node.r + 0.5);
             labelAnchor = 'end';
         }
 
