@@ -406,56 +406,83 @@ if (!d3) { throw "d3 wasn't included!"};
     // Is there a faster/cruder way to clear the decks?
     vis.selectAll('g.node text').remove();
 
-    // provide an empty label as last resort, so we can see highlights
-    var defaultNodeLabel = "unnamed";
-
     if (!options.skipLabels) {
       // refresh all labels based on tree position
       vis.selectAll('g.node')
         .append("svg:text")
           .attr('font-family', 'Helvetica Neue, Helvetica, sans-serif')
-          .attr("dx", function(d) {return (d.labelType === 'node id') ? 0 : -6;})
-          .attr("dy", function(d) {return (d.labelType === 'node id') ? 3 : -6;})
-          .attr("text-anchor", function(d) {return (d.labelType === 'node id') ? 'middle' : 'end';})
+          // Default label placement is for internal nodes (overridden below for tips).
+          // N.B. that "empty" labels are centered and used for node highlighting.
+          .attr("dx", function(d) {return (d.labelType === 'empty') ? 0 : -6;})
+          .attr("dy", function(d) {return (d.labelType === 'empty') ? 3 : -6;})
+          .attr("text-anchor", function(d) {return (d.labelType === 'empty') ? 'middle' : 'end';})
           .attr('font-size', '10px')
+          .attr('pointer-events', 'none')
           .attr('fill', function(d) {
               switch(d.labelType) {
-                  case ('mapped label'):
+                  case ('tip (mapped OTU)'):
                       return '#000';
-                  case ('node id'):
-                      if (d.ambiguousLabel) {
-                          return '#b94a48';  // show ambiguous labels, match red prompts
-                      } else if (d.adjacentEdgeLabel) {
-                          return '#888';
-                      } else {
-                          return '#888';
-                      }
-                  default:
+                  case ('tip (original)'):
                       return '#888';
+                  case ('internal node (support)'):
+                      return '#888';
+                  case ('internal node (other)'):
+                      return '#888';
+                  case ('internal node (ambiguous)'):
+                      return '#b94a48';  // show ambiguous labels, match red prompts
+                  case ('empty'):
+                      return '#888';
+                  default:
+                      console.error('Unknown label type! ['+ d.labelType +']');;
+                      return '#3f3';
               }
           })
           .attr('font-style', function(d) {
-              return (d.labelType === 'mapped label' ? 'inherit' : 'italic');
+              return (d.labelType === 'tip (mapped OTU)' ? 'inherit' : 'italic');
           })
           .html(function(d) {
-              // return (d.name + ' ('+d.length+')');
-              var nodeLabel = '';
-              if (d.labelType === 'node id') {
-                  nodeLabel = '';  // hide these
-              } else {
-                  nodeLabel = d.name || defaultNodeLabel;
+              /*
+              console.log("name: "+ d.name
+                      + "\nlabelType: "+ d.labelType
+                      + "\nlength: "+ d.length
+                      + "\nadjacentEdgeLabel: "+ d.adjacentEdgeLabel);
+              */
+              switch(d.labelType) {
+                  case ('tip (mapped OTU)'):
+                  case ('tip (original)'):
+                  case ('internal node (support)'):
+                  case ('internal node (other)'):
+                  case ('internal node (ambiguous)'):
+                      return d.name;
+                  case ('empty'):
+                      /* N.B. empty label should hide, but still have layout to
+                       * support a legible highlight.
+                       */
+                      return '&nbsp; &nbsp; &nbsp; &nbsp;';
+                  default:
+                      console.error('Unknown label type! ['+ d.labelType +']');;
+                      return "???";
               }
-              var supplementalLabel = d.ambiguousLabel || d.adjacentEdgeLabel;
-              if (supplementalLabel) {
-                  if (nodeLabel === '') {
-                      nodeLabel = supplementalLabel;
-                  } else {
-                      nodeLabel = nodeLabel +" ["+ supplementalLabel +"]";
-                  }
-              }
-              // N.B. empty label should hide, but still have layout to support a legible highlight
-              return nodeLabel || '&nbsp; &nbsp; &nbsp; &nbsp;';
           });
+
+      /* Add a second field to show any edge support values?
+       * COMMENTING THIS OUT based on further discussion. (It seems we do not expect
+       * any scenario where a tree has multiple labels per node.)
+       *
+      vis.selectAll('g.node')
+        .filter(function(d) { return d.adjacentEdgeLabel ? true : false;})
+        .append("svg:text")
+          .attr('font-family', 'Helvetica Neue, Helvetica, sans-serif')
+          // Show *beneath* the branch, directly under any internal node label
+          // N.B. that "empty" labels are centered and used for node highlighting.
+          .attr('fill', '#888')
+          .attr("dx", -6)
+          .attr("dy", 12)
+          .attr("text-anchor", 'end')
+          .attr('font-size', '10px')
+          .attr('pointer-events', 'none')
+          .html(function(d) { return d.adjacentEdgeLabel || '???'});
+      */
 
       vis.selectAll('g.root.node text')
           .attr("dx", -8)

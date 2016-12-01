@@ -4443,20 +4443,6 @@ function drawTree( treeOrID, options ) {
 
     // preload nodes with proper labels and branch lengths
     $.each(tree.node, function(index, node) {
-        var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
-        node.name = labelInfo.label;
-        node.labelType = labelInfo.labelType;
-
-        if (labelInfo['internalNodeLabel']) {
-            node.internalNodeLabel = labelInfo['internalNodeLabel'];
-        } else {
-            delete node.internalNodeLabel;
-        }
-        if (labelInfo['ambiguousLabel']) {
-            node.ambiguousLabel = labelInfo['ambiguousLabel'];
-        } else {
-            delete node.ambiguousLabel;
-        }
         // reset x of all nodes, to avoid gradual "creeping" to the right
         node.x = 0;
         node.length = 0;  // ie, branch length
@@ -4466,10 +4452,10 @@ function drawTree( treeOrID, options ) {
     var shortestEdge = null;
     var longestEdge = null;
     $.each(edges, function(index, edge) {
-        if (('@length' in edge) || ('@label' in edge)) {
-            // transfer @length property (if any) to the child node
-            var childID = edge['@target'];
-            var childNode = getTreeNodeByID(tree, childID);
+        var childID = edge['@target'];
+        var childNode = getTreeNodeByID(tree, childID);
+        // transfer @length property (if any) to the child node
+        if ('@length' in edge) {
             if ('@length' in edge) {
                 childNode.length = parseFloat(edge['@length'] || '0');
                 ///console.log("> reset length of node "+ childID+" to: "+ childNode.length);
@@ -4486,18 +4472,37 @@ function drawTree( treeOrID, options ) {
                     }
                 }
             }
-            // share certain edge predicates (usu. support values) with the child node
-            $.each(nodeLabelModes, function(i, modeInfo) {
-                // check the edge property set by each option
-                var edgeProp = modeInfo.edgePredicate; // eg, '^ot:bootstrapValues'
-                if (edgeProp in edge) {
-                    childNode.adjacentEdgeLabel = edge[ edgeProp ];
-                    return false;  // use first one found
-                }
-            });
         }
+        // share certain edge predicates (usu. support values) with the child node
+        /* N.B. we do this before calling getTreeNodeLabel below, since we need
+         * to set adjacentEdgeLabel first!
+         */
+        $.each(nodeLabelModes, function(i, modeInfo) {
+            // check the edge property set by each option
+            var edgeProp = modeInfo.edgePredicate; // eg, '^ot:bootstrapValues'
+            if (edgeProp in edge) {
+                childNode.adjacentEdgeLabel = edge[ edgeProp ];
+                return false;  // use first one found
+            }
+        });
     });
     ///console.log("> done sweeping edges");
+    $.each(tree.node, function(index, node) {
+        var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
+        node.name = labelInfo.label;
+        node.labelType = labelInfo.labelType;
+
+        if (labelInfo['internalNodeLabel']) {
+            node.internalNodeLabel = labelInfo['internalNodeLabel'];
+        } else {
+            delete node.internalNodeLabel;
+        }
+        if (labelInfo['ambiguousLabel']) {
+            node.ambiguousLabel = labelInfo['ambiguousLabel'];
+        } else {
+            delete node.ambiguousLabel;
+        }
+    });
 
     if (options.INITIAL_DRAWING) {
         var proportion = longestEdge / shortestEdge;
@@ -4567,7 +4572,7 @@ function drawTree( treeOrID, options ) {
                         if (grandchildEdges.length === 1) {
                             // it's a knuckle, with just one child that might be more interesting
                             var itsLabelInfo = getTreeNodeLabel(tree, childNode);
-                            if (itsLabelInfo.labelType === 'node id') {
+                            if (itsLabelInfo.labelType === 'empty') {
                                 // the node has no interesting label, so use its only child instead!
                                 var grandchildNode = getTreeNodeByID(null, grandchildEdges[0]['@target']);
                                 if (!grandchildNode) {
@@ -5153,14 +5158,18 @@ function updateLeafNodeFlags(tree) {
      */
 }
 function getTreeNodeLabel(tree, node, importantNodeIDs) {
-    // Return the best available label for this node, and its type:
-    //   'mapped label'         (mapped to OT taxonomy, preferred)
-    //   'original label'
-    //   'positional label'     (eg, "tree root")
-    //   'node id'              (a last resort, rarely useful)
+    /* Return the best available label for this node, and its type:
+         'tip (mapped OTU)'         mapped to OT taxonomy, preferred
+         'tip (original)'           OTU is not yet mapped
+         'internal node (support)'
+         'internal node (other)'
+         'internal node (ambiguous)'
+         'empty'                    no visible label
+         'node id'                  a last resort, rarely useful  [DEPRECATED]
+         'positional label'         eg, "tree root"  [DEPRECATED]
+    */
     var labelInfo = {};
     var nodeID = node['@id'];
-
     /* apply simple positional labels?
     if (nodeID === importantNodeIDs.inGroupClade) {
         labelInfo.label = "ingroup clade";
@@ -5179,29 +5188,36 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
         var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
         if (itsMappedLabel) {
             labelInfo.label = itsMappedLabel;
-            labelInfo.labelType = 'mapped label';
+            labelInfo.labelType = 'tip (mapped OTU)';
             labelInfo.originalLabel = otu['^ot:originalLabel'];
         } else {
-            var itsOriginalLabel = otu['^ot:originalLabel'];
-            labelInfo.label = itsOriginalLabel;
-            labelInfo.labelType = 'original label';
+            labelInfo.label = otu['^ot:originalLabel'];
+            labelInfo.labelType = 'tip (original)';
         }
     } else {
         if ('@label' in node) {
+            // TODO: What about other nodeLabelMode values!?
             if (tree['^ot:nodeLabelMode'] === 'ot:other') {
                 // add any internal label (eg, taxon name) for display
                 labelInfo.label = node['@label'];
-                labelInfo.labelType = 'internal node label ('+ tree['^ot:nodeLabelDescription'] +')';
+                labelInfo.labelType = 'internal node (other)';
+                // include tree['^ot:nodeLabelDescription'] ?
+            } else if (tree['^ot:nodeLabelMode']) {
+                // any others are support values (1 of 2)
+                labelInfo.label = node['@label'];
+                labelInfo.labelType = 'internal node (support)';
             } else {
                 // add any ambiguous label (unresolved type) for display
-                // TODO: *or* just call getAmbiguousLabelsInTree(tree) once?
-                labelInfo.ambiguousLabel = node['@label'];
-                labelInfo.label = nodeID;
-                labelInfo.labelType = 'node id';
+                labelInfo.label = node['@label'];
+                labelInfo.labelType = 'internal node (ambiguous)';
             }
+        } else if (node.adjacentEdgeLabel) {
+            // any label from the adjacent (root-ward) edge is support (2 of 2)
+            labelInfo.label = node.adjacentEdgeLabel;
+            labelInfo.labelType = 'internal node (support)';
         } else {
             labelInfo.label = nodeID;
-            labelInfo.labelType = 'node id';
+            labelInfo.labelType = 'empty';
         }
     }
 
@@ -6642,7 +6658,43 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     nodeMenu.append('<li class="node-information"></li>');
     var nodeInfoBox = nodeMenu.find('.node-information');
     var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
-    nodeInfoBox.append('<span class="node-name">'+ labelInfo.label +'</span>');
+    /* Decide what label to show in the 'options' menu, and how to describe it
+     * N.B. that we might want to show something different from the label
+     * showing in the phylogram.
+     */
+    var nodeOptionsLabel;
+    var labelTypeDescription;
+    var origDisambigStr;  // used in some special cases
+    switch(labelInfo.labelType) {
+        case('tip (mapped OTU)'):
+            nodeOptionsLabel = labelInfo.label;
+            labelTypeDescription = "Mapped to Open Tree taxonomy, ";
+            origDisambigStr = labelInfo.originalLabel;
+            break;
+        case('tip (original)'):
+            nodeOptionsLabel = labelInfo.label;
+            labelTypeDescription = "Original OTU label";
+            break;
+        case ('internal node (support)'):
+        case ('internal node (other)'):
+            nodeOptionsLabel = labelInfo.label;
+            labelTypeDescription = getNodeLabelModeDescription(tree);
+            break;
+        case ('internal node (ambiguous)'):
+            nodeOptionsLabel = labelInfo.label;
+            labelTypeDescription = "Internal node label (ambiguous)";
+            break;
+        case ('empty'):
+            nodeOptionsLabel = node['@id'];
+            labelTypeDescription = "Unlabeled node";
+            //labelTypeDescription = labelInfo.originalLabel ; //'original OTU label';
+            break;
+        default:
+            nodeOptionsLabel = "???";
+            labelTypeDescription = ('Unknown label type! ['+ labelInfo.labelType +']');
+            console.error('Unknown label type! ['+ labelInfo.labelType +']');;
+    }
+    nodeInfoBox.append('<span class="node-name">'+ nodeOptionsLabel +'</span>');
 
     if ((viewOrEdit === 'EDIT') && isDuplicateNode( tree, node )) {
         if (node['^ot:isTaxonExemplar'] === true) {
@@ -6674,26 +6726,10 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade</a></li>');
         }
     }
-    // clarify which type of label
-    var labelTypeDescription;
-    var origDisambigStr = "";
-    switch(labelInfo.labelType) {
-        case('mapped label'):
-            labelTypeDescription = 'mapped to Open Tree taxonomy';
-            origDisambigStr = labelInfo.originalLabel;
-            break;
-        case('original label'):
-            labelTypeDescription = labelInfo.originalLabel ; //'original OTU label';
-            break;
-        case('node id'):
-            labelTypeDescription = 'unnamed node';
-            break;
-        default:
-            labelTypeDescription = labelInfo.labelType;
-    }
+
     nodeInfoBox.append('<div class="node-label-type">'+ labelTypeDescription +'</div>');
-    if (origDisambigStr) {
-        nodeInfoBox.append('<div class="node-label-type"> Originally labelled "'+ origDisambigStr +'"</div>');
+    if (origDisambigStr && (origDisambigStr !== nodeOptionsLabel)) {
+        nodeInfoBox.append('<div class="node-label-type">originally labelled "'+ origDisambigStr +'"</div>');
     }
     if (node.conflictDetails) {
         // desribe its status in the current conflict analysis
@@ -7191,6 +7227,7 @@ function findHighestElementOrdinalNumber( nexml, prefix, gatherAllFunc ) {
         var testElement = allElements[i];
         var testID = ko.unwrap(testElement['@id']) || '';
         if (testID === '') {
+            // TODO: Suppress these warnings if prefix is 'message'?
             console.error("MISSING ID for this "+ prefix +":");
             console.error(testElement);
             continue;  // skip to next element
