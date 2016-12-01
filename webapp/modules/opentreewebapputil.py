@@ -236,6 +236,31 @@ def fetch_current_TNRS_context_names(request):
         # throw 403 or 500 or just leave it
         return ('ERROR', e.message)
 
+def fetch_trees_queued_for_synthesis(request):
+    try:
+        # fetch all current synth-input collections (as JSON) from remote site
+        # N.B. that this service "concatenates" all synth-input collections
+        # into a single, artificial "collection" with contributors and
+        # decisions/trees, but no name or description, see
+        # <https://github.com/OpenTreeOfLife/peyotl/blob/33b493e84558ffef381d841986281be352f3da53/peyotl/collections_store/__init__.py#L46>
+        from gluon.tools import fetch
+
+        method_dict = get_opentree_services_method_urls(request)
+        fetch_url = method_dict['getTreesQueuedForSynthesis_url']
+        if fetch_url.startswith('//'):
+            # Prepend scheme to a scheme-relative URL
+            fetch_url = "https:%s" % fetch_url
+
+        queued_trees_response = fetch(fetch_url)
+        #queued_trees_response = queued_trees_response.encode('utf-8')  # OK TO SKIP THIS?
+        queued_trees_json = json.loads( queued_trees_response )
+        # this should be a dictionary rendering of the artificial collection
+        return queued_trees_json
+
+    except Exception, e:
+        # throw 403 or 500 or just leave it
+        return ('ERROR', e.message)
+
 def unique_ordered_list(seq):
     seen = set()
     seen_add = seen.add

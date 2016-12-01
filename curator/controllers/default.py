@@ -521,14 +521,6 @@ def to_nexson():
         orig_args['uploadId'] = unique_id
         orig_args['inputFormat'] = inp_format
         orig_args['idPrefix'] = idPrefix
-        orig_args['newTreesPreferred'] = False
-        if 'newTreesPreferred' in request.vars:
-            v = request.vars.newTreesPreferred
-            if isinstance(v, str) or isinstance(v, unicode):
-                if v.lower() in ["true", "yes", "1"]:
-                    orig_args['newTreesPreferred'] = True
-            elif isinstance(v, bool) and v:
-                orig_args['newTreesPreferred'] = True
         fa_tuples = [('first_tree_available_edge_id', 'firstAvailableEdgeID', 'e'), 
                      ('first_tree_available_node_id', 'firstAvailableNodeID', 'n'),
                      ('first_tree_available_otu_id', 'firstAvailableOTUID', 'o'),

@@ -256,7 +256,7 @@ body {
       <li><a href="#History" data-toggle="tab">History <span class="badge badge-important" style="display: none;">?</span></a></li>
     </ul>
 
-    <div class="span4 Xbtn-group" style="float: right; margin-top: -56px;">
+    <div class="span4" style="float: right; margin-top: -56px;">
         {{ if viewOrEdit == 'EDIT': }}
           <button id="save-study-button" class="btn">Save Study</button>
           <input type="hidden" id="return-to-study-list"
@@ -520,15 +520,6 @@ body {
               <!-- <div class="control-group">
                 <div class="controls">
 
-                {{ if viewOrEdit == 'EDIT': }}
-                  <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: nexml['^ot:notIntendedForSynthesis'], event: { click: nudge.GENERAL_METADATA }"> This study should not contribute to synthesis.
-                  </label>
-                {{ else: }}
-                  <p class="static-form-value" data-bind="css: nexml['^ot:notIntendedForSynthesis'] ? 'interesting-value' : 'boring-value',
-                                                          text: nexml['^ot:notIntendedForSynthesis'] ? 'This study should not contribute to synthesis. (This is not typical.)' : 'This study should contribute to synthesis.'"></p>
-                {{ pass }}
-
                   <p class="static-form-value interesting-value" data-bind="text: studyContributedToLatestSynthesis() ? (currentStudyVersionContributedToLatestSynthesis() ? 'This version was used to build the latest synthetic tree' : 'This study has changed since building the last synthetic tree.') : 'This study was not used in the latest synthesis.'"></p>
 
                 </div>
@@ -648,14 +639,15 @@ body {
                     <tr>
                       {{ if viewOrEdit == 'EDIT': }}
                         <th>Tree name (click to edit tree)</th>
+                        <th colspan="2">Included in synthesis?</th>
                       {{ else: }}
                         <th>Tree name (click to view)</th>
+                        <th>Synthesis status</th>
                       {{ pass }}
                         <th>Inference method</th>
                         <th>Ingroup clade</th>
                         <th>Tree root</th>
                         <th>OTUs mapped</th>
-                        <th>Preferred</th>
                       {{ if viewOrEdit == 'EDIT': }}
                         <th>&nbsp;</th>
                       {{ pass }}
@@ -687,6 +679,40 @@ body {
                                 Review ambiguous labels
                             </a>
                         </td>
+                      {{ if viewOrEdit == 'EDIT': }}
+                        <td>
+                            <span data-bind="text: getSynthStatusDescriptionForTree($data),
+                                             css: viewModel.ticklers.TREES"></span>
+                            <a class="badge" href="#" style="padding: 2px 6px;"
+                               title="Click to see details about this tree in synthesis"
+                               data-bind="text: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0)? (tree['^ot:reasonsToExcludeFromSynthesis'].length) : '?',
+                                          css: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0 ? 'badge badge-warning' : 'badge badge-info') +' '+ viewModel.ticklers.TREES(),
+                                          click: showTreeSynthDetailsPopup">?</a>
+                        </td>
+                        <td>
+                            <div style="white-space: nowrap;">
+                              <a class="btn btn-mini btn-success row-controls-ghosted"
+                                 data-bind="attr: {disabled: !(testForPossibleTreeInclusion($data))},
+                                            css: viewModel.ticklers.TREES,
+                                            click: tryToIncludeTreeInSynth">Include</a>
+                              <a class="btn btn-mini btn-danger row-controls-ghosted"
+                                 data-bind="attr: {disabled: !(testForPossibleTreeExclusion($data))},
+                                            css: viewModel.ticklers.TREES,
+                                            click: tryToExcludeTreeFromSynth">Exclude</a>
+                            </div>
+                        </td>
+                      {{ else: }}
+                        <td>
+                          <div style="white-space: nowrap;">
+                              <span data-bind="text: getSynthStatusDescriptionForTree($data),
+                                               css: viewModel.ticklers.TREES"></span>
+                              <a class="badge" href="#" style="padding: 2px 6px;"
+                                 data-bind="text: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0)? (tree['^ot:reasonsToExcludeFromSynthesis'].length) : '?',
+                                            css: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0 ? 'badge badge-warning' : 'badge badge-info') +' '+ viewModel.ticklers.TREES(),
+                                            click: showTreeSynthDetailsPopup">?</a>
+                          </div>
+                        </td>
+                      {{ pass }}
                         <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
@@ -699,20 +725,12 @@ body {
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <input type="checkbox" style="margin: 0px 20px; display: none;"
-            data-bind="attr: {'checked': jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1},
-                       click: togglePreferredTree,
-                       visible: true" /></td>
-                      {{ else: }}
-                        <td data-bind="text: (jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) ? 'YES' : 'NO'">&nbsp;</td>
-                      {{ pass }}
-                      {{ if viewOrEdit == 'EDIT': }}
-                        <td>
                             <button data-bind="click: removeTree,
                                                visible: true"
                                 class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                                title="Click to delete this tree from the study"
                                 style="display: none;">
-                                <i class="icon-remove icon-white"></i>
+                                <i class="icon-trash icon-white"></i>
                             </button>
                         </td>
                       {{ pass }}
@@ -780,10 +798,11 @@ body {
               </p>
         {{ if viewOrEdit == 'EDIT': }}
               <p>
-                See <strong>Add a tree to this study</strong>, below, to
-                add new trees from a file or pasted text. Mark the tree as
-                <strong>preferred</strong> to nominate it for inclusion in synthesis.
-                Preferred trees will undergo validation, generating warnings
+                See <strong>Add a tree to this study</strong>, below, to add
+                new trees from a file or pasted text. To nominate a tree for
+                inclusion in synthesis, click its <strong>Include</strong> 
+                button after clearing (or acknowledging) any objections.
+                Nominated trees will undergo validation, generating warnings
                 for full OTU mapping and other quality checks.
               </p>
               <p>
@@ -792,10 +811,11 @@ body {
               </p>
         {{ else: }}
               <p>
-                Trees marked as <strong>preferred</strong> have been nominated
-                for inclusion in synthesis, generally because they
-                best represent the conclusions of the study. Inclusion in synthesis
-                also requires that trees be rooted correctly and have OTUs mapped.
+                Trees with a synthesis status of <strong>Included</strong>
+                or <strong>Queued</strong> have been nominated for inclusion
+                in synthesis, generally because they best represent the
+                conclusions of the study. Inclusion in synthesis also requires
+                that trees be rooted correctly and have OTUs mapped.
               </p>
               <p>
                 Click on a tree name to view the tree and get more information.
@@ -885,11 +905,6 @@ body {
                   <label for="new-tree-URL">&hellip;or paste an URL to the tree</label>
                   <input type="text" id="new-tree-URL" class="input-block-level" value="" placeholder="Paste URL here">
 -->
-
-                  <label class="checkbox">
-                      <input name="newTreesPreferred" type="checkbox" value="true">
-                      Mark this tree as preferred for synthesis
-                  </label>
 
                   <div Xclass="form-actions" style="margin-top: 1em;">
                       <button name="new-tree-submit" type="submit"
@@ -984,11 +999,11 @@ body {
                                 class="pull-right btn btn-mini btn-danger"
                                 style="opacity: 0.3 !important;"
                                 onclick="alert('You must delete the associated tree(s) to remove this file.'); return false;">
-                                <i class="icon-remove icon-white"></i>
+                                <i class="icon-trash icon-white"></i>
                             </button>
                             <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
                                 class="pull-right btn btn-mini btn-danger row-controls-ghosted">
-                                <i class="icon-remove icon-white"></i>
+                                <i class="icon-trash icon-white"></i>
                             </button>
                         </td>
                     {{ else: }}
@@ -1162,7 +1177,7 @@ body {
                             <span data-bind="text: viewModel.listFilters.OTUS.scope">SCOPE</span>
                             <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu" data-bind="foreach: ['In all trees', 'In preferred trees', 'In non-preferred trees']">
+                        <ul class="dropdown-menu" data-bind="foreach: ['In all trees', 'In trees nominated for synthesis', 'In trees not yet nominated']">
                             <li data-bind="css: {'disabled': viewModel.listFilters.OTUS.scope() == $data }">
                                 <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.OTUS.scope($data); }">SCOPE</a>
                             </li>
@@ -1586,7 +1601,7 @@ body {
                             <td align="center" valign="center">
                                 <a href="#" title="Click to remove this substitution."
                                    data-bind="click: function(data, event) { removeSubstitution(data);  }" />
-                                    <i class="icon-remove"></i></a>
+                                    <i class="icon-trash"></i></a>
                             </td>
                         </tr>
                     </tbody>
@@ -1940,6 +1955,8 @@ body {
 <script type='text/javascript'>
     var studyID = '{{= studyID }}';
     var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
+    var latestSynthesisTreeIDs = {{= XML( json.dumps(latestSynthesisTreeIDs) ) }};
+    var treesQueuedForSynthesis = {{=XML( json.dumps(treesQueuedForSynthesis) ) }};
     var viewOrEdit = '{{= viewOrEdit }}';
 
     var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
@@ -2009,6 +2026,9 @@ body {
     var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
     var getContextForNames_url = "{{=getContextForNames_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";
+    var getTreesQueuedForSynthesis_url ="{{=getTreesQueuedForSynthesis_url}}";
+    var includeTreeInSynthesis_url ="{{=includeTreeInSynthesis_url}}";
+    var excludeTreeFromSynthesis_url ="{{=excludeTreeFromSynthesis_url}}";
 
     var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
     var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";
@@ -2267,6 +2287,104 @@ body {
     </div>
 </div>
 
+
+
+<!-- hidden template for popup describing a tree's status vs. synthesis -->
+<div class="modal hide fade" id="tree-synth-details" style="display: none;">
+    <div class="modal-header" style="padding-bottom: 0;">
+      <a class="close" onclick="$('#tree-synth-details').modal('hide'); return false;">×</a>
+      <h3>
+          Tree <span style="color: #999;" data-bind="html: $data['@label']">???</span>
+          (id:<span style="color: #999;" data-bind="text: $data['@id']">???</span>)
+      </h3>
+    </div>
+    <div class="modal-body" style="max-height: none; padding-bottom: 0px;">
+      <div class="tab-pane active">
+          <form class="form-inline" style="overflow: hidden;margin-bottom: 0px;margin-top: -12px;padding-top: 4px;margin-right: -6px;">
+            <p style="margin-bottom: 0.6em;"
+               data-bind="html: getTreeSynthStatusSummary($root)">?</p>
+            <div data-bind="html: getTreeSynthValidationSummary($root)"></div>
+          <!-- ko foreach: { data: [$data['^ot:reasonsToExcludeFromSynthesis']], as: 'warnings' }-->
+            <div style="overflow: auto; max-height: 257px;">
+                <p style="margin-top: 0.4em; margin-bottom: 0.2em;"
+                   data-bind="visible: warnings.length > 0">
+                  Curators have submitted
+                  <strong><span data-bind="text: warnings.length">?</span>
+                    <span data-bind="visible: warnings.length === 1">reason</span>
+                    <span data-bind="visible: warnings.length > 1">reasons</span>
+                  </strong> to exclude this tree from synthesis:
+                </p>
+                <p style="margin-top: 0.4em; margin-bottom: 0.2em;"
+                   data-bind="visible: warnings.length === 0">
+                  There are currently <strong>no listed reasons</strong>
+                  to exclude this tree from synthesis.
+                </p>
+                <table id="synth-warnings-holder" class="table table-condensed table-hover" style="margin-bottom: 2px; position: relative;" data-bind="visible: true"><!-- TODO: hide if no trees found -->
+
+                  <tbody Xid="tree-collection-decisions"
+                         data-bind="foreach: { data: warnings, as: 'warning' }">
+                    <tr class="single-tree-row">
+                      <td>
+                        <button data-bind="click: function() {removeReasonToExcludeTree($index(), $root); return false;},
+                                           visible: (viewOrEdit == 'EDIT')" title="Remove this tree from the collection" class="pull-right btn btn-mini btn-danger row-controls-ghosted" style="margin-left: 4px;">
+                          <i class="icon-trash icon-white"></i>
+                        </button>
+                        <textarea class="input-block-level"
+                            style="width: 470px; margin-bottom: 4px;"
+                            data-bind="value: warning.$,
+                                       valueUpdate: ['afterkeydown', 'input'],
+                                       visible: (viewOrEdit == 'EDIT')"
+                            placeholder="Example: This tree needs more mapped OTUs."></textarea>
+<!-- event: { keyup: updateReasonToExcludeTree($index(), $root), change: updateReasonToExcludeTree($index(), $root) }, -->
+                        <div data-bind="html: warning.$,
+                                        visible: (viewOrEdit == 'VIEW')">?</div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+            </div>
+
+            <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
+              <div id="add-reason-to-exclude" class="empty-list-prompt" style="margin-bottom: 6px; display:none;">
+                  Why this tree should be excluded? Add your reason(s) here.
+              </div>
+              <button type="submit" class="btn btn-small btn-info"
+                  data-bind="click: function() {addReasonToExcludeTree($parent); return false;},
+                             visible: (viewOrEdit == 'EDIT')"><span data-bind="text: (warnings.length > 0) ? 'Add another reason to exclude this tree' : 'Add a reason to exclude this tree'">?</span>
+                    &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+              </button>
+              <div id="override-reasons-to-exclude" class="empty-list-prompt" style="margin-top: 6px; display:none;">
+                  Are you sure you want to override (or remove) the reasons listed above?
+              </div>
+            </div>
+            <div class="pull-right" style="position: relative; margin: 9px 2px;"
+                 data-bind="visible: (viewOrEdit == 'EDIT')">
+              <a class="btn btn-success row-controls-ghosted"
+                 data-bind="attr: {disabled: !(testForPossibleTreeInclusion($root))},
+                            click: function() {tryToIncludeTreeInSynth($root, {FORCE_OVERRIDE: true})}">
+                <strong>Include</strong> this tree in synthesis</a>
+              &nbsp;
+              <a class="btn btn-danger row-controls-ghosted"
+                 data-bind="attr: {disabled: !(testForPossibleTreeExclusion($root))},
+                            click: function() {tryToExcludeTreeFromSynth($root)}">
+                <strong>Exclude</strong> this tree from synthesis</a>
+            </div>
+            <div class="pull-right" style="position: relative; margin: 9px 2px;"
+                 data-bind="visible: (viewOrEdit == 'VIEW')">
+              <a class="btn" onclick="$('#tree-synth-details').modal('hide'); return false;">OK</a>
+            </div>
+
+          <!-- /ko -->
+
+            </form>
+          </div>
+    </div><!-- end of .modal-body -->
+    <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
+</div>
+
+
+
+
 <!-- hidden template for new-taxon form (for adding taxa to OT Taxonomy) -->
 <div class="modal hide fade" id="new-taxa-popup" style="display: none;">
     <div class="modal-header">
@@ -2514,7 +2632,7 @@ body {
                                        attr: {'disabled': sharedTaxonSources()}"
                         class="pull-right btn btn-mini btn-danger row-controls-ghosted"
                         style="display: none;">
-                        <i class="icon-remove icon-white"></i>
+                        <i class="icon-trash icon-white"></i>
                     </button>
                   </td>
                  </tr><!-- end of .taxon-source -->
