@@ -4,22 +4,22 @@
         "version": "v1",
         "===": "Based on file mod-date shown in http://files.opentreeoflife.org/trees/",
         "OTT_version": "ott2.6",
-        "tree_count": null, 
-        "total_OTU_count": null, 
+        "tree_count": null,
+        "total_OTU_count": null,
         "tip_count": null
     },
     "2014-09-14T00Z": {
         "version": "v2",
         "===": "tree_count and tip_count from graph/about service",
         "OTT_version": "ott2.8draft5",
-        "tree_count": 484, 
-        "total_OTU_count": null, 
+        "tree_count": 484,
+        "total_OTU_count": null,
         "tip_count": 2339516
     },
     "2015-05-06T00Z": {
         "version": "v3",
         "OTT_version": "ott2.8draft5",
-        "tree_count": 478, 
+        "tree_count": 478,
         "===": "revised downward from 63393 by JAR 2016-01-29",
         "total_OTU_count": 41580,
         "tip_count": 2339460
@@ -29,8 +29,8 @@
         "===": "total_OTU_count calculated from Processed_newicks/*.tre",
         "version": "v4",
         "OTT_version": "ott2.9draft12",
-        "tree_count": 482, 
-        "total_OTU_count": 41029, 
+        "tree_count": 482,
+        "total_OTU_count": 41029,
         "tip_count": 2424255
     },
     "2016-03-28T20Z": {
@@ -39,7 +39,7 @@
         "version": "v5.0",
         "OTT_version": "ott2.9draft12",
         "tree_count": 511,
-        "total_OTU_count": 41226, 
+        "total_OTU_count": 41226,
         "tip_count": 2424255
     },
     "2016-08-02T00Z": {
@@ -48,7 +48,7 @@
         "version": "v6.1",
         "OTT_version": "ott2.9draft12",
         "tree_count": 677,
-        "total_OTU_count": 45397, 
+        "total_OTU_count": 45397,
         "tip_count": 2424255
     },
     "2016-09-11T00Z": {
@@ -57,7 +57,16 @@
         "version": "v7.0",
         "OTT_version": "ott2.10draft11",
         "tree_count": 680,
-        "total_OTU_count": 44608, 
+        "total_OTU_count": 44608,
         "tip_count": 2146904
+    }
+    "2016-11-29T00Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count calculated with otc-count-leaves ../opentree8.0/exemplified_phylo/taxonomy.tre",
+        "version": "v8.0",
+        "OTT_version": "ott2.10draft11",
+        "tree_count": 779,
+        "total_OTU_count": 53012,
+        "tip_count": 2131472
     }
 }
