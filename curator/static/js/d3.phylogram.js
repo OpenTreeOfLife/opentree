@@ -212,7 +212,24 @@ if (!d3) { throw "d3 wasn't included!"};
         h = parseInt(h);
     var tree = options.tree || d3.layout.cluster()
       .size([h, w])
-      .sort(function(node) { return node.children ? node.children.length : -1; })
+      .sort(function(a,b,c) {
+          // use basic laddering with more children first
+          var aCount = a.children ? a.children.length : 0;
+          var bCount = b.children ? b.children.length : 0;
+          if (aCount > bCount) {
+              return 1;
+          } else if (aCount < bCount) {
+              return -1;
+          } else {
+              // final sort by name/label, if any
+              var aName = $.trim(a.name);
+              var bName = $.trim(b.name);
+              if (aName.localeCompare) {
+                  return aName.localeCompare(bName);
+              }
+              return (aName < bName) ? 1 : -1;
+          }
+      })
       .children(options.children || function(node) {
         return node.branchset
       });
