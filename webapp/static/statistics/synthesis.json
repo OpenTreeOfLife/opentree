@@ -59,7 +59,7 @@
         "tree_count": 680,
         "total_OTU_count": 44608,
         "tip_count": 2146904
-    }
+    },
     "2016-11-29T00Z": {
         "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
         "===": "total_OTU_count calculated with otc-count-leaves ../opentree8.0/exemplified_phylo/taxonomy.tre",
