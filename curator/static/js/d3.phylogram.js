@@ -438,7 +438,14 @@ if (!d3) { throw "d3 wasn't included!"};
           .attr("dy", function(d) {return (d.labelType === 'empty') ? 3 : -6;})
           .attr("text-anchor", function(d) {return (d.labelType === 'empty') ? 'middle' : 'end';})
           .attr('font-size', '10px')
-          .attr('pointer-events', 'none')
+          .attr('pointer-events', function(d) {
+              switch(d.labelType) {
+                  case ('internal node (aligned)'):
+                      return 'all';
+                  default:
+                      return 'none';
+              }
+          })
           .attr('fill', function(d) {
               switch(d.labelType) {
                   case ('tip (mapped OTU)'):
@@ -473,11 +480,20 @@ if (!d3) { throw "d3 wasn't included!"};
               switch(d.labelType) {
                   case ('tip (mapped OTU)'):
                   case ('tip (original)'):
-                  case ('internal node (aligned)'):
                   case ('internal node (support)'):
                   case ('internal node (other)'):
                   case ('internal node (ambiguous)'):
                       return d.name;
+                  case ('internal node (aligned)'):
+                      var link, title;
+                      if (isNaN(d.conflictDetails.witness)) {
+                          link = getSynthTreeViewerURLForNodeID('', d.conflictDetails.witness);
+                          title = "Click to see this taxon in the latest synthetic tree";
+                      } else {
+                          link = getTaxobrowserURL(d.conflictDetails.witness);
+                          title = "Click to see this taxon in the latest OT taxonomy";
+                      }
+                      return '<a xlink:href="'+ link +'" target="_blank" xlink:title="'+ title +'">'+ d.name +'</a>';
                   case ('empty'):
                       /* N.B. empty label should hide, but still have layout to
                        * support a legible highlight.
