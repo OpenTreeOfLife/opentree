@@ -424,6 +424,8 @@ if (!d3) { throw "d3 wasn't included!"};
                       return '#000';
                   case ('tip (original)'):
                       return '#888';
+                  case ('internal node (aligned)'):
+                      return '#36f';
                   case ('internal node (support)'):
                       return '#888';
                   case ('internal node (other)'):
@@ -450,6 +452,7 @@ if (!d3) { throw "d3 wasn't included!"};
               switch(d.labelType) {
                   case ('tip (mapped OTU)'):
                   case ('tip (original)'):
+                  case ('internal node (aligned)'):
                   case ('internal node (support)'):
                   case ('internal node (other)'):
                   case ('internal node (ambiguous)'):
