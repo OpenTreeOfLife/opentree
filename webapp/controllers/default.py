@@ -80,7 +80,7 @@ def index():
         response.status = 303
 
     # when all is said and done, do we have enough information to force the location?
-    if treeview_dict['domSource'] and treeview_dict['nodeID']:
+    if incomingDomSource and treeview_dict['nodeID']:
         treeview_dict['forcedByURL'] = True
 
     treeview_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
