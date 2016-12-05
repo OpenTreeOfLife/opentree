@@ -1247,9 +1247,7 @@ body {
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS" />
                          </td>
                       {{ pass }}
-                        <td onmousedown="return false;"
-                            data-bind="text: otu['^ot:originalLabel'],
-                                       click: toggleMappingForOTU">&nbsp;</td>
+                        <td data-bind="text: otu['^ot:originalLabel']">&nbsp;</td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted" title="Show this OTU in all trees"
                                      data-bind="click: showOTUInContext, css: viewModel.ticklers.OTU_MAPPING_HINTS">
