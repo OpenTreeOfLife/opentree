@@ -5173,12 +5173,14 @@ function updateLeafNodeFlags(tree) {
      *  .rootDist
      */
 }
+
 function getTreeNodeLabel(tree, node, importantNodeIDs) {
     /* Return the best available label for this node, and its type:
          'tip (mapped OTU)'         mapped to OT taxonomy, preferred
          'tip (original)'           OTU is not yet mapped
          'internal node (support)'
          'internal node (other)'
+         'internal node (aligned)'  from conflict service
          'internal node (ambiguous)'
          'empty'                    no visible label
          'node id'                  a last resort, rarely useful  [DEPRECATED]
@@ -5200,6 +5202,7 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
     */
     var itsOTU = node['@otu'];
     if (itsOTU) {
+        // use a mapped taxon name (or original for this OTU)
         var otu = getOTUByID( itsOTU );
         var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
         if (itsMappedLabel) {
@@ -5210,33 +5213,36 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
             labelInfo.label = otu['^ot:originalLabel'];
             labelInfo.labelType = 'tip (original)';
         }
-    } else {
-        if ('@label' in node) {
-            // TODO: What about other nodeLabelMode values!?
-            if (tree['^ot:nodeLabelMode'] === 'ot:other') {
-                // add any internal label (eg, taxon name) for display
-                labelInfo.label = node['@label'];
-                labelInfo.labelType = 'internal node (other)';
-                // include tree['^ot:nodeLabelDescription'] ?
-            } else if (tree['^ot:nodeLabelMode']) {
-                // any others are support values (1 of 2)
-                labelInfo.label = node['@label'];
-                labelInfo.labelType = 'internal node (support)';
-            } else {
-                // add any ambiguous label (unresolved type) for display
-                labelInfo.label = node['@label'];
-                labelInfo.labelType = 'internal node (ambiguous)';
-            }
-        } else if (node.adjacentEdgeLabel) {
-            // any label from the adjacent (root-ward) edge is support (2 of 2)
-            labelInfo.label = node.adjacentEdgeLabel;
+    } else if (('@label' in node) && (tree['^ot:nodeLabelMode'] === 'ot:other')) {
+        // this is probably a previously assigned taxon name
+        labelInfo.label = node['@label'];
+        labelInfo.labelType = 'internal node (other)';
+        // include tree['^ot:nodeLabelDescription'] ?
+    } else if (('conflictDetails' in node) && 
+               ($.inArray(node.conflictDetails.status, ['supported_by', 'partial_path_of', 'mapped_to_taxon']) !== -1) &&
+               node.conflictDetails.witness_name) {
+        // use any 'aligned' taxon name provided by conflict service
+        labelInfo.label = node.conflictDetails.witness_name;
+        labelInfo.labelType = 'internal node (aligned)';
+    } else if ('@label' in node) {
+        if (tree['^ot:nodeLabelMode']) {
+            // use any support values (1 of 2, see below)
+            labelInfo.label = node['@label'];
             labelInfo.labelType = 'internal node (support)';
         } else {
-            labelInfo.label = nodeID;
-            labelInfo.labelType = 'empty';
+            // use any ambiguous label (unresolved type) for display
+            labelInfo.label = node['@label'];
+            labelInfo.labelType = 'internal node (ambiguous)';
         }
+    } else if (node.adjacentEdgeLabel) {
+        // any label from the adjacent (root-ward) edge is support (2 of 2, see above)
+        labelInfo.label = node.adjacentEdgeLabel;
+        labelInfo.labelType = 'internal node (support)';
+    } else {
+        // show the bare node ID as our last resort
+        labelInfo.label = nodeID;
+        labelInfo.labelType = 'empty';
     }
-
     return labelInfo;
 }
 
@@ -6690,6 +6696,10 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
         case('tip (original)'):
             nodeOptionsLabel = labelInfo.label;
             labelTypeDescription = "Original OTU label";
+            break;
+        case ('internal node (aligned)'):
+            nodeOptionsLabel = labelInfo.label;
+            labelTypeDescription = "Label provided by conflict service";
             break;
         case ('internal node (support)'):
         case ('internal node (other)'):
