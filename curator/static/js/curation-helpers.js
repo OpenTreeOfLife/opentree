@@ -826,12 +826,6 @@ function searchForMatchingStudy() {
         return false;
     }
 
-    // is this unchanged from last time? no need to search again..
-    if ((searchText == showingResultsForStudyLookupText)) {
-        //console.log("Study-lookup text UNCHANGED!");
-        return false;
-    }
-
     // stash the search-text used to generate these results
     showingResultsForStudyLookupText = searchText;
     $('#study-lookup-results').html('<li class="disabled"><a><span class="text-warning">Search in progress...</span></a></li>');
