@@ -6028,6 +6028,11 @@ function toggleMappingForOTU(otu, evt) {
         forceToggleCheckbox($toggle, newState);
     }
     // add (or remove) highlight color that works with hover-color
+    /* N.B. that this duplicates the effect of Knockout bindings on these table
+     * rows! This is deliberate, since we're often toggling *many* rows at
+     * once, so we need to update visual style while postponing any tickler
+     * nudge 'til we're done.
+     */
     if (newState) {
         $toggle.closest('tr').addClass('warning');
     } else {
@@ -6174,7 +6179,6 @@ function approveProposedOTULabel(otu) {
     }
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
-    otu['selectedForAction'] = false;
     nudgeTickler('OTU_MAPPING_HINTS');
 }
 function approveProposedOTUMappingOption(approvedMapping, selectedIndex) {
@@ -6183,9 +6187,6 @@ function approveProposedOTUMappingOption(approvedMapping, selectedIndex) {
     mapOTUToTaxon( OTUid, approvedMapping );
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
-    // de-select this OTU
-    var otu = getOTUByID(OTUid);
-    otu['selectedForAction'] = false;
     nudgeTickler('OTU_MAPPING_HINTS');
 }
 function rejectProposedOTULabel(otu) {
@@ -6566,6 +6567,9 @@ function mapOTUToTaxon( otuID, mappingInfo, options ) {
     // FOR NOW, assume that any leaf node will have a corresponding otu entry;
     // otherwise, we can't have name for the node!
     var otu = getOTUByID( otuID );
+
+    // De-select this OTU in the mapping UI
+    otu['selectedForAction'] = false;
 
     // add (or update) a metatag mapping this to an OTT id
     otu['^ot:ottId'] = Number(mappingInfo.ottId);
