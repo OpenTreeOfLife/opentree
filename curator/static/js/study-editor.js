@@ -6174,6 +6174,7 @@ function approveProposedOTULabel(otu) {
     }
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
+    otu['selectedForAction'] = false;
     nudgeTickler('OTU_MAPPING_HINTS');
 }
 function approveProposedOTUMappingOption(approvedMapping, selectedIndex) {
@@ -6182,6 +6183,9 @@ function approveProposedOTUMappingOption(approvedMapping, selectedIndex) {
     mapOTUToTaxon( OTUid, approvedMapping );
     delete proposedOTUMappings()[ OTUid ];
     proposedOTUMappings.valueHasMutated();
+    // de-select this OTU
+    var otu = getOTUByID(OTUid);
+    otu['selectedForAction'] = false;
     nudgeTickler('OTU_MAPPING_HINTS');
 }
 function rejectProposedOTULabel(otu) {
