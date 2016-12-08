@@ -6481,18 +6481,70 @@ function requestTaxonMapping( otuToMap ) {
                     });
                     */
 
-                    var candidateMappingList = [ ];
-                    $.each(candidateMatches, function(i, match) {
-                        // convert to expected structure for proposed mappings
-                        candidateMappingList.push({
-                            name: match.taxon['unique_name'] || match.taxon['name'],       // matched name
-                            ottId: match.taxon['ott_id'],     // matched OTT id (as number!)
+                    /* TODO: If multiple matches point to a single taxon, show just the "best" match
+                     *   - Spelling counts! Show an exact match (e.g. synonym) vs. inexact spelling.
+                     *   - TODO: add more rules? or just comment the code below
+                     */
+                    var getPreferredTaxonCandidate = function( candidateA, candidateB ) {
+                        // Return whichever is preferred, based on a few criteria:
+                        var matchA = candidateA.originalMatch;
+                        var matchB = candidateB.originalMatch;
+                        // If one is the exact match, that's ideal (but unlikely since 
+                        // the TNRS apparently returned multiple candidates).
+                        if (!matchA.is_approximate_match) {
+                            return candidateA;
+                        } else if (!matchB.is_approximate_match) {
+                            return candidateB;
+                        }
+                        // Show the most similar name (or synonym) for this taxon.
+                        if (matchA.score > matchB.score) {
+                            return candidateA;
+                        }
+                        return candidateB;
+                    };
+                    var getPriorMatchingCandidate = function( ottId, priorCandidates ) {
+                        // return any match we've already examined for this taxon
+                        var priorMatch = null;
+                        $.each(priorCandidates, function(i, c) {
+                            if (c.ottId === ottId) {
+                                priorMatch = c;
+                                return false;  // there should be just one
+                            }
+                        });
+                        return priorMatch;
+                    };
+                    var rawMatchToCandidate = function( raw, otuID ) {
+                        // simplify the "raw" matches returned by TNRS
+                        return {
+                            name: raw.taxon['unique_name'] || raw.taxon['name'],       // matched name
+                            ottId: raw.taxon['ott_id'],     // matched OTT id (as number!)
                             //exact: false,                               // boolean (ignoring this for now)
                             //higher: false,                               // boolean
                             // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
-                            originalMatch: match,
+                            originalMatch: raw,
                             otuID: otuID
-                        });
+                        };
+                    }
+                    var candidateMappingList = [ ];
+                    $.each(candidateMatches, function(i, match) {
+                        // convert to expected structure for proposed mappings
+                        var candidate = rawMatchToCandidate( match, otuID );
+                        var priorTaxonCandidate = getPriorMatchingCandidate( candidate.ottId, candidateMappingList );
+                        if (priorTaxonCandidate) {
+                            var priorPosition = $.inArray(priorTaxonCandidate, candidateMappingList);
+                            var preferredCandidate = getPreferredTaxonCandidate( candidate, priorTaxonCandidate );
+                            var alternateCandidate = (preferredCandidate === candidate) ? priorTaxonCandidate : candidate;
+                            // whichever one was chosen will (re)take this place in our array
+                            candidateMappingList.splice(priorPosition, 1, preferredCandidate);
+                            // the other candidate will be stashed as a child, in case we need it later
+                            if ('alternateTaxonCandidates' in preferredCandidate) {
+                                preferredCandidate.alternateTaxonCandidates.push( alternateCandidate );
+                            } else {
+                                preferredCandidate.alternateTaxonCandidates = [ alternateCandidate ];
+                            }
+                        } else {
+                            candidateMappingList.push(candidate);
+                        }
                     });
 
                     proposeOTULabel(otuID, candidateMappingList);
