@@ -47,7 +47,8 @@ def collections():
     return view_dict
     
 def error():
-    return dict()
+    view_dict = get_opentree_services_method_urls(request)
+    return view_dict
 
 @auth.requires_login()
 def dashboard():
