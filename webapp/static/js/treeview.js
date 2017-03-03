@@ -1151,7 +1151,7 @@ function showObjectProperties( objInfo, options ) {
                             displayVal += '<div class="full-ref">'+ pRef +'</div>';
 
                             // publication URL should always be present, non-empty, and a valid URL
-                            pURL = studyInfo['ot:studyPublication'];
+                            pURL = latestCrossRefURL( studyInfo['ot:studyPublication'] );
                             if (pURL) {
                                 displayVal += 'Full publication: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pURL +'</a><br/>';
                             }

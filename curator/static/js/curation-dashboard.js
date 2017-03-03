@@ -472,7 +472,9 @@ function getPubLink(study) {
         return "";
     }
     if (urlPattern.test(pubURL) === true) {
-        // It's a proper URL, wrap it in a hyperlink
+        // It's a proper URL, wrap it in a hyperlink; but first,
+        // update to match latest CrossRef guidelines
+        pubURL = latestCrossRefURL(pubURL);
         return '<a href="'+ pubURL +'" target="_blank"'+'>'+ pubURL +'</a'+'>';
     }
     // It's not a proper URL! Return the bare value.
