@@ -8877,7 +8877,9 @@ function getStudyPublicationLink() {
         return '';
     }
     if (urlPattern.test(url) === true) {
-        // It's a proper URL, wrap it in a hyperlink
+        // It's a proper URL, wrap it in a hyperlink; but first,
+        // update to match latest CrossRef guidelines
+        url = latestCrossRefURL(url);
         return '<a target="_blank" href="'+ url +'">'+ url +'</a>';
     }
     // It's not a proper URL! Return the bare value.
@@ -8914,7 +8916,9 @@ function getDataDepositMessage() {
     // TODO: Add other substitutions?
 
     if (urlPattern.test(url) === true) {
-        // Default message simply repeats the dataDeposit URL
+        // Default message simply repeats the dataDeposit URL; but first,
+        // update to match latest CrossRef guidelines
+        url = latestCrossRefURL(url);
         return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
     }
     // It's not a proper URL! Return the bare value.

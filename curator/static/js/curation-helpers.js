@@ -18,6 +18,24 @@ function fullToCompactReference( fullReference ) {
     return compactReference;
 }
 
+function latestCrossRefURL( url ) {
+    /* When showing live hyperlinks to a CrossRef URL, we should update them to
+     * conform to [the latest guidelines](https://www.crossref.org/blog/new-crossref-doi-display-guidelines-are-on-the-way/).
+     *
+     * NOTE that this is for display only! For backward compatibility in
+     * phylesystem, we still store the old 'http://dx.doi.org/' form and use
+     * it when testing for duplicate studies.
+     *
+     * Also note that this won't modify other URLs that might appear from time to time.
+     *
+     * N.B. This duplicates a function with same name in webapp/static/js/treeview.js,
+     * so changes need to be made in both places
+     */
+    var latest = url.replace('http://dx.doi.org/', 'https://doi.org/');
+    return latest;
+}
+
+
 function showErrorMessage(msg) {
     showFooterMessage(msg, 'error');
 }
