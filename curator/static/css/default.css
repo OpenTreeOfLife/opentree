@@ -913,3 +913,10 @@ tr.after-shims th {
     color: red !important;
 }
 
+a.node-direct-link {
+    float: right;
+    padding: 1px 4px !important;
+    margin-top: -4px;
+    margin-right: -16px;
+    border-radius: 4px;
+}
