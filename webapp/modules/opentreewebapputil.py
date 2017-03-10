@@ -303,3 +303,8 @@ def get_currently_deployed_opentree_branch(request):
     except:
         pass
     return branch_name
+
+def latest_CrossRef_URL(url):
+    if (not url):
+        return ''
+    return url.replace('http://dx.doi.org/', 'https://doi.org/')
