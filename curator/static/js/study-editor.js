@@ -137,6 +137,7 @@ if ( History && History.enabled ) {
         // treatment of initial URLs.
         var currentTab = State.data.tab;
         var currentTree = State.data.tree;
+        var highlightNodeID = State.data.node;
         var conflictReferenceTree = State.data.conflict;
         var activeFilter = null;
         var filterDefaults = null;
@@ -174,7 +175,13 @@ if ( History && History.enabled ) {
         if (currentTree) {
             var tree = getTreeByID(currentTree);
             if (tree) {
-                showTreeViewer(tree);
+                // show inbound node, if provided
+                // N.B. this is not reflected in History state!
+                if (highlightNodeID) {
+                    showTreeViewer(tree, {HIGHLIGHT_NODE_ID: highlightNodeID });
+                } else {
+                    showTreeViewer(tree);
+                }
                 // omit conflict spinner when handling inbound URLs; it conflicts with others
                 if (conflictReferenceTree) {
                     fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree, {SHOW_SPINNER: false});
@@ -6765,6 +6772,10 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
             console.error('Unknown label type! ['+ labelInfo.labelType +']');;
     }
     nodeInfoBox.append('<span class="node-name">'+ nodeOptionsLabel +'</span>');
+
+    var nodeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ tree['@id'] +"&node="+ node['@id'];
+    nodeInfoBox.append('<a class="node-direct-link" title="Link directly to this node (opens in new window)" target="_blank" href="'+ 
+                       nodeURL +'"><i class="icon-share-alt"></i></a>');
 
     if ((viewOrEdit === 'EDIT') && isDuplicateNode( tree, node )) {
         if (node['^ot:isTaxonExemplar'] === true) {
