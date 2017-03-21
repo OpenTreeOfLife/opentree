@@ -68,5 +68,12 @@
         "tree_count": 779,
         "total_OTU_count": 53012,
         "tip_count": 2131472
+    },
+    "2017-03-22T00Z": {
+        "version": "v9.0",
+        "OTT_version": "ott3.0draft6",
+        "tree_count": 819,
+        "total_OTU_count": 55758,
+        "tip_count": 2901258
     }
 }
