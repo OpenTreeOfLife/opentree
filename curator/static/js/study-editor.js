@@ -4685,7 +4685,16 @@ function drawTree( treeOrID, options ) {
 
     // Finalize SVG height/width/scale/left/top to match rendered labels
     // (prevents cropping when some labels exceed our estimated `labelWidth` above)
-    var renderedBounds = vizInfo.vis.node().getBBox();
+    var renderedBounds;
+    try {
+        renderedBounds = vizInfo.vis.node().getBBox();
+    } catch(e) {
+        /* FF fails with NS_ERROR_FAILURE if this SVG element is not currently rendered! See
+         *  https://bugzilla.mozilla.org/show_bug.cgi?id=528969
+         */
+        //console.error('>>> UNABLE TO MEASURE BOUNDING BOX ('+ e +'):');
+        renderedBounds = { x:0, y:0, width:0, height:0 };
+    }
     var svgNode = d3.select( vizInfo.vis.node().parentNode );
     // match SVG size to the rendered bounds incl. all labels
     if (renderedBounds.height > 0) {
