@@ -2175,13 +2175,12 @@ function checkForInterestingStudies(a,b) {
     if ($.inArray( b['ot:studyId'], interestingIDs ) === -1) return false;
     return true;
     */
-
+    /*
     // match just one study
     var interestingIDs = ['tt_95'];
     if ($.inArray( a['ot:studyId'], interestingIDs ) !== -1) return true;
     if ($.inArray( b['ot:studyId'], interestingIDs ) !== -1) return true;
     return false;
-    /*
     */
 }
 
