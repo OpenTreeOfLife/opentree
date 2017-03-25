@@ -69,11 +69,13 @@
         "total_OTU_count": 53012,
         "tip_count": 2131472
     },
-    "2017-03-22T00Z": {
-        "version": "v9.0",
+    "2017-03-22T11Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count found in http://files.opentreeoflife.org/synthesis/opentree9.1/output/labelled_supertree/index.html",
+        "version": "v9.1",
         "OTT_version": "ott3.0draft6",
         "tree_count": 819,
-        "total_OTU_count": 55758,
-        "tip_count": 2901258
+        "total_OTU_count": 55226,
+        "tip_count": 2637204
     }
 }
