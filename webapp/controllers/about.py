@@ -314,9 +314,11 @@ def taxonomy_version():
 
     # Get OTT version from URL, or bounce to the latest version by default
     if len(request.args) == 0:
-        taxonomy_version = sorted([v.get('version') for v in ott], reverse=False)[-1]
-        redirect(URL('opentree', 'about', 'taxonomy_version',
-            vars={},
+        # safer to sort by date-strings [yyyy-mm-dd] than version strings
+        sorted_ott = sorted(ott, key=lambda v: v['date'], reverse=False)
+        taxonomy_version = sorted_ott[-1].get('version')
+        redirect(URL('opentree', 'about', 'taxonomy_version', 
+            vars={}, 
             args=[taxonomy_version]))
 
     taxo_version = request.args[0]

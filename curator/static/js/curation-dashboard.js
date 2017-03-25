@@ -109,7 +109,14 @@ function updateListFiltersWithHistory() {
             newState[prop] = ko.unwrap(activeFilter[prop]);
             // Hide default filter settings, for simpler URLs
             if (newState[prop] !== filterDefaults[prop]) {
-                newQSValues[prop] = ko.unwrap(activeFilter[prop]);
+                // make any odd characters safe for the query string!
+                // (surprisingly, History doesn't handle Unicode well here)
+                /* N.B. this gets double-encoded; hilarity ensues!
+                newQSValues[prop] = encodeURIComponent( ko.unwrap(activeFilter[prop]) );
+                */
+                // Our list filters are smart about recognizing diacritics, so
+                // we can just use their Latin-only counterparts in the URL.
+                newQSValues[prop] = removeDiacritics( ko.unwrap(activeFilter[prop]) );
             }
         }
         //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
@@ -133,76 +140,6 @@ $(document).ready(function() {
 });
 
 function loadStudyList() {
-    // show/hide spinner during all AJAX requests?
-
-    /* START of fake study list
-    var fakeStudyList = { 
-      'studies': [
-        {
-            'id': 10,
-            **
-            'firstAuthorName': "Jansen, Robert K.",
-            'firstAuthorLink': "#",
-            'title': "Analysis of 81 genes from 64 plastid genomes resolves relationships in angiosperms and identifies genome-scale evolutionary patterns",
-            'pubJournalName': "Proceedings of the National Academy of Sciences",
-            'pubJournalLink': "#",
-            **
-            'publicationReference': "Jansen, Robert K., Zhengqiu Cai, Linda A. Raubeson, Henry Daniell, Claude W. dePamphilis, James Leebens-Mack, Kai F. Müller, et al. 2007. Analysis of 81 genes from 64 plastid genomes resolves relationships in angiosperms and identifies genome-scale evolutionary patterns. Proceedings of the National Academy of Sciences 104, no. 49 (December 4): 19369 -19374. doi:10.1073/pnas.0709121104.",
-            'pubYear': "2007",
-            'pubURL': "http://dx.doi.org/10.1073/pnas.0709121104",
-            'tags': ["plastic", "angiosperms", "genes"],
-            //'curatorID': "jimallman",
-            'curatorName': "jarnold",
-            'cladeName': "Magnoliophyta",
-            'completeness': "12%",
-            'workflowState': "Draft study",
-            'nextActions': ["upload data"]
-        },
-        {
-            'id': 9,
-            **
-            'firstAuthorName': "Tank, David C.",
-            'firstAuthorLink': "#",
-            'title': "Phylogeny and Phylogenetic Nomenclature of the Campanulidae based on an Expanded Sample of Genes and Taxa",
-            'pubJournalName': "Systematic Botany",
-            'pubJournalLink': "#",
-            **
-            'publicationReference': "Tank, David C., and Michael J. Donoghue. 2010. Phylogeny and Phylogenetic Nomenclature of the Campanulidae based on an Expanded Sample of Genes and Taxa. Systematic Botany 35, no. 2 (6): 425-441. doi:10.1600/036364410791638306.",
-            'pubYear': "2010",
-            'pubURL': "http://dx.doi.org/10.1600/036364410791638306",
-            'tags': ["genes", "botany", "Campanulidae"],
-            //'curatorID': "dctank",
-            'curatorName': "Dave Tank",
-            'cladeName': "Campanulidae",
-            'completeness': "85%",
-            'workflowState': "Draft study",
-            'nextActions': ["upload data"]
-        },
-        {
-            'id': 11,
-            **
-            'firstAuthorName': "KHAN, S. A.",
-            'firstAuthorLink': "#",
-            'title': "Phylogeny and biogeography of the African genus Virectaria Bremek",
-            'pubJournalName': "Plant Systematics and Evolution",
-            'pubJournalLink': "#",
-            **
-            'publicationReference': "Magallon, Susana, and Amanda Castillo. 2009. Angiosperm diversification through time. Am. J. Bot. 96, no. 1 (January 1): 349-365. doi:10.3732/ajb.0800060.",
-            'pubYear': "2008",
-            'pubURL': "http://dx.doi.org/10.3732/ajb.0800060",
-            'tags': ["eenie", "meanie", "minie", "Angiosperm"],
-            //'curatorID': "jarnold",
-            'curatorName': "jarnold",
-            'cladeName': "Magnoliophyta",
-            'completeness': "55%",
-            'workflowState': "Included in synthetic tree",
-            'nextActions': ["upload data"]
-        }
-      ]
-    };
-    END of fake study list 
-    */
-
     // use oti (study indexing service) to get the complete list
     showModalScreen("Loading study list...", {SHOW_BUSY_BAR:true});
 
@@ -225,7 +162,13 @@ function loadStudyList() {
             }
             
             var matchedStudies = data['matched_studies'];
-            sortStudiesByDOI(matchedStudies);
+            // populate and show study total
+            $('#study-count').text( matchedStudies.length );
+            // TODO: $('#tree-count').text( ???? );
+            $('#study-count-holder').show();
+
+            captureDefaultSortOrder(matchedStudies);
+            getDuplicateStudiesByDOI(matchedStudies);
 
             viewModel = matchedStudies; /// ko.mapping.fromJS( fakeStudyList );  // ..., mappingOptions);
 
@@ -237,7 +180,9 @@ function loadStudyList() {
                     // TODO: add 'pagesize'?
                     'match': ko.observable(""),
                     'workflow': ko.observable("Any workflow state"),
-                    'order': ko.observable("Newest publication first")
+                    'order': ko.observable("Newest publication first"),
+                    'view': ko.observable("Compact view (hide details)"),
+                    'page': ko.observable(1),
                 }
             };
             
@@ -250,10 +195,14 @@ function loadStudyList() {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.STUDIES.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' ),
-                    wholeWordMatchPattern = new RegExp( '\\b'+ $.trim(match) +'\\b', 'i' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
+                    wholeWordMatchPattern = new RegExp( '\\b'+ $.trim(matchWithDiacriticals) +'\\b', 'i' );
+                console.log('Search text with diacritical variants:\n'+ matchPattern);
                 var workflow = viewModel.listFilters.STUDIES.workflow();
                 var order = viewModel.listFilters.STUDIES.order();
+                var view = viewModel.listFilters.STUDIES.view();
+                var page = viewModel.listFilters.STUDIES.page();
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
@@ -307,15 +256,24 @@ function loadStudyList() {
                      */
                     case 'Newest publication first':
                         filteredList.sort(function(a,b) { 
-                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
-                            return (a['ot:studyYear'] > b['ot:studyYear'])? -1 : 1;
+                            //if (checkForInterestingStudies(a,b)) { debugger; }
+                            var aYear = isNaN(a['ot:studyYear']) ? Number.NEGATIVE_INFINITY : Number(a['ot:studyYear']);
+                            var bYear = isNaN(b['ot:studyYear']) ? Number.NEGATIVE_INFINITY : Number(b['ot:studyYear']);
+                            if (aYear === bYear) {
+                                return maintainRelativeListPositions(a, b);
+                            };
+                            return (aYear > bYear)? -1 : 1;
                         });
                         break;
 
                     case 'Oldest publication first':
                         filteredList.sort(function(a,b) {
-                            if (a['ot:studyYear'] === b['ot:studyYear']) return 0;
-                            return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
+                            var aYear = isNaN(a['ot:studyYear']) ? Number.NEGATIVE_INFINITY : Number(a['ot:studyYear']);
+                            var bYear = isNaN(b['ot:studyYear']) ? Number.NEGATIVE_INFINITY : Number(b['ot:studyYear']);
+                            if (aYear === bYear) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aYear > bYear)? 1 : -1;
                         });
                         break;
 
@@ -324,10 +282,16 @@ function loadStudyList() {
                             var aRef = $.trim(a['ot:studyPublicationReference']);
                             var bRef = $.trim(b['ot:studyPublicationReference']);
                             if (aRef.localeCompare) {
-                                return aRef.localeCompare(bRef);
+                                var r = aRef.localeCompare(bRef);
+                                if (r === 0) {
+                                    r = maintainRelativeListPositions(a, b);
+                                } 
+                                return r;
                             }
                             // fallback do dumb alpha-sort on older browsers
-                            if (aRef === bRef) return 0;
+                            if (aRef === bRef) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (aRef > bRef) ? 1 : -1;
                         });
                         break;
@@ -337,10 +301,16 @@ function loadStudyList() {
                             var bRef = $.trim(b['ot:studyPublicationReference']);
                             var aRef = $.trim(a['ot:studyPublicationReference']);
                             if (bRef.localeCompare) {
-                                return bRef.localeCompare(aRef);
+                                var r = bRef.localeCompare(aRef);
+                                if (r === 0) {
+                                    r = maintainRelativeListPositions(a, b);
+                                } 
+                                return r;
                             }
                             // fallback do dumb alpha-sort on older browsers
-                            if (aRef === bRef) return 0;
+                            if (aRef === bRef) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (aRef < bRef) ? 1 : -1;
                         });
                         break;
@@ -355,14 +325,18 @@ function loadStudyList() {
                         filteredList.sort(function(a,b) { 
                             var aDisplayOrder = displayOrder[ a.workflowState ];
                             var bDisplayOrder = displayOrder[ b.workflowState ];
-                            if (aDisplayOrder === bDisplayOrder) return 0;
+                            if (aDisplayOrder === bDisplayOrder) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (aDisplayOrder < bDisplayOrder) ? -1 : 1;
                         });
                         break;
 
                     case 'Completeness':
                         filteredList.sort(function(a,b) { 
-                            if (a.completeness === b.completeness) return 0;
+                            if (a.completeness === b.completeness) {
+                                return maintainRelativeListPositions(a, b);
+                            };
                             return (a.completeness < b.completeness) ? -1 : 1;
                         });
                         break;
@@ -373,7 +347,7 @@ function loadStudyList() {
 
                 }
                 viewModel._filteredStudies( filteredList );
-                viewModel._filteredStudies.goToPage(1);
+                viewModel._filteredStudies.goToPage( Number(page) );
                 return viewModel._filteredStudies;
             }); // END of filteredStudies
                     
@@ -387,7 +361,7 @@ function loadStudyList() {
 
 /* gather any duplicate studies (with same DOI) */
 var studiesByDOI = {};
-function sortStudiesByDOI(studyList) {
+function getDuplicateStudiesByDOI(studyList) {
     studiesByDOI = {};
     $.each( studyList, function(i, study) {
         var studyID = study['ot:studyId'];
@@ -481,6 +455,8 @@ function getFocalCladeLink(study) {
 
     return '<a href="#" onclick="filterByClade(\''+ cladeName +'\'); return false;"'+'>'+ cladeName +'</a'+'>';
 }
+
+var urlPattern = new RegExp('http(s?)://\\S+');
 function getPubLink(study) {
     var urlNotFound = false;
     var pubURL;
@@ -493,10 +469,16 @@ function getPubLink(study) {
         urlNotFound = true;
     }
     if (urlNotFound) {
-        return '<span style="color: #999;">No link to this publication.</span>';
-        //return '<span style="color: #ccc;">[DOI not found]</span>';
+        return "";
     }
-    return '<a href="'+ pubURL +'" target="_blank"'+'>'+ pubURL +'</a'+'>';
+    if (urlPattern.test(pubURL) === true) {
+        // It's a proper URL, wrap it in a hyperlink; but first,
+        // update to match latest CrossRef guidelines
+        pubURL = latestCrossRefURL(pubURL);
+        return '<a href="'+ pubURL +'" target="_blank"'+'>'+ pubURL +'</a'+'>';
+    }
+    // It's not a proper URL! Return the bare value.
+    return pubURL;
 }
 /*
 function getSuggestedActions(study) {
@@ -517,6 +499,43 @@ function toggleStudyDetails( clicked ) {
         $fullRef.show();
         $toggle.text('[hide details]');
     }
+}
+function toggleAllStudyDetails( hidingOrShowing ) {
+    // Show (or hide) details for all visible studies
+    var $studyList = $('#study-list-container');
+    var $singleStudyToggles = $studyList.find('a.full-ref-toggle');
+    // IGNORE latent block with no toggle
+    //var $studyDetailBlocks = $studyList.find('div.full-study-ref');
+    var $studyDetailBlocks = $singleStudyToggles.closest('tr').next('tr').find('div.full-study-ref');
+    if ($.inArray(hidingOrShowing, ['SHOWING', 'HIDING']) === -1) {
+        // Operation not specified! Follow the current state of the detail blocks.
+        var $visibleStudyDetailBlocks = $studyDetailBlocks.filter(':visible');
+        if ($visibleStudyDetailBlocks.length === $singleStudyToggles.length) {
+            // all blocks found and currently visible, so we should hide all
+            hidingOrShowing = 'HIDING';
+        } else {
+            // show all blocks by default
+            hidingOrShowing = 'SHOWING';
+        }
+    }
+    $singleStudyToggles.each(function(i, toggle) {
+        var $toggle = $(toggle);
+        var $studyRow = $toggle.closest('tr');
+        var $studyDetailsRow = $studyRow.next('tr:has(.full-study-ref)');
+        if ($studyDetailsRow.length > 0) {
+            // there should always be a corresponding block
+            var detailsBlock = $studyDetailBlocks[i];
+            if ($(detailsBlock).is(':visible')) {
+                if (hidingOrShowing==='HIDING') {
+                    toggleStudyDetails($toggle);
+                }
+            } else {  // block is hidden
+                if (hidingOrShowing==='SHOWING') {
+                    toggleStudyDetails($toggle);
+                }
+            }
+        }
+    });
 }
 
 function filterByCurator( curatorID ) {

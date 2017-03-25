@@ -2,11 +2,11 @@
 
 # Brutally primitive reference taxonomy browser.
 # Basically just a simple shim on the taxomachine 'taxon' method.
-# Intended to be run as a CGI command, but it can be tested by running it 
+# Intended to be run as a CGI command, but it can be tested by running it
 # directly from the shell; just set the environment QUERY_STRING to be
 # the name or id of the taxon to browse to.
 
-# Apache (or other server) must be configured to be able to run CGI scripts, 
+# Apache (or other server) must be configured to be able to run CGI scripts,
 # and this program must be in the directory where it looks for such scripts.
 # The file name there should be simply 'browse' (not browse.py).
 
@@ -17,7 +17,12 @@
 # taxo = APIWrapper().taxomachine
 # print taxo.taxon(12345)
 
-default_api_base_url = 'https://devapi.opentreeoflife.org/'
+default_api_base_url = 'https://api.opentreeoflife.org/'
+
+# link to taxonomic amendments in the repo that matches the API base URL
+_AMENDMENT_REPO_URL_TEMPLATE = ''
+production_amendment_url_template = 'https://github.com/OpenTreeOfLife/amendments-1/blob/master/amendments/{}.json'
+dev_amendment_url_template =        'https://github.com/OpenTreeOfLife/amendments-0/blob/master/amendments/{}.json'
 
 import os
 import sys
@@ -34,8 +39,23 @@ headers = {
 # Main entry point.  Returns HTML as a string.
 
 def browse(id=None, name=None, limit=None, api_base=None):
-    if api_base == None: api_base = default_api_base_url
+    global _AMENDMENT_REPO_URL_TEMPLATE
     output = StringIO.StringIO()
+
+    if api_base == None:
+        server_name = os.environ.get('SERVER_NAME')
+        # Kludge reflecting current Open Tree of Life server configuration
+        if server_name != None and 'devtree' in server_name:
+            server_name = server_name.replace('devtree', 'devapi')
+            api_base = 'https://%s/' % server_name
+            output.write('using API server %s\n' % server_name)
+        else:
+            api_base = default_api_base_url
+
+    if 'devapi' in api_base:
+        _AMENDMENT_REPO_URL_TEMPLATE = dev_amendment_url_template
+    else:
+        _AMENDMENT_REPO_URL_TEMPLATE = production_amendment_url_template
 
     try:
         if limit != None: limit = int(limit)
@@ -153,7 +173,7 @@ def display_taxon_info(info, limit, output, api_base):
         start_el(output, 'p', 'taxon')
         display_basic_info(info, output)
         output.write(' (OTT id %s)' % id)
-        synth_tree_url = "/opentree/ottol@%s" % id
+        synth_tree_url = "/opentree/argus/ottol@%s" % id
         output.write('<br/><a target="_blank" href="%s">View this taxon in the current synthetic tree</a>' % cgi.escape(synth_tree_url))
 
         end_el(output, 'p')
@@ -286,6 +306,7 @@ def display_basic_info(info, output):
     output.write('\n')
 
 def source_link(source_id):
+    global _AMENDMENT_REPO_URL_TEMPLATE
     if source_id.startswith('http:') or source_id.startswith('https:'):
         url = source_id
     else:
@@ -304,6 +325,21 @@ def source_link(source_id):
                 url = 'http://www.marinespecies.org/aphia.php?p=taxdetails&id=%s' % parts[1]
             elif parts[0] == 'silva':
                 url = 'http://www.arb-silva.de/browser/ssu/silva/%s' % parts[1]
+            else:
+                # check for taxonomic amendments; link each directly to its latest version on GitHub
+                possible_amendment_id = parts[0]  # EXAMPLE source_id: 'additions-10000038-10000038:10000038'
+                id_parts = possible_amendment_id.split('-')
+                # see peyotl for amendment types and prefixes
+                # https://github.com/OpenTreeOfLife/peyotl/blob/3c32582e16be9dcf1029ce3d6481cdb09444890a/peyotl/amendments/amendments_umbrella.py#L33-L34
+                if (len(id_parts) > 1) and id_parts[0] in ('additions', 'changes', 'deletions',):
+                    url = _AMENDMENT_REPO_URL_TEMPLATE.format(possible_amendment_id)
+                    # we use a special displayed format for amendments
+                    type_to_singular_prefix = {'additions':'addition' , 'changes':'change', 'deletions':'deletion'}
+                    prefix = type_to_singular_prefix.get(id_parts[0])
+                    node_id = parts[1]
+                    formatted_id = '%s:%s' % (prefix, node_id)
+                    return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(formatted_id))
+
     if url != None:
         return '<a href="%s">%s</a>' % (cgi.escape(url), cgi.escape(source_id))
     else:
@@ -413,6 +449,7 @@ local_stylesheet = """
     span.name {
         font-weight: bold;
     }
+    span.sources, 
     span.flags {
         padding-left: 1em;
     }

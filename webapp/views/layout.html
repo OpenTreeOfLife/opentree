@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 {{
-from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch
+from applications.opentree.modules.opentreewebapputil import get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch, latest_CrossRef_URL
 }}
 
 <script src="{{=URL('static','js/webapp-helpers.js')}}"></script>
@@ -79,6 +79,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         var getTaxonInfo_url = "{{=getTaxonInfo_url}}";
         var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
         var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
+      {{ if 'nudgingToLatestSyntheticTree' in locals(): }}
+        // notify the user if we've nudged an old synth-tree URL to the latest (in synth-tree view only)
+        // N.B. This JS variable is currently unused! See static alert '#nudged-to-latest-synthetic-tree' below.
+        var nudgingToLatestSyntheticTree = {{=nudgingToLatestSyntheticTree and 'true' or 'false'}};
+      {{ pass }}
     </script>
     {{pass}}
 
@@ -466,6 +471,18 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
     </section>
 
 </div><!-- /.container -->
+
+{{ if 'nudgingToLatestSyntheticTree' in locals(): }}
+  {{ if nudgingToLatestSyntheticTree: }}
+    <div id="nudged-to-latest-synthetic-tree" class="alert alert-info" style="position: absolute; margin: 6px 30px;">
+        <strong>Note:</strong> The requested synthetic tree version ('{{= incomingDomSource}}') is no longer available. 
+        This view reflects <a href="{{= URL('about', 'synthesis-release') }}">the latest version 
+        (<strong>{{= draftTreeName}}</strong>).</a>
+
+        <button type="button" id="closeflash" class="close" data-dismiss="alert">×</button>
+    </div>
+  {{ pass }}
+{{ pass }}
 
 <!-- Footer ================================================== -->
 <footer class="footer" id="footer">

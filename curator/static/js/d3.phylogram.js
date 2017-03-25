@@ -203,6 +203,27 @@ if (!d3) { throw "d3 wasn't included!"};
     return yscale
   }
 
+  /* Use a standard node sort for all layouts (basic laddering with more
+   * children first, and alpha-sort of labels as a tie-breaker)
+   */
+  var ladderize = function(a,b) {
+      // put nodes with more children first
+      var aCount = a.children ? a.children.length : 0;
+      var bCount = b.children ? b.children.length : 0;
+      if (aCount > bCount) {
+          return 1;
+      } else if (aCount < bCount) {
+          return -1;
+      } else {
+          // final sort by name/label, if any
+          var aName = $.trim(a.name);
+          var bName = $.trim(b.name);
+          if (aName.localeCompare) {
+              return aName.localeCompare(bName);
+          }
+          return (aName < bName) ? 1 : -1;
+      }
+  }
 
   d3.phylogram.build = function(selector, nodes, options) {
     options = options || {}
@@ -212,13 +233,13 @@ if (!d3) { throw "d3 wasn't included!"};
         h = parseInt(h);
     var tree = options.tree || d3.layout.cluster()
       .size([h, w])
-      .sort(function(node) { return node.children ? node.children.length : -1; })
+      .sort(ladderize)
       .children(options.children || function(node) {
         return node.branchset
       });
     var diagonal = options.diagonal || d3.phylogram.rightAngleDiagonal();
     var vis = options.vis || d3.select(selector).append("svg:svg")
-        .attr("width", w + 300)
+        .attr("width", w + 200)
         .attr("height", h + 30)
       .append("svg:g")
         .attr("transform", "translate(120, 20)");
@@ -234,12 +255,24 @@ if (!d3) { throw "d3 wasn't included!"};
                d3.select(this).append("svg:feFlood")
                  //.attr("flood-color", "#ffeedd")  // matches .help-box bg color!
                  .attr("flood-color", "#ffb265")    // darkened to allow tint
-                 .attr("flood-opacity", "0.5")
-                 .attr("result", "tint");
+                 .attr("flood-opacity", "0.5")      // animate this?
+                 .attr("result", "tint")
+               /* Add a sub-element to feFlood to pulse its opacity:
+                * <animate attributeName="flood-opacity" dur="1s" values="0.5;0.8;0.5;0.2;0.5" repeatCount="indefinite"></animate>
+                * */
+                 .append("svg:animate")
+                   .attr("attributeName", "flood-opacity")
+                   .attr("dur", "0.75s")
+                   .attr("values", "0.6;1.0;0.6;0.2;0.6")
+                   .attr("repeatCount","indefinite");
+               d3.select(this).append("svg:feGaussianBlur")
+                 .attr("stdDeviation", "5")        // expand area for highlight effect
+                 .attr("in", "tint")
+                 .attr("result", "blurtint")
                d3.select(this).append("svg:feBlend")
                  .attr("mode", "multiply")
                  .attr("in", "SourceGraphic")
-                 .attr("in2", "tint")
+                 .attr("in2", "blurtint")
                  .attr("in3", "BackgroundImage");
                /* ALTERNATIVE SOLUTION, using feComposite
                d3.select(this).append("svg:feComposite")
@@ -394,56 +427,102 @@ if (!d3) { throw "d3 wasn't included!"};
     // Is there a faster/cruder way to clear the decks?
     vis.selectAll('g.node text').remove();
 
-    // provide an empty label as last resort, so we can see highlights
-    var defaultNodeLabel = "unnamed";
-
     if (!options.skipLabels) {
       // refresh all labels based on tree position
       vis.selectAll('g.node')
         .append("svg:text")
           .attr('font-family', 'Helvetica Neue, Helvetica, sans-serif')
-          .attr("dx", -6)
-          .attr("dy", -6)
-          .attr("text-anchor", 'end')
+          // Default label placement is for internal nodes (overridden below for tips).
+          // N.B. that "empty" labels are centered and used for node highlighting.
+          .attr("dx", function(d) {return (d.labelType === 'empty') ? 0 : -6;})
+          .attr("dy", function(d) {return (d.labelType === 'empty') ? 3 : -6;})
+          .attr("text-anchor", function(d) {return (d.labelType === 'empty') ? 'middle' : 'end';})
           .attr('font-size', '10px')
+          .attr('pointer-events', function(d) {
+              switch(d.labelType) {
+                  case ('internal node (aligned)'):
+                      return 'all';
+                  default:
+                      return 'none';
+              }
+          })
           .attr('fill', function(d) {
               switch(d.labelType) {
-                  case ('mapped label'):
+                  case ('tip (mapped OTU)'):
                       return '#000';
-                  case ('node id'):
-                      if (d.ambiguousLabel) {
-                          return '#b94a48';  // show ambiguous labels, match red prompts
-                      } else if (d.adjacentEdgeLabel) {
-                          return '#888';
-                      } else {
-                          return '#888';
-                      }
-                  default:
+                  case ('tip (original)'):
                       return '#888';
+                  case ('internal node (aligned)'):
+                      return '#36f';
+                  case ('internal node (support)'):
+                      return '#888';
+                  case ('internal node (other)'):
+                      return '#888';
+                  case ('internal node (ambiguous)'):
+                      return '#b94a48';  // show ambiguous labels, match red prompts
+                  case ('empty'):
+                      return '#888';
+                  default:
+                      console.error('Unknown label type! ['+ d.labelType +']');;
+                      return '#3f3';
               }
           })
-          ///.text(function(d) { return d.length; });
           .attr('font-style', function(d) {
-              return (d.labelType === 'mapped label' ? 'inherit' : 'italic');
+              return (d.labelType === 'tip (mapped OTU)' ? 'inherit' : 'italic');
           })
-          .text(function(d) {
-              // return (d.name + ' ('+d.length+')');
-              var nodeLabel = '';
-              if (d.labelType === 'node id') {
-                  nodeLabel = '';  // hide these
-              } else {
-                  nodeLabel = d.name || defaultNodeLabel;
+          .html(function(d) {
+              /*
+              console.log("name: "+ d.name
+                      + "\nlabelType: "+ d.labelType
+                      + "\nlength: "+ d.length
+                      + "\nadjacentEdgeLabel: "+ d.adjacentEdgeLabel);
+              */
+              switch(d.labelType) {
+                  case ('tip (mapped OTU)'):
+                  case ('tip (original)'):
+                  case ('internal node (support)'):
+                  case ('internal node (other)'):
+                  case ('internal node (ambiguous)'):
+                      return d.name;
+                  case ('internal node (aligned)'):
+                      var link, title;
+                      if (isNaN(d.conflictDetails.witness)) {
+                          link = getSynthTreeViewerURLForNodeID('', d.conflictDetails.witness);
+                          title = "Click to see this taxon in the latest synthetic tree";
+                      } else {
+                          link = getTaxobrowserURL(d.conflictDetails.witness);
+                          title = "Click to see this taxon in the latest OT taxonomy";
+                      }
+                      return '<a xlink:href="'+ link +'" target="_blank" xlink:title="'+ title +'">'+ d.name +'</a>';
+                  case ('empty'):
+                      /* N.B. empty label should hide, but still have layout to
+                       * support a legible highlight.
+                       */
+                      return '&nbsp; &nbsp; &nbsp; &nbsp;';
+                  default:
+                      console.error('Unknown label type! ['+ d.labelType +']');;
+                      return "???";
               }
-              var supplementalLabel = d.ambiguousLabel || d.adjacentEdgeLabel;
-              if (supplementalLabel) {
-                  if (nodeLabel === '') {
-                      nodeLabel = supplementalLabel;
-                  } else {
-                      nodeLabel = nodeLabel +" ["+ supplementalLabel +"]";
-                  }
-              }
-              return nodeLabel;
           });
+
+      /* Add a second field to show any edge support values?
+       * COMMENTING THIS OUT based on further discussion. (It seems we do not expect
+       * any scenario where a tree has multiple labels per node.)
+       *
+      vis.selectAll('g.node')
+        .filter(function(d) { return d.adjacentEdgeLabel ? true : false;})
+        .append("svg:text")
+          .attr('font-family', 'Helvetica Neue, Helvetica, sans-serif')
+          // Show *beneath* the branch, directly under any internal node label
+          // N.B. that "empty" labels are centered and used for node highlighting.
+          .attr('fill', '#888')
+          .attr("dx", -6)
+          .attr("dy", 12)
+          .attr("text-anchor", 'end')
+          .attr('font-size', '10px')
+          .attr('pointer-events', 'none')
+          .html(function(d) { return d.adjacentEdgeLabel || '???'});
+      */
 
       vis.selectAll('g.root.node text')
           .attr("dx", -8)
@@ -455,6 +534,19 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("text-anchor", "start");
     }
 
+    /*
+    // Finalize SVG height/width/scale/left/top to match rendered labels
+    // (prevents cropping when some labels exceed our estimated `labelWidth` above)
+    var renderedBounds = vis.node().getBBox();
+    var svgNode = d3.select( vis.node().parentNode );
+    // match SVG size to the rendered bounds incl. all labels
+    svgNode.style('width', renderedBounds.width +'px')
+           .style('border', '1px red solid')
+           .style('height', renderedBounds.height +'px')
+    // re-center the main group to allow for assymetric label sizes
+    vis.attr('transform', 'translate('+ -(renderedBounds.x) +','+ -(renderedBounds.y) +')');
+    */
+
     return {tree: tree, vis: vis}
   }
 
@@ -462,7 +554,7 @@ if (!d3) { throw "d3 wasn't included!"};
     options = options || {}
     var w = options.width || d3.select(selector).style('width') || d3.select(selector).attr('width'),
         r = w / 2,
-        labelWidth = options.skipLabels ? 10 : options.labelWidth || 120;
+        labelWidth = options.skipLabels ? 10 : options.labelWidth || 160;
 
     var vis = d3.select(selector).append("svg:svg")
         .attr("width", r * 2)
@@ -472,7 +564,7 @@ if (!d3) { throw "d3 wasn't included!"};
 
     var tree = d3.layout.cluster()
       .size([360, r - labelWidth])
-      .sort(function(node) { return node.children ? node.children.length : -1; })
+      .sort(ladderize)
       .children(options.children || function(node) {
         return node.branchset
       })
@@ -504,6 +596,18 @@ if (!d3) { throw "d3 wasn't included!"};
         .attr("text-anchor", function(d) { return d.x < 180 ? "end" : "start"; })
         .attr("transform", function(d) { return d.x < 180 ? null : "rotate(180)"; });
     }
+
+    /*
+    // Finalize SVG height/width/scale/left/top to match rendered labels
+    // (prevents cropping when some labels exceed our estimated `labelWidth` above)
+    var renderedBounds = vis.node().getBBox();
+    var svgNode = d3.select( vis.node().parentNode );
+    // match SVG size to the rendered bounds incl. all labels
+    svgNode.style('width', renderedBounds.width +'px')
+           .style('height', renderedBounds.height +'px')
+    // re-center the main group to allow for assymetric label sizes
+    vis.attr('transform', 'translate('+ -(renderedBounds.x) +','+ -(renderedBounds.y) +')');
+    */
 
     return {tree: tree, vis: vis}
   }

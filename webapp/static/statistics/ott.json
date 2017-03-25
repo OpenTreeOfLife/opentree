@@ -2,26 +2,41 @@
     {
         "===": "These 'comments' will be ignored by the app.",
         "===": "Note that releases are listed in reverse chronological order.",
+        "===": "taxon_count comes from `wc -l taxonomy.tsv`",
+        "===": "visible_taxon_count comes from `cleaned_ott/index.html` in propinquity output",
+        "===": "For proper sorting, all `date` strings must be in the form {yyyy-mm-dd}!",
 
-        "version": "ott2.9", 
+        "version": "ott3.0",
+        "date": "2017-02-26",
+        "taxon_count":         3594550,
+        "visible_taxon_count": 3118727
+    },
+    {
+        "version": "ott2.10",
+        "date": "2016-09-10",
+        "taxon_count":         3453840,
+        "visible_taxon_count": 2338745
+    },
+    {
+        "version": "ott2.9",
         "date": "2015-10-12",
         "taxon_count":         3528349,
         "visible_taxon_count": 2628944
     },
     {
-        "version": "ott2.8", 
+        "version": "ott2.8",
         "date": "2014-06-12",
         "taxon_count":         2918183,
         "visible_taxon_count": 2278750
     },
     {
-        "version": "ott2.7", 
+        "version": "ott2.7",
         "date": "2014-05-08",
         "taxon_count":         2734175,
         "visible_taxon_count": 2149208
     },
     {
-        "version": "ott2.6", 
+        "version": "ott2.6",
         "date": "2014-04-11",
         "taxon_count":         2762556,
         "visible_taxon_count": 2189119

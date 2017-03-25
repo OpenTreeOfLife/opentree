@@ -60,11 +60,12 @@ singlePropertySearchForStudies_url = {oti_domain}/v3/studies/find_studies
 singlePropertySearchForTrees_url = {oti_domain}/v3/studies/find_trees
 findAllTreeCollections_url = {opentree_api_domain}/v3/collections/find_collections
 treeConflictStatus_url = {conflict_api_domain}/v2/conflict/conflict-status?tree1={TREE1_ID}&tree2={TREE2_ID}&use_cache={USE_CACHE}
-mintNewOTTids_url = {taxomachine_domain}/v3/taxonomy/mint_new_ids
-submitNewTaxa_url = {taxomachine_domain}/v3/taxonomy/add_new_taxa
 # NOTE that some general utility methods are called from original v1 code.
 phylesystem_config_url = {opentree_api_domain}/phylesystem/v1/phylesystem_config
 render_markdown_url = {opentree_api_domain}/phylesystem/v1/render_markdown
+getTreesQueuedForSynthesis_url = {opentree_api_domain}/phylesystem/v1/trees_in_synth
+includeTreeInSynthesis_url = {opentree_api_domain}/phylesystem/v1/include_tree_in_synth
+excludeTreeFromSynthesis_url = {opentree_api_domain}/phylesystem/v1/exclude_tree_from_synth
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #
@@ -85,3 +86,5 @@ API_create_collection_POST_url = {opentree_api_domain}/v3/collection
 API_load_collection_GET_url = {opentree_api_domain}/v3/collection/{COLLECTION_ID}
 API_update_collection_PUT_url = {opentree_api_domain}/v3/collection/{COLLECTION_ID}
 API_remove_collection_DELETE_url = {opentree_api_domain}/v3/collection/{COLLECTION_ID}
+
+API_create_amendment_POST_url = {opentree_api_domain}/v3/amendment

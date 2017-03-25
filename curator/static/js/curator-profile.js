@@ -111,7 +111,9 @@ function updateListFiltersWithHistory() {
             newState[prop] = ko.unwrap(activeFilter[prop]);
             // Hide default filter settings, for simpler URLs
             if (newState[prop] !== filterDefaults[prop]) {
-                newQSValues[prop] = ko.unwrap(activeFilter[prop]);
+                // Our list filters are smart about recognizing diacritics, so
+                // we can just use their Latin-only counterparts in the URL.
+                newQSValues[prop] = removeDiacritics( ko.unwrap(activeFilter[prop]) );
             }
         }
         //var newQueryString = '?'+ encodeURIComponent($.param(newQSValues));
@@ -174,7 +176,7 @@ function loadCollectionList(option) {
                 showErrorMessage('Sorry, there is a problem with the tree-collection data.');
                 return;
             }
-            
+            captureDefaultSortOrder(data);
             viewModel = data;
 
             // enable sorting and filtering for lists in the editor
@@ -198,8 +200,9 @@ function loadCollectionList(option) {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.COLLECTIONS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' ),
-                    wholeSlugMatchPattern = new RegExp( '^'+ $.trim(match) +'$' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
+                    wholeSlugMatchPattern = new RegExp( '^'+ $.trim(matchWithDiacriticals) +'$' );
                 var order = viewModel.listFilters.COLLECTIONS.order();
                 var filter = viewModel.listFilters.COLLECTIONS.filter();
 
@@ -287,18 +290,24 @@ function loadCollectionList(option) {
                      */
                     case 'Most recently modified':
                         filteredList.sort(function(a,b) { 
-                            var aMod = a.lastModified.ISO_date;
-                            var bMod = b.lastModified.ISO_date;
-                            if (aMod === bMod) return 0;
+                            // coerce any missing/goofy dates to strings
+                            var aMod = $.trim(a.lastModified.ISO_date);
+                            var bMod = $.trim(b.lastModified.ISO_date);
+                            if (aMod === bMod) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             return (aMod < bMod)? 1 : -1;
                         });
                         break;
 
                     case 'Most recently modified (reversed)':
                         filteredList.sort(function(a,b) { 
+                            // coerce any missing/goofy dates to strings
                             var aMod = a.lastModified.ISO_date;
                             var bMod = b.lastModified.ISO_date;
-                            if (aMod === bMod) return 0;
+                            if (aMod === bMod) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             return (aMod > bMod)? 1 : -1;
                         });
                         break;
@@ -306,16 +315,28 @@ function loadCollectionList(option) {
                     case 'By owner/name':
                         filteredList.sort(function(a,b) { 
                             // first element is the ID with user-name/collection-name
-                            if (a.id === b.id) return 0;
-                            return (a.id < b.id) ? -1 : 1;
+                            // (coerce any missing/goofy values to strings)
+                            var aName = $.trim(a.id);
+                            var bName = $.trim(b.id);
+                            if (aName === bName) {
+                                // N.B. this should not occur
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aName < bName) ? -1 : 1;
                         });
                         break;
 
                     case 'By owner/name (reversed)':
                         filteredList.sort(function(a,b) { 
                             // first element is the ID with user-name/collection-name
-                            if (a.id === b.id) return 0;
-                            return (a.id > b.id) ? -1 : 1;
+                            // (coerce any missing/goofy values to strings)
+                            var aName = $.trim(a.id);
+                            var bName = $.trim(b.id);
+                            if (aName === bName) {
+                                // N.B. this should not occur
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aName > bName) ? -1 : 1;
                         });
                         break;
 

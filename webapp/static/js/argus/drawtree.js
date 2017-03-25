@@ -1,5 +1,5 @@
-/*    
-@licstart  The following is the entire license notice for the JavaScript code in this page. 
+/*
+@licstart  The following is the entire license notice for the JavaScript code in this page.
 
     Copyright (c) 2013, Cody Hinchliff
     Copyright (c) 2013, Joseph W. Brown
@@ -38,7 +38,8 @@
 // factor function -- gradually going to encapsulate argus functions here for better
 //  information hiding and avoiding putting a lot of things into the global namespace
 // Attributes of spec:
-//      domSource = "ottol"  The name of the source of trees. Currently only "ottol" is supported.
+//      domSource = "ottol"  The name of the source of trees. Currently only "ottol" and the latest synthetic tree 
+//          (e.g. "opentree1.2") are supported.
 //      nodeID = the ID for the node (according to the system of the service indicated by domSource)
 //          if nodeID or domSource are lacking, they will *both* be parsed out of the URL query string (location.search)
 //              from node_id and domsource url-encoded GET parameters. If they are not found there, the defaults are
@@ -133,7 +134,7 @@ function createArgus(spec) {
         "minTipRadius": 5, // the minimum radius of the node/tip circles. "r" in old argus
         "nodeDiamScalar": 1.0,  // how much internal nodes are scaled by logleafcount
         "nodesWidth": 100, // the distance between parent/child nodes
-            // TODO: try a wider setting (180?), or adapt to screen-width  
+            // TODO: try a wider setting (180?), or adapt to screen-width
         "nubDistScalar": 4, // the x/y distance of the nub from its child
         "tipOffset": 300,  // distance from right margin at which leaf nodes are drawn
         "xLabelMargin": 10, // the distance of the labels from the nodes
@@ -215,7 +216,7 @@ function createArgus(spec) {
         getArgusNodeByID: function ( nodeID ) {
             // NOTE depends on treeview.js methods
             return getTreeDataNode( function(node) {
-                return (node.node_id === nodeID); 
+                return (node.node_id === nodeID);
             });
         },
         // TODO: add a method to get node by OTT id?
@@ -239,7 +240,7 @@ function createArgus(spec) {
 
 
     argusObj.nodeHeight = (2 * argusObj.minTipRadius) + argusObj.yNodeMargin;
-    // helper function to create the URL and arg to be passed to URL. 
+    // helper function to create the URL and arg to be passed to URL.
     //  Argument:
     //      o.nodeID
     //      o.domSource (default "ottol")  @TEMP will need to be modified for cases when ottol is not the value
@@ -359,7 +360,7 @@ function createArgus(spec) {
                 // (where 0 = the right-most (leaf nodes) column, higher = further left)
                 node.treeColumn = node.isLocalLeafNode() ? 0 : (argusObj.treeData.max_node_depth - node.nodeDepth);
                 // TODO: pre-calculate node.x from this, if it never changes..?
-                
+
                 if (node.children) {
                     // sort and cluster children to build its display list
 
@@ -378,7 +379,8 @@ function createArgus(spec) {
                     // group children based on type of edge support
                     for (var i = 0; i < nchildren; i++) {
                         var testChild = node.children[i],
-                            sb = testChild.supported_by;
+                            sb = getSupportingSourceIDs(testChild);
+                            //sb = testChild.supported_by;
                         testChild.supportedByTaxonomy = (argus.supportingTaxonomyVersion in sb);
                         testChild.supportedByPhylogeny = Object.keys(sb).length > (testChild.supportedByTaxonomy ? 1 : 0);
 
@@ -393,7 +395,7 @@ function createArgus(spec) {
                     var nWithHybrid = nodesWithHybridSupport.length,
                         nWithPhylo = nodesWithPhyloSupport.length,
                         nWithoutPhylo = nodesWithoutPhyloSupport.length;
-                                                
+
                     // mark some less-interesting nodes for clustering
                     //
                     // sort first by number of descendants, so we always show the most
@@ -406,7 +408,7 @@ function createArgus(spec) {
                         nClusteredRemaining,
                         currentCluster = null,
                         nInCurrentCluster = 0;
-                    
+
                     // re-sort the smaller ones by name, then sort into clusters
                     clusteredNodes.sort(alphaSortByName);
 
@@ -431,7 +433,7 @@ function createArgus(spec) {
                                     clusters[node.node_id].push(newCluster);
                                     currentCluster = newCluster;
                                     nInCurrentCluster = 0;
-                                } 
+                                }
                                 // else toss the remaining few children into the last cluster
                             }
                         }
@@ -455,7 +457,7 @@ function createArgus(spec) {
                         nInCurrentCluster++;
                     }
                     // use names to label each cluster alphabetically
-                                                
+
                     // Use these groups and clusters to draw children
                     node.displayList = nodesWithHybridSupport.concat( nodesWithPhyloSupport );
 
@@ -487,7 +489,7 @@ function createArgus(spec) {
             };
 
             // clear the cluster registry first
-            argusObj.clusters = {}; 
+            argusObj.clusters = {};
 
             // recursively populate any missing (implied) node names
             buildAllMissingNodeNames(node);
@@ -533,7 +535,7 @@ function createArgus(spec) {
             defaultPaperWidth = paper.width;
             defaultPaperHeight = paper.height;
             setZoom();
-            
+
             // add dividers before anything else
             dividerBeforeEdges = paper.text(0,0,'');
             dividerBeforeLabels = paper.text(0,0,'');
@@ -546,7 +548,7 @@ function createArgus(spec) {
                 argusObj.anchoredControls = paper.set();
             }
 
-            /* 
+            /*
             // if we need a larger, shared background
             anchoredbg = paper.rect(0,0,120,90).attr({
                 "fill": this.bgColor,
@@ -580,7 +582,7 @@ function createArgus(spec) {
                     "cursor": "pointer"
                 }).insertBefore(dividerBeforeNodes)
             );
-            
+
             argusObj.provenanceHighlight.push(
               // Draw a lozenge shape, centered on its right focus
               // see http://www.w3.org/TR/SVG/paths.html#PathDataEllipticalArcCommands
@@ -612,7 +614,7 @@ function createArgus(spec) {
             argusObj.provenanceHighlight.hide();
 
             argusObj.provenanceHighlight.hover(
-                getHoverHandlerProvenanceHighlight('OVER', argusObj.provenanceHighlight, {}), 
+                getHoverHandlerProvenanceHighlight('OVER', argusObj.provenanceHighlight, {}),
                 getHoverHandlerProvenanceHighlight('OUT', argusObj.provenanceHighlight, { })
             );
             var handler = getClickHandlerProvenanceHighlight(); // just once!
@@ -658,7 +660,7 @@ function createArgus(spec) {
                         errMsg = 'Sorry, there was an error checking for taxon status.';
                         showErrorInArgusViewer(errMsg);
                         return;
-                    } 
+                    }
                     // check to see if we got a taxon record, or an error in JSON
                     var json = $.parseJSON(jqXHR.responseText);
                     // if (json['ott_id'] === ottID) { TODO: use this when we switch to v3 taxonomy API!
@@ -690,7 +692,7 @@ function createArgus(spec) {
             context: argusObj,
             crossDomain: true,
             contentType: 'application/json',
-            converters: { 
+            converters: {
                 // serialize this JSON into dedicated pseudo-classes
                 'text nodeTree': function(data) {
                     ///console.log(">>> pre-processing raw JSON string..." );
@@ -714,6 +716,10 @@ function createArgus(spec) {
             // proceed directly to display (emulate browser history State object)
             updateTreeView({'data': o});
         }
+        // if we're still showing the initial "nudge" message, hide it now
+        if ($('#nudged-to-latest-synthetic-tree').is(':visible')) {
+            $('#nudged-to-latest-synthetic-tree').fadeOut();
+        }
     };
 
     argusObj.displayNode = function (o) {
@@ -731,7 +737,7 @@ function createArgus(spec) {
 
         if (paper !== undefined) {
             $(this.container).unbind("scroll");
-            if (argusObj.anchoredControls) { 
+            if (argusObj.anchoredControls) {
                 argusObj.anchoredControls.remove();
                 argusObj.anchoredControls.clear();
             }
@@ -777,7 +783,7 @@ function createArgus(spec) {
                     nodeCircle = paper.getById('node-circle-'+ srcInfo.nodeID);
                     edgePath = targetShape;
                     break;
-                    
+
                 default:
                     console.warn("getHoverHandlerNodeAndEdge(): Unexpected type for targetShape: '"+ targetShape.type +"'!");
                     return;
@@ -789,10 +795,10 @@ function createArgus(spec) {
                     // copy source-node values from the target node to the highlight
 
                     argusObj.highlightedNodeInfo = srcInfo;
-                    
+
                     // move the highlight to this node
                     argusObj.provenanceHighlight.transform('t' + nodeCircle.attr('cx') + ',' + nodeCircle.attr('cy'));
-                    
+
                     if (edgePath) {
                         // move the highlight to this edge
                         // no easy x/y attributes for a path, need to use its bounding box
@@ -800,7 +806,7 @@ function createArgus(spec) {
 
                         argusObj.provenanceHighlight.forEach(function(element) {
                             if (element.type == 'rect') {
-                                var xScale = (bbox.width / 100); 
+                                var xScale = (bbox.width / 100);
                                 var pathScale = 'S '+ xScale +',1  t' + ((bbox.x + (bbox.width / 2.0)) / xScale) + ',' + bbox.y;
                                     // 100 is the natural width of the hilight path
                                 element.transform(pathScale);
@@ -815,7 +821,7 @@ function createArgus(spec) {
                         // hide edge-highlight rect if there's no upward edge
                         argusObj.provenanceHighlight.forEach(function(element) {
                             if (element.type == 'rect') {
-                                element.hide(); 
+                                element.hide();
                             }
                         });
                     }
@@ -858,11 +864,11 @@ function createArgus(spec) {
                     break;
                 case 'OUT':
                     // are we REALLY outside the lozenge, or just over the text?
-                      
+
                     // Test using client/page coordinates, instead of canvas.
                     // (This handles scaling, scrolling, etc. more reliably.)
                     var bbox = getClientBoundingBox( argusObj.provenanceHighlight );
-                    
+
                     if (Raphael.isPointInsideBBox( bbox, evt.pageX, evt.pageY )) {
                         // false alarm, it's just moved over text or the node circle
                         return;
@@ -888,7 +894,7 @@ function createArgus(spec) {
              */
             switch (e.type) {
                 case 'contextmenu':
-                    var urlSafeNodeName = encodeURIComponent(nodeName);  
+                    var urlSafeNodeName = encodeURIComponent(nodeName);
                     var nodeURL = '/opentree/'+ domSource +'@'+ nodeID +'/'+ urlSafeNodeName;
                     var newWindow = window.open( nodeURL, '_blank' );
                     if (newWindow) {
@@ -1005,7 +1011,7 @@ function createArgus(spec) {
             switch (e.type) {
                 case 'contextmenu':
                     var info = argusObj.highlightedNodeInfo;
-                    var urlSafeNodeName = encodeURIComponent(info.nodeName);  
+                    var urlSafeNodeName = encodeURIComponent(info.nodeName);
                     var nodeURL = '/opentree/'+ info.domSource +'@'+ info.nodeID +'/'+ urlSafeNodeName;
                     var newWindow = window.open( nodeURL, '_blank' );
                     if (newWindow) {
@@ -1031,12 +1037,12 @@ function createArgus(spec) {
         if (!parentNodeX) {
             // passed in arg is fastest, but this is now reliable
             var parentNode = argusObj.getArgusNodeByID(node.parentNodeID);
-            parentNodeX = (parentNode) ? 
+            parentNodeX = (parentNode) ?
               argusObj.xOffset - (argusObj.nodesWidth * parentNode.treeColumn) :
-              // if no parent ID, assume it's the local root node 
+              // if no parent ID, assume it's the local root node
               argusObj.xOffset - (argusObj.nodesWidth * argusObj.treeData.treeColumn);
         }
-        var depthFromTargetNode = obj.depthFromTargetNode || 0; 
+        var depthFromTargetNode = obj.depthFromTargetNode || 0;
         var domSource = obj.domSource;
         var fontSize = this.minTipRadius * this.fontScalar;
         var curLeaf = obj.curLeaf;
@@ -1107,7 +1113,7 @@ function createArgus(spec) {
         } else {
             node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.num_tips);
         }
-        var nodeFill = this.nodeColor; 
+        var nodeFill = this.nodeColor;
         var nodeStroke = this.pathColor;
         // override for special cases
         if (node.isActualLeafNode()) {
@@ -1115,7 +1121,7 @@ function createArgus(spec) {
             nodeStroke = this.bgColor;
         } else if (node.isVisibleLeafNode()) {
             nodeFill = this.visibleLeafColor;
-        } else if (isTargetNode) { 
+        } else if (isTargetNode) {
             // add special styles for this?
         }
         if (circle) {
@@ -1164,8 +1170,8 @@ function createArgus(spec) {
             labelY = node.y;
             labelAnchor = 'start';
         } else {
-            labelX = node.x - (node.r * 1.25);
-            labelY = node.y + (node.r * 1.25);
+            labelX = node.x - (node.r + 0.5);
+            labelY = node.y + (node.r + 0.5);
             labelAnchor = 'end';
         }
 
@@ -1190,7 +1196,7 @@ function createArgus(spec) {
                 // N.B. this is determined using vars above, COPIED from treeview.js!
                 var isCompoundNodeName = ((typeof node.name === 'string') &&
                                           (node.name.indexOf(compoundNodeNameDelimiter) !== -1) &&
-                                          (node.name.indexOf(compoundNodeNamePrefix) === 0) && 
+                                          (node.name.indexOf(compoundNodeNamePrefix) === 0) &&
                                           (node.name.indexOf(compoundNodeNameSuffix) === (node.name.length -1)));
                 displayLabel = (isCompoundNodeName ? '' : node.name || '');
             }
@@ -1221,12 +1227,13 @@ function createArgus(spec) {
                   .id = (nodeSpineElementID);
             }
         }
-        
+
         if (!isTargetNode) {
             // draw/update its "upward" branch to the parent's spine
             // TODO: nudge (vs create) if this already exists!
             var lineDashes, lineColor,
-                sb = node.supported_by,
+                //sb = node.supported_by,
+                sb = getSupportingSourceIDs(node),
                 supportedByTaxonomy = argus.supportingTaxonomyVersion in sb,
                 supportedByPhylogeny = Object.keys(sb).length > (supportedByTaxonomy ? 1 : 0);
 
@@ -1246,7 +1253,7 @@ function createArgus(spec) {
             }
 
             var branchSt = "M" + parentNodeX + " " + node.y + "L" + node.x + " " + node.y;
-                
+
             if (triggerBranch && visibleBranch) {
                 // update the existing elements
                 triggerBranch.attr({
@@ -1264,7 +1271,7 @@ function createArgus(spec) {
                 }).insertAfter(dividerBeforeEdges);
                 triggerBranch.id = (nodeTriggerBranchElementID);
                 // NOTE that these are pushed behind all visible paths!
-                
+
                 // ... and a congruent, visible path
                 visibleBranch = paper.path(branchSt).toBack().attr({
                     "stroke-width": 1,
@@ -1273,7 +1280,7 @@ function createArgus(spec) {
                     "stroke": lineColor          // this.pathColor
                 }).insertBefore(dividerBeforeLabels);
                 visibleBranch.id = (nodeVisibleBranchElementID);
-                    
+
                 // assign hover behaviors
                 triggerBranch.hover(getHoverHandlerNodeAndEdge('OVER', triggerBranch, {}), getHoverHandlerNodeAndEdge('OUT', triggerBranch, {}));
 
@@ -1330,7 +1337,7 @@ function createArgus(spec) {
 
                     if (i < maxUpwardNodes) {
                         // draw node circle and label
-                        labelX = endX - (this.minTipRadius * 1.25); 
+                        labelX = endX - (this.minTipRadius * 1.25);
                         labelY = endY + (this.minTipRadius * 1.25);
                         if (circle && label) {
                             // update the existing circle and label
@@ -1342,7 +1349,7 @@ function createArgus(spec) {
                                 'x': labelX,
                                 'y': labelY
                             });
-    
+
                         } else {
                             // create the new circle and label
                             circle = paper.circle(endX, endY, this.minTipRadius).attr({
@@ -1428,7 +1435,7 @@ function createArgus(spec) {
         if (box && label) {
             // update the existing box and label
             box.attr({
-                'x': clusterLeftEdge, 
+                'x': clusterLeftEdge,
                 'y': cluster.y - (this.nodeHeight / 2.0)
             });
             label.attr({
@@ -1464,18 +1471,18 @@ function createArgus(spec) {
             // assign behaviors to replace the minimized cluster with its nodes
             var minimizedClusterParts = [branch, minimizedCluster];
             minimizedCluster.click(getClickHandlerCluster(
-                minimizedClusterParts, 
-                parentNodeID, 
+                minimizedClusterParts,
+                parentNodeID,
                 clusterPosition,
                 depthFromTargetNode,
                 domSource,
                 currentYoffset
             ));
-            minimizedCluster.hover(getHoverHandlerCluster('OVER', 
-                box, { "fill": this.nodeColor }, 
+            minimizedCluster.hover(getHoverHandlerCluster('OVER',
+                box, { "fill": this.nodeColor },
                 label, { "fill": 'white' }
-            ), getHoverHandlerCluster('OUT', 
-                box, { "fill": this.bgColor }, 
+            ), getHoverHandlerCluster('OUT',
+                box, { "fill": this.bgColor },
                 label, { "fill": this.labelColor }
             ));
         }
@@ -1610,7 +1617,7 @@ function createArgus(spec) {
             "opacity": (conflictsInView) ? 1.0 : 0.4
         }).insertAfter(dividerBeforeAnchoredUI)
           .click(toggleAltRels(altrelsset));
-                        
+
         argusObj.anchoredControls.push(togglebox);
 
         togglelabel = paper.text(tx + (this.nodesWidth/2),
@@ -1622,18 +1629,18 @@ function createArgus(spec) {
             "title": (conflictsInView) ? conflictLabel : disabledConflictLabel,
             "opacity": (conflictsInView) ? 1.0 : 0.4
         }).insertAfter(dividerBeforeAnchoredUI);
-        
+
         // label on top needs identical action as box
         togglelabel.click(toggleAltRels(altrelsset));
         argusObj.anchoredControls.push(togglelabel);
         */
 
-        /* These are just under-powered history, remove them for now.. 
+        /* These are just under-powered history, remove them for now..
         // add clickable Back and Forward pointers (now redundant with browser Back/Fwd buttons)
         backStackPointer = forwardStackPointer = null;
         backStackPointer = paper.path("M21.871,9.814 15.684,16.001 21.871,22.188 18.335,25.725 8.612,16.001 18.335,6.276z")
             .attr({
-                fill: "#000", 
+                fill: "#000",
                 stroke: "none",
                 cursor: "pointer",
                 title: (argusObj.backStack.length > 0) ? "Show the previous view in history" : "No previous views in history",
@@ -1646,7 +1653,7 @@ function createArgus(spec) {
 
         forwardStackPointer = paper.path("M30.129,22.186 36.316,15.999 30.129,9.812 33.665,6.276 43.389,15.999 33.665,25.725z")
             .attr({
-                fill: "#000", 
+                fill: "#000",
                 stroke: "none",
                 cursor: "pointer",
                 title: (argusObj.forwardStack.length > 0) ? "Show the next view in history" : "No later views in history",
@@ -1672,9 +1679,9 @@ function createArgus(spec) {
         $argusContainer.scrollTop((this.targetNodeY) - ($argusContainer.height() / 2));
 
         // disable default right-click behavior in the argus view
-        $argusContainer.bind("contextmenu", function (e) { 
+        $argusContainer.bind("contextmenu", function (e) {
             e.preventDefault();
-            return false; 
+            return false;
         });
 
         // for each node found to have more than one parent
@@ -1856,10 +1863,10 @@ function sortByDescendantCount(a,b) {
     return 0;
 }
 
-/* Let's deserialize tree-view JSON elements into useful  pseudo-classes. This should 
+/* Let's deserialize tree-view JSON elements into useful  pseudo-classes. This should
  * simplify management of dynamic layouts, clustering, etc.
  */
-function ArgusNode() { // constructor 
+function ArgusNode() { // constructor
     // maintain ordered-and-clustered contents?
     this.nodeDepth = 0;  // 0 = root node, higher for descendants
     this.treeColumn = 0; // 0 = rightmost (leaf nodes), higher = further left
@@ -1907,7 +1914,7 @@ ArgusNode.prototype.updateDisplayBounds = function() {
                 bottomY = Math.max(bottomY, testChild.displayBounds.bottomY);
                 if (i === 0) {
                     firstChildY = testChild.y;
-                } 
+                }
                 if (i === displayListCount - 1) {
                     lastChildY = testChild.y;
                 }
@@ -1925,7 +1932,7 @@ ArgusNode.prototype.updateDisplayBounds = function() {
     return this.displayBounds;
 };
 
-function ArgusCluster() { // constructor 
+function ArgusCluster() { // constructor
     this.nodes = [ ];
     // each cluster is either minimized (default) or expanded
     this.expanded = false;
@@ -1950,9 +1957,9 @@ function getClientBoundingBox( elementSet ) {
     // Takes a RaphaelJS element set, reckons its full bounding box in
     // page/client coordinates.
     var bbox = {
-        x: Number.MAX_VALUE, 
-        y: Number.MAX_VALUE, 
-        x2: Number.MIN_VALUE, 
+        x: Number.MAX_VALUE,
+        y: Number.MAX_VALUE,
+        x2: Number.MIN_VALUE,
         y2: Number.MIN_VALUE
     };
     elementSet.forEach(function(e) {

@@ -54,36 +54,6 @@ function capture_form() {
     if (isThreadStarter) {
         jQuery('div.plugin_localcomments select[name=feedback_type]').show();
         jQuery('div.plugin_localcomments select[name=issue_title]').show();
-
-        // hide/show form widgets based on the chosen feedback type
-        console.log("SETTING UP SELECT");
-        console.log("exists? "+ jQuery('div.plugin_localcomments select[name=feedback_type]').length);
-        jQuery('div.plugin_localcomments select[name=feedback_type]')
-            .unbind('change')
-            .change(function(){
-                console.log("SELECT CHANGED");
-                var $select = $(this);
-                switch($select.val()) {
-                    case '':
-                        // hide all UI until they choose a feedback type
-                        jQuery('div.plugin_localcomments [name=doi]').hide();
-                        jQuery('div.plugin_localcomments [name=tree_id]').hide();
-                        jQuery('div.plugin_localcomments [name=body]').hide();
-                        break;
-                    case 'Tree suggestion':
-                        // show fields for paper and tree
-                        jQuery('div.plugin_localcomments [name=doi]').show();
-                        jQuery('div.plugin_localcomments [name=tree_id]').show();
-                        jQuery('div.plugin_localcomments [name=body]').show();
-                        break;
-                    default:
-                        jQuery('div.plugin_localcomments [name=doi]').hide();
-                        jQuery('div.plugin_localcomments [name=tree_id]').hide();
-                        jQuery('div.plugin_localcomments [name=body]').show();
-                }
-            });
-        jQuery('div.plugin_localcomments select[name=feedback_type]').change();
-
     } else {
         jQuery('div.plugin_localcomments select[name=feedback_type]').hide();
         jQuery('div.plugin_localcomments select[name=issue_title]').hide();
@@ -102,6 +72,7 @@ function capture_form() {
                 break;
             case 'Correction to relationships in the synthetic tree':
             case 'Correction to names (taxonomy)':
+            case 'Extinct/extant issue (taxonomy)':
                 $referenceURLField.attr('placeholder',"Provide a supporting article or web site (URL or DOI)");
                 $referenceURLField.show();
                 break;
@@ -109,6 +80,11 @@ function capture_form() {
                 $referenceURLField.attr('placeholder',"...");
                 $referenceURLField.hide();
         }
+    });
+    // convert a "naked" DOI to an URL, where possible
+    $referenceURLField.unbind('blur').bind('blur', function() {
+        var $doiField = $(this);
+        $doiField.val( DOItoURL($doiField.val()) );
     });
 
     // update the Login link, if shown
@@ -621,6 +597,7 @@ def index():
                             OPTION('Correction to relationships in the synthetic tree'),
                             OPTION('Suggest a phylogeny to incorporate'),
                             OPTION('Correction to names (taxonomy)'),
+                            OPTION('Extinct/extant issue (taxonomy)'),
                             OPTION('Bug report (website behavior)'),
                             OPTION('New feature request'),
                         _name='feedback_type',value='',_style='width: 100%; margin-right: -4px;'),

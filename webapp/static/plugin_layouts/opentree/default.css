@@ -6,24 +6,24 @@ body {
    the desire to have a nice, big, fat search box.
 */
 .header {
-	margin: 2px; 
+	margin: 2px;
 	height: 85px;
 }
 .headerlogo {
 	float: left;
 }
-.sidebar-search {	
+.sidebar-search {
     background-color: #ffc;
     border: 1px solid #dda;
     border-radius: 4px;
     margin: -3px;
     padding: 8px 4px;
 }
-.sidebar-search form {	
+.sidebar-search form {
     margin: 0;
 }
 #search-results i {
-    display: block; 
+    display: block;
     margin: 8px 0 0;
 }
 .search-result {
@@ -68,7 +68,7 @@ body {
 #provenance-panel .panel-edges {
     background-color: #eee;
 }
-.vizcontent div.viewer-frame, 
+.vizcontent div.viewer-frame,
 #comments-panel,
 #provenance-panel {
     float: left;
@@ -103,30 +103,30 @@ div.viewer-frame {
 }
 
 /* slide these using marker classes on #viewer-collection */
-.active-comments #comments-panel {   
+.active-comments #comments-panel {
     margin-left: -1px;  /* ensures visibility in scaled browser */
-    margin-right: 0; 
+    margin-right: 0;
 }
 .active-comments div.viewer-frame {
     width: 50%;  /* N.B. Javascript will override this */
     margin-left: 0;
-    margin-right: 0; 
+    margin-right: 0;
 }
-.active-comments #provenance-panel {    
+.active-comments #provenance-panel {
     margin-left: 0;
-    margin-right: -100%; 
+    margin-right: -100%;
 }
 
-.active-properties #comments-panel {   
-    margin-left: -50%; 
-    margin-right: 0; 
+.active-properties #comments-panel {
+    margin-left: -50%;
+    margin-right: 0;
 }
 .active-properties div.viewer-frame {
     width: 50%;  /* N.B. Javascript will override this */
     margin-left: 0;
-    margin-right: 0; 
+    margin-right: 0;
 }
-.active-properties #provenance-panel {    
+.active-properties #provenance-panel {
     margin-left: 0;
     margin-right: -1px;  /* ensures visibility in scaled browser */
 }
@@ -158,22 +158,22 @@ div.viewer-frame {
     }
 
     /* slide these using marker classes on #viewer-collection */
-    .active-comments #comments-panel {   
-        margin-left: 0; 
+    .active-comments #comments-panel {
+        margin-left: 0;
         margin-right: 0;
     }
     .active-comments div.viewer-frame {
         width: 100%;
-        margin-left: 0; 
+        margin-left: 0;
         margin-right: -90%;
     }
-    .active-comments #provenance-panel {    
-        margin-left: 90%; 
+    .active-comments #provenance-panel {
+        margin-left: 90%;
         margin-right: -180%;
     }
 
-    .active-properties #comments-panel {   
-        margin-left: -90%; 
+    .active-properties #comments-panel {
+        margin-left: -90%;
         margin-right: 0;
     }
     .active-properties div.viewer-frame {
@@ -181,7 +181,7 @@ div.viewer-frame {
         margin-left: -90%;
         margin-right: 0;
     }
-    .active-properties #provenance-panel {    
+    .active-properties #provenance-panel {
         margin-left: 0;
         margin-right: 0;
     }
@@ -317,6 +317,9 @@ div.viewer-frame {
     margin: 6px 0 12px 8px;
     list-style: none;
 }
+#provenance-panel .properties-section ul.external-links li {
+    margin: 4px 0;
+}
 #provenance-panel .properties-section.selected {
     border: 2px solid #d33;
 }
@@ -335,7 +338,9 @@ div.viewer-frame {
     color: #000;
     margin-bottom: 4px;
 }
-a.full-ref-toggle {
+a.full-ref-toggle,
+a.related-studies-toggle {
+	  font-weight: normal;
     color: #999 !important;
     text-decoration: none;
 }
@@ -345,8 +350,27 @@ a.full-ref-toggle {
     margin: 0px 12px 0px -6px;
     padding: 4px 6px;
 }
+.compact-ref {
+		background-color: #fff;
+		border: 1px solid #eee;
+		padding: 4px 6px;
+		display: inline-block;
+		margin-right: 8px;
+}
 .full-ref-curator {
     color: #777;
+}
+.related-study {
+	  border-bottom: 1px solid #ddd;
+		padding: 6px 0;
+}
+
+/* colors borrowed from curation app (CSS in views/study/edit.html) */
+.panel-content dl dt.supporting-tree {
+	  /*color: #36f;*/
+}
+.panel-content dl dt.conflicting-tree {
+	  /*color: #e80;*/
 }
 
 p#tree-description {
@@ -410,11 +434,11 @@ div#r0 {
     float: right;
 }
 #screen-size-indicator {
-    position: absolute; 
-    left: 0; 
-    top: 0; 
+    position: absolute;
+    left: 0;
+    top: 0;
     padding: 1px 6px;
-    background: red; 
+    background: red;
     color: white;
 }
 /* Warning banners appear when using DEVELOPMENT, STAGING servers */
@@ -452,7 +476,7 @@ div#r0 {
 .navbar-inverse .navbar-search .search-query::-webkit-input-placeholder {color: #555;}
 
 /* Optional style when field has focus
-.navbar-inverse .navbar-search .search-query:focus, 
+.navbar-inverse .navbar-search .search-query:focus,
 .navbar-inverse .navbar-search .search-query.focused {
     background-color: black;
     color: orange;
@@ -465,11 +489,11 @@ div#r0 {
     display: inline-block;
 }
 .navbar-search .left-inner-addon .search-query {
-    padding-left: 24px;    
+    padding-left: 24px;
 }
-.navbar-search .left-inner-addon .search-query:focus, 
+.navbar-search .left-inner-addon .search-query:focus,
 .navbar-search .left-inner-addon .search-query.focused {
-    padding-left: 25px;    
+    padding-left: 25px;
 }
 .navbar-search .left-inner-addon i {
     position: absolute;

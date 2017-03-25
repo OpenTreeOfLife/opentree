@@ -70,7 +70,7 @@ response.files.append(URL('static','js/d3.phylogram.js'))
     </div>
 </div>
 
-<style type="text/css">
+<style id="tree-view-style" type="text/css">
 body {
     overflow-y: scroll;
 }
@@ -97,10 +97,6 @@ body {
   fill: steelblue;
   r: 4.5px;
 }
-.node.specifiedRoot text {
-  fill: steelblue;
-  font-size: 1.3em;
-}
 /* even more preferred ot:specifiedRoot */
 .node.inGroupClade circle {
   fill: #000;
@@ -121,6 +117,10 @@ body {
 
 .node {
   font: 10px sans-serif;
+}
+.node a, .node a:visited {
+  color: inherit;
+  fill: inherit;
 }
 
 .dropdown-menu > li.node-information {
@@ -229,6 +229,13 @@ body {
     box-shadow: none !important;
 }
 
+/* simple zebra striping for new-taxon source entries */
+.controls.taxon-source td {
+    padding: 5px 6px;
+}
+.controls.taxon-source.odd {
+    background: #f3f3f3;
+}
 </style>
 
 <div class="row">
@@ -249,7 +256,7 @@ body {
       <li><a href="#History" data-toggle="tab">History <span class="badge badge-important" style="display: none;">?</span></a></li>
     </ul>
 
-    <div class="span4 Xbtn-group" style="float: right; margin-top: -56px;">
+    <div class="span4" style="float: right; margin-top: -56px;">
         {{ if viewOrEdit == 'EDIT': }}
           <button id="save-study-button" class="btn">Save Study</button>
           <input type="hidden" id="return-to-study-list"
@@ -317,10 +324,10 @@ body {
                   <button type="button" class="btn btn-info" onclick="lookUpDOI(); return false;">Look up DOI...</button>
                 {{ else: }}
                   <p class="static-form-value">
-                  <!-- ko if: nexml['^ot:studyPublication']['@href'] !== '' -->
-                      <a target="_blank" data-bind="text: nexml['^ot:studyPublication']['@href'], attr: { href: nexml['^ot:studyPublication']['@href'] }"></a>
+                 <!-- ko if: getStudyPublicationLink() !== '' -->
+                      <span data-bind="html: getStudyPublicationLink()">&nbsp;</span>
                  <!-- /ko -->
-                 <!-- ko if: nexml['^ot:studyPublication']['@href'] === '' -->
+                 <!-- ko if: getStudyPublicationLink() === '' -->
                       <em>None</em>
                  <!-- /ko -->
                   </p>
@@ -342,7 +349,7 @@ body {
                 {{ if viewOrEdit == 'EDIT': }}
                   <input data-bind="value: nexml['^ot:dataDeposit']['@href'],
                                     valueUpdate: ['afterkeydown', 'input'],
-                                    event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: validateAndTestDOI },
+                                    event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: formatDataDepositDOIAsURL },
                                     css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyDataDeposit" class="input-xlarge" placeholder="">
                 {{ else: }}
                   <p class="static-form-value">
@@ -406,9 +413,6 @@ body {
                 </div>
             </div>
                   <input data-bind="value: nexml['^ot:focalClade'], event: { change: nudge.GENERAL_METADATA }, css: viewModel.ticklers.GENERAL_METADATA" type="hidden" id="ot_focalClade" placeholder="">
-                  <!--
-                  <input data-bind="value: nexml['^ot:focalClade'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }" type="text" id="ot_focalClade" class="input-small" placeholder="">
-                    -->
                 {{ else: }}
                   <p class="static-form-value">
                     <span data-bind="text: nexml['^ot:focalCladeOTTTaxonName'], attr:{'title': ('ottid:'+ nexml['^ot:focalClade'])}, css: viewModel.ticklers.GENERAL_METADATA">&nbsp;</span>
@@ -516,15 +520,6 @@ body {
               <div class="control-group">
                 <div class="controls">
 
-                {{ if viewOrEdit == 'EDIT': }}
-                  <label class="checkbox">
-                    <input type="checkbox" data-bind="checked: nexml['^ot:notIntendedForSynthesis'], event: { click: nudge.GENERAL_METADATA }"> This study should not contribute to synthesis.
-                  </label>
-                {{ else: }}
-                  <p class="static-form-value" data-bind="css: nexml['^ot:notIntendedForSynthesis'] ? 'interesting-value' : 'boring-value',
-                                                          text: nexml['^ot:notIntendedForSynthesis'] ? 'This study should not contribute to synthesis. (This is not typical.)' : 'This study should contribute to synthesis.'"></p>
-                {{ pass }}
-
                   <p class="static-form-value interesting-value" data-bind="text: studyContributedToLatestSynthesis() ? (currentStudyVersionContributedToLatestSynthesis() ? 'This version was used to build the latest synthetic tree' : 'This study has changed since building the last synthetic tree.') : 'This study was not used in the latest synthesis.'"></p>
 
                 </div>
@@ -537,7 +532,7 @@ body {
                 {{ if viewOrEdit == 'EDIT': }}
                   <!-- markdown editor w/ preview option -->
                     <ul class="nav nav-pills pull-right" style="margin-bottom: 4px;">
-                        <li><a target="_blank" href="https://help.github.com/articles/markdown-basics">Markdown help</a></li>
+                        <li><a target="_blank" href="https://help.github.com/articles/basic-writing-and-formatting-syntax/">Markdown help</a></li>
                     </ul>
                     <div class="btn-group" style="margin-bottom: 8px;">
                       <button id="edit-comment-button" class="btn active" onclick="showStudyCommentEditor(); return false;">&nbsp; Edit (as Markdown) &nbsp;</button>
@@ -612,8 +607,7 @@ body {
 
                 <p>
                 You can also use the <strong>
-                <a href="https://github.com/OpenTreeOfLife/opentree/wiki/Open-Tree-of-Life-APIs" target="_blank">Open Tree API</a>
-                </strong> (the same one that powers this editor) to retrieve and make changes to study data.
+                <a href="https://github.com/OpenTreeOfLife/germinator/wiki/Open-Tree-of-Life-Web-APIs" target="_blank">Open Tree API</a></strong> to retrieve study data.
                 </p>
 
             </div>
@@ -645,14 +639,15 @@ body {
                     <tr>
                       {{ if viewOrEdit == 'EDIT': }}
                         <th>Tree name (click to edit tree)</th>
+                        <th colspan="2">Included in synthesis?</th>
                       {{ else: }}
                         <th>Tree name (click to view)</th>
+                        <th>Synthesis status</th>
                       {{ pass }}
                         <th>Inference method</th>
                         <th>Ingroup clade</th>
                         <th>Tree root</th>
                         <th>OTUs mapped</th>
-                        <th>Preferred</th>
                       {{ if viewOrEdit == 'EDIT': }}
                         <th>&nbsp;</th>
                       {{ pass }}
@@ -663,6 +658,7 @@ body {
                         <td>
                             <a href="#" data-bind="click: showTreeWithHistory,
                                 text: tree['@label'],
+                                attr: { href : getViewURLFromStudyID(studyID) + '/?tab=trees&tree=' + tree['@id'] },
                                 css: viewModel.ticklers.TREES">&nbsp;</a>
                             <br/>
                             <a data-bind="if: unresolvedDuplicatesFoundInTree( tree ),
@@ -683,6 +679,40 @@ body {
                                 Review ambiguous labels
                             </a>
                         </td>
+                      {{ if viewOrEdit == 'EDIT': }}
+                        <td>
+                            <span data-bind="text: getSynthStatusDescriptionForTree($data),
+                                             css: viewModel.ticklers.TREES"></span>
+                            <a class="badge" href="#" style="padding: 2px 6px;"
+                               title="Click to see details about this tree in synthesis"
+                               data-bind="text: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0)? (tree['^ot:reasonsToExcludeFromSynthesis'].length) : '?',
+                                          css: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0 ? 'badge badge-warning' : 'badge badge-info') +' '+ viewModel.ticklers.TREES(),
+                                          click: showTreeSynthDetailsPopup">?</a>
+                        </td>
+                        <td>
+                            <div style="white-space: nowrap;">
+                              <a class="btn btn-mini btn-success row-controls-ghosted"
+                                 data-bind="attr: {disabled: !(testForPossibleTreeInclusion($data))},
+                                            css: viewModel.ticklers.TREES,
+                                            click: tryToIncludeTreeInSynth">Include</a>
+                              <a class="btn btn-mini btn-danger row-controls-ghosted"
+                                 data-bind="attr: {disabled: !(testForPossibleTreeExclusion($data))},
+                                            css: viewModel.ticklers.TREES,
+                                            click: tryToExcludeTreeFromSynth">Exclude</a>
+                            </div>
+                        </td>
+                      {{ else: }}
+                        <td>
+                          <div style="white-space: nowrap;">
+                              <span data-bind="text: getSynthStatusDescriptionForTree($data),
+                                               css: viewModel.ticklers.TREES"></span>
+                              <a class="badge" href="#" style="padding: 2px 6px;"
+                                 data-bind="text: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0)? (tree['^ot:reasonsToExcludeFromSynthesis'].length) : '?',
+                                            css: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0 ? 'badge badge-warning' : 'badge badge-info') +' '+ viewModel.ticklers.TREES(),
+                                            click: showTreeSynthDetailsPopup">?</a>
+                          </div>
+                        </td>
+                      {{ pass }}
                         <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
                         <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
@@ -695,20 +725,12 @@ body {
                                 css: viewModel.ticklers.TREES">&nbsp;</td>
                       {{ if viewOrEdit == 'EDIT': }}
                         <td>
-                            <input type="checkbox" style="margin: 0px 20px; display: none;"
-            data-bind="attr: {'checked': jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1},
-                       click: togglePreferredTree,
-                       visible: true" /></td>
-                      {{ else: }}
-                        <td data-bind="text: (jQuery.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) ? 'YES' : 'NO'">&nbsp;</td>
-                      {{ pass }}
-                      {{ if viewOrEdit == 'EDIT': }}
-                        <td>
                             <button data-bind="click: removeTree,
                                                visible: true"
                                 class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                                title="Click to delete this tree from the study"
                                 style="display: none;">
-                                <i class="icon-remove icon-white"></i>
+                                <i class="icon-trash icon-white"></i>
                             </button>
                         </td>
                       {{ pass }}
@@ -776,10 +798,11 @@ body {
               </p>
         {{ if viewOrEdit == 'EDIT': }}
               <p>
-                See <strong>Add a tree to this study</strong>, below, to
-                add new trees from a file or pasted text. Mark the tree as
-                <strong>preferred</strong> to nominate it for inclusion in synthesis.
-                Preferred trees will undergo validation, generating warnings
+                See <strong>Add a tree to this study</strong>, below, to add
+                new trees from a file or pasted text. To nominate a tree for
+                inclusion in synthesis, click its <strong>Include</strong> 
+                button after clearing (or acknowledging) any objections.
+                Nominated trees will undergo validation, generating warnings
                 for full OTU mapping and other quality checks.
               </p>
               <p>
@@ -788,10 +811,11 @@ body {
               </p>
         {{ else: }}
               <p>
-                Trees marked as <strong>preferred</strong> have been nominated
-                for inclusion in synthesis, generally because they
-                best represent the conclusions of the study. Inclusion in synthesis
-                also requires that trees be rooted correctly and have OTUs mapped.
+                Trees with a synthesis status of <strong>Included</strong>
+                or <strong>Queued</strong> have been nominated for inclusion
+                in synthesis, generally because they best represent the
+                conclusions of the study. Inclusion in synthesis also requires
+                that trees be rooted correctly and have OTUs mapped.
               </p>
               <p>
                 Click on a tree name to view the tree and get more information.
@@ -881,11 +905,6 @@ body {
                   <label for="new-tree-URL">&hellip;or paste an URL to the tree</label>
                   <input type="text" id="new-tree-URL" class="input-block-level" value="" placeholder="Paste URL here">
 -->
-
-                  <label class="checkbox">
-                      <input name="newTreesPreferred" type="checkbox" value="true">
-                      Mark this tree as preferred for synthesis
-                  </label>
 
                   <div Xclass="form-actions" style="margin-top: 1em;">
                       <button name="new-tree-submit" type="submit"
@@ -980,11 +999,11 @@ body {
                                 class="pull-right btn btn-mini btn-danger"
                                 style="opacity: 0.3 !important;"
                                 onclick="alert('You must delete the associated tree(s) to remove this file.'); return false;">
-                                <i class="icon-remove icon-white"></i>
+                                <i class="icon-trash icon-white"></i>
                             </button>
                             <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
                                 class="pull-right btn btn-mini btn-danger row-controls-ghosted">
-                                <i class="icon-remove icon-white"></i>
+                                <i class="icon-trash icon-white"></i>
                             </button>
                         </td>
                     {{ else: }}
@@ -1158,7 +1177,7 @@ body {
                             <span data-bind="text: viewModel.listFilters.OTUS.scope">SCOPE</span>
                             <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu" data-bind="foreach: ['In all trees', 'In preferred trees', 'In non-preferred trees']">
+                        <ul class="dropdown-menu" data-bind="foreach: ['In all trees', 'In trees nominated for synthesis', 'In trees not yet nominated']">
                             <li data-bind="css: {'disabled': viewModel.listFilters.OTUS.scope() == $data }">
                                 <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.OTUS.scope($data); }">SCOPE</a>
                             </li>
@@ -1228,9 +1247,7 @@ body {
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS" />
                          </td>
                       {{ pass }}
-                        <td onmousedown="return false;"
-                            data-bind="text: otu['^ot:originalLabel'],
-                                       click: toggleMappingForOTU">&nbsp;</td>
+                        <td data-bind="text: otu['^ot:originalLabel']">&nbsp;</td>
                         <td>
                             <button class="btn btn-mini row-controls-ghosted" title="Show this OTU in all trees"
                                      data-bind="click: showOTUInContext, css: viewModel.ticklers.OTU_MAPPING_HINTS">
@@ -1306,7 +1323,7 @@ body {
                                    data-bind="click: approveProposedOTULabel">
                                 <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: proposedMapping(otu)[0].name,
                                                css: viewModel.ticklers.OTU_MAPPING_HINTS,
-                                               attr: getAttrsForMappingOption(proposedMapping(otu)[0])"
+                                               attr: getAttrsForMappingOption(proposedMapping(otu)[0], makeArray(proposedMapping(otu)).length)"
                                     href="#"
                                 >PROPOSED LABEL</a>
                             </span>
@@ -1329,7 +1346,7 @@ body {
                                                       data-bind="click: approveProposedOTUMappingOption"
                                                       title="Click to accept this OTU mapping">
                                 <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.taxon.unique_name,
-                                                  attr: getAttrsForMappingOption($data)"
+                                                  attr: getAttrsForMappingOption($data, makeArray(proposedMapping(otu)).length)"
                                        href="#"></a>
                                 </li>
                             </ul>
@@ -1582,7 +1599,7 @@ body {
                             <td align="center" valign="center">
                                 <a href="#" title="Click to remove this substitution."
                                    data-bind="click: function(data, event) { removeSubstitution(data);  }" />
-                                    <i class="icon-remove"></i></a>
+                                    <i class="icon-trash"></i></a>
                             </td>
                         </tr>
                     </tbody>
@@ -1594,10 +1611,10 @@ body {
                        <!-- NOTE the convention here... value="{OLD} =:= {NEW}" -->
                         <option value="\bsp(\.|\b) =:= ">Remove 'sp.'</option>
                         <option value="foo =:= bar">Replace 'foo' with 'bar'</option>
-                        <option value="^(\w*)\s+\b =:= ">Remove first of multiple words</option>
-                        <option value="\b\s+(\w*)$ =:= ">Remove last of multiple words</option>
+                        <option value="^(\S*)\s+\b =:= ">Remove first of multiple words</option>
+                        <option value="\b\s+(\S*)$ =:= ">Remove last of multiple words</option>
                         <option value="^(\S*\s+\S*).* =:= $1">Keep first two words</option>
-                        <option value=".*\s+(\w*)\s*$ =:= $1">Isolate trailing ID</option>
+                        <option value=".*\s+(\S*)\s*$ =:= $1">Isolate trailing ID</option>
                       </select>
                   </div>
                   <div style="margin-top: 1em;">
@@ -1936,6 +1953,8 @@ body {
 <script type='text/javascript'>
     var studyID = '{{= studyID }}';
     var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
+    var latestSynthesisTreeIDs = {{= XML( json.dumps(latestSynthesisTreeIDs) ) }};
+    var treesQueuedForSynthesis = {{=XML( json.dumps(treesQueuedForSynthesis) ) }};
     var viewOrEdit = '{{= viewOrEdit }}';
 
     var API_load_study_GET_url = '{{=API_load_study_GET_url}}';
@@ -2005,14 +2024,16 @@ body {
     var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
     var getContextForNames_url = "{{=getContextForNames_url}}";
     var render_markdown_url = "{{=render_markdown_url}}";
+    var getTreesQueuedForSynthesis_url ="{{=getTreesQueuedForSynthesis_url}}";
+    var includeTreeInSynthesis_url ="{{=includeTreeInSynthesis_url}}";
+    var excludeTreeFromSynthesis_url ="{{=excludeTreeFromSynthesis_url}}";
 
     var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
     var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";
     var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
     var treeConflictStatus_url = "{{=treeConflictStatus_url}}";
 
-    var mintNewOTTids_url =  "{{=mintNewOTTids_url}}";
-    var submitNewTaxa_url = "{{=submitNewTaxa_url}}";
+    var API_create_amendment_POST_url = "{{=API_create_amendment_POST_url}}";
 </script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
 
@@ -2264,10 +2285,108 @@ body {
     </div>
 </div>
 
+
+
+<!-- hidden template for popup describing a tree's status vs. synthesis -->
+<div class="modal hide fade" id="tree-synth-details" style="display: none;">
+    <div class="modal-header" style="padding-bottom: 0;">
+      <a class="close" onclick="$('#tree-synth-details').modal('hide'); return false;">×</a>
+      <h3>
+          Tree <span style="color: #999;" data-bind="html: $data['@label']">???</span>
+          (id:<span style="color: #999;" data-bind="text: $data['@id']">???</span>)
+      </h3>
+    </div>
+    <div class="modal-body" style="max-height: none; padding-bottom: 0px;">
+      <div class="tab-pane active">
+          <form class="form-inline" style="overflow: hidden;margin-bottom: 0px;margin-top: -12px;padding-top: 4px;margin-right: -6px;">
+            <p style="margin-bottom: 0.6em;"
+               data-bind="html: getTreeSynthStatusSummary($root)">?</p>
+            <div data-bind="html: getTreeSynthValidationSummary($root)"></div>
+          <!-- ko foreach: { data: [$data['^ot:reasonsToExcludeFromSynthesis']], as: 'warnings' }-->
+            <div style="overflow: auto; max-height: 257px;">
+                <p style="margin-top: 0.4em; margin-bottom: 0.2em;"
+                   data-bind="visible: warnings.length > 0">
+                  Curators have submitted
+                  <strong><span data-bind="text: warnings.length">?</span>
+                    <span data-bind="visible: warnings.length === 1">reason</span>
+                    <span data-bind="visible: warnings.length > 1">reasons</span>
+                  </strong> to exclude this tree from synthesis:
+                </p>
+                <p style="margin-top: 0.4em; margin-bottom: 0.2em;"
+                   data-bind="visible: warnings.length === 0">
+                  There are currently <strong>no listed reasons</strong>
+                  to exclude this tree from synthesis.
+                </p>
+                <table id="synth-warnings-holder" class="table table-condensed table-hover" style="margin-bottom: 2px; position: relative;" data-bind="visible: true"><!-- TODO: hide if no trees found -->
+
+                  <tbody Xid="tree-collection-decisions"
+                         data-bind="foreach: { data: warnings, as: 'warning' }">
+                    <tr class="single-tree-row">
+                      <td>
+                        <button data-bind="click: function() {removeReasonToExcludeTree($index(), $root); return false;},
+                                           visible: (viewOrEdit == 'EDIT')" title="Remove this tree from the collection" class="pull-right btn btn-mini btn-danger row-controls-ghosted" style="margin-left: 4px;">
+                          <i class="icon-trash icon-white"></i>
+                        </button>
+                        <textarea class="input-block-level"
+                            style="width: 470px; margin-bottom: 4px;"
+                            data-bind="value: warning.$,
+                                       valueUpdate: ['afterkeydown', 'input'],
+                                       visible: (viewOrEdit == 'EDIT')"
+                            placeholder="Example: This tree needs more mapped OTUs."></textarea>
+<!-- event: { keyup: updateReasonToExcludeTree($index(), $root), change: updateReasonToExcludeTree($index(), $root) }, -->
+                        <div data-bind="html: warning.$,
+                                        visible: (viewOrEdit == 'VIEW')">?</div>
+                      </td>
+                    </tr>
+                  </tbody>
+                </table>
+            </div>
+
+            <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
+              <div id="add-reason-to-exclude" class="empty-list-prompt" style="margin-bottom: 6px; display:none;">
+                  Why this tree should be excluded? Add your reason(s) here.
+              </div>
+              <button type="submit" class="btn btn-small btn-info"
+                  data-bind="click: function() {addReasonToExcludeTree($parent); return false;},
+                             visible: (viewOrEdit == 'EDIT')"><span data-bind="text: (warnings.length > 0) ? 'Add another reason to exclude this tree' : 'Add a reason to exclude this tree'">?</span>
+                    &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+              </button>
+              <div id="override-reasons-to-exclude" class="empty-list-prompt" style="margin-top: 6px; display:none;">
+                  Are you sure you want to override (or remove) the reasons listed above?
+              </div>
+            </div>
+            <div class="pull-right" style="position: relative; margin: 9px 2px;"
+                 data-bind="visible: (viewOrEdit == 'EDIT')">
+              <a class="btn btn-success row-controls-ghosted"
+                 data-bind="attr: {disabled: !(testForPossibleTreeInclusion($root))},
+                            click: function() {tryToIncludeTreeInSynth($root, {FORCE_OVERRIDE: true})}">
+                <strong>Include</strong> this tree in synthesis</a>
+              &nbsp;
+              <a class="btn btn-danger row-controls-ghosted"
+                 data-bind="attr: {disabled: !(testForPossibleTreeExclusion($root))},
+                            click: function() {tryToExcludeTreeFromSynth($root)}">
+                <strong>Exclude</strong> this tree from synthesis</a>
+            </div>
+            <div class="pull-right" style="position: relative; margin: 9px 2px;"
+                 data-bind="visible: (viewOrEdit == 'VIEW')">
+              <a class="btn" onclick="$('#tree-synth-details').modal('hide'); return false;">OK</a>
+            </div>
+
+          <!-- /ko -->
+
+            </form>
+          </div>
+    </div><!-- end of .modal-body -->
+    <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
+</div>
+
+
+
+
 <!-- hidden template for new-taxon form (for adding taxa to OT Taxonomy) -->
-<div class="modal hide fade" id="new-taxa-popup" style="width: 640px; display: none;">
+<div class="modal hide fade" id="new-taxa-popup" style="display: none;">
     <div class="modal-header">
-      <a data-dismiss="modal" class="close">×</a>
+      <a data-dismiss="modal" class="close" onclick="hideNewTaxaPopup(); return false;">×</a>
       <h3 id='dialog-heading'>
          Adding new taxa
       </h3>
@@ -2281,115 +2400,160 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
             </button>
             <p>
-                Once added, these taxa will appear in the Open Tree Taxonomy
-                with the <span style="font-family: monospace; padding: 0 4px 0 2px; font-weight: bold;">from_phylogeny</span>
-                tag. They will appear in the synthetic tree, with links to your
-                curator ID, the current study <strong id="current-study-ref">TODO</strong>,
-                and any sources of evidence that you provide below.
+                Once added, these taxa will appear in the Open Tree Taxonomy,
+                and possibly in the synthetic tree, with links to your curator
+                profile, the current study, and any additional sources that you
+                provide below.
             </p>
         </div>
+       <!-- ko if:currentTaxonCandidate -->
         <p>
-            Unmapped label <span class="nth-label" 
-                 data-bind="text: getCurrentTaxonCandidatePosition() + 1">-</span> 
+            Selected label <span class="nth-label"
+                 data-bind="text: getCurrentTaxonCandidatePosition() + 1">-</span>
             of <span class="total-labels"
                  data-bind="text: candidateOTUsForNewTaxa.length">-</span>
             <span class="btn-group" style="position: relative; left: 5px; top: -2px;">
-                <a class="btn btn-small prev-button" 
-                   href="#" onclick="return false;"
-                   data-bind="attr: {'disabled': getCurrentTaxonCandidatePosition() < 1},
+                <button class="btn btn-small prev-button"
+                   onclick="return false;"
+                   data-bind="attr: {'disabled': !prevTaxonCandidateAllowed()},
                               click: moveToPreviousTaxonCandidate"
-                >Previous label</a>
-                <a class="btn btn-small next-button" 
-                   href="#" onclick="return false;"
-                   data-bind="attr: {'disabled': getCurrentTaxonCandidatePosition() >= (candidateOTUsForNewTaxa.length - 1)},
+                >Previous label</button>
+                <button class="btn btn-small next-button"
+                   onclick="return false;"
+                   data-bind="attr: {'disabled': !nextTaxonCandidateAllowed()},
                               click: moveToNextTaxonCandidate"
-                >Next label</a>
+                >Next label</button>
             </span>
+            <span class="required-field-marker" style="padding-left: 150px;">* required fields</span>
         </p>
         <form class="form-horizontal wider-fields" style="margin-bottom: 0px;">
             <div class="control-group">
-                <label class="control-label" for="">Unmapped label</label>
+                <label class="control-label" for="">Original label</label>
                 <div class="controls">
                     <div class="static-form-value unmapped-label"
+                         style="color: #888; font-weight: normal; display: inline-block;"
                          data-bind="text: $data['^ot:originalLabel'],
                                     attr:{'title': '' }"
                          title="">...</div>
+                     <button class="btn btn-small" style="margin-left: 4px;"
+                             data-bind="click: useOriginalLabelForNewTaxon,
+                                        attr: {'disabled': newTaxonNameMatchesOriginalLabel()}"
+                     >Use as taxon name</button>
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="TODO">Modified taxon name</label>
+                <label class="control-label" for="new-taxon-name">New taxon name <span class="required-field-marker">*</span></label>
                 <div class="controls">
-                    <input type="text" id="TODO" class="input-xlarge" 
+                    <input type="text" id="new-taxon-name" class="required-field input-xlarge"
                            data-bind="value: $data.newTaxonMetadata.modifiedName,
                                       valueUpdate: ['afterkeydown', 'input'],
-                                      event: {keyup: null, change: null, blur: null}
-                                      " 
-                           style="margin-bottom: 4px;" 
+                                      event: {keyup: updateTaxonNameCheck, input: updateTaxonNameCheck, change: null, blur: null}
+                                      "
+                           style="margin-bottom: 4px;"
                            placeholder="Enter the preferred name here">
+                   <span data-bind="text: proposedTaxonNameStatusMessage($data),
+                                    style: {display: 'inline-block', color: proposedTaxonNameStatusColor($data)}">...</span>
                     <br/>
-                    <select style="margin-bottom: 0; width: auto;" 
+                    <select style="margin-bottom: 0; width: auto;"
                         data-bind="value: $data.newTaxonMetadata.modifiedNameReason,
                                    event: { keyup: null, change: null },
                                    options: ['Typo in original label',
                                              'Removing extraneous characters',
                                              'Taxon subsequently published under this name',
-                                             'Synonym',
-                                             'Other (explain below)'],
-                                   optionsCaption: 'Choose reason for modification...'
+                                             'Label is a synonym',
+                                             'Other (explain in comments below)'],
+                                   optionsCaption: 'Choose reason for modification...',
+                                   attr:{'disabled': newTaxonNameMatchesOriginalLabel()},
+                                   css: (newTaxonNameMatchesOriginalLabel() ? '' : 'required-field')
                                    ">
                     </select>
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="TODO">Taxonomic rank</label>
+                <label class="control-label" for="TODO">Taxonomic rank <span class="required-field-marker">*</span></label>
                 <div class="controls">
-                    <select style="margin-bottom: 0; width: auto;" 
+                    <select class="required-field" style="margin-bottom: 0; width: auto;"
                         data-bind="value: $data.newTaxonMetadata.rank,
                                    event: { keyup: null, change: null },
-                                   options: [  'Subspecies',
-                                             'Species',
-                                               'Subgenus',
-                                             'Genus',
-                                               'Subtribe',
-                                               'Tribe',
-                                               'Subfamily',
-                                             'Family',
-                                               'Superfamily',
-                                             'Order',
-                                             'Class',
-                                             'Phylum',
-                                             'Kingdom',
-                                             'Domain'
-                                             ]
+                                   options: [
+                                     'domain',
+                                     'superkingdom',
+                                     'kingdom',
+                                     'subkingdom',
+                                     'division',
+                                     'infrakingdom',
+                                     'superphylum',
+                                     'phylum',
+                                     'subphylum',
+                                     'infraphylum',
+                                     'subdivision',
+                                     'superclass',
+                                     'class',
+                                     'subclass',
+                                     'infraclass',
+                                     'superorder',
+                                     'order',
+                                     'suborder',
+                                     'infraorder',
+                                     'parvorder',
+                                     'section',
+                                     'subsection',
+                                     'superfamily',
+                                     'family',
+                                     'subfamily',
+                                     'supertribe',
+                                     'tribe',
+                                     'subtribe',
+                                     'genus',
+                                     'subgenus',
+                                     'species group',
+                                     'species subgroup',
+                                     'species',
+                                     'infraspecificname',
+                                     'subspecies',
+                                     'natio',
+                                     'variety',
+                                     'varietas',
+                                     'subvariety',
+                                     'form',
+                                     'forma',
+                                     'subform',
+                                     'samples',
+                                     '───────────',
+                                     'no rank'
+                                   ],
+                                   optionsAfterRender: disableRankDivider
                                    ">
                     </select>
                 </div>
             </div>
             <div class="control-group">
-                <label class="control-label" for="TODO">Parent taxon</label>
+                <label class="control-label" for="TODO">Parent taxon <span class="required-field-marker">*</span></label>
                 <div class="controls">
-                  <div class="static-form-value">
-                    <span data-bind="text: ($data.newTaxonMetadata.parentTaxonName() || 'None'),
-                                     attr:{'title': ''}"
+                  <div class="static-form-value"
+                       data-bind="visible: getActiveParentTaxonName($data)()">
+                    <span data-bind="text: (getActiveParentTaxonName($data) || 'None'),
+                                     attr:{'title': '', 'disabled': sharedParentTaxonID()}"
                           class="parent-taxon"
                           title="">???</span>
 
-                    <span style="font-weight: normal;"
-                          data-bind="visible: ($data.newTaxonMetadata.parentTaxonName() !== '')">
+                    <span style="font-weight: normal;">
                         &mdash;
-                        <a href="#" target="_blank" 
+                        <a href="#" target="_blank"
                            class="parent-taxon-browse-link"
-                           data-bind="attr: {href: '/taxonomy/browse?id='+ $data.newTaxonMetadata.parentTaxonID()}">Open in OTT browser</a>
+                           data-bind="attr: {href: '/taxonomy/browse?id='+ getActiveParentTaxonID($data)()}">Open in OTT browser</a>
                     </span>
                   </div>
                   <!-- reuse style and behavior from Metadata > Focal Clade -->
                   <div id="parent-taxon-search-form" class="Xnavbar-search Xpull-right" autocomplete="off" style="Xdisplay: inline-block; position: relative;">
-                      <input type="text" name="parent-taxon-search" class="" style="Xwidth: 365px;"
+                      <input type="text" name="parent-taxon-search" class="required-field" style="Xwidth: 365px;"
+                          data-bind="attr:{'disabled': sharedParentTaxonID()}"
                           placeholder="Choose the parent taxon..." autocomplete="off">
                       <!-- <input type="submit" style="" name="parent-taxon-search-go" value="Go" onclick="return false;"/> -->
                       <!-- then show dropdown when results are ready... -->
                       <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
-                      <select style="margin-bottom: 0; width: auto;" name="parent-taxon-search-context">
+                      <select style="margin-bottom: 0; width: auto;" name="parent-taxon-search-context"
+                              data-bind="attr:{'disabled': sharedParentTaxonID()}">
                           {{ # generate our contextNames list based on newly fetched names
                             try:
                              for context_name in taxonSearchContextNames:
@@ -2413,51 +2577,97 @@ body {
                           </ul>
                       </div>
                   </div>
-                  <input Xdata-bind="value: nexml['^ot:focalClade'], event: { change: nudge.GENERAL_METADATA }, css: viewModel.ticklers.GENERAL_METADATA" type="hidden" id="ot_focalClade" placeholder="">
-
-
+                  <label for="copy-parent-taxon" class="featured-label" style="clear: both; padding-top: 2px; padding-left: 20px; text-indent: -20px;">
+                      <input type="checkbox" id="copy-parent-taxon" name="TODO"
+                             style="width: 20px;"
+                             data-bind="checked: sharedParentTaxonID(),
+                                        click: toggleSharedParentID" />
+                      Use this parent taxon for all labels <em>(un-check to edit)</em>
+                  </label>
                 </div><!-- .controls -->
             </div>
-            <div class="control-group">
-                <label class="control-label" for="TODO">Evidence for taxon</label>
-                <div class="controls">
-                    <select style="margin-bottom: 4px; width: auto;" 
-                        data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidenceType : $data.newTaxonMetadata.evidenceType,
-                                   event: { keyup: null, change: null },
-                                   attr: {'disabled': evidenceSourceCandidate},
-                                   options: ['Link to online taxonomy',
+            <div class="control-group" id="active-taxon-sources"
+                 data-bind="with: getActiveTaxonSources($data)">
+               <label class="">Source(s) for this taxon <span class="required-field-marker">*</span></label>
+               <table style="clear: left; width: 100%;">
+                <tbody class="taxon-sources"
+                    data-bind="foreach: { data: $data, as: 'source' }">
+                 <tr class="controls taxon-source"
+                     data-bind="css: { odd: ($index() % 2) === 0 }">
+                  <td width="250">
+                    <select class="required-field source-type" style="width: auto;"
+                        data-bind="value: source.type,
+                                   event: { keyup: updateActiveTaxonSources,
+                                            change: updateActiveTaxonSources },
+                                   attr: {'disabled': sharedTaxonSources()},
+                                   options: ['The taxon is described in this study',
+                                             'Link to online taxonomy',
                                              'Link (DOI) to publication',
-                                             'Other (explain below)'],
-                                   optionsCaption: 'Choose evidence type...'
+                                             'Other'],
+                                   optionsCaption: 'Choose source type...'
                                    ">
                     </select>
-                    <br/>
-                    <input data-bind="value: evidenceSourceCandidate() ? evidenceSourceCandidate().newTaxonMetadata.evidence : $data.newTaxonMetadata.evidence,
+                  </td>
+                  <td width="*">
+                    <input data-bind="value: source.value,
                                       valueUpdate: ['afterkeydown', 'input'],
-                                      event: {keyup: null, change: null, blur: null},
-                                      attr: {'disabled': evidenceSourceCandidate}
-                                      " type="text" class="input-block-level" placeholder="Enter DOI or URL (add longer comments below)">
-                    <br/>
-                    <label for="copy-evidence" class="featured-label" style="margin-top: 0px; padding-left: 20px; text-indent: -20px; width: 60%;">
-                        <input type="checkbox" id="copy-evidence" name="TODO"
-                               style="width: 20px;"
-                               data-bind="checked: (evidenceSourceCandidate() !== null),
-                                          click: toggleEvidenceSourceCandidate" />
-                        Copy this evidence to all labels
-                    </label>
+                                      event: {keyup: null,
+                                              change: updateActiveTaxonSources,
+                                              blur: updateActiveTaxonSources},
+                                      attr: {'disabled': sharedTaxonSources()}
+                                      "
+                           type="text"
+                           class="input-block-level source-details required-field"
+                     /><!-- placeholder text is set by JS, in `updateTaxonSourceDetails` -->
+                  </td>
+                  <td width="30">
+                    <button data-bind="click: function() {
+                                         removeTaxonSource( $parent, $data );
+                                         updateActiveTaxonSources();
+                                         return false;
+                                       },
+                                       visible: $parent.indexOf(source) !== 0,
+                                       attr: {'disabled': sharedTaxonSources()}"
+                        class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                        style="display: none;">
+                        <i class="icon-trash icon-white"></i>
+                    </button>
+                  </td>
+                 </tr><!-- end of .taxon-source -->
+                </tbody><!-- end of .taxon-sources -->
+               </table>
+
+                <div>
+                  <button class="btn btn-small btn-info pull-right"
+                          style="margin: 4px 8px 2px;"
+                          data-bind="click: addEmptyTaxonSource,
+                                     attr: {'disabled': sharedTaxonSources()}">
+                    Add another source
+                    <i class="icon-plus icon-white"></i></button>
+                  <label for="copy-evidence" class="featured-label pull-left" style="margin-top: 6px;">
+                      <input type="checkbox" id="copy-evidence" name="TODO"
+                             style="width: 20px;"
+                             data-bind="checked: $.isArray(sharedTaxonSources()),
+                                        click: toggleSharedSources" />
+                      Use this source information for all labels <em>(un-check to edit)</em>
+                  </label>
                 </div>
-            </div>
-                    <textarea class="input-block-level" style="margin-bottom: 8px;"
-                        data-bind="value: $data.newTaxonMetadata.comments,
-                                   valueUpdate: ['afterkeydown', 'input'],
-                                   event: { keyup: null, change: null }"
-                              placeholder="Add comments or additional links to support this taxon."></textarea>
+
+            </div><!--  /#active-taxon-sources -->
+
+            <textarea class="input-block-level" style="margin-bottom: 8px;"
+                data-bind="value: $data.newTaxonMetadata.comments,
+                           valueUpdate: ['afterkeydown', 'input'],
+                           event: { keyup: null, change: null }"
+                placeholder="Add comments or additional links to support this taxon.">
+            </textarea>
         </form>
+        <!-- /ko --><!-- end of 'if there's a candidate' -->
 
     </div>
     <div class="modal-footer">
       <button class="btn btn-info pull-right" style="margin-left: 20px;"
-              onclick="submitNewTaxa(); return false;">Save and exit</button>
+              onclick="if (taxonCondidateIsValid( currentTaxonCandidate(), {REPORT_ERRORS: true} ) && allTaxonCandidatesAreValid({REPORT_ERRORS: true})) submitNewTaxa(); return false;">Submit</button>
       <a data-dismiss="modal" class="btn"
               onclick="hideNewTaxaPopup(); return false;" >Cancel</a>
     </div>
@@ -2473,7 +2683,7 @@ body {
               onclick="$('#full-screen-area').fullscreen(); return false;"><i class="icon-fullscreen"></i> Full screen</button>
       <button id="exit-full-screen" class="btn btn-small pull-right" style="margin-right: 25px; display: none;"
               onclick="$.fullscreen.exit(); return false;"><i class="icon-resize-small"></i> Exit full screen</button>
-      <h3 id='dialog-heading'>
+      <h3 id='tree-title'>
         {{ if viewOrEdit == 'EDIT': }}
             Edit tree
             <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000; font-weight: bold; width: 50%;"
@@ -2615,7 +2825,7 @@ body {
 
                 <span data-bind="visible: viewModel.ticklers.TREES() && $data['^ot:branchLengthMode'] === 'ot:time'" >
                     <label style="margin-left: 10px;">Time unit: </label>
-                    <select data-bind="options: ['Myr', 'Kyr', 'Coalescent time units'], 
+                    <select data-bind="options: ['Myr', 'Kyr', 'Coalescent time units', 'Relative time'],
                                        optionsCaption: 'Choose a unit of time...',
                                        value: $data['^ot:branchLengthTimeUnit'],
                                        event: { keyup: nudge.TREES, change: nudge.TREES },
@@ -2968,9 +3178,13 @@ body {
           </select>
           <button id="treeview-fetch-conflict" class="btn btn-info" data-bind="click: showConflictDetailsWithHistory">GO!</button>
           <button id="treeview-clear-conflict" class="btn" data-bind="click: hideConflictDetailsWithHistory">Hide conflict</button>
-
       </div>
-      <a class="btn" style="margin-left: 25px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
+      <a id="save-tree-view" class="btn btn-mini" title="Save the current tree view (as SVG)"
+          href-lang='image/svg+xml' target='_blank' href='data:text/plain,NO IMAGE DATA (wait for tree view to render)'
+          download="not-yet-ready.txt" onmouseover="updateSaveTreeViewLink();"><i class="icon-download-alt"></i></a>
+      <button id="print-tree-view" class="btn btn-mini" style="display: none;" title="Print the current tree view"
+              onclick="printCurrentTreeView(); return false;"><i class="icon-print"></i></button>
+      <a class="btn" style="margin-left: 12px;" onclick="$('#tree-viewer').modal('hide'); return false;">Close</a>
     </div>
   </div><!-- /#full-screen-area -->
 </div>

@@ -46,7 +46,8 @@ var History = window.History; // Note: capital H refers to History.js!
 
 // these variables should already be defined in the main HTML page
 var studyID;
-var latestSynthesisSHA;   // the SHA for this study (if any) that was last used in synthesis
+var latestSynthesisSHA;      // the SHA for this study (if any) that was last used in synthesis
+var latestSynthesisTreeIDs;  // ids of any trees in this study included in the latest synthesis
 var API_load_study_GET_url;
 var API_update_study_PUT_url;
 var API_remove_study_DELETE_url;
@@ -56,8 +57,11 @@ var API_load_file_GET_url;
 var API_update_file_PUT_url;
 var API_remove_file_DELETE_url;
 var findAllTreeCollections_url;
-var mintNewOTTids_url;
-var submitNewTaxa_url;
+var API_create_amendment_POST_url;
+var getTreesQueuedForSynthesis_url;
+var includeTreeInSynthesis_url;
+var excludeTreeFromSynthesis_url;
+var treesQueuedForSynthesis;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
@@ -133,6 +137,7 @@ if ( History && History.enabled ) {
         // treatment of initial URLs.
         var currentTab = State.data.tab;
         var currentTree = State.data.tree;
+        var highlightNodeID = State.data.node;
         var conflictReferenceTree = State.data.conflict;
         var activeFilter = null;
         var filterDefaults = null;
@@ -170,7 +175,13 @@ if ( History && History.enabled ) {
         if (currentTree) {
             var tree = getTreeByID(currentTree);
             if (tree) {
-                showTreeViewer(tree);
+                // show inbound node, if provided
+                // N.B. this is not reflected in History state!
+                if (highlightNodeID) {
+                    showTreeViewer(tree, {HIGHLIGHT_NODE_ID: highlightNodeID });
+                } else {
+                    showTreeViewer(tree);
+                }
                 // omit conflict spinner when handling inbound URLs; it conflicts with others
                 if (conflictReferenceTree) {
                     fetchAndShowTreeConflictDetails(currentTree, conflictReferenceTree, {SHOW_SPINNER: false});
@@ -338,7 +349,9 @@ function updateListFiltersWithHistory() {
             newState[prop] = ko.unwrap(activeFilter[prop]);
             // Hide default filter settings, for simpler URLs
             if (newState[prop] !== filterDefaults[prop]) {
-                newQSValues[prop] = ko.unwrap(activeFilter[prop]);
+                // Our list filters are smart about recognizing diacritics, so
+                // we can just use their Latin-only counterparts in the URL.
+                newQSValues[prop] = removeDiacritics( ko.unwrap(activeFilter[prop]) );
             }
         }
 
@@ -664,13 +677,6 @@ function loadSelectedStudy() {
                 return;
             }
             // pull data from bare NexSON repsonse or compound object (data + sha)
-            /*
-            if (response['data']) {
-                console.log("FOUND inner data (compound response)...");
-            } else {
-                console.log("inner data NOT found (bare NexSON)...");
-            }
-            */
             var data = response['data'] || response;
             if (typeof data !== 'object' || typeof(data['nexml']) == 'undefined') {
                 showErrorMessage('Sorry, there is a problem with the study data (missing NexSON).');
@@ -783,7 +789,14 @@ function loadSelectedStudy() {
             if (!(['^ot:studyPublicationReference'] in data.nexml)) {
                 data.nexml['^ot:studyPublicationReference'] = "";
             }
-            if (!(['^ot:studyPublication'] in data.nexml)) {
+            if (['^ot:studyPublication'] in data.nexml) {
+                // Convert a "bare" DOI, if found (e.g. from TreeBASE import)
+                var oldValue = data.nexml['^ot:studyPublication']['@href'];
+                var newValue = DOItoURL( oldValue );
+                if (newValue !== oldValue) {
+                    data.nexml['^ot:studyPublication']['@href'] = newValue;
+                }
+            } else {
                 data.nexml['^ot:studyPublication'] = {
                     '@href': ""
                 };
@@ -808,13 +821,21 @@ function loadSelectedStudy() {
             if (!(['^ot:focalCladeOTTTaxonName'] in data.nexml)) {
                 data.nexml['^ot:focalCladeOTTTaxonName'] = "";
             }
-            if (!(['^ot:notIntendedForSynthesis'] in data.nexml)) {
-                data.nexml['^ot:notIntendedForSynthesis'] = false;
+            if (['^ot:notIntendedForSynthesis'] in data.nexml) {
+                // Remove deprecated property (now reckoned indirectly, per-tree)
+                delete data.nexml['^ot:notIntendedForSynthesis'];
             }
             if (!(['^ot:comment'] in data.nexml)) {
                 data.nexml['^ot:comment'] = "";
             }
-            if (!(['^ot:dataDeposit'] in data.nexml)) {
+            if (['^ot:dataDeposit'] in data.nexml) {
+                // Convert a "bare" DOI, if found (e.g. from TreeBASE import)
+                var oldValue = data.nexml['^ot:dataDeposit']['@href'];
+                var newValue = DOItoURL( oldValue );
+                if (newValue !== oldValue) {
+                    data.nexml['^ot:dataDeposit']['@href'] = newValue;
+                }
+            } else {
                 data.nexml['^ot:dataDeposit'] = {
                     '@href': ""
                 };
@@ -829,8 +850,21 @@ function loadSelectedStudy() {
                 }
                 data.nexml['^ot:candidateTreeForSynthesis'] =
                     makeArray(data.nexml['^ot:candidateTreeForSynthesis']);
-            } else {
-                data.nexml['^ot:candidateTreeForSynthesis'] = [ ];
+                /* Shift "preferred" status to a per-tree property with default
+                 * value, then remove the deprecated study property.
+                 */
+                var preferredTreeIDs = data.nexml['^ot:candidateTreeForSynthesis'];
+                var allTrees = viewModel.elementTypes.tree.gatherAll(data.nexml);
+                $.each(allTrees, function( i, tree ) {
+                    if ($.inArray(tree['@id'], preferredTreeIDs) !== -1) {
+                        // this was a preferred tree (chosen for inclusion in synthesis)
+                        tree['^ot:candidateForSynthesis'] = 'ot:include';
+                    } else {
+                        // not a preferred tree, play it safe with default value
+                        tree['^ot:candidateForSynthesis'] = 'ot:notReviewed';
+                    }
+                });
+                delete data.nexml['^ot:candidateTreeForSynthesis'];
             }
             if ('^ot:tag' in data.nexml) {
                 data.nexml['^ot:tag'] = makeArray(data.nexml['^ot:tag']);
@@ -1026,7 +1060,8 @@ function loadSelectedStudy() {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.TREES.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' );
 
                 var allTrees = [];
                 $.each(viewModel.nexml.trees, function(i, treesCollection) {
@@ -1036,8 +1071,6 @@ function loadSelectedStudy() {
                         allTrees.push( tree );
                     });
                 });
-
-                console.log("  filtering "+ allTrees.length +" trees...");
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter(
@@ -1069,7 +1102,8 @@ function loadSelectedStudy() {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.FILES.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' );
 
                 // map old array to new and return it
                 var fileDetails = [];
@@ -1109,23 +1143,25 @@ function loadSelectedStudy() {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.OTUS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' );
                 var scope = viewModel.listFilters.OTUS.scope();
                 var order = viewModel.listFilters.OTUS.order();
 
                 // gather all OTUs from all 'otus' collections
                 var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+                captureDefaultSortOrder(allOTUs);
 
                 var chosenTrees;
                 switch(scope) {
                     case 'In all trees':
                         chosenTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                         break;
-                    case 'In preferred trees':
-                        chosenTrees = getPreferredTrees()
+                    case 'In trees nominated for synthesis':
+                        chosenTrees = getTreesNominatedForSynthesis()
                         break;
-                    case 'In non-preferred trees':
-                        chosenTrees = getNonPreferredTrees()
+                    case 'In trees not yet nominated':
+                        chosenTrees = getTreesNotYetNominated()
                         break;
                     default:
                         chosenTrees = [];
@@ -1157,8 +1193,8 @@ function loadSelectedStudy() {
                         switch (scope) {
                             case 'In all trees':
                                 // N.B. Even here, we want to hide (but not preserve) OTUs that don't appear in any tree
-                            case 'In preferred trees':
-                            case 'In non-preferred trees':
+                            case 'In trees nominated for synthesis':
+                            case 'In trees not yet nominated':
                                 // check selected trees for this node
                                 var foundInMatchingTree = false;
                                 var otuID = otu['@id'];
@@ -1183,12 +1219,14 @@ function loadSelectedStudy() {
                      *   1 = b comes before a
                      */
                     case 'Unmapped OTUs first':
-                        // Capture prior position first (for a more stable list during bulk mapping)
+                        /* Capture prior position first (for a more stable list during bulk mapping)
                         $.each(filteredList, function(i, otu) {
                             otu.priorPosition = i;
                         });
+                        */
                         filteredList.sort(function(a,b) {
                             // N.B. This works even if there's no such property.
+                            //if (checkForInterestingStudies(a,b)) { debugger; }
                             var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
                             var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
                             if (aMapStatus === bMapStatus) {
@@ -1199,30 +1237,37 @@ function loadSelectedStudy() {
                                     if (aFailedMapping === bFailedMapping) {
                                         // Try to retain their prior precedence in
                                         // the list (avoid items jumping around)
-                                        return (a.priorPosition < b.priorPosition) ? -1:1;
+                                        /*return (a.priorPosition < b.priorPosition) ? -1:1;
+                                         * Should this supercede our typical use of `maintainRelativeListPositions`?
+                                         */
+                                        return maintainRelativeListPositions(a, b);
                                     }
                                     if (aFailedMapping) {
                                         return 1;   // force a (failed) below b
                                     }
                                     return -1;   // force b (failed) below a
                                 } else {
-                                    return 0;
+                                    //return (a.priorPosition < b.priorPosition) ? -1:1;
+                                    return maintainRelativeListPositions(a, b);
                                 }
                             }
                             if (aMapStatus) return 1;
                             if (bMapStatus) return -1;
                         });
-                        // Toss the outdated prior positions
+                        /* Toss the outdated prior positions
                         $.each(filteredList, function(i, otu) {
                             delete otu.priorPosition;
                         });
+                        */
                         break;
 
                     case 'Mapped OTUs first':
                         filteredList.sort(function(a,b) {
                             var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
                             var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
-                            if (aMapStatus === bMapStatus) return 0;
+                            if (aMapStatus === bMapStatus) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             if (aMapStatus) return -1;
                             return 1;
                         });
@@ -1230,9 +1275,11 @@ function loadSelectedStudy() {
 
                     case 'Original label (A-Z)':
                         filteredList.sort(function(a,b) {
-                            var aOriginal = a['^ot:originalLabel'];
-                            var bOriginal = b['^ot:originalLabel'];
-                            if (aOriginal === bOriginal) return 0;
+                            var aOriginal = $.trim(a['^ot:originalLabel']);
+                            var bOriginal = $.trim(b['^ot:originalLabel']);
+                            if (aOriginal === bOriginal) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             if (aOriginal < bOriginal) return -1;
                             return 1;
                         });
@@ -1240,9 +1287,11 @@ function loadSelectedStudy() {
 
                     case 'Original label (Z-A)':
                         filteredList.sort(function(a,b) {
-                            var aOriginal = a['^ot:originalLabel'];
-                            var bOriginal = b['^ot:originalLabel'];
-                            if (aOriginal === bOriginal) return 0;
+                            var aOriginal = $.trim(a['^ot:originalLabel']);
+                            var bOriginal = $.trim(b['^ot:originalLabel']);
+                            if (aOriginal === bOriginal) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             if (aOriginal > bOriginal) return -1;
                             return 1;
                         });
@@ -1282,7 +1331,8 @@ function loadSelectedStudy() {
                 updateListFiltersWithHistory();
 
                 var match = viewModel.listFilters.ANNOTATIONS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' );
                 var scope = viewModel.listFilters.ANNOTATIONS.scope();
                 var submitter = viewModel.listFilters.ANNOTATIONS.submitter();
 
@@ -1659,10 +1709,22 @@ function getTreeConflictSummary(conflictInfo) {
 function testConflictSummary(conflictInfo) {
     // show results in the JS console
     var summaryInfo = getTreeConflictSummary(conflictInfo);
+    /*
     console.warn("Node status summary");
     console.warn("  "+ summaryInfo.aligned +" aligned nodes");
     console.warn("  "+ summaryInfo.conflicting +" conflicting nodes");
     console.warn("  "+ summaryInfo.resolving +" resolving nodes");
+    */
+}
+
+function getTargetTreeNodeLink(nodeID, referenceTreeID) {
+    // return a link to the local (reference) tree node; used in conflict summary
+    var displayName = nodeID;
+    var link = '<a href="#" onclick="showTreeViewer(getTreeByID(\'{TREE_ID}\'), {HIGHLIGHT_NODE_ID:\'{NODE_ID}\'}); return false;" \
+               title="See this node in the selected tree">{DISPLAY_NAME}</a>';
+    return link.replace('{TREE_ID}', referenceTreeID)
+               .replace('{NODE_ID}', nodeID)
+               .replace('{DISPLAY_NAME}', displayName);
 }
 
 // returns a link to the witness node (in synth tree browser or OTT browser)
@@ -1684,8 +1746,9 @@ function displayConflictSummary(conflictInfo) {
     // show results in the Analyses tab
     var summaryInfo = getTreeConflictSummary(conflictInfo);
     var $reportArea = $('#analysis-results');
-    var targetTree = $('#reference-select').val()
-    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ $('#tree-select').val()
+    var targetTree = $('#reference-select').val();
+    var referenceTreeID = $('#tree-select').val();
+    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ referenceTreeID;
       +"&conflict="+ targetTree;
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
@@ -1710,8 +1773,9 @@ function displayConflictSummary(conflictInfo) {
     for (var nodeid in summaryInfo.aligned.nodes) {
         var nodeInfo = summaryInfo.aligned.nodes[nodeid];
         if ('witness' in nodeInfo) {
-          var witnessLink = getWitnessLink(nodeInfo,targetTree)
-          var nodeName = witnessLink + ' [aligned to tree ' + nodeid + ']'
+          var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
+          var witnessLink = getWitnessLink(nodeInfo, targetTree);
+          var nodeName = 'tree '+ nodeLink +' aligned to '+ witnessLink;
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
@@ -1737,9 +1801,10 @@ function displayConflictSummary(conflictInfo) {
     var namedNodes = 0
     for (var nodeid in summaryInfo.resolving.nodes) {
         var nodeInfo = summaryInfo.resolving.nodes[nodeid];
+        var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
         var witnessLink = getWitnessLink(nodeInfo,targetTree)
         if ('witness' in nodeInfo) {
-          var nodeName = witnessLink + ' [resolved by tree ' + nodeid + ']'
+          var nodeName = 'tree '+ nodeLink +' resolved by '+ witnessLink;
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
@@ -1764,8 +1829,9 @@ function displayConflictSummary(conflictInfo) {
     var namedNodes = 0
     for (var nodeid in summaryInfo.conflicting.nodes) {
         var nodeInfo = summaryInfo.conflicting.nodes[nodeid];
+        var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
         var witnessLink = getWitnessLink(nodeInfo,targetTree)
-        var nodeName = witnessLink + ' [conflicts with tree ' + nodeid + ']'
+        var nodeName = 'tree '+ nodeLink +' conflicts with '+ witnessLink;
         $nodeList.append('<li>'+ nodeName +'</li>');
         ++namedNodes
     }
@@ -1973,6 +2039,7 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     tree.conflictDetails = {
         inputTreeID: conflictInfo.inputTreeID,
         referenceTreeID: conflictInfo.referenceTreeID,
+        // TODO: referenceTreeVersion: '',   // e.g. 'opentree7.1' for synth, 'ott2.9' for taxonomy
         referenceTreeName: conflictInfo.referenceTreeName
     };
     // ... and more details to any specified local node
@@ -1980,22 +2047,6 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
         var localNode = getTreeNodeByID( tree, nodeID );
         localNode.conflictDetails = conflictInfo.detailsByNodeID[nodeID];
     }
-    // ... and pseudo-support to all taxonomically mapped leaf nodes
-    $.each(tree.node, function(i, node) {
-        if (node['^ot:isLeaf']) {
-            if ('@otu' in node) {
-                var otu = getOTUByID( node['@otu'] );
-                var mappedLabel = $.trim(otu['^ot:ottTaxonName']);
-                if (('^ot:ottId' in otu) && (mappedLabel !== '')) {
-                    node.conflictDetails = {
-                        status: 'mapped_to_taxon',
-                        witness: Number(otu['^ot:ottId']),
-                        witness_name: mappedLabel
-                    }
-                }
-            }
-        }
-    });
 
     if (treeViewerIsInUse) {
         // update the reference-tree selector
@@ -2148,7 +2199,7 @@ function updateMappingStatus() {
                     // we can add more by including 'All trees'
                     detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
                             +'Mapping is suspended because all OTUs in this '
-                            +'study\'s preferred trees have accepted labels already. To continue, '
+                            +'study\'s nominated trees have accepted labels already. To continue, '
                             +'reject some mapped labels with the '
                             +'<span class="btn-group" style="margin: -2px 0;">'
                             +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
@@ -2273,6 +2324,7 @@ function scrubNexsonForTransport( nexml ) {
         clearMRCATestResults(tree);
         removeConflictInfoFromTree(tree);
         removeTaxonMappingInfoFromTree(tree);
+        removeEmptyReasonsToExclude(tree);
     });
 
     // coerce some non-string values
@@ -2301,6 +2353,7 @@ function scrubNexsonForTransport( nexml ) {
     $.each( allOTUs, function(i, otu) {
         delete otu['selectedForAction'];  // only used in the curation app
         delete otu['newTaxonMetadata'];
+        delete otu['defaultSortOrder'];
         if ('^ot:altLabel' in otu) {
             var ottId = $.trim(otu['^ot:ottId']);
             if (ottId !== '') {
@@ -2662,6 +2715,9 @@ function normalizeTree( tree ) {
         // safest value, forces the curator to assert correctness
         tree['^ot:unrootedTree'] = true;
     }
+    if (!(['^ot:candidateForSynthesis'] in tree)) {
+        tree['^ot:candidateForSynthesis'] = 'ot:notReviewed';
+    }
 
     // metadata fields (with empty default values)
     var metatags = [
@@ -2690,6 +2746,14 @@ function normalizeTree( tree ) {
 
     removeDuplicateTags( tree );
 
+    // add array of reasons-to-exclude (convert singleton, if found)
+    if ('^ot:reasonsToExcludeFromSynthesis' in tree) {
+        tree['^ot:reasonsToExcludeFromSynthesis'] =
+            makeArray(tree['^ot:reasonsToExcludeFromSynthesis']);
+    } else {
+        tree['^ot:reasonsToExcludeFromSynthesis'] = [ ];
+    }
+
     // pre-select first node among duplicate siblings
     resolveMonophyleticDuplicatesInTree(tree);
 }
@@ -2710,69 +2774,20 @@ function getAllTreeLabels() {
     });
 }
 
-function getPreferredTreeIDs() {
-    preferredTreeIDs = [];
-    var candidateTreeMarkers = ('^ot:candidateTreeForSynthesis' in viewModel.nexml) ?
-        makeArray( viewModel.nexml['^ot:candidateTreeForSynthesis'] ) : [];
-
-    $.each(candidateTreeMarkers, function(i, marker) {
-        var treeID = $.trim(marker);
-        switch(treeID) {  // non-empty points to a candidate tree
-            case '':
-            case '0':
-                break;
-            default:
-                preferredTreeIDs.push( treeID );
-        }
-    });
-    return preferredTreeIDs;
-}
-function getPreferredTrees() {
-    var preferredTreeIDs = getPreferredTreeIDs();
-    var allTrees = [];
-    $.each(viewModel.nexml.trees, function(i, treesCollection) {
-        $.each(treesCollection.tree, function(i, tree) {
-            allTrees.push( tree );
-        });
-    });
+function getTreesNominatedForSynthesis() {
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
     return ko.utils.arrayFilter(
         allTrees,
-        isPreferredTree
+        isQueuedForNewSynthesis
     );
 }
-function isPreferredTree(treeOrID) {
-    var treeID = ('@id' in treeOrID) ? treeOrID['@id'] : treeOrID;
-    var preferredTreeIDs = getPreferredTreeIDs();
-    var isPreferred = ($.inArray(treeID, preferredTreeIDs) !== -1);
-    return isPreferred;
-}
-function togglePreferredTree( tree ) {
-    var treeID = tree['@id'];
-    var alreadyPreferred = ($.inArray( treeID, getPreferredTreeIDs()) !== -1);
-    if (alreadyPreferred) {
-        // remove it from the list of preferred trees
-        removeFromArray( treeID, viewModel.nexml['^ot:candidateTreeForSynthesis'] );
-    } else {
-        // add it to the list of preferred trees
-        viewModel.nexml['^ot:candidateTreeForSynthesis'].push( treeID );
-    }
-    nudgeTickler('TREES');
-    nudgeTickler('OTU_MAPPING_HINTS');
-    return true;  // to allow checkbox updates
-}
-function getNonPreferredTrees() {
-    var preferredTreeIDs = getPreferredTreeIDs();
-    var allTrees = [];
-    $.each(viewModel.nexml.trees, function(i, treesCollection) {
-        $.each(treesCollection.tree, function(i, tree) {
-            allTrees.push( tree );
-        });
-    });
+
+function getTreesNotYetNominated() {
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
     return ko.utils.arrayFilter(
         allTrees,
-        function(tree) {
-            var isPreferred = ($.inArray(tree['@id'], preferredTreeIDs) !== -1);
-            return !isPreferred;
+        function (tree) {
+            return !(isQueuedForNewSynthesis(tree));
         }
     );
 }
@@ -2807,9 +2822,9 @@ function getNodeCounts(tree) {
         }
         return true;  // skip to next node
     });
-    console.log("total nodes? "+ nodeCounts.totalNodes);
-    console.log("total leaf nodes? "+ nodeCounts.totalTips);
-    console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
+    //console.log("total nodes? "+ nodeCounts.totalNodes);
+    //console.log("total leaf nodes? "+ nodeCounts.totalTips);
+    //console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
 
     return nodeCounts;
 }
@@ -2821,9 +2836,9 @@ function getMappedTallyForTree(tree) {
         return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
     } else {
       nodeCounts = getNodeCounts(tree);
-      console.log("total nodes? "+ nodeCounts.totalNodes);
-      console.log("total leaf nodes? "+ nodeCounts.totalTips);
-      console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
+      //console.log("total nodes? "+ nodeCounts.totalNodes);
+      //console.log("total leaf nodes? "+ nodeCounts.totalTips);
+      //console.log("mapped leaf nodes? "+ nodeCounts.mappedTips);
 
       return '<strong>'+ nodeCounts.mappedTips +'</strong><span>'+ thinSpace +'/'+ thinSpace + nodeCounts.totalTips +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(nodeCounts.mappedTips/nodeCounts.totalTips) +'%)</span>';
     }
@@ -2978,9 +2993,373 @@ function getInGroupCladeDescriptionForTree( tree ) {
     return nodeName;
 }
 
+function getSynthStatusDescriptionForTree( tree ) {
+    // Did this tree contribute to the latest synthesis?
+    var contributedToLastSynth = contributedToLastSynthesis(tree);
+    // Is this tree in a collection that will contribute to the next synthesis?
+    var queuedForNextSynth = isQueuedForNewSynthesis(tree);
+    // Are there any listed reasons to exclude this tree?
+    var thereAreReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] && (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0);
+    // Does this tree meet minimum standards for synthesis?
+    var validForSynthesis = treeIsValidForSynthesis(tree);
+
+    if (contributedToLastSynth) {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return "Included despite warnings";
+            } else {
+                return "Included";
+            }
+        } else {
+            return "To be removed";
+        }
+    } else {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return "Queued despite warnings";
+            } else {
+                return "Queued";
+            }
+        } else {
+            if (!validForSynthesis) {
+                return "Needs curation";
+            } else if (thereAreReasonsToExclude) {
+                return "Excluded";
+            } else {
+                // This indicates a new, unreviewed tree (or out-of-band collection editing)
+                return "Needs review";
+            }
+        }
+    }
+}
+
+function getTreeSynthStatusSummary( tree ) {
+    // This appears in the tree-synth details popup
+    // Did this tree contribute to the latest synthesis?
+    var contributedToLastSynth = contributedToLastSynthesis(tree);
+    // Is this tree in a collection that will contribute to the next synthesis?
+    var queuedForNextSynth = isQueuedForNewSynthesis(tree);
+    // Are there any listed reasons to exclude this tree?
+    var thereAreReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] && (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0);
+    // TODO: fetch and include the latest synth version)?
+    if (contributedToLastSynth) {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return 'This tree <strong>was included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>queued</strong> '
+                      +'for future synthesis, despite the warnings listed below.';
+            } else {
+                return 'This tree <strong>was included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>queued</strong> '
+                      +'for future synthesis.';
+            }
+        } else {
+                return 'This tree <strong>was included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'but it is <strong>not queued</strong> '
+                      +'for future synthesis.';
+        }
+    } else {
+        if (queuedForNextSynth) {
+            if (thereAreReasonsToExclude) {
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'but it is <strong>queued</strong> '
+                      +'for future synthesis, despite the warnings listed below.';
+            } else {
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'but it is <strong>queued</strong> '
+                      +'for future synthesis.';
+            }
+        } else {
+            if (thereAreReasonsToExclude) {
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>not queued</strong> '
+                      +'for future synthesis.';
+            } else {
+                // This indicates a new, unreviewed tree (or out-of-band collection editing)
+                return 'This tree was <strong>not included</strong> in the '
+                      +'<a href="/about/synthesis-release" target="_blank">latest synthetic tree</a>, '
+                      +'and it is <strong>not currently queued</strong> '
+                      +'for future synthesis.';
+            }
+        }
+    }
+}
+function treeIsValidForSynthesis( tree ) {
+    // more compact simple test (some logic repeated in getTreeSynthValidationSummary)
+    var rootConfirmed = !(tree['^ot:unrootedTree']); // missing, false, or empty
+    var moreThanTwoMappings = getNodeCounts(tree).mappedTips > 2;
+    return (rootConfirmed && moreThanTwoMappings);
+}
+function getTreeSynthValidationSummary( tree ) {
+    var rootConfirmed = !(tree['^ot:unrootedTree']); // missing, false, or empty
+    var moreThanTwoMappings = getNodeCounts(tree).mappedTips > 2;
+
+    var firstPara = '<p style="margin-bottom: 0.0em;">';
+    if (rootConfirmed && moreThanTwoMappings) {
+        firstPara += 'It <strong>passes</strong> our minimal validation for synthesis:';
+    } else {
+        firstPara += 'It <strong>fails</strong> our minimal validation for synthesis:';
+    }
+    firstPara += '</p>';
+
+    var testList = '<ul style="margin-bottom: 0.2em;">';
+    if (rootConfirmed) {
+         testList += '  <li>Its root has been confirmed by a curator.</li>'
+    } else {
+         testList += '  <li style="color: #b94a48;">Its root has <strong>not</strong> been confirmed by a curator.</li>'
+    }
+    if (moreThanTwoMappings) {
+         testList += '  <li>It has more than two mapped OTUs.</li>';
+    } else {
+         testList += '  <li style="color: #b94a48;">It has <strong>fewer</strong> than two mapped OTUs.</li>';
+    }
+    testList += '</ul>';
+    return firstPara +'\n'+ testList;
+}
+
+function contributedToLastSynthesis(tree) {
+    // Check this tree against latest-synth details
+    return ($.inArray(tree['@id'], latestSynthesisTreeIDs) !== -1);
+}
+function isQueuedForNewSynthesis(tree) {
+    // Check to see if this tree is listed in last-known input collections
+    /* N.B. that this service "concatenates" all synth-input collections into a
+     * single, artificial "collection" with contributors and decisions/trees,
+     * but no name or description, see
+     * <https://github.com/OpenTreeOfLife/peyotl/blob/33b493e84558ffef381d841986281be352f3da53/peyotl/collections_store/__init__.py#L46>
+     */
+    if (!(treesQueuedForSynthesis) || !('decisions' in treesQueuedForSynthesis)) {
+        console.error("No queued-trees data found!");
+        return false;
+    }
+    var foundTree = false;
+    $.each(treesQueuedForSynthesis.decisions, function(i, treeDecision) {
+        if ((treeDecision.studyID === studyID) &&
+            (treeDecision.treeID === tree['@id'])) {
+            foundTree = true;
+            return false;
+        }
+    });
+    return foundTree;
+}
+
+function testForPossibleTreeInclusion(tree) {
+    // return true if it can be included, else false
+    if (isQueuedForNewSynthesis(tree)) {
+        return false;
+    }
+    if (!treeIsValidForSynthesis(tree)) {
+        return false;
+    }
+    return true;
+}
+function testForPossibleTreeExclusion(tree) {
+    // return true if it can be excluded, else false
+    return (isQueuedForNewSynthesis(tree));
+}
+
+function tryToIncludeTreeInSynth(tree, options) {
+    options = options || {};
+    if (isQueuedForNewSynthesis(tree)) {
+        showInfoMessage("This tree is already included (queued).");
+        return;
+    }
+    if (!treeIsValidForSynthesis(tree)) {
+        var rootConfirmed = !(tree['^ot:unrootedTree']); // missing, false, or empty
+        var moreThanTwoMappings = getNodeCounts(tree).mappedTips > 2;
+        if (!rootConfirmed && !moreThanTwoMappings) {
+            showInfoMessage("This tree needs further curation (confirmed root, 3+ OTUs mapped).");
+        } else if (!rootConfirmed) {
+            showInfoMessage("This tree needs further curation (confirmed root node).");
+        } else {
+            showInfoMessage("This tree needs further curation (3 or more OTUs mapped).");
+        }
+        return;
+    }
+    var howManyReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] ? tree['^ot:reasonsToExcludeFromSynthesis'].length : 0;
+    if (!(options.FORCE_OVERRIDE)) {
+        if (howManyReasonsToExclude > 0) {
+            // if there are no reasons-to-exclude, prompt for one now
+            showTreeSynthDetailsPopup( tree, {PROMPT_FOR_OVERRIDE: true});
+            return;
+        }
+    }
+    // call web service to append to default synth-input collection
+    showModalScreen("Adding tree to default synthesis collection...", {SHOW_BUSY_BAR:true});
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        url: includeTreeInSynthesis_url,
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({
+            study_id: studyID,
+            tree_id: tree['@id'],
+            author_name: userDisplayName,
+            author_email: userEmail,
+            auth_token: userAuthToken
+        }),
+        crossDomain: true,
+        contentType: "application/json; charset=utf-8",
+        complete: function( jqXHR, textStatus ) {
+            hideModalScreen();
+            if (textStatus !== 'success') {
+                var errMsg = 'Sorry, there was an error including this tree. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                showErrorMessage(errMsg);
+                return;
+            }
+            // elevate response (if not error) to global input-trees variable
+            treesQueuedForSynthesis = $.parseJSON(jqXHR.responseText);
+            nudgeTickler('TREES'); // immediate update in popup UI
+            hideModalScreen();
+            $('#tree-synth-details').modal('hide');
+        }
+    });
+}
+function tryToExcludeTreeFromSynth(tree) {
+    var howManyReasonsToExclude = tree['^ot:reasonsToExcludeFromSynthesis'] ? tree['^ot:reasonsToExcludeFromSynthesis'].length : 0;
+    if (howManyReasonsToExclude === 0) {
+        // if there are no reasons-to-exclude, prompt for one now
+        showTreeSynthDetailsPopup( tree, {PROMPT_FOR_REASONS: true});
+        return;
+    }
+    if (!isQueuedForNewSynthesis(tree)) {
+        showInfoMessage("This tree is already excluded, for "+ howManyReasonsToExclude +" reason"+ (howManyReasonsToExclude === 1 ? '': 's') +".");
+        return;
+    }
+    showModalScreen("Removing tree from all synthesis collections...", {SHOW_BUSY_BAR:true});
+    // call web service to purge from all collections
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        url: excludeTreeFromSynthesis_url,
+        type: 'POST',
+        dataType: 'json',
+        data: JSON.stringify({
+            study_id: studyID,
+            tree_id: tree['@id'],
+            author_name: userDisplayName,
+            author_email: userEmail,
+            auth_token: userAuthToken
+        }),
+        crossDomain: true,
+        contentType: "application/json; charset=utf-8",
+        complete: function( jqXHR, textStatus ) {
+            hideModalScreen();
+            if (textStatus !== 'success') {
+                var errMsg = 'Sorry, there was an error excluding this tree. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                showErrorMessage(errMsg);
+                return;
+            }
+            // elevate response (if not error) to global input-trees variable
+            treesQueuedForSynthesis = $.parseJSON(jqXHR.responseText);
+            nudgeTickler('TREES'); // immediate update in popup UI
+            hideModalScreen();
+            $('#tree-synth-details').modal('hide');
+        }
+    });
+}
+
+var $stashedSynthWarningsElement = null;
+function showTreeSynthDetailsPopup( tree, options ) {
+    // bind and show details for this tree vs. old and new synthesis
+    options = options || {};
+
+    /* TODO: special init behavior for EDIT vs. VIEW?
+    if (viewOrEdit == 'EDIT') {
+    } else {  // 'VIEW'
+    }
+    */
+
+    if ($stashedSynthWarningsElement === null) {
+        // save the template and use the original
+        $stashedSynthWarningsElement = $('#synth-warnings-holder')
+            .find('tbody tr').eq(0).clone();
+    } else {
+        // apply the saved template
+        $('#synth-warnings-holder tbody').empty()
+                                          .append( $stashedSynthWarningsElement.clone() );
+    }
+
+    // bind just the selected tree to the modal HTML
+    // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
+    var $boundElements = $('#tree-synth-details').find('.modal-body, .modal-header h3, .modal-footer');
+    // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
+    $.each($boundElements, function(i, el) {
+        ko.cleanNode(el);
+        ko.applyBindings(tree,el);
+    });
+
+    /* TODO: use a delayed load, so we see a modal blocker *above* the tree viewer?
+            setTimeout(function() {
+                if (viewModel.allCollections && viewModel.allCollections.length) {
+                    nudgeTickler('COLLECTIONS_LIST');
+                } else {
+                    loadCollectionList('INIT');
+                }
+            }, 10);
+    */
+    $('#tree-synth-details').off('hidden').on('hidden', function () {
+        removeEmptyReasonsToExclude(tree);
+        nudgeTickler('TREES');
+    });
+    $('#tree-synth-details').modal('show');
+
+    var $addReasonPrompt = $('#tree-synth-details').find('#add-reason-to-exclude');
+    if (options.PROMPT_FOR_REASONS) {
+        $addReasonPrompt.show();
+    } else {
+        $addReasonPrompt.hide();
+    }
+    var $overridePrompt = $('#tree-synth-details').find('#override-reasons-to-exclude');
+    if (options.PROMPT_FOR_OVERRIDE) {
+        $overridePrompt.show();
+    } else {
+        $overridePrompt.hide();
+    }
+}
+function hideTreeSynthDetailsPopup() {
+    $('#tree-synth-details').modal('hide');
+}
+
+function addReasonToExcludeTree(tree) {
+    // add a (tentative) reason
+    tree['^ot:reasonsToExcludeFromSynthesis'].push({ $: "" });
+    showTreeSynthDetailsPopup(tree);
+    nudgeTickler('TREES');
+}
+function updateReasonToExcludeTree(itsPosition, tree) {
+    // We do this based on position, since duplicate values are possible
+    //tree['^ot:reasonsToExcludeFromSynthesis'][itsPosition] = 'TEST';
+    nudgeTickler('TREES');
+}
+function removeReasonToExcludeTree(itsPosition, tree) {
+    // We do this based on position, since duplicate values are possible
+    tree['^ot:reasonsToExcludeFromSynthesis'].splice(itsPosition, 1);
+    showTreeSynthDetailsPopup(tree);
+    nudgeTickler('TREES');
+}
+function removeEmptyReasonsToExclude(tree) {
+    // call this before saving Nexson
+    if ('^ot:reasonsToExcludeFromSynthesis' in tree) {
+        var warnings = makeArray(tree['^ot:reasonsToExcludeFromSynthesis']);
+        // filter out any empty (whitespace-only) reasons
+        // N.B. that we store the text in a '$' property (per Badgerfish convention)
+        tree['^ot:reasonsToExcludeFromSynthesis'] = warnings.filter(function(item, index) {
+            if ($.trim(item.$) === "") {
+                return false;
+            }
+            return true;
+        });
+    }
+}
 
 /* support classes for objects in arrays
- * (TODO: use these instead of generlc observables?)
+ * (TODO: use these instead of generic observables?)
  */
 function MetaTag( name, type, value ) {
     var self = this;
@@ -3040,8 +3419,8 @@ function TreeNode() {
  *      min threshold
  *      study data is complete
  *      nice-to-have (what are the finishing touches?)
- *      one preferred tree?
- *      preferred tree(s) is/are rooted? or "unrooted" disclaimer was chosen?
+ *      one tree nominated for synthesis?
+ *      nominated tree(s) is/are rooted? or "unrooted" disclaimer was chosen?
  *
  * integrity
  *      all taxon names mapped (perhaps this score is proportional)
@@ -3227,39 +3606,14 @@ var studyScoringRules = {
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         },
         {
-            description: "For studies nominated for synthesis, there should be at least one preferred tree.",
+            description: "Trees nominated for synthesis should not have duplicate (non-monophyletic) tips mapped to a single taxon.",
             test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
-                // check for any candidate tree in the study
-                return getPreferredTrees().length > 0;
-            },
-            weight: 0.2,
-            successMessage: "There is at least one preferred tree, or this study is not nominated for synthesis.",
-            failureMessage: "There should be at least one preferred tree, or the study should not be nominated for synthesis.",
-            suggestedAction: "Mark at least one tree as preferred, or mark this study as not contributing to synthesis in Metadata."
-                // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        },
-        {
-            description: "Preferred trees should not have duplicate (non-monophyletic) tips mapped to a single taxon.",
-            test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
-
-                // check preferred trees (synthesis candidates) only
+                // check nominated trees (synthesis candidates) only
                 //var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                 var duplicateNodesFound = false;
                 var startTime = new Date();
-                $.each(getPreferredTrees(), function(i, tree) {
-                    // disregard monophyletic duplicates (will be resolved on the server)
+                $.each(getTreesNominatedForSynthesis(), function(i, tree) {
+                    // disregard sibling-only duplicates (will be resolved on the server)
                     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
                     if ( !($.isEmptyObject(duplicateData)) ) {
                         duplicateNodesFound = true;
@@ -3270,7 +3624,7 @@ var studyScoringRules = {
                 return !(duplicateNodesFound);
             },
             weight: 0.2,
-            successMessage: "No duplicate tips (mapped to the same taxon) found in preferred trees.",
+            successMessage: "No duplicate tips (mapped to the same taxon) found in trees nominated for synthesis.",
             failureMessage: "Multiple tips map to the same taxon (no exemplar chosen).",
             suggestedAction: "Designate an exemplar for each set of tips mapped to the same taxon."
         },
@@ -3278,7 +3632,7 @@ var studyScoringRules = {
             description: "Internal node labels should have a defined type.",
             test: function(studyData) {
                 // TODO: opt-out if study not intended for synthesis?
-                // TODO: skip non-preferred trees?
+                // TODO: skip non-nominated trees?
                 // check all trees
                 var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                 var ambiguousLabelsFound = false;
@@ -3443,20 +3797,13 @@ var studyScoringRules = {
     ],
     */
     'OTU Mapping': [
-        // checks that all preferred tree tips mapped to OTT taxon names (i.e. pass / fail test)
+        // checks that all nominated trees' tips are mapped to OTT taxon names (i.e. pass / fail test)
         {
-            description: "All tip labels in preferred trees should be mapped to the Open Tree Taxonomy.",
+            description: "All tip labels (in trees nominated for synthesis) should be mapped to the Open Tree Taxonomy.",
             test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
-
-                // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
+                // check the proportion of mapped leaf nodes in all nominated trees
                 var unmappedLeafNodes = false;
-                $.each(getPreferredTrees(), function(i, tree) {
+                $.each(getTreesNominatedForSynthesis(), function(i, tree) {
                     nodeCounts = getNodeCounts(tree)
                     if (nodeCounts.mappedTips != nodeCounts.totalTips) {
                       return true; // no need to look at other trees for pass / fail test
@@ -3467,28 +3814,21 @@ var studyScoringRules = {
             },
             weight: 0.5,
             successMessage: "Preferred trees (submitted for synthesis) have all tips mapped to Open Tree Taxonomy.",
-            failureMessage: "There are unmapped tip labels in preferred trees (submitted for synthesis).",
+            failureMessage: "There are unmapped tip labels in trees nominated for synthesis.",
             suggestedAction: "Review all unmapped tips in OTU Mapping."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
         /* commenting this out for now because no way to deal with non pass-fail tests
         {
-            // checks fraction of OTUs mapped in preferred trees
+            // checks fraction of OTUs mapped in nominated trees
             // does not currently add to quality score (weight = 0)
-            description: "What fraction of tip labels in preferred trees are mapped to the Open Tree Taxonomy.",
+            description: "What fraction of tip labels in nominated trees are mapped to the Open Tree Taxonomy.",
             test: function(studyData) {
-                // check for opt-out flag
-                var optOutFlag = studyData.nexml['^ot:notIntendedForSynthesis'];
-                if (optOutFlag) {
-                    // submitter has explicitly said this study is not intended for synthesis
-                    return true;
-                }
-
-                // check the proportion of mapped leaf nodes in all candidate ("preferred") trees
+                // check the proportion of mapped leaf nodes in all nominated trees
                 var totalTips = 0;
                 var mappedTips = 0;
                 var fractionMapped = 0;
-                $.each(getPreferredTrees(), function(i, tree) {
+                $.each(getTreesNominatedForSynthesis(), function(i, tree) {
                     nodeCounts = getNodeCounts(tree)
                     totalTips += nodeCounts.totalTips
                     mappedTips += nodeCounts.mappedTips
@@ -3498,14 +3838,14 @@ var studyScoringRules = {
                 if (totalTips != 0) {
                   fractionMapped = mappedTips/totalTips;
                 }
-                console.log(mappedTips + "/" + totalTips + " = " + floatToPercent(fractionMapped) + "% of OTUs in preferred trees mapped")
+                console.log(mappedTips + "/" + totalTips + " = " + floatToPercent(fractionMapped) + "% of OTUs in nominated trees mapped")
                 return fractionMapped;
             },
             // would like to update weight based on fractionMapped, but in different scopes
             // with this setup
             weight: 0.5,
             successMessage: "Preferred trees (submitted for synthesis) have all tips mapped to Open Tree Taxonomy.",
-            failureMessage: "There are unmapped tip labels in preferred trees (submitted for synthesis).",
+            failureMessage: "There are unmapped tip labels in trees nominated for synthesis.",
             suggestedAction: "Review all unmapped tips in OTU Mapping."
                 // TODO: add hint/URL/fragment for when curator clicks on suggested action?
         }
@@ -3800,10 +4140,7 @@ function showTreeViewer( tree, options ) {
             }
         }
         if (highlightNodeID) {
-            // scroll this node into view (once popup is properly place in the DOM)
-            ///setTimeout(function() {
             scrollToTreeNode(tree['@id'], highlightNodeID);
-            ///}, 250);
         }
         if (options.HIGHLIGHT_AMBIGUOUS_LABELS) {
             // TODO: visibly mark the Label Types widget, and show internal labels in red
@@ -3871,6 +4208,31 @@ function showTreeViewer( tree, options ) {
                              .show();
         }
         */
+
+        /* Show or disable the print widget (requires full-screen support).
+         * This is used to briefly maximize the current tree view (SVG
+         * viewport) and print it on demand.
+         */
+        var $printTreeViewButton = $('button#print-tree-view');
+        if ($.fullscreen.isNativelySupported()) {
+            // ie, the current browser supports full-screen APIs
+            $printTreeViewButton.show();
+            $(document).bind('fscreenchange', function(e, state, elem) {
+                if ($.fullscreen.isFullScreen()) {
+                    //$('#exit-full-screen').show();
+                } else {
+                    //$('#exit-full-screen').hide();
+                }
+            });
+        } else {
+            // dim and disable the full-screen toggle
+            $printTreeViewButton.css("opacity: 0.5;")
+                                .click(function() {
+                                    alert("This browser does not support full-screen display, so it cannot print the tree.");
+                                    return false;
+                                })
+                             .show();
+        }
 
         // hide or show footer options based on tab chosen
         $treeViewerTabs.off('shown').on('shown', function (e) {
@@ -3986,9 +4348,9 @@ function findOTUInTrees( otu, trees ) {
 function showOTUInContext() {
     // use the popup tree viewer to show this node in place (to clarify OTU mapping, etc)
     var otu = this;
-    // start with preferred trees (show best-quality results first)
-    var otuContextsToShow = findOTUInTrees( otu, getPreferredTrees() );
-    $.merge( otuContextsToShow, findOTUInTrees( otu, getNonPreferredTrees() ) );
+    // start with nominated trees (show best-quality results first)
+    var otuContextsToShow = findOTUInTrees( otu, getTreesNominatedForSynthesis() );
+    $.merge( otuContextsToShow, findOTUInTrees( otu, getTreesNotYetNominated() ) );
     // if this OTU is unused, something's very wrong; bail out now
     if (otuContextsToShow.length === 0) {
         alert("This OTU doesn't appear in any tree. (This is not expected.)");
@@ -4007,7 +4369,7 @@ function showOTUInContext() {
 function showDuplicateNodesInTreeViewer(tree) {
     // If there are no duplicates, fall back to simple tree view
     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: false} );
-    if (!isPreferredTree(tree) || $.isEmptyObject(duplicateData)) {
+    if (!isQueuedForNewSynthesis(tree) || $.isEmptyObject(duplicateData)) {
         showTreeWithHistory(tree);
         return;
     }
@@ -4038,8 +4400,29 @@ function scrollToTreeNode( treeID, nodeID ) {
         console.error("scrollToTreeNode: MISSING expected $('#nodebox-"+ nodeID +"') !");
         return;
     }
+    /* NOTE that this old method of scrolling now fails, due the the mix of SVG
+     * and HTML used in this page. See https://github.com/jquery/jquery/issues/2895
+     * This is a problem because $.position() depends on $.offsetParent(), which has been
+     * deprecated for SVG elements.  :-/
+     *
+    console.warn("SCROLL TARGET: $('#nodebox-"+ nodeID +"')");
+    console.warn("OFFSET PARENT:");
+    console.warn( $nodeBox.offsetParent()[0] );
+    console.warn("NEW scroll top:  "+ $nodeBox.position().top);
+    console.warn("NEW scroll left: "+ $nodeBox.position().left);
     $scrollingPane.scrollTop( $nodeBox.position().top );
     $scrollingPane.scrollLeft( $nodeBox.position().left );
+    */
+    // Reckon the needed scroll based on *page-relative* values
+    var currentPaneOffset = $scrollingPane.offset();
+    var currentPaneScrollTop = $scrollingPane.scrollTop();
+    var currentPaneScrollLeft = $scrollingPane.scrollLeft();
+    var currentNodeOffset = $nodeBox.offset();
+    var nudgePaneScrollTop =  currentNodeOffset.top -  currentPaneOffset.top - 20;
+    var nudgePaneScrollLeft = currentNodeOffset.left - currentPaneOffset.left - 20;
+    $scrollingPane.scrollTop( currentPaneScrollTop + nudgePaneScrollTop );
+    $scrollingPane.scrollLeft( currentPaneScrollLeft + nudgePaneScrollLeft );
+
     highlightTreeNode( treeID, nodeID );
 }
 
@@ -4083,20 +4466,6 @@ function drawTree( treeOrID, options ) {
 
     // preload nodes with proper labels and branch lengths
     $.each(tree.node, function(index, node) {
-        var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
-        node.name = labelInfo.label;
-        node.labelType = labelInfo.labelType;
-
-        if (labelInfo['internalNodeLabel']) {
-            node.internalNodeLabel = labelInfo['internalNodeLabel'];
-        } else {
-            delete node.internalNodeLabel;
-        }
-        if (labelInfo['ambiguousLabel']) {
-            node.ambiguousLabel = labelInfo['ambiguousLabel'];
-        } else {
-            delete node.ambiguousLabel;
-        }
         // reset x of all nodes, to avoid gradual "creeping" to the right
         node.x = 0;
         node.length = 0;  // ie, branch length
@@ -4106,10 +4475,10 @@ function drawTree( treeOrID, options ) {
     var shortestEdge = null;
     var longestEdge = null;
     $.each(edges, function(index, edge) {
-        if (('@length' in edge) || ('@label' in edge)) {
-            // transfer @length property (if any) to the child node
-            var childID = edge['@target'];
-            var childNode = getTreeNodeByID(tree, childID);
+        var childID = edge['@target'];
+        var childNode = getTreeNodeByID(tree, childID);
+        // transfer @length property (if any) to the child node
+        if ('@length' in edge) {
             if ('@length' in edge) {
                 childNode.length = parseFloat(edge['@length'] || '0');
                 ///console.log("> reset length of node "+ childID+" to: "+ childNode.length);
@@ -4126,18 +4495,37 @@ function drawTree( treeOrID, options ) {
                     }
                 }
             }
-            // share certain edge predicates (usu. support values) with the child node
-            $.each(nodeLabelModes, function(i, modeInfo) {
-                // check the edge property set by each option
-                var edgeProp = modeInfo.edgePredicate; // eg, '^ot:bootstrapValues'
-                if (edgeProp in edge) {
-                    childNode.adjacentEdgeLabel = edge[ edgeProp ];
-                    return false;  // use first one found
-                }
-            });
         }
+        // share certain edge predicates (usu. support values) with the child node
+        /* N.B. we do this before calling getTreeNodeLabel below, since we need
+         * to set adjacentEdgeLabel first!
+         */
+        $.each(nodeLabelModes, function(i, modeInfo) {
+            // check the edge property set by each option
+            var edgeProp = modeInfo.edgePredicate; // eg, '^ot:bootstrapValues'
+            if (edgeProp in edge) {
+                childNode.adjacentEdgeLabel = edge[ edgeProp ];
+                return false;  // use first one found
+            }
+        });
     });
     ///console.log("> done sweeping edges");
+    $.each(tree.node, function(index, node) {
+        var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
+        node.name = labelInfo.label;
+        node.labelType = labelInfo.labelType;
+
+        if (labelInfo['internalNodeLabel']) {
+            node.internalNodeLabel = labelInfo['internalNodeLabel'];
+        } else {
+            delete node.internalNodeLabel;
+        }
+        if (labelInfo['ambiguousLabel']) {
+            node.ambiguousLabel = labelInfo['ambiguousLabel'];
+        } else {
+            delete node.ambiguousLabel;
+        }
+    });
 
     if (options.INITIAL_DRAWING) {
         var proportion = longestEdge / shortestEdge;
@@ -4207,7 +4595,7 @@ function drawTree( treeOrID, options ) {
                         if (grandchildEdges.length === 1) {
                             // it's a knuckle, with just one child that might be more interesting
                             var itsLabelInfo = getTreeNodeLabel(tree, childNode);
-                            if (itsLabelInfo.labelType === 'node id') {
+                            if (itsLabelInfo.labelType === 'empty') {
                                 // the node has no interesting label, so use its only child instead!
                                 var grandchildNode = getTreeNodeByID(null, grandchildEdges[0]['@target']);
                                 if (!grandchildNode) {
@@ -4294,6 +4682,29 @@ function drawTree( treeOrID, options ) {
         });
 
     ///console.log("> done re-asserting click behaviors");
+
+    // Finalize SVG height/width/scale/left/top to match rendered labels
+    // (prevents cropping when some labels exceed our estimated `labelWidth` above)
+    var renderedBounds;
+    try {
+        renderedBounds = vizInfo.vis.node().getBBox();
+    } catch(e) {
+        /* FF fails with NS_ERROR_FAILURE if this SVG element is not currently rendered! See
+         *  https://bugzilla.mozilla.org/show_bug.cgi?id=528969
+         */
+        //console.error('>>> UNABLE TO MEASURE BOUNDING BOX ('+ e +'):');
+        renderedBounds = { x:0, y:0, width:0, height:0 };
+    }
+    var svgNode = d3.select( vizInfo.vis.node().parentNode );
+    // match SVG size to the rendered bounds incl. all labels
+    if (renderedBounds.height > 0) {
+        svgNode.attr({
+            width: renderedBounds.width,
+            height: renderedBounds.height
+        });
+        // re-center the main group to allow for assymetric label sizes
+        vizInfo.vis.attr('transform', 'translate('+ -(renderedBounds.x) +','+ -(renderedBounds.y) +')');
+    }
 }
 
 function setTreeRoot( treeOrID, rootingInfo ) {
@@ -4302,7 +4713,9 @@ function setTreeRoot( treeOrID, rootingInfo ) {
     //  - a single node (make this the new root)
     //  - a single root-node ID (for the new root)
     //  - an array of nodes or IDs (add a root between these)
-    //  - null (un-root this tree)
+    //  - null (un-root this tree)  [DEPRECATED]
+    // All but the last option should set the tree's rooted status to indicate
+    // a confirmed root. (Un-rooting, if allowed, would do the reverse.)
 
     var tree = null;
     if (typeof(treeOrID) === 'object') {
@@ -4354,6 +4767,7 @@ function setTreeRoot( treeOrID, rootingInfo ) {
 
     // update tree and node properties
     tree['^ot:specifiedRoot'] = newRootNodeID;
+    tree['^ot:unrootedTree'] = false;
     newRootNode['@root'] = true;
     // selective deletion of d3 parent
     delete newRootNode['parent'];
@@ -4455,8 +4869,7 @@ function addTreeNodeBetween( tree, nodeID_A, nodeID_B ) {
                 tree.edge.push(adHocRootEdge);
             } else {
                 detachAdHocRootElements(tree);
-                // undo any reversals in the existing ad-hoc edge
-                adHocRootEdge['@source'] = getAdHocRootID(tree);
+                // N.B. this also undoes any reversal of the existing ad-hoc edge
             }
 
             // re-wire the existing edge (and the new one) with minimal changes
@@ -4529,6 +4942,18 @@ function detachAdHocRootElements( tree ) {
     if (adHocRootNode) {
         var adHocRootEdge = getAdHocEdge(tree);
         if (adHocRootEdge) {
+            // N.B. watch for a reversed ad-hoc edge (flipped source and target)! 
+            //var normalNeighbor = (adHocRootEdge['@source'] === getAdHocRootID(tree)) ? '@target' : '@source';
+            if (adHocRootEdge['@target'] === getAdHocRootID(tree)) {
+                reverseEdgeDirection(adHocRootEdge);
+                // We always clear the fast lookups below, so skip this here.
+                if (adHocRootEdge['@source'] !== getAdHocRootID(tree)) {
+                    // this should never be the case!
+                    console.error('Ad-hoc root node and edge are not attached!');
+                    console.error(adHocRootEdge);
+                }
+            }
+
             var edgesFromRoot = getTreeEdgesByID( tree, getAdHocRootID(tree), 'ANY' );
             $.each(edgesFromRoot, function(index, e) {
                 if (e !== adHocRootEdge) {
@@ -4764,15 +5189,21 @@ function updateLeafNodeFlags(tree) {
      *  .rootDist
      */
 }
+
 function getTreeNodeLabel(tree, node, importantNodeIDs) {
-    // Return the best available label for this node, and its type:
-    //   'mapped label'         (mapped to OT taxonomy, preferred)
-    //   'original label'
-    //   'positional label'     (eg, "tree root")
-    //   'node id'              (a last resort, rarely useful)
+    /* Return the best available label for this node, and its type:
+         'tip (mapped OTU)'         mapped to OT taxonomy, preferred
+         'tip (original)'           OTU is not yet mapped
+         'internal node (support)'
+         'internal node (other)'
+         'internal node (aligned)'  from conflict service
+         'internal node (ambiguous)'
+         'empty'                    no visible label
+         'node id'                  a last resort, rarely useful  [DEPRECATED]
+         'positional label'         eg, "tree root"  [DEPRECATED]
+    */
     var labelInfo = {};
     var nodeID = node['@id'];
-
     /* apply simple positional labels?
     if (nodeID === importantNodeIDs.inGroupClade) {
         labelInfo.label = "ingroup clade";
@@ -4787,35 +5218,47 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
     */
     var itsOTU = node['@otu'];
     if (itsOTU) {
+        // use a mapped taxon name (or original for this OTU)
         var otu = getOTUByID( itsOTU );
         var itsMappedLabel = $.trim(otu['^ot:ottTaxonName']);
         if (itsMappedLabel) {
             labelInfo.label = itsMappedLabel;
-            labelInfo.labelType = 'mapped label';
+            labelInfo.labelType = 'tip (mapped OTU)';
+            labelInfo.originalLabel = otu['^ot:originalLabel'];
         } else {
-            var itsOriginalLabel = otu['^ot:originalLabel'];
-            labelInfo.label = itsOriginalLabel;
-            labelInfo.labelType = 'original label';
+            labelInfo.label = otu['^ot:originalLabel'];
+            labelInfo.labelType = 'tip (original)';
         }
+    } else if (('@label' in node) && (tree['^ot:nodeLabelMode'] === 'ot:other')) {
+        // this is probably a previously assigned taxon name
+        labelInfo.label = node['@label'];
+        labelInfo.labelType = 'internal node (other)';
+        // include tree['^ot:nodeLabelDescription'] ?
+    } else if (('conflictDetails' in node) && 
+               ($.inArray(node.conflictDetails.status, ['supported_by', 'partial_path_of', 'mapped_to_taxon']) !== -1) &&
+               node.conflictDetails.witness_name) {
+        // use any 'aligned' taxon name provided by conflict service
+        labelInfo.label = node.conflictDetails.witness_name;
+        labelInfo.labelType = 'internal node (aligned)';
+    } else if ('@label' in node) {
+        if (tree['^ot:nodeLabelMode']) {
+            // use any support values (1 of 2, see below)
+            labelInfo.label = node['@label'];
+            labelInfo.labelType = 'internal node (support)';
+        } else {
+            // use any ambiguous label (unresolved type) for display
+            labelInfo.label = node['@label'];
+            labelInfo.labelType = 'internal node (ambiguous)';
+        }
+    } else if (node.adjacentEdgeLabel) {
+        // any label from the adjacent (root-ward) edge is support (2 of 2, see above)
+        labelInfo.label = node.adjacentEdgeLabel;
+        labelInfo.labelType = 'internal node (support)';
     } else {
-        if ('@label' in node) {
-            if (tree['^ot:nodeLabelMode'] === 'ot:other') {
-                // add any internal label (eg, taxon name) for display
-                labelInfo.label = node['@label'];
-                labelInfo.labelType = 'internal node label ('+ tree['^ot:nodeLabelDescription'] +')';
-            } else {
-                // add any ambiguous label (unresolved type) for display
-                // TODO: *or* just call getAmbiguousLabelsInTree(tree) once?
-                labelInfo.ambiguousLabel = node['@label'];
-                labelInfo.label = nodeID;
-                labelInfo.labelType = 'node id';
-            }
-        } else {
-            labelInfo.label = nodeID;
-            labelInfo.labelType = 'node id';
-        }
+        // show the bare node ID as our last resort
+        labelInfo.label = nodeID;
+        labelInfo.labelType = 'empty';
     }
-
     return labelInfo;
 }
 
@@ -4968,10 +5411,6 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         treesElement['tree'] = makeArray( treesElement['tree'] );
         $.each( treesElement.tree, function(i, tree) {
             normalizeTree( tree );
-            if (responseJSON.newTreesPreferred) {
-                // mark all new tree(s) as preferred, eg, a candidate for synthesis
-                viewModel.nexml['^ot:candidateTreeForSynthesis'].push( tree['@id'] );
-            }
         });
     });
 
@@ -5399,7 +5838,7 @@ function addSupportingFileFromURL() {
 
 function removeTree( tree ) {
     // let's be sure, since adding may be slow...
-    if (!confirm("Are you sure you want to delete this tree?")) {
+    if (!confirm("Are you sure you want to delete this tree from the study?")) {
         return;
     }
 
@@ -5413,11 +5852,6 @@ function removeTree( tree ) {
     // TODO: remove any captive trees- and OTUs-collections
     // TODO: remove any otus not used elsewhere?
     // TODO: remove related annotation events and agents?
-
-    if ($.inArray(tree['@id'], getPreferredTreeIDs()) !== -1) {
-        // remove its ID from list of preferred (candidate) trees
-        togglePreferredTree( tree );
-    }
 
     // force rebuild of all tree-related lookups
     buildFastLookup('NODES_BY_ID');
@@ -5551,7 +5985,7 @@ function updateMappingHints( data ) {
     return true;
 }
 
-function getAttrsForMappingOption( optionData ) {
+function getAttrsForMappingOption( optionData, numOptions ) {
     var attrs = {
         'title': parseInt(optionData.originalMatch.score * 100) +"% match of original label",
         'class': "badge ",
@@ -5561,7 +5995,8 @@ function getAttrsForMappingOption( optionData ) {
     if (optionData.originalMatch.is_synonym) {
         attrs.title = ('Matched on synonym '+ optionData.originalMatch.matched_name);
         attrs.class += ' badge-info';
-    } else if (optionData.originalMatch.matched_name !== optionData.originalMatch.taxon.unique_name) {
+    } else if ((numOptions > 1) && (optionData.originalMatch.matched_name !== optionData.originalMatch.taxon.unique_name)) {
+        // Let's assume a single result is the right answer
         attrs.title = ('Taxon-name homonym');
         attrs.class += ' badge-warning';
     } else {
@@ -5609,6 +6044,11 @@ function toggleMappingForOTU(otu, evt) {
         forceToggleCheckbox($toggle, newState);
     }
     // add (or remove) highlight color that works with hover-color
+    /* N.B. that this duplicates the effect of Knockout bindings on these table
+     * rows! This is deliberate, since we're often toggling *many* rows at
+     * once, so we need to update visual style while postponing any tickler
+     * nudge 'til we're done.
+     */
     if (newState) {
         $toggle.closest('tr').addClass('warning');
     } else {
@@ -5798,9 +6238,10 @@ function approveAllVisibleMappings() {
                 if (onlyMapping.originalMatch.is_synonym) {
                     return;  // synonyms require manual review
                 }
-                if (onlyMapping.originalMatch.matched_name !== onlyMapping.originalMatch.taxon.unique_name) {
-                    return;  // taxon-name homonyms require manual review
-                }
+                /* N.B. We never present the sole mapping suggestion as a
+                 * taxon-name homonym, so just consider the match score to
+                 * determine whether it's an "exact match".
+                 */
                 if (onlyMapping.originalMatch.score < 1.0) {
                     return;  // non-exact matches require manual review
                 }
@@ -6083,18 +6524,70 @@ function requestTaxonMapping( otuToMap ) {
                     });
                     */
 
-                    var candidateMappingList = [ ];
-                    $.each(candidateMatches, function(i, match) {
-                        // convert to expected structure for proposed mappings
-                        candidateMappingList.push({
-                            name: match.taxon['unique_name'] || match.taxon['name'],       // matched name
-                            ottId: match.taxon['ott_id'],     // matched OTT id (as number!)
+                    /* TODO: If multiple matches point to a single taxon, show just the "best" match
+                     *   - Spelling counts! Show an exact match (e.g. synonym) vs. inexact spelling.
+                     *   - TODO: add more rules? or just comment the code below
+                     */
+                    var getPreferredTaxonCandidate = function( candidateA, candidateB ) {
+                        // Return whichever is preferred, based on a few criteria:
+                        var matchA = candidateA.originalMatch;
+                        var matchB = candidateB.originalMatch;
+                        // If one is the exact match, that's ideal (but unlikely since 
+                        // the TNRS apparently returned multiple candidates).
+                        if (!matchA.is_approximate_match) {
+                            return candidateA;
+                        } else if (!matchB.is_approximate_match) {
+                            return candidateB;
+                        }
+                        // Show the most similar name (or synonym) for this taxon.
+                        if (matchA.score > matchB.score) {
+                            return candidateA;
+                        }
+                        return candidateB;
+                    };
+                    var getPriorMatchingCandidate = function( ottId, priorCandidates ) {
+                        // return any match we've already examined for this taxon
+                        var priorMatch = null;
+                        $.each(priorCandidates, function(i, c) {
+                            if (c.ottId === ottId) {
+                                priorMatch = c;
+                                return false;  // there should be just one
+                            }
+                        });
+                        return priorMatch;
+                    };
+                    var rawMatchToCandidate = function( raw, otuID ) {
+                        // simplify the "raw" matches returned by TNRS
+                        return {
+                            name: raw.taxon['unique_name'] || raw.taxon['name'],       // matched name
+                            ottId: raw.taxon['ott_id'],     // matched OTT id (as number!)
                             //exact: false,                               // boolean (ignoring this for now)
                             //higher: false,                               // boolean
                             // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
-                            originalMatch: match,
+                            originalMatch: raw,
                             otuID: otuID
-                        });
+                        };
+                    }
+                    var candidateMappingList = [ ];
+                    $.each(candidateMatches, function(i, match) {
+                        // convert to expected structure for proposed mappings
+                        var candidate = rawMatchToCandidate( match, otuID );
+                        var priorTaxonCandidate = getPriorMatchingCandidate( candidate.ottId, candidateMappingList );
+                        if (priorTaxonCandidate) {
+                            var priorPosition = $.inArray(priorTaxonCandidate, candidateMappingList);
+                            var preferredCandidate = getPreferredTaxonCandidate( candidate, priorTaxonCandidate );
+                            var alternateCandidate = (preferredCandidate === candidate) ? priorTaxonCandidate : candidate;
+                            // whichever one was chosen will (re)take this place in our array
+                            candidateMappingList.splice(priorPosition, 1, preferredCandidate);
+                            // the other candidate will be stashed as a child, in case we need it later
+                            if ('alternateTaxonCandidates' in preferredCandidate) {
+                                preferredCandidate.alternateTaxonCandidates.push( alternateCandidate );
+                            } else {
+                                preferredCandidate.alternateTaxonCandidates = [ alternateCandidate ];
+                            }
+                        } else {
+                            candidateMappingList.push(candidate);
+                        }
                     });
 
                     proposeOTULabel(otuID, candidateMappingList);
@@ -6142,6 +6635,9 @@ function mapOTUToTaxon( otuID, mappingInfo, options ) {
     // FOR NOW, assume that any leaf node will have a corresponding otu entry;
     // otherwise, we can't have name for the node!
     var otu = getOTUByID( otuID );
+
+    // De-select this OTU in the mapping UI
+    otu['selectedForAction'] = false;
 
     // add (or update) a metatag mapping this to an OTT id
     otu['^ot:ottId'] = Number(mappingInfo.ottId);
@@ -6260,7 +6756,51 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     nodeMenu.append('<li class="node-information"></li>');
     var nodeInfoBox = nodeMenu.find('.node-information');
     var labelInfo = getTreeNodeLabel(tree, node, importantNodeIDs);
-    nodeInfoBox.append('<span class="node-name">'+ labelInfo.label +'</span>');
+    /* Decide what label to show in the 'options' menu, and how to describe it
+     * N.B. that we might want to show something different from the label
+     * showing in the phylogram.
+     */
+    var nodeOptionsLabel;
+    var labelTypeDescription;
+    var origDisambigStr;  // used in some special cases
+    switch(labelInfo.labelType) {
+        case('tip (mapped OTU)'):
+            nodeOptionsLabel = labelInfo.label;
+            labelTypeDescription = "Mapped to Open Tree taxonomy, ";
+            origDisambigStr = labelInfo.originalLabel;
+            break;
+        case('tip (original)'):
+            nodeOptionsLabel = labelInfo.label;
+            labelTypeDescription = "Original OTU label";
+            break;
+        case ('internal node (aligned)'):
+            nodeOptionsLabel = labelInfo.label;
+            labelTypeDescription = "Label provided by conflict service";
+            break;
+        case ('internal node (support)'):
+        case ('internal node (other)'):
+            nodeOptionsLabel = labelInfo.label;
+            labelTypeDescription = getNodeLabelModeDescription(tree);
+            break;
+        case ('internal node (ambiguous)'):
+            nodeOptionsLabel = labelInfo.label;
+            labelTypeDescription = "Internal node label (ambiguous)";
+            break;
+        case ('empty'):
+            nodeOptionsLabel = node['@id'];
+            labelTypeDescription = "Unlabeled node";
+            //labelTypeDescription = labelInfo.originalLabel ; //'original OTU label';
+            break;
+        default:
+            nodeOptionsLabel = "???";
+            labelTypeDescription = ('Unknown label type! ['+ labelInfo.labelType +']');
+            console.error('Unknown label type! ['+ labelInfo.labelType +']');;
+    }
+    nodeInfoBox.append('<span class="node-name">'+ nodeOptionsLabel +'</span>');
+
+    var nodeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ tree['@id'] +"&node="+ node['@id'];
+    nodeInfoBox.append('<a class="node-direct-link" title="Link directly to this node (opens in new window)" target="_blank" href="'+ 
+                       nodeURL +'"><i class="icon-share-alt"></i></a>');
 
     if ((viewOrEdit === 'EDIT') && isDuplicateNode( tree, node )) {
         if (node['^ot:isTaxonExemplar'] === true) {
@@ -6272,6 +6812,9 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
 
     if (nodeID == importantNodeIDs.treeRoot) {
         nodeInfoBox.append('<span class="node-type specifiedRoot">tree root</span>');
+        if ((viewOrEdit === 'EDIT') && (tree['^ot:unrootedTree'])) {
+            nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Confirm as root of this tree</a></li>');
+        }
     } else {
         if ((viewOrEdit === 'EDIT') && !(node['^ot:isLeaf'])) {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeRoot( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as root of this tree</a></li>');
@@ -6289,22 +6832,11 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
             nodeMenu.append('<li><a href="#" onclick="hideNodeOptionsMenu(); setTreeIngroup( \''+ tree['@id'] +'\', \''+ nodeID +'\' ); return false;">Mark as the ingroup clade</a></li>');
         }
     }
-    // clarify which type of label
-    var labelTypeDescription;
-    switch(labelInfo.labelType) {
-        case('mapped label'):
-            labelTypeDescription = 'mapped to Open Tree taxonomy';
-            break;
-        case('original label'):
-            labelTypeDescription = 'original OTU label';
-            break;
-        case('node id'):
-            labelTypeDescription = 'unnamed node';
-            break;
-        default:
-            labelTypeDescription = labelInfo.labelType;
-    }
+
     nodeInfoBox.append('<div class="node-label-type">'+ labelTypeDescription +'</div>');
+    if (origDisambigStr && (origDisambigStr !== nodeOptionsLabel)) {
+        nodeInfoBox.append('<div class="node-label-type">originally labelled "'+ origDisambigStr +'"</div>');
+    }
     if (node.conflictDetails) {
         // desribe its status in the current conflict analysis
         var conflictDescriptionHTML = getNodeConflictDescription(tree, node);
@@ -6344,7 +6876,27 @@ function getNodeConflictDescription(tree, node) {
         case 'synth':
             if (node.conflictDetails.witness) {
                 // EXAMPLE:  https://tree.opentreeoflife.org/opentree/argus/ottol@770315/Homo-sapiens
-                witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+                if (isNaN(node.conflictDetails.witness)) {
+                    // it's a synthetic-tree node ID (e.g. 'ott1234' or 'mrcaott123ott456')
+                   /* N.B. Ideally we'd include the current synth-version (e.g. '/opentree7.0@ott123'),
+                    * like so:
+
+                    witnessURL = "/opentree/argus/{SYNTH_VERSION}@{NODE_ID}"
+                        .replace('{SYNTH_VERSION}', referenceTreeVersion)
+                        .replace('{NODE_ID}', node.conflictDetails.witness);
+
+                    * But this is not yet provided by the conflict service. Perhaps we could capture
+                    * this as <tree>.conflictDetails['referenceTreeVersion']
+                    *
+                    * For now, omitting the version entirely (e.g. '/@ott123') will redirect to
+                    * the latest-version URL.
+                    */
+                    witnessURL = "/opentree/argus/@{NODE_ID}"
+                        .replace('{NODE_ID}', node.conflictDetails.witness);
+                } else {
+                    // it's a numeric OTT taxon ID (e.g. '1234')
+                    witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+                }
             } else {
                 missingWitnessDescription = "anonymous synth node";
             }
@@ -6361,7 +6913,7 @@ function getNodeConflictDescription(tree, node) {
       case 'mapped_to_taxon':
           if (witnessURL) {
               conflictHTML = 'Aligned with <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || "???") +'</a>';
+                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
           } else {
               conflictHTML = 'Aligned with '+ missingWitnessDescription;
           }
@@ -6369,7 +6921,7 @@ function getNodeConflictDescription(tree, node) {
       case 'conflicts_with':
           if (witnessURL) {
               conflictHTML = 'Conflicts with <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || "???") +'</a>';
+                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
           } else {
               conflictHTML = 'Conflicts with '+ missingWitnessDescription;
           }
@@ -6377,7 +6929,7 @@ function getNodeConflictDescription(tree, node) {
       case 'resolves':
           if (witnessURL) {
               conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || "???") +'</a>';
+                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
           } else {
               conflictHTML = 'Resolves '+ missingWitnessDescription;
           }
@@ -6781,6 +7333,7 @@ function findHighestElementOrdinalNumber( nexml, prefix, gatherAllFunc ) {
         var testElement = allElements[i];
         var testID = ko.unwrap(testElement['@id']) || '';
         if (testID === '') {
+            // TODO: Suppress these warnings if prefix is 'message'?
             console.error("MISSING ID for this "+ prefix +":");
             console.error(testElement);
             continue;  // skip to next element
@@ -7696,22 +8249,48 @@ var minimalDOIPattern = new RegExp('10\\..+')
 var urlPattern = new RegExp('http(s?)://\\S+');
 function formatDOIAsURL() {
     var oldValue = viewModel.nexml['^ot:studyPublication']['@href'];
-    // IF it's already in the form of a URL, do nothing
-    if (urlPattern.test(oldValue) === true) {
+    var newValue = DOItoURL( oldValue );
+    if (newValue === oldValue) {
+        // no change, so no further action needed
         return;
     }
-    // IF it's not a reasonable "naked" DOI, do nothing
-    var possibleDOIs = oldValue.match(minimalDOIPattern);
-    if( possibleDOIs === null ) {
-        // no possible DOI found
-        return;
-    }
-
-    // this is a candidate; try to convert it to URL form
-    var bareDOI = $.trim( possibleDOIs[0] );
-    var newValue = 'http://dx.doi.org/'+ bareDOI;
     viewModel.nexml['^ot:studyPublication']['@href'] = newValue;
     nudgeTickler('GENERAL_METADATA');
+}
+function formatDataDepositDOIAsURL() {
+    var oldValue = viewModel.nexml['^ot:dataDeposit']['@href'];
+    var newValue = DOItoURL( oldValue );
+    if (newValue === oldValue) {
+        // no change, so no further action needed
+        return;
+    }
+    viewModel.nexml['^ot:dataDeposit']['@href'] = newValue;
+    nudgeTickler('GENERAL_METADATA');
+}
+
+/*
+* N.B. this duplicates the function with same name in
+* webapp/static/js/webapp-helpers.js, so any changes should be made in both
+* places.
+*/
+function DOItoURL( doi ) {
+    /* Return the DOI provided (if any) in URL form */
+    if (!doi) {  // null, undefined, or empty string
+        return "";
+    }
+    if (urlPattern.test(doi) === true) {
+        // It's already in the form of a URL, return unchanged
+        return doi;
+    }
+    // IF it's not a reasonable "naked" DOI, do nothing
+    var possibleDOIs = doi.match(minimalDOIPattern);
+    if( possibleDOIs === null ) {
+        // No possible DOI found, return unchanged
+        return doi;
+    }
+    // This is a candidate; try to convert it to URL form
+    var bareDOI = $.trim( possibleDOIs[0] );
+    return ('http://dx.doi.org/'+ bareDOI);
 }
 function testDOIForDuplicates( doi ) {
     // REMINDER: This is usually a full DOI, but not always. Test any valid URL!
@@ -7802,7 +8381,7 @@ function getDuplicateNodesInTree( tree ) {
     // 'exemplar' node to avoid problems in synthesis.
     var duplicateNodes = { };
 
-    if (!isPreferredTree(tree)) {
+    if (!isQueuedForNewSynthesis(tree)) {
         // ignoring these for now...
         return duplicateNodes;
     }
@@ -8306,6 +8885,26 @@ function currentStudyVersionContributedToLatestSynthesis() {
     // compare SHA values and return true if they match
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
 }
+function treeContributedToLatestSynthesis(tree) {
+    // check for a valid SHA from last synthesis
+    return ($.inArray( tree['@id'], latestSynthesisTreeIDs ) !== -1);
+}
+
+function getStudyPublicationLink() {
+    var url = $.trim(viewModel.nexml['^ot:studyPublication']['@href']);
+    // If there's no URL, we have nothing to say
+    if (url === '') {
+        return '';
+    }
+    if (urlPattern.test(url) === true) {
+        // It's a proper URL, wrap it in a hyperlink; but first,
+        // update to match latest CrossRef guidelines
+        url = latestCrossRefURL(url);
+        return '<a target="_blank" href="'+ url +'">'+ url +'</a>';
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
+}
 
 function getDataDepositMessage() {
     // Returns HTML explaining where to find this study's data, or an empty
@@ -8336,8 +8935,14 @@ function getDataDepositMessage() {
 
     // TODO: Add other substitutions?
 
-    // default message simply repeats the dataDeposit URL
-    return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
+    if (urlPattern.test(url) === true) {
+        // Default message simply repeats the dataDeposit URL; but first,
+        // update to match latest CrossRef guidelines
+        url = latestCrossRefURL(url);
+        return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
 }
 
 function showDownloadFormatDetails() {
@@ -8481,6 +9086,7 @@ function loadCollectionList(option) {
             }
 
             viewModel.allCollections = data;
+            captureDefaultSortOrder(viewModel.allCollections);
 
             // enable sorting and filtering for lists in the editor
             // UI widgets bound to these variables will trigger the
@@ -8507,8 +9113,9 @@ function loadCollectionList(option) {
                  * (and clutter) for what will typically be a short list.
                  */
                 var match = viewModel.listFilters.COLLECTIONS.match(),
-                    matchPattern = new RegExp( $.trim(match), 'i' ),
-                    wholeSlugMatchPattern = new RegExp( '^'+ $.trim(match) +'$' );
+                    matchWithDiacriticals = addDiacriticalVariants(match),
+                    matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
+                    wholeSlugMatchPattern = new RegExp( '^'+ $.trim(matchWithDiacriticals) +'$' );
                 var order = viewModel.listFilters.COLLECTIONS.order();
                 var filter = viewModel.listFilters.COLLECTIONS.filter();
 
@@ -8529,6 +9136,7 @@ function loadCollectionList(option) {
                 // map old array to new and return it
                 var currentStudyID = $('#current-study-id').val();
                 var currentTreeID = $('#current-tree-id').val();
+
                 var filteredList = ko.utils.arrayFilter(
                     viewModel.allCollections,
                     function(collection) {
@@ -8634,18 +9242,22 @@ function loadCollectionList(option) {
                      */
                     case 'Most recently modified':
                         filteredList.sort(function(a,b) {
-                            var aMod = a.lastModified.ISO_date;
-                            var bMod = b.lastModified.ISO_date;
-                            if (aMod === bMod) return 0;
+                            var aMod = $.trim(a.lastModified.ISO_date);
+                            var bMod = $.trim(b.lastModified.ISO_date);
+                            if (aMod === bMod) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             return (aMod < bMod)? 1 : -1;
                         });
                         break;
 
                     case 'Most recently modified (reversed)':
                         filteredList.sort(function(a,b) {
-                            var aMod = a.lastModified.ISO_date;
-                            var bMod = b.lastModified.ISO_date;
-                            if (aMod === bMod) return 0;
+                            var aMod = $.trim(a.lastModified.ISO_date);
+                            var bMod = $.trim(b.lastModified.ISO_date);
+                            if (aMod === bMod) {
+                                return maintainRelativeListPositions(a, b);
+                            }
                             return (aMod > bMod)? 1 : -1;
                         });
                         break;
@@ -8653,16 +9265,28 @@ function loadCollectionList(option) {
                     case 'By owner/name':
                         filteredList.sort(function(a,b) {
                             // first element is the ID with user-name/collection-name
-                            if (a.id === b.id) return 0;
-                            return (a.id < b.id) ? -1 : 1;
+                            // (coerce any missing/goofy values to strings)
+                            var aName = $.trim(a.id);
+                            var bName = $.trim(b.id);
+                            if (aName === bName) {
+                                // N.B. this should not occur
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aName < bName) ? -1 : 1;
                         });
                         break;
 
                     case 'By owner/name (reversed)':
                         filteredList.sort(function(a,b) {
                             // first element is the ID with user-name/collection-name
-                            if (a.id === b.id) return 0;
-                            return (a.id > b.id) ? -1 : 1;
+                            // (coerce any missing/goofy values to strings)
+                            var aName = $.trim(a.id);
+                            var bName = $.trim(b.id);
+                            if (aName === bName) {
+                                // N.B. this should not occur
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aName > bName) ? -1 : 1;
                         });
                         break;
 
@@ -8799,8 +9423,9 @@ function searchForMatchingCollections() {
         return false;
     }
 
-    var matchPattern = new RegExp( $.trim(searchText), 'i' ),
-        wholeSlugMatchPattern = new RegExp( '^'+ $.trim(searchText) +'$' );
+    var matchWithDiacriticals = addDiacriticalVariants(searchText),
+        matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
+        wholeSlugMatchPattern = new RegExp( '^'+ $.trim(matchWithDiacriticals) +'$' );
 
     var matchingCollections = ko.utils.arrayFilter(
         viewModel.allCollections,
@@ -8944,8 +9569,11 @@ function hideMappingOptions() {
 
 /* A few global vars for the add-new-taxa popup */
 var candidateOTUsForNewTaxa = [ ];
-var currentTaxonCandidate = null;
-var evidenceSourceCandidate = ko.observable(null);
+var currentTaxonCandidate = ko.observable(null);
+var sharedParentTaxonID = ko.observable(null);
+var sharedParentTaxonName = ko.observable(null);
+var sharedTaxonSources = ko.observableArray(); // sets it to an empty array
+sharedTaxonSources(null); // force to null (no shared source)
 
 function getSelectedOTUs() {
     /* This includes only visible OTUs, i.e. those in the current filtered and
@@ -8964,9 +9592,27 @@ function moveToNthTaxonCandidate( pos ) {
         console.error("moveToNthTaxonCandidate("+ pos +") - no such candidate OTU!");
         return;
     }
+
+    if (currentTaxonCandidate()) {
+        // report any validation errors in the current candidate (and don't move)
+        if (!taxonCondidateIsValid(currentTaxonCandidate(), {REPORT_ERRORS: true})) {
+            return;
+        }
+    }
+
     // move to the n-th otu
-    currentTaxonCandidate = testCandidate;
+    currentTaxonCandidate(testCandidate);
     // add new-taxon metadata, if not found (stored only during this curation session!)
+
+    if ($stashedTaxonSourceElement === null) {
+        // save the template and use the original
+        $stashedTaxonSourceElement = $('#active-taxon-sources .taxon-sources')
+            .find('.taxon-source').eq(0).clone();
+    } else {
+        // apply the saved template
+        $('#active-taxon-sources .taxon-sources').empty()
+                  .append( $stashedTaxonSourceElement.clone() );
+    }
 
     // Bind just the selected candidate to the editing UI
     // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
@@ -8976,7 +9622,10 @@ function moveToNthTaxonCandidate( pos ) {
         ko.cleanNode(el);
         ko.applyBindings(currentTaxonCandidate, el);
     });
+    updateTaxonSourceDetails( );
     bindHelpPanels();
+    //updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+    // N.B. This is already handled, probably during `updateTaxonSourceDetails()`
 
     // enable parent-taxon search
     $('input[name=parent-taxon-search]').unbind('keyup change').bind('keyup change', setParentTaxaSearchFuse );
@@ -9001,17 +9650,26 @@ function moveToPreviousTaxonCandidate() {
     }
     moveToNthTaxonCandidate(chosenPosition - 1);
 }
+/* UNUSED (nudge Knockout bindings instead, if possible)
+function refreshCurrentTaxonCandidate() {
+    var currentPosition = getCurrentTaxonCandidatePosition();
+    moveToNthTaxonCandidate(currentPosition);
+}
+*/
 function getCurrentTaxonCandidatePosition() {
-    var chosenPosition = $.inArray(currentTaxonCandidate, candidateOTUsForNewTaxa);
+    var chosenPosition = $.inArray(currentTaxonCandidate(), candidateOTUsForNewTaxa);
     return chosenPosition;
 }
 function clearAllTaxonCandidates() {
     // Clear all vars related to the new-taxa popup
     candidateOTUsForNewTaxa = [ ];
-    currentTaxonCandidate = null;
-    evidenceSourceCandidate(null);
+    currentTaxonCandidate(null);
+    sharedParentTaxonID(null);
+    sharedParentTaxonName(null);
+    sharedTaxonSources(null);
 }
 
+var $stashedTaxonSourceElement = null;
 function showNewTaxaPopup() {
     // Try to incorporate any selected labels.
     //$stashedCollectionViewerTemplate
@@ -9035,39 +9693,77 @@ function showNewTaxaPopup() {
     if (alreadyMapped > 0) {
         showInfoMessage('Only un-mapped labels will be considered (ignoring '+ alreadyMapped +' already mapped)');
     }
-    
+
     // prepare storage for each selected OTU
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
         if (!('newTaxonMetadata' in candidate)) {
+            var adjustedOTULabel = $.trim(candidate['^ot:altLabel']) ||
+                                   $.trim(adjustedLabel(candidate['^ot:originalLabel']));
             candidate.newTaxonMetadata = {
-                'rank': 'Species',
-                'modifiedName': candidate['^ot:originalLabel'],
-                'modifiedNameReason': '',
-                'parentTaxonName': ko.observable(''), // watch for changes!
-                'parentTaxonID': ko.observable(''),  
+                'rank': 'species',
+                'adjustedLabel': adjustedOTULabel,  // as modified by regex or manual edit
+                'modifiedName': ko.observable( adjustedOTULabel ),
+                'modifiedNameStatus': ko.observable('PENDING'),  // will be tested immediately below
+                'modifiedNameReason': ko.observable(''),
+                'parentTaxonName': ko.observable(''),  // not sent to server
+                'parentTaxonID': ko.observable(0),
                 'parentTaxonSearchContext': '',
-                'evidenceType': '',
-                'evidence': '',
+                'sources': ko.observableArray(),
                 'comments': ''
             };
+            // add a single source (required)
+            addEmptyTaxonSource(candidate.newTaxonMetadata.sources);
         }
+    });
+    // Now that all candidates have metadata, test all names for dupes
+    // N.B. Since names are compared against the other candidates as well as taxonomy,
+    // we should ALL of them now, even if they've passed before.
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        updateTaxonNameCheck( candidate );
     });
 
     moveToNthTaxonCandidate( 0 );
-    // Show and initialize the popup
-    $('#new-taxa-popup').modal('show');
 
+    // Trigger smart resize each time the window opens
+    $('#new-taxa-popup').off('shown').on('shown', function () {
+        updateNewTaxaPopupHeight();
+    });
     // Block any method of closing this window if there is unsaved work
     $('#new-taxa-popup').off('hide').on('hide', function () {
-        if (currentTaxonCandidate || candidateOTUsForNewTaxa.length > 0) {
+        if (currentTaxonCandidate() || candidateOTUsForNewTaxa.length > 0) {
             alert("Please submit (or cancel) your proposed taxa!");
             return false;
         }
     });
+    // Show and initialize the popup
+    $('#new-taxa-popup').modal('show');
 }
 function hideNewTaxaPopup() {
     clearAllTaxonCandidates();
     $('#new-taxa-popup').modal('hide');
+}
+
+function getActiveParentTaxonID(candidate) {
+    // return the *observable* property (shared or local)
+    var activeID = sharedParentTaxonID() ?
+            sharedParentTaxonID :
+            candidate.newTaxonMetadata.parentTaxonID;
+    return activeID;
+}
+function getActiveParentTaxonName(candidate) {
+    // return the *observable* property (shared or local)
+    var activeName = sharedParentTaxonName() ?
+            sharedParentTaxonName :
+            candidate.newTaxonMetadata.parentTaxonName;
+    return activeName;
+}
+
+function getActiveTaxonSources(candidate) {
+    // return the *observable* property (shared or local)
+    var activeSources = sharedTaxonSources() ?
+            sharedTaxonSources :
+            candidate.newTaxonMetadata.sources;
+    return activeSources;
 }
 
 function submitNewTaxa() {
@@ -9077,41 +9773,68 @@ function submitNewTaxa() {
     //var bundle = candidateOTUsForNewTaxa.concat(); 
     // unwrap any KO observables within
     var bundle = {
+        "user_agent": "opentree-curation-webapp",
+        "date_created": new Date().toISOString(),
         "taxa": [ ],
         "study_id": studyID,
         "curator": {
             'name': userDisplayName, 
             'login': userLogin, 
             'email': userEmail
-        }
+        },
+        "new_ottids_required": candidateOTUsForNewTaxa.length
     };
-    // override with shared evidence, if any
-    var sharedEvidence = null,
-        sharedEvidenceType = null;
-    if (evidenceSourceCandidate()) {
-        sharedEvidence = evidenceSourceCandidate().newTaxonMetadata.evidence;
-        sharedEvidenceType = evidenceSourceCandidate().newTaxonMetadata.evidenceType;
-    }
+
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
         // repackage its metadata to match the web service
         var newTaxon = {};
-        newTaxon['tag'] = i;  // used to match results with candidate OTUs
-        newTaxon['name'] = candidate.newTaxonMetadata.modifiedName;
-        newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason;
+        newTaxon['tag'] = candidate['@id'];  // used to match results with candidate OTUs
+        newTaxon['original_label'] = $.trim(candidate['^ot:originalLabel']);
+        newTaxon['adjusted_label'] = candidate.newTaxonMetadata.adjustedLabel;
+        newTaxon['name'] = candidate.newTaxonMetadata.modifiedName();
+        newTaxon['name_derivation'] = candidate.newTaxonMetadata.modifiedNameReason() || "No change to original label";
         newTaxon['rank'] = candidate.newTaxonMetadata.rank.toLowerCase();
-        newTaxon['parent'] = candidate.newTaxonMetadata.parentTaxonID();
-        if (sharedEvidence !== null) {
-            newTaxon['source'] = sharedEvidence;
-            newTaxon['source_type'] = sharedEvidenceType;
-        } else {
-            newTaxon['source'] = candidate.newTaxonMetadata.evidence;
-            newTaxon['source_type'] = candidate.newTaxonMetadata.evidenceType;
-        }
+        /* Use shared parent taxon, if any. */
+        newTaxon['parent'] = getActiveParentTaxonID(candidate)();
+        /* Include all valid sources for this candidate. If curator is sharing
+         * one taxon's sources, ignore any saved as a convenience for the curator.
+         */
+        var activeSources = getActiveTaxonSources(candidate);
+        newTaxon['sources'] = [ ];
+        $.each( activeSources(), function(i, source) {
+            if (!source.type) {
+                // Ignore sources with no selected type (null, undefined, '')
+                return;
+            }
+            var srcInfo = {
+                'source_type': source.type,
+                'source': null
+            };
+            /* Some source types should supress any value that was kept as a
+             * convenience for the curator.
+             */
+            switch( source.type ) {
+                case 'The taxon is described in this study':
+                    srcInfo['source'] = null;
+                default:
+                    srcInfo['source'] = source.value;
+            }
+            newTaxon['sources'].push(srcInfo);
+        });
         newTaxon['comment'] = candidate.newTaxonMetadata.comments;
         bundle.taxa.push(newTaxon);
     });
+
+    // add non-JSON values to the query string
+    var qsVars = $.param({
+        author_name: userDisplayName,
+        author_email: userEmail,
+        //starting_commit_SHA: collection.sha,
+        //commit_msg: commitMessage,
+        auth_token: userAuthToken
+    });
     $.ajax({
-        url: submitNewTaxa_url,
+        url: API_create_amendment_POST_url +'?'+ qsVars,
         type: 'POST',
         dataType: 'json',
         processData: false,
@@ -9148,21 +9871,62 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
         return;
     }
 
-    // TODO: apply the new IDs to the original OTUs
+    // Apply the newly minted OTT ids to the original OTUs
+    var tagsToOTTids = responseJSON['tag_to_ottid'];
+    if (!$.isPlainObject(tagsToOTTids)) {
+        hideModalScreen();
+        showErrorMessage(
+            'Sorry, no data was returned mapping OTT ids to OTUs! <a href="#" onclick="toggleFlashErrorDetails(this); return false;">' +
+            'Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>'
+        );
+        return;
+    }
+
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        // REMINDER: we used the ID of each OTU as its tag!
+        var OTUid = candidate['@id'];
+        var mintedOTTid = Number(tagsToOTTids[ OTUid ]);
+        // N.B. we convert back from the server's preferred String tags
+        var mappingInfo = {
+             "name" : candidate.newTaxonMetadata.modifiedName(),
+             "ottId" : mintedOTTid
+        };
+        mapOTUToTaxon( OTUid, mappingInfo );
+        delete proposedOTUMappings()[ OTUid ];
+    });
+    proposedOTUMappings.valueHasMutated();
+    nudgeTickler('OTU_MAPPING_HINTS');
 
     hideModalScreen(); // TODO?
+    hideNewTaxaPopup();
     showSuccessMessage('Selected OTUs mapped to new taxa.');
 }
 
-function toggleEvidenceSourceCandidate( otu, event ) {
-    // set a global for this (an observable, to update display)
-    // NOTE that radio-button values are strings, so we convert to boolean below
-    var sharingThisEvidence = $(event.target).is(':checked');
-    if (sharingThisEvidence) {
-        evidenceSourceCandidate(currentTaxonCandidate);
+function toggleSharedParentID( otu, event ) {
+    // Set a global for this (an observable, to update display).
+    // NOTE that radio-button values are strings, so we convert to boolean below!
+    var sharingThisParentID = $(event.target).is(':checked');
+    if (sharingThisParentID) {
+        sharedParentTaxonID(currentTaxonCandidate().newTaxonMetadata.parentTaxonID());
+        sharedParentTaxonName(currentTaxonCandidate().newTaxonMetadata.parentTaxonName());
+        // clobber any pending search text in the field (to avoid confusion)
+        $('input[name=parent-taxon-search]').val("");
     } else {
-        evidenceSourceCandidate(null);
+        sharedParentTaxonID(null);
+        sharedParentTaxonName(null);
     }
+    return true;
+}
+function toggleSharedSources( otu, event ) {
+    // Set a global for this (an observable, to update display).
+    // NOTE that radio-button values are strings, so we convert to boolean below!
+    var sharingTheseSources = $(event.target).is(':checked');
+    if (sharingTheseSources) {
+        sharedTaxonSources(currentTaxonCandidate().newTaxonMetadata.sources());
+    } else {
+        sharedTaxonSources(null);
+    }
+    updateTaxonSourceDetails();
     return true;
 }
 
@@ -9302,8 +10066,9 @@ function searchForMatchingParentTaxa() {
                         var $link = $(this);
 
                         // Modify this candidate taxon (and indicator)
-                        currentTaxonCandidate.newTaxonMetadata.parentTaxonName($link.text());
-                        currentTaxonCandidate.newTaxonMetadata.parentTaxonID($link.attr('href'));
+                        currentTaxonCandidate().newTaxonMetadata.parentTaxonName($link.text());
+                        var numericID = Number($link.attr('href'));
+                        currentTaxonCandidate().newTaxonMetadata.parentTaxonID( numericID );
 
                         // hide menu and reset search field
                         $('#parent-taxon-search-results').html('');
@@ -9337,3 +10102,482 @@ function autoApplyExactParentMatch() {
     }
 }
 
+function disableRankDivider(option, item) {
+    // disable the divider option in this menu
+    if (item.indexOf('─') === 0) {  // Unicode box character!
+        ko.applyBindingsToNode(option, {disable: true}, 'FOO');
+    }
+}
+
+function updateActiveTaxonSources() {
+    // trigger validation, updates to next/previous buttons
+    coerceTaxonSourceDOIsToURLs();
+    currentTaxonCandidate.valueHasMutated();
+    updateTaxonSourceDetails();
+    updateTaxonSourceTypeOptions();
+    taxonCondidateIsValid(currentTaxonCandidate());
+}
+
+function coerceTaxonSourceDOIsToURLs() {
+    var activeSources = getActiveTaxonSources(currentTaxonCandidate());
+    $.each(activeSources(), function(i, source) {
+        switch( source.type ) {
+            case undefined:
+            case '':
+            case 'The taxon is described in this study':
+            case 'Other':
+                break;
+            default:
+                // its value should be a valid URL (convert simple DOIs)
+                source.value = DOItoURL( source.value );
+                activeSources.replace(source, source);
+                break;
+        }
+    });
+}
+
+function updateTaxonSourceDetails( ) {
+    var activeSources = getActiveTaxonSources(currentTaxonCandidate());
+    $.each(activeSources(), function(i, source) {
+        var $details = $('#new-taxa-popup .taxon-source:eq('+i+') .source-details')
+        switch( source.type ) {
+            case undefined:
+            case '':
+            case 'The taxon is described in this study':
+                $details.hide();
+                break;
+            default:
+                // show free-form text field with appropriate placeholder text
+                if (source.type === 'Other') {
+                    $details.attr('placeholder', "Describe or link to this source");
+                } else {
+                    $details.attr('placeholder', "Enter DOI or URL");
+                }
+                $details.show();
+                break;
+        }
+    });
+    updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+}
+
+function updateTaxonSourceTypeOptions() {
+    // Disable 'this study' option for active sources, if it's already selected
+    // (but don't disable the currently selected option).
+    var activeSources = getActiveTaxonSources(currentTaxonCandidate());
+    var currentStudyFound = false;
+    $.each(activeSources(), function(i, source) {
+        if (source.type === 'The taxon is described in this study') {
+            currentStudyFound = true;
+        }
+    });
+    var $sourceTypeOptions = $('#new-taxa-popup .source-type option');
+    $sourceTypeOptions.each(function(i, option) {
+        var $option = $(option);
+        if ($option.val() === 'The taxon is described in this study') {
+            // This study has already been listed as a source!
+            if (currentStudyFound && (!$option.is(':selected'))) {
+                $option.attr('disabled', 'disabled');
+            } else {
+                $option.removeAttr('disabled');
+            }
+        }
+    });
+}
+function addEmptyTaxonSource( sourceList ) {
+    // N.B. We should always apply this to an observableArray, so that the
+    // UI will update automatically.
+    if (!ko.isObservable(sourceList)) {
+        sourceList = getActiveTaxonSources(currentTaxonCandidate());
+    }
+    sourceList.push({
+        'type': null,
+        'value': null
+    });
+    updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+}
+function removeTaxonSource( sourceList, item ) {
+    // N.B. We should always apply this to an observableArray, so that the
+    // UI will update automatically.
+    if (!ko.isObservable(sourceList)) {
+        sourceList = getActiveTaxonSources(currentTaxonCandidate());
+    }
+    sourceList.remove(item);
+    updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+}
+
+function updateNewTaxaPopupHeight(options) {
+    /* Revisit height and placement of the new-taxon submission tool. If the
+     * list of sources is long enough, we should take the full height of the
+     * window, with all non-list UI available and any scrollbars restricted to
+     * the list area.
+     */
+    options = options || {};
+    var $popup = $('#new-taxa-popup');
+    // let the rounded top and bottom edges of the popup leave the page
+    var outOfBoundsHeight = 8;  // px each on top and bottom
+    // leave room at the bottom for error messages, etc.
+    var footerMessageHeight = 40;
+    var currentWindowHeight = $(window).height();
+    var maxPopupHeight = (currentWindowHeight + (outOfBoundsHeight*2) - footerMessageHeight);
+    var $listHolder = $popup.find('.modal-body');
+    var currentListScrollPosition = $listHolder.scrollTop();
+    // NOTE that MAINTAIN_SCROLL may only gives good results if this is called
+    // directly, vs. as part of a full update...
+    var newListScrollPosition = (options.MAINTAIN_SCROLL) ? currentListScrollPosition : 0;
+    var currentListHeight = $listHolder.height();
+    var currentPopupHeight = $popup.height();
+    // how tall is the rest of the popup?
+    var otherPopupHeight = currentPopupHeight - currentListHeight;
+    var maxListHeight = maxPopupHeight - otherPopupHeight;
+    //$popupBody.css({ 'max-height': 'none' });
+    $listHolder.css({ 'max-height': maxListHeight +'px' });
+    var popupTopY = (currentWindowHeight / 2) - ($popup.height() / 2) - (footerMessageHeight/2);
+    $popup.css({ 'top': popupTopY +'px' });
+    // restore (or set) new list scroll position
+    $listHolder.scrollTop(newListScrollPosition);
+}
+$(window).resize( function () {
+    if ($('#new-taxa-popup').is(':visible')) {
+        updateNewTaxaPopupHeight({MAINTAIN_SCROLL: true});
+    }
+});
+
+function taxonCondidateIsValid( candidate, options ) {
+    // Check for essential fields, taking shared info into account
+    if (!options) options = {REPORT_ERRORS: false};
+    var metadata = candidate.newTaxonMetadata;
+    var requiredProperties = {  // non-empty
+        'modifiedName': "Modified name must be a non-empty string",
+        'parentTaxonID': "Please specify the parent taxon for this label",
+        'rank': "Please specify a taxonomic rank (or 'no rank')"
+    };
+    if (!newTaxonNameMatchesOriginalLabel(candidate)) {
+        requiredProperties['modifiedNameReason'] = "Please explain why you modified the taxon's original label.";
+    }
+    var missingProperty = null;
+    for (var propName in requiredProperties) {
+        var itsValue;
+        switch(propName) {
+            // in some cases, check the shared property instead
+            case 'parentTaxonID':
+                itsValue = sharedParentTaxonID() || ko.unwrap(metadata.parentTaxonID);
+                break;
+            default:
+                itsValue = ko.unwrap(metadata[ propName ]);
+        }
+        if (!itsValue) {
+            missingProperty = propName;
+            break;  // report the first missing property
+        }
+    }
+    if (missingProperty) {
+        // return a hint of what's missing? show an error here?
+        // use the error messages defined above for each field
+        if (options.REPORT_ERRORS) {
+            showErrorMessage( requiredProperties[missingProperty] );
+        }
+        return false;
+    }
+    // have we confirmed that the proposed taxon name is not already found?
+    switch( metadata.modifiedNameStatus() ) {
+        case 'PENDING':
+            // quietly block validation; tests results should refresh this
+            ///console.warn("Blocking validation based on PENDING name test...");
+            return false;
+        case 'FOUND IN CANDIDATES':
+            if (options.REPORT_ERRORS) {
+                showErrorMessage('There is another candidate taxon with this name! Proposed taxon names must be unique.');
+            }
+            return false;
+        case 'FOUND IN TAXONOMY':
+            if (options.REPORT_ERRORS) {
+                showErrorMessage('There is already a taxon with this name! Homonyms are not currently allowed.');
+            }
+            return false;
+        case 'NOT FOUND':
+            // it's a unique name! no problem here
+            break;
+        default:
+            console.error('Unexpected value found for modifiedNameStatus! ['+ ko.unwrap(metadata.modifiedNameStatus) +']');
+    }
+
+    // Check for at least one valid source (possibly shared)
+    var validSourceFound = false;
+    var activeSources = ko.unwrap(getActiveTaxonSources(candidate));
+    $.each(activeSources, function(i, source) {
+        // validation details depend on source type
+        switch(source.type) {
+            case '':
+            case null:
+            case undefined:
+                // No source type specified; step to the next one
+                return;
+            case 'The taxon is described in this study':
+                // No further description needed in value field
+                validSourceFound = true;
+                return;
+            default:
+                // look for a non-empty value (at least 4 characters)
+                if (source.value && (source.value.length > 3)) {
+                    validSourceFound = true;
+                }
+                return;
+        }
+    });
+    if (!validSourceFound) {
+        if (options.REPORT_ERRORS) {
+            showErrorMessage( "Candidate has no valid sources!" );
+        }
+        return false;
+    }
+    hideFooterMessage();
+    return true;
+}
+
+function allTaxonCandidatesAreValid(options) {
+    if (!options) options = {REPORT_ERRORS: false};
+    var invalidCandidateFound = false;
+    $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        if (!taxonCondidateIsValid( candidate )) {
+            invalidCandidateFound = true;
+            return false;
+        }
+    });
+    if (invalidCandidateFound && options.REPORT_ERRORS) {
+        showErrorMessage("Please review all labels for required data!");
+    }
+    return !(invalidCandidateFound);
+}
+
+var prevTaxonCandidateAllowed = ko.computed(function() {
+    if (!currentTaxonCandidate()) return false;
+    return taxonCondidateIsValid(currentTaxonCandidate()) && (getCurrentTaxonCandidatePosition() > 0);
+});
+var nextTaxonCandidateAllowed = ko.computed(function() {
+    if (!currentTaxonCandidate()) return false;
+    return taxonCondidateIsValid(currentTaxonCandidate()) && (getCurrentTaxonCandidatePosition() < (candidateOTUsForNewTaxa.length - 1));
+});
+
+function newTaxonNameMatchesOriginalLabel(candidate) {
+    var c = candidate || currentTaxonCandidate();
+    if (!c) return false;
+    return $.trim(c.newTaxonMetadata.modifiedName()) === $.trim(c['^ot:originalLabel']);
+}
+var currentTaxonUsesOriginalLabel = ko.computed(function() {
+    // computed wrapper for fast binding
+    return newTaxonNameMatchesOriginalLabel( currentTaxonCandidate() );
+});
+
+function useOriginalLabelForNewTaxon(candidate) {
+    // overwrite the new-taxon name with the original, and clear any reason for renaming
+    candidate.newTaxonMetadata.modifiedName( candidate['^ot:originalLabel'] );
+    candidate.newTaxonMetadata.modifiedNameReason(null);
+}
+
+function updateTaxonNameCheck(candidate) {
+    // report status of last check, or initiate a new check
+    if (!candidate) return false;
+    ///console.log('updateTaxonNameCheck() STARTING...');
+    var testName = candidate.newTaxonMetadata.modifiedName();
+    ///console.log('>> test name is '+ testName);
+    ///console.log('>> previous status is '+ candidate.newTaxonMetadata.modifiedNameStatus());
+    // check first against other proposed names
+    var duplicateNameFound = false;
+    $.each(candidateOTUsForNewTaxa, function(i, compareCandidate) {
+        if (compareCandidate === candidate) {
+            return true; // don't compare to itself! skips to next
+        }
+        var compareName = compareCandidate.newTaxonMetadata.modifiedName();
+        if ($.trim(testName) === $.trim(compareName)) {
+            duplicateNameFound = true;
+            candidate.newTaxonMetadata.modifiedNameStatus('FOUND IN CANDIDATES');
+            return false;
+        }
+    });
+    if (!duplicateNameFound) {
+        // keep checking, this time against the OT taxonomy
+        candidate.newTaxonMetadata.modifiedNameStatus('PENDING');
+        $.ajax({
+            url: doTNRSForMappingOTUs_url,  // NOTE that actual server-side method name might be quite different!
+            type: 'POST',
+            dataType: 'json',
+            data: JSON.stringify({
+                "names": [testName],
+                "include_suppressed": true,
+                "do_approximate_matching": false,
+                "context_name": 'All life',
+            }),
+            crossDomain: true,
+            contentType: "application/json; charset=utf-8",
+            error: function(jqXHR, textStatus, errorThrown) {
+                console.log("!!! something went terribly wrong");
+                console.log(jqXHR.responseText);
+                showErrorMessage("Something went wrong in taxomachine:\n"+ jqXHR.responseText);
+            },
+            success: function(data) {    // JSONP callback
+                // Check for duplicates
+                var resultSetsFound = (data && ('results' in data) && (data.results.length > 0));
+                var candidateMatches = [ ];
+                // Check for expected result sets (preliminary to individual matches below)
+                if (resultSetsFound) {
+                    switch (data.results.length) {
+                        case 0:
+                            ///console.warn('NO SEARCH RESULT SETS FOUND! UNABLE TO CONFIRM DUPLICATE NAMES.');
+                            return;
+                        case 1:
+                            // the expected case
+                            candidateMatches = data.results[0].matches;
+                            break;
+
+                        default:
+                            // ASSUME the first result set has what we need
+                            ///console.warn('MULTIPLE SEARCH RESULT SETS (USING FIRST)');
+                            ///console.warn(data['results']);
+                            candidateMatches = data.results[0].matches;
+                    }
+                }
+                // Check for one or more identical names
+                var duplicateNameFound = false;
+                $.each(candidateMatches, function(i, match) {
+                    // convert to expected structure for proposed mappings
+                    var foundName = (match.taxon['unique_name'] || match.taxon['name'])
+                    ///console.log('>>> found ['+ foundName +']...');
+                    if (!match.is_approximate_match) {
+                        duplicateNameFound = true;
+                        return false;  // stop checking names
+                    }
+                });
+                if (duplicateNameFound) {
+                    ///console.log('>> EXACT MATCH FOUND!');
+                    candidate.newTaxonMetadata.modifiedNameStatus('FOUND IN TAXONOMY');
+                } else {
+                    ///console.log('>> NO EXACT MATCH');
+                    candidate.newTaxonMetadata.modifiedNameStatus('NOT FOUND');
+                }
+            }
+        });
+    }
+    // N.B. We should always return true, for moving directly from this field to Next/Prev/Submit
+    return true;
+}
+
+function proposedTaxonNameStatusMessage(candidate) {
+    if (!candidate) return "?";
+    switch(candidate.newTaxonMetadata.modifiedNameStatus()) {
+        case 'PENDING':
+            return "...";
+        case 'NOT FOUND':
+            return "No duplicates found.";
+        case 'FOUND IN TAXONOMY':
+            return "Already in OT taxonomy!";
+        case 'FOUND IN CANDIDATES':
+            return "Already in proposed taxa!";
+        default:
+            return candidate.newTaxonMetadata.modifiedNameStatus();
+    }
+}
+function proposedTaxonNameStatusColor(candidate) {
+    if (!candidate) return "?";
+    switch(candidate.newTaxonMetadata.modifiedNameStatus()) {
+        case 'PENDING':
+            return 'silver';
+        case 'NOT FOUND':
+            return 'green';
+        case 'FOUND IN TAXONOMY':
+            return 'orange';
+        case 'FOUND IN CANDIDATES':
+            return 'orange';
+        default:
+            return 'purple';
+    }
+}
+
+function updateSaveTreeViewLink() {
+    /* This is done on mouseover, so that clicking the link will save
+     * the current tree view as an SVG file. Very loosely adapted from
+     * <http://stackoverflow.com/a/4228053>
+     */
+    // Update the link to use current SVG
+    var $treeViewer = $('#tree-viewer');
+    var $treeStylesheet = $('#tree-view-style');
+    var $treeSVG = $treeViewer.find('#tree-phylogram svg');
+    var $treeTitle = $treeViewer.find('#tree-title');
+    var treeName = $treeTitle.find('span').text();
+    var fileName = slugify( treeName ) +'.svg';
+
+    // confirm SVG has needed attributes (missing in Firefox)
+    $treeSVG.attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
+
+    // confirm SVG has our CSS styles for the tree view (or add them now)
+    if ($treeSVG.find('style').length === 0) {
+        // copy the main page's tree-view stylesheet exactly
+        // N.B. putting it where even Inkscape can find it :-/
+        $treeSVG.prepend( $treeStylesheet[0].outerHTML );
+    }
+
+    // encode the current SVG
+    var base64src = b64EncodeUnicode( $treeSVG[0].outerHTML );
+
+    var $saveLink = $('#save-tree-view');
+    $saveLink.attr('href', 'data:image/svg+xml;base64,\n'+ base64src);
+    $saveLink.attr('download', fileName);
+}
+
+function b64EncodeUnicode(str) {
+    /* Safe encoding for Unicode text, from
+     *  <https://developer.mozilla.org/en-US/docs/Web/API/WindowBase64/Base64_encoding_and_decoding#The_.22Unicode_Problem.22>
+     */
+    return btoa(encodeURIComponent(str).replace(/%([0-9A-F]{2})/g, function(match, p1) {
+        return String.fromCharCode('0x' + p1);
+    }));
+}
+
+function printCurrentTreeView() {
+    /* Print the current tree, sized to fit within a single vertical page
+     * (since Firefox has limited print support for SVG).
+     */
+    var $treeViewer = $('#tree-viewer');
+    var $treeSVG = $treeViewer.find('#tree-phylogram svg');
+    var $treeTitle = $treeViewer.find('#tree-title');
+
+    // set a temporary title (becomes the default filename for a saved PDF)
+    var oldTitle = window.document.title;
+    var treeName = $treeTitle.find('span').text();
+    window.document.title = slugify( treeName );
+
+    // move printing elements to the foreground
+    var $svgHolder = $treeSVG.parent();
+    var $titleHolder = $treeTitle.parent();
+    var $pageBody = $('body');
+    $pageBody.append( $treeSVG );
+    $pageBody.append( $treeTitle );
+
+    // adjust SVG viewport (esp. for Firefox, Chrome doesn't need this)
+    // NOTE that we need to use el.setAttribute to keep mixed-case attribute names!
+    var treeSVG = $treeSVG[0];
+    var oldSVGWidth = treeSVG.getAttribute('width');
+    var oldSVGHeight = treeSVG.getAttribute('height');
+    var oldSVGViewBox = treeSVG.getAttribute('viewBox');
+    treeSVG.setAttribute('width', "8in");
+    treeSVG.setAttribute('height', "10in");
+    treeSVG.setAttribute('viewBox', "0 0 "+ oldSVGWidth +" "+ oldSVGHeight);
+
+    // adjust bg and positioning just for print, then undo
+    $pageBody.addClass('printing-tree-view');
+    window.print();
+    $pageBody.removeClass('printing-tree-view');
+
+    // restore SVG viewport for normal use
+    treeSVG.setAttribute('width', oldSVGWidth);
+    treeSVG.setAttribute('height', oldSVGHeight);
+    if (oldSVGViewBox) {  // skip if null
+        treeSVG.setAttribute('viewBox', oldSVGViewBox);
+    }
+
+    // put the printed elements back in place
+    $svgHolder.append( $treeSVG );
+    $treeTitle.insertBefore( $titleHolder.find('ul.nav-tabs') );
+
+    // restore the normal doc title
+    window.document.title = oldTitle;
+}

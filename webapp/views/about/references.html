@@ -70,7 +70,8 @@ div.contributing-studies div.links .tree-links a {
               <div class="span6 reference">
                   {{= study.get('ot:studyPublicationReference') }}
                   {{ if study.get('ot:studyPublication'): }}
-                    <a target="_blank" href="{{= study.get('ot:studyPublication') }}">{{= study.get('ot:studyPublication') }}</a>
+                    <a target="_blank"
+                       href="{{= latest_CrossRef_URL(study.get('ot:studyPublication')) }}">{{= latest_CrossRef_URL(study.get('ot:studyPublication')) }}</a>
                   {{ else: }}
                     <div style="color: #c33; background-color: #fdd; font-weight: bold; margin-top: 2px; padding: 1px 4px 3px;">
                         <em>
@@ -92,8 +93,8 @@ div.contributing-studies div.links .tree-links a {
                       ><span>Show links to included trees</span> ({{= len(study['tree_ids']) }})</a>
                   <div class="tree-links">
                      {{ for tree_id in study['tree_ids']: }}
-                     <a target="_blank" href="{{= URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ], vars={'tab':'trees', 'tree': 'tree%s' % tree_id }) }}"
-                        title="Click to see this tree in the curation app">tree{{= tree_id }}</a>
+                     <a target="_blank" href="{{= URL(a='curator', c='study', f='view', args=[ study.get('ot:studyId') ], vars={'tab':'trees', 'tree': tree_id }) }}"
+                        title="Click to see this tree in the curation app">{{= tree_id }}</a>
                      {{ pass }}
                   </div>
                   <a target="_blank" 
@@ -111,7 +112,8 @@ div.contributing-studies div.links .tree-links a {
                  {{ if study.get('friendlyDepositMessage', None): }}
                   {{= XML(study.get('friendlyDepositMessage')) }}
                  {{ elif study.get('ot:dataDeposit', None): }}
-                  <a target="_blank" href="{{= study.get('ot:dataDeposit') }}">Data deposit DOI/URL</a>
+                  <a target="_blank"
+                     href="{{= latest_CrossRef_URL(study.get('ot:dataDeposit')) }}">Data deposit DOI/URL</a>
                  {{ pass }}
               </div>
              </div>
