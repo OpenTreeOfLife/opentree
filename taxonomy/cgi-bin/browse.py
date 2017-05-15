@@ -296,7 +296,11 @@ def display_basic_info(info, output):
     # Sources
     start_el(output, 'span', 'sources')
     if u'tax_sources' in info:
-        output.write(' %s ' % ', '.join(map(source_link, info[u'tax_sources'])))
+        sources = info[u'tax_sources']
+        if len(sources) > 0:
+            output.write(' %s ' % source_link(sources[0]))
+            if len(sources) > 1:
+                output.write('(%s) ' % (', '.join(map(source_link, sources[1:])),))
     end_el(output, 'span')
 
     # Flags
