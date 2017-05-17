@@ -8722,6 +8722,12 @@ function getAmbiguousLabelsInTree(tree) {
     }
 
     $.each( tree.node, function(i, node) {
+        if (node['^ot:isLeaf'] === true) {
+            /* We sometimes save a misspelled taxon name as `node[@label]` so
+             * we can show it later, but tip labels aren't really ambiguous here.
+             */
+            return true;  // skip to next node
+        }
         if ('@label' in node) {
             var nodeID = node['@id'];
             labelData[ nodeID ] = node['@label'];
