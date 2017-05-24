@@ -500,7 +500,7 @@ if (!d3) { throw "d3 wasn't included!"};
                        * numeric entity '#160' here, instead of 'nbsp', so we
                        * can safely download the resulting tree view as SVG/XML!
                        */
-                      return '&#160; &#160; &#160; &#160;';
+                      return '&#160; &#160; TEST &#160; &#160;';
                   default:
                       console.error('Unknown label type! ['+ d.labelType +']');;
                       return "???";
