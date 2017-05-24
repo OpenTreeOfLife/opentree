@@ -10521,8 +10521,12 @@ function updateSaveTreeViewLink() {
         $treeSVG.prepend( $treeStylesheet[0].outerHTML );
     }
 
-    // encode the current SVG
-    var base64src = b64EncodeUnicode( $treeSVG[0].outerHTML );
+    // serialize the main SVG node (convert HTML entities to Unicode)
+    var serializer = new XMLSerializer();
+    var node = $treeSVG[0];
+    var svgString = serializer.serializeToString(node);
+    // encode it for safe use in a data URI
+    var base64src = b64EncodeUnicode(svgString);
 
     var $saveLink = $('#save-tree-view');
     $saveLink.attr('href', 'data:image/svg+xml;base64,\n'+ base64src);
