@@ -496,11 +496,9 @@ if (!d3) { throw "d3 wasn't included!"};
                       return '<a xlink:href="'+ link +'" target="_blank" xlink:title="'+ title +'">'+ d.name +'</a>';
                   case ('empty'):
                       /* N.B. empty label should hide, but still have layout to
-                       * support a legible highlight. NOTE that we use the
-                       * numeric entity '#160' here, instead of 'nbsp', so we
-                       * can safely download the resulting tree view as SVG/XML!
+                       * support a legible highlight.
                        */
-                      return '&#160; &#160; TEST &#160; &#160;';
+                      return '&nbsp; &nbsp; &nbsp; &nbsp;';
                   default:
                       console.error('Unknown label type! ['+ d.labelType +']');;
                       return "???";
