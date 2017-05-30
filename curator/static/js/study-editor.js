@@ -10530,10 +10530,11 @@ function updateSaveTreeViewLink() {
         null    // desired doctype, or null
     )
     // replace its boring top-level element with our SVG
-    var htmlNode = $treeSVG[0];
-    tempXMLDoc.documentElement.replaceWith(htmlNode)
-    xmlNode = tempXMLDoc.documentElement
-    var svgString = serializer.serializeToString(node);
+    // (cloned from the original, else it disappears!)
+    var htmlNode = $treeSVG.clone()[0];
+    tempXMLDoc.documentElement.replaceWith(htmlNode);
+    var xmlNode = tempXMLDoc.documentElement;
+    var svgString = serializer.serializeToString(xmlNode);
 
     /* Alternate implmentation (fails in Safari)
     var serializer = new XMLSerializer();
