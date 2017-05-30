@@ -10493,10 +10493,28 @@ function updateSaveTreeViewLink() {
         $treeSVG.prepend( $treeStylesheet[0].outerHTML );
     }
 
-    // serialize the main SVG node (convert HTML entities to Unicode)
+    // Serialize the main SVG node (converting HTML entities to Unicode); first, we
+    // create a temporary XML document
+    var serializer = new XMLSerializer();
+    var tempXMLDoc = document.implementation.createDocument(
+        null,   // desired namespace, or null
+        "svg",  // name of top-level element
+        null    // desired doctype, or null
+    )
+    // replace its boring top-level element with our SVG
+    var htmlNode = $treeSVG[0];
+    tempXMLDoc.documentElement.replaceWith(htmlNode)
+    xmlNode = tempXMLDoc.documentElement
+    var svgString = serializer.serializeToString(node);
+
+    /* Alternate implmentation (fails in Safari)
     var serializer = new XMLSerializer();
     var node = $treeSVG[0];
     var svgString = serializer.serializeToString(node);
+    // Safari may still fail to convert HTML entities :-/
+    svgString = svgString.replace(/&nbsp;/gi,'&#160;');
+    */
+
     // encode it for safe use in a data URI
     var base64src = b64EncodeUnicode(svgString);
 
