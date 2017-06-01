@@ -1425,6 +1425,7 @@ body {
                 <a href="http://www.gbif.org/species" target="_blank">GBIF</a>,
                 <a href="http://www.indexfungorum.org/" target="_blank">Index Fungorum</a> or
                 <a href="http://www.cmar.csiro.au/datacentre/irmng/" target="_blank">IRMNG</a>.
+                Some labels comprising genus + strain will also map directly.
                 See <strong>Mapping options</strong> for ways to customize mapping.
                 </p>
         {{ else: }}
@@ -1473,9 +1474,13 @@ body {
                       <span data-bind="text: recentMappingSpeedLabel">10 sec / name</span>
                   </div>
                 </div>
-                <div class="mapping-details"><!--
-                    <p>For best results, wrap messages here in paragraphs.</p>
-            --></div>
+                <div class="mapping-details">
+                    <p><strong>Note</strong> that the OpenTree taxonomy contains mostly
+                    binomials, but in some cases, terminals comprising <em>genus +
+                    strain number</em> can also be mapped directly to OTT.
+                    (When in doubt, try mapping first before adding any new
+                    taxa.)</p>
+                </div>
                 <div class="mapping-batch-operations" style="display: none;">
                     <button id="batch-approve" class="btn btn-small pull-left"
                             onclick="approveAllVisibleMappings(); return false;">
