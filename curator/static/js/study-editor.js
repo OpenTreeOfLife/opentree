@@ -1791,7 +1791,7 @@ function displayConflictSummary(conflictInfo) {
         var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
         var witnessLink = getWitnessLink(nodeInfo,targetTree)
         if ('witness' in nodeInfo) {
-          var nodeName = 'tree '+ nodeLink +' resolved by '+ witnessLink;
+          var nodeName = 'tree '+ nodeLink +' provides resolution in '+ witnessLink;
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
