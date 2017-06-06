@@ -1687,7 +1687,7 @@ function getTreeConflictSummary(conflictInfo) {
     var tree = getTreeByID( inputTreeID );
     var nodeCounts = getNodeCounts(tree);
     var internalNodeCount = nodeCounts.totalNodes - nodeCounts.totalTips;
-    summary.undetermined.total = internalNodeCount
+    summary.undetermined.total = nodeCounts.totalNodes
         - summary.aligned.total
         - summary.conflicting.total
         - summary.resolving.total;
