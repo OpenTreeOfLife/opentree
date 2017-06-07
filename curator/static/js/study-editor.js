@@ -1626,7 +1626,8 @@ function toggleRadialTreeLayoutInViewer(cb) {
     var currentTree = getTreeByID(currentTreeID);
     usingRadialTreeLayout = $(cb).is(':checked');
     // disable/enable the branch-lengths checkbox
-    if (usingRadialTreeLayout || !(branchLengthsFoundInTree(currentTree))) {
+    // NOTE: We only enable this feature if ALL branches have length!
+    if (usingRadialTreeLayout || !(allBranchLengthsFoundInTree(currentTree))) {
         $('#branch-length-toggle').attr('disabled', 'disabled');
     } else {
         $('#branch-length-toggle').removeAttr('disabled');
@@ -2904,9 +2905,25 @@ function getRootedStatusForTree( tree ) {
     return biologicalRootMessage;
 }
 
-function branchLengthsFoundInTree( tree ) {
-    // ASSUMES that all edges have length, or none
-    return ('@length' in tree.edge[0]);
+// N.B. It's possible (but rare) that some-but-not-all edges will have length!
+// Let's check for some/all/none with separate functions.
+function anyBranchLengthsFoundInTree( tree ) {
+    $.each(tree.edge, function(i, edge) {
+        if ('@length' in edge) return true;
+    });
+    // no lengths found!
+    return false;
+}
+function allBranchLengthsFoundInTree( tree ) {
+    // N.B. It's possible (but rare) that some-but-not-all edges will have length.
+    $.each(tree.edge, function(i, edge) {
+        if (!('@length' in edge)) return false;
+    });
+    // no exceptions found!
+    return true;
+}
+function noBranchLengthsFoundInTree( tree ) {
+    return !(anyBranchLengthsFoundInTree(tree));
 }
 var branchLengthModeDescriptions = [
     { value: 'ot:undefined', text: "Choose one..." },
@@ -2920,7 +2937,7 @@ var branchLengthModeDescriptions = [
 function getBranchLengthModeDescriptionForTree( tree ) {
     var rawModeValue = tree['^ot:branchLengthMode'];
     if (!rawModeValue || (rawModeValue === 'ot:undefined')) {
-        if (branchLengthsFoundInTree(tree)) {
+        if (anyBranchLengthsFoundInTree(tree)) {
             return 'Unspecified (needs review)';
         } else {
             return 'No branch lengths found';
@@ -3722,7 +3739,7 @@ var studyScoringRules = {
                 var branchLengthFieldsPresent = true;
                 $.each(allTrees, function(i, tree) {
                     // check if there are branch lengths (assume if one edge has length, they all have lengths)
-                    if (branchLengthsFoundInTree(tree)) {
+                    if (anyBranchLengthsFoundInTree(tree)) {
                       // check that ot:branchLengthMode set
                       var brlenMode = tree['^ot:branchLengthMode'];
                       switch( brlenMode ) {
@@ -4555,7 +4572,7 @@ function drawTree( treeOrID, options ) {
             height: viewHeight,
             // simplify display by omitting scales or variable-length branches
             skipTicks: true,
-            skipBranchLengthScaling: (hidingBranchLengths || usingRadialTreeLayout || !(branchLengthsFoundInTree(tree))) ?  true : false,
+            skipBranchLengthScaling: (hidingBranchLengths || usingRadialTreeLayout || !(allBranchLengthsFoundInTree(tree))) ?  true : false,
             children : function(d) {
                 var parentID = d['@id'];
                 var itsChildren = [];
