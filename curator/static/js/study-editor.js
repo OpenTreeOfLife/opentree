@@ -2934,7 +2934,6 @@ function anyBranchLengthsFoundInTree( tree ) {
     return foundBranchWithLength;
 }
 function allBranchLengthsFoundInTree( tree ) {
-    // N.B. It's possible (but rare) that some-but-not-all edges will have length.
     var foundBranchWithoutLength = false;
     $.each(tree.edge, function(i, edge) {
         if (!('@length' in edge)) {
