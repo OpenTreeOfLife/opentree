@@ -2924,19 +2924,25 @@ function getRootedStatusForTree( tree ) {
 // N.B. It's possible (but rare) that some-but-not-all edges will have length!
 // Let's check for some/all/none with separate functions.
 function anyBranchLengthsFoundInTree( tree ) {
+    var foundBranchWithLength = false;
     $.each(tree.edge, function(i, edge) {
-        if ('@length' in edge) return true;
+        if ('@length' in edge) {
+            foundBranchWithLength = true;
+            return false; // stop looking
+        }
     });
-    // no lengths found!
-    return false;
+    return foundBranchWithLength;
 }
 function allBranchLengthsFoundInTree( tree ) {
     // N.B. It's possible (but rare) that some-but-not-all edges will have length.
+    var foundBranchWithoutLength = false;
     $.each(tree.edge, function(i, edge) {
-        if (!('@length' in edge)) return false;
+        if (!('@length' in edge)) {
+            foundBranchWithoutLength = true;
+            return false; // stop looking
+        }
     });
-    // no exceptions found!
-    return true;
+    return !(foundBranchWithoutLength);
 }
 function noBranchLengthsFoundInTree( tree ) {
     return !(anyBranchLengthsFoundInTree(tree));
