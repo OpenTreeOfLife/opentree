@@ -1681,7 +1681,7 @@ function getBranchLengthToggleStyle(tree) {
     if (isBranchLengthToggleEnabled(tree)) {
         return {'color': null};
     }
-    return {'color': '#999'};
+    return {'color': '#999999'};
 }
 
 /* Support conflict display in the tree viewer */
