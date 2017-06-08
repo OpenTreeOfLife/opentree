@@ -1687,7 +1687,7 @@ function getTreeConflictSummary(conflictInfo) {
     var tree = getTreeByID( inputTreeID );
     var nodeCounts = getNodeCounts(tree);
     var internalNodeCount = nodeCounts.totalNodes - nodeCounts.totalTips;
-    summary.undetermined.total = internalNodeCount
+    summary.undetermined.total = nodeCounts.totalNodes
         - summary.aligned.total
         - summary.conflicting.total
         - summary.resolving.total;
@@ -1740,7 +1740,7 @@ function displayConflictSummary(conflictInfo) {
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
            .append('<p><a href="'+ treeURL +'" target="conflicttree">Open labelled tree in new window</a></p>')
-           .append('<p>Of the <span class="node-count-display">n</span> internal nodes in this tree, here is how they compare to the <span class="reference-tree-display">taxonomy / synthetic tree</span> (=target). Nodes in the input tree or the synthetic tree may be unnamed / undefined if they are not associated with taxonomic names.</p>');
+           .append('<p>Of the <span class="node-count-display">n</span> nodes in this tree, here is how they compare to the <span class="reference-tree-display">taxonomy / synthetic tree</span> (=target). Nodes in the input tree or the synthetic tree may be unnamed / undefined if they are not associated with taxonomic names.</p>');
     var nodeCount = summaryInfo.aligned.total
         + summaryInfo.conflicting.total
         + summaryInfo.resolving.total
@@ -1791,7 +1791,7 @@ function displayConflictSummary(conflictInfo) {
         var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
         var witnessLink = getWitnessLink(nodeInfo,targetTree)
         if ('witness' in nodeInfo) {
-          var nodeName = 'tree '+ nodeLink +' resolved by '+ witnessLink;
+          var nodeName = 'tree '+ nodeLink +' provides resolution in '+ witnessLink;
           $nodeList.append('<li>'+ nodeName +'</li>');
           ++namedNodes
         }
