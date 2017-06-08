@@ -1629,19 +1629,19 @@ function toggleRadialTreeLayoutInViewer(cb) {
     // NOTE: We only enable this feature if ALL branches have length!
     var $branchLengthCheckbox = $('#branch-length-toggle');
     var $branchLengthLabel = $branchLengthCheckbox.parent();
-    /* N.B. This logic is replicated in Knockout bindings to handle the 
-     * initial display for each tree!
+    /* N.B. This logic is shared with Knockout bindings, to handle the
+     * initial display for each tree.
      */
-    if isBranchLengthToggleEnabled(currentTree) {
+    if (isBranchLengthToggleEnabled(currentTree)) {
         $branchLengthCheckbox.attr('disabled', 'disabled');
     } else {
-        $branchLengthCheckbox.removeAttr('disabled')
+        $branchLengthCheckbox.removeAttr('disabled');
     }
     $branchLengthLabel.css( getBranchLengthToggleStyle(currentTree) );
     $branchLengthLabel.attr( getBranchLengthToggleAttributes(currentTree) );
 
     if (currentTreeID) {
-        drawTree(currentTreeID)
+        drawTree(currentTreeID);
     } else {
         console.warn("No tree in vizInfo!");
     }
