@@ -3167,7 +3167,7 @@ body {
           <label class="checkbox" style="margin-left: 25px;" for="branch-length-toggle" 
                  data-bind="attr: {'title' : (viewModel.ticklers.TREES() &&
                                      (usingRadialTreeLayout ||
-                                      !allBranchLengthsFoundInTree($data)) ?
+                                      !allBranchLengthsFoundInTree($data))) ?
                                     noBranchLengthsFoundInTree($data) ?
                                  'No branch lengths found in this tree' :
                                     !allBranchLengthsFoundInTree($data) ?
@@ -3175,7 +3175,7 @@ body {
                                  'Branch lengths cannot be shown in the radial layout'},
                             css: {'color': (viewModel.ticklers.TREES() &&
                                             (usingRadialTreeLayout ||
-                                             !allBranchLengthsFoundInTree($data)) ?
+                                             !allBranchLengthsFoundInTree($data))) ?
                                            '#999' :
                                            null}">
               <input type="checkbox" id="branch-length-toggle"
