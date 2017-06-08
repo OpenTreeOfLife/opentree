@@ -1679,7 +1679,7 @@ function getBranchLengthToggleStyle(tree) {
     viewModel.ticklers.TREES();
     // return a set of properties/values suitable for inline CSS
     if (isBranchLengthToggleEnabled(tree)) {
-        return {'color': null};
+        return {'color': ''};
     }
     return {'color': '#999999'};
 }
