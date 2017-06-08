@@ -1632,27 +1632,57 @@ function toggleRadialTreeLayoutInViewer(cb) {
     /* N.B. This logic is replicated in Knockout bindings to handle the 
      * initial display for each tree!
      */
-    if (usingRadialTreeLayout || !allBranchLengthsFoundInTree(currentTree)) {
+    if isBranchLengthToggleEnabled(currentTree) {
         $branchLengthCheckbox.attr('disabled', 'disabled');
-        $branchLengthLabel.css('color', '#999');
-        if (noBranchLengthsFoundInTree(currentTree)) {
-            $branchLengthLabel.attr('title', 'No branch lengths found in this tree');
-        } else if (!allBranchLengthsFoundInTree(currentTree)) {
-            $branchLengthLabel.attr('title', 'Not all edges of this tree have branch lengths');
-        } else {
-            $branchLengthLabel.attr('title', 'Branch lengths cannot be shown in the radial layout');
-        }
     } else {
         $branchLengthCheckbox.removeAttr('disabled')
-        $branchLengthLabel.css('color', null).attr('title', '');
     }
+    $branchLengthLabel.css( getBranchLengthToggleStyle(currentTree) );
+    $branchLengthLabel.attr( getBranchLengthToggleAttributes(currentTree) );
+
     if (currentTreeID) {
         drawTree(currentTreeID)
     } else {
         console.warn("No tree in vizInfo!");
     }
 }
-
+/* These awkward support functions isolate the logic used to assign inline CSS
+ * and attributes for the toggling checkbox and its surrounding label. This
+ * makes it possible to build Knockout bindings and JS functions that draw
+ * from common logic and values. The previous duplication was error-prone and
+ * unwieldy, esp. for KO bindings.
+ */
+function isBranchLengthToggleEnabled(tree) {
+    viewModel.ticklers.TREES();
+    if (usingRadialTreeLayout) return false;
+    if (allBranchLengthsFoundInTree(tree)) return true;
+    return false;  // i.e., some branches have no length
+}
+function getBranchLengthToggleAttributes(tree) {
+    viewModel.ticklers.TREES();
+    // return a set of properties/values suitable for HTML attributes
+    var title;
+    if (isBranchLengthToggleEnabled(tree)) {
+        title = '';
+    } else {
+        if (noBranchLengthsFoundInTree(tree)) {
+            title = 'No branch lengths found in this tree';
+        } else if (!allBranchLengthsFoundInTree(tree)) {
+            title = 'Not all edges of this tree have branch lengths';
+        } else {
+            title = 'Branch lengths cannot be shown in the radial layout';
+        }
+    }
+    return {'title': title};
+}
+function getBranchLengthToggleStyle(tree) {
+    viewModel.ticklers.TREES();
+    // return a set of properties/values suitable for inline CSS
+    if (isBranchLengthToggleEnabled(tree)) {
+        return {'color': null};
+    }
+    return {'color': '#999'};
+}
 
 /* Support conflict display in the tree viewer */
 function getTreeConflictSummary(conflictInfo) {
