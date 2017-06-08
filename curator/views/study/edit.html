@@ -3166,7 +3166,7 @@ body {
           <!-- N.B. data bindings mimic toggleRadialTreeLayoutInViewer() -->
           <label class="checkbox" style="margin-left: 25px;" for="branch-length-toggle"
                  data-bind="attr: getBranchLengthToggleAttributes($data),
-                            css: getBranchLengthToggleStyle($data)">
+                            style: getBranchLengthToggleStyle($data)">
               <input type="checkbox" id="branch-length-toggle"
                      data-bind="enable: isBranchLengthToggleEnabled($data)"
                      onclick="toggleBranchLengthsInViewer(this); return true;" />
