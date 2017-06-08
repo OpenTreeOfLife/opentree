@@ -1641,7 +1641,7 @@ function toggleRadialTreeLayoutInViewer(cb) {
     // disable/enable the branch-lengths checkbox
     // NOTE: We only enable this feature if ALL branches have length!
     var $branchLengthCheckbox = $('#branch-length-toggle');
-    var $branchLengthLabel = $branchLengthToggleCB.parent();
+    var $branchLengthLabel = $branchLengthCheckbox.parent();
     if (usingRadialTreeLayout || !allBranchLengthsFoundInTree(currentTree)) {
         $branchLengthCheckbox.attr('disabled', 'disabled');
         $branchLengthLabel.css('color', '#999');
