@@ -2814,7 +2814,7 @@ body {
               <br/>
                -->
 
-            <div style="margin-top: 6px;" data-bind="visible: viewModel.ticklers.TREES() && branchLengthsFoundInTree( $data )">
+            <div style="margin-top: 6px;" data-bind="visible: viewModel.ticklers.TREES() && anyBranchLengthsFoundInTree( $data )">
                 <label>Branch length mode: </label>
                 <select data-bind="options: branchLengthModeDescriptions,
                     optionsValue: function(item) {
@@ -2848,7 +2848,7 @@ body {
             </div>
 
            <!-- NOTE that a virtual element with 'ko if: ...' didn't work here! -->
-            <div style="margin-top: 6px;" data-bind="visible: viewModel.ticklers.TREES() && !branchLengthsFoundInTree( $data )">
+            <div style="margin-top: 6px;" data-bind="visible: viewModel.ticklers.TREES() && !anyBranchLengthsFoundInTree( $data )">
                 <label>Branch length mode: </label>
                 <strong data-bind="css: viewModel.ticklers.TREES(), text: getBranchLengthModeDescriptionForTree($data)"></strong>
             </div>
@@ -3163,9 +3163,12 @@ body {
     </div>
     <div class="modal-footer">
       <div id="tree-phylogram-options" class="pull-left form-inline" style="display: none;">
-          <label class="checkbox" style="margin-left: 25px;" for="branch-length-toggle">
+          <!-- N.B. data bindings mimic toggleRadialTreeLayoutInViewer() -->
+          <label class="checkbox" style="margin-left: 25px;" for="branch-length-toggle"
+                 data-bind="attr: getBranchLengthToggleAttributes($data),
+                            style: getBranchLengthToggleStyle($data)">
               <input type="checkbox" id="branch-length-toggle"
-                     data-bind="enable: branchLengthsFoundInTree($data)"
+                     data-bind="enable: isBranchLengthToggleEnabled($data)"
                      onclick="toggleBranchLengthsInViewer(this); return true;" />
               Cladogram (hide branch lengths)
           </label>

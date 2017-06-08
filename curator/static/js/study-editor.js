@@ -1626,18 +1626,63 @@ function toggleRadialTreeLayoutInViewer(cb) {
     var currentTree = getTreeByID(currentTreeID);
     usingRadialTreeLayout = $(cb).is(':checked');
     // disable/enable the branch-lengths checkbox
-    if (usingRadialTreeLayout || !(branchLengthsFoundInTree(currentTree))) {
-        $('#branch-length-toggle').attr('disabled', 'disabled');
+    // NOTE: We only enable this feature if ALL branches have length!
+    var $branchLengthCheckbox = $('#branch-length-toggle');
+    var $branchLengthLabel = $branchLengthCheckbox.parent();
+    /* N.B. This logic is shared with Knockout bindings, to handle the
+     * initial display for each tree.
+     */
+    if (isBranchLengthToggleEnabled(currentTree)) {
+        $branchLengthCheckbox.removeAttr('disabled');
     } else {
-        $('#branch-length-toggle').removeAttr('disabled');
+        $branchLengthCheckbox.attr('disabled', 'disabled');
     }
+    $branchLengthLabel.css( getBranchLengthToggleStyle(currentTree) );
+    $branchLengthLabel.attr( getBranchLengthToggleAttributes(currentTree) );
+
     if (currentTreeID) {
-        drawTree(currentTreeID)
+        drawTree(currentTreeID);
     } else {
         console.warn("No tree in vizInfo!");
     }
 }
-
+/* These awkward support functions isolate the logic used to assign inline CSS
+ * and attributes for the toggling checkbox and its surrounding label. This
+ * makes it possible to build Knockout bindings and JS functions that draw
+ * from common logic and values. The previous duplication was error-prone and
+ * unwieldy, esp. for KO bindings.
+ */
+function isBranchLengthToggleEnabled(tree) {
+    viewModel.ticklers.TREES();
+    if (usingRadialTreeLayout) return false;
+    if (allBranchLengthsFoundInTree(tree)) return true;
+    return false;  // i.e., some branches have no length
+}
+function getBranchLengthToggleAttributes(tree) {
+    viewModel.ticklers.TREES();
+    // return a set of properties/values suitable for HTML attributes
+    var title;
+    if (isBranchLengthToggleEnabled(tree)) {
+        title = '';
+    } else {
+        if (noBranchLengthsFoundInTree(tree)) {
+            title = 'No branch lengths found in this tree';
+        } else if (!allBranchLengthsFoundInTree(tree)) {
+            title = 'Not all edges of this tree have branch lengths';
+        } else {
+            title = 'Branch lengths cannot be shown in the radial layout';
+        }
+    }
+    return {'title': title};
+}
+function getBranchLengthToggleStyle(tree) {
+    viewModel.ticklers.TREES();
+    // return a set of properties/values suitable for inline CSS
+    if (isBranchLengthToggleEnabled(tree)) {
+        return {'color': ''};
+    }
+    return {'color': '#999999'};
+}
 
 /* Support conflict display in the tree viewer */
 function getTreeConflictSummary(conflictInfo) {
@@ -2904,9 +2949,30 @@ function getRootedStatusForTree( tree ) {
     return biologicalRootMessage;
 }
 
-function branchLengthsFoundInTree( tree ) {
-    // ASSUMES that all edges have length, or none
-    return ('@length' in tree.edge[0]);
+// N.B. It's possible (but rare) that some-but-not-all edges will have length!
+// Let's check for some/all/none with separate functions.
+function anyBranchLengthsFoundInTree( tree ) {
+    var foundBranchWithLength = false;
+    $.each(tree.edge, function(i, edge) {
+        if ('@length' in edge) {
+            foundBranchWithLength = true;
+            return false; // stop looking
+        }
+    });
+    return foundBranchWithLength;
+}
+function allBranchLengthsFoundInTree( tree ) {
+    var foundBranchWithoutLength = false;
+    $.each(tree.edge, function(i, edge) {
+        if (!('@length' in edge)) {
+            foundBranchWithoutLength = true;
+            return false; // stop looking
+        }
+    });
+    return !(foundBranchWithoutLength);
+}
+function noBranchLengthsFoundInTree( tree ) {
+    return !(anyBranchLengthsFoundInTree(tree));
 }
 var branchLengthModeDescriptions = [
     { value: 'ot:undefined', text: "Choose one..." },
@@ -2920,7 +2986,7 @@ var branchLengthModeDescriptions = [
 function getBranchLengthModeDescriptionForTree( tree ) {
     var rawModeValue = tree['^ot:branchLengthMode'];
     if (!rawModeValue || (rawModeValue === 'ot:undefined')) {
-        if (branchLengthsFoundInTree(tree)) {
+        if (anyBranchLengthsFoundInTree(tree)) {
             return 'Unspecified (needs review)';
         } else {
             return 'No branch lengths found';
@@ -3722,7 +3788,7 @@ var studyScoringRules = {
                 var branchLengthFieldsPresent = true;
                 $.each(allTrees, function(i, tree) {
                     // check if there are branch lengths (assume if one edge has length, they all have lengths)
-                    if (branchLengthsFoundInTree(tree)) {
+                    if (anyBranchLengthsFoundInTree(tree)) {
                       // check that ot:branchLengthMode set
                       var brlenMode = tree['^ot:branchLengthMode'];
                       switch( brlenMode ) {
@@ -4555,7 +4621,7 @@ function drawTree( treeOrID, options ) {
             height: viewHeight,
             // simplify display by omitting scales or variable-length branches
             skipTicks: true,
-            skipBranchLengthScaling: (hidingBranchLengths || usingRadialTreeLayout || !(branchLengthsFoundInTree(tree))) ?  true : false,
+            skipBranchLengthScaling: (hidingBranchLengths || usingRadialTreeLayout || !(allBranchLengthsFoundInTree(tree))) ?  true : false,
             children : function(d) {
                 var parentID = d['@id'];
                 var itsChildren = [];
