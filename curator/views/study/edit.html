@@ -3164,7 +3164,8 @@ body {
     <div class="modal-footer">
       <div id="tree-phylogram-options" class="pull-left form-inline" style="display: none;">
           <!-- N.B. data bindings mimic toggleRadialTreeLayoutInViewer() -->
-          <label class="checkbox" style="margin-left: 25px;" for="branch-length-toggle" data-bind="attr: {'title' : (viewModel.ticklers.TREES() &&
+          <label class="checkbox" style="margin-left: 25px;" for="branch-length-toggle" 
+                 data-bind="attr: {'title' : (viewModel.ticklers.TREES() &&
                                      (usingRadialTreeLayout ||
                                       !allBranchLengthsFoundInTree($data)) ?
                                     noBranchLengthsFoundInTree($data) ?
@@ -3172,11 +3173,11 @@ body {
                                     !allBranchLengthsFoundInTree($data) ?
                                  'Not all edges of this tree have branch lengths' :
                                  'Branch lengths cannot be shown in the radial layout'},
-                   css: {'color': (viewModel.ticklers.TREES() &&
-                                   (usingRadialTreeLayout ||
-                                    !allBranchLengthsFoundInTree($data)) ?
-                                  '#999',
-                                  null}">
+                            css: {'color': (viewModel.ticklers.TREES() &&
+                                            (usingRadialTreeLayout ||
+                                             !allBranchLengthsFoundInTree($data)) ?
+                                           '#999' :
+                                           null}">
               <input type="checkbox" id="branch-length-toggle"
                      data-bind="enable: viewModel.ticklers.TREES() &&
                                         (!usingRadialTreeLayout &&
