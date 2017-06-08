@@ -1640,10 +1640,22 @@ function toggleRadialTreeLayoutInViewer(cb) {
     usingRadialTreeLayout = $(cb).is(':checked');
     // disable/enable the branch-lengths checkbox
     // NOTE: We only enable this feature if ALL branches have length!
-    if (usingRadialTreeLayout || !(allBranchLengthsFoundInTree(currentTree))) {
-        $('#branch-length-toggle').attr('disabled', 'disabled');
+    var $branchLengthCheckbox = $('#branch-length-toggle');
+    var $branchLengthLabel = $branchLengthToggleCB.parent();
+    if (usingRadialTreeLayout || !allBranchLengthsFoundInTree(currentTree)) {
+        $branchLengthCheckbox.attr('disabled', 'disabled');
+        $branchLengthLabel.css('color', '#999');
+        if (noBranchLengthsFoundInTree(currentTree)) {
+            $('#branch-length-toggle').attr('title', 'No branch lengths found in this tree');
+        } else if (!allBranchLengthsFoundInTree(currentTree)) {
+            $('#branch-length-toggle').attr('title', 'Not all edges of this tree have branch lengths');
+        } else {
+            $('#branch-length-toggle').attr('title', 'Branch lengths cannot be shown in the radial layout');
+        }
     } else {
-        $('#branch-length-toggle').removeAttr('disabled');
+        $('#branch-length-toggle').removeAttr('disabled')
+                                  .attr('title', '');
+        $branchLengthLabel.css('color', null);
     }
     if (currentTreeID) {
         drawTree(currentTreeID)
