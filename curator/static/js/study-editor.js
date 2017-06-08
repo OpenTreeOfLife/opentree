@@ -1633,9 +1633,9 @@ function toggleRadialTreeLayoutInViewer(cb) {
      * initial display for each tree.
      */
     if (isBranchLengthToggleEnabled(currentTree)) {
-        $branchLengthCheckbox.attr('disabled', 'disabled');
-    } else {
         $branchLengthCheckbox.removeAttr('disabled');
+    } else {
+        $branchLengthCheckbox.attr('disabled', 'disabled');
     }
     $branchLengthLabel.css( getBranchLengthToggleStyle(currentTree) );
     $branchLengthLabel.attr( getBranchLengthToggleAttributes(currentTree) );
