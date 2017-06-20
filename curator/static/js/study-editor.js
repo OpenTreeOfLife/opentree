@@ -6435,6 +6435,15 @@ function getNextUnmappedOTU() {
     return unmappedOTU;
 }
 
+/* TNRS requests are sent via POST and cannot be cached by the browser. Keep
+ * track of responses in a simple local cache, to avoid extra requests for
+ * identical taxon names. (This is common when many similar labels have been
+ * "modified for mapping").
+ */
+var TNRSCache = {};
+function clearTNRSCache() {
+    TNRSCache = {};
+};
 
 function requestTaxonMapping( otuToMap ) {
     // set spinner, make request, handle response, and daisy-chain the next request
@@ -6478,18 +6487,188 @@ function requestTaxonMapping( otuToMap ) {
 
     var mappingStartTime = new Date();
 
+    function tnrsSuccess(data) {
+        // IF there's a proper response, assert this as the OTU and label for this node
+        // TODO: Give the curator a chance to push back? and cleanly roll back changes if they disagree?
+
+        /* Let any pending mapping finish up, even if curator has
+         * paused auto-mapping!
+        if (!autoMappingInProgress()) {
+            // curator has paused all mapping
+            return false;
+        }
+        */
+
+        // update the rolling average for the mapping-speed bar
+        var mappingStopTime = new Date();
+        updateMappingSpeed( mappingStopTime.getTime() - mappingStartTime.getTime() );
+
+        var maxResults = 100;
+        var visibleResults = 0;
+        var resultSetsFound = (data && ('results' in data) && (data.results.length > 0));
+        var candidateMatches = [ ];
+        // For now, we want to auto-apply if there's exactly one match
+        if (resultSetsFound) {
+            switch (data.results.length) {
+                case 0:
+                    console.warn('NO SEARCH RESULT SETS FOUND!');
+                    candidateMatches = [ ];
+                    break;
+
+                case 1:
+                    // the expected case
+                    candidateMatches = data.results[0].matches;
+                    break;
+
+                default:
+                    console.warn('MULTIPLE SEARCH RESULT SETS (USING FIRST)');
+                    console.warn(data['results']);
+                    candidateMatches = data.results[0].matches;
+            }
+        }
+        // TODO: Filter candidate matches based on their properties, scores, etc.?
+
+        switch (candidateMatches.length) {
+            case 0:
+                failedMappingOTUs.push( otuID );
+                break;
+
+            /* SKIPPING THIS to provide uniform treatment of all matches
+            case 1:
+                // choose the first+only match automatically!
+                var resultToMap = candidateMatches[0];
+                // convert to expected structure for proposed mappings
+                var otuMapping = {
+                    name: resultToMap['ot:ottTaxonName'],       // matched name
+                    ottId: String(resultToMap['ot:ottId']),     // matched OTT id (as string)
+                    //nodeId: resultToMap.matched_node_id,        // number
+                    exact: false,                               // boolean (ignoring this for now)
+                    higher: false                               // boolean
+                    // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
+                };
+                proposeOTULabel(otuID, otuMapping);
+                // postpone actual mapping until user approves
+                break;
+             */
+
+            default:
+                // multiple matches found, offer a choice
+                // ASSUMES we only get one result set, with n matches
+
+                // TODO: Sort matches based on exact text matches? fractional (matching) scores? synonyms or homonyms?
+                /* initial sort on lower taxa (will be overridden by exact matches)
+                candidateMatches.sort(function(a,b) {
+                    if (a.is_approximate_match === b.is_approximate_match) return 0;
+                    if (a.is_approximate_match) return 1;
+                    if (b.is_approximate_match) return -1;
+                });
+                */
+
+                /* TODO: If multiple matches point to a single taxon, show just the "best" match
+                 *   - Spelling counts! Show an exact match (e.g. synonym) vs. inexact spelling.
+                 *   - TODO: add more rules? or just comment the code below
+                 */
+                var getPreferredTaxonCandidate = function( candidateA, candidateB ) {
+                    // Return whichever is preferred, based on a few criteria:
+                    var matchA = candidateA.originalMatch;
+                    var matchB = candidateB.originalMatch;
+                    // If one is the exact match, that's ideal (but unlikely since 
+                    // the TNRS apparently returned multiple candidates).
+                    if (!matchA.is_approximate_match) {
+                        return candidateA;
+                    } else if (!matchB.is_approximate_match) {
+                        return candidateB;
+                    }
+                    // Show the most similar name (or synonym) for this taxon.
+                    if (matchA.score > matchB.score) {
+                        return candidateA;
+                    }
+                    return candidateB;
+                };
+                var getPriorMatchingCandidate = function( ottId, priorCandidates ) {
+                    // return any match we've already examined for this taxon
+                    var priorMatch = null;
+                    $.each(priorCandidates, function(i, c) {
+                        if (c.ottId === ottId) {
+                            priorMatch = c;
+                            return false;  // there should be just one
+                        }
+                    });
+                    return priorMatch;
+                };
+                var rawMatchToCandidate = function( raw, otuID ) {
+                    // simplify the "raw" matches returned by TNRS
+                    return {
+                        name: raw.taxon['unique_name'] || raw.taxon['name'],       // matched name
+                        ottId: raw.taxon['ott_id'],     // matched OTT id (as number!)
+                        //exact: false,                               // boolean (ignoring this for now)
+                        //higher: false,                               // boolean
+                        // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
+                        originalMatch: raw,
+                        otuID: otuID
+                    };
+                }
+                var candidateMappingList = [ ];
+                $.each(candidateMatches, function(i, match) {
+                    // convert to expected structure for proposed mappings
+                    var candidate = rawMatchToCandidate( match, otuID );
+                    var priorTaxonCandidate = getPriorMatchingCandidate( candidate.ottId, candidateMappingList );
+                    if (priorTaxonCandidate) {
+                        var priorPosition = $.inArray(priorTaxonCandidate, candidateMappingList);
+                        var preferredCandidate = getPreferredTaxonCandidate( candidate, priorTaxonCandidate );
+                        var alternateCandidate = (preferredCandidate === candidate) ? priorTaxonCandidate : candidate;
+                        // whichever one was chosen will (re)take this place in our array
+                        candidateMappingList.splice(priorPosition, 1, preferredCandidate);
+                        // the other candidate will be stashed as a child, in case we need it later
+                        if ('alternateTaxonCandidates' in preferredCandidate) {
+                            preferredCandidate.alternateTaxonCandidates.push( alternateCandidate );
+                        } else {
+                            preferredCandidate.alternateTaxonCandidates = [ alternateCandidate ];
+                        }
+                    } else {
+                        candidateMappingList.push(candidate);
+                    }
+                });
+
+                proposeOTULabel(otuID, candidateMappingList);
+                // postpone actual mapping until user chooses, then approves
+        }
+
+        currentlyMappingOTUs.remove( otuID );
+
+        if (singleTaxonMapping) {
+            stopAutoMapping();
+        } else if (autoMappingInProgress()) {
+            // after a brief pause, try for the next available OTU...
+            setTimeout(requestTaxonMapping, 10);
+        }
+
+        return false;
+    }
+
+    var TNRSQueryAndCacheKey = JSON.stringify({
+        "names": [searchText],
+        "include_suppressed": false,
+        "do_approximate_matching": (singleTaxonMapping || usingFuzzyMatching) ? true : false,
+        "context_name": searchContextName
+    });
+
     $.ajax({
         url: doTNRSForMappingOTUs_url,  // NOTE that actual server-side method name might be quite different!
-        type: 'GET',    // to allow caching for identical requests!
+        type: 'POST',
         dataType: 'json',
-        data: {
-            "names": [searchText],
-            "include_suppressed": false,
-            "do_approximate_matching": (singleTaxonMapping || usingFuzzyMatching) ? true : false,
-            "context_name": searchContextName
-        },  // data (asterisk required for completion suggestions)
+        data: TNRSQueryAndCacheKey,  // data (asterisk required for completion suggestions)
         crossDomain: true,
-        //contentType: "application/json; charset=utf-8",
+        contentType: "application/json; charset=utf-8",
+        beforeSend: function () {
+            // check our local cache to see if this is a repeat
+            var cachedResponse = TNRSCache[ TNRSQueryAndCacheKey ];
+            if (cachedResponse) {
+                tnrsSuccess( cachedResponse );
+                return false;
+            }
+            return true;
+        },
         error: function(jqXHR, textStatus, errorThrown) {
 
             console.log("!!! something went terribly wrong");
@@ -6513,163 +6692,10 @@ function requestTaxonMapping( otuToMap ) {
             }
 
         },
-        success: function(data) {    // JSONP callback
-            // IF there's a proper response, assert this as the OTU and label for this node
-            // TODO: Give the curator a chance to push back? and cleanly roll back changes if they disagree?
-
-            /* Let any pending mapping finish up, even if curator has
-             * paused auto-mapping!
-            if (!autoMappingInProgress()) {
-                // curator has paused all mapping
-                return false;
-            }
-            */
-
-            // update the rolling average for the mapping-speed bar
-            var mappingStopTime = new Date();
-            updateMappingSpeed( mappingStopTime.getTime() - mappingStartTime.getTime() );
-
-            var maxResults = 100;
-            var visibleResults = 0;
-            var resultSetsFound = (data && ('results' in data) && (data.results.length > 0));
-            var candidateMatches = [ ];
-            // For now, we want to auto-apply if there's exactly one match
-            if (resultSetsFound) {
-                switch (data.results.length) {
-                    case 0:
-                        console.warn('NO SEARCH RESULT SETS FOUND!');
-                        candidateMatches = [ ];
-                        break;
-
-                    case 1:
-                        // the expected case
-                        candidateMatches = data.results[0].matches;
-                        break;
-
-                    default:
-                        console.warn('MULTIPLE SEARCH RESULT SETS (USING FIRST)');
-                        console.warn(data['results']);
-                        candidateMatches = data.results[0].matches;
-                }
-            }
-            // TODO: Filter candidate matches based on their properties, scores, etc.?
-
-            switch (candidateMatches.length) {
-                case 0:
-                    failedMappingOTUs.push( otuID );
-                    break;
-
-                /* SKIPPING THIS to provide uniform treatment of all matches
-                case 1:
-                    // choose the first+only match automatically!
-                    var resultToMap = candidateMatches[0];
-                    // convert to expected structure for proposed mappings
-                    var otuMapping = {
-                        name: resultToMap['ot:ottTaxonName'],       // matched name
-                        ottId: String(resultToMap['ot:ottId']),     // matched OTT id (as string)
-                        //nodeId: resultToMap.matched_node_id,        // number
-                        exact: false,                               // boolean (ignoring this for now)
-                        higher: false                               // boolean
-                        // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
-                    };
-                    proposeOTULabel(otuID, otuMapping);
-                    // postpone actual mapping until user approves
-                    break;
-                 */
-
-                default:
-                    // multiple matches found, offer a choice
-                    // ASSUMES we only get one result set, with n matches
-
-                    // TODO: Sort matches based on exact text matches? fractional (matching) scores? synonyms or homonyms?
-                    /* initial sort on lower taxa (will be overridden by exact matches)
-                    candidateMatches.sort(function(a,b) {
-                        if (a.is_approximate_match === b.is_approximate_match) return 0;
-                        if (a.is_approximate_match) return 1;
-                        if (b.is_approximate_match) return -1;
-                    });
-                    */
-
-                    /* TODO: If multiple matches point to a single taxon, show just the "best" match
-                     *   - Spelling counts! Show an exact match (e.g. synonym) vs. inexact spelling.
-                     *   - TODO: add more rules? or just comment the code below
-                     */
-                    var getPreferredTaxonCandidate = function( candidateA, candidateB ) {
-                        // Return whichever is preferred, based on a few criteria:
-                        var matchA = candidateA.originalMatch;
-                        var matchB = candidateB.originalMatch;
-                        // If one is the exact match, that's ideal (but unlikely since 
-                        // the TNRS apparently returned multiple candidates).
-                        if (!matchA.is_approximate_match) {
-                            return candidateA;
-                        } else if (!matchB.is_approximate_match) {
-                            return candidateB;
-                        }
-                        // Show the most similar name (or synonym) for this taxon.
-                        if (matchA.score > matchB.score) {
-                            return candidateA;
-                        }
-                        return candidateB;
-                    };
-                    var getPriorMatchingCandidate = function( ottId, priorCandidates ) {
-                        // return any match we've already examined for this taxon
-                        var priorMatch = null;
-                        $.each(priorCandidates, function(i, c) {
-                            if (c.ottId === ottId) {
-                                priorMatch = c;
-                                return false;  // there should be just one
-                            }
-                        });
-                        return priorMatch;
-                    };
-                    var rawMatchToCandidate = function( raw, otuID ) {
-                        // simplify the "raw" matches returned by TNRS
-                        return {
-                            name: raw.taxon['unique_name'] || raw.taxon['name'],       // matched name
-                            ottId: raw.taxon['ott_id'],     // matched OTT id (as number!)
-                            //exact: false,                               // boolean (ignoring this for now)
-                            //higher: false,                               // boolean
-                            // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
-                            originalMatch: raw,
-                            otuID: otuID
-                        };
-                    }
-                    var candidateMappingList = [ ];
-                    $.each(candidateMatches, function(i, match) {
-                        // convert to expected structure for proposed mappings
-                        var candidate = rawMatchToCandidate( match, otuID );
-                        var priorTaxonCandidate = getPriorMatchingCandidate( candidate.ottId, candidateMappingList );
-                        if (priorTaxonCandidate) {
-                            var priorPosition = $.inArray(priorTaxonCandidate, candidateMappingList);
-                            var preferredCandidate = getPreferredTaxonCandidate( candidate, priorTaxonCandidate );
-                            var alternateCandidate = (preferredCandidate === candidate) ? priorTaxonCandidate : candidate;
-                            // whichever one was chosen will (re)take this place in our array
-                            candidateMappingList.splice(priorPosition, 1, preferredCandidate);
-                            // the other candidate will be stashed as a child, in case we need it later
-                            if ('alternateTaxonCandidates' in preferredCandidate) {
-                                preferredCandidate.alternateTaxonCandidates.push( alternateCandidate );
-                            } else {
-                                preferredCandidate.alternateTaxonCandidates = [ alternateCandidate ];
-                            }
-                        } else {
-                            candidateMappingList.push(candidate);
-                        }
-                    });
-
-                    proposeOTULabel(otuID, candidateMappingList);
-                    // postpone actual mapping until user chooses, then approves
-            }
-
-            currentlyMappingOTUs.remove( otuID );
-
-            if (singleTaxonMapping) {
-                stopAutoMapping();
-            } else if (autoMappingInProgress()) {
-                // after a brief pause, try for the next available OTU...
-                setTimeout(requestTaxonMapping, 10);
-            }
-
-            return false;
+        success: function(data) {
+            // add this response to the local cache
+            TNRSCache[ TNRSQueryAndCacheKey ] = data;
+            tnrsSuccess(data);
         }
     });
 
@@ -9968,6 +9994,9 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
     });
     proposedOTUMappings.valueHasMutated();
     nudgeTickler('OTU_MAPPING_HINTS');
+
+    // invalidate any prior cached TNRS responses, since results might now change
+    clearTNRSCache();
 
     hideModalScreen(); // TODO?
     hideNewTaxaPopup();
