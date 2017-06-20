@@ -6464,7 +6464,7 @@ function requestTaxonMapping( otuToMap ) {
 
     $.ajax({
         url: doTNRSForMappingOTUs_url,  // NOTE that actual server-side method name might be quite different!
-        type: 'GET',    // to allow caching for identical requests!
+        type: 'POST',
         dataType: 'json',
         data: JSON.stringify({
             "names": [searchText],
