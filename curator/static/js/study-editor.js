@@ -6466,14 +6466,14 @@ function requestTaxonMapping( otuToMap ) {
         url: doTNRSForMappingOTUs_url,  // NOTE that actual server-side method name might be quite different!
         type: 'GET',    // to allow caching for identical requests!
         dataType: 'json',
-        data: {
+        data: JSON.stringify({
             "names": [searchText],
             "include_suppressed": false,
             "do_approximate_matching": (singleTaxonMapping || usingFuzzyMatching) ? true : false,
             "context_name": searchContextName
-        },  // data (asterisk required for completion suggestions)
+        }),  // data (asterisk required for completion suggestions)
         crossDomain: true,
-        //contentType: "application/json; charset=utf-8",
+        contentType: "application/json; charset=utf-8",
         error: function(jqXHR, textStatus, errorThrown) {
 
             console.log("!!! something went terribly wrong");
