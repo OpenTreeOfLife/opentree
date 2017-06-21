@@ -6439,8 +6439,27 @@ function getNextUnmappedOTU() {
  * track of responses in a simple local cache, to avoid extra requests for
  * identical taxon names. (This is common when many similar labels have been
  * "modified for mapping").
+ *
+ * We'll use a FIFO strategy to keep this to a reasonable size. I believe this
+ * will handle the expected case of many labels being modified to the same
+ * string.
  */
+var TNRSCacheSize = 200;
 var TNRSCache = {};
+var TNRSCacheKeys = [];
+function addToTNRSCache( key, value ) {
+    // add (or update) the cache for this key
+    if (!(key in TNRSCache)) {
+        TNRSCacheKeys.push( key );
+    }
+    TNRSCache[ key ] = value;
+    if (TNRSCacheKeys.length > TNRSCacheSize) {
+        // clear the oldest cached item
+        var doomedKey = TNRSCacheKeys.shift();
+        delete TNRSCache[ doomedKey ];
+    }
+    console.log(TNRSCache);
+}
 function clearTNRSCache() {
     TNRSCache = {};
 };
@@ -6694,7 +6713,7 @@ function requestTaxonMapping( otuToMap ) {
         },
         success: function(data) {
             // add this response to the local cache
-            TNRSCache[ TNRSQueryAndCacheKey ] = data;
+            addToTNRSCache( TNRSQueryAndCacheKey, data );
             tnrsSuccess(data);
         }
     });
