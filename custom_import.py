@@ -1,6 +1,16 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
+"""
+*****************************
+NOTE that this is a modified version from web2py 2.8.2. For full details on what has changed, see
+ https://github.com/OpenTreeOfLife/opentree/commits/master/custom_import.py
+
+This file was patched (by jimallman, on 10/10/2017) to restore working python
+imports. See the problems and solution reported here:
+https://groups.google.com/forum/#!topic/web2py/k5193zQX6kM
+*****************************
+"""
 import __builtin__
 import os
 import sys
@@ -72,6 +82,7 @@ def custom_importer(name, globals=None, locals=None, fromlist=None, level=-1):
                     # import like "import x" or "import x.y"
                     result = None
                     for itemname in name.split("."):
+                        itemname = itemname.encode('utf-8')
                         new_mod = base_importer(
                             modules_prefix, globals, locals, [itemname], level)
                         try:
