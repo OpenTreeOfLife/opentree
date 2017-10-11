@@ -1177,7 +1177,7 @@ body {
                             <span data-bind="text: viewModel.listFilters.OTUS.scope">SCOPE</span>
                             <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu" data-bind="foreach: ['In all trees', 'In trees nominated for synthesis', 'In trees not yet nominated']">
+                        <ul class="dropdown-menu" data-bind="foreach: ['In any tree', 'In trees nominated for synthesis', 'In trees not yet nominated', 'Unused (not in any tree)']">
                             <li data-bind="css: {'disabled': viewModel.listFilters.OTUS.scope() == $data }">
                                 <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.OTUS.scope($data); }">SCOPE</a>
                             </li>

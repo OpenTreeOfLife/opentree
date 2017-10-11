@@ -1141,7 +1141,7 @@ function loadSelectedStudy() {
 
                 var chosenTrees;
                 switch(scope) {
-                    case 'In all trees':
+                    case 'In any tree':
                         chosenTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                         break;
                     case 'In trees nominated for synthesis':
@@ -1150,20 +1150,39 @@ function loadSelectedStudy() {
                     case 'In trees not yet nominated':
                         chosenTrees = getTreesNotYetNominated()
                         break;
+                    case 'Unused (not in any tree)':
+                        chosenTrees = null;
+                        break;
                     default:
                         chosenTrees = [];
                 }
 
                 // pool all node IDs in chosen trees into a common object
-                var chosenTreeNodeIDs = {};
-                $.each( chosenTrees, function(i, tree) {
-                    // check this tree's nodes for this OTU id
-                    $.each( tree.node, function( i, node ) {
-                        if (node['@otu']) {
-                            chosenTreeNodeIDs[ node['@otu'] ] = true;
-                        }
+                var chosenOTUIDs = {};
+                if ($.isArray(chosenTrees)) {
+                    // it's a list of zero or more trees
+                    $.each( chosenTrees, function(i, tree) {
+                        // check this tree's nodes for this OTU id
+                        $.each( tree.node, function( i, node ) {
+                            if (node['@otu']) {
+                                chosenOTUIDs[ node['@otu'] ] = true;
+                            }
+                        });
                     });
-                });
+                } else {
+                    // show the *unused* OTUs instead (inverse of 'In any tree' above)
+                    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+                    // start with all OTUs in the study, then whittle them down
+                    chosenOTUIDs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+                    $.each( chosenTrees, function(i, tree) {
+                        // check this tree's nodes for this OTU id
+                        $.each( tree.node, function( i, node ) {
+                            if (node['@otu']) {
+                                delete chosenOTUIDs[ node['@otu'] ];
+                            }
+                        });
+                    });
+                }
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter(
@@ -1178,14 +1197,16 @@ function loadSelectedStudy() {
 
                         // check nodes against trees, if filtered
                         switch (scope) {
-                            case 'In all trees':
+                            case 'In any tree':
                                 // N.B. Even here, we want to hide (but not preserve) OTUs that don't appear in any tree
                             case 'In trees nominated for synthesis':
                             case 'In trees not yet nominated':
                                 // check selected trees for this node
+                            case 'Unused (not in any tree)':
+                                // the inverse of 'In any tree' above
                                 var foundInMatchingTree = false;
                                 var otuID = otu['@id'];
-                                foundInMatchingTree = otuID in chosenTreeNodeIDs;
+                                foundInMatchingTree = otuID in chosenOTUIDs;
                                 if (!foundInMatchingTree) return false;
                                 break;
 
