@@ -1174,7 +1174,7 @@ function loadSelectedStudy() {
                     var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                     // start with all OTUs in the study, then whittle them down
                     chosenOTUIDs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
-                    $.each( chosenTrees, function(i, tree) {
+                    $.each( allTrees, function(i, tree) {
                         // check this tree's nodes for this OTU id
                         $.each( tree.node, function( i, node ) {
                             if (node['@otu']) {
@@ -2257,7 +2257,7 @@ function updateMappingStatus() {
                             +'<span class="btn-group" style="margin: -2px 0;">'
                             +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
                             +'</span> '
-                            +'button or change the filter to <strong>In all trees</strong>.<'+'/p>';
+                            +'button or change the filter to <strong>In any tree</strong>.<'+'/p>';
                     showBatchApprove = false;
                     showBatchReject = false;
                     needsAttention = true;
