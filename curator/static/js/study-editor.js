@@ -10675,3 +10675,7 @@ function printCurrentTreeView() {
     // restore the normal doc title
     window.document.title = oldTitle;
 }
+
+function purgeUnusedOTUs() {
+    console.warn("Now I'd do the purge!");
+}
