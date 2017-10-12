@@ -1171,18 +1171,19 @@ function loadSelectedStudy() {
                     });
                 } else {
                     // show the *unused* OTUs instead (inverse of 'In any tree' above)
-                    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
-                    // start with all OTUs in the study, then whittle them down
-                    chosenOTUIDs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
-                    $.each( allTrees, function(i, tree) {
-                        // check this tree's nodes for this OTU id
-                        $.each( tree.node, function( i, node ) {
-                            if (node['@otu']) {
-                                delete chosenOTUIDs[ node['@otu'] ];
-                            }
-                        });
+                    $.each(getUnusedOTUs(), function(i, otu) {
+                        chosenOTUIDs[ otu['@id'] ] = true;
                     });
                 }
+                console.warn(chosenOTUIDs);
+                /*
+                if (chosenOTUIDs.length > 0) {
+                    console.warn("Here's the first of chosenOTUIDs:");
+                    console.warn(chosenOTUIDs[0]);
+                } else {
+                    console.warn("chosenOTUIDs is an empty list!");
+                }
+                */
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter(
@@ -10676,6 +10677,50 @@ function printCurrentTreeView() {
     window.document.title = oldTitle;
 }
 
+function getUnusedOTUs() {
+    // return a list of OTUs that are not used in any tree
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+    // start with all OTUs in the study, then whittle them down
+    var unusedOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+    // var otu = getOTUByID( otu );
+    console.log("BEFORE - ALL OTUs: "+ unusedOTUs.length);
+    $.each( allTrees, function(i, tree) {
+        // check this tree's nodes for this OTU id
+        $.each( tree.node, function( i, node ) {
+            if (node['@otu']) {
+                var otu = getOTUByID( node['@otu'] );
+                if ($.inArray(otu, unusedOTUs) !== -1) {
+                    removeFromArray( otu, unusedOTUs );
+                }
+            }
+        });
+    });
+    console.log("AFTER - UNUSED OTUs: "+ unusedOTUs.length);
+    return unusedOTUs;
+}
+
 function purgeUnusedOTUs() {
-    console.warn("Now I'd do the purge!");
+    // remove each unused OTU from its parent OTUs collection
+    $.each( getUnusedOTUs(), function(i, otu) {
+        console.log("REMOVING AN UNUSED OTU!");
+        console.log(otu);
+        var otu = getOTUByID( otu );
+        $.each(viewModel.nexml.otus, function(i, otusCollection) {
+            if ($.inArray(otu, otusCollection.otu) !== -1) {
+                removeFromArray( otu, otusCollection.otu );
+            }
+        });
+    });
+
+    // TODO: remove any empty OTUs-collections?
+    // TODO: remove related annotation events and agents?
+
+    // force rebuild of all tree-related lookups
+    buildFastLookup('OTUS_BY_ID');
+
+    console.log("AFTER - ALL OTUs: "+ viewModel.elementTypes.otu.gatherAll(viewModel.nexml).length);
+
+    // force update of curation UI in all relevant areas
+    nudgeTickler('VISIBLE_OTU_MAPPINGS');
+    nudgeTickler('STUDY_HAS_CHANGED');
 }
