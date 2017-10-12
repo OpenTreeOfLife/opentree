@@ -10774,7 +10774,6 @@ function purgeUnusedOTUs() {
     $.each( getUnusedOTUs(), function(i, otu) {
         console.log("REMOVING AN UNUSED OTU!");
         console.log(otu);
-        var otu = getOTUByID( otu );
         $.each(viewModel.nexml.otus, function(i, otusCollection) {
             if ($.inArray(otu, otusCollection.otu) !== -1) {
                 removeFromArray( otu, otusCollection.otu );
