@@ -1205,7 +1205,7 @@ body {
                     OTUs in this study.
                 </div>
                 <div class="unused-otus-prompt" style="margin-top: -6px; margin-bottom: 8px; display: none;"
-                     data-bind="visible: (viewOrEdit == 'EDIT') && (viewModel.listFilters.OTUS.scope() === 'Unused (not in any tree)') && viewModel.filteredOTUs().pagedItems().length > 0">
+                     data-bind="visible: (viewOrEdit == 'EDIT') && (viewModel.filteredOTUs().pagedItems().length > 0) && (viewModel.listFilters.OTUS.scope() === 'Unused (not in any tree)')">
                     <button class="btn pull-right btn-warning" title="Purge all OTUs listed below"
                             style="margin: 4px 0 0 18px;"
                             data-bind="click: purgeUnusedOTUs, css: viewModel.ticklers.OTU_MAPPING_HINTS">
