@@ -10720,6 +10720,6 @@ function purgeUnusedOTUs() {
     console.log("AFTER - ALL OTUs: "+ viewModel.elementTypes.otu.gatherAll(viewModel.nexml).length);
 
     // force update of curation UI in all relevant areas
-    nudgeTickler('VISIBLE_OTU_MAPPINGS');
+    nudgeTickler('OTU_MAPPING_HINTS');
     nudgeTickler('STUDY_HAS_CHANGED');
 }
