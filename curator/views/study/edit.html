@@ -1177,7 +1177,7 @@ body {
                             <span data-bind="text: viewModel.listFilters.OTUS.scope">SCOPE</span>
                             <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu" data-bind="foreach: ['In all trees', 'In trees nominated for synthesis', 'In trees not yet nominated']">
+                        <ul class="dropdown-menu" data-bind="foreach: ['In any tree', 'In trees nominated for synthesis', 'In trees not yet nominated', 'Unused (not in any tree)']">
                             <li data-bind="css: {'disabled': viewModel.listFilters.OTUS.scope() == $data }">
                                 <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.OTUS.scope($data); }">SCOPE</a>
                             </li>
@@ -1203,6 +1203,18 @@ body {
                 <div class="empty-list-prompt" data-bind="visible: viewModel.filteredOTUs().pagedItems().length === 0">
                     No matching OTUs found! Use the filters above to see
                     OTUs in this study.
+                </div>
+                <div class="unused-otus-prompt" style="margin-top: -6px; margin-bottom: 8px;"
+                     data-bind="visible: (viewOrEdit == 'EDIT') && (viewModel.listFilters.OTUS.scope() === 'Unused (not in any tree)') && viewModel.filteredOTUs().pagedItems().length > 0">
+                    <button class="btn pull-right btn-warning" title="Purge all OTUs listed below"
+                            style="margin: 4px 0 0 18px;"
+                            data-bind="click: purgeUnusedOTUs, css: viewModel.ticklers.OTU_MAPPING_HINTS">
+                        Purge unused OTUs &nbsp; <i class="icon-white icon-remove"></i>
+                    </button>
+                    The OTUs below are not currently used in any tree. If
+                    you've mapped some of these names, and you expect to
+                    (re)import trees that include them, you should keep these;
+                    otherwise you can purge them to clean up the study data.
                 </div>
 
                 <table class="table table-condensed table-hover" style="table-layout: fixed;"
@@ -1987,7 +1999,7 @@ body {
         'OTUS': {
             // TODO: add 'pagesize'?
             'match': "",
-            'scope': "In all trees",
+            'scope': "In any tree",
             'order': "Unmapped OTUs first"
         },
         'ANNOTATIONS': {
