@@ -99,8 +99,12 @@ def download_subtree():
      
     try:
         # fetch the Newick tree as JSON from remote site
-        from gluon.tools import fetch
-        import simplejson
+        import requests
+        import json
+        json_headers = {
+            'content-type' : 'application/json',
+            'accept' : 'application/json',
+        }
 
         method_dict = get_opentree_services_method_urls(request)
 
@@ -119,8 +123,8 @@ def download_subtree():
             fetch_url = "https:%s" % fetch_url
 
         # apparently this needs to be a POST, or it just describes the API
-        tree_response = fetch(fetch_url, data=fetch_args)
-        tree_json = simplejson.loads( tree_response )
+        tree_response = requests.post(fetch_url, data=fetch_args, headers=json_headers)
+        tree_json = tree_response.json()
         newick_text = str(tree_json.get('newick', 'NEWICK_NOT_FOUND')).encode('utf-8');
         s.write( newick_text )
 
@@ -142,7 +146,7 @@ def download_subtree():
 def fetch_current_synthetic_tree_ids():
     try:
         # fetch the latest IDs as JSON from remote site
-        import simplejson
+        import json
 
         method_dict = get_opentree_services_method_urls(request)
         fetch_url = method_dict['getDraftTreeID_url']
@@ -153,10 +157,10 @@ def fetch_current_synthetic_tree_ids():
         fetch_args = {}
         # this needs to be a POST (pass fetch_args or ''); if GET, it just describes the API
         # N.B. that gluon.tools.fetch() can't be used here, since it won't send "raw" JSON data as treemachine expects
-        req = urllib2.Request(url=fetch_url, data=simplejson.dumps(fetch_args), headers={"Content-Type": "application/json"}) 
+        req = urllib2.Request(url=fetch_url, data=json.dumps(fetch_args), headers={"Content-Type": "application/json"}) 
         ids_response = urllib2.urlopen(req).read()
 
-        ids_json = simplejson.loads( ids_response )
+        ids_json = json.loads( ids_response )
         draftTreeName = str(ids_json['synth_id']).encode('utf-8')
         startNodeID = str(ids_json['root']['node_id']).encode('utf-8')
         return (draftTreeName, startNodeID)
