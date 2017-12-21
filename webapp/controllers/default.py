@@ -123,7 +123,7 @@ def download_subtree():
             fetch_url = "https:%s" % fetch_url
 
         # apparently this needs to be a POST, or it just describes the API
-        tree_response = requests.post(fetch_url, data=fetch_args, headers=json_headers)
+        tree_response = requests.post(fetch_url, data=json.dumps(fetch_args), headers=json_headers)
         tree_json = tree_response.json()
         newick_text = str(tree_json.get('newick', 'NEWICK_NOT_FOUND')).encode('utf-8');
         s.write( newick_text )
