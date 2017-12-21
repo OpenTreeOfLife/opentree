@@ -414,9 +414,13 @@ def get_latest_ott_version_info_by_date(date):
     return closest_previous_version
 
 def fetch_current_synthesis_source_data():
+    json_headers = {
+        'content-type' : 'application/json',
+        'accept' : 'application/json',
+    }
     try:
-        from gluon.tools import fetch
-        import simplejson
+        import requests
+        import json
         method_dict = get_opentree_services_method_urls(request)
 
         # fetch a list of all studies that contribute to synthesis
@@ -425,8 +429,8 @@ def fetch_current_synthesis_source_data():
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
         # as usual, this needs to be a POST (pass empty fetch_args)
-        source_list_response = fetch(fetch_url, data={'include_source_list':True})
-        source_data = simplejson.loads( source_list_response )
+        source_list_response = requests.post(fetch_url, data=json.dumps({'include_source_list':True}), headers=json_headers)
+        source_data = source_list_response.json()
         source_id_list = source_data.get('source_list', [ ])
         source_id_map = source_data.get('source_id_map')
         # split these source descriptions, which are in the form '{STUDY_ID_PREFIX}_{STUDY_NUMERIC_ID}_{TREE_ID}_{COMMIT_SHA}'
@@ -457,9 +461,9 @@ def fetch_current_synthesis_source_data():
             fetch_url = "https:%s" % fetch_url
 
         # as usual, this needs to be a POST (pass empty fetch_args)
-        study_metadata_response = fetch(fetch_url, data={"verbose": True})
+        study_metadata_response = requests.post(fetch_url, data=json.dumps({"verbose": True}), headers=json_headers)
         # TODO: add more friendly label to tree metadata? if so, add "includeTreeMetadata":True above
-        study_metadata = simplejson.loads( study_metadata_response )
+        study_metadata = study_metadata_response.json()
 
         # filter just the metadata for studies contributing to synthesis
         contributing_studies = [ ]
