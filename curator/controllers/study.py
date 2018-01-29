@@ -89,7 +89,6 @@ def _get_latest_synthesis_details_for_study_id( study_id ):
     # treemachine. If the study is not found in contributing studies, return
     # None for both.
     try:
-        from gluon.tools import fetch
         import simplejson
         import requests
 
