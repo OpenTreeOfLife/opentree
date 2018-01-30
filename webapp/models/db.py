@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
+from pprint import pprint
+import sys
 import os
 from ConfigParser import SafeConfigParser
-import urllib2
 import requests
 import json
+
+# WARNING!  This file is a near-duplicat of curator/models/db.py
+#           Any changes here should probably be mirrored there.
 
 conf = SafeConfigParser({})
 config_file_found = None
@@ -81,23 +85,6 @@ from gluon.tools import Auth, Crud, Service, PluginManager, prettydate
 auth = Auth(db, secure=SECURE_SESSIONS_WITH_HTTPS)
 crud, service, plugins = Crud(db), Service(), PluginManager()
 
-## configure email
-mail = auth.settings.mailer
-mail.settings.server = 'logging' or 'smtp.gmail.com:587'
-mail.settings.sender = 'you@gmail.com'
-mail.settings.login = 'username:password'
-
-## configure auth policy
-auth.settings.registration_requires_verification = False
-auth.settings.registration_requires_approval = False
-auth.settings.reset_password_requires_verification = True
-
-# basic setup for wikip plugin(s)
-plugins.wiki.editor = (auth.user) and (auth.user.email == mail.settings.sender)
-plugins.wiki.level = 3
-plugins.wiki.mode = 'html' # OR 'markmin', others?
-# plugins.wiki.theme = 'ui-darkness'
-
 #
 # OAuth2 for Github (API v3), based on the FB sample provided in gluon/contrib/login_methods/oauth20_account.py
 # 
@@ -141,9 +128,9 @@ except:
 AUTH_URL="http://..."
 TOKEN_URL="http://..."
 
-
 from gluon import current
 from gluon.contrib.login_methods.oauth20_account import OAuthAccount
+
 class GitHubAccount(OAuthAccount):
     '''OAuth impl for GitHub'''
     # http://developer.github.com/v3/oauth/
@@ -245,6 +232,31 @@ if request.controller=='default' and request.function=='user' and request.args(0
 else:
     session._next = request.env.path_info
 
+## configure email
+mail = auth.settings.mailer
+mail.settings.server = 'logging' or 'smtp.gmail.com:587'
+mail.settings.sender = 'you@gmail.com'
+mail.settings.login = 'username:password'
+
+## configure auth policy
+auth.settings.registration_requires_verification = False
+auth.settings.registration_requires_approval = False
+auth.settings.reset_password_requires_verification = True
+
+# basic setup for wikip plugin(s)
+plugins.wiki.editor = (auth.user) and (auth.user.email == mail.settings.sender)
+plugins.wiki.level = 3
+plugins.wiki.mode = 'html' # OR 'markmin', others?
+# plugins.wiki.theme = 'ui-darkness'
+
+mail.settings.server = settings.email_server
+mail.settings.sender = settings.email_sender
+mail.settings.login = settings.email_login
+
+# DEV ONLY: recognize and re-import any modules if file has changed (ie, after git pull)
+## from gluon.custom_import import track_changes
+## track_changes(True)
+
 #########################################################################
 ## Define your tables below (or better in another model file) for example
 ##
@@ -264,13 +276,3 @@ else:
 
 ## after defining tables, uncomment below to enable auditing
 # auth.enable_record_versioning(db)
-
-mail.settings.server = settings.email_server
-mail.settings.sender = settings.email_sender
-mail.settings.login = settings.email_login
-
-# DEV ONLY: recognize and re-import any modules if file has changed (ie, after git pull)
-## from gluon.custom_import import track_changes
-## track_changes(True)
-
-
