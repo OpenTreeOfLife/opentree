@@ -300,6 +300,28 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                         $('#search-results').dropdown('toggle');
                     }
                     if (typeof snapViewerFrameToMainTitle === 'function') snapViewerFrameToMainTitle();
+                },
+                error: function(jqXHR, textStatus, errorThrown) {
+                    // report errors or malformed data, if any (else ignore)
+                    if (textStatus !== 'success') {
+                        if (jqXHR.status >= 500) {
+                            // major TNRS error! offer the raw response for tech support
+                            var errMsg = jqXHR.statusText +' ('+ jqXHR.status +') searching for<br/>'
+    +'<strong style="background-color: #edd; padding: 0 3px; margin: 0 -3px;">'+ queryText +'</strong><br/>'
+    +'Please modify your search and try again.<br/>'
+    +'<span class="detail-toggle" style="text-decoration: underline !important;">Show details</span>'
+    +'<pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
+                            //showErrorMessage(errMsg);
+                            $('#search-results').html('<li class="disabled"><a><span style="color: #933;">'+ errMsg +'</span></a></li>');
+                            $('#search-results').find('span.detail-toggle').click(function(e) {
+                                e.preventDefault();
+                                $(this).next('.error-details').show()
+                                return false;
+                            });
+                            $('#search-results').dropdown('toggle');
+                        }
+                    }
+                    return;
                 }
             });
 
