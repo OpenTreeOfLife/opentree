@@ -283,15 +283,14 @@ def synthesis_release():
     view_dict['synthesis_stats'] = synth
 
     # fetch and render Markdown release notes as HTML
-    from gluon.tools import fetch
+    import requests
     from gluon.contrib.markdown.markdown2 import markdown
-    from urllib2 import HTTPError
     fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/germinator/master/doc/ot-synthesis-{v}.md'.format(v=synth_release_version)
     try:
-        version_notes_response = fetch(fetch_url)
+        version_notes_response = requests.get(url=fetch_url).text
         # N.B. We assume here that any hyperlinks have the usual Markdown braces!
         version_notes_html = markdown(version_notes_response).encode('utf-8')
-    except HTTPError:
+    except:
         version_notes_html = None
     view_dict['synthesis_release_notes'] = version_notes_html
 
@@ -322,15 +321,14 @@ def taxonomy_version():
     view_dict['taxonomy_stats'] = ott
 
     # fetch and render Markdown release notes as HTML
-    from gluon.tools import fetch
+    import requests
     from gluon.contrib.markdown.markdown2 import markdown
-    from urllib2 import HTTPError
     fetch_url = 'https://raw.githubusercontent.com/OpenTreeOfLife/reference-taxonomy/master/doc/{v}.md'.format(v=taxo_version)
     try:
-        version_notes_response = fetch(fetch_url)
+        version_notes_response = requests.get(url=fetch_url).text
         # N.B. We assume here that any hyperlinks have the usual Markdown braces!
         version_notes_html = markdown(version_notes_response).encode('utf-8')
-    except HTTPError:
+    except:
         version_notes_html = None
     view_dict['taxonomy_version_notes'] = version_notes_html
 

@@ -3,8 +3,11 @@ from pprint import pprint
 import sys
 import os
 from ConfigParser import SafeConfigParser
-import urllib2
+import requests
 import json
+
+# WARNING!  This file is a near-duplicat of webapp/models/db.py
+#           Any changes here should probably be mirrored there.
 
 conf = SafeConfigParser({})
 config_file_found = None
@@ -149,6 +152,7 @@ TOKEN_URL="http://..."
 
 from gluon import current
 from gluon.contrib.login_methods.oauth20_account import OAuthAccount
+
 class GitHubAccount(OAuthAccount):
     '''OAuth impl for GitHub'''
     # http://developer.github.com/v3/oauth/
@@ -189,13 +193,11 @@ class GitHubAccount(OAuthAccount):
         ##pprint(session.token)
 
         # fetch full user info from GitHub, to add/update user data
-        user_request = urllib2.Request("https://api.github.com/user", headers={"Authorization" : ("token %s" % access_token)})
-        data = urllib2.urlopen(user_request).read()
-        user_json = {}
+        h = {"Authorization" : ("token %s" % access_token)}
         try:
-            user_json = json.loads(data)
-        except Exception, e:
-            raise Exception("Cannot parse oauth server response %s %s" % (data, e))
+            user_json = requests.get(url="https://api.github.com/user", headers=h).json()
+        except JSONDecodeError, e:
+            raise Exception("Cannot parse oauth server response %s %s" % (e.doc, e))
             return None
 
         ##pprint('----------- user_json ----------')

@@ -208,8 +208,7 @@ def get_data_deposit_message(raw_deposit_doi):
 def fetch_current_TNRS_context_names(request):
     try:
         # fetch the latest contextName values as JSON from remote site
-        from gluon.tools import fetch
-        import simplejson
+        import requests
 
         method_dict = get_opentree_services_method_urls(request)
         fetch_url = method_dict['getContextsJSON_url']
@@ -218,9 +217,7 @@ def fetch_current_TNRS_context_names(request):
             fetch_url = "https:%s" % fetch_url
 
         # as usual, this needs to be a POST (pass empty fetch_args)
-        contextnames_response = fetch(fetch_url, data='')
-
-        contextnames_json = simplejson.loads( contextnames_response )
+        contextnames_json = requests.post(url=fetch_url, data='').json()
         # start with LIFE group (incl. 'All life'), and add any other ordered suggestions
         ordered_group_names = unique_ordered_list(['LIFE','PLANTS','ANIMALS'] + [g for g in contextnames_json])
         context_names = [ ]
@@ -243,7 +240,7 @@ def fetch_trees_queued_for_synthesis(request):
         # into a single, artificial "collection" with contributors and
         # decisions/trees, but no name or description, see
         # <https://github.com/OpenTreeOfLife/peyotl/blob/33b493e84558ffef381d841986281be352f3da53/peyotl/collections_store/__init__.py#L46>
-        from gluon.tools import fetch
+        import requests
 
         method_dict = get_opentree_services_method_urls(request)
         fetch_url = method_dict['getTreesQueuedForSynthesis_url']
@@ -251,9 +248,8 @@ def fetch_trees_queued_for_synthesis(request):
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
 
-        queued_trees_response = fetch(fetch_url)
         #queued_trees_response = queued_trees_response.encode('utf-8')  # OK TO SKIP THIS?
-        queued_trees_json = json.loads( queued_trees_response )
+        queued_trees_json = requests.get(url=fetch_url).json()
         # this should be a dictionary rendering of the artificial collection
         return queued_trees_json
 
