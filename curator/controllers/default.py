@@ -751,9 +751,8 @@ def search_crossref_proxy():
     search_crossref_url = request.env.web2py_original_uri.split('search_crossref_proxy')[1]
     # prepend the real domain, using HTTP, and return the response
     search_crossref_url = 'http://search.crossref.org/%s' % search_crossref_url
-    req = urllib2.Request(url=search_crossref_url) 
     try:
-        resp = urllib2.urlopen(req).read()
+        resp = requests.get(url=search_crossref_url).content
     except:
         raise HTTP(501, "DOI lookup service failed. Please try again in a few minutes.")
     return resp

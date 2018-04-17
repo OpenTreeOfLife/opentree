@@ -147,6 +147,7 @@ def fetch_current_synthetic_tree_ids():
     try:
         # fetch the latest IDs as JSON from remote site
         import json
+        import requests
 
         method_dict = get_opentree_services_method_urls(request)
         fetch_url = method_dict['getDraftTreeID_url']
@@ -156,11 +157,7 @@ def fetch_current_synthetic_tree_ids():
 
         fetch_args = {}
         # this needs to be a POST (pass fetch_args or ''); if GET, it just describes the API
-        # N.B. that gluon.tools.fetch() can't be used here, since it won't send "raw" JSON data as treemachine expects
-        req = urllib2.Request(url=fetch_url, data=json.dumps(fetch_args), headers={"Content-Type": "application/json"}) 
-        ids_response = urllib2.urlopen(req).read()
-
-        ids_json = json.loads( ids_response )
+        ids_json = requests.post(url=fetch_url, data=json.dumps(fetch_args), headers={"Content-Type": "application/json"}).json()
         draftTreeName = str(ids_json['synth_id']).encode('utf-8')
         startNodeID = str(ids_json['root']['node_id']).encode('utf-8')
         return (draftTreeName, startNodeID)
@@ -174,15 +171,8 @@ def phylopic_proxy():
     phylopic_url = request.env.web2py_original_uri.split('phylopic_proxy')[1]
     # prepend the real domain, using HTTP, and return the response
     phylopic_url = 'http://phylopic.org/%s' % phylopic_url
+    import requests
     try:
-        req = urllib2.Request(url=phylopic_url) 
-        resp = urllib2.urlopen(req, timeout=10).read()
-        # N.B. timeout value is in seconds!
-        return resp
-    except urllib2.URLError, e:
-        # this includes possible timeout from urllib2
-        raise HTTP(503, 'The attempt to fetch an image from phylopic failed (probable timeout)')
-    except socket.timeout, e:
-        # report underlying socket timeouts!
-        raise HTTP(504, 'The attempt to fetch an image from phylopic timed out')
-
+        return requests.get(url=phylopic_url, timeout=10).content
+    except requests.exceptions.ReadTimeout, e:
+        raise HTTP(503, 'The attempt to fetch an image from phylopic timed out')

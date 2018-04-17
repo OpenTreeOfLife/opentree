@@ -89,8 +89,8 @@ def _get_latest_synthesis_details_for_study_id( study_id ):
     # treemachine. If the study is not found in contributing studies, return
     # None for both.
     try:
-        from gluon.tools import fetch
         import simplejson
+        import requests
 
         method_dict = get_opentree_services_method_urls(request)
 
@@ -100,7 +100,7 @@ def _get_latest_synthesis_details_for_study_id( study_id ):
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
         # as usual, this needs to be a POST (pass empty fetch_args)
-        source_list_response = fetch(fetch_url, data={'include_source_list':True})
+        source_list_response = requests.post(fetch_url, headers={"Content-Type": "application/json"},data=simplejson.dumps({'include_source_list':True})).text
         source_dict = simplejson.loads( source_list_response )['source_id_map']
 
         # fetch the full source list, then look for this study and its trees
