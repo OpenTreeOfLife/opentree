@@ -219,7 +219,8 @@ def _get_opentree_activity( userid=None, username=None ):
     # as usual, this needs to be a POST (pass empty fetch_args)
     source_data = requests.post(
         url=fetch_url,
-        data={'include_source_list':True}
+        headers={"Content-Type": "application/json"},
+        data=json.dumps({'include_source_list':True})
     ).json()
     source_id_map = source_data.get('source_id_map')
     # N.B. We can ignore the munged ids in source_data['source_list']
@@ -239,7 +240,8 @@ def _get_opentree_activity( userid=None, username=None ):
         fetch_url = "https:%s" % fetch_url
     all_studies = requests.post(
         url=fetch_url,
-        data={'verbose': True}  # include curator list
+        headers={"Content-Type": "application/json"},
+        data=json.dumps({'verbose':True})  # include curator list
     ).json().get('matched_studies', [ ])
 
     for study in all_studies:
