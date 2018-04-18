@@ -89,7 +89,7 @@ def _get_latest_synthesis_details_for_study_id( study_id ):
     # treemachine. If the study is not found in contributing studies, return
     # None for both.
     try:
-        import simplejson
+        import json
         import requests
 
         method_dict = get_opentree_services_method_urls(request)
@@ -100,8 +100,8 @@ def _get_latest_synthesis_details_for_study_id( study_id ):
             # Prepend scheme to a scheme-relative URL
             fetch_url = "https:%s" % fetch_url
         # as usual, this needs to be a POST (pass empty fetch_args)
-        source_list_response = requests.post(fetch_url, headers={"Content-Type": "application/json"},data=simplejson.dumps({'include_source_list':True})).text
-        source_dict = simplejson.loads( source_list_response )['source_id_map']
+        source_list_response = requests.post(fetch_url, headers={"Content-Type": "application/json"},data=json.dumps({'include_source_list':True})).text
+        source_dict = json.loads( source_list_response )['source_id_map']
 
         # fetch the full source list, then look for this study and its trees
         commit_SHA_in_synthesis = None
