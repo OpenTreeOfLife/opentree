@@ -9,7 +9,7 @@ def upload_file():
     Return the response in JSON required by the plugin
     """
     import os
-    import gluon
+    import json
     response.view = 'generic.json'
     try:
         # Get the file from the form
@@ -33,7 +33,7 @@ def upload_file():
          
         res = dict(files=[{"name": str(f.filename), "size": size, "url": URL(f='download', args=[File['doc']]), "delete_url": URL(f='delete_file', args=[File['doc']])}])
          
-        return gluon.contrib.simplejson.dumps(res, separators=(',',':'))
+        return json.dumps(res, separators=(',',':'))
 
     except:
         return dict(message=T('Upload error'))
