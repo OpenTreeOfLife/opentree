@@ -522,6 +522,7 @@ function createArgus(spec) {
 
             pwidth = argusObjRef.nodesWidth * (node.max_node_depth + 1);
             pwidth += 1.5 * argusObjRef.tipOffset + argusObjRef.xLabelMargin;
+            // NOTE that this might still clip super-wide labels, e.g. for a cluster
 
             argusObjRef.xOffset = pwidth - argusObjRef.nodesWidth - argusObjRef.tipOffset;
 
