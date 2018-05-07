@@ -165,8 +165,8 @@ function createArgus(spec) {
         "currDisplayContext": undefined, //arg to most recent displayNode call
 
         clusters: {},      // a registry of clustered child-nodes, keyed to the parent-node's ID
-        clusterSize: 100,   // try to bundle sets of n children
-        minClusterSize: 10, // add fewer to the previous cluster instead
+        maxClusterSize: 100,   // try to bundle sets of n children
+        minClusterSize: 10, // add fewer to the previous cluster (or unclustered children) instead
         maxUnclusteredNodes: 30,  // show the most interesting n nodes outside of clusters
 
         toggleAltBoxX: 55,
@@ -402,8 +402,12 @@ function createArgus(spec) {
                     // populous clades
                     nodesWithoutPhyloSupport.sort(sortByDescendantCount);
                     var nUnclusteredNodes = argusObj.maxUnclusteredNodes - nWithHybrid - nWithPhylo;
-                    var clusteredNodes = nodesWithoutPhyloSupport.slice( nUnclusteredNodes ),
-                        firstClusteredNode = clusteredNodes[0],  // capture BEFORE re-sorting!
+                    var clusteredNodes = nodesWithoutPhyloSupport.slice( nUnclusteredNodes );
+                    if (clusteredNodes.length < argusObj.minClusterSize) {
+                        // never mind! there's not enough to make a decent cluster
+                        clusteredNodes = [ ];
+                    }
+                    var firstClusteredNode = clusteredNodes[0],  // capture BEFORE re-sorting!
                         nClustered = clusteredNodes.length,
                         nClusteredRemaining,
                         currentCluster = null,
@@ -415,7 +419,7 @@ function createArgus(spec) {
                     for (i = 0; i < nClustered; i++) {
                         testChild = clusteredNodes[i];
                         /// testChild.nameStartsWith = (testChild.name.length > 0 ? testChild.name[0].toLowerCase() : '');
-                        if (nInCurrentCluster > argusObj.clusterSize) {
+                        if (nInCurrentCluster > argusObj.maxClusterSize) {
                             // this cluster is full, start another one?
                             if (testChild.name.indexOf(currentCluster.lastName) === 0) {  // ie, starts with...
                                 // no, push this node into the last one...
@@ -1443,19 +1447,9 @@ function createArgus(spec) {
                 'y': cluster.y
             });
         } else {
-            // draw the cluster shape (a lozenge that can hold 'Aaa - Zzz')?
+            // Draw the cluster label, then a surrounding shape (a lozenge that can hold 'Aaa - Zzz')?
             var minimizedCluster = paper.set().insertAfter(dividerBeforeLabels);
             // NOTE that we can't set (or retrieve) an ID on a Raphael set...
-            box = paper.rect(clusterLeftEdge, cluster.y - (this.nodeHeight * 0.55), (this.nodesWidth * 3.5), this.nodeHeight * 1.2).attr({
-                "stroke": this.bgColor,
-                "stroke-width": 1,
-                "stroke-dasharray": '.',
-                "fill": this.bgColor,
-                "r": 4,  // rounded corner (radius)
-                "cursor": "pointer"
-            });
-            box.id = (clusterBoxElementID);
-            minimizedCluster.push(box);
 
             // draw the cluster label
             var clusterLabel = "more... ("+ cluster.firstName +" - "+ cluster.lastName +")";
@@ -1467,6 +1461,22 @@ function createArgus(spec) {
             });
             label.id = (clusterLabelElementID);
             minimizedCluster.push(label);
+
+            // draw the surrounding shape (appears on mouseover)
+            var defaultBoxWidth = this.nodesWidth * 3.5;
+            var minBoxWidth = label.getBBox().width + 16;
+            var boxWidth = Math.max(defaultBoxWidth, minBoxWidth);
+            box = paper.rect(clusterLeftEdge, cluster.y - (this.nodeHeight * 0.55), boxWidth, this.nodeHeight * 1.2).attr({
+                "stroke": this.bgColor,
+                "stroke-width": 1,
+                "stroke-dasharray": '.',
+                "fill": this.bgColor,
+                "r": 4,  // rounded corner (radius)
+                "cursor": "pointer"
+            });
+            box.id = (clusterBoxElementID);
+            minimizedCluster.push(box);
+            label.toFront();    // else it's hidden behind the lozenge!
 
             // assign behaviors to replace the minimized cluster with its nodes
             var minimizedClusterParts = [branch, minimizedCluster];
