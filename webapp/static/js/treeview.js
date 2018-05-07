@@ -782,7 +782,8 @@ function showObjectProperties( objInfo, options ) {
         if (fullNodeSupporters) {
             if (edgeSection) {
                 edgeSection.displayedProperties['Supporting trees'] = fullNodeSupporters;
-            } else {
+            } else if (parentNode) {
+                // ignore OTT support on 'cellular organisms' (main root of synth tree)
                 console.log('>>> No edgeSection found for this node:');
                 console.log(fullNode);
             }
