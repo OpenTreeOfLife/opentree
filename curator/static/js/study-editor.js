@@ -3708,7 +3708,7 @@ var studyScoringRules = {
                         return false;
                     }
                 });
-                console.log("total elapsed: "+ (new Date() - startTime) +" ms");
+                console.log("check for non-monophyletic tips... total elapsed: "+ (new Date() - startTime) +" ms");
                 return !(duplicateNodesFound);
             },
             weight: 0.2,
