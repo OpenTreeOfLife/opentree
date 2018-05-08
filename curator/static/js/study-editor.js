@@ -7466,9 +7466,14 @@ function findHighestElementOrdinalNumber( nexml, prefix, gatherAllFunc ) {
         var testElement = allElements[i];
         var testID = ko.unwrap(testElement['@id']) || '';
         if (testID === '') {
-            // TODO: Suppress these warnings if prefix is 'message'?
-            console.error("MISSING ID for this "+ prefix +":");
-            console.error(testElement);
+            /* Suppress these warnings for 'message' prefix; it's just noise
+             * until we have established a need and a batch solution for minting
+             * unique message IDs.
+             */
+            if (prefix !== 'message') {
+                console.error("MISSING ID for this "+ prefix +":");
+                console.error(testElement);
+            }
             continue;  // skip to next element
         }
         if (testID.indexOf(prefix) === 0) {
