@@ -1207,6 +1207,7 @@ function createArgus(spec) {
             }
             label = paper.text(labelX, labelY, displayLabel).attr({
                 'text-anchor': labelAnchor,
+                "title": displayLabel,
                 "fill": this.labelColor,
                 "font-size": fontSize
             }).insertBefore(dividerBeforeHighlights);
@@ -1366,6 +1367,7 @@ function createArgus(spec) {
 
                             label = paper.text(labelX, labelY, ancestorNode.name || "").attr({
                                 'text-anchor': 'end',
+                                "title": (ancestorNode.name || ""),
                                 "fill": this.labelColor,
                                 "font-size": fontSize
                             }).insertBefore(dividerBeforeHighlights);
@@ -1456,6 +1458,7 @@ function createArgus(spec) {
             var clusterLabel = "more... ("+ cluster.firstName +" - "+ cluster.lastName +")";
             label = paper.text(clusterLeftEdge + 8, cluster.y - (this.nodeHeight * 0.0), clusterLabel).attr({
                 'text-anchor': 'start',
+                "title": clusterLabel,
                 "fill": this.labelColor,
                 "font-size": fontSize,
                 "cursor": "pointer"
