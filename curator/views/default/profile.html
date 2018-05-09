@@ -222,34 +222,21 @@ elif active_user_found:
             </p>
             {{ pass }}
         </div>
-    </div>
-
 {{# TODO: Restore these stats once OTI has been fixed, see https://github.com/OpenTreeOfLife/oti/issues/35 }}
 {{ if False: }}
-    <div class="control-group">
-        <label class="control-label">Studies added</label>
         <div class="controls">
             <p class="static-form-value">
-                {{= len( opentree_activity.get('added_studies', []) ) }}
-                &nbsp;
-                &nbsp;
-                <span class="interesting-value" style="font-weight: normal;">
-                    N.B. Study counts here are dubious, pending
-                    <a href="https://github.com/OpenTreeOfLife/oti/issues/35" target="_blank">
-                        needed fixes to oti</a>
-                </span>
-            </p>
-            <!--  TODO: add markers for top 5%, etc. -->
-        </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label">Studies curated</label>
-        <div class="controls">
-            <p class="static-form-value">
-                {{= len( opentree_activity.get('curated_studies', []) ) }}
-                &nbsp;
-                &nbsp;
-                {{ if len( opentree_activity.get('curated_studies', []) ) > 0: }}
+                {{ how_many_added = len( opentree_activity.get('added_studies', []) )
+                   how_many_curated = len( opentree_activity.get('curated_studies', []) )
+                }}
+                {{= how_many_added }}
+                <span style="font-weight: normal;">added</span>,
+                {{= how_many_curated }}
+                <span style="font-weight: normal;">curated</span>,
+                {{= len( opentree_activity.get('curated_studies_in_synthesis', []) ) }}
+                <span style="font-weight: normal;">in synthesis</span>
+                {{ if (how_many_added + how_many_curated) > 0: }}
+                <br/>
                 <a target="_blank" style="font-weight: normal;"
                    href="/curator/?match={{= user_info.get('name', user_info.get('login')) }}">
                    See these studies in the curation dashboard
@@ -258,17 +245,8 @@ elif active_user_found:
             </p>
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
-    </div>
-    <div class="control-group">
-        <label class="control-label">Studies in synthesis</label>
-        <div class="controls">
-            <p class="static-form-value">
-                {{= len( opentree_activity.get('curated_studies_in_synthesis', []) ) }}
-            </p>
-            <!--  TODO: add markers for top 5%, etc. -->
-        </div>
-    </div>
 {{ pass }}
+    </div>
 
     <div class="control-group">
         <label class="control-label">Tree collections</label>
