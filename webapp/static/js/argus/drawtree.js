@@ -293,6 +293,71 @@ function createArgus(spec) {
             "domSource": ds
         };
     };
+
+    argusObj.revealAllVisibleTreeElements = function() {
+        /* Update argus viewbox to show all visible items (via scrollbars).
+         * For a seamless effect, we need to simultaneously change the size,
+         * position(?), and viewbox of the RaphaelJS (SVG) canvas.
+         *
+         * This is because the SVG element (regardless of its 'overflow' style)
+         * dictates the beahavior of scrollbars in the argus view. So for a
+         * seamless transition, e.g. when expanding a cluster, we need
+         * to preserve the current scale and *apparent* position of tree
+         * elements, but (potentially) modify the size and position of the main
+         * SVG element so that we can scroll to any visible part of the tree.
+         * Tricky stuff!
+         *
+         * After some reflection, I think the key is that the SVG's internal
+         * viewBox should always match its visible contents (plus a small
+         * cosmetic margin), and that the SVG element should follow these changes
+         * in both its size and relative position. Let's tweak all related
+         * code to do this, instead of the old system, which was:
+         *     Let's reckon the default width and height based on the "maximum
+         *     reasonable extent" of all visible and collapsed nodes.
+         * Instead, let the (visible) content drive the viewBox, and
+         * that in turn sets the size and location of the SVG element, always.
+         *
+         * ? Is it possible that default viewBox will "follow" visible contents?
+         *
+         * Two minor changes that support this method:
+         *  - Set the SVG element's position to static (within scrollpane)
+         *  - Set its preserveAspectRatio to "none" so that we can clearly see
+         *    distortion due to errors on our updated view.
+         */
+        if (paper && paper.canvas) {
+            // measure the old size/position/viewbox
+            console.log("OLD canvas scale: "+ paper.canvas.currentScale);
+            console.log("OLD argusZoomLevel: "+ argusZoomLevel);
+            var oldBBox = paper.canvas.getBBox();
+            console.log("OLD bounding box: "); console.log(oldBBox);
+            if (paper.viewBox) {
+                console.log("OLD paper.viewbox: "); console.log(paper.viewBox);
+            }
+            if (paper.canvas.viewBox) {
+                console.log("OLD paper.canvas.viewbox: "); console.log(paper.canvas.viewBox);
+                // paper.canvas.viewBox.baseVal;  // OR .animVal
+            }
+debugger;
+            // allow distortion to reveal serious distortion ASAP
+            paper.canvas.setAttribute('preserveAspectRatio','none');
+            // var oldSize = paper.
+            var oldTop = oldBBox.left,
+                oldRight = oldBBox.left + oldBBox.width,
+                oldBottom = oldBBox.top + oldBBox.height,
+                oldLeft = oldBBox.left;
+            var margin = 6;  // a little extra padding, so they can see that labels are complete
+            paper.setViewBox(oldBBox.x - margin, oldBBox.y - margin, oldBBox.width + (margin*2), oldBBox.height + (margin*2));
+            console.log("NEW canvas scale: "+ paper.canvas.currentScale);
+            console.log("NEW argusZoomLevel: "+ argusZoomLevel);
+            console.log("NEW bounding box: "); console.log(paper.canvas.getBBox());
+            var newBBox = paper.canvas.getBBox();
+            var newTop = newBBox.left,
+                newRight = newBBox.left + newBBox.width,
+                newBottom = newBBox.top + newBBox.height,
+                newLeft = newBBox.left;
+        }
+    };
+
     argusObj.loadData = function (o) {
         // accepts three named arguments:
          //    o.url               the address to which the HTTP request is sent
@@ -634,6 +699,10 @@ function createArgus(spec) {
             argusObjRef.nodesWithCycles = [];
             // draw the tree
             argusObjRef.drawTree();
+            /* Update the viewbox to include all visible elements (esp.
+             * ancestor nodes and long node+cluster labels)
+             */
+            argusObj.revealAllVisibleTreeElements();
 
             // Release the forced height of the argus viewport
             $(this.container).css('height', '');
@@ -940,6 +1009,7 @@ function createArgus(spec) {
 
             // redraw entire tree with changes
             argusObj.drawTree();
+            argusObj.revealAllVisibleTreeElements();
         };
     };
     getBackClickHandler = function () {
@@ -990,7 +1060,8 @@ function createArgus(spec) {
         }
         // try to apply the new scale, while maintaining the current center point
         paper.setSize(defaultPaperWidth * argusZoomLevel, defaultPaperHeight * argusZoomLevel);
-    }
+        argusObj.revealAllVisibleTreeElements();
+    };
 
     getClickHandlerAltRelLine = function (nodeFromAJAX) {
         /* at some point we will probably want to retain a history of preferred altrelationships, etc.
