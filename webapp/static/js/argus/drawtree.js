@@ -60,10 +60,10 @@ function createArgus(spec) {
     var getBackClickHandler;
     var getForwardClickHandler;
     var argusZoomLevel;
-    var defaultPaperWidth;
-    var defaultPaperHeight;
+    var argusScrollTop;
+    var argusScrollLeft;
     var zoomStep;
-    var setZoom;
+    var setZoomAndReframeView;
     var getClickHandlerAltRelLine;
     var getHoverHandlerProvenanceHighlight;
     var getClickHandlerProvenanceHighlight;
@@ -223,13 +223,13 @@ function createArgus(spec) {
 
         getZoomInHandler: function () {
             return function() {
-                setZoom('+');
+                setZoomAndReframeView('+');
                 return false;
             };
         },
         getZoomOutHandler: function () {
             return function() {
-                setZoom('-');
+                setZoomAndReframeView('-');
                 return false;
             };
         },
@@ -293,6 +293,62 @@ function createArgus(spec) {
             "domSource": ds
         };
     };
+
+    argusObj.revealAllVisibleTreeElements = function() {
+        /* Update argus viewbox to show all visible items (via scrollbars).
+         * For a seamless effect, we need to simultaneously change the size,
+         * position(?), and viewbox of the RaphaelJS (SVG) canvas.
+         *
+         * This is because the SVG element (regardless of its 'overflow' style)
+         * dictates the beahavior of scrollbars in the argus view. So for a
+         * seamless transition, e.g. when expanding a cluster, we need
+         * to preserve the current scale and *apparent* position of tree
+         * elements, but (potentially) modify the size and position of the main
+         * SVG element so that we can scroll to any visible part of the tree.
+         * Tricky stuff!
+         *
+         * After some reflection, I think the key is that the SVG's internal
+         * viewBox should always match its visible contents (plus a small
+         * cosmetic margin), and that the SVG element should follow these changes
+         * in both its size and relative position. Let's tweak all related
+         * code to do this, instead of the old system, which was:
+         *     Let's reckon the default width and height based on the "maximum
+         *     reasonable extent" of all visible and collapsed nodes.
+         * Instead, let the (visible) content drive the viewBox, and
+         * that in turn sets the size and location of the SVG element, always.
+         *
+         * Is it possible that default viewBox will "follow" visible contents?
+         * NO, we need to maintain viewBox manually as things change.
+         *
+         * Let's also set its preserveAspectRatio to "none", so that we can
+         * clearly see stretched graphics due to errors on our updated view.
+         */
+        if (!paper.canvas) {
+            console.warn('revealAllVisibleTreeElements - NO paper.canvas found, skipping update');
+            return;
+        }
+
+        // allow distortion to reveal serious distortion ASAP
+        paper.canvas.setAttribute('preserveAspectRatio','none');
+        // capture old viewbox (if any) and SVG scrollbar position
+        var svgContainer = $(paper.canvas)[0].parentElement,
+            oldViewBox = paper.canvas.viewBox.baseVal || null;
+        // measure the extent of the newly visible tree
+        var newBBox = paper.canvas.getBBox();
+        // add a little padding, so we can see that labels are complete
+        var margin = 6,
+            newLeft = newBBox.x - margin,
+            newTop = newBBox.y - margin,
+            newWidth = newBBox.width + (margin*2),
+            newHeight = newBBox.height + (margin*2);
+        paper.setViewBox(newLeft, newTop, newWidth, newHeight);
+        // set the SVG element's size to show this fully
+        paper.setSize(newWidth * argusZoomLevel, newHeight * argusZoomLevel);
+        // update scrollbars to match old position as best we can
+        svgContainer.scrollLeft = argusScrollLeft;
+        svgContainer.scrollTop = argusScrollTop;
+    };
+
     argusObj.loadData = function (o) {
         // accepts three named arguments:
          //    o.url               the address to which the HTTP request is sent
@@ -533,13 +589,6 @@ function createArgus(spec) {
             } else {
                 paper = new Raphael(argusObjRef.container, 10, 10);
             }
-            paper.setSize(pwidth, pheight);
-
-            // IMPORTANT for easy scaling below
-            paper.setViewBox(0, 0, pwidth, pheight, true);
-            defaultPaperWidth = paper.width;
-            defaultPaperHeight = paper.height;
-            setZoom();
 
             // add dividers before anything else
             dividerBeforeEdges = paper.text(0,0,'');
@@ -548,12 +597,12 @@ function createArgus(spec) {
             dividerBeforeNodes = paper.text(0,0,'');
             dividerBeforeAnchoredUI = paper.text(0,0,'');
 
-            // gather all controls that should anchor to the scrolling viewport
+            /* Gather all controls that should anchor to the scrolling viewport
+             * SUPPRESSING this for now, but kept in case we revisit this idea.
             if (!argusObj.anchoredControls) {
                 argusObj.anchoredControls = paper.set();
             }
 
-            /*
             // if we need a larger, shared background
             anchoredbg = paper.rect(0,0,120,90).attr({
                 "fill": this.bgColor,
@@ -634,6 +683,10 @@ function createArgus(spec) {
             argusObjRef.nodesWithCycles = [];
             // draw the tree
             argusObjRef.drawTree();
+            /* Update the viewbox to include all visible elements (esp.
+             * ancestor nodes and long node+cluster labels)
+             */
+            setZoomAndReframeView();
 
             // Release the forced height of the argus viewport
             $(this.container).css('height', '');
@@ -766,7 +819,7 @@ function createArgus(spec) {
 
         this.nodeID = o.nodeID;
         this.loadData(ajaxInfo);
-        setZoom();
+        setZoomAndReframeView();
         return this;
     };
 
@@ -940,6 +993,7 @@ function createArgus(spec) {
 
             // redraw entire tree with changes
             argusObj.drawTree();
+            setZoomAndReframeView();
         };
     };
     getBackClickHandler = function () {
@@ -960,37 +1014,48 @@ function createArgus(spec) {
     // reckon zoom level as a proportion of 1.0 (="natural" size)
     argusZoomLevel = null;
     zoomStep = 1.2;
-    setZoom = function( newLevel ) {
+    setZoomAndReframeView = function( newLevel ) {
         if (argusZoomLevel && argusZoomLevel === newLevel) {
             return;  // do nothing
         }
-        if (!paper) {
+        if (!paper || !paper.canvas) {
             return;
         }
         if (typeof(argusZoomLevel) !== 'number') {
             // set default size
             argusZoomLevel = 1.0;
-            defaultPaperWidth = paper.width;
-            defaultPaperHeight = paper.height;
         }
+        // read the current scrollbar positions of the argus view
+        var svgContainer = $(paper.canvas)[0].parentElement;
+        argusScrollLeft = svgContainer.scrollLeft;
+        argusScrollTop = svgContainer.scrollTop;
         switch(newLevel) {
             case '+':
                 argusZoomLevel *= zoomStep;
+                argusScrollLeft *= zoomStep;
+                argusScrollTop *= zoomStep;
                 break;
             case '-':
                 argusZoomLevel /= zoomStep;
+                argusScrollLeft /= zoomStep;
+                argusScrollTop /= zoomStep;
                 break;
             default:
                 if (typeof(newLevel) === 'number') {
                     // assume it's an explicit zoom level
+                    var oldZoomLevel = (argusZoomLevel || 1.0);
                     argusZoomLevel = 1.0 * newLevel;
+                    // reckon this change as a "custom zoomStep"
+                    var zoomChange = newLevel / oldZoomLevel;
+                    argusScrollLeft = 0.0 * zoomChange;
+                    argusScrollTop = 0.0 * zoomChange;
                 } else {
                     // assume this is simply re-asserting the current zoom level (eg, in a new node)
                 }
         }
         // try to apply the new scale, while maintaining the current center point
-        paper.setSize(defaultPaperWidth * argusZoomLevel, defaultPaperHeight * argusZoomLevel);
-    }
+        argusObj.revealAllVisibleTreeElements();
+    };
 
     getClickHandlerAltRelLine = function (nodeFromAJAX) {
         /* at some point we will probably want to retain a history of preferred altrelationships, etc.
@@ -1207,6 +1272,7 @@ function createArgus(spec) {
             }
             label = paper.text(labelX, labelY, displayLabel).attr({
                 'text-anchor': labelAnchor,
+                "title": displayLabel,
                 "fill": this.labelColor,
                 "font-size": fontSize
             }).insertBefore(dividerBeforeHighlights);
@@ -1366,6 +1432,7 @@ function createArgus(spec) {
 
                             label = paper.text(labelX, labelY, ancestorNode.name || "").attr({
                                 'text-anchor': 'end',
+                                "title": (ancestorNode.name || ""),
                                 "fill": this.labelColor,
                                 "font-size": fontSize
                             }).insertBefore(dividerBeforeHighlights);
@@ -1456,6 +1523,7 @@ function createArgus(spec) {
             var clusterLabel = "more... ("+ cluster.firstName +" - "+ cluster.lastName +")";
             label = paper.text(clusterLeftEdge + 8, cluster.y - (this.nodeHeight * 0.0), clusterLabel).attr({
                 'text-anchor': 'start',
+                "title": clusterLabel,
                 "fill": this.labelColor,
                 "font-size": fontSize,
                 "cursor": "pointer"
