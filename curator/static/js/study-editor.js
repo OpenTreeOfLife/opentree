@@ -8127,6 +8127,7 @@ function searchForMatchingTaxa() {
     $('#search-results').dropdown('toggle');
 
     $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
         url: doTNRSForAutocomplete_url,  // NOTE that actual server-side method name might be quite different!
         type: 'POST',
         dataType: 'json',
@@ -8200,6 +8201,27 @@ function searchForMatchingTaxa() {
                 $('#search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
                 $('#search-results').dropdown('toggle');
             }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            // report errors or malformed data, if any (else ignore)
+            if (textStatus !== 'success') {
+                if (jqXHR.status >= 500) {
+                    // major TNRS error! offer the raw response for tech support
+                    var errMsg = jqXHR.statusText +' ('+ jqXHR.status +') searching for<br/>'
++'<strong style="background-color: #edd; padding: 0 3px; margin: 0 -3px;">'+ queryText +'</strong><br/>'
++'Please modify your search and try again.<br/>'
++'<span class="detail-toggle" style="text-decoration: underline !important;">Show details in footer</span>';
+                    $('#search-results').html('<li class="disabled"><a><span style="color: #933;">'+ errMsg +'</span></a></li>');
+                    var errDetails = 'TNRS error details:<pre class="error-details">'+ jqXHR.responseText +'</pre>';
+                    $('#search-results').find('span.detail-toggle').click(function(e) {
+                        e.preventDefault();
+                        showErrorMessage(errDetails);
+                        return false;
+                    });
+                    $('#search-results').dropdown('toggle');
+                }
+            }
+            return;
         }
     });
 
@@ -10105,6 +10127,7 @@ function searchForMatchingParentTaxa() {
     $('#parent-taxon-search-results').dropdown('toggle');
 
     $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
         url: doTNRSForAutocomplete_url,  // NOTE that actual server-side method name might be quite different!
         type: 'POST',
         dataType: 'json',
@@ -10181,6 +10204,27 @@ function searchForMatchingParentTaxa() {
                 $('#parent-taxon-search-results').html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
                 $('#parent-taxon-search-results').dropdown('toggle');
             }
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+            // report errors or malformed data, if any (else ignore)
+            if (textStatus !== 'success') {
+                if (jqXHR.status >= 500) {
+                    // major TNRS error! offer the raw response for tech support
+                    var errMsg = jqXHR.statusText +' ('+ jqXHR.status +') searching for<br/>'
++'<strong style="background-color: #edd; padding: 0 3px; margin: 0 -3px;">'+ queryText +'</strong><br/>'
++'Please modify your search and try again.<br/>'
++'<span class="detail-toggle" style="text-decoration: underline !important;">Show details in footer</span>';
+                    $('#parent-taxon-search-results').html('<li class="disabled"><a><span style="color: #933;">'+ errMsg +'</span></a></li>');
+                    var errDetails = 'TNRS error details:<pre class="error-details">'+ jqXHR.responseText +'</pre>';
+                    $('#parent-taxon-search-results').find('span.detail-toggle').click(function(e) {
+                        e.preventDefault();
+                        showErrorMessage(errDetails);
+                        return false;
+                    });
+                    $('#parent-taxon-search-results').dropdown('toggle');
+                }
+            }
+            return;
         }
     });
 
