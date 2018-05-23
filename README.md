@@ -19,18 +19,16 @@ v2.7.3.
 Newer versions of python2.7 should work, but **NOTE that web2py is not
 compatible with Python 3**.
 The final invocation to create your virtualenv should look something like:
-```
-$ virtualenv --python=(which python2.7) --distribute env
-$ source env
-```
+
+    $ virtualenv --python=(which python2.7) --distribute env
+    $ source env/bin/activate
+
 
 The included **requirements.txt** file lists known-good versions of all the required
 python modules for opentree, plus a few convenience modules. To [install these modules 
 using pip](http://www.pip-installer.org/en/latest/cookbook.html#requirements-files), 
 
-<pre>
-pip install -r requirements.txt
-</pre>
+    pip install -r requirements.txt
 
 ### install web2py and link to applications
 
