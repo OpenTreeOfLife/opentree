@@ -829,11 +829,12 @@ function showObjectProperties( objInfo, options ) {
                 nodeSection.selected = false;
             }
             orderedSections.push(orphanSection);
+            var top_curator_app_link = createCuratorAElement("", "study curation application");
             orphanSection.displayedProperties[
                 '<p>This taxon exists in our taxonomy but is not connected to any other taxa in the'
                +' synthetic tree. This happens when the taxon is non-monphyletic in contributed'
                +' phylogenies. To contribute a phylogeny that supports monophyly of this taxon, use'
-               +' our <a href="/curator" target="_blank">study curation application</a>.</p>'] = '';
+               +' our ' + top_curator_app_link.outerHTML + '.</p>'] = '';
             // TODO: Explain in more detail: Why is this disconnected from other nodes?
         }
     } else {
@@ -1147,7 +1148,10 @@ function showObjectProperties( objInfo, options ) {
                             pRef = studyInfo['ot:studyPublicationReference'] || '???';
                             pCompactRef = fullToCompactReference( pRef );
                             // show compact reference for each study, with a toggle for more below
-                            displayVal = '<div class="related-study"><div class="compact-ref"><a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pCompactRef +'</a></div>';
+                            var displayLinkEl = createCuratorAElement("/study/view/"+ pID,
+                                                                       pCompactRef,
+                                                                       "Link to this study in curation app");
+                            displayVal = '<div class="related-study">' + displayLinkEl.outerHTML + '</div>';
                             displayVal += '<div class="full-study-details" style="display: none;">';
                             displayVal += '<div class="full-ref">'+ pRef +'</div>';
 
@@ -1160,15 +1164,15 @@ function showObjectProperties( objInfo, options ) {
                             /* Phylografter link
                             displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
                             */
+                            displayLinkEl.innerHTML = pID;
                             displayVal += (
-                                'Open Tree curation of this study: <a href="/curator/study/view/'+ pID +'" target="_blank" title="Link to this study in curation app">'+ pID +'</a><br/>'
+                                'Open Tree curation of this study: ' + displayLinkEl.outerHTML + '<br/>'
                               + 'Supporting '+ (studyInfo.supportingTrees.length > 1 ? 'trees:' : 'tree:')
                             );
                             for (var treeID in studyInfo.supportingTrees) {
-                                displayVal += (
-                                    '&nbsp; <a href="/curator/study/view/'+ pID +'?tab=trees&tree='+ treeID +'" '
-                                  + 'target="_blank" title="Link to this supporting tree in curation app">'+ treeID +'</a>'
-                                );
+                                var treeLinkEl = createCuratorAElement('/study/view/'+ pID + '?tab=trees&tree=' + treeID,
+                                                                       treeID, "Link to this supporting tree in curation app");
+                                displayVal += ('&nbsp; ' + treeLinkEl.outerHTML);
                             }
 
                             pCurator = studyInfo['ot:curatorName'];

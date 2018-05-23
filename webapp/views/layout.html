@@ -357,6 +357,22 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
             }
         }
 
+        var createCuratorUrl = function (trailing) {
+            return "{{=curator_url}}" + trailing ;
+        };
+
+        var createCuratorAElement = function (trailing, text, title) {
+            var curator_app_link;
+            curator_app_link = document.createElement('a');
+            curator_app_link.setAttribute("href", createCuratorUrl(trailing));
+            curator_app_link.setAttribute("target", "_blank");
+            if (title) {
+                curator_app_link.setAttribute("title", title);
+            }
+            curator_app_link.innerHTML = text;
+            return curator_app_link;
+        };
+
         $(document).ready(function() {
             // taxon search on remote site (using JSONP to overcome the same-origin policy)
             $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
@@ -422,7 +438,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         <div class="nav-collapse collapse">
                     <ul class="nav">
               <!--<li class="active"><a href="{{= URL('default','index') }}">Home</a></li>-->
-              <li><a href="/curator">Add / browse trees</a></li>
+              <li><a href="{{=curator_url}}">Add / browse trees</a></li>
               <li><a href="{{= URL('contact','index') }}">Feedback</a></li>
               <li class="dropdown">
                 <a href="{{= URL('about','open-tree-of-life') }}" class="dropdown-toggle" data-toggle="dropdown">
