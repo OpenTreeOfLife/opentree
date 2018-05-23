@@ -1,6 +1,5 @@
 {{response.title = "Progress - Open Tree of Life"
-  ### response.files.append("/curator/static/js/d3.v3.js")
-  response.files.append("/curator/static/js/d3.v3.min.js") }}
+  response.files.append("/opentree/static/js/d3.v3.min.js") }}
 {{extend 'layout.html'}}
 {{import urllib}}
 {{from pprint import pprint}}
@@ -91,7 +90,7 @@ circle.taxo-release-marker {
               large gap between the number of taxa in OTT and the number of
               taxa in our datastore (phylesystem) and the synthetic tree!
               Please help close this gap by adding published trees through our
-              <a href="/curator">curator application</a>.
+              <a href="{{=curator_url}}">curator application</a>.
               <br/>
               <a id="warnings-toggle" onclick="$('#warnings-panel').toggle(); return false;"
                  style="display: none; font-weight:bold; color:red; background-color: #fdd;" href="#">

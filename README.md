@@ -57,14 +57,23 @@ symlink. This will be available at http://127.0.0.1:8000/curator/
     cd web2py/applications
     ln -s ../../curator curator
     cd -
-    
 
-### Launch web2py for debugging
+## Configuring the application
+Copy and tweak the template `config` files to provide the variables that will
+be available during execution of the web applications:
 
-   <pre>
-   cd web2py
-   python web2py.py --nogui -a '&lt;recycle&gt;'
-   </pre>
+    for app in webapp curator ; do 
+        cp ${app}/private/config.example ${app}/private/config
+    done
+
+Edit each `${app}/private/config` file to use the API servers and properties that you
+    want to use for debugging purposes.
+
+
+## Launch web2py for debugging
+
+    cd web2py
+    python web2py.py --nogui -a '<recycle>'
    
    Where the -a flag is allowing you to reuse the previous admin password that you used
    with this instance of web2py.

@@ -53,3 +53,8 @@ singlePropertySearchForStudies_url = {oti_domain}/v3/studies/find_studies
 getTaxonInfo_url = {taxomachine_domain}/v3/taxonomy/taxon_info
 # Include one phylesystem-api method to download NexSON from Bibliographic References page
 API_load_study_GET_url = {opentree_api_domain}/v3/study/{STUDY_ID}
+
+
+# Use this absolute reference to tree if you want to deploy a web-app without a curator app.
+# curator_url = https://tree.opentreeoflife.org/curator
+curator_url = /curator
