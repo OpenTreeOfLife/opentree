@@ -1,7 +1,6 @@
 #!/usr/env python
 import logging
 import os
-import sys
 import json
 import re
 from gluon.http import HTTP
