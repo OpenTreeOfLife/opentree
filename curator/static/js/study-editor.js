@@ -1141,7 +1141,7 @@ function loadSelectedStudy() {
 
                 var chosenTrees;
                 switch(scope) {
-                    case 'In all trees':
+                    case 'In any tree':
                         chosenTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
                         break;
                     case 'In trees nominated for synthesis':
@@ -1150,20 +1150,40 @@ function loadSelectedStudy() {
                     case 'In trees not yet nominated':
                         chosenTrees = getTreesNotYetNominated()
                         break;
+                    case 'Unused (not in any tree)':
+                        chosenTrees = null;
+                        break;
                     default:
                         chosenTrees = [];
                 }
 
                 // pool all node IDs in chosen trees into a common object
-                var chosenTreeNodeIDs = {};
-                $.each( chosenTrees, function(i, tree) {
-                    // check this tree's nodes for this OTU id
-                    $.each( tree.node, function( i, node ) {
-                        if (node['@otu']) {
-                            chosenTreeNodeIDs[ node['@otu'] ] = true;
-                        }
+                var chosenOTUIDs = {};
+                if ($.isArray(chosenTrees)) {
+                    // it's a list of zero or more trees
+                    $.each( chosenTrees, function(i, tree) {
+                        // check this tree's nodes for this OTU id
+                        $.each( tree.node, function( i, node ) {
+                            if (node['@otu']) {
+                                chosenOTUIDs[ node['@otu'] ] = true;
+                            }
+                        });
                     });
-                });
+                } else {
+                    // show the *unused* OTUs instead (inverse of 'In any tree' above)
+                    $.each(getUnusedOTUs(), function(i, otu) {
+                        chosenOTUIDs[ otu['@id'] ] = true;
+                    });
+                }
+                console.warn(chosenOTUIDs);
+                /*
+                if (chosenOTUIDs.length > 0) {
+                    console.warn("Here's the first of chosenOTUIDs:");
+                    console.warn(chosenOTUIDs[0]);
+                } else {
+                    console.warn("chosenOTUIDs is an empty list!");
+                }
+                */
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter(
@@ -1178,14 +1198,16 @@ function loadSelectedStudy() {
 
                         // check nodes against trees, if filtered
                         switch (scope) {
-                            case 'In all trees':
+                            case 'In any tree':
                                 // N.B. Even here, we want to hide (but not preserve) OTUs that don't appear in any tree
                             case 'In trees nominated for synthesis':
                             case 'In trees not yet nominated':
                                 // check selected trees for this node
+                            case 'Unused (not in any tree)':
+                                // the inverse of 'In any tree' above
                                 var foundInMatchingTree = false;
                                 var otuID = otu['@id'];
-                                foundInMatchingTree = otuID in chosenTreeNodeIDs;
+                                foundInMatchingTree = otuID in chosenOTUIDs;
                                 if (!foundInMatchingTree) return false;
                                 break;
 
@@ -2236,7 +2258,7 @@ function updateMappingStatus() {
                             +'<span class="btn-group" style="margin: -2px 0;">'
                             +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
                             +'</span> '
-                            +'button or change the filter to <strong>In all trees</strong>.<'+'/p>';
+                            +'button or change the filter to <strong>In any tree</strong>.<'+'/p>';
                     showBatchApprove = false;
                     showBatchReject = false;
                     needsAttention = true;
@@ -10745,4 +10767,51 @@ function printCurrentTreeView() {
 
     // restore the normal doc title
     window.document.title = oldTitle;
+}
+
+function getUnusedOTUs() {
+    // return a list of OTUs that are not used in any tree
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+    // start with all OTUs in the study, then whittle them down
+    var unusedOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+    // var otu = getOTUByID( otu );
+    console.log("BEFORE - ALL OTUs: "+ unusedOTUs.length);
+    $.each( allTrees, function(i, tree) {
+        // check this tree's nodes for this OTU id
+        $.each( tree.node, function( i, node ) {
+            if (node['@otu']) {
+                var otu = getOTUByID( node['@otu'] );
+                if ($.inArray(otu, unusedOTUs) !== -1) {
+                    removeFromArray( otu, unusedOTUs );
+                }
+            }
+        });
+    });
+    console.log("AFTER - UNUSED OTUs: "+ unusedOTUs.length);
+    return unusedOTUs;
+}
+
+function purgeUnusedOTUs() {
+    // remove each unused OTU from its parent OTUs collection
+    $.each( getUnusedOTUs(), function(i, otu) {
+        console.log("REMOVING AN UNUSED OTU!");
+        console.log(otu);
+        $.each(viewModel.nexml.otus, function(i, otusCollection) {
+            if ($.inArray(otu, otusCollection.otu) !== -1) {
+                removeFromArray( otu, otusCollection.otu );
+            }
+        });
+    });
+
+    // TODO: remove any empty OTUs-collections?
+    // TODO: remove related annotation events and agents?
+
+    // force rebuild of all tree-related lookups
+    buildFastLookup('OTUS_BY_ID');
+
+    console.log("AFTER - ALL OTUs: "+ viewModel.elementTypes.otu.gatherAll(viewModel.nexml).length);
+
+    // force update of curation UI in all relevant areas
+    nudgeTickler('OTU_MAPPING_HINTS');
+    nudgeTickler('STUDY_HAS_CHANGED');
 }
