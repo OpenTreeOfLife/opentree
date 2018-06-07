@@ -125,7 +125,7 @@ def download_subtree():
         # apparently this needs to be a POST, or it just describes the API
         tree_response = requests.post(fetch_url, data=json.dumps(fetch_args), headers=json_headers)
         tree_json = tree_response.json()
-        newick_text = unicode(tree_json.get('newick', 'NEWICK_NOT_FOUND')).encode('utf-8');
+        newick_text = unicode(tree_json.get('newick', u'NEWICK_NOT_FOUND')).encode('utf-8');
         s.write( newick_text )
 
     except Exception, e:
