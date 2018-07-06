@@ -1,3 +1,4 @@
 requests==2.2.1
 python-dateutil==2.2
 locket==0.1.1
+bleach
