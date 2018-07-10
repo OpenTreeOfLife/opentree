@@ -92,8 +92,8 @@
         "===": "total_OTU_count found in http://files.opentreeoflife.org/synthesis/opentree10.3/output/labelled_supertree/index.html",
         "version": "v10.3",
         "OTT_version": "ott3.0draft6",
-        "tree_count": 976,
-        "total_OTU_count": 72517,
-        "tip_count": 2641298
+        "tree_count": 974,
+        "total_OTU_count": 65739,
+        "tip_count": 2641229
     }
 }
