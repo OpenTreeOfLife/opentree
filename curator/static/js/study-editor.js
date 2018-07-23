@@ -7024,7 +7024,8 @@ function getNodeConflictDescription(tree, node) {
         case 'ott':
             if (node.conflictDetails.witness) {
                 // EXAMPLE: https://tree.opentreeoflife.org/taxonomy/browse?id=770315
-                witnessURL = "/taxonomy/browse?id={NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+		var witness_ott_id = node.conflictDetails.witness.replace('ott','');
+                witnessURL = "/taxonomy/browse?id={NODE_ID}".replace('{NODE_ID}', witness_ott_id);
             } else {
                 missingWitnessDescription = "anonymous taxonomy node"; // unlikely!
             }

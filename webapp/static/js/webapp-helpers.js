@@ -103,6 +103,7 @@ function latestCrossRefURL( url ) {
      if (!ottID) {
          return null;
      }
+     ottID=ottID.replace('ott','');
      var url = '/taxonomy/browse?id={OTT_ID}';
      return url.replace('{OTT_ID}', ottID);
  }
