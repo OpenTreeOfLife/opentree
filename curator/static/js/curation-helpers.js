@@ -483,7 +483,7 @@ function getSynthTreeViewerURLForTaxon(ottID) {
     if (!ottID) {
         return null;
     }
-    var url = '/opentree/argus/ottol@{OTT_ID}';
+    var url = '/opentree/argus/@{OTT_ID}';
     return url.replace('{OTT_ID}', ottID);
 }
 
