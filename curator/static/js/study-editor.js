@@ -1732,6 +1732,7 @@ function getTreeConflictSummary(conflictInfo) {
     //var totalNodesPartialPathOf = 0;
     for (var nodeid in conflictInfo.detailsByNodeID) {
         switch(conflictInfo.detailsByNodeID[nodeid].status) {
+	    case 'terminal':
             case 'supported_by':
             case 'partial_path_of':
                 summary.aligned.total++;
@@ -1741,6 +1742,7 @@ function getTreeConflictSummary(conflictInfo) {
                 summary.conflicting.total++;
                 summary.conflicting.nodes[nodeid] = conflictInfo.detailsByNodeID[nodeid];
                 break;
+            case 'resolved_by':
             case 'resolves':
                 summary.resolving.total++;
                 summary.resolving.nodes[nodeid] = conflictInfo.detailsByNodeID[nodeid];
@@ -5307,7 +5309,7 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
         labelInfo.labelType = 'internal node (other)';
         // include tree['^ot:nodeLabelDescription'] ?
     } else if (('conflictDetails' in node) && 
-               ($.inArray(node.conflictDetails.status, ['supported_by', 'partial_path_of', 'mapped_to_taxon']) !== -1) &&
+               ($.inArray(node.conflictDetails.status, ['supported_by', 'terminal', 'partial_path_of', 'mapped_to_taxon']) !== -1) &&
                node.conflictDetails.witness_name) {
         // use any 'aligned' taxon name provided by conflict service
         labelInfo.label = node.conflictDetails.witness_name;
@@ -7025,6 +7027,7 @@ function getNodeConflictDescription(tree, node) {
 
     var conflictHTML = "";
     switch(node.conflictDetails.status) {
+      case 'terminal':
       case 'supported_by':
       case 'partial_path_of':
       case 'mapped_to_taxon':
@@ -7043,6 +7046,7 @@ function getNodeConflictDescription(tree, node) {
               conflictHTML = 'Conflicts with '+ missingWitnessDescription;
           }
           break;
+      case 'resolved_by':
       case 'resolves':
           if (witnessURL) {
               conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+
