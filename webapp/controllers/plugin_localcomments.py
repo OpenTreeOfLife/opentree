@@ -5,7 +5,7 @@ from gluon.contrib.markdown.markdown2 import markdown
 import requests
 import os.path
 import urllib
-import bleach
+from bleach.sanitizer import Cleaner
 from datetime import datetime
 import json
 from pprint import pprint
@@ -427,6 +427,15 @@ def index():
         link_replace = r'\1'
         # NOTE the funky constructor required to use this below
 
+        # Define a consistent cleaner to sanitize user input. We need a few
+        # elements that are common in our markdown but missing from the Bleach
+        # whitelist.
+        # N.B. HTML comments are stripped by default. Non-allowed tags will appear
+        # "naked" in output, so we can identify any bad actors.
+        common_feedback_tags = [u'p', u'br']  # any others? h1, h2, etc?
+        ot_markdown_tags = list(set( bleach.sanitizer.ALLOWED_TAGS + common_feedback_tags))
+        ot_cleaner = Cleaner(tags=ot_markdown_tags)
+
         try:   # TODO: if not comment.deleted:
             # N.B. some missing information (e.g. supporting URL) will appear here as a string like "None"
             supporting_reference_url = metadata.get('Supporting reference', None)
@@ -435,7 +444,7 @@ def index():
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
                     ('title' in comment) and DIV( comment['title'], A(T('on GitHub'), _href=comment['html_url'], _target='_blank'), _class='topic-title') or '',
-                    DIV( bleach.clean(str(XML(markdown(get_visible_comment_body(comment['body'] or ''), extras={'link-patterns':None}, link_patterns=[(link_regex, link_replace)]).encode('utf-8'), sanitize=False))),_class=(issue_node and 'body issue-body' or 'body comment-body')),
+                    DIV( ot_cleaner.clean(str(XML(markdown(get_visible_comment_body(comment['body'] or ''), extras={'link-patterns':None}, link_patterns=[(link_regex, link_replace)]).encode('utf-8'), sanitize=False))),_class=(issue_node and 'body issue-body' or 'body comment-body')),
                     DIV( A(T('Supporting reference (opens in a new window)'), _href=supporting_reference_url, _target='_blank'), _class='body issue-supporting-reference' ) if has_supporting_reference_url else '',
                     DIV(
                         A(T(author_display_name), _href=author_link, _target='_blank'),
@@ -820,8 +829,6 @@ def clear_local_comments():
             # Extract a root-relative URL from markdown strings like 
             # "[devtree.opentreeoflife.org/opentree/argus/otol.draft.22@132](http://devtree.opentreeoflife.org/opentree/argus/otol.draft.22@132)"
             markdown_url = local_url
-            #print('markdown_url:')
-            #print(markdown_url)
             parts = markdown_url.split('[')
             if len(parts) > 1:
                 markdown_url = parts[1]
