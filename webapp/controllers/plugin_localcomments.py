@@ -5,6 +5,7 @@ from gluon.contrib.markdown.markdown2 import markdown
 import requests
 import os.path
 import urllib
+import bleach
 from bleach.sanitizer import Cleaner
 from datetime import datetime
 import json
