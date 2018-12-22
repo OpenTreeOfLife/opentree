@@ -77,5 +77,32 @@
         "tree_count": 819,
         "total_OTU_count": 55226,
         "tip_count": 2637204
+    },
+    "2018-01-09T00Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count found in http://files.opentreeoflife.org/synthesis/opentree10.2/output/labelled_supertree/index.html",
+        "version": "v10.2",
+        "OTT_version": "ott3.0draft6",
+        "tree_count": 954,
+        "total_OTU_count": 62664,
+        "tip_count": 2641222
+    },
+    "2018-07-02T00Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count found in http://files.opentreeoflife.org/synthesis/opentree10.3/output/labelled_supertree/index.html",
+        "version": "v10.3",
+        "OTT_version": "ott3.0draft6",
+        "tree_count": 974,
+        "total_OTU_count": 65739,
+        "tip_count": 2641229
+    },
+    "2018-09-24T00Z": {
+        "===": "tree_count and tip_count from https://devapi.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count found in http://files.opentreeoflife.org/synthesis/opentree10.3/output/labelled_supertree/index.html",
+        "version": "v10.4",
+        "OTT_version": "ott3.0draft6",
+        "tree_count": 987,
+        "total_OTU_count": 65662,
+        "tip_count": 2640941
     }
 }

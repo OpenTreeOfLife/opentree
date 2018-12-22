@@ -633,6 +633,8 @@ def to_nexson():
                         if v > 0:
                             f = fa_flag[k]
                             invoc.append('-p{f}{v:d}'.format(f=f, v=v))
+                # Use new NCL option to emit only trees and taxa (not character data)
+                invoc.append('-etreenexml')
                 invoc.append('in.nex')
                 do_ext_proc_launch(request,
                                    working_dir,

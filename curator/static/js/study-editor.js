@@ -1725,6 +1725,10 @@ function getTreeConflictSummary(conflictInfo) {
     // summary tallies of each node status.
     // treat supported_by and partial_path_of the same
     var summary = {
+        'terminal': {
+            total: 0,
+            nodes: {}
+        },
         'aligned': {
             total: 0,
             nodes: {}
@@ -1745,6 +1749,10 @@ function getTreeConflictSummary(conflictInfo) {
     //var totalNodesPartialPathOf = 0;
     for (var nodeid in conflictInfo.detailsByNodeID) {
         switch(conflictInfo.detailsByNodeID[nodeid].status) {
+	    case 'terminal':
+                summary.terminal.total++;
+                summary.terminal.nodes[nodeid] = conflictInfo.detailsByNodeID[nodeid];
+                break;
             case 'supported_by':
             case 'partial_path_of':
                 summary.aligned.total++;
@@ -1754,6 +1762,7 @@ function getTreeConflictSummary(conflictInfo) {
                 summary.conflicting.total++;
                 summary.conflicting.nodes[nodeid] = conflictInfo.detailsByNodeID[nodeid];
                 break;
+            case 'resolved_by':
             case 'resolves':
                 summary.resolving.total++;
                 summary.resolving.nodes[nodeid] = conflictInfo.detailsByNodeID[nodeid];
@@ -1768,6 +1777,7 @@ function getTreeConflictSummary(conflictInfo) {
     var nodeCounts = getNodeCounts(tree);
     var internalNodeCount = nodeCounts.totalNodes - nodeCounts.totalTips;
     summary.undetermined.total = nodeCounts.totalNodes
+        - summary.terminal.total
         - summary.aligned.total
         - summary.conflicting.total
         - summary.resolving.total;
@@ -1909,6 +1919,35 @@ function displayConflictSummary(conflictInfo) {
       var unnamedNodes = summaryInfo.conflicting.total - namedNodes
       if (unnamedNodes > 0) {
         $nodeList.append('<li>plus ' + unnamedNodes + ' more nodes that resolve unnamed nodes in the target</li>')
+      }
+    }
+
+    // show terminal nodes
+    $reportArea.append('<p style="padding-left: 2em;">'+ summaryInfo.terminal.total
+        +' <strong>tip</strong> nodes that can be mapped to nodes in the target'
+        + (summaryInfo.terminal.total > 0 ? ' <a href="#" onclick="$(\'#report-terminal-nodes\').toggle(); return false;">(hide/show node list)</a>' : '')
+        +'</p>');
+    $reportArea.append('<ul id="report-terminal-nodes" class="conflict-report-node-list"></ul>');
+    var $nodeList = $reportArea.find('#report-terminal-nodes');
+    var namedNodes = 0
+    for (var nodeid in summaryInfo.terminal.nodes) {
+        var nodeInfo = summaryInfo.terminal.nodes[nodeid];
+        if ('witness' in nodeInfo) {
+          var nodeLink = getTargetTreeNodeLink(nodeid, referenceTreeID);
+          var witnessLink = getWitnessLink(nodeInfo, targetTree);
+          var nodeName = 'tree '+ nodeLink +' terminal to '+ witnessLink;
+          $nodeList.append('<li>'+ nodeName +'</li>');
+          ++namedNodes
+        }
+        //var nodeName = 'witness_name' in nodeInfo ? nodeInfo.witness_name +' ['+ nodeid +']' : 'Unnamed node ('+ nodeInfo.witness +')'
+    }
+    if (namedNodes == 0) {
+      $nodeList.append('<li>all target nodes unnamed (so there is not anything interesting to show here)</li>')
+    }
+    else {
+      var unnamedNodes = summaryInfo.terminal.total - namedNodes
+      if (unnamedNodes > 0) {
+        $nodeList.append('<li>plus ' + unnamedNodes + ' more unnamed target nodes terminal to nodes in this tree</li>')
       }
     }
 
@@ -5323,7 +5362,7 @@ function getTreeNodeLabel(tree, node, importantNodeIDs) {
         labelInfo.labelType = 'internal node (other)';
         // include tree['^ot:nodeLabelDescription'] ?
     } else if (('conflictDetails' in node) && 
-               ($.inArray(node.conflictDetails.status, ['supported_by', 'partial_path_of', 'mapped_to_taxon']) !== -1) &&
+               ($.inArray(node.conflictDetails.status, ['supported_by', 'terminal', 'partial_path_of', 'mapped_to_taxon']) !== -1) &&
                node.conflictDetails.witness_name) {
         // use any 'aligned' taxon name provided by conflict service
         labelInfo.label = node.conflictDetails.witness_name;
@@ -7000,8 +7039,7 @@ function getNodeConflictDescription(tree, node) {
     switch (tree.conflictDetails.referenceTreeID) {
         case 'ott':
             if (node.conflictDetails.witness) {
-                // EXAMPLE: https://tree.opentreeoflife.org/taxonomy/browse?id=770315
-                witnessURL = "/taxonomy/browse?id={NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
+                witnessURL = getTaxobrowserURL(node.conflictDetails.witness);
             } else {
                 missingWitnessDescription = "anonymous taxonomy node"; // unlikely!
             }
@@ -7041,6 +7079,7 @@ function getNodeConflictDescription(tree, node) {
 
     var conflictHTML = "";
     switch(node.conflictDetails.status) {
+      case 'terminal':
       case 'supported_by':
       case 'partial_path_of':
       case 'mapped_to_taxon':
@@ -7059,6 +7098,7 @@ function getNodeConflictDescription(tree, node) {
               conflictHTML = 'Conflicts with '+ missingWitnessDescription;
           }
           break;
+      case 'resolved_by':
       case 'resolves':
           if (witnessURL) {
               conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+

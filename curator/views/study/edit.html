@@ -184,16 +184,19 @@ body {
 }
 
 /* Conflict-info colors should take precedence */
+.node.conflict-terminal circle,
 .node.conflict-supported_by circle,
 .node.conflict-partial_path_of circle,
 .node.conflict-mapped_to_taxon circle {
   fill: #36f;
 }
+.link.conflict-terminal,
 .link.conflict-supported_by,
 .link.conflict-partial_path_of,
 .link.conflict-mapped_to_taxon {
   stroke: #36f;
 }
+.node-conflict-status-terminal,
 .node-conflict-status-supported_by,
 .node-conflict-status-partial_path_of,
 .node-conflict-status-mapped_to_taxon {
@@ -217,6 +220,16 @@ body {
   stroke: #0b0;
 }
 .node-conflict-status-resolves {
+  color: #0b0;
+}
+
+.node.conflict-resolved_by circle {
+  fill: #0b0;
+}
+.link.conflict-resolved_by {
+  stroke: #0b0;
+}
+.node-conflict-status-resolved_by {
   color: #0b0;
 }
 

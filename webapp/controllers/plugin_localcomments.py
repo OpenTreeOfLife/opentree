@@ -5,6 +5,7 @@ from gluon.contrib.markdown.markdown2 import markdown
 import requests
 import os.path
 import urllib
+import bleach
 from datetime import datetime
 import json
 from pprint import pprint
@@ -436,7 +437,7 @@ def index():
                     DIV(##T('posted by %(first_name)s %(last_name)s',comment.created_by),
                     # not sure why this doesn't work... db.auth record is not a mapping!?
                     ('title' in comment) and DIV( comment['title'], A(T('on GitHub'), _href=comment['html_url'], _target='_blank'), _class='topic-title') or '',
-                    DIV( XML(markdown(get_visible_comment_body(comment['body'] or ''), extras={'link-patterns':None}, link_patterns=[(link_regex, link_replace)]).encode('utf-8'), sanitize=False),_class=(issue_node and 'body issue-body' or 'body comment-body')),
+                    DIV( bleach.clean(str(XML(markdown(get_visible_comment_body(comment['body'] or ''), extras={'link-patterns':None}, link_patterns=[(link_regex, link_replace)]).encode('utf-8'), sanitize=False))),_class=(issue_node and 'body issue-body' or 'body comment-body')),
                     DIV( A(T('Supporting reference (opens in a new window)'), _href=supporting_reference_url, _target='_blank'), _class='body issue-supporting-reference' ) if has_supporting_reference_url else '',
                     DIV(
                         A(T(author_display_name), _href=author_link, _target='_blank'),

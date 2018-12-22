@@ -446,10 +446,16 @@ function getTaxobrowserLink(displayName, ottID) {
     return link.replace('{TAXO_BROWSER_URL}', getTaxobrowserURL(ottID))
         .replace('{DISPLAY_NAME}', displayName);
 }
+
 function getTaxobrowserURL(ottID) {
     if (!ottID) {
         return null;
     }
+    if (typeof ottID == 'string' || ottID instanceof String)
+    {
+	ottID=ottID.replace('ott','');
+    }
+    // If the taxonomy browser is on a different server, this fails.
     var url = '/taxonomy/browse?id={OTT_ID}';
     return url.replace('{OTT_ID}', ottID);
 }
@@ -477,7 +483,7 @@ function getSynthTreeViewerURLForTaxon(ottID) {
     if (!ottID) {
         return null;
     }
-    var url = '/opentree/argus/ottol@{OTT_ID}';
+    var url = '/opentree/argus/@{OTT_ID}';
     return url.replace('{OTT_ID}', ottID);
 }
 
