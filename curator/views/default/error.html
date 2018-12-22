@@ -28,7 +28,7 @@ response.subtitle = ""
     </h1>
 
     <div style="padding: 50px 50px 30px; font-size: 120%;">
-        {{= XML(suggestion) }}
+        {{= XML(suggestion, sanitize=True) }}
     </div>
 
 </div>
