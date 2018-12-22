@@ -4,6 +4,24 @@ from datetime import datetime
 from opentreewebapputil import (get_opentree_services_method_urls,
                                 fetch_current_TNRS_context_names,
                                 get_data_deposit_message,)
+import bleach
+from bleach.sanitizer import Cleaner
+
+# Define a consistent cleaner to sanitize user input. We need a few
+# elements that are common in our markdown but missing from the Bleach
+# whitelist.
+# N.B. HTML comments are stripped by default. Non-allowed tags will appear
+# "naked" in output, so we can identify any bad actors.
+common_version_notes_tags = [u'p', u'br',
+                             u'h1', u'h2', u'h3', u'h4', u'h5', u'h6',
+                             u'table', u'tbody', u'tr', u'td', u'th',
+                             ]
+ot_markdown_tags = list(set( bleach.sanitizer.ALLOWED_TAGS + common_version_notes_tags))
+common_version_notes_attributes={u'table': [u'class'],
+                                 }
+ot_markdown_attributes = bleach.sanitizer.ALLOWED_ATTRIBUTES.copy()
+ot_markdown_attributes.update(common_version_notes_attributes)
+ot_cleaner = Cleaner(tags=ot_markdown_tags, attributes=ot_markdown_attributes)
 
 ### required - do no delete
 def user(): return dict(form=auth())
@@ -294,7 +312,8 @@ def synthesis_release():
         version_notes_response = requests.get(url=fetch_url).text
         # N.B. We assume here that any hyperlinks have the usual Markdown braces!
         version_notes_html = markdown(version_notes_response).encode('utf-8')
-        # TODO: scrub HTML output with bleach?
+        # scrub HTML output with bleach
+        version_notes_html = ot_cleaner.clean(version_notes_html)
     except:
         version_notes_html = None
     view_dict['synthesis_release_notes'] = version_notes_html
@@ -333,7 +352,8 @@ def taxonomy_version():
         version_notes_response = requests.get(url=fetch_url).text
         # N.B. We assume here that any hyperlinks have the usual Markdown braces!
         version_notes_html = markdown(version_notes_response).encode('utf-8')
-        # TODO: scrub HTML output with bleach?
+        # scrub HTML output with bleach
+        version_notes_html = ot_cleaner.clean(version_notes_html)
     except:
         version_notes_html = None
     view_dict['taxonomy_version_notes'] = version_notes_html
