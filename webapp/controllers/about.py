@@ -294,6 +294,7 @@ def synthesis_release():
         version_notes_response = requests.get(url=fetch_url).text
         # N.B. We assume here that any hyperlinks have the usual Markdown braces!
         version_notes_html = markdown(version_notes_response).encode('utf-8')
+        # TODO: scrub HTML output with bleach?
     except:
         version_notes_html = None
     view_dict['synthesis_release_notes'] = version_notes_html
@@ -332,6 +333,7 @@ def taxonomy_version():
         version_notes_response = requests.get(url=fetch_url).text
         # N.B. We assume here that any hyperlinks have the usual Markdown braces!
         version_notes_html = markdown(version_notes_response).encode('utf-8')
+        # TODO: scrub HTML output with bleach?
     except:
         version_notes_html = None
     view_dict['taxonomy_version_notes'] = version_notes_html
