@@ -255,7 +255,8 @@ from gluon.contrib.markdown.markdown2 import markdown
     </tr>
     <tr class="{{= row_class}} feedback-details">
         <td colspan="2">
-            <div class="feedback-body">{{= XML(markdown(comment.body or ''), sanitize=True) }}</div>
+             {{ # REMINDER: web2py's sanitize can't handle Unicode! }}
+            <div class="feedback-body">{{= XML(markdown(comment.body or ''), sanitize=False) }}</div>
             <div class="feedback-actions" style="padding: 8px 12px 8px 0; text-align: right;">
                 <a class="btn" href="#" onclick="alert('TODO'); return false;">View/reply in context</a>
                 &nbsp;

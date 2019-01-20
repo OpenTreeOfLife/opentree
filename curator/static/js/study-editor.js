@@ -9060,9 +9060,6 @@ function showStudyCommentPreview() {
         url: render_markdown_url,
         data: {'src': viewModel.nexml['^ot:comment']},
         success: function( data, textstatus, jqxhr ) {
-            $('#comment-preview').show();
-        },
-        success: function( data, textstatus, jqxhr ) {
             $('#comment-preview').html(data);
             $('#comment-preview').show();
             //setTimeout(function() {

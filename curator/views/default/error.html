@@ -28,7 +28,8 @@ response.subtitle = ""
     </h1>
 
     <div style="padding: 50px 50px 30px; font-size: 120%;">
-        {{= XML(suggestion, sanitize=True) }}
+        {{ # REMINDER: web2py's sanitize can't handle Unicode! }}
+        {{= XML(suggestion, sanitize=False) }}
     </div>
 
 </div>
