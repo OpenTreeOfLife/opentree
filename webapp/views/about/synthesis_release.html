@@ -109,7 +109,8 @@ circle.taxo-release-marker {
             {{ if synthesis_release_notes: }}
               <div id="taxonomy-version-notes"
                    style="background-color: #f5f5f5; padding: 1em; border-radius: 6px;">
-                  {{= XML(synthesis_release_notes) }}
+                  {{ # REMINDER: web2py's sanitize can't handle Unicode! }}
+                  {{= XML(synthesis_release_notes, sanitize=False) }}
               </div>
             {{ else: }}
               <div class="alert alert-error">
