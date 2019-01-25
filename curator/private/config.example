@@ -60,11 +60,12 @@ singlePropertySearchForStudies_url = {oti_domain}/v3/studies/find_studies
 singlePropertySearchForTrees_url = {oti_domain}/v3/studies/find_trees
 findAllTreeCollections_url = {opentree_api_domain}/v3/collections/find_collections
 treeConflictStatus_url = {conflict_api_domain}/v3/conflict/conflict-status?tree1={TREE1_ID}&tree2={TREE2_ID}&use_cache={USE_CACHE}
-phylesystem_config_url = {opentree_api_domain}/phylesystem/v3/phylesystem_config
-render_markdown_url = {opentree_api_domain}/phylesystem/v3/render_markdown
-getTreesQueuedForSynthesis_url = {opentree_api_domain}/phylesystem/v3/trees_in_synth
-includeTreeInSynthesis_url = {opentree_api_domain}/phylesystem/v3/include_tree_in_synth
-excludeTreeFromSynthesis_url = {opentree_api_domain}/phylesystem/v3/exclude_tree_from_synth
+# some undocumented utility methods (for internal use only)
+phylesystem_config_url = {opentree_api_domain}/v3/phylesystem_config
+render_markdown_url = {opentree_api_domain}/v3/render_markdown
+getTreesQueuedForSynthesis_url = {opentree_api_domain}/v3/trees_in_synth
+includeTreeInSynthesis_url = {opentree_api_domain}/v3/include_tree_in_synth
+excludeTreeFromSynthesis_url = {opentree_api_domain}/v3/exclude_tree_from_synth
 
 # Open Tree API - RESTful URLs for managing studies in remote storage (note HTTP verbs for each)
 #
