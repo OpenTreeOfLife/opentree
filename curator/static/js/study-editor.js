@@ -8512,6 +8512,14 @@ function testDOIForDuplicates( doi ) {
                 // update the viewModel and trigger fresh tests+prompts
                 viewModel.duplicateStudyIDs( matchingStudyIDs );
                 nudgeTickler('GENERAL_METADATA');
+            },
+            function( ) {  // error callback
+                /* Something went wrong! The called function will show the
+                 * error footer, but we should also clear the matching-IDs list
+                 * so that we don't show stale matches.
+                 */
+                viewModel.duplicateStudyIDs( [ ] );
+                nudgeTickler('GENERAL_METADATA');
             }
         );
     } else {
