@@ -358,7 +358,7 @@ function restoreModalEnforcedFocus() {
     $.fn.modal.Constructor.prototype.enforceFocus = activeEnforceFocus;
 }
 
-function checkForDuplicateStudies( idType, testIdentifier, successCallback ) {
+function checkForDuplicateStudies( idType, testIdentifier, successCallback, errorCallback ) {
     // Our test has minor variations based on identifier type
     var queryData;
     switch( idType ) {
@@ -370,6 +370,7 @@ function checkForDuplicateStudies( idType, testIdentifier, successCallback ) {
            break;
         default:
            console.error("checkForDuplicateStudies(): ERROR, unknown idType: '"+ idType +"'!");
+           if (typeof(errorCallback) === 'function') errorCallback();
            return;
     }
     $.ajax({
@@ -389,6 +390,7 @@ function checkForDuplicateStudies( idType, testIdentifier, successCallback ) {
                     var errMsg = 'Sorry, there was an error checking for duplicate studies. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
                     hideModalScreen();
                     showErrorMessage(errMsg);
+                    if (typeof(errorCallback) === 'function') errorCallback();
                     return;
                 }
                 // Server blocked the save due to major validation errors!
@@ -398,6 +400,7 @@ function checkForDuplicateStudies( idType, testIdentifier, successCallback ) {
                 var errMsg = 'Sorry, there was an error checking for duplicate studies. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [parsed in JS]</pre>';
                 hideModalScreen();
                 showErrorMessage(errMsg);
+                if (typeof(errorCallback) === 'function') errorCallback();
                 return;
             }
             // if we're still here, use the success callback provided
