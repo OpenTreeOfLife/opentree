@@ -25,6 +25,9 @@ response.files.append(URL('static','js/knockout-paged-e4a5770702.js'))
 # Knockout bindings for Twitter Bootstrap components
 response.files.append(URL('static','js/knockout-bootstrap.min.js'))
 
+# Date formatting and relative-date calculation
+response.files.append(URL('static','js/moment.min.js'))
+
 
 # jQuery-File-Upload plugin and supporting files (TODO)
 # minimal support for $.widget()
@@ -35,6 +38,7 @@ response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.fileuploa
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/css/jquery.fileupload.css'))
 # TODO: Replace above with upload tools used in Tree Illustrator?
 
+response.files.append(URL('static','css/tnrs.css'))
 
 # TODO: offer fullscreen display for bigger workspace
 response.files.append(URL('static','js/jquery.fullscreen.min.js'))
@@ -50,8 +54,8 @@ response.files.append(URL('static','js/jquery.fullscreen.min.js'))
     <!-- Appears only during creation..? then replaced by status
       <li><a href="#">Import</a></li>
     -->
-      <li><a href="#About-Mapping" data-toggle="tab">About <span class="badge badge-important" style="display: none;">?</span></a></li>
     <!--
+      <li><a href="#About-Mapping" data-toggle="tab">About <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#Data-Upload" data-toggle="tab">1. Upload dataset <span class="badge badge-important" style="display: none;">?</span></a></li>
     -->
       <li><a href="#Name-Mapping" data-toggle="tab">Map labels to names <span class="badge badge-important" style="display: none;">?</span></a></li>
@@ -74,11 +78,13 @@ response.files.append(URL('static','js/jquery.fullscreen.min.js'))
 <div class="row">
     <div class="tab-content">
 
+        <!--
           <div class="tab-pane" id="About-Mapping">
-           <div class="span12"><!-- full width... -->
+           <div class="span12">
 About-Mapping
            </div>
           </div>
+        -->
 
           <div class="tab-pane" id="Name-Mapping">
            <div class="span8"><!-- main column... -->
@@ -98,7 +104,7 @@ About-Mapping
                             <span data-bind="text: viewModel.listFilters.NAMES.order">SORT</span>
                             <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu" data-bind="foreach: ['Unmapped labels first', 'Mapped labels first', 'Original label (A-Z)', 'Original label (Z-A)']">
+                        <ul class="dropdown-menu" data-bind="foreach: ['Unmapped names first', 'Mapped names first', 'Original name (A-Z)', 'Original name (Z-A)']">
                             <li data-bind="css: {'disabled': viewModel.listFilters.NAMES.order() == $data }">
                                 <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.NAMES.order($data); }">SORT</a>
                             </li>
@@ -108,9 +114,14 @@ About-Mapping
                </div>
               </div>
 
-                <div class="empty-list-prompt" data-bind="visible: viewModel.filteredNames().pagedItems().length === 0">
-                    No matching OTUs found! Use the filters above to see
-                    OTUs in this study.
+                <div class="empty-list-prompt" data-bind="visible: viewModel.names().length === 0">
+                    This nameset is empty! You can add names from a text file (one name per line) by clicking <strong>Add names...</strong> in the sidebar. 
+                    <br/>
+                    <br/>
+                    Or click <strong>Load nameset...</strong> to reload a previous session (nameset) file saved from this tool.
+                </div>
+                <div class="empty-list-prompt" data-bind="visible: (viewModel.names().length > 0) && (viewModel.filteredNames().pagedItems().length === 0)">
+                    No matching names found! Clear the text filter above to see more.
                 </div>
                 <!--
                 <div class="unused-otus-prompt" style="margin-top: -6px; margin-bottom: 16px; display: none;"
@@ -310,38 +321,64 @@ About-Mapping
               </span>
             </div>
 
-            <button class="help-toggle">
-                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
-            </button>
-            <div class="help-box" style="display: none;">
-              <button class="help-toggle">
-                  Hide <i class="icon-chevron-up Xicon-white"></i>
-              </button>
-        <!-- TODO: link to OTT should be updated once we have a release page on the webapp -->
-                <p>
-                This is a list of all leaf labels, representing OTUs (operational
-                taxonomic units), in trees in this study. For a tree to
-                contribute to the synthetic tree, OTUs must be mapped
-                to taxa in the
-                <a href="https://tree.opentreeoflife.org/about/taxonomy-version" target="_blank">OTT (Open Tree Taxonomy)</a>.
-                </p>
-                <p>
-                Click the magnifying-glass next to any OTU to see it in
-                the context of this study's trees.
-                </p>
-                <p>
-                We use a TNRS (taxonomic name resolution service) to automate this
-                "mapping" process, including resolving synonyms and misspellings.
-                Mapping is simplest if trees use taxonomic
-                names from
-                <a href="http://www.ncbi.nlm.nih.gov/taxonomy" target="_blank">NCBI</a>,
-                <a href="http://www.gbif.org/species" target="_blank">GBIF</a>,
-                <a href="http://www.indexfungorum.org/" target="_blank">Index Fungorum</a> or
-                <a href="http://www.cmar.csiro.au/datacentre/irmng/" target="_blank">IRMNG</a>.
-                Some labels comprising genus + strain will also map directly.
-                See <strong>Mapping options</strong> for ways to customize mapping.
-                </p>
+            <div id="nameset-metadata-prompt" class="well" style="cursor: pointer;"
+                 onclick="tnrs.showNamesetMetadata(); return false;">
+                <h4 title="Click to show nameset metadata" style="margin-top: 0;">
+                    <i class="pull-right icon-chevron-down"></i>
+                    About this nameset
+                </h4>
+                <strong data-bind="text: viewModel.metadata.name,
+                                   attr: {title: viewModel.metadata.description}">
+                    {TITLE OF CURRENT NAMESET}
+                </strong> 
+                <br />
+                <em data-bind="text: viewModel.displayLastSave()">
+                        {LEGIBLE TIMESTAMP}
+                </em>
+                <br />
+                <a onclick="tnrs.showNamesetMetadata(); return false;">Show/edit details</a>
             </div>
+
+            <div id="nameset-metadata-panel" class="well" style="display: none; margin-top: 1em; clear: both;">
+                <h4 title="Click to hide metadata" style="margin-top: 0; cursor: pointer;"
+                    onclick="tnrs.hideNamesetMetadata(); return false;">
+                    <i class="pull-right icon-chevron-up"></i>
+                    About this nameset
+                </h4>
+                <input type="text" data-bind="value: viewModel.metadata.name" 
+                       placeholder="What should we call it?" />
+                <br />
+                <em data-bind="text: viewModel.displayLastSave()">
+                        {LEGIBLE TIMESTAMP}
+                </em>
+                <br />
+                <em id="nameset-filepath">Loaded from: {PATH TO LOADED FILE}</em>
+                <br />
+                <textarea data-bind="value: viewModel.metadata.description,
+                                     valueUpdate: ['aftterkeydown', 'input'],
+                                     event: {keyup: tnrs.nudge.METADATA, 
+                                             change: tnrs.nudge.METADATA}" 
+                          class="input-block-level"
+                          rows="6"
+                          placeholder="Describe this nameset.">
+                    {RENDERED DESCRIPTION}
+                </textarea>
+            </div>
+
+            <div style="padding: 2px 20px 4px; margin: -10px 0px 0px;">
+                <div style="float: left; margin-right: 0.5em;">
+                    Mapping progress &nbsp;
+                </div>
+                <div style="float: right; margin-left: 0.75em;" 
+                     data-bind="html: tnrs.getMappedNamesTally(),
+                                css: viewModel.ticklers.VISIBLE_NAME_MAPPINGS">
+                </div>
+
+                <div class="progress"
+                     style="height: 0.5em; margin: 0.5em 0;">
+                  <div class="bar" data-bind="style: { width: tnrs.mappingProgressAsPercent() }" style="width: 45%;">&nbsp;</div>
+                </div>
+            </div> 
 
 <!-- TODO: If we're doing independent server-side mapping, show a blanket message like this to avoid conflicts?
             <div class="alert alert-block">
@@ -376,8 +413,7 @@ About-Mapping
                     <p><strong>Note</strong> that the OpenTree taxonomy contains mostly
                     binomials, but in some cases, terminals comprising <em>genus +
                     strain number</em> can also be mapped directly to OTT.
-                    (When in doubt, try mapping first before adding any new
-                    taxa.)</p>
+                    (When in doubt, try mapping it!)</p>
                 </div>
                 <div class="mapping-batch-operations" style="display: none;">
                     <button id="batch-approve" class="btn btn-small pull-left"
@@ -404,7 +440,7 @@ About-Mapping
             </div>
 
             <div id="mapping-options-prompt" class="well" style="cursor: pointer;"
-                 onclick="showMappingOptions(); return false;">
+                 onclick="tnrs.showMappingOptions(); return false;">
                 <h4 title="Click to show mapping options" style="margin-top: 0;">
                     <i class="pull-right icon-chevron-down"></i>
                     Mapping options
@@ -415,7 +451,7 @@ About-Mapping
             </div>
             <div id="mapping-options-panel" class="well" style="display: none;">
                 <h4 title="Click to hide mapping options" style="margin-top: 0; cursor: pointer;"
-                    onclick="hideMappingOptions(); return false;">
+                    onclick="tnrs.hideMappingOptions(); return false;">
                     <i class="pull-right icon-chevron-up"></i>
                     Mapping options
                 </h4>
@@ -537,25 +573,46 @@ About-Mapping
                 </p>
             </div>
 
-            <div class="well">
-                <h4 style="margin-top: 0;">Adding new taxa</h4>
-                <p>
-                Unmapped taxa are kept in the study, but pruned during
-                synthesis. You can submit unmapped tree labels as new taxa in
-                the Open Tree Taxonomy.
-                </p>
-                <button type="submit" class="btn"
-                        onclick="showNewTaxaPopup(); return false;">
-                    <i class="icon-plus"></i> Open new taxa form for selected OTUs
-                </button>
-            </div>
-
            </div>
           </div>
 
           <div class="tab-pane" id="Mapping-Help">
-           <div class="span12"><!-- full width... -->
-Mapping-Help
+           <div class="span8"><!-- full width... -->
+                <p>
+                This tool will help you to quickly map a list of names to 
+                taxa in the <a href="https://tree.opentreeoflife.org/about/taxonomy-version" target="_blank">OTT (Open Tree Taxonomy)</a>.
+                This is typically done with leaf labels that represent OTUs
+                (operational taxonomic units) in a phylogenetic tree.
+                </p>
+                <p>
+                We use a TNRS (taxonomic name resolution service) to automate this
+                mapping process, including resolving synonyms and misspellings.
+                Mapping is simplest if trees use taxonomic
+                names from
+                <a href="http://www.ncbi.nlm.nih.gov/taxonomy" target="_blank">NCBI</a>,
+                <a href="http://www.gbif.org/species" target="_blank">GBIF</a>,
+                <a href="http://www.indexfungorum.org/" target="_blank">Index Fungorum</a> or
+                <a href="http://www.cmar.csiro.au/datacentre/irmng/" target="_blank">IRMNG</a>.
+                Some labels comprising genus + strain will also map directly.
+                See <strong>Mapping options</strong> for ways to customize mapping.
+                </p>
+                <p>
+                TODO: You can monitor your mapping progress using... and save this mapping session as a "<strong>nameset</strong>" file that includes 
+                </p>
+                <ul>
+                    <li>all original and mapped names</li>
+                    <li>OTT ids for all mapped names</li>
+                    <li>any mapping options defined here</li>
+                    <li>copies of all imported files (lists of names)</li>
+                    <li>output files with original and mapped names</li>
+                </ul>
+                <p>
+                This nameset file is a ZIP archive containing the input and
+                output files described above, plus a file
+                <strong>main.json</strong> that carries session details and
+                useful metadata.
+                </p>
+                <p>&nbsp;</p>
            </div>
           </div>
 

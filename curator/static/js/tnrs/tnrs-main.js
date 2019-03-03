@@ -54,15 +54,42 @@ var getNewNamesetModel = function(options) {
             'name': "Untitled nameset",
             'description': "",
             'authors': [ ],   // assign immediately to this user?
-            'date_created': new Date().toISOString()
+            'date_created': new Date().toISOString(),
+            'last_saved': null
         },
-        'mappingHints': {
-            'searchContext': "All Life",
-            'useFuzzyMatching': false,
-            // Replacment regexps
+        "mappingHints": {       // OR nameMappingHints?
+            "description": "Aids for mapping listed names to OTT taxa",
+            "searchContext": "All life",
+            "useFuzzyMatching": false,
+            "substitutions": [
+                /* typical values in use
+                {
+                    "active": false,
+                    "old": ".* ([A-Z][a-z]+ [a-z.]+ [A-Z 0-9]+)$",
+                    "new": "$1",
+                    "valid": true
+                },
+                */
+                /* start with one empty/new substitution */
+                {
+                    "active": false,
+                    "old": "",
+                    "new": "",
+                    "valid": false
+                }
+            ],
         },
         'names': [
-            // original name, manually edited, current mapped name
+            // each should include a unique id, original name, manually edited/adjusted name, and any mapped name/taxon
+            /* here's a typical example, with an arbitrary/serial ID
+            {
+                "id": "name23",
+                "originalLabel": "Bacteria Proteobacteria Gammaproteobacteria Oceanospirillales Saccharospirillaceae Saccharospirillum impatiens DSM 12546",
+                "adjustedLabel": "Proeobacteria",  // WAS '^ot:altLabel'
+                "ottTaxonName": "Saccharospirillum impatiens DSM 12546",
+                "ottId": 132751
+            }
+            */
         ]
     };
     /* TODO: Apply optional modifications?
@@ -82,6 +109,90 @@ var proposedNameMappings = ko.observable({});
     // stored any labels proposed by server, keyed by name id [TODO?]
 var bogusEditedLabelCounter = ko.observable(1);  
     // this just nudges the label-editing UI to refresh!
+
+/* Define a registry of nudge methods, for use in KO data bindings. Calling
+ * a nudge function will update one or more observables to trigger updates
+ * in the curation UI. This approach allows us to work without observables,
+ * which in turn means we can edit enormous viewmodels.
+ */
+var nudge = {
+    'METADATA': function( data, event ) {
+        nudgeTickler( 'METADATA');
+        return true;
+    }
+    // TODO: Add more for any ticklers added below
+}
+function nudgeTickler( name ) {
+    if (name === 'ALL') {
+        for (var aName in viewModel.ticklers) {
+            nudgeTickler( aName );
+        }
+        return;
+    }
+
+    var tickler = viewModel.ticklers[ name ];
+    if (!tickler) {
+        console.error("No such tickler: '"+ name +"'!");
+        return;
+    }
+    var oldValue = tickler.peek();
+    tickler( oldValue + 1 );
+
+    // if this reflects changes to the study, nudge the main 'dirty flag' tickler
+    if (name !== 'COLLECTIONS_LIST') {
+        viewModel.ticklers.NAMESET_HAS_CHANGED( viewModel.ticklers.NAMESET_HAS_CHANGED.peek() + 1 );
+        console.warn('NAMESET_HAS_CHANGED');
+    }
+}
+
+function showNamesetMetadata() {
+    $('#nameset-metadata-prompt').hide();
+    $('#nameset-metadata-panel').show();
+}
+function hideNamesetMetadata() {
+    $('#nameset-metadata-panel').hide();
+    $('#nameset-metadata-prompt').show();
+}
+
+function showMappingOptions() {
+    $('#mapping-options-prompt').hide();
+    $('#mapping-options-panel').show();
+}
+function hideMappingOptions() {
+    $('#mapping-options-panel').hide();
+    $('#mapping-options-prompt').show();
+}
+
+
+function getMappedNamesTally() {
+    // return display-ready tally (mapped/total ratio and percentage)
+    var thinSpace = '&#8201;';
+    if (!viewModel || !viewModel.names || viewModel.names.length === 0) {
+        return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
+    }
+    var totalNameCount = viewModel.names.length;
+    var mappedNameCount = $( ['foo'] ).length;
+    return '<strong>'+ mappedNameCount +'</strong><span>'+ thinSpace +'/'+ thinSpace + totalNameCount +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(totalNameCount / mappedNameCount) +'%)</span>';
+}
+function mappingProgressAsPercent() {
+    if (!viewModel || !viewModel.names || viewModel.names.length === 0) {
+        return 0;
+    }
+    var totalNameCount = viewModel.names.length;
+    var mappedNameCount = $.grep( viewModel.names, function(name, i) {
+        if (!item.ottId) {  
+            // missing, empty string, or null
+            return false;
+        }
+        return true;
+    }).length;
+    return floatToPercent(totalNameCount / mappedNameCount);
+}
+function floatToPercent( dec ) {
+    // assumes a float between 0.0 and 1.0
+    // EXAMPLE: 0.232 ==> 23%
+    return Math.round(dec * 100);
+}
 
 function addSubstitution( clicked ) {
     var subst = {};
@@ -221,14 +332,27 @@ function loadNamesetData( data ) {
      * Add observable properties to the model to support the UI. 
      */
 
+    // prettier display dates
+    viewModel.displayCreationDate = ko.computed(function() {
+        var date = viewModel.metadata.date_created();
+        return formatISODate(date);
+    });
+    viewModel.displayLastSave = ko.computed(function() {
+        var date = viewModel.metadata.last_saved();
+        if (date) {
+            return 'Last saved '+ formatISODate(date);
+        } else {
+            return 'This nameset has not been saved.';
+        }
+    });
+
     // Add a series of observable "ticklers" to signal changes in
     // the model without observable Nexson properties. Each is an
     // integer that creeps up by 1 to signal a change somewhere in
     // related Nexson elements.
-    // TODO: Is this a tickler? ratchet? whisker?
     viewModel.ticklers = {
-        'GENERAL_METADATA': ko.observable(1),
-        'SUPPORTING_FILES': ko.observable(1),
+        'METADATA': ko.observable(1),
+        'INPUT_FILES': ko.observable(1),
         'NAME_MAPPING_HINTS': ko.observable(1),
         'VISIBLE_NAME_MAPPINGS': ko.observable(1),
         // TODO: add more as needed...
@@ -356,7 +480,7 @@ function loadNamesetData( data ) {
                 });
                 break;
 
-            case 'Original label (A-Z)':
+            case 'Original name (A-Z)':
                 filteredList.sort(function(a,b) {
                     var aOriginal = $.trim(a['^ot:originalLabel']);
                     var bOriginal = $.trim(b['^ot:originalLabel']);
@@ -368,7 +492,7 @@ function loadNamesetData( data ) {
                 });
                 break;
 
-            case 'Original label (Z-A)':
+            case 'Original name (Z-A)':
                 filteredList.sort(function(a,b) {
                     var aOriginal = $.trim(a['^ot:originalLabel']);
                     var bOriginal = $.trim(b['^ot:originalLabel']);
@@ -386,10 +510,9 @@ function loadNamesetData( data ) {
 
         }
 
-        // Un-select any otu that's now out of view (ie, outside of the first page of results)
+        // Un-select any name that's now out of view (ie, outside of the first page of results)
         var itemsInView = filteredList.slice(0, viewModel._filteredNames.pageSize);
-        var allNames = viewModel.names();
-        allNames.map(function(name) {
+        viewModel.names().map(function(name) {
             if (name['selectedForAction']) {
                 var isOutOfView = ($.inArray(name, itemsInView) === -1);
                 if (isOutOfView) {
@@ -405,7 +528,6 @@ function loadNamesetData( data ) {
         viewModel._filteredNames.goToPage(1);
         return viewModel._filteredNames;
     }).extend({ throttle: viewModel.filterDelay }); // END of filteredNames
-
 
     // Keep a safe copy of our UI markup, for re-use as a Knockout template (see below)
     var $stashedEditArea = null;
@@ -428,9 +550,57 @@ function loadNamesetData( data ) {
     });
 }
 
+// keep track of the largest (and thus next available) name id
+var highestNameOrdinalNumber = null;
+function findHighestElementOrdinalNumber() {
+    // do a one-time scan for the highest ID currently in use
+    var highestOrdinalNumber = 0;
+    var allNames = viewModel.names();
+    for (var i = 0; i < allNames.length; i++) {
+        var testName = allNames[i];
+        var testID = ko.unwrap(testName['id']) || '';
+        if (testID === '') {
+            console.error("MISSING ID for this name:");
+            console.error(testName);
+            continue;  // skip to next element
+        }
+        if (testID.indexOf('name') === 0) {
+            // compare this to the highest ID found so far
+            var itsNumber = testID.split( 'name' )[1];
+            if ($.isNumeric( itsNumber )) {
+                highestOrdinalNumber = Math.max( highestOrdinalNumber, itsNumber );
+            }
+        }
+    }
+    return highestOrdinalNumber;
+}
+function getNextNameOrdinalNumber() {
+    // increment and return the next available ordinal number for names; this
+    // is typically used to mint a new id, e.g. 23 => 'name23'
+    if (highestNameOrdinalNumber === null) {
+        highestNameOrdinalNumber = findHighestNameOrdinalNumber();
+    }
+    // increment the highest ID for faster assignment next time
+    highestNameOrdinalNumber++;
+    return highestNameOrdinalNumber;
+}
+
+
 function removeDuplicateNames( viewmodel ) {
     // call this when loading a nameset *or* adding names!
     console.warn("I don't know how to remove duplicate names yet!");
+}
+
+function formatISODate( dateString, options ) {
+    // copied from synth-tree viewer (otu_statistics.html)
+    options = options || {includeTime: true};
+    var aDate = new moment(dateString);
+    // see http://momentjs.com/docs/#/parsing/string/
+    if (options.includeTime) {
+        return aDate.format('MMMM Do YYYY, hA');
+    } else {
+        return aDate.format('MMMM Do YYYY');
+    }
 }
 
 $(document).ready(function() {
@@ -458,12 +628,25 @@ $(document).ready(function() {
     $('input[name=treebase-id]').unbind('blur').blur(validateAndTestTreeBaseID);
     $('input[name=publication-DOI]').unbind('blur').blur(validateAndTestDOI);
     */
-    console.log("READY!");
+    //
+    // auto-select the main (UI) tab
+    $('a[href=#Name-Mapping]').tab('show');
+
+    console.log("READY");
 });
 
 // export some members as a simple API
 var api = [
-    'autoMappingInProgress'
+    'nudge',  // expose ticklers for KO bindings
+    'autoMappingInProgress',
+    'updateMappingHints',
+    'showNamesetMetadata',
+    'hideNamesetMetadata',
+    'showMappingOptions',
+    'hideMappingOptions',
+    'getMappedNamesTally',
+    'mappingProgressAsPercent',
+    'formatISODate'
 ];
 $.each(api, function(i, methodName) {
     // populate the default 'module.exports' object
