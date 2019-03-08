@@ -39,14 +39,16 @@ var jszip = require('jszip'),
     Blob = require('blob-polyfill'),
     assert = require('assert');
 
-// these variables should already be defined in the main HTML page
+/* These variables should already be defined in the main HTML page. We should
+ * NOT declare them here, or this will hide their "global" values.
 var initialState;
 var doTNRSForAutocomplete_url;
 var doTNRSForMappingOTUs_url;
 var getContextForNames_url;
 var render_markdown_url;
+*/
 
-/* Return the data model for a new illustration (our JSON representation) */
+/* Return the data model for a new nameset (our JSON representation) */
 var getNewNamesetModel = function(options) {
     if (!options) options = {};
     var obj = {
@@ -100,6 +102,252 @@ var getNewNamesetModel = function(options) {
     return obj;
 };
 
+/* Each time the user sucessfully saves the current nameset, stash the
+ * time and the last proposed filename. NOTE that the browser has very
+ * limited access to the filesystem, so this is *not* necessarily the final
+ * name saved.
+ *      filename: 'turtle-taxa.zip'
+ *     If that proposed name is moot, empty or unreliable:
+ *      filename: 'UNKNOWN'
+ *
+ * We should reset all properties to null if we abandon a session/nameset, or
+ * if we open a new one, or if an attempted save fails.
+ */
+var lastSave = {
+    timestamp: ko.observable(null),  // an ISO date string, or empty
+    filename: ko.observable(null)
+};
+function updateLastSavedInfo( suggestedFilename ) {
+    var rightNow = new Date().toISOString();
+    storage.lastSave.timestamp( rightNow );
+    storage.lastSave.filename( $.trim( suggestedFilename ) );
+    console.warn('UPDATED lastSave, timestamp: '+ storage.lastSave.timestamp() +', SUGGESTED filename: '+ storage.lastSave.filename());
+}
+function clearLastSavedInfo() {
+    storage.lastSave.timestamp(null);
+    storage.lastSave.filename('UNKNOWN');
+    console.warn('CLEARED lastSave, timestamp: '+ storage.lastSave.timestamp() +', proposed filename: '+ storage.lastSave.filename());
+}
+
+/* Load and save (to/from ZIP file on the user's filesystem) */
+
+// propose an appropriate filename based on its internal name
+function getDefaultArchiveFilename( candidateFileName ) {
+    // try to use a candidate name, if provided
+    var suggestedFileName = $.trim(candidateFileName) ||
+        viewModel.metadata.name() ||
+        "UNTITLED_NAMESET";
+    if (!suggestedFileName.toLowerCase().endsWith('.zip')) {
+        suggestedFileName += '.zip';
+    }
+    return suggestedFileName;
+}
+
+function saveCurrentNameset() {
+    var $filenameField = $('input#suggested-archive-filename');
+    var suggestedFileName = $.trim($filenameField.val());
+    if (suggestedFileName) {
+        suggestedFileName = getDefaultArchiveFilename(suggestedFileName);
+    } // ASSUMES this field is populated based on lastSave info?
+
+    // TODO: stylist.storage[ LOCAL_FILESYSTEM ].saveIllustration(suggestedFileName);
+
+    updateLastSavedInfo(suggestedFileName);
+    $('#nameset-local-filesystem-warning').slideDown(); // TODO
+}
+
+function loadListFromChosenFile( vm, evt ) {
+    // First param (corresponding view-model data) is probably empty; focus on the event!
+    var $hintArea = $('#list-local-filesystem-warning').eq(0);
+    $hintArea.html("");  // clear for new results
+    var eventTarget = evt.target || evt.srcElement;
+    switch(eventTarget.files.length) {
+        case (0):
+            console.warn('No file(s) selected!');
+            return;
+        case (1):
+        default:  // ignore multiple files for now, just load the first
+            var fileInfo = eventTarget.files[0];
+            console.warn("fileInfo.name = "+ fileInfo.name);
+            console.warn("fileInfo.type = "+ fileInfo.type);
+            var isValidList = false;
+            switch (fileInfo.type) {
+                case 'text/plain':
+                case 'text/tab-separated-values':
+                    isValidList = true;
+                    break;
+                case '':
+                    // check file extension
+                    if (fileInfo.name.match('.(txt|tsv)$')) {
+                        isValidList = true;
+                    }
+                    break;
+            }
+            if (!isValidList) {
+                var msg = "A list of names should end in <code>.txt</code> or <code>.tsv</code>. Choose another file?";
+                $hintArea.html(msg).show();
+                return;
+            }
+            // Still here? try to load and parse the list (line- or tab-delimited names)
+            console.log('reading list contents...');
+            var msg = "Reading list of names...";
+            $hintArea.html(msg).show();
+
+            var fr = new FileReader();
+            fr.onload = function( evt ) {
+                var listText = evt.target.result;
+                console.log( listText );
+                // test a variety of delimiters to find multiple items
+                var names = [ ];
+                var multipleNamesFound = false;
+                var delimiters = ['\n','\r','\t'];
+                $.each(delimiters, function(i, delim) {
+                    if (!multipleNamesFound) {
+                        names = listText.split(delim);
+                        // filter out empty names, empty lines, etc.
+                        names = $.grep(names, function(name, i) {
+                            return $.trim(name) !== "";
+                        });
+                        switch (names.length) {
+                            case 0:
+                                console.warn("No names found with delimiter '"+ delim +"'");
+                                break;
+                            case 1:
+                                console.warn("Just one name found with delimiter '"+ delim +"'");
+                                break;
+                            default:
+                                multipleNamesFound = true;
+                                console.warn( names.length +" names found with delimiter '"+ delim +"'");
+                                // TODO: unpack names, ignore remaining delimiters
+                                $.each(names, function(i, name) {
+                                    // add a new name entry to the 
+                                    console.log("...adding name '"+ name +"'...");
+                                    viewModel.names.push({
+                                        "id": ("name"+ getNextNameOrdinalNumber()),
+                                        "originalLabel": name,
+                                     /* add these only when they're populated!
+                                        "adjustedLabel": ""   // WAS '^ot:altLabel'
+                                        "ottTaxonName": "Homo sapiens sapiens",
+                                        "ottId": 132751
+                                      */
+                                    });
+                                });
+                                // sweep for duplicates
+                                removeDuplicateNames(viewModel);
+                                // TODO: nudge tickler(s)?
+                                return;
+                        }
+                    }
+                });
+                // still here? there was a problem, report it and bail
+                var msg;
+                if (multipleNamesFound) {
+                    msg = "Adding "+ names.length +" names found in this file...";
+                } else {
+                    msg = "No names (or just one) found in this file! Try again?";
+                }
+                $hintArea.html(msg).show();
+                return;
+            };
+            //fr.readAsDataURL(fileInfo);
+            fr.readAsText(fileInfo);  // default encoding is utf-8
+    }
+}
+
+function loadNamesetFromChosenFile( vm, evt ) {
+    // First param (corresponding view-model data) is probably empty; focus on the event!
+    var $hintArea = $('#nameset-local-filesystem-warning').eq(0);
+    $hintArea.html("");  // clear for new results
+    var eventTarget = evt.target || evt.srcElement;
+    switch(eventTarget.files.length) {
+        case (0):
+            var msg = "No file(s) selected!";
+            $hintArea.html(msg).show();
+            return;
+        case (1):
+        default:  // ignore multiple files for now, just load the first
+            var fileInfo = eventTarget.files[0];
+            console.warn("fileInfo.name = "+ fileInfo.name);
+            console.warn("fileInfo.type = "+ fileInfo.type);
+            var isValidArchive = false;
+            switch (fileInfo.type) {
+                case 'application/zip':
+                    isValidArchive = true;
+                    break;
+                case '':
+                    // check file extension
+                    if (fileInfo.name.match('.(zip|nameset)$')) {
+                        isValidArchive = true;
+                    }
+                    break;
+            }
+            if (!isValidArchive) {
+                var msg = "Archived nameset file should end in <code>.zip</code> or <code>.nameset</code>. Choose another file?";
+                $hintArea.html(msg).show();
+                return;
+            }
+            // Still here? try to read and unzip this archive!
+            jszip.loadAsync(fileInfo)   // read the Blob
+                 .then(function(zip) {  // success callback
+                     console.log('reading ZIP contents...');
+                     var msg = "Reading nameset contents...";
+                     $hintArea.html(msg).show();
+                     // How will we know when it's all (async) loaded? Count down as each entry is read!
+                     var zipEntriesToLoad = 0;
+                     var initialCache = {};
+                     for (var p in zip.files) { zipEntriesToLoad++; }
+                     // Stash most found data in the cache, but main JSON should be parsed
+                     var mainNamesetJSON = null;
+                     zip.forEach(function (relativePath, zipEntry) {  // 2) print entries
+                         console.log('  '+ zipEntry.name);
+                         console.log(zipEntry);
+                         // skip directories (nothing to do here)
+                         if (zipEntry.dir) {
+                             console.warn("SKIPPING directory "+ zipEntry.name +"...");
+                             zipEntriesToLoad--;
+                             return;
+                         }
+                         // read and store files
+                         zipEntry.async('text', function(metadata) {
+                                    // report progress?
+                                    var msg = "Reading nameset contents ("+ zipEntry.name +"): "+ metadata.percent.toFixed(2) +" %";
+                                    $hintArea.html(msg).show();
+                                 })
+                                 .then(function success(data) {
+                                           console.log("Success unzipping "+ zipEntry.name +":\n"+ data);
+                                           zipEntriesToLoad--;
+                                           // parse and stash the main JSON data; cache the rest
+                                           switch (zipEntry.name) {
+                                               case 'main.json':
+                                                   mainNamesetJSON = JSON.parse(data);
+                                                   break;
+                                               default:
+                                                   // copy to our initial cache
+                                                   initialCache[ zipEntry.name ] = data;
+                                           }
+                                           if (zipEntriesToLoad === 0) {
+                                               // we've read in all the ZIP data! open this nameset
+                                               // (TODO: setting its initial cache) and close this popup
+                                               loadNamesetData( mainNamesetJSON, initialCache, 'EXISTING');
+                                               // update last-saved info
+                                               updateLastSavedInfo(fileInfo.name);
+                                               // N.B. the File API *always* downloads to an unused path+filename
+                                               $('#storage-options-popup').modal('hide');
+                                           }
+                                       },
+                                       function error(e) {
+                                           var msg = "Problem unzipping "+ zipEntry.name +":\n"+ e.message;
+                                           $hintArea.html(msg).show();
+                                       });
+                     });
+                 },
+                 function (e) {         // failure callback
+                     var msg = "Error reading <strong>" + fileInfo.name + "</strong>! Is this a proper zip file?";
+                     $hintArea.html(msg).show();
+                 });
+    }
+}
+
 // create some isolated observables (as global JS vars!) used to support our mapping UI
 var autoMappingInProgress = ko.observable(false);
 var currentlyMappingNames = ko.observableArray([]); // drives spinners, etc.
@@ -109,6 +357,918 @@ var proposedNameMappings = ko.observable({});
     // stored any labels proposed by server, keyed by name id [TODO?]
 var bogusEditedLabelCounter = ko.observable(1);  
     // this just nudges the label-editing UI to refresh!
+
+
+/* START convert 'OTU' to 'name' throughout? */
+
+function adjustedLabelOrEmpty(label) {
+    // We should only display an adjusted label if it's changed from the
+    // original; otherwise return an empty string.
+    if (typeof(label) === 'function') {
+        label = label();
+    }
+    if (typeof(label) !== 'string') {
+        // probably null, nothing to see here
+        return "";
+    }
+    var adjusted = adjustedLabel(label);
+    if (adjusted == label) {
+        return "";
+    }
+    return adjusted;
+}
+
+function adjustedLabel(label) {
+    // apply any active name mapping adjustments to this string
+    if (typeof(label) === 'function') {
+        label = label();
+    }
+    if (typeof(label) !== 'string') {
+        // probably null
+        return label;
+    }
+    var adjusted = label;
+    // apply any active subsitutions in the viewMdel
+    var subList = viewModel.mappingHints.substitutions();
+    $.each(subList, function(i, subst) {
+        if (!subst['@active']) {
+            return true; // skip to next adjustment
+        }
+        var oldText = subst.old.$;
+        var newText = subst.new.$;
+        if ($.trim(oldText) === $.trim(newText) === "") {
+            return true; // skip to next adjustment
+        }
+        try {
+            //var pattern = new RegExp(oldText, 'g');  // g = replace ALL instances
+            // NO, this causes weird repetition in common cases
+            var pattern = new RegExp(oldText);
+            adjusted = adjusted.replace(pattern, newText);
+            // clear any stale invalid-regex marking on this field
+            if (!subst['@valid']) {
+                subst['@valid'] = true;
+            }
+            subst['@valid'] = true;
+        } catch(e) {
+            // there's probably invalid regex in the field... mark it and skip
+            if (!subst['@valid']) {
+                subst['@valid'] = false;
+            }
+            subst['@valid'] = false;
+        }
+    });
+    return adjusted;
+}
+
+// keep track of the last (de)selected list item (its position)
+var lastClickedTogglePosition = null;
+function toggleMappingForName(name, evt) {
+    var $toggle, newState;
+    // allow triggering this from anywhere in the row
+    if ($(evt.target).is(':checkbox')) {
+        $toggle = $(evt.target);
+        // N.B. user's click (or the caller) has already set its state!
+        newState = $toggle.is(':checked');
+    } else {
+        $toggle = $(evt.target).closest('tr').find('input.map-toggle');
+        // clicking elsewhere should toggle checkbox state!
+        newState = !($toggle.is(':checked'));
+        forceToggleCheckbox($toggle, newState);
+    }
+    // add (or remove) highlight color that works with hover-color
+    /* N.B. that this duplicates the effect of Knockout bindings on these table
+     * rows! This is deliberate, since we're often toggling *many* rows at
+     * once, so we need to update visual style while postponing any tickler
+     * nudge 'til we're done.
+     */
+    if (newState) {
+        $toggle.closest('tr').addClass('warning');
+    } else {
+        $toggle.closest('tr').removeClass('warning');
+    }
+    // if this is the original click event; check for a range!
+    if (typeof(evt.shiftKey) !== 'undefined') {
+        // determine the position (nth checkbox) of this name in the visible list
+        var $visibleToggles = $toggle.closest('table').find('input.map-toggle');
+        var newListPosition = $.inArray( $toggle[0], $visibleToggles);
+        if (evt.shiftKey && typeof(lastClickedTogglePosition) === 'number') {
+            forceMappingForRangeOfNames( name['selectedForAction'], lastClickedTogglePosition, newListPosition );
+        }
+        // in any case, make this the new range-starter
+        lastClickedTogglePosition = newListPosition;
+    }
+    evt.stopPropagation();
+    return true;  // update the checkbox
+}
+function forceMappingForRangeOfNames( newState, posA, posB ) {
+    // update selected state for all checkboxes in this range
+    var $allMappingToggles = $('input.map-toggle');
+    var $togglesInRange;
+    if (posB > posA) {
+        $togglesInRange = $allMappingToggles.slice(posA, posB+1);
+    } else {
+        $togglesInRange = $allMappingToggles.slice(posB, posA+1);
+    }
+    $togglesInRange.each(function() {
+        forceToggleCheckbox(this, newState);
+    });
+}
+
+function forceToggleCheckbox(cb, newState) {
+    var $cb = $(cb);
+    switch(newState) {
+        case (true):
+            if ($cb.is(':checked') == false) {
+                $cb.prop('checked', true);
+                $cb.triggerHandler('click');
+            }
+            break;
+        case (false):
+            if ($cb.is(':checked')) {
+                $cb.prop('checked', false);
+                $cb.triggerHandler('click');
+            }
+            break;
+        default:
+            console.error("forceToggleCheckbox() invalid newState <"+ typeof(newState) +">:");
+            console.error(newState);
+            return;
+    }
+}
+function toggleAllMappingCheckboxes(cb) {
+    var $bigToggle = $(cb);
+    var $allMappingToggles = $('input.map-toggle');
+    var newState = $bigToggle.is(':checked');
+    $allMappingToggles.each(function() {
+        forceToggleCheckbox(this, newState);
+    });
+    return true;
+}
+
+function editNameLabel(name, evt) {
+    var nameid = name['id'];
+    var originalLabel = name['originalLabel'];
+    name['adjustedLabel'] = adjustedLabel(originalLabel);
+
+    // Mark this name as selected for mapping.
+    name['selectedForAction'] = true;
+
+    // If we have a proper mouse event, try to move input focus to this field
+    // and pre-select its full text.
+    //
+    // N.B. There's a 'hasFocus' binding with similar behavior, but it's tricky
+    // to mark the new field vs. existing ones:
+    //   http://knockoutjs.com/documentation/hasfocus-binding.html
+    if ('currentTarget' in evt) {
+        // capture the current table row before DOM updates
+        var $currentRow = $(evt.currentTarget).closest('tr');
+        setTimeout(function() {
+            var $editField = $currentRow.find('input:text');
+            $editField.focus().select();
+        }, 50);
+    }
+
+    // this should make the editor appear (altering the DOM)
+    bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+    nudgeTickler( 'NAME_MAPPING_HINTS'); // to refresh 'selected' checkbox
+}
+function modifyEditedLabel(name) {
+    // remove its name-id from failed-name list when user makes changes
+    var nameid = name['id'];
+    failedMappingNames.remove(nameid);
+    // nudge to update name list immediately
+    bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+    nudgeAutoMapping();
+
+    nudgeTickler( 'NAME_MAPPING_HINTS');
+}
+function revertNameLabel(name) {
+    // undoes 'editNameLabel', releasing a label to use shared hints
+    var nameid = name['id'];
+    delete name['adjustedLabel'];
+    failedMappingNames.remove(nameid );
+    // this should make the editor disappear and revert its adjusted label
+    bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
+    nudgeAutoMapping();
+}
+
+function proposeNameLabel(nameid, mappingInfo) {
+    // stash one (or more) mappings as options for this name
+    if ($.isArray( mappingInfo)) {
+        proposedNameMappings()[ nameid ] = ko.observableArray( mappingInfo ).extend({ notify: 'always' });
+    } else {
+        proposedNameMappings()[ nameid ] = ko.observable( mappingInfo ).extend({ notify: 'always' });
+    }
+    proposedNameMappings.valueHasMutated();
+    // this should make the editor appear
+}
+function proposedMapping( name ) {
+    if (!name || typeof name['id'] === 'undefined') {
+        console.log("proposedMapping() failed");
+        return null;
+    }
+    var nameid = name['id'];
+    var acc = proposedNameMappings()[ nameid ];
+    return acc ? acc() : null;
+}
+function approveProposedNameLabel(name) {
+    // undoes 'editNameLabel', releasing a label to use shared hints
+    var nameid = name['id'];
+    var itsMappingInfo = proposedNameMappings()[ nameid ];
+    var approvedMapping = $.isFunction(itsMappingInfo) ?
+        itsMappingInfo() :
+        itsMappingInfo;
+    if ($.isArray(approvedMapping)) {
+        // apply the first (only) value
+        mapNameToTaxon( nameid, approvedMapping[0] );
+    } else {
+        // apply the inner value of an observable (accessor) function
+        mapNameToTaxon( nameid, ko.unwrap(approvedMapping) );
+    }
+    delete proposedNameMappings()[ nameid ];
+    proposedNameMappings.valueHasMutated();
+    nudgeTickler('NAME_MAPPING_HINTS');
+}
+function approveProposedNameMappingOption(approvedMapping, selectedIndex) {
+    // similar to approveProposedNameLabel, but for a listed option
+    var nameid = approvedMapping.nameID;
+    mapNameToTaxon( nameid, approvedMapping );
+    delete proposedNameMappings()[ nameid ];
+    proposedNameMappings.valueHasMutated();
+    nudgeTickler('NAME_MAPPING_HINTS');
+}
+function rejectProposedNameLabel(name) {
+    // undoes 'proposeNameLabel', clearing its value
+    var nameid = name['id'];
+    delete proposedNameMappings()[ nameid ];
+    proposedNameMappings.valueHasMutated();
+    nudgeTickler('NAME_MAPPING_HINTS');
+}
+
+function getAllVisibleProposedMappings() {
+    // gather any proposed mappings (IDs) that are visible on this page
+    var visibleProposedMappings = [];
+    var visibleNames = viewModel.filteredNames().pagedItems();
+    $.each( visibleNames, function (i, name) {
+        if (proposedMapping(name)) {
+            // we have a proposed mapping for this name!
+            visibleProposedMappings.push( name['id'] );
+        }
+    });
+    return visibleProposedMappings; // return a series of IDs
+}
+function approveAllVisibleMappings() {
+    $.each(getAllVisibleProposedMappings(), function(i, nameid) {
+        var itsMappingInfo = proposedNameMappings()[ nameid ];
+        var approvedMapping = $.isFunction(itsMappingInfo) ?
+            itsMappingInfo() :
+            itsMappingInfo;
+        if ($.isArray(approvedMapping)) {
+            if (approvedMapping.length === 1) {
+                // test the first (only) value for possible approval
+                var onlyMapping = approvedMapping[0];
+                if (onlyMapping.originalMatch.is_synonym) {
+                    return;  // synonyms require manual review
+                }
+                /* N.B. We never present the sole mapping suggestion as a
+                 * taxon-name homonym, so just consider the match score to
+                 * determine whether it's an "exact match".
+                 */
+                if (onlyMapping.originalMatch.score < 1.0) {
+                    return;  // non-exact matches require manual review
+                }
+                // still here? then this mapping looks good enough for auto-approval
+                delete proposedNameMappings()[ nameid ];
+                mapNameToTaxon( nameid, approvedMapping[0], {POSTPONE_UI_CHANGES: true} );
+            } else {
+                return; // multiple possibilities require manual review
+            }
+        } else {
+            // apply the inner value of an observable (accessor) function
+            delete proposedNameMappings()[ nameid ];
+            mapNameToTaxon( nameid, ko.unwrap(approvedMapping), {POSTPONE_UI_CHANGES: true} );
+        }
+    });
+    proposedNameMappings.valueHasMutated();
+    nudgeTickler('NAME_MAPPING_HINTS');
+    startAutoMapping();
+}
+function rejectAllVisibleMappings() {
+    $.each(getAllVisibleProposedMappings(), function(i, nameid) {
+        delete proposedNameMappings()[ nameid ];
+    });
+    proposedNameMappings.valueHasMutated();
+    stopAutoMapping();
+}
+
+function updateMappingStatus() {
+    // update mapping status+details based on the current state of things
+    var detailsHTML, showBatchApprove, showBatchReject, needsAttention;
+    /* TODO: defaults assume nothing particularly interesting going on
+    detailsHTML = '';
+    showBatchApprove = false;
+    showBatchReject = true;
+    needsAttention = false;
+    */
+    var proposedMappingNeedsDecision = false;
+    for (var p in proposedNameMappings()) {
+        // the presence of anything here means there are proposed mappings
+        proposedMappingNeedsDecision = true;
+    }
+
+    if (autoMappingInProgress() === true) {
+        // auto-mapping is ACTIVE (meaning we have work in hand)
+        detailsHTML = ''; // '<p'+'>Mapping in progress...<'+'/p>';
+        showBatchApprove = false;
+        showBatchReject = false;
+        needsAttention = false;
+    } else {
+        if (getNextUnmappedName()) {
+            // IF auto-mapping is PAUSED, but there's more to do on this page
+            detailsHTML = '<p'+'>Mapping paused. Select new name or adjust mapping hints, then click the '
+                         +'<strong>Map selected name</strong> button above to try again.<'+'/p>';
+            showBatchApprove = false;
+            showBatchReject = proposedMappingNeedsDecision;
+            needsAttention = proposedMappingNeedsDecision;
+        } else {
+            // auto-mapping is PAUSED and everything's been mapped
+            if (proposedMappingNeedsDecision) {
+                // there are proposed mappings awaiting a decision
+                detailsHTML = '<p'+'>All selected names have been mapped. Use the '
+                        +'<span class="btn-group" style="margin: -2px 0;">'
+                        +' <button class="btn btn-mini disabled"><i class="icon-ok"></i></button>'
+                        +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
+                        +'</span>'
+                        +' buttons to accept or reject each suggested mapping,'
+                        +' or the buttons below to accept or reject the suggestions for all visible names.<'+'/p>';
+                showBatchApprove = true;
+                showBatchReject = true;
+                needsAttention = true;
+            } else {
+                // there are NO proposed mappings awaiting a decision
+                //
+                /* TODO: check for two possibilities here
+                if () {
+                    // we can add more by including 'All trees'
+                    detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
+                            +'Mapping is suspended because all names in this '
+                            +'study\'s nominated trees have accepted labels already. To continue, '
+                            +'reject some mapped labels with the '
+                            +'<span class="btn-group" style="margin: -2px 0;">'
+                            +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
+                            +'</span> '
+                            +'button or change the filter to <strong>In any tree</strong>.<'+'/p>';
+                    showBatchApprove = false;
+                    showBatchReject = false;
+                    needsAttention = true;
+                } else {
+                    // we're truly done with mapping (in all trees)
+                    detailsHTML = '<p'+'><strong>Congrtulations!</strong> '
+                            +'Mapping is suspended because all names in this study have accepted '
+                            +'labels already.. To continue, use the '
+                            +'<span class="btn-group" style="margin: -2px 0;">'
+                            +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
+                            +'</span>'
+                            +' buttons to reject any label at left.<'+'/p>';
+                    showBatchApprove = false;
+                    showBatchReject = false;
+                    needsAttention = true;
+                }
+                */
+
+                /* TODO: replace this stuff with if/else block above
+                 */
+                detailsHTML = '<p'+'>Mapping is suspended because all selected names have accepted '
+                        +' labels already. To continue, select additional names to map, or use the '
+                        +'<span class="btn-group" style="margin: -2px 0;">'
+                        +' <button class="btn btn-mini disabled"><i class="icon-remove"></i></button>'
+                        +'</span>'
+                        +' buttons to reject any label at left, or change the filter and sort options'
+                        +' to bring unmapped names into view.<'+'/p>';
+                showBatchApprove = false;
+                showBatchReject = false;
+                needsAttention = true;
+            }
+        }
+    }
+
+    $('.mapping-details').html(detailsHTML);
+    if (showBatchApprove || showBatchReject) {
+        $('.mapping-batch-operations').show();
+        if (showBatchApprove) {
+            $('.mapping-batch-operations #batch-approve').show();
+        } else {
+            $('.mapping-batch-operations #batch-approve').hide();
+        }
+        if (showBatchReject) {
+            $('.mapping-batch-operations #batch-reject').show();
+        } else {
+            $('.mapping-batch-operations #batch-reject').hide();
+        }
+    } else {
+        $('.mapping-batch-operations').hide();
+    }
+    if (needsAttention) {
+        $('#mapping-status-panel').addClass('mapping-needs-attention');
+    } else {
+        $('#mapping-status-panel').removeClass('mapping-needs-attention');
+    }
+}
+
+function startAutoMapping() {
+    // begin a daisy-chain of AJAX operations, mapping 1 label (or more?) to known taxa
+    // TODO: what if there was a pending operation when we stopped?
+    autoMappingInProgress( true );
+    requestTaxonMapping();  // try to grab the first unmapped label in view
+    updateMappingStatus();
+}
+function stopAutoMapping() {
+    // TODO: what if there's an operation in progress? get its result, or drop it?
+    autoMappingInProgress( false );
+    currentlyMappingNames.removeAll();
+    recentMappingSpeedBarClass( 'progress progress-info' );   // inactive blue bar
+    updateMappingStatus();
+}
+
+function updateMappingSpeed( newElapsedTime ) {
+    recentMappingTimes.push(newElapsedTime);
+    if (recentMappingTimes.length > 5) {
+        // keep just the last 5 times
+        recentMappingTimes = recentMappingTimes.slice(-5);
+    }
+
+    var total = 0;
+    $.each(recentMappingTimes, function(i, time) {
+        total += time;
+    });
+    var rollingAverage = total / recentMappingTimes.length;
+    var secPerName = rollingAverage / 1000;
+    // show a legible number (first significant digit)
+    var displaySec;
+    if (secPerName >= 0.1) {
+        displaySec = secPerName.toFixed(1);
+    } else if (secPerName >= 0.01) {
+        displaySec = secPerName.toFixed(2);
+    } else {
+        displaySec = secPerName.toFixed(3);
+    }
+
+    recentMappingSpeedLabel( displaySec +" sec / name");
+
+    // use arbitrary speeds here, for bad/fair/good
+    if (secPerName < 0.2) {
+        recentMappingSpeedBarClass( 'progress progress-success' );  // green bar
+    } else if (secPerName < 2.0) {
+        recentMappingSpeedBarClass( 'progress progress-warning' );  // orange bar
+    } else {
+        recentMappingSpeedBarClass( 'progress progress-danger' );   // red bar
+    }
+
+    // bar width is approximate, needs ~40% to show its text
+    recentMappingSpeedPercent( (40 + Math.min( (0.1 / secPerName) * 60, 60)).toFixed() +"%" );
+}
+
+
+function getNextUnmappedName() {
+    var unmappedName = null;
+    var visibleNames = viewModel.filteredNames().pagedItems();
+    $.each( visibleNames, function (i, name) {
+        var isAvailable = name['selectedForAction'] || false;
+        // if no such attribute, consider it unavailable
+        if (isAvailable) {
+            var ottMappingTag = name['ottId'] || null;
+            var proposedMappingInfo = proposedMapping(name);
+            if (!ottMappingTag && !proposedMappingInfo) {
+                // this is an unmapped name!
+                if (failedMappingNames.indexOf(name['id']) === -1) {
+                    // it hasn't failed mapping (at least not yet)
+                    unmappedName = name;
+                    return false;
+                }
+            }
+        }
+    });
+    return unmappedName;
+}
+
+/* TNRS requests are sent via POST and cannot be cached by the browser. Keep
+ * track of responses in a simple local cache, to avoid extra requests for
+ * identical taxon names. (This is common when many similar labels have been
+ * "modified for mapping").
+ *
+ * We'll use a FIFO strategy to keep this to a reasonable size. I believe this
+ * will handle the expected case of many labels being modified to the same
+ * string.
+ */
+var TNRSCacheSize = 200;
+var TNRSCache = {};
+var TNRSCacheKeys = [];
+function addToTNRSCache( key, value ) {
+    // add (or update) the cache for this key
+    if (!(key in TNRSCache)) {
+        TNRSCacheKeys.push( key );
+    }
+    TNRSCache[ key ] = value;
+    if (TNRSCacheKeys.length > TNRSCacheSize) {
+        // clear the oldest cached item
+        var doomedKey = TNRSCacheKeys.shift();
+        delete TNRSCache[ doomedKey ];
+    }
+    console.log(TNRSCache);
+}
+function clearTNRSCache() {
+    TNRSCache = {};
+};
+
+function requestTaxonMapping( nameToMap ) {
+    // set spinner, make request, handle response, and daisy-chain the next request
+    // TODO: send one at a time? or in a batch (5 items)?
+
+    // NOTE that we might be requesting a single name, else find the next unmapped one
+    var singleTaxonMapping;
+    if (nameToMap) {
+        singleTaxonMapping = true;
+        failedMappingNames.remove(nameToMap['id'] );
+        autoMappingInProgress( true );
+    } else {
+        singleTaxonMapping = false;
+        nameToMap = getNextUnmappedName();
+    }
+    if (!nameToMap) {
+        stopAutoMapping();
+        return false;
+    }
+
+    updateMappingStatus();
+    var nameID = nameToMap['id'];
+    var originalLabel = $.trim(nameToMap['originalLabel']) || null;
+    // use the manually edited label (if any), or the hint-adjusted version
+    var editedLabel = $.trim(nameToMap['adjustedLabel']);
+    var searchText = (editedLabel !== '') ? editedLabel : $.trim(adjustedLabel(originalLabel));
+
+    if (searchText.length === 0) {
+        console.log("No name to match!"); // TODO
+        return false;
+    } else if (searchText.length < 2) {
+        console.log("Need at least two letters!"); // TODO
+        return false;
+    }
+
+    // groom trimmed text based on our search rules
+    var searchContextName = viewModel.mappingHints.searchContext();
+    var usingFuzzyMatching = viewModel.mappingHints['useFuzzyMatching'] || false;
+    // show spinner alongside this item...
+    currentlyMappingNames.push( nameID );
+
+    var mappingStartTime = new Date();
+
+    function tnrsSuccess(data) {
+        // IF there's a proper response, assert this as the name and label for this node
+
+        // update the rolling average for the mapping-speed bar
+        var mappingStopTime = new Date();
+        updateMappingSpeed( mappingStopTime.getTime() - mappingStartTime.getTime() );
+
+        var maxResults = 100;
+        var visibleResults = 0;
+        var resultSetsFound = (data && ('results' in data) && (data.results.length > 0));
+        var candidateMatches = [ ];
+        // For now, we want to auto-apply if there's exactly one match
+        if (resultSetsFound) {
+            switch (data.results.length) {
+                case 0:
+                    console.warn('NO SEARCH RESULT SETS FOUND!');
+                    candidateMatches = [ ];
+                    break;
+
+                case 1:
+                    // the expected case
+                    candidateMatches = data.results[0].matches;
+                    break;
+
+                default:
+                    console.warn('MULTIPLE SEARCH RESULT SETS (USING FIRST)');
+                    console.warn(data['results']);
+                    candidateMatches = data.results[0].matches;
+            }
+        }
+        // TODO: Filter candidate matches based on their properties, scores, etc.?
+
+        switch (candidateMatches.length) {
+            case 0:
+                failedMappingNames.push( nameID );
+                break;
+
+            /* SKIPPING THIS to provide uniform treatment of all matches
+            case 1:
+                // choose the first+only match automatically!
+                var resultToMap = candidateMatches[0];
+                // convert to expected structure for proposed mappings
+                var nameMapping = {
+                    name: resultToMap['ot:ottTaxonName'],       // matched name
+                    ottId: String(resultToMap['ot:ottId']),     // matched OTT id (as string)
+                    //nodeId: resultToMap.matched_node_id,        // number
+                    exact: false,                               // boolean (ignoring this for now)
+                    higher: false                               // boolean
+                    // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
+                };
+                proposeNameLabel(nameID, nameMapping);
+                // postpone actual mapping until user approves
+                break;
+             */
+
+            default:
+                // multiple matches found, offer a choice
+                // ASSUMES we only get one result set, with n matches
+
+                // TODO: Sort matches based on exact text matches? fractional (matching) scores? synonyms or homonyms?
+                /* initial sort on lower taxa (will be overridden by exact matches)
+                candidateMatches.sort(function(a,b) {
+                    if (a.is_approximate_match === b.is_approximate_match) return 0;
+                    if (a.is_approximate_match) return 1;
+                    if (b.is_approximate_match) return -1;
+                });
+                */
+
+                /* TODO: If multiple matches point to a single taxon, show just the "best" match
+                 *   - Spelling counts! Show an exact match (e.g. synonym) vs. inexact spelling.
+                 *   - TODO: add more rules? or just comment the code below
+                 */
+                var getPreferredTaxonCandidate = function( candidateA, candidateB ) {
+                    // Return whichever is preferred, based on a few criteria:
+                    var matchA = candidateA.originalMatch;
+                    var matchB = candidateB.originalMatch;
+                    // If one is the exact match, that's ideal (but unlikely since 
+                    // the TNRS apparently returned multiple candidates).
+                    if (!matchA.is_approximate_match) {
+                        return candidateA;
+                    } else if (!matchB.is_approximate_match) {
+                        return candidateB;
+                    }
+                    // Show the most similar name (or synonym) for this taxon.
+                    if (matchA.score > matchB.score) {
+                        return candidateA;
+                    }
+                    return candidateB;
+                };
+                var getPriorMatchingCandidate = function( ottId, priorCandidates ) {
+                    // return any match we've already examined for this taxon
+                    var priorMatch = null;
+                    $.each(priorCandidates, function(i, c) {
+                        if (c.ottId === ottId) {
+                            priorMatch = c;
+                            return false;  // there should be just one
+                        }
+                    });
+                    return priorMatch;
+                };
+                var rawMatchToCandidate = function( raw, nameID ) {
+                    // simplify the "raw" matches returned by TNRS
+                    return {
+                        name: raw.taxon['unique_name'] || raw.taxon['name'],       // matched name
+                        ottId: raw.taxon['ott_id'],     // matched OTT id (as number!)
+                        //exact: false,                               // boolean (ignoring this for now)
+                        //higher: false,                               // boolean
+                        // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
+                        originalMatch: raw,
+                        nameID: nameID
+                    };
+                }
+                var candidateMappingList = [ ];
+                $.each(candidateMatches, function(i, match) {
+                    // convert to expected structure for proposed mappings
+                    var candidate = rawMatchToCandidate( match, nameID );
+                    var priorTaxonCandidate = getPriorMatchingCandidate( candidate.ottId, candidateMappingList );
+                    if (priorTaxonCandidate) {
+                        var priorPosition = $.inArray(priorTaxonCandidate, candidateMappingList);
+                        var preferredCandidate = getPreferredTaxonCandidate( candidate, priorTaxonCandidate );
+                        var alternateCandidate = (preferredCandidate === candidate) ? priorTaxonCandidate : candidate;
+                        // whichever one was chosen will (re)take this place in our array
+                        candidateMappingList.splice(priorPosition, 1, preferredCandidate);
+                        // the other candidate will be stashed as a child, in case we need it later
+                        if ('alternateTaxonCandidates' in preferredCandidate) {
+                            preferredCandidate.alternateTaxonCandidates.push( alternateCandidate );
+                        } else {
+                            preferredCandidate.alternateTaxonCandidates = [ alternateCandidate ];
+                        }
+                    } else {
+                        candidateMappingList.push(candidate);
+                    }
+                });
+
+                proposeNameLabel(nameID, candidateMappingList);
+                // postpone actual mapping until user chooses, then approves
+        }
+
+        currentlyMappingNames.remove( nameID );
+
+        if (singleTaxonMapping) {
+            stopAutoMapping();
+        } else if (autoMappingInProgress()) {
+            // after a brief pause, try for the next available name...
+            setTimeout(requestTaxonMapping, 10);
+        }
+
+        return false;
+    }
+
+    var TNRSQueryAndCacheKey = JSON.stringify({
+        "names": [searchText],
+        "include_suppressed": false,
+        "do_approximate_matching": (singleTaxonMapping || usingFuzzyMatching) ? true : false,
+        "context_name": searchContextName
+    });
+
+    $.ajax({
+        url: doTNRSForMappingOTUs_url,  // NOTE that actual server-side method name might be quite different!
+        type: 'POST',
+        dataType: 'json',
+        data: TNRSQueryAndCacheKey,  // data (asterisk required for completion suggestions)
+        crossDomain: true,
+        contentType: "application/json; charset=utf-8",
+        beforeSend: function () {
+            // check our local cache to see if this is a repeat
+            var cachedResponse = TNRSCache[ TNRSQueryAndCacheKey ];
+            if (cachedResponse) {
+                tnrsSuccess( cachedResponse );
+                return false;
+            }
+            return true;
+        },
+        error: function(jqXHR, textStatus, errorThrown) {
+
+            console.log("!!! somethiny went terribly wrong");
+            console.log(jqXHR.responseText);
+
+            showErrorMessage("Something went wrong in taxomachine:\n"+ jqXHR.responseText);
+
+            if (!autoMappingInProgress()) {
+                // curator has paused all mapping
+                return false;
+            }
+
+            currentlyMappingNames.remove( nameID );
+
+            // let's hope it's something about this label and try the next one...
+            failedMappingNames.push( nameID );
+            if (singleTaxonMapping) {
+                stopAutoMapping();
+            } else if (autoMappingInProgress()) {
+                setTimeout(requestTaxonMapping, 100);
+            }
+
+        },
+        success: function(data) {
+            // add this response to the local cache
+            addToTNRSCache( TNRSQueryAndCacheKey, data );
+            tnrsSuccess(data);
+        }
+    });
+
+    return false;
+}
+
+function getNameByID(id) {
+    // return the matching otu, or null if not found
+    var matchingName = null;
+    $.each( viewModel.names(), function(i, name) {
+        if (name.id === id) {  
+            matchingName = name;
+            return false;
+        }
+    });
+    return matchingName;
+    /* TODO: if performance suffers, use fast lookup!
+    var lookup = getFastLookup('NAMES_BY_ID');
+    return lookup[ id ] || null;
+    */
+}
+
+
+function mapNameToTaxon( nameID, mappingInfo, options ) {
+    /* Apply this mapping, creating Nexson elements as needed
+     *
+     * mappingInfo should be an object with these properties:
+     * {
+     *   "name" : "Centranthus",
+     *   "ottId" : "759046",
+     *
+     *   // these may also be present, but aren't important here
+     *     "exact" : false,
+     *     "higher" : true
+     * }
+     *
+     * N.B. We *always* add/change/remove these properties in tandem!
+     *    ottId
+     *    ottTaxonName
+     */
+
+    // If options.POSTPONE_UI_CHANGES, please do so (else we crawl when
+    // approving hundreds of mappings)
+    options = options || {};
+
+    // FOR NOW, assume that any leaf node will have a corresponding otu entry;
+    // otherwise, we can't have name for the node!
+    var name = getNameByID( nameID );
+
+    // De-select this name in the mapping UI
+    name['selectedForAction'] = false;
+
+    // add (or update) a metatag mapping this to an OTT id
+    name['ottId'] = Number(mappingInfo.ottId);
+
+    // Add/update the OTT name (cached here for performance)
+    name['ottTaxonName'] = mappingInfo.name || 'OTT NAME MISSING!';
+    // N.B. We always preserve originalLabel for reference
+
+    // Clear any proposed/adjusted label (this is trumped by mapping to OTT)
+    delete name['adjustedLabel'];
+
+    if (!options.POSTPONE_UI_CHANGES) {
+        nudgeTickler('NAME_MAPPING_HINTS');
+    }
+}
+
+function unmapNameFromTaxon( nameOrID, options ) {
+    // remove this mapping, removing any unneeded Nexson elements
+
+    // If options.POSTPONE_UI_CHANGES, please do so (else we crawl when
+    // clearing hundreds of mappings)
+    options = options || {};
+
+    var name = (typeof nameOrID === 'object') ? nameOrID : getNameByID( nameOrID );
+    // restore its original label (versus mapped label)
+    var originalLabel = name['originalLabel'];
+
+    // strip any metatag mapping this to an OTT id
+    if ('ottId' in name) {
+        delete name['ottId'];
+    }
+    if ('ottTaxonName' in name) {
+        delete name['ottTaxonName'];
+    }
+
+    if (!options.POSTPONE_UI_CHANGES) {
+        nudgeTickler('NAME_MAPPING_HINTS');
+    }
+}
+
+function addMetaTagToParent( parent, props ) {
+    // wrap submitted properties to make an observable metatag
+    var newTag = cloneFromSimpleObject( props );
+    if (!parent.meta) {
+        // add a meta collection here
+        parent['meta'] = [ ];
+    } else if (!$.isArray(parent.meta)) {
+        // convert a Badgerfish "singleton" to a proper array
+        parent['meta'] = [ parent.meta ];
+    }
+    parent.meta.push( newTag );
+}
+
+
+function clearSelectedMappings() {
+    // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) names.
+    var visibleNames = viewModel.filteredNames().pagedItems();
+    $.each( visibleNames, function (i, name) {
+        if (name['selectedForAction']) {
+            // clear any "established" mapping (already approved)
+            unmapNameFromTaxon( name, {POSTPONE_UI_CHANGES: true} );
+            // clear any proposed mapping
+            delete proposedNameMappings()[ name['id'] ];
+        }
+    });
+    clearFailedNameList();
+    proposedNameMappings.valueHasMutated();
+    nudgeTickler('NAME_MAPPING_HINTS');
+}
+
+function clearAllMappings() {
+    var allNames = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+    if (confirm("WARNING: This will un-map all "+ allNames.length +" names in the current study! Are you sure you want to do this?")) {
+        // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) names.
+        $.each( allNames, function (i, name) {
+            // clear any "established" mapping (already approved)
+            unmapNameFromTaxon( name, {POSTPONE_UI_CHANGES: true} );
+            // clear any proposed mapping
+            delete proposedNameMappings()[ name['id'] ];
+        });
+        clearFailedNameList();
+        proposedNameMappings.valueHasMutated();
+        nudgeTickler('NAME_MAPPING_HINTS');
+    }
+}
+
+/* END convert 'OTU' to 'name' throughout? */
+
+
+
+
+
+
+
+
+
 
 /* Define a registry of nudge methods, for use in KO data bindings. Calling
  * a nudge function will update one or more observables to trigger updates
@@ -163,6 +1323,27 @@ function hideMappingOptions() {
     $('#mapping-options-prompt').show();
 }
 
+function showLoadListPopup( ) {
+    showFilesystemPopup('#load-list-popup');
+}
+function showLoadNamesetPopup( ) {
+    showFilesystemPopup('#load-nameset-popup');
+}
+function showSaveNamesetPopup( ) {
+    showFilesystemPopup('#save-nameset-popup');
+}
+function showFilesystemPopup( popupSelector ) {
+    // expects a valid jQuery selector for the popup in DOM
+    var $popup = $(popupSelector);
+    $popup.modal('show');
+
+    // (re)bind UI with Knockout
+    var $boundElements = $popup.find('.modal-body'); // add other elements?
+    $.each($boundElements, function(i, el) {
+        ko.cleanNode(el);
+        ko.applyBindings({},el);
+    });
+}
 
 function getMappedNamesTally() {
     // return display-ready tally (mapped/total ratio and percentage)
@@ -180,7 +1361,7 @@ function mappingProgressAsPercent() {
     }
     var totalNameCount = viewModel.names.length;
     var mappedNameCount = $.grep( viewModel.names, function(name, i) {
-        if (!item.ottId) {  
+        if (!name.ottId) {  
             // missing, empty string, or null
             return false;
         }
@@ -192,6 +1373,14 @@ function floatToPercent( dec ) {
     // assumes a float between 0.0 and 1.0
     // EXAMPLE: 0.232 ==> 23%
     return Math.round(dec * 100);
+}
+
+function browserSupportsFileAPI() {
+    // Can load and manipulate local files in this browser?
+    return (window.File && 
+            window.FileReader && 
+            window.FileList && 
+            window.Blob) ? true : false;
 }
 
 function addSubstitution( clicked ) {
@@ -280,7 +1469,7 @@ recentMappingSpeedBarClass = ko.observable('progress progress-info');
 // this should be cleared whenever something changes in mapping hints
 function clearFailedNameList() {
     failedMappingNames.removeAll();
-    // nudge to update OTU list immediately
+    // nudge to update name list immediately
     bogusEditedLabelCounter( bogusEditedLabelCounter() + 1);
     nudgeAutoMapping();
 }
@@ -292,6 +1481,78 @@ function nudgeAutoMapping() {
             requestTaxonMapping();
         }
     }
+}
+
+
+
+
+function inferSearchContextFromAvailableNames() {
+    // Fetch the least inclusive context via AJAX, and update the drop-down menu
+    var namesToSubmit = [ ];
+    var maxNamesToSubmit = 5000;  // if more than this, drop extra names evenly
+    console.log(">> found "+ viewModel.names().length +" names in the nameset");
+    var namesToSubmit = $.map(viewModel.names(), function(name, index) {
+        return ('ottTaxonName' in name) ? name['ottTaxonName'] : name['originalLabel'];
+    });
+    if (namesToSubmit.length > maxNamesToSubmit) {
+        // reduce the list in a distributed fashion (eg, every fourth item)
+        var stepSize = maxNamesToSubmit / namesToSubmit.length;
+        ///console.log("TOO MANY NAMES, reducing with step-size "+ stepSize);
+        // creep to whole numbers, keeping an item every time we increment by one
+        var currentStepTotal = 0.0;
+        var nextWholeNumber = 1;
+        namesToSubmit = namesToSubmit.filter(function(item, index) {
+            if ((currentStepTotal += stepSize) >= nextWholeNumber) {
+                nextWholeNumber += 1; // bump to next number
+                return true;
+            }
+            return false;
+        });
+    }
+    console.log(">> submitting "+ namesToSubmit.length +" names in the nameset");
+    if (namesToSubmit.length === 0) {
+        return; // this is a no-op
+    }
+
+    ///showModalScreen("Inferring search context...", {SHOW_BUSY_BAR:true});
+
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: getContextForNames_url,
+        processData: false,
+        data: ('{"names": '+ JSON.stringify(namesToSubmit) +'}'),
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                showErrorMessage('Sorry, there was an error inferring the search context.');
+                console.log("ERROR: textStatus !== 'success', but "+ textStatus);
+                return;
+            }
+            ///hideModalScreen();
+            ///showSuccessMessage('Study removed, returning to study list...');
+            var result = JSON.parse( jqXHR.responseText );
+            var inferredContext = null;
+            if (result && 'context_name' in result) {
+                inferredContext = result['context_name'];
+            }
+            ///console.log(">> inferredContext: "+ inferredContext);
+            if (inferredContext) {
+                // update BOTH search-context drop-down menus to show this result
+                $('select[name=taxon-search-context]').val(inferredContext);
+                // Tweak the model's name mapping, then refresh the UI
+                // N.B. We check first to avoid adding an unnecessary unsaved-data warning!
+                if (viewModel.mappingHints.searchContext() !== inferredContext) {
+                    viewModel.mappingHints.searchContext(inferredContext);
+                    updateMappingHints();
+                }
+            } else {
+                showErrorMessage('Sorry, no search context was inferred.');
+            }
+        }
+    });
 }
 
 // Load a nameset from JS/JSON data (usu. called by convenience functions below)
@@ -326,7 +1587,7 @@ function loadNamesetData( data ) {
     // cleanup of incoming data
     removeDuplicateNames(viewModel);
     // TODO: take initial stab at setting search context for TNRS?
-    // TODO: inferSearchContextFromAvailableOTUs();
+    inferSearchContextFromAvailableNames();
 
     /* 
      * Add observable properties to the model to support the UI. 
@@ -389,9 +1650,9 @@ function loadNamesetData( data ) {
     viewModel.filteredNames = ko.computed(function() {
         // filter raw name list, then sort, returning a
         // new (OR MODIFIED??) paged observableArray
-        ///var ticklers = [ viewModel.ticklers.OTU_MAPPING_HINTS() ];
+        ///var ticklers = [ viewModel.ticklers.NAME_MAPPING_HINTS() ];
 
-        updateClearSearchWidget( '#otu-list-filter' );
+        updateClearSearchWidget( '#name-list-filter' );
         //updateListFiltersWithHistory();
 
         var match = viewModel.listFilters.NAMES.match(),
@@ -400,30 +1661,29 @@ function loadNamesetData( data ) {
         var order = viewModel.listFilters.NAMES.order();
 
         // capture current positions, to avoid unnecessary "jumping" in the list
-        captureDefaultSortOrder(viewModel.names);
+        captureDefaultSortOrder(viewModel.names());
 
         /* TODO: pool all name IDs into a common object?
-        var chosenOTUIDs = {};
-        console.warn(chosenOTUIDs);
-        if (chosenOTUIDs.length > 0) {
-            console.warn("Here's the first of chosenOTUIDs:");
-            console.warn(chosenOTUIDs[0]);
+        var chosenNameIDs = {};
+        console.warn(chosenNameIDs);
+        if (chosenNameIDs.length > 0) {
+            console.warn("Here's the first of chosenNameIDs:");
+            console.warn(chosenNameIDs[0]);
         } else {
-            console.warn("chosenOTUIDs is an empty list!");
+            console.warn("chosenNameIDs is an empty list!");
         }
         */
 
         // map old array to new and return it
         var filteredList = ko.utils.arrayFilter(
-            viewModel.names,
+            viewModel.names(),
             function(name) {
                 // match entered text against old or new label
-                var originalLabel = name['^ot:originalLabel'];
-                var mappedLabel = name['^ot:ottTaxonName'];
+                var originalLabel = name['originalLabel'];
+                var mappedLabel = name['ottTaxonName'];
                 if (!matchPattern.test(originalLabel) && !matchPattern.test(mappedLabel)) {
                     return false;
                 }
-
                 return true;
             }
         );  // END of list filtering
@@ -439,13 +1699,13 @@ function loadNamesetData( data ) {
                 filteredList.sort(function(a,b) {
                     // N.B. This works even if there's no such property.
                     //if (checkForInterestingStudies(a,b)) { debugger; }
-                    var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
-                    var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
+                    var aMapStatus = $.trim(a['ottTaxonName']) !== '';
+                    var bMapStatus = $.trim(b['ottTaxonName']) !== '';
                     if (aMapStatus === bMapStatus) {
                         if (!aMapStatus) { // both names are currently un-mapped
                             // Force failed mappings to the bottom of the list
-                            var aFailedMapping = (failedMappingNames.indexOf(a['@id']) !== -1);
-                            var bFailedMapping = (failedMappingNames.indexOf(b['@id']) !== -1);
+                            var aFailedMapping = (failedMappingNames.indexOf(a['id']) !== -1);
+                            var bFailedMapping = (failedMappingNames.indexOf(b['id']) !== -1);
                             if (aFailedMapping === bFailedMapping) {
                                 // Try to retain their prior precedence in
                                 // the list (avoid items jumping around)
@@ -470,8 +1730,8 @@ function loadNamesetData( data ) {
 
             case 'Mapped names first':
                 filteredList.sort(function(a,b) {
-                    var aMapStatus = $.trim(a['^ot:ottTaxonName']) !== '';
-                    var bMapStatus = $.trim(b['^ot:ottTaxonName']) !== '';
+                    var aMapStatus = $.trim(a['ottTaxonName']) !== '';
+                    var bMapStatus = $.trim(b['ottTaxonName']) !== '';
                     if (aMapStatus === bMapStatus) {
                         return maintainRelativeListPositions(a, b);
                     }
@@ -482,8 +1742,8 @@ function loadNamesetData( data ) {
 
             case 'Original name (A-Z)':
                 filteredList.sort(function(a,b) {
-                    var aOriginal = $.trim(a['^ot:originalLabel']);
-                    var bOriginal = $.trim(b['^ot:originalLabel']);
+                    var aOriginal = $.trim(a['originalLabel']);
+                    var bOriginal = $.trim(b['originalLabel']);
                     if (aOriginal === bOriginal) {
                         return maintainRelativeListPositions(a, b);
                     }
@@ -494,8 +1754,8 @@ function loadNamesetData( data ) {
 
             case 'Original name (Z-A)':
                 filteredList.sort(function(a,b) {
-                    var aOriginal = $.trim(a['^ot:originalLabel']);
-                    var bOriginal = $.trim(b['^ot:originalLabel']);
+                    var aOriginal = $.trim(a['originalLabel']);
+                    var bOriginal = $.trim(b['originalLabel']);
                     if (aOriginal === bOriginal) {
                         return maintainRelativeListPositions(a, b);
                     }
@@ -521,7 +1781,7 @@ function loadNamesetData( data ) {
             }
         });
 
-        // clear any stale last-selected OTU (it's likely moved)
+        // clear any stale last-selected name (it's likely moved)
         lastClickedTogglePosition = null;
 
         viewModel._filteredNames( filteredList );
@@ -543,7 +1803,7 @@ function loadNamesetData( data ) {
     }
 
     // (re)bind to editor UI with Knockout
-    var $boundElements = $('#Name-Mapping'); // add other elements?
+    var $boundElements = $('#Name-Mapping, #help-file-api-prompt'); // add other elements?
     $.each($boundElements, function(i, el) {
         ko.cleanNode(el);
         ko.applyBindings(viewModel,el);
@@ -552,7 +1812,7 @@ function loadNamesetData( data ) {
 
 // keep track of the largest (and thus next available) name id
 var highestNameOrdinalNumber = null;
-function findHighestElementOrdinalNumber() {
+function findHighestNameOrdinalNumber() {
     // do a one-time scan for the highest ID currently in use
     var highestOrdinalNumber = 0;
     var allNames = viewModel.names();
@@ -603,6 +1863,11 @@ function formatISODate( dateString, options ) {
     }
 }
 
+function showPossibleMappingsKey() {
+    // explain colors and opacity in a popup (already bound)
+    $('#possible-mappings-key').modal('show');
+}
+
 $(document).ready(function() {
     // Always start with an empty set, binding it to the UI
     loadNamesetData( null );
@@ -638,14 +1903,45 @@ $(document).ready(function() {
 // export some members as a simple API
 var api = [
     'nudge',  // expose ticklers for KO bindings
+    'lastSave',
+    'getDefaultArchiveFilename',
+    'saveCurrentNameset',
+    'loadListFromChosenFile',
+    'loadNamesetFromChosenFile',
+    'showLoadListPopup',
+    'showLoadNamesetPopup',
+    'showSaveNamesetPopup',
+    'browserSupportsFileAPI',
     'autoMappingInProgress',
     'updateMappingHints',
     'showNamesetMetadata',
     'hideNamesetMetadata',
+    'inferSearchContextFromAvailableNames',
     'showMappingOptions',
     'hideMappingOptions',
+    'getAttrsForMappingOption',
+    'startAutoMapping',
+    'stopAutoMapping',
     'getMappedNamesTally',
     'mappingProgressAsPercent',
+    'bogusEditedLabelCounter',
+    'toggleMappingForName',
+    'toggleAllMappingCheckboxes',
+    'proposedMapping',
+    'adjustedLabelOrEmpty',
+    'currentlyMappingNames',
+    'failedMappingNames',
+    'editNameLabel',
+    'revertNameLabel',
+    'modifyEditedLabel',
+    'approveProposedNameLabel',
+    'approveProposedNameMappingOption',
+    'rejectProposedNameLabel',
+    'rejectAllVisibleMappings',
+    'unmapNameFromTaxon',
+    'clearSelectedMappings',
+    'clearAllMappings',
+    'showPossibleMappingsKey',
     'formatISODate'
 ];
 $.each(api, function(i, methodName) {

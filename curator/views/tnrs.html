@@ -94,7 +94,7 @@ About-Mapping
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
-                    <input type="text" id="otu-list-filter" class="search-query" placeholder="Filter by original or mapped label"
+                    <input type="text" id="name-list-filter" class="search-query" placeholder="Filter by original or mapped label"
                            data-bind="value: viewModel.listFilters.NAMES.match, valueUpdate: ['afterkeydown', 'input']">
                 </form>
                 <ul class="nav" style="padding-left: 1em;">
@@ -123,20 +123,6 @@ About-Mapping
                 <div class="empty-list-prompt" data-bind="visible: (viewModel.names().length > 0) && (viewModel.filteredNames().pagedItems().length === 0)">
                     No matching names found! Clear the text filter above to see more.
                 </div>
-                <!--
-                <div class="unused-otus-prompt" style="margin-top: -6px; margin-bottom: 16px; display: none;"
-                     data-bind="visible: (viewOrEdit == 'EDIT') && (viewModel.filteredNames().pagedItems().length > 0) && (viewModel.listFilters.NAMES.scope() === 'Unused (not in any tree)')">
-                    <button class="btn pull-right btn-warning" title="Purge all OTUs listed below"
-                            style="margin: 4px 0 0 18px;"
-                            data-bind="click: purgeUnusedOTUs, css: viewModel.ticklers.NAME_MAPPING_HINTS">
-                        Purge unused OTUs &nbsp; <i class="icon-white icon-remove"></i>
-                    </button>
-                    The OTUs below are not currently used in any tree. If
-                    you've mapped some of these names, and you expect to
-                    (re)import trees that include them, you should keep these;
-                    otherwise you can purge them to clean up the study data.
-                </div>
-                -->
 
                 <table class="table table-condensed table-hover" style="table-layout: fixed;"
                        data-bind="visible: viewModel.filteredNames().pagedItems().length !== 0">
@@ -144,138 +130,131 @@ About-Mapping
                     <tr class="table-shims">
                         <td width="5%"></td>
                         <td width="25%"></td>
-                        <td width="28"></td><!-- width in px, based on button width -->
                         <td width="25%"></td>
                         <td width="28"></td><!-- width in px, based on button width -->
                         <td width="30%"></td>
                     </tr>
                     <tr class="after-shims">
                         <th style="position: relative;"><span style="position: absolute; top: -0.75em; left: -0.5em; z-index: -1; font-size: 0.85em;"
-                                >Select</span><input type="checkbox" onclick="toggleAllMappingCheckboxes(this); return true;" /></th>
-                        <th colspan="2">Original name</th>
+                                >Select</span><input type="checkbox" onclick="tnrs.toggleAllMappingCheckboxes(this); return true;" /></th>
+                        <th>Original name</th>
                         <th colspan="2">Modified for mapping</th>
-                        <th>Mapped to taxon <a href="#" onclick="showPossibleMappingsKey(); return false;">(key)</a></th>
+                        <th>Mapped to taxon <a href="#" onclick="tnrs.showPossibleMappingsKey(); return false;">(key)</a></th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: viewModel.filteredNames().pagedItems(), as: 'otu' }">
+                  <tbody data-bind="foreach: { data: viewModel.filteredNames().pagedItems(), as: 'name' }">
                     <tr data-bind="if: true,
-                                   css: viewModel.ticklers.NAME_MAPPING_HINTS() +' '+ (otu['selectedForAction'] ? 'warning' : '')">
+                                   css: viewModel.ticklers.NAME_MAPPING_HINTS() +' '+ (name['selectedForAction'] ? 'warning' : '')">
                          <td style="text-align: left;"
                              onmousedown="return false;"
-                             data-bind="click: toggleMappingForOTU">
+                             data-bind="click: tnrs.toggleMappingForName">
                              <input type="checkbox" class="map-toggle"
                                     data-bind="checked: $data['selectedForAction'],
-                                               click: toggleMappingForOTU,
+                                               click: tnrs.toggleMappingForName,
                                                css: viewModel.ticklers.NAME_MAPPING_HINTS" />
                          </td>
-                        <td data-bind="text: otu['^ot:originalLabel']">&nbsp;</td>
-                        <td>
-                            <button class="btn btn-mini row-controls-ghosted" title="Show this OTU in all trees"
-                                     data-bind="click: showOTUInContext, css: viewModel.ticklers.NAME_MAPPING_HINTS">
-                                <i class="icon-search"></i>
-                            </button>
-                        </td>
-                         <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0) && !('^ot:altLabel' in otu) -->
+                        <td data-bind="text: name['originalLabel']">&nbsp;</td>
+                         <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && (tnrs.bogusEditedLabelCounter() > 0) && !('adjustedLabel' in name) -->
                           {{ # show static adjusted label (modified by mapping hints) }}
                          <td>
-                            <em data-bind="text: adjustedLabelOrEmpty(otu['^ot:originalLabel']) || '&mdash;',
+                            <em data-bind="text: tnrs.adjustedLabelOrEmpty(name['originalLabel']) || '&mdash;',
                                            css: viewModel.ticklers.NAME_MAPPING_HINTS,
-                                           style: { 'color' : ($.trim(otu['^ot:ottTaxonName']) === '' && !proposedMapping(otu)) ?  '' : 'silver' }"
+                                           style: { 'color' : ($.trim(name['ottTaxonName']) === '' && !tnrs.proposedMapping(name)) ?  '' : 'silver' }"
                                >WORKING?</em>
                         </td>
                         <td>
-                          <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && $.trim(otu['^ot:ottTaxonName']) === '' && !proposedMapping(otu) -->
+                          <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && $.trim(name['ottTaxonName']) === '' && !tnrs.proposedMapping(name) -->
                           {{ # show manual-editing widget }}
                             <button class="btn btn-mini row-controls-ghosted pull-right" title="Edit this label manually"
-                                    data-bind="click: editOTULabel, css: viewModel.ticklers.NAME_MAPPING_HINTS">
+                                    data-bind="click: tnrs.editNameLabel, css: viewModel.ticklers.NAME_MAPPING_HINTS">
                                 <i class="icon-edit"></i>
                             </button>
                           <!-- /ko -->
                         </td>
                          <!-- /ko -->
-                         <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && (bogusEditedLabelCounter() > 0)  && ('^ot:altLabel' in otu) -->
+                         <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && (tnrs.bogusEditedLabelCounter() > 0)  && ('adjustedLabel' in name) -->
                           {{ # show editable label field and its remove widget }}
                         <td>
                             <input type="text" class="input-block-level" style="min-height: inherit; height: 1.6em; margin-bottom: 0"
-                                   data-bind="value: otu['^ot:altLabel'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: modifyEditedLabel, change: modifyEditedLabel }, css: viewModel.ticklers.NAME_MAPPING_HINTS">
+                                   data-bind="value: name['adjustedLabel'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: tnrs.modifyEditedLabel, change: tnrs.modifyEditedLabel }, css: viewModel.ticklers.NAME_MAPPING_HINTS">
                         </td>
                         <td>
-                            <button class="btn btn-mini row-controls-ghosted pull-right" type="button" style="margin-top: 1px;" data-bind="click: revertOTULabel, css: viewModel.ticklers.NAME_MAPPING_HINTS">
+                            <button class="btn btn-mini row-controls-ghosted pull-right" type="button" style="margin-top: 1px;" data-bind="click: tnrs.revertNameLabel, css: viewModel.ticklers.NAME_MAPPING_HINTS">
                                 <i class="icon-remove"></i>
                             </button>
                         </td>
                          <!-- /ko -->
                        {{ # show status or failure message }}
                         <td>
-                         <!-- ko if: currentlyMappingOTUs.indexOf(otu['@id']) !== -1 -->
+                         <!-- ko if: tnrs.currentlyMappingNames.indexOf(name['id']) !== -1 -->
                             <strong style="color: orange;"><em>...mapping now...</em></strong>
                          <!-- /ko -->
-                         <!-- ko if: failedMappingOTUs.indexOf(otu['@id']) !== -1 -->
+                         <!-- ko if: tnrs.failedMappingNames.indexOf(name['id']) !== -1 -->
                             <strong style="color: #999;"><em>Failed mapping</em></strong>
                          <!-- /ko -->
                          <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() &&
-                                     (currentlyMappingOTUs.indexOf(otu['@id']) === -1) -->
+                                     (tnrs.currentlyMappingNames.indexOf(name['id']) === -1) -->
 <!--
-{<em data-bind="text:proposedMapping(otu)"></em>}
-[<em data-bind="text:$.trim(otu['^ot:ottTaxonName'])"></em>]
+{<em data-bind="text:tnrs.proposedMapping(name)"></em>}
+[<em data-bind="text:$.trim(name['ottTaxonName'])"></em>]
 -->
-                          <!-- ko if: false && viewModel.ticklers.NAME_MAPPING_HINTS() && !(proposedMapping(otu)) && !($.trim(otu['^ot:ottTaxonName'])) -->
-                            <button id="single-otu-mapping-button"
+                          <!-- ko if: false && viewModel.ticklers.NAME_MAPPING_HINTS() && !(tnrs.proposedMapping(name)) && !($.trim(name['ottTaxonName'])) -->
+                            <button id="single-name-mapping-button"
                                     class="btn btn-small row-controls-ghosted pull-right"
                                     data-bind="visible: !tnrs.autoMappingInProgress(),
                                                click: requestTaxonMapping">Fuzzy matches</button>
                           <!-- /ko -->
-                          <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length === 1) -->
+                          <!-- ko if: tnrs.proposedMapping(name) && (tnrs.proposedMapping(name).length === 1) -->
                            {{ # show mapped label }}
                             <div class="btn-group pull-right">
                                 <button class="btn btn-mini"
-                                        data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.NAME_MAPPING_HINTS"
-                                        title="Click to reject this OTU mapping">
+                                        data-bind="click: tnrs.rejectProposedNameLabel, css: viewModel.ticklers.NAME_MAPPING_HINTS"
+                                        title="Click to reject this name mapping">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
                             <span style="white-space: nowrap;">
                                 <a class="btn btn-mini"
                                    style="padding: 0px 4px;"
-                                   title="Click to accept this OTU mapping"
-                                   data-bind="click: approveProposedOTULabel">
-                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: proposedMapping(otu)[0].name,
+                                   title="Click to accept this name mapping"
+                                   data-bind="click: tnrs.approveProposedNameLabel">
+                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: tnrs.proposedMapping(name)[0].name,
                                                css: viewModel.ticklers.NAME_MAPPING_HINTS,
-                                               attr: getAttrsForMappingOption(proposedMapping(otu)[0], makeArray(proposedMapping(otu)).length)"
+                                               attr: tnrs.getAttrsForMappingOption(tnrs.proposedMapping(name)[0], makeArray(tnrs.proposedMapping(name)).length)"
                                     href="#"
                                 >PROPOSED LABEL</a>
                             </span>
                           <!-- /ko -->
-                          <!-- ko if: proposedMapping(otu) && (proposedMapping(otu).length > 1) -->
-                           {{ # show available choices for mapping this OTU }}
+                          <!-- ko if: tnrs.proposedMapping(name) && (tnrs.proposedMapping(name).length > 1) -->
+                           {{ # show available choices for mapping this name }}
                             <div class="btn-group pull-right">
                                 <button class="btn btn-mini"
-                                        data-bind="click: rejectProposedOTULabel, css: viewModel.ticklers.NAME_MAPPING_HINTS"
-                                        title="Click to reject all mappings for this OTU">
+                                        data-bind="click: tnrs.rejectProposedNameLabel, css: viewModel.ticklers.NAME_MAPPING_HINTS"
+                                        title="Click to reject all mappings for this name">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <strong style="font-size: 85%; color: #999;"><em>Possible mappings <a href="#" onclick="showPossibleMappingsKey(); return false;">(key)</a></em></strong>
+                            <strong style="font-size: 85%; color: #999;"><em>Possible mappings <a href="#" onclick="tnrs.showPossibleMappingsKey(); return false;">(key)</a></em></strong>
                             <ul class="mapping-options"
-                                data-bind="foreach: makeArray(proposedMapping(otu)),
+                                data-bind="foreach: makeArray(tnrs.proposedMapping(name)),
                                            css: viewModel.ticklers.NAME_MAPPING_HINTS">
                                 <li style="white-space: nowrap;"><a class="btn btn-mini"
                                                       style="padding: 0px 4px;"
-                                                      data-bind="click: approveProposedOTUMappingOption"
-                                                      title="Click to accept this OTU mapping">
+                                                      data-bind="click: tnrs.approveProposedNameMappingOption"
+                                                      title="Click to accept this name mapping">
                                 <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.taxon.unique_name,
-                                                  attr: getAttrsForMappingOption($data, makeArray(proposedMapping(otu)).length)"
+                                                  attr: tnrs.getAttrsForMappingOption($data, makeArray(tnrs.proposedMapping(name)).length)"
                                        href="#"></a>
                                 </li>
                             </ul>
                           <!-- /ko -->
-                          <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && $.trim(otu['^ot:ottTaxonName']) -->
+                          <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && $.trim(name['ottTaxonName']) -->
                             <div class="btn-group pull-right row-controls-ghosted">
-                                <button class="btn btn-mini" data-bind="click: unmapOTUFromTaxon, css: viewModel.ticklers.NAME_MAPPING_HINTS">
+                                <button class="btn btn-mini" data-bind="click: tnrs.unmapNameFromTaxon, css: viewModel.ticklers.NAME_MAPPING_HINTS">
                                     <i class="icon-remove"></i>
                                 </button>
                             </div>
-                            <strong data-bind="html: getTaxobrowserLink(otu['^ot:ottTaxonName'], otu['^ot:ottId']),
+                            <strong data-bind="html: getTaxobrowserLink(name['ottTaxonName'], name['ottId']),
                                                css: viewModel.ticklers.NAME_MAPPING_HINTS",
                                 >MAPPED LABEL</strong>
                           <!-- /ko -->
@@ -312,12 +291,26 @@ About-Mapping
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->
                
+             <div class="alert alert-danger"
+                  data-bind="visible: !(tnrs.browserSupportsFileAPI())">
+                 You can save your work as a ZIP archive in most modern
+                 browsers. <strong>This browser does not provide the needed access to
+                 the local filesystem.</strong>
+             </div>
              <div class="button-bar" style="margin-bottom: 1em;">
-                <button class="btn btn-small" onclick="stylist.showStorageOptions('LOADING_ILLUSTRATION'); return false;">Load nameset...</button>
-                <button class="btn btn-small">Add names...</button>
+                <button class="btn btn-small" 
+                        onclick="tnrs.showLoadNamesetPopup(); return false;"
+                        data-bind="enable: tnrs.browserSupportsFileAPI()">
+                    Load nameset...</button>
+                <button class="btn btn-small"
+                        onclick="tnrs.showLoadListPopup(); return false;"
+                        data-bind="enable: tnrs.browserSupportsFileAPI()">
+                    Add names...</button>
               <span class="pull-right">
-                <button class="btn btn-small" TODO-data-bind="enable: (lastSave.location() !== null)" onclick="stylist.saveCurrentIllustration(stylist.storage.lastSave.backend(), stylist.storage.lastSave.location(), {REFRESH_LIST: false}); return false;">Save</button>
-                <button class="btn btn-small" onclick="stylist.showStorageOptions('SAVING_ILLUSTRATION'); return false;">Save as...</button>
+                <button class="btn btn-small" 
+                        onclick="tnrs.showSaveNamesetPopup(); return false;"
+                        data-bind="enable: tnrs.browserSupportsFileAPI()">
+                    Save nameset...</button>
               </span>
             </div>
 
@@ -391,12 +384,12 @@ About-Mapping
                 <div class="pull-right" style="margin-top: -2px;">
                     <button id="pause-mapping-button" class="btn btn-small"
                             data-bind="visible: tnrs.autoMappingInProgress()"
-                            onclick="stopAutoMapping(); return false;">
+                            onclick="tnrs.stopAutoMapping(); return false;">
                         <i class="icon-pause"></i> Pause mapping</button>
                     <button id="start-mapping-button" class="btn btn-small"
                             data-bind="visible: !tnrs.autoMappingInProgress()"
-                            onclick="startAutoMapping(); return false;">
-                        <i class="icon-play"></i> Map selected OTUs</button>
+                            onclick="tnrs.startAutoMapping(); return false;">
+                        <i class="icon-play"></i> Map selected names</button>
                 </div>
                 <!-- TODO: heading changes to reflect status -->
                 <h4 style="margin-top: 0;" data-bind="visible: tnrs.autoMappingInProgress()">Mapping in progress</h4>
@@ -417,11 +410,11 @@ About-Mapping
                 </div>
                 <div class="mapping-batch-operations" style="display: none;">
                     <button id="batch-approve" class="btn btn-small pull-left"
-                            onclick="approveAllVisibleMappings(); return false;">
+                            onclick="tnrs.approveAllVisibleMappings(); return false;">
                         <i class="icon-ok"></i> Accept exact matches
                     </button>
                     <button id="batch-reject" class="btn btn-small pull-right"
-                            onclick="rejectAllVisibleMappings(); return false;">
+                            onclick="tnrs.rejectAllVisibleMappings(); return false;">
                         <i class="icon-remove"></i> Reject all and pause
                     </button>
                 </div>
@@ -482,8 +475,8 @@ About-Mapping
                     </select>
                     <div style="text-align: center; margin: 0 0 1em;">
                         <button class="btn btn-small Xbtn-info"
-                                onclick="inferSearchContextFromAvailableOTUs(); return false;">
-                            Infer search context from all OTUs
+                                onclick="tnrs.inferSearchContextFromAvailableNames(); return false;">
+                            Infer search context from all names
                         </button>
                     </div>
                  </fieldset>
@@ -503,7 +496,7 @@ About-Mapping
                 <p>
                 If mapping is slow or failing, you can streamline the process by
                 modifying the original node labels. Any active substitutions below
-                will be applied to all labels during OTU mapping. (See the
+                will be applied to all labels during name mapping. (See the
                 italic <strong>Modified for mapping</strong> values at left.)
                 Try some common patterns from the drop-down menu below, or use
                 <a href="http://www.regular-expressions.info/javascript.html#replace" target="_blank">regular expressions</a> to construct your own.
@@ -581,7 +574,7 @@ About-Mapping
                 <p>
                 This tool will help you to quickly map a list of names to 
                 taxa in the <a href="https://tree.opentreeoflife.org/about/taxonomy-version" target="_blank">OTT (Open Tree Taxonomy)</a>.
-                This is typically done with leaf labels that represent OTUs
+                This is typically done with leaf labels that represent names
                 (operational taxonomic units) in a phylogenetic tree.
                 </p>
                 <p>
@@ -612,6 +605,13 @@ About-Mapping
                 <strong>main.json</strong> that carries session details and
                 useful metadata.
                 </p>
+                <div id="help-file-api-prompt"
+                     class="alert alert-danger"
+                     data-bind="visible: !(tnrs.browserSupportsFileAPI())">
+                    <strong>This web browser does not provide the needed access to
+                    the local filesystem! Please try using this tool in
+                    another browser.</strong>
+                </div>
                 <p>&nbsp;</p>
            </div>
           </div>
@@ -631,27 +631,153 @@ About-Mapping
 <!-- main support scripts for bulk-TNRS webapp, built with npm -->
 <script src="{{=URL('static','js/tnrs-bundle.js')}}"></script>
 
-<!-- hidden template describing dowload formats -->
-<div class="modal hide fade modal-save-comments" id="download-formats-popup" style="display: none;">
+<!-- hidden templates for load and save dialogs -->
+<div id="load-list-popup" class="modal fade" style="display: none;">
+    <div class="modal-header" style="padding: 0px inherit;">
+      <a data-dismiss="modal" class="close" style="margin-top: -2px;">x</a>
+      <h4 style="margin: 0;">
+         Where is the list of names?
+      </h4>
+    </div>
+    <div class="modal-header modal-body">
+        <p>
+            Your list should be a plain-text file where each line 
+            is a name to be mapped. Its text encoding should be <code>utf-8</code>.
+        </p>
+        <input type="file" value="Load text file..."
+               data-bind="event: { change: tnrs.loadListFromChosenFile }"
+        />
+        <p id="list-local-filesystem-warning" style="color: #933; margin: 8px 0 0;"
+           data-bind="visible: false">
+          Help text appears here.
+        </p>
+    </div>
+</div>
+<div id="load-nameset-popup" class="modal fade" style="display: none;">
+    <div class="modal-header" style="padding: 0px inherit;">
+      <a data-dismiss="modal" class="close" style="margin-top: -2px;">x</a>
+      <h4 style="margin: 0;">
+         Where is the nameset file?
+      </h4>
+    </div>
+    <div class="modal-header modal-body">
+        <p>
+            Namesets are stored as ZIP archives, with all inputs and
+            data included. This is useful for sharing your work via email,
+            though you might need to remove the <code>.zip</code> file
+            extension to pass spam filters.
+        </p>
+        <input type="file" value="Load ZIP archive..."
+               data-bind="event: { change: tnrs.loadNamesetFromChosenFile }"
+        />
+        <p id="nameset-local-filesystem-warning" style="color: #933; margin: 8px 0 0;"
+           data-bind="visible: false">
+          Help text appears here.
+        </p>
+    </div>
+</div>
+<div id="save-nameset-popup" class="modal fade" style="display: none;">
+    <div class="modal-header" style="padding: 0px inherit;">
+      <a data-dismiss="modal" class="close" style="margin-top: -2px;">x</a>
+      <h4 style="margin: 0;">
+         Where would you like to save your work?
+      </h4>
+    </div>
+    <div class="modal-header modal-body">
+        <p>
+            Namesets are stored as ZIP archives, with all inputs and data
+            included. This is useful for sharing your work via email, though
+            you might need to remove the <code>.zip</code> file extension to
+            pass spam filters.
+        </p>
+        <input type="button" value="Save ZIP archive"
+               onclick="tnrs.saveCurrentNameset(); return false;" />
+        <span>with filename</span>
+        <input type="text" id="suggested-archive-filename"
+               style="margin-bottom: 0px;"
+               data-bind="value: tnrs.getDefaultArchiveFilename()" />
+
+        <p id="save-location-warning" style="color: #933; margin: 8px 0 0;"
+           data-bind="visible: false">
+        Please <strong>check the name and location of your downloaded file</strong> 
+        carefully! Due to your web browser's security restrictions, we can't save 
+        over an existing nameset. It's possible that your file was
+        downloaded in an unexpected location, or with a different filename.
+        </p>
+
+    </div>
+</div>
+
+<!-- hidden template for explaining colors and opacity of name mapping option -->
+<div class="modal hide fade" id="possible-mappings-key" style="display: none;">
     <div class="modal-header">
       <a data-dismiss="modal" class="close">×</a>
       <h3 id='dialog-heading'>
-         About study download formats
+         How to interpret possible name mappings
       </h3>
     </div>
     <div class="modal-body">
-      <p>
-        <a href="https://github.com/OpenTreeOfLife/phylesystem-api/wiki/NexSON" target="_blank"><strong>NexSON</strong></a> is a format used extensively in the Open Tree project. It's based on the <a href="http://badgerfish.ning.com/" target="_blank">Badgerfish</a> convention for converting NeXML to JSON, with additional improvement for faster processing. It includes both original and mapped OTU labels.
-      </p>
-      <p style="margin-top: 1.5em;">
-        <a href="http://nexml.org/" target="_blank"><strong>NeXML</strong></a> is an XML serialization of the older NEXUS format. It retains some of NexSON's richness but is compatible with more third-party software. NeXML includes both original and mapped OTU labels, with the original labels repeated in <code>label</code> attributes.
-      </p>
-      <p style="margin-top: 1.5em;">
-        <a href="http://en.wikipedia.org/wiki/Nexus_file" target="_blank"><strong>NEXUS</strong></a> is a common format from which NeXML and NexSON were derived. It includes original OTU labels only.
-      </p>
-      <p style="margin-top: 1.5em;">
-      <a href="http://en.wikipedia.org/wiki/Newick_format" target="_blank"><strong> Newick</strong></a> is a format commonly used in tree visualization. It captures <em>tree information only</em> and includes just the original OTU labels.
-      </p>
+        <p>
+            When an name cannot be clearly mapped to a single taxon in the Open
+            Tree taxonomy, the most likely matches will appear in a list like
+            the one below.
+        </p>
+        <ul class="mapping-options" style="padding-left: 20px;">
+            <li>
+                <div class="key-note">possible matches are green</div>
+                <a class="badge badge-success"
+                   style="opacity: 1.0;"
+                   title="100% match of original label"
+                   href="#" onclick="return false;"
+                >Hominidae</a>
+            </li>
+            <li>
+                <div class="key-note">closer matches are darker</div>
+                <a class="badge badge-success"
+                   style="opacity: 0.78;"
+                   title="78% match of original label"
+                   href="#" onclick="return false;"
+                >Homininae</a>
+            </li>
+            <li>
+                <a class="badge badge-success"
+                   style="opacity: 0.56;"
+                   title="56% match of original label"
+                   href="#" onclick="return false;"
+                >Homo</a>
+            </li>
+            <li>
+                <div class="key-note">synonyms are blue</div>
+                <a class="badge badge-info"
+                   style="opacity: 1;"
+                   title="Synonym for Drosophila"
+                   href="#" onclick="return false;"
+                >Psathyrella</a>
+            </li>
+            <li>
+                <div class="key-note">homonyms are amber</div>
+                <a class="badge badge-warning"
+                   style="opacity: 1;"
+                   title="Taxon-name homonym"
+                   href="#" onclick="return false;"
+                >Drosophila (genus in Drosophiliti)</a>
+            </li>
+        </ul>
+        <p>
+            Click <button
+            class="btn btn-mini row-controls-ghosted"
+            type="button" onclick="return true;"><i class="icon-ok"></i>
+            </button> to
+            map the name to this taxon. Click
+            <button class="btn btn-mini row-controls-ghosted"
+                    type="button" onclick="return false;"><i class="icon-remove"></i>
+            </button>
+            to reject all mappings; then try modifying the original label and re-mapping.
+        </p>
+        <p>
+          Roll over each match to learn more about it. Click a name to
+          open the taxonomy browser for that taxon.
+        </p>
     </div>
     <div class="modal-footer">
       <a data-dismiss="modal" class="btn" >Close</a>
