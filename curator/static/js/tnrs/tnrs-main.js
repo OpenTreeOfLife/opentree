@@ -74,10 +74,10 @@ var getNewNamesetModel = function(options) {
                 */
                 /* start with one empty/new substitution */
                 {
-                    "active": false,
+                    "active": true,
                     "old": "",
                     "new": "",
-                    "valid": false
+                    "valid": true
                 }
             ],
         },
@@ -391,11 +391,11 @@ function adjustedLabel(label) {
     // apply any active subsitutions in the viewMdel
     var subList = viewModel.mappingHints.substitutions();
     $.each(subList, function(i, subst) {
-        if (!subst['@active']) {
+        if (!subst['active']) {
             return true; // skip to next adjustment
         }
-        var oldText = subst.old.$;
-        var newText = subst.new.$;
+        var oldText = subst.old;
+        var newText = subst.new;
         if ($.trim(oldText) === $.trim(newText) === "") {
             return true; // skip to next adjustment
         }
@@ -405,16 +405,16 @@ function adjustedLabel(label) {
             var pattern = new RegExp(oldText);
             adjusted = adjusted.replace(pattern, newText);
             // clear any stale invalid-regex marking on this field
-            if (!subst['@valid']) {
-                subst['@valid'] = true;
+            if (!subst['valid']) {
+                subst['valid'] = true;
             }
-            subst['@valid'] = true;
+            subst['valid'] = true;
         } catch(e) {
             // there's probably invalid regex in the field... mark it and skip
-            if (!subst['@valid']) {
-                subst['@valid'] = false;
+            if (!subst['valid']) {
+                subst['valid'] = false;
             }
-            subst['@valid'] = false;
+            subst['valid'] = false;
         }
     });
     return adjusted;
@@ -588,6 +588,7 @@ function approveProposedNameLabel(name) {
     delete proposedNameMappings()[ nameid ];
     proposedNameMappings.valueHasMutated();
     nudgeTickler('NAME_MAPPING_HINTS');
+    nudgeTickler( 'VISIBLE_NAME_MAPPINGS'); // to refresh status bar
 }
 function approveProposedNameMappingOption(approvedMapping, selectedIndex) {
     // similar to approveProposedNameLabel, but for a listed option
@@ -596,6 +597,7 @@ function approveProposedNameMappingOption(approvedMapping, selectedIndex) {
     delete proposedNameMappings()[ nameid ];
     proposedNameMappings.valueHasMutated();
     nudgeTickler('NAME_MAPPING_HINTS');
+    nudgeTickler( 'VISIBLE_NAME_MAPPINGS'); // to refresh status bar
 }
 function rejectProposedNameLabel(name) {
     // undoes 'proposeNameLabel', clearing its value
@@ -603,6 +605,7 @@ function rejectProposedNameLabel(name) {
     delete proposedNameMappings()[ nameid ];
     proposedNameMappings.valueHasMutated();
     nudgeTickler('NAME_MAPPING_HINTS');
+    nudgeTickler( 'VISIBLE_NAME_MAPPINGS'); // to refresh status bar
 }
 
 function getAllVisibleProposedMappings() {
@@ -651,6 +654,7 @@ function approveAllVisibleMappings() {
     });
     proposedNameMappings.valueHasMutated();
     nudgeTickler('NAME_MAPPING_HINTS');
+    nudgeTickler( 'VISIBLE_NAME_MAPPINGS'); // to refresh status bar
     startAutoMapping();
 }
 function rejectAllVisibleMappings() {
@@ -659,6 +663,7 @@ function rejectAllVisibleMappings() {
     });
     proposedNameMappings.valueHasMutated();
     stopAutoMapping();
+    nudgeTickler( 'VISIBLE_NAME_MAPPINGS'); // to refresh status bar
 }
 
 function updateMappingStatus() {
@@ -1210,6 +1215,7 @@ function unmapNameFromTaxon( nameOrID, options ) {
 
     if (!options.POSTPONE_UI_CHANGES) {
         nudgeTickler('NAME_MAPPING_HINTS');
+        nudgeTickler('VISIBLE_NAME_MAPPINGS');
     }
 }
 
@@ -1244,7 +1250,7 @@ function clearSelectedMappings() {
 }
 
 function clearAllMappings() {
-    var allNames = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+    var allNames = viewModel.names();
     if (confirm("WARNING: This will un-map all "+ allNames.length +" names in the current study! Are you sure you want to do this?")) {
         // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) names.
         $.each( allNames, function (i, name) {
@@ -1348,26 +1354,24 @@ function showFilesystemPopup( popupSelector ) {
 function getMappedNamesTally() {
     // return display-ready tally (mapped/total ratio and percentage)
     var thinSpace = '&#8201;';
-    if (!viewModel || !viewModel.names || viewModel.names.length === 0) {
+    if (!viewModel || !viewModel.names || viewModel.names().length === 0) {
         return '<strong>0</strong><span>'+ thinSpace +'/'+ thinSpace + '0 &nbsp;</span><span style="color: #999;">(0%)</span>';
     }
-    var totalNameCount = viewModel.names.length;
-    var mappedNameCount = $( ['foo'] ).length;
-    return '<strong>'+ mappedNameCount +'</strong><span>'+ thinSpace +'/'+ thinSpace + totalNameCount +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(totalNameCount / mappedNameCount) +'%)</span>';
+    var totalNameCount = viewModel.names().length;
+    var mappedNameCount = $.grep(viewModel.names(), function(name, i) {
+        return (!name.ottId) ? false: true;
+    }).length;
+    return '<strong>'+ mappedNameCount +'</strong><span>'+ thinSpace +'/'+ thinSpace + totalNameCount +' &nbsp;</span><span style="color: #999;">('+ floatToPercent(mappedNameCount / totalNameCount) +'%)</span>';
 }
 function mappingProgressAsPercent() {
-    if (!viewModel || !viewModel.names || viewModel.names.length === 0) {
+    if (!viewModel || !viewModel.names || viewModel.names().length === 0) {
         return 0;
     }
-    var totalNameCount = viewModel.names.length;
-    var mappedNameCount = $.grep( viewModel.names, function(name, i) {
-        if (!name.ottId) {  
-            // missing, empty string, or null
-            return false;
-        }
-        return true;
+    var totalNameCount = viewModel.names().length;
+    var mappedNameCount = $.grep( viewModel.names(), function(name, i) {
+        return (!name.ottId) ? false: true;
     }).length;
-    return floatToPercent(totalNameCount / mappedNameCount);
+    return floatToPercent(mappedNameCount / totalNameCount);
 }
 function floatToPercent( dec ) {
     // assumes a float between 0.0 and 1.0
@@ -1384,7 +1388,12 @@ function browserSupportsFileAPI() {
 }
 
 function addSubstitution( clicked ) {
-    var subst = {};
+    var subst = {
+        'old': "",
+        'new': "",
+        'active': true,
+        'valid': true
+    };
 
     if ($(clicked).is('select')) {
         var chosenSub = $(clicked).val();
@@ -1394,10 +1403,10 @@ function addSubstitution( clicked ) {
         }
         // add the chosen subsitution
         var parts = chosenSub.split(' =:= ');
-        subst.old.$ = parts[0] || '';
-        subst.new.$ = parts[1] || '';
-        subst['@valid'] = true;
-        subst['@active'] = true;
+        subst.old = parts[0] || '';
+        subst.new = parts[1] || '';
+        subst.valid = true;
+        subst.active = true;
         // reset the SELECT widget to its prompt
         $(clicked).val('');
     }
@@ -1936,12 +1945,15 @@ var api = [
     'modifyEditedLabel',
     'approveProposedNameLabel',
     'approveProposedNameMappingOption',
+    'approveAllVisibleMappings',
     'rejectProposedNameLabel',
     'rejectAllVisibleMappings',
     'unmapNameFromTaxon',
     'clearSelectedMappings',
     'clearAllMappings',
     'showPossibleMappingsKey',
+    'addSubstitution',
+    'removeSubstitution',
     'formatISODate'
 ];
 $.each(api, function(i, methodName) {

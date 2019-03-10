@@ -369,7 +369,8 @@ About-Mapping
 
                 <div class="progress"
                      style="height: 0.5em; margin: 0.5em 0;">
-                  <div class="bar" data-bind="style: { width: tnrs.mappingProgressAsPercent() }" style="width: 45%;">&nbsp;</div>
+                  <div class="bar" data-bind="style: { width: tnrs.mappingProgressAsPercent() +'%' },
+                                              css: viewModel.ticklers.VISIBLE_NAME_MAPPINGS" style="width: 45%;">&nbsp;</div>
                 </div>
             </div> 
 
@@ -422,11 +423,11 @@ About-Mapping
 
             <div style="margin: 1em 0; overflow: hidden;">
                 <button class="btn btn-small pull-left"
-                        onclick="clearSelectedMappings(); return false;">
+                        onclick="tnrs.clearSelectedMappings(); return false;">
                     Clear selected mappings
                 </button>
                 <button class="btn btn-small btn-warning pull-right"
-                        onclick="clearAllMappings(); return false;">
+                        onclick="tnrs.clearAllMappings(); return false;">
                     <i class="icon-warning-sign icon-white"></i>
                     Clear <strong>all</strong> mappings
                 </button>
@@ -517,20 +518,20 @@ About-Mapping
                     <tbody id="mapping-adjustments" data-bind="foreach: { data: viewModel.mappingHints.substitutions, as: 'substitution'}, css: viewModel.ticklers.NAME_MAPPING_HINTS">
                         <tr>
                             <td align="center" valign="center">
-                                <input type="checkbox" data-bind="checked: substitution['@active'], event: { click: tnrs.updateMappingHints }"
+                                <input type="checkbox" data-bind="checked: substitution['active'], event: { click: tnrs.updateMappingHints }"
                                        title="If checked, this substitution will be used."/>
                             </td>
                             <td>
                                 <input type="text" class="input-block-level"
-                                       data-bind="value: substitution.old.$, valueUpdate: ['afterkeydown', 'input'], event: { keyup: tnrs.updateMappingHints, change: tnrs.updateMappingHints }, style: { 'background-color': substitution['@valid'] ? '' : '#fdd' }"/>
+                                       data-bind="value: substitution.old, valueUpdate: ['afterkeydown', 'input'], event: { keyup: tnrs.updateMappingHints, change: tnrs.updateMappingHints }, style: { 'background-color': substitution['valid'] ? '' : '#fdd' }"/>
                             </td>
                             <td>
                                 <input type="text"
-                                class="input-block-level" data-bind="value: substitution.new.$, valueUpdate: ['afterkeydown', 'input'], event: { keyup: tnrs.updateMappingHints, change: tnrs.updateMappingHints }"/>
+                                class="input-block-level" data-bind="value: substitution.new, valueUpdate: ['afterkeydown', 'input'], event: { keyup: tnrs.updateMappingHints, change: tnrs.updateMappingHints }"/>
                             </td>
                             <td align="center" valign="center">
                                 <a href="#" title="Click to remove this substitution."
-                                   data-bind="click: function(data, event) { removeSubstitution(data);  }" />
+                                   data-bind="click: function(data, event) { tnrs.removeSubstitution(data);  }" />
                                     <i class="icon-trash"></i></a>
                             </td>
                         </tr>
@@ -538,7 +539,7 @@ About-Mapping
                   </table>
 
                   <div style="margin-top: 1em;">
-                      <select class="input-block-level" onchange="addSubstitution(this); return false;">
+                      <select class="input-block-level" onchange="tnrs.addSubstitution(this); return false;">
                         <option value="">Add a common substitution...</option>
                        <!-- NOTE the convention here... value="{OLD} =:= {NEW}" -->
                         <option value="\bsp(\.|\b) =:= ">Remove 'sp.'</option>
@@ -551,7 +552,7 @@ About-Mapping
                   </div>
                   <div style="margin-top: 1em;">
                       <button type="submit" class="btn"
-                              onclick="addSubstitution(); return false;">
+                              onclick="tnrs.addSubstitution(); return false;">
                           <i class="icon-plus"></i> Add another substitution
                       </button>
                   </div>
