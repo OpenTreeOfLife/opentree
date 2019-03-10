@@ -391,11 +391,11 @@ function adjustedLabel(label) {
     // apply any active subsitutions in the viewMdel
     var subList = viewModel.mappingHints.substitutions();
     $.each(subList, function(i, subst) {
-        if (!subst['active']) {
+        if (!subst.active()) {
             return true; // skip to next adjustment
         }
-        var oldText = subst.old;
-        var newText = subst.new;
+        var oldText = subst.old();
+        var newText = subst.new();
         if ($.trim(oldText) === $.trim(newText) === "") {
             return true; // skip to next adjustment
         }
@@ -405,16 +405,10 @@ function adjustedLabel(label) {
             var pattern = new RegExp(oldText);
             adjusted = adjusted.replace(pattern, newText);
             // clear any stale invalid-regex marking on this field
-            if (!subst['valid']) {
-                subst['valid'] = true;
-            }
-            subst['valid'] = true;
+            subst.valid(true);
         } catch(e) {
             // there's probably invalid regex in the field... mark it and skip
-            if (!subst['valid']) {
-                subst['valid'] = false;
-            }
-            subst['valid'] = false;
+            subst.valid(false);
         }
     });
     return adjusted;
@@ -1388,12 +1382,12 @@ function browserSupportsFileAPI() {
 }
 
 function addSubstitution( clicked ) {
-    var subst = {
+    var subst = ko.mapping.fromJS({
         'old': "",
         'new': "",
         'active': true,
         'valid': true
-    };
+    });
 
     if ($(clicked).is('select')) {
         var chosenSub = $(clicked).val();
@@ -1403,10 +1397,10 @@ function addSubstitution( clicked ) {
         }
         // add the chosen subsitution
         var parts = chosenSub.split(' =:= ');
-        subst.old = parts[0] || '';
-        subst.new = parts[1] || '';
-        subst.valid = true;
-        subst.active = true;
+        subst.old( parts[0] || '' );
+        subst.new( parts[1] || '' );
+        subst.valid(true);
+        subst.active(true);
         // reset the SELECT widget to its prompt
         $(clicked).val('');
     }
@@ -1428,6 +1422,7 @@ function removeSubstitution( data ) {
 function updateMappingHints( data ) {
     // after-effects of changes to search context or any substitution
     clearFailedNameList();
+    adjustedLabel("TEST");   // validate all substitutions
     nudgeTickler('NAME_MAPPING_HINTS');
     return true;
 }

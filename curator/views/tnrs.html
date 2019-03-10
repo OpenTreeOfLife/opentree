@@ -518,12 +518,12 @@ About-Mapping
                     <tbody id="mapping-adjustments" data-bind="foreach: { data: viewModel.mappingHints.substitutions, as: 'substitution'}, css: viewModel.ticklers.NAME_MAPPING_HINTS">
                         <tr>
                             <td align="center" valign="center">
-                                <input type="checkbox" data-bind="checked: substitution['active'], event: { click: tnrs.updateMappingHints }"
+                                <input type="checkbox" data-bind="checked: substitution.active, event: { click: tnrs.updateMappingHints }"
                                        title="If checked, this substitution will be used."/>
                             </td>
                             <td>
                                 <input type="text" class="input-block-level"
-                                       data-bind="value: substitution.old, valueUpdate: ['afterkeydown', 'input'], event: { keyup: tnrs.updateMappingHints, change: tnrs.updateMappingHints }, style: { 'background-color': substitution['valid'] ? '' : '#fdd' }"/>
+                                                   data-bind="value: substitution.old, valueUpdate: ['afterkeydown', 'input'], event: { keyup: tnrs.updateMappingHints, change: tnrs.updateMappingHints }, style: { 'background-color': substitution.valid() ? '' : '#fdd' }, attr: { 'title': substitution.valid() ? '' : 'This is not a valid expression and will not be applied' }"/>
                             </td>
                             <td>
                                 <input type="text"
