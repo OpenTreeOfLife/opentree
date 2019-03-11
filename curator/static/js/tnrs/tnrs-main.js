@@ -34,7 +34,7 @@
  *
  * This uses the Open Tree API to resolve large sets of labels to taxonomic names.
  */
-var jszip = require('jszip'),
+var JSZip = require('jszip'),
     FileSaver = require('file-saver'),
     Blob = require('blob-polyfill'),
     assert = require('assert');
@@ -119,14 +119,14 @@ var lastSave = {
 };
 function updateLastSavedInfo( suggestedFilename ) {
     var rightNow = new Date().toISOString();
-    storage.lastSave.timestamp( rightNow );
-    storage.lastSave.filename( $.trim( suggestedFilename ) );
-    console.warn('UPDATED lastSave, timestamp: '+ storage.lastSave.timestamp() +', SUGGESTED filename: '+ storage.lastSave.filename());
+    lastSave.timestamp( rightNow );
+    lastSave.filename( $.trim( suggestedFilename ) );
+    console.warn('UPDATED lastSave, timestamp: '+ lastSave.timestamp() +', SUGGESTED filename: '+ lastSave.filename());
 }
 function clearLastSavedInfo() {
-    storage.lastSave.timestamp(null);
-    storage.lastSave.filename('UNKNOWN');
-    console.warn('CLEARED lastSave, timestamp: '+ storage.lastSave.timestamp() +', proposed filename: '+ storage.lastSave.filename());
+    lastSave.timestamp(null);
+    lastSave.filename('UNKNOWN');
+    console.warn('CLEARED lastSave, timestamp: '+ lastSave.timestamp() +', proposed filename: '+ lastSave.filename());
 }
 
 /* Load and save (to/from ZIP file on the user's filesystem) */
@@ -143,17 +143,100 @@ function getDefaultArchiveFilename( candidateFileName ) {
     return suggestedFileName;
 }
 
-function saveCurrentNameset() {
+function saveCurrentNameset( options ) {
+    // save a ZIP archive (or just `main.json`) to the filesystem
+    options = options || {FULL_ARCHIVE: true};
+
+    // TODO: add this user to the authors list, if not found?
+    // (email and/or userid, so we can link to authors)
+    /*
+    var userDisplayName = '???';
+    var listPos = $.inArray( userDisplayName, viewModel.metadata.authors() );
+    if (listPos === -1) {
+        viewModel.metadata.authors.push( userDisplayName );
+    }
+    */
+
+    // TODO: add a "scrubber" as we do for OpenTree studies? 
+    // scrubNamesetForTransport(stylist.ill);
+
+    // flatten the current nameset to simple JS using our 
+    // Knockout mapping options
+    var clonableNameset = ko.mapping.toJS(viewModel);
+
+    // TODO: clear any existing URL? or keep last-known good one?
+    //clonableNameset.metadata.url = '';
+
+    // create a Zip archive, add the core document
+    var archive = new JSZip();
+    archive.file("main.json", JSON.stringify(clonableNameset));
+
+    // TODO: Test all input for repeatable provenance info; if any are lacking a
+    // clear source, we should embed the source data here.
+    /*
+    var staticInputs = TreeIllustrator.gatherStaticInputData();
+    if (options.FULL_ARCHIVE || (staticInputs.length > 0)) {
+        // add some or all input data for this illustration
+        //var inputFolder = archive.folder('input');
+        var inputsToStore = options.FULL_ARCHIVE ? TreeIllustrator.gatherAllInputData() : staticInputs;
+        $.each(inputsToStore, function(i, inputData) {
+            var itsPath = inputData.path;
+            var serialized = utils.serializeDataForSavedFile( inputData.value );
+            archive.file(itsPath, serialized.value, serialized.options);
+        });
+    }
+    */
+
+    // add any output docs (SVG, PDF)
+    var outputFolder = archive.folder('output');
+    outputFolder.file('main.tsv', generateTabSeparatedOutput(), {TODO: "What are appropriate options for TSV?"});
+
+    /* NOTE that we have no control over where the browser will save a
+     * downloaded file, and we have no direct knowledge of the filesystem!
+     * Furthermore, most browsers won't overwrite an existing file with this
+     * path+name, and will instead increment the new file, e.g.
+     * 'bee-trees-compared.zip' becomes '~/Downloads/bee-trees-compared (2).zip'.
+     */
     var $filenameField = $('input#suggested-archive-filename');
     var suggestedFileName = $.trim($filenameField.val());
     if (suggestedFileName) {
         suggestedFileName = getDefaultArchiveFilename(suggestedFileName);
     } // ASSUMES this field is populated based on lastSave info?
-
-    // TODO: stylist.storage[ LOCAL_FILESYSTEM ].saveIllustration(suggestedFileName);
+    archive.generateAsync( {type:"blob"}, 
+                           function updateCallback(metadata) {
+                               // TODO: Show progress as demonstrated in
+                               // https://stuk.github.io/jszip/documentation/examples/downloader.html
+                               console.log( metadata.percent.toFixed(2) + " % complete" );
+                           } )
+           .then( function (blob) {   
+                      // success callback
+                      FileSaver.saveAs(blob, suggestedFileName);
+                  },
+                  function (err) {    
+                      // failure callback
+                      alert('ERROR saving this ZIP archive:\n'+ err);
+                  } );
 
     updateLastSavedInfo(suggestedFileName);
     $('#nameset-local-filesystem-warning').slideDown(); // TODO
+}
+
+function generateTabSeparatedOutput() {
+    // render the current nameset (mapped name, or all names?) to TSV string
+    var TAB = "\t";
+    var output;
+    if (viewModel.names().length === 0) {
+        output = "# No names in this nameset were mapped to the OT Taxonomy.";
+    } else {
+        output = "ORIGINAL LABEL"+ TAB +"OTT TAXON NAME"+ TAB +"OTT TAXON ID\n";
+        $.each(viewModel.names(), function(i, name) {
+            if (!name.ottTaxonName) {
+                return true;  // skip this un-mapped name
+            }
+            output += (name.originalLabel +TAB+ name.ottTaxonName +TAB+ name.ottId +"\n");
+        });
+    }
+    return output;
 }
 
 function loadListFromChosenFile( vm, evt ) {
@@ -200,6 +283,7 @@ function loadListFromChosenFile( vm, evt ) {
                 // test a variety of delimiters to find multiple items
                 var names = [ ];
                 var multipleNamesFound = false;
+                var dupesFound = 0;
                 var delimiters = ['\n','\r','\t'];
                 $.each(delimiters, function(i, delim) {
                     if (!multipleNamesFound) {
@@ -233,7 +317,10 @@ function loadListFromChosenFile( vm, evt ) {
                                     });
                                 });
                                 // sweep for duplicates
+                                var withDupes = viewModel.names().length;
                                 removeDuplicateNames(viewModel);
+                                var withoutDupes = viewModel.names().length;
+                                dupesFound = withDupes - withoutDupes;
                                 // TODO: nudge tickler(s)?
                                 return;
                         }
@@ -242,7 +329,15 @@ function loadListFromChosenFile( vm, evt ) {
                 // still here? there was a problem, report it and bail
                 var msg;
                 if (multipleNamesFound) {
-                    msg = "Adding "+ names.length +" names found in this file...";
+                    if (dupesFound === 0) {
+                        msg = "Adding "+ names.length +" names found in this file...";
+                    } else {
+                        var namesAdded = names.length - dupesFound;
+                        msg = "Adding "+ namesAdded +" name"+
+                            (namesAdded > 1? "s" : "") +"found in this file ("+ 
+                            dupesFound +" duplicate name"+ (dupesFound > 1? "s" : "") 
+                            +" removed)...";
+                    }
                 } else {
                     msg = "No names (or just one) found in this file! Try again?";
                 }
@@ -287,7 +382,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
                 return;
             }
             // Still here? try to read and unzip this archive!
-            jszip.loadAsync(fileInfo)   // read the Blob
+            JSZip.loadAsync(fileInfo)   // read the Blob
                  .then(function(zip) {  // success callback
                      console.log('reading ZIP contents...');
                      var msg = "Reading nameset contents...";
@@ -328,7 +423,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                            if (zipEntriesToLoad === 0) {
                                                // we've read in all the ZIP data! open this nameset
                                                // (TODO: setting its initial cache) and close this popup
-                                               loadNamesetData( mainNamesetJSON, initialCache, 'EXISTING');
+                                               loadNamesetData( mainNamesetJSON );
                                                // update last-saved info
                                                updateLastSavedInfo(fileInfo.name);
                                                // N.B. the File API *always* downloads to an unused path+filename
@@ -1279,6 +1374,18 @@ var nudge = {
     'METADATA': function( data, event ) {
         nudgeTickler( 'METADATA');
         return true;
+    },
+    'VISIBLE_NAME_MAPPINGS': function( data, event ) {
+        nudgeTickler( 'VISIBLE_NAME_MAPPINGS');
+        return true;
+    },
+    'NAME_MAPPING_HINTS': function( data, event ) {
+        nudgeTickler( 'NAME_MAPPING_HINTS');
+        return true;
+    },
+    'INPUT_FILES': function( data, event ) {
+        nudgeTickler( 'INPUT_FILES');
+        return true;
     }
     // TODO: Add more for any ticklers added below
 }
@@ -1559,6 +1666,9 @@ function inferSearchContextFromAvailableNames() {
     });
 }
 
+// Keep a safe copy of our UI markup, for re-use as a Knockout template (see below)
+var $stashedEditArea = null;
+
 // Load a nameset from JS/JSON data (usu. called by convenience functions below)
 function loadNamesetData( data ) {
     /* Parse this data as `nameset` (a simple JS object), then convert this
@@ -1585,12 +1695,20 @@ function loadNamesetData( data ) {
             console.error("Unexpected type for nameset data: "+ (typeof data));
             nameset = null;
     }
-    // name and export the new viewmodel
-    exports.viewModel = viewModel = ko.mapping.fromJS(nameset);
+    /* Name and export the new viewmodel. NOTE that we don't create observables
+     * for names and their many properties! This should help keep things snappy
+     * when woriing with very large lists.
+     */
+    var knockoutMappingOptions = {
+        'copy': ["names"]  // we'll make the 'names' array observable below
+    };
+    exports.viewModel = viewModel = ko.mapping.fromJS(nameset, knockoutMappingOptions);
+    viewModel.names = ko.observableArray(viewModel.names);
 
     // cleanup of incoming data
     removeDuplicateNames(viewModel);
-    // TODO: take initial stab at setting search context for TNRS?
+
+    // take initial stab at setting search context for TNRS?
     inferSearchContextFromAvailableNames();
 
     /* 
@@ -1793,9 +1911,6 @@ function loadNamesetData( data ) {
         return viewModel._filteredNames;
     }).extend({ throttle: viewModel.filterDelay }); // END of filteredNames
 
-    // Keep a safe copy of our UI markup, for re-use as a Knockout template (see below)
-    var $stashedEditArea = null;
-
     // Stash the pristine markup before binding our UI for the first time
     if ($stashedEditArea === null) {
         $stashedEditArea = $('#Name-Mapping').clone();
@@ -1851,8 +1966,24 @@ function getNextNameOrdinalNumber() {
 
 
 function removeDuplicateNames( viewmodel ) {
-    // call this when loading a nameset *or* adding names!
-    console.warn("I don't know how to remove duplicate names yet!");
+    /* Call this when loading a nameset *or* adding names!  We should walk the
+     * full names array and clobber any later duplicates. This array is always
+     * sorted by creation order, so a simple approach should preserve the
+     * curator's existing mappings and label adjustments.
+     */
+    var labelsAlreadyFound = [ ];
+    var dupes = [ ];
+    $.each( viewModel.names(), function(i, name) {
+        var testLabel = $.trim(name.originalLabel);
+        if (labelsAlreadyFound.indexOf(testLabel) === -1) {
+            // add this to labels found (test later names against this)
+            labelsAlreadyFound.push(testLabel);
+        } else {
+            // this is a dupe of an earlier name!
+            dupes.push(name);
+        }
+    });
+    viewModel.names.removeAll( dupes );
 }
 
 function formatISODate( dateString, options ) {
