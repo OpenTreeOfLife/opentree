@@ -1,0 +1,787 @@
+{{# This tool uses mostly client-side logic, but also makes heavy use
+# of our TNRS services via the OpenTree API.
+
+response.title = "Name Resolution"
+isLoggedIn = (auth.user) and True or False
+}}
+
+{{left_sidebar_enabled,right_sidebar_enabled=False,False}}
+{{response.subtitle = "waiting for data..."}}
+
+{{### Add support scripts for single-page editor
+
+# JSON support for older browsers (esp. IE7)
+response.files.append(URL('static','js/json2.js'))
+
+# Knockout.js for binding JSON model to editing UI
+response.files.append(URL('static','js/knockout-2.3.0.js'))
+
+# Mapping plugin for easier conversion to/from vanilla JS
+response.files.append(URL('static','js/knockout.mapping-2.4.1.js'))
+
+# KO plugin for paginated lists
+response.files.append(URL('static','js/knockout-paged-e4a5770702.js'))
+
+# Knockout bindings for Twitter Bootstrap components
+response.files.append(URL('static','js/knockout-bootstrap.min.js'))
+
+# Date formatting and relative-date calculation
+response.files.append(URL('static','js/moment.min.js'))
+
+
+# jQuery-File-Upload plugin and supporting files (TODO)
+# minimal support for $.widget()
+response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/vendor/jquery.ui.widget.js'))
+# Iframe Transport is required for browsers without support for XHR file uploads
+response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.iframe-transport.js'))
+response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.fileupload.js'))
+response.files.append(URL('static','jQuery-File-Upload-9.5.2/css/jquery.fileupload.css'))
+# TODO: Replace above with upload tools used in Tree Illustrator?
+
+response.files.append(URL('static','css/tnrs.css'))
+
+# TODO: offer fullscreen display for bigger workspace
+response.files.append(URL('static','js/jquery.fullscreen.min.js'))
+}}
+
+{{extend 'layout.html'}}
+
+<div class="row">
+ <div class="span12">
+
+  <div class="tabbable tabs">
+    <ul class="nav nav-tabs">
+    <!-- Appears only during creation..? then replaced by status
+      <li><a href="#">Import</a></li>
+    -->
+    <!--
+      <li><a href="#About-Mapping" data-toggle="tab">About <span class="badge badge-important" style="display: none;">?</span></a></li>
+      <li><a href="#Data-Upload" data-toggle="tab">1. Upload dataset <span class="badge badge-important" style="display: none;">?</span></a></li>
+    -->
+      <li><a href="#Name-Mapping" data-toggle="tab">Map labels to names <span class="badge badge-important" style="display: none;">?</span></a></li>
+    <!--
+      <li><a href="#Data-Export" data-toggle="tab">3. Save/export dataset <span class="badge badge-important" style="display: none;">?</span></a></li>
+    -->
+      <li><a href="#Mapping-Help" data-toggle="tab">Help <span class="badge badge-important" style="display: none;">?</span></a></li>
+    </ul><!-- /.nav -->
+   </div><!-- /.tabbable -->
+ </div>
+ <div class="row">
+    <div class="span12">
+       {{if 'message' in globals():}}
+        <h4>{{=message}}</h4>
+       {{pass}}
+    </div>
+ </div><!-- /.row -->
+</div>
+
+<div class="row">
+    <div class="tab-content">
+
+        <!--
+          <div class="tab-pane" id="About-Mapping">
+           <div class="span12">
+About-Mapping
+           </div>
+          </div>
+        -->
+
+          <div class="tab-pane" id="Name-Mapping">
+           <div class="span8"><!-- main column... -->
+            <ul class="suggestion-list"></ul>
+            <div style="margin-bottom: 100px;">
+
+              <div class="navbar">
+               <div class="navbar-inner">
+                <form class="navbar-search pull-left">
+                    <input type="text" id="name-list-filter" class="search-query" placeholder="Filter by original or mapped label"
+                           data-bind="value: viewModel.listFilters.NAMES.match, valueUpdate: ['afterkeydown', 'input']">
+                </form>
+                <ul class="nav" style="padding-left: 1em;">
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle"
+                            data-toggle="dropdown">
+                            <span data-bind="text: viewModel.listFilters.NAMES.order">SORT</span>
+                            <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu" data-bind="foreach: ['Unmapped names first', 'Mapped names first', 'Original name (A-Z)', 'Original name (Z-A)']">
+                            <li data-bind="css: {'disabled': viewModel.listFilters.NAMES.order() == $data }">
+                                <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.NAMES.order($data); }">SORT</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+               </div>
+              </div>
+
+                <div class="empty-list-prompt" data-bind="visible: viewModel.names().length === 0">
+                    This nameset is empty! You can add names from a text file (one name per line) by clicking <strong>Add names...</strong> in the sidebar. 
+                    <br/>
+                    <br/>
+                    Or click <strong>Load nameset...</strong> to reload a previous session (nameset) file saved from this tool.
+                </div>
+                <div class="empty-list-prompt" data-bind="visible: (viewModel.names().length > 0) && (viewModel.filteredNames().pagedItems().length === 0)">
+                    No matching names found! Clear the text filter above to see more.
+                </div>
+
+                <table class="table table-condensed table-hover" style="table-layout: fixed;"
+                       data-bind="visible: viewModel.filteredNames().pagedItems().length !== 0">
+                  <thead>
+                    <tr class="table-shims">
+                        <td width="5%"></td>
+                        <td width="25%"></td>
+                        <td width="25%"></td>
+                        <td width="28"></td><!-- width in px, based on button width -->
+                        <td width="30%"></td>
+                    </tr>
+                    <tr class="after-shims">
+                        <th style="position: relative;"><span style="position: absolute; top: -0.75em; left: -0.5em; z-index: -1; font-size: 0.85em;"
+                                >Select</span><input type="checkbox" onclick="tnrs.toggleAllMappingCheckboxes(this); return true;" /></th>
+                        <th>Original name</th>
+                        <th colspan="2">Modified for mapping</th>
+                        <th>Mapped to taxon <a href="#" onclick="tnrs.showPossibleMappingsKey(); return false;">(key)</a></th>
+                    </tr>
+                  </thead>
+                  <tbody data-bind="foreach: { data: viewModel.filteredNames().pagedItems(), as: 'name' }">
+                    <tr data-bind="if: true,
+                                   css: viewModel.ticklers.NAME_MAPPING_HINTS() +' '+ (name['selectedForAction'] ? 'warning' : '')">
+                         <td style="text-align: left;"
+                             onmousedown="return false;"
+                             data-bind="click: tnrs.toggleMappingForName">
+                             <input type="checkbox" class="map-toggle"
+                                    data-bind="checked: $data['selectedForAction'],
+                                               click: tnrs.toggleMappingForName,
+                                               css: viewModel.ticklers.NAME_MAPPING_HINTS" />
+                         </td>
+                        <td data-bind="text: name['originalLabel']">&nbsp;</td>
+                         <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && (tnrs.bogusEditedLabelCounter() > 0) && !('adjustedLabel' in name) -->
+                          {{ # show static adjusted label (modified by mapping hints) }}
+                         <td>
+                            <em data-bind="text: tnrs.adjustedLabelOrEmpty(name['originalLabel']) || '&mdash;',
+                                           css: viewModel.ticklers.NAME_MAPPING_HINTS,
+                                           style: { 'color' : ($.trim(name['ottTaxonName']) === '' && !tnrs.proposedMapping(name)) ?  '' : 'silver' }"
+                               >WORKING?</em>
+                        </td>
+                        <td>
+                          <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && $.trim(name['ottTaxonName']) === '' && !tnrs.proposedMapping(name) -->
+                          {{ # show manual-editing widget }}
+                            <button class="btn btn-mini row-controls-ghosted pull-right" title="Edit this label manually"
+                                    data-bind="click: tnrs.editNameLabel, css: viewModel.ticklers.NAME_MAPPING_HINTS">
+                                <i class="icon-edit"></i>
+                            </button>
+                          <!-- /ko -->
+                        </td>
+                         <!-- /ko -->
+                         <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && (tnrs.bogusEditedLabelCounter() > 0)  && ('adjustedLabel' in name) -->
+                          {{ # show editable label field and its remove widget }}
+                        <td>
+                            <input type="text" class="input-block-level" style="min-height: inherit; height: 1.6em; margin-bottom: 0"
+                                   data-bind="value: name['adjustedLabel'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: tnrs.modifyEditedLabel, change: tnrs.modifyEditedLabel }, css: viewModel.ticklers.NAME_MAPPING_HINTS">
+                        </td>
+                        <td>
+                            <button class="btn btn-mini row-controls-ghosted pull-right" type="button" style="margin-top: 1px;" data-bind="click: tnrs.revertNameLabel, css: viewModel.ticklers.NAME_MAPPING_HINTS">
+                                <i class="icon-remove"></i>
+                            </button>
+                        </td>
+                         <!-- /ko -->
+                       {{ # show status or failure message }}
+                        <td>
+                         <!-- ko if: tnrs.currentlyMappingNames.indexOf(name['id']) !== -1 -->
+                            <strong style="color: orange;"><em>...mapping now...</em></strong>
+                         <!-- /ko -->
+                         <!-- ko if: tnrs.failedMappingNames.indexOf(name['id']) !== -1 -->
+                            <strong style="color: #999;"><em>Failed mapping</em></strong>
+                         <!-- /ko -->
+                         <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() &&
+                                     (tnrs.currentlyMappingNames.indexOf(name['id']) === -1) -->
+<!--
+{<em data-bind="text:tnrs.proposedMapping(name)"></em>}
+[<em data-bind="text:$.trim(name['ottTaxonName'])"></em>]
+-->
+                          <!-- ko if: false && viewModel.ticklers.NAME_MAPPING_HINTS() && !(tnrs.proposedMapping(name)) && !($.trim(name['ottTaxonName'])) -->
+                            <button id="single-name-mapping-button"
+                                    class="btn btn-small row-controls-ghosted pull-right"
+                                    data-bind="visible: !tnrs.autoMappingInProgress(),
+                                               click: requestTaxonMapping">Fuzzy matches</button>
+                          <!-- /ko -->
+                          <!-- ko if: tnrs.proposedMapping(name) && (tnrs.proposedMapping(name).length === 1) -->
+                           {{ # show mapped label }}
+                            <div class="btn-group pull-right">
+                                <button class="btn btn-mini"
+                                        data-bind="click: tnrs.rejectProposedNameLabel, css: viewModel.ticklers.NAME_MAPPING_HINTS"
+                                        title="Click to reject this name mapping">
+                                    <i class="icon-remove"></i>
+                                </button>
+                            </div>
+                            <span style="white-space: nowrap;">
+                                <a class="btn btn-mini"
+                                   style="padding: 0px 4px;"
+                                   title="Click to accept this name mapping"
+                                   data-bind="click: tnrs.approveProposedNameLabel">
+                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: tnrs.proposedMapping(name)[0].name,
+                                               css: viewModel.ticklers.NAME_MAPPING_HINTS,
+                                               attr: tnrs.getAttrsForMappingOption(tnrs.proposedMapping(name)[0], makeArray(tnrs.proposedMapping(name)).length)"
+                                    href="#"
+                                >PROPOSED LABEL</a>
+                            </span>
+                          <!-- /ko -->
+                          <!-- ko if: tnrs.proposedMapping(name) && (tnrs.proposedMapping(name).length > 1) -->
+                           {{ # show available choices for mapping this name }}
+                            <div class="btn-group pull-right">
+                                <button class="btn btn-mini"
+                                        data-bind="click: tnrs.rejectProposedNameLabel, css: viewModel.ticklers.NAME_MAPPING_HINTS"
+                                        title="Click to reject all mappings for this name">
+                                    <i class="icon-remove"></i>
+                                </button>
+                            </div>
+                            <strong style="font-size: 85%; color: #999;"><em>Possible mappings <a href="#" onclick="tnrs.showPossibleMappingsKey(); return false;">(key)</a></em></strong>
+                            <ul class="mapping-options"
+                                data-bind="foreach: makeArray(tnrs.proposedMapping(name)),
+                                           css: viewModel.ticklers.NAME_MAPPING_HINTS">
+                                <li style="white-space: nowrap;"><a class="btn btn-mini"
+                                                      style="padding: 0px 4px;"
+                                                      data-bind="click: tnrs.approveProposedNameMappingOption"
+                                                      title="Click to accept this name mapping">
+                                <i class="icon-ok"></i></a>&nbsp;<a data-bind="text: $data.originalMatch.taxon.unique_name,
+                                                  attr: tnrs.getAttrsForMappingOption($data, makeArray(tnrs.proposedMapping(name)).length)"
+                                       href="#"></a>
+                                </li>
+                            </ul>
+                          <!-- /ko -->
+                          <!-- ko if: viewModel.ticklers.NAME_MAPPING_HINTS() && $.trim(name['ottTaxonName']) -->
+                            <div class="btn-group pull-right row-controls-ghosted">
+                                <button class="btn btn-mini" data-bind="click: tnrs.unmapNameFromTaxon, css: viewModel.ticklers.NAME_MAPPING_HINTS">
+                                    <i class="icon-remove"></i>
+                                </button>
+                            </div>
+                            <strong data-bind="html: getTaxobrowserLink(name['ottTaxonName'], name['ottId']),
+                                               css: viewModel.ticklers.NAME_MAPPING_HINTS",
+                                >MAPPED LABEL</strong>
+                          <!-- /ko -->
+                         <!-- /ko -->
+                        </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="pagination pagination-centered pagination-small"
+                     Xdata-bind="if: viewModel.filteredNames()().length &gt; viewModel.filteredNames().pagedItems().length">
+                  <ul>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredNames().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredNames().prev(); return false;">&laquo;</a>
+                    </li>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredNames() ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.filteredNames() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredNames().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.filteredNames().goToPage($data); return false; }">0</a>
+                    </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.filteredNames() ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredNames().goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
+                   <!-- /ko -->
+                    <li data-bind="css: { 'disabled': !viewModel.filteredNames().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredNames().next(); return false;">&raquo;</a>
+                    </li>
+                  </ul>
+
+                </div>
+
+            </div>
+           </div><!-- end of main column... -->
+           <div class="span4"><!-- right col -->
+               
+             <div class="alert alert-danger"
+                  data-bind="visible: !(tnrs.browserSupportsFileAPI())">
+                 You can save your work as a ZIP archive in most modern
+                 browsers. <strong>This browser does not provide the needed access to
+                 the local filesystem.</strong>
+             </div>
+             <div class="button-bar" style="margin-bottom: 1em;">
+                <button class="btn btn-small" 
+                        onclick="tnrs.showLoadNamesetPopup(); return false;"
+                        data-bind="enable: tnrs.browserSupportsFileAPI()">
+                    Load nameset...</button>
+                <button class="btn btn-small"
+                        onclick="tnrs.showLoadListPopup(); return false;"
+                        data-bind="enable: tnrs.browserSupportsFileAPI()">
+                    Add names...</button>
+              <span class="pull-right">
+                <button class="btn btn-small" 
+                        onclick="tnrs.showSaveNamesetPopup(); return false;"
+                        data-bind="enable: tnrs.browserSupportsFileAPI()">
+                    Save nameset...</button>
+              </span>
+            </div>
+
+            <div id="nameset-metadata-prompt" class="well" style="cursor: pointer;"
+                 onclick="tnrs.showNamesetMetadata(); return false;">
+                <h4 title="Click to show nameset metadata" style="margin-top: 0;">
+                    <i class="pull-right icon-chevron-down"></i>
+                    About this nameset
+                </h4>
+                <strong data-bind="text: viewModel.metadata.name,
+                                   attr: {title: viewModel.metadata.description}">
+                    {TITLE OF CURRENT NAMESET}
+                </strong> 
+                <br />
+                <em data-bind="text: viewModel.displayLastSave()">
+                        {LEGIBLE TIMESTAMP}
+                </em>
+                <br />
+                <a onclick="tnrs.showNamesetMetadata(); return false;">Show/edit details</a>
+            </div>
+
+            <div id="nameset-metadata-panel" class="well" style="display: none; margin-top: 1em; clear: both;">
+                <h4 title="Click to hide metadata" style="margin-top: 0; cursor: pointer;"
+                    onclick="tnrs.hideNamesetMetadata(); return false;">
+                    <i class="pull-right icon-chevron-up"></i>
+                    About this nameset
+                </h4>
+                <input type="text" data-bind="value: viewModel.metadata.name" 
+                       placeholder="What should we call it?" />
+                <br />
+                <em data-bind="text: viewModel.displayLastSave()">
+                        {LEGIBLE TIMESTAMP}
+                </em>
+                <br />
+                <em id="nameset-filepath">Loaded from: {PATH TO LOADED FILE}</em>
+                <br />
+                <textarea data-bind="value: viewModel.metadata.description,
+                                     valueUpdate: ['aftterkeydown', 'input'],
+                                     event: {keyup: tnrs.nudge.METADATA, 
+                                             change: tnrs.nudge.METADATA}" 
+                          class="input-block-level"
+                          rows="6"
+                          placeholder="Describe this nameset.">
+                    {RENDERED DESCRIPTION}
+                </textarea>
+            </div>
+
+            <div style="padding: 2px 20px 4px; margin: -10px 0px 0px;">
+                <div style="float: left; margin-right: 0.5em;">
+                    Mapping progress &nbsp;
+                </div>
+                <div style="float: right; margin-left: 0.75em;" 
+                     data-bind="html: tnrs.getMappedNamesTally(),
+                                css: viewModel.ticklers.VISIBLE_NAME_MAPPINGS">
+                </div>
+
+                <div class="progress"
+                     style="height: 0.5em; margin: 0.5em 0;">
+                  <div class="bar" data-bind="style: { width: tnrs.mappingProgressAsPercent() +'%' },
+                                              css: viewModel.ticklers.VISIBLE_NAME_MAPPINGS" style="width: 45%;">&nbsp;</div>
+                </div>
+            </div> 
+
+<!-- TODO: If we're doing independent server-side mapping, show a blanket message like this to avoid conflicts?
+            <div class="alert alert-block">
+                <h4>Server-side mapping in progress</h4>
+                This section is blocked while the server works. Please check again later. [TODO]
+            </div>
+-->
+
+            <div id="mapping-status-panel" class="well" style="margin-top: 1em; clear: both;">
+                <div class="pull-right" style="margin-top: -2px;">
+                    <button id="pause-mapping-button" class="btn btn-small"
+                            data-bind="visible: tnrs.autoMappingInProgress()"
+                            onclick="tnrs.stopAutoMapping(); return false;">
+                        <i class="icon-pause"></i> Pause mapping</button>
+                    <button id="start-mapping-button" class="btn btn-small"
+                            data-bind="visible: !tnrs.autoMappingInProgress()"
+                            onclick="tnrs.startAutoMapping(); return false;">
+                        <i class="icon-play"></i> Map selected names</button>
+                </div>
+                <!-- TODO: heading changes to reflect status -->
+                <h4 style="margin-top: 0;" data-bind="visible: tnrs.autoMappingInProgress()">Mapping in progress</h4>
+                <h4 style="margin-top: 0;" data-bind="visible: !tnrs.autoMappingInProgress()">Mapping suspended</h4>
+                <div class="progress"
+                     style="margin-bottom: 0; background-color: #333;"
+                     data-bind="css: recentMappingSpeedBarClass">
+                  <div class="bar" style="text-align: center;"
+                       data-bind="style: { width: recentMappingSpeedPercent }">
+                      <span data-bind="text: recentMappingSpeedLabel">10 sec / name</span>
+                  </div>
+                </div>
+                <div class="mapping-details">
+                    <p><strong>Note</strong> that the OpenTree taxonomy contains mostly
+                    binomials, but in some cases, terminals comprising <em>genus +
+                    strain number</em> can also be mapped directly to OTT.
+                    (When in doubt, try mapping it!)</p>
+                </div>
+                <div class="mapping-batch-operations" style="display: none;">
+                    <button id="batch-approve" class="btn btn-small pull-left"
+                            onclick="tnrs.approveAllVisibleMappings(); return false;">
+                        <i class="icon-ok"></i> Accept exact matches
+                    </button>
+                    <button id="batch-reject" class="btn btn-small pull-right"
+                            onclick="tnrs.rejectAllVisibleMappings(); return false;">
+                        <i class="icon-remove"></i> Reject all and pause
+                    </button>
+                </div>
+            </div>
+
+            <div style="margin: 1em 0; overflow: hidden;">
+                <button class="btn btn-small pull-left"
+                        onclick="tnrs.clearSelectedMappings(); return false;">
+                    Clear selected mappings
+                </button>
+                <button class="btn btn-small btn-warning pull-right"
+                        onclick="tnrs.clearAllMappings(); return false;">
+                    <i class="icon-warning-sign icon-white"></i>
+                    Clear <strong>all</strong> mappings
+                </button>
+            </div>
+
+            <div id="mapping-options-prompt" class="well" style="cursor: pointer;"
+                 onclick="tnrs.showMappingOptions(); return false;">
+                <h4 title="Click to show mapping options" style="margin-top: 0;">
+                    <i class="pull-right icon-chevron-down"></i>
+                    Mapping options
+                </h4>
+                <p style="margin-bottom: 0;">
+                Click here for tools that make mapping faster and more accurate.
+                </p>
+            </div>
+            <div id="mapping-options-panel" class="well" style="display: none;">
+                <h4 title="Click to hide mapping options" style="margin-top: 0; cursor: pointer;"
+                    onclick="tnrs.hideMappingOptions(); return false;">
+                    <i class="pull-right icon-chevron-up"></i>
+                    Mapping options
+                </h4>
+                <p>
+                The easiest way to improve mapping performance is to provide a
+                narrow context for the search.
+                </p>
+                <form class="form-inline" style="margin: 0;">
+                 <fieldset>
+                    <select class="input-block-level" style="margin-bottom: 8px;" name="mapping-search-context"
+                            data-bind="value: viewModel.mappingHints.searchContext(),
+                              valueUpdate: ['afterkeydown', 'input'],
+                              css: viewModel.ticklers.NAME_MAPPING_HINTS,
+                              event: { keyup: tnrs.updateMappingHints, change: tnrs.updateMappingHints }
+                              ">
+                    {{ # generate our contextNames list based on newly fetched names
+                      try:
+                       for context_name in taxonSearchContextNames:
+                          if context_name == 'All life': }}
+                            <option selected="selected">{{= context_name }}</option>
+                       {{ else: }}
+                            <option>{{= context_name }}</option>
+                       {{ pass }}
+                    {{ pass }}
+                    {{ except: }}
+                            <option selected="selected">ERROR loading context values</option>
+                       {{ pass }}
+                    </select>
+                    <div style="text-align: center; margin: 0 0 1em;">
+                        <button class="btn btn-small Xbtn-info"
+                                onclick="tnrs.inferSearchContextFromAvailableNames(); return false;">
+                            Infer search context from all names
+                        </button>
+                    </div>
+                 </fieldset>
+                </form>
+                <p>
+                Another option that can affect performance is "fuzzy" matching,
+                which will offer taxa that are similar in name (including
+                synonyms) to the node labels.
+                </p>
+                <form class="form-inline" style="margin: 0; margin-left: 8px;">
+                 <fieldset>
+                  <label><input id="toggle-fuzzy-matching" type="checkbox" style="margin-top: 0; padding-top: 0;"
+                      data-bind="checked: viewModel.mappingHints.useFuzzyMatching,
+                                 event: { click: tnrs.updateMappingHints }"> Use fuzzy matching (slower)</label>
+                 </fieldset>
+                </form>
+                <p>
+                If mapping is slow or failing, you can streamline the process by
+                modifying the original node labels. Any active substitutions below
+                will be applied to all labels during name mapping. (See the
+                italic <strong>Modified for mapping</strong> values at left.)
+                Try some common patterns from the drop-down menu below, or use
+                <a href="http://www.regular-expressions.info/javascript.html#replace" target="_blank">regular expressions</a> to construct your own.
+                </p>
+                <i data-bind="if: viewModel.mappingHints === {}">ERROR: No mapping hints found!</i>
+              <!-- ko if: true --><!-- WAS if: viewModel.mappingHints === {} -->
+                <form class="form-inline" style="margin: 0;">
+                 <fieldset>
+                  <table>
+                    <thead>
+                        <tr>
+                            <th width="20">&nbsp;</th>
+                            <th>Replace this...</th>
+                            <th>with this</th>
+                            <th width="20">&nbsp;</th>
+                        </tr>
+                    </thead>
+                    <tbody id="mapping-adjustments" data-bind="foreach: { data: viewModel.mappingHints.substitutions, as: 'substitution'}, css: viewModel.ticklers.NAME_MAPPING_HINTS">
+                        <tr>
+                            <td align="center" valign="center">
+                                <input type="checkbox" data-bind="checked: substitution.active, event: { click: tnrs.updateMappingHints }"
+                                       title="If checked, this substitution will be used."/>
+                            </td>
+                            <td>
+                                <input type="text" class="input-block-level"
+                                                   data-bind="value: substitution.old, valueUpdate: ['afterkeydown', 'input'], event: { keyup: tnrs.updateMappingHints, change: tnrs.updateMappingHints }, style: { 'background-color': substitution.valid() ? '' : '#fdd' }, attr: { 'title': substitution.valid() ? '' : 'This is not a valid expression and will not be applied' }"/>
+                            </td>
+                            <td>
+                                <input type="text"
+                                class="input-block-level" data-bind="value: substitution.new, valueUpdate: ['afterkeydown', 'input'], event: { keyup: tnrs.updateMappingHints, change: tnrs.updateMappingHints }"/>
+                            </td>
+                            <td align="center" valign="center">
+                                <a href="#" title="Click to remove this substitution."
+                                   data-bind="click: function(data, event) { tnrs.removeSubstitution(data);  }" />
+                                    <i class="icon-trash"></i></a>
+                            </td>
+                        </tr>
+                    </tbody>
+                  </table>
+
+                  <div style="margin-top: 1em;">
+                      <select class="input-block-level" onchange="tnrs.addSubstitution(this); return false;">
+                        <option value="">Add a common substitution...</option>
+                       <!-- NOTE the convention here... value="{OLD} =:= {NEW}" -->
+                        <option value="\bsp(\.|\b) =:= ">Remove 'sp.'</option>
+                        <option value="foo =:= bar">Replace 'foo' with 'bar'</option>
+                        <option value="^(\S*)\s+\b =:= ">Remove first of multiple words</option>
+                        <option value="\b\s+(\S*)$ =:= ">Remove last of multiple words</option>
+                        <option value="^(\S*\s+\S*).* =:= $1">Keep first two words</option>
+                        <option value=".*\s+(\S*)\s*$ =:= $1">Isolate trailing ID</option>
+                      </select>
+                  </div>
+                  <div style="margin-top: 1em;">
+                      <button type="submit" class="btn"
+                              onclick="tnrs.addSubstitution(); return false;">
+                          <i class="icon-plus"></i> Add another substitution
+                      </button>
+                  </div>
+
+                 </fieldset>
+                </form>
+              <!-- /ko -->
+                <p style="margin: 1em 0 0;">
+                As a last resort, you can directly edit the label submitted for mapping. Just click
+                the <button class="btn btn-mini"><i class="icon-edit"></i></button> buttons
+                in the <strong>Modified for mapping</strong> column at left.
+                </p>
+            </div>
+
+           </div>
+          </div>
+
+          <div class="tab-pane" id="Mapping-Help">
+           <div class="span8"><!-- full width... -->
+                <p>
+                This tool will help you to quickly map a list of names to 
+                taxa in the <a href="https://tree.opentreeoflife.org/about/taxonomy-version" target="_blank">OTT (Open Tree Taxonomy)</a>.
+                This is typically done with leaf labels that represent names
+                (operational taxonomic units) in a phylogenetic tree.
+                </p>
+                <p>
+                We use a TNRS (taxonomic name resolution service) to automate this
+                mapping process, including resolving synonyms and misspellings.
+                Mapping is simplest if trees use taxonomic
+                names from
+                <a href="http://www.ncbi.nlm.nih.gov/taxonomy" target="_blank">NCBI</a>,
+                <a href="http://www.gbif.org/species" target="_blank">GBIF</a>,
+                <a href="http://www.indexfungorum.org/" target="_blank">Index Fungorum</a> or
+                <a href="http://www.cmar.csiro.au/datacentre/irmng/" target="_blank">IRMNG</a>.
+                Some labels comprising genus + strain will also map directly.
+                See <strong>Mapping options</strong> for ways to customize mapping.
+                </p>
+                <p>
+                TODO: You can monitor your mapping progress using... and save this mapping session as a "<strong>nameset</strong>" file that includes 
+                </p>
+                <ul>
+                    <li>all original and mapped names</li>
+                    <li>OTT ids for all mapped names</li>
+                    <li>any mapping options defined here</li>
+                    <li>copies of all imported files (lists of names)</li>
+                    <li>output files with original and mapped names</li>
+                </ul>
+                <p>
+                This nameset file is a ZIP archive containing the input and
+                output files described above, plus a file
+                <strong>main.json</strong> that carries session details and
+                useful metadata.
+                </p>
+                <div id="help-file-api-prompt"
+                     class="alert alert-danger"
+                     data-bind="visible: !(tnrs.browserSupportsFileAPI())">
+                    <strong>This web browser does not provide the needed access to
+                    the local filesystem! Please try using this tool in
+                    another browser.</strong>
+                </div>
+                <p>&nbsp;</p>
+           </div>
+          </div>
+
+
+<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
+<script type='text/javascript'>
+    // TODO: If inbound URL specifies tab, tree, or filter settings, record them here
+    var initialState = {{= XML( dict(request.vars) ) }};
+
+    var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
+    var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
+    var getContextForNames_url = "{{=getContextForNames_url}}";
+    var render_markdown_url = "{{=render_markdown_url}}";
+</script>
+
+<!-- main support scripts for bulk-TNRS webapp, built with npm -->
+<script src="{{=URL('static','js/tnrs-bundle.js')}}"></script>
+
+<!-- hidden templates for load and save dialogs -->
+<div id="load-list-popup" class="modal fade" style="display: none;">
+    <div class="modal-header" style="padding: 0px inherit;">
+      <a data-dismiss="modal" class="close" style="margin-top: -2px;">x</a>
+      <h4 style="margin: 0;">
+         Where is the list of names?
+      </h4>
+    </div>
+    <div class="modal-header modal-body">
+        <p>
+            Your list should be a plain-text file where each line 
+            is a name to be mapped. Its text encoding should be <code>utf-8</code>.
+        </p>
+        <input type="file" value="Load text file..."
+               data-bind="event: { change: tnrs.loadListFromChosenFile }"
+        />
+        <p id="list-local-filesystem-warning" style="color: #933; margin: 8px 0 0;"
+           data-bind="visible: false">
+          Help text appears here.
+        </p>
+    </div>
+</div>
+<div id="load-nameset-popup" class="modal fade" style="display: none;">
+    <div class="modal-header" style="padding: 0px inherit;">
+      <a data-dismiss="modal" class="close" style="margin-top: -2px;">x</a>
+      <h4 style="margin: 0;">
+         Where is the nameset file?
+      </h4>
+    </div>
+    <div class="modal-header modal-body">
+        <p>
+            Namesets are stored as ZIP archives, with all inputs and
+            data included. This is useful for sharing your work via email,
+            though you might need to remove the <code>.zip</code> file
+            extension to pass spam filters.
+        </p>
+        <input type="file" value="Load ZIP archive..."
+               data-bind="event: { change: tnrs.loadNamesetFromChosenFile }"
+        />
+        <p id="nameset-local-filesystem-warning" style="color: #933; margin: 8px 0 0;"
+           data-bind="visible: false">
+          Help text appears here.
+        </p>
+    </div>
+</div>
+<div id="save-nameset-popup" class="modal fade" style="display: none;">
+    <div class="modal-header" style="padding: 0px inherit;">
+      <a data-dismiss="modal" class="close" style="margin-top: -2px;">x</a>
+      <h4 style="margin: 0;">
+         Where would you like to save your work?
+      </h4>
+    </div>
+    <div class="modal-header modal-body">
+        <p>
+            Namesets are stored as ZIP archives, with all inputs and data
+            included. This is useful for sharing your work via email, though
+            you might need to remove the <code>.zip</code> file extension to
+            pass spam filters.
+        </p>
+        <input type="button" value="Save ZIP archive"
+               onclick="tnrs.saveCurrentNameset(); return false;" />
+        <span>with filename</span>
+        <input type="text" id="suggested-archive-filename"
+               style="margin-bottom: 0px;"
+               data-bind="value: tnrs.getDefaultArchiveFilename()" />
+
+        <p id="save-location-warning" style="color: #933; margin: 8px 0 0;"
+           data-bind="visible: false">
+        Please <strong>check the name and location of your downloaded file</strong> 
+        carefully! Due to your web browser's security restrictions, we can't save 
+        over an existing nameset. It's possible that your file was
+        downloaded in an unexpected location, or with a different filename.
+        </p>
+
+    </div>
+</div>
+
+<!-- hidden template for explaining colors and opacity of name mapping option -->
+<div class="modal hide fade" id="possible-mappings-key" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         How to interpret possible name mappings
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            When an name cannot be clearly mapped to a single taxon in the Open
+            Tree taxonomy, the most likely matches will appear in a list like
+            the one below.
+        </p>
+        <ul class="mapping-options" style="padding-left: 20px;">
+            <li>
+                <div class="key-note">possible matches are green</div>
+                <a class="badge badge-success"
+                   style="opacity: 1.0;"
+                   title="100% match of original label"
+                   href="#" onclick="return false;"
+                >Hominidae</a>
+            </li>
+            <li>
+                <div class="key-note">closer matches are darker</div>
+                <a class="badge badge-success"
+                   style="opacity: 0.78;"
+                   title="78% match of original label"
+                   href="#" onclick="return false;"
+                >Homininae</a>
+            </li>
+            <li>
+                <a class="badge badge-success"
+                   style="opacity: 0.56;"
+                   title="56% match of original label"
+                   href="#" onclick="return false;"
+                >Homo</a>
+            </li>
+            <li>
+                <div class="key-note">synonyms are blue</div>
+                <a class="badge badge-info"
+                   style="opacity: 1;"
+                   title="Synonym for Drosophila"
+                   href="#" onclick="return false;"
+                >Psathyrella</a>
+            </li>
+            <li>
+                <div class="key-note">homonyms are amber</div>
+                <a class="badge badge-warning"
+                   style="opacity: 1;"
+                   title="Taxon-name homonym"
+                   href="#" onclick="return false;"
+                >Drosophila (genus in Drosophiliti)</a>
+            </li>
+        </ul>
+        <p>
+            Click <button
+            class="btn btn-mini row-controls-ghosted"
+            type="button" onclick="return true;"><i class="icon-ok"></i>
+            </button> to
+            map the name to this taxon. Click
+            <button class="btn btn-mini row-controls-ghosted"
+                    type="button" onclick="return false;"><i class="icon-remove"></i>
+            </button>
+            to reject all mappings; then try modifying the original label and re-mapping.
+        </p>
+        <p>
+          Roll over each match to learn more about it. Click a name to
+          open the taxonomy browser for that taxon.
+        </p>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>
+

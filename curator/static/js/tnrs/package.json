@@ -1,0 +1,52 @@
+{
+  "name": "bulk-name-resolution-webapp",
+  "version": "0.0.1",
+  "description": "Bundle all TNRS-tool JS with browserify",
+  "author": "Jim Allman <jim@ibang.com>",
+  "contributors": [],
+  "scripts": {
+    "watch": "watchify             ./tnrs-main.js  --verbose  --debug  --standalone=tnrs                           --outfile=../tnrs-bundle.js",
+    "build": "browserify           ./tnrs-main.js  --verbose           --standalone=tnrs                           --outfile=../tnrs-bundle.js",
+    "uglify": "browserify           ./tnrs-main.js  --verbose           --standalone=tnrs  |  uglifyjs -mc warnings=false  >  ../tnrs-bundle.js"
+  },
+  "main": "./tnrs-main.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/opentreeoflife/opentree"
+  },
+  "bugs": {
+    "url": "https://github.com/opentreeoflife/feedback/issues"
+  },
+  "keywords": [
+    "tnrs",
+    "tree",
+    "taxonomy",
+    "phylogeny"
+  ],
+  "dependencies": {
+    "jszip": "3.1.3",
+    "file-saver": "1.3.x",
+    "blob-polyfill": "1.x",
+    "acorn": "^6.0.0"
+  },
+  "devDependencies": {
+    "browserify": "^3.8.9",
+    "browserify-versionify": "^1.0.4",
+    "watchify": "^3.5.0"
+  },
+  "engineStrict": false,
+  "engines": {
+    "node": "0.12.7",
+    "npm": "2.11.3"
+  },
+  "preferGlobal": false,
+  "private": true,
+  "publishConfig": {},
+  "license": "BSD-2-Clause",
+  "browser": {
+    "jquery": "./src/jquery-1.8.3.js"
+  },
+  "browserify-shim": {
+    "jquery": "$"
+  }
+}
