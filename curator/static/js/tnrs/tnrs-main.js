@@ -1802,8 +1802,11 @@ function loadNamesetData( data ) {
             function(name) {
                 // match entered text against old or new label
                 var originalLabel = name['originalLabel'];
+                var modifiedLabel = name['adjustedLabel'] || adjustedLabel(originalLabel);
                 var mappedLabel = name['ottTaxonName'];
-                if (!matchPattern.test(originalLabel) && !matchPattern.test(mappedLabel)) {
+                if (!matchPattern.test(originalLabel) &&
+                    !matchPattern.test(modifiedLabel) &&
+                    !matchPattern.test(mappedLabel)) {
                     return false;
                 }
                 return true;
