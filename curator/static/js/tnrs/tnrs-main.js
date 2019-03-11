@@ -309,6 +309,7 @@ function loadListFromChosenFile( vm, evt ) {
                                     viewModel.names.push({
                                         "id": ("name"+ getNextNameOrdinalNumber()),
                                         "originalLabel": name,
+                                        "selectedForAction": true
                                      /* add these only when they're populated!
                                         "adjustedLabel": ""   // WAS '^ot:altLabel'
                                         "ottTaxonName": "Homo sapiens sapiens",
@@ -334,8 +335,8 @@ function loadListFromChosenFile( vm, evt ) {
                     } else {
                         var namesAdded = names.length - dupesFound;
                         msg = "Adding "+ namesAdded +" name"+
-                            (namesAdded > 1? "s" : "") +"found in this file ("+ 
-                            dupesFound +" duplicate name"+ (dupesFound > 1? "s" : "") 
+                            (namesAdded === 1? "" : "s") +" found in this file ("+
+                            dupesFound +" duplicate name"+ (dupesFound === 1? "" : "s")
                             +" removed)...";
                     }
                 } else {
