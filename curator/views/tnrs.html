@@ -1,12 +1,12 @@
 {{# This tool uses mostly client-side logic, but also makes heavy use
 # of our TNRS services via the OpenTree API.
 
-response.title = "Name Resolution"
+response.title = "Name Resolution (TNRS) bulk mapping tool"
 isLoggedIn = (auth.user) and True or False
 }}
 
 {{left_sidebar_enabled,right_sidebar_enabled=False,False}}
-{{response.subtitle = "waiting for data..."}}
+{{response.subtitle = ""}}
 
 {{### Add support scripts for single-page editor
 
@@ -38,13 +38,32 @@ response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.fileuploa
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/css/jquery.fileupload.css'))
 # TODO: Replace above with upload tools used in Tree Illustrator?
 
-response.files.append(URL('static','css/tnrs.css'))
-
 # TODO: offer fullscreen display for bigger workspace
 response.files.append(URL('static','js/jquery.fullscreen.min.js'))
+
+#response.files.append(URL('static','css/tnrs.css'))
 }}
 
 {{extend 'layout.html'}}
+
+<style type="text/css">
+    /* Style used only in the bulk-TNRS tool */
+
+    body {
+        /* always show scrollbar area, to avoid glitch when changing tabs etc. */
+        overflow: scroll;
+    }
+
+    .button-bar {
+        background-color: #ddd;
+        padding: 3px 5px;
+        border-radius: 4px;
+    }
+
+    input[type="file"] {
+        line-height: normal;  /* align with filename or prompt */
+    }
+</style>
 
 <div class="row">
  <div class="span12">
@@ -125,7 +144,8 @@ About-Mapping
                 </div>
 
                 <table class="table table-condensed table-hover" style="table-layout: fixed;"
-                       data-bind="visible: viewModel.filteredNames().pagedItems().length !== 0">
+                       data-bind="visible: viewModel.filteredNames().pagedItems().length !== 0,
+                                  css: viewModel.ticklers.VISIBLE_NAME_MAPPINGS()">
                   <thead>
                     <tr class="table-shims">
                         <td width="5%"></td>
