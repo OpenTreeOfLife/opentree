@@ -327,8 +327,7 @@ About-Mapping
                         data-bind="enable: tnrs.browserSupportsFileAPI()">
                     Add names...</button>
               <span class="pull-right">
-                <button class="btn btn-small" 
-                        onclick="tnrs.showSaveNamesetPopup(); return false;"
+                <button id="save-nameset-button" class="btn btn-small" 
                         data-bind="enable: tnrs.browserSupportsFileAPI()">
                     Save nameset...</button>
               </span>
@@ -358,7 +357,10 @@ About-Mapping
                     <i class="pull-right icon-chevron-up"></i>
                     About this nameset
                 </h4>
-                <input type="text" data-bind="value: viewModel.metadata.name" 
+                <input type="text" data-bind="value: viewModel.metadata.name,
+                                              valueUpdate: ['aftterkeydown', 'input'],
+                                              event: {keyup: tnrs.nudge.METADATA, 
+                                              change: tnrs.nudge.METADATA}"
                        placeholder="What should we call it?" />
                 <br />
                 <em data-bind="text: viewModel.displayLastSave()">

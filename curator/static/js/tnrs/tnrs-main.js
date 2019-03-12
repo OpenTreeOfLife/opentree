@@ -219,6 +219,12 @@ function saveCurrentNameset( options ) {
 
     updateLastSavedInfo(suggestedFileName);
     $('#nameset-local-filesystem-warning').slideDown(); // TODO
+
+    showInfoMessage('Nameset saved to local file.');
+
+    popPageExitWarning('UNSAVED_NAMESET_CHANGES');
+    namesetHasUnsavedChanges = false;
+    disableSaveButton();
 }
 
 function generateTabSeparatedOutput() {
@@ -322,7 +328,7 @@ function loadListFromChosenFile( vm, evt ) {
                                 removeDuplicateNames(viewModel);
                                 var withoutDupes = viewModel.names().length;
                                 dupesFound = withDupes - withoutDupes;
-                                // TODO: nudge tickler(s)?
+                                nudgeTickler('VISIBLE_NAME_MAPPINGS');
                                 return;
                         }
                     }
@@ -1431,6 +1437,27 @@ function hideMappingOptions() {
     $('#mapping-options-prompt').show();
 }
 
+function disableSaveButton() {
+    var $btn = $('#save-nameset-button');
+    $btn.addClass('disabled');
+    $btn.unbind('click').click(function(evt) {
+        showInfoMessage('There are no unsaved changes.');
+        return false;
+    });
+}
+function enableSaveButton() {
+    var $btn = $('#save-nameset-button');
+    $btn.removeClass('disabled');
+    $btn.unbind('click').click(function(evt) {
+        if (browserSupportsFileAPI()) {
+            showSaveNamesetPopup();
+        } else {
+            alert("Sorry, this browser does not support saving to a local file!");
+        }
+        return false;
+    });
+}
+
 function showLoadListPopup( ) {
     showFilesystemPopup('#load-list-popup');
 }
@@ -1643,8 +1670,6 @@ function inferSearchContextFromAvailableNames() {
                 console.log("ERROR: textStatus !== 'success', but "+ textStatus);
                 return;
             }
-            ///hideModalScreen();
-            ///showSuccessMessage('Study removed, returning to study list...');
             var result = JSON.parse( jqXHR.responseText );
             var inferredContext = null;
             if (result && 'context_name' in result) {
@@ -1931,6 +1956,19 @@ function loadNamesetData( data ) {
         ko.cleanNode(el);
         ko.applyBindings(viewModel,el);
     });
+
+    /* Any further changes (*after* initial cleanup) should prompt for a save
+     * before leaving this page.
+     */
+    viewModel.ticklers.NAMESET_HAS_CHANGED.subscribe( function() {
+        namesetHasUnsavedChanges = true;
+        enableSaveButton();
+        pushPageExitWarning('UNSAVED_NAMESET_CHANGES',
+                            "WARNING: This nameset has unsaved changes! To preserve your work, you should save a nameset file before leaving or reloading the page.");
+    });
+    popPageExitWarning('UNSAVED_NAMESET_CHANGES');
+    namesetHasUnsavedChanges = false;
+    disableSaveButton();
 }
 
 // keep track of the largest (and thus next available) name id
@@ -2058,6 +2096,8 @@ var api = [
     'inferSearchContextFromAvailableNames',
     'showMappingOptions',
     'hideMappingOptions',
+    'disableSaveButton',
+    'enableSaveButton',
     'getAttrsForMappingOption',
     'startAutoMapping',
     'stopAutoMapping',

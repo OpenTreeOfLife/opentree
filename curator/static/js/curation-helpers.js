@@ -233,8 +233,11 @@ function isVisiblePage( pageNum, pagedArray ) {
 var pageExitWarnings = [ ];
 var defaultPageExitWarning = "WARNING: This page contains unsaved changes.";
 var expectedPageExitWarningIDs = [
+    // used by study curation tool
     'UNSAVED_STUDY_CHANGES',
-    'UNSAVED_COLLECTION_CHANGES'
+    'UNSAVED_COLLECTION_CHANGES',
+    // used by TNRS bulk-mapping tool
+    'UNSAVED_NAMESET_CHANGES'
 ];
 
 var confirmOnPageExit = function (e)
