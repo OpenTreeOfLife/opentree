@@ -89,7 +89,8 @@ var getNewNamesetModel = function(options) {
                 "originalLabel": "Bacteria Proteobacteria Gammaproteobacteria Oceanospirillales Saccharospirillaceae Saccharospirillum impatiens DSM 12546",
                 "adjustedLabel": "Proeobacteria",  // WAS '^ot:altLabel'
                 "ottTaxonName": "Saccharospirillum impatiens DSM 12546",
-                "ottId": 132751
+                "ottId": 132751,
+                "taxonomicSources": ["silva:A16379/#1", "ncbi:2", "worms:6", "gbif:3", "irmng:13"]
             }
             */
         ]
@@ -230,16 +231,21 @@ function saveCurrentNameset( options ) {
 function generateTabSeparatedOutput() {
     // render the current nameset (mapped name, or all names?) to TSV string
     var TAB = "\t";
+    var MINOR_SEPARATOR = ",";  // replace if this is unsafe/ambiguous!
     var output;
     if (viewModel.names().length === 0) {
         output = "# No names in this nameset were mapped to the OT Taxonomy.";
     } else {
-        output = "ORIGINAL LABEL"+ TAB +"OTT TAXON NAME"+ TAB +"OTT TAXON ID\n";
+        output = "ORIGINAL LABEL"+ TAB +"OTT TAXON NAME"+ TAB +"OTT TAXON ID"+ TAB +"TAXONOMIC SOURCES\n";
         $.each(viewModel.names(), function(i, name) {
             if (!name.ottTaxonName) {
                 return true;  // skip this un-mapped name
             }
-            output += (name.originalLabel +TAB+ name.ottTaxonName +TAB+ name.ottId +"\n");
+            var combinedSources = name.taxonomicSources.join(MINOR_SEPARATOR);
+            output += (name.originalLabel +TAB+
+                       name.ottTaxonName +TAB+
+                       name.ottId +TAB+
+                       combinedSources +"\n");
         });
     }
     return output;
@@ -310,7 +316,7 @@ function loadListFromChosenFile( vm, evt ) {
                                 console.warn( names.length +" names found with delimiter '"+ delim +"'");
                                 // TODO: unpack names, ignore remaining delimiters
                                 $.each(names, function(i, name) {
-                                    // add a new name entry to the 
+                                    // add a new name entry to the nameset
                                     console.log("...adding name '"+ name +"'...");
                                     viewModel.names.push({
                                         "id": ("name"+ getNextNameOrdinalNumber()),
@@ -320,6 +326,7 @@ function loadListFromChosenFile( vm, evt ) {
                                         "adjustedLabel": ""   // WAS '^ot:altLabel'
                                         "ottTaxonName": "Homo sapiens sapiens",
                                         "ottId": 132751
+                                        "taxonomicSources": [ ... ]
                                       */
                                     });
                                 });
@@ -1063,19 +1070,7 @@ function requestTaxonMapping( nameToMap ) {
             /* SKIPPING THIS to provide uniform treatment of all matches
             case 1:
                 // choose the first+only match automatically!
-                var resultToMap = candidateMatches[0];
-                // convert to expected structure for proposed mappings
-                var nameMapping = {
-                    name: resultToMap['ot:ottTaxonName'],       // matched name
-                    ottId: String(resultToMap['ot:ottId']),     // matched OTT id (as string)
-                    //nodeId: resultToMap.matched_node_id,        // number
-                    exact: false,                               // boolean (ignoring this for now)
-                    higher: false                               // boolean
-                    // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
-                };
-                proposeNameLabel(nameID, nameMapping);
-                // postpone actual mapping until user approves
-                break;
+                ...
              */
 
             default:
@@ -1128,8 +1123,9 @@ function requestTaxonMapping( nameToMap ) {
                     return {
                         name: raw.taxon['unique_name'] || raw.taxon['name'],       // matched name
                         ottId: raw.taxon['ott_id'],     // matched OTT id (as number!)
+                        taxonomicSources: raw.taxon['tax_sources'],   // "upstream" taxonomies
                         //exact: false,                               // boolean (ignoring this for now)
-                        //higher: false,                               // boolean
+                        //higher: false,                              // boolean
                         // TODO: Use flags for this ? higher: ($.inArray('SIBLING_HIGHER', resultToMap.flags) === -1) ? false : true
                         originalMatch: raw,
                         nameID: nameID
@@ -1262,6 +1258,7 @@ function mapNameToTaxon( nameID, mappingInfo, options ) {
      * N.B. We *always* add/change/remove these properties in tandem!
      *    ottId
      *    ottTaxonName
+     *    taxonomicSources
      */
 
     // If options.POSTPONE_UI_CHANGES, please do so (else we crawl when
@@ -1281,6 +1278,9 @@ function mapNameToTaxon( nameID, mappingInfo, options ) {
     // Add/update the OTT name (cached here for performance)
     name['ottTaxonName'] = mappingInfo.name || 'OTT NAME MISSING!';
     // N.B. We always preserve originalLabel for reference
+
+    // add "upstream" taxonomic sources
+    name['taxonomicSources'] = mappingInfo.taxonomicSources || 'TAXONOMIC SOURCES MISSING!';
 
     // Clear any proposed/adjusted label (this is trumped by mapping to OTT)
     delete name['adjustedLabel'];
@@ -1307,6 +1307,9 @@ function unmapNameFromTaxon( nameOrID, options ) {
     }
     if ('ottTaxonName' in name) {
         delete name['ottTaxonName'];
+    }
+    if ('taxonomicSources' in name) {
+        delete name['taxonomicSources'];
     }
 
     if (!options.POSTPONE_UI_CHANGES) {
