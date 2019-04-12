@@ -190,7 +190,11 @@ function saveCurrentNameset( options ) {
 
     // add any output docs (SVG, PDF)
     var outputFolder = archive.folder('output');
-    outputFolder.file('main.tsv', generateTabSeparatedOutput(), {TODO: "What are appropriate options for TSV?"});
+    /* See https://stuk.github.io/jszip/documentation/api_jszip/file_data.html
+     * for other ZIP options like copmression settings.
+     */
+    outputFolder.file('main.tsv', generateTabSeparatedOutput('ALL_NAMES'), {comment: "Tab-delimited text, including unmapped names."});
+    outputFolder.file('main.csv', generateCommaSeparatedOutput('ALL_NAMES'), {comment: "Comma-delimited text, including unmapped names."});
 
     /* NOTE that we have no control over where the browser will save a
      * downloaded file, and we have no direct knowledge of the filesystem!
@@ -229,22 +233,32 @@ function saveCurrentNameset( options ) {
 }
 
 function generateTabSeparatedOutput() {
-    // render the current nameset (mapped name, or all names?) to TSV string
-    var TAB = "\t";
-    var MINOR_SEPARATOR = ",";  // replace if this is unsafe/ambiguous!
+    return generateDelimitedTextOutput('ALL_NAMES', '\t', ';');
+}
+function generateCommaSeparatedOutput() {
+    return generateDelimitedTextOutput('ALL_NAMES', ',', ';');
+}
+function generateDelimitedTextOutput(mappedOrAllNames, delimiter, minorDelimiter) {
+    // render the current nameset (mapped names, or all) as a delimited (TSV, CSV) string
     var output;
+    if ($.inArray(mappedOrAllNames, ['MAPPED_NAMES', 'ALL_NAMES']) === -1) {
+        var msg = "# ERROR: mappedOrAllNames should be 'MAPPED_NAMES' or 'ALL_NAMES', not '"+ mappedOrAllNames +"'!"
+        console.error(msg);
+        return msg;
+    }
     if (viewModel.names().length === 0) {
         output = "# No names in this nameset were mapped to the OT Taxonomy.";
     } else {
-        output = "ORIGINAL LABEL"+ TAB +"OTT TAXON NAME"+ TAB +"OTT TAXON ID"+ TAB +"TAXONOMIC SOURCES\n";
+        output = "ORIGINAL LABEL"+ delimiter +"OTT TAXON NAME"+ delimiter +"OTT TAXON ID"+ delimiter +"TAXONOMIC SOURCES\n";
         $.each(viewModel.names(), function(i, name) {
-            if (!name.ottTaxonName) {
+            if ((mappedOrAllNames === 'MAPPED_NAMES') && !name.ottTaxonName) {
                 return true;  // skip this un-mapped name
             }
-            var combinedSources = name.taxonomicSources.join(MINOR_SEPARATOR);
-            output += (name.originalLabel +TAB+
-                       name.ottTaxonName +TAB+
-                       name.ottId +TAB+
+            // N.B. unmapped names won't have most of these properties!
+            var combinedSources = (name.taxonomicSources || [ ]).join(minorDelimiter);
+            output += (name.originalLabel +delimiter+
+                       (name.ottTaxonName || '') +delimiter+
+                       (name.ottId || '') +delimiter+
                        combinedSources +"\n");
         });
     }
