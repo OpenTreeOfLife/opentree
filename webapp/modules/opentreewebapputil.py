@@ -164,20 +164,24 @@ def get_user_login():
 def get_domain_banner_text(request):
     # Add an optional CSS banner to indicate a test domain, or none if
     # we're on a production server.
-    if request.env.http_host == 'devtree.opentreeoflife.org':
-        return 'DEVELOPMENT'
-    elif request.env.http_host == 'stagingtree.opentreeoflife.org':
-        return 'STAGING'
-    return ''
+    if request.env.http_host == 'tree.opentreeoflife.org':
+        return ''
+    # all other domains (including 'devtree.opentreeoflife.org') should present as dev servers
+    return 'DEVELOPMENT'
 
 def get_domain_banner_hovertext(request):
-    # Return optional hover-text for test domains, or none if
+    # Return optional hover-text for dev+test domains, or none if
     # we're on a production server.
-    if request.env.http_host == 'devtree.opentreeoflife.org':
-        return 'This is the development site for Open Tree of Life. Data and services may not be up to date, or may be untested. Production version at tree.opentreeoflife.org'
-    elif request.env.http_host == 'stagingtree.opentreeoflife.org':
-        return 'This is the staging site for Open Tree of Life. Data and services may not be up to date, or may be untested. Production version at tree.opentreeoflife.org'
-    return ''
+    if request.env.http_host == 'tree.opentreeoflife.org':
+        return ""
+    # all other domains (including 'devtree.opentreeoflife.org') should present as dev servers
+    # N.B. Line lengths gradually change, since this text fits diagonally in the page corner.
+    # Be sure to test any changes!
+    return '<br/>'.join(["This is a development version",
+                         "of the Open Tree of Life website!",
+                         "Data and services may be out of date or",
+                         "untested. The production site (the place to",
+                         "do real work) is <a href='https://tree.opentreeoflife.org/'>tree.opentreeoflife.org</a>."])
 
 
 treebase_deposit_doi = re.compile('//purl.org/phylo/treebase/phylows/study/TB2:S(?P<treebase_id>\d+)')
