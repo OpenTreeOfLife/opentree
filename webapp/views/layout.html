@@ -353,9 +353,20 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                 searchForMatchingTaxa();
                 return false;
             });
+
             if (showLegendOnLoad) {
                 toggleTreeViewLegend();
             }
+
+            // toggle behavior for dev-site banner
+            $('.ribbon-banner, .ribbon-banner-details').hover(
+                function() {
+                    $('.ribbon-banner-details').show();
+                },
+                function() {
+                    $('.ribbon-banner-details').hide();
+                }
+            );
         });
 
     </script>
@@ -379,7 +390,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
 
 <body>
 {{ if get_domain_banner_text(request): }}
-  <div class="ribbon-banner" title="{{= get_domain_banner_hovertext(request) }}">{{= get_domain_banner_text(request) }}</div>
+  <div class="ribbon-banner">{{= get_domain_banner_text(request) }}</div>
+  <p class="ribbon-banner-details">{{= XML(get_domain_banner_hovertext(request)) }}</p>
 {{ pass }}
   <div class="navbar navbar-inverse navbar-static-top" role="navigation">
     <div class="navbar-inner">
