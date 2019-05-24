@@ -57,7 +57,10 @@ var getNewNamesetModel = function(options) {
             'description': "",
             'authors': [ ],   // assign immediately to this user?
             'date_created': new Date().toISOString(),
-            'last_saved': null
+            'last_saved': null,
+            'save_count': 0,  // use to suggest unique (numbered) filenames
+            'previous_filename': null,  // what file we loaded before doing this work
+            'latest_ott_version': null
         },
         "mappingHints": {       // OR nameMappingHints?
             "description": "Aids for mapping listed names to OTT taxa",
@@ -103,33 +106,6 @@ var getNewNamesetModel = function(options) {
     return obj;
 };
 
-/* Each time the user sucessfully saves the current nameset, stash the
- * time and the last proposed filename. NOTE that the browser has very
- * limited access to the filesystem, so this is *not* necessarily the final
- * name saved.
- *      filename: 'turtle-taxa.zip'
- *     If that proposed name is moot, empty or unreliable:
- *      filename: 'UNKNOWN'
- *
- * We should reset all properties to null if we abandon a session/nameset, or
- * if we open a new one, or if an attempted save fails.
- */
-var lastSave = {
-    timestamp: ko.observable(null),  // an ISO date string, or empty
-    filename: ko.observable(null)
-};
-function updateLastSavedInfo( suggestedFilename ) {
-    var rightNow = new Date().toISOString();
-    lastSave.timestamp( rightNow );
-    lastSave.filename( $.trim( suggestedFilename ) );
-    console.warn('UPDATED lastSave, timestamp: '+ lastSave.timestamp() +', SUGGESTED filename: '+ lastSave.filename());
-}
-function clearLastSavedInfo() {
-    lastSave.timestamp(null);
-    lastSave.filename('UNKNOWN');
-    console.warn('CLEARED lastSave, timestamp: '+ lastSave.timestamp() +', proposed filename: '+ lastSave.filename());
-}
-
 /* Load and save (to/from ZIP file on the user's filesystem) */
 
 // propose an appropriate filename based on its internal name
@@ -138,15 +114,33 @@ function getDefaultArchiveFilename( candidateFileName ) {
     var suggestedFileName = $.trim(candidateFileName) ||
         viewModel.metadata.name() ||
         "UNTITLED_NAMESET";
-    if (!suggestedFileName.toLowerCase().endsWith('.zip')) {
-        suggestedFileName += '.zip';
+    // strip extension (if found) and increment as needed
+    if (suggestedFileName.toLowerCase().endsWith('.zip')) {
+        suggestedFileName = suggestedFileName.substr(0, suggestedFileName.length() - 4);
     }
+    // add incrementing counter from viewModel, plus file extension
+    if (viewModel.metadata.save_count() > 0) {
+        suggestedFileName += "-"+ viewModel.metadata.save_count();
+    }
+    suggestedFileName += '.zip';
     return suggestedFileName;
 }
 
 function saveCurrentNameset( options ) {
     // save a ZIP archive (or just `main.json`) to the filesystem
     options = options || {FULL_ARCHIVE: true};
+
+    /*
+     * Update new-save info (timestamp and counter) in the JSON document BEFORE
+     * saving it; if the operation fails, we'll revert these properties in the
+     * active document.
+     */
+    var previousSaveTimestamp = viewModel.metadata.last_saved();
+    var rightNow = new Date().toISOString();
+    viewModel.metadata.last_saved( rightNow );
+    var previousSaveCount = viewModel.metadata.save_count();
+    viewModel.metadata.save_count( ++previousSaveCount );
+    // TODO: Set (tentative/user-suggested) filename in the live viewModel?
 
     // TODO: add this user to the authors list, if not found?
     // (email and/or userid, so we can link to authors)
@@ -204,9 +198,14 @@ function saveCurrentNameset( options ) {
      */
     var $filenameField = $('input#suggested-archive-filename');
     var suggestedFileName = $.trim($filenameField.val());
-    if (suggestedFileName) {
+    if (suggestedFileName === "") {
         suggestedFileName = getDefaultArchiveFilename(suggestedFileName);
-    } // ASSUMES this field is populated based on lastSave info?
+    }
+    // add missing extension, if it's missing
+    if (!(suggestedFileName.toLowerCase().endsWith('.zip'))) {
+        suggestedFileName += '.zip';
+    }
+
     archive.generateAsync( {type:"blob"}, 
                            function updateCallback(metadata) {
                                // TODO: Show progress as demonstrated in
@@ -219,10 +218,12 @@ function saveCurrentNameset( options ) {
                   },
                   function (err) {    
                       // failure callback
-                      alert('ERROR saving this ZIP archive:\n'+ err);
+                      alert('ERROR generating this ZIP archive:\n'+ err);
+                      // revert to previous last-save info in the active document
+                      viewModel.metadata.last_saved( previousSaveTimestamp );
+                      viewModel.metadata.save_count( previousSaveCount );
                   } );
 
-    updateLastSavedInfo(suggestedFileName);
     $('#nameset-local-filesystem-warning').slideDown(); // TODO
 
     showInfoMessage('Nameset saved to local file.');
@@ -451,9 +452,12 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                            if (zipEntriesToLoad === 0) {
                                                // we've read in all the ZIP data! open this nameset
                                                // (TODO: setting its initial cache) and close this popup
-                                               loadNamesetData( mainNamesetJSON );
-                                               // update last-saved info
-                                               updateLastSavedInfo(fileInfo.name);
+
+                                               // Capture some file metadata, in case it's needed in the nameset
+                                               var loadedFileName = fileInfo.name;
+                                               var lastModifiedDate = fileInfo.lastModifiedDate;
+                                               console.log("LOADING FROM FILE '"+ loadedFileName +"', LAST MODIFIED: "+ lastModifiedDate);
+                                               loadNamesetData( mainNamesetJSON, loadedFileName, lastModifiedDate );
                                                // N.B. the File API *always* downloads to an unused path+filename
                                                $('#storage-options-popup').modal('hide');
                                            }
@@ -1713,7 +1717,7 @@ function inferSearchContextFromAvailableNames() {
 var $stashedEditArea = null;
 
 // Load a nameset from JS/JSON data (usu. called by convenience functions below)
-function loadNamesetData( data ) {
+function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
     /* Parse this data as `nameset` (a simple JS object), then convert this
      * into our primary view model for KnockoutJS  (by convention, it's usually
      * named 'viewModel').
@@ -1738,6 +1742,31 @@ function loadNamesetData( data ) {
             console.error("Unexpected type for nameset data: "+ (typeof data));
             nameset = null;
     }
+
+    /* "Normalize" the nameset by adding any missing properties and metadata.
+     * (This is mainly useful when loading an older archived nameset, to
+     * catch up with any changes to the expected data model.)
+     */
+    if (nameset.metadata['date_created'] === undefined) {
+        // creation date is not knowable; match last-saved date from file
+        nameset.metadata.date_created = lastModifiedDate.toISOString();
+    }
+    if (nameset.metadata['last_saved'] === undefined) {
+        // assume last-saved date from file is correct
+        nameset.metadata.last_saved = lastModifiedDate.toISOString();
+    }
+    if (nameset.metadata['save_count'] === undefined) {
+        // true number of saves is not knowable, but there's been at least one!
+        nameset.metadata.save_count = 1;
+    }
+    if (nameset.metadata['latest_ott_version'] === undefined) {
+        nameset.metadata.latest_ott_version = null;
+    }
+    if (loadedFileName) {
+        // We just loaded an archive file! Store its latest filename.
+        nameset.metadata.previous_filename = loadedFileName;
+    }
+
     /* Name and export the new viewmodel. NOTE that we don't create observables
      * for names and their many properties! This should help keep things snappy
      * when woriing with very large lists.
@@ -1745,6 +1774,7 @@ function loadNamesetData( data ) {
     var knockoutMappingOptions = {
         'copy': ["names"]  // we'll make the 'names' array observable below
     };
+
     exports.viewModel = viewModel = ko.mapping.fromJS(nameset, knockoutMappingOptions);
     viewModel.names = ko.observableArray(viewModel.names);
 
@@ -1769,6 +1799,14 @@ function loadNamesetData( data ) {
             return 'Last saved '+ formatISODate(date);
         } else {
             return 'This nameset has not been saved.';
+        }
+    });
+    viewModel.displayPreviousFilename = ko.computed(function() {
+        var fileName = viewModel.metadata.previous_filename();
+        if (fileName) {
+            return "Loaded from file <code>"+ fileName +"</code>.";
+        } else {
+            return 'This is a new nameset (no previous filename).';
         }
     });
 
@@ -2097,7 +2135,6 @@ $(document).ready(function() {
 // export some members as a simple API
 var api = [
     'nudge',  // expose ticklers for KO bindings
-    'lastSave',
     'getDefaultArchiveFilename',
     'saveCurrentNameset',
     'loadListFromChosenFile',

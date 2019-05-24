@@ -363,11 +363,14 @@ About-Mapping
                                               change: tnrs.nudge.METADATA}"
                        placeholder="What should we call it?" />
                 <br />
-                <em data-bind="text: viewModel.displayLastSave()">
+                <em data-bind="html: viewModel.displayPreviousFilename()">
+                        {PREVIOUS FILENAME}
+                </em>
+                <br />
+                <em data-bind="html: viewModel.displayLastSave()">
                         {LEGIBLE TIMESTAMP}
                 </em>
                 <br />
-                <em id="nameset-filepath">Loaded from: {PATH TO LOADED FILE}</em>
                 <br />
                 <textarea data-bind="value: viewModel.metadata.description,
                                      valueUpdate: ['aftterkeydown', 'input'],
