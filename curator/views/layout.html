@@ -243,6 +243,16 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             },
             50  // runs 20 times/sec until it finds its backdrop or dies
         );
+
+        // toggle behavior for dev-site banner
+        $('.ribbon-banner, .ribbon-banner-details').hover(
+            function() {
+                $('.ribbon-banner-details').show();
+            },
+            function() {
+                $('.ribbon-banner-details').hide();
+            }
+        );
     });
     $('body').on('hidden', '.modal', function (evt) {
         if (evt.target !== this) {
@@ -322,7 +332,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
   <!--[if (gt IE 9)|!(IE)]><!--> <body> <!--<![endif]-->
 
 {{ if get_domain_banner_text(request): }}
-  <div class="ribbon-banner" title="{{= get_domain_banner_hovertext(request) }}">{{= get_domain_banner_text(request) }}</div>
+  <div class="ribbon-banner">{{= get_domain_banner_text(request) }}</div>
+  <p class="ribbon-banner-details">{{= XML(get_domain_banner_hovertext(request)) }}</p>
 {{ pass }}
   <div class="navbar navbar-inverse navbar-static-top">
     <div class="navbar-inner">

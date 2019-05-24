@@ -442,9 +442,17 @@ div#r0 {
     color: white;
 }
 /* Warning banners appear when using DEVELOPMENT, STAGING servers */
+.ribbon-banner, .ribbon-banner-details {
+    position: absolute;
+    -webkit-transform: rotate(-45deg);
+    -moz-transform:    rotate(-45deg);
+    -ms-transform:     rotate(-45deg);
+    transform:         rotate(-45deg);
+    z-index: 500;
+    cursor: pointer;
+}
 .ribbon-banner {
     display: block;
-    position: absolute;
     top: 40px;
     left: -90px;
     width: 300px;
@@ -452,17 +460,25 @@ div#r0 {
     line-height: 30px;
     text-align: center;
     opacity: 0.7;
-    -webkit-transform: rotate(-45deg);
-    -moz-transform:    rotate(-45deg);
-    -ms-transform:     rotate(-45deg);
-    transform:         rotate(-45deg);
     font-size: 18px;
     font-weight: 900;
     color: #fff;
     background-color: #c00;
     border: 1px solid white;
-    z-index: 500;
-    cursor: pointer;
+}
+.ribbon-banner-details {
+    display: none;
+    top: 58px;
+    left: -100px;
+    text-align: center;
+    font-size: 14px;
+    line-height: 1.25em;
+    color: #600;
+    background-color: white;
+    width: 400px;
+    padding: 2px 0 4px;
+    border-bottom: 1px solid #ddd;
+    margin: 0px auto;
 }
 
 /* Adjusting "inverse" colors in header search */
