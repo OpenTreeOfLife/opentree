@@ -84,6 +84,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         // N.B. This JS variable is currently unused! See static alert '#nudged-to-latest-synthetic-tree' below.
         var nudgingToLatestSyntheticTree = {{=nudgingToLatestSyntheticTree and 'true' or 'false'}};
       {{ pass }}
+      {{ if 'showLegendOnLoad' in locals(): }}
+        // support the option to show the synth-tree view's legend when the page is fully loaded
+        var showLegendOnLoad = {{=showLegendOnLoad and 'true' or 'false'}};
+      {{ pass }}
     </script>
     {{pass}}
 
@@ -349,7 +353,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                 searchForMatchingTaxa();
                 return false;
             });
-
             // toggle behavior for dev-site banner
             $('.ribbon-banner, .ribbon-banner-details').hover(
                 function() {
@@ -359,6 +362,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                     $('.ribbon-banner-details').hide();
                 }
             );
+            if (showLegendOnLoad) {
+                toggleTreeViewLegend();
+            }
         });
 
     </script>
