@@ -103,6 +103,11 @@ function latestCrossRefURL( url ) {
      if (!ottID) {
          return null;
      }
+     if (typeof ottID == 'string' || ottID instanceof String)
+     {
+	 ottID=ottID.replace('ott','');
+     }
+     // If the taxonomy browser is on a different server, this fails.
      var url = '/taxonomy/browse?id={OTT_ID}';
      return url.replace('{OTT_ID}', ottID);
  }

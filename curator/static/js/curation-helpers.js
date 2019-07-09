@@ -233,8 +233,11 @@ function isVisiblePage( pageNum, pagedArray ) {
 var pageExitWarnings = [ ];
 var defaultPageExitWarning = "WARNING: This page contains unsaved changes.";
 var expectedPageExitWarningIDs = [
+    // used by study curation tool
     'UNSAVED_STUDY_CHANGES',
-    'UNSAVED_COLLECTION_CHANGES'
+    'UNSAVED_COLLECTION_CHANGES',
+    // used by TNRS bulk-mapping tool
+    'UNSAVED_NAMESET_CHANGES'
 ];
 
 var confirmOnPageExit = function (e)
@@ -358,7 +361,7 @@ function restoreModalEnforcedFocus() {
     $.fn.modal.Constructor.prototype.enforceFocus = activeEnforceFocus;
 }
 
-function checkForDuplicateStudies( idType, testIdentifier, successCallback ) {
+function checkForDuplicateStudies( idType, testIdentifier, successCallback, errorCallback ) {
     // Our test has minor variations based on identifier type
     var queryData;
     switch( idType ) {
@@ -370,6 +373,7 @@ function checkForDuplicateStudies( idType, testIdentifier, successCallback ) {
            break;
         default:
            console.error("checkForDuplicateStudies(): ERROR, unknown idType: '"+ idType +"'!");
+           if (typeof(errorCallback) === 'function') errorCallback();
            return;
     }
     $.ajax({
@@ -389,6 +393,7 @@ function checkForDuplicateStudies( idType, testIdentifier, successCallback ) {
                     var errMsg = 'Sorry, there was an error checking for duplicate studies. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
                     hideModalScreen();
                     showErrorMessage(errMsg);
+                    if (typeof(errorCallback) === 'function') errorCallback();
                     return;
                 }
                 // Server blocked the save due to major validation errors!
@@ -398,6 +403,7 @@ function checkForDuplicateStudies( idType, testIdentifier, successCallback ) {
                 var errMsg = 'Sorry, there was an error checking for duplicate studies. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [parsed in JS]</pre>';
                 hideModalScreen();
                 showErrorMessage(errMsg);
+                if (typeof(errorCallback) === 'function') errorCallback();
                 return;
             }
             // if we're still here, use the success callback provided
@@ -446,10 +452,16 @@ function getTaxobrowserLink(displayName, ottID) {
     return link.replace('{TAXO_BROWSER_URL}', getTaxobrowserURL(ottID))
         .replace('{DISPLAY_NAME}', displayName);
 }
+
 function getTaxobrowserURL(ottID) {
     if (!ottID) {
         return null;
     }
+    if (typeof ottID == 'string' || ottID instanceof String)
+    {
+	ottID=ottID.replace('ott','');
+    }
+    // If the taxonomy browser is on a different server, this fails.
     var url = '/taxonomy/browse?id={OTT_ID}';
     return url.replace('{OTT_ID}', ottID);
 }
@@ -477,7 +489,7 @@ function getSynthTreeViewerURLForTaxon(ottID) {
     if (!ottID) {
         return null;
     }
-    var url = '/opentree/argus/ottol@{OTT_ID}';
+    var url = '/opentree/argus/@{OTT_ID}';
     return url.replace('{OTT_ID}', ottID);
 }
 

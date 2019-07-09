@@ -880,11 +880,11 @@ function showObjectProperties( objInfo, options ) {
                     ///console.warn('>>>>>>>>>>>>>>> sourceDetails NOT FOUND for sourceID '+ sourceID +', FETCHING NOW...');
                     $.post(
                         singlePropertySearchForStudies_url, // JSONP fetch URL
-                        {   // POSTed data
+                        JSON.stringify({   // POSTed data
                             "property": "ot:studyId",
                             "value": (sourceMetadata).study_id,
                             verbose: true
-                        },
+                        }),
                         function(data) {    // JSONP callback
                             // reset this locally, to MAKE SURE we've got the right box
                             ///console.warn('<<<<<<<<<<<<<<< BACK FROM FETCH for sourceID '+ sourceID);
@@ -989,7 +989,7 @@ function showObjectProperties( objInfo, options ) {
                                 break;
 
                             case 'IRMNG':
-                                displayVal = '<a href="http://www.marine.csiro.au/mirrorsearch/ir_search.taxon_info?id='+ sourceInfo.taxSourceId +'" '
+                                displayVal = '<a href="http://www.irmng.org/aphia.php?p=taxdetails&id='+ sourceInfo.taxSourceId +'" '
                                               + 'title="Interim Register of Marine and Nonmarine Genera" target="_blank">IRMNG: '+ sourceInfo.taxSourceId +'</a>';
                                 break;
 

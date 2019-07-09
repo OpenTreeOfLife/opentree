@@ -165,7 +165,7 @@ def display_taxon_info(info, limit, output, api_base):
 
         start_el(output, 'p', 'legend')
         version = get_taxonomy_version(api_base)
-        output.write('The current taxonomy version is <a target="_blank" href="https://devtree.opentreeoflife.org/about/taxonomy-version/%s">%s (click for more information)</a>. ' % (version, version,))
+        output.write('The current taxonomy version is <a target="_blank" href="https://tree.opentreeoflife.org/about/taxonomy-version/%s">%s (click for more information)</a>. ' % (version, version,))
         output.write('See the OTT wiki for <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags">an explanation of the taxon flags used</a> below, e.g., <span class="flag">extinct</span>\n')
         end_el(output, 'p')
 
@@ -322,7 +322,8 @@ def source_link(source_id):
             elif parts[0] == 'gbif':
                 url = 'http://www.gbif.org/species/%s/' % parts[1]
             elif parts[0] == 'irmng':
-                url = 'http://www.marine.csiro.au/mirrorsearch/ir_search.taxon_info?id=%s' % parts[1]
+                # url = 'http://www.marine.csiro.au/mirrorsearch/ir_search.taxon_info?id=%s' % parts[1]
+                url = 'http://www.irmng.org/aphia.php?p=taxdetails&id=%s' % parts[1]
             elif parts[0] == 'if':
                 url = 'http://www.indexfungorum.org/names/NamesRecord.asp?RecordID=%s' % parts[1]
             elif parts[0] == 'worms':
