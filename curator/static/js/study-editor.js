@@ -8313,8 +8313,9 @@ function lookUpDOI() {
         window.open(lookupURL,'lookup');
     } else {
         // see if we get lucky..
-        lookupURL = '/curator/search_crossref_proxy/dois?q=' + encodeURIComponent(referenceText);
-        // TODO: show potential matches in popup? or new frame?
+        lookupURL = '/curator/search_crossref_proxy?' + encodeURIComponent(referenceText).replace(/\(/g,'%28').replace(/\)/g,'%29');
+
+        // show potential matches in popup? or new frame?
         showModalScreen("Looking up DOI...", {SHOW_BUSY_BAR:true});
         $.ajax({
             global: false,  // suppress web2py's aggressive error handling
@@ -8334,29 +8335,38 @@ function lookUpDOI() {
                 // Show best guesses for this DOI
                 // convert raw response to JSON
                 var resultsJSON = $.parseJSON(jqXHR.responseText);
-                if (resultsJSON.length === 0) {
+                if (resultsJSON.status !== 'ok') {
+                    var errMsg = 'Sorry, there was an error looking up this study\'s DOI. Please try again in a moment.';
+                    showErrorMessage(errMsg);
+                    return;
+                }
+                var foundItems = resultsJSON.message.items;
+                console.log("FOUND "+ foundItems.length +" matching items");
+                if (foundItems.length === 0) {
                     alert('No matches found, please check your publication reference text.')
                 } else {
                     var $lookup = $('#DOI-lookup');
-                    $lookup.find('.found-matches-count').text(resultsJSON.length);
+                    $lookup.find('.found-matches-count').text(foundItems.length);
                     $lookup.find('.found-matches').empty();
                     $lookup.find('#current-ref-text').html( viewModel.nexml['^ot:studyPublicationReference'] || '<em>No reference text</em>');
                     var currentDOI = viewModel.nexml['^ot:studyPublication']['@href'];
                     updateDOIPreviewLink(currentDOI);
-                    $.each(resultsJSON, function(i, match) {
-                        var $matchInfo = $('<div class="match"><div class="full-citation"></div><div class="doi"></div></div>');
-                        $matchInfo.find('.full-citation').html(
-                            match.fullCitation || '<em>No citation found.</em>');
-                        $matchInfo.find('.doi').html( match.doi
-                            ? '<a href="'+ match.doi +'" target="_blank">'+ match.doi +'</a>'
+                    $.each(foundItems, function(i, match) {
+                        var $matchInfo = $('<div class="match"><div class="full-citation"><em>Loading citation text...</em></div><div class="doi"></div></div>');
+                        // CrossRef APIs (as of 2019) require a second call to retrieve reference text
+                        var refTextFetchURL = 'https://api.crossref.org/works/DOI/transform/text/x-bibliography'.replace('DOI', encodeURIComponent(match.DOI));
+                        $matchInfo.find('.full-citation').load(refTextFetchURL, function(responseText, textStatus, jqXHR) {
+                                                                 $(this).html(decodeURIComponent(responseText));
+                                                                 var $btn = $('<button class="btn btn-info">Update reference text</button>');
+                                                                 $btn.click( updateRefTextFromLookup );
+                                                                 $matchInfo.append($btn);
+                                                             });  // these will load ASAP
+                        // REMINDER: CrossRef returns DOI-as-URL in its URL field!
+                        $matchInfo.find('.doi').html( match.URL
+                            ? '<a href="'+ match.URL +'" target="_blank">'+ match.URL +'</a>'
                             : '<em>No DOI found.</em>'
                         );
-                        if (match.fullCitation) {
-                            var $btn = $('<button class="btn btn-info">Update reference text</button>');
-                            $btn.click( updateRefTextFromLookup );
-                            $matchInfo.append($btn);
-                        }
-                        if (match.doi) {
+                        if (match.URL) {
                             var $btn = $('<button class="btn btn-info pull-right">Update DOI</button>');
                             $btn.click( updateDOIFromLookup );
                             $matchInfo.append($btn);
