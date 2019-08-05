@@ -7,6 +7,15 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
 
 <html lang="en">
   <head>
+    <!-- Global site tag (gtag.js) - Google Analytics -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-143548106-1"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag(){dataLayer.push(arguments);}
+      gtag('js', new Date());
+      gtag('config', 'UA-143548106-1');
+    </script>
+
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{{=response.title or request.application}}</title>
@@ -412,7 +421,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
               <!--<li class="active"><a href="{{= URL('default','index') }}">Home</a></li>-->
               <li><a href="/curator">Add / browse trees</a></li>
               <li><a href="{{= URL('contact','index') }}">Feedback</a></li>
-              <li><a href="http://blog.opentreeoflife.org/" target="_blank">Blog</a></li>
               <li class="dropdown">
                 <a href="{{= URL('about','open-tree-of-life') }}" class="dropdown-toggle" data-toggle="dropdown">
                       About  <b class="caret"></b>
