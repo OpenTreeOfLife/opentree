@@ -751,10 +751,13 @@ def to_nexson():
     assert (False)
 
 # provide support for CrossRef.org URLs via HTTPS
+# NB - We are submitting (partial?) reference text, hoping to retrieve the matching DOI!
 def search_crossref_proxy():
-    search_crossref_url = request.env.web2py_original_uri.split('search_crossref_proxy')[1]
-    # prepend the real domain, using HTTP, and return the response
-    search_crossref_url = 'http://search.crossref.org/%s' % search_crossref_url
+    encoded_ref_string = request.env.web2py_original_uri.split('search_crossref_proxy?')[1]
+    # prepend the CrossRef search base URL and return the response
+    search_crossref_url = 'https://api.crossref.org/works?rows=10&query=%s' % encoded_ref_string
+    # NB - the query-string is already properly encoded! Do NOT double-encode
+    # this, or we'll get wildly wrong results.
     try:
         resp = requests.get(url=search_crossref_url).content
     except:

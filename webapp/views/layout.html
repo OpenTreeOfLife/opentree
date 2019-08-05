@@ -353,11 +353,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                 searchForMatchingTaxa();
                 return false;
             });
-
-            if (showLegendOnLoad) {
-                toggleTreeViewLegend();
-            }
-
             // toggle behavior for dev-site banner
             $('.ribbon-banner, .ribbon-banner-details').hover(
                 function() {
@@ -367,6 +362,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
                     $('.ribbon-banner-details').hide();
                 }
             );
+            if (showLegendOnLoad) {
+                toggleTreeViewLegend();
+            }
         });
 
     </script>
