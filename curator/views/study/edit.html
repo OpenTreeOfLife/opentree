@@ -2616,6 +2616,79 @@ body {
                   </label>
                 </div><!-- .controls -->
             </div>
+            <div class="control-group" id="active-taxon-flags"
+                 data-bind="with: getActiveTaxonFlags($data)">
+               <label class="control-label">Flags for this taxon <em>(mouse over for details)</em></label>
+               <div class="controls">
+                <table style="width: 100%;">
+                 <tbody class="taxon-flags">
+                  <tr class="controls taxon-flags">
+                   <td>
+                       <label for="taxon-flag-FOO" class="featured-label pull-left" style="margin-top: 4px;"
+                              title="No living specimens known to exist.">
+                           <input type="checkbox" id="taxon-flag-FOO" name="TODO"
+                                  style="width: 20px;"
+                                  data-bind="checked: true,
+                                             click: toggleTaxonFlag" />
+                           Extinct
+                       </label>
+                   </td>
+                   <td>
+                       <label for="taxon-flag-BAR" class="featured-label pull-left" style="margin-top: 4px;"
+                              title="A subspecies, variety, cultivar, or form.">
+                           <input type="checkbox" id="taxon-flag-BAR" name="TODO"
+                                  style="width: 20px;"
+                                  data-bind="checked: false,
+                                             click: toggleTaxonFlag" />
+                           Infraspecific
+                       </label>
+                   </td>
+                   <td>
+                       <label for="taxon-flag-BAR" class="featured-label pull-left" style="margin-top: 4px;"
+                              title="Specimen is the offspring of parents that differ in genetically determined traits.">
+                           <input type="checkbox" id="taxon-flag-BAR" name="TODO"
+                                  style="width: 20px;"
+                                  data-bind="checked: false,
+                                             click: toggleTaxonFlag" />
+                           Hybrid
+                       </label>
+                   </td>
+                  </tr>
+                  <tr class="controls taxon-flags">
+                   <td>
+                       <label for="taxon-flag-BAR" class="featured-label pull-left" style="margin-top: 4px;"
+                              title="Unclassified, taxonomic placement uncertain (or descended from same).">
+                           <input type="checkbox" id="taxon-flag-BAR" name="TODO"
+                                  style="width: 20px;"
+                                  data-bind="checked: false,
+                                             click: toggleTaxonFlag" />
+                           Incertae sedis
+                       </label>
+                   </td>
+                   <td>
+                       <label for="taxon-flag-BAR" class="featured-label pull-left" style="margin-top: 4px;"
+                              title="This taxon contains no species.">
+                           <input type="checkbox" id="taxon-flag-BAR" name="TODO"
+                                  style="width: 20px;"
+                                  data-bind="checked: false,
+                                             click: toggleTaxonFlag" />
+                           Barren
+                       </label>
+                   </td>
+                   <td>
+                       <label for="taxon-flag-BAR" class="featured-label pull-left" style="margin-top: 4px;"
+                              title="Something to do with viruses, or descended from same.">
+                           <input type="checkbox" id="taxon-flag-BAR" name="TODO"
+                                  style="width: 20px;"
+                                  data-bind="checked: false,
+                                             click: toggleTaxonFlag" />
+                           Viral
+                       </label>
+                   </td>
+                  </tr>
+                 </table>
+               </div>
+            </div><!--  /#active-taxon-flags -->
             <div class="control-group" id="active-taxon-sources"
                  data-bind="with: getActiveTaxonSources($data)">
                <label class="">Source(s) for this taxon <span class="required-field-marker">*</span></label>

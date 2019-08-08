@@ -9950,6 +9950,12 @@ function getActiveTaxonSources(candidate) {
     return activeSources;
 }
 
+function getActiveTaxonFlags(candidate) {
+    // return local flags
+    //return candidate.newTaxonMetadata.flags;
+    return ['EXTINCT', 'SENTIENT'];
+}
+
 function submitNewTaxa() {
     // Bundle all new (proposed) taxon info, submit to OTT, report on results
     // clone the taxa information (recursive or "deep" clone)
@@ -10112,6 +10118,16 @@ function toggleSharedSources( otu, event ) {
         sharedTaxonSources(currentTaxonCandidate().newTaxonMetadata.sources());
     } else {
         sharedTaxonSources(null);
+    }
+    updateTaxonSourceDetails();
+    return true;
+}
+function toggleTaxonFlag( otu, event ) {
+    var usingThisFlag = $(event.target).is(':checked');
+    if (usingThisFlag) {
+        // TODO: make sure this tag value is included
+    } else {
+        // TODO: make sure this tag value is NOT included
     }
     updateTaxonSourceDetails();
     return true;
