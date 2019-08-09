@@ -322,7 +322,8 @@ def source_link(source_id):
             elif parts[0] == 'gbif':
                 url = 'http://www.gbif.org/species/%s/' % parts[1]
             elif parts[0] == 'irmng':
-                url = 'http://www.marine.csiro.au/mirrorsearch/ir_search.taxon_info?id=%s' % parts[1]
+                # url = 'http://www.marine.csiro.au/mirrorsearch/ir_search.taxon_info?id=%s' % parts[1]
+                url = 'http://www.irmng.org/aphia.php?p=taxdetails&id=%s' % parts[1]
             elif parts[0] == 'if':
                 url = 'http://www.indexfungorum.org/names/NamesRecord.asp?RecordID=%s' % parts[1]
             elif parts[0] == 'worms':
