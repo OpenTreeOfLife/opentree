@@ -416,7 +416,16 @@ function getViewOrEditLinks(study) {
     return html;
 }
 function getCuratorLink(study) {
-    return '<a href="#" onclick="filterByCurator(\''+ study['ot:curatorName'] +'\'); return false;"'+'>'+ study['ot:curatorName'] +'</a'+'>';
+    var linkList = [];
+    var nameList = study['ot:curatorName'];
+    if (! $.isArray(nameList)) {
+        // wrap single curator name in the expected list
+        nameList = [nameList];
+    }
+    $.each(nameList , function(i, name) {
+        linkList.push('<a href="#" onclick="filterByCurator(\''+ name +'\'); return false;"'+'>'+ name +'</a'+'>');
+    });
+    return linkList.join(', ');
 }
 function getFocalCladeLink(study) {
     var ottIdNotFound = false;
