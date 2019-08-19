@@ -120,7 +120,7 @@ elif active_user_found:
 <div class="row">
  <div class="span2">
     <img src="{{= user_info.get('avatar_url', '') }}"
-         alt="{{= user_info.get('name', user_info.get('login', 'User')) }} avatar"
+         alt="{{= user_info['name'] or user_info.get('login', 'User') }} avatar"
          style="width: 105px; height: 105px; padding: 0 0 30px 0;">
  </div>
  <div class="span10 wireframe user-profile">
@@ -209,23 +209,6 @@ elif active_user_found:
         <label class="control-label">Studies</label>
         <div class="controls">
             <p class="static-form-value">
-                <span class="interesting-value" style="font-weight: normal;">
-                    Reliable counts are coming soon.
-                </span>
-            </p>
-            {{ if user_info: }}
-            <p>
-                For now, you can 
-                <a target="_blank" href="/curator/?match={{= user_info.get('name', user_info.get('login')) }}">
-                   see this curator's studies
-                </a> in the curation dashboard.
-            </p>
-            {{ pass }}
-        </div>
-{{# TODO: Restore these stats once OTI has been fixed, see https://github.com/OpenTreeOfLife/oti/issues/35 }}
-{{ if False: }}
-        <div class="controls">
-            <p class="static-form-value">
                 {{ how_many_added = len( opentree_activity.get('added_studies', []) )
                    how_many_curated = len( opentree_activity.get('curated_studies', []) )
                 }}
@@ -238,14 +221,13 @@ elif active_user_found:
                 {{ if (how_many_added + how_many_curated) > 0: }}
                 <br/>
                 <a target="_blank" style="font-weight: normal;"
-                   href="/curator/?match={{= user_info.get('name', user_info.get('login')) }}">
+                   href="/curator/?match={{= user_info['name'] or user_info.get('login', '???') }}">
                    See these studies in the curation dashboard
                 </a>
                 {{ pass }}
             </p>
             <!--  TODO: add markers for top 5%, etc. -->
         </div>
-{{ pass }}
     </div>
 
     <div class="control-group">
