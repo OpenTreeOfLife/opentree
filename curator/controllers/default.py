@@ -249,11 +249,12 @@ def _get_opentree_activity( userid=None, username=None ):
         # TODO: improve oti to handle multiple curator names!
         if type(study_curators) is not list:
             study_curators = [study_curators]
-        if username in study_curators:
+        # NB - If there's no "display name" defined, look for their userid
+        if (username or userid) in study_curators:
             activity_found = True
             activity['curated_studies'].append(study)
             # first curator name is its original contributor
-            if study_curators[0] == username:
+            if study_curators[0] == (username or userid):
                 activity['added_studies'].append(study)
             # does this contribute to synthesis?
             if contributing_study_info.has_key( study['ot:studyId'] ):
