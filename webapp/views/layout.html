@@ -96,6 +96,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
       {{ if 'showLegendOnLoad' in locals(): }}
         // support the option to show the synth-tree view's legend when the page is fully loaded
         var showLegendOnLoad = {{=showLegendOnLoad and 'true' or 'false'}};
+      {{ else: }}
+        // harmless default value (for About and other unrelated pages)
+        var showLegendOnLoad = false;
       {{ pass }}
     </script>
     {{pass}}
