@@ -751,6 +751,15 @@ function createArgus(spec) {
                             errMsg = '<p>This taxon is in our taxonomy but does not appear in the latest synthetic tree. This can happen for a variety of reasons,'
                                 +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
                                 +' causes it to be pruned from the synthetic tree.</p>';
+                            if (json.flags && json.flags.length > 0) {
+                                errMsg += '<p>The following flags were found on this taxon:</p>'
+                                errMsg += '<ul>';
+                                $.each(json.flags, function(i, flag) {
+                                    errMsg += '<li style="font-family: monospace; color: #999;">'+ flag +'</li>';
+                                });
+                                errMsg += '</ul>';
+                                errMsg += '<p>See our <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags" target="_blank">taxonomy documentation</a> for details on the meanings of each flag.</p>'
+                            }
                         }
 
                         errMsg +='<p class="action-item">'+ taxoBrowserLink +'</p>';
