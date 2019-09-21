@@ -758,7 +758,7 @@ function createArgus(spec) {
                                     errMsg += '<li style="font-family: monospace; color: #999;">'+ flag +'</li>';
                                 });
                                 errMsg += '</ul>';
-                                errMsg += '<p>See our <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/wiki/Taxon-flags" target="_blank">taxonomy documentation</a> for details on the meanings of each flag.</p>'
+                                errMsg += '<p>See our <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/taxon-flags.md#taxon-flags" target="_blank">taxonomy documentation</a> for details on the meanings of each flag.</p>'
                             }
                         }
 
