@@ -731,13 +731,13 @@ function createArgus(spec) {
                     var json = $.parseJSON(jqXHR.responseText);
                     // if (json['ott_id'] === ottID) { TODO: use this when we switch to v3 taxonomy API!
                     if (json['ott_id'] === ottID) {
-                        var taxoBrowserLink = getTaxobrowserLink('taxonomy browser', ottID)
+                        var taxoBrowserLink = getTaxobrowserLink('View this taxon in the taxonomy browser', ottID)
                         // the requested taxon exists in OTT, but is not found in the target tree
-                        errMsg = '<p>This taxon is in our taxonomy but not in our tree synthesis database.</p>'
+                        //errMsg = '<p>This taxon is in our taxonomy but not in our tree synthesis database.</p>'
 
                         if (mainFetchJSON.broken) {
                             // parse this to learn more...
-                            errMsg += '<p>It appears to be "broken" (not monophyletic) in the latest synthetic tree.</p>';
+                            errMsg = '<p>This taxon is in our taxonomy but it\'s "broken" (not monophyletic) in the latest synthetic tree.</p>';
                             if (mainFetchJSON.broken.mrca) {
                                 // this is the ottid of its MRCA, a good next step for this user
                                 var mrcaSynthViewURL = getSynthTreeViewerURLForNodeID(
@@ -745,15 +745,15 @@ function createArgus(spec) {
                                     mainFetchJSON.broken.mrca
                                 );
                                 errMsg +='<p class="action-item"><a href="' + mrcaSynthViewURL
-                                        +'">Review the MRCA of the members of this taxon</a></p>';
+                                        +'">View the MRCA of the members of this taxon in the synthetic tree</a></p>';
                             }
                         } else {
-                            errMsg += '<p>This can happen for a variety of reasons,'
+                            errMsg = 'This can happen for a variety of reasons,'
                                 +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
                                 +' causes it to be pruned from the synthetic tree.</p>';
                         }
 
-                        errMsg +='<p>See the '+ taxoBrowserLink +' for more information about this taxon.</p>';
+                        errMsg +='<p class="action-item">'+ taxoBrowserLink +'</p>';
                         showErrorInArgusViewer( errMsg );
                     } else {
                         // this is not a valid taxon id! Show the *original* error response from the failed argus fetch.
