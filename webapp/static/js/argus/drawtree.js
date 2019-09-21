@@ -741,7 +741,8 @@ function createArgus(spec) {
                             errMsg += ' It appears to have been "broken" during the latest synthesis.';
                             if (mainFetchJSON.broken.mrca) {
                                 // this is the ottid of its MRCA, a good next step for this user
-                                var mrcaSynthViewURL = getSynthTreeViewerURLForTaxon(
+                                var mrcaSynthViewURL = getSynthTreeViewerURLForNodeID(
+                                    '',  // defaults to latest synthetic tree
                                     mainFetchJSON.broken.mrca
                                 );
                                 errMsg +=' To learn more, you can <a href="'

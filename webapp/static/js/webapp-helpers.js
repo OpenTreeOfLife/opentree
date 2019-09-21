@@ -157,7 +157,8 @@ function getSynthTreeViewerLinkForNodeID(displayName, synthID, nodeID) {
         .replace('{DISPLAY_NAME}', displayName);
 }
 function getSynthTreeViewerURLForNodeID(synthID, nodeID) {
-    if (!synthID || !nodeID) {
+    // if synthID is '', this will point to the latest synthetic tree
+    if (!nodeID) {
         return null;
     }
     var url = '/opentree/argus/{SYNTH_ID}@{NODE_ID}';
