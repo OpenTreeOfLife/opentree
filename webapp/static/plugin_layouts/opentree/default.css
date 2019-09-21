@@ -532,3 +532,14 @@ div#r0 {
 #tree-view-legend .legend-pane img {
     border: 1px solid #fcfcfc;
 }
+.argus-error {
+    margin: 30px 40px; 
+    font-size: 120%;
+}
+.argus-error p {
+    font-weight: bold; 
+    color: #777;
+}
+.argus-error p.action-item {
+    padding-left: 8em;
+}

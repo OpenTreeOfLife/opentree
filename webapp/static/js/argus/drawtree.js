@@ -733,36 +733,31 @@ function createArgus(spec) {
                     if (json['ott_id'] === ottID) {
                         var taxoBrowserLink = getTaxobrowserLink('taxonomy browser', ottID)
                         // the requested taxon exists in OTT, but is not found in the target tree
-                        errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy'
-                            +' but not in our tree synthesis database.'
+                        errMsg = '<p>This taxon is in our taxonomy but not in our tree synthesis database.</p>'
 
                         if (mainFetchJSON.broken) {
                             // parse this to learn more...
-                            errMsg += ' It appears to have been "broken" during the latest synthesis.';
+                            errMsg += '<p>It appears to be "broken" (not monophyletic) in the latest synthetic tree.</p>';
                             if (mainFetchJSON.broken.mrca) {
                                 // this is the ottid of its MRCA, a good next step for this user
                                 var mrcaSynthViewURL = getSynthTreeViewerURLForNodeID(
                                     '',  // defaults to latest synthetic tree
                                     mainFetchJSON.broken.mrca
                                 );
-                                errMsg +=' To learn more, you can <a href="'
-                                        + mrcaSynthViewURL
-                                        +'">review the MRCA</a> of its members.';
+                                errMsg +='<p class="action-item"><a href="' + mrcaSynthViewURL
+                                        +'">Review the MRCA of the members of this taxon</a></p>';
                             }
                         } else {
-                            errMsg += 'This can happen for a variety of reasons,'
+                            errMsg += '<p>This can happen for a variety of reasons,'
                                 +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
-                                +' causes it to be pruned from the synthetic tree.';
+                                +' causes it to be pruned from the synthetic tree.</p>';
                         }
 
-                        errMsg +=' See the '+ taxoBrowserLink +' for more information about this taxon.'
-                                +'<br/><br/>If you think this is an error, please'
-                                +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">'
-                                +'create an issue in our bug tracker</a>.</span>';
+                        errMsg +='<p>See the '+ taxoBrowserLink +' for more information about this taxon.</p>';
                         showErrorInArgusViewer( errMsg );
                     } else {
                         // this is not a valid taxon id! Show the *original* error response from the failed argus fetch.
-                        errMsg = 'Whoops! The call to get the tree around a node did not work out the way we were hoping it would.';
+                        errMsg = '<p>Whoops! The call to get the tree around a node did not work out the way we were hoping it would.</p>';
                         showErrorInArgusViewer( errMsg, mainFetchXHR.responseText );
                     }
                 }
