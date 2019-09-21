@@ -746,7 +746,7 @@ function createArgus(spec) {
                                     mainFetchJSON.broken.mrca
                                 );
                                 errMsg +=' To learn more, you can <a href="'
-                                        + getSynthTreeViewerURL
+                                        + mrcaSynthViewURL
                                         +'">review the MRCA</a> of its members.';
                             }
                         } else {
