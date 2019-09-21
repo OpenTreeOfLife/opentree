@@ -702,6 +702,14 @@ function createArgus(spec) {
         var argusLoadFailure = function (jqXHR, textStatus, errorThrown) {
             // Was this a taxon that didn't make it into synthesis, or some other error?
             var mainFetchXHR = jqXHR;
+            var mainFetchJSON;
+            try {
+                // IF there was a JSON payload, we want to keep it
+                mainFetchJSON = $.parseJSON(mainFetchXHR.responseText);
+            } catch(e) {
+                // make an empty object for now
+                mainFetchJSON = { };
+            }
             $.ajax({
                 url: getTaxonInfo_url,
                 type: 'POST',
@@ -723,16 +731,33 @@ function createArgus(spec) {
                     var json = $.parseJSON(jqXHR.responseText);
                     // if (json['ott_id'] === ottID) { TODO: use this when we switch to v3 taxonomy API!
                     if (json['ott_id'] === ottID) {
+                        var taxoBrowserLink = getTaxobrowserLink('taxonomy browser', ottID)
                         // the requested taxon exists in OTT, but is not found in the target tree
-                        var taxobrowserlink = getTaxobrowserLink('taxonomy browser', ottID)
                         errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy'
-                                +' but not in our tree synthesis database. This can happen for a variety of reasons,'
+                            +' but not in our tree synthesis database.'
+
+                        if (mainFetchJSON.broken) {
+                            // parse this to learn more...
+                            errMsg += ' It appears to have been "broken" during the latest synthesis.';
+                            if (mainFetchJSON.broken.mrca) {
+                                // this is the ottid of its MRCA, a good next step for this user
+                                var mrcaSynthViewURL = getSynthTreeViewerURLForTaxon(
+                                    mainFetchJSON.broken.mrca
+                                );
+                                errMsg +=' To learn more, you can <a href="'
+                                        + getSynthTreeViewerURL
+                                        +'">review the MRCA</a> of its members.';
+                            }
+                        } else {
+                            errMsg += 'This can happen for a variety of reasons,'
                                 +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
-                                +' causes it to be pruned from the synthetic tree. See the '
-                                +taxobrowserlink
-                                +' for more information about this taxon.'
+                                +' causes it to be pruned from the synthetic tree.';
+                        }
+
+                        errMsg +=' See the '+ taxoBrowserLink +' for more information about this taxon.'
                                 +'<br/><br/>If you think this is an error, please'
-                                +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
+                                +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">'
+                                +'create an issue in our bug tracker</a>.</span>';
                         showErrorInArgusViewer( errMsg );
                     } else {
                         // this is not a valid taxon id! Show the *original* error response from the failed argus fetch.
