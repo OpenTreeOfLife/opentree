@@ -723,7 +723,7 @@ function createArgus(spec) {
                     var errMsg;
                     if (textStatus !== 'success') {
                         // major server-side error, just show raw response for tech support
-                        errMsg = 'Sorry, there was an error checking for taxon status.';
+                        errMsg = '<p>Sorry, there was an error checking for taxon status.</p>';
                         showErrorInArgusViewer(errMsg);
                         return;
                     }
@@ -748,7 +748,7 @@ function createArgus(spec) {
                                         +'">View the MRCA of the members of this taxon in the synthetic tree</a></p>';
                             }
                         } else {
-                            errMsg = 'This can happen for a variety of reasons,'
+                            errMsg = '<p>This taxon is in our taxonomy but does not appear in the latest synthetic tree. This can happen for a variety of reasons,'
                                 +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
                                 +' causes it to be pruned from the synthetic tree.</p>';
                         }
