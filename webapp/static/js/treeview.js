@@ -1444,10 +1444,10 @@ if (false) {
 function showErrorInArgusViewer( msg, details ) {
     var errorHTML;
     if (!details) {
-        errorHTML = '<p style="margin: 8px 12px;">'+ msg +'</p>';
+        errorHTML = '<div class="argus-error">'+ msg +'</div>';
     } else {
-        errorHTML = '<p style="margin: 8px 12px;">'+ msg +'&nbsp; &nbsp; '
-        + '<a href="#" onclick="$(\'#error-details\').show(); return false;">Show details</a></p>'
+        errorHTML = '<div class="argus-error">'+ msg +'&nbsp; &nbsp; '
+        + '<a href="#" onclick="$(\'#error-details\').show(); return false;">Show details</a></div>'
         + '<p id="error-details" style="margin: 8px 12px; font-style: italic; display: none;">'+ details +'</p>';
     }
     $('#argusCanvasContainer').css('height','500px').html( errorHTML );
