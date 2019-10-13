@@ -52,7 +52,10 @@ def index():
     if len(request.args) > 1:
         if not treeview_dict['nodeID']:
         #if (not treeview_dict['nodeID']) and '@' in request.args[1]:
-            treeview_dict['domSource'], treeview_dict['nodeID'] = request.args[1].split('@')
+            ds_and_node_id = request.args[1].split('@')
+            treeview_dict['domSource'] = ds_and_node_id[0]
+            if len(ds_and_node_id) > 1:
+                treeview_dict['nodeID'] = ds_and_node_id[1]
         else:
             treeview_dict['nodeName'] = request.args[1]
 
