@@ -747,6 +747,14 @@ function createArgus(spec) {
                                 errMsg +='<p class="action-item"><a href="' + mrcaSynthViewURL
                                         +'">View the MRCA of the members of this taxon in the synthetic tree</a></p>';
                             }
+                            if (mainFetchJSON.broken.contesting_trees) {
+                                errMsg +='<p>Input phylogenies that conflict with this taxon:</p>';
+                                errMsg +='<ul>';
+                                Object.keys(mainFetchJSON.broken.contesting_trees).forEach(function(tree) {
+                                    errMsg +='<li>' + tree + '</li>';
+                                });
+                                errMsg +='</ul>';
+                            }
                         } else {
                             errMsg = '<p>This taxon is in our taxonomy but does not appear in the latest synthetic tree. This can happen for a variety of reasons,'
                                 +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
