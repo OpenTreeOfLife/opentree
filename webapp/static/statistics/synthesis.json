@@ -109,7 +109,7 @@
         "===": "tree_count and tip_count from https://nexttree.opentreeoflife.org/v3/tree_of_life/about",
         "===": "total_OTU_count found in https://files.opentreeoflife.org/synthesis/opentree11.4/opentree11.4/labelled_supertree/index.html",
         "version": "v11.4",
-        "OTT_version": "3.1draft2",
+        "OTT_version": "ott3.1draft2",
         "tree_count": 1212,
         "total_OTU_count": 87682,
         "tip_count": 2852504
