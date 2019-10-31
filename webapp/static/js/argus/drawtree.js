@@ -748,10 +748,23 @@ function createArgus(spec) {
                                         +'">View the MRCA of the members of this taxon in the synthetic tree</a></p>';
                             }
                             if (mainFetchJSON.broken.contesting_trees) {
-                                errMsg +='<p>Input phylogenies that conflict with this taxon:</p>';
-                                errMsg +='<ul>';
-                                Object.keys(mainFetchJSON.broken.contesting_trees).forEach(function(tree) {
-                                    errMsg +='<li>' + tree + '</li>';
+                                errMsg +='<p class="action-item">Input phylogenies that conflict with this taxon (click to see each conflicting tree in a new window):</p>';
+                                errMsg +='<ul class="action-item">';
+                                Object.keys(mainFetchJSON.broken.contesting_trees).forEach(function(treeAndStudyID) {
+
+                                    var parts = treeAndStudyID.split('@');
+                                    var studyID = parts[0];
+                                    var treeID = parts[1];
+                                    var conflictURL = '/curator/study/view/{STUDY_ID}/?tab=trees&tree={TREE_ID}&conflict=ott'
+                                        .replace('{STUDY_ID}', studyID)
+                                        .replace('{TREE_ID}', treeID);
+
+                                    errMsg +='<li><a target="_blank" href="'+ conflictURL +'"><b>' + treeAndStudyID +'</b>';
+                                  /* TODO: One or more AJAX fetches to retrieve study and tree names?
+                                    var treeName = "TODO";
+                                    var compactRef = "TODO";
+                                    errMsg +=' &nbsp; ('+ "tree <b>'+ treeName +'</b> in study <b>'+ compactRef +'</b>" +')<//a></li>';
+                                  */
                                 });
                                 errMsg +='</ul>';
                             }
