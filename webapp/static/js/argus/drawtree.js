@@ -748,8 +748,8 @@ function createArgus(spec) {
                                         +'">View the MRCA of the members of this taxon in the synthetic tree</a></p>';
                             }
                             if (mainFetchJSON.broken.contesting_trees) {
-                                errMsg +='<p class="action-item">Input phylogenies that conflict with this taxon (click to see each conflicting tree in a new window):</p>';
-                                errMsg +='<ul class="action-item">';
+                                errMsg +='<p class="action-item">Input phylogenies that conflict with this taxon: &nbsp; <a class="conflicting-tree-toggle" style="font-weight: normal; display: none;" href="#">[show tree and study details]</a></p>';
+                                errMsg +='<ul class="action-item conflicting-trees">';
                                 Object.keys(mainFetchJSON.broken.contesting_trees).forEach(function(treeAndStudyID) {
 
                                     var parts = treeAndStudyID.split('@');
@@ -759,7 +759,7 @@ function createArgus(spec) {
                                         .replace('{STUDY_ID}', studyID)
                                         .replace('{TREE_ID}', treeID);
 
-                                    errMsg +='<li><a target="_blank" href="'+ conflictURL +'"><b>' + treeAndStudyID +'</b>';
+                                    errMsg +='<li><a target="_blank" href="'+ conflictURL +'"><b>' + treeAndStudyID +'</b> (show this tree in a new window)';
                                   /* TODO: One or more AJAX fetches to retrieve study and tree names?
                                     var treeName = "TODO";
                                     var compactRef = "TODO";
@@ -767,6 +767,11 @@ function createArgus(spec) {
                                   */
                                 });
                                 errMsg +='</ul>';
+
+                                /* Fetch more information about conflicting trees and
+                                 * studies; update the UI once we have the data.
+                                 */
+                                loadConflictingTreeDetails(mainFetchJSON.broken.contesting_trees);
                             }
                         } else {
                             errMsg = '<p>This taxon is in our taxonomy but does not appear in the latest synthetic tree. This can happen for a variety of reasons,'
@@ -2082,6 +2087,13 @@ ArgusCluster.prototype.updateDisplayBounds = function() {
     };
     return this.displayBounds;
 };
+
+function loadConflictingTreeDetails( contestingTreeJSON ) {
+    /* Fetch details (esp. names) about conflicting trees and
+     * studies; update the UI once we have the data.
+     */
+    console.log('Now I\'d load some details!');
+}
 
 function getClientBoundingBox( elementSet ) {
     // Takes a RaphaelJS element set, reckons its full bounding box in
