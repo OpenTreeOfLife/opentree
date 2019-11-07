@@ -535,6 +535,7 @@ div#r0 {
 .argus-error {
     margin: 30px 40px; 
     font-size: 120%;
+    max-width: 40em;
 }
 .argus-error p {
     font-weight: bold; 
