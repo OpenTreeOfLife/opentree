@@ -88,6 +88,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         var getTaxonInfo_url = "{{=getTaxonInfo_url}}";
         var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
         var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
+        var singlePropertySearchForTrees_url = "{{=singlePropertySearchForTrees_url}}";
       {{ if 'nudgingToLatestSyntheticTree' in locals(): }}
         // notify the user if we've nudged an old synth-tree URL to the latest (in synth-tree view only)
         // N.B. This JS variable is currently unused! See static alert '#nudged-to-latest-synthetic-tree' below.
