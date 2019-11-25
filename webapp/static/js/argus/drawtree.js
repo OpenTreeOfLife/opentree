@@ -769,7 +769,7 @@ function createArgus(spec) {
                                     /* Fetch more information about conflicting trees and
                                      * studies; update the UI once we have the data.
                                      */
-                                    loadConflictingTreeDetails(contestingTreeJSON, conflictDetailsPanelID);
+                                    loadConflictingTreeDetails(studyID, treeID, conflictDetailsPanelID);
                                 });
                                 errMsg +='</ul>';
 
@@ -2089,47 +2089,43 @@ ArgusCluster.prototype.updateDisplayBounds = function() {
     return this.displayBounds;
 };
 
-function loadConflictingTreeDetails(contestingTreeJSON, conflictDetailsPanelID) {
-    /* Fetch details (esp. names) about conflicting trees and
-     * studies; update the UI once we have the data.
+function loadConflictingTreeDetails(studyID, treeID, conflictDetailsPanelID) {
+    /* Fetch details (esp. names) about a conflicting tree;
+     * update the UI once we have the data.
      */
-    //var conflictingStudyInfo = { };  // display conflicts by study, with any trees listed beneath each?
-    Object.keys(contestingTreeJSON).forEach(function(treeAndStudyID) {
-        // extract study & tree IDs from each property, e.g. "pg_1940@tree3943"
-        var parts = treeAndStudyID.split('@');
-        var studyID = parts[0];
-        var treeID = parts[1];
-        var studyURL = '/curator/study/view/{STUDY_ID}/'.replace('{STUDY_ID}', studyID);
-        var conflictURL = studyURL + '?tab=trees&tree={TREE_ID}&conflict=ott'.replace('{TREE_ID}', treeID);
-        // One AJAX fetch per tree
-        $.post(
-            singlePropertySearchForTrees_url, // JSON fetch URL
-            JSON.stringify({   // POSTed data
-                "property": "ot:studyId",
-                "value": studyID,
-                verbose: true
-            }),
-            function(data) {    // JSONP callback
-                var $detailsPanel = $('#'+ conflictDetailsPanelID);
-                try {
-                    var studyInfo = data.matched_studies[0];
-                    var treeInfo = $.grep(studyInfo.matched_trees, function(treeInfo) {
-                        return (treeInfo['ot:treeId'] === treeID);
-                    })[0];
-                    detailsPanelHTML = 'Conflicting tree \'<strong>'+ treeInfo['@label'] +'</strong>\'<br/>'
-                      + '<a target="_blank" href="'+ conflictURL +'">Show this tree\'s conflicts in the study curation tool</a><br/>'
-                      + '<pre>'+ studyInfo['ot:studyPublicationReference']
-                      + ' <a target="_blank" href="'+ studyInfo['ot:studyPublication'] +'">'+ studyInfo['ot:studyPublication'] +'</a></pre>';
-                      //+ '<a target="_blank" href="'+ studyURL +'">Show this study (all trees) in a new window</a><br/>';
-                    $detailsPanel.html(detailsPanelHTML);
-                    // clobber the initial raw link, since we have somethign nicer
-                    $detailsPanel.prev().remove();
-                } catch(e) {
-                    $detailsPanel.html('<strong>ERROR loading details for this conflicting tree!</strong>');
-                }
+    var studyURL = '/curator/study/view/{STUDY_ID}/'.replace('{STUDY_ID}', studyID);
+    var conflictURL = studyURL + '?tab=trees&tree={TREE_ID}&conflict=ott'.replace('{TREE_ID}', treeID);
+    // One AJAX fetch per tree
+    $.post(
+        singlePropertySearchForTrees_url, // JSON fetch URL
+        JSON.stringify({   // POSTed data
+            "property": "ot:studyId",
+            "value": studyID,
+            verbose: true
+        }),
+        function(data) {    // JSONP callback
+            var $detailsPanel = $('#'+ conflictDetailsPanelID);
+            try {
+                var studyInfo = data.matched_studies[0];
+                var treeInfo = $.grep(studyInfo.matched_trees, function(treeInfo) {
+                    return (treeInfo['ot:treeId'] === treeID);
+                })[0];
+                var treeName = treeInfo['@label'] || ('Untitled ('+ treeInfo['ot:treeId'] +')');
+                console.warn(treeName);
+                detailsPanelHTML = 'Conflicting tree \'<strong>'+ treeName +'</strong>\'<br/>'
+                  + '<a target="_blank" href="'+ conflictURL +'">Show this tree\'s conflicts in the study curation tool</a><br/>'
+                  + '<pre>'+ studyInfo['ot:studyPublicationReference']
+                  + ' <a target="_blank" href="'+ studyInfo['ot:studyPublication'] +'">'+ studyInfo['ot:studyPublication'] +'</a></pre>';
+                  //+ '<a target="_blank" href="'+ studyURL +'">Show this study (all trees) in a new window</a><br/>';
+                $detailsPanel.html(detailsPanelHTML);
+                console.log( $detailsPanel.length +' panels updated.');
+                // clobber the initial raw link, since we have somethign nicer
+                $detailsPanel.prev('a').remove();
+            } catch(e) {
+                $detailsPanel.html('<strong>ERROR loading details for this conflicting tree!</strong>');
             }
-        );
-    });
+        }
+    );
     console.warn("ALL DONE?");
 }
 

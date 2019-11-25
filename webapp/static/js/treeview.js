@@ -1452,7 +1452,8 @@ function showErrorInArgusViewer( msg, details ) {
         + '<a href="#" onclick="$(\'#error-details\').show(); return false;">Show details</a></div>'
         + '<p id="error-details" style="margin: 8px 12px; font-style: italic; display: none;">'+ details +'</p>';
     }
-    $('#argusCanvasContainer').css('height','500px').html( errorHTML );
+    // allow full height (with scrollbars) for long messages
+    $('#argusCanvasContainer').css('height','').html( errorHTML );
 }
 
 function toggleTreeViewLegend() {
