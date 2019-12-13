@@ -747,6 +747,33 @@ function createArgus(spec) {
                                 errMsg +='<p class="action-item"><a href="' + mrcaSynthViewURL
                                         +'">View the MRCA of the members of this taxon in the synthetic tree</a></p>';
                             }
+                            var contestingTreeJSON = mainFetchJSON.broken.contesting_trees;
+                            if (contestingTreeJSON) {
+                                errMsg +='<p class="action-item">Input phylogenies that conflict with this taxon: &nbsp; <a class="conflicting-tree-toggle" style="font-weight: normal; display: none;" href="#">[show tree and study details]</a></p>';
+                                errMsg +='<ul class="action-item conflicting-trees">';
+                                Object.keys(contestingTreeJSON).forEach(function(treeAndStudyID) {
+
+                                    var parts = treeAndStudyID.split('@');
+                                    var studyID = parts[0];
+                                    var treeID = parts[1];
+                                    var conflictURL = '/curator/study/view/{STUDY_ID}/?tab=trees&tree={TREE_ID}&conflict=ott'
+                                        .replace('{STUDY_ID}', studyID)
+                                        .replace('{TREE_ID}', treeID);
+                                    var conflictDetailsPanelID = 'conflicting-tree-details-'+ studyID +'-'+ treeID;
+                                    errMsg +='<li><a target="_blank" href="'+ conflictURL +'"><b>' + treeAndStudyID +'</b> (show this tree in a new window)</a><div id="'+ conflictDetailsPanelID +'" class="conflicting-tree-details"><em>...loading details..</em></div></li>';
+                                  /* TODO: One or more AJAX fetches to retrieve study and tree names?
+                                    var treeName = "TODO";
+                                    var compactRef = "TODO";
+                                    errMsg +=' &nbsp; ('+ "tree <b>'+ treeName +'</b> in study <b>'+ compactRef +'</b>" +')<//a></li>';
+                                  */
+                                    /* Fetch more information about conflicting trees and
+                                     * studies; update the UI once we have the data.
+                                     */
+                                    loadConflictingTreeDetails(studyID, treeID, conflictDetailsPanelID);
+                                });
+                                errMsg +='</ul>';
+
+                            }
                         } else {
                             errMsg = '<p>This taxon is in our taxonomy but does not appear in the latest synthetic tree. This can happen for a variety of reasons,'
                                 +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
@@ -2061,6 +2088,46 @@ ArgusCluster.prototype.updateDisplayBounds = function() {
     };
     return this.displayBounds;
 };
+
+function loadConflictingTreeDetails(studyID, treeID, conflictDetailsPanelID) {
+    /* Fetch details (esp. names) about a conflicting tree;
+     * update the UI once we have the data.
+     */
+    var studyURL = '/curator/study/view/{STUDY_ID}/'.replace('{STUDY_ID}', studyID);
+    var conflictURL = studyURL + '?tab=trees&tree={TREE_ID}&conflict=ott'.replace('{TREE_ID}', treeID);
+    // One AJAX fetch per tree
+    $.post(
+        singlePropertySearchForTrees_url, // JSON fetch URL
+        JSON.stringify({   // POSTed data
+            "property": "ot:studyId",
+            "value": studyID,
+            verbose: true
+        }),
+        function(data) {    // JSONP callback
+            var $detailsPanel = $('#'+ conflictDetailsPanelID);
+            try {
+                var studyInfo = data.matched_studies[0];
+                var treeInfo = $.grep(studyInfo.matched_trees, function(treeInfo) {
+                    return (treeInfo['ot:treeId'] === treeID);
+                })[0];
+                var treeName = treeInfo['@label'] || ('Untitled ('+ treeInfo['ot:treeId'] +')');
+                console.warn(treeName);
+                detailsPanelHTML = 'Conflicting tree \'<strong>'+ treeName +'</strong>\'<br/>'
+                  + '<a target="_blank" href="'+ conflictURL +'">Show this tree\'s conflicts in the study curation tool</a><br/>'
+                  + '<pre>'+ studyInfo['ot:studyPublicationReference']
+                  + ' <a target="_blank" href="'+ studyInfo['ot:studyPublication'] +'">'+ studyInfo['ot:studyPublication'] +'</a></pre>';
+                  //+ '<a target="_blank" href="'+ studyURL +'">Show this study (all trees) in a new window</a><br/>';
+                $detailsPanel.html(detailsPanelHTML);
+                console.log( $detailsPanel.length +' panels updated.');
+                // clobber the initial raw link, since we have somethign nicer
+                $detailsPanel.prev('a').remove();
+            } catch(e) {
+                $detailsPanel.html('<strong>ERROR loading details for this conflicting tree!</strong>');
+            }
+        }
+    );
+    console.warn("ALL DONE?");
+}
 
 function getClientBoundingBox( elementSet ) {
     // Takes a RaphaelJS element set, reckons its full bounding box in
