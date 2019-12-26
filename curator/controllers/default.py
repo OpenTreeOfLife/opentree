@@ -249,11 +249,12 @@ def _get_opentree_activity( userid=None, username=None ):
         # TODO: improve oti to handle multiple curator names!
         if type(study_curators) is not list:
             study_curators = [study_curators]
-        if username in study_curators:
+        # NB - If there's no "display name" defined, look for their userid
+        if (username or userid) in study_curators:
             activity_found = True
             activity['curated_studies'].append(study)
             # first curator name is its original contributor
-            if study_curators[0] == username:
+            if study_curators[0] == (username or userid):
                 activity['added_studies'].append(study)
             # does this contribute to synthesis?
             if contributing_study_info.has_key( study['ot:studyId'] ):
@@ -750,10 +751,13 @@ def to_nexson():
     assert (False)
 
 # provide support for CrossRef.org URLs via HTTPS
+# NB - We are submitting (partial?) reference text, hoping to retrieve the matching DOI!
 def search_crossref_proxy():
-    search_crossref_url = request.env.web2py_original_uri.split('search_crossref_proxy')[1]
-    # prepend the real domain, using HTTP, and return the response
-    search_crossref_url = 'http://search.crossref.org/%s' % search_crossref_url
+    encoded_ref_string = request.env.web2py_original_uri.split('search_crossref_proxy?')[1]
+    # prepend the CrossRef search base URL and return the response
+    search_crossref_url = 'https://api.crossref.org/works?rows=10&query=%s' % encoded_ref_string
+    # NB - the query-string is already properly encoded! Do NOT double-encode
+    # this, or we'll get wildly wrong results.
     try:
         resp = requests.get(url=search_crossref_url).content
     except:

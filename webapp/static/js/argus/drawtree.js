@@ -702,6 +702,14 @@ function createArgus(spec) {
         var argusLoadFailure = function (jqXHR, textStatus, errorThrown) {
             // Was this a taxon that didn't make it into synthesis, or some other error?
             var mainFetchXHR = jqXHR;
+            var mainFetchJSON;
+            try {
+                // IF there was a JSON payload, we want to keep it
+                mainFetchJSON = $.parseJSON(mainFetchXHR.responseText);
+            } catch(e) {
+                // make an empty object for now
+                mainFetchJSON = { };
+            }
             $.ajax({
                 url: getTaxonInfo_url,
                 type: 'POST',
@@ -715,7 +723,7 @@ function createArgus(spec) {
                     var errMsg;
                     if (textStatus !== 'success') {
                         // major server-side error, just show raw response for tech support
-                        errMsg = 'Sorry, there was an error checking for taxon status.';
+                        errMsg = '<p>Sorry, there was an error checking for taxon status.</p>';
                         showErrorInArgusViewer(errMsg);
                         return;
                     }
@@ -723,20 +731,42 @@ function createArgus(spec) {
                     var json = $.parseJSON(jqXHR.responseText);
                     // if (json['ott_id'] === ottID) { TODO: use this when we switch to v3 taxonomy API!
                     if (json['ott_id'] === ottID) {
+                        var taxoBrowserLink = getTaxobrowserLink('View this taxon in the taxonomy browser', ottID)
                         // the requested taxon exists in OTT, but is not found in the target tree
-                        var taxobrowserlink = getTaxobrowserLink('taxonomy browser', ottID)
-                        errMsg = '<span style="font-weight: bold; color: #777;">This taxon is in our taxonomy'
-                                +' but not in our tree synthesis database. This can happen for a variety of reasons,'
+                        //errMsg = '<p>This taxon is in our taxonomy but not in our tree synthesis database.</p>'
+
+                        if (mainFetchJSON.broken) {
+                            // parse this to learn more...
+                            errMsg = '<p>This taxon is in our taxonomy but it\'s "broken" (not monophyletic) in the latest synthetic tree.</p>';
+                            if (mainFetchJSON.broken.mrca) {
+                                // this is the ottid of its MRCA, a good next step for this user
+                                var mrcaSynthViewURL = getSynthTreeViewerURLForNodeID(
+                                    '',  // defaults to latest synthetic tree
+                                    mainFetchJSON.broken.mrca
+                                );
+                                errMsg +='<p class="action-item"><a href="' + mrcaSynthViewURL
+                                        +'">View the MRCA of the members of this taxon in the synthetic tree</a></p>';
+                            }
+                        } else {
+                            errMsg = '<p>This taxon is in our taxonomy but does not appear in the latest synthetic tree. This can happen for a variety of reasons,'
                                 +' but the most probable is that is has a taxon flag (e.g. <em>incertae sedis</em>) that'
-                                +' causes it to be pruned from the synthetic tree. See the '
-                                +taxobrowserlink
-                                +' for more information about this taxon.'
-                                +'<br/><br/>If you think this is an error, please'
-                                +' <a href="https://github.com/OpenTreeOfLife/feedback/issues" target="_blank">create an issue in our bug tracker</a>.';
+                                +' causes it to be pruned from the synthetic tree.</p>';
+                            if (json.flags && json.flags.length > 0) {
+                                errMsg += '<p>The following flags were found on this taxon:</p>'
+                                errMsg += '<ul>';
+                                $.each(json.flags, function(i, flag) {
+                                    errMsg += '<li style="font-family: monospace; color: #999;">'+ flag +'</li>';
+                                });
+                                errMsg += '</ul>';
+                                errMsg += '<p>See our <a href="https://github.com/OpenTreeOfLife/reference-taxonomy/blob/master/doc/taxon-flags.md#taxon-flags" target="_blank">taxonomy documentation</a> for details on the meanings of each flag.</p>'
+                            }
+                        }
+
+                        errMsg +='<p class="action-item">'+ taxoBrowserLink +'</p>';
                         showErrorInArgusViewer( errMsg );
                     } else {
                         // this is not a valid taxon id! Show the *original* error response from the failed argus fetch.
-                        errMsg = 'Whoops! The call to get the tree around a node did not work out the way we were hoping it would.';
+                        errMsg = '<p>Whoops! The call to get the tree around a node did not work out the way we were hoping it would.</p>';
                         showErrorInArgusViewer( errMsg, mainFetchXHR.responseText );
                     }
                 }
