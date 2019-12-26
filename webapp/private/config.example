@@ -50,6 +50,7 @@ getContextsJSON_url = {CACHED_taxomachine_domain}/v3/tnrs/contexts
 getSynthesisSourceList_url = {CACHED_treemachine_domain}/v3/tree_of_life/about
 findAllStudies_url = {CACHED_oti_domain}/v3/studies/find_studies
 singlePropertySearchForStudies_url = {oti_domain}/v3/studies/find_studies
+singlePropertySearchForTrees_url = {oti_domain}/v3/studies/find_trees
 getTaxonInfo_url = {taxomachine_domain}/v3/taxonomy/taxon_info
 # Include one phylesystem-api method to download NexSON from Bibliographic References page
 API_load_study_GET_url = {opentree_api_domain}/v3/study/{STUDY_ID}
