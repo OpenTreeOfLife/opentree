@@ -1173,6 +1173,9 @@ function showObjectProperties( objInfo, options ) {
 
                             pCurator = studyInfo['ot:curatorName'];
                             if (pCurator) {
+                                if ($.isArray(pCurator)) {
+                                    pCurator = pCurator.join(", ");
+                                }
                                 displayVal += ('<div>Curated by: '+ pCurator +'</div>');
                             }
                             displayVal += '</div>';  // end of .full-study-details
