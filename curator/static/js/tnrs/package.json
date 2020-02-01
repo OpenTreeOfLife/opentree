@@ -32,7 +32,7 @@
   "devDependencies": {
     "browserify": "^3.8.9",
     "browserify-versionify": "^1.0.4",
-    "watchify": "^3.5.0"
+    "watchify": "^3.11.1"
   },
   "engineStrict": false,
   "engines": {
