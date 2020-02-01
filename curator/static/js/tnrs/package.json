@@ -30,7 +30,7 @@
     "acorn": "^6.0.0"
   },
   "devDependencies": {
-    "browserify": "^3.8.9",
+    "browserify": "^16.5.0",
     "browserify-versionify": "^1.0.4",
     "watchify": "^3.11.1"
   },
