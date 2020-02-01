@@ -894,7 +894,14 @@ function searchForMatchingStudy() {
                 ];
                 $.each(testForPartialMatch, function(i, testField) {
                     if (testField in studyInfo) {
-                        if (studyInfo[testField].search(tokenRegex) !== -1) {
+                        // coerce any found value to a string
+                        var testValue = studyInfo[testField];
+                        if ($.isArray(testValue)) {
+                            testValue = testValue.join('|');
+                        } else {
+                            testValue = String(testValue);
+                        }
+                        if (testValue.search(tokenRegex) !== -1) {
                             studyInfo.matchScore += 2;
                         }
                     }
@@ -917,7 +924,7 @@ function searchForMatchingStudy() {
             if (visibleResults > maxResults) {
                 // Add one final prompt
                 $('#study-lookup-results').append(
-                    '<li class="disabled"><a><span class="muted">Add search text to see hidden matches.</span></a></li>'
+                    '<li class="disabled"><a href=""><span class="muted">Add more search text to see hidden matches.</span></a></li>'
                 );
                 return false;
             }
@@ -933,6 +940,7 @@ function searchForMatchingStudy() {
         $('#study-lookup-results a')
             .click(function(e) {
                 var $link = $(this);
+                if ($link.attr('href') === '') return false;
                 var pathParts = $link.attr('href').split('/');
                 var studyID = pathParts[ pathParts.length - 1 ];
                 // update hidden field
@@ -1013,11 +1021,10 @@ function searchForMatchingStudy() {
                                         // capture the current tree ID, name and study reference
                                         var foundTreeName = $.trim(foundTree['@label']);
                                         // recover the simple tree ID from {STUDY_ID}_{TREE_ID}
-                                        var combinedID = $.trim(foundTree['oti_tree_id']);
-                                        var treeID = combinedID.substr(studyID.length + 1);
-                                        var treeAndStudy = (foundTreeName || treeID) +' ('+ compactStudyRef +')';
-                                        var visibleLabel = (foundTreeName || treeID) +' ('+ foundTree['ot:ottTaxonName'] +')';
-                                        var rollOverText = "";
+                                        var treeID = $.trim(foundTree['ot:treeId']);
+                                        //var visibleLabel = (foundTreeName || treeID) +' ('+ foundTree['ot:ottTaxonName'] +')';
+                                        var visibleLabel = (foundTreeName || ("Untitled ["+ treeID +"]"));
+                                        var rollOverText = "";  // none for now
                                         // TODO: can we copy the tree's description?
                                         // TODO: pick a SHA from history? or use the latest?
                                         // Build a new OPTION element for this tree
@@ -1123,6 +1130,177 @@ function updateNewCollectionID( collection ) {
     currentlyEditingCollectionID = proposedID;
 }
 
+function updateCollectionTrees ( collection ) {
+    // Update all trees in collection to recognize the latest tree labels, etc.
+    // in oti (study index). Also note if a tree has been removed, in case the
+    // curator want to clean up the collection.
+    //
+    // Show a modal blocker and summary results
+    showModalScreen("Checking trees in phylesystem...", {SHOW_BUSY_BAR:true});
+    var totalTrees = collection.data.decisions.length;
+    var treesUnchanged = 0;
+    var treesChanged = 0;
+    var treesRemoved = 0;
+    var treeSearchFailing = false;
+    $.each(collection.data.decisions, function(i, decision) {
+        if (treeSearchFailing) return;
+        /* Not found? Mark it as removed! else...
+         * Update its tree name/label, if changed
+         * Update its compact study reference, if changed
+         * Update UI along the way...
+         *    grey block = UNCHANGED
+         *    yellow block = RENAMED (either label or compact reference)
+         *    red block = REMOVED
+         */
+        // look for a matching tree in the study index
+        $.ajax({
+            global: false,  // suppress web2py's aggressive error handling
+            type: 'POST',
+            dataType: 'json',
+            // crossdomain: true,
+            contentType: "application/json; charset=utf-8",
+            url: singlePropertySearchForTrees_url,
+            data: JSON.stringify({
+                property: "ot:studyId",  // replaces DEPRECATED oti_tree_id
+                value: String(decision.studyID),
+                exact: true,
+                verbose: true }),
+            processData: false,
+            complete: function( jqXHR, textStatus ) {
+                // report errors or malformed data, if any
+                if (textStatus !== 'success') {
+                    if (jqXHR.status >= 500) {
+                        // major server-side error, just show raw response for tech support
+                        var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
+                        hideModalScreen();
+                        showErrorMessage(errMsg);
+                        treeSearchFailing = true;
+                        return;
+                    }
+                    // Server blocked the save due to major validation errors!
+                    var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [parsed in JS]</pre>';
+                    hideModalScreen();
+                    showErrorMessage(errMsg);
+                    treeSearchFailing = true;
+                    return;
+                }
+                // if we're still here, handle the search results
+                // IF NOT FOUND, complain and prompt for new input
+                // IF FOUND, use its label/description/SHA(?) to populate the entry
+                var responseObj = $.parseJSON(jqXHR.responseText);
+                if ($.isArray(responseObj['matched_studies'])) {
+                    switch(responseObj['matched_studies'].length) {
+                        case 0:
+                            // study has been removed!
+                            treesRemoved += 1;
+                            // Highlight this in the list, mark as REMOVED
+                            decision.status = 'REMOVED';
+                            break;
+
+                        case 1:
+                            // walk its properties and use them in our collection JSON
+                            var foundStudy = responseObj['matched_studies'][0];
+                            var compactStudyRef = fullToCompactReference(foundStudy['ot:studyPublicationReference']);
+                            // find the desired tree (or complain if not found)
+                            var foundTree = null;
+                            var matchingTrees = $.grep(
+                                foundStudy['matched_trees'],
+                                function(tree, index) {
+                                    return (tree['ot:treeId'] == decision.treeID);
+                                }
+                            );
+                            switch(matchingTrees.length) {
+                                case 0:
+                                    // no such tree (removed!)
+                                    treesRemoved += 1;
+                                    // Highlight this in the list, mark as REMOVED
+                                    decision.status = 'REMOVED';
+                                    break;
+
+                                case 1:
+                                    // expected result, get details below
+                                    foundTree = matchingTrees[0];
+                                    break;
+
+                                default:
+                                    // multiple matches is an error
+                                    var errMsg = 'Sorry, there are multiple trees matching these IDs. '
+                                               + '<strong>This is not expected!</strong> Please '
+                                               + '<a href="/contact" target="_blank">report this error</a> '
+                                               + 'so we can investigate.';
+                                    hideModalScreen();
+                                    showErrorMessage(errMsg);
+                                    return;
+                            }
+                            if (foundTree) {
+                                /* Still here? Compare the tree's current name and study
+                                 * reference to the version stored in this collection
+                                 */
+                                var foundTreeName = $.trim(foundTree['@label']);
+                                var proposedName = $.trim(foundTreeName || decision.treeID) +' ('+ compactStudyRef +')';
+                                var treeLabelHasChanged = false;
+                                if (proposedName == decision.name) {
+                                    treesUnchanged += 1;
+                                    // UN-highlight this in the list, mark as UNCHANGED
+                                    decision.status = 'UNCHANGED';
+                                } else {
+                                    // Update the existing collection record for this tree; mark it for review
+                                    treesChanged += 1;
+                                    decision.name = proposedName;
+                                    // Highlight this in the list, mark as RENAMED
+                                    decision.status = 'RENAMED';
+                                }
+                                /* TODO: Should we update the tree's SHA? Not currently available! */
+                            }
+                            break;
+
+                        default:
+                            var errMsg = 'Sorry, there are multiple studies matching these IDs. '
+                                       + '<strong>This is not expected!</strong> Please '
+                                       + '<a href="/contact" target="_blank">report this error</a> '
+                                       + 'so we can investigate.';
+                            hideModalScreen();
+                            showErrorMessage(errMsg);
+                            return;
+                    }
+                } else {
+                    var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">Missing or malformed "matching_studies" in JSON response:\n\n'+
+                        jqXHR.responseText+'</pre>';
+                    hideModalScreen();
+                    showErrorMessage(errMsg);
+                    treeSearchFailing = true;
+                    return;
+                }
+                // Have we successfully checked all trees? If so, summarize changes found and prompt to re-save.
+                if (treesUnchanged + treesChanged + treesRemoved === totalTrees) {
+                    showCollectionViewer( collection, {MAINTAIN_SCROLL: true});
+                    hideModalScreen();
+                    if (treesUnchanged === totalTrees) {
+                        showSuccessMessage('There were no recent changes to the trees in this list. '
+                            +'You can improve the name of any tree by editing its study in the curation tool.');
+                    } else {
+                        var summaryMsg = 'Please review '+ (treesChanged + treesRemoved) +' recent changes to the trees in this list. ';
+                        if (treesRemoved > 0) {
+                            summaryMsg += (String(treesRemoved) +' tree'+ (treesRemoved == 1 ? '' : 's')
+                                +' (marked in red) ' + (treesRemoved == 1 ? 'has' : 'have')
+                                +' been removed from OpenTree. You should consider removing these items from'
+                                +' this collection before saving, and possibly adding a replacement. ');
+                        }
+                        if (treesChanged > 0) {
+                            summaryMsg += (String(treesChanged) +' tree'+ (treesChanged == 1 ? '' : 's')
+                                +' (marked in yellow) ' + (treesChanged == 1 ? 'has' : 'have')
+                                +' been renamed. New names are usually an improvement and worth saving. ');
+                        }
+                        summaryMsg += 'Remember to save this collection after your review, or cancel to ignore these changes.';
+                        showErrorMessage(summaryMsg);
+                        addPendingCollectionChange( 'UPDATE' );
+                    }
+                }
+            }
+        });
+    });
+}
+
 function addTreeToCollection( collection, inputType ) {
     // Test input values against oti (study index), to see if there's a matching tree
     var studyID, treeID, treeURL;
@@ -1185,8 +1363,8 @@ function addTreeToCollection( collection, inputType ) {
         // data: ('{"property": "ot:studyId", "value": '+
         //    JSON.stringify(studyID) +', "exact": true, "verbose": true }'),
         data: JSON.stringify({
-            property: "oti_tree_id",
-            value: (String(studyID) +'_'+ String(treeID)),
+            property: "ot:studyId",  // replaces DEPRECATED oti_tree_id
+            value: String(studyID),
             exact: true,
             verbose: true }),
         processData: false,
@@ -1200,11 +1378,8 @@ function addTreeToCollection( collection, inputType ) {
                     showErrorMessage(errMsg);
                     return;
                 }
-                // Server blocked the save due to major validation errors!
-                var data = $.parseJSON(jqXHR.responseText);
-                // TODO: this should be properly parsed JSON, show it more sensibly
-                // (but for now, repeat the crude feedback used above)
-                var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [parsed in JS]</pre>';
+                // Server blocked the save due to major validation or API errors!
+                var errMsg = 'Sorry, there was an error checking for matching trees. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
                 //hideModalScreen();
                 showErrorMessage(errMsg);
                 return;
@@ -1213,8 +1388,6 @@ function addTreeToCollection( collection, inputType ) {
             // IF NOT FOUND, complain and prompt for new input
             // IF FOUND, use its label/description/SHA(?) to populate the entry
             var responseObj = $.parseJSON(jqXHR.responseText);
-            //console.log("responseObj:");
-            //console.log(responseObj);
             if ($.isArray(responseObj['matched_studies'])) {
                 switch(responseObj['matched_studies'].length) {
                     case 0:
@@ -1484,6 +1657,14 @@ function stripTreeCollectionRanking( collection ) {
         delete decision['rank'];
     });
 }
+function stripTreeCollectionStatusMarkers( collection ) {
+    // remove temporary 'status' properties before saving a collection, since these
+    // are only used to review after updating trees from phylesystem
+    var decisionList = ('data' in collection) ? collection.data.decisions : collection.decisions;
+    $.each(decisionList, function(i, decision) {
+        delete decision['status'];
+    });
+}
 
 function removeTreeFromCollection(tree, collection) {
     // TODO: prompt for commit msg along with confirmation?
@@ -1521,11 +1702,15 @@ function addPendingCollectionChange( action, studyID, treeID ) {
             msg = ('Tree '+ treeID +' from study '+ studyID +' added.');
             break;
         case 'REMOVE':
-            msg = ('Tree '+ treeID +' from study '+ studyID +' removed.');
+            msg = ('Tree '+ treeID +' from study '+ studyID +' removed in phylesystem.');
             break;
         case 'REORDER':
             // ignore ids for this message
             msg = ('Changed ranking of trees.');
+            break;
+        case 'UPDATE':
+            //msg = ('Tree names and status renamed in phylesystem.');
+            msg = ('Tree '+ treeID +' from study '+ studyID +' renamed in phylesystem.');
             break;
         default:
             console.error('UNKNOWN collection change: '+ action);
@@ -1548,6 +1733,16 @@ function compressPendingCollectionChanges() {
         if (i === (reorders.length - 1)) return;
         removeFromArray(change, pendingCollectionChanges);
     });
+    var updates = $.grep(pendingCollectionChanges, function(change) {
+        return (change.action === 'UPDATE');
+    });
+    $.each(updates, function(i, change) {
+        if (i === (updates.length - 1)) {
+            change.msg = ('Tree names and status updated from latest phylesystem.');
+            return;
+        }
+        removeFromArray(change, pendingCollectionChanges);
+    });
     // TODO: remove ADD/REMOVE pairs for a single tree?
 }
 function clearPendingCollectionChanges() {
@@ -1558,6 +1753,7 @@ addPendingCollectionChange( 'REORDER' );
 addPendingCollectionChange( 'ADD', 'ot_123', 'tree456' );
 addPendingCollectionChange( 'REORDER' );
 addPendingCollectionChange( 'REMOVE', 'ot_123', 'tree456' );
+
 addPendingCollectionChange( 'ADD', 'ot_987', 'tree654' );
 addPendingCollectionChange( 'REORDER' );
 compressPendingCollectionChanges();
@@ -1888,6 +2084,9 @@ function saveTreeCollection( collection ) {
 
     // remove explicit ranking values (rely on array order)
     stripTreeCollectionRanking( collection );
+
+    // remove any 'status' property markers (RENAMED, REMOVED, etc.)
+    stripTreeCollectionStatusMarkers( collection );
 
     // push changes back to storage
     var saveURL;

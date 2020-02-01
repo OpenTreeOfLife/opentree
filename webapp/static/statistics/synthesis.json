@@ -113,5 +113,14 @@
         "tree_count": 1212,
         "total_OTU_count": 87682,
         "tip_count": 2852504
+    },
+    "2019-12-29T00Z": {
+        "===": "tree_count and tip_count from https://nexttree.opentreeoflife.org/v3/tree_of_life/about",
+        "===": "total_OTU_count found in https://files.opentreeoflife.org/synthesis/opentree12.3/opentree12.3/labelled_supertree/index.html",
+        "version": "v12.3",
+        "OTT_version": "ott3.2draft9",
+        "tree_count": 1216,
+        "total_OTU_count": 87740,
+        "tip_count": 2391916
     }
 }
