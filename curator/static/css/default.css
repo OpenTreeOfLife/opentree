@@ -932,3 +932,7 @@ a.node-direct-link {
     margin-right: -16px;
     border-radius: 4px;
 }
+.tree-status-marker {
+    font-weight: bold;
+    margin: 4px 0 0 2px;
+}

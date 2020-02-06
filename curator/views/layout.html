@@ -665,14 +665,21 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 title="Cancel your changes to this collection"
                 class="pull-right btn btn-warning btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
-                Cancel</i>
+                Cancel
             </button>
             <button data-bind="click: promptForSaveCollectionComments,
                                visible: userIsEditingCollection($data)"
                 title="Save your changes to this collection"
                 class="pull-right btn btn-info btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
-                Save Changes</i>
+                Save Changes
+            </button>
+            <button data-bind="click: updateCollectionTrees,
+                               visible: userIsEditingCollection($data)"
+                title="Use latest tree labels, detect removed trees"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                Update trees <i class="icon-refresh"></i>
             </button>
 
            </div>
@@ -756,8 +763,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     </tr>
                   </thead>
                   <tbody id="tree-collection-decisions"
-                         data-bind="foreach: { data: $data.data.decisions, as: 'decision' }">
-                      <tr class="single-tree-row">
+                         data-bind="foreach: { data: $data.data.decisions }">
+                      <tr data-bind="attr: { class: (userIsEditingCollection($parent) && $data['status'] == 'REMOVED') ?
+                                                      'single-tree-row error' :
+                                                      (userIsEditingCollection($parent) && $data['status'] == 'RENAMED' ?
+                                                        'single-tree-row warning' :
+                                                        'single-tree-row-'+ $data['status'] )
+                                            }">
                           <td>
                           <!-- ko if: userIsEditingCollection($parent) -->
                             <input type="text"
@@ -801,6 +813,12 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                                title="Move this tree down in the list"
                                class="icon-chevron-down">
                             </a>
+                           <!-- /ko -->
+                           <!-- ko if: $data['status'] == 'REMOVED' -->
+                             <div class="tree-status-marker text-error">REMOVED</div>
+                           <!-- /ko -->
+                           <!-- ko if: $data['status'] == 'RENAMED' -->
+                             <div class="tree-status-marker text-warning">RENAMED</div>
                            <!-- /ko -->
 
                           <!-- /ko --><!-- END of editing widgets -->
