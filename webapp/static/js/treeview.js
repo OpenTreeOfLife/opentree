@@ -844,6 +844,9 @@ function showObjectProperties( objInfo, options ) {
     // start filling in the panel from the top
 
     displayName = (objName) ? objName : ("Unnamed "+ objType);
+    if (fullNode.isExtinct()) {
+        displayName = argus.leadingDagger + displayName;
+    }
     jQuery('#provenance-panel .provenance-title').html( displayName );
 
     /* Clear and rebuild collection of detailed properties, adapting to special
