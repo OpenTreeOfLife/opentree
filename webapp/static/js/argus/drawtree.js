@@ -1215,6 +1215,7 @@ function createArgus(spec) {
                     "clusterPosition": $.inArray(dlChild, node.getClusters()), // returns index
                     "domSource": domSource,
                     "parentNodeX": node.x,
+                    "parentNodeExtinct": node.isExtinct(),
                     "currentYoffset": currentYoffset,
                     "depthFromTargetNode": depthFromTargetNode
                 });
@@ -1552,6 +1553,7 @@ function createArgus(spec) {
         var cluster = obj.cluster;
         var parentNodeID = cluster.parentNodeID;
         var parentNodeX = obj.parentNodeX;
+        var parentNodeExtinct = obj.parentNodeExtinct;
         var depthFromTargetNode = obj.depthFromTargetNode;
         var currentYoffset = obj.currentYoffset;
         var clusterPosition = obj.clusterPosition;
@@ -1583,7 +1585,7 @@ function createArgus(spec) {
                 "stroke-width": 1,
                 "stroke-linecap": 'butt', // REQUIRED if stroke-dasharray is '.'
                 "stroke-dasharray": '. ',
-                "stroke": node.isExtinct() ? this.extinctPathColor : this.pathColor
+                "stroke": parentNodeExtinct ? this.extinctPathColor : this.pathColor
             }).insertBefore(dividerBeforeLabels);
             branch.id = (clusterBranchElementID);
         }
@@ -1608,7 +1610,7 @@ function createArgus(spec) {
             label = paper.text(clusterLeftEdge + 8, cluster.y - (this.nodeHeight * 0.0), clusterLabel).attr({
                 'text-anchor': 'start',
                 "title": clusterLabel,
-                "fill": this.labelColor,
+                "fill": parentNodeExtinct ? this.extinctLabelColor : this.labelColor,
                 "font-size": fontSize,
                 "cursor": "pointer"
             });
