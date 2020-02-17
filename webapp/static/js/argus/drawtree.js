@@ -1610,7 +1610,7 @@ function createArgus(spec) {
             label = paper.text(clusterLeftEdge + 8, cluster.y - (this.nodeHeight * 0.0), clusterLabel).attr({
                 'text-anchor': 'start',
                 "title": clusterLabel,
-                "fill": this.labelColor,
+                "fill": parentNodeExtinct ? this.extinctLabelColor : this.labelColor,
                 "font-size": fontSize,
                 "cursor": "pointer"
             });
