@@ -1825,8 +1825,7 @@ function displayConflictSummary(conflictInfo) {
     var $reportArea = $('#analysis-results');
     var targetTree = $('#reference-select').val();
     var referenceTreeID = $('#tree-select').val();
-    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ referenceTreeID;
-      +"&conflict="+ targetTree;
+    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ referenceTreeID +"&conflict="+ targetTree;
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
            .append('<p><a href="'+ treeURL +'" target="conflicttree">Open labelled tree in new window</a></p>')
