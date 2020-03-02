@@ -258,8 +258,8 @@ body {
     <!-- Appears only during creation..? then replaced by status
       <li><a href="#">Import</a></li>
     -->
-      <li><a href="#Metadata" data-toggle="tab">Metadata <span class="badge badge-important" style="display: none;">?</span></a></li>
-      <li><a href="#Trees" data-toggle="tab">Trees <span class="badge badge-important" style="display: none;">?</span></a></li>
+      <li><a href="#Trees" data-toggle="tab">Home <span class="badge badge-important" style="display: none;">?</span></a></li>
+      <li><a href="#Metadata" data-toggle="tab">XXX-Metadata <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#Files" data-toggle="tab">Files <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#OTU-Mapping" data-toggle="tab">OTU Mapping <span class="badge badge-important" style="display: none;">?</span></a></li>
     <!--
@@ -312,7 +312,7 @@ body {
 <div class="row">
     <div class="tab-content">
 
-          <div class="tab-pane" id="Metadata">
+          <div class="tab-pane" id="XXX-Metadata">
            <div class="span8"><!-- main column... -->
             <ul class="suggestion-list"></ul>
             <form class="form-horizontal wider-fields{{= (viewOrEdit == 'VIEW') and ' metadata-readonly' or '' }}">
@@ -336,9 +336,9 @@ body {
                                     css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
                   <button type="button" class="btn btn-info" onclick="lookUpDOI(); return false;">Look up DOI...</button>
                 {{ else: }}
-                  <p class="static-form-value">
+                  <p>
                  <!-- ko if: getStudyPublicationLink() !== '' -->
-                      <span data-bind="html: getStudyPublicationLink()">&nbsp;</span>
+                      <span class="static-form-value" data-bind="html: getStudyPublicationLink()">&nbsp;</span>
                  <!-- /ko -->
                  <!-- ko if: getStudyPublicationLink() === '' -->
                       <em>None</em>
@@ -365,9 +365,9 @@ body {
                                     event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: formatDataDepositDOIAsURL },
                                     css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyDataDeposit" class="input-xlarge" placeholder="">
                 {{ else: }}
-                  <p class="static-form-value">
+                  <p>
                   <!-- ko if: getDataDepositMessage() !== '' -->
-                      <span data-bind="html: getDataDepositMessage()">&nbsp;</span>
+                      <span class="static-form-value" data-bind="html: getDataDepositMessage()">&nbsp;</span>
                  <!-- /ko -->
                  <!-- ko if: getDataDepositMessage() === '' -->
                       <em>None</em>
@@ -631,10 +631,57 @@ body {
           <div class="tab-pane" id="Trees">
            <div class="span8"><!-- main column -->
             <ul class="suggestion-list"></ul>
-            <div style="margin-bottom: 100px;">
+
+            <!-- read-only display of core metadata -->
+            <div id="core-metadata-pane">
+              <p data-bind="text: nexml['^ot:studyPublicationReference']"></p>
+              <div class="control-group">
+                 {{ if viewOrEdit == 'EDIT': }}
+                  <button id="full-metadata-button" class="btn btn-small pull-right">Edit study metadata</button>
+                 {{ else: }}
+                  <button id="full-metadata-button" class="btn btn-small pull-right">See all study metadata</button>
+                 {{ pass }}
+               <!-- ko if: getNormalizedStudyPublicationURL() !== '' -->
+                <a href="" target="_blank"
+                   data-bind="attr: {'href': getNormalizedStudyPublicationURL()}">Link to publication</a>
+               <!-- /ko -->
+               <!-- ko if: getNormalizedStudyPublicationURL() === '' -->
+                <span style="color: #999; text-decoration: line-through;">No link to publication</span>
+               <!-- /ko -->
+               |
+               <!-- ko if: getNormalizedDataDepositURL() !== '' -->
+                <a href="" target="_blank"
+                   data-bind="attr: {'href': getNormalizedDataDepositURL()}">Link to data package</a>
+               <!-- /ko -->
+               <!-- ko if: getNormalizedDataDepositURL() === '' -->
+                <span style="color: #999; text-decoration: line-through;">No link to data package</span>
+               <!-- /ko -->
+
+                <div class="controls" data-bind="if: viewModel.duplicateStudyIDs().length > 0">
+                    <p class="static-form-value interesting-value">
+                        There are other studies in Open Tree database with this DOI. Click the links below to see each one in a new browser window.
+                    </p>
+                    <ul class="static-form-value interesting-value" data-bind="foreach: viewModel.duplicateStudyIDs">
+                        <li><a href="#" target="_blank"
+                            data-bind="text: getViewURLFromStudyID($data), attr: {'href': getViewURLFromStudyID($data)}">&nbsp</a></li>
+                    </ul>
+                </div>
+              </div>
+              <!-- render any existing curator notes as HTML (else hide)-->
+              <div data-bind="visible: $.trim(viewModel.nexml['^ot:comment']) !== ''">
+                <strong>Curator notes: </strong>
+                <div class="rendered-comment"
+                     data-bind="html: viewModel['commentHTML']" >
+                   {comments appear here}
+                </div>
+              </div>
+            </div>
+
+            <div style="margin-bottom: 100px; clear: right; padding-top: 1em;">
               <div class="navbar">
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
+                    <h4 class="pull-left" style="margin: 5px 1em 0 0">Trees in this study</h4>
                     <input type="text" id="tree-list-filter" class="search-query" placeholder="Filter by name or ingroup clade"
                            data-bind="value: viewModel.listFilters.TREES.match, valueUpdate: ['afterkeydown', 'input']">
                 </form>

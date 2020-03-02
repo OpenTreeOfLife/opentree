@@ -9084,35 +9084,41 @@ function currentStudyVersionContributedToLatestSynthesis() {
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
 }
 
-function getStudyPublicationLink() {
+function getNormalizedStudyPublicationURL() {
+    console.warn('getNormalizedStudyPublicationURL');
+    // just the bare URL, or '' if not found
     var url = $.trim(viewModel.nexml['^ot:studyPublication']['@href']);
     // If there's no URL, we have nothing to say
     if (url === '') {
         return '';
     }
     if (urlPattern.test(url) === true) {
-        // It's a proper URL, wrap it in a hyperlink; but first,
-        // update to match latest CrossRef guidelines
+        // It's a proper URL, update it to match latest CrossRef guidelines
         url = latestCrossRefURL(url);
+        return url;
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
+}
+
+function getStudyPublicationLink() {
+    // this is displayed HTML (typically a hyperlink, occasionally a bare string)
+    var url = getNormalizedStudyPublicationURL();
+    // If there's no URL, we have nothing to say
+    if (url === '') {
+        return '';
+    }
+    if (urlPattern.test(url) === true) {
+        // It's a proper URL, wrap it in a hyperlink
         return '<a target="_blank" href="'+ url +'">'+ url +'</a>';
     }
     // It's not a proper URL! Return the bare value.
     return url;
 }
 
-function getDataDepositMessage() {
-    // Returns HTML explaining where to find this study's data, or an empty
-    // string if no URL is found. Some cryptic dataDeposit URLs may require
-    // more explanation or a modified URL to be more web-friendly.
-    //
-    // NOTE that we maintain a server-side counterpart in
-    // webapp/modules/opentreewebapputil.py > get_data_deposit_message
+function getNormalizedDataDepositURL() {
+    console.warn('getNormalizedDataDepositURL');
     var url = $.trim(viewModel.nexml['^ot:dataDeposit']['@href']);
-    // If there's no URL, we have nothing to say
-    if (url === '') {
-        return '';
-    }
-
     // TreeBASE URLs should point to a web page (vs RDF)
     // EXAMPLE: http://purl.org/phylo/treebase/phylows/study/TB2:S13451
     //    => http://treebase.org/treebase-web/search/study/summary.html?id=13451
@@ -9124,15 +9130,43 @@ function getDataDepositMessage() {
             regex,
             '//treebase.org/treebase-web/search/study/summary.html?id=$1'
         );
-        return 'Data for this study is archived as <a href="'+ url +'" target="_blank">Treebase study '+ treebaseStudyID +'</a>';
+        return url;
+    }
+    if (urlPattern.test(url) === true) {
+        // It's a proper URL, update it to match latest CrossRef guidelines
+        // (this is harmless for other URLs)
+        url = latestCrossRefURL(url);
+        return url;
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
+}
+function getDataDepositMessage() {
+    // Returns HTML explaining where to find this study's data, or an empty
+    // string if no URL is found. Some cryptic dataDeposit URLs may require
+    // more explanation or a modified URL to be more web-friendly.
+    //
+    // NOTE that we maintain a server-side counterpart in
+    // webapp/modules/opentreewebapputil.py > get_data_deposit_message
+    var url = getNormalizedDataDepositURL();
+    // If there's no URL, we have nothing to say
+    if (url === '') {
+        return '';
     }
 
-    // TODO: Add other substitutions?
+    // TreeBASE URLs get a special description here
+    // EXAMPLE: http://purl.org/phylo/treebase/phylows/study/TB2:S13451
+    //    => http://treebase.org/treebase-web/search/study/summary.html?id=13451
+    var treebasePattern = new RegExp('//treebase.org/treebase-web/.*?id=(\\d+)');
+    var matches = treebasePattern.exec(url);
+    if (matches && matches.length === 2) {
+        var treebaseStudyID = matches[1];
+        return 'Data for this study is archived as <a href="'+ url +'" target="_blank">Treebase study '+ treebaseStudyID +'</a>';
+    }
+    // TODO: Add other special messages?
 
     if (urlPattern.test(url) === true) {
-        // Default message simply repeats the dataDeposit URL; but first,
-        // update to match latest CrossRef guidelines
-        url = latestCrossRefURL(url);
+        // Default message simply repeats the dataDeposit URL
         return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
     }
     // It's not a proper URL! Return the bare value.

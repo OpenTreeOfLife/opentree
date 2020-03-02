@@ -488,7 +488,7 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
     font-weight: bold;
 }
 .rendered-comment {
-    background-color: #f5f5f5;
+    background-color: #eee;
     border: none;
     border-radius: 4px;
     padding: 5px;
@@ -870,6 +870,13 @@ tr.after-shims th {
 
 .form-horizontal.metadata-readonly .control-group {
   margin-bottom: 12px;
+}
+#core-metadata-pane {
+  border-radius: 5px;
+  border: 1px #ddd solid;
+  overflow: hidden;
+  padding: 12px 18px;
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
 }
 
 .profile-header .control-group > .control-label,
