@@ -914,6 +914,11 @@ tr.after-shims th {
 		margin-left: 4em;
 }
 
+#study-metadata-popup {
+    width: 80%;
+    margin: auto -40%;
+}
+
 #new-taxa-popup {
     width: 80%;
     margin: auto -40%;

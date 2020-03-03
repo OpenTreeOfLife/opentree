@@ -9173,6 +9173,11 @@ function getDataDepositMessage() {
     return url;
 }
 
+function showStudyMetadata() {
+  // show details in a popup (already bound)
+  $('#study-metadata-popup').modal('show');
+}
+
 function showDownloadFormatDetails() {
   // show details in a popup (already bound)
   $('#download-formats-popup').modal('show');
