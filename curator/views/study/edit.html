@@ -329,18 +329,6 @@ body {
               <button class="help-toggle">
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
-              <p>
-                Each tab in this tool manages a different aspect of the
-                study data. Prompts&mdash;they look like
-                <span class="badge badge-important" style="">2</span>&mdash;identify
-                aspects that are incomplete.
-              </p>
-              <p>
-                <strong>Metadata</strong> holds information that
-                identifies this study and makes it easy to find, such as
-                standard publication references, DOIs, and
-                free-form tags.
-              </p>
             </div>
             <div class="well" style="clear: right;">
                 <h4 style="margin-top: 0;">Download</h4>
@@ -374,7 +362,7 @@ body {
 
             <!-- read-only display of core metadata -->
             <div id="core-metadata-pane">
-              <p data-bind="text: nexml['^ot:studyPublicationReference']"></p>
+              <p data-bind="visible: viewModel.ticklers.GENERAL_METADATA(), text: nexml['^ot:studyPublicationReference']"></p>
               <div class="control-group">
                  {{ if viewOrEdit == 'EDIT': }}
                   <button id="full-metadata-button" class="btn btn-small pull-right"
@@ -383,19 +371,19 @@ body {
                   <button id="full-metadata-button" class="btn btn-small pull-right"
                           onclick="showStudyMetadata(); return false;">See all study metadata</button>
                  {{ pass }}
-               <!-- ko if: getNormalizedStudyPublicationURL() !== '' -->
+               <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && getNormalizedStudyPublicationURL() !== '' -->
                 <a href="" target="_blank"
-                   data-bind="attr: {'href': getNormalizedStudyPublicationURL()}">Link to publication</a>
+                   data-bind="visible: viewModel.ticklers.GENERAL_METADATA(), attr: {'href': getNormalizedStudyPublicationURL()}">Link to publication</a>
                <!-- /ko -->
-               <!-- ko if: getNormalizedStudyPublicationURL() === '' -->
+               <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && getNormalizedStudyPublicationURL() === '' -->
                 <span style="color: #999; text-decoration: line-through;">No link to publication</span>
                <!-- /ko -->
                |
-               <!-- ko if: getNormalizedDataDepositURL() !== '' -->
+               <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && getNormalizedDataDepositURL() !== '' -->
                 <a href="" target="_blank"
-                   data-bind="attr: {'href': getNormalizedDataDepositURL()}">Link to data package</a>
+                   data-bind="visible: viewModel.ticklers.GENERAL_METADATA(), attr: {'href': getNormalizedDataDepositURL()}">Link to data package</a>
                <!-- /ko -->
-               <!-- ko if: getNormalizedDataDepositURL() === '' -->
+               <!-- ko if: viewModel.ticklers.GENERAL_METADATA() && getNormalizedDataDepositURL() === '' -->
                 <span style="color: #999; text-decoration: line-through;">No link to data package</span>
                <!-- /ko -->
 
@@ -410,10 +398,10 @@ body {
                 </div>
               </div>
               <!-- render any existing curator notes as HTML (else hide)-->
-              <div data-bind="visible: $.trim(viewModel.nexml['^ot:comment']) !== ''">
+              <div data-bind="visible: viewModel.ticklers.GENERAL_METADATA() && $.trim(viewModel.nexml['^ot:comment']) !== ''">
                 <strong>Curator notes: </strong>
                 <div class="rendered-comment"
-                     data-bind="html: viewModel['commentHTML']" >
+                     data-bind="visible: viewModel.ticklers.GENERAL_METADATA(), html: viewModel['commentHTML']" >
                    {comments appear here}
                 </div>
               </div>
@@ -595,8 +583,18 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
               <p>
-                <strong>Trees</strong> lists the phylogenetic
-                trees in the current study.
+                Each tab in this tool manages a different aspect of the
+                study data. Prompts&mdash;they look like
+                <span class="badge badge-important" style="">2</span>&mdash;identify
+                aspects that are incomplete.
+              </p>
+              <p>
+                The <strong>Home</strong> tab shows metadata and lists the
+                phylogenetic trees in the current study. Metadata is
+                information that identifies this study and makes it easy to
+                find, such as standard publication references, DOIs, and
+                free-form tags. You can also add curator notes that will appear
+                on this tab.
               </p>
         {{ if viewOrEdit == 'EDIT': }}
               <p>
@@ -3036,7 +3034,7 @@ body {
                 </div>
               </div>
               <div class="control-group">
-                <label class="control-label" for="ot_studyPublication">Publication DOI (or URL)</label>
+                <label class="control-label" for="ot_studyPublication">Publication DOI/URL</label>
                 <div class="controls">
                 {{ if viewOrEdit == 'EDIT': }}
                   <input data-bind="value: nexml['^ot:studyPublication']['@href'],
@@ -3257,8 +3255,8 @@ body {
                         <li><a target="_blank" href="https://help.github.com/articles/basic-writing-and-formatting-syntax/">Markdown help</a></li>
                     </ul>
                     <div class="btn-group" style="margin-bottom: 8px;">
-                      <button id="edit-comment-button" class="btn active" onclick="showStudyCommentEditor(); return false;">&nbsp; Edit (as Markdown) &nbsp;</button>
-                      <button id="preview-comment-button" class="btn" onclick="showStudyCommentPreview(); return false;">&nbsp; Preview (as HTML) &nbsp;</button>
+                      <button id="edit-comment-button" class="btn active" onclick="showStudyCommentEditor(); return false;">&nbsp; Edit (Markdown) &nbsp;</button>
+                      <button id="preview-comment-button" class="btn" onclick="showStudyCommentPreview(); return false;">&nbsp; Preview (HTML) &nbsp;</button>
                     </div>
 <!--
                     <textarea id="save-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>

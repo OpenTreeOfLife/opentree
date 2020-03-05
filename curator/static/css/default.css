@@ -930,6 +930,13 @@ tr.after-shims th {
     margin-bottom: 10px;
 }
 
+#new-taxa-popup .form-horizontal .control-label {
+    width: 148px;
+}
+#new-taxa-popup .form-horizontal .controls {
+    margin-left: 140px;
+}
+
 .required-field {
  /* border-color: red !important; */
 }

@@ -1451,6 +1451,8 @@ function loadSelectedStudy() {
             ko.applyBindings(viewModel, headerQualityPanel);
             var qualityDetailsViewer = $('#quality-details-viewer')[0];
             ko.applyBindings(viewModel, qualityDetailsViewer);
+            var metadataPopup = $('#study-metadata-popup')[0];
+            ko.applyBindings(viewModel, metadataPopup);
 
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
@@ -9043,18 +9045,41 @@ function showStudyCommentEditor() {
     $('#comment-preview').hide();
     $('#comment-editor').show();
 }
+function fetchRenderedMarkdown(successCallback, failureCallback) {
+    $.ajax({
+        crossdomain: true,
+        type: 'POST',
+        url: render_markdown_url,
+        data: {'src': viewModel.nexml['^ot:comment']},
+        success: successCallback,
+        error: failureCallback
+    });
+}
+function updateStudyRenderedComment() {
+    // just update our pre-rendered curation notes
+    fetchRenderedMarkdown(
+        // success callback
+        function( data, textstatus, jqxhr ) {
+            viewModel['commentHTML'] = data;
+            nudgeTickler('GENERAL_METADATA');
+        },
+        // failure callback (just show raw markdown)
+        function(jqXHR, textStatus, errorThrown) {
+            // report errors or malformed data, if any
+            viewModel['commentHTML'] = viewModel.nexml['^ot:comment'];
+            nudgeTickler('GENERAL_METADATA');
+        }
+    );
+}
 function showStudyCommentPreview() {
     // show spinner? no, it's really quick
     $('#edit-comment-button').removeClass('active');
     $('#preview-comment-button').addClass('active');
     // stash and restore the current scroll position, lest it jump
     var savedPageScroll = $('body').scrollTop();
-    $.ajax({
-        crossdomain: true,
-        type: 'POST',
-        url: render_markdown_url,
-        data: {'src': viewModel.nexml['^ot:comment']},
-        success: function( data, textstatus, jqxhr ) {
+    fetchRenderedMarkdown(
+        // success callback
+        function( data, textstatus, jqxhr ) {
             $('#comment-preview').html(data);
             $('#comment-preview').show();
             //setTimeout(function() {
@@ -9062,7 +9087,8 @@ function showStudyCommentPreview() {
             //}, 10);
             $('#comment-editor').hide();
         },
-        error: function(jqXHR, textStatus, errorThrown) {
+        // failure callback
+        function(jqXHR, textStatus, errorThrown) {
             // report errors or malformed data, if any
             var errMsg;
             if (jqXHR.responseText.length === 0) {
@@ -9072,7 +9098,7 @@ function showStudyCommentPreview() {
             }
             showErrorMessage(errMsg);
         }
-    });
+    );
 }
 
 function studyContributedToLatestSynthesis() {
@@ -9085,7 +9111,6 @@ function currentStudyVersionContributedToLatestSynthesis() {
 }
 
 function getNormalizedStudyPublicationURL() {
-    console.warn('getNormalizedStudyPublicationURL');
     // just the bare URL, or '' if not found
     var url = $.trim(viewModel.nexml['^ot:studyPublication']['@href']);
     // If there's no URL, we have nothing to say
@@ -9117,7 +9142,6 @@ function getStudyPublicationLink() {
 }
 
 function getNormalizedDataDepositURL() {
-    console.warn('getNormalizedDataDepositURL');
     var url = $.trim(viewModel.nexml['^ot:dataDeposit']['@href']);
     // TreeBASE URLs should point to a web page (vs RDF)
     // EXAMPLE: http://purl.org/phylo/treebase/phylows/study/TB2:S13451
@@ -9174,13 +9198,17 @@ function getDataDepositMessage() {
 }
 
 function showStudyMetadata() {
-  // show details in a popup (already bound)
-  $('#study-metadata-popup').modal('show');
+    // show details in a popup (already bound)
+    $('#study-metadata-popup').off('hidden').on('hidden', function () {
+        updateStudyRenderedComment();
+        nudgeTickler('GENERAL_METADATA');
+    });
+    $('#study-metadata-popup').modal('show');
 }
 
 function showDownloadFormatDetails() {
-  // show details in a popup (already bound)
-  $('#download-formats-popup').modal('show');
+    // show details in a popup (already bound)
+    $('#download-formats-popup').modal('show');
 }
 
 function applyCC0Waiver() {
