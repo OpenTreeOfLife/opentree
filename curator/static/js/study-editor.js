@@ -145,7 +145,7 @@ if ( History && History.enabled ) {
         if (currentTab) {
             goToTab( currentTab );
             switch(slugify(currentTab)) {
-                case 'trees':
+                case 'home':
                     activeFilter = viewModel.listFilters.TREES;
                     filterDefaults = listFilterDefaults.TREES;
                     break;
@@ -270,11 +270,11 @@ function showTreeWithHistory(tree) {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': tree['@id']
             }
         );
-        History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree) );
+        History.pushState( newState, (window.document.title), ('?tab=home&tree='+ newState.tree) );
     } else {
         // show tree normally (ignore browser history)
         showTreeViewer(tree);
@@ -293,12 +293,12 @@ function hideTreeWithHistory() {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': null,
                 'conflict': null
             }
         );
-        History.pushState( newState, (window.document.title), '?tab=trees' );
+        History.pushState( newState, (window.document.title), '?tab=home' );
     }
     fixLoginLinks();
 }
@@ -318,11 +318,11 @@ function updateListFiltersWithHistory() {
         var oldState = History.getState().data;
 
         // Determine which list filter is active (currently based on tab)
-        // N.B. There's currently just one filter per tab (Trees, Files, OTU Mapping).
+        // N.B. There's currently just one filter per tab (Home, Files, OTU Mapping).
         var activeFilter;
         var filterDefaults;
         switch(slugify(oldState.tab)) {
-            case 'trees':
+            case 'home':
                 activeFilter = viewModel.listFilters.TREES;
                 filterDefaults = listFilterDefaults.TREES;
                 break;
@@ -612,6 +612,11 @@ function goToTab( tabName ) {
         }
         return false;
     })
+    if ($matchingTab.length === 0) {
+        console.warn("No such tab, going to Home...");
+        goToTab('home');
+        return;
+    }
     $matchingTab.tab('show');
 }
 
@@ -1814,7 +1819,7 @@ function displayConflictSummary(conflictInfo) {
     var $reportArea = $('#analysis-results');
     var targetTree = $('#reference-select').val();
     var referenceTreeID = $('#tree-select').val();
-    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ referenceTreeID;
+    var treeURL = getViewURLFromStudyID(studyID) +"?tab=home&tree="+ referenceTreeID;
       +"&conflict="+ targetTree;
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
@@ -2211,12 +2216,12 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': tree['@id'],
                 'conflict': referenceTreeID
             }
         );
-        History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree +'&conflict='+ newState.conflict) );
+        History.pushState( newState, (window.document.title), ('?tab=home&tree='+ newState.tree +'&conflict='+ newState.conflict) );
     } else {
         // show conflict normally (ignore browser history)
         showTreeConflictDetailsFromPopup(tree);
@@ -2230,12 +2235,12 @@ function hideConflictDetailsWithHistory(tree) {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': tree['@id'],
                 'conflict': null
             }
         );
-        History.pushState( newState, (window.document.title), '?tab=trees&tree='+ newState.tree );
+        History.pushState( newState, (window.document.title), '?tab=home&tree='+ newState.tree );
     } else {
         // hide conflict normally (ignore browser history)
         hideTreeConflictDetails(tree);
@@ -2363,7 +2368,7 @@ function validateFormData() {
     // check for a study year (non-empty integer)
     var studyYear = Number(viewModel.nexml["^ot:studyYear"]);
     if (isNaN(studyYear) || studyYear === 0) {
-        showErrorMessage('Please enter an non-zero integer for the Study Year (in Metadata tab).');
+        showErrorMessage("Please enter an non-zero integer for the Study Year (in Home tab's metadata editor).");
         return false;
     }
     // TODO: Add other validation logic to match changes on the server side.
@@ -3546,14 +3551,14 @@ function TreeNode() {
  *
  * validity? or should we make it "impossible" to build invalid data here?
  *
- * Let's try again, organizing by tab (Metadata, Trees, etc)
+ * Let's try again, organizing by tab (Home, Files, etc)
  */
 
 var roughDOIpattern = new RegExp('(doi|DOI)[\\s\\.\\:]{0,2}\\b10[.\\d]{2,}\\b');
 // this checks for *attempts* to include a DOI, not necessarily valid
 
 // runs various tests on a study; used for building the scoreInfo var
-// tests divided into Metadata, Files, Trees and OTU mapping
+// tests divided into Home, Files, and OTU mapping
 var studyScoringRules = {
     'Home': [  // combines former Metadata and Trees tabs
         // problems with study metadata, DOIs, etc. AND TREES
@@ -6954,7 +6959,7 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     }
     nodeInfoBox.append('<span class="node-name">'+ nodeOptionsLabel +'</span>');
 
-    var nodeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ tree['@id'] +"&node="+ node['@id'];
+    var nodeURL = getViewURLFromStudyID(studyID) +"?tab=home&tree="+ tree['@id'] +"&node="+ node['@id'];
     nodeInfoBox.append('<a class="node-direct-link" title="Link directly to this node (opens in new window)" target="_blank" href="'+ 
                        nodeURL +'"><i class="icon-share-alt"></i></a>');
 

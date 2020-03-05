@@ -100,7 +100,7 @@ function updateListFiltersWithHistory() {
         var oldState = History.getState().data;
 
         // Determine which list filter is active (currently based on tab)
-        // N.B. There's currently just one filter per tab (Trees, Files, OTU Mapping).
+        // N.B. There's currently just one filter per tab (Home, Files, OTU Mapping).
         var activeFilter = viewModel.listFilters.STUDIES;
         var filterDefaults = listFilterDefaults.STUDIES;
         var newState = { };
