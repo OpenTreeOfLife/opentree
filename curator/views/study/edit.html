@@ -3022,9 +3022,9 @@ body {
                                     css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyPublication" class="input-xlarge" placeholder="">
                   <button type="button" class="btn btn-info" onclick="lookUpDOI(); return false;">Look up DOI...</button>
                 {{ else: }}
-                  <p>
+                  <p class="static-form-value">
                  <!-- ko if: getStudyPublicationLink() !== '' -->
-                      <span class="static-form-value" data-bind="html: getStudyPublicationLink()">&nbsp;</span>
+                      <span data-bind="html: getStudyPublicationLink()">&nbsp;</span>
                  <!-- /ko -->
                  <!-- ko if: getStudyPublicationLink() === '' -->
                       <em>None</em>
