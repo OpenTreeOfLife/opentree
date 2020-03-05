@@ -488,7 +488,7 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
     font-weight: bold;
 }
 .rendered-comment {
-    background-color: #f5f5f5;
+    background-color: #eee;
     border: none;
     border-radius: 4px;
     padding: 5px;
@@ -876,6 +876,13 @@ tr.after-shims th {
 .form-horizontal.metadata-readonly .control-group {
   margin-bottom: 12px;
 }
+#core-metadata-pane {
+  border-radius: 5px;
+  border: 1px #ddd solid;
+  overflow: hidden;
+  padding: 12px 18px;
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
+}
 
 .profile-header .control-group > .control-label,
 .profile-header .control-group > .controls {
@@ -912,6 +919,11 @@ tr.after-shims th {
 		margin-left: 4em;
 }
 
+#study-metadata-popup {
+    width: 80%;
+    margin: auto -40%;
+}
+
 #new-taxa-popup {
     width: 80%;
     margin: auto -40%;
@@ -921,6 +933,13 @@ tr.after-shims th {
 }
 #new-taxa-popup .form-horizontal .control-group {
     margin-bottom: 10px;
+}
+
+#new-taxa-popup .form-horizontal .control-label {
+    width: 148px;
+}
+#new-taxa-popup .form-horizontal .controls {
+    margin-left: 140px;
 }
 
 .required-field {
