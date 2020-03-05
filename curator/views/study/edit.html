@@ -3051,9 +3051,9 @@ body {
                                     event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA, blur: formatDataDepositDOIAsURL },
                                     css: viewModel.ticklers.GENERAL_METADATA" type="text" id="ot_studyDataDeposit" class="input-xlarge" placeholder="">
                 {{ else: }}
-                  <p>
+                  <p class="static-form-value">
                   <!-- ko if: getDataDepositMessage() !== '' -->
-                      <span class="static-form-value" data-bind="html: getDataDepositMessage()">&nbsp;</span>
+                      <span data-bind="html: getDataDepositMessage()">&nbsp;</span>
                  <!-- /ko -->
                  <!-- ko if: getDataDepositMessage() === '' -->
                       <em>None</em>
