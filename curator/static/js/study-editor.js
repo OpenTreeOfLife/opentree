@@ -3555,8 +3555,8 @@ var roughDOIpattern = new RegExp('(doi|DOI)[\\s\\.\\:]{0,2}\\b10[.\\d]{2,}\\b');
 // runs various tests on a study; used for building the scoreInfo var
 // tests divided into Metadata, Files, Trees and OTU mapping
 var studyScoringRules = {
-    'Metadata': [
-        // problems with study metadata, DOIs, etc
+    'Home': [  // combines former Metadata and Trees tabs
+        // problems with study metadata, DOIs, etc. AND TREES
         {
             description: "The study should have all metadata fields complete.",
             test: function(studyData) {
@@ -3697,9 +3697,7 @@ var studyScoringRules = {
             failureMessage: "This study has no license or waiver.",
             suggestedAction: "A study author should add an appropriate license or waiver."
             // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        }
-    ],
-    'Trees': [
+        },
         {
             description: "The study should contain at least one tree.",
             test: function(studyData) {

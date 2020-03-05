@@ -258,10 +258,7 @@ body {
     <!-- Appears only during creation..? then replaced by status
       <li><a href="#">Import</a></li>
     -->
-      <li><a href="#Trees" data-toggle="tab">Home <span class="badge badge-important" style="display: none;">?</span></a></li>
-    <!--
-    -->
-      <li><a href="#Metadata" data-toggle="tab">Metadata <span class="badge badge-important" style="display: none;">?</span></a></li>
+      <li><a href="#Home" data-toggle="tab">Home <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#Files" data-toggle="tab">Files <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#OTU-Mapping" data-toggle="tab">OTU Mapping <span class="badge badge-important" style="display: none;">?</span></a></li>
     <!--
@@ -313,50 +310,8 @@ body {
 
 <div class="row">
     <div class="tab-content">
-          <div class="tab-pane" id="Metadata">
 
-           <div class="span8"><!-- main column... -->
-            <ul class="suggestion-list"></ul>
-            {MOVED TO POPUP}
-
-           </div><!-- end of main column... -->
-           <div class="span4"><!-- right col -->
-
-            <button class="help-toggle" style="display: none;">
-                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
-            </button>
-            <div class="help-box">
-              <button class="help-toggle">
-                  Hide <i class="icon-chevron-up Xicon-white"></i>
-              </button>
-            </div>
-            <div class="well" style="clear: right;">
-                <h4 style="margin-top: 0;">Download</h4>
-
-                <p>
-                You can download this study in
-                <a href="#" onclick="showDownloadFormatDetails(); return false;"
-                   title="Click for details on how these differ">
-                    several formats</a>:
-                </p>
-                <div class="btn-group" style="position: relative; top: -5px; margin-bottom: 10px;">
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=1.2' }}" target="_blank">NexSON</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.nexml' }}" target="_blank">NeXML</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.nex' }}" target="_blank">NEXUS</a>
-                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.tre' }}" target="_blank">Newick</a>
-                </div>
-
-                <p>
-                You can also use the <strong>
-                <a href="https://github.com/OpenTreeOfLife/germinator/wiki/Open-Tree-of-Life-Web-APIs" target="_blank">Open Tree API</a></strong> to retrieve study data.
-                </p>
-
-            </div>
-
-           </div><!-- end of right col -->
-          </div><!-- /.tab-pane -->
-
-          <div class="tab-pane" id="Trees">
+          <div class="tab-pane" id="Home">
            <div class="span8"><!-- main column -->
             <ul class="suggestion-list"></ul>
 
@@ -623,6 +578,29 @@ body {
         {{ pass }}
             </div>
 
+            <div class="well" style="clear: right;">
+                <h4 style="margin-top: 0;">Download</h4>
+
+                <p>
+                You can download this study in
+                <a href="#" onclick="showDownloadFormatDetails(); return false;"
+                   title="Click for details on how these differ">
+                    several formats</a>:
+                </p>
+                <div class="btn-group" style="position: relative; top: -5px; margin-bottom: 10px;">
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '?output_nexml2json=1.2' }}" target="_blank">NexSON</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.nexml' }}" target="_blank">NeXML</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.nex' }}" target="_blank">NEXUS</a>
+                    <a class="btn btn-small" href="{{= API_load_study_GET_url.replace('{STUDY_ID}', studyID) + '.tre' }}" target="_blank">Newick</a>
+                </div>
+
+                <p>
+                You can also use the <strong>
+                <a href="https://github.com/OpenTreeOfLife/germinator/wiki/Open-Tree-of-Life-Web-APIs" target="_blank">Open Tree API</a></strong> to retrieve study data.
+                </p>
+
+            </div>
+
         {{ if viewOrEdit == 'EDIT': }}
             <div class="well" style="clear: right;">
                 <h4 style="margin-top: 0;">Add a tree to this study</h4>
@@ -719,6 +697,7 @@ body {
                 </form>
             </div>
         {{ pass }}
+
 
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
