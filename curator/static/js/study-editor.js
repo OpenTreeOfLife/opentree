@@ -1613,6 +1613,19 @@ function updateQualityDisplay () {
         if (suggestionCount === 0) {
             $cTabTally.hide();
         } else {
+            // if read-only, prompot the user to login and fix things
+            if (viewOrEdit == 'VIEW') {
+                var editPromptHTML;
+                // show appropriate text for logged-in vs anonymous user
+                var $loginToEditLink = $('a.sticky-login').eq(0);
+                editPromptHTML = 'If you want to improve this study, click <a href="#">'+ $loginToEditLink.text() +'</a> to begin.'
+                $cTabSugestionList.append('<li class="edit-prompt">'+ editPromptHTML +'</li>');
+                // clicking the new link should click our smart login link
+                $cTabSugestionList.find('li.edit-prompt').unbind('click').click(function(evt) {
+                    $loginToEditLink[0].click();  // call the bare DOM element for full support of onclick AND href
+                    return false;
+                });
+            }
             $cTabTally.text(suggestionCount).show();
         }
 
