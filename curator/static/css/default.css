@@ -468,12 +468,14 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
     padding: 0.25em 0;
 }
 
-.suggestion-list {
-    /* list-style-type: none; */
-}
 .suggestion-list li {
     padding-bottom: 0.2em;
     color: #b94a48;
+    list-style-position: inside;
+}
+.suggestion-list li.edit-prompt {
+    list-style: none;
+    list-style-position: outside;
 }
 .suggestion-list span.label {
     padding: 0.3em 0.7em 0.4em;
@@ -875,6 +877,7 @@ tr.after-shims th {
   border-radius: 5px;
   border: 1px #ddd solid;
   overflow: hidden;
+  margin-bottom: 14px;
   padding: 12px 18px;
   box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
 }
