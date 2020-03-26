@@ -844,6 +844,9 @@ function showObjectProperties( objInfo, options ) {
     // start filling in the panel from the top
 
     displayName = (objName) ? objName : ("Unnamed "+ objType);
+    if (fullNode.isExtinct()) {
+        displayName = argus.leadingDagger + displayName;
+    }
     jQuery('#provenance-panel .provenance-title').html( displayName );
 
     /* Clear and rebuild collection of detailed properties, adapting to special
@@ -1297,6 +1300,7 @@ function showObjectProperties( objInfo, options ) {
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
         if ((displayName.indexOf('Unnamed ') !== 0) &&
             (displayName.indexOf('(unnamed ') !== 0) &&
+            (displayName.indexOf(argus.leadingDagger +'[') !== 0) &&
             (displayName.indexOf('[') !== 0)) {
             // Attempt to find a page for this taxon in the Encyclopedia of Life website
             // N.B. This 'external-links' list can hold similar entries.
