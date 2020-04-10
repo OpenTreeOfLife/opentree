@@ -186,9 +186,9 @@ def fetch_github_app_auth_token(request):
         raise Exception("[apis] github_app_installation_id not found in config!")
 
     # load our GitHub app's private key from a separate file (kept out of source repo)
-    if os.path.isfile("applications/%s/private/TREE_EXPLORER_PRIVATE_KEY_PEM" % request.application):
+    if os.path.isfile("applications/%s/private/GITHUB_APP_PRIVATE_KEY_PEM" % request.application):
         try:
-            private_key_pem = open("applications/%s/private/TREE_EXPLORER_PRIVATE_KEY_PEM" % request.application).read().strip()
+            private_key_pem = open("applications/%s/private/GITHUB_APP_PRIVATE_KEY_PEM" % request.application).read().strip()
             private_key = jwk.JWK.from_pem(private_key_pem)
             #key_json = private_key.export(private_key=True)
         except:
