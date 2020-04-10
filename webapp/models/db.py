@@ -205,14 +205,6 @@ class GitHubAccount(OAuthAccount):
 
         return dict(auth_user_fields)
 
-# add our GitHub app's private key from a separate file (kept out of source repo)
-# NOTE that we'll load and stash private keys in .pem format, to be extracted later
-if os.path.isfile("applications/%s/private/TREE_EXPLORER_PRIVATE_KEY_PEM" % request.application):
-    private_key_pem = open("applications/%s/private/TREE_EXPLORER_PRIVATE_KEY_PEM" % request.application).read().strip()
-    conf.set("apis", "github_app_private_key", private_key_pem)
-else:
-    conf.set("apis", "github_app_private_key", "PRIVATE-KEY PEM NOT FOUND")
-
 # use the class above to build a new login form
 auth.settings.login_form=GitHubAccount()
 
