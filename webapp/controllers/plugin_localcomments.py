@@ -9,7 +9,9 @@ import bleach
 from bleach.sanitizer import Cleaner
 from datetime import datetime
 import json
+from opentreewebapputil import fetch_github_app_auth_token
 from pprint import pprint
+
 
 
 def error(): raise HTTP(404)
@@ -378,7 +380,7 @@ def index():
         # Examine the comment metadata (if any) to get the best display name
         # and URL for its author. Guests should appear here as the name and
         # email address they entered when creating a comment, rather than the
-        # 'opentreeapi' bot user.
+        # GitHub app (bot).
         #
         # Default values are what we can fetch from the issues API
         author_display_name = comment['user']['login']
@@ -646,25 +648,25 @@ def index():
 # Perform basic CRUD for local comments, using GitHub Issues API
 #
 GH_BASE_URL = 'https://api.github.com'
-oauth_token_path = os.path.expanduser('~/.ssh/OPENTREEAPI_OAUTH_TOKEN')
-try:
-    OPENTREEAPI_AUTH_TOKEN = open(oauth_token_path).read().strip()
-except:
-    OPENTREEAPI_AUTH_TOKEN = ''
-    print("OAuth token (%s) not found!" % oauth_token_path)
 
 # if the current user is logged in, use their auth token instead
 USER_AUTH_TOKEN = auth.user and auth.user.github_auth_token or None
 
 # Specify the media-type from GitHub, to freeze v3 API responses and get
 # the comment body as markdown (vs. plaintext or HTML)
-PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json'
+PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json, application/vnd.github.machine-man-preview+json'
 # to get markdown AND html body, use 'application/vnd.github.v3.full+json'
 
 GH_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
-GH_GET_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
+if USER_AUTH_TOKEN:
+    auth_header_value = 'token %s' % USER_AUTH_TOKEN
+else:
+    GITHUB_APP_INSTALLATION_TOKEN = fetch_github_app_auth_token(request)
+    auth_header_value = 'token %s' % GITHUB_APP_INSTALLATION_TOKEN
+
+GH_GET_HEADERS = {'Authorization': auth_header_value,
                   'Accept': PREFERRED_MEDIA_TYPE}
-GH_POST_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
+GH_POST_HEADERS = {'Authorization': auth_header_value,
                    'Content-Type': 'application/json',
                    'Accept': PREFERRED_MEDIA_TYPE}
 
