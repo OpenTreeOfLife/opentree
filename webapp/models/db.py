@@ -134,8 +134,11 @@ from gluon.contrib.login_methods.oauth20_account import OAuthAccount
 class GitHubAccount(OAuthAccount):
     '''OAuth impl for GitHub'''
     # http://developer.github.com/v3/oauth/
-    AUTH_URL="https://github.com/login/oauth/authorize"
-    TOKEN_URL="https://github.com/login/oauth/access_token"
+    ## blocking these URLs as a failsafe
+    #AUTH_URL="https://github.com/login/oauth/authorize"
+    #TOKEN_URL="https://github.com/login/oauth/access_token"
+    AUTH_URL="."
+    TOKEN_URL="."
 
     def __init__(self):
         OAuthAccount.__init__(self, 

@@ -603,8 +603,9 @@ def index():
 
     return DIV(script,
                DIV(FORM(# anonymous users should see be encouraged to login or add a name-or-email to their comments
-                        '' if auth.user_id else A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
-                        '' if auth.user_id else T(' or '),
+                        ## Remove login option for adding comments
+                        #'' if auth.user_id else A(T('Login'),_href=URL(r=request,c='default',f='user',args=['login']),_class='login-logout reply'),
+                        #'' if auth.user_id else T(' or '),
                         '' if auth.user_id else INPUT(_type='text',_id='visitor_name',_name='visitor_name',_value=session.get('visitor_name',''),_placeholder="Enter your name"),
                         '' if auth.user_id else T(' '),
                         '' if auth.user_id else INPUT(_type='text',_id='visitor_email',_name='visitor_email',_value=session.get('visitor_email',''),_placeholder="Your email (visible on GitHub)"),
