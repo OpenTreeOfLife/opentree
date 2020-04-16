@@ -404,7 +404,7 @@ function fixLoginLinks() {
 
     // TEMPORARILY block all Login links with a message
     $loginLinks.each(function() {
-        $(this).attr('disabled','disabled');
+        $(this).attr('disabled','disabled')
                .attr('onclick', 'showMaintenancePopup(); return false;');
     });
 
