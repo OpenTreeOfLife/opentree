@@ -402,12 +402,6 @@ function fixLoginLinks() {
     var $loginToEditLinks = $('a.sticky-login');
     var $switchToViewLinks = $('#cancel-study-edits');
 
-    // TEMPORARILY block all Login links with a message
-    $loginLinks.each(function() {
-        $(this).attr('disabled','disabled')
-               .attr('onclick', 'showMaintenancePopup(); return false;');
-    });
-
     var updateLoginHref = function( link, targetURL ) {
         // allow for different URL patterns
         var $link = $(link);
@@ -449,6 +443,14 @@ var studyHasUnsavedChanges = false;
 
 var initialState;
 $(document).ready(function() {
+
+    // TEMPORARILY block all Login links with a message
+    console.warn("BLOCKING LOGIN LINKS");
+    $("a:contains(Log In)").each(function() {
+        $(this).attr('disabled','disabled')
+               .attr('onclick', 'showMaintenancePopup(); return false;');
+    });
+
     bindHistoryAwareWidgets();
     bindHelpPanels();
 
