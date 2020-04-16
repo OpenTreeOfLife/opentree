@@ -601,6 +601,11 @@ def index():
         #thread[comment.thread_parent_id] = thread.get(comment.thread_parent_id,[])+[comment]
         threads.append(comment)
 
+    """Temporary link to GitHub feedback repo."""
+    return DIV(T("Commenting tools are temporarily disabled. If you have a GitHub account, you can "),
+               A(T('add your feedback directly on GitHub'),_href='https://github.com/OpenTreeOfLife/feedback/issues/new', _target='_blank'),
+               T("."))
+
     return DIV(script,
                DIV(FORM(# anonymous users should see be encouraged to login or add a name-or-email to their comments
                         ## Remove login option for adding comments
