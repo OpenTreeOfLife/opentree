@@ -2,6 +2,22 @@
  * Utilities common to multiple pages in the OpenTree study-curation tool.
  */
 
+
+// TEMPORARILY block all Login links with a message
+function blockAllLoginFeatures() {
+    console.warn("BLOCKING LOGIN LINKS");
+    var $loginFeatures = $("a:contains(Log In)")
+         .add("a:contains(Manage my collections)")
+         .add("a:contains(Add new collection)")
+         .add("a:contains(Add new study)")
+         .add("a:contains(Import from TreeBASE)");
+
+    $loginFeatures.each(function() {
+        $(this).attr('disabled','disabled')
+               .attr('onclick', 'showMaintenancePopup(); return false;');
+    });
+}
+
 // converts full reference to short reference for display purposes
 // duplicates function with same name in webapp/static/js/treeview.js,
 // so changes need to be made in both places

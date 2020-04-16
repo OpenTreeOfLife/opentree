@@ -119,6 +119,9 @@ function updateListFiltersWithHistory() {
 }
 
 $(document).ready(function() {
+
+    blockAllLoginFeatures();
+
     bindHelpPanels();
     loadCollectionList();
     

@@ -123,6 +123,8 @@ function updateListFiltersWithHistory() {
 }
 
 $(document).ready(function() {
+    blockAllLoginFeatures();
+
     bindHelpPanels();
     if (activeUserFound) {
         loadCollectionList();

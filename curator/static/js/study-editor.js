@@ -444,12 +444,7 @@ var studyHasUnsavedChanges = false;
 var initialState;
 $(document).ready(function() {
 
-    // TEMPORARILY block all Login links with a message
-    console.warn("BLOCKING LOGIN LINKS");
-    $("a:contains(Log In)").each(function() {
-        $(this).attr('disabled','disabled')
-               .attr('onclick', 'showMaintenancePopup(); return false;');
-    });
+    blockAllLoginFeatures();
 
     bindHistoryAwareWidgets();
     bindHelpPanels();
