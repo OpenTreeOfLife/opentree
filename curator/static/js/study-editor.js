@@ -402,6 +402,12 @@ function fixLoginLinks() {
     var $loginToEditLinks = $('a.sticky-login');
     var $switchToViewLinks = $('#cancel-study-edits');
 
+    // TEMPORARILY block all Login links with a message
+    $loginLinks.each(function() {
+        $(this).attr('disabled','disabled');
+               .attr('onclick', 'showMaintenancePopup(); return false;');
+    });
+
     var updateLoginHref = function( link, targetURL ) {
         // allow for different URL patterns
         var $link = $(link);
