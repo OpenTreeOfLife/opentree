@@ -162,7 +162,7 @@ function loadCollectionList(option) {
     }
 
     $.ajax({
-        type: 'POST',
+        type: 'GET',
         dataType: 'json',
         url: findAllTreeCollections_url,
         data: null,  // TODO: do we need { verbose: true } or other options here?
