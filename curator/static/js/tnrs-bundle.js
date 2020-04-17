@@ -21090,6 +21090,7 @@ function showPossibleMappingsKey() {
 }
 
 $(document).ready(function() {
+    blockAllLoginFeatures();
     // Always start with an empty set, binding it to the UI
     loadNamesetData( null );
 
