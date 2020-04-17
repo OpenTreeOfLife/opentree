@@ -2102,6 +2102,7 @@ function showPossibleMappingsKey() {
 
 $(document).ready(function() {
     // Always start with an empty set, binding it to the UI
+    blockAllLoginFeatures();
     loadNamesetData( null );
 
     /* typical setup and binding of update logic
