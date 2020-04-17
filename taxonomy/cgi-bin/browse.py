@@ -409,7 +409,7 @@ local_stylesheet = """
         padding-top: 0.35em;
         line-height: 1.0em;
         min-height: 32px;
-        background-position: left 5px;
+        background: url(/images/mini-opentree-logo.png) no-repeat left 5px;
     }
     h1 strong {
         color: #000;
