@@ -10,7 +10,10 @@ function blockAllLoginFeatures() {
          .add("a:contains(Manage my collections)")
          .add("a:contains(Add new collection)")
          .add("a:contains(Add new study)")
-         .add("a:contains(Import from TreeBASE)");
+         .add("a:contains(Import from TreeBASE)")
+         .add("a:contains(Create new tree collection)")
+         .add("button:contains(Edit)")  // for tree collections, etc.
+         .add("button:contains(Save a copy)");  // for tree collections, etc.
 
     $loginFeatures.each(function() {
         $(this).attr('disabled','disabled')
