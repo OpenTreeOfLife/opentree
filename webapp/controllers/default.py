@@ -181,3 +181,5 @@ def phylopic_proxy():
         return requests.get(url=phylopic_url, timeout=10).content
     except requests.exceptions.ReadTimeout, e:
         raise HTTP(503, 'The attempt to fetch an image from phylopic timed out')
+    except:
+        raise HTTP(503, 'The attempt to fetch an image from phylopic failed')
