@@ -98,7 +98,8 @@ def download_subtree():
     node_or_ottol_id = request.args(1)
     node_name = request.args(2)
     import cStringIO
-    import contenttype as c
+    # This next "import contenttype..." line seems to be failing on the new web2py and not used anyway
+    # import contenttype as c
     s=cStringIO.StringIO()
      
     try:
