@@ -1069,13 +1069,13 @@ function requestTaxonMapping( nameToMap ) {
 
                 case 1:
                     // the expected case
-                    candidateMatches = data.results[0].matches;
+                    candidateMatches = data.results[0].matches || [ ];
                     break;
 
                 default:
                     console.warn('MULTIPLE SEARCH RESULT SETS (USING FIRST)');
                     console.warn(data['results']);
-                    candidateMatches = data.results[0].matches;
+                    candidateMatches = data.results[0].matches || [ ];
             }
         }
         // TODO: Filter candidate matches based on their properties, scores, etc.?
