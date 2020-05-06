@@ -9371,7 +9371,7 @@ function loadCollectionList(option) {
     }
 
     $.ajax({
-        type: 'POST',
+        type: 'GET',
         dataType: 'json',
         url: findAllTreeCollections_url,
         data: null,
