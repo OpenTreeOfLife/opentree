@@ -709,8 +709,9 @@ function createArgus(spec) {
             var mainFetchXHR = jqXHR;
             var mainFetchJSON;
             try {
-                // IF there was a JSON payload, we want to keep it
-                mainFetchJSON = $.parseJSON(mainFetchXHR.responseText);
+                // IF there was a JSON payload, we want to keep it (if the payload is
+                // empty/null, make an empty object)
+                mainFetchJSON = $.parseJSON(mainFetchXHR.responseText) || { };
             } catch(e) {
                 // make an empty object for now
                 mainFetchJSON = { };
