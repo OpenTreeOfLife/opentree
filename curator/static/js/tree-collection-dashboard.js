@@ -99,7 +99,6 @@ function updateListFiltersWithHistory() {
         var oldState = History.getState().data;
 
         // Determine which list filter is active (currently based on tab)
-        // N.B. There's currently just one filter per tab (Trees, Files, OTU Mapping).
         var activeFilter = viewModel.listFilters.COLLECTIONS;
         var filterDefaults = listFilterDefaults.COLLECTIONS;
         var newState = { };
@@ -198,7 +197,7 @@ function loadCollectionList(option) {
     */
 
     $.ajax({
-        type: 'POST',
+        type: 'GET',
         dataType: 'json',
         url: findAllTreeCollections_url,
         data: null,  // TODO: do we need { verbose: true } or other options here?

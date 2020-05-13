@@ -145,7 +145,7 @@ if ( History && History.enabled ) {
         if (currentTab) {
             goToTab( currentTab );
             switch(slugify(currentTab)) {
-                case 'trees':
+                case 'home':
                     activeFilter = viewModel.listFilters.TREES;
                     filterDefaults = listFilterDefaults.TREES;
                     break;
@@ -270,11 +270,11 @@ function showTreeWithHistory(tree) {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': tree['@id']
             }
         );
-        History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree) );
+        History.pushState( newState, (window.document.title), ('?tab=home&tree='+ newState.tree) );
     } else {
         // show tree normally (ignore browser history)
         showTreeViewer(tree);
@@ -293,12 +293,12 @@ function hideTreeWithHistory() {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': null,
                 'conflict': null
             }
         );
-        History.pushState( newState, (window.document.title), '?tab=trees' );
+        History.pushState( newState, (window.document.title), '?tab=home' );
     }
     fixLoginLinks();
 }
@@ -318,11 +318,11 @@ function updateListFiltersWithHistory() {
         var oldState = History.getState().data;
 
         // Determine which list filter is active (currently based on tab)
-        // N.B. There's currently just one filter per tab (Trees, Files, OTU Mapping).
+        // N.B. There's currently just one filter per tab (Home, Files, OTU Mapping).
         var activeFilter;
         var filterDefaults;
         switch(slugify(oldState.tab)) {
-            case 'trees':
+            case 'home':
                 activeFilter = viewModel.listFilters.TREES;
                 filterDefaults = listFilterDefaults.TREES;
                 break;
@@ -612,6 +612,11 @@ function goToTab( tabName ) {
         }
         return false;
     })
+    if ($matchingTab.length === 0) {
+        console.warn("No such tab, going to Home...");
+        goToTab('home');
+        return;
+    }
     $matchingTab.tab('show');
 }
 
@@ -1451,6 +1456,8 @@ function loadSelectedStudy() {
             ko.applyBindings(viewModel, headerQualityPanel);
             var qualityDetailsViewer = $('#quality-details-viewer')[0];
             ko.applyBindings(viewModel, qualityDetailsViewer);
+            var metadataPopup = $('#study-metadata-popup')[0];
+            ko.applyBindings(viewModel, metadataPopup);
 
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
@@ -1593,6 +1600,19 @@ function updateQualityDisplay () {
         if (suggestionCount === 0) {
             $cTabTally.hide();
         } else {
+            // if read-only, prompot the user to login and fix things
+            if (viewOrEdit == 'VIEW') {
+                var editPromptHTML;
+                // show appropriate text for logged-in vs anonymous user
+                var $loginToEditLink = $('a.sticky-login').eq(0);
+                editPromptHTML = 'If you want to improve this study, click <a href="#">'+ $loginToEditLink.text() +'</a> to begin.'
+                $cTabSugestionList.append('<li class="edit-prompt">'+ editPromptHTML +'</li>');
+                // clicking the new link should click our smart login link
+                $cTabSugestionList.find('li.edit-prompt').unbind('click').click(function(evt) {
+                    $loginToEditLink[0].click();  // call the bare DOM element for full support of onclick AND href
+                    return false;
+                });
+            }
             $cTabTally.text(suggestionCount).show();
         }
 
@@ -1812,7 +1832,7 @@ function displayConflictSummary(conflictInfo) {
     var $reportArea = $('#analysis-results');
     var targetTree = $('#reference-select').val();
     var referenceTreeID = $('#tree-select').val();
-    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ referenceTreeID +"&conflict="+ targetTree;
+    var treeURL = getViewURLFromStudyID(studyID) +"?tab=home&tree="+ referenceTreeID +"&conflict="+ targetTree;
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
            .append('<p><a href="'+ treeURL +'" target="conflicttree">Open labelled tree in new window</a></p>')
@@ -2208,12 +2228,12 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': tree['@id'],
                 'conflict': referenceTreeID
             }
         );
-        History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree +'&conflict='+ newState.conflict) );
+        History.pushState( newState, (window.document.title), ('?tab=home&tree='+ newState.tree +'&conflict='+ newState.conflict) );
     } else {
         // show conflict normally (ignore browser history)
         showTreeConflictDetailsFromPopup(tree);
@@ -2227,12 +2247,12 @@ function hideConflictDetailsWithHistory(tree) {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': tree['@id'],
                 'conflict': null
             }
         );
-        History.pushState( newState, (window.document.title), '?tab=trees&tree='+ newState.tree );
+        History.pushState( newState, (window.document.title), '?tab=home&tree='+ newState.tree );
     } else {
         // hide conflict normally (ignore browser history)
         hideTreeConflictDetails(tree);
@@ -2360,7 +2380,7 @@ function validateFormData() {
     // check for a study year (non-empty integer)
     var studyYear = Number(viewModel.nexml["^ot:studyYear"]);
     if (isNaN(studyYear) || studyYear === 0) {
-        showErrorMessage('Please enter an non-zero integer for the Study Year (in Metadata tab).');
+        showErrorMessage("Please enter an non-zero integer for the Study Year (in Home tab's metadata editor).");
         return false;
     }
     // TODO: Add other validation logic to match changes on the server side.
@@ -3543,17 +3563,17 @@ function TreeNode() {
  *
  * validity? or should we make it "impossible" to build invalid data here?
  *
- * Let's try again, organizing by tab (Metadata, Trees, etc)
+ * Let's try again, organizing by tab (Home, Files, etc)
  */
 
 var roughDOIpattern = new RegExp('(doi|DOI)[\\s\\.\\:]{0,2}\\b10[.\\d]{2,}\\b');
 // this checks for *attempts* to include a DOI, not necessarily valid
 
 // runs various tests on a study; used for building the scoreInfo var
-// tests divided into Metadata, Files, Trees and OTU mapping
+// tests divided into Home, Files, and OTU mapping
 var studyScoringRules = {
-    'Metadata': [
-        // problems with study metadata, DOIs, etc
+    'Home': [  // combines former Metadata and Trees tabs
+        // problems with study metadata, DOIs, etc. AND TREES
         {
             description: "The study should have all metadata fields complete.",
             test: function(studyData) {
@@ -3694,9 +3714,7 @@ var studyScoringRules = {
             failureMessage: "This study has no license or waiver.",
             suggestedAction: "A study author should add an appropriate license or waiver."
             // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        }
-    ],
-    'Trees': [
+        },
         {
             description: "The study should contain at least one tree.",
             test: function(studyData) {
@@ -6953,7 +6971,7 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     }
     nodeInfoBox.append('<span class="node-name">'+ nodeOptionsLabel +'</span>');
 
-    var nodeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ tree['@id'] +"&node="+ node['@id'];
+    var nodeURL = getViewURLFromStudyID(studyID) +"?tab=home&tree="+ tree['@id'] +"&node="+ node['@id'];
     nodeInfoBox.append('<a class="node-direct-link" title="Link directly to this node (opens in new window)" target="_blank" href="'+ 
                        nodeURL +'"><i class="icon-share-alt"></i></a>');
 
@@ -9042,18 +9060,41 @@ function showStudyCommentEditor() {
     $('#comment-preview').hide();
     $('#comment-editor').show();
 }
+function fetchRenderedMarkdown(successCallback, failureCallback) {
+    $.ajax({
+        crossdomain: true,
+        type: 'POST',
+        url: render_markdown_url,
+        data: {'src': viewModel.nexml['^ot:comment']},
+        success: successCallback,
+        error: failureCallback
+    });
+}
+function updateStudyRenderedComment() {
+    // just update our pre-rendered curation notes
+    fetchRenderedMarkdown(
+        // success callback
+        function( data, textstatus, jqxhr ) {
+            viewModel['commentHTML'] = data;
+            nudgeTickler('GENERAL_METADATA');
+        },
+        // failure callback (just show raw markdown)
+        function(jqXHR, textStatus, errorThrown) {
+            // report errors or malformed data, if any
+            viewModel['commentHTML'] = viewModel.nexml['^ot:comment'];
+            nudgeTickler('GENERAL_METADATA');
+        }
+    );
+}
 function showStudyCommentPreview() {
     // show spinner? no, it's really quick
     $('#edit-comment-button').removeClass('active');
     $('#preview-comment-button').addClass('active');
     // stash and restore the current scroll position, lest it jump
     var savedPageScroll = $('body').scrollTop();
-    $.ajax({
-        crossdomain: true,
-        type: 'POST',
-        url: render_markdown_url,
-        data: {'src': viewModel.nexml['^ot:comment']},
-        success: function( data, textstatus, jqxhr ) {
+    fetchRenderedMarkdown(
+        // success callback
+        function( data, textstatus, jqxhr ) {
             $('#comment-preview').html(data);
             $('#comment-preview').show();
             //setTimeout(function() {
@@ -9061,7 +9102,8 @@ function showStudyCommentPreview() {
             //}, 10);
             $('#comment-editor').hide();
         },
-        error: function(jqXHR, textStatus, errorThrown) {
+        // failure callback
+        function(jqXHR, textStatus, errorThrown) {
             // report errors or malformed data, if any
             var errMsg;
             if (jqXHR.responseText.length === 0) {
@@ -9071,7 +9113,7 @@ function showStudyCommentPreview() {
             }
             showErrorMessage(errMsg);
         }
-    });
+    );
 }
 
 function studyContributedToLatestSynthesis() {
@@ -9083,35 +9125,39 @@ function currentStudyVersionContributedToLatestSynthesis() {
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
 }
 
-function getStudyPublicationLink() {
+function getNormalizedStudyPublicationURL() {
+    // just the bare URL, or '' if not found
     var url = $.trim(viewModel.nexml['^ot:studyPublication']['@href']);
     // If there's no URL, we have nothing to say
     if (url === '') {
         return '';
     }
     if (urlPattern.test(url) === true) {
-        // It's a proper URL, wrap it in a hyperlink; but first,
-        // update to match latest CrossRef guidelines
+        // It's a proper URL, update it to match latest CrossRef guidelines
         url = latestCrossRefURL(url);
+        return url;
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
+}
+
+function getStudyPublicationLink() {
+    // this is displayed HTML (typically a hyperlink, occasionally a bare string)
+    var url = getNormalizedStudyPublicationURL();
+    // If there's no URL, we have nothing to say
+    if (url === '') {
+        return '';
+    }
+    if (urlPattern.test(url) === true) {
+        // It's a proper URL, wrap it in a hyperlink
         return '<a target="_blank" href="'+ url +'">'+ url +'</a>';
     }
     // It's not a proper URL! Return the bare value.
     return url;
 }
 
-function getDataDepositMessage() {
-    // Returns HTML explaining where to find this study's data, or an empty
-    // string if no URL is found. Some cryptic dataDeposit URLs may require
-    // more explanation or a modified URL to be more web-friendly.
-    //
-    // NOTE that we maintain a server-side counterpart in
-    // webapp/modules/opentreewebapputil.py > get_data_deposit_message
+function getNormalizedDataDepositURL() {
     var url = $.trim(viewModel.nexml['^ot:dataDeposit']['@href']);
-    // If there's no URL, we have nothing to say
-    if (url === '') {
-        return '';
-    }
-
     // TreeBASE URLs should point to a web page (vs RDF)
     // EXAMPLE: http://purl.org/phylo/treebase/phylows/study/TB2:S13451
     //    => http://treebase.org/treebase-web/search/study/summary.html?id=13451
@@ -9123,24 +9169,61 @@ function getDataDepositMessage() {
             regex,
             '//treebase.org/treebase-web/search/study/summary.html?id=$1'
         );
-        return 'Data for this study is archived as <a href="'+ url +'" target="_blank">Treebase study '+ treebaseStudyID +'</a>';
+        return url;
+    }
+    if (urlPattern.test(url) === true) {
+        // It's a proper URL, update it to match latest CrossRef guidelines
+        // (this is harmless for other URLs)
+        url = latestCrossRefURL(url);
+        return url;
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
+}
+function getDataDepositMessage() {
+    // Returns HTML explaining where to find this study's data, or an empty
+    // string if no URL is found. Some cryptic dataDeposit URLs may require
+    // more explanation or a modified URL to be more web-friendly.
+    //
+    // NOTE that we maintain a server-side counterpart in
+    // webapp/modules/opentreewebapputil.py > get_data_deposit_message
+    var url = getNormalizedDataDepositURL();
+    // If there's no URL, we have nothing to say
+    if (url === '') {
+        return '';
     }
 
-    // TODO: Add other substitutions?
+    // TreeBASE URLs get a special description here
+    // EXAMPLE: http://purl.org/phylo/treebase/phylows/study/TB2:S13451
+    //    => http://treebase.org/treebase-web/search/study/summary.html?id=13451
+    var treebasePattern = new RegExp('//treebase.org/treebase-web/.*?id=(\\d+)');
+    var matches = treebasePattern.exec(url);
+    if (matches && matches.length === 2) {
+        var treebaseStudyID = matches[1];
+        return 'Data for this study is archived as <a href="'+ url +'" target="_blank">Treebase study '+ treebaseStudyID +'</a>';
+    }
+    // TODO: Add other special messages?
 
     if (urlPattern.test(url) === true) {
-        // Default message simply repeats the dataDeposit URL; but first,
-        // update to match latest CrossRef guidelines
-        url = latestCrossRefURL(url);
+        // Default message simply repeats the dataDeposit URL
         return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
     }
     // It's not a proper URL! Return the bare value.
     return url;
 }
 
+function showStudyMetadata() {
+    // show details in a popup (already bound)
+    $('#study-metadata-popup').off('hidden').on('hidden', function () {
+        updateStudyRenderedComment();
+        nudgeTickler('GENERAL_METADATA');
+    });
+    $('#study-metadata-popup').modal('show');
+}
+
 function showDownloadFormatDetails() {
-  // show details in a popup (already bound)
-  $('#download-formats-popup').modal('show');
+    // show details in a popup (already bound)
+    $('#download-formats-popup').modal('show');
 }
 
 function applyCC0Waiver() {
@@ -9261,7 +9344,7 @@ function loadCollectionList(option) {
     }
 
     $.ajax({
-        type: 'POST',
+        type: 'GET',
         dataType: 'json',
         url: findAllTreeCollections_url,
         data: null,
