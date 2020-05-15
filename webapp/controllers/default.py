@@ -98,6 +98,8 @@ def download_subtree():
     node_or_ottol_id = request.args(1)
     node_name = request.args(2)
     import cStringIO
+    # This next "import contenttype..." line seems to be failing on the new web2py and not used anyway
+    # import contenttype as c
     s=cStringIO.StringIO()
      
     try:
@@ -179,3 +181,5 @@ def phylopic_proxy():
         return requests.get(url=phylopic_url, timeout=10).content
     except requests.exceptions.ReadTimeout, e:
         raise HTTP(503, 'The attempt to fetch an image from phylopic timed out')
+    except:
+        raise HTTP(503, 'The attempt to fetch an image from phylopic failed')
