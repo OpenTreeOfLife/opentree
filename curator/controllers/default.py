@@ -2,6 +2,7 @@
 from applications.opentree.modules.opentreewebapputil import(
     get_opentree_services_method_urls,
     extract_nexson_from_http_call,
+    fetch_github_app_auth_token,
     get_maintenance_info)
 # N.B. This module is shared with tree-browser app, which is aliased as
 # 'opentree'. Any name changes will be needed here as well!
@@ -140,25 +141,25 @@ def _fetch_github_api(verb='GET', url=None, data=None):
     #   'url' should be root-relative (assume GitHub API)
     #   'data' could be passed via GET [TODO] or POST
     GH_BASE_URL = 'https://api.github.com'
-    oauth_token_path = os.path.expanduser('~/.ssh/OPENTREEAPI_OAUTH_TOKEN')
-    try:
-        OPENTREEAPI_AUTH_TOKEN = open(oauth_token_path).read().strip()
-    except:
-        OPENTREEAPI_AUTH_TOKEN = ''
-        print("OAuth token (%s) not found!" % oauth_token_path)
 
     # if the current user is logged in, use their auth token instead
     USER_AUTH_TOKEN = auth.user and auth.user.github_auth_token or None
 
     # Specify the media-type from GitHub, to freeze v3 API responses and get
     # the comment body as markdown (vs. plaintext or HTML)
-    PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json'
+    PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json, application/vnd.github.machine-man-preview+json'
     # to get markdown AND html body, use 'application/vnd.github.v3.full+json'
 
+    if USER_AUTH_TOKEN:
+        auth_header_value = 'token %s' % USER_AUTH_TOKEN
+    else:
+        GITHUB_APP_INSTALLATION_TOKEN = fetch_github_app_auth_token(request)
+        auth_header_value = 'token %s' % GITHUB_APP_INSTALLATION_TOKEN
+
     GH_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
-    GH_GET_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
+    GH_GET_HEADERS = {'Authorization': auth_header_value,
                       'Accept': PREFERRED_MEDIA_TYPE}
-    GH_POST_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
+    GH_POST_HEADERS = {'Authorization': auth_header_value,
                        'Content-Type': 'application/json',
                        'Accept': PREFERRED_MEDIA_TYPE}
 

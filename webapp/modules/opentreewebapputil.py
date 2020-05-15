@@ -161,6 +161,61 @@ def get_user_login():
     # no name or id found (this should never happen)
     return 'UNKNOWN'
 
+def fetch_github_app_auth_token(request):
+    # fetch a new token, or confirm that a known token is still current (or replace it)
+    # see https://developer.github.com/v3/apps/#create-a-new-installation-token
+    # TODO: include 'repository_ids' "feedback" (?)
+
+    # build a new JWT, since they expire
+    import python_jwt as jwt, jwcrypto.jwk as jwk, datetime, requests
+    app_name = request.application
+    if (app_name == 'curator'):
+        pass
+    else: # 'webapp' or 'opentree' (aliases)
+        pass
+    #key = jwk.JWK.generate(kty='RSA', size=2048)
+    conf = get_conf(request)
+    try:
+        github_app_id = conf.get("apis", "github_app_id")
+    except:
+        raise Exception("[apis] github_app_id not found in config!")
+
+    try:
+        app_installation_id = conf.get("apis", "github_app_installation_id")
+    except:
+        raise Exception("[apis] github_app_installation_id not found in config!")
+
+    # load our GitHub app's private key from a separate file (kept out of source repo)
+    if os.path.isfile("applications/%s/private/GITHUB_APP_PRIVATE_KEY_PEM" % request.application):
+        try:
+            private_key_pem = open("applications/%s/private/GITHUB_APP_PRIVATE_KEY_PEM" % request.application).read().strip()
+            private_key = jwk.JWK.from_pem(private_key_pem)
+            #key_json = private_key.export(private_key=True)
+        except:
+            raise Exception("Invalid private-key .pem!")
+    else:
+        raise Exception("Private-key .pem file not found!")
+
+    payload = {
+        # issued at time
+        'iat': datetime.timedelta(minutes=0),
+        # JWT expiration time (10 min max)
+        'exp': datetime.timedelta(minutes=10),
+        # issuer? (GitHub app identifier)
+        'iss': github_app_id,
+    }
+    app_jwt = jwt.generate_jwt(payload, private_key, 'RS256', datetime.timedelta(minutes=5))
+    # use this JWT to request an auth token for the current GitHub app (bot)
+    resp = requests.post( ("https://api.github.com/app/installations/%s/access_tokens" % app_installation_id),
+                          headers={'Authorization': ('Bearer %s' % app_jwt),
+                                   'Accept': "application/vnd.github.machine-man-preview+json"})
+    resp_json = resp.json()
+    try:
+        new_token = resp_json.get("token")
+    except:
+        raise Exception("Installation token not found in JSON response!")
+    return new_token
+
 def get_domain_banner_text(request):
     # Add an optional CSS banner to indicate a test domain, or none if
     # we're on a production server.

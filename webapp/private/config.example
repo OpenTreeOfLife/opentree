@@ -13,12 +13,18 @@ secure_sessions_with_HTTPS = false
 #study_to_status_script = /usr/share/open-tree/avatol_nexsons/nexson2treemach/study_nexson_to_status_html.py
 
 [apis]
-# These values can be obtained by registering your instance as an
-# application with GitHub, at https://github.com/settings/applications/new
+# Settings for a registered app on GitHub, for example on devtree:
+# <https://github.com/settings/apps/open-tree-tree-explorer-dev>
+github_app_id = YOUR_APP_ID_HERE
 github_client_id = YOUR_CLIENT_ID_HERE
 github_redirect_uri = YOUR_REDIRECT_URI_HERE
 # DON'T INCLUDE 'github_client_secret' value here. For better security, this is
 # loaded from a separate file and added to config data on-the-fly.
+#
+# github_app_installation_id can be found from the installing organization's page, e.g.
+# <https://github.com/organizations/OpenTreeOfLife/settings/installations>
+# (the installation ID is in the URL of the Configure button here)
+github_app_installation_id = YOUR_APP_INSTALLATION_ID_HERE
 
 # List public-facing base URL for treemachine and taxomachine services
 # (NOTE that these are used by both server- and client-side code)
