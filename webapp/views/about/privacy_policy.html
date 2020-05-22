@@ -1,65 +1,153 @@
 {{extend 'layout.html'}}
 
 <div class="container">
-  <h1 id="main-title">Privacy Policy</h1>
+<h1 id="main-title">Privacy Policy</h1>
+<div class="row">
+<div class="span10 offset1">
+<p>
+The Open Tree of Life project provides infrastructure
+to help the community of people interested in evolutionary
+relationships to create a synthetic view of published
+phylogenetic information.
+The website of the project allows user to curate the results of
+phylogenetic research via
+<a href="https://tree.opentreeoflife.org/curator/">our curation page</a>.
+Users can also comment on current synthetic tree (see instructions on
+<a href="https://tree.opentreeoflife.org/about/open-tree-of-life"> our "about" page</a>).
+</p>
+<h2>What kind of user information do we keep?</h2>
+<p>Not much, and as little as possible (see the <a href="http://opentreeoflife.github.io/whynouserdb">this page</a> for
+  an explanation of this choice).</p>
+<p>The type of user information stored on our servers depends
+on what aspects of the site you are using. Briefly:
+<ul>
+  <li>You do not need to have an account or any type of registeration to 
+      use our <a href="http://opentreeoflife.github.io/use">API</a> or
+      to browse the <a href="https://tree.opentreeoflife.org">synthetic tree</a> or
+      <a href="https://tree.opentreeoflife.org/taxonomy/browse">taxonomy</a>.</li>
+  <li>To maintain provenance of the scientific work involved in curating a study,
+      we require curators to log in via GitHub (see below).</li>
+  <li>To leave a comment on the tree, you can either be logged in with a
+      GitHub account, provide a name and email address (which will be publicly visible), 
+      or enter "Anonymous" in the name field.
+      Comments are publicly visible on the tree and in our <a href="https://github.com/OpenTreeOfLife/feedback">feedback repository</a>.
+  </li>
+</ul>
+We describe below what information is stored for each type of user activity below.
+</p>
 
-  <div class="row">
-      <div class="span10 offset1">
-          <p>
-          The Open Tree of Life project is inherently collaborative, with
-          many contributors working in a manner that's open to discussion
-          and review. As a result, we assume that contributors and
-          reviewers are willing to participate in dialogue and to have
-          their work cited in accordance with academic standards.
-          This assumption is core to our mission and drives our approach to
-          handling our users' personal data.
-          </p>
-          <p>
-          We use GitHub to store and share the project's data, as well as login and authentication for data contributors.
-          <strong>[TODO]</strong> We have entered into a Data Protection Agreement with GitHub regarding issues of privacy and personal data.
-          See <a href="https://help.github.com/en/github/site-policy/github-privacy-statement" target="_blank">GitHub's privacy policy</a>
-          for their approach to protecting and managing users' personal data.
-          </p>
 
-          <h3>What kind of information do we keep?</h3>
-          <p>
-          Not much, and as little as possible. Our web apps (for study curation
-          and browsing the synthetic tree) will store a single cookie with a
-          session identifier, with more no personal information.
-          </p>
-          <p>
-          If you want to leave a comment on the synthetic tree, you will be
-          prompted to log into a GitHub account or to enter your name and email address.
-          To leave anonymous feedback, enter 'Anonymous' for the name and leave
-          the email address blank.
-          </p>
-          <p>
-          We also use Google Analytics to gather some basic information about
-          how users are navigating the site, and which features are commonly used.
-          You can "opt out" of this tracking when you first reach the website.
-          </p>
-          <p>
-          The study curation app creates a lot more data, and we definitely would prefer
-          to attribute this work to the authors for the reasons outlined above.
-          If you want to edit studies and trees, the curation tool will require
-          a GitHub account. If your email address has not been made public in
-          your GitHub user profile, it will not appear in our study data, but
-          it's possible that git operations using other tools will reveal your
-          email address.
-          </p>
+<h3 name="apilogs">What information do we keep about users of our APIs?</h3>
+<p><a name="ipaddresses"><strong>IP addresses:</strong></a>
+  The apache web server software we use writes IP addresses of incoming requests in its log files.
+We periodically summarize the counts of calls to different services
+ based on these logs so that we can better understand what parts of 
+ the project are most widely used.
+After that summarization, we delete the log files.
+We do not store the IP addresses in them long term. 
+We do not associate the IP address with any user accounts or user other user information.
+We do not distribute any of this IP addresses to any third-parties.
+The only form that this information is used or distributed is in summary statistics about
+ the frequency of usage of our different services.
+</p>
 
-          <h3>Who can you talk to about data privacy?</h3>
-          <p>
-          If you have questions about how we handle personal data, or if you'd
-          like your personal information to be removed, please send a message to
-          <a href="mailto:privacy@opentreeoflife.org">privacy@opentreeoflife.org</a>.
-          </p>
+<h3><a name="siteusers">What information do we keep about non-logged in users browsing the tree?</a></h3>
+<ol>
+  <li><strong>IP addresses:</strong> When you visit our site, your browser users our API. So the information
+  described in the previous section about IP addresses applies to you.</li>
+  <li><strong>Cookies+Sessions:</strong> Our web apps (browsing the synthetic tree and taxonomy) store a single cookie with a
+session identifier. This cookie and session store no personal information.</li>
+  <li><strong>Google analytics:</strong> We use Google Analytics to gather some basic information about
+how users are navigating the site and which features are commonly used.
+You can "opt out" <strong>[TODO]</strong> of this tracking when you first reach the website.
+</li>
+</ol>
 
-      </div>
-  </div>
+<h3>What information do we keep about anonymous comments on the tree?</h3>
+<p>
+If you want to leave a comment on the synthetic tree, you will be
+prompted to log into a GitHub account or to enter your name and email address.
+To leave anonymous feedback, enter 'Anonymous' for the name and leave
+the email address blank.
+</p>
+<ol>
+  <li><strong>See above:</strong> Anonymous commenters are using the site, so the previous sections apply to them.</li>
+  <li><strong>Comments on GitHub:</strong> We store the comments in a publicly visible form as an "issue" at 
+    <a href="https://github.com/OpenTreeOfLife/feedback/issues">https://github.com/OpenTreeOfLife/feedback/issues/</a></li>
+  <li><strong>Comments on the tree browser:</strong> Open issues will also appear to visitors of the site when they browse to the node
+  of the tree where the issue was created.</li>
+  <li><strong>Name and email address:</strong>If you enter your name and an email address when creating a comment, 
+    the name will appear with a link your email address as the "Author" of the comment.</li>
+</ol>
 
-  <h3 id="comment-header">Comments <i></i></h3>
-  {{=plugin_localcomments(filter='url',url=request.url)}}
+
+<h3>What information do we keep about logged-in users?</h3>
+<ol>
+  <li><strong>See above:</strong> The information in "What information do we keep about non-logged in users browsing the tree?" applies to logged-in users</li>
+  <li><strong>GitHub account info:</strong> We use GitHub for authentication for data contributors.
+This means that the Open Tree of Life project does not store any personal
+  information about its users.
+Our web application can only obtain your name and email address if it is 
+publicly visible in your GitHub profile.
+If you choose not to make that information public, then our application can only
+  tell what your GitHub username is (and the fact that you have successfully
+  authenticated with GitHub using that username). <br />
+  <strong>[TODO]</strong> We have entered into a Data Protection Agreement with GitHub regarding issues of privacy and personal data.
+See <a href="https://help.github.com/en/github/site-policy/github-privacy-statement" target="_blank">GitHub's privacy policy</a>
+for their approach to protecting and managing users' personal data.
+</li>
+</ol>
+
+
+<h3>What information do we keep about study curators?</h3>
+<p>
+The study curation app handle much more data than the commenting feature.
+We prefer to attribute this work to the curators so that they get credit and 
+other members of the community can ask questions about the curated data.
+If you want to edit studies and trees, the curation tool will require
+a log in via a GitHub account. If your email address has not been made public in
+your GitHub user profile, it will not appear in our study data, but
+it's possible that git operations using other tools will reveal your
+email address.
+</p>
+<ol>
+  <li><strong>See above:</strong> The information in "What information do we keep about logged-in users?" applies to curators</li>
+  <li><strong>GitHub id, your name:</strong> When you help with curation, your GitHub username is used as the author of a git commit 
+    so that you get credit for the curation activity.
+    The username (and your real name if that information is public on your GitHub profile) is publicly visible at in the
+    git repository storing the curated information.
+    Those repositories include information on:
+    <ul>
+      <li>studies at <a href="https://github.com/OpenTreeOfLife/phylesystem-1">https://github.com/OpenTreeOfLife/phylesystem-1</a>,</li>
+      <li>collections of trees at <a href="https://github.com/OpenTreeOfLife/collections-1">https://github.com/OpenTreeOfLife/collections-1</a>, and</li>
+      <li>taxonomic amendments at <a href="https://github.com/OpenTreeOfLife/amendments-1">https://github.com/OpenTreeOfLife/amendments-1</a>,</li>
+    </ul></li>
+  <li><strong>your email address:</strong> If you have made your email address publicly visible in your GitHub profile, then that address will
+    occur in the git commit metadata when you save a study. If your email address is not public, then "ANONYMOUS" will be used in the git commit
+    metadata in place of your email.</li>
+</ol>
+
+<h3>What information do we keep about commenters who are logged-in via GitHub?</h3>
+<ol>
+  <li><strong>See above:</strong> The information in "What information do we keep about logged-in users?" applies to curators</li>
+  <li><strong>Comment data:</strong>The same information that is described in "What information do we keep about anonymous comments on the tree?" is
+    associated with the logged-in commenters, except that the comment will appear as an issue that you created on GitHub.
+    Your name and a link to your GitHub profile will appear in the author field.
+    You can use the GitHub account settings to control whether you get email about responses to your comment.</li>
+</ol>
+
+<h2>Who can you talk to about data privacy?</h2>
+<p>
+If you have questions about how we handle personal data, or if you'd
+like your personal information to be removed, please send a message to
+<a href="mailto:privacy@opentreeoflife.org">privacy@opentreeoflife.org</a>.
+</p>
+
+</div>
+</div>
+
+<h3 id="comment-header">Comments <i></i></h3>
+{{=plugin_localcomments(filter='url',url=request.url)}}
 
 </div><!-- end of .container -->
 
