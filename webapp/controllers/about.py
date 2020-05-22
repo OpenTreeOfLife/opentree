@@ -47,6 +47,10 @@ def faq():
     # URL is /opentree/about/faq
     return default_view_dict
 
+def privacy_policy():
+    # URL is /opentree/about/privacy-policy
+    return default_view_dict
+
 def the_synthetic_tree():
     # URL is /opentree/about/the-synthetic-tree
     return default_view_dict
