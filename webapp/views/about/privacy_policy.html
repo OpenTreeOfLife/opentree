@@ -1,0 +1,68 @@
+{{extend 'layout.html'}}
+
+<div class="container">
+  <h1 id="main-title">Privacy Policy</h1>
+
+  <div class="row">
+      <div class="span10 offset1">
+          <p>
+          The Open Tree of Life project is inherently collaborative, with
+          many contributors working in a manner that's open to discussion
+          and review. As a result, we assume that contributors and
+          reviewers are willing to participate in dialogue and to have
+          their work cited in accordance with academic standards.
+          This assumption is core to our mission and drives our approach to
+          handling our users' personal data.
+          </p>
+          <p>
+          We use GitHub to store and share the project's data, as well as login and authentication for data contributors.
+          <strong>[TODO]</strong> We have entered into a Data Protection Agreement with GitHub regarding issues of privacy and personal data.
+          See <a href="https://help.github.com/en/github/site-policy/github-privacy-statement" target="_blank">GitHub's privacy policy</a>
+          for their approach to protecting and managing users' personal data.
+          </p>
+
+          <h3>What kind of information do we keep?</h3>
+          <p>
+          Not much, and as little as possible. Our web apps (for study curation
+          and browsing the synthetic tree) will store a single cookie with a
+          session identifier, with more no personal information.
+          </p>
+          <p>
+          If you want to leave a comment on the synthetic tree, you will be
+          prompted to log into a GitHub account or to enter your name and email address.
+          To leave anonymous feedback, enter 'Anonymous' for the name and leave
+          the email address blank.
+          </p>
+          <p>
+          We also use Google Analytics to gather some basic information about
+          how users are navigating the site, and which features are commonly used.
+          You can "opt out" of this tracking when you first reach the website.
+          </p>
+          <p>
+          The study curation app creates a lot more data, and we definitely would prefer
+          to attribute this work to the authors for the reasons outlined above.
+          If you want to edit studies and trees, the curation tool will require
+          a GitHub account. If your email address has not been made public in
+          your GitHub user profile, it will not appear in our study data, but
+          it's possible that git operations using other tools will reveal your
+          email address.
+          </p>
+
+          <h3>Who can you talk to about data privacy?</h3>
+          <p>
+          If you have questions about how we handle personal data, or if you'd
+          like your personal information to be removed, please send a message to
+          <a href="mailto:privacy@opentreeoflife.org">privacy@opentreeoflife.org</a>.
+          </p>
+
+      </div>
+  </div>
+
+  <h3 id="comment-header">Comments <i></i></h3>
+  {{=plugin_localcomments(filter='url',url=request.url)}}
+
+</div><!-- end of .container -->
+
+<script type="text/javascript">
+    // add any page-specific behavior here
+</script>
