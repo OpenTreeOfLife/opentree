@@ -6,6 +6,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
 <script src="{{=URL('static','js/webapp-helpers.js')}}"></script>
 
 <html lang="en">
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css" />
   <head>
     <!-- Global site tag (gtag.js) - Google Analytics -->
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-143548106-1"></script>
@@ -576,6 +577,31 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
 <div id="spinner" style="display: none;">
     <img src="/opentree/static/images/spinner.gif" />
 </div>
+
+<!-- cookie consent for first-time visitors -->
+<script src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js" data-cfasync="false"></script>
+<script type="text/javascript">
+    window.cookieconsent.initialise({
+      "palette": {
+        "popup": {
+          "background": "#eb6c44",
+          "text": "#ffffff"
+        },
+        "button": {
+          "background": "#f5d948"
+        }
+      },
+      "theme": "classic",
+      "position": "top",
+      "type": "opt-out",
+      "content": {
+        "message": "This website uses cookies maintain user sessions (essential) and to anonymously track how you use the website (optional).",
+        "dismiss": "OK",
+        "deny": "Refuse tracking",
+        "href": "/about/privacy-policy"
+      }
+    });
+</script>
 
 </body>
 </html>
