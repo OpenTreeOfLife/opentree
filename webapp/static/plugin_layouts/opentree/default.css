@@ -547,3 +547,9 @@ div#r0 {
 .argus-error .action-item li {
     list-style: circle;
 }
+.cc-banner.cc-bottom {
+    background-color: #c00;
+    border-top: 2px solid #fff;
+    box-shadow: 0px 0px 21px #000;
+}
+
