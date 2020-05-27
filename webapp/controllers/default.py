@@ -41,7 +41,7 @@ def index():
 
     # handle the first arg (path part) found
     if len(request.args) > 0:
-        if request.args[0] in ['argus',]:  # TODO: add 'onezoom','phylet', others?
+        if request.args[0] in ['argus', 'feedback', 'properties']:  # TODO: add 'onezoom','phylet', others?
             treeview_dict['viewer'] = request.args[0]
         elif '@' in request.args[0]:
             treeview_dict['domSource'], treeview_dict['nodeID'] = request.args[0].split('@')
