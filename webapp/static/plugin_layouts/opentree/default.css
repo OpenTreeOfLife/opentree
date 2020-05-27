@@ -63,9 +63,6 @@ body {
     top: 90px;  /* allow for taller (wrapping) main title? */
     bottom: 0px;  /* WAS 25px for minimal footer */
 }
-#viewer-collection.isolated-feedback {
-    display: none !important;
-}
 #viewer-collection,
 #comments-panel .panel-edges,
 #provenance-panel .panel-edges {
@@ -94,19 +91,10 @@ body {
     margin-left: -50%;
     margin-right: 0;
 }
-#comments-panel.isolated-feedback {
-  /* special style when used in isolation */
-    width: 100% !important;
-    max-width: none !important;
-    margin: 0 !important;
-}
 div.viewer-frame {
     width: 100%;  /* TODO: adapt to narrower window!? */
     margin-left: 0;
     margin-right: 0;
-}
-div.viewer-frame.isolated-feedback {
-    display: none !important;
 }
 #provenance-panel {
     /* margin-right: -200%; */
@@ -445,9 +433,6 @@ div#r0 {
 #footer  .pull-right{
     float: right;
 }
-#footer.isolated-feedback {
-    display: none !important;
-}
 #screen-size-indicator {
     position: absolute;
     left: 0;
@@ -561,4 +546,17 @@ div#r0 {
 }
 .argus-error .action-item li {
     list-style: circle;
+}
+
+/* special styles when showing only feedback UI */
+body.isolated-feedback #comments-panel {
+    width: 100% !important;
+    max-width: none !important;
+    margin: 0 !important;
+}
+body.isolated-feedback #viewer-collection,
+body.isolated-feedback div.viewer-frame,
+body.isolated-feedback #footer
+{
+    display: none !important;
 }
