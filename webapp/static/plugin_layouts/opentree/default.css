@@ -91,6 +91,12 @@ body {
     margin-left: -50%;
     margin-right: 0;
 }
+#comments-panel.isolated-feedback {
+  /* special style when used in isolation */
+    width: 100% !important;
+    max-width: auto !important;
+    margin: 0 !important;
+}
 div.viewer-frame {
     width: 100%;  /* TODO: adapt to narrower window!? */
     margin-left: 0;

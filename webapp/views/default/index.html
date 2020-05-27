@@ -197,11 +197,13 @@
 
    {{ if viewer == 'feedback': }}
     // hide all but the feedback (comments) panel
-    $('#comments-panel').siblings().hide();
-    $('#comments-panel').parentsUntil('body').each(function() {
+    $commentsPanel = $('#comments-panel');
+    $commentsPanel.siblings().hide();
+    $commentsPanel.parentsUntil('body').each(function() {
         var $ancestor = $(this);
         $ancestor.siblings().hide();
     });
+    $commentsPanel.addClass('isolated-feedback').show();
    {{ pass }}
   </script>
   <script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
