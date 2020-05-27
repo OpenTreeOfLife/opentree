@@ -193,9 +193,8 @@
         forcedByURL: true
      {{ pass }}
     };
-  </script>
     // treeview.js will examine this to determine our starting view
-  <script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
+  </script>
 
 {{ if viewer == 'feedback': }}
   <script type="text/javascript">
@@ -209,6 +208,8 @@
     });
     $commentsPanel.show();
   </script>
+{{ else: }}
+  <script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
 {{ pass }}
 
 <!-- hidden template for argus (tree-viewer) legend -->
