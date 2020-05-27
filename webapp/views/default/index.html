@@ -194,6 +194,13 @@
      {{ pass }}
     };
     // treeview.js will examine this to determine our starting view
+
+   {{ if viewer == 'feedback': }}
+    $('#comments-panel').siblings().hide();
+    $('#comments-panel').parentsUntil('body').each( ancestor, function() {
+        $(ancestor).siblings().hide();
+    });
+   {{ pass }}
   </script>
   <script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
 </script>
