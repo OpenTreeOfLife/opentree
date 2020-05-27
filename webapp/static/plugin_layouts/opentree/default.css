@@ -63,6 +63,9 @@ body {
     top: 90px;  /* allow for taller (wrapping) main title? */
     bottom: 0px;  /* WAS 25px for minimal footer */
 }
+#viewer-collection.isolated-feedback {
+    display: none !important;
+}
 #viewer-collection,
 #comments-panel .panel-edges,
 #provenance-panel .panel-edges {
