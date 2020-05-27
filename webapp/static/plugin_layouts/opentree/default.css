@@ -94,13 +94,16 @@ body {
 #comments-panel.isolated-feedback {
   /* special style when used in isolation */
     width: 100% !important;
-    max-width: auto !important;
+    max-width: none !important;
     margin: 0 !important;
 }
 div.viewer-frame {
     width: 100%;  /* TODO: adapt to narrower window!? */
     margin-left: 0;
     margin-right: 0;
+}
+div.viewer-frame.isolated-feedback {
+    display: none !important;
 }
 #provenance-panel {
     /* margin-right: -200%; */
@@ -438,6 +441,9 @@ div#r0 {
 }
 #footer  .pull-right{
     float: right;
+}
+#footer.isolated-feedback {
+    display: none !important;
 }
 #screen-size-indicator {
     position: absolute;
