@@ -196,9 +196,11 @@
     // treeview.js will examine this to determine our starting view
 
    {{ if viewer == 'feedback': }}
+    // hide all but the feedback (comments) panel
     $('#comments-panel').siblings().hide();
-    $('#comments-panel').parentsUntil('body').each( ancestor, function() {
-        $(ancestor).siblings().hide();
+    $('#comments-panel').parentsUntil('body').each(function() {
+        var $ancestor = $(this);
+        $ancestor.siblings().hide();
     });
    {{ pass }}
   </script>
