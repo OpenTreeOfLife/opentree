@@ -559,7 +559,9 @@ body.isolated-feedback #comments-panel {
     max-width: none !important;
     margin: 0 !important;
 }
-body.isolated-feedback #viewer-collection,
+body.isolated-feedback #viewer-collection {
+    top: 0px !important;
+}
 body.isolated-feedback div.viewer-frame,
 body.isolated-feedback #footer
 {
