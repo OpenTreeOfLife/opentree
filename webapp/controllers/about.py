@@ -43,6 +43,10 @@ def open_tree_of_life():
     # URL is /opentree/about/open-tree-of-life
     return default_view_dict
 
+def privacy_policy():
+    # URL is /opentree/about/privacy-policy
+    return default_view_dict
+
 def the_synthetic_tree():
     # URL is /opentree/about/the-synthetic-tree
     return default_view_dict
