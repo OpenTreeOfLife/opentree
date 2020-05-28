@@ -547,7 +547,6 @@ div#r0 {
 .argus-error .action-item li {
     list-style: circle;
 }
-
 /* special styles when showing only feedback UI */
 body.isolated-feedback #comments-panel {
     width: 100% !important;
@@ -562,3 +561,10 @@ body.isolated-feedback #footer
 {
     display: none !important;
 }
+.cc-banner.cc-bottom {
+    background-color: #c00;
+    border-top: 2px solid #fff;
+    box-shadow: 0px 0px 21px #000;
+}
+
+
