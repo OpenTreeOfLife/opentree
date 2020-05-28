@@ -240,6 +240,7 @@ function loadLocalComments( chosenFilter ) {
 /* Not all tree viewers use argus! but we still need other functions in this file.
  * N.B. 'viewer' should be defined in the parent page
  */
+var viewer;
 if (viewer !== 'feedback') {
 
     $(document).ready(function() {
