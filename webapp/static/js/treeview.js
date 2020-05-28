@@ -206,7 +206,7 @@ function loadLocalComments( chosenFilter ) {
         fetchArgs.url = getCommentIndexURL();
 
         commentLabel = window.document.title;
-        if (commentLabel.endsWidth(' - opentree')) {
+        if (commendLabel.match(/ - opentree$/)) {
             // trim to just the distinctive page title
             commentLabel = commentLabel.slice(0, -11);
         }
