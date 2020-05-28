@@ -170,7 +170,7 @@ function loadLocalComments( chosenFilter ) {
     // add a mnemonic to the comment header (for this page? which node?)
     var commentLabel = '';
 
-    if (argus.treeData) {
+    if (argus && argus.treeData) {
         // default filter is for the current location in the synthetic tree
         // TODO: pivot based on current page/view type..
         fetchArgs.filter = chosenFilter || 'synthtree_id,synthtree_node_id';
