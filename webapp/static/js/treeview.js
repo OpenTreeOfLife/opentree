@@ -237,91 +237,98 @@ function loadLocalComments( chosenFilter ) {
     );
 }
 
-$(document).ready(function() {
-    // set default starting node and view, if the URL doesn't specify
-    // NOTE that we override this (using $.extend) with values set in the
-    // main page template, so we can build it from incoming URL in web2py.
-    var initialState = $.extend({
-        viewer: 'argus',
-        domSource: syntheticTreeID,                  // from main HTML view
-        nodeID: syntheticTreeDefaultStartingNodeID,  // from main HTML view
-        nodeName: '',  // names will be updated/corrected by argus callback
-        viewport: '24,201,0,800',
-        forcedByURL: false
-    }, urlState); // urlState should been defined in the main HTML view
+/* Not all tree viewers use argus! but we still need other functions in this file.
+ * N.B. 'viewer' should be defined in the parent page
+ */
+if (viewer !== 'feedback') {
 
-    // check for server-supplied input[type=hidden] widget with depth value
-    var currentMaxDepth = $('#currentMaxDepth').length === 1 ? $('#currentMaxDepth').val() : 3;     // TODO: reset to 2?
+    $(document).ready(function() {
+        // set default starting node and view, if the URL doesn't specify
+        // NOTE that we override this (using $.extend) with values set in the
+        // main page template, so we can build it from incoming URL in web2py.
+        var initialState = $.extend({
+            viewer: 'argus',
+            domSource: syntheticTreeID,                  // from main HTML view
+            nodeID: syntheticTreeDefaultStartingNodeID,  // from main HTML view
+            nodeName: '',  // names will be updated/corrected by argus callback
+            viewport: '24,201,0,800',
+            forcedByURL: false
+        }, urlState); // urlState should been defined in the main HTML view
 
-    // TODO: how should these defaults (borrowed from synthview/index.html) be set?
-    argus = createArgus({
-      "domSource": "ottol",
-      "container": $('#argusCanvasContainer')[0], // get the "raw" element, not a jQuery set
-      "treemachineDomain": treemachine_domain,    // "global" vars from main page template
-      "taxomachineDomain": taxomachine_domain,
-      "useTreemachine": true, // TODO: pivot based on domSource? treeID?
-      "useSyntheticTree": true, // TODO: pivot based on domSource? treeID?
-      "maxDepth": currentMaxDepth
-    });
+        // check for server-supplied input[type=hidden] widget with depth value
+        var currentMaxDepth = $('#currentMaxDepth').length === 1 ? $('#currentMaxDepth').val() : 3;     // TODO: reset to 2?
 
-    if ( History && History.enabled && pageUsesHistory ) {
-        // if there's no prior state, go to the initial target node in the synthetic tree
-        var priorState = History.getState();
+        // TODO: how should these defaults (borrowed from synthview/index.html) be set?
+        argus = createArgus({
+          "domSource": "ottol",
+          "container": $('#argusCanvasContainer')[0], // get the "raw" element, not a jQuery set
+          "treemachineDomain": treemachine_domain,    // "global" vars from main page template
+          "taxomachineDomain": taxomachine_domain,
+          "useTreemachine": true, // TODO: pivot based on domSource? treeID?
+          "useSyntheticTree": true, // TODO: pivot based on domSource? treeID?
+          "maxDepth": currentMaxDepth
+        });
 
-        // Check first for incoming URL that might override prior history
-        if (initialState.forcedByURL) {
-            // apply the state as specified in the URL
-            ///console.log("Applying state from incoming URL...");
-            initialState.nudge = new Date().getTime();
-            History.replaceState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
-        } else if (!(priorState.data.nodeID)) {
-            // replace incomplete" prior history (if found) with default view
-            ///console.log("Correcting incomplete state with default view...");
-            initialState.nudge = new Date().getTime();
-            History.replaceState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
+        if ( History && History.enabled && pageUsesHistory ) {
+            // if there's no prior state, go to the initial target node in the synthetic tree
+            var priorState = History.getState();
+
+            // Check first for incoming URL that might override prior history
+            if (initialState.forcedByURL) {
+                // apply the state as specified in the URL
+                ///console.log("Applying state from incoming URL...");
+                initialState.nudge = new Date().getTime();
+                History.replaceState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
+            } else if (!(priorState.data.nodeID)) {
+                // replace incomplete" prior history (if found) with default view
+                ///console.log("Correcting incomplete state with default view...");
+                initialState.nudge = new Date().getTime();
+                History.replaceState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
+            } else {
+                // nudge the (existing) browser state to view it again
+                ///console.log("Nudging state (and hopefully initial view)...");
+                priorState.data.nudge = new Date().getTime();
+                History.replaceState( priorState.data, priorState.title, priorState.url );
+            }
         } else {
-            // nudge the (existing) browser state to view it again
-            ///console.log("Nudging state (and hopefully initial view)...");
-            priorState.data.nudge = new Date().getTime();
-            History.replaceState( priorState.data, priorState.title, priorState.url );
+            // force initial argus view using defaults above (mimic History state object)
+            // NOTE: we force this through common code to remap ottids to node ids
+            updateTreeView({'data': initialState});
         }
-    } else {
-        // force initial argus view using defaults above (mimic History state object)
-        // NOTE: we force this through common code to remap ottids to node ids
-        updateTreeView({'data': initialState});
-    }
 
-    /*
-    // add splitter between argus + provenance panel (using jquery.splitter plugin)
-    var viewSplitter = $('#viewer-collection').split({
-        orientation:'vertical',
-        limit: 280,             // don't come closer than this to edge
-        position:'70%'          // initial position
+        /*
+        // add splitter between argus + provenance panel (using jquery.splitter plugin)
+        var viewSplitter = $('#viewer-collection').split({
+            orientation:'vertical',
+            limit: 280,             // don't come closer than this to edge
+            position:'70%'          // initial position
+        });
+
+        // bind toggle for provenance panel
+        var lastViewSplitterPosition = viewSplitter.position();
+        $('#provenance-show').unbind('click').click(function() {
+            viewSplitter.position(lastViewSplitterPosition);
+            $(this).hide();
+            return false;
+        });
+        $('#provenance-hide').unbind('click').click(function() {
+            lastViewSplitterPosition = viewSplitter.position();
+            viewSplitter.position( viewSplitter.width() - 2 );
+            $('#provenance-show').show();
+            return false;
+        });
+        */
+        $('#comments-hide').unbind('click').click(function() {
+            toggleCommentsPanel('HIDE');
+            return false;
+        });
+        $('#provenance-hide').unbind('click').click(function() {
+            togglePropertiesPanel('HIDE');
+            return false;
+        });
     });
 
-    // bind toggle for provenance panel
-    var lastViewSplitterPosition = viewSplitter.position();
-    $('#provenance-show').unbind('click').click(function() {
-        viewSplitter.position(lastViewSplitterPosition);
-        $(this).hide();
-        return false;
-    });
-    $('#provenance-hide').unbind('click').click(function() {
-        lastViewSplitterPosition = viewSplitter.position();
-        viewSplitter.position( viewSplitter.width() - 2 );
-        $('#provenance-show').show();
-        return false;
-    });
-    */
-    $('#comments-hide').unbind('click').click(function() {
-        toggleCommentsPanel('HIDE');
-        return false;
-    });
-    $('#provenance-hide').unbind('click').click(function() {
-        togglePropertiesPanel('HIDE');
-        return false;
-    });
-});
+}
 
 var activeToggleFade = 0.5;
 var readyToggleFade = 1.0;

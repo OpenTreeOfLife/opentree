@@ -196,6 +196,8 @@
     // treeview.js will examine this to determine our starting view
   </script>
 
+<script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
+
 {{ if viewer == 'feedback': }}
   <script type="text/javascript">
     // hide all but the feedback (comments) panel
@@ -208,9 +210,8 @@
         $ancestor.siblings().hide();
     });
     $commentsPanel.show();
+    loadLocalComments();
   </script>
-{{ else: }}
-  <script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
 {{ pass }}
 
 <!-- hidden template for argus (tree-viewer) legend -->
