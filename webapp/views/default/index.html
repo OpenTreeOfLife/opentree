@@ -182,6 +182,7 @@
     var syntheticTreeID = '{{=draftTreeName}}';
     var syntheticTreeDefaultStartingNodeID = '{{=startingNodeID}}';
         // TODO: Allow other choices via URL?
+    var viewer = '{{=viewer}}';
 
     // if inbound URL points to a particular location+view, record it here
     var urlState = {
@@ -195,8 +196,24 @@
     };
     // treeview.js will examine this to determine our starting view
   </script>
-  <script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
-</script>
+
+<script type="text/javascript" src="/opentree/static/js/treeview.js"></script>
+
+{{ if viewer == 'feedback': }}
+  <script type="text/javascript">
+    // hide all but the feedback (comments) panel
+    //$('#comments-panel, #viewer-collection, .viewer-frame, #footer').addClass('isolated-feedback');
+    $('body').addClass('isolated-feedback');
+    $commentsPanel = $('#comments-panel');
+    $commentsPanel.siblings().hide();
+    $commentsPanel.parentsUntil('body').each(function() {
+        var $ancestor = $(this);
+        $ancestor.siblings().hide();
+    });
+    $commentsPanel.show();
+    loadLocalComments();
+  </script>
+{{ pass }}
 
 <!-- hidden template for argus (tree-viewer) legend -->
 <div class="modal hide fade" id="tree-view-legend" style="display: none;">
