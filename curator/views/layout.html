@@ -188,6 +188,28 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       $('#maintenance-notice').modal('show');
   }
 
+  // Open a new window for bug reports and other feedback
+  function showFeedbackWindow() {
+      var fbUrl = window.location.protocol + "//" + window.location.hostname
+          + (window.location.port ? ':' + window.location.port: '')
+          + "/opentree/feedback/"+ escape( $('#main-title').text() );
+      console.warn("fbUrl:\n"+ fbUrl);
+      console.warn("request.vars['url']:\n {{= request.vars['url'] or 'NOPE' }}";
+      console.warn("request.get('env').get('http_referer'):\n {{= request.get('env').get('http_referer') or 'NADA' }}";
+      console.warn("window.opener.location.href: "+ window.opener.location.href || 'NOSIREE' );
+      var fbWindow = window.open(fbUrl, 'feedback');
+      if (fbWindow) {
+          fbWindow.focus();
+          // pass any qualifying information via URL? Or wait for a call to `window.opener`?
+
+      } else {
+          alert("Couldn't open a new window. Are you using a popup blocker?");
+          return false;
+      };
+      return false;
+  }
+
+
   // Fetch the current user information for general use
   var userLogin = "{{= get_user_login() }}";
   var userLoginASCII = "{{= get_user_login().encode('ascii','ignore') }}";
@@ -472,6 +494,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
           <h3>Right Sidebar</h3>
           <p></p>
           {{end}}
+          <p></p>
+          <a class="btn btn-small" href="#"
+             onclick="showFeedbackWindow(); return false;">Bug reports and feature suggestions</a>
         </div>
         {{pass}}
 
