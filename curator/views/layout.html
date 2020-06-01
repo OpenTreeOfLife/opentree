@@ -196,7 +196,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       var mainWindowURL = window.location.href || "";
       var fbUrl = window.location.protocol + "//" + window.location.hostname
           + (window.location.port ? ':' + window.location.port: '')
-          + "/opentree/feedback?url="+ escape(mainWindowURL));
+          + "/opentree/feedback?url="+ escape(mainWindowURL);
       console.warn("fbUrl:\n"+ fbUrl);
       console.warn("window.opener.location.href: "+ (window.opener ? window.opener.location.pathname : ""));
       console.warn("main title text: "+ escape( $('#main-title').text() ));
