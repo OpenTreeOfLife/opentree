@@ -34,6 +34,7 @@ def index():
     treeview_dict['nudgingToLatestSyntheticTree'] = False
     treeview_dict['incomingDomSource'] = 'none'
     treeview_dict['showLegendOnLoad'] = request.vars.get('show-legend') or False
+    treeview_dict['feedbackParentWindowURL'] = request.vars.get('parentWindowURL', None)
 
     # add a flag to determine whether to force the viewer to this node (vs. using the
     # browser's stored state for this URL, or a default starting node)
