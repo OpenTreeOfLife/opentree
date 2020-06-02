@@ -597,6 +597,8 @@ def index():
         return node(new_msg)                
 
     # retrieve related comments, based on the chosen filter
+    pprint("=== filter: %s ===" % filter)
+    pprint("=== url: %s ===" % url)
     if filter == 'skip_comments':
         # sometimes we just want the markup/UI (eg, an empty page that's quickly updated by JS)
         comments = [ ]
@@ -611,6 +613,7 @@ def index():
     else:   # fall back to url
         comments = get_local_comments({"URL": url})
 
+    pprint("=== found %d comments ===" % len(comments))
     #pprint(comments) 
 
     for comment in comments:
