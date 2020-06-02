@@ -329,6 +329,7 @@ def smartgrid():
 
 def index():
     # this is a tricky function that does simple display, handles POSTed comments, moderation, etc.
+    from gluon.html import web2pyHTMLParser
 
     # TODO: break this up into more sensible functions, and refactor
     # display/markup generation to shared code?
@@ -338,8 +339,11 @@ def index():
     sourcetree_id = request.vars['sourcetree_id']
     ottol_id = request.vars['ottol_id']
     target_node_label = request.vars['target_node_label']
-    # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
     url = request.vars['url'] or request.get('env').get('http_referer')
+    if 'parentWindowURL=' in request.env.query_string:
+        # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
+        raw_qs_value = request.env.query_string.split('parentWindowURL=')[1];
+        url = str(web2pyHTMLParser(raw_qs_value))  # decode to a proper URL
 
     filter = request.vars['filter']
 
