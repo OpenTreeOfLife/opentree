@@ -23,6 +23,7 @@ def SUL(*a,**b): return UL(*[u for u in a if u],**b)
 script=SCRIPT("""
 var action = null;
 var formhtml = null;
+
 function delete_all_forms() { 
     jQuery('div.plugin_localcomments div.reply').each(function() {
         if ($(this).closest('.issue').length === 0) {
@@ -157,6 +158,14 @@ function capture_form() {
         if (!validateFeedbackForm({VERBOSE: true})) {
             // something's wrong
             return false;
+        }
+
+        if (window.opener) {
+            /* This window was opened by another page! Copy its URL to the 'url' field
+             * This is probably OneZoom, or our curation tool, or some other site using
+             * OpenTree data. We'll group these issues by URL.
+             */
+            $form.find('input[name="url"]').val( window.location.href );
         }
 
         jQuery.post(action,
@@ -330,7 +339,7 @@ def index():
     ottol_id = request.vars['ottol_id']
     target_node_label = request.vars['target_node_label']
     # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
-    url = request.get_vars['parentWindowURL'] or request.vars['url'] or request.get('env').get('http_referer')
+    url = request.vars['url'] or request.get('env').get('http_referer')
 
     filter = request.vars['filter']
 
