@@ -165,7 +165,7 @@ function capture_form() {
              * This is probably OneZoom, or our curation tool, or some other site using
              * OpenTree data. We'll group these issues by URL.
              */
-            $form.find('input[name="url"]').val( window.location.href );
+            $form.find('input[name="url"]').val( window.opener.location.href );
         }
 
         jQuery.post(action,
