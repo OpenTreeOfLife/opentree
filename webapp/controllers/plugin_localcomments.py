@@ -610,7 +610,10 @@ def index():
     else:   # fall back to url
         if 'parentWindowURL=' in url:
             pprint("=== LOOKING for parentWindowURL...")
-            from urllib.parse import unquote_plus
+            try:
+                from urllib import unquote_plus
+            except ImportError:
+                from urllib.parse import unquote_plus
             # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
             raw_qs_value = url.split('parentWindowURL=')[1];
             pprint("=== raw_qs_value: %s" % raw_qs_value)
