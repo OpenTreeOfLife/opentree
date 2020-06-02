@@ -196,16 +196,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       var mainWindowURL = window.location.href || "";
       var fbUrl = window.location.protocol + "//" + window.location.hostname
           + (window.location.port ? ':' + window.location.port: '')
-          + "/opentree/feedback?url="+ escape(mainWindowURL);
-      console.warn("fbUrl:\n"+ fbUrl);
-      console.warn("window.opener.location.href: "+ (window.opener ? window.opener.location.pathname : ""));
-      console.warn("main title text: "+ escape( $('#main-title').text() ));
-
+          + "/opentree/feedback?parentWindowURL="+ escape(mainWindowURL);
       var fbWindow = window.open(fbUrl, 'feedback');
       if (fbWindow) {
           fbWindow.focus();
-          // pass any qualifying information via URL? Or wait for a call to `window.opener`?
-
       } else {
           alert("Couldn't open a new window. Are you using a popup blocker?");
           return false;
