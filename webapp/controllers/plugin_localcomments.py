@@ -332,7 +332,7 @@ def index():
     ottol_id = request.vars['ottol_id']
     target_node_label = request.vars['target_node_label']
     # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
-    url = request.vars['parentWindowURL'] or request.vars['url'] or request.get('env').get('http_referer')
+    url = request.get_vars['parentWindowURL'] or request.vars['url'] or request.get('env').get('http_referer')
 
     filter = request.vars['filter']
 
