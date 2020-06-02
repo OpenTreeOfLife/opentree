@@ -341,13 +341,6 @@ def index():
     target_node_label = request.vars['target_node_label']
     url = request.vars['url'] or request.get('env').get('http_referer')
     pprint("=== request.env.query_string: %s ===" % request.env.query_string)
-    if 'parentWindowURL=' in request.env.query_string:
-        pprint("=== LOOKING for parentWindowURL...")
-        # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
-        raw_qs_value = request.env.query_string.split('parentWindowURL=')[1];
-        pprint("=== raw_qs_value: %s", raw_qs_value)
-        url = str(web2pyHTMLParser(raw_qs_value))  # decode to a proper URL
-        pprint("=== NEW url: %s", url)
 
     filter = request.vars['filter']
 
@@ -615,6 +608,13 @@ def index():
     elif filter == 'ottol_id':
         comments = get_local_comments({"Open Tree Taxonomy id": ottol_id})
     else:   # fall back to url
+        if 'parentWindowURL=' in url:
+            pprint("=== LOOKING for parentWindowURL...")
+            # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
+            raw_qs_value = url.split('parentWindowURL=')[1];
+            pprint("=== raw_qs_value: %s", raw_qs_value)
+            url = str(web2pyHTMLParser(raw_qs_value))  # decode to a proper URL
+            pprint("=== NEW url: %s", url)
         comments = get_local_comments({"URL": url})
 
     pprint("=== found %d comments ===" % len(comments))
