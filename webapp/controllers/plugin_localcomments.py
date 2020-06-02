@@ -609,7 +609,8 @@ def index():
         comments = get_local_comments({"Open Tree Taxonomy id": ottol_id})
     else:   # fall back to url
         if 'parentWindowURL=' in url:
-            pprint("=== LOOKING for parentWindowURL...")
+            pprint("=== NO LONGER LOOKING for parentWindowURL...")
+            """
             try:
                 from urllib import unquote_plus
             except ImportError:
@@ -619,6 +620,7 @@ def index():
             pprint("=== raw_qs_value: %s" % raw_qs_value)
             url = unquote_plus(raw_qs_value)  # decode to a proper URL
             pprint("=== NEW url: %s" % url)
+            """
         comments = get_local_comments({"URL": url})
 
     pprint("=== found %d comments ===" % len(comments))
