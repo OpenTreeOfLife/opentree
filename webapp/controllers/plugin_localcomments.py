@@ -329,7 +329,8 @@ def index():
     sourcetree_id = request.vars['sourcetree_id']
     ottol_id = request.vars['ottol_id']
     target_node_label = request.vars['target_node_label']
-    url = request.vars['url'] or request.get('env').get('http_referer')
+    # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
+    url = request.vars['parentWindowURL'] or request.vars['url'] or request.get('env').get('http_referer')
 
     filter = request.vars['filter']
 
