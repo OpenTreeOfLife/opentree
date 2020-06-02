@@ -341,7 +341,6 @@ def index():
     ottol_id = request.vars['ottol_id']
     target_node_label = request.vars['target_node_label']
     url = request.vars['url'] or request.get('env').get('http_referer')
-    pprint("=== request.env.query_string: %s ===" % request.env.query_string)
 
     filter = request.vars['filter']
 
@@ -613,9 +612,9 @@ def index():
             pprint("=== LOOKING for parentWindowURL...")
             # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
             raw_qs_value = url.split('parentWindowURL=')[1];
-            pprint("=== raw_qs_value: %s", raw_qs_value)
+            pprint("=== raw_qs_value: %s" % raw_qs_value)
             url = str(web2pyHTMLParser(raw_qs_value))  # decode to a proper URL
-            pprint("=== NEW url: %s", url)
+            pprint("=== NEW url: %s" % url)
         comments = get_local_comments({"URL": url})
 
     pprint("=== found %d comments ===" % len(comments))
