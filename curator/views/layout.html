@@ -193,7 +193,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       // ASSUMES that synth-tree viewer is on the same domain!
       var fbUrl = window.location.protocol + "//" + window.location.hostname
           + (window.location.port ? ':' + window.location.port: '')
-          + "/opentree/feedback";
+          + "/opentree/feedback?parentWindowURL="+ escape(window.location.href);
       var fbWindow = window.open(fbUrl, 'feedback');
       if (fbWindow) {
           fbWindow.focus();
