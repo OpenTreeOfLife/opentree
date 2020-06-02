@@ -613,7 +613,7 @@ def index():
             # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
             raw_qs_value = url.split('parentWindowURL=')[1];
             pprint("=== raw_qs_value: %s" % raw_qs_value)
-            url = str(web2pyHTMLParser(raw_qs_value).tree)  # decode to a proper URL
+            url = urllib.unquote_plus(raw_qs_value)  # decode to a proper URL
             pprint("=== NEW url: %s" % url)
         comments = get_local_comments({"URL": url})
 
