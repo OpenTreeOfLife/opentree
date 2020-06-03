@@ -547,10 +547,10 @@ def index():
 
             # more useful links for some footer fields
             if url.startswith('http'):
-                # truncate visible link
-                url_link = '[{0}]({1})'.format(url.split('//')[1], url)
+                # repeat full (absolute) URL as link text
+                url_link = '[{0}]({1})'.format(url, url)
             else:
-                # expand hidden link
+                # expand hidden link for root-relative URL
                 url_link = '[{0}]({1}{2})'.format(url, request.get('env').get('http_origin'), url)
 
             # add full metadata for an issue 
