@@ -822,8 +822,8 @@ def get_local_comments(location={}):
     url = url.format(GH_BASE_URL, search_text)
     resp = requests.get(url, headers=GH_GET_HEADERS, timeout=10)  
     # N.B. Timeout is in seconds, and watches for *any* new data within that time (vs. whole response)
-    ##print(url)
-    ##print(resp)
+    print(url)
+    print(resp)
     try:
         resp.raise_for_status()
     except:
@@ -834,10 +834,10 @@ def get_local_comments(location={}):
     except:
         results = resp.json
     ##pprint(results)
-    ##print("Returned {0} issues ({1})".format(
-    ##  results["total_count"],
-    ##  results["incomplete_results"] and 'INCOMPLETE' or 'COMPLETE'
-    ##  ))
+    print("Returned {0} issues ({1})".format(
+      results["total_count"],
+      results["incomplete_results"] and 'INCOMPLETE' or 'COMPLETE'
+      ))
     return results['items']
 
 def clear_local_comments():
