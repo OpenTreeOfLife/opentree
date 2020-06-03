@@ -330,7 +330,6 @@ def smartgrid():
 
 def index():
     # this is a tricky function that does simple display, handles POSTed comments, moderation, etc.
-    from gluon.html import web2pyHTMLParser
 
     # TODO: break this up into more sensible functions, and refactor
     # display/markup generation to shared code?
@@ -834,7 +833,7 @@ def get_local_comments(location={}):
     ##print("Returned {0} issues ({1})".format(
     ##  results["total_count"],
     ##  results["incomplete_results"] and 'INCOMPLETE' or 'COMPLETE'
-    ##))
+    ##  ))
     return results['items']
 
 def clear_local_comments():
