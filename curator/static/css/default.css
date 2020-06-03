@@ -963,3 +963,9 @@ a.node-direct-link {
     font-weight: bold;
     margin: 4px 0 0 2px;
 }
+
+.curation-feedback-btn {
+    clear: right;
+    float: right;
+    margin: -6px 0 10px;
+}
