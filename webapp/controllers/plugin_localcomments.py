@@ -609,18 +609,16 @@ def index():
         comments = get_local_comments({"Open Tree Taxonomy id": ottol_id})
     else:   # fall back to url
         if 'parentWindowURL=' in url:
-            pprint("=== NO LONGER LOOKING for parentWindowURL...")
-            """
+            #pprint("=== EXTRACTING parentWindowURL...")
             try:
                 from urllib import unquote_plus
             except ImportError:
                 from urllib.parse import unquote_plus
             # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
             raw_qs_value = url.split('parentWindowURL=')[1];
-            pprint("=== raw_qs_value: %s" % raw_qs_value)
+            #pprint("=== raw_qs_value: %s" % raw_qs_value)
             url = unquote_plus(raw_qs_value)  # decode to a proper URL
-            pprint("=== NEW url: %s" % url)
-            """
+            #pprint("=== NEW url: %s" % url)
         comments = get_local_comments({"URL": url})
 
     pprint("=== found %d comments ===" % len(comments))
