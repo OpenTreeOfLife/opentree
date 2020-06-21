@@ -5817,6 +5817,7 @@ var nexsonTemplates = {
                 "data": {
                     "searchContext": {"$": "All life"},
                     "useFuzzyMatching": false,
+                    "autoAcceptExactMatches": true,
                     "substitutions": {"substitution": [
                         // always one default (empty) substitution
                         {

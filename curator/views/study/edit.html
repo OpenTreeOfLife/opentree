@@ -1265,6 +1265,13 @@ body {
                       <span data-bind="text: recentMappingSpeedLabel">10 sec / name</span>
                   </div>
                 </div>
+                <form class="form-inline" style="margin: 0; margin-left: 8px;">
+                 <fieldset>
+                  <label><input id="toggle-accept-exact-matches" type="checkbox" style="margin-top: 0; padding-top: 0;"
+                      data-bind="checked: getOTUMappingHints().data['autoAcceptExactMatches'],
+                                 event: { click: updateMappingHints }"> Auto-accept exact matches</label>
+                 </fieldset>
+                </form>
                 <div class="mapping-details">
                     <p><strong>Note</strong> that the OpenTree taxonomy contains mostly
                     binomials, but in some cases, terminals comprising <em>genus +
