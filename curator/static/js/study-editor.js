@@ -7034,8 +7034,8 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
 }
 
 function getNodeConflictDescription(tree, node) {
-    var witnessHTML = "",
-        statusHTML = "";
+    var statusHTML = "",
+        witnessHTML = "";
 
     switch(node.conflictDetails.status) {
       case 'terminal':
@@ -7099,7 +7099,7 @@ function getNodeConflictDescription(tree, node) {
             }
 
             witnessHTML += '<a href="'+ witnessURL +'" target="_blank">'+ (witnessName || witnessID) +'</a>';
-            if (idArray.length > i) {
+            if (idArray.length > (i+1)) {
                 witnessHTML += ", ";
             }
         });
