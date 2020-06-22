@@ -7067,7 +7067,7 @@ function getNodeConflictDescription(tree, node) {
 
             switch (tree.conflictDetails.referenceTreeID) {
                 case 'ott':
-                    witnessURL = getTaxobrowserURL(node.conflictDetails.witness);
+                    witnessURL = getTaxobrowserURL(witnessID);
                     break;
 
                 case 'synth':
