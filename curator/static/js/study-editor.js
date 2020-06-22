@@ -7101,6 +7101,10 @@ function getNodeConflictDescription(tree, node) {
             witnessHTML += '<a href="'+ witnessURL +'" target="_blank">'+ (witnessName || witnessID) +'</a>';
             if (idArray.length > (i+1)) {
                 witnessHTML += ", ";
+                if (i % 2) {  
+                    // after every 2 witness links, add a new line and indent
+                    witnessHTML += '<br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; '
+                }
             }
         });
     } else {
