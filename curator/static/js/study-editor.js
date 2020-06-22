@@ -7058,14 +7058,14 @@ function getNodeConflictDescription(tree, node) {
       case 'supported_by':
       case 'partial_path_of':
       case 'mapped_to_taxon':
-          statusHTML = 'Aligned with ";
+          statusHTML = "Aligned with ";
           break;
       case 'conflicts_with':
-          statusHTML = 'Conflicts with ";
+          statusHTML = "Conflicts with ";
           break;
       case 'resolved_by':
       case 'resolves':
-          statusHTML = 'Resolves ";
+          statusHTML = "Resolves ";
           break;
       default:
           console.error("ERROR: unknown conflict status '"+ node.conflictDetails.status +"'!");
