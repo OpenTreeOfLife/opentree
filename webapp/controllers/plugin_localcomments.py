@@ -816,11 +816,13 @@ def get_local_comments(location={}):
     ##TODO: search only within body?
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
     url = url.format(GH_BASE_URL, search_text)
-    resp = requests.get(url, headers=GH_GET_HEADERS, timeout=10)  
-    # N.B. Timeout is in seconds, and watches for *any* new data within that time (vs. whole response)
-    ##print(url)
-    ##print(resp)
     try:
+        # 21 Apr, 2020: bug fix: keep this .get in a try block, because a HTTPSConnectionPool can be
+        #   raised here (e.g. when GitHub is down)
+        resp = requests.get(url, headers=GH_GET_HEADERS, timeout=10)
+        # N.B. Timeout is in seconds, and watches for *any* new data within that time (vs. whole response)
+        ##print(url)
+        ##print(resp)
         resp.raise_for_status()
     except:
         print('call to {u} failed. Returning empty comments list'.format(u=url))
