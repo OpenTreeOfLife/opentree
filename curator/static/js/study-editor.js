@@ -7034,85 +7034,94 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
 }
 
 function getNodeConflictDescription(tree, node) {
-    var witnessURL = "",
-        missingWitnessDescription = "";
-    // Build "witness" node URLs based on the chosen reference tree.
-    switch (tree.conflictDetails.referenceTreeID) {
-        case 'ott':
-            if (node.conflictDetails.witness) {
-                witnessURL = getTaxobrowserURL(node.conflictDetails.witness);
-            } else {
-                missingWitnessDescription = "anonymous taxonomy node"; // unlikely!
-            }
-            break;
-        case 'synth':
-            if (node.conflictDetails.witness) {
-                // EXAMPLE:  https://tree.opentreeoflife.org/opentree/argus/ottol@770315/Homo-sapiens
-                if (isNaN(node.conflictDetails.witness)) {
-                    // it's a synthetic-tree node ID (e.g. 'ott1234' or 'mrcaott123ott456')
-                   /* N.B. Ideally we'd include the current synth-version (e.g. '/opentree7.0@ott123'),
-                    * like so:
+    var statusHTML = "",
+        witnessHTML = "";
 
-                    witnessURL = "/opentree/argus/{SYNTH_VERSION}@{NODE_ID}"
-                        .replace('{SYNTH_VERSION}', referenceTreeVersion)
-                        .replace('{NODE_ID}', node.conflictDetails.witness);
-
-                    * But this is not yet provided by the conflict service. Perhaps we could capture
-                    * this as <tree>.conflictDetails['referenceTreeVersion']
-                    *
-                    * For now, omitting the version entirely (e.g. '/@ott123') will redirect to
-                    * the latest-version URL.
-                    */
-                    witnessURL = "/opentree/argus/@{NODE_ID}"
-                        .replace('{NODE_ID}', node.conflictDetails.witness);
-                } else {
-                    // it's a numeric OTT taxon ID (e.g. '1234')
-                    witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
-                }
-            } else {
-                missingWitnessDescription = "anonymous synth node";
-            }
-            break;
-        default:
-            console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
-            return;
-    }
-
-    var conflictHTML = "";
     switch(node.conflictDetails.status) {
       case 'terminal':
       case 'supported_by':
       case 'partial_path_of':
       case 'mapped_to_taxon':
-          if (witnessURL) {
-              conflictHTML = 'Aligned with <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
-          } else {
-              conflictHTML = 'Aligned with '+ missingWitnessDescription;
-          }
+          statusHTML = "Aligned with ";
           break;
       case 'conflicts_with':
-          if (witnessURL) {
-              conflictHTML = 'Conflicts with <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
-          } else {
-              conflictHTML = 'Conflicts with '+ missingWitnessDescription;
-          }
+          statusHTML = "Conflicts with ";
           break;
       case 'resolved_by':
       case 'resolves':
-          if (witnessURL) {
-              conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
-          } else {
-              conflictHTML = 'Resolves '+ missingWitnessDescription;
-          }
+          statusHTML = "Resolves ";
           break;
       default:
           console.error("ERROR: unknown conflict status '"+ node.conflictDetails.status +"'!");
     }
 
-    return '<div class="node-conflict-status-'+ node.conflictDetails.status +'">'+ conflictHTML +'</div>';
+    // Build "witness" node URLs based on the chosen reference tree.
+    if (node.conflictDetails.witness) {
+        // NB that there can be zero, one, or more witness nodes. These should be listed in two matching arrays in an array
+        // wrap any single value found into an array for uniform treatment
+        var idArray = $.isArray(node.conflictDetails.witness) ? node.conflictDetails.witness : [node.conflictDetails.witness] ;
+        var nameArray = $.isArray(node.conflictDetails.witness_name) ? node.conflictDetails.witness_name : [node.conflictDetails.witness_name] ;
+        $.each(idArray, function(i, witnessID) {
+            var witnessName = nameArray[i],
+                witnessURL = "";
+
+            switch (tree.conflictDetails.referenceTreeID) {
+                case 'ott':
+                    witnessURL = getTaxobrowserURL(witnessID);
+                    break;
+
+                case 'synth':
+                    if (isNaN(witnessID)) {
+                        // it's a synthetic-tree node ID (e.g. 'ott1234' or 'mrcaott123ott456')
+                        /* N.B. Ideally we'd include the current synth-version (e.g. '/opentree7.0@ott123'),
+                         * like so:
+
+                        witnessURL = "/opentree/argus/{SYNTH_VERSION}@{NODE_ID}"
+                            .replace('{SYNTH_VERSION}', referenceTreeVersion)
+                            .replace('{NODE_ID}', node.conflictDetails.witness);
+
+                        * But this is not yet provided by the conflict service. Perhaps we could capture
+                        * this as <tree>.conflictDetails['referenceTreeVersion']
+                        *
+                        * For now, omitting the version entirely (e.g. '/@ott123') will redirect to
+                        * the latest-version URL.
+                        */
+                        witnessURL = "/opentree/argus/@{NODE_ID}".replace('{NODE_ID}', witnessID);
+                    } else {
+                        // it's a numeric OTT taxon ID (e.g. '1234')
+                        witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', witnessID);
+                    }
+                    break;
+
+                default:
+                    console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+                    return;
+            }
+
+            witnessHTML += '<a href="'+ witnessURL +'" target="_blank">'+ (witnessName || witnessID) +'</a>';
+            if (idArray.length > (i+1)) {
+                witnessHTML += ", ";
+                if (i % 2) {  
+                    // after every 2 witness links, add a new line and indent
+                    witnessHTML += '<br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; '
+                }
+            }
+        });
+    } else {
+        // if empty or not found, assume there is no witness
+        switch (tree.conflictDetails.referenceTreeID) {
+            case 'ott':
+                witnessHTML = "anonymous taxonomy node"; // unlikely!
+                break;
+            case 'synth':
+                witnessHTML = "anonymous synth node";
+                break;
+            default:
+                console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+                return;
+        }
+    }
+    return '<div class="node-conflict-status-'+ node.conflictDetails.status +'">'+ statusHTML + witnessHTML +'</div>';
 }
 
 
