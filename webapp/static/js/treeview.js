@@ -884,7 +884,9 @@ function showObjectProperties( objInfo, options ) {
                 // this supporting data is already in arguson
             } else {
                 // it's a study; call the index to get full details
-                if ((typeof sourceMetadata['sourceDetails'] === 'undefined') && (sourceMetadata['loadStatus'] !== 'PENDING')) {
+                if ((typeof sourceMetadata['sourceDetails'] === 'undefined')
+                 && (sourceMetadata['loadStatus'] !== 'PENDING')        // fetch in progress
+                 && (sourceMetadata['loadStatus'] !== 'FAILED')) {      // fetch tried and failed
                     // don't keep sending requests for the same source! we manage this with 'loadStatus'
                     sourceMetadata['loadStatus'] = 'PENDING';
                     ///console.warn('>>>>>>>>>>>>>>> sourceDetails NOT FOUND for sourceID '+ sourceID +', FETCHING NOW...');
