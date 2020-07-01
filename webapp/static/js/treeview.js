@@ -909,13 +909,13 @@ function showObjectProperties( objInfo, options ) {
                                     var studyInfo = data.matched_studies[0];
                                     cbSourceMetadata['sourceDetails'] = studyInfo;
                                     cbSourceMetadata['loadStatus'] = 'COMPLETE';
-                                    // Nudge for a refresh of the properties display?
-                                    showObjectProperties( objInfo );
                                 } else {
                                     console.log(">>>> EXPECTED to find a matching study for id '"+ (cbSourceMetadata).study_id +"', not this:");
                                     console.log(data);
                                     cbSourceMetadata['loadStatus'] = 'FAILED';
                                 }
+                                // In either case, nudge for a refresh of the properties display?
+                                showObjectProperties( objInfo );
                             }
                         }
                     );
