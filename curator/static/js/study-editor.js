@@ -10848,7 +10848,7 @@ console.log(stylesheetHTML);
     // create a temporary XML document
     var serializer = new XMLSerializer();
     var tempXMLDoc = document.implementation.createDocument(
-        null,   // desired namespace, or null
+        "http://www.w3.org/2000/svg",   // desired namespace, or null
         "svg",  // name of top-level element
         null    // desired doctype, or null
     )
