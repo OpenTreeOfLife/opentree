@@ -10829,8 +10829,11 @@ function updateSaveTreeViewLink() {
         // N.B. putting it where even Inkscape can find it :-/
         var stylesheetHTML = $treeStylesheet[0].outerHTML;
         // Inkscape is picky about `svg:style` vs. `xhtml:style`!
+        /*
         stylesheetHTML = stylesheetHTML.replace('<style', '<svg:style')
                                        .replace('</style', '</svg:style');
+        */
+        stylesheetHTML = stylesheetHTML.replace('<style', '<style xmlns="http://www.w3.org/2000/svg"');
         $treeSVG.prepend( stylesheetHTML );
     }
 
