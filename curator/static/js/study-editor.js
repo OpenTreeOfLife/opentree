@@ -10849,7 +10849,11 @@ function updateSaveTreeViewLink() {
     if ($treeSVG.find('style').length === 0) {
         // copy the main page's tree-view stylesheet exactly
         // N.B. putting it where even Inkscape can find it :-/
-        $treeSVG.prepend( $treeStylesheet[0].outerHTML );
+        var stylesheetHTML = $treeStylesheet[0].outerHTML;
+        // Inkscape is picky about `svg:style` vs. `xhtml:style`!
+        stylesheetHTML = stylesheetHTML.replace('<style', '<svg:style')
+                                       .replace('</style', '</svg:style');
+        $treeSVG.prepend( stylesheetHTML );
     }
 
     // Serialize the main SVG node (converting HTML entities to Unicode); first, we
