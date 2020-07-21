@@ -10859,8 +10859,8 @@ function updateSaveTreeViewLink() {
         stylesheetHTML = stylesheetHTML.replace('<style', '<style xmlns="http://www.w3.org/2000/svg"');
         */
         // Replace its implicit namespace with explicit? or remove entirely?
-        stylesheetHTML = stylesheetHTML.replace('xmlns="http://www.w3.org/1999/xhtml"', '');
-        // stylesheetHTML = stylesheetHTML.replace('xmlns="http://www.w3.org/1999/xhtml"', 'xmlns="http://www.w3.org/2000/svg"');
+        //stylesheetHTML = stylesheetHTML.replace('xmlns="http://www.w3.org/1999/xhtml"', '');
+        stylesheetHTML = stylesheetHTML.replace('xmlns="http://www.w3.org/1999/xhtml"', 'xmlns="http://www.w3.org/2000/svg"');
         $treeSVG.prepend( stylesheetHTML );
     }
 
