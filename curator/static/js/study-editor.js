@@ -10833,12 +10833,14 @@ function updateSaveTreeViewLink() {
         stylesheetHTML = stylesheetHTML.replace('<style', '<svg:style')
                                        .replace('</style', '</svg:style');
         */
-        /* ADDS a second xmlns!
+console.log("========== BEFORE:");
+console.log(stylesheetHTML);
         stylesheetHTML = stylesheetHTML.replace('<style', '<style xmlns="http://www.w3.org/2000/svg"');
-        */
+console.log("========== AFTER:");
+console.log(stylesheetHTML);
         // Replace its implicit namespace with explicit? or remove entirely?
         //stylesheetHTML = stylesheetHTML.replace('xmlns="http://www.w3.org/1999/xhtml"', '');
-        stylesheetHTML = stylesheetHTML.replace('xmlns="http://www.w3.org/1999/xhtml"', 'xmlns="http://www.w3.org/2000/svg"');
+        //stylesheetHTML = stylesheetHTML.replace('xmlns="http://www.w3.org/1999/xhtml"', 'xmlns="http://www.w3.org/2000/svg"');
         $treeSVG.prepend( stylesheetHTML );
     }
 
