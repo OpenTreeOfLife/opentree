@@ -10851,28 +10851,13 @@ function updateSaveTreeViewLink() {
         // copy the main page's tree-view stylesheet exactly
         // N.B. putting it where even Inkscape can find it :-/
         var stylesheetHTML = $treeStylesheet[0].outerHTML;
-        // Inkscape is picky about `svg:style` vs. `xhtml:style`!
-        /* NO, this is later unrecognized in the SVG DOM
-        stylesheetHTML = stylesheetHTML.replace('<style', '<svg:style')
-                                       .replace('</style', '</svg:style');
+        /* Inkscape is picky about `svg:style` vs. `xhtml:style`!
+         * jQuery's $.prepend() implicitly creates a DOM element from our HTML, and
+         * that element is always from the xhtml namespace. We need to use an
+         * alternative, explicit method to create an `svg:style` element.
         */
-        /* NO, this results in a second 'xmlns' attribute (invalid)
-        stylesheetHTML = stylesheetHTML.replace('<style', '<style xmlns="http://www.w3.org/2000/svg"');
-        *;
-        /* NO, the final result is always an `xhtml:style` element
-        // Replace its implicit namespace with explicit? or remove entirely?
-        //stylesheetHTML = stylesheetHTML.replace('xmlns="http://www.w3.org/1999/xhtml"', '');
-        //stylesheetHTML = stylesheetHTML.replace('xmlns="http://www.w3.org/1999/xhtml"', 'xmlns="http://www.w3.org/2000/svg"');
-        */
-
-        /* OK the problem is *here*. jQuery's prepend is implicitly creating a
-         * DOM element from our HTML, and that element is always from the xhtml
-         * namespace. We need to use an alternative, explicit method to create
-         * an `svg:style` element.
-        */
-        //var svgEl = document.createElementNS(svgUrl, "style");
         var svgHolder = document.createElementNS(svgUrl, "svg");
-        svgHolder.innerHTML = stylesheetHTML;  // will this inherit the parent's namespace?
+        svgHolder.innerHTML = stylesheetHTML;  // N.B. this inherits the parent's namespace!
         $treeSVG.prepend( svgHolder.firstChild );
     }
 
