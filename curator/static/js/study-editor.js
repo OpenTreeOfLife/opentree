@@ -10843,7 +10843,8 @@ function updateSaveTreeViewLink() {
     var fileName = slugify( treeName ) +'.svg';
 
     // confirm SVG has needed attributes (missing in Firefox)
-    $treeSVG.attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
+    var svgUrl = "http://www.w3.org/2000/svg";
+    $treeSVG.attr({ version: '1.1' , xmlns: svgUrl});
 
     // confirm SVG has our CSS styles for the tree view (or add them now)
     if ($treeSVG.find('style').length === 0) {
@@ -10851,19 +10852,28 @@ function updateSaveTreeViewLink() {
         // N.B. putting it where even Inkscape can find it :-/
         var stylesheetHTML = $treeStylesheet[0].outerHTML;
         // Inkscape is picky about `svg:style` vs. `xhtml:style`!
-        /*
+        /* NO, this is later unrecognized in the SVG DOM
         stylesheetHTML = stylesheetHTML.replace('<style', '<svg:style')
                                        .replace('</style', '</svg:style');
         */
-console.log("========== BEFORE:");
-console.log(stylesheetHTML);
+        /* NO, this results in a second 'xmlns' attribute (invalid)
         stylesheetHTML = stylesheetHTML.replace('<style', '<style xmlns="http://www.w3.org/2000/svg"');
-console.log("========== AFTER:");
-console.log(stylesheetHTML);
+        *;
+        /* NO, the final result is always an `xhtml:style` element
         // Replace its implicit namespace with explicit? or remove entirely?
         //stylesheetHTML = stylesheetHTML.replace('xmlns="http://www.w3.org/1999/xhtml"', '');
         //stylesheetHTML = stylesheetHTML.replace('xmlns="http://www.w3.org/1999/xhtml"', 'xmlns="http://www.w3.org/2000/svg"');
-        $treeSVG.prepend( stylesheetHTML );
+        */
+
+        /* OK the problem is *here*. jQuery's prepend is implicitly creating a
+         * DOM element from our HTML, and that element is always from the xhtml
+         * namespace. We need to use an alternative, explicit method to create
+         * an `svg:style` element.
+        */
+        //var svgEl = document.createElementNS(svgUrl, "style");
+        var svgHolder = document.createElementNS(svgUrl, "svg");
+        svgHolder.innerHTML = stylesheetHTML;  // will this inherit the parent's namespace?
+        $treeSVG.prepend( svgHolder.firstChild );
     }
 
     // Serialize the main SVG node (converting HTML entities to Unicode); first, we
