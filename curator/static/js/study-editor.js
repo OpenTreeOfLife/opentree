@@ -10821,20 +10821,29 @@ function updateSaveTreeViewLink() {
     var fileName = slugify( treeName ) +'.svg';
 
     // confirm SVG has needed attributes (missing in Firefox)
-    $treeSVG.attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
+    var svgUrl = "http://www.w3.org/2000/svg";
+    $treeSVG.attr({ version: '1.1' , xmlns: svgUrl});
 
     // confirm SVG has our CSS styles for the tree view (or add them now)
     if ($treeSVG.find('style').length === 0) {
         // copy the main page's tree-view stylesheet exactly
         // N.B. putting it where even Inkscape can find it :-/
-        $treeSVG.prepend( $treeStylesheet[0].outerHTML );
+        var stylesheetHTML = $treeStylesheet[0].outerHTML;
+        /* Inkscape is picky about `svg:style` vs. `xhtml:style`!
+         * jQuery's $.prepend() implicitly creates a DOM element from our HTML, and
+         * that element is always from the xhtml namespace. We need to use an
+         * alternative, explicit method to create an `svg:style` element.
+        */
+        var svgHolder = document.createElementNS(svgUrl, "svg");
+        svgHolder.innerHTML = stylesheetHTML;  // N.B. this inherits the parent's namespace!
+        $treeSVG.prepend( svgHolder.firstChild );
     }
 
     // Serialize the main SVG node (converting HTML entities to Unicode); first, we
     // create a temporary XML document
     var serializer = new XMLSerializer();
     var tempXMLDoc = document.implementation.createDocument(
-        null,   // desired namespace, or null
+        "http://www.w3.org/2000/svg",   // desired namespace, or null
         "svg",  // name of top-level element
         null    // desired doctype, or null
     )
