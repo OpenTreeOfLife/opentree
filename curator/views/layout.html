@@ -188,6 +188,23 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       $('#maintenance-notice').modal('show');
   }
 
+  // Open a new window for bug reports and other feedback
+  function showFeedbackWindow() {
+      // ASSUMES that synth-tree viewer is on the same domain!
+      var fbUrl = window.location.protocol + "//" + window.location.hostname
+          + (window.location.port ? ':' + window.location.port: '')
+          + "/opentree/feedback?parentWindowURL="+ escape(window.location.href);
+      var fbWindow = window.open(fbUrl, 'feedback');
+      if (fbWindow) {
+          fbWindow.focus();
+      } else {
+          alert("Couldn't open a new window. Are you using a popup blocker?");
+          return false;
+      };
+      return false;
+  }
+
+
   // Fetch the current user information for general use
   var userLogin = "{{= get_user_login() }}";
   var userLoginASCII = "{{= get_user_login().encode('ascii','ignore') }}";
@@ -472,9 +489,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
           <h3>Right Sidebar</h3>
           <p></p>
           {{end}}
-        </div>
+          <p></p>
         {{pass}}
-
+          <a class="btn Xbtn-small btn-info curation-feedback-btn" href="#"
+             onclick="showFeedbackWindow(); return false;">Submit a bug report or suggestion</a>
+        </div>
     </section><!-- #main.main row -->
     </div><!-- .container -->
       <!--</div>--><!-- main -->

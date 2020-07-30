@@ -151,9 +151,15 @@
              <div>
                {{  # initialize comments with a naive url-based query
                    # (this will probably be overwritten by tree-view data)
-                   url = request.url
+                   if feedbackParentWindowURL:
+                       filter = 'url'
+                       url = feedbackParentWindowURL
+                   else:
+                       filter = 'skip_comments'
+                       url = request.url
+                   pass
                }}
-               {{=plugin_localcomments(filter='skip_comments',url=url)}}
+               {{=plugin_localcomments(filter=filter,url=url)}}
              </div>
             </div>
            </div>

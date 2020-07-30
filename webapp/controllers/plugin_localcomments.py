@@ -159,6 +159,14 @@ function capture_form() {
             return false;
         }
 
+        if (window.opener) {
+            /* This window was opened by another page! Copy its URL to the 'url' field
+             * This is probably OneZoom, or our curation tool, or some other site using
+             * OpenTree data. We'll group these issues by URL.
+             */
+            $form.find('input[name="url"]').val( window.opener.location.href );
+        }
+
         jQuery.post(action,
             {
                ////$'thread_parent_id': form.find('input[name="thread_parent_id"]').val(),
@@ -536,10 +544,10 @@ def index():
 
             # more useful links for some footer fields
             if url.startswith('http'):
-                # truncate visible link
-                url_link = '[{0}]({1})'.format(url.split('//')[1], url)
+                # repeat full (absolute) URL as link text
+                url_link = '[{0}]({1})'.format(url, url)
             else:
-                # expand hidden link
+                # expand hidden link for root-relative URL
                 url_link = '[{0}]({1}{2})'.format(url, request.get('env').get('http_origin'), url)
 
             # add full metadata for an issue 
@@ -595,6 +603,17 @@ def index():
     elif filter == 'ottol_id':
         comments = get_local_comments({"Open Tree Taxonomy id": ottol_id})
     else:   # fall back to url
+        if 'parentWindowURL=' in url:
+            #pprint("=== EXTRACTING parentWindowURL...")
+            try:
+                from urllib import unquote_plus
+            except ImportError:
+                from urllib.parse import unquote_plus
+            # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
+            raw_qs_value = url.split('parentWindowURL=')[1];
+            #pprint("=== raw_qs_value: %s" % raw_qs_value)
+            url = unquote_plus(raw_qs_value)  # decode to a proper URL
+            #pprint("=== NEW url: %s" % url)
         comments = get_local_comments({"URL": url})
 
     #pprint(comments) 
