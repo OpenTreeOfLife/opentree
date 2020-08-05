@@ -3,6 +3,7 @@
 from applications.opentree.modules.opentreewebapputil import get_user_login, get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch
 }}
 <html lang="{{=T.accepted_language or 'en'}}" class="no-js"><!-- no-js need it for modernzr -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css" />
   <head>
   <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-143548106-1"></script>
@@ -1071,5 +1072,62 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div>
 {{ pass }}
 
+<!-- cookie consent for first-time visitors -->
+<script src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js" data-cfasync="false"></script>
+<script type="text/javascript">
+    function showCurrentCookieStatus() {
+        // TODO: Vary this message based on latest user decision?
+        return "This website uses cookies to maintain user sessions (essential) and to anonymously track how people use the website (optional).";
+    }
+    function forceDeleteTrackingCookies() {
+      // Clear any existing tracking cookies from Google Analytics!
+      ///window['ga-disable-UA-143548106-1'] = true;
+      // N.B. `document.cookie` is a smart setter, won't affect other cookies
+      document.cookie = "_ga=;max-age=-1;path=/;domain=.opentreeoflife.org";
+      document.cookie = "_gid=;max-age=-1;path=/;domain=.opentreeoflife.org";
+      // sometimes these cookies are set to third-level domains! why?!
+      document.cookie = "_ga=;max-age=-1;path=/;domain=.devtree.opentreeoflife.org";
+      document.cookie = "_gid=;max-age=-1;path=/;domain=.devtree.opentreeoflife.org";
+      document.cookie = "_ga=;max-age=-1;path=/;domain=.tree.opentreeoflife.org";
+      document.cookie = "_gid=;max-age=-1;path=/;domain=.tree.opentreeoflife.org";
+    }
+    window.cookieconsent.initialise({
+      "palette": {
+        "popup": {
+          "background": "#cc0000",
+          "text": "#ffffff"
+        },
+        "button": {
+          "background": "#ffffff"
+        }
+      },
+      "theme": "classic",
+      "position": "bottom",
+      "type": "opt-out",
+      "onStatusChange": function(status) {
+          console.warn('onStatusChange, status = '+ status);
+          if (this.hasConsented()) {
+              // anything to do here?
+          } else {
+              forceDeleteTrackingCookies();
+          }
+      },
+      "onInitialise": function(status) {
+          console.warn('onInitialise, status = '+ status);
+          if (status === 'deny') {
+            forceDeleteTrackingCookies();
+          }
+      },
+      "onStatusChange": function(status) {
+          console.warn('onStatusChange, status = '+ status);
+      },
+      "content": {
+        "message": showCurrentCookieStatus(),
+        // "dismiss": "OK",
+        "deny": "Refuse tracking",
+        "href": "/about/privacy-policy"
+      }
+    });
+</script>
   </body>
 </html>
