@@ -1105,7 +1105,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       "position": "bottom",
       "type": "opt-out",
       "onStatusChange": function(status) {
-          console.warn('onStatusChange, status = '+ status);
           if (this.hasConsented()) {
               // anything to do here?
           } else {
@@ -1113,7 +1112,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
           }
       },
       "onInitialise": function(status) {
-          console.warn('onInitialise, status = '+ status);
           if (status === 'deny') {
             forceDeleteTrackingCookies();
           }
