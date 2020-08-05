@@ -599,6 +599,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
         // TODO: Vary this message based on latest user decision?
         return "This website uses cookies to maintain user sessions (essential) and to anonymously track how people use the website (optional).";
     }
+    function forceDeleteTrackingCookies() {
+      // Clear any existing tracking cookies from Google Analytics!
+      ///window['ga-disable-UA-143548106-1'] = true;
+      // N.B. `document.cookie` is a smart setter, won't affect other cookies
+      document.cookie = "_ga=;max-age=-1;path=/;domain=.opentreeoflife.org";
+      document.cookie = "_gid=;max-age=-1;path=/;domain=.opentreeoflife.org";
+    }
     window.cookieconsent.initialise({
       "palette": {
         "popup": {
@@ -617,18 +624,14 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
           if (this.hasConsented()) {
               // anything to do here?
           } else {
-              // Clear any existing tracking cookies from Google Analytics!
-              ///window['ga-disable-UA-143548106-1'] = true;
-              // N.B. `document.cookie` is a smart setter, won't affect other cookies
-              document.cookie = "_ga=;max-age=-1;path=/;domain=.opentreeoflife.org";
-              document.cookie = "_gid=;max-age=-1;path=/;domain=.opentreeoflife.org";
+              forceDeleteTrackingCookies();
           }
       },
       "onInitialise": function(status) {
           console.warn('onInitialise, status = '+ status);
-      },
-      "onPopupOpen": function() {
-          console.warn('onPopupOpen');
+          if (status === 'deny') {
+            forceDeleteTrackingCookies();
+          }
       },
       "onStatusChange": function(status) {
           console.warn('onStatusChange, status = '+ status);
