@@ -606,6 +606,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
       // N.B. `document.cookie` is a smart setter, won't affect other cookies
       document.cookie = "_ga=;max-age=-1;path=/;domain=.opentreeoflife.org";
       document.cookie = "_gid=;max-age=-1;path=/;domain=.opentreeoflife.org";
+      // sometimes these cookies are set to third-level domains! why?!
+      document.cookie = "_ga=;max-age=-1;path=/;domain=.devtree.opentreeoflife.org";
+      document.cookie = "_gid=;max-age=-1;path=/;domain=.devtree.opentreeoflife.org";
+      document.cookie = "_ga=;max-age=-1;path=/;domain=.tree.opentreeoflife.org";
+      document.cookie = "_gid=;max-age=-1;path=/;domain=.tree.opentreeoflife.org";
     }
     window.cookieconsent.initialise({
       "palette": {
