@@ -595,6 +595,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
 <!-- cookie consent for first-time visitors -->
 <script src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js" data-cfasync="false"></script>
 <script type="text/javascript">
+    function showCurrentCookieStatus() {
+        // TODO: Vary this message based on latest user decision?
+        return "This website uses cookies to maintain user sessions (essential) and to anonymously track how people use the website (optional).";
+    }
     window.cookieconsent.initialise({
       "palette": {
         "popup": {
@@ -608,9 +612,26 @@ from applications.opentree.modules.opentreewebapputil import get_user_display_na
       "theme": "classic",
       "position": "bottom",
       "type": "opt-out",
+      "onStatusChange": function(status) {
+          console.warn('onStatusChange, status = '+ status);
+          if (this.hasConsented()) {
+              // anything to do here?
+          } else {
+              // TODO: Clear any existing tracking cookie!
+          }
+      },
+      "onInitialise": function(status) {
+          console.warn('onInitialise, status = '+ status);
+      },
+      "onPopupOpen": function() {
+          console.warn('onPopupOpen');
+      },
+      "onStatusChange": function(status) {
+          console.warn('onStatusChange, status = '+ status);
+      },
       "content": {
-        "message": "This website uses cookies to maintain user sessions (essential) and to anonymously track how people use the website (optional).",
-        "dismiss": "OK",
+        "message": showCurrentCookieStatus(),
+        // "dismiss": "OK",
         "deny": "Refuse tracking",
         "href": "/about/privacy-policy"
       }
