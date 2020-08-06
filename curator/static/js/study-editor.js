@@ -5621,6 +5621,18 @@ function replaceViewModelNexson( nexml ) {
     nudgeTickler('ALL');
 }
 
+/* support functions for uploading+importing pre-mapped names */
+function updateNamesetUploadForm() {
+    console.log('updateNamesetUploadForm STARTING...');
+}
+function clearNamesetUploadWidget() {
+    console.log('clearNamesetUploadWidget STARTING...');
+}
+function submitNameset() {
+    console.log('submitNameset STARTING...');
+}
+
+
 function adjustedLabelOrEmpty(label) {
     // We should only display an adjusted label if it's changed from the
     // original; otherwise return an empty string.
