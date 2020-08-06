@@ -5695,16 +5695,34 @@ function updateNamesetUploadForm() {
     // check all fields, enable/disable button
     var readyToSubmit = true;
 
+    // offer field for pasted text IF format is appropriate or unspecified
+    var $pastedTextField = $('#new-nameset-text');
+    
     var chosenFormat = $.trim( $('#nameset-import-format').val() );
-    if (chosenFormat === '') {
-        readyToSubmit = false;
+    switch (chosenFormat) {
+        case '':
+            readyToSubmit = false;
+            $pastedTextField.attr('disabled', 'disabled');
+            break;
+        case 'zip':
+            $pastedTextField.attr('disabled', 'disabled');
+            break;
+        case 'tsv':
+        case 'csv':
+        case 'json':
+            $pastedTextField.removeAttr('disabled');
+            break;
+        default:
+            console.error("Unexpected format for pre-mapped names: ["+ chosenFormat +"]");
+            $pastedTextField.attr('disabled', 'disabled');
+            readyToSubmit = false;
     }
 
     //var chosenFile = $.trim( $('#namesetupload').val() );
     // NO, this is routinely cleared by the upload widget; the file-name
     // display (white on blue) alongside, is actually a safer test.
     var chosenFile = $.trim( $('#upload-nameset-info').text() );
-    var pastedText = $.trim( $('#new-nameset-text').val() );
+    var pastedText = $.trim( $pastedTextField.val() );
     // either of these is acceptable
     if (pastedText === '' && chosenFile === '') {
         readyToSubmit = false;
