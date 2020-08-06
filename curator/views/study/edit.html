@@ -1443,6 +1443,89 @@ body {
                 </button>
             </div>
 
+            <div class="well">
+                <h4 style="margin-top: 0;">Upload mapped names</h4>
+                <p>
+                If you have a set of mapped names from the 
+                <a href="/curator/tnrs/" target="_blank">TNRS bulk-mapping tool</a>,
+                you can upload it to this study. After your upload, any
+                matching names will be mapped accordingly.
+                </p>
+                <form id="nameset-import-form"
+                      style="margin: 0;"
+                      Xaction="{{= URL(a='curator', c='default', f='to_nexson')}}"
+                      action="/curator/default/to_nexson"
+                      method="POST"
+                      onsubmit="submitNameset(this); return false;">
+                 <fieldset>
+                 <input type="hidden" name="author_name"
+                   value="{{= auth.user and auth.user.name or 'ANONYMOUS' }}">
+                 <input type="hidden" name="author_email"
+                   value="{{= auth.user and auth.user.email or 'ANONYMOUS' }}">
+                 <input type="hidden" name="auth_token"
+                   value="{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}">
+                 <!-- TODO: pass along hints for new element IDs?
+                 <input type="hidden" name="idPrefix" value="">
+                 <input type="hidden" name="firstAvailableOTUID" value="">
+                 <input type="hidden" name="firstAvailableOTUsID" value="">
+                 <input type="hidden" name="firstAvailableMessageID" value="">
+                 -->
+                  <select id="nameset-import-format" name="inputFormat"
+                          class="input-block-level"
+                          style="margin-bottom: 1em;"
+                          oninput="updateNamesetUploadForm(); return true;"
+                          onchange="updateNamesetUploadForm(); return true;">
+                      <option value="" selected="selected">What is the format of these mappings?</option>
+                      <option value="zip">.nameset (ZIP archive)</option>
+                      <option value="tsv">Tab-separated text (TSV)</option>
+                      <option value="csv">Comma-separated text (CSV)</option>
+                      <option value="json">JSON</option>
+                  </select>
+
+                  <!-- TODO: Hide this direct-input UI if ZIP is chosen above? -->
+                  <label for="new-nameset-text">Paste mappings (as tab-separated text)&hellip;</label>
+                  <textarea id="new-nameset-text" name="content" rows="5"
+                            class="input-block-level"
+                            onkeyup="updateNamesetUploadForm(); return true;"
+                            oninput="updateNamesetUploadForm(); return true;"
+                            onchange="updateNamesetUploadForm(); return true;"
+                            ></textarea>
+
+                  <label for="treeupload">&hellip;or upload a tree file</label>
+
+
+                <div>
+                    <span class="btn fileinput-button">
+                        <i class="glyphicon glyphicon-plus"></i>
+                        <span>Select file to upload...</span>
+                        <!-- The file input field used as target for the file upload widget -->
+                        <input id="namesetupload"
+                               type="file" name="file"
+                               onchange="$('#upload-nameset-info').html( filenameFromFakePath($(this).val()) ); updateNamesetUploadForm(); return true;">
+                    </span>
+                    &nbsp;
+                    <span class='label label-info' id="upload-nameset-info"></span>
+                </div>
+                <div id="nameset-upload-progress" class="progress progress-info"
+                     style="margin-top: 0.3em; margin-bottom: 1em; background-color: #333;">
+                  <div class="bar" style="text-align: center; width: 0%;">
+                      <span>&nbsp;</span>
+                  </div>
+                </div>
+
+                  <div Xclass="form-actions" style="margin-top: 1em;">
+                      <button name="new-nameset-submit" type="submit"
+                          class="btn btn-info btn-info-disabled"
+                          disabled="disabled">Add new tree
+                        <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
+                      <button type="reset" class="btn"
+                              onclick="clearNamesetUploadWidget(); return true;"
+                      >Clear form</button>
+                  </div>
+                 </fieldset>
+                </form>
+            </div>
+
         {{ pass }}
 
            </div><!-- end of right col -->
