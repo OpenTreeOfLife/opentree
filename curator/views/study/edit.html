@@ -1456,8 +1456,7 @@ body {
                       Xaction="{{= URL(a='curator', c='default', f='to_nexson')}}"
                       action="/curator/default/to_nexson"
                       method="POST"
-                      onsubmit="submitNewTree(this); return false;"
-                      Xonsubmit="console.log('DEFAULT tree-import-form submit (suppressed)'); return false;">
+                      onsubmit="submitNameset(this); return false;">
                  <fieldset>
                  <input type="hidden" name="author_name"
                    value="{{= auth.user and auth.user.name or 'ANONYMOUS' }}">
@@ -1500,32 +1499,27 @@ body {
                         <i class="glyphicon glyphicon-plus"></i>
                         <span>Select file to upload...</span>
                         <!-- The file input field used as target for the file upload widget -->
-                        <input id="treeupload"
+                        <input id="namesetupload"
                                type="file" name="file"
-                               onchange="$('#upload-tree-info').html( filenameFromFakePath($(this).val()) ); updateNamesetUploadForm(); return true;">
+                               onchange="$('#upload-nameset-info').html( filenameFromFakePath($(this).val()) ); updateNamesetUploadForm(); return true;">
                     </span>
                     &nbsp;
-                    <span class='label label-info' id="upload-tree-info"></span>
+                    <span class='label label-info' id="upload-nameset-info"></span>
                 </div>
-                <div id="tree-upload-progress" class="progress progress-info"
+                <div id="nameset-upload-progress" class="progress progress-info"
                      style="margin-top: 0.3em; margin-bottom: 1em; background-color: #333;">
                   <div class="bar" style="text-align: center; width: 0%;">
                       <span>&nbsp;</span>
                   </div>
                 </div>
 
-<!-- TODO: Enter a URL or DOI for the new tree?
-                  <label for="new-tree-URL">&hellip;or paste an URL to the tree</label>
-                  <input type="text" id="new-tree-URL" class="input-block-level" value="" placeholder="Paste URL here">
--->
-
                   <div Xclass="form-actions" style="margin-top: 1em;">
-                      <button name="new-tree-submit" type="submit"
+                      <button name="new-nameset-submit" type="submit"
                           class="btn btn-info btn-info-disabled"
                           disabled="disabled">Add new tree
                         <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
                       <button type="reset" class="btn"
-                              onclick="clearNewTreeUploadWidget(); return true;"
+                              onclick="clearNamesetUploadWidget(); return true;"
                       >Clear form</button>
                   </div>
                  </fieldset>
