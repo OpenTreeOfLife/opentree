@@ -1477,14 +1477,14 @@ body {
                           oninput="updateNamesetUploadForm(); return true;"
                           onchange="updateNamesetUploadForm(); return true;">
                       <option value="" selected="selected">What is the format of these mappings?</option>
-                      <option value="zip">.nameset (ZIP archive)</option>
-                      <option value="tsv">Tab-separated text (TSV)</option>
-                      <option value="csv">Comma-separated text (CSV)</option>
-                      <option value="json">JSON</option>
+                      <option value="zip">ZIP archive (.nameset)</option>
+                      <option value="tsv">Tab-separated text (.tsv)</option>
+                      <option value="csv">Comma-separated text (.csv)</option>
+                      <option value="json">JSON (.json)</option>
                   </select>
 
                   <!-- TODO: Hide this direct-input UI if ZIP is chosen above? -->
-                  <label for="new-nameset-text">Paste mappings (as tab-separated text)&hellip;</label>
+                  <label for="new-nameset-text">Paste mappings (using selected format)&hellip;</label>
                   <textarea id="new-nameset-text" name="content" rows="5"
                             class="input-block-level"
                             onkeyup="updateNamesetUploadForm(); return true;"
@@ -1492,7 +1492,7 @@ body {
                             onchange="updateNamesetUploadForm(); return true;"
                             ></textarea>
 
-                  <label for="treeupload">&hellip;or upload a tree file</label>
+                  <label for="treeupload">&hellip;or upload a file with pre-mapped names</label>
 
 
                 <div>
