@@ -1444,7 +1444,7 @@ body {
             </div>
 
             <div class="well">
-                <h4 style="margin-top: 0;">Upload mapped names</h4>
+                <h4 style="margin-top: 0;">Upload pre-mapped names</h4>
                 <p>
                 If you have a set of mapped names from the 
                 <a href="/curator/tnrs/" target="_blank">TNRS bulk-mapping tool</a>,
@@ -1464,12 +1464,13 @@ body {
                    value="{{= auth.user and auth.user.email or 'ANONYMOUS' }}">
                  <input type="hidden" name="auth_token"
                    value="{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}">
-                 <!-- TODO: pass along hints for new element IDs?
+                 <!-- pass along hints for new element IDs? -->
                  <input type="hidden" name="idPrefix" value="">
                  <input type="hidden" name="firstAvailableOTUID" value="">
                  <input type="hidden" name="firstAvailableOTUsID" value="">
+                 <input type="hidden" name="firstAvailableAnnotationID" value="">
+                 <input type="hidden" name="firstAvailableAgentID" value="">
                  <input type="hidden" name="firstAvailableMessageID" value="">
-                 -->
                   <select id="nameset-import-format" name="inputFormat"
                           class="input-block-level"
                           style="margin-bottom: 1em;"
@@ -1516,7 +1517,7 @@ body {
                   <div Xclass="form-actions" style="margin-top: 1em;">
                       <button name="new-nameset-submit" type="submit"
                           class="btn btn-info btn-info-disabled"
-                          disabled="disabled">Add new tree
+                          disabled="disabled">Import and map names
                         <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
                       <button type="reset" class="btn"
                               onclick="clearNamesetUploadWidget(); return true;"
