@@ -374,6 +374,20 @@ body {
                </div>
               </div>
 
+               <!-- ko if: studyContainsScriptManagedTrees() -->
+                <div class="empty-list-prompt">
+                    This study contains 
+                    <a target="_blank"
+                       href="https://github.com/OpenTreeOfLife/script-managed-trees/blob/master/README.md">script-managed trees</a> 
+                    that are too large to store in phylesystem.
+                    These cannot be managed in the curation web app, nor can
+                    this study's OTUs, but you can edit the study's metadata
+                    and see its revision history.
+                </div>
+
+               <!-- /ko -->
+
+               <!-- ko if: ! studyContainsScriptManagedTrees() -->
                 <div class="empty-list-prompt" data-bind="visible: viewModel.filteredTrees().pagedItems().length === 0">
                     No matching trees found! Add new trees or clear the
                     filter above to see trees in this study.
@@ -525,6 +539,7 @@ body {
                     </li>
                   </ul>
                 </div>
+               <!-- /ko -->
 
             </div>
 
