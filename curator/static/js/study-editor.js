@@ -9386,6 +9386,19 @@ function treeContributedToLatestSynthesis(tree) {
     return ($.inArray( tree['@id'], latestSynthesisTreeIDs ) !== -1);
 }
 
+function studyContainsScriptManagedTrees() {
+    // check for signature for this in Nexson (to modify UI, hide/block some features?)
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+    var bigTrees = ko.utils.arrayFilter(
+        allTrees,
+        function (tree) {
+            // if this property is found (even if it's an empty object), assume it's a huge script-managed tree
+            return (tree["^ot:external_data"] !== undefined);
+        }
+    );
+    return (bigTrees.length > 0);
+}
+
 function getNormalizedStudyPublicationURL() {
     // just the bare URL, or '' if not found
     var url = $.trim(viewModel.nexml['^ot:studyPublication']['@href']);
