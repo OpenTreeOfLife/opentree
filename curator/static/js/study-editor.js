@@ -1167,7 +1167,7 @@ function loadSelectedStudy() {
                 if ($.isArray(chosenTrees)) {
                     // it's a list of zero or more trees
                     $.each( chosenTrees, function(i, tree) {
-                        if (! $.isArray(tree.node)) {
+                        if (isScriptManagedTree(tree)) {
                             // ignore "empty" (script-managed) trees
                             return;
                         }
@@ -8978,6 +8978,11 @@ function getAmbiguousLabelsInTree(tree) {
         return labelData;
     }
 
+    if (isScriptManagedTree(tree)) {
+        // ignore "empty" (script-managed) trees
+        return labelData;
+    }
+
     $.each( tree.node, function(i, node) {
         if (node['^ot:isLeaf'] === true) {
             /* We sometimes save a misspelled taxon name as `node[@label]` so
@@ -8990,6 +8995,7 @@ function getAmbiguousLabelsInTree(tree) {
             labelData[ nodeID ] = node['@label'];
         }
     });
+
     return labelData;
 }
 function showAmbiguousLabelsInTreeViewer(tree) {
@@ -9148,12 +9154,13 @@ function studyContainsScriptManagedTrees() {
     var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
     var bigTrees = ko.utils.arrayFilter(
         allTrees,
-        function (tree) {
-            // if this property is found (even if it's an empty object), assume it's a huge script-managed tree
-            return (tree["^ot:external_data"] !== undefined);
-        }
+        isScriptManagedTree
     );
     return (bigTrees.length > 0);
+}
+function isScriptManagedTree(tree) {
+    // if this property is found (even if it's an empty object), assume it's a huge script-managed tree
+    return (tree["^ot:external_data"] !== undefined);
 }
 
 function getNormalizedStudyPublicationURL() {
