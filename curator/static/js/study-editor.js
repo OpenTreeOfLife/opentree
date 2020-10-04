@@ -3037,6 +3037,10 @@ function getRootedStatusForTree( tree ) {
 // Let's check for some/all/none with separate functions.
 function anyBranchLengthsFoundInTree( tree ) {
     var foundBranchWithLength = false;
+    if (isScriptManagedTree(tree)) {
+        // ignore "empty" (script-managed) trees
+        return false;
+    }
     $.each(tree.edge, function(i, edge) {
         if ('@length' in edge) {
             foundBranchWithLength = true;
@@ -3047,6 +3051,10 @@ function anyBranchLengthsFoundInTree( tree ) {
 }
 function allBranchLengthsFoundInTree( tree ) {
     var foundBranchWithoutLength = false;
+    if (isScriptManagedTree(tree)) {
+        // ignore "empty" (script-managed) trees
+        return false;
+    }
     $.each(tree.edge, function(i, edge) {
         if (!('@length' in edge)) {
             foundBranchWithoutLength = true;
