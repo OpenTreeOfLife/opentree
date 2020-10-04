@@ -1225,6 +1225,10 @@ function loadSelectedStudy() {
                 if ($.isArray(chosenTrees)) {
                     // it's a list of zero or more trees
                     $.each( chosenTrees, function(i, tree) {
+                        if (! $.isArray(tree.node)) {
+                            // ignore "empty" (script-managed) trees
+                            return;
+                        }
                         // check this tree's nodes for this OTU id
                         $.each( tree.node, function( i, node ) {
                             if (node['@otu']) {
