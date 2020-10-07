@@ -805,7 +805,7 @@ function loadSelectedStudy() {
                         $.each(allTreesCollections, function(i, treesCollection) {
                             $.each(treesCollection.tree, function(i, tree) {
                                 if (!options.INCLUDE_SCRIPT_MANAGED_TREES) {
-                                    if isScriptManagedTree(tree) return true;
+                                    if (isScriptManagedTree(tree)) return true;
                                 }
                                 allTrees.push( tree );
                             });
