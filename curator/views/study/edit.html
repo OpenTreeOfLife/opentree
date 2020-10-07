@@ -1627,11 +1627,17 @@ body {
           <div class="tab-pane" id="Analyses">
            <div class="span8"><!-- main column... -->
 
+            <!-- ko if: viewModel.elementTypes.tree.gatherAll(viewModel.nexml, {INCLUDE_SCRIPT_MANAGED_TREES: false}).length === 0 -->
+             <div>
+               <em>This study has no eligible trees.</em>
+             </div>
+            <!-- /ko -->
+            <!-- ko if: viewModel.elementTypes.tree.gatherAll(viewModel.nexml, {INCLUDE_SCRIPT_MANAGED_TREES: false}).length > 0 -->
              <form class="form-inline">
                  <label>Analyze tree</label>
                  <select id="tree-select"
                          onchange="(this); return false;"
-                         data-bind="options: viewModel.elementTypes.tree.gatherAll(viewModel.nexml),
+                         data-bind="options: viewModel.elementTypes.tree.gatherAll(viewModel.nexml, {INCLUDE_SCRIPT_MANAGED_TREES: false}),
                                     optionsValue: '@id',
                                     optionsText: '@label',
                                     optionsCaption: 'Choose a tree from this study...',
@@ -1647,9 +1653,11 @@ body {
                  <button class="btn btn-info" data-bind="click: fetchAndShowTreeConflictSummary">GO!</button>
              </form>
 
-            <div id="analysis-results">
-              <em>Analysis results will appear here...</em>
-            </div>
+             <div id="analysis-results">
+               <em>Analysis results will appear here...</em>
+             </div>
+
+            <!-- /ko -->
 
            </div><!-- end of main column... -->
            <div class="span4"><!-- right col -->

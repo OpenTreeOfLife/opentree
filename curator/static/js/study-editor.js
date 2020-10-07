@@ -752,12 +752,16 @@ function loadSelectedStudy() {
                 },
                 'tree': {
                     highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
+                    gatherAll: function(nexml, options) {
                         // return an array of all matching elements
+                        if (!options) options = {INCLUDE_SCRIPT_MANAGED_TREES: true};
                         var allTrees = [];
                         var allTreesCollections = viewModel.elementTypes.trees.gatherAll(nexml);
                         $.each(allTreesCollections, function(i, treesCollection) {
                             $.each(treesCollection.tree, function(i, tree) {
+                                if (!options.INCLUDE_SCRIPT_MANAGED_TREES) {
+                                    if isScriptManagedTree(tree) return true;
+                                }
                                 allTrees.push( tree );
                             });
                         });
