@@ -49,7 +49,7 @@ def view():
     view_dict['maintenance_info'] = get_maintenance_info(request)
     #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['collectionID'] = request.args[0]
-    # TODO: restore equivalent? view_dict['latestSynthesisSHA'], view_dict['latestSynthesisTreeIDs'] = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
+    view_dict['latestSynthesisSHA'] = _get_latest_synthesis_details_for_collection_id(view_dict['collectionID'])
     view_dict['viewOrEdit'] = 'VIEW'
     view_dict['userCanEdit'] = auth.is_logged_in() and True or False
     view_dict['treesQueuedForSynthesis'] = fetch_trees_queued_for_synthesis(request)
@@ -81,7 +81,7 @@ def edit():
     view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['treesQueuedForSynthesis'] = fetch_trees_queued_for_synthesis(request)
     view_dict['collectionID'] = request.args[0]
-    # TODO: restore equivalent? view_dict['latestSynthesisSHA'], view_dict['latestSynthesisTreeIDs'] = _get_latest_synthesis_details_for_study_id(view_dict['studyID'])
+    view_dict['latestSynthesisSHA'] = _get_latest_synthesis_details_for_collection_id(view_dict['collectionID'])
     view_dict['viewOrEdit'] = 'EDIT'
     return view_dict
 
@@ -105,18 +105,20 @@ def load():
 def store():
     return dict(message="collection/store")
 
-""" TODO: Delete if not needed/wanted, OR adapt for collection status
-def _get_latest_synthesis_details_for_study_id( study_id ):
-    # Fetch the last synthesis SHA *and* any tree IDs (from this study) from
-    # treemachine. If the study is not found in contributing studies, return
-    # None for both.
+""" TODO: Adapt this for current collection status, based on new APIs """
+def _get_latest_synthesis_details_for_collection_id( collection_id ):
+    # Fetch the last SHA for this collection that was used in the latest
+    # published Open Tree of Life synthesis. If this collection was not
+    # included, return None.
+    # TODO: Expect other information as well?
     try:
         import json
         import requests
 
         method_dict = get_opentree_services_method_urls(request)
 
-        # fetch a list of all studies that contribute to synthesis
+        # fetch a list of all studies and collections that contribute to synthesis
+        # TODO: Request that these fields be added
         fetch_url = method_dict['getSynthesisSourceList_url']
         if fetch_url.startswith('//'):
             # Prepend scheme to a scheme-relative URL
@@ -128,23 +130,26 @@ def _get_latest_synthesis_details_for_study_id( study_id ):
             data=json.dumps({'include_source_list':True})
         ).text
         source_dict = json.loads( source_list_response )['source_id_map']
+        # TODO: Confirm details and method calls to fetch any contributing collection SHAs!
+        # Draft code is based on schema proposed in
+        # https://github.com/OpenTreeOfLife/phylesystem-api/issues/228
 
         # fetch the full source list, then look for this study and its trees
         commit_SHA_in_synthesis = None
-        current_study_trees_included = [ ]
-        #print(source_dict)
-        # ignore source descriptions (e.g. "ot_764@tree1"); just read the details
-        for source_details in source_dict.values():
-            if source_details.get('study_id', None) == study_id:
-                # this is the study we're interested in!
-                current_study_trees_included.append( source_details['tree_id'] )
-                if commit_SHA_in_synthesis is None:
-                    commit_SHA_in_synthesis = source_details['git_sha']
-            # keep checking, as each tree will have its own entry
-        return commit_SHA_in_synthesis, current_study_trees_included
+        # if key (collection ID, e.g. "opentreeoflife/default") matches, read its details
+        for c_id, collection_details in source_dict.items():
+            if c_id == collection_id:
+                # this is the collection we're interested in!
+                commit_SHA_in_synthesis = collection_details['git_sha']
+        return commit_SHA_in_synthesis  # TODO: return more information?
 
+        # fetch the full source list, then look for this collection and its SHA
+        # if key (collection ID, e.g. "opentreeoflife/default") matches, read its details
+        for c_id, collection_details in source_dict.items():
+            if c_id == collection_id:
+                commit_SHA_in_synthesis = collection_details['git_sha']
+                return commit_SHA_in_synthesis  # TODO: return more values here?
+        return None
     except Exception, e:
         # throw 403 or 500 or just leave it
-        raise HTTP(500, T('Unable to retrieve latest synthesis details for study {u}'.format(u=study_id)))
-
-"""
+        raise HTTP(500, T('Unable to retrieve latest synthesis details for collection {u}'.format(u=collection)))
