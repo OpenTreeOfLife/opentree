@@ -34,7 +34,7 @@ def index():
         # anonymous visitor, show unfiltered list?
         pass
 
-    return dict(message="study/index")
+    return view_dict
 
 
 def view():
