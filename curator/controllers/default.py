@@ -42,6 +42,8 @@ def index():
 def collections():
     """
     Show a filtered list of all tree collections in the system.
+
+    TODO: move to collection/index?
     """
     view_dict = get_opentree_services_method_urls(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
