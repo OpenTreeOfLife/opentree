@@ -27,7 +27,8 @@ def index():
     Show list searchable/filtered list of all collections
     (default filter = My Collections, if logged in?)
     """
-
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict['maintenance_info'] = get_maintenance_info(request)
     if auth.is_logged_in():
         # user is logged in, filter to their own collections by default?
         pass
@@ -35,7 +36,7 @@ def index():
         # anonymous visitor, show unfiltered list?
         pass
 
-    return dict(message="collection/index")
+    return view_dict
 
 
 def view():
