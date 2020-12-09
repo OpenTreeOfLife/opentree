@@ -334,11 +334,13 @@ div.viewer-frame {
     color: #000;
     margin-bottom: 4px;
 }
-a.full-ref-toggle {
+a.full-ref-toggle,
+a.preview-link {
     color: #999 !important;
     text-decoration: none;
 }
-a.full-ref-toggle:hover {
+a.full-ref-toggle:hover,
+a.preview-link:hover {
     color: #333 !important;
     text-decoration: underline;
 }
