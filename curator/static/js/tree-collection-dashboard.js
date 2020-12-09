@@ -132,21 +132,30 @@ $(document).ready(function() {
     }
 
     /* Extract collection ID (if any) from URL, which could look like any of these patterns:
-     *   /curator/collections/
-     *   /curator/collections
-     *   /curator/collections/jimallman/newtest-3
-     *   /curator/collections/jimallman/newtest-3#foo
-     *   /curator/collections/jimallman/newtest-3/
-     *   /curator/collections/jimallman/newtest-3/#foo
-     *   /curator/collections/jimallman/newtest-3?match=micro
-     *   /curator/collections/jimallman/newtest-3?match=micro#foo
-     *   /curator/collections/jimallman/newtest-3/?match=micro
-     *   /curator/collections/jimallman/newtest-3/?match=micro#foo
+     *   /curator/collection/
+     *   /curator/collection
+     *   /curator/collection/jimallman/newtest-3   # in popup?
+     *   /curator/collection/view/jimallman/newtest-3
+     *   /curator/collection/edit/jimallman/newtest-3
+     *   /curator/collection/edit/jimallman/newtest-3#foo
+     *   /curator/collection/edit/jimallman/newtest-3/
+     *   /curator/collection/edit/jimallman/newtest-3/#foo
+     *   /curator/collection/edit/jimallman/newtest-3?match=micro
+     *   /curator/collection/edit/jimallman/newtest-3?match=micro#foo
+     *   /curator/collection/edit/jimallman/newtest-3/?match=micro
+     *   /curator/collection/edit/jimallman/newtest-3/?match=micro#foo
      * N.B. So far, hashes don't seem to matter much here.
      */
-    var trailingPath = window.location.pathname.split( RegExp('/collections/?') )[1];
+    var trailingPath = window.location.pathname.split( RegExp('/collections?\\b/?') )[1];
+    // remove typical leading path parts, if found
+    var splitPath = trailingPath.split( RegExp('^view/|^edit/|^create/?) );
+    if (splitPath.length > 1) {
+        trailingPath = splitPath[1];
+    }
     // strip final slash, if any
     trailingPath = trailingPath.split(/\/$/)[0];
+    console.warn("trailing path (possible collection ID) is ["+ trailingPath +"]");
+
     // check for a valid collection ID, in the form '{user-id}/{collection-id}'
     var collectionID = null;
     if (trailingPath) {
@@ -154,12 +163,13 @@ $(document).ready(function() {
         if ((trailingPathParts.length === 2) && trailingPathParts[0] && trailingPathParts[1]) {
             // it looks like this is a proper collection ID
             collectionID = trailingPath;
-            ///console.warn("Found this collection ID ["+ collectionID +"]");
+            console.warn("Found this collection ID ["+ collectionID +"]");
         } else {
-            ///console.warn("Trailing path, but it's not a proper collection ID! ["+ trailingPath +"]");
+            console.warn("Trailing path, but it's not a proper collection ID! ["+ trailingPath +"]");
         }
     } else {
-        ; ///console.warn("NO trailing path, therefore no inbound collection ID!");
+        ;
+        console.warn("NO trailing path, therefore no inbound collection ID!");
     }
     if (collectionID) {
         // TODO: Open this collection (and hide any other, IF changes are saved)
