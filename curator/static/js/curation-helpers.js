@@ -2285,7 +2285,7 @@ function getCollectionViewLink(collection, options) {
         case 'POPUP':
             break;
         default:
-            console.error('ERROR: getCollectionViewLink: unknown value for VIEW! ['+ options.VIEW "+']');
+            console.error('ERROR: getCollectionViewLink: unknown value for VIEW! ['+ options.VIEW +']');
             options.VIEW = 'POPUP';
     }
     switch (options.VIEW) {
