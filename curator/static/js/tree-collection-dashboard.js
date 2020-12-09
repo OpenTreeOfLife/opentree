@@ -148,7 +148,7 @@ $(document).ready(function() {
      */
     var trailingPath = window.location.pathname.split( RegExp('/collections?\\b/?') )[1];
     // remove typical leading path parts, if found
-    var splitPath = trailingPath.split( RegExp('^view/|^edit/|^create/?) );
+    var splitPath = trailingPath.split( RegExp('^view/|^edit/|^create/?') );
     if (splitPath.length > 1) {
         trailingPath = splitPath[1];
     }
