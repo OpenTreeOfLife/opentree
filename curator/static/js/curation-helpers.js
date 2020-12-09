@@ -2277,10 +2277,40 @@ function cancelChangesToCollection(collection) {
 }
 
 
-function getCollectionViewLink(collection) {
-    // shows this collection in a popup viewer/editor
-    var html = '<a class="" href="#" title="'+ (collection.description || "(no description provided)") +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
-        + collection.name +' <span style="color: #aaa;">&bullet;&nbsp;<span class="collection-id">'+ collection.id +'</span></span></a>';
+function getCollectionViewLink(collection, options) {
+    options = options || {VIEW: 'POPUP'};
+    var html;
+    switch(options.VIEW) {
+        case 'FULL_PAGE':
+        case 'POPUP':
+            break;
+        default:
+            console.error('ERROR: getCollectionViewLink: unknown value for VIEW! ['+ options.VIEW "+']');
+            options.VIEW = 'POPUP';
+    }
+    switch (options.VIEW) {
+        case 'FULL_PAGE':
+            // jump to the full-page viewer/editor
+            html = '<a class="" href="/curator/collection/'+ collection.id
+                  +'" title="'+ (collection.description || "(no description provided)") +'">' + collection.name
+                  +' <span style="color: #aaa;">&bullet;&nbsp;<span class="collection-id">'+ collection.id +'</span></span></a>';
+            break;
+        case 'POPUP':
+            // show this collection in a popup viewer/editor (but keep the full-page URL in case they want to capture it)
+            if (options.LABEL) {
+                html = '<a class="" href="/curator/collection/'+ collection.id +'" title="'
+                      + (collection.description || "(no description provided)")
+                      +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
+                      + options.LABEL +'</a>';
+            } else {
+                html = '<a class="" href="/curator/collection/'+ collection.id +'" title="'
+                      + (collection.description || "(no description provided)")
+                      +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
+                      + collection.name
+                      +' <span style="color: #aaa;">&bullet;&nbsp;<span class="collection-id">'+ collection.id +'</span></span></a>';
+            }
+            break;
+    }
     return html;
 }
 function getCollectionTreeCount(collection) {
