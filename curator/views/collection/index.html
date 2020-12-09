@@ -141,10 +141,6 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
                 <th>Collection name (click to view)</th>
               {{ pass }}
                 <th>nbsp;</th>
-                <th>nbsp;</th>
-                <th>nbsp;</th>
-                <th>nbsp;</th>
-                <th>nbsp;</th>
                 <th>How many trees</th>
                 <th>Last modified</th>
                 <th>Owner</th>
@@ -160,13 +156,9 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
           </thead>
           <tbody data-bind="foreach: { data: viewModel.filteredCollections().pagedItems(), as: 'collection' }">
             <tr>
-                <td data-bind="html: getCollectionViewLink(collection)">&nbsp;</td>
-                <td data-bind="html: getCollectionViewLink(collection, {VIEW: 'POPUP'})">&nbsp;</td>
                 <td data-bind="html: getCollectionViewLink(collection, {VIEW: 'FULL_PAGE'})">&nbsp;</td>
-                <td data-bind="html: getCollectionViewLink(collection, {VIEW: 'fooFOO'})">&nbsp;</td>
-                <td data-bind="html: getCollectionViewLink(collection, {VIEW: 'POPUP', LABEL: 'preview'})">&nbsp;</td>
-                <td data-bind="html: getCollectionViewLink(collection, {VIEW: 'POPUP', LABEL: 'quick look'})">&nbsp;</td>
-                <td data-bind="html: getCollectionViewLink(collection)">&nbsp;</td>
+                <td style="text-align: right;" 
+                    data-bind="html: getCollectionViewLink(collection, {VIEW: 'POPUP', LABEL: 'preview'})">&nbsp;</td>
                 <td data-bind="html: getCollectionTreeCount(collection)">&nbsp;</td>
                 <td data-bind="html: getCollectionLastModification(collection)">&nbsp;</td>
                 <td data-bind="html: getCollectionCreatorLink(collection)">&nbsp;</td>
