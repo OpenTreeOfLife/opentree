@@ -51,6 +51,7 @@ def view():
     #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['collectionID'] = request.args[0]
     view_dict['latestSynthesisSHA'] = _get_latest_synthesis_details_for_collection_id(view_dict['collectionID'])
+        # TODO: include latestSynthesisTreeIDs as second response item? as for studies
     view_dict['viewOrEdit'] = 'VIEW'
     view_dict['userCanEdit'] = auth.is_logged_in() and True or False
     view_dict['treesQueuedForSynthesis'] = fetch_trees_queued_for_synthesis(request)
