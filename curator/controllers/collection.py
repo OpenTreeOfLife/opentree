@@ -56,6 +56,7 @@ def view():
     view_dict['treesQueuedForSynthesis'] = fetch_trees_queued_for_synthesis(request)
     return view_dict
 
+""" TODO: Remove this if not needed!
 @auth.requires_login()
 def create():
     # Block (redirect) if we've suspended curation
@@ -66,7 +67,7 @@ def create():
     view_dict = get_opentree_services_method_urls(request)
     view_dict['message'] = "collection/create"
     return view_dict
-
+"""
 
 @auth.requires_login()
 def edit():

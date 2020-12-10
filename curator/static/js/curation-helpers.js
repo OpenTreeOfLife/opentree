@@ -2295,19 +2295,19 @@ function getCollectionViewLink(collection, options) {
     switch (options.VIEW) {
         case 'FULL_PAGE':
             // jump to the full-page viewer/editor
-            html = '<a class="'+ options.CLASS +'" href="/curator/collection/'+ collection.id
+            html = '<a class="'+ options.CLASS +'" href="/curator/collection/view/'+ collection.id
                   +'" title="'+ (collection.description || "(no description provided)") +'">' + collection.name
                   +' <span style="color: #aaa;">&bullet;&nbsp;<span class="collection-id">'+ collection.id +'</span></span></a>';
             break;
         case 'POPUP':
             // show this collection in a popup viewer/editor (but keep the full-page URL in case they want to capture it)
             if (options.LABEL) {
-                html = '<a class="'+ options.CLASS +'" href="/curator/collection/'+ collection.id +'" title="'
+                html = '<a class="'+ options.CLASS +'" href="/curator/collection/view/'+ collection.id +'" title="'
                       + (collection.description || "(no description provided)")
                       +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
                       + options.LABEL +'</a>';
             } else {
-                html = '<a class="'+ options.CLASS +'" href="/curator/collection/'+ collection.id +'" title="'
+                html = '<a class="'+ options.CLASS +'" href="/curator/collection/view/'+ collection.id +'" title="'
                       + (collection.description || "(no description provided)")
                       +'" onclick="fetchAndShowCollection(\''+  collection.id +'\'); return false;">'
                       + collection.name
