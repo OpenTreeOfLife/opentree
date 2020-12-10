@@ -562,33 +562,31 @@ function goToTab( tabName ) {
 
 function loadSelectedCollection() {
     /* Use REST API to pull collection data from datastore
-     * :EXAMPLE: GET http://api.opentreeoflife.org/1/collection/{23}.json
+     * :EXAMPLE: GET http://api.opentreeoflife.org/v3/collection/{jimallman/test}
      *
-     * Offer a visible progress bar (studies can be very large)
+     * Offer a visible progress bar (for larger collectiond)?
      *
      * Gracefully handle and report:
      *  - remote service not available
      *  - collection missing or not found
-     *  - too-large studies? will probably choke on parsing
      *  - misc errors from API
      *  - any local storage (in Lawnchair) that trumps the one in remote storage
      */
 
-    var fetchURL = API_load_collection_GET_url.replace('{STUDY_ID}', collectionID);
+    var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID);
 
     // TEST URL with local JSON file
     ///fetchURL = '/curator/static/1003.json';
 
     // TODO: try an alternate URL, pulling directly from GitHub?
 
-    showModalScreen("Loading collection data...", {SHOW_BUSY_BAR:true});
+    showModalScreen("Loading tree collection...", {SHOW_BUSY_BAR:true});
 
     $.ajax({
         type: 'GET',
         dataType: 'json',
         url: fetchURL,
         data: {
-            'output_nexml2json': '1.0.0',  // '0.0', '1.0', '1.2', '1.2.1'
             'auth_token': userAuthToken
         },
         error: function(jqXHR, textStatus, errorThrown) {
@@ -646,88 +644,7 @@ function loadSelectedCollection() {
              * N.B. Unless otherwise specified with a 'prefix' property, the
              * key in each case is also the preferred prefix.
              */
-            viewModel.elementTypes = {
-                'edge': {
-                    highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
-                        // return an array of all matching elements
-                        var allEdges = [];
-                        var allTrees = viewModel.elementTypes.tree.gatherAll(nexml);
-                        $.each(allTrees, function( i, tree ) {
-                            $.merge(allEdges, tree.edge );
-                        });
-                        return allEdges;
-                    }
-                },
-                'node': {
-                    highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
-                        // return an array of all matching elements
-                        var allNodes = [];
-                        var allTrees = viewModel.elementTypes.tree.gatherAll(nexml);
-                        $.each(allTrees, function( i, tree ) {
-                            $.merge(allNodes, tree.node );
-                        });
-                        return allNodes;
-                    }
-                },
-                'otu': {
-                    highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
-                        // return an array of all matching elements
-                        var allOTUs = [];
-                        $.each(nexml.otus, function( i, otusCollection ) {
-                            $.merge(allOTUs, otusCollection.otu );
-                        });
-                        return allOTUs;
-                    }
-                },
-                'otus': {   // a collection of otu elements
-                    highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
-                        // return an array of all matching elements
-                        return makeArray(nexml.otus);
-                    }
-                },
-                'tree': {
-                    highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
-                        // return an array of all matching elements
-                        var allTrees = [];
-                        var allTreesCollections = viewModel.elementTypes.trees.gatherAll(nexml);
-                        $.each(allTreesCollections, function(i, treesCollection) {
-                            $.each(treesCollection.tree, function(i, tree) {
-                                allTrees.push( tree );
-                            });
-                        });
-                        return allTrees;
-                    }
-                },
-                'trees': {   // a collection of tree elements
-                    highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
-                        // return an array of all matching elements
-                        return makeArray(nexml.trees);
-                    }
-                },
-                'annotation': {  // an annotation event
-                    highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
-                        return makeArray(nexml['^ot:annotationEvents']);
-                    }
-                },
-                'agent': {  // an annotation agent
-                    highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
-                        return makeArray(nexml['^ot:agents']);
-                    }
-                },
-                'message': {  // an annotation message
-                    highestOrdinalNumber: null,
-                    gatherAll: getAllAnnotationMessagesInStudy
-                },
-
-            }
+            viewModel.elementTypes = {};
 
             // add missing collection metadata tags (with default values)
             if (!(['^ot:studyPublicationReference'] in data.nexml)) {
@@ -2276,7 +2193,7 @@ function saveFormDataToCollectionJSON() {
     showModalScreen("Saving collection data...", {SHOW_BUSY_BAR:true});
 
     // push changes back to storage
-    var saveURL = API_update_collection_PUT_url.replace('{STUDY_ID}', collectionID);
+    var saveURL = API_update_collection_PUT_url.replace('{COLLECTION_ID}', collectionID);
     // gather commit message (if any) from pre-save popup
     var commitMessage;
     var firstLine = $('#save-comment-first-line').val();
@@ -2380,7 +2297,7 @@ function enableSaveButton() {
 
 function removeCollection() {
     // let's be sure, since deletion will make a mess...
-    var removeURL = API_remove_collection_DELETE_url.replace('{STUDY_ID}', collectionID);
+    var removeURL = API_remove_collection_DELETE_url.replace('{COLLECTION_ID}', collectionID);
     // gather commit message (if any) from pre-save popup
     var commitMessage;
     var firstLine = $('#delete-comment-first-line').val();
