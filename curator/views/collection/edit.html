@@ -40,24 +40,6 @@ response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.iframe-tr
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.fileupload.js'))
 response.files.append(URL('static','jQuery-File-Upload-9.5.2/css/jquery.fileupload.css'))
 
-# TODO: remove if not used
-# support for fullscreen display (tree viewer)
-response.files.append(URL('static','js/jquery.fullscreen.min.js'))
-
-# TODO: remove if not used
-# minimal Bootstrap Tags Input (jQuery plugin)
-response.files.append(URL('static','js/bootstrap-tagsinput.min.js'))
-response.files.append(URL('static','css/bootstrap-tagsinput.css'))
-
-# TODO: remove if not used
-# D3 for tree viewer/editor
-response.files.append(URL('static','js/d3.v3.min.js'))
-
-# TODO: remove if not used
-# Phylogram "plugin" for D3
-response.files.append(URL('static','js/d3.phylogram.js'))
-}}
-
 {{extend 'layout.html'}}
 
 <style id="tree-view-style" type="text/css">
@@ -65,15 +47,6 @@ body {
     overflow-y: scroll;
 }
 
-/* TODO: remove if not used */
-/* force proper styles for Bootstrap Tags Input */
-.bootstrap-tagsinput input {
-    border: none !important;
-    background-color: transparent !important;
-    padding: 0 !important;
-    -webkit-box-shadow: none !important;
-    box-shadow: none !important;
-}
 </style>
 
 <div class="row">
@@ -496,241 +469,6 @@ body {
         {{ pass }}
 
 
-           </div><!-- end of right col -->
-          </div><!-- /.tab-pane -->
-
-          <div class="tab-pane" id="Files">
-           <div class="span8"><!-- main column... -->
-            <ul class="suggestion-list"></ul>
-            <div style="margin-bottom: 100px;">
-
-              <div class="navbar">
-               <div class="navbar-inner">
-                <form class="navbar-search pull-left">
-                    <input type="text" id="file-list-filter" class="search-query" placeholder="Filter by name or description"
-                           data-bind="value: viewModel.listFilters.FILES.match, valueUpdate: ['afterkeydown', 'input']">
-                </form>
-               </div>
-              </div>
-
-                {{ #TODO: IF a dataDeposit URL is found, should we hide the files list? block editing and addition of files/trees? }}
-               <!-- ko if: getDataDepositMessage() !== '' -->
-                <div class="empty-list-prompt" data-bind="html: getDataDepositMessage()" style="margin-bottom: 1em;">{deposit message} </div>
-               <!-- /ko -->
-
-                <div class="empty-list-prompt" data-bind="visible: viewModel.filteredFiles().pagedItems().length === 0">
-                    No matching files found! Add files or use the filters
-                    above to see supporting files in this study.
-                </div>
-
-                <table class="table table-condensed table-hover"
-                    data-bind="visible: viewModel.filteredFiles().pagedItems().length &gt; 0">
-                  <thead>
-                    <tr>
-                        <th width="35%">File name (click to download)</th>
-                        <th width="*">Description</th>
-                        <th width="15%">Size</th><!-- also includes possible delete button -->
-                    </tr>
-                  </thead>
-                  <tbody data-bind="foreach: { data: viewModel.filteredFiles().pagedItems(), as: 'file' }">
-                    <tr>
-                    {{ if viewOrEdit == 'EDIT': }}
-                        <td>
-                          <!-- ko if: file['@url']  -->
-                            <a href="#" target="_blank" data-bind="text: file['@filename'] || '?', attr: { href: file['@url'] }">
-                                Alignment data (urchins).xls
-                            </a>
-                          <!-- /ko -->
-                          <!-- ko if: !file['@url'] -->
-                            <span style="color: #999;" data-bind="text: file['@filename'] || '?'" onclick="showErrorMessage('No URL stored for this file!')">
-                                Alignment data (urchins).xls
-                            </span>
-                          <!-- /ko -->
-                        </td>
-                        <td>
-                            <div><textarea data-bind="value: file.description.$,
-                                                      valueUpdate: ['afterkeydown', 'input'],
-                                                      event: { keyup: nudge.SUPPORTING_FILES, change: nudge.SUPPORTING_FILES }"
-                                           placeholder="Describe this file's format and purpose."
-                                           rows="2"
-                                           class="input-block-level"
-                                           style="margin-bottom: 0px;">?</textarea></div>
-                            <em data-bind="if: getAssociatedTrees(file).length > 0">
-                                Source for tree(s):
-                                <strong data-bind="text: getAssociatedTreeLabels(file).join(', ')">&nbsp;</strong>
-                            </em>
-                           <!-- TODO: make this directly editable?
-                            <input type="text" data-bind="value: file['@sourceForTree']"
-                                   placeholder="Tree ID (if source file for a tree)">OPTIONAL_TREE_ID</em>
-                           -->
-                        </td>
-                        <td>
-                          <!-- ko if: file['@size'] -->
-                            <span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
-                          <!-- /ko -->
-                          <!-- ko if: !file['@size'] -->
-                            &mdash;
-                          <!-- /ko -->
-                            <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length > 0"
-                                class="pull-right btn btn-mini btn-danger"
-                                style="opacity: 0.3 !important;"
-                                onclick="alert('You must delete the associated tree(s) to remove this file.'); return false;">
-                                <i class="icon-trash icon-white"></i>
-                            </button>
-                            <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
-                                class="pull-right btn btn-mini btn-danger row-controls-ghosted">
-                                <i class="icon-trash icon-white"></i>
-                            </button>
-                        </td>
-                    {{ else: }}
-                        <td>
-                          <!-- ko if: file['@url']  -->
-                            <a href="#" target="_blank" data-bind="text: file['@filename'] || '?', attr: { href: file['@url'] }">
-                                Alignment data (urchins).xls
-                            </a>
-                          <!-- /ko -->
-                          <!-- ko if: !file['@url'] -->
-                            <span style="color: #999;" data-bind="text: file['@filename'] || '?'" onclick="showErrorMessage('No URL stored for this file!')">
-                                Alignment data (urchins).xls
-                            </span>
-                          <!-- /ko -->
-                        </td>
-                        <td>
-                            <div data-bind="text: file.description.$">Microsoft Excel spreadsheet</div>
-                            <em data-bind="if: getAssociatedTrees(file).length > 0">
-                                Source for tree(s):
-                                <strong data-bind="text: getAssociatedTreeLabels(file).join(', ')">&nbsp;</strong>
-                            </em>
-                        </td>
-                        <td>
-                          <!-- ko if: file['@size'] -->
-                            <span data-bind="text: getHumanReadableFileSize(file['@size']) || '?'">241 KB</span>
-                          <!-- /ko -->
-                          <!-- ko if: !file['@size'] -->
-                            &mdash;
-                          <!-- /ko -->
-                        </td>
-                    {{ pass }}
-                    </tr>
-                  </tbody>
-                </table>
-
-                <div class="pagination pagination-centered pagination-small"
-                     Xdata-bind="if: viewModel.filteredFiles()().length &gt; viewModel.filteredFiles().pagedItems().length">
-                  <ul>
-                    <li data-bind="css: { 'disabled': !viewModel.filteredFiles().prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.filteredFiles().prev(); return false;">&laquo;</a>
-                    </li>
-                   <!-- ko foreach: getPageNumbers( viewModel.filteredFiles() ) -->
-                    <!-- ko if: isVisiblePage( $data, viewModel.filteredFiles() ) -->
-                    <li data-bind="css: { 'active': (viewModel.filteredFiles().current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data, click: function() { viewModel.filteredFiles().goToPage($data); return false; }">0</a>
-                    </li>
-                    <!-- /ko -->
-                    <!-- ko if: ! isVisiblePage( $data, viewModel.filteredFiles() ) -->
-                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredFiles().goToPage($data); return false; }">&nbsp;</a></li>
-                    <!-- /ko -->
-                   <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !viewModel.filteredFiles().next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.filteredFiles().next(); return false;">&raquo;</a>
-                    </li>
-                  </ul>
-                </div>
-
-            </div>
-
-           </div><!-- end of main column... -->
-           <div class="span4"><!-- right col -->
-
-            <button class="help-toggle" style="display: none;">
-                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
-            </button>
-            <div class="help-box">
-              <button class="help-toggle">
-                  Hide <i class="icon-chevron-up Xicon-white"></i>
-              </button>
-        {{ if viewOrEdit == 'EDIT': }}
-              <p>
-                <strong>Files</strong> is a list of optional supporting files.
-                These  might include alignments, files used for inference (e.g.
-                a BEAST XML file or MrBayes block), or lists of bootstrap trees.
-                Tree data imported in the <strong>Home</strong> tab also appears
-                here in its original form.
-              </p>
-              <p>
-                Use the <strong>upload tool</strong> below to add files from your
-                local filesystem and then add a short description beside the
-                file in the list. These files are not added to the study file
-                itself; they are stored on our servers pending transfer
-                to a permanent data repository (this feature not yet complete.)
-              </p>
-        {{ else: }}
-              <p>
-                <strong>Files</strong> is a list of optional supporting files.
-                These  might include alignments, files used for inference (e.g.
-                a BEAST XML file or MrBayes block), or lists of bootstrap trees.
-                Tree data imported in the
-                <strong>Home</strong> tab also appears here in its original
-                form.
-              </p>
-              <p>
-                These files are not added to the study file
-                itself; they are stored on our servers pending transfer
-                to a permanent data repository (this feature not yet complete.)
-              </p>
-        {{ pass }}
-            <!--
-              <p>
-                <strong>Note</strong> Describe how we interoperate with data repositories, and
-                what the curator can do here if the permanent deposit of this study's
-                data has already taken place.
-              </p>
-            -->
-            </div>
-
-        {{ if viewOrEdit == 'EDIT': }}
-            <div class="well" style="clear: right;">
-                <h4 style="margin-top: 0;">Add a file to this study</h4>
-
-                <p class="interesting-value" style="line-height: 1.25em; display: none;"
-                   data-bind="style: {'display': getDataDepositMessage() === '' ? 'none':'block'}">
-                    <span data-bind="html: getDataDepositMessage()">&nbsp;</span>.
-                    Files added here should already be present in the data deposit for this study.
-                </p>
-
-                <form style="margin: 0;">
-                 <fieldset>
-
-                <div>
-                    <span class="btn btn-info fileinput-button">
-                        <i class="glyphicon glyphicon-plus"></i>
-                        <span>Select file(s) to upload...</span>
-                        <!-- The file input field used as target for the file upload widget -->
-                        <input id="fileupload" type="file" name="files[]" multiple>
-                    </span>
-
-                </div>
-                <div id="file-upload-progress" class="progress progress-info"
-                     style="margin-top: 1em; margin-bottom: 0; background-color: #333;">
-                  <div class="bar" style="text-align: center; width: 0%;">
-                      <span>&nbsp;</span>
-                  </div>
-                </div>
-
-  <!--
-                  <label for="new-file-url">&hellip;or paste its URL:</label>
-                  <input type="text" id="new-file-url" name="new-file-url" class="input-block-level" value="" placeholder="Paste file URL here">
-
-                  <div Xclass="form-actions" style="margin-top: 1em;">
-                      <button type="submit" class="btn btn-primary btn-primary-disabled" onclick="addSupportingFileFromURL(); return false;">Add new file
-                        <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
-                      <button type="button" class="btn">Cancel</button>
-                  </div>
-  -->
-                 </fieldset>
-                </form>
-            </div>
-        {{ pass }}
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
@@ -1624,7 +1362,7 @@ body {
 
     var API_create_amendment_POST_url = "{{=API_create_amendment_POST_url}}";
 </script>
-<script src="{{=URL('static','js/study-editor.js')}}"></script>
+<script src="{{=URL('static','js/tree-collection-editor.js')}}"></script>
 
 <!-- hidden template for DOI lookups -->
 <div class="modal hide fade modal-DOI-lookup" id="DOI-lookup" style="display: none;">
@@ -2053,31 +1791,6 @@ body {
                     <span data-bind="text: nexml['^ot:focalCladeOTTTaxonName'], attr:{'title': ('ottid:'+ nexml['^ot:focalClade'])}, css: viewModel.ticklers.GENERAL_METADATA">&nbsp;</span>
                   </p>
                 {{ pass }}
-                </div>
-              </div>
-              <div class="control-group">
-                <label class="control-label">Tags</label>
-                <div class="controls">
-                {{ if viewOrEdit == 'EDIT': }}
-                    <select id="study-tags" multiple="multiple" placeholder="Add tags"
-                            onchange="updateElementTags(this); nudge.GENERAL_METADATA();">
-                    </select>
-                {{ else: }}
-                    <!-- TODO: make all tags clickable (search in new window?) -->
-                    <div class="bootstrap-tagsinput"
-                         style="border: none; margin-bottom: 0; padding: 4px 0; display: none;"
-                         data-bind="visible: getTags(viewModel.nexml).length > 0">
-                    <!-- ko foreach: getTags( viewModel.nexml ) -->
-                        <span class="tag label label-info" data-bind="text:
-                            $data"></span>
-                    <!-- /ko -->
-                    </div>
-                    <p class="static-form-value" style="display: none;"
-                       data-bind="visible: getTags(viewModel.nexml).length === 0">
-                       <em>None</em>
-                    </p>
-                {{ pass }}
-
                 </div>
               </div>
 
