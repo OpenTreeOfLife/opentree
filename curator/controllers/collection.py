@@ -49,7 +49,7 @@ def view():
     view_dict = get_opentree_services_method_urls(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
     #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
-    view_dict['collectionID'] = request.args[0]
+    view_dict['collectionID'] = request.args[0] +'/'+ request.args[1]
     view_dict['latestSynthesisSHA'] = _get_latest_synthesis_details_for_collection_id(view_dict['collectionID'])
         # TODO: include latestSynthesisTreeIDs as second response item? as for studies
     view_dict['viewOrEdit'] = 'VIEW'
@@ -83,7 +83,7 @@ def edit():
     view_dict = get_opentree_services_method_urls(request)
     view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['treesQueuedForSynthesis'] = fetch_trees_queued_for_synthesis(request)
-    view_dict['collectionID'] = request.args[0]
+    view_dict['collectionID'] = request.args[0] +'/'+ request.args[1]
     view_dict['latestSynthesisSHA'] = _get_latest_synthesis_details_for_collection_id(view_dict['collectionID'])
     view_dict['viewOrEdit'] = 'EDIT'
     return view_dict
