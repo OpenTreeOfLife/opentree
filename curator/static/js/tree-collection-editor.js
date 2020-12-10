@@ -39,9 +39,9 @@ var History = window.History; // Note: capital H refers to History.js!
 
 
 /*
- * Client-side behavior for the Open Tree curation UI
+ * More client-side behavior for the Open Tree curation UI
  *
- * This uses the Open Tree API to fetch and store studies and trees remotely.
+ * This uses the Open Tree API to fetch and store tree collections remotely.
  */
 
 // these variables should already be defined in the main HTML page
@@ -52,70 +52,10 @@ var API_load_collection_GET_url;
 var API_update_collection_PUT_url;
 var API_remove_collection_DELETE_url;
 var viewOrEdit;
-var API_create_file_POST_url;
-var API_load_file_GET_url;
-var API_update_file_PUT_url;
-var API_remove_file_DELETE_url;
-var findAllTreeCollections_url;
-var API_create_amendment_POST_url;
 var getTreesQueuedForSynthesis_url;
-var includeTreeInSynthesis_url;
-var excludeTreeFromSynthesis_url;
-var treesQueuedForSynthesis;
 
 // working space for parsed JSON objects (incl. sub-objects)
 var viewModel;
-
-var tagsOptions = {
-    confirmKeys: [13, 9],  // ENTER, TAB for next tag
-    allowDuplicates: false,  // default, but added here for clarity
-    // using simple objects-as-tags, to avoid bugs with string + SELECT
-    itemValue: 'attrValue',
-    itemText: 'displayString',
-    typeahead: {
-        //source: ['eenie', 'meanie', 'minie', 'moe']
-        /*
-        source: function(query) {
-            return $.get('/oti/existing_tags');  // TODO
-        }
-        */
-    }
-};
-function captureTagTextOnBlur( $tagsSelect ) {
-    /* Add any "loose" text in a tags widget as a new tag, e.g., if someone
-     * types a word and immediately tries to save the study. Adapted from this
-     * pull request by https://github.com/kubanka-peter:
-     *   https://github.com/TimSchlechter/bootstrap-tagsinput/pull/99
-     */
-    $tagsSelect.tagsinput('input').on('blur', function(event){
-        var $input = $(event.target);
-        var $select = $input.closest('.bootstrap-tagsinput').prev('select');
-        if ($select.length === 0) {
-            console.warn("captureTagTextOnBlur(): No SELECT widget found!");
-        } else {
-            var inputText = $.trim( $input.val() );
-            // reject whitespace-only tags!
-            if (inputText !== '') {
-                var tagInfo = makeTagObjFromString(inputText);
-                $select.tagsinput('add', tagInfo);
-            }
-            $input.val('');
-        }
-    });
-}
-function makeTagObjFromString( tagString ) {
-    // groom string value, and make it safe for HTML attributes
-    if (typeof tagString !== 'string') {
-        tagString = tagString.toString();
-    }
-    var displayString = $.trim(tagString);
-    var attrValue = encodeURIComponent(displayString);
-    var tagInfo = {
-        displayString: displayString,
-        attrValue: attrValue
-    };
-    return tagInfo;
-}
 
 /* Use history plugin to track moves from tab to tab, single-tree popup, others? */
 
@@ -620,7 +560,6 @@ function goToTab( tabName ) {
     $matchingTab.tab('show');
 }
 
-var studyTagsInitialized = false;
 function loadSelectedCollection() {
     /* Use REST API to pull collection data from datastore
      * :EXAMPLE: GET http://api.opentreeoflife.org/1/collection/{23}.json
@@ -863,8 +802,6 @@ function loadSelectedCollection() {
             } else {
                 data.nexml['^ot:tag'] = [ ];
             }
-
-            removeDuplicateTags( data.nexml );
 
             // add study-level containers for annotations
             if (['^ot:annotationEvents'] in data.nexml) {
@@ -1454,20 +1391,6 @@ function loadSelectedCollection() {
                                         "WARNING: This study has unsaved changes! To preserve your work, you should save this study before leaving or reloading the page.");
                 }
             });
-
-            if (viewOrEdit == 'EDIT') {
-                // init (or refresh) the study tags
-                if (studyTagsInitialized) {
-                    $('#study-tags').tagsinput('destroy');
-                }
-                $('#study-tags').tagsinput( tagsOptions );
-                // add all tag values directly from nemxml
-                $.each( getTags( data.nexml, {FULL_TAG_INFO: true}), function(i, tagInfo) {
-                    $('#study-tags').tagsinput('add', tagInfo);
-                });
-                captureTagTextOnBlur( $('#study-tags') );
-                studyTagsInitialized = true;
-            }
 
             hideModalScreen();
             showInfoMessage('Collection data loaded.');
@@ -7019,72 +6942,6 @@ function moveOrMergeLocalMessage(msg, parentElement, nexml) {
     // still here? then we can safely remove this local message
     var msgCollection = getLocalMessagesCollection( parentElement );
     removeFromArray(msg, msgCollection.message);
-}
-
-/*
- * Manage free-form tags for a specified study or tree. This is somewhat
- * complicated by the fact that these are stored as a set of zero or more
- * metatags, with no duplicate values for the parent element.
- */
-
-function getTags( parentElement, options ) {
-    options = options || { FULL_TAG_INFO: false };
-    var tags = [];
-    var rawTagValues = parentElement['^ot:tag'] || [];
-    $.each(rawTagValues, function(i, tagText) {
-        var tagText = $.trim(tagText);
-        switch(tagText) {
-            case '':
-                break;  // discard empty tags
-            default:
-                if (options.FULL_TAG_INFO) {
-                    var tagInfo = makeTagObjFromString( tagText );
-                    tags.push( tagInfo );
-                } else {
-                    tags.push( tagText );
-                }
-        }
-    });
-    return tags;
-}
-function addTag( parentElement, newTagText ) {
-    // ASSUMES that tag text is storage-ready (URI-decoded and trimmed)
-    if (!('^ot:tag' in parentElement)) {
-        parentElement['^ot:tag'] = [];
-    }
-    // only add unique tags!
-    if ($.inArray(newTagText, parentElement['^ot:tag']) === -1) {
-        parentElement['^ot:tag'].push( newTagText );
-    }
-}
-function removeAllTags( parentElement ) {
-    parentElement['^ot:tag'] = [];
-}
-function removeDuplicateTags( parentElement ) {
-    var uniqueTags = [ ] ;
-    $.each(parentElement['^ot:tag'], function(i,tag){
-        if ($.inArray(tag, uniqueTags) === -1) { uniqueTags.push(tag) };
-    });
-    parentElement['^ot:tag'] = uniqueTags;
-}
-function updateElementTags( select ) {
-    var parentElement;
-    if ($(select).attr('id') === 'study-tags') {
-        parentElement = viewModel.nexml;
-    } else {
-        var treeID = $(select).attr('treeid');
-        parentElement = getTreeByID(treeID);
-    }
-    removeAllTags( parentElement );
-    // read and apply the values in this tags-input SELECT element
-    // N.B. multiple-value select returns null if no values selected!
-    var values = $(select).val() || [];
-    $.each(values, function(i, encodedTag ) {
-        // convert as needed, e.g. 'delete%20me' => 'delete me'
-        var rawTagValue = decodeURIComponent( encodedTag );
-        // trim final string just to be safe
-        addTag( parentElement, $.trim(rawTagValue) );
-    });
 }
 
 function updateInferenceMethodWidgets( tree, event ) {
