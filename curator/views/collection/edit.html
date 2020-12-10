@@ -1561,7 +1561,7 @@ body {
 <script type='text/javascript'>
     var collectionID = '{{= collectionID }}';
     var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
-    //var latestSynthesisTreeIDs = {{= XML( json.dumps(latestSynthesisTreeIDs) ) }};
+    //var latestSynthesisTreeIDs = {{# = XML( json.dumps(latestSynthesisTreeIDs) ) }};
     var treesQueuedForSynthesis = {{=XML( json.dumps(treesQueuedForSynthesis) ) }};
     var viewOrEdit = '{{= viewOrEdit }}';
 
