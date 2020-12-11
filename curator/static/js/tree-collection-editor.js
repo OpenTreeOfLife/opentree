@@ -2385,7 +2385,8 @@ function getTreeByID(id) {
             $('#tree-tags').tagsinput('destroy');
             treeTagsInitialized = false;
         }
-    });
+    }
+}
 
 /* TODO: use this after Save, etc?
 function replaceViewModelNexson( nexml ) {
