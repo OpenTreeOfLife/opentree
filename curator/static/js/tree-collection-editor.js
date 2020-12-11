@@ -654,7 +654,7 @@ function loadSelectedCollection() {
 
             // TODO: support fast lookup of elements by ID? for largest trees
             viewModel.fastLookups = {
-                TREES_BY_NAME: null
+                TREES_BY_ID: null
             };
 
             // enable sorting and filtering for lists in the editor
@@ -2516,22 +2516,21 @@ function getFastLookup( lookupName ) {
         if (viewModel.fastLookups[ lookupName ] === null) {
             buildFastLookup( lookupName );
         }
+        return viewModel.fastLookups[ lookupName ];
     }
-
-            case 'TREES_BY_NAME':
-                // assumes that all OTU ids are unique, across all trees
-                var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
-                $.each(allTrees, function( i, tree ) {
-                    $.each(tree.node, function( i, node ) {
-                        var itsID = node['@otu'];
-                        if (itsID in newLookup) {
-                            console.warn("Duplicate otu ID '"+ itsID +"' found ["+ lookupName +"]");
-                        }
-                        newLookup[ itsID ] = tree;
-                    });
-                });
+    console.error("No such lookup as '"+ lookupName +"'!");
+    return null;
+}
+function buildFastLookup( lookupName ) {
+    // (re)build and store a flat list of Nexson elements by ID
+    if (lookupName in viewModel.fastLookups) {
+        clearFastLookup( lookupName );
+        var newLookup = {};
+        switch( lookupName ) {
+            case 'TREES_BY_ID':
+                //TODO: build a composite key of 'studyID-treeID', if needed
+                console.log("TREES_BY_ID lookup NOT IMPLEMENTED")
                 break;
-
         }
         viewModel.fastLookups[ lookupName ] = newLookup;
     } else {
