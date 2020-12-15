@@ -571,7 +571,7 @@ function fetchAndShowCollection( collectionID, specialHandling ) {
     });
 }
 
-var collectionUI = collectionUI || 'POPUP'; // or 'FULL_PAGE', if set already by main page
+var collectionUI; // already set to 'POPUP' or 'FULL_PAGE'
 console.warn(">>> collectionUI: "+ collectionUI);
 
 // Keep track of when the collection popup viewer is already showing, so we
