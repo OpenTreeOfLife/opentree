@@ -571,9 +571,12 @@ function fetchAndShowCollection( collectionID, specialHandling ) {
     });
 }
 
-// Keep track of when the collection viewer is already showing, so we
+var collectionUI = collectionUI || 'POPUP'; // or 'FULL_PAGE', if set already by main page
+console.warn(">>> collectionUI: "+ collectionUI);
+
+// Keep track of when the collection popup viewer is already showing, so we
 // can hold it open and step through nodes or trees.
-var collectionViewerIsInUse = false;
+var collectionPopupIsInUse = false;
 
 // Keep safe copy of its markup for re=use as a Knockout template (see below)
 var $stashedCollectionViewerTemplate = null;
@@ -674,12 +677,12 @@ function showCollectionViewer( collection, options ) {
         $('#tree-list-holder').scrollTop(newListScrollPosition);
     }
 
-    if (collectionViewerIsInUse) {
+    if (collectionPopupIsInUse) {
         // trigger its 'shown' event to update the UI
         updateCollectionDisplay(options);
     } else {
         $('#tree-collection-viewer').off('show').on('show', function () {
-            collectionViewerIsInUse = true;
+            collectionPopupIsInUse = true;
         });
         $('#tree-collection-viewer').off('shown').on('shown', function () {
             updateCollectionDisplay(options);
@@ -690,7 +693,7 @@ function showCollectionViewer( collection, options ) {
                 alert("Please save (or cancel) your changes to this collection!");
                 return false;
             }
-            collectionViewerIsInUse = false;
+            collectionPopupIsInUse = false;
         });
         $('#tree-collection-viewer').off('hidden').on('hidden', function () {
             ///console.log('@@@@@ hidden');
@@ -732,7 +735,7 @@ function updateCollectionEditorHeight(options) {
     $listHolder.scrollTop(newListScrollPosition);
 }
 $(window).resize( function () {
-    if (collectionViewerIsInUse) {
+    if (collectionPopupIsInUse) {
         updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
     }
 });

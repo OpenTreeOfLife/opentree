@@ -565,6 +565,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         </div>
     </div>
 
+{{ # Supress this popup template in our full-page collection viewer/editor
+   if response.view != 'collection/edit.html': }}
   <!-- hidden template for the tree-collection-viewer (editor) -->
   <div class="modal hide fade" id="tree-collection-viewer"
        Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
@@ -998,6 +1000,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div><!-- end of .modal-body -->
     <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
   </div><!-- end of #tree-collection-viewer.modal- -->
+{{ pass }}
+
 
 <!-- hidden template for gathering comments when saving a tree collection -->
 <div class="modal hide fade modal-save-comments" id="save-collection-comments-popup" style="display: none;">
