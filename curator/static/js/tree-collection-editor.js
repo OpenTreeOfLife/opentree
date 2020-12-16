@@ -705,20 +705,11 @@ function loadSelectedCollection() {
 
 function updatePageHeadings() {
     // page headings should reflect the latest metadata for the collection
-    var studyFullReference = viewModel.nexml['^ot:studyPublicationReference'];
-    var studyCompactReference = fullToCompactReference(studyFullReference);
+    var collectionName = viewModel.name |} '';
     if (viewOrEdit == 'EDIT') {
-        $('#main-title').html('<span style="color: #ccc;">Editing collection</span> '+ studyCompactReference);
+        $('#main-title').html('<span style="color: #ccc;">Editing collection</span> '+ collectionName);
     } else {
-        $('#main-title').html('<span style="color: #ccc;">Viewing collection</span> '+ studyCompactReference);
-    }
-
-    var studyDOI = ('^ot:studyPublication' in viewModel.nexml) ? viewModel.nexml['^ot:studyPublication']['@href'] : "";
-    studyDOI = $.trim(studyDOI);
-    if (studyDOI === "") {
-        $('a.main-title-DOI').hide();
-    } else {
-        $('a.main-title-DOI').text(studyDOI).attr('href', studyDOI).show();
+        $('#main-title').html('<span style="color: #ccc;">Viewing collection</span> '+ collectionName);
     }
 }
 
