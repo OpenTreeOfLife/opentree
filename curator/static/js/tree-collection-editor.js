@@ -588,13 +588,12 @@ function loadSelectedCollection() {
                 showErrorMessage('Sorry, there is a problem with the collection data (no response).');
                 return;
             }
-            // pull data from bare NexSON repsonse or compound object (data + sha)
-            var data = response['data'] || response;
-            if (typeof data !== 'object' || typeof(data['decisions']) == 'undefined') {
+            // build our viewModel from the full JSON repsonse (stored collection is its 'data')
+            var data = response;
+            if (typeof data !== 'object' || typeof(data['data']['decisions']) == 'undefined') {
                 showErrorMessage('Sorry, there is a problem with the collection data (decision list).');
                 return;
             }
-
             viewModel = data;
 
             // get initial rendered HTML for study comment (from markdown)
@@ -678,7 +677,7 @@ function loadSelectedCollection() {
 
             // "Normalize" trees by adding any missing tree properties and metadata.
             // (this depends on some of the "fast lookups" added above)
-            $.each(data.decisions, function(i, dec) {
+            $.each(viewModel.data.decisions, function(i, dec) {
                 normalizeDecision( dec );
             });
 
