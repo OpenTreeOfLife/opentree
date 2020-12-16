@@ -797,12 +797,16 @@ function loadSelectedStudy() {
                 },
                 'tree': {
                     highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
+                    gatherAll: function(nexml, options) {
                         // return an array of all matching elements
+                        if (!options) options = {INCLUDE_SCRIPT_MANAGED_TREES: true};
                         var allTrees = [];
                         var allTreesCollections = viewModel.elementTypes.trees.gatherAll(nexml);
                         $.each(allTreesCollections, function(i, treesCollection) {
                             $.each(treesCollection.tree, function(i, tree) {
+                                if (!options.INCLUDE_SCRIPT_MANAGED_TREES) {
+                                    if (isScriptManagedTree(tree)) return true;
+                                }
                                 allTrees.push( tree );
                             });
                         });
@@ -900,8 +904,21 @@ function loadSelectedStudy() {
                 }
                 data.nexml['^ot:candidateTreeForSynthesis'] =
                     makeArray(data.nexml['^ot:candidateTreeForSynthesis']);
-            } else {
-                data.nexml['^ot:candidateTreeForSynthesis'] = [ ];
+                /* Shift "preferred" status to a per-tree property with default
+                 * value, then remove the deprecated study property.
+                 */
+                var preferredTreeIDs = data.nexml['^ot:candidateTreeForSynthesis'];
+                var allTrees = viewModel.elementTypes.tree.gatherAll(data.nexml);
+                $.each(allTrees, function( i, tree ) {
+                    if ($.inArray(tree['@id'], preferredTreeIDs) !== -1) {
+                        // this was a preferred tree (chosen for inclusion in synthesis)
+                        tree['^ot:candidateForSynthesis'] = 'ot:include';
+                    } else {
+                        // not a preferred tree, play it safe with default value
+                        tree['^ot:candidateForSynthesis'] = 'ot:notReviewed';
+                    }
+                });
+                delete data.nexml['^ot:candidateTreeForSynthesis'];
             }
             if ('^ot:tag' in data.nexml) {
                 data.nexml['^ot:tag'] = makeArray(data.nexml['^ot:tag']);
@@ -1212,6 +1229,10 @@ function loadSelectedStudy() {
                 if ($.isArray(chosenTrees)) {
                     // it's a list of zero or more trees
                     $.each( chosenTrees, function(i, tree) {
+                        if (isScriptManagedTree(tree)) {
+                            // ignore "empty" (script-managed) trees
+                            return;
+                        }
                         // check this tree's nodes for this OTU id
                         $.each( tree.node, function( i, node ) {
                             if (node['@otu']) {
@@ -2872,6 +2893,9 @@ function normalizeTree( tree ) {
         // safest value, forces the curator to assert correctness
         tree['^ot:unrootedTree'] = true;
     }
+    if (!(['^ot:candidateForSynthesis'] in tree)) {
+        tree['^ot:candidateForSynthesis'] = 'ot:notReviewed';
+    }
 
     // metadata fields (with empty default values)
     var metatags = [
@@ -3347,7 +3371,6 @@ function testForPossibleTreeExclusion(tree) {
     return (isQueuedForNewSynthesis(tree));
 }
 
-/* implement a basic "dirty" flag (to trigger updates), as described here:
 function tryToIncludeTreeInSynth(tree, options) {
     options = options || {};
     if (isQueuedForNewSynthesis(tree)) {
@@ -5540,6 +5563,14 @@ function setElementIDHints() {
     $form.find('[name=firstAvailableAnnotationID]').val( getNextElementOrdinalNumber('annotation') );
     $form.find('[name=firstAvailableAgentID]').val( getNextElementOrdinalNumber('agent') );
     $form.find('[name=firstAvailableMessageID]').val( getNextElementOrdinalNumber('message') );
+    // and again for nameset-upload form
+    var $form = $('#nameset-import-form');
+    $form.find('[name=idPrefix]').val('');  // clear this field
+    $form.find('[name=firstAvailableOTUID]').val( getNextElementOrdinalNumber('otu') );
+    $form.find('[name=firstAvailableOTUsID]').val( getNextElementOrdinalNumber('otus') );
+    $form.find('[name=firstAvailableAnnotationID]').val( getNextElementOrdinalNumber('annotation') );
+    $form.find('[name=firstAvailableAgentID]').val( getNextElementOrdinalNumber('agent') );
+    $form.find('[name=firstAvailableMessageID]').val( getNextElementOrdinalNumber('message') );
 }
 
 function returnFromNewTreeSubmission( jqXHR, textStatus ) {
@@ -5658,7 +5689,7 @@ function returnFromOTUMerge( jqXHR, textStatus ) {
     replaceViewModelNexson( responseJSON.data.nexml );
 
     hideModalScreen();
-    showSuccessMessage('Tree(s) added and merged.');
+    showSuccessMessage('Tree(s) and OTUs merged successfully.');
 }
 
 function replaceViewModelNexson( nexml ) {
@@ -5674,6 +5705,178 @@ function replaceViewModelNexson( nexml ) {
     // refresh the complete curation UI, via ticklers
     nudgeTickler('ALL');
 }
+
+/* support functions for uploading+importing pre-mapped names */
+function updateNamesetUploadForm() {
+    // check all fields, enable/disable button
+    var readyToSubmit = true;
+
+    // offer field for pasted text IF format is appropriate or unspecified
+    var $pastedTextField = $('#new-nameset-text');
+    
+    var chosenFormat = $.trim( $('#nameset-import-format').val() );
+    switch (chosenFormat) {
+        case '':
+            readyToSubmit = false;
+            $pastedTextField.attr('disabled', 'disabled');
+            break;
+        case 'zip':
+            $pastedTextField.attr('disabled', 'disabled');
+            break;
+        case 'tsv':
+        case 'csv':
+        case 'json':
+            $pastedTextField.removeAttr('disabled');
+            break;
+        default:
+            console.error("Unexpected format for pre-mapped names: ["+ chosenFormat +"]");
+            $pastedTextField.attr('disabled', 'disabled');
+            readyToSubmit = false;
+    }
+
+    //var chosenFile = $.trim( $('#namesetupload').val() );
+    // NO, this is routinely cleared by the upload widget; the file-name
+    // display (white on blue) alongside, is actually a safer test.
+    var chosenFile = $.trim( $('#upload-nameset-info').text() );
+    var pastedText = $.trim( $pastedTextField.val() );
+    // either of these is acceptable
+    if (pastedText === '' && chosenFile === '') {
+        readyToSubmit = false;
+    }
+
+    var $submitBtn = $('[name=new-nameset-submit]');
+    if (readyToSubmit) {
+        $submitBtn.removeAttr('disabled');
+    } else {
+        $submitBtn.attr('disabled', 'disabled');
+    }
+    return true;
+}
+function clearNamesetUploadWidget() {
+    // un-bind fileupload submission
+    $('[name=new-nameset-submit]').off('click');
+
+    var $widget = $('#namesetupload');
+    $widget.val('');
+    $widget.trigger('change');
+
+    // reset the progress bar
+    setTimeout( function() {
+        $('#nameset-upload-progress .bar').css( 'width', '0%' );
+        $('#nameset-upload-progress .bar span').text( '' );
+    }, 500);
+}
+function submitNameset() {
+    // TODO: NOTE that this should submit the same arguments (except for file
+    // data) as the fileupload behavior for #namesetupload
+
+    showModalScreen("Adding pre-mapped names...", {SHOW_BUSY_BAR:true});
+
+    // add hints for nicer element IDs to the form
+    setElementIDHints();
+
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        // contentType: "application/json; charset=utf-8",
+        url: $('#nameset-import-form').attr('action'),
+        data: $('#nameset-import-form').serialize(),
+        complete: returnFromNamesetSubmission
+    });
+}
+function returnFromNamesetSubmission( jqXHR, textStatus ) {
+    // show results of nameset submission, whether from submitNameset()
+    // or special (fileupload) behavior
+
+    console.log('submitNameset(): done! textStatus = '+ textStatus);
+    // report errors or malformed data, if any
+    if (textStatus !== 'success') {
+        var errMsg;
+        // TODO: Update the literal-text check below indexOf( blah )?
+        if ((jqXHR.status === 501) && (jqXHR.responseText.indexOf("Conversion") === 0)) {
+            errMsg = 'Sorry, there was an error importing your pre-mapped names. Please double-check the format and data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+        } else {
+            errMsg = 'Sorry, there was an error importing your pre-mapped names. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+            console.warn("jqXHR.status: "+ jqXHR.status);
+            console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+        }
+        hideModalScreen();
+        showErrorMessage(errMsg);
+        return;
+    }
+
+    // Add supporting-file info for the submitted nameset
+    console.log("status: "+ jqXHR.status);
+    console.log("statusText: "+ jqXHR.statusText);
+    // convert raw response to JSON
+    var responseJSON = $.parseJSON(jqXHR.responseText);
+    var data = responseJSON['data'];
+    console.log("data: "+ data);
+
+
+
+    /* TODO: What do we need to incorporate/consolidate here? */
+    // move its collections into the view model Nexson
+    var nexmlName = ('nex:nexml' in data) ? 'nex:nexml' : 'nexml';
+
+    // check for needed collections
+    var itsOTUsCollection =  data[nexmlName]['otus'];
+    var itsTreesCollection = data[nexmlName]['trees'];
+    if (!itsOTUsCollection || !itsTreesCollection) {
+        hideModalScreen();
+        showErrorMessage('Sorry, no trees were found in this file.');
+        return;
+    }
+
+    // coerce the inner array of each collection into an array
+    // (override Badgerfish singletons)
+    // NOTE that there may be multiple trees elements, otus elements
+    $.each(itsOTUsCollection, function(i, otusElement) {
+        otusElement['otu'] = makeArray( otusElement['otu'] );
+    });
+
+    $.each(itsTreesCollection, function(i, treesElement) {
+        treesElement['tree'] = makeArray( treesElement['tree'] );
+        $.each( treesElement.tree, function(i, tree) {
+            normalizeTree( tree );
+        });
+    });
+
+    try {
+        $.merge(viewModel.nexml.otus, itsOTUsCollection);
+        $.merge(viewModel.nexml.trees, itsTreesCollection);
+    } catch(e) {
+        console.error('Unable to push collections (needs Nexson upgrade)');
+    }
+
+    // update the files list (and auto-save?)
+    var file = responseJSON.annotationFileInfo;
+    console.log("annotationFileInfo:");
+    console.log(file);
+    getSupportingFiles().data.files.file.push(file);
+
+    // clear the import form (using Clear button to capture all behavior)
+    $('#nameset-import-form :reset').click();
+
+    showModalScreen("Merging trees and OTUs...", {SHOW_BUSY_BAR:true});
+
+    // clean any client-side junk from the study
+    scrubNexsonForTransport();
+
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: '/curator/default/merge_otus',
+        processData: false,
+        data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
+        error: returnFromOTUMerge,  // to suppress web2py's unhelpful error msg
+        complete: returnFromOTUMerge
+    });
+}
+
 
 function adjustedLabelOrEmpty(label) {
     // We should only display an adjusted label if it's changed from the
@@ -8633,7 +8836,9 @@ function getUnresolvedDuplicatesInTree( tree, options ) {
     // have't been resolved, ie, curator has not chosen an exemplar.
     var includeMonophyleticDuplicates = options && ('INCLUDE_MONOPHYLETIC' in options) ? options.INCLUDE_MONOPHYLETIC : false;
     var unresolvedDuplicates = {};
+    var startTime = new Date();
     var allDuplicates = getDuplicateNodesInTree( tree );
+    console.log(">>>>>> total elapsed to gather conflicting nodes: "+ (new Date() - startTime) +" ms");
     for (var taxonID in allDuplicates) {
         var allNodesAlreadyMarked = true; // we can disprove this from any node
         var itsMappings = allDuplicates[taxonID];
@@ -8668,10 +8873,10 @@ function getDuplicateNodesInTree( tree ) {
 
     // Pull from cached information, if any (else populate the cache)
     if (tree.taxonMappingInfo) {
-        ///console.log('!!!!! getConflictingNodesInTree (treeid='+ tree['@id'] +'...) using cached taxon-mapping info');
+        ///console.log('!!!!! getDuplicateNodesInTree (treeid='+ tree['@id'] +'...) using cached taxon-mapping info');
         return tree.taxonMappingInfo;
     }
-    ///console.log('..... getConflictingNodesInTree (treeid='+ tree['@id'] +'...) building fresh taxon-mapping info');
+    ///console.log('..... getDuplicateNodesInTree (treeid='+ tree['@id'] +'...) building fresh taxon-mapping info');
 
     var taxonMappings = { };
     $.each(tree.node, function( i, node ) {
@@ -8696,7 +8901,7 @@ function getDuplicateNodesInTree( tree ) {
     });
 
     // Gather all duplicate mappings, but mark them to distinguish trivial cases
-    // (the duplicates are siblings) from more interesting cases (there is
+    // (the duplicates are monophyletic) from more interesting cases (there is
     // ambiguity about placement of the OT taxon because duplicates in multiple
     // places in the tree)
     // N.B. Trivial duplicates will be reconciled on the server in any case, but this
@@ -8725,6 +8930,7 @@ function getDuplicateNodesInTree( tree ) {
     tree.taxonMappingInfo = duplicateNodes;
     return duplicateNodes;
 }
+
 function tipsAreMonophyletic(tipIDs, tree) {
     ///return false;
     // general fast check for monophyly in a specified tree
@@ -8885,9 +9091,8 @@ function clearTaxonExemplar( treeID, chosenNodeID, options ) {
     }
 }
 function resolveMonophyleticDuplicatesInTree(tree) {
-    // Find and resolve all simple conflicts between sibling nodes, and any
-    // others where the conflicting nodes constitute a clade. In all cases, our
-    // choice is arbitrary; we simply select the first node found as the exemplar.
+    // Find and resolve all trivial duplicates - sibling nodes mapped to same OT
+    // taxon, or other monophyletic sets - by selecting the first as the exemplar.
     var duplicateData = getUnresolvedDuplicatesInTree( tree, {INCLUDE_MONOPHYLETIC: true} );
     for (var taxonID in duplicateData) {
         var duplicateInfo = duplicateData[taxonID];
@@ -9028,6 +9233,11 @@ function getAmbiguousLabelsInTree(tree) {
         return labelData;
     }
 
+    if (isScriptManagedTree(tree)) {
+        // ignore "empty" (script-managed) trees
+        return labelData;
+    }
+
     $.each( tree.node, function(i, node) {
         if (node['^ot:isLeaf'] === true) {
             /* We sometimes save a misspelled taxon name as `node[@label]` so
@@ -9040,6 +9250,7 @@ function getAmbiguousLabelsInTree(tree) {
             labelData[ nodeID ] = node['@label'];
         }
     });
+
     return labelData;
 }
 function showAmbiguousLabelsInTreeViewer(tree) {
@@ -9191,6 +9402,24 @@ function studyContributedToLatestSynthesis() {
 function currentStudyVersionContributedToLatestSynthesis() {
     // compare SHA values and return true if they match
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
+}
+function treeContributedToLatestSynthesis(tree) {
+    // check for a valid SHA from last synthesis
+    return ($.inArray( tree['@id'], latestSynthesisTreeIDs ) !== -1);
+}
+
+function studyContainsScriptManagedTrees() {
+    // check for signature for this in Nexson (to modify UI, hide/block some features?)
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+    var bigTrees = ko.utils.arrayFilter(
+        allTrees,
+        isScriptManagedTree
+    );
+    return (bigTrees.length > 0);
+}
+function isScriptManagedTree(tree) {
+    // if this property is found (even if it's an empty object), assume it's a huge script-managed tree
+    return (tree["^ot:external_data"] !== undefined);
 }
 
 function getNormalizedStudyPublicationURL() {
