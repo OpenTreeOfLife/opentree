@@ -906,11 +906,13 @@ function saveFormDataToCollectionJSON() {
     });
     saveURL += ('?'+ qsVars);
 
-    // add this user to the curatorName list, if not found
+    /* TODO?
+    //add this user to the curatorName list, if not found
     var listPos = $.inArray( userDisplayName, viewModel.nexml['^ot:curatorName'] );
     if (listPos === -1) {
         viewModel.nexml['^ot:curatorName'].push( userDisplayName );
     }
+    */
 
     scrubJsonForTransport();
 
