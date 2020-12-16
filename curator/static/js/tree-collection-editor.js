@@ -687,7 +687,7 @@ function loadSelectedCollection() {
             ko.applyBindings(viewModel, metadataPopup);
 
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
-            viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
+            viewModel.ticklers.COLLECTION_HAS_CHANGED.subscribe( function() {
                 if (viewOrEdit == 'EDIT') {
                     collectionHasUnsavedChanges = true;
                     enableSaveButton();
