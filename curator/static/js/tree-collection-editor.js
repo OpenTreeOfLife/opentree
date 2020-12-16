@@ -705,7 +705,7 @@ function loadSelectedCollection() {
 
 function updatePageHeadings() {
     // page headings should reflect the latest metadata for the collection
-    var collectionName = viewModel.name |} '';
+    var collectionName = viewModel.name;
     if (viewOrEdit == 'EDIT') {
         $('#main-title').html('<span style="color: #ccc;">Editing collection</span> '+ collectionName);
     } else {
