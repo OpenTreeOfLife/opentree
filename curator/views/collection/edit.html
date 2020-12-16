@@ -871,56 +871,6 @@ body {
            </div><!-- end of right col -->
           </div><!-- /.tab-pane -->
 
-          <div class="tab-pane" id="Analyses">
-           <div class="span8"><!-- main column... -->
-
-             <form class="form-inline">
-                 <label>Analyze tree</label>
-                 <select id="tree-select"
-                         onchange="(this); return false;"
-                         data-bind="options: viewModel.elementTypes.tree.gatherAll(viewModel.nexml),
-                                    optionsValue: '@id',
-                                    optionsText: '@label',
-                                    optionsCaption: 'Choose a tree from this study...',
-                                    css: viewModel.ticklers.TREES">
-                 </select>
-
-                 <label>against target</label>
-                 <select id="reference-select">
-                     <option value="">Choose a target...</option>
-                     <option value="synth">Synthetic Tree of Life</option>
-                     <option value="ott">Open Tree Taxonomy</option>
-                 </select>
-                 <button class="btn btn-info" data-bind="click: fetchAndShowTreeConflictSummary">GO!</button>
-             </form>
-
-            <div id="analysis-results">
-              <em>Analysis results will appear here...</em>
-            </div>
-
-           </div><!-- end of main column... -->
-           <div class="span4"><!-- right col -->
-
-            <button class="help-toggle" style="display: none;">
-                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
-            </button>
-            <div class="help-box">
-              <button class="help-toggle">
-                  Hide <i class="icon-chevron-up Xicon-white"></i>
-              </button>
-                <p>
-                  The <strong>Analysis</strong> tab reports the results of conflict
-                  analysis - how trees in this study agree / conflict with the
-                  synthetic tree or the OpenTree Taxonomy.
-                </p>
-                <p>
-                  In the future, there will be other analyses here. Have a suggestion?
-                  Add an <a href="https://github.com/OpenTreeOfLife/opentree/issues">issue</a>.
-                </p>
-            </div>
-
-           </div><!-- end of right col -->
-          </div><!-- /.tab-pane -->
 
           <div class="tab-pane" id="History">
            <div class="span12"><!-- full width... -->
