@@ -572,7 +572,6 @@ function fetchAndShowCollection( collectionID, specialHandling ) {
 }
 
 var collectionUI; // already set to 'POPUP' or 'FULL_PAGE'
-console.warn(">>> collectionUI: "+ collectionUI);
 
 // Keep track of when the collection popup viewer is already showing, so we
 // can hold it open and step through nodes or trees.

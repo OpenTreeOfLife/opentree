@@ -651,23 +651,16 @@ function loadSelectedCollection() {
                     matchWithDiacriticals = addDiacriticalVariants(match),
                     matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' );
 
-                var allTrees = [];
-                $.each(viewModel.nexml.trees, function(i, treesCollection) {
-                    // watch for single trees here!
-                    var treeList = makeArray(treesCollection.tree);
-                    $.each(treeList, function(i, tree) {
-                        allTrees.push( tree );
-                    });
-                });
+                var allTrees = viewModel.decisions;
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter(
                     allTrees,
                     function(tree) {
                         // match entered text against old or new label
-                        var treeName = tree['@label'];
-                        var inGroupName = getInGroupCladeDescriptionForTree(tree);
-                        if (!matchPattern.test(treeName) && !matchPattern.test(inGroupName)) {
+                        var treeName = tree['name'] || '';
+                        var comments = tree['comments'] || '';;
+                        if (!matchPattern.test(treeName) && !matchPattern.test(comments)) {
                             return false;
                         }
                         return true;
@@ -852,7 +845,7 @@ function promptForDeleteComments() {
 }
 
 
-function scrubJsonForTransport( nexml ) {
+function scrubJsonForTransport( collection ) {
     /* Groom client-side Nexson for storage on server (details below)
      *   - strip client-side-only d3 properties (and similar)
      *   - coerce some KO string values to numeric types
@@ -861,73 +854,38 @@ function scrubJsonForTransport( nexml ) {
      *   - clean up empty/unused OTU alt-labels
      *   - remove client-side MRCA test results
      */
-    if (!nexml) {
-        nexml = viewModel.nexml;
+    if (!collection) {
+        collection = viewModel;
     }
+    // avoid empty or missing decision list
+    collection.decisions = makeArray( collection.decisions );
 
-    var allTrees = [];
-    $.each(nexml.trees, function(i, treesCollection) {
-        $.each(treesCollection.tree, function(i, tree) {
-            allTrees.push( tree );
-        });
-    });
-    $.each( allTrees, function(i, tree) {
-        cleanupAdHocRoot(tree);
-        clearD3PropertiesFromTree(tree);
-        clearMRCATestResults(tree);
-        removeConflictInfoFromTree(tree);
-        removeTaxonMappingInfoFromTree(tree);
-        removeEmptyReasonsToExclude(tree);
+    $.each( collection.decisions, function(i, tree) {
+        ;
+        // TODO: add cleanup tasks here, e.g.
+        // removeConflictInfoFromTree(tree);
+        // removeTaxonMappingInfoFromTree(tree);
+        // removeEmptyReasonsToExclude(tree);
     });
 
-    // coerce some non-string values
+    /* TODO: Coerce some non-string values?
     if ("string" === typeof nexml['^ot:studyYear']) {
         // this should be an integer (or null if empty/invalid)
         var intYear = parseInt(nexml['^ot:studyYear']);
         nexml['^ot:studyYear'] = isNaN(intYear) ? null : intYear;
     }
-    if ("string" === typeof nexml['^ot:focalClade']) {
-        // this should be an integer (or null if empty/invalid)
-        var intOttID = parseInt(nexml['^ot:focalClade']);
-        nexml['^ot:focalClade'] = isNaN(intOttID) ? null : intOttID;
-    }
     // force edge lengths from integers to floats
     $.each( allTrees, function(i, tree) {
         coerceEdgeLengthsToNumbers(tree);
     });
+    */
 
-    // remove some unused elements
+    /*
+    // TODO: Remove unused elements?
     if (null == nexml['^ot:focalClade']) {
         delete nexml['^ot:focalClade'];
     }
-
-    // scrub otu properties
-    var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
-    $.each( allOTUs, function(i, otu) {
-        delete otu['selectedForAction'];  // only used in the curation app
-        delete otu['newTaxonMetadata'];
-        delete otu['defaultSortOrder'];
-        if ('^ot:altLabel' in otu) {
-            var ottId = $.trim(otu['^ot:ottId']);
-            if (ottId !== '') {
-                // this otu is already mapped to OTT (trumps alt label)
-                delete otu['^ot:altLabel'];
-                return true; // skip to next otu
-            }
-            var altLabel = $.trim(otu['^ot:altLabel']);
-            if (altLabel === '') {
-                // the alt-label is empty
-                delete otu['^ot:altLabel'];
-                return true; // skip to next otu
-            }
-            var originalLabel = $.trim(otu['^ot:originalLabel']);
-            if (altLabel === originalLabel) {
-                // no changes from original (pointless)
-                delete otu['^ot:altLabel'];
-                return true; // skip to next otu
-            }
-        }
-    });
+    */
 }
 
 function saveFormDataToCollectionJSON() {
