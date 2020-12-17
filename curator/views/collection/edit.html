@@ -105,10 +105,8 @@ body {
           <div class="tab-pane" id="Home">
            <div class="span8"><!-- main column -->
 
-              <div Xclass="modal hide fade" style="border: solid red 1px;" id="tree-collection-viewer">
-               <!-- TODO: KO binding here to 'collection' (as $data below) -->
+              <div Xclass="modal hide fade" Xstyle="border: solid red 1px;" id="tree-collection-viewer">
                 <div class="modal-header" style="padding-bottom: 0;">
-                  <a class="close" onclick="$('#tree-collection-viewer').modal('hide'); return false;">×</a>
                   <h3 id='dialog-heading'>
                         <span style="color: #999;">Tree collection</span>
                        <!-- ko if: userIsEditingCollection($data) -->
@@ -198,7 +196,7 @@ body {
                         </button>
                         -->
 
-                        <!-- DUPLICATE button -->
+                        <!-- DUPLICATE button
                         <button data-bind="click: copyCollection,
                                             visible: true,
                                             attr: {'title': userIsLoggedIn() ? 'Copy this collection (you will own the copy)' : 'Copy this collection (requires login)'}"
@@ -207,9 +205,9 @@ body {
                             style="margin-left: 4px;">
                             Save a copy <i class="icon-repeat"></i>
                         </button>
-                       <!-- /ko -->
+                        -->
 
-                        <!-- EDIT button -->
+                        <!-- EDIT button 
                         <button data-bind="click: editCollection,
                                            visible: !(userIsEditingCollection($data)),
                                            attr: {'title': userIsLoggedIn() ? 'Edit collection, including add/remove trees' : 'Edit collection (requires login)'}"
@@ -239,6 +237,7 @@ body {
                             style="margin-left: 4px;">
                             Update trees <i class="icon-refresh"></i>
                         </button>
+                        -->
 
                        </div>
 
