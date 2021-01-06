@@ -45,7 +45,7 @@ var History = window.History; // Note: capital H refers to History.js!
  */
 
 // these variables should already be defined in the main HTML page
-var currentlyEditingCollectionID;
+var collectionID;
 var latestSynthesisSHA;      // the SHA for this collection (if any) that was last used in synthesis
 var latestSynthesisTreeIDs;  // ids of any trees in this collection included in the latest synthesis
 var API_load_collection_GET_url;
@@ -543,7 +543,7 @@ function loadSelectedCollection() {
      *  - any local storage (in Lawnchair) that trumps the one in remote storage
      */
 
-    var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', currentlyEditingCollectionID);
+    var fetchURL = API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID);
 
     // TEST URL with local JSON file
     ///fetchURL = '/curator/static/1003.json';
@@ -883,7 +883,7 @@ function saveFormDataToCollectionJSON() {
     showModalScreen("Saving collection data...", {SHOW_BUSY_BAR:true});
 
     // push changes back to storage
-    var saveURL = API_update_collection_PUT_url.replace('{COLLECTION_ID}', currentlyEditingCollectionID);
+    var saveURL = API_update_collection_PUT_url.replace('{COLLECTION_ID}', collectionID);
     // gather commit message (if any) from pre-save popup
     var commitMessage;
     var firstLine = $('#save-comment-first-line').val();
@@ -989,7 +989,7 @@ function enableSaveButton() {
 
 function removeCollection() {
     // let's be sure, since deletion will make a mess...
-    var removeURL = API_remove_collection_DELETE_url.replace('{COLLECTION_ID}', currentlyEditingCollectionID);
+    var removeURL = API_remove_collection_DELETE_url.replace('{COLLECTION_ID}', collectionID);
     // gather commit message (if any) from pre-save popup
     var commitMessage;
     var firstLine = $('#delete-comment-first-line').val();
@@ -1277,7 +1277,7 @@ function isQueuedForNewSynthesis(tree) {
     }
     var foundTree = false;
     $.each(treesQueuedForSynthesis.decisions, function(i, treeDecision) {
-        if ((treeDecision.collectionID === currentlyEditingCollectionID) &&
+        if ((treeDecision.collectionID === collectionID) &&
             (treeDecision.treeID === tree['@id'])) {
             foundTree = true;
             return false;
