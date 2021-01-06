@@ -596,6 +596,9 @@ function loadSelectedCollection() {
             }
             viewModel = data;
 
+            // add any missing 'rank' properties
+            ensureTreeCollectionRanking( collection );
+
             // get initial rendered HTML for study comment (from markdown)
             viewModel.commentHTML = response['commentHTML'] || 'COMMENT_HTML_NOT_PROVIDED';
 
@@ -847,14 +850,20 @@ function scrubJsonForTransport( collection ) {
     if (!collection) {
         collection = viewModel;
     }
+
+    // remove explicit ranking values (rely on array order)
+    stripTreeCollectionRanking( collection );
+
+    // remove any 'status' property markers (RENAMED, REMOVED, etc.)
+    stripTreeCollectionStatusMarkers( collection );
+
     // avoid empty or missing decision list
     collection.decisions = makeArray( collection.decisions );
 
+    // any other cleanup for trees/decisions?
     $.each( collection.decisions, function(i, tree) {
         ;
         // TODO: add cleanup tasks here, e.g.
-        // removeConflictInfoFromTree(tree);
-        // removeTaxonMappingInfoFromTree(tree);
         // removeEmptyReasonsToExclude(tree);
     });
 
