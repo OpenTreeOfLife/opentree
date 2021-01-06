@@ -578,7 +578,7 @@ body {
                         <td>
                             <a href="#" data-bind="click: showTreeWithHistory,
                                 text: tree['@label'],
-                                attr: { href : getViewURLFromStudyID(currentlyEditingCollectionID) + '/?tab=trees&tree=' + tree['@id'] },
+                                attr: { href : getViewURLFromStudyID(collectionID) + '/?tab=trees&tree=' + tree['@id'] },
                                 css: viewModel.ticklers.TREES">&nbsp;</a>
                             <br/>
                             <a data-bind="if: unresolvedDuplicatesFoundInTree( tree ),
@@ -953,7 +953,8 @@ body {
 
 <script src="{{=URL('static','js/curation-helpers.js')}}"></script>
 <script type='text/javascript'>
-    var currentlyEditingCollectionID = '{{= collectionID }}';
+    var collectionID = '{{= collectionID }}';
+    var currentlyEditingCollectionID = '{{= (viewOrEdit == 'EDIT') and collectionID or "null" }}';
     var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
     //var latestSynthesisTreeIDs = {{# = XML( json.dumps(latestSynthesisTreeIDs) ) }};
     var treesQueuedForSynthesis = {{=XML( json.dumps(treesQueuedForSynthesis) ) }};
