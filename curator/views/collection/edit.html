@@ -70,7 +70,7 @@ body {
         {{ else: }}
           <a class="btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to collection list</a>
          {{ if userCanEdit: }}
-          <a class="btn btn-info pull-right sticky-login" href="{{=URL('collection', 'edit/'+ currentlyEditingCollectionID)}}"
+          <a class="btn btn-info pull-right sticky-login" href="{{=URL('collection', 'edit/'+ collectionID)}}"
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
             onclick="showMaintenancePopup(); return false;"
            {{ else: }}
@@ -78,7 +78,7 @@ body {
            {{ pass }}
           >Edit Collection</a>
          {{ else: }}
-          <a class="btn btn-info pull-right sticky-login" href="{{=URL('collection', 'edit/'+ currentlyEditingCollectionID)}}"
+          <a class="btn btn-info pull-right sticky-login" href="{{=URL('collection', 'edit/'+ collectionID)}}"
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
             onclick="showMaintenancePopup(); return false;"
            {{ else: }}
@@ -760,7 +760,7 @@ body {
                 You can download this collection as JSON
                 </p>
                 <div class="btn-group" style="position: relative; top: -5px; margin-bottom: 10px;">
-                    <a class="btn btn-small" href="{{= API_load_collection_GET_url.replace('{COLLECTION_ID}', currentlyEditingCollectionID) + '.json' }}" target="_blank">JSON</a>
+                    <a class="btn btn-small" href="{{= API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID) + '.json' }}" target="_blank">JSON</a>
                 </div>
 
                 <p>
