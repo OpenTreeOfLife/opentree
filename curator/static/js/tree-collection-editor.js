@@ -608,6 +608,30 @@ function loadSelectedCollection() {
                 response['versionHistory'] || [ ]
             ).asPaged(20);
 
+            // add external URLs (on GitHub) for the differences between versions
+            if (response['external_url']) {
+                // adapted from study 'shardName' logic
+                var orgFound = false;
+                var repoName = null;
+                var externalUrlParts = response['external_url'].split('/');
+                $.each(externalUrlParts, function(i, part) {
+                    if (!repoName) {
+                        if (orgFound) {
+                            repoName = part;
+                            return false;
+                        } else if (part === 'OpenTreeOfLife') {
+                            orgFound = true;
+                        }
+                    }
+                    return true;
+                });
+                if (repoName) {
+                    $.each(viewModel.versions(), function(i, version) {
+                        version['publicDiffURL'] = ('//github.com/OpenTreeOfLife/'+ repoName +'/commit/'+ version.id);
+                    });
+                }
+            }
+
             /*
              * Add observable properties to the model to support the UI
              */
