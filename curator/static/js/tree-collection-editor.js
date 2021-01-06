@@ -597,7 +597,7 @@ function loadSelectedCollection() {
             viewModel = data;
 
             // add any missing 'rank' properties
-            ensureTreeCollectionRanking( collection );
+            ensureTreeCollectionRanking( viewModel );
 
             // get initial rendered HTML for study comment (from markdown)
             viewModel.commentHTML = response['commentHTML'] || 'COMMENT_HTML_NOT_PROVIDED';
