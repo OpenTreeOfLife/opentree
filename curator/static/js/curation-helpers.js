@@ -1684,7 +1684,7 @@ function removeTreeFromCollection(tree, collection) {
     }
 }
 
-var currentlyEditingCollectionID = null;
+var currentlyEditingCollectionID;  // possibly already set in full-page collection editor
 function userIsEditingCollection( collection ) {
     if ('data' in collection && 'url' in collection.data) {
         var collectionID = getCollectionIDFromURL( collection.data.url );
