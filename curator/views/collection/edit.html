@@ -304,7 +304,7 @@ body {
                             </div>
                             -->
                           <div id="tree-list-holder"
-                               style="overflow: auto;">
+                               style="x-overflow: hidden; y-overflow: auto;">
                   <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->
                             <table id="tree-collection-decision-holder"
                                    class="table table-condensed table-hover"
@@ -432,8 +432,8 @@ body {
                                                         attr: { href: getTreeViewURL($data), title: comments || '(no description provided)' }"
                                              href="#" target="_blank"><!--NAME--></a>
                                            <!-- ko if: comments -->
-                                             &ndash;
-                                             <span data-bind="text: comments"
+                                             <span data-bind="html: '&ndash; '+ $data.comments(),
+                                                              attr: { title: comments }""
                                                    style="color: #999; white-space: nowrap;"><!-- COMMENTS --></span>
                                            <!-- /ko -->
                                         <!-- /ko -->
