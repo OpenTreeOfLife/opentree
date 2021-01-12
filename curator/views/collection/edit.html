@@ -318,7 +318,7 @@ body {
                                         Tree
                                       <!-- /ko -->
                                       <!-- ko if: !userIsEditingCollection($data) -->
-                                        Tree (click to view, mouse-over for description)
+                                        Tree (click to view, mouse-over for complete description)
                                       <!-- /ko -->
                                     </th>
                                 </tr>
@@ -431,6 +431,11 @@ body {
                                           <a data-bind="html: name,
                                                         attr: { href: getTreeViewURL($data), title: comments || '(no description provided)' }"
                                              href="#" target="_blank"><!--NAME--></a>
+                                           <!-- ko if: comments -->
+                                             &ndash;
+                                             <span data-bind="text: comments"
+                                                   style="color: #999; white-space: nowrap;"><!-- COMMENTS --></span>
+                                           <!-- /ko -->
                                         <!-- /ko -->
                                       </td>
                                   </tr>
@@ -907,8 +912,8 @@ body {
                   <thead>
                     <tr>
                         <th width="20%">Date</th>
-                        <th width="20%">Curated by</th>
-                        <th width="50%">Comment</th>
+                        <th width="20%">Event</th>
+                        <th width="50%">Summary</th>
                         <th width="10%">Details</th>
                     </tr>
                   </thead>
