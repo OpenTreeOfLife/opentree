@@ -432,7 +432,7 @@ body {
                                                         attr: { href: getTreeViewURL($data), title: comments || '(no description provided)' }"
                                              href="#" target="_blank"><!--NAME--></a>
                                            <!-- ko if: comments -->
-                                             <span data-bind="html: '&ndash; '+ $data.comments(),
+                                             <span data-bind="html: '&ndash; '+ comments,
                                                               attr: { title: comments }""
                                                    style="color: #999; white-space: nowrap;"><!-- COMMENTS --></span>
                                            <!-- /ko -->
