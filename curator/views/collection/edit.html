@@ -678,7 +678,7 @@ body {
                         <!-- "active" wiget for study lookup -->
                         <i class="icon-search study-lookup-active" style="position: absolute; margin: 8px 0 0 7px; pointer-events: none;"></i>
                         <input type="text" name="study-lookup"
-                            class="input-xlarge study-lookup-active" style="margin-bottom: 2px; padding-left: 25px;"
+                            class="input-block-level study-lookup-active" style="margin-bottom: 2px; padding-left: 25px;"
                             placeholder="Enter its title, DOI, reference, tag, ID..."
                             data-bind="value: '',
                                        valueUpdate: ['afterkeydown', 'input'],
@@ -700,9 +700,9 @@ body {
                            title="" href="" target="_blank">...</a>
                         <br />
 
-                        <label style="padding-left: 4em;">and one of its trees</label>
+                        <label>and one of its trees</label>
                         <select name="tree-lookup"
-                            class="input-xlarge" style="margin-bottom: 2px;"
+                            class="input-block-level" style="margin-bottom: 2px;"
                             disabled="disabled"
                             placeholder="Enter its name, ID, ingroup clade..."
                             data-bind="value: '',
@@ -712,28 +712,32 @@ body {
                         >
                             <option disabled="disabled" value="">Find the study above first</option>
                         </select>
+                        <!--
                         <button class="btn btn-info"
                                 data-bind="click: function() {addTreeToCollection($data, 'FROM_LOOKUPS'); return false;}"
                         >
                               <i class="icon-plus icon-white"></i>
                         </button>
+                        -->
                     </div>
                     <div id="new-collection-tree-by-url"
                          class="new-collection-tree-options">
-                        <label>&hellip; by URL</label>
+                        <label>&hellip; or directly by a tree's URL</label>
                         <input type="text"  name="tree-url"
-                            class="input-xlarge" style="width: 385px; margin-bottom: 2px;"
+                            class="input-block-level" style="width: 385px; margin-bottom: 2px;"
                             placeholder=".../curator/study/view/pg_2826/?tab=trees&tree=tree6573"
                             data-bind="value: '',
                                        valueUpdate: ['afterkeydown', 'input'],
                                        event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
                                        "
                         ></input>
+                        <!--
                         <button class="btn btn-info"
                                 data-bind="click: function() {addTreeToCollection($data, 'FROM_URL'); return false;}"
                         >
                               <i class="icon-plus icon-white"></i>
                         </button>
+                        -->
                     </div>
                     <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
                       <button id="new-collection-tree-start" type="submit"
