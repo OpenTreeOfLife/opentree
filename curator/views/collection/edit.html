@@ -423,88 +423,6 @@ body {
                   <!-- /ko -->
                           </div><!-- /#tree-list-holder -->
 
-                      <!-- ko if: userIsEditingCollection($data) -->
-                        <!-- TODO: Put add-collection widgets! -->
-                        <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
-                          <button id="new-collection-tree-start" type="submit"
-                                  class="btn btn-info Xbtn-info-disabled"
-                                  onclick="return false;"
-                          ><span data-bind="text: ($data.data.decisions.length > 0) ? 'Add another tree' : 'Add a tree to this collection'">ADD TREE</span>
-                                &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
-                          </button>
-                          <button id="new-collection-tree-cancel" type="submit"
-                                  style="display: none;" class="btn">Cancel
-                          </button>
-                        </div>
-                        <div id="new-collection-tree-by-lookup"
-                             class="new-collection-tree-options" style="display: none; padding-left: 12px;">
-                            <div class="dropup" style="position: relative; margin-left: 146px;">
-                                <ul id="study-lookup-results" class="dropdown-menu" role="menu">
-                                    ...
-                                </ul>
-                            </div>
-                            <label>&hellip; by matching a study</label>
-                            <!-- "active" wiget for study lookup -->
-                            <i class="icon-search study-lookup-active" style="position: absolute; margin: 8px 0 0 7px; pointer-events: none;"></i>
-                            <input type="text" name="study-lookup"
-                                class="input-xlarge study-lookup-active" style="margin-bottom: 2px; padding-left: 25px;"
-                                placeholder="Enter its title, DOI, reference, tag, ID..."
-                                data-bind="value: '',
-                                           valueUpdate: ['afterkeydown', 'input'],
-                                           event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
-                                           "
-                            ></input>
-                            <!-- hidden field to store chosen ID -->
-                            <input type="hidden" name="study-lookup-id"
-                                   data-bind="value: '',
-                                              event: { change: updateNewCollTreeUI }
-                                             "></input>
-                            <!-- "passive" wiget once study is chosen -->
-                            <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
-                               onclick="resetStudyLookup(); return false;">
-                                <i class="icon-search"></i>
-                            </a>
-                            <a id="study-lookup-indicator" class="study-lookup-passive"
-                               style="font-weight: bold; display: none;"
-                               title="" href="" target="_blank">...</a>
-                            <br />
-
-                            <label style="padding-left: 4em;">and one of its trees</label>
-                            <select name="tree-lookup"
-                                class="input-xlarge" style="margin-bottom: 2px;"
-                                disabled="disabled"
-                                placeholder="Enter its name, ID, ingroup clade..."
-                                data-bind="value: '',
-                                           valueUpdate: ['afterkeydown', 'input'],
-                                           event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
-                                           "
-                            >
-                                <option disabled="disabled" value="">Find the study above first</option>
-                            </select>
-                            <button class="btn btn-info"
-                                    data-bind="click: function() {addTreeToCollection($data, 'FROM_LOOKUPS'); return false;}"
-                            >
-                                  <i class="icon-plus icon-white"></i>
-                            </button>
-                        </div>
-                        <div id="new-collection-tree-by-url"
-                             class="new-collection-tree-options" style="display: none; padding-left: 12px;">
-                            <label>&hellip; by URL</label>
-                            <input type="text"  name="tree-url"
-                                class="input-xlarge" style="width: 385px; margin-bottom: 2px;"
-                                placeholder=".../curator/study/view/pg_2826/?tab=trees&tree=tree6573"
-                                data-bind="value: '',
-                                           valueUpdate: ['afterkeydown', 'input'],
-                                           event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
-                                           "
-                            ></input>
-                            <button class="btn btn-info"
-                                    data-bind="click: function() {addTreeToCollection($data, 'FROM_URL'); return false;}"
-                            >
-                                  <i class="icon-plus icon-white"></i>
-                            </button>
-                        </div>
-                      <!-- /ko -->
 
                         </form>
                       </div>
@@ -748,90 +666,87 @@ body {
             <div class="well" style="clear: right;">
                 <h4 style="margin-top: 0;">Add a tree to this collection</h4>
 
-                <form id="tree-import-form"
-                      style="margin: 0;"
-                      Xaction="{{= URL(a='curator', c='default', f='to_nexson')}}"
-                      action="/curator/default/to_nexson"
-                      method="POST"
-                      onsubmit="submitNewTree(this); return false;"
-                      Xonsubmit="console.log('DEFAULT tree-import-form submit (suppressed)'); return false;">
-                 <fieldset>
-                 <input type="hidden" name="output" value="ot:nexson">
-                 <input type="hidden" name="author_name"
-                   value="{{= auth.user and auth.user.name or 'ANONYMOUS' }}">
-                 <input type="hidden" name="author_email"
-                   value="{{= auth.user and auth.user.email or 'ANONYMOUS' }}">
-                 <input type="hidden" name="auth_token"
-                   value="{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}">
-                 <!--@MTH:"no longer needed on upload" input type="hidden" name="uploadid" value=""-->
-                 <!-- hints for new element IDs -->
-                 <input type="hidden" name="idPrefix" value="">
-                 <input type="hidden" name="firstAvailableEdgeID" value="">
-                 <input type="hidden" name="firstAvailableNodeID" value="">
-                 <input type="hidden" name="firstAvailableOTUID" value="">
-                 <input type="hidden" name="firstAvailableOTUsID" value="">
-                 <input type="hidden" name="firstAvailableTreeID" value="">
-                 <input type="hidden" name="firstAvailableTreesID" value="">
-                 <input type="hidden" name="firstAvailableAnnotationID" value="">
-                 <input type="hidden" name="firstAvailableAgentID" value="">
-                 <input type="hidden" name="firstAvailableMessageID" value="">
+                        <!-- TODO: Put add-collection widgets! -->
+                        <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
+                          <button id="new-collection-tree-start" type="submit"
+                                  class="btn btn-info Xbtn-info-disabled"
+                                  onclick="return false;"
+                          ><span data-bind="text: ($data.data.decisions.length > 0) ? 'Add another tree' : 'Add a tree to this collection'">ADD TREE</span>
+                                &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+                          </button>
+                          <button id="new-collection-tree-cancel" type="submit"
+                                  style="display: none;" class="btn">Cancel
+                          </button>
+                        </div>
+                        <div id="new-collection-tree-by-lookup"
+                             class="new-collection-tree-options" style="display: none; padding-left: 12px;">
+                            <div class="dropup" style="position: relative; margin-left: 146px;">
+                                <ul id="study-lookup-results" class="dropdown-menu" role="menu">
+                                    ...
+                                </ul>
+                            </div>
+                            <label>&hellip; by matching a study</label>
+                            <!-- "active" wiget for study lookup -->
+                            <i class="icon-search study-lookup-active" style="position: absolute; margin: 8px 0 0 7px; pointer-events: none;"></i>
+                            <input type="text" name="study-lookup"
+                                class="input-xlarge study-lookup-active" style="margin-bottom: 2px; padding-left: 25px;"
+                                placeholder="Enter its title, DOI, reference, tag, ID..."
+                                data-bind="value: '',
+                                           valueUpdate: ['afterkeydown', 'input'],
+                                           event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                                           "
+                            ></input>
+                            <!-- hidden field to store chosen ID -->
+                            <input type="hidden" name="study-lookup-id"
+                                   data-bind="value: '',
+                                              event: { change: updateNewCollTreeUI }
+                                             "></input>
+                            <!-- "passive" wiget once study is chosen -->
+                            <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
+                               onclick="resetStudyLookup(); return false;">
+                                <i class="icon-search"></i>
+                            </a>
+                            <a id="study-lookup-indicator" class="study-lookup-passive"
+                               style="font-weight: bold; display: none;"
+                               title="" href="" target="_blank">...</a>
+                            <br />
 
-                  <select id="tree-import-format" name="inputFormat"
-                          class="input-block-level"
-                          style="margin-bottom: 1em;"
-                          oninput="updateNewTreeUploadForm(); return true;"
-                          onchange="updateNewTreeUploadForm(); return true;">
-                      <option value="" selected="selected">What is the format of this tree?</option>
-                      <option value="nexus">NEXUS</option>
-                      <option value="newick">Newick</option>
-                      <option value="nexml">NeXML</option>
-                  </select>
-                  <label for="new-tree-text">Paste tree data (text)&hellip;</label>
-                  <textarea id="new-tree-text" name="content" rows="5"
-                            class="input-block-level"
-                            onkeyup="updateNewTreeUploadForm(); return true;"
-                            oninput="updateNewTreeUploadForm(); return true;"
-                            onchange="updateNewTreeUploadForm(); return true;"
-                            ></textarea>
+                            <label style="padding-left: 4em;">and one of its trees</label>
+                            <select name="tree-lookup"
+                                class="input-xlarge" style="margin-bottom: 2px;"
+                                disabled="disabled"
+                                placeholder="Enter its name, ID, ingroup clade..."
+                                data-bind="value: '',
+                                           valueUpdate: ['afterkeydown', 'input'],
+                                           event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                                           "
+                            >
+                                <option disabled="disabled" value="">Find the study above first</option>
+                            </select>
+                            <button class="btn btn-info"
+                                    data-bind="click: function() {addTreeToCollection($data, 'FROM_LOOKUPS'); return false;}"
+                            >
+                                  <i class="icon-plus icon-white"></i>
+                            </button>
+                        </div>
+                        <div id="new-collection-tree-by-url"
+                             class="new-collection-tree-options" style="display: none; padding-left: 12px;">
+                            <label>&hellip; by URL</label>
+                            <input type="text"  name="tree-url"
+                                class="input-xlarge" style="width: 385px; margin-bottom: 2px;"
+                                placeholder=".../curator/study/view/pg_2826/?tab=trees&tree=tree6573"
+                                data-bind="value: '',
+                                           valueUpdate: ['afterkeydown', 'input'],
+                                           event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                                           "
+                            ></input>
+                            <button class="btn btn-info"
+                                    data-bind="click: function() {addTreeToCollection($data, 'FROM_URL'); return false;}"
+                            >
+                                  <i class="icon-plus icon-white"></i>
+                            </button>
+                        </div>
 
-                  <label for="treeupload">&hellip;or upload a tree file</label>
-
-
-                <div>
-                    <span class="btn fileinput-button">
-                        <i class="glyphicon glyphicon-plus"></i>
-                        <span>Select file to upload...</span>
-                        <!-- The file input field used as target for the file upload widget -->
-                        <input id="treeupload"
-                               type="file" name="file"
-                               onchange="$('#upload-tree-info').html( filenameFromFakePath($(this).val()) ); updateNewTreeUploadForm(); return true;">
-                    </span>
-                    &nbsp;
-                    <span class='label label-info' id="upload-tree-info"></span>
-                </div>
-                <div id="tree-upload-progress" class="progress progress-info"
-                     style="margin-top: 0.3em; margin-bottom: 1em; background-color: #333;">
-                  <div class="bar" style="text-align: center; width: 0%;">
-                      <span>&nbsp;</span>
-                  </div>
-                </div>
-
-<!-- TODO: Enter a URL or DOI for the new tree?
-                  <label for="new-tree-URL">&hellip;or paste an URL to the tree</label>
-                  <input type="text" id="new-tree-URL" class="input-block-level" value="" placeholder="Paste URL here">
--->
-
-                  <div Xclass="form-actions" style="margin-top: 1em;">
-                      <button name="new-tree-submit" type="submit"
-                          class="btn btn-info btn-info-disabled"
-                          disabled="disabled">Add new tree
-                        <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
-                      <button type="reset" class="btn"
-                              onclick="clearNewTreeUploadWidget(); return true;"
-                      >Clear form</button>
-                  </div>
-                 </fieldset>
-                </form>
             </div>
         {{ pass }}
 
