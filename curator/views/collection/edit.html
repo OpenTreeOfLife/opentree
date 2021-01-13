@@ -155,40 +155,7 @@ body {
                         -->
                        <!-- /ko -->
 
-                       <!-- ko if: ('external_url' in $data) -->
-                        <!-- HISTORY button -->
-                        <a data-bind="attr: { href: getCollectionHistoryURL($data) }"
-                           title="See full version history on GitHub"
-                           class="pull-right btn btn-mini row-controls-ghosted"
-                           style="margin-left: 4px;"
-                           href="#" target="_blank">
-                           History
-                           <img src="/curator/static/images/GitHub-Mark-32px.png"
-                                style="width: 14px; height: 14px; padding-left: 2px; margin-top: -2px;"/>
-                        </a>
-                       <!-- /ko -->
-
                        <!-- ko if: !userIsEditingCollection($data) -->
-                        <!-- SHARE button -->
-                        <button data-bind="click: shareCollection,
-                                           visible: true"
-                            title="Show the direct URL for this collection"
-                            class="pull-right btn btn-mini row-controls-ghosted"
-                            style="margin-left: 4px;">
-                            Share <i class="icon-share"></i>
-                        </button>
-
-                       <!-- ko if: ('external_url' in $data) -->
-                        <!-- DOWNLOAD button -->
-                        <a data-bind="attr: { href: $data['external_url'] }"
-                           title="Download this collection as JSON"
-                           class="pull-right btn btn-mini row-controls-ghosted"
-                           style="margin-left: 4px;"
-                           href="#" target="_blank">
-                           Download <i class="icon-download"></i>
-                        </a>
-                       <!-- /ko -->
-
                         <!-- SYNTHESIS REPORT button (TODO?)
                         <button Xdata-bind="click: TODO-follow-this-collection,
                                             visible: true"
@@ -542,7 +509,6 @@ body {
                         </form>
                       </div>
                 </div><!-- end of .modal-body -->
-                <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
               </div><!-- end of #tree-collection-viewer.modal- -->
 
             <div style="margin-bottom: 100px; clear: right; padding-top: 1em;">
