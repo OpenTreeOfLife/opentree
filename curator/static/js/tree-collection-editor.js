@@ -664,9 +664,9 @@ function loadSelectedCollection() {
                 }
             }
             // for synthesis runs, build a URL to synth details (if possible)
-            $.each(response['synthHistory'] || [ ], function(i, synth) {
+            $.each(response['synthHistory'] || [ ], function(i, event) {
                 // TODO: Expect this from the JSON payload? esp. if there are many hosts for this information!
-                version['publicSynthURL'] = ('/about/synthesis-release/'+ synth.id);
+                event['publicSynthURL'] = ('/about/synthesis-release/'+ event.id);
             });
             // combine history and interleave these events by date
             viewModel.history = ko.observableArray(
