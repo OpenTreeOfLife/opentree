@@ -602,19 +602,48 @@ function loadSelectedCollection() {
             // get initial rendered HTML for study comment (from markdown)
             viewModel.commentHTML = response['commentHTML'] || 'COMMENT_HTML_NOT_PROVIDED';
 
-            // we should also now have the full commit history of this NexSON
-            // study in the docstore repo
-            viewModel.versions = ko.observableArray(
-                response['versionHistory'] || [ ]
+            /* We should also now have the full commit history of this tree
+             * collection in the docstore repo. Interleave this with any
+             * synthesis runs for this collection and paginate the combined
+             * entries.
+             */
+            // TODO: return this data as 'synthHistory' in collection JSON fetch!
+            response['synthHistory'] = [
+                {
+                    runner_email: "jim@ibang.com",
+                    runner_name: "Jim Allman",
+                    date: "Tue, 6 Oct 2015 06:26:15 -0400",
+                    date_ISO_8601: "2015-10-06 06:26:15 -0400",
+                    id: "SYNTH-FAKE1",
+                    run_comment: "Running synth after plants update",
+                    relative_date: "5 years ago"
+                    // ADD THESE when building the combined history?
+                    ///publicSynthURL: "//github.com/OpenTreeOfLife/collections-0/commit/9b30589b8554f7385cb6fdbbd0644e4a1a585bbc",
+                },
+                {
+                    runner_email: "mtholder@gmail.com"",
+                    runner_name: "Mark T. Holder",
+                    date: "Thu, 3 Nov 2016 16:00:27 -0500",
+                    date_ISO_8601: "2016-11-03 16:00:27 -0500",
+                    id: "SYNTH-FAKE2",
+                    run_comment: "Weed and re-order all animal collections",
+                    relative_date: "4 years, 2 months ago"
+                    // ADD THESE when building the combined history?
+                    ///publicSynthURL: "//github.com/OpenTreeOfLife/collections-0/commit/9b30589b8554f7385cb6fdbbd0644e4a1a585bbc",
+                },
+            ];
+            viewModel.history = ko.observableArray(
+                buildCombinedCollectionHistory( response['versionHistory'], response['synthHistory'] )
             ).asPaged(20);
 
-            // add external URLs (on GitHub) for the differences between versions
+            // add external URLs (on GitHub) for the differences between code versions
             if (response['external_url']) {
                 // adapted from study 'shardName' logic
                 var orgFound = false;
                 var repoName = null;
                 var externalUrlParts = response['external_url'].split('/');
                 $.each(externalUrlParts, function(i, part) {
+                    // extract the source repo's name from the expected pattern below
                     if (!repoName) {
                         if (orgFound) {
                             repoName = part;
@@ -626,7 +655,7 @@ function loadSelectedCollection() {
                     return true;
                 });
                 if (repoName) {
-                    $.each(viewModel.versions(), function(i, version) {
+                    $.each(viewModel.history(), function(i, version) {
                         version['publicDiffURL'] = ('//github.com/OpenTreeOfLife/'+ repoName +'/commit/'+ version.id);
                     });
                 }
@@ -727,6 +756,28 @@ function loadSelectedCollection() {
             showInfoMessage('Collection data loaded.');
         }
     });
+}
+
+/* Incorporate code changes and synthesis runs into a combined history. Making
+ * this a separate function means we can update history after a new synthesis
+ * run, without reloading the entire collection in this editor.
+ */
+function buildCombinedCollectionHistory( versionHistory, synthHistory ) {
+    // combine code changes and synth runs into a NEW array
+    /* NB that this will "fail safe" if garbage input is found, returning a
+     * usable (if incomplete) history array.
+     */
+    var fullHistory = $.merge( $.merge( [], versionHistory || [] ), synthHistory || []);
+    // sort the combined list by date (latest first)
+    fullHistory.sort(function(a,b)
+    {
+       return a.date_ISO_8601 - b.date_ISO_8601;
+    });
+    // decorate with URLs for details on both types
+    $.each( fullHistory, function(i, event) {
+        ;  // TODO
+    });
+    return fullHistory;
 }
 
 function updatePageHeadings() {
@@ -981,7 +1032,8 @@ function saveFormDataToCollectionJSON() {
             viewModel.startingCommitSHA = putResponse['sha'] || viewModel.startingCommitSHA;
             // update the History tab to show the latest commit
             if ('versionHistory' in putResponse) {
-                viewModel.versions(putResponse['versionHistory'] || [ ]);
+                // TODO: incorporate new code versions into our combined history
+                viewModel.history(putResponse['versionHistory'] || [ ]);
             }
             if (putResponse['merge_needed']) {
                 var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Study merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
