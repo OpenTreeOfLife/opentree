@@ -786,12 +786,12 @@ body {
             <ul class="suggestion-list" style="clear: right;"></ul>
             <div style="margin-bottom: 100px;">
 
-                <div class="empty-list-prompt" data-bind="visible: viewModel.versions.pagedItems().length === 0">
-                    No previous versions found! (This is a new collection.)
+                <div class="empty-list-prompt" data-bind="visible: viewModel.history.pagedItems().length === 0">
+                    No previous code versions or synthesis events found! (This is a new collection.)
                 </div>
 
                 <table class="table table-condensed"
-                    data-bind="visible: viewModel.versions.pagedItems().length &gt; 0">
+                    data-bind="visible: viewModel.history.pagedItems().length &gt; 0">
                   <thead>
                     <tr>
                         <th width="20%">Date</th>
@@ -800,7 +800,7 @@ body {
                         <th width="10%">Details</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: viewModel.versions.pagedItems(), as: 'version' }">
+                  <tbody data-bind="foreach: { data: viewModel.history.pagedItems(), as: 'version' }">
                     <tr>
                         <td><span data-bind="text: version['relative_date'], attr: {'title': version['date']}">?</span></td>
                         <td data-bind="text: version['author_name']">?</td>
@@ -819,23 +819,23 @@ body {
                 </table>
 
                 <div class="pagination pagination-centered pagination-small"
-                     Xdata-bind="if: viewModel.versions()().length &gt; viewModel.versions().pagedItems().length">
+                     Xdata-bind="if: viewModel.history()().length &gt; viewModel.history().pagedItems().length">
                   <ul>
-                    <li data-bind="css: { 'disabled': !viewModel.versions.prev.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.versions.prev(); return false;">&laquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.history.prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.history.prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( viewModel.versions ) -->
-                    <!-- ko if: isVisiblePage( $data, viewModel.versions ) -->
-                    <li data-bind="css: { 'active': (viewModel.versions.current() === $data) }" class="active">
-                        <a href="#" data-bind="text: $data, click: function() { viewModel.versions.goToPage($data); return false; }">0</a>
+                   <!-- ko foreach: getPageNumbers( viewModel.history ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.history ) -->
+                    <li data-bind="css: { 'active': (viewModel.history.current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.history.goToPage($data); return false; }">0</a>
                     </li>
                     <!-- /ko -->
-                    <!-- ko if: ! isVisiblePage( $data, viewModel.versions ) -->
-                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.versions.goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.history ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.history.goToPage($data); return false; }">&nbsp;</a></li>
                     <!-- /ko -->
                    <!-- /ko -->
-                    <li data-bind="css: { 'disabled': !viewModel.versions.next.enabled() }" class="disabled">
-                        <a href="#" onclick="viewModel.versions.next(); return false;">&raquo;</a>
+                    <li data-bind="css: { 'disabled': !viewModel.history.next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.history.next(); return false;">&raquo;</a>
                     </li>
                   </ul>
                 </div>
