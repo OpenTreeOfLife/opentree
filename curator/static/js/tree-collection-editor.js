@@ -784,8 +784,8 @@ function buildCombinedCollectionHistory( versionHistory, synthHistory ) {
     // sort the combined list by date (latest first)
     fullHistory.sort(function(a,b) {
        if (a.date_ISO_8601 == b.date_ISO_8601) return 0;
-       if (a.date_ISO_8601 > b.date_ISO_8601) return 1;
-       return -1;
+       if (a.date_ISO_8601 > b.date_ISO_8601) return -1;
+       return 1;
     });
     return fullHistory;
 }
