@@ -617,8 +617,8 @@ function loadSelectedCollection() {
                     id: "SYNTH-FAKE1",
                     run_comment: "Running synth after plants update",
                     relative_date: "5 years ago"
-                    // ADD THESE when building the combined history?
-                    ///publicSynthURL: "//github.com/OpenTreeOfLife/collections-0/commit/9b30589b8554f7385cb6fdbbd0644e4a1a585bbc",
+                    // ADD THIS to initial response?
+                    ///publicSynthURL: "https://example.edu/otsynth/about/synthesis-release/SYNTH-FAKE1
                 },
                 {
                     runner_email: "mtholder@gmail.com",
@@ -628,14 +628,17 @@ function loadSelectedCollection() {
                     id: "SYNTH-FAKE2",
                     run_comment: "Weed and re-order all animal collections",
                     relative_date: "4 years, 2 months ago"
-                    // ADD THESE when building the combined history?
-                    ///publicSynthURL: "//github.com/OpenTreeOfLife/collections-0/commit/9b30589b8554f7385cb6fdbbd0644e4a1a585bbc",
                 },
+                {
+                    runner_email: "jim@ibang.com",
+                    runner_name: "Jim Allman",
+                    date: "Fri, 25 Jan 2019 18:53:01 +0000",
+                    date_ISO_8601: "2019-01-25 18:53:01 +0000",
+                    id: "SYNTH-FAKE3",
+                    run_comment: "Custom synth, incorporating all 2018 changes.",
+                    relative_date: "2 years ago"
+                }
             ];
-            viewModel.history = ko.observableArray(
-                buildCombinedCollectionHistory( response['versionHistory'], response['synthHistory'] )
-            ).asPaged(20);
-
             // add external URLs (on GitHub) for the differences between code versions
             if (response['external_url']) {
                 // adapted from study 'shardName' logic
@@ -655,11 +658,21 @@ function loadSelectedCollection() {
                     return true;
                 });
                 if (repoName) {
-                    $.each(viewModel.history(), function(i, version) {
+                    $.each(response['versionHistory'] || [ ], function(i, version) {
                         version['publicDiffURL'] = ('//github.com/OpenTreeOfLife/'+ repoName +'/commit/'+ version.id);
                     });
                 }
             }
+            // for synthesis runs, build a URL to synth details (if possible)
+            $.each(response['synthHistory'] || [ ], function(i, synth) {
+                // TODO: Expect this from the JSON payload? esp. if there are many hosts for this information!
+                version['publicSynthURL'] = ('/about/synthesis-release/'+ synth.id);
+            });
+            // combine history and interleave these events by date
+            viewModel.history = ko.observableArray(
+                buildCombinedCollectionHistory( response['versionHistory'], response['synthHistory'] )
+            ).asPaged(20);
+
 
             /*
              * Add observable properties to the model to support the UI
@@ -769,13 +782,10 @@ function buildCombinedCollectionHistory( versionHistory, synthHistory ) {
      */
     var fullHistory = $.merge( $.merge( [], versionHistory || [] ), synthHistory || []);
     // sort the combined list by date (latest first)
-    fullHistory.sort(function(a,b)
-    {
-       return a.date_ISO_8601 - b.date_ISO_8601;
-    });
-    // decorate with URLs for details on both types
-    $.each( fullHistory, function(i, event) {
-        ;  // TODO
+    fullHistory.sort(function(a,b) {
+       if (a.date_ISO_8601 == b.date_ISO_8601) return 0;
+       if (a.date_ISO_8601 > b.date_ISO_8601) return 1;
+       return -1;
     });
     return fullHistory;
 }
