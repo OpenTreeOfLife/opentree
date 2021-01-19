@@ -621,7 +621,7 @@ function loadSelectedCollection() {
                     ///publicSynthURL: "//github.com/OpenTreeOfLife/collections-0/commit/9b30589b8554f7385cb6fdbbd0644e4a1a585bbc",
                 },
                 {
-                    runner_email: "mtholder@gmail.com"",
+                    runner_email: "mtholder@gmail.com",
                     runner_name: "Mark T. Holder",
                     date: "Thu, 3 Nov 2016 16:00:27 -0500",
                     date_ISO_8601: "2016-11-03 16:00:27 -0500",
