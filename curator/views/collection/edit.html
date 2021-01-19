@@ -800,17 +800,35 @@ body {
                         <th width="10%">Details</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: viewModel.history.pagedItems(), as: 'version' }">
+                  <tbody data-bind="foreach: { data: viewModel.history.pagedItems(), as: 'event' }">
                     <tr>
-                        <td><span data-bind="text: version['relative_date'], attr: {'title': version['date']}">?</span></td>
-                        <td data-bind="text: version['author_name']">?</td>
-                        <td><pre class="rendered-comment" data-bind="text: version['message_subject'] + (version['message_body'] ? '\n\n'+ version['message_body'] : '')">?</pre></td>
+                        <td><span data-bind="text: event['relative_date'], attr: {'title': event['date']}">?</span></td>
                         <td>
-                          <!-- ko if: version['publicDiffURL'] -->
-                            <a href="" target="_blank" title="See detailed differences on GitHub"
-                               data-bind="attr: {'href': version['publicDiffURL']}">Diff view</a>
+                          <!-- ko if: event['author_name'] -->
+                          Saved version
                           <!-- /ko -->
-                          <!-- ko if: !version['publicDiffURL'] -->
+                          <!-- ko if: event['runner_name'] -->
+                          Synthesis run
+                          <!-- /ko -->
+                        </td>
+                        <td>
+                          <!-- ko if: event['author_name'] -->
+                            <pre class="rendered-comment" data-bind="text: event['author_name'] +'\n\n'+ event['message_subject'] + (event['message_body'] ? '\n\n'+ event['message_body'] : '')">?</pre>
+                          <!-- /ko -->
+                          <!-- ko if: event['runner_name'] -->
+                            <pre class="synth-event" data-bind="text: event['runner_name'] +'\n\n'+ event['run_comment']">?</pre>
+                          <!-- /ko -->
+                        </td>
+                        <td>
+                          <!-- ko if: event['publicDiffURL'] -->
+                            <a href="" target="_blank" title="See detailed differences on GitHub"
+                               data-bind="attr: {'href': event['publicDiffURL']}">Diff view</a>
+                          <!-- /ko -->
+                          <!-- ko if: event['publicSynthURL'] -->
+                            <a href="" target="_blank" title="More information about this synthesis run"
+                               data-bind="attr: {'href': event['publicSynthURL']}">Synthesis details</a>
+                          <!-- /ko -->
+                          <!-- ko if: !event['publicDiffURL'] && !event['publicDiffURL'] -->
                             &mdash;
                           <!-- /ko -->
                         </td>

@@ -497,6 +497,12 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
     border-radius: 4px;
     padding: 5px;
 }
+.synth-event {
+    background-color: #edb;
+    border: 1px solid #cb9;
+    border-radius: 4px;
+    padding: 5px;
+}
 .interesting-value {
     color: #b94a48;
 }
