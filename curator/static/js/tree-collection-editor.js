@@ -612,22 +612,22 @@ function loadSelectedCollection() {
                 {
                     runner_email: "jim@ibang.com",
                     runner_name: "Jim Allman",
-                    date: "Tue, 6 Oct 2016 06:26:15 -0400",
-                    date_ISO_8601: "2016-10-06 06:26:15 -0400",
+                    date: "Tue, 6 Oct 2017 06:26:15 -0400",
+                    date_ISO_8601: "2017-10-06 06:26:15 -0400",
                     id: "SYNTH-FAKE1",
                     run_comment: "Running synth after plants update",
-                    relative_date: "4 years, 3 months ago"
+                    relative_date: "3 years, 3 months ago"
                     // ADD THIS to initial response?
                     ///publicSynthURL: "https://example.edu/otsynth/about/synthesis-release/SYNTH-FAKE1
                 },
                 {
                     runner_email: "mtholder@gmail.com",
                     runner_name: "Mark T. Holder",
-                    date: "Thu, 3 Nov 2016 16:00:27 -0500",
-                    date_ISO_8601: "2016-11-03 16:00:27 -0500",
+                    date: "Thu, 3 Nov 2017 16:00:27 -0500",
+                    date_ISO_8601: "2017-11-03 16:00:27 -0500",
                     id: "SYNTH-FAKE2",
                     run_comment: "Weed and re-order all animal collections",
-                    relative_date: "4 years, 2 months ago"
+                    relative_date: "3 years, 2 months ago"
                 },
                 {
                     runner_email: "jim@ibang.com",

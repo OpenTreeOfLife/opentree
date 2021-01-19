@@ -805,18 +805,18 @@ body {
                         <td><span data-bind="text: event['relative_date'], attr: {'title': event['date']}">?</span></td>
                         <td>
                           <!-- ko if: event['author_name'] -->
-                          Saved version
+                          Version saved by<br/><strong data-bind="text: event['author_name']">?</strong>
                           <!-- /ko -->
                           <!-- ko if: event['runner_name'] -->
-                          Synthesis run
+                          Synthesis run by<br/><strong data-bind="text: event['runner_name']">?</strong>
                           <!-- /ko -->
                         </td>
                         <td>
                           <!-- ko if: event['author_name'] -->
-                            <pre class="rendered-comment" data-bind="text: event['author_name'] +'\n\n'+ event['message_subject'] + (event['message_body'] ? '\n\n'+ event['message_body'] : '')">?</pre>
+                            <pre class="rendered-comment" data-bind="text: event['message_subject'] + (event['message_body'] ? '\n\n'+ event['message_body'] : '')">?</pre>
                           <!-- /ko -->
                           <!-- ko if: event['runner_name'] -->
-                            <pre class="synth-event" data-bind="text: event['runner_name'] +'\n\n'+ event['run_comment']">?</pre>
+                            <pre class="synth-event" data-bind="event['run_comment']">?</pre>
                           <!-- /ko -->
                         </td>
                         <td>
