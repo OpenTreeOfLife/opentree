@@ -612,11 +612,11 @@ function loadSelectedCollection() {
                 {
                     runner_email: "jim@ibang.com",
                     runner_name: "Jim Allman",
-                    date: "Tue, 6 Oct 2015 06:26:15 -0400",
-                    date_ISO_8601: "2015-10-06 06:26:15 -0400",
+                    date: "Tue, 6 Oct 2016 06:26:15 -0400",
+                    date_ISO_8601: "2016-10-06 06:26:15 -0400",
                     id: "SYNTH-FAKE1",
                     run_comment: "Running synth after plants update",
-                    relative_date: "5 years ago"
+                    relative_date: "4 years, 3 months ago"
                     // ADD THIS to initial response?
                     ///publicSynthURL: "https://example.edu/otsynth/about/synthesis-release/SYNTH-FAKE1
                 },
