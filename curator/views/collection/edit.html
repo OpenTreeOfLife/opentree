@@ -442,6 +442,8 @@ body {
                     filter above to see trees in this collection.
                 </div>
 
+              <div id="tree-list-holder"
+                   style="x-overflow: hidden; y-overflow: auto;">
                 <table class="table table-condensed table-hover"
                     data-bind="visible: viewModel.filteredTrees().pagedItems().length &gt; 0">
                   <thead>
@@ -524,13 +526,6 @@ body {
 
                         </td>
                         <td>
-                            <button Xdata-bind="click: TODO-follow-this-collection,
-                                                visible: true"
-                                title="Edit name and description (become a collaborator)"
-                                class="pull-right btn btn-mini row-controls-ghosted"
-                                style="margin-left: 4px;">
-                                <i class="icon-edit"></i>
-                            </button>
                           <!-- ko if: userIsEditingCollection($parent) -->
                             <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;}"
                                     title="Remove this tree from the collection"
@@ -600,6 +595,7 @@ body {
                     </li>
                   </ul>
                 </div>
+              </div><!-- #tree-list-holder -->
 
             </div>
 
