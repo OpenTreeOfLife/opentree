@@ -449,8 +449,15 @@ body {
                     data-bind="visible: viewModel.filteredTrees().pagedItems().length &gt; 0">
                   <thead>
                     <tr>
-                        <th>Rank (list position)</th>
-                        <th>Tree name and description</th>
+                        <th width="76">Rank</th><!-- ranking -->
+                        <th width="*">
+                          <!-- ko if: userIsEditingCollection($data) -->
+                            Tree name and description
+                          <!-- /ko -->
+                          <!-- ko if: !userIsEditingCollection($data) -->
+                            Tree (click to view, mouse-over for complete description)
+                          <!-- /ko -->
+                        </th>
                     </tr>
                   </thead>
 
@@ -520,7 +527,6 @@ body {
 
                         </td>
                         <td>
---
                             <button Xdata-bind="click: TODO-follow-this-collection,
                                                 visible: true"
                                 title="Edit name and description (become a collaborator)"
@@ -528,7 +534,6 @@ body {
                                 style="margin-left: 4px;">
                                 <i class="icon-edit"></i>
                             </button>
->
                           <!-- ko if: userIsEditingCollection($parent) -->
                             <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;}"
                                     title="Remove this tree from the collection"
