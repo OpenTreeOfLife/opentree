@@ -519,6 +519,16 @@ body {
                          <!-- /ko -->
 
                         <!-- /ko --><!-- END of editing widgets -->
+                        <!-- ko if: !userIsEditingCollection($parent) -->
+                        A
+                        <!-- /ko -->
+                        <!-- ko if: viewModel.filteredTrees()().length &gt; viewModel.filteredTrees().pagedItems().length -->
+                        B
+                        <!-- /ko -->
+                        <!-- ko if: (viewModel.filteredTrees()().length &gt; viewModel.filteredTrees().pagedItems().length) -->
+                        C
+                        <!-- /ko -->
+
                         <!-- ko if: !userIsEditingCollection($parent) || (viewModel.filteredTrees()().length &gt; viewModel.filteredTrees().pagedItems().length) -->
                         <div data-bind="text: $data['rank']"
                              style="text-align: right; width: 27px; margin-top: 5px;">XX</div>
