@@ -468,7 +468,7 @@ body {
                                                       'single-tree-row-'+ $data['status'] )
                                           }">
                         <td>
-                        <!-- ko if: userIsEditingCollection($parent) -->
+                        <!-- ko if: userCanReorderTrees($parent) -->
                           <input type="text"
                                  data-bind="value: $data['rank'],
                                             valueUpdate: ['afterkeydown', 'input'],
@@ -518,9 +518,9 @@ body {
                            <div class="tree-status-marker text-warning">RENAMED</div>
                          <!-- /ko -->
 
-                        <!-- /ko --><!-- END of editing widgets -->
+                        <!-- /ko --><!-- END of re-ordering widgets -->
 
-                        <!-- ko if: !userIsEditingCollection($parent) || (viewModel.filteredTrees()().length > viewModel.filteredTrees().pagedItems().length) -->
+                        <!-- ko if: !userCanReorderTrees($parent) -->
                         <div data-bind="text: $data['rank']"
                              style="text-align: right; width: 27px; margin-top: 5px;">XX</div>
                         <!-- /ko -->
