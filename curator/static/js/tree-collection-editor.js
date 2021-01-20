@@ -719,7 +719,7 @@ function loadSelectedCollection() {
                     matchWithDiacriticals = addDiacriticalVariants(match),
                     matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' );
 
-                var allTrees = viewModel.decisions;
+                var allTrees = viewModel.data.decisions;
 
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter(
@@ -727,8 +727,11 @@ function loadSelectedCollection() {
                     function(tree) {
                         // match entered text against old or new label
                         var treeName = tree['name'] || '';
-                        var comments = tree['comments'] || '';;
-                        if (!matchPattern.test(treeName) && !matchPattern.test(comments)) {
+                        var comments = tree['comments'] || '';
+                        var studyID = tree['studyID'] || '';
+                        var treeID = tree['treeID'] || '';
+                        if (!matchPattern.test(treeName) && !matchPattern.test(comments)
+                         && !matchPattern.test(studyID) && !matchPattern.test(treeID)) {
                             return false;
                         }
                         return true;
