@@ -1697,7 +1697,7 @@ function userIsEditingCollection( collection ) {
 
 function userCanReorderTrees( collection ) {
     // user must be editing
-    if !userIsEditingCollection(collection)) return false;
+    if (!userIsEditingCollection(collection)) return false;
     // we must not be filtering out trees
     return (viewModel._filteredTrees().length === viewModel.data.decisions.length);
 }
