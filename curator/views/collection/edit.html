@@ -264,12 +264,8 @@ body {
                             </ul>
                           </div>
 
-                            <!-- let's keep it simple for now
-                            <div class="btn-group" style="margin-left: 80px; margin-top: 6px;">
-                              <button id="show-included-trees-button" class="btn btn-small active" onclick="alert('COMING SOON'); return false;">&nbsp; Show only included trees &nbsp;</button>
-                              <button id="show-all-trees-button" class="btn btn-small" onclick="alert('COMING SOON'); return false;">&nbsp; Show all tree decisions &nbsp;</button>
-                            </div>
-                            -->
+{{ if: False }}
+
                           <div id="tree-list-holder"
                                style="x-overflow: hidden; y-overflow: auto;">
                   <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->
@@ -423,6 +419,7 @@ body {
                   <!-- /ko -->
                           </div><!-- /#tree-list-holder -->
 
+{{ pass }}
 
                         </form>
                       </div>
