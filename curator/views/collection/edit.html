@@ -519,7 +519,7 @@ body {
                          <!-- /ko -->
 
                         <!-- /ko --><!-- END of editing widgets -->
-                        <!-- ko if: !userIsEditingCollection($parent) -->
+                        <!-- ko if: !userIsEditingCollection($parent) || (viewModel.filteredTrees()().length &gt; viewModel.filteredTrees().pagedItems().length) -->
                         <div data-bind="text: $data['rank']"
                              style="text-align: right; width: 27px; margin-top: 5px;">XX</div>
                         <!-- /ko -->
@@ -550,7 +550,8 @@ body {
                             -->
                             <br/>
                             <textarea data-bind="value: comments"
-                                      style="width: 380px; color: #333; margin-bottom: 4px; height: 2em;"
+                                      class="span6"
+                                      style="color: #333; margin-bottom: 4px; height: 2em;"
                                       placeholder="Describe your reasons for including this tree">
                               <!--COMMENTS--></textarea>
                           <!-- /ko -->
