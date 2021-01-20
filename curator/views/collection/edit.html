@@ -570,108 +570,11 @@ body {
                         </td>
                     </tr>
 
-                    <tr data-bind="if: true">
-                        <td>
-                            <a href="#" data-bind="click: showTreeWithHistory,
-                                text: tree['@label'],
-                                attr: { href : getViewURLFromStudyID(collectionID) + '/?tab=trees&tree=' + tree['@id'] },
-                                css: viewModel.ticklers.TREES">&nbsp;</a>
-                            <br/>
-                            <a data-bind="if: unresolvedDuplicatesFoundInTree( tree ),
-                                          css: viewModel.ticklers.TREES,
-                                          click: showDuplicateNodesInTreeViewer,
-                                          visible: true"
-                               class="suggestion-prompt" style="display: none;"
-                               href="#">
-                                Show duplicate tips
-                            </a>
-                            <br/>
-                            <a data-bind="if: ambiguousLabelsFoundInTree( tree ),
-                                          css: viewModel.ticklers.TREES,
-                                          click: showAmbiguousLabelsInTreeViewer,
-                                          visible: true"
-                               class="suggestion-prompt" style="display: none;"
-                               href="#">
-                                Review ambiguous labels
-                            </a>
-                        </td>
                       {{ if viewOrEdit == 'EDIT': }}
-                        <td>
-                            <span data-bind="text: getSynthStatusDescriptionForTree($data),
-                                             css: viewModel.ticklers.TREES"></span>
-                            <a class="badge" href="#" style="padding: 2px 6px;"
-                               title="Click to see details about this tree in synthesis"
-                               data-bind="text: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0)? (tree['^ot:reasonsToExcludeFromSynthesis'].length) : '?',
-                                          css: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0 ? 'badge badge-warning' : 'badge badge-info') +' '+ viewModel.ticklers.TREES(),
-                                          click: showTreeSynthDetailsPopup">?</a>
-                        </td>
-                        <td>
-                            <div style="white-space: nowrap;">
-                              <a class="btn btn-mini btn-success row-controls-ghosted"
-                                 data-bind="attr: {disabled: !(testForPossibleTreeInclusion($data))},
-                                            css: viewModel.ticklers.TREES,
-                                            click: tryToIncludeTreeInSynth">Include</a>
-                              <a class="btn btn-mini btn-danger row-controls-ghosted"
-                                 data-bind="attr: {disabled: !(testForPossibleTreeExclusion($data))},
-                                            css: viewModel.ticklers.TREES,
-                                            click: tryToExcludeTreeFromSynth">Exclude</a>
-                            </div>
-                        </td>
                       {{ else: }}
-                        <td>
-                          <div style="white-space: nowrap;">
-                              <span data-bind="text: getSynthStatusDescriptionForTree($data),
-                                               css: viewModel.ticklers.TREES"></span>
-                              <a class="badge" href="#" style="padding: 2px 6px;"
-                                 data-bind="text: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0)? (tree['^ot:reasonsToExcludeFromSynthesis'].length) : '?',
-                                            css: (tree['^ot:reasonsToExcludeFromSynthesis'].length > 0 ? 'badge badge-warning' : 'badge badge-info') +' '+ viewModel.ticklers.TREES(),
-                                            click: showTreeSynthDetailsPopup">?</a>
-                          </div>
-                        </td>
                       {{ pass }}
-                        <td data-bind="text: tree['^ot:curatedType'] || 'Unspecified',
-                                css: viewModel.ticklers.TREES">&nbsp;</td>
-                        <td data-bind="text: getInGroupCladeDescriptionForTree(tree),
-                                css: viewModel.ticklers.TREES">&nbsp;</td>
-                        <td data-bind="html: getRootedDescriptionForTree(tree),
-                                       click: showArbitraryRootExplanationInTreeViewer,
-                                       css: viewModel.ticklers.TREES"
-                               style="cursor: pointer;">&nbsp;</td>
-                        <td data-bind="html: getMappedTallyForTree(tree),
-                                css: viewModel.ticklers.TREES">&nbsp;</td>
-                      {{ if viewOrEdit == 'EDIT': }}
-                        <td>
-                            <button data-bind="click: removeTree,
-                                               visible: true"
-                                class="pull-right btn btn-mini btn-danger row-controls-ghosted"
-                                title="Click to delete this tree from the collection"
-                                style="display: none;">
-                                <i class="icon-trash icon-white"></i>
-                            </button>
-                        </td>
-                      {{ pass }}
-                    </tr>
+
                   </tbody>
-                <!-- EXAMPLES of tree-table entries
-                    <tr>
-                        <td><a href="#">Parsimony tree (urchins)</a></td>
-                        <td>Parsimony</td>
-                        <td>92/108</td>
-                        <td><input type="checkbox" checked="checked" /></td>
-                    </tr>
-                    <tr>
-                        <td><a href="#">Alternate weighting</a></td>
-                        <td>Parsimony</td>
-                        <td>23/45</td>
-                        <td><input type="checkbox" /></td>
-                    </tr>
-                    <tr>
-                        <td><a href="#">Draft tree</a></td>
-                        <td>Equally weighted</td>
-                        <td>14/20</td>
-                        <td><input type="checkbox" /></td>
-                    </tr>
-                -->
                 </table>
 
                 <div class="pagination pagination-centered pagination-small"
