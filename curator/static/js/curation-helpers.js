@@ -1695,6 +1695,13 @@ function userIsEditingCollection( collection ) {
     return false;
 }
 
+function userCanReorderTrees( collection ) {
+    // user must be editing
+    if !userIsEditingCollection(collection)) return false;
+    // we must not be filtering out trees
+    return (viewModel._filteredTrees().length === viewModel.data.decisions.length);
+}
+
 // keep track of pending tree-collection changes, for easy commit messages
 var pendingCollectionChanges = [ ];
 function addPendingCollectionChange( action, studyID, treeID ) {
