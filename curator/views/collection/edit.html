@@ -468,6 +468,7 @@ body {
                                                       'single-tree-row-'+ $data['status'] )
                                           }">
                         <td>
+                        <!-- ko if: userIsEditingCollection($parent) -->
                           <input type="text"
                                  data-bind="value: $data['rank'],
                                             valueUpdate: ['afterkeydown', 'input'],
@@ -479,6 +480,7 @@ body {
                                         margin-left: -4px; text-align: right;"
                                  value=""
                            />&nbsp;
+                         <!-- /ko -->
                         <!-- ko if: userCanReorderTrees($parent) -->
                          <!-- SORTING widgets -->
                          <!-- ko if: $index() === 0 -->
