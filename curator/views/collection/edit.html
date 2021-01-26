@@ -109,12 +109,12 @@ body {
            <div class="span8"><!-- main column -->
 
               <div Xclass="modal hide fade" Xstyle="border: solid red 1px;" id="tree-collection-viewer">
-                <div class="modal-header" style="padding-bottom: 0;">
-                  <h3 id='dialog-heading'>
+                <div Xclass="modal-header" style="padding-bottom: 0;">
+                  <h3 id='dialog-heading' style="margin-top: 0px;">
                         <span style="color: #999;">Tree collection</span>
                        <!-- ko if: userIsEditingCollection($data) -->
                         <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000;
-                                                  font-weight: bold; width: 50%; margin-bottom: 0px;"
+                                                  font-weight: bold; width: 60%; margin-bottom: 0px;"
                                data-bind="value: $data.data['name'],
                                           valueUpdate: ['afterkeydown', 'input'],
                                           event: { keyup: updateNewCollectionID, change: updateNewCollectionID }
@@ -136,7 +136,7 @@ body {
                     </p>
                   </div>
                 </div>
-                <div class="modal-body" style="max-height: none;">
+                <div Xclass="modal-body" style="max-height: none;">
                   <div class="tab-pane active">
                       <form class="form-inline"
                             style="margin-bottom: -12px; margin-top: -12px; padding-top: 12px; margin-right: -6px;">
