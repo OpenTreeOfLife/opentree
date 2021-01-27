@@ -1683,6 +1683,7 @@ function removeTreeFromCollection(tree, collection) {
         }
         decisionList.splice(oldPosition, 1);
         resetTreeCollectionRanking( collection );
+        if (collectionUI === 'FULL_PAGE') nudgeTickler('TREES');  // force update to paged list
         showCollectionViewer( collection );  // to refresh the list
         addPendingCollectionChange( 'REMOVE', tree.studyID, tree.treeID );
     }
