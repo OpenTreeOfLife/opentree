@@ -315,6 +315,7 @@ body {
                           <input type="text"
                                  data-bind="value: $data['rank'],
                                             valueUpdate: ['afterkeydown', 'input'],
+                                            css: viewModel.ticklers.TREES,
                                             event: {
                       keyup: function() {showCollectionMoveUI($data, $element, $parent)},
                       change: function() {showCollectionMoveUI($data, $element, $parent)}
