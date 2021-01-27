@@ -1524,6 +1524,7 @@ function moveInTreeCollection( tree, collection, newPosition ) {
 
     addPendingCollectionChange( 'REORDER' );
     resetTreeCollectionRanking( collection );
+    if (collectionUI === 'FULL_PAGE') nudgeTickler('TREES');
     showCollectionViewer( collection, {MAINTAIN_SCROLL: true} );  // to refresh the list
 }
 
