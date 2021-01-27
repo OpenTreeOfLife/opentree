@@ -327,14 +327,14 @@ body {
                          <!-- /ko -->
                         <!-- ko if: userCanReorderTrees($parent) -->
                          <!-- SORTING widgets -->
-                         <!-- ko if: $data['rank'] === 1 -->
+                         <!-- ko if: $data['rank'] === 1 && viewModel.ticklers.TREES() -->
                           <a style="opacity: 0.5;"
                              href="#"
                              onclick="return false;"
                              class="icon-chevron-up">
                           </a>
                          <!-- /ko -->
-                         <!-- ko if: $data['rank'] > 1 -->
+                         <!-- ko if: $data['rank'] > 1 && viewModel.ticklers.TREES() -->
                           <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'UP'); return false;}"
                              href="#"
                              title="Move this tree up in the list"
@@ -342,24 +342,24 @@ body {
                           </a>
                          <!-- /ko -->
 
-                         <!-- ko if: $data['rank'] === ($parent.data.decisions.length) -->
+                         <!-- ko if: $data['rank'] === ($parent.data.decisions.length) && viewModel.ticklers.TREES() -->
                           <a style="opacity: 0.5;"
                              href="#"
                              onclick="return false;"
                              class="icon-chevron-down">
                           </a>
                          <!-- /ko -->
-                         <!-- ko if: $data['rank'] < ($parent.data.decisions.length) -->
+                         <!-- ko if: $data['rank'] < ($parent.data.decisions.length) && viewModel.ticklers.TREES() -->
                           <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'DOWN'); return false;}"
                              href="#"
                              title="Move this tree down in the list"
                              class="icon-chevron-down">
                           </a>
                          <!-- /ko -->
-                         <!-- ko if: $data['status'] == 'REMOVED' -->
+                         <!-- ko if: $data['status'] == 'REMOVED' && viewModel.ticklers.TREES() -->
                            <div class="tree-status-marker text-error">REMOVED</div>
                          <!-- /ko -->
-                         <!-- ko if: $data['status'] == 'RENAMED' -->
+                         <!-- ko if: $data['status'] == 'RENAMED' && viewModel.ticklers.TREES() -->
                            <div class="tree-status-marker text-warning">RENAMED</div>
                          <!-- /ko -->
 
@@ -373,14 +373,16 @@ body {
                         </td>
                         <td>
                           <!-- ko if: userIsEditingCollection($parent) -->
-                            <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;}"
+                            <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;},
+                                               css:  viewModel.ticklers.TREES"
                                     title="Remove this tree from the collection"
                                     class="pull-right btn btn-mini btn-danger row-controls-ghosted"
                                     style="margin-left: 4px;">
                                 <i class="icon-trash icon-white"></i>
                             </button>
                             <a data-bind="html: name,
-                                          attr: { href: getTreeViewURL($data) }"
+                                          attr: { href: getTreeViewURL($data) },
+                                          css:  viewModel.ticklers.TREES"
                                title="View this tree in a new window"
                                href="#" target="_blank"><!--NAME--></a>
                            <!-- this is no longer editable
@@ -413,11 +415,6 @@ body {
                           <!-- /ko -->
                         </td>
                     </tr>
-
-                      {{ if viewOrEdit == 'EDIT': }}
-                      {{ else: }}
-                      {{ pass }}
-
                   </tbody>
                 </table>
 
