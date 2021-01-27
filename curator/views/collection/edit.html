@@ -327,35 +327,35 @@ body {
                          <!-- /ko -->
                         <!-- ko if: userCanReorderTrees($parent) -->
                          <!-- SORTING widgets -->
-                         <!-- ko if: $data['rank'] === 1 && viewModel.ticklers.TREES() -->
-                          <a style="opacity: 0.5;"
+                          <a data-bind="visible: $data['rank'] === 1,
+                                        css: viewModel.ticklers.TREES"
+                             style="opacity: 0.5;"
                              href="#"
                              onclick="return false;"
                              class="icon-chevron-up">
                           </a>
-                         <!-- /ko -->
-                         <!-- ko if: $data['rank'] > 1 && viewModel.ticklers.TREES() -->
-                          <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'UP'); return false;}"
+                          <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'UP'); return false;},
+                                        visible: $data['rank'] > 1,
+                                        css: viewModel.ticklers.TREES"
                              href="#"
                              title="Move this tree up in the list"
                              class="icon-chevron-up">
                           </a>
-                         <!-- /ko -->
 
-                         <!-- ko if: $data['rank'] === ($parent.data.decisions.length) && viewModel.ticklers.TREES() -->
-                          <a style="opacity: 0.5;"
+                          <a data-bind="visible: $data['rank'] === ($parent.data.decisions.length),
+                                        css: viewModel.ticklers.TREES"style="opacity: 0.5;"
                              href="#"
                              onclick="return false;"
                              class="icon-chevron-down">
                           </a>
-                         <!-- /ko -->
-                         <!-- ko if: $data['rank'] < ($parent.data.decisions.length) && viewModel.ticklers.TREES() -->
-                          <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'DOWN'); return false;}"
+                          <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'DOWN'); return false;},
+                                        visible: $data['rank'] < ($parent.data.decisions.length),
+                                        css: viewModel.ticklers.TREES"
                              href="#"
                              title="Move this tree down in the list"
                              class="icon-chevron-down">
                           </a>
-                         <!-- /ko -->
+
                          <!-- ko if: $data['status'] == 'REMOVED' && viewModel.ticklers.TREES() -->
                            <div class="tree-status-marker text-error">REMOVED</div>
                          <!-- /ko -->
