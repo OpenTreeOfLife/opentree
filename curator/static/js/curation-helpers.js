@@ -619,19 +619,20 @@ function showCollectionViewer( collection, options ) {
     // add any missing 'rank' properties
     ensureTreeCollectionRanking( collection );
 
-    // bind just the selected collection to the modal HTML
-    // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
-    var $boundElements = $('#tree-collection-viewer').find('.modal-body, .modal-header');
-    // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
-    $.each($boundElements, function(i, el) {
-        ko.cleanNode(el);
-        ko.applyBindings(collection, el);
-    });
+    if (collectionUI === 'POPUP') {
+        // bind just the selected collection to the modal HTML
+        // NOTE that we must call cleanNode first, to allow "re-binding" with KO.
+        var $boundElements = $('#tree-collection-viewer').find('.modal-body, .modal-header');
+        // Step carefully to avoid un-binding important modal behavior (close widgets, etc)!
+        $.each($boundElements, function(i, el) {
+            ko.cleanNode(el);
+            ko.applyBindings(collection, el);
+        });
+    }
 
     var updateCollectionDisplay = function(options) {
         options = options || {};
         // (re)bind widgets, esp. for adding trees
-        var $popup = $('#tree-collection-viewer');
         var currentListScrollPosition = $('#tree-list-holder').scrollTop();
         var newListScrollPosition;
         if (options.MAINTAIN_SCROLL) {
@@ -641,10 +642,10 @@ function showCollectionViewer( collection, options ) {
         } else {
             newListScrollPosition = 0;
         }
-        var $newTreeStartButton = $popup.find('#new-collection-tree-start');
-        var $newTreeCancelButton = $popup.find('#new-collection-tree-cancel');
-        var $newTreeOptionsPanels = $popup.find('.new-collection-tree-options');
-        var $newTreeByURLButton = $popup.find('#new-collection-tree-by-url');
+        var $newTreeStartButton =  $('#new-collection-tree-start');
+        var $newTreeCancelButton = $('#new-collection-tree-cancel');
+        var $newTreeOptionsPanels = $('.new-collection-tree-options');
+        var $newTreeByURLButton = $('#new-collection-tree-by-url');
         $newTreeCancelButton.hide();
         $newTreeOptionsPanels.hide();
         $newTreeStartButton.click(function() {
@@ -657,7 +658,7 @@ function showCollectionViewer( collection, options ) {
             $newTreeByURLButton.attr('disabled', 'disabled')
                 .addClass('btn-info-disabled');
             updateNewCollTreeUI();
-            updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
+            if (collectionUI === 'POPUP') updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
             // (re)bind study and tree lookups
             loadStudyListForLookup();
             return false;
@@ -667,13 +668,15 @@ function showCollectionViewer( collection, options ) {
                                .removeClass('btn-info-disabled');
             $newTreeCancelButton.hide();
             $newTreeOptionsPanels.hide();
-            updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
+            if (collectionUI === 'POPUP') updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
             return false;
         });
 
-        updateCollectionEditorHeight();
-        // now we can restore the original scroll position (or not)
-        $('#tree-list-holder').scrollTop(newListScrollPosition);
+        if (collectionUI === 'POPUP') {
+            updateCollectionEditorHeight();
+            // now we can restore the original scroll position (or not)
+            $('#tree-list-holder').scrollTop(newListScrollPosition);
+        }
     }
 
     if (collectionPopupIsInUse) {
@@ -697,8 +700,9 @@ function showCollectionViewer( collection, options ) {
         $('#tree-collection-viewer').off('hidden').on('hidden', function () {
             ///console.log('@@@@@ hidden');
         });
-
-        $('#tree-collection-viewer').modal('show');
+        if (collectionUI === 'POPUP') {
+            $('#tree-collection-viewer').modal('show');
+        }
     }
 }
 function updateCollectionEditorHeight(options) {
@@ -734,7 +738,7 @@ function updateCollectionEditorHeight(options) {
     $listHolder.scrollTop(newListScrollPosition);
 }
 $(window).resize( function () {
-    if (collectionPopupIsInUse) {
+    if (collectionUI === 'POPUP' && collectionPopupIsInUse) {
         updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
     }
 });
