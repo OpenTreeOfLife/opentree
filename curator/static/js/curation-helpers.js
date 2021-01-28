@@ -1581,6 +1581,7 @@ function showCollectionMoveUI( decision, itsElement, collection ) {
                             return (aStatedRank > bStatedRank) ? 1 : -1;
                         });
                         resetTreeCollectionRanking( collection );
+                        if (collectionUI === 'FULL_PAGE') nudgeTickler('TREES');  // force refresh
                         showCollectionViewer( collection );  // to refresh the list
                         $('#collection-move-ui').hide();
                         return false;
