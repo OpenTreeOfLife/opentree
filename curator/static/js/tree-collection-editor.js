@@ -505,6 +505,13 @@ $(document).ready(function() {
     $('input[name=taxon-search], select[name=taxon-search-context]')
         .unbind('keydown')
         .bind('keydown', function(e) { return e.which !== 13; });
+
+    // emulate original popup behavior from editCollection()
+    showCollectionViewer( viewModel );  // to refresh the UI
+    loadStudyListForLookup();
+    //pushPageExitWarning('UNSAVED_COLLECTION_CHANGES',
+    //                    "WARNING: This page contains unsaved changes.");
+
 });
 
 
