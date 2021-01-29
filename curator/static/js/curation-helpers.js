@@ -1469,7 +1469,12 @@ function addTreeToCollection( collection, inputType ) {
                         };
                         //console.log(treeEntry);
                         collection.data.decisions.push(treeEntry);
-                        showCollectionViewer( collection, {SCROLL_TO_BOTTOM: true} );  // to refresh the list
+                        if (collectionUI === 'FULL_PAGE') {
+                            nudgeTickler('TREES');  // force display refresh
+                            showCollectionViewer( collection );  // to refresh the list
+                        } else {
+                            showCollectionViewer( collection, {SCROLL_TO_BOTTOM: true} );  // to refresh the list
+                        }
                         showSuccessMessage('Tree found and added to this collection.');
                         addPendingCollectionChange( 'ADD', studyID, treeID );
                         break;
