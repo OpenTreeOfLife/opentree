@@ -454,44 +454,28 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
               <p>
-                Each tab in this tool manages a different aspect of the
-                collection data. Prompts&mdash;they look like
-                <span class="badge badge-important" style="">2</span>&mdash;identify
-                aspects that are incomplete.
-              </p>
-              <p>
-                The <strong>Home</strong> tab shows metadata and lists the
-                phylogenetic trees in the current collection. Metadata is
-                information that identifies this collection and makes it easy to
-                find, such as standard publication references, DOIs, and
-                free-form tags. You can also add curator notes that will appear
-                on this tab.
+                There are just two tabs here. The
+                <strong>Home</strong> tab shows metadata and lists the
+                phylogenetic trees in the current collection. There's not much
+                metadata for a collection, just a name and brief description.
+                Note that the collection ID becomes the URL for this
+                collection. This is based on the <em>first</em> name saved with
+                this collection; you should't change the name after that, since
+                that would break any links to the collection.
               </p>
         {{ if viewOrEdit == 'EDIT': }}
               <p>
                 See <strong>Add a tree to this collection</strong>, below, to add
-                new trees from a file or pasted text. To nominate a tree for
-                inclusion in synthesis, click its <strong>Include</strong> 
-                button after clearing (or acknowledging) any objections.
-                Nominated trees will undergo validation, generating warnings
-                for full OTU mapping and other quality checks.
-              </p>
-              <p>
-                Click on the name of a tree to open the editor, where you can
-                re-root the tree, define an ingroup clade, and add metadata.
-              </p>
-        {{ else: }}
-              <p>
-                Trees with a synthesis status of <strong>Included</strong>
-                or <strong>Queued</strong> have been nominated for inclusion
-                in synthesis, generally because they best represent the
-                conclusions of the study. Inclusion in synthesis also requires
-                that trees be rooted correctly and have OTUs mapped.
-              </p>
-              <p>
-                Click on a tree name to view the tree and get more information.
+                a tree from any study in the Open Tree of Life corpus (a.k.a.
+                "phylesystem"). You'll need to find the study and tree with the
+                search tool, or paste in a direct URL to this tree in the
+                curation tool.
               </p>
         {{ pass }}
+              <p>
+                Click on the name of any included tree to view it in the Open
+                Tree study curation tool.
+              </p>
             </div>
 
             <div class="well" style="clear: right;">
