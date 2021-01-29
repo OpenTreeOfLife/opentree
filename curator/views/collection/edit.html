@@ -572,13 +572,10 @@ body {
                         -->
                     </div>
                     <div xclass="form-actions" style="margin-top: 0.5em; margin-bottom: 0.25em;">
-                      <button id="new-collection-tree-start" type="submit"
-                              class="btn btn-info Xbtn-info-disabled"
-                              onclick="return false;"
+                      <button id="add-tree-by-any-input" type="submit"
+                              class="btn btn-info btn-info-disabled"
+                              data-bind="click: function() {addTreeToCollection($data, 'FROM_ANY'); return false;}"
                           >Add tree &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
-                      </button>
-                      <button id="new-collection-tree-cancel" type="submit"
-                              style="display: none;" class="btn">Cancel
                       </button>
                     </div>
 
