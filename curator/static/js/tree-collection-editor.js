@@ -505,13 +505,6 @@ $(document).ready(function() {
     $('input[name=taxon-search], select[name=taxon-search-context]')
         .unbind('keydown')
         .bind('keydown', function(e) { return e.which !== 13; });
-
-    // emulate original popup behavior from editCollection()
-    showCollectionViewer( viewModel );  // to refresh the UI
-    loadStudyListForLookup();
-    //pushPageExitWarning('UNSAVED_COLLECTION_CHANGES',
-    //                    "WARNING: This page contains unsaved changes.");
-
 });
 
 
@@ -774,6 +767,12 @@ function loadSelectedCollection() {
                                         "WARNING: This tree collection has unsaved changes! To preserve your work, you should save this collection before leaving or reloading the page.");
                 }
             });
+
+            // emulate original popup behavior from editCollection()
+            showCollectionViewer( viewModel );  // to refresh the UI
+            loadStudyListForLookup();
+            //pushPageExitWarning('UNSAVED_COLLECTION_CHANGES',
+            //                    "WARNING: This page contains unsaved changes.");
 
             hideModalScreen();
             showInfoMessage('Collection data loaded.');
