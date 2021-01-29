@@ -789,12 +789,14 @@ function updateNewCollTreeUI() {
     }
 
     if (($.trim($studyIDField.val()) == '') || ($.trim($treeSelector.val()) == '')) {
+        // no ids found!
         if (collectionUI === 'POPUP') {
             $submitByLookupButton.attr('disabled', 'disabled')
                                  .addClass('btn-info-disabled');
         }
     } else {
-        if (collectionUI === 'FULL_PAGE') {
+        // both ids found!
+        if (collectionUI === 'POPUP') {
             $submitByLookupButton.attr('disabled', null)
                                  .removeClass('btn-info-disabled');
         } else {
@@ -813,7 +815,7 @@ function updateNewCollTreeUI() {
                               .addClass('btn-info-disabled');
         }
     } else {
-        if (collectionUI === 'FULL_PAGE') {
+        if (collectionUI === 'POPUP') {
             $submitByURLButton.attr('disabled', null)
                               .removeClass('btn-info-disabled');
         } else {
