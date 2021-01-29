@@ -1452,7 +1452,10 @@ function addTreeToCollection( collection, inputType ) {
                     case 1:
                         // walk its properties and use them in our collection JSON
                         var foundStudy = responseObj['matched_studies'][0];
-                        var foundTree = foundStudy['matched_trees'][0];
+                        // NB - There can be multiple trees returned! Find the right one by its ID!
+                        var foundTree = $.grep(foundStudy['matched_trees'], function(tree) {
+                            return (tree['ot:treeId'] === treeID);
+                        })[0];
                         var compactStudyRef = fullToCompactReference(foundStudy['ot:studyPublicationReference']);
                         // capture the current tree name and study reference
                         // TODO: update these as studies change?
