@@ -1840,8 +1840,7 @@ function bindStudyAndTreeLookups() {
         console.warn(studyListForLookup);
         return false;
     }
-    var $popup = $('#tree-collection-viewer');
-    var $newTreeStartButton = $popup.find('#new-collection-tree-start');
+    var $newTreeStartButton = $('#new-collection-tree-start');
     $newTreeStartButton.attr('disabled', null)
                        .removeClass('btn-info-disabled');
 
@@ -1865,8 +1864,7 @@ function loadStudyListForLookup() {
     }
 
     // disable "Add tree" button until the list is loaded
-    var $popup = $('#tree-collection-viewer');
-    var $newTreeStartButton = $popup.find('#new-collection-tree-start');
+    var $newTreeStartButton = $('#new-collection-tree-start');
     $newTreeStartButton.attr('disabled', 'disabled')
                        .addClass('btn-info-disabled');
 
