@@ -142,7 +142,7 @@ body {
 
         {{ if viewOrEdit == 'VIEW': }}
             <div class="control-group">
-                <a class="btn btn-info" style="margin-bottom: 1em;"
+                <a class="btn btn-info"
                    href="{{= API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID) + '.json' }}"
                    target="_blank">Download as JSON</a>
                 <span> or you can use the
@@ -242,7 +242,7 @@ body {
               <div Xclass="modal hide fade" Xstyle="border: solid red 1px;" id="tree-collection-viewer">
                 <div Xclass="modal-header" style="padding-bottom: 0;">
                   <h3 id='dialog-heading' style="margin-top: 0px; margin-bottom: 2px;">
-                        <span style="color: #999;">Tree collection</span>
+                        <span style="color: #999;">Collection name</span>
                        <!-- ko if: userIsEditingCollection($data) -->
                         <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000;
                                                   font-weight: bold; width: 60%; margin-bottom: 0px;"
