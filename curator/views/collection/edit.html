@@ -514,6 +514,7 @@ body {
                             Tree (click to view, mouse-over for complete description)
                           <!-- /ko -->
                         </th>
+                        <th>&nbsp;</th>
                     </tr>
                   </thead>
 
@@ -587,13 +588,6 @@ body {
                         </td>
                         <td>
                           <!-- ko if: userIsEditingCollection($parent) -->
-                            <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;},
-                                               css:  viewModel.ticklers.TREES"
-                                    title="Remove this tree from the collection"
-                                    class="pull-right btn btn-mini btn-danger row-controls-ghosted"
-                                    style="margin-left: 4px;">
-                                <i class="icon-trash icon-white"></i>
-                            </button>
                             <a data-bind="html: name,
                                           attr: { href: getTreeViewURL($data) },
                                           css:  viewModel.ticklers.TREES"
@@ -626,6 +620,17 @@ body {
                                                 attr: { title: comments }""
                                      style="color: #999; Xwhite-space: nowrap;"><!-- COMMENTS --></span>
                              <!-- /ko -->
+                          <!-- /ko -->
+                        </td>
+                        <td>
+                          <!-- ko if: userIsEditingCollection($parent) -->
+                            <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;},
+                                               css:  viewModel.ticklers.TREES"
+                                    title="Remove this tree from the collection"
+                                    class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                                    style="margin-left: 4px;">
+                                <i class="icon-trash icon-white"></i>
+                            </button>
                           <!-- /ko -->
                         </td>
                     </tr>
