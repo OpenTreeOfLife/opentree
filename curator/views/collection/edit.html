@@ -488,9 +488,38 @@ body {
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
                     <h4 class="pull-left" style="margin: 5px 1em 0 0">Trees in this collection</h4>
-                    <input type="text" id="tree-list-filter" class="search-query" placeholder="Filter by name or ingroup clade"
+                    <input type="text" id="tree-list-filter" class="search-query" placeholder="Filter by name, ID, clade..."
                            data-bind="value: viewModel.listFilters.TREES.match, valueUpdate: ['afterkeydown', 'input']">
                 </form>
+                <ul class="nav" style="padding-left: 1em;">
+                    <!-- hide/show columns UI, with hidden columns ghosted -->
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                          <span Xdata-bind="text: countHiddenTreeColumns() + 'columns hidden'># columns hidden</span>
+                          <!-- TODO: Show actual value -->
+                          <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu"
+                            data-bind="foreach: ['Tree name and description', 'Mapped nodes', 'Focal clade', 'TODO'] ">
+                            <li data-bind="css: {'disabled': getTreeColumnVisibility($data) }">
+                                <!-- TODO: apply 'disabled' if column is NOT currently being used -->
+                                <a href="#" data-bind="text: $data, click: function () { toggleTreeColumnVisibility($data) }">COLNAME</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <!-- sorting options -->
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                          <span data-bind="text: viewModel.listFilters.TREES.order">SORT</span>
+                          <b class="caret"></b>
+                        </a>
+                        <ul class="dropdown-menu" data-bind="foreach: ['Newest publication first', 'Oldest publication first', 'Mapped nodes (ascending)', 'Mapped nodes (descending)', 'Taxonomic rank (ascending)', 'Taxonomic rank (ascending)'] ">
+                            <li data-bind="css: {'disabled': viewModel.listFilters.TREES.order() == $data }">
+                                <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.STUDIES.order($data); }">SORT</a>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
                </div>
               </div>
 
