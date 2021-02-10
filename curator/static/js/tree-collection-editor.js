@@ -776,6 +776,7 @@ function loadSelectedCollection() {
             updateNewCollTreeUI();
             //pushPageExitWarning('UNSAVED_COLLECTION_CHANGES',
             //                    "WARNING: This page contains unsaved changes.");
+            viewModel.ticklers.TREES.subscribe(countHiddenTreeColumns);
 
             hideModalScreen();
             showInfoMessage('Collection data loaded.');
@@ -1897,7 +1898,6 @@ function countHiddenTreeColumns() {
     });
     return hidden;
 }
-viewModel.ticklers.TREES.subscribe(countHiddenTreeColumns);
 
 function getTreeColumnVisibility( name ) {
     var visibleColumns = viewModel.listFilters.TREES.columns();
