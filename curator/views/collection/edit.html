@@ -500,8 +500,9 @@ body {
                           <b class="caret"></b>
                         </a>
                         <ul id="tree-list-columns" class="dropdown-menu"
-                            data-bind="foreach: ['Tree name and description', 'Mapped nodes', 'Focal clade', 'TODO'] ">
-                            <li data-bind="css: {'disabled': getTreeColumnVisibility($data) }">
+                            data-bind="foreach: collectionTreeListColumns">
+                            <li data-bind="css: {'disabled': $data.locked,
+                                                 'dropdown-item-checked': getTreeColumnVisiblity($data.name) }">
                                 <!-- TODO: apply 'disabled' if column is NOT currently being used -->
                                 <a href="#" data-bind="text: $data, click: function () { toggleTreeColumnVisibility($data) }">COLNAME</a>
                             </li>

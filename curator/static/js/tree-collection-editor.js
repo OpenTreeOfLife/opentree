@@ -1887,12 +1887,22 @@ function showCollectionMetadata() {
     $('#collection-metadata-popup').modal('show');
 }
 
+// define the available tree-list columns and their key properties
+var collectionTreeListColumns = [
+    { name: "Rank", locked: true},
+    { name: "Tree name and description", locked: true},
+    { name: "Mapped nodes" },
+    { name: "Root of ingroup" },
+    { name: "Focal clade of study" },
+    { name: "Conflict vs. latest OpenTree synthesis" },
+    { name: "Year of publication" }
+];
 function countHiddenTreeColumns() {
     var hidden = 0;
     // NB the canonical list of column names is actually in our markup!
-    $("#tree-list-columns li").each(function() {
-        var colName = $(this).val();
-        if (getTreeColumnVisibility() === false) {
+    $(collectionTreeListColumns).each(function() {
+        var colName = this.name;
+        if (getTreeColumnVisibility(colName) === false) {
             hidden++;
         }
     });
