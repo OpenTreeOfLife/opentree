@@ -504,7 +504,7 @@ body {
                             <li data-bind="css: {'disabled': $data.locked,
                                                  'dropdown-item-checked': getTreeColumnVisibility($data.name) }">
                                 <!-- TODO: apply 'disabled' if column is NOT currently being used -->
-                                <a href="#" data-bind="text: $data, click: function () { toggleTreeColumnVisibility($data) }">COLNAME</a>
+                                <a href="#" data-bind="text: $data.name, click: function () { toggleTreeColumnVisibility($data.name) }">COLNAME</a>
                             </li>
                         </ul>
                     </li>
@@ -832,7 +832,7 @@ body {
         // track these defaults so we can reset them in history
         'TREES': {
             'match': "",
-            'columns': ["Tree name and description", "Mapped nodes"],
+            'columns': ["Rank", "Tree name and description", "Mapped nodes"],
             'order': "Rank (ascending)"  // ie, list position
         },
         'FILES': {
