@@ -544,6 +544,11 @@ body {
                             Tree (click to view, mouse-over for complete description)
                           <!-- /ko -->
                         </th>
+                       <!-- ko: foreach: getCollectionTreeListColumns() as 'col' -->
+                        <th data-bind="visible: getTreeColumnVisibility(col.name),
+                                       text: col.name">COLNAME
+                        </th>
+                       <!-- /ko -->
                         <th>&nbsp;</th>
                     </tr>
                   </thead>
