@@ -499,7 +499,7 @@ body {
                           <!-- TODO: Show actual value -->
                           <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu"
+                        <ul id="tree-list-columns" class="dropdown-menu"
                             data-bind="foreach: ['Tree name and description', 'Mapped nodes', 'Focal clade', 'TODO'] ">
                             <li data-bind="css: {'disabled': getTreeColumnVisibility($data) }">
                                 <!-- TODO: apply 'disabled' if column is NOT currently being used -->
@@ -513,7 +513,7 @@ body {
                           <span data-bind="text: viewModel.listFilters.TREES.order">SORT</span>
                           <b class="caret"></b>
                         </a>
-                        <ul class="dropdown-menu" data-bind="foreach: ['Newest publication first', 'Oldest publication first', 'Mapped nodes (ascending)', 'Mapped nodes (descending)', 'Taxonomic rank (ascending)', 'Taxonomic rank (ascending)'] ">
+                        <ul id="tree-list-order" class="dropdown-menu" data-bind="foreach: ['Rank (ascending)','Rank (descending)', 'Newest publication first', 'Oldest publication first', 'Mapped nodes (ascending)', 'Mapped nodes (descending)', 'Taxonomic rank (ascending)', 'Taxonomic rank (ascending)'] ">
                             <li data-bind="css: {'disabled': viewModel.listFilters.TREES.order() == $data }">
                                 <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.STUDIES.order($data); }">SORT</a>
                             </li>
@@ -830,7 +830,9 @@ body {
     var listFilterDefaults = {
         // track these defaults so we can reset them in history
         'TREES': {
-            'match': ""
+            'match': "",
+            'columns': ["Tree name and description", "Mapped nodes"],
+            'order': "Rank (ascending)"  // ie, list position
         },
         'FILES': {
             'match': ""

@@ -701,7 +701,9 @@ function loadSelectedCollection() {
                 // UI widgets bound to these variables will trigger the
                 // computed display lists below..
                 'TREES': {
-                    'match': ko.observable( listFilterDefaults.TREES.match )
+                    'match': ko.observable( listFilterDefaults.TREES.match ),
+                    'columns': ko.observableArray( listFilterDefaults.TREES.columns ),
+                    'order': ko.observable( listFilterDefaults.TREES.order )
                 },
             };
 
@@ -1883,6 +1885,39 @@ function showCollectionMetadata() {
     });
     $('#collection-metadata-popup').modal('show');
 }
+
+function countHiddenTreeColumns() {
+    var hidden = 0;
+    // NB the canonical list of column names is actually in our markup!
+    $("#tree-list-columns li").each(function() {
+        var colName = $(this).val();
+        if (getTreeColumnVisibility() === false) {
+            hidden++;
+        }
+    });
+    return hidden;
+}
+viewModel.ticklers.TREES.subscribe(countHiddenTreeColumns);
+
+function getTreeColumnVisibility( name ) {
+    var visibleColumns = viewModel.listFilters.TREES.columns();
+    var isVisible = visibleColumns.indexOf(name) !== -1;
+    return isVisible;
+}
+
+function toggleTreeColumnVisibility( name ) {
+    var visibleColumns = viewModel.listFilters.TREES.columns();
+    var isVisible = visibleColumns.indexOf(name) !== -1;
+    if (isVisible) {
+        // hide it
+        visibleColumns.remove(name);
+    } else {
+        // show it
+        visibleColumns.push(name);
+    }
+    nudgeTickler('TREES');
+}
+
 
 /* TODO: adapt for use here?
 function addCurrentTreeToCollection( collection ) {
