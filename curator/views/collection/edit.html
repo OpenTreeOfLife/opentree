@@ -656,14 +656,17 @@ body {
                         <td data-bind="visible: getTreeColumnVisibility('Root of ingroup')">
                             <span class="placeholder-data">{Root of ingroup}</span>
                         </td>
+                        <td data-bind="visible: getTreeColumnVisibility('Taxonomic rank of root')">
+                            <span class="placeholder-data">{Taxonomic rank}</span>
+                        </td>
                         <td data-bind="visible: getTreeColumnVisibility('Focal clade of study')">
-                            <span class="placeholder-data">{Focal clade of study}</span>
+                            <span class="placeholder-data">{Focal clade}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Conflict vs. latest OpenTree synthesis')">
-                            <span class="placeholder-data">{Conflict vs. latest OpenTree synthesis}</span>
+                            <span class="placeholder-data">{Conflict vs. OpenTree}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Year of publication')">
-                            <span class="placeholder-data">{Year of publication}</span>
+                            <span class="placeholder-data">{Year}</span>
                         </td>
                         <td>
                           <!-- ko if: userIsEditingCollection($parent) -->
