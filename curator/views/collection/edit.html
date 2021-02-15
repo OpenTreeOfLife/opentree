@@ -552,7 +552,6 @@ body {
                                                       'single-tree-row warning' :
                                                       'single-tree-row-'+ $data['status'] )
                                           }">
-
                         <td data-bind="visible: getTreeColumnVisibility('Rank')">
                         <!-- ko if: userIsEditingCollection($parent) -->
                           <input type="text"
@@ -653,16 +652,16 @@ body {
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Mapped nodes')">
 Mapped nodes
-                        <td>
+                        </td>
                         <td data-bind="visible: getTreeColumnVisibility('Root of ingroup')">
 Root of ingroup
-                        <td>
+                        </td>
                         <td data-bind="visible: getTreeColumnVisibility('Focal clade of study')">
 Focal clade of study
-                        <td>
+                        </td>
                         <td data-bind="visible: getTreeColumnVisibility('Conflict vs. latest OpenTree synthesis')">
 Conflict vs. latest OpenTree synthesis
-                        <td>
+                        </td>
                         <td>
                           <!-- ko if: userIsEditingCollection($parent) -->
                             <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;},
