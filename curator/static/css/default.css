@@ -983,3 +983,7 @@ a.node-direct-link {
   content: '✓';
   font-weight: 600;
 }
+.placeholder-data {
+    color: #939;
+    font-style: italic;
+}

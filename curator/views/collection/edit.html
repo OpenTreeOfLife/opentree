@@ -651,16 +651,19 @@ body {
                           <!-- /ko -->
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Mapped nodes')">
-Mapped nodes
+                            <span class="placeholder-data">{Mapped nodes}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Root of ingroup')">
-Root of ingroup
+                            <span class="placeholder-data">{Root of ingroup}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Focal clade of study')">
-Focal clade of study
+                            <span class="placeholder-data">{Focal clade of study}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Conflict vs. latest OpenTree synthesis')">
-Conflict vs. latest OpenTree synthesis
+                            <span class="placeholder-data">{Conflict vs. latest OpenTree synthesis}</span>
+                        </td>
+                        <td data-bind="visible: getTreeColumnVisibility('Year of publication')">
+                            <span class="placeholder-data">{Year of publication}</span>
                         </td>
                         <td>
                           <!-- ko if: userIsEditingCollection($parent) -->
