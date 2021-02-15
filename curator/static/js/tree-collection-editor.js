@@ -1893,9 +1893,10 @@ var collectionTreeListColumns = [
     { name: "Tree name and description", colWidth: "*", locked: true},
     { name: "Mapped nodes" },
     { name: "Root of ingroup" },
-    { name: "Focal clade of study" },
-    { name: "Conflict vs. latest OpenTree synthesis" },
-    { name: "Year of publication" }
+    { name: "Taxonomic rank of root", shortName: "Taxo. rank" },
+    { name: "Focal clade of study", shortName: "Focal clade" },
+    { name: "Conflict vs. latest OpenTree synthesis", shortName: "Conflict" },
+    { name: "Year of publication", shortName: "Year" }
 ];
 function countHiddenTreeColumns() {
     var hidden = 0;
