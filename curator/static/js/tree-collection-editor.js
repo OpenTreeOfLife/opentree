@@ -1889,8 +1889,8 @@ function showCollectionMetadata() {
 
 // define the available tree-list columns and their key properties
 var collectionTreeListColumns = [
-    { name: "Rank", locked: true},
-    { name: "Tree name and description", locked: true},
+    { name: "Rank", colWidth: "76", locked: true},
+    { name: "Tree name and description", colWidth: "*", locked: true},
     { name: "Mapped nodes" },
     { name: "Root of ingroup" },
     { name: "Focal clade of study" },
