@@ -537,7 +537,7 @@ body {
                     <tr>
                        <!-- ko foreach: collectionTreeListColumns -->
                         <th data-bind="visible: getTreeColumnVisibility($data.name),
-                                       attr: {'width': $data.colWidth || ''},
+                                       attr: {'width': $data.colWidth || '', 'title': $data.name},
                                        text: $data.shortName || $data.name">COLNAME
                         </th>
                        <!-- /ko -->
