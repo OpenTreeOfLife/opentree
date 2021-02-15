@@ -1920,7 +1920,8 @@ function toggleTreeColumnVisibility( name ) {
     var isVisible = visibleColumns.indexOf(name) !== -1;
     if (isVisible) {
         // hide it
-        visibleColumns.remove(name);
+        var pos = visibleColumns.indexOf(name);
+        if (pos > -1) { visibleColumns.splice(pos, 1) };
     } else {
         // show it
         visibleColumns.push(name);
