@@ -552,7 +552,7 @@ body {
                                                       'single-tree-row warning' :
                                                       'single-tree-row-'+ $data['status'] )
                                           }">
-                        <td data-bind="visible: getTreeColumnVisibility('Rank')">
+                        <td style="white-space: nowrap;" data-bind="visible: getTreeColumnVisibility('Rank')">
                         <!-- ko if: userIsEditingCollection($parent) -->
                           <input type="text"
                                  data-bind="value: $data['rank'],
