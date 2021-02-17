@@ -514,7 +514,22 @@ body {
                           <span data-bind="text: viewModel.listFilters.TREES.order">SORT</span>
                           <b class="caret"></b>
                         </a>
-                        <ul id="tree-list-order" class="dropdown-menu" data-bind="foreach: ['Rank (ascending)','Rank (descending)', 'Newest publication first', 'Oldest publication first', 'Mapped nodes (ascending)', 'Mapped nodes (descending)', 'Taxonomic rank (ascending)', 'Taxonomic rank (descending)'] ">
+                        <ul id="tree-list-order" class="dropdown-menu" data-bind="foreach: [
+                                                                                            'Rank (ascending)',
+                                                                                            'Rank (descending)', 
+                                                                                            'Newest publication first', 
+                                                                                            'Oldest publication first', 
+                                                                                            'Mapped nodes (ascending)', 
+                                                                                            'Mapped nodes (descending)', 
+                                                                                            'Root of ingroup (alpha, ascending)', 
+                                                                                            'Root of ingroup (alpha, descending)', 
+                                                                                            'Taxonomic rank (ascending)', 
+                                                                                            'Taxonomic rank (descending)',
+                                                                                            'Focal clade of study (alpha, ascending)',
+                                                                                            'Focal clade of study (alpha, descending)',
+                                                                                            'Coflict vs. OpenTree synthetic tree (ascending)',
+                                                                                            'Coflict vs. OpenTree synthetic tree (descending)'
+                                                                                            ] ">
                             <li data-bind="css: {'disabled': viewModel.listFilters.TREES.order() == $data }">
                                 <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.STUDIES.order($data); }">SORT</a>
                             </li>
