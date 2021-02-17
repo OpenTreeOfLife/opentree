@@ -152,96 +152,6 @@ body {
             </div>
         {{ pass }}
 
-        {{ if viewOrEdit == 'EDIT': }}
-            <!-- TODO: Put add-collection widgets! -->
-            <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
-              <button id="freeze-tree-list-order" type="submit"
-                      class="btn btn-warning"
-                      onclick="return false;">
-                    Freeze current tree list order
-              </button>
-              &nbsp;
-              &nbsp;
-              <button id="new-collection-tree-start" type="submit"
-                      class="btn btn-info Xbtn-info-disabled"
-                      onclick="return false;"
-              ><span data-bind="text: ($data.data.decisions.length > 0) ? 'Add another tree' : 'Add a tree to this collection'">ADD TREE</span>
-                    &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
-              </button>
-              <button id="new-collection-tree-cancel" type="submit"
-                      style="display: none;" class="btn">Cancel
-              </button>
-            </div>
-            <div id="new-collection-tree-by-lookup"
-                 class="new-collection-tree-options" style="display: none; padding-left: 12px;">
-                <div class="dropup" style="position: relative; margin-left: 146px;">
-                    <ul id="study-lookup-results" class="dropdown-menu" role="menu">
-                        ...
-                    </ul>
-                </div>
-                <label>&hellip; by matching a study</label>
-                <!-- "active" wiget for study lookup -->
-                <i class="icon-search study-lookup-active" style="position: absolute; margin: 8px 0 0 7px; pointer-events: none;"></i>
-                <input type="text" name="study-lookup"
-                    class="input-xlarge study-lookup-active" style="margin-bottom: 2px; padding-left: 25px;"
-                    placeholder="Enter its title, DOI, reference, tag, ID..."
-                    data-bind="value: '',
-                               valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
-                               "
-                ></input>
-                <!-- hidden field to store chosen ID -->
-                <input type="hidden" name="study-lookup-id"
-                       data-bind="value: '',
-                                  event: { change: updateNewCollTreeUI }
-                                 "></input>
-                <!-- "passive" wiget once study is chosen -->
-                <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
-                   onclick="resetStudyLookup(); return false;">
-                    <i class="icon-search"></i>
-                </a>
-                <a id="study-lookup-indicator" class="study-lookup-passive"
-                   style="font-weight: bold; display: none;"
-                   title="" href="" target="_blank">...</a>
-                <br />
-
-                <label style="padding-left: 4em;">and one of its trees</label>
-                <select name="tree-lookup"
-                    class="input-xlarge" style="margin-bottom: 2px;"
-                    disabled="disabled"
-                    placeholder="Enter its name, ID, ingroup clade..."
-                    data-bind="value: '',
-                               valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
-                               "
-                >
-                    <option disabled="disabled" value="">Find the study above first</option>
-                </select>
-                <button class="btn btn-info"
-                        data-bind="click: function() {addTreeToCollection($data, 'FROM_LOOKUPS'); return false;}"
-                >
-                      <i class="icon-plus icon-white"></i>
-                </button>
-            </div>
-            <div id="new-collection-tree-by-url"
-                 class="new-collection-tree-options" style="display: none; padding-left: 12px;">
-                <label>&hellip; by URL</label>
-                <input type="text"  name="tree-url"
-                    class="input-xlarge" style="width: 385px; margin-bottom: 2px;"
-                    placeholder=".../curator/study/view/pg_2826/?tab=trees&tree=tree6573"
-                    data-bind="value: '',
-                               valueUpdate: ['afterkeydown', 'input'],
-                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
-                               "
-                ></input>
-                <button class="btn btn-info"
-                        data-bind="click: function() {addTreeToCollection($data, 'FROM_URL'); return false;}"
-                >
-                      <i class="icon-plus icon-white"></i>
-                </button>
-            </div>
-        {{ pass }}
-
         {{ if False: }}
             <div class="well" style="clear: right;">
                 <h4 style="margin-top: 0;">Add a tree to this collection</h4>
@@ -555,6 +465,97 @@ body {
                     No matching trees found! Add new trees or clear the
                     filter above to see trees in this collection.
                 </div>
+
+        {{ if viewOrEdit == 'EDIT': }}
+            <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
+              <button id="freeze-tree-list-order" type="submit"
+                      data-bind="attr: {'disabled': viewModel.filteredTrees().pagedItems().length === 0},
+                                 css: (viewModel.ticklers.TREES +' btn btn-warning')"
+                      class="btn btn-warning"
+                      onclick="return false;">
+                    Freeze current tree list order
+              </button>
+              &nbsp;
+              &nbsp;
+              <button id="new-collection-tree-start" type="submit"
+                      class="btn btn-info Xbtn-info-disabled"
+                      onclick="return false;"
+              ><span data-bind="text: ($data.data.decisions.length > 0) ? 'Add another tree' : 'Add a tree to this collection'">ADD TREE</span>
+                    &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+              </button>
+              <button id="new-collection-tree-cancel" type="submit"
+                      style="display: none;" class="btn">Cancel
+              </button>
+            </div>
+            <div id="new-collection-tree-by-lookup"
+                 class="new-collection-tree-options" style="display: none; padding-left: 12px;">
+                <div class="dropup" style="position: relative; margin-left: 146px;">
+                    <ul id="study-lookup-results" class="dropdown-menu" role="menu">
+                        ...
+                    </ul>
+                </div>
+                <label>&hellip; by matching a study</label>
+                <!-- "active" wiget for study lookup -->
+                <i class="icon-search study-lookup-active" style="position: absolute; margin: 8px 0 0 7px; pointer-events: none;"></i>
+                <input type="text" name="study-lookup"
+                    class="input-xlarge study-lookup-active" style="margin-bottom: 2px; padding-left: 25px;"
+                    placeholder="Enter its title, DOI, reference, tag, ID..."
+                    data-bind="value: '',
+                               valueUpdate: ['afterkeydown', 'input'],
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                ></input>
+                <!-- hidden field to store chosen ID -->
+                <input type="hidden" name="study-lookup-id"
+                       data-bind="value: '',
+                                  event: { change: updateNewCollTreeUI }
+                                 "></input>
+                <!-- "passive" wiget once study is chosen -->
+                <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
+                   onclick="resetStudyLookup(); return false;">
+                    <i class="icon-search"></i>
+                </a>
+                <a id="study-lookup-indicator" class="study-lookup-passive"
+                   style="font-weight: bold; display: none;"
+                   title="" href="" target="_blank">...</a>
+                <br />
+
+                <label style="padding-left: 4em;">and one of its trees</label>
+                <select name="tree-lookup"
+                    class="input-xlarge" style="margin-bottom: 2px;"
+                    disabled="disabled"
+                    placeholder="Enter its name, ID, ingroup clade..."
+                    data-bind="value: '',
+                               valueUpdate: ['afterkeydown', 'input'],
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                >
+                    <option disabled="disabled" value="">Find the study above first</option>
+                </select>
+                <button class="btn btn-info"
+                        data-bind="click: function() {addTreeToCollection($data, 'FROM_LOOKUPS'); return false;}"
+                >
+                      <i class="icon-plus icon-white"></i>
+                </button>
+            </div>
+            <div id="new-collection-tree-by-url"
+                 class="new-collection-tree-options" style="display: none; padding-left: 12px;">
+                <label>&hellip; by URL</label>
+                <input type="text"  name="tree-url"
+                    class="input-xlarge" style="width: 385px; margin-bottom: 2px;"
+                    placeholder=".../curator/study/view/pg_2826/?tab=trees&tree=tree6573"
+                    data-bind="value: '',
+                               valueUpdate: ['afterkeydown', 'input'],
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                ></input>
+                <button class="btn btn-info"
+                        data-bind="click: function() {addTreeToCollection($data, 'FROM_URL'); return false;}"
+                >
+                      <i class="icon-plus icon-white"></i>
+                </button>
+            </div>
+        {{ pass }}
 
               <div id="tree-list-holder"
                    style="x-overflow: hidden; y-overflow: auto;">
