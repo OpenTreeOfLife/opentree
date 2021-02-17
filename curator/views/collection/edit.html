@@ -155,6 +155,13 @@ body {
         {{ if viewOrEdit == 'EDIT': }}
             <!-- TODO: Put add-collection widgets! -->
             <div xclass="form-actions" style="margin-top: 0px; margin-bottom: 0.25em;">
+              <button id="freeze-tree-list-order" type="submit"
+                      class="btn btn-warning"
+                      onclick="return false;">
+                    Freeze current tree list order
+              </button>
+              &nbsp;
+              &nbsp;
               <button id="new-collection-tree-start" type="submit"
                       class="btn btn-info Xbtn-info-disabled"
                       onclick="return false;"
