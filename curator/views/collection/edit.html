@@ -488,7 +488,7 @@ body {
                <div class="navbar-inner">
                 <form class="navbar-search pull-left">
                     <h4 class="pull-left" style="margin: 5px 1em 0 0"
-                        data-bind="text: $data.decisions.length +' trees in this collection'"># trees in this collection</h4>
+                        data-bind="text: $data.data.decisions.length +' trees in this collection'"># trees in this collection</h4>
                     <input type="text" id="tree-list-filter" class="search-query" placeholder="Filter by name, ID, clade..."
                            data-bind="value: viewModel.listFilters.TREES.match, valueUpdate: ['afterkeydown', 'input']">
                 </form>
