@@ -642,15 +642,6 @@ function showCollectionViewer( collection, options ) {
         } else {
             newListScrollPosition = 0;
         }
-        var $freezeTreeListOrderButton = $('#freeze-tree-list-order');
-        $freezeTreeListOrderButton.click(function() {
-            if (confirm('WARNING: This will over-write all ranks/positions previously set in this collection! Are you sure you want to do this?')) {
-                /* TODO: What if only a partial tree list is showing? */
-                // TODO
-                return false;
-            }
-        });
-
         var $newTreeStartButton = $('#new-collection-tree-start');
         var $newTreeCancelButton = $('#new-collection-tree-cancel');
         var $newTreeOptionsPanels = $('.new-collection-tree-options');
@@ -1902,6 +1893,16 @@ function bindStudyAndTreeLookups() {
         console.warn(studyListForLookup);
         return false;
     }
+
+    var $freezeTreeListOrderButton = $('#freeze-tree-list-order');
+    $freezeTreeListOrderButton.click(function() {
+        if (confirm('WARNING: This will over-write all ranks/positions previously set in this collection! Are you sure you want to do this?')) {
+            /* TODO: What if only a partial tree list is showing? */
+            // TODO
+            return false;
+        }
+    });
+
     var $newTreeStartButton = $('#new-collection-tree-start');
     $newTreeStartButton.attr('disabled', null)
                        .removeClass('btn-info-disabled');
