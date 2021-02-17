@@ -873,7 +873,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                               <a data-bind="html: name,
                                             attr: { href: getTreeViewURL($data) }"
                                  title="View this tree in a new window"
-                                 href="#" target="_blank"><!--NAME--></a>
+                                 href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
                              <!-- this is no longer editable
                               <input type="text"
                                      class="input-large"
@@ -894,7 +894,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             <!-- ko if: !userIsEditingCollection($parent) -->
                               <a data-bind="html: name,
                                             attr: { href: getTreeViewURL($data), title: comments || '(no description provided)' }"
-                                 href="#" target="_blank"><!--NAME--></a>
+                                 href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
                             <!-- /ko -->
                           </td>
                       </tr>
