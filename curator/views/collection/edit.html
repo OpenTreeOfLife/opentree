@@ -447,6 +447,9 @@ body {
                           <!-- /ko -->
 
                             <br/>
+                            <label data-bind="html: 'Last modified '+ getCollectionLastModification($data)
+                                              css: viewModel.ticklers.GENERAL_METADATA"
+                                   style="font-style: italic; float: right; margin-top: 6px;">Last modified ?????</label>
                             <label style="clear: left; margin-top: 6px;">Created by </label>
                             <strong><a href="https://github.com/jimallman" target="_blank"
                                        data-bind="text: $data.data.creator['name'],
