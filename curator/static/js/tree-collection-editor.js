@@ -708,7 +708,7 @@ function loadSelectedCollection() {
             };
 
             // maintain a persistent array to preserve pagination (reset when computed)
-            viewModel._filteredTrees = ko.observableArray( ).asPaged(20);
+            viewModel._filteredTrees = ko.observableArray( ).asPaged(1000);  // disable paging for now... WAS asPaged(20)
             viewModel.filteredTrees = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray

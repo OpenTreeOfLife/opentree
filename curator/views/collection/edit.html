@@ -711,6 +711,7 @@ body {
                   </tbody>
                 </table>
 
+              {{ if False: }}
                 <div class="pagination pagination-centered pagination-small"
                      Xdata-bind="if: viewModel.filteredTrees()().length &gt; viewModel.filteredTrees().pagedItems().length">
                   <ul>
@@ -732,6 +733,8 @@ body {
                     </li>
                   </ul>
                 </div>
+              {{ pass }}
+
               </div><!-- #tree-list-holder -->
 
             </div>
