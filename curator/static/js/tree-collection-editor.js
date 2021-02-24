@@ -741,6 +741,8 @@ function loadSelectedCollection() {
                     }
                 );  // END of list filtering
 
+                captureDefaultSortOrder(filteredList);
+
                 // apply selected sort order
                 switch(order) {
                     /* REMINDER: in sort functions, results are as follows:
