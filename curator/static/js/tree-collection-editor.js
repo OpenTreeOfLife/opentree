@@ -752,19 +752,19 @@ function loadSelectedCollection() {
                      */
                     case 'Rank - ASC':
                         filteredList.sort(function(a,b) {
-                            if (a.rank === a.rank) {
+                            if (a.rank === b.rank) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (a.rank < a.rank)? 1 : -1;
+                            return (a.rank < b.rank)? 1 : -1;
                         });
                         break;
 
                     case 'Rank - DESC':
                         filteredList.sort(function(a,b) {
-                            if (a.rank === a.rank) {
+                            if (a.rank === b.rank) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (a.rank > a.rank)? 1 : -1;
+                            return (a.rank > b.rank)? 1 : -1;
                         });
                         break;
 
