@@ -430,7 +430,7 @@ body {
                             </li>
                         </ul>
                     </li>
-                    <!-- sorting options -->
+                    <!-- sorting options
                     <li class="dropdown">
                         <a href="#" class="dropdown-toggle" data-toggle="dropdown">
                           <span data-bind="text: viewModel.listFilters.TREES.order">SORT</span>
@@ -457,6 +457,7 @@ body {
                             </li>
                         </ul>
                     </li>
+                    -->
                 </ul>
                </div>
               </div>
@@ -565,8 +566,10 @@ body {
                     <tr>
                        <!-- ko foreach: collectionTreeListColumns -->
                         <th data-bind="visible: getTreeColumnVisibility($data.name),
-                                       attr: {'width': $data.colWidth || '', 'title': $data.name},
-                                       text: $data.shortName || $data.name">COLNAME
+                                       attr: {'width': $data.colWidth || ''}">
+                          <span data-bind="text: $data.shortName || $data.name,
+                                           attr: {'title': $data.name}">COLNAME</span>
+                          <i class="">^v</i>
                         </th>
                        <!-- /ko -->
                         <th>&nbsp;</th><!-- final tools cell, always visible -->
