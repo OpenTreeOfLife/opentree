@@ -679,27 +679,33 @@ body {
                           <!-- /ko -->
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Mapped nodes')">
-                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeMappedNodes') || '??'"
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeMappedNodes') || '??',
+                                             css:  viewModel.ticklers.TREES"
                                   class="placeholder-data">{Mapped nodes}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Root of ingroup')">
-                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeIngroupRoot') || '??'"
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeIngroupRoot') || '??',
+                                             css:  viewModel.ticklers.TREES"
                                   class="placeholder-data">{Root of ingroup}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Taxonomic rank of root')">
-                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeIngroupTaxonomicRank') || '??'"
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeIngroupTaxonomicRank') || '??',
+                                             css:  viewModel.ticklers.TREES"
                                   class="placeholder-data">{Taxonomic rank}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Focal clade of study')">
-                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:focalCladeOTTTaxonName') || '&mdash;'"
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:focalCladeOTTTaxonName') || '&mdash;',
+                                             css:  viewModel.ticklers.TREES"
                                   class="">{Focal clade}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Conflict vs. latest OpenTree synthesis')">
-                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeConflictScore') || '??'"
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeConflictScore') || '??',
+                                             css:  viewModel.ticklers.TREES"
                                   class="placeholder-data">{Conflict vs. OpenTree}</span>
                         </td>
-                        <td data-bind="visible: getTreeColumnVisibility('Year of publication')">
-                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:studyYear') || '&mdash;'"
+                        <td data-bind="visible: getTreeColumnVisibility('Year of study publication')">
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:studyYear') || '&mdash;',
+                                             css:  viewModel.ticklers.TREES"
                                   class="">{Year}</span>
                         </td>
                         <td>
