@@ -566,7 +566,7 @@ body {
                     <tr>
                        <!-- ko foreach: collectionTreeListColumns -->
                         <th data-bind="visible: getTreeColumnVisibility($data.name),
-                                       attr: {'width': $data.colWidth || ''}
+                                       attr: {'width': $data.colWidth || ''},
                                        click: function () { toggleTreeListOrder($data); },
                                        css: viewModel.ticklers.TREES">
                           <span data-bind="text: $data.shortName || $data.name,
