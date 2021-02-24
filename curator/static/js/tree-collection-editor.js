@@ -769,9 +769,9 @@ function loadSelectedCollection() {
                         break;
 
                     case 'Tree name and description - ASC':
-                        var aName = $.trim(a.name);
-                        var bName = $.trim(b.name);
                         filteredList.sort(function(a,b) {
+                            var aName = $.trim(a.name);
+                            var bName = $.trim(b.name);
                             if (aName === bName) {
                                 return maintainRelativeListPositions(a, b);
                             }
@@ -780,9 +780,9 @@ function loadSelectedCollection() {
                         break;
 
                     case 'Tree name and description - DESC':
-                        var aName = $.trim(a.name);
-                        var bName = $.trim(b.name);
                         filteredList.sort(function(a,b) {
+                            var aName = $.trim(a.name);
+                            var bName = $.trim(b.name);
                             if (aName === bName) {
                                 return maintainRelativeListPositions(a, b);
                             }
@@ -813,7 +813,7 @@ function loadSelectedCollection() {
                             if (a['ot:studyYear'] === b['ot:studyYear']) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (a['ot:studyYear'] < b['ot:studyYear'])? 1 : -1;
+                            return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
                         });
                         break;
 
@@ -822,7 +822,7 @@ function loadSelectedCollection() {
                             if (a['ot:studyYear'] === b['ot:studyYear']) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
+                            return (a['ot:studyYear'] < b['ot:studyYear'])? 1 : -1;
                         });
                         break;
 
