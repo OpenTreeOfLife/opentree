@@ -802,8 +802,6 @@ function loadSelectedCollection() {
 
                     default:
                         console.warn("Unexpected order for tree list: ["+ order +"]");
-                        return null;
-
                 }
 
                 viewModel._filteredTrees( filteredList );
