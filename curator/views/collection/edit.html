@@ -679,28 +679,28 @@ body {
                           <!-- /ko -->
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Mapped nodes')">
-                            <span data-bind="text: getMetadataForTreeListEntry( $data, 'treeMappedNodes') || '??'"
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeMappedNodes') || '??'"
                                   class="placeholder-data">{Mapped nodes}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Root of ingroup')">
-                            <span data-bind="text: getMetadataForTreeListEntry( $data, 'treeIngroupRoot') || '??'"
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeIngroupRoot') || '??'"
                                   class="placeholder-data">{Root of ingroup}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Taxonomic rank of root')">
-                            <span data-bind="text: getMetadataForTreeListEntry( $data, 'treeIngroupTaxonomicRank') || '??'"
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeIngroupTaxonomicRank') || '??'"
                                   class="placeholder-data">{Taxonomic rank}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Focal clade of study')">
-                            <span data-bind="text: getMetadataForTreeListEntry( $data, 'ot:focalCladeOTTTaxonName') || '??'"
-                                  class="placeholder-data">{Focal clade}</span>
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:focalCladeOTTTaxonName') || '&mdash;')"
+                                  class="">{Focal clade}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Conflict vs. latest OpenTree synthesis')">
-                            <span data-bind="text: getMetadataForTreeListEntry( $data, 'treeConflictScore') || '??'"
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeConflictScore') || '??'"
                                   class="placeholder-data">{Conflict vs. OpenTree}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('Year of publication')">
-                            <span data-bind="text: getMetadataForTreeListEntry( $data, 'ot:studyYear') || '??'"
-                                  class="placeholder-data">{Year}</span>
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:studyYear') || '&mdash;'"
+                                  class="">{Year}</span>
                         </td>
                         <td>
                           <!-- ko if: userIsEditingCollection($parent) -->
