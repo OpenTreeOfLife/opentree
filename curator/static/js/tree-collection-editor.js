@@ -778,10 +778,48 @@ function loadSelectedCollection() {
             //                    "WARNING: This page contains unsaved changes.");
             viewModel.ticklers.TREES.subscribe(countHiddenTreeColumns);
 
+            populateTreeListWithStudyMetadata();
             hideModalScreen();
             showInfoMessage('Collection data loaded.');
         }
     });
+}
+
+function getMetadataForTreeListEntry( decision, propName ) {
+    if (!studyListForLookup) {
+        return null;  // probably renders as '??'
+    }
+    // Check for a cached property value?
+    if (decision[ propName ]) {
+        return decision[ propName ];
+    }
+    // Attempt to cache if not found
+    var matches = $.grep( studyListForLookup, function( s ) {
+        var itsID = ('ot:studyId' in s) ? s['ot:studyId'] : null;
+        return (itsID === decision.studyID);
+    });
+    if (matches.length === 0) {
+        return null;
+    }
+    var studyMetadata = matches[0];
+    var foundValue = studyMetadata[ propName ] ||  null;
+    // TODO: Allow initial always-cache behavior, to update old metadata in this collection?
+    if (foundValue) {
+        // TODO: Cache this in decision (in viewModel)? Store it, or strip it during cleanup?
+        decision[ propName ] = foundValue;
+    }
+    return foundValue;
+}
+
+function populateTreeListWithStudyMetadata() {
+    // if list is available, capture its metadata and return
+    if (studyListForLookup) {
+        // transfer tree/study properties to tree-list entries? or map them all from here?
+        //TODO: applyStudyMetadataToTreeList();
+        return true;
+    } else {
+        // TODO: Set a timer and try again?
+    }
 }
 
 /* Incorporate code changes and synthesis runs into a combined history. Making
