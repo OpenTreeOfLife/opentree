@@ -888,7 +888,8 @@ function toggleTreeListOrder( columnInfo ) {
             console.warn("Unknown column ["+ colName +"]? "+ columnSpecs.length +" instances found!");
             return;
         }
-        viewModel.listFilters.TREES.order( colName +' - '+ columnSpecs.defaultSort );
+        var col = columnSpecs[0];
+        viewModel.listFilters.TREES.order( colName +' - '+ col.defaultSort );
     }
     nudgeTickler('TREES');
 }
