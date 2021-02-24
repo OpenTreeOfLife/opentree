@@ -1951,6 +1951,10 @@ function loadStudyListForLookup() {
 
             studyListForLookup = data['matched_studies'];
             bindStudyAndTreeLookups();
+            if ('TREES' in viewModel.ticklers) {
+                // refresh tree list in collections editor
+                nudgeTickler('TREES');
+            }
         }
     });
 
