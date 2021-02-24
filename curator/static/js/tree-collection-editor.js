@@ -881,14 +881,14 @@ function toggleTreeListOrder( columnInfo ) {
         }
     } else {
         // use the new column with its default ordering
-        var columnInfo = $.grep( collectionTreeListColumns, function( s ) {
-            return (s.name == colName) || (s.shortName == colName);
+        var columnSpecs = $.grep( collectionTreeListColumns, function( c ) {
+            return (c.name == colName) || (c.shortName == colName);
         });
-        if (columnInfo.length !== 1) {
-            console.warn("Unknown column ["+ colName +"]? "+ columnInfo.length +" instances found!");
+        if (columnSpecs.length !== 1) {
+            console.warn("Unknown column ["+ colName +"]? "+ columnSpecs.length +" instances found!");
             return;
         }
-        viewModel.listFilters.TREES.order( colName +' - '+ columnInfo.defaultSort );
+        viewModel.listFilters.TREES.order( colName +' - '+ columnSpecs.defaultSort );
     }
     nudgeTickler('TREES');
 }
