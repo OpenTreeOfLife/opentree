@@ -566,10 +566,14 @@ body {
                     <tr>
                        <!-- ko foreach: collectionTreeListColumns -->
                         <th data-bind="visible: getTreeColumnVisibility($data.name),
-                                       attr: {'width': $data.colWidth || ''}">
+                                       attr: {'width': $data.colWidth || ''}
+                                       click: function () { toggleTreeListOrder($data); },
+                                       css: viewModel.ticklers.TREES">
                           <span data-bind="text: $data.shortName || $data.name,
-                                           attr: {'title': $data.name}">COLNAME</span>
-                          <i class="">^v</i>
+                                           attr: {'title': $data.name + ($data.sortable) ? ' (click to sort)' : ''}">COLNAME</span>
+                          <i class="icon-circle-arrow-up"
+                             data-bind="visible: viewModel.listFilters.TREES.order().indexOf($data +'-') === 0,
+                                        css='viewModel.listFilters.TREES.order().indexOf('ASC') === -1 ? 'icon-circle-arrow-down' : 'icon-circle-arrow-up'"></i>
                         </th>
                        <!-- /ko -->
                         <th>&nbsp;</th><!-- final tools cell, always visible -->
@@ -895,7 +899,7 @@ body {
         'TREES': {
             'match': "",
             'columns': ["Rank", "Tree name and description", "Mapped nodes"],
-            'order': "Rank (ascending)"  // ie, list position
+            'order': "Rank - ASC"  // ie, list position
         },
         'FILES': {
             'match': ""

@@ -849,6 +849,29 @@ function loadSelectedCollection() {
     });
 }
 
+function toggleTreeListOrder( colName ) {
+    var currentOrder = viewModel.listFilters.TREES.order();
+    if (currentOrder.indexOf( colName ) === 0) {
+        // switch ASC to DESC and vice versa
+        if (currentOrder.indexOf( 'DESC' ) === -1) {
+            viewModel.listFilters.TREES.order( colName +' - DESC' );
+        } else {
+            viewModel.listFilters.TREES.order( colName +' - ASC' );
+        }
+    } else {
+        // use the new column with its default ordering
+        var columnInfo = $.grep( collectionTreeListColumns, function( s ) {
+            return (s.name == colName) || (s.shortName == colName);
+        });
+        if (columnInfo.length !== 1) {
+            console.warn("Unknown column '"+ colName +"'? "+ columnInfo.length +" instances found!");
+            return;
+        }
+        viewModel.listFilters.TREES.order( colName +' - '+ columnInfo.defaultSort );
+    }
+    nudgeTickler('TREES');
+}
+
 function getMetadataForTreeListEntry( decision, propName ) {
     if (!studyListForLookup) {
         return null;  // probably renders as '??'
@@ -1991,14 +2014,14 @@ function showCollectionMetadata() {
 
 // define the available tree-list columns and their key properties
 var collectionTreeListColumns = [
-    { name: "Rank", colWidth: "76", locked: true},
-    { name: "Tree name and description", colWidth: "*", locked: true},
-    { name: "Mapped nodes" },
-    { name: "Root of ingroup" },
-    { name: "Taxonomic rank of root", shortName: "Taxo. rank" },
-    { name: "Conflict vs. latest OpenTree synthesis", shortName: "Conflict score" },
-    { name: "Focal clade of study", shortName: "Focal clade" },
-    { name: "Year of study publication", shortName: "Year" }
+    { name: "Rank", colWidth: "76", sortable: true, defaultSort: 'ASC', locked: true},
+    { name: "Tree name and description", colWidth: "*", sortable: true, defaultSort: 'ASC', locked: true},
+    { name: "Mapped nodes", sortable: true, defaultSort: 'ASC' },
+    { name: "Root of ingroup", sortable: true, defaultSort: 'ASC' },
+    { name: "Taxonomic rank of root", shortName: "Taxo. rank", sortable: true, defaultSort: 'ASC' },
+    { name: "Conflict vs. latest OpenTree synthesis", shortName: "Conflict score", sortable: true, defaultSort: 'ASC' },
+    { name: "Focal clade of study", shortName: "Focal clade", sortable: true, defaultSort: 'ASC' },
+    { name: "Year of study publication", shortName: "Year", sortable: true, defaultSort: 'DESC' }
 ];
 function countHiddenTreeColumns() {
     var hidden = 0;
