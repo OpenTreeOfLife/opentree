@@ -775,7 +775,7 @@ function loadSelectedCollection() {
                             if (aName === bName) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (aName < bName)? 1 : -1;
+                            return (aName > bName)? 1 : -1;
                         });
                         break;
 
@@ -786,7 +786,7 @@ function loadSelectedCollection() {
                             if (aName === bName) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (aName > bName)? 1 : -1;
+                            return (aName < bName)? 1 : -1;
                         });
                         break;
 
@@ -795,7 +795,7 @@ function loadSelectedCollection() {
                             if (a['ot:focalCladeOTTTaxonName'] === b['ot:focalCladeOTTTaxonName']) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (a['ot:focalCladeOTTTaxonName'] < b['ot:focalCladeOTTTaxonName'])? 1 : -1;
+                            return (a['ot:focalCladeOTTTaxonName'] > b['ot:focalCladeOTTTaxonName'])? 1 : -1;
                         });
                         break;
 
@@ -804,7 +804,7 @@ function loadSelectedCollection() {
                             if (a['ot:focalCladeOTTTaxonName'] === b['ot:focalCladeOTTTaxonName']) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (a['ot:focalCladeOTTTaxonName'] > b['ot:focalCladeOTTTaxonName'])? 1 : -1;
+                            return (a['ot:focalCladeOTTTaxonName'] < b['ot:focalCladeOTTTaxonName'])? 1 : -1;
                         });
                         break;
 
