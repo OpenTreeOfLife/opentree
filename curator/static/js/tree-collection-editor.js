@@ -748,6 +748,24 @@ function loadSelectedCollection() {
                      *   0 = no change
                      *   1 = b comes before a
                      */
+                    case 'Rank - ASC':
+                        filteredList.sort(function(a,b) {
+                            if (a.rank === a.rank) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (a.rank < a.rank)? 1 : -1;
+                        });
+                        break;
+
+                    case 'Rank - DESC':
+                        filteredList.sort(function(a,b) {
+                            if (a.rank === a.rank) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (a.rank > a.rank)? 1 : -1;
+                        });
+                        break;
+
                     case 'Most recently modified':
                         filteredList.sort(function(a,b) {
                             var aMod = $.trim(a.lastModified.ISO_date);
@@ -849,8 +867,9 @@ function loadSelectedCollection() {
     });
 }
 
-function toggleTreeListOrder( colName ) {
+function toggleTreeListOrder( columnInfo ) {
     var currentOrder = viewModel.listFilters.TREES.order();
+    var colName = columnInfo.name; // OR shortName?
     if (currentOrder.indexOf( colName ) === 0) {
         // switch ASC to DESC and vice versa
         if (currentOrder.indexOf( 'DESC' ) === -1) {
@@ -864,7 +883,7 @@ function toggleTreeListOrder( colName ) {
             return (s.name == colName) || (s.shortName == colName);
         });
         if (columnInfo.length !== 1) {
-            console.warn("Unknown column '"+ colName +"'? "+ columnInfo.length +" instances found!");
+            console.warn("Unknown column ["+ colName +"]? "+ columnInfo.length +" instances found!");
             return;
         }
         viewModel.listFilters.TREES.order( colName +' - '+ columnInfo.defaultSort );
