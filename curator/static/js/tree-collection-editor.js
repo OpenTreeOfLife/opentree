@@ -755,7 +755,7 @@ function loadSelectedCollection() {
                             if (a.rank === b.rank) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (a.rank < b.rank)? 1 : -1;
+                            return (a.rank > b.rank)? 1 : -1;
                         });
                         break;
 
@@ -764,57 +764,65 @@ function loadSelectedCollection() {
                             if (a.rank === b.rank) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (a.rank > b.rank)? 1 : -1;
+                            return (a.rank < b.rank)? 1 : -1;
                         });
                         break;
 
-                    case 'Most recently modified':
+                    case 'Tree name and description - ASC':
+                        var aName = $.trim(a.name);
+                        var bName = $.trim(b.name);
                         filteredList.sort(function(a,b) {
-                            var aMod = $.trim(a.lastModified.ISO_date);
-                            var bMod = $.trim(b.lastModified.ISO_date);
-                            if (aMod === bMod) {
-                                return maintainRelativeListPositions(a, b);
-                            }
-                            return (aMod < bMod)? 1 : -1;
-                        });
-                        break;
-
-                    case 'Most recently modified (reversed)':
-                        filteredList.sort(function(a,b) {
-                            var aMod = $.trim(a.lastModified.ISO_date);
-                            var bMod = $.trim(b.lastModified.ISO_date);
-                            if (aMod === bMod) {
-                                return maintainRelativeListPositions(a, b);
-                            }
-                            return (aMod > bMod)? 1 : -1;
-                        });
-                        break;
-
-                    case 'By owner/name':
-                        filteredList.sort(function(a,b) {
-                            // first element is the ID with user-name/collection-name
-                            // (coerce any missing/goofy values to strings)
-                            var aName = $.trim(a.id);
-                            var bName = $.trim(b.id);
                             if (aName === bName) {
-                                // N.B. this should not occur
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (aName < bName) ? -1 : 1;
+                            return (aName < bName)? 1 : -1;
                         });
                         break;
 
-                    case 'By owner/name (reversed)':
+                    case 'Tree name and description - DESC':
+                        var aName = $.trim(a.name);
+                        var bName = $.trim(b.name);
                         filteredList.sort(function(a,b) {
-                            // first element is the ID with user-name/collection-name
-                            // (coerce any missing/goofy values to strings)
-                            var aName = $.trim(a.id);
-                            var bName = $.trim(b.id);
                             if (aName === bName) {
-                                // N.B. this should not occur
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (aName > bName) ? -1 : 1;
+                            return (aName > bName)? 1 : -1;
+                        });
+                        break;
+
+                    case 'Focal clade of study - ASC':
+                        filteredList.sort(function(a,b) {
+                            if (a['ot:focalCladeOTTTaxonName'] === b['ot:focalCladeOTTTaxonName']) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (a['ot:focalCladeOTTTaxonName'] < b['ot:focalCladeOTTTaxonName'])? 1 : -1;
+                        });
+                        break;
+
+                    case 'Focal clade of study - DESC':
+                        filteredList.sort(function(a,b) {
+                            if (a['ot:focalCladeOTTTaxonName'] === b['ot:focalCladeOTTTaxonName']) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (a['ot:focalCladeOTTTaxonName'] > b['ot:focalCladeOTTTaxonName'])? 1 : -1;
+                        });
+                        break;
+
+                    case 'Year of study publication - ASC':
+                        filteredList.sort(function(a,b) {
+                            if (a['ot:studyYear'] === b['ot:studyYear']) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (a['ot:studyYear'] < b['ot:studyYear'])? 1 : -1;
+                        });
+                        break;
+
+                    case 'Year of study publication - DESC':
+                        filteredList.sort(function(a,b) {
+                            if (a['ot:studyYear'] === b['ot:studyYear']) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (a['ot:studyYear'] > b['ot:studyYear'])? 1 : -1;
                         });
                         break;
 
