@@ -720,6 +720,7 @@ function loadSelectedCollection() {
                 var match = viewModel.listFilters.TREES.match(),
                     matchWithDiacriticals = addDiacriticalVariants(match),
                     matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' );
+                var order = viewModel.listFilters.TREES.order();
 
                 var allTrees = viewModel.data.decisions;
 
@@ -739,6 +740,71 @@ function loadSelectedCollection() {
                         return true;
                     }
                 );  // END of list filtering
+
+                // apply selected sort order
+                switch(order) {
+                    /* REMINDER: in sort functions, results are as follows:
+                     *  -1 = a comes before b
+                     *   0 = no change
+                     *   1 = b comes before a
+                     */
+                    case 'Most recently modified':
+                        filteredList.sort(function(a,b) {
+                            var aMod = $.trim(a.lastModified.ISO_date);
+                            var bMod = $.trim(b.lastModified.ISO_date);
+                            if (aMod === bMod) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aMod < bMod)? 1 : -1;
+                        });
+                        break;
+
+                    case 'Most recently modified (reversed)':
+                        filteredList.sort(function(a,b) {
+                            var aMod = $.trim(a.lastModified.ISO_date);
+                            var bMod = $.trim(b.lastModified.ISO_date);
+                            if (aMod === bMod) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aMod > bMod)? 1 : -1;
+                        });
+                        break;
+
+                    case 'By owner/name':
+                        filteredList.sort(function(a,b) {
+                            // first element is the ID with user-name/collection-name
+                            // (coerce any missing/goofy values to strings)
+                            var aName = $.trim(a.id);
+                            var bName = $.trim(b.id);
+                            if (aName === bName) {
+                                // N.B. this should not occur
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aName < bName) ? -1 : 1;
+                        });
+                        break;
+
+                    case 'By owner/name (reversed)':
+                        filteredList.sort(function(a,b) {
+                            // first element is the ID with user-name/collection-name
+                            // (coerce any missing/goofy values to strings)
+                            var aName = $.trim(a.id);
+                            var bName = $.trim(b.id);
+                            if (aName === bName) {
+                                // N.B. this should not occur
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aName > bName) ? -1 : 1;
+                        });
+                        break;
+
+                    // TODO: add a filter for 'Has un-merged changes'?
+
+                    default:
+                        console.warn("Unexpected order for tree list: ["+ order +"]");
+                        return null;
+
+                }
 
                 viewModel._filteredTrees( filteredList );
                 viewModel._filteredTrees.goToPage(1);
