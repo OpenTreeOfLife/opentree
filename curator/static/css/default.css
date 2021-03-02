@@ -984,7 +984,7 @@ a.node-direct-link {
 }
 /* highlight column headers in collection editor */
 #tree-list-holder table th:hover {
-    background-color: #ccc !important;
+    background-color: #eee !important;
 }
 #tree-list-holder table th:hover i {
     opacity: 1.0 !important;

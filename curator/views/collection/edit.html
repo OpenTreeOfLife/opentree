@@ -573,7 +573,9 @@ body {
                                            attr: {'title': $data.name + ($data.sortable) ? ' (click to sort)' : ''}">COLNAME</span>
                           <i class="icon-arrow-up"
                              data-bind="style: {'opacity': viewModel.listFilters.TREES.order().indexOf($data.name +' -') === 0 ? '1.0' : '0.3'},
-                                        css: viewModel.listFilters.TREES.order().indexOf('ASC') === -1 ? 'icon-arrow-down' : 'icon-arrow-up'"></i>
+                                        css: viewModel.listFilters.TREES.order().indexOf($data.name +' -') === 0 ?
+                                              viewModel.listFilters.TREES.order().indexOf('ASC') === -1 ? 'icon-arrow-down' : 'icon-arrow-up' : 
+                                              'icon-resize-vertical'"></i>
                         </th>
                        <!-- /ko -->
                         <th>&nbsp;</th><!-- final tools cell, always visible -->
