@@ -573,7 +573,7 @@ body {
                                            attr: {'title': $data.name + ($data.sortable) ? ' (click to sort)' : ''}">COLNAME</span>
                           <i class="icon-arrow-up"
                              data-bind="style: {'opacity': viewModel.listFilters.TREES.order().indexOf($data.name +' -') === 0 ? '1.0' : '0.3'},
-                                        css: viewModel.listFilters.TREES.order().indexOf($data.name +' -') === 0 ?
+                                        css: viewModel.listFilters.TREES.order().indexOf($data.id +'-') === 0 ?
                                               viewModel.listFilters.TREES.order().indexOf('ASC') === -1 ? 'icon-arrow-down' : 'icon-arrow-up' : 
                                               'icon-resize-vertical'"></i>
                         </th>
@@ -901,7 +901,7 @@ body {
         'TREES': {
             'match': "",
             'columns': ["Rank", "Tree name and description", "Mapped nodes"],
-            'order': "Rank - ASC"  // ie, list position
+            'order': "RANK-ASC"  // ie, list position
         },
         'FILES': {
             'match': ""

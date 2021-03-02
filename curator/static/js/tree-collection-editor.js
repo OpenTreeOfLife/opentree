@@ -750,7 +750,7 @@ function loadSelectedCollection() {
                      *   0 = no change
                      *   1 = b comes before a
                      */
-                    case 'Rank - ASC':
+                    case 'RANK-ASC':
                         filteredList.sort(function(a,b) {
                             if (a.rank === b.rank) {
                                 return maintainRelativeListPositions(a, b);
@@ -759,7 +759,7 @@ function loadSelectedCollection() {
                         });
                         break;
 
-                    case 'Rank - DESC':
+                    case 'RANK-DESC':
                         filteredList.sort(function(a,b) {
                             if (a.rank === b.rank) {
                                 return maintainRelativeListPositions(a, b);
@@ -768,7 +768,7 @@ function loadSelectedCollection() {
                         });
                         break;
 
-                    case 'Tree name and description - ASC':
+                    case 'NAME-ASC':
                         filteredList.sort(function(a,b) {
                             var aName = $.trim(a.name);
                             var bName = $.trim(b.name);
@@ -779,7 +779,7 @@ function loadSelectedCollection() {
                         });
                         break;
 
-                    case 'Tree name and description - DESC':
+                    case 'NAME-DESC':
                         filteredList.sort(function(a,b) {
                             var aName = $.trim(a.name);
                             var bName = $.trim(b.name);
@@ -790,7 +790,7 @@ function loadSelectedCollection() {
                         });
                         break;
 
-                    case 'Focal clade of study - ASC':
+                    case 'CLAD-ASC':
                         filteredList.sort(function(a,b) {
                             if (a['ot:focalCladeOTTTaxonName'] === b['ot:focalCladeOTTTaxonName']) {
                                 return maintainRelativeListPositions(a, b);
@@ -799,7 +799,7 @@ function loadSelectedCollection() {
                         });
                         break;
 
-                    case 'Focal clade of study - DESC':
+                    case 'CLAD-DESC':
                         filteredList.sort(function(a,b) {
                             if (a['ot:focalCladeOTTTaxonName'] === b['ot:focalCladeOTTTaxonName']) {
                                 return maintainRelativeListPositions(a, b);
@@ -808,7 +808,7 @@ function loadSelectedCollection() {
                         });
                         break;
 
-                    case 'Year of study publication - ASC':
+                    case 'YEAR-ASC':
                         filteredList.sort(function(a,b) {
                             if (a['ot:studyYear'] === b['ot:studyYear']) {
                                 return maintainRelativeListPositions(a, b);
@@ -817,7 +817,7 @@ function loadSelectedCollection() {
                         });
                         break;
 
-                    case 'Year of study publication - DESC':
+                    case 'YEAR-DESC':
                         filteredList.sort(function(a,b) {
                             if (a['ot:studyYear'] === b['ot:studyYear']) {
                                 return maintainRelativeListPositions(a, b);
@@ -879,25 +879,25 @@ function loadSelectedCollection() {
 
 function toggleTreeListOrder( columnInfo ) {
     var currentOrder = viewModel.listFilters.TREES.order();
-    var colName = columnInfo.name; // OR shortName?
-    if (currentOrder.indexOf( colName ) === 0) {
+    var columnID = columnInfo.id;
+    if (currentOrder.indexOf( columnID ) === 0) {
         // switch ASC to DESC and vice versa
         if (currentOrder.indexOf( 'DESC' ) === -1) {
-            viewModel.listFilters.TREES.order( colName +' - DESC' );
+            viewModel.listFilters.TREES.order( columnID +'-DESC' );
         } else {
-            viewModel.listFilters.TREES.order( colName +' - ASC' );
+            viewModel.listFilters.TREES.order( columnID +'-ASC' );
         }
     } else {
         // use the new column with its default ordering
         var columnSpecs = $.grep( collectionTreeListColumns, function( c ) {
-            return (c.name == colName) || (c.shortName == colName);
+            return (c.id == columnID);
         });
         if (columnSpecs.length !== 1) {
-            console.warn("Unknown column ["+ colName +"]? "+ columnSpecs.length +" instances found!");
+            console.warn("Unknown column ["+ columnID +"]? "+ columnSpecs.length +" instances found!");
             return;
         }
         var col = columnSpecs[0];
-        viewModel.listFilters.TREES.order( colName +' - '+ col.defaultSort );
+        viewModel.listFilters.TREES.order( columnID +'-'+ col.defaultSort );
     }
     nudgeTickler('TREES');
 }
@@ -2044,30 +2044,30 @@ function showCollectionMetadata() {
 
 // define the available tree-list columns and their key properties
 var collectionTreeListColumns = [
-    { name: "Rank", colWidth: "76", sortable: true, defaultSort: 'ASC', locked: true},
-    { name: "Tree name and description", colWidth: "*", sortable: true, defaultSort: 'ASC', locked: true},
-    { name: "Mapped nodes", sortable: true, defaultSort: 'ASC' },
-    { name: "Root of ingroup", sortable: true, defaultSort: 'ASC' },
-    { name: "Taxonomic rank of root", shortName: "Taxo. rank", sortable: true, defaultSort: 'ASC' },
-    { name: "Conflict vs. latest OpenTree synthesis", shortName: "Conflict score", sortable: true, defaultSort: 'ASC' },
-    { name: "Focal clade of study", shortName: "Focal clade", sortable: true, defaultSort: 'ASC' },
-    { name: "Year of study publication", shortName: "Year", sortable: true, defaultSort: 'DESC' }
+    { id: 'RANK', name: "Rank", colWidth: "76", sortable: true, defaultSort: 'ASC', locked: true},
+    { id: 'NAME', name: "Tree name and description", colWidth: "*", sortable: true, defaultSort: 'ASC', locked: true},
+    { id: 'MAPD', name: "Mapped nodes", sortable: true, defaultSort: 'ASC' },
+    { id: 'ROOT', name: "Root of ingroup", sortable: true, defaultSort: 'ASC' },
+    { id: 'TRNK', name: "Taxonomic rank of root", shortName: "Taxo. rank", sortable: true, defaultSort: 'ASC' },
+    { id: 'CONF', name: "Conflict vs. latest OpenTree synthesis", shortName: "Conflict score", sortable: true, defaultSort: 'ASC' },
+    { id: 'CLAD', name: "Focal clade of study", shortName: "Focal clade", sortable: true, defaultSort: 'ASC' },
+    { id: 'YEAR', name: "Year of study publication", shortName: "Year", sortable: true, defaultSort: 'DESC' }
 ];
 function countHiddenTreeColumns() {
     var hidden = 0;
     // NB the canonical list of column names is actually in our markup!
     $(collectionTreeListColumns).each(function() {
-        var colName = this.name;
-        if (getTreeColumnVisibility(colName) === false) {
+        var columnID = this.id;
+        if (getTreeColumnVisibility(columnID) === false) {
             hidden++;
         }
     });
     return hidden;
 }
 
-function getTreeColumnVisibility( name ) {
+function getTreeColumnVisibility( id ) {
     var visibleColumns = viewModel.listFilters.TREES.columns();
-    var isVisible = (visibleColumns.indexOf(name) !== -1);
+    var isVisible = (visibleColumns.indexOf(columnID) !== -1);
     return isVisible;
 }
 
