@@ -144,7 +144,7 @@ body {
             <div class="control-group">
                 <a class="btn btn-info"
                    href="{{= API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID) + '.json' }}"
-                   target="_blank">Download collection as JSON <i class="icon-circle-arrow-down icon-white"></i></a>
+                   target="_blank">Download collection as JSON <i class="icon-arrow-down icon-white"></i></a>
                 <span> or you can use the
                     <strong><a href="https://github.com/OpenTreeOfLife/germinator/wiki/Open-Tree-of-Life-Web-APIs"
                        target="_blank">Open Tree API</a></strong>
@@ -571,8 +571,8 @@ body {
                                        css: viewModel.ticklers.TREES">
                           <span data-bind="text: $data.shortName || $data.name,
                                            attr: {'title': $data.name + ($data.sortable) ? ' (click to sort)' : ''}">COLNAME</span>
-                          <i class="icon-circle-arrow-up"
-                             data-bind="visible: viewModel.listFilters.TREES.order().indexOf($data.name +' -') === 0,
+                          <i class="icon-arrow-up"
+                             data-bind="style: {'opacity': viewModel.listFilters.TREES.order().indexOf($data.name +' -') === 0 ? '1.0' : '0.3'},
                                         css: viewModel.listFilters.TREES.order().indexOf('ASC') === -1 ? 'icon-circle-arrow-down' : 'icon-circle-arrow-up'"></i>
                         </th>
                        <!-- /ko -->
