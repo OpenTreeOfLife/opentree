@@ -2065,7 +2065,7 @@ function countHiddenTreeColumns() {
     return hidden;
 }
 
-function getTreeColumnVisibility( id ) {
+function getTreeColumnVisibility( columnID ) {
     var visibleColumns = viewModel.listFilters.TREES.columns();
     var isVisible = (visibleColumns.indexOf(columnID) !== -1);
     return isVisible;
