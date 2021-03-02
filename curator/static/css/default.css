@@ -987,3 +987,10 @@ a.node-direct-link {
     color: #939;
     font-style: italic;
 }
+/* highlight column headers in collection editor */
+#tree-list-holder table th:hover {
+    background-color: #ccc !important;
+}
+#tree-list-holder table th:hover i {
+    opacity: 1.0 !important;
+}
