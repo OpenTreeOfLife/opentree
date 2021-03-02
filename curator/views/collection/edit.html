@@ -424,9 +424,10 @@ body {
                         <ul id="tree-list-columns" class="dropdown-menu"
                             data-bind="foreach: collectionTreeListColumns">
                             <li data-bind="css: {'disabled': $data.locked,
-                                                 'dropdown-item-checked': getTreeColumnVisibility($data.name) }">
+                                                 'dropdown-item-checked': getTreeColumnVisibility($data.id) }">
                                 <!-- TODO: apply 'disabled' if column is NOT currently being used -->
-                                <a href="#" data-bind="text: $data.name, click: function () { if (!$data.locked) toggleTreeColumnVisibility($data.name) }">COLNAME</a>
+                                <a href="#" data-bind="text: $data.name, 
+                                                       click: function () { if (!$data.locked) toggleTreeColumnVisibility($data.id) }">COLNAME</a>
                             </li>
                         </ul>
                     </li>
@@ -571,8 +572,8 @@ body {
                                        css: viewModel.ticklers.TREES">
                           <span data-bind="text: $data.shortName || $data.name,
                                            attr: {'title': $data.name + ($data.sortable) ? ' (click to sort)' : ''}">COLNAME</span>
-                          <i class="icon-arrow-up"
-                             data-bind="style: {'opacity': viewModel.listFilters.TREES.order().indexOf($data.name +' -') === 0 ? '1.0' : '0.3'},
+                          <i class="icon-resize-vertical"
+                             data-bind="style: {'opacity': viewModel.listFilters.TREES.order().indexOf($data.id +' -') === 0 ? '1.0' : '0.3'},
                                         css: viewModel.listFilters.TREES.order().indexOf($data.id +'-') === 0 ?
                                               viewModel.listFilters.TREES.order().indexOf('ASC') === -1 ? 'icon-arrow-down' : 'icon-arrow-up' : 
                                               'icon-resize-vertical'"></i>
@@ -900,7 +901,7 @@ body {
         // track these defaults so we can reset them in history
         'TREES': {
             'match': "",
-            'columns': ["Rank", "Tree name and description", "Mapped nodes"],
+            'columns': ['RANK', 'NAME', 'MAPD', 'ROOT', 'TRNK', 'CONF', 'CLAD', 'YEAR'],
             'order': "RANK-ASC"  // ie, list position
         },
         'FILES': {
