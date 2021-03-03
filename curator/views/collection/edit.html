@@ -703,15 +703,15 @@ body {
                                              css:  viewModel.ticklers.TREES"
                                   class="placeholder-data">{Taxonomic rank}</span>
                         </td>
-                        <td data-bind="visible: getTreeColumnVisibility('CLAD')">
-                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:focalCladeOTTTaxonName') || '&mdash;',
-                                             css:  viewModel.ticklers.TREES"
-                                  class="">{Focal clade}</span>
-                        </td>
                         <td data-bind="visible: getTreeColumnVisibility('CONF')">
                             <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeConflictScore') || '??',
                                              css:  viewModel.ticklers.TREES"
                                   class="placeholder-data">{Conflict vs. OpenTree}</span>
+                        </td>
+                        <td data-bind="visible: getTreeColumnVisibility('CLAD')">
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:focalCladeOTTTaxonName') || '&mdash;',
+                                             css:  viewModel.ticklers.TREES"
+                                  class="">{Focal clade}</span>
                         </td>
                         <td data-bind="visible: getTreeColumnVisibility('YEAR')">
                             <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:studyYear') || '&mdash;',
