@@ -950,7 +950,7 @@ function getMetadataForTreeListEntry( decision, propName ) {
             foundValue = fullToCompactReference( refText ) || null;
             break;
 
-        default;
+        default:
             // all other properties should already be available
             foundValue = studyMetadata[ propName ] ||  null;
     }
