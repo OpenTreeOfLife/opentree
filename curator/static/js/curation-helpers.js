@@ -1885,6 +1885,36 @@ function copyCollection( collection ) {
     }
 }
 
+function freezeDisplayedListOrder() {
+    /* TODO: What if only a partial tree list is showing? Bump hidden trees to end, preserving relative order? */
+    if (!confirm('WARNING: This will over-write all ranks/positions previously set in this collection! Are you sure you want to do this?')) {
+        return false;
+    }
+    // sort trees (decisions) based on current position in DISPLAYED list
+    var decisionList = viewModel.data.decisions;
+    var displayedList = viewModel.filteredTrees()();  // yes, chained calls!
+    decisionList.sort(function(a,b) {
+        // N.B. This works even if there's no such property.
+        var aDisplayedPosition = displayedList.indexOf(a);
+        var bDisplayedPosition = displayedList.indexOf(b);
+        // if both are hidden (filtered out of displayed list), stand pat
+        if ((aDisplayedPosition === -1) && (bDisplayedPosition === -1)) {
+            return 0;
+        }
+        if (aDisplayedPosition === -1) {
+            return -1;
+        }
+        if (bDisplayedPosition === -1) {
+            return 1;
+        }
+        // in normal cases, sort from low to high
+        return (aDisplayedPosition > bDisplayedPosition) ? 1 : -1;
+    });
+    // update 'rank' values to match
+    resetTreeCollectionRanking( collection );
+    return false;
+}
+
 /* If user chooses to edit a collection, load the study list (just once!) and
  * bind the UI for fast lookups of a study and tree.
  */
@@ -1898,13 +1928,7 @@ function bindStudyAndTreeLookups() {
     }
 
     var $freezeTreeListOrderButton = $('#freeze-tree-list-order');
-    $freezeTreeListOrderButton.click(function() {
-        if (confirm('WARNING: This will over-write all ranks/positions previously set in this collection! Are you sure you want to do this?')) {
-            /* TODO: What if only a partial tree list is showing? */
-            // TODO
-            return false;
-        }
-    });
+    $freezeTreeListOrderButton.click(freezeDisplayedListOrder);
 
     var $newTreeStartButton = $('#new-collection-tree-start');
     $newTreeStartButton.attr('disabled', null)
