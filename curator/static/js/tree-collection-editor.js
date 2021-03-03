@@ -790,6 +790,29 @@ function loadSelectedCollection() {
                         });
                         break;
 
+                    case 'CREF-ASC':
+                        // alpha sort of visible (COMPACT) study reference text
+                        filteredList.sort(function(a,b) {
+                            var aRef = getMetadataForTreeListEntry(a, 'compactRefText');
+                            var bRef = getMetadataForTreeListEntry(b, 'compactRefText');
+                            if (aRef === bRef) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aRef > bRef)? 1 : -1;
+                        });
+                        break;
+
+                    case 'CREF-DESC':
+                        filteredList.sort(function(a,b) {
+                            var aRef = getMetadataForTreeListEntry(a, 'compactRefText');
+                            var bRef = getMetadataForTreeListEntry(b, 'compactRefText');
+                            if (aRef === bRef) {
+                                return maintainRelativeListPositions(a, b);
+                            }
+                            return (aRef < bRef)? 1 : -1;
+                        });
+                        break;
+
                     case 'CLAD-ASC':
                         filteredList.sort(function(a,b) {
                             if (a['ot:focalCladeOTTTaxonName'] === b['ot:focalCladeOTTTaxonName']) {
@@ -919,7 +942,18 @@ function getMetadataForTreeListEntry( decision, propName ) {
         return null;
     }
     var studyMetadata = matches[0];
-    var foundValue = studyMetadata[ propName ] ||  null;
+    var foundValue;
+    switch(propName) {
+        // synthesize and cache some derived properties for fast sorting later
+        case 'compactRefText':
+            var refText = getMetadataForTreeListEntry(decision, 'ot:studyPublicationReference');
+            foundValue = fullToCompactReference( refText ) || null;
+            break;
+
+        default;
+            // all other properties should already be available
+            foundValue = studyMetadata[ propName ] ||  null;
+    }
     // TODO: Allow initial always-cache behavior, to update old metadata in this collection?
     if (foundValue) {
         // TODO: Cache this in decision (in viewModel)? Store it, or strip it during cleanup?
@@ -930,7 +964,7 @@ function getMetadataForTreeListEntry( decision, propName ) {
 function getCompactReferenceLinkForTreeListEntry( decision ) {
     var pubLink = getMetadataForTreeListEntry(decision, 'ot:studyPublication');
     var refText = getMetadataForTreeListEntry(decision, 'ot:studyPublicationReference');
-    var compactRef = fullToCompactReference( refText );
+    var compactRef = getMetadataForTreeListEntry(decision, 'compactRefText');
     if (!compactRef && !pubLink) {
         return null;
     }
