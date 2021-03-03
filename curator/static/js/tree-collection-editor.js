@@ -770,8 +770,8 @@ function loadSelectedCollection() {
 
                     case 'NAME-ASC':
                         filteredList.sort(function(a,b) {
-                            var aName = $.trim(a.name);
-                            var bName = $.trim(b.name);
+                            var aName = $.trim(a.name).toLowerCase();
+                            var bName = $.trim(b.name).toLowerCase();
                             if (aName === bName) {
                                 return maintainRelativeListPositions(a, b);
                             }
@@ -781,8 +781,8 @@ function loadSelectedCollection() {
 
                     case 'NAME-DESC':
                         filteredList.sort(function(a,b) {
-                            var aName = $.trim(a.name);
-                            var bName = $.trim(b.name);
+                            var aName = $.trim(a.name).toLowerCase();
+                            var bName = $.trim(b.name).toLowerCase();
                             if (aName === bName) {
                                 return maintainRelativeListPositions(a, b);
                             }
@@ -794,9 +794,9 @@ function loadSelectedCollection() {
                         // alpha sort of visible (COMPACT) study reference text
                         filteredList.sort(function(a,b) {
                             var aRef = getMetadataForTreeListEntry(a, 'compactRefText');
-                            aRef = $.trim(aRef.toLowerCase());
+                            aRef = $.trim(aRef).toLowerCase();
                             var bRef = getMetadataForTreeListEntry(b, 'compactRefText');
-                            bRef = $.trim(bRef.toLowerCase());
+                            bRef = $.trim(bRef).toLowerCase();
                             if (aRef === bRef) {
                                 return maintainRelativeListPositions(a, b);
                             }
@@ -806,10 +806,10 @@ function loadSelectedCollection() {
 
                     case 'CREF-DESC':
                         filteredList.sort(function(a,b) {
-                            var aRef = getMetadataForTreeListEntry(a, 'compactRefText');
-                            aRef = $.trim(aRef.toLowerCase());
-                            var bRef = getMetadataForTreeListEntry(b, 'compactRefText');
-                            bRef = $.trim(bRef.toLowerCase());
+                            var aRef = getMetadataForTreeListEntry(a, 'compactRefText') || "";
+                            aRef = $.trim(aRef).toLowerCase();
+                            var bRef = getMetadataForTreeListEntry(b, 'compactRefText') || "";
+                            bRef = $.trim(bRef).toLowerCase();
                             if (aRef === bRef) {
                                 return maintainRelativeListPositions(a, b);
                             }
@@ -819,19 +819,23 @@ function loadSelectedCollection() {
 
                     case 'CLAD-ASC':
                         filteredList.sort(function(a,b) {
-                            if (a['ot:focalCladeOTTTaxonName'] === b['ot:focalCladeOTTTaxonName']) {
+                            var aClade = $.trim(a['ot:focalCladeOTTTaxonName']).toLowerCase();
+                            var bClade = $.trim(b['ot:focalCladeOTTTaxonName']).toLowerCase();
+                            if (aClade === bClade) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (a['ot:focalCladeOTTTaxonName'] > b['ot:focalCladeOTTTaxonName'])? 1 : -1;
+                            return (aClade > bClade)? 1 : -1;
                         });
                         break;
 
                     case 'CLAD-DESC':
                         filteredList.sort(function(a,b) {
-                            if (a['ot:focalCladeOTTTaxonName'] === b['ot:focalCladeOTTTaxonName']) {
+                            var aClade = $.trim(a['ot:focalCladeOTTTaxonName']).toLowerCase();
+                            var bClade = $.trim(b['ot:focalCladeOTTTaxonName']).toLowerCase();
+                            if (aClade === bClade) {
                                 return maintainRelativeListPositions(a, b);
                             }
-                            return (a['ot:focalCladeOTTTaxonName'] < b['ot:focalCladeOTTTaxonName'])? 1 : -1;
+                            return (aClade < bClade)? 1 : -1;
                         });
                         break;
 
