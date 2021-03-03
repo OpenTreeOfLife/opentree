@@ -422,7 +422,8 @@ body {
                           <b class="caret"></b>
                         </a>
                         <ul id="tree-list-columns" class="dropdown-menu"
-                            data-bind="foreach: collectionTreeListColumns">
+                            data-bind="foreach: collectionTreeListColumns,
+                                       css: viewModel.ticklers.TREES">
                             <li data-bind="css: {'disabled': $data.locked,
                                                  'dropdown-item-checked': getTreeColumnVisibility($data.id) }">
                                 <!-- TODO: apply 'disabled' if column is NOT currently being used -->
@@ -688,32 +689,38 @@ body {
                              <!-- /ko -->
                           <!-- /ko -->
                         </td>
-                        <td data-bind="visible: getTreeColumnVisibility('MAPD')">
+                        <td data-bind="visible: getTreeColumnVisibility('MAPD'),
+                                       css:  viewModel.ticklers.TREES">
                             <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeMappedNodes') || '??',
                                              css:  viewModel.ticklers.TREES"
                                   class="placeholder-data">{Mapped nodes}</span>
                         </td>
-                        <td data-bind="visible: getTreeColumnVisibility('ROOT')">
+                        <td data-bind="visible: getTreeColumnVisibility('ROOT'),
+                                       css:  viewModel.ticklers.TREES">
                             <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeIngroupRoot') || '??',
                                              css:  viewModel.ticklers.TREES"
                                   class="placeholder-data">{Root of ingroup}</span>
                         </td>
-                        <td data-bind="visible: getTreeColumnVisibility('TRNK')">
+                        <td data-bind="visible: getTreeColumnVisibility('TRNK'),
+                                       css:  viewModel.ticklers.TREES">
                             <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeIngroupTaxonomicRank') || '??',
                                              css:  viewModel.ticklers.TREES"
                                   class="placeholder-data">{Taxonomic rank}</span>
                         </td>
-                        <td data-bind="visible: getTreeColumnVisibility('CLAD')">
-                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:focalCladeOTTTaxonName') || '&mdash;',
-                                             css:  viewModel.ticklers.TREES"
-                                  class="">{Focal clade}</span>
-                        </td>
-                        <td data-bind="visible: getTreeColumnVisibility('CONF')">
+                        <td data-bind="visible: getTreeColumnVisibility('CONF'),
+                                       css:  viewModel.ticklers.TREES">
                             <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeConflictScore') || '??',
                                              css:  viewModel.ticklers.TREES"
                                   class="placeholder-data">{Conflict vs. OpenTree}</span>
                         </td>
-                        <td data-bind="visible: getTreeColumnVisibility('YEAR')">
+                        <td data-bind="visible: getTreeColumnVisibility('CLAD'),
+                                       css:  viewModel.ticklers.TREES">
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:focalCladeOTTTaxonName') || '&mdash;',
+                                             css:  viewModel.ticklers.TREES"
+                                  class="">{Focal clade}</span>
+                        </td>
+                        <td data-bind="visible: getTreeColumnVisibility('YEAR'),
+                                       css:  viewModel.ticklers.TREES">
                             <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:studyYear') || '&mdash;',
                                              css:  viewModel.ticklers.TREES"
                                   class="">{Year}</span>
