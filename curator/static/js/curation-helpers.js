@@ -1903,10 +1903,10 @@ function freezeDisplayedListOrder() {
             return 0;
         }
         if (aDisplayedPosition === -1) {
-            return -1;
+            return 1;
         }
         if (bDisplayedPosition === -1) {
-            return 1;
+            return -1;
         }
         // in normal cases, sort from low to high
         return (aDisplayedPosition > bDisplayedPosition) ? 1 : -1;
