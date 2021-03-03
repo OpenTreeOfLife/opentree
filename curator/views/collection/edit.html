@@ -54,6 +54,7 @@ body {
   <div class="tabbable tabs">
     <ul class="nav nav-tabs">
       <li><a href="#Home" data-toggle="tab">Home <span class="badge badge-important" style="display: none;">?</span></a></li>
+      <li><a href="#Synthesis" data-toggle="tab">Synthesis Tools <span class="badge badge-important" style="display: none;">?</span></a></li>
       <li><a href="#History" data-toggle="tab">History <span class="badge badge-important" style="display: none;">?</span></a></li>
       <!-- split history tabs?
       <li><a href="#Change-History" data-toggle="tab">Change History <span class="badge badge-important" style="display: none;">?</span></a></li>
@@ -116,7 +117,7 @@ body {
                   Hide <i class="icon-chevron-up Xicon-white"></i>
               </button>
               <p>
-                There are just two tabs here. The
+                There are just a few tabs here. The
                 <strong>Home</strong> tab shows metadata and lists the
                 phylogenetic trees in the current collection. There's not much
                 metadata for a collection, just a name and brief description.
@@ -136,7 +137,10 @@ body {
         {{ pass }}
               <p>
                 Click on the name of any included tree to view it in the Open
-                Tree study curation tool.
+                Tree study curation tool. Click <strong>Synthesis</strong> to submit
+                this collection to our synthesis tools or to see its status in synthesis.
+                Click <strong>History</strong> to see a combined history of
+                changes to this collection and its use in synthesis.
               </p>
             </div>
 
@@ -783,6 +787,23 @@ body {
 
           </div><!-- /.tab-pane -->
 
+          <div class="tab-pane" id="Synthesis">
+           <div class="span12"><!-- full width... -->
+
+            <button class="help-toggle" style="display: none; margin-bottom: 0px;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+              <p>
+                This tab includes <strong>tools for synthesis</strong> using this collection.
+              </p>
+            </div>
+            <h3>Synthesis tools TBD</h3>
+           </div><!-- /.span12 -->
+          </div><!-- /#Synthesis -->
 
           <div class="tab-pane" id="History">
            <div class="span12"><!-- full width... -->
