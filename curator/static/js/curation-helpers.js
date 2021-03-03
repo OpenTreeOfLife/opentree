@@ -1759,7 +1759,10 @@ function userCanReorderTrees( collection ) {
     // user must be editing
     if (!userIsEditingCollection(collection)) return false;
     // we must not be filtering out trees
-    return (viewModel._filteredTrees().length === viewModel.data.decisions.length);
+    if (viewModel._filteredTrees().length !== viewModel.data.decisions.length) return false;
+    // we must be sorting the list by Rank (ascending)
+    if (viewModel.listFilters.TREES.order() !== 'RANK-ASC') return false;
+    return true;
 }
 
 // keep track of pending tree-collection changes, for easy commit messages
