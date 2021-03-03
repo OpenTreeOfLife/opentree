@@ -690,6 +690,12 @@ body {
                              <!-- /ko -->
                           <!-- /ko -->
                         </td>
+                        <td data-bind="visible: getTreeColumnVisibility('CREF'),
+                                       css:  viewModel.ticklers.TREES">
+                            <span data-bind="html: getCompactReferenceLinkForTreeListEntry( $data ) || '??',
+                                             css:  viewModel.ticklers.TREES"
+                                  class="placeholder-data">{Study reference}</span>
+                        </td>
                         <td data-bind="visible: getTreeColumnVisibility('MAPD'),
                                        css:  viewModel.ticklers.TREES">
                             <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeMappedNodes') || '??',
@@ -909,7 +915,7 @@ body {
         // track these defaults so we can reset them in history
         'TREES': {
             'match': "",
-            'columns': ['RANK', 'NAME', 'MAPD', 'ROOT', 'TRNK', 'CONF', 'CLAD', 'YEAR'],
+            'columns': ['RANK', 'NAME', 'CREF', 'MAPD', 'ROOT', 'TRNK', 'CONF', 'CLAD', 'YEAR'],
             'order': "RANK-ASC"  // ie, list position
         },
         'FILES': {

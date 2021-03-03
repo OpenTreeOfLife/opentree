@@ -927,6 +927,22 @@ function getMetadataForTreeListEntry( decision, propName ) {
     }
     return foundValue;
 }
+function getCompactReferenceLinkForTreeListEntry( decision ) {
+    var pubLink = getMetadataForTreeListEntry(decision, 'ot:studyPublication');
+    var refText = getMetadataForTreeListEntry(decision, 'ot:studyPublicationReference');
+    var compactRef = fullToCompactReference( refText );
+    if (!compactRef && !pubLink) {
+        return null;
+    }
+    if (!pubLink) {
+        // just show short reference
+        return '<span title="'+ refText +'">'+ compactRef +'</span>';
+    }
+    if (!compactRef) {
+        compactRef = "Link to study";
+    }
+    return '<a href="'+ pubLink +'" title="'+ refText +'" target="_blank">'+ compactRef +'</a>';
+}
 
 function populateTreeListWithStudyMetadata() {
     // if list is available, capture its metadata and return
@@ -2046,6 +2062,7 @@ function showCollectionMetadata() {
 var collectionTreeListColumns = [
     { id: 'RANK', name: "Rank", colWidth: "76", sortable: true, defaultSort: 'ASC', locked: true},
     { id: 'NAME', name: "Tree name and description", colWidth: "*", sortable: true, defaultSort: 'ASC', locked: true},
+    { id: 'CREF', name: "Study reference", shortName: "Study", sortable: true, defaultSort: 'ASC'},
     { id: 'MAPD', name: "Mapped nodes", sortable: true, defaultSort: 'ASC' },
     { id: 'ROOT', name: "Root of ingroup", sortable: true, defaultSort: 'ASC' },
     { id: 'TRNK', name: "Taxonomic rank of root", shortName: "Taxo. rank", sortable: true, defaultSort: 'ASC' },
