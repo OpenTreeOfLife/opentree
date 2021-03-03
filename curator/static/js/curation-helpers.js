@@ -1891,7 +1891,8 @@ function freezeDisplayedListOrder() {
         return false;
     }
     // sort trees (decisions) based on current position in DISPLAYED list
-    var decisionList = viewModel.data.decisions;
+    var collection = viewModel;
+    var decisionList = collection.data.decisions;
     var displayedList = viewModel.filteredTrees()();  // yes, chained calls!
     decisionList.sort(function(a,b) {
         // N.B. This works even if there's no such property.
