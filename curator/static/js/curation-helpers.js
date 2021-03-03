@@ -1886,14 +1886,26 @@ function copyCollection( collection ) {
 }
 
 function freezeDisplayedListOrder() {
-    /* TODO: What if only a partial tree list is showing? Bump hidden trees to end, preserving relative order? */
-    if (!confirm('WARNING: This will over-write all ranks/positions previously set in this collection! Are you sure you want to do this?')) {
-        return false;
-    }
-    // sort trees (decisions) based on current position in DISPLAYED list
+    /* Update this collection's tree list to capture the filtered/sorted list
+     * currently shown. If only a partial tree list is showing (due to
+     * pagination or filtering), bump the "hidden" trees to the end, preserving
+     * their relative order.
+     */
     var collection = viewModel;
     var decisionList = collection.data.decisions;
-    var displayedList = viewModel.filteredTrees()();  // yes, chained calls!
+    var displayedList = viewModel.filteredTrees().pagedItems(); // in case we're paging results
+
+    // explain the consequences beforehand
+    var warning = "WARNING: This will over-write all ranks/positions previously set in this collection! ";
+    if (displayedList.length < decisionList.length) {
+        warning += "Hidden trees will be moved to the end of the list, but retain their relative positions. ";
+    }
+    warning += "Are you sure you want to do this?";
+    if (!confirm(warning)) {
+        return false;
+    }
+
+    // sort trees (decisions) based on current position in DISPLAYED list
     decisionList.sort(function(a,b) {
         // N.B. This works even if there's no such property.
         var aDisplayedPosition = displayedList.indexOf(a);
