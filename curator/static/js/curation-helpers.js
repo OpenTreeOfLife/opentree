@@ -1913,6 +1913,8 @@ function freezeDisplayedListOrder() {
     });
     // update 'rank' values to match
     resetTreeCollectionRanking( collection );
+    // refresh displayed list
+    nudgeTickler('TREES');
     return false;
 }
 
