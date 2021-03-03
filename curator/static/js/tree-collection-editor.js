@@ -794,7 +794,9 @@ function loadSelectedCollection() {
                         // alpha sort of visible (COMPACT) study reference text
                         filteredList.sort(function(a,b) {
                             var aRef = getMetadataForTreeListEntry(a, 'compactRefText');
+                            aRef = $.trim(aRef.toLowerCase());
                             var bRef = getMetadataForTreeListEntry(b, 'compactRefText');
+                            bRef = $.trim(bRef.toLowerCase());
                             if (aRef === bRef) {
                                 return maintainRelativeListPositions(a, b);
                             }
@@ -805,7 +807,9 @@ function loadSelectedCollection() {
                     case 'CREF-DESC':
                         filteredList.sort(function(a,b) {
                             var aRef = getMetadataForTreeListEntry(a, 'compactRefText');
+                            aRef = $.trim(aRef.toLowerCase());
                             var bRef = getMetadataForTreeListEntry(b, 'compactRefText');
+                            bRef = $.trim(bRef.toLowerCase());
                             if (aRef === bRef) {
                                 return maintainRelativeListPositions(a, b);
                             }
