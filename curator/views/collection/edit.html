@@ -425,7 +425,8 @@ body {
                             data-bind="foreach: collectionTreeListColumns,
                                        css: viewModel.ticklers.TREES">
                             <li data-bind="css: {'disabled': $data.locked,
-                                                 'dropdown-item-checked': getTreeColumnVisibility($data.id) }">
+                                                 'dropdown-item-checked': getTreeColumnVisibility($data.id),
+                                                 viewModel.ticklers.TREES: true}">
                                 <!-- TODO: apply 'disabled' if column is NOT currently being used -->
                                 <a href="#" data-bind="text: $data.name, 
                                                        click: function () { if (!$data.locked) toggleTreeColumnVisibility($data.id) }">COLNAME</a>
