@@ -570,9 +570,9 @@ body {
                        <!-- ko foreach: collectionTreeListColumns -->
                         <th data-bind="visible: getTreeColumnVisibility($data.id),
                                        attr: {'width': $data.colWidth || ''},
-                                       click: ($data.sortable) ? function () { toggleTreeListOrder($data); } : 'return false;',
-                                       css: { 'IGNORE-ME': viewModel.ticklers.TREES
-                                              'non-sorting': !($data.sortable)">
+                                       click: ($data.sortable) ? function () { toggleTreeListOrder($data); } : null,
+                                       css: { 'IGNORE-ME': viewModel.ticklers.TREES,
+                                              'non-sorting': !($data.sortable) }">
                           <span data-bind="text: $data.shortName || $data.name,
                                            attr: {'title': $data.name + ($data.sortable) ? ' (click to sort)' : ''}">COLNAME</span>
                           <i class=""
