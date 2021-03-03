@@ -570,12 +570,14 @@ body {
                        <!-- ko foreach: collectionTreeListColumns -->
                         <th data-bind="visible: getTreeColumnVisibility($data.id),
                                        attr: {'width': $data.colWidth || ''},
-                                       click: function () { toggleTreeListOrder($data); },
-                                       css: viewModel.ticklers.TREES">
+                                       click: ($data.sortable) ? function () { toggleTreeListOrder($data); } : 'return false;',
+                                       css: { 'IGNORE-ME': viewModel.ticklers.TREES
+                                              'non-sorting': !($data.sortable)">
                           <span data-bind="text: $data.shortName || $data.name,
                                            attr: {'title': $data.name + ($data.sortable) ? ' (click to sort)' : ''}">COLNAME</span>
                           <i class=""
-                             data-bind="style: {'opacity': viewModel.listFilters.TREES.order().indexOf($data.id +'-') === 0 ? '1.0' : '0.3'},
+                             data-bind="visible: $data.sortable,
+                                        style: {'opacity': viewModel.listFilters.TREES.order().indexOf($data.id +'-') === 0 ? '1.0' : '0.3'},
                                         css: viewModel.listFilters.TREES.order().indexOf($data.id +'-') === 0 ?
                                               viewModel.listFilters.TREES.order().indexOf('ASC') === -1 ? 'icon-arrow-down' : 'icon-arrow-up' : 
                                               'icon-resize-vertical'"></i>

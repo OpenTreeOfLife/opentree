@@ -2059,14 +2059,15 @@ function showCollectionMetadata() {
 }
 
 // define the available tree-list columns and their key properties
+// TODO: Make more of these sortable as we can provide data!
 var collectionTreeListColumns = [
     { id: 'RANK', name: "Rank", colWidth: "76", sortable: true, defaultSort: 'ASC', locked: true},
     { id: 'NAME', name: "Tree name and description", colWidth: "*", sortable: true, defaultSort: 'ASC', locked: true},
     { id: 'CREF', name: "Study reference", shortName: "Study", sortable: true, defaultSort: 'ASC'},
-    { id: 'MAPD', name: "Mapped nodes", sortable: true, defaultSort: 'ASC' },
-    { id: 'ROOT', name: "Root of ingroup", sortable: true, defaultSort: 'ASC' },
-    { id: 'TRNK', name: "Taxonomic rank of root", shortName: "Taxo. rank", sortable: true, defaultSort: 'ASC' },
-    { id: 'CONF', name: "Conflict vs. latest OpenTree synthesis", shortName: "Conflict score", sortable: true, defaultSort: 'ASC' },
+    { id: 'MAPD', name: "Mapped nodes", sortable: false, defaultSort: 'ASC' },
+    { id: 'ROOT', name: "Root of ingroup", sortable: false, defaultSort: 'ASC' },
+    { id: 'TRNK', name: "Taxonomic rank of root", shortName: "Taxo. rank", sortable: false, defaultSort: 'ASC' },
+    { id: 'CONF', name: "Conflict vs. latest OpenTree synthesis", shortName: "Conflict score", sortable: false, defaultSort: 'ASC' },
     { id: 'CLAD', name: "Focal clade of study", shortName: "Focal clade", sortable: true, defaultSort: 'ASC' },
     { id: 'YEAR', name: "Year of study publication", shortName: "Year", sortable: true, defaultSort: 'DESC' }
 ];
