@@ -631,6 +631,7 @@ function showCollectionViewer( collection, options ) {
     }
 
     var updateCollectionDisplay = function(options) {
+        console.warn('STARTING updateCollectionDisplay');
         options = options || {};
         // (re)bind widgets, esp. for adding trees
         var currentListScrollPosition = $('#tree-list-holder').scrollTop();
@@ -1935,6 +1936,7 @@ function freezeDisplayedListOrder() {
  */
 var studyListForLookup = null;
 function bindStudyAndTreeLookups() {
+    console.warn('STARTING bindStudyAndTreeLookups');
     // ASSUMES the study list is available
     if (!studyListForLookup || studyListForLookup.length === 0) {
         console.warn("Study list not found (or empty):");
@@ -1962,6 +1964,7 @@ function bindStudyAndTreeLookups() {
                        .removeClass('btn-info-disabled');
 }
 function loadStudyListForLookup() {
+    console.warn('STARTING loadStudyListForLookup');
     // if list is available, bind UI and return
     if (studyListForLookup) {
         bindStudyAndTreeLookups();
