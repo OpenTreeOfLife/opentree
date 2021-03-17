@@ -1050,19 +1050,6 @@ function loadSelectedStudy() {
                 });
             });
 
-            /* apparently not needed, since subscribers only hear about proper changes
-            function updateList( displayListID, propName, newValue ) {
-                var observableProperty = viewModel.listFilters[ displayListID ][ propName ];
-                var oldValue = observableProperty();
-                console.log(" > updating "+ displayListID +"."+ propName +" from "+ oldValue+" to "+ newValue);
-                // DON'T reset pagination unless value is actually changing
-                if (oldValue !== newValue) {
-                    console.log(" >>> resetting pagination!");
-                    resetPagination( displayListID );
-                }
-                observableProperty(newValue);
-            }
-            */
             function resetPagination( displayListID ) {
                 // list filter or sorting has changed; return to page 1!
                 switch( displayListID ) {
