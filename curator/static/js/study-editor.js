@@ -1102,10 +1102,18 @@ function loadSelectedStudy() {
                     'filter': ko.observable( listFilterDefaults.COLLECTIONS.filter )
                 }
             };
-            viewModel.listFilters.OTUS.order.subscribe(function(newValue) {
-                console.warn("listFilters.OTUS.order, NEW VALUE: "+ newValue);
+            // any change to these list filters should reset pagination for the current display list
+            $.each(viewModel.listFilters, function(key, filters) {
+                var displayListID = key;  // which list just changed?
+                $.each(filters, function( filter ) {
+                    filter.subscribe(function(newValue) {
+                        // ignore value, just reset pagination (back to page 1)
+                        resetPagination( displayListID );
+                    });
+                });
             });
 
+            /* apparently not needed, since subscribers only hear about proper changes
             function updateList( displayListID, propName, newValue ) {
                 var observableProperty = viewModel.listFilters[ displayListID ][ propName ];
                 var oldValue = observableProperty();
@@ -1117,6 +1125,7 @@ function loadSelectedStudy() {
                 }
                 observableProperty(newValue);
             }
+            */
             function resetPagination( displayListID ) {
                 // list filter or sorting has changed; return to page 1!
                 switch( displayListID ) {
