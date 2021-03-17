@@ -557,14 +557,14 @@ body {
                              class="icon-chevron-down">
                           </a>
 
-                           <div data-bind="visible: $data['status'] == 'REMOVED',
-                                           css: viewModel.ticklers.TREES"
-                                class="tree-status-marker text-error">REMOVED</div>
-                           <div data-bind="visible: $data['status'] == 'RENAMED',
-                                           css: viewModel.ticklers.TREES"
-                                class="tree-status-marker text-warning">RENAMED</div>
-
                         <!-- /ko --><!-- END of re-ordering widgets -->
+
+                        <div data-bind="visible: $data['status'] == 'REMOVED',
+                                        css: viewModel.ticklers.TREES"
+                             class="tree-status-marker text-error">REMOVED</div>
+                        <div data-bind="visible: $data['status'] == 'RENAMED',
+                                        css: viewModel.ticklers.TREES"
+                             class="tree-status-marker text-warning">RENAMED</div>
 
                         <!-- ko if: !userIsEditingCollection($parent) -->
                         <div data-bind="text: $data['rank']"

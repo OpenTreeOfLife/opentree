@@ -1306,6 +1306,7 @@ function updateCollectionTrees ( collection ) {
                 // Have we successfully checked all trees? If so, summarize changes found and prompt to re-save.
                 if (treesUnchanged + treesChanged + treesRemoved === totalTrees) {
                     showCollectionViewer( collection, {MAINTAIN_SCROLL: true});
+                    nudgeTickler('TREES');  // update the list to show markers and new names
                     hideModalScreen();
                     if (treesUnchanged === totalTrees) {
                         showSuccessMessage('There were no recent changes to the trees in this list. '
