@@ -646,6 +646,8 @@ function showCollectionViewer( collection, options ) {
         var $newTreeCancelButton = $('#new-collection-tree-cancel');
         var $newTreeOptionsPanels = $('.new-collection-tree-options');
         var $newTreeByURLButton = $('#new-collection-tree-by-url');
+        $newTreeStartButton.attr('disabled', null)
+                           .removeClass('btn-info-disabled');
         $newTreeCancelButton.hide();
         $newTreeOptionsPanels.hide();
         $newTreeStartButton.unbind('click').click(function() {
