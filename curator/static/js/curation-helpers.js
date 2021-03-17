@@ -1947,7 +1947,7 @@ function bindStudyAndTreeLookups() {
     }
 
     var $freezeTreeListOrderButton = $('#freeze-tree-list-order');
-    $freezeTreeListOrderButton.click(freezeDisplayedListOrder);
+    $freezeTreeListOrderButton.unbind('click').click(freezeDisplayedListOrder);
 
     var $newTreeStartButton = $('#new-collection-tree-start');
     $newTreeStartButton.attr('disabled', null)
