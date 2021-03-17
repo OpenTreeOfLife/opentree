@@ -1103,10 +1103,9 @@ function loadSelectedStudy() {
                 }
             };
             // any change to these list filters should reset pagination for the current display list
-            $.each(viewModel.listFilters, function(key, filters) {
-                var displayListID = key;  // which list just changed?
-                $.each(filters, function( filter ) {
-                    filter.subscribe(function(newValue) {
+            $.each(viewModel.listFilters, function(displayListID, itsFilters) {
+                $.each(itsFilters, function(filterName, filterObservable) {
+                    filterObservable.subscribe(function(newValue) {
                         // ignore value, just reset pagination (back to page 1)
                         resetPagination( displayListID );
                     });
