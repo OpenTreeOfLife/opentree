@@ -392,6 +392,13 @@ body {
                       onclick="return false;">
                     Freeze list order shown below
               </button>
+              <button data-bind="click: updateCollectionTrees,
+                                 visible: userIsEditingCollection($data)"
+                      title="Use latest tree labels, detect removed trees"
+                      class="pull-right btn info-btn"
+                      style="margin-left: 4px;">
+                      Update trees <i class="icon-refresh"></i>
+              </button>
               <button id="new-collection-tree-start" type="submit"
                       class="btn btn-info Xbtn-info-disabled"
                       onclick="return false;"

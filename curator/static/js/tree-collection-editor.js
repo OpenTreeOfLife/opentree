@@ -1116,12 +1116,16 @@ function validateFormData() {
     // Return success (t/f?), and handle errors one at a time
     // or use more typical jQuery machinery, or validation plugin?
     // check for a study year (non-empty integer)
+
+    /* What's mandator for a tree collection?
     var studyYear = Number(viewModel.nexml["^ot:studyYear"]);
     if (isNaN(studyYear) || studyYear === 0) {
         showErrorMessage("Please enter an non-zero integer for the Study Year (in Home tab's metadata editor).");
         return false;
     }
+    */
     // TODO: Add other validation logic to match changes on the server side.
+
     // return true IF no errors were found!
     return true;
 }
