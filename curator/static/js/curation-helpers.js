@@ -631,7 +631,6 @@ function showCollectionViewer( collection, options ) {
     }
 
     var updateCollectionDisplay = function(options) {
-        console.warn('STARTING updateCollectionDisplay');
         options = options || {};
         // (re)bind widgets, esp. for adding trees
         var currentListScrollPosition = $('#tree-list-holder').scrollTop();
@@ -649,9 +648,7 @@ function showCollectionViewer( collection, options ) {
         var $newTreeByURLButton = $('#new-collection-tree-by-url');
         $newTreeCancelButton.hide();
         $newTreeOptionsPanels.hide();
-        $newTreeStartButton.click(function() {
-            $newTreeStartButton.attr('disabled', 'disabled')
-                               .addClass('btn-info-disabled');
+        $newTreeStartButton.unbind('click').click(function() {
             $newTreeCancelButton.show();
             $newTreeOptionsPanels.show();
             // clear all input fields and disable buttons
@@ -659,12 +656,17 @@ function showCollectionViewer( collection, options ) {
             $newTreeByURLButton.attr('disabled', 'disabled')
                 .addClass('btn-info-disabled');
             updateNewCollTreeUI();
+
+            // disable the Add Tree button until they finish or cancel
+            $newTreeStartButton.attr('disabled', 'disabled')
+                               .addClass('btn-info-disabled');
             if (collectionUI === 'POPUP') updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
+
             // (re)bind study and tree lookups
             loadStudyListForLookup();
             return false;
         });
-        $newTreeCancelButton.click(function() {
+        $newTreeCancelButton.unbind('click').click(function() {
             $newTreeStartButton.attr('disabled', null)
                                .removeClass('btn-info-disabled');
             $newTreeCancelButton.hide();
