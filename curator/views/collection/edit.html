@@ -249,13 +249,6 @@ body {
                             style="margin-left: 4px;">
                             Save Changes
                         </button>
-                        <button data-bind="click: updateCollectionTrees,
-                                           visible: userIsEditingCollection($data)"
-                            title="Use latest tree labels, detect removed trees"
-                            class="pull-right btn btn-mini row-controls-ghosted"
-                            style="margin-left: 4px;">
-                            Update trees <i class="icon-refresh"></i>
-                        </button>
                         -->
 
                        </div>
@@ -396,7 +389,7 @@ body {
                                  visible: userIsEditingCollection($data)"
                       title="Use latest tree labels, detect removed trees"
                       class="pull-right btn info-btn"
-                      style="margin-left: 4px;">
+                      style="margin-left: 4px; margin-right: 12px;">
                       Update trees <i class="icon-refresh"></i>
               </button>
               <button id="new-collection-tree-start" type="submit"
@@ -516,7 +509,8 @@ body {
                                                     (userIsEditingCollection($parent) && $data['status'] == 'RENAMED' ?
                                                       'single-tree-row warning' :
                                                       'single-tree-row-'+ $data['status'] )
-                                          }">
+                                          },
+                                   css: viewModel.ticklers.TREES">
                         <td style="white-space: nowrap;" data-bind="visible: getTreeColumnVisibility('RANK')">
                         <!-- ko if: userIsEditingCollection($parent) -->
                           <input type="text"
@@ -563,12 +557,12 @@ body {
                              class="icon-chevron-down">
                           </a>
 
-                         <!-- ko if: $data['status'] == 'REMOVED' && viewModel.ticklers.TREES() -->
-                           <div class="tree-status-marker text-error">REMOVED</div>
-                         <!-- /ko -->
-                         <!-- ko if: $data['status'] == 'RENAMED' && viewModel.ticklers.TREES() -->
-                           <div class="tree-status-marker text-warning">RENAMED</div>
-                         <!-- /ko -->
+                           <div data-bind="visible: $data['status'] == 'REMOVED',
+                                           css: viewModel.ticklers.TREES"
+                                class="tree-status-marker text-error">REMOVED</div>
+                           <div data-bind="visible: $data['status'] == 'RENAMED',
+                                           css: viewModel.ticklers.TREES"
+                                class="tree-status-marker text-warning">RENAMED</div>
 
                         <!-- /ko --><!-- END of re-ordering widgets -->
 
