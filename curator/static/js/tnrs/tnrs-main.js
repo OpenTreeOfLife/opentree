@@ -1847,6 +1847,14 @@ function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
             'order': ko.observable( listFilterDefaults.NAMES.order )
         }
     };
+    // any change to these list filters should reset pagination for the current display list
+    // NB this is a streamlined version of the more general fix in study-editor.js!
+    $.each(viewModel.listFilters.NAMES, function(filterName, filterObservable) {
+        filterObservable.subscribe(function(newValue) {
+            // ignore value, just reset pagination (back to page 1)
+            viewModel._filteredOTUs.goToPage(1);
+        });
+    });
  
     // maintain a persistent array to preserve pagination (reset when computed)
     viewModel._filteredNames = ko.observableArray( ).asPaged(500);
@@ -1991,7 +1999,6 @@ function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
         lastClickedTogglePosition = null;
 
         viewModel._filteredNames( filteredList );
-        viewModel._filteredNames.goToPage(1);
         return viewModel._filteredNames;
     }).extend({ throttle: viewModel.filterDelay }); // END of filteredNames
 
