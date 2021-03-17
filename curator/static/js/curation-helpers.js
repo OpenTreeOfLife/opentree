@@ -656,14 +656,12 @@ function showCollectionViewer( collection, options ) {
             $newTreeByURLButton.attr('disabled', 'disabled')
                 .addClass('btn-info-disabled');
             updateNewCollTreeUI();
-
+            // (re)bind study and tree lookups
+            loadStudyListForLookup();
             // disable the Add Tree button until they finish or cancel
             $newTreeStartButton.attr('disabled', 'disabled')
                                .addClass('btn-info-disabled');
             if (collectionUI === 'POPUP') updateCollectionEditorHeight({MAINTAIN_SCROLL: true});
-
-            // (re)bind study and tree lookups
-            loadStudyListForLookup();
             return false;
         });
         $newTreeCancelButton.unbind('click').click(function() {
