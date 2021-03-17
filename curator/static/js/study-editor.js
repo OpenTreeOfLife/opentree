@@ -1040,6 +1040,41 @@ function loadSelectedStudy() {
                     'filter': ko.observable( listFilterDefaults.COLLECTIONS.filter )
                 }
             };
+            viewModel.listFilters.OTUS.order.subscribe(function(newValue) {
+                console.warn("listFilters.OTUS.order, NEW VALUE: "+ newValue);
+            });
+
+            function updateList( displayListID, propName, newValue ) {
+                var observableProperty = viewModel.listFilters[ displayListID ][ propName ];
+                var oldValue = observableProperty();
+                console.log(" > updating "+ displayListID +"."+ propName +" from "+ oldValue+" to "+ newValue);
+                // DON'T reset pagination unless value is actually changing
+                if (oldValue !== newValue) {
+                    console.log(" >>> resetting pagination!");
+                    resetPagination( displayListID );
+                }
+                observableProperty(newValue);
+            }
+            function resetPagination( displayListID ) {
+                // list filter or sorting has changed; return to page 1!
+                switch( displayListID ) {
+                    'TREES':
+                        viewModel._filteredOTUs.goToPage(1);
+                        break;
+                    'FILES':
+                        viewModel._filteredOTUs.goToPage(1);
+                        break;
+                    'OTUS':
+                        viewModel._filteredOTUs.goToPage(1);
+                        break;
+                    'ANNOTATIONS':
+                        viewModel._filteredAnnotations.goToPage(1);
+                        break;
+                    'COLLECTIONS':
+                        viewModel._filteredAnnotations.goToPage(1);
+                        break;
+                }
+            }
 
             // maintain a persistent array to preserve pagination (reset when computed)
             viewModel._filteredTrees = ko.observableArray( ).asPaged(20);
@@ -1332,7 +1367,7 @@ function loadSelectedStudy() {
                 lastClickedTogglePosition = null;
 
                 viewModel._filteredOTUs( filteredList );
-                viewModel._filteredOTUs.goToPage(1);
+                //viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredOTUs
 
