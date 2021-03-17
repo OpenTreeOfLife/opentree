@@ -680,7 +680,7 @@ function showCollectionViewer( collection, options ) {
         }
     }
 
-    if (collectionPopupIsInUse) {
+    if ((collectionUI === 'FULL_PAGE') || collectionPopupIsInUse) {
         // trigger its 'shown' event to update the UI
         updateCollectionDisplay(options);
     } else {
@@ -1936,7 +1936,7 @@ function freezeDisplayedListOrder() {
  */
 var studyListForLookup = null;
 function bindStudyAndTreeLookups() {
-    console.warn('STARTING bindStudyAndTreeLookups');
+    ///console.warn('STARTING bindStudyAndTreeLookups');
     // ASSUMES the study list is available
     if (!studyListForLookup || studyListForLookup.length === 0) {
         console.warn("Study list not found (or empty):");
@@ -1964,7 +1964,7 @@ function bindStudyAndTreeLookups() {
                        .removeClass('btn-info-disabled');
 }
 function loadStudyListForLookup() {
-    console.warn('STARTING loadStudyListForLookup');
+    ///console.warn('STARTING loadStudyListForLookup');
     // if list is available, bind UI and return
     if (studyListForLookup) {
         bindStudyAndTreeLookups();
