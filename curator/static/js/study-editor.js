@@ -1120,20 +1120,20 @@ function loadSelectedStudy() {
             function resetPagination( displayListID ) {
                 // list filter or sorting has changed; return to page 1!
                 switch( displayListID ) {
-                    'TREES':
+                    case 'TREES':
+                        viewModel._filteredTrees.goToPage(1);
+                        break;
+                    case 'FILES':
+                        viewModel._filteredFiles.goToPage(1);
+                        break;
+                    case 'OTUS':
                         viewModel._filteredOTUs.goToPage(1);
                         break;
-                    'FILES':
-                        viewModel._filteredOTUs.goToPage(1);
-                        break;
-                    'OTUS':
-                        viewModel._filteredOTUs.goToPage(1);
-                        break;
-                    'ANNOTATIONS':
+                    case 'ANNOTATIONS':
                         viewModel._filteredAnnotations.goToPage(1);
                         break;
-                    'COLLECTIONS':
-                        viewModel._filteredAnnotations.goToPage(1);
+                    case 'COLLECTIONS':
+                        viewModel._filteredCollections.goToPage(1);
                         break;
                 }
             }
