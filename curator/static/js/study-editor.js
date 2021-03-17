@@ -1112,19 +1112,6 @@ function loadSelectedStudy() {
                 });
             });
 
-            /* apparently not needed, since subscribers only hear about proper changes
-            function updateList( displayListID, propName, newValue ) {
-                var observableProperty = viewModel.listFilters[ displayListID ][ propName ];
-                var oldValue = observableProperty();
-                console.log(" > updating "+ displayListID +"."+ propName +" from "+ oldValue+" to "+ newValue);
-                // DON'T reset pagination unless value is actually changing
-                if (oldValue !== newValue) {
-                    console.log(" >>> resetting pagination!");
-                    resetPagination( displayListID );
-                }
-                observableProperty(newValue);
-            }
-            */
             function resetPagination( displayListID ) {
                 // list filter or sorting has changed; return to page 1!
                 switch( displayListID ) {
@@ -1184,7 +1171,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredTrees( filteredList );
-                viewModel._filteredTrees.goToPage(1);
                 return viewModel._filteredTrees;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredTrees
 
@@ -1225,7 +1211,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredFiles( filteredList );
-                viewModel._filteredFiles.goToPage(1);
                 return viewModel._filteredFiles;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredFiles
 
@@ -1441,7 +1426,6 @@ function loadSelectedStudy() {
                 lastClickedTogglePosition = null;
 
                 viewModel._filteredOTUs( filteredList );
-                //viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredOTUs
 
@@ -1513,7 +1497,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredAnnotations( filteredList );
-                viewModel._filteredAnnotations.goToPage(1);
                 return viewModel._filteredAnnotations;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredAnnotations
 
@@ -9914,7 +9897,6 @@ function loadCollectionList(option) {
 
                 }
                 viewModel._filteredCollections( filteredList );
-                //viewModel._filteredCollections.goToPage(1);
                 return viewModel._filteredCollections;
             }); // END of filteredCollections
             nudgeTickler('COLLECTIONS_LIST');
