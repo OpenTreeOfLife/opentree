@@ -1309,7 +1309,7 @@ function updateCollectionTrees ( collection ) {
 
                     // clear list filters to show all changes!
                     $('#tree-list-filter').val('').trigger('change');
-                    //nudgeTickler('TREES');  // update the list to show markers and new names
+                    nudgeTickler('TREES');  // just in case filter was already empty
 
                     hideModalScreen();
                     if (treesUnchanged === totalTrees) {
