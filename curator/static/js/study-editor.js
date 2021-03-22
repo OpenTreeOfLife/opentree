@@ -1040,6 +1040,36 @@ function loadSelectedStudy() {
                     'filter': ko.observable( listFilterDefaults.COLLECTIONS.filter )
                 }
             };
+            // any change to these list filters should reset pagination for the current display list
+            $.each(viewModel.listFilters, function(displayListID, itsFilters) {
+                $.each(itsFilters, function(filterName, filterObservable) {
+                    filterObservable.subscribe(function(newValue) {
+                        // ignore value, just reset pagination (back to page 1)
+                        resetPagination( displayListID );
+                    });
+                });
+            });
+
+            function resetPagination( displayListID ) {
+                // list filter or sorting has changed; return to page 1!
+                switch( displayListID ) {
+                    case 'TREES':
+                        viewModel._filteredTrees.goToPage(1);
+                        break;
+                    case 'FILES':
+                        viewModel._filteredFiles.goToPage(1);
+                        break;
+                    case 'OTUS':
+                        viewModel._filteredOTUs.goToPage(1);
+                        break;
+                    case 'ANNOTATIONS':
+                        viewModel._filteredAnnotations.goToPage(1);
+                        break;
+                    case 'COLLECTIONS':
+                        viewModel._filteredCollections.goToPage(1);
+                        break;
+                }
+            }
 
             // maintain a persistent array to preserve pagination (reset when computed)
             viewModel._filteredTrees = ko.observableArray( ).asPaged(20);
@@ -1079,7 +1109,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredTrees( filteredList );
-                viewModel._filteredTrees.goToPage(1);
                 return viewModel._filteredTrees;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredTrees
 
@@ -1120,7 +1149,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredFiles( filteredList );
-                viewModel._filteredFiles.goToPage(1);
                 return viewModel._filteredFiles;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredFiles
 
@@ -1332,7 +1360,6 @@ function loadSelectedStudy() {
                 lastClickedTogglePosition = null;
 
                 viewModel._filteredOTUs( filteredList );
-                viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredOTUs
 
@@ -1404,7 +1431,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredAnnotations( filteredList );
-                viewModel._filteredAnnotations.goToPage(1);
                 return viewModel._filteredAnnotations;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredAnnotations
 
@@ -9588,7 +9614,6 @@ function loadCollectionList(option) {
 
                 }
                 viewModel._filteredCollections( filteredList );
-                //viewModel._filteredCollections.goToPage(1);
                 return viewModel._filteredCollections;
             }); // END of filteredCollections
             nudgeTickler('COLLECTIONS_LIST');
