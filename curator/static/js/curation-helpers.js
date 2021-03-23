@@ -1309,7 +1309,7 @@ function updateCollectionTrees ( collection ) {
 
                     // clear list filters to show all changes!
                     $('#tree-list-filter').val('').trigger('change');
-                    nudgeTickler('TREES');  // just in case filter was already empty
+                    nudgeTickler('TREES', {modelHasChanged: false});  // just in case filter was already empty
 
                     hideModalScreen();
                     if (treesUnchanged === totalTrees) {
@@ -1484,6 +1484,7 @@ function addTreeToCollection( collection, inputType ) {
                             nudgeTickler('TREES');  // force display refresh
                             showCollectionViewer( collection );  // to refresh the list
                         } else {
+                            nudgeTickler('COLLECTION_HAS_CHANGED');
                             showCollectionViewer( collection, {SCROLL_TO_BOTTOM: true} );  // to refresh the list
                         }
                         showSuccessMessage('Tree found and added to this collection.');
@@ -2005,7 +2006,7 @@ function loadStudyListForLookup() {
             bindStudyAndTreeLookups();
             if ('TREES' in viewModel.ticklers) {
                 // refresh tree list in collections editor
-                nudgeTickler('TREES');
+                nudgeTickler('TREES', {modelHasChanged: false});
             }
         }
     });
