@@ -673,6 +673,12 @@ function loadSelectedCollection() {
                 buildCombinedCollectionHistory( response['versionHistory'], response['synthHistory'] )
             ).asPaged(20);
 
+            /*
+             * Wrap a few properties in the model so we can detect changes
+             */
+            viewModel['name'] = ko.observable(viewModel['name']);
+            viewModel['description'] = ko.observable(viewModel['description']);
+            //viewModel['description'].subscribe('');
 
             /*
              * Add observable properties to the model to support the UI
@@ -1200,6 +1206,10 @@ function scrubJsonForTransport( collection ) {
         delete nexml['^ot:focalClade'];
     }
     */
+
+    // unwrap any other observable properties
+    viewModel['name'] = ko.unwrap(viewModel['name']);
+    viewModel['description'] = ko.unwrap(viewModel['description']);
 }
 
 function saveFormDataToCollectionJSON() {
