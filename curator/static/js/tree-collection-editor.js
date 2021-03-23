@@ -1294,7 +1294,7 @@ function saveFormDataToCollectionJSON() {
 }
 
 function disableSaveButton() {
-    var $btn = $('#save-study-button');
+    var $btn = $('#save-collection-button');
     $btn.addClass('disabled');
     $btn.unbind('click').click(function(evt) {
         showErrorMessage('There are no unsaved changes.');
