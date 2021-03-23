@@ -930,7 +930,7 @@ function toggleTreeListOrder( columnInfo ) {
         var col = columnSpecs[0];
         viewModel.listFilters.TREES.order( columnID +'-'+ col.defaultSort );
     }
-    nudgeTickler('TREES');
+    nudgeTickler('TREES', {modelHasChanged: false});
 }
 
 function getMetadataForTreeListEntry( decision, propName ) {
@@ -1784,7 +1784,9 @@ var nudge = {
         return true;
     }
 }
-function nudgeTickler( name ) {
+function nudgeTickler( name, options ) {
+    options = options || {modelHasChanged: true};
+    // allows override for display-only nudges
     if (name === 'ALL') {
         for (var aName in viewModel.ticklers) {
             nudgeTickler( aName );
@@ -1801,7 +1803,9 @@ function nudgeTickler( name ) {
     tickler( oldValue + 1 );
 
     // nudge the main 'dirty flag' tickler
-    viewModel.ticklers.COLLECTION_HAS_CHANGED( viewModel.ticklers.COLLECTION_HAS_CHANGED.peek() + 1 );
+    if (options.modelHasChanged) {
+        viewModel.ticklers.COLLECTION_HAS_CHANGED( viewModel.ticklers.COLLECTION_HAS_CHANGED.peek() + 1 );
+    }
 }
 
 function getFastLookup( lookupName ) {
@@ -2044,13 +2048,13 @@ function updateCollectionRenderedComment() {
         // success callback
         function( data, textstatus, jqxhr ) {
             viewModel['commentHTML'] = data;
-            nudgeTickler('GENERAL_METADATA');
+            nudgeTickler('GENERAL_METADATA', {modelHasChanged: false});
         },
         // failure callback (just show raw markdown)
         function(jqXHR, textStatus, errorThrown) {
             // report errors or malformed data, if any
             viewModel['commentHTML'] = viewModel['description'];
-            nudgeTickler('GENERAL_METADATA');
+            nudgeTickler('GENERAL_METADATA', {modelHasChanged: false});
         }
     );
 }
@@ -2099,7 +2103,7 @@ function showCollectionMetadata() {
     // show details in a popup (already bound)
     $('#collection-metadata-popup').off('hidden').on('hidden', function () {
         updateCollectionRenderedComment();
-        nudgeTickler('GENERAL_METADATA');
+        nudgeTickler('GENERAL_METADATA', {modelHasChanged: false});
     });
     $('#collection-metadata-popup').modal('show');
 }
@@ -2146,7 +2150,7 @@ function toggleTreeColumnVisibility( name ) {
         // show it
         visibleColumns.push(name);
     }
-    nudgeTickler('TREES');
+    nudgeTickler('TREES', {modelHasChanged: false});
 }
 
 
