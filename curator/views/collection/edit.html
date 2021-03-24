@@ -67,7 +67,7 @@ body {
         {{# TODO: revisit these buttons }}
           <button id="save-collection-button" class="btn">Save Collection</button>
           <input type="hidden" id="return-to-collection-list"
-                 value="{{= URL(a='curator', c='collection')}}">
+                 value="{{= URL(a='curator', c='collection', f='index')}}">
           <a id="cancel-collection-edits" class="btn btn-link" href="#">Cancel</a>
           <button class="btn btn-danger pull-right"
             onclick="promptForDeleteComments(); return false;">Delete Collection</button>
