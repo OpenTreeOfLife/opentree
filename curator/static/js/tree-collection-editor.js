@@ -1174,10 +1174,12 @@ function scrubJsonForTransport( collection ) {
      *   - remove "empty" elements if server doesn't expect them
      *   - clean up empty/unused OTU alt-labels
      *   - remove client-side MRCA test results
+     *
+     * NB - Unlike the equivalent function for studies, this makes the data
+     * unsuitable for continued editing, so we will copy the collection to a 
+     * "flat" JS tree and strip unwanted properties. We then return the copy.
      */
-    if (!collection) {
-        collection = viewModel;
-    }
+    collection = ko.toJS(collection);       // now we have a flattened copy
 
     // remove explicit ranking values (rely on array order)
     stripTreeCollectionRanking( collection );
@@ -1213,10 +1215,6 @@ function scrubJsonForTransport( collection ) {
         delete nexml['^ot:focalClade'];
     }
     */
-
-    // unwrap any other observable properties
-    viewModel.data['name'] = ko.unwrap(viewModel.data['name']);
-    viewModel.data['description'] = ko.unwrap(viewModel.data['description']);
 }
 
 function saveFormDataToCollectionJSON() {
@@ -1255,7 +1253,7 @@ function saveFormDataToCollectionJSON() {
     }
     */
 
-    scrubJsonForTransport();
+    var flattenedCollection = scrubJsonForTransport( viewModel );
 
     $.ajax({
         global: false,  // suppress web2py's aggressive error handling
@@ -1265,7 +1263,7 @@ function saveFormDataToCollectionJSON() {
         contentType: "application/json; charset=utf-8",
         url: saveURL,
         processData: false,
-        data: (JSON.stringify( viewModel.data )),  // the "core" collection document
+        data: (JSON.stringify( flattenedCollection.data )),  // the "core" collection document
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
@@ -1289,8 +1287,11 @@ function saveFormDataToCollectionJSON() {
             viewModel.startingCommitSHA = putResponse['sha'] || viewModel.startingCommitSHA;
             // update the History tab to show the latest commit
             if ('versionHistory' in putResponse) {
-                // TODO: incorporate new code versions into our combined history
-                viewModel.history(putResponse['versionHistory'] || [ ]);
+                viewModel.versionHistory = putResponse['versionHistory'] || [ ];
+                // combine existing synth history and interleave these events by date
+                viewModel.history = ko.observableArray(
+                    buildCombinedCollectionHistory( viewModel['versionHistory'], viewModel['synthHistory'] )
+                ).asPaged(20);
             }
             if (putResponse['merge_needed']) {
                 var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Study merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
@@ -1305,7 +1306,6 @@ function saveFormDataToCollectionJSON() {
             popPageExitWarning('UNSAVED_COLLECTION_CHANGES');
             collectionHasUnsavedChanges = false;
             disableSaveButton();
-            // TODO: should we expect fresh JSON to refresh the form?
         }
     });
 }
