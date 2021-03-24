@@ -1215,6 +1215,8 @@ function scrubJsonForTransport( collection ) {
         delete nexml['^ot:focalClade'];
     }
     */
+
+    return collection;
 }
 
 function saveFormDataToCollectionJSON() {
