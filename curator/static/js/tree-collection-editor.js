@@ -699,9 +699,9 @@ function loadSelectedCollection() {
              * Wrap a few properties in the model so we can detect changes
              */
             viewModel.data['name'] = ko.observable(viewModel.data['name']);
-            viewModel.data['name'].subscribe(viewModel.ticklers.COLLECTION_HAS_CHANGED);
+            viewModel.data['name'].subscribe(viewModel.ticklers.GENERAL_METADATA);
             viewModel.data['description'] = ko.observable(viewModel.data['description']);
-            viewModel.data['description'].subscribe(viewModel.ticklers.COLLECTION_HAS_CHANGED);
+            viewModel.data['description'].subscribe(viewModel.ticklers.GENERAL_METADATA);
 
             // TODO: support fast lookup of elements by ID? for largest trees
             viewModel.fastLookups = {
@@ -1518,7 +1518,7 @@ function valueFieldForMetaTag( metatag ) {
 }
 
 function normalizeDecision( decision ) {
-    // TODO: add expected tree properties and metadata, if missing
+    // add expected tree properties and metadata, if missing
     decision['comments'] = ko.observable( decision['comments'] );
     decision['comments'].subscribe(viewModel.ticklers.COLLECTION_HAS_CHANGED);
 }
