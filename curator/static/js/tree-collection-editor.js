@@ -1130,14 +1130,12 @@ function validateFormData() {
     // or use more typical jQuery machinery, or validation plugin?
     // check for a study year (non-empty integer)
 
-    /* What's mandator for a tree collection?
-    var studyYear = Number(viewModel.nexml["^ot:studyYear"]);
-    if (isNaN(studyYear) || studyYear === 0) {
-        showErrorMessage("Please enter an non-zero integer for the Study Year (in Home tab's metadata editor).");
+    // What's mandator for a tree collection? Let's say it needs a name and a URL
+    var collectionName = ko.unwrap(viewModel.data['name']);
+    if ($.trim(collectionName) === "") {  // catches null, undefined, or empty string!
+        showErrorMessage("Please enter a name for this tree collection.");
         return false;
     }
-    */
-    // TODO: Add other validation logic to match changes on the server side.
 
     // return true IF no errors were found!
     return true;
