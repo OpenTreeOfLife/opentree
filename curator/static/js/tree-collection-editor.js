@@ -1184,10 +1184,10 @@ function scrubJsonForTransport( collection ) {
     stripTreeCollectionStatusMarkers( collection );
 
     // avoid empty or missing decision list
-    collection.decisions = makeArray( collection.decisions );
+    collection.data.decisions = makeArray( collection.data.decisions );
 
     // any other cleanup for trees/decisions?
-    $.each( collection.decisions, function(i, tree) {
+    $.each( collection.data.decisions, function(i, tree) {
         ;
         // TODO: add cleanup tasks here, e.g.
         // removeEmptyReasonsToExclude(tree);
@@ -1213,8 +1213,8 @@ function scrubJsonForTransport( collection ) {
     */
 
     // unwrap any other observable properties
-    viewModel['name'] = ko.unwrap(viewModel['name']);
-    viewModel['description'] = ko.unwrap(viewModel['description']);
+    viewModel.data['name'] = ko.unwrap(viewModel.data['name']);
+    viewModel.data['description'] = ko.unwrap(viewModel.data['description']);
 }
 
 function saveFormDataToCollectionJSON() {
