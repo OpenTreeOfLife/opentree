@@ -2309,10 +2309,18 @@ function saveTreeCollection( collection ) {
             // update in-use ID in case phylesystem API has forced a new one
             currentlyEditingCollectionID = putResponse['resource_id'];
             // get fresh JSON and refresh the form (view only)
+            /*
             if (createOrUpdate === 'CREATE') {
                 // add empty history to hint that we should hold the editor open
                 collection['versionHistory'] = [ ];
+            } or {
+                // TODO: Update local collection history
+                ;
             }
+            // re-bind observables, etc. to restore proper editing behavior
+            */
+            // Let's try a full reload and see what happens
+            loadSelectedCollection();
             hideModalScreen();
             cancelChangesToCollection(collection);
         }
