@@ -2286,7 +2286,7 @@ function saveTreeCollection( collection ) {
                 var data = $.parseJSON(jqXHR.responseText);
                 // TODO: this should be properly parsed JSON, show it more sensibly
                 // (but for now, repeat the crude feedback used above)
-                var errMsg = 'Sorry, there was an error in the study data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+                var errMsg = 'Sorry, there was an error in the collection data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
                 hideModalScreen();
                 showErrorMessage(errMsg);
                 return;

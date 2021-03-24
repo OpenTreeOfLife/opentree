@@ -1289,8 +1289,11 @@ function saveFormDataToCollectionJSON() {
             viewModel.startingCommitSHA = putResponse['sha'] || viewModel.startingCommitSHA;
             // update the History tab to show the latest commit
             if ('versionHistory' in putResponse) {
-                // TODO: incorporate new code versions into our combined history
-                viewModel.history(putResponse['versionHistory'] || [ ]);
+                viewModel.versionHistory = putResponse['versionHistory'] || [ ];
+                // combine existing synth history and interleave these events by date
+                viewModel.history = ko.observableArray(
+                    buildCombinedCollectionHistory( viewModel['versionHistory'], viewModel['synthHistory'] )
+                ).asPaged(20);
             }
             if (putResponse['merge_needed']) {
                 var errMsg = 'Your changes were saved, but an edit by another user prevented your edit from merging to the publicly visible location. In the near future, we hope to take care of this automatically. In the meantime, please <a href="mailto:info@opentreeoflife.org?subject=Study merge%20needed%20-%20'+ viewModel.startingCommitSHA +'">report this error</a> to the Open Tree of Life software team';
@@ -1305,7 +1308,6 @@ function saveFormDataToCollectionJSON() {
             popPageExitWarning('UNSAVED_COLLECTION_CHANGES');
             collectionHasUnsavedChanges = false;
             disableSaveButton();
-            // TODO: should we expect fresh JSON to refresh the form?
         }
     });
 }
