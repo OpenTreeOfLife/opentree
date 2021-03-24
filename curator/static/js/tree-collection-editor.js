@@ -892,8 +892,10 @@ function loadSelectedCollection() {
             });
 
             var mainPageArea = $('#main .tab-content')[0];
+            ko.cleanNode(mainPageArea);
             ko.applyBindings(viewModel, mainPageArea);
             var metadataPopup = $('#collection-metadata-popup')[0];
+            ko.cleanNode(metadataPopup);
             ko.applyBindings(viewModel, metadataPopup);
 
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
