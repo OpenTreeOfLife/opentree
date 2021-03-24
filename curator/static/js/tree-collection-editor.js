@@ -699,9 +699,10 @@ function loadSelectedCollection() {
              * Wrap a few properties in the model so we can detect changes
              */
             viewModel.data['name'] = ko.observable(viewModel.data['name']);
-            viewModel.data['name'].subscribe(viewModel.ticklers.GENERAL_METADATA);
+            viewModel.data['name'].subscribe(viewModel.ticklers.GENERAL_METADATA);  // to updated page headings
+            viewModel.data['name'].subscribe(viewModel.ticklers.COLLECTION_HAS_CHANGED);  // to enable Save button
             viewModel.data['description'] = ko.observable(viewModel.data['description']);
-            viewModel.data['description'].subscribe(viewModel.ticklers.GENERAL_METADATA);
+            viewModel.data['description'].subscribe(viewModel.ticklers.COLLECTION_HAS_CHANGED);  // to enable Save
 
             // TODO: support fast lookup of elements by ID? for largest trees
             viewModel.fastLookups = {
