@@ -1263,7 +1263,7 @@ function saveFormDataToCollectionJSON() {
         contentType: "application/json; charset=utf-8",
         url: saveURL,
         processData: false,
-        data: (JSON.stringify(viewModel)),
+        data: (JSON.stringify( viewModel.data )),  // the "core" collection document
         complete: function( jqXHR, textStatus ) {
             // report errors or malformed data, if any
             if (textStatus !== 'success') {
