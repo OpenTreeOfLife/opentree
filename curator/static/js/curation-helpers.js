@@ -1480,6 +1480,10 @@ function addTreeToCollection( collection, inputType ) {
                             "SHA": "",    // TODO: capture this (already expected by server-side validation)
                             "comments": foundTreeComments
                         };
+                        if (collectionUI === 'FULL_PAGE') {
+                            // wrap this in an observable, so we can enable Save button after any change
+                            treeEntry['comments'] = ko.observable( treeEntry['comments'] );
+                        }
                         //console.log(treeEntry);
                         collection.data.decisions.push(treeEntry);
                         if (collectionUI === 'FULL_PAGE') {
