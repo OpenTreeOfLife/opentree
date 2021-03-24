@@ -530,6 +530,12 @@ function goToTab( tabName ) {
     $matchingTab.tab('show');
 }
 
+/* TODO: Consider mapping options if we need more observables!
+var knockoutMappingOptions = {
+    'copy': ["names"]  // we'll make the 'names' array observable below
+};
+ */
+
 function loadSelectedCollection() {
     /* Use REST API to pull collection data from datastore
      * :EXAMPLE: GET http://api.opentreeoflife.org/v3/collection/{jimallman/test}
@@ -674,13 +680,6 @@ function loadSelectedCollection() {
             ).asPaged(20);
 
             /*
-             * Wrap a few properties in the model so we can detect changes
-             */
-            viewModel['name'] = ko.observable(viewModel['name']);
-            viewModel['description'] = ko.observable(viewModel['description']);
-            //viewModel['description'].subscribe('');
-
-            /*
              * Add observable properties to the model to support the UI
              */
 
@@ -695,6 +694,14 @@ function loadSelectedCollection() {
                 // TODO: add more as needed...
                 'COLLECTION_HAS_CHANGED': ko.observable(1)
             }
+
+            /*
+             * Wrap a few properties in the model so we can detect changes
+             */
+            viewModel.data['name'] = ko.observable(viewModel.data['name']);
+            viewModel.data['name'].subscribe(viewModel.ticklers.COLLECTION_HAS_CHANGED);
+            viewModel.data['description'] = ko.observable(viewModel.data['description']);
+            viewModel.data['description'].subscribe(viewModel.ticklers.COLLECTION_HAS_CHANGED);
 
             // TODO: support fast lookup of elements by ID? for largest trees
             viewModel.fastLookups = {
