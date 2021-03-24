@@ -1390,7 +1390,7 @@ function removeCollection() {
                 if (!collectionListURL) {
                     console.error("Missing collectionListURL!");
                 }
-                window.location = collectionListURL || '/curator';
+                window.location = collectionListURL || '/curator/collection';
             }, 3000);
         }
     });
