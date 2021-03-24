@@ -1309,7 +1309,9 @@ function updateCollectionTrees ( collection ) {
 
                     // clear list filters to show all changes!
                     $('#tree-list-filter').val('').trigger('change');
-                    nudgeTickler('TREES', {modelHasChanged: false});  // just in case filter was already empty
+                    // any pending changes should enable the Save button
+                    var collectionHasChanged = (treesChanged + treesRemoved) > 0;
+                    nudgeTickler('TREES', {modelHasChanged: collectionHasChanged});  // just in case filter was already empty
 
                     hideModalScreen();
                     if (treesUnchanged === totalTrees) {
