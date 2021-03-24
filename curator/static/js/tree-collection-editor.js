@@ -1240,7 +1240,7 @@ function saveFormDataToCollectionJSON() {
         author_name: userDisplayName,
         author_email: userEmail,
         auth_token: userAuthToken,
-        starting_commit_SHA: viewModel.startingCommitSHA,
+        starting_commit_SHA: viewModel.sha,
         commit_msg: commitMessage
     });
     saveURL += ('?'+ qsVars);
@@ -1347,7 +1347,7 @@ function removeCollection() {
         author_name: userDisplayName,
         author_email: userEmail,
         auth_token: userAuthToken,
-        starting_commit_SHA: viewModel.startingCommitSHA,
+        starting_commit_SHA: viewModel.sha,
         commit_msg: commitMessage
     });
     removeURL += ('?'+ qsVars);
