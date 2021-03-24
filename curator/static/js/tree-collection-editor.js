@@ -743,7 +743,7 @@ function loadSelectedCollection() {
                     function(tree) {
                         // match entered text against old or new label
                         var treeName = tree['name'] || '';
-                        var comments = tree['comments'] || '';
+                        var comments = ko.unwrap(tree['comments']) || '';
                         var studyID = tree['studyID'] || '';
                         var treeID = tree['treeID'] || '';
                         if (!matchPattern.test(treeName) && !matchPattern.test(comments)
@@ -1031,7 +1031,7 @@ function buildCombinedCollectionHistory( versionHistory, synthHistory ) {
 
 function updatePageHeadings() {
     // page headings should reflect the latest metadata for the collection
-    var collectionName = viewModel.data.name;
+    var collectionName = viewModel.data.name();
     if (viewOrEdit == 'EDIT') {
         $('#main-title').html('<span style="color: #ccc;">Editing collection</span> '+ collectionName);
     } else {
@@ -1517,6 +1517,8 @@ function valueFieldForMetaTag( metatag ) {
 
 function normalizeDecision( decision ) {
     // TODO: add expected tree properties and metadata, if missing
+    decision['comments'] = ko.observable( decision['comments'] );
+    decision['comments'].subscribe(viewModel.ticklers.COLLECTION_HAS_CHANGED);
 }
 
 function getAllTreeIDs() {
