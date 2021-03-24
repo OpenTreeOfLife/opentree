@@ -72,7 +72,7 @@ body {
           <button class="btn btn-danger pull-right"
             onclick="promptForDeleteComments(); return false;">Delete Collection</button>
         {{ else: }}
-          <a class="btn" href="{{= URL(a='curator', c='default', f='index')}}">Return to collection list</a>
+          <a class="btn" href="{{= URL(a='curator', c='collection', f='index')}}">Return to collection list</a>
          {{ if userCanEdit: }}
           <a class="btn btn-info pull-right sticky-login" href="{{=URL('collection', 'edit/'+ collectionID)}}"
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
