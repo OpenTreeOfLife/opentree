@@ -592,7 +592,8 @@ body {
                             </input>
                             -->
                             <br/>
-                            <textarea data-bind="value: comments"
+                            <textarea data-bind="value: comments,
+                                                 valueUpdate: ['afterkeydown', 'input']"
                                       class="span4"
                                       style="color: #333; margin-bottom: 4px; height: 2em;"
                                       placeholder="Describe your reasons for including this tree">
