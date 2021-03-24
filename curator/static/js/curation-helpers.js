@@ -1483,6 +1483,7 @@ function addTreeToCollection( collection, inputType ) {
                         if (collectionUI === 'FULL_PAGE') {
                             // wrap this in an observable, so we can enable Save button after any change
                             treeEntry['comments'] = ko.observable( treeEntry['comments'] );
+                            treeEntry['comments'].subscribe(viewModel.ticklers.COLLECTION_HAS_CHANGED);
                         }
                         //console.log(treeEntry);
                         collection.data.decisions.push(treeEntry);
