@@ -1384,6 +1384,7 @@ function removeCollection() {
 
             hideModalScreen();
             showSuccessMessage('Collection removed, returning to collection list...');
+            popPageExitWarning('UNSAVED_COLLECTION_CHANGES');
             setTimeout(function() {
                 var collectionListURL = $('#return-to-collection-list').val();
                 if (!collectionListURL) {
