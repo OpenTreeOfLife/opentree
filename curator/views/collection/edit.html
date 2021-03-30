@@ -748,12 +748,14 @@ body {
             <ul class="suggestion-list" style="clear: right;"></ul>
             <div style="margin-bottom: 100px;">
 
-                <div class="empty-list-prompt" data-bind="visible: viewModel.history.pagedItems().length === 0">
+                <div class="empty-list-prompt" data-bind="visible: viewModel.history.pagedItems().length === 0,
+                                                          css: viewModel.ticklers.HISTORY">
                     No previous code versions or synthesis events found! (This is a new collection.)
                 </div>
 
                 <table class="table table-condensed"
-                    data-bind="visible: viewModel.history.pagedItems().length &gt; 0">
+                    data-bind="visible: viewModel.history.pagedItems().length &gt; 0,
+                               css: viewModel.ticklers.HISTORY">
                   <thead>
                     <tr>
                         <th width="20%">Date</th>
@@ -762,7 +764,8 @@ body {
                         <th width="10%">Details</th>
                     </tr>
                   </thead>
-                  <tbody data-bind="foreach: { data: viewModel.history.pagedItems(), as: 'event' }">
+                  <tbody data-bind="foreach: { data: viewModel.history.pagedItems(), as: 'event' },
+                                    css: viewModel.ticklers.HISTORY">
                     <tr>
                         <td><span data-bind="text: event['relative_date'], attr: {'title': event['date']}">?</span></td>
                         <td>
@@ -804,7 +807,7 @@ body {
                     <li data-bind="css: { 'disabled': !viewModel.history.prev.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.history.prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( viewModel.history ) -->
+                   <!-- ko foreach: getPageNumbers( viewModel.history ), css: viewModel.ticklers.HISTORY -->
                     <!-- ko if: isVisiblePage( $data, viewModel.history ) -->
                     <li data-bind="css: { 'active': (viewModel.history.current() === $data) }" class="active">
                         <a href="#" data-bind="text: $data, click: function() { viewModel.history.goToPage($data); return false; }">0</a>
