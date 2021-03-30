@@ -691,6 +691,7 @@ function loadSelectedCollection() {
             viewModel.ticklers = {
                 'GENERAL_METADATA': ko.observable(1),
                 'TREES': ko.observable(1),  // i.e. the 'decisions' array
+                'HISTORY': ko.observable(1),  // new synth OR version
                 // TODO: add more as needed...
                 'COLLECTION_HAS_CHANGED': ko.observable(1)
             }
@@ -1804,6 +1805,10 @@ var nudge = {
     },
     'TREES': function( data, event ) {
         nudgeTickler( 'TREES');
+        return true;
+    },
+    'HISTORY': function( data, event ) {
+        nudgeTickler( 'HISTORY');
         return true;
     }
 }
