@@ -807,7 +807,7 @@ body {
                     <li data-bind="css: { 'disabled': !viewModel.history.prev.enabled() }" class="disabled">
                         <a href="#" onclick="viewModel.history.prev(); return false;">&laquo;</a>
                     </li>
-                   <!-- ko foreach: getPageNumbers( viewModel.history ), css: viewModel.ticklers.HISTORY -->
+                   <!-- ko foreach: getPageNumbers( viewModel.history ) || viewModel.ticklers.HISTORY -->
                     <!-- ko if: isVisiblePage( $data, viewModel.history ) -->
                     <li data-bind="css: { 'active': (viewModel.history.current() === $data) }" class="active">
                         <a href="#" data-bind="text: $data, click: function() { viewModel.history.goToPage($data); return false; }">0</a>
