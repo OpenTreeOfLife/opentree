@@ -621,19 +621,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             -->
            <!-- /ko -->
 
-           <!-- ko if: ('external_url' in $data) -->
-            <!-- HISTORY button -->
-            <a data-bind="attr: { href: getCollectionHistoryURL($data) }"
-               title="See full version history on GitHub"
-               class="pull-right btn btn-mini row-controls-ghosted"
-               style="margin-left: 4px;"
-               href="#" target="_blank">
-               History
-               <img src="/curator/static/images/GitHub-Mark-32px.png"
-                    style="width: 14px; height: 14px; padding-left: 2px; margin-top: -2px;"/>
-            </a>
-           <!-- /ko -->
-
            <!-- ko if: !userIsEditingCollection($data) -->
             <!-- SHARE button -->
             <button data-bind="click: shareCollection,
@@ -684,7 +671,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 title="" target="_blank" href="#"
                 class="pull-right btn btn-info btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
-                Edit <i class="icon-edit icon-white"></i>
+                <span data-bind="text: userIsLoggedIn() ? 'Edit details' : 'View Details'">DETAILS</span> <i class="icon-edit icon-white"></i>
             </a>
             <button data-bind="click: cancelChangesToCollection,
                                visible: userIsEditingCollection($data)"
