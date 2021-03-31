@@ -677,14 +677,15 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
            <!-- /ko -->
 
             <!-- EDIT button -->
-            <button data-bind="click: editCollection,
-                               visible: !(userIsEditingCollection($data)),
-                               attr: {'title': userIsLoggedIn() ? 'Edit collection, including add/remove trees' : 'Edit collection (requires login)'}"
-                title=""
+            <a data-bind="click: editCollection,
+                          visible: !(userIsEditingCollection($data)),
+                          attr: {'title': userIsLoggedIn() ? 'Edit collection, including add/remove trees' : 'Edit collection (requires login)',
+                                 'href': userIsLoggedIn() ? ('/curator/collection/edit/'+ $data.id) : ('/curator/collection/view/'+ $data.id)}"
+                title="" target="_blank" href="#"
                 class="pull-right btn btn-info btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
                 Edit <i class="icon-edit icon-white"></i>
-            </button>
+            </a>
             <button data-bind="click: cancelChangesToCollection,
                                visible: userIsEditingCollection($data)"
                 title="Cancel your changes to this collection"
