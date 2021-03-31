@@ -615,6 +615,9 @@ function loadSelectedCollection() {
              */
             // TODO: return this data as 'synthHistory' in collection JSON fetch!
             response['synthHistory'] = [
+                /* EXAMPLES of synthesis events; adapt structure and display
+                 * template as needed to show real data.
+                 *
                 {
                     runner_email: "jim@ibang.com",
                     runner_name: "Jim Allman",
@@ -644,6 +647,7 @@ function loadSelectedCollection() {
                     run_comment: "Custom synth, incorporating all 2018 changes.",
                     relative_date: "2 years ago"
                 }
+                */
             ];
             // add external URLs (on GitHub) for the differences between code versions
             if (response['external_url']) {
@@ -2143,10 +2147,12 @@ var collectionTreeListColumns = [
     { id: 'RANK', name: "Rank", colWidth: "76", sortable: true, defaultSort: 'ASC', locked: true},
     { id: 'NAME', name: "Tree name and description", colWidth: "*", sortable: true, defaultSort: 'ASC', locked: true},
     { id: 'CREF', name: "Study reference", shortName: "Study", sortable: true, defaultSort: 'ASC'},
+    /* TODO: Restore these columns as data becomes available
     { id: 'MAPD', name: "Mapped nodes", sortable: false, defaultSort: 'ASC' },
     { id: 'ROOT', name: "Root of ingroup", sortable: false, defaultSort: 'ASC' },
     { id: 'TRNK', name: "Taxonomic rank of root", shortName: "Taxo. rank", sortable: false, defaultSort: 'ASC' },
     { id: 'CONF', name: "Conflict vs. latest OpenTree synthesis", shortName: "Conflict score", sortable: false, defaultSort: 'ASC' },
+     */
     { id: 'CLAD', name: "Focal clade of study", shortName: "Focal clade", sortable: true, defaultSort: 'ASC' },
     { id: 'YEAR', name: "Year of study publication", shortName: "Year", sortable: true, defaultSort: 'DESC' }
 ];
