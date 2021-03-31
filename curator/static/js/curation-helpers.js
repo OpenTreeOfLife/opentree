@@ -1850,7 +1850,7 @@ compressPendingCollectionChanges();
 function getCollectionDirectURL( collection ) {
     // provide a direct URL to the collection (to copy/paste or email)
     var collectionID = getCollectionIDFromURL( collection.data.url );
-    var directURL = window.location.protocol +'//'+ window.location.hostname +'/curator/collections/'+ collectionID;
+    var directURL = window.location.protocol +'//'+ window.location.hostname +'/curator/collection/view/'+ collectionID;
     return directURL;
 }
 function shareCollection( collection ) {

@@ -175,12 +175,11 @@ body {
                   </h3>
                   <div style="color: #999; position: relative;">
                     <p style="position: absolute; width: 170px; text-align: right;">
-                        Collection ID (direct link):
+                        Collection ID
                     </p>
                     <p style="margin-left: 180px;">
-                        <a id="collection-id-display"
-                           data-bind="text: getCollectionIDFromURL($data.data.url),
-                                      attr: { href: getCollectionDirectURL($data) }">&nbsp;</a>
+                        <span id="collection-id-display"
+                              data-bind="text: getCollectionIDFromURL($data.data.url)">&nbsp;</a>
                     </p>
                   </div>
                 </div>
