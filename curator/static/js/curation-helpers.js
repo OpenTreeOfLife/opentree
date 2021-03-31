@@ -693,7 +693,7 @@ function showCollectionViewer( collection, options ) {
             updateCollectionDisplay(options);
         });
         $('#tree-collection-viewer').off('hide').on('hide', function () {
-            if (currentlyEditingCollectionID !== null) {
+            if (currentlyEditingCollectionID) {  // not null or undefined
                 //showInfoMessage("Please save (or cancel) your changes to this collection!");
                 alert("Please save (or cancel) your changes to this collection!");
                 return false;
