@@ -679,7 +679,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             <!-- EDIT button -->
             <a data-bind="visible: !(userIsEditingCollection($data)),
                           attr: {'title': userIsLoggedIn() ? 'Edit collection, including add/remove trees' : 'Edit collection (requires login)',
-                                 'href': userIsLoggedIn() ? ('/curator/collection/edit/'+ $data.id) : ('/curator/collection/view/'+ $data.id)}"
+                                 'href': userIsLoggedIn() ? ('/curator/collection/edit/'+ getCollectionIDFromURL($data.data.url)) :
+                                                            ('/curator/collection/view/'+ getCollectionIDFromURL($data.data.url)}"
                 title="" target="_blank" href="#"
                 class="pull-right btn btn-info btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
