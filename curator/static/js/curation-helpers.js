@@ -1491,7 +1491,7 @@ function addTreeToCollection( collection, inputType ) {
                             nudgeTickler('TREES');  // force display refresh
                             showCollectionViewer( collection );  // to refresh the list
                         } else {
-                            nudgeTickler('COLLECTION_HAS_CHANGED');
+                            if (nudgeTickler) nudgeTickler('COLLECTION_HAS_CHANGED');
                             showCollectionViewer( collection, {SCROLL_TO_BOTTOM: true} );  // to refresh the list
                         }
                         showSuccessMessage('Tree found and added to this collection.');
