@@ -72,7 +72,6 @@ body {
           <button class="btn btn-danger pull-right"
             onclick="ejjjjjfgpromptForDeleteComments(); return false;">Delete Collection</button>
         {{ else: }}
-          <a class="btn" href="{{= URL(a='curator', c='collection', f='index')}}">Return to collection list</a>
          {{ if userCanEdit: }}
           <a class="btn btn-info pull-right sticky-login" href="{{=URL('collection', 'edit/'+ collectionID)}}"
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
@@ -95,6 +94,7 @@ body {
                         attr: {'title': userIsLoggedIn() ? 'Copy this collection (you will own the copy)' : 'Copy this collection (requires login)'}" title="Copy this collection (you will own the copy)" class="pull-right btn" style="margin-right: 8px;">
                 Save a copy <i class="icon-repeat"></i>
           </a>
+          <a class="btn pull-right" style="margin-right: 8px;" href="{{= URL(a='curator', c='collection', f='index')}}">Return to collection list</a>
         {{ pass }}
     </div>
   </div>
