@@ -62,7 +62,7 @@ body {
       -->
     </ul>
 
-    <div class="span4" style="float: right; margin-top: -56px;">
+    <div class="span6" style="float: right; margin-top: -56px;">
         {{ if viewOrEdit == 'EDIT': }}
         {{# TODO: revisit these buttons }}
           <button id="save-collection-button" class="btn">Save Collection</button>
@@ -70,14 +70,9 @@ body {
                  value="{{= URL(a='curator', c='collection', f='index')}}">
           <a id="cancel-collection-edits" class="btn btn-link" href="#">Cancel</a>
           <button class="btn btn-danger pull-right"
-            onclick="promptForDeleteComments(); return false;">Delete Collection</button>
+            onclick="ejjjjjfgpromptForDeleteComments(); return false;">Delete Collection</button>
         {{ else: }}
           <a class="btn" href="{{= URL(a='curator', c='collection', f='index')}}">Return to collection list</a>
-          <a data-bind="click: copyCollection,
-                        visible: true,
-                        attr: {'title': userIsLoggedIn() ? 'Copy this collection (you will own the copy)' : 'Copy this collection (requires login)'}" title="Copy this collection (you will own the copy)" class="pull-right btn" style="margin-left: 4px;">
-                Save a copy <i class="icon-repeat"></i>
-          </button>
          {{ if userCanEdit: }}
           <a class="btn btn-info pull-right sticky-login" href="{{=URL('collection', 'edit/'+ collectionID)}}"
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
@@ -95,6 +90,11 @@ body {
            {{ pass }}
           >Login to Edit Collection</a>
          {{ pass }}
+          <a data-bind="click: copyCollection,
+                        visible: true,
+                        attr: {'title': userIsLoggedIn() ? 'Copy this collection (you will own the copy)' : 'Copy this collection (requires login)'}" title="Copy this collection (you will own the copy)" class="pull-right btn" style="margin-left: 4px;">
+                Save a copy <i class="icon-repeat"></i>
+          </a>
         {{ pass }}
     </div>
   </div>
