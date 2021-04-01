@@ -2319,12 +2319,23 @@ function saveTreeCollection( collection ) {
             }
             // re-bind observables, etc. to restore proper editing behavior
             */
-            // Let's try a full reload and see what happens
-            loadSelectedCollection();
-            hideModalScreen();
-            cancelChangesToCollection(collection);
+            if (collectionUI === 'FULL_PAGE') {
+                // Let's try a full reload and see what happens
+                loadSelectedCollection();
+                hideModalScreen();
+                cancelChangesToCollection(collection);
+            } else {
+                // jump from popup to the full-page editor for this collection
+                jumpToCollectionEditor(collection);
+            }
         }
     });
+}
+function jumpToCollectionEditor( collection ) {
+    // move this page to the chosen version
+    var viewURL = getCollectionDirectURL( collection );
+    var editURL = viewURL.split('/view/').join('/edit/');
+    window.location.href = editURL;
 }
 function deleteTreeCollection( collection ) {
     // user has already confirmed and provided commit msg
