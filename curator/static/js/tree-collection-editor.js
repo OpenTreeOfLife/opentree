@@ -353,6 +353,9 @@ var collectionHasUnsavedChanges = false;
 
 var initialState;
 $(document).ready(function() {
+    bindHistoryAwareWidgets();
+    bindHelpPanels();
+
     // NOTE that our initial state is set in the main page template, so we
     // can build it from incoming URL in web2py. Try to recapture this state,
     // ideally through manipulating history.
@@ -368,9 +371,6 @@ $(document).ready(function() {
     collectionHasUnsavedChanges = false;
     disableSaveButton();
     loadSelectedCollection();
-
-    bindHistoryAwareWidgets();
-    bindHelpPanels();
 
     // Initialize the jQuery File Upload widgets
     $('#fileupload').fileupload({
@@ -903,6 +903,9 @@ function loadSelectedCollection() {
             var metadataPopup = $('#collection-metadata-popup')[0];
             ko.cleanNode(metadataPopup);
             ko.applyBindings(viewModel, metadataPopup);
+
+            bindHistoryAwareWidgets();
+            bindHelpPanels();
 
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.COLLECTION_HAS_CHANGED.subscribe( function() {
