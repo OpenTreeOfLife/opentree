@@ -353,9 +353,6 @@ var collectionHasUnsavedChanges = false;
 
 var initialState;
 $(document).ready(function() {
-    bindHistoryAwareWidgets();
-    bindHelpPanels();
-
     // NOTE that our initial state is set in the main page template, so we
     // can build it from incoming URL in web2py. Try to recapture this state,
     // ideally through manipulating history.
@@ -371,6 +368,9 @@ $(document).ready(function() {
     collectionHasUnsavedChanges = false;
     disableSaveButton();
     loadSelectedCollection();
+
+    bindHistoryAwareWidgets();
+    bindHelpPanels();
 
     // Initialize the jQuery File Upload widgets
     $('#fileupload').fileupload({
