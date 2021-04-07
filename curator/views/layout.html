@@ -1196,19 +1196,19 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).append($form);
         dialog.showModal();
     }
-async testAlert() {
+async function testAlert() {
     console.log('STARTING testAlert...');
     var test = await asyncAlert('This is a test!');
     console.log('RESPONSE to testAlert:');
     console.log(test);
 }
-async testConfirm() {
+async function testConfirm() {
     console.log('STARTING testConfirm...');
     var test = await asyncConfirm('This is a test!');
     console.log('RESPONSE to testConfirm:');
     console.log(test);
 }
-async testPrompt() {
+async function testPrompt() {
     console.log('STARTING testPrompt...');
     var test = await asyncPrompt('Favorite flavor?', 'vanilla');
     console.log('RESPONSE to testPrompt:');
