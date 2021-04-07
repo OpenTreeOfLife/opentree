@@ -1145,7 +1145,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     }
     function alertDialog(msg) {
         // no return value
-        var dialog = $(getEmptyDialog());
+        var dialog = getEmptyDialog();
         $(dialog).addClass('fixed')
                  .html('<p>'+ msg +'</p>');
         var $form = $('<form method="dialog"></form>');
@@ -1157,7 +1157,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         dialog.showModal();
     }
     function confirmDialog(msg) {
-        var dialog = $(getEmptyDialog());
+        var dialog = getEmptyDialog();
         dialog.addEventListener('close', function(evt) {
             return dialog.returnValue || null;
         });
