@@ -121,6 +121,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       {{#response.files.append(URL('static','jquery.hoverIntent.js'))}}
       {{#response.files.append(URL('static','jquery-ui-1.8.5.custom.css'))}}
 
+    <!-- support for dialog polyfill (replace JS confirm, prompt, alert) -->
+    {{response.files.append(URL('static','js/dialog-polyfill.js'))}}
+    {{response.files.append(URL('static','css/dialog-polyfill.css'))}}
+
     <!-- js for history management -->
     {{response.files.append(URL('static','js/jquery.history.js'))}}
 
@@ -1120,6 +1124,54 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         "href": "/about/privacy-policy"
       }
     });
+
+    /* Basic emulation of JS `alert`, `confirm`, `prompt`
+     * using Google's dialog-polyfill
+     */
+    var dialogSingleton; // one is enough for our needs
+    function getEmptyDialog() {
+        if (!dialogSingleton) {
+            dialogSingleton = document.createElement('dialog');
+            dialogPolyfill.registerDialog(dialogSingleton);
+        }
+        $(dialogSingleton).empty(); // clear any prior contents
+        return dialogSingleton;
+    }
+    function alertDialog(msg) {
+        // no return value
+        var dialog = getEmptyDialog();
+        $(dialog).addClass('fixed')
+                 .html('<p>'+ msg +'</p>');
+        dialog.showModal();
+    }
+    function confirmDialog(msg) {
+        var dialog = getEmptyDialog();
+        $(dialog).addClass('fixed')
+                 .html('<p>'+ msg +'</p>')
+                 .append('<form method="dialog"></form>');
+        $(dialog).find('form').append('<input type="submit" value="Cancel" />');
+        $(dialog).find('form').append('<input type="submit" value="OK" />');
+        dialog.showModal();
+        // TODO: gather yes|no response!
+        return dialog.returnValue;  // OR return confirmed
+    }
+    function promptDialog(msg, defaultValue) {
+        if (!defaultValue) defaultValue = "";
+        var userInput = null;
+        var promptCanceled = false;
+        var dialog = getEmptyDialog();
+        $(dialog).addClass('fixed')
+                 .html('<p>'+ msg +'</p>')
+                 .append('<form method="dialog"></form>');
+        $(dialog).find('form').append('<input type="text" name="userInput" placeholder="'+ defaultValue +'" />');
+        $(dialog).find('form').append('<input type="submit" value="Cancel" />');
+        $(dialog).find('form').append('<input type="submit" value="OK" />');
+        dialog.showModal();
+        // TODO: gather user input and accept|cancel response!
+
+        // NB if user clicks Cancel, return null
+        return dialog.returnValue;  // OR promptCanceled ? null : userInput;
+    }
 </script>
   </body>
 </html>
