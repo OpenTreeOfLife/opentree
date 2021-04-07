@@ -118,6 +118,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       {{#response.files.append(URL('static','jquery.hoverIntent.js'))}}
       {{#response.files.append(URL('static','jquery-ui-1.8.5.custom.css'))}}
 
+    <!-- support for dialog polyfill (replace JS confirm, prompt, alert) -->
+    {{response.files.append(URL('static','js/dialog-polyfill.js'))}}
+    {{response.files.append(URL('static','css/dialog-polyfill.css'))}}
+
     <!-- js for history management -->
     {{response.files.append(URL('static','js/jquery.history.js'))}}
 
