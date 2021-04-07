@@ -1156,13 +1156,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).append($form);
         dialog.showModal();
     }
-    function confirmDialog(msg) {
+    function confirmDialog(question) {
         var dialog = getEmptyDialog();
         dialog.addEventListener('close', function(evt) {
             return dialog.returnValue || null;
         });
         $(dialog).addClass('fixed')
-                 .html('<p>'+ msg +'</p>');
+                 .html('<p>'+ question +'</p>');
         var $form = $('<form method="dialog"></form>');
         var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
             dialog.close();
@@ -1175,7 +1175,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).append($form);
         dialog.showModal();
     }
-    function promptDialog(msg, defaultValue) {
+    function promptDialog(question, defaultValue) {
         if (!defaultValue) defaultValue = "";
         var userInput = null;
         var promptCanceled = false;
@@ -1184,7 +1184,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             return dialog.returnValue || null;
         });
         $(dialog).addClass('fixed')
-                 .html('<p>'+ msg +'</p>');
+                 .html('<p>'+ question +'</p>');
         var $form = $('<form method="dialog"></form>');
         var $inputField = ('<input type="text" name="userInput" placeholder="'+ defaultValue +'" />');
         var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
