@@ -1143,7 +1143,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         }
         return dialogSingleton;
     }
-    function alertDialog(msg) {
+    async function asyncAlert(msg) {
         // no return value
         var dialog = getEmptyDialog();
         $(dialog).addClass('fixed')
@@ -1156,7 +1156,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).append($form);
         dialog.showModal();
     }
-    function confirmDialog(question) {
+    async function asyncConfirm(question) {
         var dialog = getEmptyDialog();
         dialog.addEventListener('close', function(evt) {
             return dialog.returnValue || null;
@@ -1175,7 +1175,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).append($form);
         dialog.showModal();
     }
-    function promptDialog(question, defaultValue) {
+    async function asyncPrompt(question, defaultValue) {
         if (!defaultValue) defaultValue = "";
         var userInput = null;
         var promptCanceled = false;
@@ -1199,6 +1199,24 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).append($form);
         dialog.showModal();
     }
+async testAlert() {
+    console.log('STARTING testAlert...');
+    var test = await asyncAlert('This is a test!');
+    console.log('RESPONSE to testAlert:');
+    console.log(test);
+}
+async testConfirm() {
+    console.log('STARTING testConfirm...');
+    var test = await asyncConfirm('This is a test!');
+    console.log('RESPONSE to testConfirm:');
+    console.log(test);
+}
+async testPrompt() {
+    console.log('STARTING testPrompt...');
+    var test = await asyncPrompt('Favorite flavor?', 'vanilla');
+    console.log('RESPONSE to testPrompt:');
+    console.log(test);
+}
 </script>
   </body>
 </html>
