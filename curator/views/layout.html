@@ -1130,48 +1130,71 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
      */
     var dialogSingleton; // one is enough for our needs
     function getEmptyDialog() {
-        if (!dialogSingleton) {
+        if (dialogSingleton) {
+            dialogSingleton.returnValue = null;
+            $(dialogSingleton).empty(); // clear any prior contents
+        } else {
             dialogSingleton = document.createElement('dialog');
             $('body').append(dialogSingleton);
             dialogPolyfill.registerDialog(dialogSingleton);
         }
-        $(dialogSingleton).empty(); // clear any prior contents
         return dialogSingleton;
     }
     function alertDialog(msg) {
         // no return value
-        var dialog = getEmptyDialog();
+        var dialog = $(getEmptyDialog());
         $(dialog).addClass('fixed')
                  .html('<p>'+ msg +'</p>');
+        var $form = $('<form method="dialog"></form>');
+        var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
+            dialog.close();
+        }) ;
+        $form.append($OKBtn);
+        $(dialog).append($form);
         dialog.showModal();
     }
     function confirmDialog(msg) {
-        var dialog = getEmptyDialog();
+        var dialog = $(getEmptyDialog());
+        dialog.addEventListener('close', function(evt) {
+            return dialog.returnValue || null;
+        });
         $(dialog).addClass('fixed')
-                 .html('<p>'+ msg +'</p>')
-                 .append('<form method="dialog"></form>');
-        $(dialog).find('form').append('<input type="submit" value="Cancel" />');
-        $(dialog).find('form').append('<input type="submit" value="OK" />');
+                 .html('<p>'+ msg +'</p>');
+        var $form = $('<form method="dialog"></form>');
+        var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
+            dialog.close();
+        }) ;
+        var $cancelBtn = $('<input type="submit" value="Cancel" />').click(function(evt) {
+            dialog.close();
+        }) ;
+        $form.append($OKBtn);
+        $form.append($cancelBtn);
+        $(dialog).append($form);
         dialog.showModal();
-        // TODO: gather yes|no response!
-        return dialog.returnValue;  // OR return confirmed
     }
     function promptDialog(msg, defaultValue) {
         if (!defaultValue) defaultValue = "";
         var userInput = null;
         var promptCanceled = false;
         var dialog = getEmptyDialog();
+        dialog.addEventListener('close', function(evt) {
+            return dialog.returnValue || null;
+        });
         $(dialog).addClass('fixed')
-                 .html('<p>'+ msg +'</p>')
-                 .append('<form method="dialog"></form>');
-        $(dialog).find('form').append('<input type="text" name="userInput" placeholder="'+ defaultValue +'" />');
-        $(dialog).find('form').append('<input type="submit" value="Cancel" />');
-        $(dialog).find('form').append('<input type="submit" value="OK" />');
+                 .html('<p>'+ msg +'</p>');
+        var $form = $('<form method="dialog"></form>');
+        var $inputField = ('<input type="text" name="userInput" placeholder="'+ defaultValue +'" />');
+        var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
+            dialog.close();
+        }) ;
+        var $cancelBtn = $('<input type="submit" value="Cancel" />').click(function(evt) {
+            dialog.close();
+        }) ;
+        $form.append($inputField);
+        $form.append($OKBtn);
+        $form.append($cancelBtn);
+        $(dialog).append($form);
         dialog.showModal();
-        // TODO: gather user input and accept|cancel response!
-
-        // NB if user clicks Cancel, return null
-        return dialog.returnValue;  // OR promptCanceled ? null : userInput;
     }
 </script>
   </body>
