@@ -1135,6 +1135,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     function getEmptyDialog() {
         if (!dialogSingleton) {
             dialogSingleton = document.createElement('dialog');
+            $('body').append(dialogSingleton);
             dialogPolyfill.registerDialog(dialogSingleton);
         }
         $(dialogSingleton).empty(); // clear any prior contents
