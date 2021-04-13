@@ -1202,7 +1202,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).addClass('fixed')
                  .html('<p>'+ question +'</p>');
         var $form = $('<form method="dialog"></form>');
-        var $inputField = ('<input type="text" name="userInput" placeholder="'+ defaultValue +'" />');
+        var $inputField = $('<input type="text" name="userInput" placeholder="'+ defaultValue +'" />');
         var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
             resolve( $inputField.val() );
             dialog.close();
