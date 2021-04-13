@@ -283,7 +283,7 @@ body {
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
             onclick="showMaintenancePopup(); return false;"
            {{ else: }}
-            onclick="return asyncConfirm('Are you sure you want to edit this study?');"
+            onclick="return await asyncConfirm('Are you sure you want to edit this study?');"
            {{ pass }}
           >Edit Study</a>
          {{ else: }}
@@ -291,7 +291,7 @@ body {
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
             onclick="showMaintenancePopup(); return false;"
            {{ else: }}
-            onclick="return asyncConfirm('Are you sure you want to edit this study?');"
+            onclick="return await asyncConfirm('Are you sure you want to edit this study?');"
            {{ pass }}
           >Login to Edit Study</a>
          {{ pass }}
