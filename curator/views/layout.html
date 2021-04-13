@@ -1135,6 +1135,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             $(dialogSingleton).empty(); // clear any prior contents
         } else {
             dialogSingleton = document.createElement('dialog');
+            $(dialog).addClass('fixed');
+            $(dialog).addClass('modal');  // emulate Bootstrap style
             $('body').append(dialogSingleton);
             dialogPolyfill.registerDialog(dialogSingleton);
         }
@@ -1199,12 +1201,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).addClass('fixed')
                  .html('<p>'+ question +'</p>');
         var $form = $('<form method="dialog"></form>');
-        var $inputField = $('<input type="text" name="userInput" value="'+ defaultValue +'" />');
-        var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
+        var $inputField = $('<input class="input-block-level" type="text" name="userInput" value="'+ defaultValue +'" />');
+        $inputField
+        var $OKBtn = $('<input type="submit" class="btn-info pull-right" value="OK" />').click(function(evt) {
             resolve( $inputField.val() );
             dialog.close();
         }) ;
-        var $cancelBtn = $('<input type="submit" value="Cancel" />').click(function(evt) {
+        var $cancelBtn = $('<input type="submit" class="btn pull-left" value="Cancel" />').click(function(evt) {
             resolve(null);  // mimic window.prompt response
             dialog.close();
         }) ;
