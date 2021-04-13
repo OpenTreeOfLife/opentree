@@ -1135,8 +1135,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             $(dialogSingleton).empty(); // clear any prior contents
         } else {
             dialogSingleton = document.createElement('dialog');
-            $(dialog).addClass('fixed');
-            $(dialog).addClass('modal');  // emulate Bootstrap style
+            $(dialogSingleton).addClass('fixed');
+            $(dialogSingleton).addClass('modal');  // emulate Bootstrap style
             $('body').append(dialogSingleton);
             dialogPolyfill.registerDialog(dialogSingleton);
         }
