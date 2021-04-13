@@ -1152,7 +1152,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).addClass('fixed')
                  .html('<p>'+ msg +'</p>');
         var $form = $('<form method="dialog"></form>');
-        var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
+        var $OKBtn = $('<input type="submit" class="btn-info pull-right" value="OK" />').click(function(evt) {
             resolve(true);  // always true
             dialog.close();
         }) ;
@@ -1174,11 +1174,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).addClass('fixed')
                  .html('<p>'+ question +'</p>');
         var $form = $('<form method="dialog"></form>');
-        var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
+        var $OKBtn = $('<input type="submit" class="btn-info pull-right" value="OK" />').click(function(evt) {
             resolve(true);
             dialog.close();
         }) ;
-        var $cancelBtn = $('<input type="submit" value="Cancel" />').click(function(evt) {
+        var $cancelBtn = $('<input type="submit" class="btn pull-left" value="Cancel" />').click(function(evt) {
             resolve(false);
             dialog.close();
         }) ;
