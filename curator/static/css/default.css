@@ -657,6 +657,11 @@ tr:hover .row-controls-ghosted.btn[disabled] {
     color: #888;
 }
 
+/* override default width for dialog-polyfill */
+dialog.modal {
+    width: 360px;
+}
+
 /* DOI lookup window */
 .before-matches {
     margin-top: -6px;
