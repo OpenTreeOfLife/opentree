@@ -283,7 +283,7 @@ body {
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
             onclick="showMaintenancePopup(); return false;"
            {{ else: }}
-            onclick="return confirmStudyEdit();"
+            onclick="debugger; var test = confirmStudyEdit(); console.warn(test); return test;"
            {{ pass }}
           >Edit Study</a>
          {{ else: }}
