@@ -1156,6 +1156,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         }) ;
         $form.append($OKBtn);
         $(dialog).append($form);
+        dialog.addEventListener('cancel', function(evt) {
+            // capture ESC key closing window
+            resolve(true);
+        });
         dialog.showModal();
       });
     }
@@ -1179,6 +1183,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $form.append($OKBtn);
         $form.append($cancelBtn);
         $(dialog).append($form);
+        dialog.addEventListener('cancel', function(evt) {
+            // capture ESC key closing window
+            resolve(true);
+        });
         dialog.showModal();
       });
     }
