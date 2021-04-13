@@ -1185,7 +1185,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).append($form);
         dialog.addEventListener('cancel', function(evt) {
             // capture ESC key closing window
-            resolve(true);
+            resolve(false);
         });
         dialog.showModal();
       });
