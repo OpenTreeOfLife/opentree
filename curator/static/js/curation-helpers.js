@@ -2847,3 +2847,11 @@ function removeDiacritics( str ) {
     str = str.replace(finder, replacer);
     return str;
 }
+
+/*
+ * Trivial-but-required to support asynchronous confirmation from raw event handlers
+ */
+async function confirmStudyEdit() {
+    return await asyncConfirm('Are you sure you want to edit this study?'); 
+}
+
