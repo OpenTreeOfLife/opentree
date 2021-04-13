@@ -1157,7 +1157,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $form.append($OKBtn);
         $(dialog).append($form);
         dialog.addEventListener('cancel', function(evt) {
-            // capture ESC key closing window
+            // capture ESC key closing window; return true regardless
             resolve(true);
         });
         dialog.showModal();
@@ -1191,6 +1191,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       });
     }
     async function asyncPrompt(question, defaultValue) {
+      return new Promise((resolve, reject) => {
         if (!defaultValue) defaultValue = "";
         var userInput = null;
         var promptCanceled = false;
@@ -1203,16 +1204,23 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         var $form = $('<form method="dialog"></form>');
         var $inputField = ('<input type="text" name="userInput" placeholder="'+ defaultValue +'" />');
         var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
+            resolve( $inputField.val() );
             dialog.close();
         }) ;
         var $cancelBtn = $('<input type="submit" value="Cancel" />').click(function(evt) {
+            resolve(null);  // mimic window.prompt response
             dialog.close();
         }) ;
         $form.append($inputField);
         $form.append($OKBtn);
         $form.append($cancelBtn);
         $(dialog).append($form);
+        dialog.addEventListener('cancel', function(evt) {
+            // capture ESC key closing window
+            resolve(null);  // mimic window.prompt response
+        });
         dialog.showModal();
+      });
     }
 
 async function testAlert() {
@@ -1226,19 +1234,6 @@ async function testAlert() {
         console.warn("promise rejected!", rejectedValue);
         test = "NADA";
     }
-    console.log('RESPONSE to testAlert?', test);
-}
-function testAlert2() {
-    // use .next(), .catch() instead of await
-    console.log('STARTING testAlert2...');
-    var test = asyncAlert('This is a test!')
-                .then(function(x) {
-                    return x;
-                })
-                .catch(function(x) {
-                    console.warn("promise rejected!", x);
-                    return 'NADA2';
-                });
     console.log('RESPONSE to testAlert?', test);
 }
 async function testConfirm() {
