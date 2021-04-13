@@ -660,6 +660,7 @@ tr:hover .row-controls-ghosted.btn[disabled] {
 /* override default width for dialog-polyfill */
 dialog.modal {
     width: 360px;
+    margin-left: -180px;
 }
 
 /* DOI lookup window */
