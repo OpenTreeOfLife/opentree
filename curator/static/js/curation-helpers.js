@@ -1668,7 +1668,7 @@ function stripTreeCollectionStatusMarkers( collection ) {
 
 async function removeTreeFromCollection(tree, collection) {
     // TODO: prompt for commit msg along with confirmation?
-    if (await confirm('Are you sure you want to remove this tree from the collection?')) {
+    if (await asyncConfirm('Are you sure you want to remove this tree from the collection?')) {
         var decisionList = collection.data.decisions;
         var oldPosition = decisionList.indexOf( tree );
         if (oldPosition === -1) {
