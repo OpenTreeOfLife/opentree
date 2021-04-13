@@ -2659,7 +2659,7 @@ function removeDiacritics( str ) {
  */
 async function confirmHyperlink( link, message ) {
     if (await asyncConfirm( message )) {
-        var targetURL = $(this).attr('href');
+        var targetURL = $(link).attr('href');
         window.location = targetURL;
     }
 }
