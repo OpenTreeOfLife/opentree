@@ -2851,7 +2851,10 @@ function removeDiacritics( str ) {
 /*
  * Trivial-but-required to support asynchronous confirmation from raw event handlers
  */
-async function confirmStudyEdit() {
-    return await asyncConfirm('Are you sure you want to edit this study?'); 
+async function confirmHyperlink( link, message ) {
+    if (await asyncConfirm( message )) {
+        var targetURL = $(this).attr('href');
+        window.location = targetURL;
+    }
 }
 
