@@ -1137,9 +1137,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             dialogSingleton.returnValue = null;
             $(dialogSingleton).empty(); // clear any prior contents
         } else {
-            dialogSingleton = document.createElement('dialog');
-            $(dialogSingleton).addClass('fixed');
-            $(dialogSingleton).addClass('modal');  // emulate Bootstrap style
+            // emulate Bootstrap style and choose a sensible width
+            dialogSingleton = $('<dialog class="fixed modal" style="width: 360px;">');
             $('body').append(dialogSingleton);
             dialogPolyfill.registerDialog(dialogSingleton);
         }
