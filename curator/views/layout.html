@@ -1141,19 +1141,23 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         return dialogSingleton;
     }
     async function asyncAlert(msg) {
+      return new Promise((resolve, reject) => {
         // no return value
         var dialog = getEmptyDialog();
         $(dialog).addClass('fixed')
                  .html('<p>'+ msg +'</p>');
         var $form = $('<form method="dialog"></form>');
         var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
+            resolve(true);  // always true
             dialog.close();
         }) ;
         $form.append($OKBtn);
         $(dialog).append($form);
         dialog.showModal();
+      });
     }
     async function asyncConfirm(question) {
+      return new Promise((resolve, reject) => {
         var dialog = getEmptyDialog();
         dialog.addEventListener('close', function(evt) {
             return dialog.returnValue || null;
@@ -1162,15 +1166,18 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                  .html('<p>'+ question +'</p>');
         var $form = $('<form method="dialog"></form>');
         var $OKBtn = $('<input type="submit" value="OK" />').click(function(evt) {
+            resolve(true);
             dialog.close();
         }) ;
         var $cancelBtn = $('<input type="submit" value="Cancel" />').click(function(evt) {
+            resolve(false);
             dialog.close();
         }) ;
         $form.append($OKBtn);
         $form.append($cancelBtn);
         $(dialog).append($form);
         dialog.showModal();
+      });
     }
     async function asyncPrompt(question, defaultValue) {
         if (!defaultValue) defaultValue = "";
@@ -1196,17 +1203,44 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         $(dialog).append($form);
         dialog.showModal();
     }
+
 async function testAlert() {
+    // use `await` here
     console.log('STARTING testAlert...');
-    var test = await asyncAlert('This is a test!');
-    console.log('RESPONSE to testAlert:');
-    console.log(test);
+    var test = null;
+    try {
+        test = await asyncAlert('This is a test!');
+    }
+    catch (rejectedValue) {
+        console.warn("promise rejected!", rejectedValue);
+        test = "NADA";
+    }
+    console.log('RESPONSE to testAlert?', test);
+}
+function testAlert2() {
+    // use .next(), .catch() instead of await
+    console.log('STARTING testAlert2...');
+    var test = asyncAlert('This is a test!')
+                .then(function(x) {
+                    return x;
+                })
+                .catch(function(x) {
+                    console.warn("promise rejected!", x);
+                    return 'NADA2';
+                });
+    console.log('RESPONSE to testAlert?', test);
 }
 async function testConfirm() {
     console.log('STARTING testConfirm...');
-    var test = await asyncConfirm('This is a test!');
-    console.log('RESPONSE to testConfirm:');
-    console.log(test);
+    var test = await asyncConfirm('This is a test!')
+                .then(function(x) {
+                    return x;
+                })
+                .catch(function(x) {
+                    console.warn("promise rejected!", x);
+                    return 'NADA';
+                });
+    console.log('RESPONSE to testConfirm:', test);
 }
 async function testPrompt() {
     console.log('STARTING testPrompt...');
