@@ -1780,7 +1780,7 @@ function getCollectionHistoryURL( collection ) {
     return historyURL;
 }
 
-function copyCollection( collection ) {
+async function copyCollection( collection ) {
     // create a user-owned copy (or login if user is anonymous)
     if (userIsLoggedIn()) {
         /* Step by step:
@@ -1807,7 +1807,7 @@ function copyCollection( collection ) {
         promptForSaveCollectionComments( collection );
         // from this point, it's treated like a new collection
     } else {
-        if (confirm('Copying a tree collection requires login via Github. OK to proceed?')) {
+        if (await asyncConfirm('Copying a tree collection requires login via Github. OK to proceed?')) {
             loginAndReturn();
         }
     }
