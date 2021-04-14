@@ -793,7 +793,7 @@ body {
                             <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length > 0"
                                 class="pull-right btn btn-mini btn-danger"
                                 style="opacity: 0.3 !important;"
-                                onclick="alert('You must delete the associated tree(s) to remove this file.'); return false;">
+                                onclick="asyncAlert('You must delete the associated tree(s) to remove this file.'); return false;">
                                 <i class="icon-trash icon-white"></i>
                             </button>
                             <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
