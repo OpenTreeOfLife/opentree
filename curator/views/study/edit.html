@@ -402,7 +402,7 @@ body {
                   <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
                     <tr data-bind="if: true">
                         <td>
-                            <a href="#" data-bind="click: showTreeWithHistory,
+                            <a href="#" style="hyphens: auto; overflow-wrap: anywhere;" data-bind="click: showTreeWithHistory,
                                 text: tree['@label'],
                                 attr: { href : getViewURLFromStudyID(studyID) + '/?tab=trees&tree=' + tree['@id'] },
                                 css: viewModel.ticklers.TREES">&nbsp;</a>

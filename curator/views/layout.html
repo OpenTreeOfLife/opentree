@@ -104,6 +104,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}";
         var API_update_collection_PUT_url = "{{=API_update_collection_PUT_url}}";
         var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}";
+
+        // Adjust behavior based on whether we'd manage collections in a popup or a full-page editor
+        var collectionUI = "{{=(response.view == 'collection/edit.html') and 'FULL_PAGE' or 'POPUP' }}";  // to modify behaviors, vs. popup viewer
     </script>
 
     {{#------  require CSS and JS files for this page (read info in base.css) ------}}
@@ -401,8 +404,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     <a href="/curator#TODO" class="dropdown-toggle" data-toggle="dropdown">Tree collections  <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                         <li><a href="/curator/profile#collections">Manage my collections</a></li>
-                        <li><a href="/curator/collections">Browse all collections</a></li>
+                        <li><a href="/curator/collection/">Browse all collections</a></li>
+                      {{ if (response.view != 'collection/edit.html'): }}
                         <li><a href="#" onclick="createNewTreeCollection(); return false;">Add new collection</a></li>
+                      {{ pass }}
                     </ul>
                 </li>
                 <!--
@@ -569,6 +574,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         </div>
     </div>
 
+{{ # Supress this popup template in our full-page collection viewer/editor
+   if response.view != 'collection/edit.html': }}
   <!-- hidden template for the tree-collection-viewer (editor) -->
   <div class="modal hide fade" id="tree-collection-viewer"
        Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
@@ -620,19 +627,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             -->
            <!-- /ko -->
 
-           <!-- ko if: ('external_url' in $data) -->
-            <!-- HISTORY button -->
-            <a data-bind="attr: { href: getCollectionHistoryURL($data) }"
-               title="See full version history on GitHub"
-               class="pull-right btn btn-mini row-controls-ghosted"
-               style="margin-left: 4px;"
-               href="#" target="_blank">
-               History
-               <img src="/curator/static/images/GitHub-Mark-32px.png"
-                    style="width: 14px; height: 14px; padding-left: 2px; margin-top: -2px;"/>
-            </a>
-           <!-- /ko -->
-
            <!-- ko if: !userIsEditingCollection($data) -->
             <!-- SHARE button -->
             <button data-bind="click: shareCollection,
@@ -676,14 +670,15 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
            <!-- /ko -->
 
             <!-- EDIT button -->
-            <button data-bind="click: editCollection,
-                               visible: !(userIsEditingCollection($data)),
-                               attr: {'title': userIsLoggedIn() ? 'Edit collection, including add/remove trees' : 'Edit collection (requires login)'}"
-                title=""
+            <a data-bind="visible: !(userIsEditingCollection($data)),
+                          attr: {'title': userIsLoggedIn() ? 'Edit collection, including add/remove trees' : 'Edit collection (requires login)',
+                                 'href': userIsLoggedIn() ? ('/curator/collection/edit/'+ getCollectionIDFromURL($data.data.url)) :
+                                                            ('/curator/collection/view/'+ getCollectionIDFromURL($data.data.url))}"
+                title="" target="_blank" href="#"
                 class="pull-right btn btn-info btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
-                Edit <i class="icon-edit icon-white"></i>
-            </button>
+                <span data-bind="text: userIsLoggedIn() ? 'Edit details' : 'View Details'">DETAILS</span> <i class="icon-edit icon-white"></i>
+            </a>
             <button data-bind="click: cancelChangesToCollection,
                                visible: userIsEditingCollection($data)"
                 title="Cancel your changes to this collection"
@@ -872,7 +867,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                               <a data-bind="html: name,
                                             attr: { href: getTreeViewURL($data) }"
                                  title="View this tree in a new window"
-                                 href="#" target="_blank"><!--NAME--></a>
+                                 href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
                              <!-- this is no longer editable
                               <input type="text"
                                      class="input-large"
@@ -893,7 +888,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             <!-- ko if: !userIsEditingCollection($parent) -->
                               <a data-bind="html: name,
                                             attr: { href: getTreeViewURL($data), title: comments || '(no description provided)' }"
-                                 href="#" target="_blank"><!--NAME--></a>
+                                 href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
                             <!-- /ko -->
                           </td>
                       </tr>
@@ -1002,6 +997,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div><!-- end of .modal-body -->
     <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
   </div><!-- end of #tree-collection-viewer.modal- -->
+{{ pass }}
+
 
 <!-- hidden template for gathering comments when saving a tree collection -->
 <div class="modal hide fade modal-save-comments" id="save-collection-comments-popup" style="display: none;">
