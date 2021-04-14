@@ -5990,9 +5990,9 @@ function addSupportingFileFromURL() {
 
 }
 
-function removeTree( tree ) {
+async function removeTree( tree ) {
     // let's be sure, since adding may be slow...
-    if (!confirm("Are you sure you want to delete this tree from the study?")) {
+    if (!(await asyncConfirm("Are you sure you want to delete this tree from the study?"))) {
         return;
     }
 
