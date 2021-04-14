@@ -6919,9 +6919,9 @@ function clearSelectedMappings() {
     nudgeTickler('TREES');  // to hide/show duplicate-taxon prompts in tree list
 }
 
-function clearAllMappings() {
+async function clearAllMappings() {
     var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
-    if (confirm("WARNING: This will un-map all "+ allOTUs.length +" OTUs in the current study! Are you sure you want to do this?")) {
+    if (await asyncConfirm("WARNING: This will un-map all "+ allOTUs.length +" OTUs in the current study! Are you sure you want to do this?")) {
         // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) OTUs.
         $.each( allOTUs, function (i, otu) {
             // clear any "established" mapping (already approved)
