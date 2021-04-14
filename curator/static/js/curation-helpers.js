@@ -1901,7 +1901,7 @@ async function copyCollection( collection ) {
     }
 }
 
-function freezeDisplayedListOrder() {
+async function freezeDisplayedListOrder() {
     /* Update this collection's tree list to capture the filtered/sorted list
      * currently shown. If only a partial tree list is showing (due to
      * pagination or filtering), bump the "hidden" trees to the end, preserving
@@ -1917,7 +1917,7 @@ function freezeDisplayedListOrder() {
         warning += "Hidden trees will be moved to the end of the list, but retain their relative positions. ";
     }
     warning += "Are you sure you want to do this?";
-    if (!confirm(warning)) {
+    if (!(await asyncConfirm(warning))) {
         return false;
     }
 
