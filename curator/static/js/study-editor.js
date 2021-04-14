@@ -9630,7 +9630,7 @@ function getAssociatedCollectionsCount() {
     return '';
 }
 
-function addTreeToExistingCollection(clicked) {
+async function addTreeToExistingCollection(clicked) {
     if (userIsLoggedIn()) {
         // show the autocomplete widget and mute this button
         var $btn = $(clicked);
@@ -9639,7 +9639,7 @@ function addTreeToExistingCollection(clicked) {
         $collectionPrompt.show()
         $collectionPrompt.find('input').eq(0).focus();
     } else {
-        if (confirm('This requires login via Github. OK to proceed?')) {
+        if (await asyncConfirm('This requires login via Github. OK to proceed?')) {
             loginAndReturn();
         }
     }
