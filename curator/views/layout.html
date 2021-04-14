@@ -1161,14 +1161,15 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         dialog.showModal();
       });
     }
-    async function asyncConfirm(question) {
+    async function asyncConfirm(question, options) {
       return new Promise((resolve, reject) => {
+        options = options || {'FULL_HTML': false};
         var dialog = getEmptyDialog();
         dialog.addEventListener('close', function(evt) {
             return dialog.returnValue || null;
         });
         $(dialog).addClass('fixed')
-                 .html('<p>'+ question +'</p>');
+                 .html( options.FULL_HTML ? question : '<p>'+ question +'</p>');
         var $form = $('<form method="dialog"></form>');
         var $OKBtn = $('<input type="submit" class="btn-info pull-right" value="OK" />').click(function(evt) {
             resolve(true);
