@@ -6022,9 +6022,9 @@ async function removeTree( tree ) {
     nudgeTickler('STUDY_HAS_CHANGED');
 }
 
-function removeSupportingFile( fileInfo ) {
+async function removeSupportingFile( fileInfo ) {
     // let's be sure, since adding may be slow...
-    if (!confirm("Are you sure you want to delete this file?")) {
+    if (!(await asyncConfirm("Are you sure you want to delete this file?"))) {
         return;
     }
 
