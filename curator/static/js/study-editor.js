@@ -9861,13 +9861,13 @@ function addCurrentTreeToCollection( collection ) {
     editCollection( collection, {SCROLL_TO_BOTTOM: true} );
 }
 
-function addTreeToNewCollection() {
+async function addTreeToNewCollection() {
     if (userIsLoggedIn()) {
         var c = createNewTreeCollection();
         addCurrentTreeToCollection(c);
         showCollectionViewer( c, {SCROLL_TO_BOTTOM: true} );
     } else {
-        if (confirm('This requires login via Github. OK to proceed?')) {
+        if (await asyncConfirm('This requires login via Github. OK to proceed?')) {
             loginAndReturn();
         }
     }

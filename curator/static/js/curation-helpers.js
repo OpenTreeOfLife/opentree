@@ -2021,7 +2021,7 @@ function loadStudyListForLookup() {
     return false;
 }
 
-function editCollection( collection, editorOptions ) {
+async function editCollection( collection, editorOptions ) {
     // toggle to full editing UI (or login if user is anonymous)
     editorOptions = editorOptions || {MAINTAIN_SCROLL: true};
     if (userIsLoggedIn()) {
@@ -2036,7 +2036,7 @@ function editCollection( collection, editorOptions ) {
         console.warn("can't edit malformed collection:");
         console.warn(collection);
     } else {
-        if (confirm('Editing a tree collection requires login via Github. OK to proceed?')) {
+        if (await asyncConfirm('Editing a tree collection requires login via Github. OK to proceed?')) {
             loginAndReturn();
         }
     }
