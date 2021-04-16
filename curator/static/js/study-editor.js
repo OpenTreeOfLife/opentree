@@ -8941,12 +8941,17 @@ var nodeLabelModes = [
         }
     }
 ];
-function updateNodeLabelMode(tree) {
+
+async function updateNodeLabelMode(tree) {
     /* Translate the choices in nodeLabelModes into action:
          - update the tree's nodeLabelMode
          - transform the node @label properties and shift them to their new
            locations (or not)
    */
+    if (!(await asyncConfirm('Warning: This can shift ambiguous node labels to their adjacent edges. '
+                            +'Check rooting carefully! OK to proceed?'))) {
+        return;
+    }
     tree['^ot:nodeLabelMode'] = viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode;
     switch(viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode) {
         case 'ot:otherSupport':
