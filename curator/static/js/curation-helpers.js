@@ -1853,9 +1853,9 @@ function getCollectionDirectURL( collection ) {
     var directURL = window.location.protocol +'//'+ window.location.hostname +'/curator/collection/view/'+ collectionID;
     return directURL;
 }
-function shareCollection( collection ) {
+async function shareCollection( collection ) {
     var directURL = getCollectionDirectURL(collection);
-    window.prompt("This URL will open the current collection automatically (no login required).", directURL);
+    await asyncPrompt("This URL will open the current collection automatically (no login required).", directURL);
 }
 
 function getCollectionHistoryURL( collection ) {
