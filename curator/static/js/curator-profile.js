@@ -392,7 +392,7 @@ async function promptToEditProfile() {
             // if blocked by popup blocker, this is undefined
             newWindow.focus();
         } else {
-            alert(
+            await asyncAlert(
                 'The new window was blocked. You can edit your GitHub profile at this URL:'
                +'\n\n   '+ gitHubProfileURL
             );
