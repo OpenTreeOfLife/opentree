@@ -238,13 +238,13 @@ function changeTab(o) {
     // if we're using History.js, all tab changes should should be driven from history
     var newTabName = $.trim('tab' in o ? o.tab : '');
     if (newTabName === '') {
-        alert('changeTab(): No tab name specified!');
+        console.warn('changeTab(): No tab name specified!');
         return;
     }
     var $tabBar = $('ul.nav-tabs:eq(0)');
     var oldTabName = $.trim($tabBar.find('li.active a').text());
     if (newTabName === oldTabName) {
-        alert('changeTab(): Same tab specified, nothing to change...');
+        console.warn('changeTab(): Same tab specified, nothing to change...');
         return;
     }
     if (History && History.enabled) {
@@ -2196,7 +2196,7 @@ function showTreeConflictDetailsFromPopup(tree) {
     // call the above from the tree-view popup
     if (!tree) {
         // this should *never* happen
-        alert("showTreeConflictDetailsFromPopup(): No tree specified!");
+        console.warn("showTreeConflictDetailsFromPopup(): No tree specified!");
         return;
     }
     var newReferenceTreeID = $('#treeview-reference-select').val();

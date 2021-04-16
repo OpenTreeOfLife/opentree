@@ -582,7 +582,7 @@ var $stashedCollectionViewerTemplate = null;
 var $stashedCollectionContributorElement = null;
 var $stashedCollectionDecisionElement = null;
 
-function showCollectionViewer( collection, options ) {
+async function showCollectionViewer( collection, options ) {
     // allow options for initial display, etc.
     options = options || {};
 
@@ -612,7 +612,7 @@ function showCollectionViewer( collection, options ) {
         //console.log(collection);
     } else {
         // this should *never* happen
-        alert("showCollectionViewer(): No collection specified!");
+        console.warn("showCollectionViewer(): No collection specified!");
         return;
     }
 
@@ -695,7 +695,7 @@ function showCollectionViewer( collection, options ) {
         $('#tree-collection-viewer').off('hide').on('hide', function () {
             if (currentlyEditingCollectionID) {  // not null or undefined
                 //showInfoMessage("Please save (or cancel) your changes to this collection!");
-                alert("Please save (or cancel) your changes to this collection!");
+                await asyncAlert("Please save (or cancel) your changes to this collection!");
                 return false;
             }
             collectionPopupIsInUse = false;
@@ -1533,7 +1533,8 @@ function moveInTreeCollection( tree, collection, newPosition ) {
     var decisionList = collection.data.decisions;
     var oldPosition = decisionList.indexOf( tree );
     if (oldPosition === -1) {
-        alert('No such tree in this collection!');
+        // this should *never* happen
+        console.warn('No such tree in this collection!');
         return false;
     }
 
@@ -1749,7 +1750,8 @@ async function removeTreeFromCollection(tree, collection) {
         var decisionList = collection.data.decisions;
         var oldPosition = decisionList.indexOf( tree );
         if (oldPosition === -1) {
-            alert('No such tree in this collection!');
+            // this should *never* happen
+            console.warn('No such tree in this collection!');
             return false;
         }
         decisionList.splice(oldPosition, 1);
@@ -2337,7 +2339,7 @@ function jumpToCollectionEditor( collection ) {
     var editURL = viewURL.split('/view/').join('/edit/');
     window.location.href = editURL;
 }
-function deleteTreeCollection( collection ) {
+async function deleteTreeCollection( collection ) {
     // user has already confirmed and provided commit msg
     var collectionID, lastCommitSHA;
     if ('versionHistory' in collection) {
@@ -2349,7 +2351,7 @@ function deleteTreeCollection( collection ) {
         collectionID = collection.id;
         lastCommitSHA = collection.lastModified.sha;
     } else {
-        alert('Missing history for this collection!');
+        await asyncAlert('Missing history for this collection!');
         return false;
     }
     var removeURL = API_remove_collection_DELETE_url.replace('{COLLECTION_ID}', collectionID);
