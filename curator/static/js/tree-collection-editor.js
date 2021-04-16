@@ -1758,27 +1758,6 @@ if (!Date.prototype.toISOString) {
     Date.prototype.toISOString = Date.prototype.toJSON;
 }
 
-/* TODO: Still useful?
-function removeTree( tree ) {
-    // let's be sure, since adding may be slow...
-    if (!confirm("Are you sure you want to delete this tree from the study?")) {
-        return;
-    }
-
-    // remove this tree
-    $.each(viewModel.nexml.trees, function(i, treesCollection) {
-        if ($.inArray(tree, treesCollection.tree) !== -1) {
-            removeFromArray( tree, treesCollection.tree );
-        }
-    });
-
-    // force update of curation UI in all relevant areas
-    nudgeTickler('GENERAL_METADATA');
-    nudgeTickler('TREES');
-    nudgeTickler('COLLECTION_HAS_CHANGED');
-}
-*/
-
 function forceToggleCheckbox(cb, newState) {
     var $cb = $(cb);
     switch(newState) {

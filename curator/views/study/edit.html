@@ -2776,7 +2776,7 @@ body {
 
                <span class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree($data)">
                  <button class="btn btn-info" style="margin-left: 10px;"
-                         data-bind="click: function() { if (confirm('Warning: This can shift ambiguous node labels to their adjacent edges. Check rooting carefully! OK to proceed?')) updateNodeLabelMode($data); return false; }, enable: readyToCaptureInternalNodeLabels()"
+                         data-bind="click: function() { updateNodeLabelMode($data); return false; }, enable: readyToCaptureInternalNodeLabels()"
                     >Capture internal node labels</button>
                </span>
 
