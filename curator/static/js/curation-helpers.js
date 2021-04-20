@@ -630,7 +630,7 @@ async function showCollectionViewer( collection, options ) {
         });
     }
 
-    var updateCollectionDisplay = async function(options) {
+    const updateCollectionDisplay = async function(options) {
         options = options || {};
         // (re)bind widgets, esp. for adding trees
         var currentListScrollPosition = $('#tree-list-holder').scrollTop();
