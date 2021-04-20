@@ -218,7 +218,7 @@ function saveCurrentNameset( options ) {
                   },
                   function (err) {    
                       // failure callback
-                      alert('ERROR generating this ZIP archive:\n'+ err);
+                      asyncAlert('ERROR generating this ZIP archive:<br/><br/>'+ err);
                       // revert to previous last-save info in the active document
                       viewModel.metadata.last_saved( previousSaveTimestamp );
                       viewModel.metadata.save_count( previousSaveCount );
@@ -1473,7 +1473,7 @@ function enableSaveButton() {
         if (browserSupportsFileAPI()) {
             showSaveNamesetPopup();
         } else {
-            alert("Sorry, this browser does not support saving to a local file!");
+            asyncAlert("Sorry, this browser does not support saving to a local file!");
         }
         return false;
     });

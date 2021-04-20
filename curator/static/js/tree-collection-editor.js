@@ -148,13 +148,13 @@ function changeTab(o) {
     // if we're using History.js, all tab changes should should be driven from history
     var newTabName = $.trim('tab' in o ? o.tab : '');
     if (newTabName === '') {
-        alert('changeTab(): No tab name specified!');
+        console.warn('changeTab(): No tab name specified!');
         return;
     }
     var $tabBar = $('ul.nav-tabs:eq(0)');
     var oldTabName = $.trim($tabBar.find('li.active a').text());
     if (newTabName === oldTabName) {
-        alert('changeTab(): Same tab specified, nothing to change...');
+        console.warn('changeTab(): Same tab specified, nothing to change...');
         return;
     }
     if (History && History.enabled) {
@@ -1701,7 +1701,7 @@ function getTreeByID(id) {
         }
         if (!tree) {
             // this should *never* happen
-            alert("showTreeViewer(): No tree specified!");
+            console.warn("showTreeViewer(): No tree specified!");
             return;
         }
     }

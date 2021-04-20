@@ -115,7 +115,6 @@ function makeNamesForm(respData) {
             var matches = respData.results[i].matches;
             for (var j = 0; j < matches.length; j++) {
                 var thisMatch = matches[j];
-                //alert(thisMatch.matchedNodeName);
 
                 var thisMatchResult = $("<li></li>");
 
