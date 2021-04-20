@@ -630,7 +630,7 @@ async function showCollectionViewer( collection, options ) {
         });
     }
 
-    const updateCollectionDisplay = async function(options) {
+    var updateCollectionDisplay = function(options) {
         options = options || {};
         // (re)bind widgets, esp. for adding trees
         var currentListScrollPosition = $('#tree-list-holder').scrollTop();
@@ -692,7 +692,7 @@ async function showCollectionViewer( collection, options ) {
         $('#tree-collection-viewer').off('shown').on('shown', function () {
             updateCollectionDisplay(options);
         });
-        $('#tree-collection-viewer').off('hide').on('hide', function () {
+        $('#tree-collection-viewer').off('hide').on('hide', async function () {
             if (currentlyEditingCollectionID) {  // not null or undefined
                 //showInfoMessage("Please save (or cancel) your changes to this collection!");
                 await asyncAlert("Please save (or cancel) your changes to this collection!");
