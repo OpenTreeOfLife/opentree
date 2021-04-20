@@ -692,10 +692,10 @@ async function showCollectionViewer( collection, options ) {
         $('#tree-collection-viewer').off('shown').on('shown', function () {
             updateCollectionDisplay(options);
         });
-        $('#tree-collection-viewer').off('hide').on('hide', async function () {
+        $('#tree-collection-viewer').off('hide').on('hide', function () {
             if (currentlyEditingCollectionID) {  // not null or undefined
                 //showInfoMessage("Please save (or cancel) your changes to this collection!");
-                await asyncAlert("Please save (or cancel) your changes to this collection!");
+                asyncAlert("Please save (or cancel) your changes to this collection!");  // no need to wait
                 return false;
             }
             collectionPopupIsInUse = false;
