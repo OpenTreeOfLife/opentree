@@ -206,7 +206,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       if (fbWindow) {
           fbWindow.focus();
       } else {
-          alert("Couldn't open a new window. Are you using a popup blocker?");
+          asyncAlert("Couldn't open a new window. Are you using a popup blocker?");
           return false;
       };
       return false;
@@ -755,12 +755,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 </ul>
               </div>
 
-                <!-- let's keep it simple for now
-                <div class="btn-group" style="margin-left: 80px; margin-top: 6px;">
-                  <button id="show-included-trees-button" class="btn btn-small active" onclick="alert('COMING SOON'); return false;">&nbsp; Show only included trees &nbsp;</button>
-                  <button id="show-all-trees-button" class="btn btn-small" onclick="alert('COMING SOON'); return false;">&nbsp; Show all tree decisions &nbsp;</button>
-                </div>
-                -->
               <div id="tree-list-holder"
                    style="overflow: auto;">
       <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->

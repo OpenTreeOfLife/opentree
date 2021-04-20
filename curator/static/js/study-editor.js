@@ -2165,12 +2165,12 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     }
     if (!tree) {
         // this should *never* happen
-        alert("addConflictInfoToTree(): No tree specified!");
+        console.warn("addConflictInfoToTree(): No tree specified!");
         return;
     }
     if (!conflictInfo) {
         // this should *never* happen
-        alert("addConflictInfoToTree(): No conflict info provided!");
+        console.warn("addConflictInfoToTree(): No conflict info provided!");
         return;
     }
     // Add general information on the tree itself...
@@ -2203,7 +2203,7 @@ function removeTaxonMappingInfoFromTree( treeOrID ) {
     }
     if (!tree) {
         // this should *never* happen
-        alert("removeTaxonMappingInfoFromTree(): No tree specified!");
+        console.warn("removeTaxonMappingInfoFromTree(): No tree specified!");
         return;
     }
     // Clear conflict information from the tree itself...
@@ -2220,7 +2220,7 @@ function removeConflictInfoFromTree( treeOrID ) {
     }
     if (!tree) {
         // this should *never* happen
-        alert("removeConflictInfoFromTree(): No tree specified!");
+        console.warn("removeConflictInfoFromTree(): No tree specified!");
         return;
     }
     // Clear conflict information from the tree itself...
@@ -4163,7 +4163,7 @@ function showTreeViewer( tree, options ) {
         }
         if (!tree) {
             // this should *never* happen
-            alert("showTreeViewer(): No tree specified!");
+            console.warn("showTreeViewer(): No tree specified!");
             return;
         }
     }
@@ -4356,7 +4356,7 @@ function showTreeViewer( tree, options ) {
             // dim and disable the full-screen toggle
             $fullScreenToggle.css("opacity: 0.5;")
                              .click(function() {
-                                alert("This browser does not support full-screen display.");
+                                asyncAlert("This browser does not support full-screen display.");
                                 return false;
                              })
                              .show();
@@ -4382,7 +4382,7 @@ function showTreeViewer( tree, options ) {
             // dim and disable the full-screen toggle
             $printTreeViewButton.css("opacity: 0.5;")
                                 .click(function() {
-                                    alert("This browser does not support full-screen display, so it cannot print the tree.");
+                                    asyncAlert("This browser does not support full-screen display, so it cannot print the tree.");
                                     return false;
                                 })
                              .show();
@@ -4507,7 +4507,7 @@ function showOTUInContext() {
     $.merge( otuContextsToShow, findOTUInTrees( otu, getTreesNotYetNominated() ) );
     // if this OTU is unused, something's very wrong; bail out now
     if (otuContextsToShow.length === 0) {
-        alert("This OTU doesn't appear in any tree. (This is not expected.)");
+        asyncAlert("This OTU doesn't appear in any tree. (This is not expected.)");
         return;
     }
     // otherwise show the tree viewer with first result highlighted, UI to show more
@@ -7389,7 +7389,7 @@ function createAnnotation( annotationBundle, nexml ) {
     // add message(s) to its target element, building a local message
     // collection if not found
     if (!target) {
-        alert("ERROR: target element not found: "+ target +" <"+ typeof(target) +">");
+        console.error("ERROR: target element not found: "+ target +" <"+ typeof(target) +">");
         return;
     }
     $.each( annEvent.message, function( i, msg ) {
@@ -8400,7 +8400,7 @@ function lookUpDOI() {
                 var foundItems = resultsJSON.message.items;
                 console.log("FOUND "+ foundItems.length +" matching items");
                 if (foundItems.length === 0) {
-                    alert('No matches found, please check your publication reference text.')
+                    asyncAlert('No matches found, please check your publication reference text.')
                 } else {
                     var $lookup = $('#DOI-lookup');
                     $lookup.find('.found-matches-count').text(foundItems.length);
@@ -10051,7 +10051,7 @@ function showNewTaxaPopup() {
     // Block any method of closing this window if there is unsaved work
     $('#new-taxa-popup').off('hide').on('hide', function () {
         if (currentTaxonCandidate() || candidateOTUsForNewTaxa.length > 0) {
-            alert("Please submit (or cancel) your proposed taxa!");
+            asyncAlert("Please submit (or cancel) your proposed taxa!");
             return false;
         }
     });
