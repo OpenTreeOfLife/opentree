@@ -11006,7 +11006,7 @@ function updateTaxonNameCheck(candidate) {
     // report status of last check, or initiate a new check
     if (!candidate) return false;
     ///console.log('updateTaxonNameCheck() STARTING...');
-    var testName = candidate.newTaxonMetadata.modifiedName();
+    var testName = $.trim( candidate.newTaxonMetadata.modifiedName() );
     ///console.log('>> test name is '+ testName);
     ///console.log('>> previous status is '+ candidate.newTaxonMetadata.modifiedNameStatus());
     // check first against other proposed names
@@ -11016,7 +11016,7 @@ function updateTaxonNameCheck(candidate) {
             return true; // don't compare to itself! skips to next
         }
         var compareName = compareCandidate.newTaxonMetadata.modifiedName();
-        if ($.trim(testName) === $.trim(compareName)) {
+        if (testName === $.trim(compareName)) {
             duplicateNameFound = true;
             candidate.newTaxonMetadata.modifiedNameStatus('FOUND IN CANDIDATES');
             return false;
