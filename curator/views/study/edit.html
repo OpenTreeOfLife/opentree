@@ -2333,7 +2333,7 @@ body {
               data-bind="css: currentTaxonCandidate().newTaxonMetadata.skipped() ? 'skip-label' : ''">
             <div class="control-group">
                 <label for="skip-this-label" class="featured-label skip-label non-fading"
-                       style="clear: both; padding-top: 2px; padding-left: 20px; text-indent: -20px;">
+                       style="clear: both; padding: 2px 0 4px 24px; text-indent: -16px;">
                     <input type="checkbox" id="skip-this-label" name="TODO"
                            style="width: 20px;" class="non-fading"
                            data-bind="checked: currentTaxonCandidate().newTaxonMetadata.skipped(),
@@ -2467,7 +2467,7 @@ body {
                       <!-- then show dropdown when results are ready... -->
                       <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
                       <select style="margin-bottom: 0; width: auto;" name="parent-taxon-search-context"
-                              data-bind="attr:{'disabled': sharedParentTaxonID()}">
+                              data-bind="attr:{'disabled': sharedParentTaxonID() || currentTaxonCandidate().newTaxonMetadata.skipped()}">
                           {{ # generate our contextNames list based on newly fetched names
                             try:
                              for context_name in taxonSearchContextNames:
