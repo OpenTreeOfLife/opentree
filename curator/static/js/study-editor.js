@@ -10015,6 +10015,7 @@ function showNewTaxaPopup() {
             var adjustedOTULabel = $.trim(candidate['^ot:altLabel']) ||
                                    $.trim(adjustedLabel(candidate['^ot:originalLabel']));
             candidate.newTaxonMetadata = {
+                'skipped': ko.observable(false),
                 'rank': 'species',
                 'adjustedLabel': adjustedOTULabel,  // as modified by regex or manual edit
                 'modifiedName': ko.observable( adjustedOTULabel ),
@@ -10102,6 +10103,9 @@ function submitNewTaxa() {
 
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
         // repackage its metadata to match the web service
+        if (candidate.newTaxonMetadata.skipped()) {
+            return;  // skipping this taxon (unable to validate)
+        }
         var newTaxon = {};
         newTaxon['tag'] = candidate['@id'];  // used to match results with candidate OTUs
         newTaxon['original_label'] = $.trim(candidate['^ot:originalLabel']);
@@ -10220,6 +10224,15 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
     showSuccessMessage('Selected OTUs mapped to new taxa.');
 }
 
+function toggleSkipThisTaxon( otu, event ) {
+    var skippingThisTaxon = $(event.target).is(':checked');
+    if (skippingThisTaxon) {
+        currentTaxonCandidate().newTaxonMetadata.skipped(true);
+    } else {
+        currentTaxonCandidate().newTaxonMetadata.skipped(false);
+    }
+    return true;
+}
 function toggleSharedParentID( otu, event ) {
     // Set a global for this (an observable, to update display).
     // NOTE that radio-button values are strings, so we convert to boolean below!

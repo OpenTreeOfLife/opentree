@@ -2224,6 +2224,13 @@ body {
         </p>
         <form class="form-horizontal wider-fields" style="margin-bottom: 0px;">
             <div class="control-group">
+                <label for="skip-this-taxon" class="featured-label" style="clear: both; padding-top: 2px; padding-left: 20px; text-indent: -20px;">
+                    <input type="checkbox" id="skip-this-taxon" name="TODO"
+                           style="width: 20px;"
+                           data-bind="checked: currentTaxonCandidate().newTaxonMetadata.skipped(),
+                                      click: toggleSkipThisTaxon" />
+                    Skip this taxon if unable to validate below <em>(un-check to try again)</em>
+                </label>
                 <label class="control-label" for="">Original label &nbsp; </label>
                 <div class="controls">
                     <div class="static-form-value unmapped-label"
