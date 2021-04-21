@@ -1013,3 +1013,10 @@ form.skip-label {
     padding: 4px;
     margin: -4px;
 }
+form.skip-label * {
+    opacity: 0.75;
+}
+form.skip-label *.non-fading {
+    opacity: 1.0;
+    opacity: 0.75;
+}
