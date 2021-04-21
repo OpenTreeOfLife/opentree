@@ -10431,6 +10431,11 @@ function submitNewTaxa() {
         newTaxon['comment'] = candidate.newTaxonMetadata.comments;
         bundle.taxa.push(newTaxon);
     });
+    if (bundle.taxa.length === 0) {
+        // all labels were skipped! nothing to submit
+        showErrorMessage("All labels were skipped, so there was nothing to submit!");
+        return false;
+    }
 
     // add non-JSON values to the query string
     var qsVars = $.param({
