@@ -1018,5 +1018,4 @@ form.skip-label * {
 }
 form.skip-label *.non-fading {
     opacity: 1.0;
-    opacity: 0.75;
 }
