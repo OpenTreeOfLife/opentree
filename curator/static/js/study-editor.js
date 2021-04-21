@@ -10145,7 +10145,7 @@ function submitNewTaxa() {
     });
     if (bundle.taxa.length === 0) {
         // all labels were skipped! nothing to submit
-        showErrorMessage("All labels were skipped, so there was nothing to submit!");
+        showErrorMessage("All labels were skipped, so there's nothing to submit!");
         return false;
     } else {
         bundle["new_ottids_required"] = bundle.taxa.length;
