@@ -10712,6 +10712,8 @@ function useOriginalLabelForNewTaxon(candidate) {
     // overwrite the new-taxon name with the original, and clear any reason for renaming
     candidate.newTaxonMetadata.modifiedName( candidate['^ot:originalLabel'] );
     candidate.newTaxonMetadata.modifiedNameReason(null);
+    // force a fresh check of this label against existing taxonomy
+    updateTaxonNameCheck(candidate);
 }
 
 function updateTaxonNameCheck(candidate) {
