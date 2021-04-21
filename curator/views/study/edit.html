@@ -283,7 +283,7 @@ body {
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
             onclick="showMaintenancePopup(); return false;"
            {{ else: }}
-            onclick="return confirm('Are you sure you want to edit this study?');"
+            onclick="confirmHyperlink(this, 'Are you sure you want to edit this study?'); return false;"
            {{ pass }}
           >Edit Study</a>
          {{ else: }}
@@ -291,7 +291,7 @@ body {
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
             onclick="showMaintenancePopup(); return false;"
            {{ else: }}
-            onclick="return confirm('Are you sure you want to edit this study?');"
+            onclick="confirmHyperlink(this, 'Are you sure you want to edit this study?'); return false;"
            {{ pass }}
           >Login to Edit Study</a>
          {{ pass }}
@@ -778,7 +778,7 @@ body {
                             <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length > 0"
                                 class="pull-right btn btn-mini btn-danger"
                                 style="opacity: 0.3 !important;"
-                                onclick="alert('You must delete the associated tree(s) to remove this file.'); return false;">
+                                onclick="asyncAlert('You must delete the associated tree(s) to remove this file.'); return false;">
                                 <i class="icon-trash icon-white"></i>
                             </button>
                             <button data-bind="css: viewModel.ticklers.TREES, visible: getAssociatedTrees(file).length === 0, click: removeSupportingFile"
@@ -2669,7 +2669,7 @@ body {
 
                <span class="structure-only" data-bind="visible: viewModel.ticklers.TREES() && ambiguousLabelsFoundInTree($data)">
                  <button class="btn btn-info" style="margin-left: 10px;"
-                         data-bind="click: function() { if (confirm('Warning: This can shift ambiguous node labels to their adjacent edges. Check rooting carefully! OK to proceed?')) updateNodeLabelMode($data); return false; }, enable: readyToCaptureInternalNodeLabels()"
+                         data-bind="click: function() { updateNodeLabelMode($data); return false; }, enable: readyToCaptureInternalNodeLabels()"
                     >Capture internal node labels</button>
                </span>
 

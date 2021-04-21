@@ -582,7 +582,7 @@ var $stashedCollectionViewerTemplate = null;
 var $stashedCollectionContributorElement = null;
 var $stashedCollectionDecisionElement = null;
 
-function showCollectionViewer( collection, options ) {
+async function showCollectionViewer( collection, options ) {
     // allow options for initial display, etc.
     options = options || {};
 
@@ -612,7 +612,7 @@ function showCollectionViewer( collection, options ) {
         //console.log(collection);
     } else {
         // this should *never* happen
-        alert("showCollectionViewer(): No collection specified!");
+        console.warn("showCollectionViewer(): No collection specified!");
         return;
     }
 
@@ -695,7 +695,7 @@ function showCollectionViewer( collection, options ) {
         $('#tree-collection-viewer').off('hide').on('hide', function () {
             if (currentlyEditingCollectionID) {  // not null or undefined
                 //showInfoMessage("Please save (or cancel) your changes to this collection!");
-                alert("Please save (or cancel) your changes to this collection!");
+                asyncAlert("Please save (or cancel) your changes to this collection!");  // no need to wait
                 return false;
             }
             collectionPopupIsInUse = false;
@@ -1533,7 +1533,8 @@ function moveInTreeCollection( tree, collection, newPosition ) {
     var decisionList = collection.data.decisions;
     var oldPosition = decisionList.indexOf( tree );
     if (oldPosition === -1) {
-        alert('No such tree in this collection!');
+        // this should *never* happen
+        console.warn('No such tree in this collection!');
         return false;
     }
 
@@ -1743,13 +1744,14 @@ function stripTreeCollectionStatusMarkers( collection ) {
     });
 }
 
-function removeTreeFromCollection(tree, collection) {
+async function removeTreeFromCollection(tree, collection) {
     // TODO: prompt for commit msg along with confirmation?
-    if (confirm('Are you sure you want to remove this tree from the collection?')) {
+    if (await asyncConfirm('Are you sure you want to remove this tree from the collection?')) {
         var decisionList = collection.data.decisions;
         var oldPosition = decisionList.indexOf( tree );
         if (oldPosition === -1) {
-            alert('No such tree in this collection!');
+            // this should *never* happen
+            console.warn('No such tree in this collection!');
             return false;
         }
         decisionList.splice(oldPosition, 1);
@@ -1853,9 +1855,9 @@ function getCollectionDirectURL( collection ) {
     var directURL = window.location.protocol +'//'+ window.location.hostname +'/curator/collection/view/'+ collectionID;
     return directURL;
 }
-function shareCollection( collection ) {
+async function shareCollection( collection ) {
     var directURL = getCollectionDirectURL(collection);
-    window.prompt("This URL will open the current collection automatically (no login required).", directURL);
+    await asyncPrompt("This URL will open the current collection automatically (no login required).", directURL);
 }
 
 function getCollectionHistoryURL( collection ) {
@@ -1868,7 +1870,7 @@ function getCollectionHistoryURL( collection ) {
     return historyURL;
 }
 
-function copyCollection( collection ) {
+async function copyCollection( collection ) {
     // create a user-owned copy (or login if user is anonymous)
     if (userIsLoggedIn()) {
         /* Step by step:
@@ -1895,13 +1897,13 @@ function copyCollection( collection ) {
         promptForSaveCollectionComments( collection );
         // from this point, it's treated like a new collection
     } else {
-        if (confirm('Copying a tree collection requires login via Github. OK to proceed?')) {
+        if (await asyncConfirm('Copying a tree collection requires login via Github. OK to proceed?')) {
             loginAndReturn();
         }
     }
 }
 
-function freezeDisplayedListOrder() {
+async function freezeDisplayedListOrder() {
     /* Update this collection's tree list to capture the filtered/sorted list
      * currently shown. If only a partial tree list is showing (due to
      * pagination or filtering), bump the "hidden" trees to the end, preserving
@@ -1917,7 +1919,7 @@ function freezeDisplayedListOrder() {
         warning += "Hidden trees will be moved to the end of the list, but retain their relative positions. ";
     }
     warning += "Are you sure you want to do this?";
-    if (!confirm(warning)) {
+    if (!(await asyncConfirm(warning))) {
         return false;
     }
 
@@ -2021,7 +2023,7 @@ function loadStudyListForLookup() {
     return false;
 }
 
-function editCollection( collection, editorOptions ) {
+async function editCollection( collection, editorOptions ) {
     // toggle to full editing UI (or login if user is anonymous)
     editorOptions = editorOptions || {MAINTAIN_SCROLL: true};
     if (userIsLoggedIn()) {
@@ -2036,7 +2038,7 @@ function editCollection( collection, editorOptions ) {
         console.warn("can't edit malformed collection:");
         console.warn(collection);
     } else {
-        if (confirm('Editing a tree collection requires login via Github. OK to proceed?')) {
+        if (await asyncConfirm('Editing a tree collection requires login via Github. OK to proceed?')) {
             loginAndReturn();
         }
     }
@@ -2337,7 +2339,7 @@ function jumpToCollectionEditor( collection ) {
     var editURL = viewURL.split('/view/').join('/edit/');
     window.location.href = editURL;
 }
-function deleteTreeCollection( collection ) {
+async function deleteTreeCollection( collection ) {
     // user has already confirmed and provided commit msg
     var collectionID, lastCommitSHA;
     if ('versionHistory' in collection) {
@@ -2349,7 +2351,7 @@ function deleteTreeCollection( collection ) {
         collectionID = collection.id;
         lastCommitSHA = collection.lastModified.sha;
     } else {
-        alert('Missing history for this collection!');
+        await asyncAlert('Missing history for this collection!');
         return false;
     }
     var removeURL = API_remove_collection_DELETE_url.replace('{COLLECTION_ID}', collectionID);
@@ -2847,3 +2849,14 @@ function removeDiacritics( str ) {
     str = str.replace(finder, replacer);
     return str;
 }
+
+/*
+ * Trivial-but-required to support asynchronous confirmation from raw event handlers
+ */
+async function confirmHyperlink( link, message ) {
+    if (await asyncConfirm( message )) {
+        var targetURL = $(link).attr('href');
+        window.location = targetURL;
+    }
+}
+

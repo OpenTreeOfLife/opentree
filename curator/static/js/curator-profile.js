@@ -376,21 +376,23 @@ function loadCollectionList(option) {
     });
 }
 
-function promptToEditProfile() {
+async function promptToEditProfile() {
     var gitHubProfileURL = 'https://github.com/settings/profile';
-    var msg = 'You can personalize this curator page by editing your GitHub profile:\n'
-             +'   Name and profile picture\n'
-             +'   Affiliation ("Company" on GitHub)\n'
-             +'   Website ("URL" on GitHub)\n'
-             +'   Email ("Public email" on GitHub)\n\n'
-             +'Would you like to do this now?'
-    if (confirm(msg)) {
+    var msg = '<p>You can personalize this curator page by editing your GitHub profile:</p>'
+             +'<ul>'
+             +'  <li>Name and profile picture</li>'
+             +'  <li>Affiliation ("Company" on GitHub)</li>'
+             +'  <li>Website ("URL" on GitHub)</li>'
+             +'  <li>Email ("Public email" on GitHub)</li>'
+             +'</ul>'
+             +'<p>Would you like to do this now?</p>';
+    if (await asyncConfirm(msg, {'FULL_HTML': true})) {
         var newWindow = window.open(gitHubProfileURL , '_blank' );
         if (newWindow) {
             // if blocked by popup blocker, this is undefined
             newWindow.focus();
         } else {
-            alert(
+            await asyncAlert(
                 'The new window was blocked. You can edit your GitHub profile at this URL:'
                +'\n\n   '+ gitHubProfileURL
             );

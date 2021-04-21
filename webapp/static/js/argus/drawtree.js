@@ -288,7 +288,7 @@ function createArgus(spec) {
             ds = o.domSource === undefined ? "ottol" : o.domSource;
             ajaxData = {"domsource": ds}; // phylotastic TNRS API wants domsource, MTH believes.
             */
-            alert("AJAX calls via taxomachine are no longer supported.");
+            console.error("AJAX calls via taxomachine are no longer supported.");
             return;
         }
         return {
@@ -408,7 +408,7 @@ function createArgus(spec) {
                 argus.supportingTaxonomyVersion = ottInfo['taxonomy'];
             }
             if (!argus.supportingTaxonomyVersion) {
-                alert("No supporting OTT version found!");
+                console.warn("No supporting OTT version found!");
                 return;
             }
 

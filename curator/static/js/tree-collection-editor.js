@@ -148,13 +148,13 @@ function changeTab(o) {
     // if we're using History.js, all tab changes should should be driven from history
     var newTabName = $.trim('tab' in o ? o.tab : '');
     if (newTabName === '') {
-        alert('changeTab(): No tab name specified!');
+        console.warn('changeTab(): No tab name specified!');
         return;
     }
     var $tabBar = $('ul.nav-tabs:eq(0)');
     var oldTabName = $.trim($tabBar.find('li.active a').text());
     if (newTabName === oldTabName) {
-        alert('changeTab(): Same tab specified, nothing to change...');
+        console.warn('changeTab(): Same tab specified, nothing to change...');
         return;
     }
     if (History && History.enabled) {
@@ -1701,7 +1701,7 @@ function getTreeByID(id) {
         }
         if (!tree) {
             // this should *never* happen
-            alert("showTreeViewer(): No tree specified!");
+            console.warn("showTreeViewer(): No tree specified!");
             return;
         }
     }
@@ -1757,27 +1757,6 @@ if (!Date.prototype.toISOString) {
     }
     Date.prototype.toISOString = Date.prototype.toJSON;
 }
-
-/* TODO: Still useful?
-function removeTree( tree ) {
-    // let's be sure, since adding may be slow...
-    if (!confirm("Are you sure you want to delete this tree from the study?")) {
-        return;
-    }
-
-    // remove this tree
-    $.each(viewModel.nexml.trees, function(i, treesCollection) {
-        if ($.inArray(tree, treesCollection.tree) !== -1) {
-            removeFromArray( tree, treesCollection.tree );
-        }
-    });
-
-    // force update of curation UI in all relevant areas
-    nudgeTickler('GENERAL_METADATA');
-    nudgeTickler('TREES');
-    nudgeTickler('COLLECTION_HAS_CHANGED');
-}
-*/
 
 function forceToggleCheckbox(cb, newState) {
     var $cb = $(cb);
@@ -2190,54 +2169,3 @@ function toggleTreeColumnVisibility( name ) {
     }
     nudgeTickler('TREES', {modelHasChanged: false});
 }
-
-
-/* TODO: adapt for use here?
-function addCurrentTreeToCollection( collection ) {
-    // gather default information about the current study and tree
-    var currentStudyID = $('#current-study-id').val();
-    var currentTreeID = $('#current-tree-id').val();
-    var currentStudy = viewModel.nexml;
-    var currentTree = getTreeByID(currentTreeID);
-    var compactStudyRef = fullToCompactReference(currentStudy['^ot:studyPublicationReference']);
-    if (compactStudyRef === '(Untitled)') {
-        // strip the original parentheses to avoid extras
-        compactStudyRef = 'study has no reference';
-    }
-    // capture the current tree name and study reference
-    // TODO: update these as studies change?
-    var currentTreeName = $.trim(currentTree['@label']);
-    var treeAndStudy = (currentTreeName || currentTreeID) +' ('+ compactStudyRef +')';
-    var treeEntry = {
-        "decision": "INCLUDED",
-        "name": treeAndStudy,
-        "studyID": currentStudyID,
-        "treeID": currentTreeID,
-        "SHA": "",    // TODO: capture this (already expected by server-side validation)
-        "comments": ""
-    };
-    if ('data' in collection) {
-        collection.data.decisions.push(treeEntry);
-    } else {
-        collection.decisions.push(treeEntry);
-    }
-    addPendingCollectionChange( 'ADD', currentStudyID, currentTreeID );
-
-    // to refresh the list
-    //showCollectionViewer( collection, {SCROLL_TO_BOTTOM: true} );
-    editCollection( collection, {SCROLL_TO_BOTTOM: true} );
-}
-
-function addTreeToNewCollection() {
-    if (userIsLoggedIn()) {
-        var c = createNewTreeCollection();
-        addCurrentTreeToCollection(c);
-        showCollectionViewer( c, {SCROLL_TO_BOTTOM: true} );
-    } else {
-        if (confirm('This requires login via Github. OK to proceed?')) {
-            loginAndReturn();
-        }
-    }
-}
-*/
-

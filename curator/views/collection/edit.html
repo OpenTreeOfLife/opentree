@@ -77,23 +77,28 @@ body {
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
             onclick="showMaintenancePopup(); return false;"
            {{ else: }}
-            onclick="return confirm('Are you sure you want to edit this collection?');"
+            onclick="confirmHyperlink(this, 'Are you sure you want to edit this collection?'); return false;"
            {{ pass }}
           >Edit Collection</a>
+          <a onclick="copyCollection(); return false;"
+             title="Copy this collection (you will own the copy)"
+             class="pull-right btn" style="margin-right: 8px;">
+                Save a copy <i class="icon-repeat"></i>
+          </a>
          {{ else: }}
           <a class="btn btn-info pull-right sticky-login" href="{{=URL('collection', 'edit/'+ collectionID)}}"
            {{ if maintenance_info.get('maintenance_in_progress', False): }}
             onclick="showMaintenancePopup(); return false;"
            {{ else: }}
-            onclick="return confirm('Are you sure you want to edit this collection?');"
+            onclick="confirmHyperlink(this, 'Are you sure you want to edit this collection?'); return false;"
            {{ pass }}
           >Login to Edit Collection</a>
-         {{ pass }}
-          <a data-bind="click: copyCollection,
-                        visible: true,
-                        attr: {'title': userIsLoggedIn() ? 'Copy this collection (you will own the copy)' : 'Copy this collection (requires login)'}" title="Copy this collection (you will own the copy)" class="pull-right btn" style="margin-right: 8px;">
+          <a onclick="copyCollection(); return false;"
+             title="Copy this collection (requires login)"
+             class="pull-right btn" style="margin-right: 8px;">
                 Save a copy <i class="icon-repeat"></i>
           </a>
+         {{ pass }}
           <a class="btn pull-right" style="margin-right: 8px;" href="{{= URL(a='curator', c='collection', f='index')}}">Return to collection list</a>
         {{ pass }}
     </div>
