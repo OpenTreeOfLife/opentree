@@ -10599,6 +10599,10 @@ function taxonCondidateIsValid( candidate, options ) {
     // Check for essential fields, taking shared info into account
     if (!options) options = {REPORT_ERRORS: false};
     var metadata = candidate.newTaxonMetadata;
+    // any skipped label is considered valid (doesn't fail)
+    if (metadata.skipped()) {
+        return true;
+    }
     var requiredProperties = {  // non-empty
         'modifiedName': "Modified name must be a non-empty string",
         'parentTaxonID': "Please specify the parent taxon for this label",
