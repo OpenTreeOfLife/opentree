@@ -10512,9 +10512,9 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
     showSuccessMessage('Selected OTUs mapped to new taxa.');
 }
 
-function toggleSkipThisTaxon( otu, event ) {
-    var skippingThisTaxon = $(event.target).is(':checked');
-    if (skippingThisTaxon) {
+function toggleSkipThisLabel( otu, event ) {
+    var skippingThisLabel = $(event.target).is(':checked');
+    if (skippingThisLabel) {
         currentTaxonCandidate().newTaxonMetadata.skipped(true);
     } else {
         currentTaxonCandidate().newTaxonMetadata.skipped(false);
