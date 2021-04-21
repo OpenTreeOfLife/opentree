@@ -994,3 +994,11 @@ a.node-direct-link {
     background-color: inherit !important;
     cursor: default !important;
 }
+.skip-label {
+    background-color: #eee;
+    border-radius: 8px;
+}
+form.skip-label {
+    padding: 4px;
+    margin: -4px;
+}
