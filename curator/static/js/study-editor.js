@@ -10098,7 +10098,7 @@ function submitNewTaxa() {
             'login': userLogin, 
             'email': userEmail
         },
-        "new_ottids_required": candidateOTUsForNewTaxa.length
+        "new_ottids_required": 0 // update below with un-skipped taxa
     };
 
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
@@ -10147,6 +10147,8 @@ function submitNewTaxa() {
         // all labels were skipped! nothing to submit
         showErrorMessage("All labels were skipped, so there was nothing to submit!");
         return false;
+    } else {
+        bundle["new_ottids_required"] = bundle.taxa.length;
     }
 
     // add non-JSON values to the query string
