@@ -10209,6 +10209,11 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
     }
 
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        if (candidate.newTaxonMetadata.skipped()) {
+            // ignore this un-submitted candidate
+            delete proposedOTUMappings()[ OTUid ];
+            return;
+        }
         // REMINDER: we used the ID of each OTU as its tag!
         var OTUid = candidate['@id'];
         var mintedOTTid = Number(tagsToOTTids[ OTUid ]);
