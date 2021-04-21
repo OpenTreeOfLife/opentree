@@ -2225,16 +2225,16 @@ body {
         <form class="form-horizontal wider-fields" style="margin-bottom: 0px;"
               data-bind="css: currentTaxonCandidate().newTaxonMetadata.skipped() ? 'skip-label' : ''">
             <div class="control-group">
-                <label for="skip-this-label" class="featured-label skip-label" 
+                <label for="skip-this-label" class="featured-label skip-label non-fading"
                        style="clear: both; padding-top: 2px; padding-left: 20px; text-indent: -20px;">
                     <input type="checkbox" id="skip-this-label" name="TODO"
-                           style="width: 20px;"
+                           style="width: 20px;" class="non-fading"
                            data-bind="checked: currentTaxonCandidate().newTaxonMetadata.skipped(),
                                       click: toggleSkipThisLabel" />
                     Skip this label (if unable to validate below)
                 </label>
-                <label class="control-label" for="">Original label &nbsp; </label>
-                <div class="controls">
+                <label class="control-label non-fading" for="">Original label &nbsp; </label>
+                <div class="controls non-fading">
                     <div class="static-form-value unmapped-label"
                          style="color: #888; font-weight: normal; display: inline-block;"
                          data-bind="text: $data['^ot:originalLabel'],
@@ -2242,7 +2242,7 @@ body {
                          title="">...</div>
                      <button class="btn btn-small" style="margin-left: 4px;"
                              data-bind="click: useOriginalLabelForNewTaxon,
-                                        attr: {'disabled': newTaxonNameMatchesOriginalLabel()}"
+                                        attr: {'disabled': newTaxonNameMatchesOriginalLabel() || currentTaxonCandidate().newTaxonMetadata.skipped()}"
                      >Use as taxon name</button>
                 </div>
             </div>
@@ -2252,7 +2252,8 @@ body {
                     <input type="text" id="new-taxon-name" class="required-field input-xlarge"
                            data-bind="value: $data.newTaxonMetadata.modifiedName,
                                       valueUpdate: ['afterkeydown', 'input'],
-                                      event: {keyup: updateTaxonNameCheck, input: updateTaxonNameCheck, change: null, blur: null}
+                                      event: {keyup: updateTaxonNameCheck, input: updateTaxonNameCheck, change: null, blur: null},
+                                      attr: {'disabled': currentTaxonCandidate().newTaxonMetadata.skipped()}
                                       "
                            style="margin-bottom: 4px;"
                            placeholder="Enter the preferred name here">
@@ -2268,7 +2269,7 @@ body {
                                              'Label is a synonym',
                                              'Other (explain in comments below)'],
                                    optionsCaption: 'Choose reason for modification...',
-                                   attr:{'disabled': newTaxonNameMatchesOriginalLabel()},
+                                   attr:{'disabled': newTaxonNameMatchesOriginalLabel() || currentTaxonCandidate().newTaxonMetadata.skipped()},
                                    css: (newTaxonNameMatchesOriginalLabel() ? '' : 'required-field')
                                    ">
                     </select>
@@ -2327,7 +2328,8 @@ body {
                                      '───────────',
                                      'no rank'
                                    ],
-                                   optionsAfterRender: disableRankDivider
+                                   optionsAfterRender: disableRankDivider,
+                                   attr: {'disabled': currentTaxonCandidate().newTaxonMetadata.skipped()}
                                    ">
                     </select>
                 </div>
@@ -2338,7 +2340,7 @@ body {
                   <div class="static-form-value"
                        data-bind="visible: getActiveParentTaxonName($data)()">
                     <span data-bind="text: (getActiveParentTaxonName($data) || 'None'),
-                                     attr:{'title': '', 'disabled': sharedParentTaxonID()}"
+                                     attr:{'title': '', 'disabled': sharedParentTaxonID() || currentTaxonCandidate().newTaxonMetadata.skipped()}"
                           class="parent-taxon"
                           title="">???</span>
 
@@ -2404,7 +2406,7 @@ body {
                         data-bind="value: source.type,
                                    event: { keyup: updateActiveTaxonSources,
                                             change: updateActiveTaxonSources },
-                                   attr: {'disabled': sharedTaxonSources()},
+                                   attr: {'disabled': sharedTaxonSources() || currentTaxonCandidate().newTaxonMetadata.skipped()},
                                    options: ['The taxon is described in this study',
                                              'Link to online taxonomy',
                                              'Link (DOI) to publication',
@@ -2419,7 +2421,7 @@ body {
                                       event: {keyup: null,
                                               change: updateActiveTaxonSources,
                                               blur: updateActiveTaxonSources},
-                                      attr: {'disabled': sharedTaxonSources()}
+                                      attr: {'disabled': sharedTaxonSources() || currentTaxonCandidate().newTaxonMetadata.skipped()}
                                       "
                            type="text"
                            class="input-block-level source-details required-field"
@@ -2432,7 +2434,7 @@ body {
                                          return false;
                                        },
                                        visible: $parent.indexOf(source) !== 0,
-                                       attr: {'disabled': sharedTaxonSources()}"
+                                       attr: {'disabled': sharedTaxonSources() || currentTaxonCandidate().newTaxonMetadata.skipped()}"
                         class="pull-right btn btn-mini btn-danger row-controls-ghosted"
                         style="display: none;">
                         <i class="icon-trash icon-white"></i>
@@ -2446,7 +2448,7 @@ body {
                   <button class="btn btn-small btn-info pull-right"
                           style="margin: 4px 8px 2px;"
                           data-bind="click: addEmptyTaxonSource,
-                                     attr: {'disabled': sharedTaxonSources()}">
+                                     attr: {'disabled': sharedTaxonSources() || currentTaxonCandidate().newTaxonMetadata.skipped()}">
                     Add another source
                     <i class="icon-plus icon-white"></i></button>
                   <label for="copy-evidence" class="featured-label pull-left" style="margin-top: 6px;">
@@ -2463,6 +2465,7 @@ body {
             <textarea class="input-block-level" style="margin-bottom: 8px;"
                 data-bind="value: $data.newTaxonMetadata.comments,
                            valueUpdate: ['afterkeydown', 'input'],
+                           attr: {'disabled': currentTaxonCandidate().newTaxonMetadata.skipped()},
                            event: { keyup: null, change: null }"
                 placeholder="Add comments or additional links to support this taxon.">
             </textarea>
