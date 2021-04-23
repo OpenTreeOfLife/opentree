@@ -10233,6 +10233,7 @@ function moveToNthTaxonCandidate( pos ) {
     // enable parent-taxon search
     $('input[name=parent-taxon-search]').unbind('keyup change').bind('keyup change', setParentTaxaSearchFuse );
     $('select[name=parent-taxon-search-context]').unbind('change').bind('change', searchForMatchingParentTaxa );
+    clearPriorSearchForParentTaxa();    // in case they type in the same initial taxon string
 
     // don't trigger unrelated form submission when pressing ENTER here
     $('input[name=parent-taxon-search], select[name=parent-taxon-search-context]')
@@ -10604,6 +10605,14 @@ function setParentTaxaSearchFuse(e) {
 
 var showingResultsForParentSearchText = '';
 var showingResultsForParentSearchContextName = '';
+function clearPriorSearchForParentTaxa() {
+    /* Clear any prior parent-taxon search,  so we always get a fresh result,
+     * even if they type in the same initial taxon string after changing to
+     * a new taxon candidate.
+     */
+    showingResultsForParentSearchText = '';
+    showingResultsForParentSearchContextName = '';
+}
 function searchForMatchingParentTaxa() {
     // clear any pending search timeout and ID
     clearTimeout(parentSearchTimeoutID);
