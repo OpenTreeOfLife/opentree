@@ -218,7 +218,7 @@ function saveCurrentNameset( options ) {
                   },
                   function (err) {    
                       // failure callback
-                      alert('ERROR generating this ZIP archive:\n'+ err);
+                      asyncAlert('ERROR generating this ZIP archive:<br/><br/>'+ err);
                       // revert to previous last-save info in the active document
                       viewModel.metadata.last_saved( previousSaveTimestamp );
                       viewModel.metadata.save_count( previousSaveCount );
@@ -1366,9 +1366,9 @@ function clearSelectedMappings() {
     nudgeTickler('NAME_MAPPING_HINTS');
 }
 
-function clearAllMappings() {
+async function clearAllMappings() {
     var allNames = viewModel.names();
-    if (confirm("WARNING: This will un-map all "+ allNames.length +" names in the current study! Are you sure you want to do this?")) {
+    if (await asyncConfirm("WARNING: This will un-map all "+ allNames.length +" names in the current study! Are you sure you want to do this?")) {
         // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) names.
         $.each( allNames, function (i, name) {
             // clear any "established" mapping (already approved)
@@ -1473,7 +1473,7 @@ function enableSaveButton() {
         if (browserSupportsFileAPI()) {
             showSaveNamesetPopup();
         } else {
-            alert("Sorry, this browser does not support saving to a local file!");
+            asyncAlert("Sorry, this browser does not support saving to a local file!");
         }
         return false;
     });
@@ -1847,6 +1847,14 @@ function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
             'order': ko.observable( listFilterDefaults.NAMES.order )
         }
     };
+    // any change to these list filters should reset pagination for the current display list
+    // NB this is a streamlined version of the more general fix in study-editor.js!
+    $.each(viewModel.listFilters.NAMES, function(filterName, filterObservable) {
+        filterObservable.subscribe(function(newValue) {
+            // ignore value, just reset pagination (back to page 1)
+            viewModel._filteredOTUs.goToPage(1);
+        });
+    });
  
     // maintain a persistent array to preserve pagination (reset when computed)
     viewModel._filteredNames = ko.observableArray( ).asPaged(500);
@@ -1991,7 +1999,6 @@ function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
         lastClickedTogglePosition = null;
 
         viewModel._filteredNames( filteredList );
-        viewModel._filteredNames.goToPage(1);
         return viewModel._filteredNames;
     }).extend({ throttle: viewModel.filterDelay }); // END of filteredNames
 

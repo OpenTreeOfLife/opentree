@@ -334,11 +334,13 @@ div.viewer-frame {
     color: #000;
     margin-bottom: 4px;
 }
-a.full-ref-toggle {
+a.full-ref-toggle,
+a.preview-link {
     color: #999 !important;
     text-decoration: none;
 }
-a.full-ref-toggle:hover {
+a.full-ref-toggle:hover,
+a.preview-link:hover {
     color: #333 !important;
     text-decoration: underline;
 }
@@ -495,6 +497,12 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
     border-radius: 4px;
     padding: 5px;
 }
+.synth-event {
+    background-color: #edb;
+    border: 1px solid #cb9;
+    border-radius: 4px;
+    padding: 5px;
+}
 .interesting-value {
     color: #b94a48;
 }
@@ -647,6 +655,12 @@ tr:hover .row-controls-ghosted.btn[disabled] {
     text-align: center;
     font-size: 1.6em;
     color: #888;
+}
+
+/* override default width for dialog-polyfill */
+dialog.modal {
+    width: 360px;
+    margin-left: -180px;
 }
 
 /* DOI lookup window */
@@ -963,4 +977,26 @@ a.node-direct-link {
     clear: right;
     float: right;
     margin: -6px 0 10px;
+}
+.dropdown-item-checked::before {
+  position: absolute;
+  left: .4rem;
+  content: '✓';
+  font-weight: 600;
+}
+.placeholder-data {
+    color: #939;
+    font-style: italic;
+}
+/* highlight sorting headers in collection editor */
+#tree-list-holder table th:hover {
+    background-color: #eee !important;
+    cursor: ns-resize;
+}
+#tree-list-holder table th:hover i {
+    opacity: 1.0 !important;
+}
+#tree-list-holder table th.non-sorting:hover {
+    background-color: inherit !important;
+    cursor: default !important;
 }

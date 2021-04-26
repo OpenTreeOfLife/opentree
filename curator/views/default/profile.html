@@ -364,7 +364,11 @@ elif active_user_found:
 
       <tbody data-bind="foreach: { data: viewModel.filteredCollections().pagedItems(), as: 'collection' }">
         <tr>
-            <td data-bind="html: getCollectionViewLink(collection)">&nbsp;</td>
+            <td>
+                <span data-bind="html:getCollectionViewLink(collection, {VIEW: 'FULL_PAGE'})"></span>
+                &nbsp; &nbsp;
+                <span data-bind="html:getCollectionViewLink(collection, {VIEW: 'POPUP', LABEL: '[preview]', CLASS: 'preview-link'})"></span>
+            </td>
             <td data-bind="html: getCollectionTreeCount(collection)">&nbsp;</td>
             <td data-bind="html: getCollectionLastModification(collection)">&nbsp;</td>
             <td data-bind="html: getCollectionCuratorRole(collection)">&nbsp;</td>

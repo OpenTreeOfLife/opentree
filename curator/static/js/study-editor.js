@@ -238,13 +238,13 @@ function changeTab(o) {
     // if we're using History.js, all tab changes should should be driven from history
     var newTabName = $.trim('tab' in o ? o.tab : '');
     if (newTabName === '') {
-        alert('changeTab(): No tab name specified!');
+        console.warn('changeTab(): No tab name specified!');
         return;
     }
     var $tabBar = $('ul.nav-tabs:eq(0)');
     var oldTabName = $.trim($tabBar.find('li.active a').text());
     if (newTabName === oldTabName) {
-        alert('changeTab(): Same tab specified, nothing to change...');
+        console.warn('changeTab(): Same tab specified, nothing to change...');
         return;
     }
     if (History && History.enabled) {
@@ -1085,6 +1085,36 @@ function loadSelectedStudy() {
                     'filter': ko.observable( listFilterDefaults.COLLECTIONS.filter )
                 }
             };
+            // any change to these list filters should reset pagination for the current display list
+            $.each(viewModel.listFilters, function(displayListID, itsFilters) {
+                $.each(itsFilters, function(filterName, filterObservable) {
+                    filterObservable.subscribe(function(newValue) {
+                        // ignore value, just reset pagination (back to page 1)
+                        resetPagination( displayListID );
+                    });
+                });
+            });
+
+            function resetPagination( displayListID ) {
+                // list filter or sorting has changed; return to page 1!
+                switch( displayListID ) {
+                    case 'TREES':
+                        viewModel._filteredTrees.goToPage(1);
+                        break;
+                    case 'FILES':
+                        viewModel._filteredFiles.goToPage(1);
+                        break;
+                    case 'OTUS':
+                        viewModel._filteredOTUs.goToPage(1);
+                        break;
+                    case 'ANNOTATIONS':
+                        viewModel._filteredAnnotations.goToPage(1);
+                        break;
+                    case 'COLLECTIONS':
+                        viewModel._filteredCollections.goToPage(1);
+                        break;
+                }
+            }
 
             // maintain a persistent array to preserve pagination (reset when computed)
             viewModel._filteredTrees = ko.observableArray( ).asPaged(20);
@@ -1124,7 +1154,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredTrees( filteredList );
-                viewModel._filteredTrees.goToPage(1);
                 return viewModel._filteredTrees;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredTrees
 
@@ -1165,7 +1194,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredFiles( filteredList );
-                viewModel._filteredFiles.goToPage(1);
                 return viewModel._filteredFiles;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredFiles
 
@@ -1377,7 +1405,6 @@ function loadSelectedStudy() {
                 lastClickedTogglePosition = null;
 
                 viewModel._filteredOTUs( filteredList );
-                viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredOTUs
 
@@ -1449,7 +1476,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredAnnotations( filteredList );
-                viewModel._filteredAnnotations.goToPage(1);
                 return viewModel._filteredAnnotations;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredAnnotations
 
@@ -1650,7 +1676,7 @@ function updateQualityDisplay () {
                 var editPromptHTML;
                 // show appropriate text for logged-in vs anonymous user
                 var $loginToEditLink = $('a.sticky-login').eq(0);
-                editPromptHTML = 'If you want to improve this study, click <a href="#">'+ $loginToEditLink.text() +'</a> to begin.'
+                editPromptHTML = 'If you want to improve this study, click <a class="sticky-login" href="#">'+ $loginToEditLink.text() +'</a> to begin.'
                 $cTabSugestionList.append('<li class="edit-prompt">'+ editPromptHTML +'</li>');
                 // clicking the new link should click our smart login link
                 $cTabSugestionList.find('li.edit-prompt').unbind('click').click(function(evt) {
@@ -2149,7 +2175,7 @@ function showTreeConflictDetailsFromPopup(tree) {
     // call the above from the tree-view popup
     if (!tree) {
         // this should *never* happen
-        alert("showTreeConflictDetailsFromPopup(): No tree specified!");
+        console.warn("showTreeConflictDetailsFromPopup(): No tree specified!");
         return;
     }
     var newReferenceTreeID = $('#treeview-reference-select').val();
@@ -2184,12 +2210,12 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     }
     if (!tree) {
         // this should *never* happen
-        alert("addConflictInfoToTree(): No tree specified!");
+        console.warn("addConflictInfoToTree(): No tree specified!");
         return;
     }
     if (!conflictInfo) {
         // this should *never* happen
-        alert("addConflictInfoToTree(): No conflict info provided!");
+        console.warn("addConflictInfoToTree(): No conflict info provided!");
         return;
     }
     // Add general information on the tree itself...
@@ -2222,7 +2248,7 @@ function removeTaxonMappingInfoFromTree( treeOrID ) {
     }
     if (!tree) {
         // this should *never* happen
-        alert("removeTaxonMappingInfoFromTree(): No tree specified!");
+        console.warn("removeTaxonMappingInfoFromTree(): No tree specified!");
         return;
     }
     // Clear conflict information from the tree itself...
@@ -2239,7 +2265,7 @@ function removeConflictInfoFromTree( treeOrID ) {
     }
     if (!tree) {
         // this should *never* happen
-        alert("removeConflictInfoFromTree(): No tree specified!");
+        console.warn("removeConflictInfoFromTree(): No tree specified!");
         return;
     }
     // Clear conflict information from the tree itself...
@@ -4182,7 +4208,7 @@ function showTreeViewer( tree, options ) {
         }
         if (!tree) {
             // this should *never* happen
-            alert("showTreeViewer(): No tree specified!");
+            console.warn("showTreeViewer(): No tree specified!");
             return;
         }
     }
@@ -4375,7 +4401,7 @@ function showTreeViewer( tree, options ) {
             // dim and disable the full-screen toggle
             $fullScreenToggle.css("opacity: 0.5;")
                              .click(function() {
-                                alert("This browser does not support full-screen display.");
+                                asyncAlert("This browser does not support full-screen display.");
                                 return false;
                              })
                              .show();
@@ -4401,7 +4427,7 @@ function showTreeViewer( tree, options ) {
             // dim and disable the full-screen toggle
             $printTreeViewButton.css("opacity: 0.5;")
                                 .click(function() {
-                                    alert("This browser does not support full-screen display, so it cannot print the tree.");
+                                    asyncAlert("This browser does not support full-screen display, so it cannot print the tree.");
                                     return false;
                                 })
                              .show();
@@ -4526,7 +4552,7 @@ function showOTUInContext() {
     $.merge( otuContextsToShow, findOTUInTrees( otu, getTreesNotYetNominated() ) );
     // if this OTU is unused, something's very wrong; bail out now
     if (otuContextsToShow.length === 0) {
-        alert("This OTU doesn't appear in any tree. (This is not expected.)");
+        asyncAlert("This OTU doesn't appear in any tree. (This is not expected.)");
         return;
     }
     // otherwise show the tree viewer with first result highlighted, UI to show more
@@ -6189,9 +6215,9 @@ function addSupportingFileFromURL() {
 
 }
 
-function removeTree( tree ) {
+async function removeTree( tree ) {
     // let's be sure, since adding may be slow...
-    if (!confirm("Are you sure you want to delete this tree from the study?")) {
+    if (!(await asyncConfirm("Are you sure you want to delete this tree from the study?"))) {
         return;
     }
 
@@ -6221,9 +6247,9 @@ function removeTree( tree ) {
     nudgeTickler('STUDY_HAS_CHANGED');
 }
 
-function removeSupportingFile( fileInfo ) {
+async function removeSupportingFile( fileInfo ) {
     // let's be sure, since adding may be slow...
-    if (!confirm("Are you sure you want to delete this file?")) {
+    if (!(await asyncConfirm("Are you sure you want to delete this file?"))) {
         return;
     }
 
@@ -7118,9 +7144,9 @@ function clearSelectedMappings() {
     nudgeTickler('TREES');  // to hide/show duplicate-taxon prompts in tree list
 }
 
-function clearAllMappings() {
+async function clearAllMappings() {
     var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
-    if (confirm("WARNING: This will un-map all "+ allOTUs.length +" OTUs in the current study! Are you sure you want to do this?")) {
+    if (await asyncConfirm("WARNING: This will un-map all "+ allOTUs.length +" OTUs in the current study! Are you sure you want to do this?")) {
         // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) OTUs.
         $.each( allOTUs, function (i, otu) {
             // clear any "established" mapping (already approved)
@@ -7588,7 +7614,7 @@ function createAnnotation( annotationBundle, nexml ) {
     // add message(s) to its target element, building a local message
     // collection if not found
     if (!target) {
-        alert("ERROR: target element not found: "+ target +" <"+ typeof(target) +">");
+        console.error("ERROR: target element not found: "+ target +" <"+ typeof(target) +">");
         return;
     }
     $.each( annEvent.message, function( i, msg ) {
@@ -8599,7 +8625,7 @@ function lookUpDOI() {
                 var foundItems = resultsJSON.message.items;
                 console.log("FOUND "+ foundItems.length +" matching items");
                 if (foundItems.length === 0) {
-                    alert('No matches found, please check your publication reference text.')
+                    asyncAlert('No matches found, please check your publication reference text.')
                 } else {
                     var $lookup = $('#DOI-lookup');
                     $lookup.find('.found-matches-count').text(foundItems.length);
@@ -9140,12 +9166,17 @@ var nodeLabelModes = [
         }
     }
 ];
-function updateNodeLabelMode(tree) {
+
+async function updateNodeLabelMode(tree) {
     /* Translate the choices in nodeLabelModes into action:
          - update the tree's nodeLabelMode
          - transform the node @label properties and shift them to their new
            locations (or not)
    */
+    if (!(await asyncConfirm('Warning: This can shift ambiguous node labels to their adjacent edges. '
+                            +'Check rooting carefully! OK to proceed?'))) {
+        return;
+    }
     tree['^ot:nodeLabelMode'] = viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode;
     switch(viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode) {
         case 'ot:otherSupport':
@@ -9813,7 +9844,6 @@ function loadCollectionList(option) {
 
                 }
                 viewModel._filteredCollections( filteredList );
-                //viewModel._filteredCollections.goToPage(1);
                 return viewModel._filteredCollections;
             }); // END of filteredCollections
             nudgeTickler('COLLECTIONS_LIST');
@@ -9830,7 +9860,7 @@ function getAssociatedCollectionsCount() {
     return '';
 }
 
-function addTreeToExistingCollection(clicked) {
+async function addTreeToExistingCollection(clicked) {
     if (userIsLoggedIn()) {
         // show the autocomplete widget and mute this button
         var $btn = $(clicked);
@@ -9839,7 +9869,7 @@ function addTreeToExistingCollection(clicked) {
         $collectionPrompt.show()
         $collectionPrompt.find('input').eq(0).focus();
     } else {
-        if (confirm('This requires login via Github. OK to proceed?')) {
+        if (await asyncConfirm('This requires login via Github. OK to proceed?')) {
             loginAndReturn();
         }
     }
@@ -10061,13 +10091,13 @@ function addCurrentTreeToCollection( collection ) {
     editCollection( collection, {SCROLL_TO_BOTTOM: true} );
 }
 
-function addTreeToNewCollection() {
+async function addTreeToNewCollection() {
     if (userIsLoggedIn()) {
         var c = createNewTreeCollection();
         addCurrentTreeToCollection(c);
         showCollectionViewer( c, {SCROLL_TO_BOTTOM: true} );
     } else {
-        if (confirm('This requires login via Github. OK to proceed?')) {
+        if (await asyncConfirm('This requires login via Github. OK to proceed?')) {
             loginAndReturn();
         }
     }
@@ -10246,7 +10276,7 @@ function showNewTaxaPopup() {
     // Block any method of closing this window if there is unsaved work
     $('#new-taxa-popup').off('hide').on('hide', function () {
         if (currentTaxonCandidate() || candidateOTUsForNewTaxa.length > 0) {
-            alert("Please submit (or cancel) your proposed taxa!");
+            asyncAlert("Please submit (or cancel) your proposed taxa!");
             return false;
         }
     });
