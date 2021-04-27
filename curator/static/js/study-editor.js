@@ -823,13 +823,13 @@ function loadSelectedStudy() {
                 'annotation': {  // an annotation event
                     highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
-                        return makeArray(nexml['^ot:annotationEvents']);
+                        return makeArray(nexml['^ot:annotationEvents']['annotation']);
                     }
                 },
                 'agent': {  // an annotation agent
                     highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
-                        return makeArray(nexml['^ot:agents']);
+                        return makeArray(nexml['^ot:agents']['agent']);
                     }
                 },
                 'message': {  // an annotation message
