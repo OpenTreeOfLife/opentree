@@ -5657,7 +5657,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         $.merge(viewModel.nexml.otus, itsOTUsCollection);
         $.merge(viewModel.nexml.trees, itsTreesCollection);
     } catch(e) {
-        console.error('Unable to push collections (needs Nexson upgrade)');
+        console.error('Unable to merge tree and OTU collections (needs Nexson upgrade)');
     }
 
     // update the files list (and auto-save?)
@@ -5851,7 +5851,7 @@ function returnFromNamesetSubmission( jqXHR, textStatus ) {
     var itsTreesCollection = data[nexmlName]['trees'];
     if (!itsOTUsCollection || !itsTreesCollection) {
         hideModalScreen();
-        showErrorMessage('Sorry, no trees were found in this file.');
+        showErrorMessage('Sorry, no OTUs  were found in this file.');
         return;
     }
 
@@ -5873,7 +5873,7 @@ function returnFromNamesetSubmission( jqXHR, textStatus ) {
         $.merge(viewModel.nexml.otus, itsOTUsCollection);
         $.merge(viewModel.nexml.trees, itsTreesCollection);
     } catch(e) {
-        console.error('Unable to push collections (needs Nexson upgrade)');
+        console.error('Unable to merge OTU collections (needs Nexson upgrade)');
     }
 
     // update the files list (and auto-save?)
