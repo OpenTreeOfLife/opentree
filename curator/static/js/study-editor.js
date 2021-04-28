@@ -5745,7 +5745,7 @@ function updateNamesetUploadForm() {
         $submitBtn.click(function(e) {
             e.preventDefault(); // BLOCK upload behavior in favor of local merge!
             console.log("...now i'd handle things locally...");
-            mergeNamesetIntoCurrentStudy(e); // pass data? or rely on global IDs?
+            //mergeNamesetIntoCurrentStudy(e); // pass data? or rely on global IDs?
             return false;
         });
         $submitBtn.removeAttr('disabled');
@@ -5768,6 +5768,7 @@ function clearNamesetUploadWidget() {
         $('#nameset-upload-progress .bar span').text( '' );
     }, 500);
 }
+/*
 function mergeNamesetIntoCurrentStudy(evt) {
     // find validate input data
     var nameset; // common JS representation
@@ -5798,6 +5799,7 @@ function mergeNamesetIntoCurrentStudy(evt) {
     }
     showSuccessMessage('Tree(s) and OTUs merged successfully.');
 }
+/*
 function submitNameset() {
     // TODO: NOTE that this should submit the same arguments (except for file
     // data) as the fileupload behavior for #namesetupload
