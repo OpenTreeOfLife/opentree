@@ -5831,7 +5831,7 @@ function mergeNamesetIntoCurrentStudy(evt) {
     }
     showSuccessMessage('Tree(s) and OTUs merged successfully.');
 }
-/*
+*/
 function submitNameset() {
     // TODO: NOTE that this should submit the same arguments (except for file
     // data) as the fileupload behavior for #namesetupload
