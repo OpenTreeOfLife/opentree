@@ -605,12 +605,14 @@ $(document).ready(function() {
             // add hints for nicer element IDs to the form
             setElementIDHints();
 
+            /* BLOCK upload behavior for now, in favor of JS merge
             $('[name=new-nameset-submit]').click(function() {
                 console.log('namesetupload - submitting...');
                 showModalScreen("Adding pre-mapped names...", {SHOW_BUSY_BAR:true});
                 data.submit();
                 return false; // suppress normal form submission!
             });
+            */
         },
         always: function(e, data) {
             // do this regardless of success or failure
@@ -5740,6 +5742,11 @@ function updateNamesetUploadForm() {
 
     var $submitBtn = $('[name=new-nameset-submit]');
     if (readyToSubmit) {
+        $submitBtn.click(function(e) {
+            e.preventDefault(); // BLOCK upload behavior in favor of local merge!
+            console.log("...now i'd handle things locally...");
+            return false;
+        });
         $submitBtn.removeAttr('disabled');
     } else {
         $submitBtn.attr('disabled', 'disabled');
