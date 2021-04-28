@@ -5745,6 +5745,7 @@ function updateNamesetUploadForm() {
         $submitBtn.click(function(e) {
             e.preventDefault(); // BLOCK upload behavior in favor of local merge!
             console.log("...now i'd handle things locally...");
+            mergeNamesetIntoCurrentStudy(e); // pass data? or rely on global IDs?
             return false;
         });
         $submitBtn.removeAttr('disabled');
@@ -5766,6 +5767,36 @@ function clearNamesetUploadWidget() {
         $('#nameset-upload-progress .bar').css( 'width', '0%' );
         $('#nameset-upload-progress .bar span').text( '' );
     }, 500);
+}
+function mergeNamesetIntoCurrentStudy(evt) {
+    // find validate input data
+    var nameset; // common JS representation
+    var $form = $('#nameset-import-form');
+    var inputFormat = $form.find('[name=inputFormat]').val();
+    // convert input (whatever format) to a plain JS object
+    if (inputFormat === 'zip') {
+        var unableToParseZIP = false;
+        console.log(evt.target.files);
+        debugger;
+        // TODO: Read in and decompress archive to retrieve `main.json` from inside
+/////nameset = json-parse(payload);
+        if (unableToParseZIP) {
+            showErrorMessage("Sorry, I can't read this ZIP archive (created in MacOS Finder?)");
+            return;
+        }
+    }
+    switch(inputFormat) {
+        case 'zip':
+        case 'json':
+            // assume things are already OK?
+            break;
+        case 'csv':
+            break;
+        case 'tsv':
+            break;
+        default;
+    }
+    showSuccessMessage('Tree(s) and OTUs merged successfully.');
 }
 function submitNameset() {
     // TODO: NOTE that this should submit the same arguments (except for file
