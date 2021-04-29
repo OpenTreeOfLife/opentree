@@ -105,6 +105,109 @@ var getNewNamesetModel = function(options) {
     */
     return obj;
 };
+function convertToNamesetModel( listText ) {
+    /* Test for proper delimited text (TSV or CSV, with a pair of names on each line).
+     * The first value on each line is a vernacular label, the second its mapped taxon name.
+     */
+    var nameset = getNewNamesetModel();  // we'll add name pairs to this
+    console.log( listText );
+    // test a variety of delimiters to use with this text
+    var lineDelimiters = ['\n','\r'];
+    var lineDelimFound = null;
+    $.each(lineDelimiters, function(i, delim) {
+        if (!lineDelimFound) {
+            if (listText.split(delim)).length > 1) {
+                lineDelimFound = delim;
+            }
+        }
+    }
+    var itemDelimiters = [',','\t'];
+    var itemDelimFound = null;
+    $.each(itemDelimiters, function(i, delim) {
+        if (!itemDelimFound) {
+            if (listText.split(delim)).length > 1) {
+                itemDelimFound = delim;
+            }
+        }
+    }
+    if (!(lineDelimFound) || !(itemDelimFound)) {
+        return nameset;  // probably still empty
+    }
+    // now apply labels and keep count of any duplicate labels
+    var foundLabels = [ ];
+    var dupeLabelsFound = 0;
+    var lines = listText.split(lineDelimFound);
+    // filter out empty empty lines, etc.
+    lines = $.grep(lines, function(line, i) {
+        return $.trim(line) !== "";
+    });
+    console.warn( lines.length +" lines found with line delimiter '"+ lineDelimFound +"'");
+    $.each(lines, function(i, line) {
+        var items = line.split(itemDelimFound);
+        // filter out empty empty labels and taxa
+        items = $.grep(items, function(item, i) {
+            return $.trim(item) !== "";
+        });
+        switch (items.length) {
+            case 0:
+            case 1:
+                return true;  // skip to next line
+            default:
+                // we assume the same fields as in out nameset output files
+                // and the gihrd(or ottid?)
+                var label = $.trim(items[0]);   // its original, vernacular label
+                // skip this label if it's a duplicate
+                if (labelsFound.indexOf(label) === -1) {
+                    // add this to labels found (test later names against this)
+                    labelsFound.push(label);
+                } else {
+                    // this is a dupe of an earlier name!
+                    dupeLabelsFound++;
+                    return true;
+                }
+                var canonicalTaxonName = $.trim(items[1]);  // its mapped taxon name
+                // include ottid and any taxonomic sources, if provided
+                var taxonID = (items.length > 2) ? items[2] : null;
+                var sources = (items.length > 3) ? items[3].split(';') : null;
+                // add this information in the expected nameset form
+                console.log("...adding label '"+ label +"'...");
+                var nameInfo = {
+                    "id": ("name"+ getNextNameOrdinalNumber()),
+                    "originalLabel": label,
+                    "ottTaxonName": canonicalTaxonName,
+                    "selectedForAction": false
+                };
+                if (taxonID) {
+                    nameInfo["ottId"] = taxonID;
+                }
+                if (sources) {
+                    nameInfo["taxonomicSources"] = [];
+                    $.each(sources, function(i, source) {
+                        source = $.trim(source);
+                        if (source) {  // it's not an empty string
+                            nameInfo["taxonomicSources"].push( source );
+                        }
+                    }
+                }
+                nameset.names.push( nameInfo );
+        }
+        return;
+    });
+    nudgeTickler('VISIBLE_NAME_MAPPINGS');
+    var namesAdded = nameset.names.length;
+    var msg;
+    if (dupeLabelsFound === 0) {
+        msg = "Adding "+ namesAdded +" names found in this file...";
+    } else {
+        msg = "Adding "+ namesAdded +" name"+
+            (namesAdded === 1? "" : "s") +" found in this file ("+
+            dupeLabelsFound +" duplicate label"+ (dupeLabelsFound === 1? "" : "s")
+            +" removed)...";
+    }
+    // where do we show these messages?
+    showInfoMessage(msg);
+    return nameset;
+}
 
 /* Load and save (to/from ZIP file on the user's filesystem) */
 
@@ -1736,7 +1839,12 @@ function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
             nameset = getNewNamesetModel();
             break;
         case 'string':
-            nameset = JSON.parse(data);
+            try {
+                nameset = JSON.parse(data);
+            } catch(e) {
+                // IF this fails, try to import TSV/CSV, line-by-line text
+                nameset = convertToNamesetModel(data);
+            }
             break;
         default: 
             console.error("Unexpected type for nameset data: "+ (typeof data));
