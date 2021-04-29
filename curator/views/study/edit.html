@@ -1470,9 +1470,9 @@ body {
                    <button class="btn input-block-level"
                            onclick="tnrs.showLoadNamesetPopup(); return false;"
                            data-bind="enable: tnrs.browserSupportsFileAPI()">
-                       Load nameset...</button>
+                       Load names...</button>
                 </div>
-<!--
+<!-- UNUSED form if submitting nameset data to the server for conversion and merge
                 <form id="nameset-import-form"
                       style="margin: 0;"
                       Xaction="{{= URL(a='curator', c='default', f='to_nexson')}}"
@@ -2306,18 +2306,40 @@ body {
     </div>
     <div class="modal-header modal-body">
         <p>
-            Namesets are stored as ZIP archives, with all inputs and
-            data included. This is useful for sharing your work via email,
-            though you might need to remove the <code>.zip</code> file
-            extension to pass spam filters.
+        A nameset from the <a href="/curator/tnrs/" target="_blank">TNRS bulk-mapping tool</a>
+        is typically stored as ZIP archive, with all inputs and metadata included. This
+        file will usually have a <code>.zip</code> or <code>.nameset</code> file
+        extension.
         </p>
-        <input type="file" value="Load ZIP archive..."
+        <p>
+        If you used another tool for mapping names to the 
+        <a href="/about/taxonomy-version" target="_blank">OpenTreed Taxonomy</a>, 
+        you can load a text file here <em>or</em> paste your text in the field below.
+        Expected text file formats are <code>.txt</code>, <code>.tsv</code>,
+        <code>.csv</code>, or <code>.json</code>.
+        </p>
+        <input type="file" value="Load nameset from file..."
                data-bind="event: { change: tnrs.loadNamesetFromChosenFile }"
         />
         <p id="nameset-local-filesystem-warning" style="color: #933; margin: 8px 0 0;"
            data-bind="visible: false">
           Help text appears here.
         </p>
+        <textarea id="new-nameset-text" name="content" rows="5"
+                  class="input-block-level"
+                  placeholder="dog, Canis lupus familiaris, 247333
+cat, Felis catus, 563166"
+                  onkeyup="updateNamesetUploadForm(); return true;"
+                  oninput="updateNamesetUploadForm(); return true;"
+                  onchange="updateNamesetUploadForm(); return true;"
+         ></textarea>
+        <button name="new-nameset-submit" type="submit"
+                class="btn btn-info btn-info-disabled"
+                disabled="disabled">Import and map names
+          <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
+         <button type="reset" class="btn"
+                  onclick="clearNamesetUploadWidget(); return true;"
+         >Clear form</button>
     </div>
 </div>
 
