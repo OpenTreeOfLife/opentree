@@ -1505,7 +1505,7 @@ body {
                         <input id="namesetupload"
                                type="file" name="file"
                                Xonchange="$('#upload-nameset-info').html( filenameFromFakePath($(this).val()) ); updateNamesetUploadForm(); return true;"
-                               data-bind="event: { change: tnrs.loadListFromChosenFile }">
+                               data-bind="event: { change: tnrs.loadNamesetFromChosenFile }">
                     </span>
                     &nbsp;
                     <span class='label label-info' id="upload-nameset-info"></span>
