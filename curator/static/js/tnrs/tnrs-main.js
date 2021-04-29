@@ -116,21 +116,21 @@ function convertToNamesetModel( listText ) {
     var lineDelimFound = null;
     $.each(lineDelimiters, function(i, delim) {
         if (!lineDelimFound) {
-            if (listText.split(delim)).length > 1) {
+            if (listText.split(delim).length > 1) {
                 lineDelimFound = delim;
             }
         }
-    }
+    });
     var itemDelimiters = [',','\t'];
     var itemDelimFound = null;
     $.each(itemDelimiters, function(i, delim) {
         if (!itemDelimFound) {
-            if (listText.split(delim)).length > 1) {
+            if (listText.split(delim).length > 1) {
                 itemDelimFound = delim;
             }
         }
-    }
-    if (!(lineDelimFound) || !(itemDelimFound)) {
+    });
+    if ((!lineDelimFound) || (!itemDelimFound)) {
         return nameset;  // probably still empty
     }
     // now apply labels and keep count of any duplicate labels
@@ -187,7 +187,7 @@ function convertToNamesetModel( listText ) {
                         if (source) {  // it's not an empty string
                             nameInfo["taxonomicSources"].push( source );
                         }
-                    }
+                    });
                 }
                 nameset.names.push( nameInfo );
         }
