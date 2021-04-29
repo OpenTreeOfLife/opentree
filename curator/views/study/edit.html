@@ -1447,10 +1447,17 @@ body {
                 <h4 style="margin-top: 0;">Upload pre-mapped names</h4>
                 <p>
                 If you have a set of mapped names from the 
-                <a href="/curator/tnrs/" target="_blank">TNRS bulk-mapping tool</a>,
-                you can upload it to this study. After your upload, any
-                matching names will be mapped accordingly.
+                <a href="/curator/tnrs/" target="_blank">TNRS bulk-mapping tool</a>
+                (or a simple text file with mapped names), you can import them
+                into this study to map any matching names automatically.
                 </p>
+                <div class="button-bar" style="margin-bottom: 1em;">
+                   <button class="btn input-block-level"
+                           onclick="tnrs.showLoadNamesetPopup(); return false;"
+                           data-bind="enable: tnrs.browserSupportsFileAPI()">
+                       Load nameset...</button>
+                </div>
+<!--
                 <form id="nameset-import-form"
                       style="margin: 0;"
                       Xaction="{{= URL(a='curator', c='default', f='to_nexson')}}"
@@ -1464,7 +1471,7 @@ body {
                    value="{{= auth.user and auth.user.email or 'ANONYMOUS' }}">
                  <input type="hidden" name="auth_token"
                    value="{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}">
-                 <!-- pass along hints for new element IDs? -->
+                 <!- - pass along hints for new element IDs? - ->
                  <input type="hidden" name="idPrefix" value="">
                  <input type="hidden" name="firstAvailableOTUID" value="">
                  <input type="hidden" name="firstAvailableOTUsID" value="">
@@ -1483,7 +1490,7 @@ body {
                       <option value="json">JSON (.json)</option>
                   </select>
 
-                  <!-- NB - We disable this direct-input field if ZIP is chosen above -->
+                  <!- - NB - We disable this direct-input field if ZIP is chosen above - ->
                   <label for="new-nameset-text">Paste mappings (using selected format)&hellip;</label>
                   <textarea id="new-nameset-text" name="content" rows="5"
                             class="input-block-level"
@@ -1501,7 +1508,7 @@ body {
                     <span class="btn fileinput-button">
                         <i class="glyphicon glyphicon-plus"></i>
                         <span>Select file to upload...</span>
-                        <!-- The file input field used as target for the file upload widget -->
+                        <!- - The file input field used as target for the file upload widget - ->
                         <input id="namesetupload"
                                type="file" name="file"
                                Xonchange="$('#upload-nameset-info').html( filenameFromFakePath($(this).val()) ); updateNamesetUploadForm(); return true;"
@@ -1528,6 +1535,7 @@ body {
                   </div>
                  </fieldset>
                 </form>
+-->
             </div>
 
         {{ pass }}
@@ -2265,8 +2273,30 @@ body {
     <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
 </div>
 
-
-
+<!-- hidden template for popup loader for nameset in various formats -->
+<div id="load-nameset-popup" class="modal fade" style="display: none;">
+    <div class="modal-header" style="padding: 0px inherit;">
+      <a data-dismiss="modal" class="close" style="margin-top: -2px;">x</a>
+      <h4 style="margin: 0;">
+         Paste or upload your mapped names
+      </h4>
+    </div>
+    <div class="modal-header modal-body">
+        <p>
+            Namesets are stored as ZIP archives, with all inputs and
+            data included. This is useful for sharing your work via email,
+            though you might need to remove the <code>.zip</code> file
+            extension to pass spam filters.
+        </p>
+        <input type="file" value="Load ZIP archive..."
+               data-bind="event: { change: tnrs.loadNamesetFromChosenFile }"
+        />
+        <p id="nameset-local-filesystem-warning" style="color: #933; margin: 8px 0 0;"
+           data-bind="visible: false">
+          Help text appears here.
+        </p>
+    </div>
+</div>
 
 <!-- hidden template for new-taxon form (for adding taxa to OT Taxonomy) -->
 <div class="modal hide fade" id="new-taxa-popup" style="display: none;">
