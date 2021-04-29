@@ -1519,7 +1519,8 @@ body {
                         <!-- The file input field used as target for the file upload widget -->
                         <input id="namesetupload"
                                type="file" name="file"
-                               onchange="$('#upload-nameset-info').html( filenameFromFakePath($(this).val()) ); updateNamesetUploadForm(); return true;">
+                               Xonchange="$('#upload-nameset-info').html( filenameFromFakePath($(this).val()) ); updateNamesetUploadForm(); return true;"
+                               data-bind="event: { change: tnrs.loadListFromChosenFile }">
                     </span>
                     &nbsp;
                     <span class='label label-info' id="upload-nameset-info"></span>
