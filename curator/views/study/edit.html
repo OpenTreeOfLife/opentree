@@ -2316,8 +2316,7 @@ body {
         <p>
         If you used another tool for mapping names to the 
         <a href="/about/taxonomy-version" target="_blank">OpenTreed Taxonomy</a>, 
-        you can load a text file here <em>or</em> paste your text in the field below.
-        Expected text file formats are <code>.txt</code>, <code>.tsv</code>,
+        you can load a text file here. Expected text file formats are <code>.txt</code>, <code>.tsv</code>,
         <code>.csv</code>, or <code>.json</code>.
         </p>
         <input id="nameset-file-for-study-curation" type="file" value="Load nameset from file..."
@@ -2326,6 +2325,9 @@ body {
         <p id="nameset-local-filesystem-warning" style="color: #933; margin: 8px 0 0;"
            data-bind="visible: false">
           Help text appears here.
+        </p>
+        <p>
+        ... <em>or</em> paste your text in the field below.
         </p>
         <textarea id="new-nameset-text" name="content" rows="5"
                   class="input-block-level"
