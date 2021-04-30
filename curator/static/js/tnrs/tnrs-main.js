@@ -508,21 +508,44 @@ function loadNamesetFromChosenFile( vm, evt ) {
             console.warn("fileInfo.name = "+ fileInfo.name);
             console.warn("fileInfo.type = "+ fileInfo.type);
             var isValidArchive = false;
-            switch (fileInfo.type) {
-                case 'application/zip':
-                    isValidArchive = true;
-                    break;
-                case '':
-                    // check file extension
-                    if (fileInfo.name.match('.(zip|nameset)$')) {
+            if (destination === 'BULK_TNRS') {
+                switch (fileInfo.type) {
+                    case 'application/zip':
                         isValidArchive = true;
-                    }
-                    break;
-            }
-            if (!isValidArchive) {
-                var msg = "Archived nameset file should end in <code>.zip</code> or <code>.nameset</code>. Choose another file?";
-                $hintArea.html(msg).show();
-                return;
+                        break;
+                    case '':
+                        // check file extension
+                        if (fileInfo.name.match('.(zip|nameset)$')) {
+                            isValidArchive = true;
+                        }
+                        break;
+                }
+                if (!isValidArchive) {
+                    var msg = "Archived nameset file should end in <code>.zip</code> or <code>.nameset</code>. Choose another file?";
+                    $hintArea.html(msg).show();
+                    return;
+                }
+            } else {  // presumably 'STUDY_OTU_MAPPING'
+                switch (fileInfo.type) {
+                    case 'application/zip':
+                    case 'text/plain':
+                    case 'text/tab-separated-values':
+                    case 'text/csv':
+                    case 'application/json':
+                        isValidArchive = true;
+                        break;
+                    default:
+                        // check file extension
+                        if (fileInfo.name.match('.(zip|nameset|txt|tsv|csv|json)$')) {
+                            isValidArchive = true;
+                        }
+                        break;
+                }
+                if (!isValidArchive) {
+                    var msg = "Nameset file should end in <code>.zip</code>, <code>.nameset</code>, <code>txt</code>, <code>tsv</code>, <code>csv</code>, or <code>json</code>. Choose another file?";
+                    $hintArea.html(msg).show();
+                    return;
+                }
             }
             // Still here? try to read and unzip this archive!
             JSZip.loadAsync(fileInfo)   // read the Blob

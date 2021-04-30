@@ -5761,6 +5761,7 @@ function clearNamesetUploadWidget() {
     // clear the file widget and the field for pasted text
     var $widgets = $('#nameset-file-for-study-curation, #new-nameset-text');
     $widgets.val('');
+    $('#nameset-local-filesystem-warning').html("");
     //$widgets.trigger('change');
 
     /* OLD reset the progress bar
