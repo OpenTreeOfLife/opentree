@@ -484,6 +484,17 @@ function loadListFromChosenFile( vm, evt ) {
 function loadNamesetFromChosenFile( vm, evt ) {
     // First param (corresponding view-model data) is probably empty; focus on the event!
     var $hintArea = $('#nameset-local-filesystem-warning').eq(0);
+    var destination = null;
+    switch($(evt.target).attr('id')) {
+        case 'nameset-file-for-bulk-tnrs':
+            destination = 'BULK_TNRS';
+            break;
+        case 'nameset-file-for-study-curation':
+            destination = 'STUDY_OTU_MAPPING';
+            break;
+        default:
+            destination = '???';
+    }
     $hintArea.html("");  // clear for new results
     var eventTarget = evt.target || evt.srcElement;
     switch(eventTarget.files.length) {
@@ -560,9 +571,15 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                                var loadedFileName = fileInfo.name;
                                                var lastModifiedDate = fileInfo.lastModifiedDate;
                                                console.log("LOADING FROM FILE '"+ loadedFileName +"', LAST MODIFIED: "+ lastModifiedDate);
-                                               loadNamesetData( mainNamesetJSON, loadedFileName, lastModifiedDate );
-                                               // N.B. the File API *always* downloads to an unused path+filename
-                                               $('#storage-options-popup').modal('hide');
+                                                   if (destination === 'BULK_TNRS') {
+                                                       // replace the main view-model on this page
+                                                       loadNamesetData( mainNamesetJSON, loadedFileName, lastModifiedDate );
+                                                       // N.B. the File API *always* downloads to an unused path+filename
+                                                       $('#storage-options-popup').modal('hide');
+                                                   } else {  // presumably 'STUDY_OTU_MAPPING'
+                                                       //TODO: examine and apply these mappings to the OTUs in the current study
+                                                       console.warn("Let's map these puppies!");
+                                                   }
                                            }
                                        },
                                        function error(e) {
