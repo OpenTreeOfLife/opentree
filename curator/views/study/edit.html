@@ -1444,7 +1444,7 @@ body {
             </div>
 
             <div class="well">
-                <h4 style="margin-top: 0;">Upload pre-mapped names</h4>
+                <h4 style="margin-top: 0;">Import pre-mapped names</h4>
                 <p>
                 If you have a set of mapped names from the 
                 <a href="/curator/tnrs/" target="_blank">TNRS bulk-mapping tool</a>
@@ -1452,10 +1452,11 @@ body {
                 into this study to map any matching names automatically.
                 </p>
                 <div class="button-bar" style="margin-bottom: 1em;">
-                   <button class="btn btn-info"
+                   <button class="btn"
                            onclick="tnrs.showLoadNamesetPopup(); return false;"
                            data-bind="enable: tnrs.browserSupportsFileAPI()">
-                       Load names...<i class="icon-circle-arrow-up icon-white"></i ></button>
+                      <i class="icon-circle-arrow-up"></i >
+                       Paste or upload names...</button>
                 </div>
 <!-- UNUSED form if submitting nameset data to the server for conversion and merge
                 <form id="nameset-import-form"
