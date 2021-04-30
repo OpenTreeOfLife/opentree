@@ -542,7 +542,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
                         break;
                 }
                 if (!isValidArchive) {
-                    var msg = "Nameset file should end in <code>.zip</code>, <code>.nameset</code>, <code>txt</code>, <code>tsv</code>, <code>csv</code>, or <code>json</code>. Choose another file?";
+                    var msg = "Nameset file should end in one of <code>.zip .nameset .txt .tsv .csv .json</code>. Choose another file?";
                     $hintArea.html(msg).show();
                     return;
                 }
