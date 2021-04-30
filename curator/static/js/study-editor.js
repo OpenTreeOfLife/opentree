@@ -5758,15 +5758,17 @@ function clearNamesetUploadWidget() {
     // un-bind fileupload submission
     $('[name=new-nameset-submit]').off('click');
 
-    var $widget = $('#namesetupload');
-    $widget.val('');
-    $widget.trigger('change');
+    // clear the file widget and the field for pasted text
+    var $widgets = $('#nameset-file-for-study-curation, #new-nameset-text');
+    $widgets.val('');
+    $widgets.trigger('change');
 
-    // reset the progress bar
+    /* OLD reset the progress bar
     setTimeout( function() {
         $('#nameset-upload-progress .bar').css( 'width', '0%' );
         $('#nameset-upload-progress .bar span').text( '' );
     }, 500);
+    */
 }
 function mergeNamesetIntoCurrentStudy(evt) {
     // find validate input data
