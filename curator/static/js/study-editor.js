@@ -5742,6 +5742,7 @@ function updateNamesetUploadForm() {
     // offer field for pasted text IF format is appropriate or unspecified
     var $pastedTextField = $('#new-nameset-text');
     
+    /*
     var chosenFormat = $.trim( $('#nameset-import-format').val() );
     switch (chosenFormat) {
         case '':
@@ -5761,14 +5762,13 @@ function updateNamesetUploadForm() {
             $pastedTextField.attr('disabled', 'disabled');
             readyToSubmit = false;
     }
+    */
 
     //var chosenFile = $.trim( $('#namesetupload').val() );
     // NO, this is routinely cleared by the upload widget; the file-name
     // display (white on blue) alongside, is actually a safer test.
-    var chosenFile = $.trim( $('#upload-nameset-info').text() );
     var pastedText = $.trim( $pastedTextField.val() );
-    // either of these is acceptable
-    if (pastedText === '' && chosenFile === '') {
+    if (pastedText === '') {
         readyToSubmit = false;
     }
 
