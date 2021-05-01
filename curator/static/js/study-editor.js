@@ -5770,6 +5770,7 @@ function clearNamesetUploadWidget() {
         $('#nameset-upload-progress .bar span').text( '' );
     }, 500);
     */
+    updateNamesetUploadForm();
 }
 function mergeNamesetIntoCurrentStudy(evt) {
     // find validate input data
