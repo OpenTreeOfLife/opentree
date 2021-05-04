@@ -5965,7 +5965,7 @@ function mergeNamesetData( nameset, loadedFileName, lastModifiedDate ) {
         if (!$.trim(nameInfo['originalLabel'])) return false;
         if (!$.trim(nameInfo['ottTaxonName'])) return false;
         // for now, let's require an OTT id as well
-        if (!$.trim(nameInfo['ottId']) return false;
+        if (!$.trim(nameInfo['ottId'])) return false;
         return true;
     });
     if (mappableNames.length === 0) {
