@@ -5943,7 +5943,7 @@ function mergeNamesetData( nameset, loadedFileName, lastModifiedDate ) {
     }
     var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
     // NB This will override already-mapped OTUs!
-    var unmappedOTUs = $.filter(allOTUs, function( otu ) {
+    var unmappedOTUs = $.grep(allOTUs, function( otu ) {
         return ($.trim(otu['^ot:ottTaxonName']) === '');
     });
     var howManyTried = 0;
