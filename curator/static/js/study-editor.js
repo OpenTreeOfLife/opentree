@@ -5956,7 +5956,7 @@ function mergeNamesetData( nameset, loadedFileName, lastModifiedDate ) {
                 var OTUid = otu['@id'];
                 var mappingInfo = {
                     "name" : $.trim(nameInfo['ottTaxonName']),
-                    "ottId" : Number(nameInfo['ottId']
+                    "ottId" : Number(nameInfo['ottId'])
                 };
                 mapOTUToTaxon( OTUid, mappingInfo, {POSTPONE_UI_CHANGES: true} );
                 exactMatchFound = true;
