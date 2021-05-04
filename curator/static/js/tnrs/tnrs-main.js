@@ -509,15 +509,18 @@ function loadNamesetFromChosenFile( vm, evt ) {
             var fileInfo = eventTarget.files[0];
             console.warn("fileInfo.name = "+ fileInfo.name);
             console.warn("fileInfo.type = "+ fileInfo.type);
+            var usesNamesetFileFormat = false;
             var isValidArchive = false;
             if (context === 'BULK_TNRS') {
                 switch (fileInfo.type) {
                     case 'application/zip':
+                        usesNamesetFileFormat = true;
                         isValidArchive = true;
                         break;
                     case '':
                         // check file extension
                         if (fileInfo.name.match('.(zip|nameset)$')) {
+                            usesNamesetFileFormat = true;
                             isValidArchive = true;
                         }
                         break;
@@ -530,103 +533,137 @@ function loadNamesetFromChosenFile( vm, evt ) {
             } else {  // presumably 'STUDY_OTU_MAPPING'
                 switch (fileInfo.type) {
                     case 'application/zip':
+                        usesNamesetFileFormat = true;
+                        isValidArchive = true;
+                        break;
                     case 'text/plain':
                     case 'text/tab-separated-values':
                     case 'text/csv':
                     case 'application/json':
-                        isValidArchive = true;
+                        usesNamesetFileFormat = true;
                         break;
                     default:
                         // check file extension
                         if (fileInfo.name.match('.(zip|nameset|txt|tsv|csv|json)$')) {
+                            usesNamesetFileFormat = true;
                             isValidArchive = true;
                         }
                         break;
                 }
-                if (!isValidArchive) {
+                if (!usesNamesetFileFormat) {
                     var msg = "Nameset file should end in one of <code>.zip .nameset .txt .tsv .csv .json</code>. Choose another file?";
                     $hintArea.html(msg).show();
                     return;
                 }
             }
-            // Still here? try to read and unzip this archive!
-            JSZip.loadAsync(fileInfo)   // read the Blob
-                 .then(function(zip) {  // success callback
-                     console.log('reading ZIP contents...');
-                     var msg = "Reading nameset contents...";
-                     $hintArea.html(msg).show();
-                     // How will we know when it's all (async) loaded? Count down as each entry is read!
-                     var zipEntriesToLoad = 0;
-                     var initialCache = {};
-                     for (var p in zip.files) { zipEntriesToLoad++; }
-                     // Stash most found data in the cache, but main JSON should be parsed
-                     var nameset = null;
-                     zip.forEach(function (relativePath, zipEntry) {  // 2) print entries
-                         console.log('  '+ zipEntry.name);
-                         console.log(zipEntry);
-                         // skip directories (nothing to do here)
-                         if (zipEntry.dir) {
-                             console.warn("SKIPPING directory "+ zipEntry.name +"...");
-                             zipEntriesToLoad--;
-                             return;
-                         }
-                         // read and store files
-                         zipEntry.async('text', function(metadata) {
-                                    // report progress?
-                                    var msg = "Reading nameset contents ("+ zipEntry.name +"): "+ metadata.percent.toFixed(2) +" %";
-                                    $hintArea.html(msg).show();
-                                 })
-                                 .then(function success(data) {
-                                           console.log("Success unzipping "+ zipEntry.name +":\n"+ data);
-                                           zipEntriesToLoad--;
-                                           // parse and stash the main JSON data; cache the rest
-                                           switch (zipEntry.name) {
-                                               case 'main.json':
-                                                   try {
-                                                       nameset = JSON.parse(data);
-                                                   } catch(e) {
-                                                       // just swallow this and report below
-                                                       nameset = null;
-                                                       var msg = "<code>main.json</code> was missing or malformed ("+ e +")!";
-                                                       $hintArea.html(msg).show();
-                                                   }
-                                                   break;
-                                               default:
-                                                   // copy to our initial cache
-                                                   initialCache[ zipEntry.name ] = data;
-                                           }
-                                           if (zipEntriesToLoad === 0) {
-                                               // we've read in all the ZIP data! open this nameset
-                                               // (TODO: setting its initial cache) and close this popup
-
-                                               // Capture some file metadata, in case it's needed in the nameset
-                                               var loadedFileName = fileInfo.name;
-                                               var lastModifiedDate = fileInfo.lastModifiedDate;
-                                               console.log("LOADING FROM FILE '"+ loadedFileName +"', LAST MODIFIED: "+ lastModifiedDate);
-                                               if (context === 'BULK_TNRS') {
-                                                   // replace the main view-model on this page
-                                                   loadNamesetData( nameset, loadedFileName, lastModifiedDate );
-                                                   // N.B. the File API *always* downloads to an unused path+filename
-                                                   $('#storage-options-popup').modal('hide');
-                                               } else {  // presumably 'STUDY_OTU_MAPPING'
-                                                   // examine and apply these mappings to the OTUs in the current study
-                                                   if (nameset) {
-                                                       mergeNamesetData( nameset, loadedFileName, lastModifiedDate );
-                                                   }
-                                                   // NB if it failed to parse, we're showing a deatiled error message above
+            // Still here? try to extract a nameset from the chosen file
+            if (isValidArchive) {
+                // try to read and unzip this archive!
+                JSZip.loadAsync(fileInfo)   // read the Blob
+                     .then(function(zip) {  // success callback
+                         console.log('reading ZIP contents...');
+                         var msg = "Reading nameset contents...";
+                         $hintArea.html(msg).show();
+                         // How will we know when it's all (async) loaded? Count down as each entry is read!
+                         var zipEntriesToLoad = 0;
+                         var initialCache = {};
+                         for (var p in zip.files) { zipEntriesToLoad++; }
+                         // Stash most found data in the cache, but main JSON should be parsed
+                         var nameset = null;
+                         zip.forEach(function (relativePath, zipEntry) {  // 2) print entries
+                             console.log('  '+ zipEntry.name);
+                             console.log(zipEntry);
+                             // skip directories (nothing to do here)
+                             if (zipEntry.dir) {
+                                 console.warn("SKIPPING directory "+ zipEntry.name +"...");
+                                 zipEntriesToLoad--;
+                                 return;
+                             }
+                             // read and store files
+                             zipEntry.async('text', function(metadata) {
+                                        // report progress?
+                                        var msg = "Reading nameset contents ("+ zipEntry.name +"): "+ metadata.percent.toFixed(2) +" %";
+                                        $hintArea.html(msg).show();
+                                     })
+                                     .then(function success(data) {
+                                               console.log("Success unzipping "+ zipEntry.name +":\n"+ data);
+                                               zipEntriesToLoad--;
+                                               // parse and stash the main JSON data; cache the rest
+                                               switch (zipEntry.name) {
+                                                   case 'main.json':
+                                                       try {
+                                                           nameset = JSON.parse(data);
+                                                       } catch(e) {
+                                                           // just swallow this and report below
+                                                           nameset = null;
+                                                           var msg = "<code>main.json</code> was missing or malformed ("+ e +")!";
+                                                           $hintArea.html(msg).show();
+                                                       }
+                                                       break;
+                                                   default:
+                                                       // copy to our initial cache
+                                                       initialCache[ zipEntry.name ] = data;
                                                }
-                                           }
-                                       },
-                                       function error(e) {
-                                           var msg = "Problem unzipping "+ zipEntry.name +":\n"+ e.message;
-                                           $hintArea.html(msg).show();
-                                       });
+                                               if (zipEntriesToLoad === 0) {
+                                                   // we've read in all the ZIP data! open this nameset
+                                                   // (TODO: setting its initial cache) and close this popup
+
+                                                   // Capture some file metadata, in case it's needed in the nameset
+                                                   var loadedFileName = fileInfo.name;
+                                                   var lastModifiedDate = fileInfo.lastModifiedDate;
+                                                   console.log("LOADING FROM FILE '"+ loadedFileName +"', LAST MODIFIED: "+ lastModifiedDate);
+                                                   if (context === 'BULK_TNRS') {
+                                                       // replace the main view-model on this page
+                                                       loadNamesetData( nameset, loadedFileName, lastModifiedDate );
+                                                       // N.B. the File API *always* downloads to an unused path+filename
+                                                       $('#storage-options-popup').modal('hide');
+                                                   } else {  // presumably 'STUDY_OTU_MAPPING'
+                                                       // examine and apply these mappings to the OTUs in the current study
+                                                       if (nameset) {
+                                                           mergeNamesetData( nameset, loadedFileName, lastModifiedDate );
+                                                       }
+                                                       // NB if it failed to parse, we're showing a deatiled error message above
+                                                   }
+                                               }
+                                           },
+                                           function error(e) {
+                                               var msg = "Problem unzipping "+ zipEntry.name +":\n"+ e.message;
+                                               $hintArea.html(msg).show();
+                                           });
+                         });
+                     },
+                     function (e) {         // failure callback
+                         var msg = "Error reading <strong>" + fileInfo.name + "</strong>! Is this a proper zip file?";
+                         $hintArea.html(msg).show();
                      });
-                 },
-                 function (e) {         // failure callback
-                     var msg = "Error reading <strong>" + fileInfo.name + "</strong>! Is this a proper zip file?";
-                     $hintArea.html(msg).show();
-                 });
+            } else {
+                // try to extract nameset from a simple (non-ZIP) file
+                var fr = new FileReader();
+                fr.onload = function( evt ) {
+                    var data = evt.target.result;
+                    var nameset = null;
+                    console.log( data );
+                    if (context === 'BULK_TNRS') {
+                        console.error("Unexpected context 'BULK_TNRS' for flat-file nameset!");
+                    } else {  // presumably 'STUDY_OTU_MAPPING'
+                        // TODO: Try conversion to standard nameset JS object
+                        try {
+                            nameset = JSON.parse(data);
+                        } catch(e) {
+                            // IF this fails, try to import TSV/CSV, line-by-line text
+                            nameset = convertToNamesetModel(data);
+                        }
+                        if (nameset) {
+                            // examine and apply these mappings to the OTUs in the current study
+                            mergeNamesetData( nameset, loadedFileName, lastModifiedDate );
+                        } else {
+                             var msg = "Error reading names from <strong>" + fileInfo.name + "</strong>! Please compare it to examples";
+                             $hintArea.html(msg).show();
+                        }
+                    }
+                };
+                fr.readAsText(fileInfo);  // default encoding is utf-8
+            }
     }
 }
 
