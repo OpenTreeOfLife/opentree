@@ -20594,7 +20594,6 @@ function showLoadListPopup( ) {
 }
 function showLoadNamesetPopup( ) {
     showFilesystemPopup('#load-nameset-popup');
-    updateNamesetUploadForm();
 }
 function showSaveNamesetPopup( ) {
     showFilesystemPopup('#save-nameset-popup');
