@@ -154,8 +154,11 @@ function convertToNamesetModel( listText ) {
                 return true;  // skip to next line
             default:
                 // we assume the same fields as in out nameset output files
-                // and the gihrd(or ottid?)
                 var label = $.trim(items[0]);   // its original, vernacular label
+                if (label === 'ORIGINAL LABEL') {
+                    // skip the header row, if found
+                    return true;
+                }
                 // skip this label if it's a duplicate
                 if (labelsFound.indexOf(label) === -1) {
                     // add this to labels found (test later names against this)
@@ -558,7 +561,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
                      var initialCache = {};
                      for (var p in zip.files) { zipEntriesToLoad++; }
                      // Stash most found data in the cache, but main JSON should be parsed
-                     var mainNamesetJSON = null;
+                     var nameset = null;
                      zip.forEach(function (relativePath, zipEntry) {  // 2) print entries
                          console.log('  '+ zipEntry.name);
                          console.log(zipEntry);
@@ -580,7 +583,14 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                            // parse and stash the main JSON data; cache the rest
                                            switch (zipEntry.name) {
                                                case 'main.json':
-                                                   mainNamesetJSON = JSON.parse(data);
+                                                   try {
+                                                       nameset = JSON.parse(data);
+                                                   } catch(e) {
+                                                       // just swallow this and report below
+                                                       nameset = null;
+                                                       var msg = "<code>main.json</code> was missing or malformed ("+ e +")!";
+                                                       $hintArea.html(msg).show();
+                                                   }
                                                    break;
                                                default:
                                                    // copy to our initial cache
@@ -594,15 +604,19 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                                var loadedFileName = fileInfo.name;
                                                var lastModifiedDate = fileInfo.lastModifiedDate;
                                                console.log("LOADING FROM FILE '"+ loadedFileName +"', LAST MODIFIED: "+ lastModifiedDate);
-                                                   if (destination === 'BULK_TNRS') {
-                                                       // replace the main view-model on this page
-                                                       loadNamesetData( mainNamesetJSON, loadedFileName, lastModifiedDate );
-                                                       // N.B. the File API *always* downloads to an unused path+filename
-                                                       $('#storage-options-popup').modal('hide');
-                                                   } else {  // presumably 'STUDY_OTU_MAPPING'
-                                                       //TODO: examine and apply these mappings to the OTUs in the current study
-                                                       console.warn("Let's map these puppies!");
+                                               if (destination === 'BULK_TNRS') {
+                                                   // replace the main view-model on this page
+                                                   loadNamesetData( nameset, loadedFileName, lastModifiedDate );
+                                                   // N.B. the File API *always* downloads to an unused path+filename
+                                                   $('#storage-options-popup').modal('hide');
+                                               } else {  // presumably 'STUDY_OTU_MAPPING'
+                                                   //TODO: examine and apply these mappings to the OTUs in the current study
+                                                   console.warn("Let's map these puppies!");
+                                                   if (nameset) {
+                                                       mergeNamesetData( nameset, loadedFileName, lastModifiedDate );
                                                    }
+                                                   // NB if it failsed to parse, we're showing a deatiled error message above
+                                               }
                                            }
                                        },
                                        function error(e) {

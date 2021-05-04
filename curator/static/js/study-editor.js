@@ -990,6 +990,18 @@ function loadSelectedStudy() {
                 createAnnotation( hintsAnnotationBundle, data.nexml );
             }
 
+            // add baseline (empty) annotation for merged namesets
+            if (getMergedNamesets(data.nexml) === null) {
+                var filesAnnotationBundle = $.extend(
+                    {
+                        targetElement: data.nexml,
+                        agent: curatorAgent
+                    },
+                    nexsonTemplates['merged namesets']
+                );
+                createAnnotation( filesAnnotationBundle, data.nexml );
+            }
+
             // add baseline (empty) annotation for supporting files
             if (getSupportingFiles(data.nexml) === null) {
                 ///data.nexml.meta.push( cloneFromNexsonTemplate('supporting files') );
@@ -5813,7 +5825,6 @@ function mergeNamesetIntoCurrentStudy(evt) {
     if (inputFormat === 'zip') {
         var unableToParseZIP = false;
         console.log(evt.target.files);
-        debugger;
         // TODO: Read in and decompress archive to retrieve `main.json` from inside
 /////nameset = json-parse(payload);
         if (unableToParseZIP) {
@@ -5946,6 +5957,78 @@ function returnFromNamesetSubmission( jqXHR, textStatus ) {
     });
 }
 
+/* nameset merge using local data; assumes nameset is in expected JS object */
+function mergeNamesetData( nameset, loadedFileName, lastModifiedDate ) {
+    // check for mappable names
+    var mappableNames = $.grep(nameset.names, function( nameInfo ) {
+        // is it fully mapped to OTT? at least with a canonical name?
+        if (!$.trim(nameInfo['originalLabel'])) return false;
+        if (!$.trim(nameInfo['ottTaxonName']) return false;
+        // for now, let's require an OTT id as well
+        if (!$.trim(nameInfo['ottId']) return false;
+        return true;
+    });
+    if (mappableNames.length === 0) {
+        // alert user and bail out
+        showErrorMessage('No mapped names found in this nameset.');
+        return;
+    }
+    var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+    // NB This will override already-mapped OTUs!
+    var unmappedOTUs = $.filter(allOTUs, function( otu ) {
+        return ($.trim(otu['^ot:ottTaxonName']) === '');
+    });
+    var howManyTried = 0;
+    var howManyMatched = 0;
+    $.each(mappableNames, function(i, nameInfo ) {
+        var exactMatchFound = false;
+        $.each(allOTUs, function(i otu) {
+            if ($.trim(otu['^ot:originalLabel']) === $.trim(nameInfo['originalLabel'])) {
+                // it's a match!  emulate existing name-mapping behavior
+                var OTUid = otu['@id'];
+                var mappingInfo = {
+                    "name" : $.trim(nameInfo['ottTaxonName']),
+                    "ottId" : Number(nameInfo['ottId']
+                };
+                mapOTUToTaxon( OTUid, mappingInfo, {POSTPONE_UI_CHANGES: true} );
+                exactMatchFound = true;
+                return false;  // skip the rest (ASSUMES no duplicate OTU labels!)
+            }
+        });
+        howManyTried++;
+        if (exactMatchFound) {
+            howManyMatched++;
+        }
+    });
+    // update display of both OTU Mapping and Home/Trees tabs
+    nudgeTickler('OTU_MAPPING_HINTS');
+    nudgeTickler('TREES');  // to hide/show duplicate-taxon prompts in tree list
+
+    // update the namesets list
+    var namesetNexson = cloneFromNexsonTemplate('single merged nameset');
+    var desc = "Nameset merged by `"+ userDisplayName +"`. "+ howManyTried +" mappings tried, "+ howManyMatched +" successfully applied.";
+    if (loadedFileName) {
+        // add this to comment
+        desc += " Nameset was loaded from file `"+ loadedFileName +"`";
+        if (lastModifiedDate) {
+            // add this to comment
+            desc += " (last modified on "+ lastModifiedDate +").";;
+        } else {
+            desc += ".";;
+        }
+    } else {
+        desc += " Nameset was pasted directly in curation app.";
+    }
+    namesetNexson['description']['$'] = desc;
+    getMergedNamesets().data.namesets.nameset.push(namesetNexson);
+
+    // summarize results for the curator
+    if (howManyMatched === 0) {
+        showInfoMessage("Nameset merged attempted, but no matches were found (of "+ howManyTried +" attempted) in this study's OTUs.");
+    } else {
+        showSuccessMessage("Nameset merged successfully ("+ howManyTried +" mappings tried, "+ howManyMatched +" successfully applied).");
+    }
+}
 
 function adjustedLabelOrEmpty(label) {
     // We should only display an adjusted label if it's changed from the
@@ -6020,6 +6103,52 @@ var nexsonTemplates = {
         "@url": "https://github.com/OpenTreeOfLife/opentree",
         "@version": "0.0.0"   // TODO
     },
+
+    'merged namesets': {
+        /* App-specific metadata about namesets merged into this study.
+         *
+         * NOTE that this object describes an annotation bundle with
+         * several main parts, each of which will be applied separately to
+         * the target Nexml:
+         *  targetElement  // supplied by template consumer
+         *  annotationEvent
+         *  agent(s)
+         *  message(s)
+         */
+        // 'targetElement': ,
+        'annotationEvent': {
+            "@id": "merged-namesets-metadata",
+            "@description": "Describes external namesets merged into this study",
+            "@wasAssociatedWithAgentId": "opentree-curation-webapp",
+            // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
+            "@dateCreated": new Date().toISOString(),
+            "@passedChecks": true,  // this is moot
+            "@preserve": true,
+            "message": [{
+                //"@id": "",      // will be assigned via $.extend
+                "@severity": "INFO",
+                "@code": "MERGED_NAMESET_INFO",
+                "@humanMessageType": "NONE",
+                "data": {
+                    "namesets": { "nameset": [
+                        /* an array of objects based on 'single merged nameset' below */
+                    ]}
+                },
+                "refersTo": {
+                    "@top": {"$": "meta"}
+                }
+            }]
+            // "otherProperty": [ ]  // SKIP THIS, use messages for details
+        }
+        // 'agent': null,      // will be provided by template consumer
+    }, // END of 'merged namesets' template
+
+    'single merged nameset': {
+        /* A single nameset merged into this study
+         */
+        "description": {"$": ""}  // eg, "Alignment data for tree #3"
+    }, // END of 'single supporting file' template
+
 
     'supporting files': {
         /* App-specific metadata about associated support files for this study.
@@ -6203,6 +6332,35 @@ if (!Date.prototype.toISOString) {
         };
     }
     Date.prototype.toISOString = Date.prototype.toJSON;
+}
+
+function getMergedNamesets(nexml) {
+    // retrieve this annotation message from the model (or other specified
+    // object); return null if not found
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
+    var annotations = getStudyAnnotationEvents( nexml );
+    var namesetsAnnotation = null;
+    $.each(makeArray(annotations.annotation), function(i, annotation) {
+        var itsID = ko.unwrap(annotation['@id']);
+
+        if (itsID === 'merged-namesets-metadata') {
+            namesetsAnnotation = annotation;
+            return false;
+        }
+    });
+
+    if (!namesetsAnnotation) {
+        return null;
+    }
+
+    var namesetsMessages = makeArray( namesetsAnnotation.message );
+    if (namesetsMessages.length > 0) {
+        // return its message with the interesting parts
+        return namesetsMessages[0];
+    }
+    return null;
 }
 
 function getSupportingFiles(nexml) {
