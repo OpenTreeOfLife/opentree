@@ -561,7 +561,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
                      var initialCache = {};
                      for (var p in zip.files) { zipEntriesToLoad++; }
                      // Stash most found data in the cache, but main JSON should be parsed
-                     var mainNamesetJSON = null;
+                     var nameset = null;
                      zip.forEach(function (relativePath, zipEntry) {  // 2) print entries
                          console.log('  '+ zipEntry.name);
                          console.log(zipEntry);
@@ -584,10 +584,10 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                            switch (zipEntry.name) {
                                                case 'main.json':
                                                    try {
-                                                       mainNamesetJSON = JSON.parse(data);
+                                                       nameset = JSON.parse(data);
                                                    } catch(e) {
                                                        // just swallow this and report below
-                                                       mainNamesetJSON = null;
+                                                       nameset = null;
                                                        var msg = "<code>main.json</code> was missing or malformed ("+ e +")!";
                                                        $hintArea.html(msg).show();
                                                    }
@@ -606,14 +606,14 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                                console.log("LOADING FROM FILE '"+ loadedFileName +"', LAST MODIFIED: "+ lastModifiedDate);
                                                if (destination === 'BULK_TNRS') {
                                                    // replace the main view-model on this page
-                                                   loadNamesetData( mainNamesetJSON, loadedFileName, lastModifiedDate );
+                                                   loadNamesetData( nameset, loadedFileName, lastModifiedDate );
                                                    // N.B. the File API *always* downloads to an unused path+filename
                                                    $('#storage-options-popup').modal('hide');
                                                } else {  // presumably 'STUDY_OTU_MAPPING'
                                                    //TODO: examine and apply these mappings to the OTUs in the current study
                                                    console.warn("Let's map these puppies!");
-                                                   if (mainNamesetJSON) {
-                                                       mergeNamesetData( mainNamesetJSON, loadedFileName, lastModifiedDate );
+                                                   if (nameset) {
+                                                       mergeNamesetData( nameset, loadedFileName, lastModifiedDate );
                                                    }
                                                    // NB if it failsed to parse, we're showing a deatiled error message above
                                                }
