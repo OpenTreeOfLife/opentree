@@ -48,6 +48,16 @@ var getContextForNames_url;
 var render_markdown_url;
 */
 
+// sometimes we use this script in other pages; let's check!
+var context;
+if (window.location.pathname.indexOf("/curator/tnrs/") === 0) {
+    context = 'BULK_TNRS';
+} else if (window.location.pathname.indexOf("/curator/study/edit/") === 0) {
+    context = 'STUDY_OTU_MAPPING';
+} else {
+    context = '???';
+}
+
 /* Return the data model for a new nameset (our JSON representation) */
 var getNewNamesetModel = function(options) {
     if (!options) options = {};
@@ -487,17 +497,6 @@ function loadListFromChosenFile( vm, evt ) {
 function loadNamesetFromChosenFile( vm, evt ) {
     // First param (corresponding view-model data) is probably empty; focus on the event!
     var $hintArea = $('#nameset-local-filesystem-warning').eq(0);
-    var destination = null;
-    switch($(evt.target).attr('id')) {
-        case 'nameset-file-for-bulk-tnrs':
-            destination = 'BULK_TNRS';
-            break;
-        case 'nameset-file-for-study-curation':
-            destination = 'STUDY_OTU_MAPPING';
-            break;
-        default:
-            destination = '???';
-    }
     $hintArea.html("");  // clear for new results
     var eventTarget = evt.target || evt.srcElement;
     switch(eventTarget.files.length) {
@@ -511,7 +510,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
             console.warn("fileInfo.name = "+ fileInfo.name);
             console.warn("fileInfo.type = "+ fileInfo.type);
             var isValidArchive = false;
-            if (destination === 'BULK_TNRS') {
+            if (context === 'BULK_TNRS') {
                 switch (fileInfo.type) {
                     case 'application/zip':
                         isValidArchive = true;
@@ -604,7 +603,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                                var loadedFileName = fileInfo.name;
                                                var lastModifiedDate = fileInfo.lastModifiedDate;
                                                console.log("LOADING FROM FILE '"+ loadedFileName +"', LAST MODIFIED: "+ lastModifiedDate);
-                                               if (destination === 'BULK_TNRS') {
+                                               if (context === 'BULK_TNRS') {
                                                    // replace the main view-model on this page
                                                    loadNamesetData( nameset, loadedFileName, lastModifiedDate );
                                                    // N.B. the File API *always* downloads to an unused path+filename
@@ -2270,35 +2269,21 @@ function showPossibleMappingsKey() {
 }
 
 $(document).ready(function() {
-    // Always start with an empty set, binding it to the UI
-    loadNamesetData( null );
-
-    /* typical setup and binding of update logic
-    // set initial state for all widgets
-    updateMyStuff();
-
-    // any change in widgets should (potentially) update all
-    $('input, textarea, select').unbind('change').change(updateMyStuff);
-    $('input, textarea').unbind('keyup').keyup(updateMyStuff);
-
-    // any change to the TreeBASE ID or DOI fields should also disable Continue
-    $('input[name=treebase-id]').unbind('change keyup').bind('change keyup', function() {
-        duplicateStudiesBasedOnTreeBASEUrl = null;
-        updateMyStuff();
-    });
-    $('input[name=publication-DOI]').unbind('change keyup').bind('change keyup', function() {
-        duplicateStudiesBasedOnDOI = null;
-        updateMyStuff();
-    });
-    // normalize to URL and test for duplicates after significant changes in the DOI field
-    $('input[name=treebase-id]').unbind('blur').blur(validateAndTestTreeBaseID);
-    $('input[name=publication-DOI]').unbind('blur').blur(validateAndTestDOI);
-    */
-    //
-    // auto-select the main (UI) tab
-    $('a[href=#Name-Mapping]').tab('show');
-
-    console.log("READY");
+    switch (context) {
+        case 'BULK_TNRS':
+            // Always start with an empty set, binding it to the UI
+            loadNamesetData( null );
+            // auto-select the main (UI) tab
+            $('a[href=#Name-Mapping]').tab('show');
+            break;
+        case 'STUDY_OTU_MAPPING':
+            console.log("Anything to do on ready?");
+            break;
+        case '???':
+        default:
+            // do nothing for now (possibly study View page)
+            break;
+    }
 });
 
 // export some members as a simple API
