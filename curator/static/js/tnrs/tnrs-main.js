@@ -609,12 +609,11 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                                    // N.B. the File API *always* downloads to an unused path+filename
                                                    $('#storage-options-popup').modal('hide');
                                                } else {  // presumably 'STUDY_OTU_MAPPING'
-                                                   //TODO: examine and apply these mappings to the OTUs in the current study
-                                                   console.warn("Let's map these puppies!");
+                                                   // examine and apply these mappings to the OTUs in the current study
                                                    if (nameset) {
                                                        mergeNamesetData( nameset, loadedFileName, lastModifiedDate );
                                                    }
-                                                   // NB if it failsed to parse, we're showing a deatiled error message above
+                                                   // NB if it failed to parse, we're showing a deatiled error message above
                                                }
                                            }
                                        },

@@ -5756,8 +5756,7 @@ function updateNamesetUploadForm() {
     if (readyToSubmit) {
         $submitBtn.click(function(e) {
             e.preventDefault(); // BLOCK upload behavior in favor of local merge!
-            console.log("...now i'd handle things locally...");
-            mergeNamesetIntoCurrentStudy(e); // pass data? or rely on global IDs?
+            processNamesetFromPastedText(e); // pass data? or rely on global IDs?
             return false;
         });
         $submitBtn.removeAttr('disabled');
@@ -5784,7 +5783,7 @@ function clearNamesetUploadWidget() {
     */
     updateNamesetUploadForm();
 }
-function mergeNamesetIntoCurrentStudy(evt) {
+function processNamesetFromPastedText(evt) {
     // find validate input data
     var nameset; // common JS representation
     var $form = $('#nameset-import-form');
