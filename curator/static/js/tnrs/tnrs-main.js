@@ -2371,7 +2371,8 @@ var api = [
     'showPossibleMappingsKey',
     'addSubstitution',
     'removeSubstitution',
-    'formatISODate'
+    'formatISODate',
+    'convertToNamesetModel'
 ];
 $.each(api, function(i, methodName) {
     // populate the default 'module.exports' object
