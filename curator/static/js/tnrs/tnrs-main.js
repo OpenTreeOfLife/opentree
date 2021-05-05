@@ -152,6 +152,7 @@ function convertToNamesetModel( listText ) {
         return $.trim(line) !== "";
     });
     console.warn( lines.length +" lines found with line delimiter '"+ lineDelimFound +"'");
+    var localNameNumber = 0;  // these are not imported, so local integers are find
     $.each(lines, function(i, line) {
         var items = line.split(itemDelimFound);
         // filter out empty empty labels and taxa
@@ -185,7 +186,7 @@ function convertToNamesetModel( listText ) {
                 // add this information in the expected nameset form
                 console.log("...adding label '"+ label +"'...");
                 var nameInfo = {
-                    "id": ("name"+ getNextNameOrdinalNumber()),
+                    "id": ("name"+ localNameNumber++),
                     "originalLabel": label,
                     "ottTaxonName": canonicalTaxonName,
                     "selectedForAction": false
