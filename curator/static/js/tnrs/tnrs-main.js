@@ -656,6 +656,8 @@ function loadNamesetFromChosenFile( vm, evt ) {
                         }
                         if (nameset) {
                             // examine and apply these mappings to the OTUs in the current study
+                            var loadedFileName = fileInfo.name;
+                            var lastModifiedDate = fileInfo.lastModifiedDate;
                             mergeNamesetData( nameset, loadedFileName, lastModifiedDate );
                         } else {
                              var msg = "Error reading names from <strong>" + fileInfo.name + "</strong>! Please compare it to examples";
