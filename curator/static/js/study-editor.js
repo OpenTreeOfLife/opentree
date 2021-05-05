@@ -5798,7 +5798,7 @@ function processNamesetFromPastedText(evt) {
     }
     if (nameset) {
         // examine and apply these mappings to the OTUs in the current study
-        mergeNamesetData( nameset, loadedFileName, lastModifiedDate );
+        mergeNamesetData( nameset );
     } else {
         var msg = "Error reading names from pasted text! Please compare it to examples";
         $hintArea.html(msg).show();
