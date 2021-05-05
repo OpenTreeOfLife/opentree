@@ -5754,7 +5754,7 @@ function updateNamesetUploadForm() {
 
     var $submitBtn = $('[name=new-nameset-submit]');
     if (readyToSubmit) {
-        $submitBtn.click(function(e) {
+        $submitBtn.unbind('click').click(function(e) {
             e.preventDefault(); // BLOCK upload behavior in favor of local merge!
             processNamesetFromPastedText(e); // pass data? or rely on global IDs?
             return false;
