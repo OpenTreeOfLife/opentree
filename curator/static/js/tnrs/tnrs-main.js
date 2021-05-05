@@ -170,9 +170,9 @@ function convertToNamesetModel( listText ) {
                     return true;
                 }
                 // skip this label if it's a duplicate
-                if (labelsFound.indexOf(label) === -1) {
+                if (foundLabels.indexOf(label) === -1) {
                     // add this to labels found (test later names against this)
-                    labelsFound.push(label);
+                    foundLabels.push(label);
                 } else {
                     // this is a dupe of an earlier name!
                     dupeLabelsFound++;
