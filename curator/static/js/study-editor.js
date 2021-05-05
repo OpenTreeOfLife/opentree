@@ -5819,31 +5819,22 @@ function processNamesetFromPastedText(evt) {
     // find validate input data
     var nameset; // common JS representation
     var $form = $('#nameset-import-form');
-    var inputFormat = $form.find('[name=inputFormat]').val();
-    // convert input (whatever format) to a plain JS object
-    if (inputFormat === 'zip') {
-        var unableToParseZIP = false;
-        console.log(evt.target.files);
-        // TODO: Read in and decompress archive to retrieve `main.json` from inside
-/////nameset = json-parse(payload);
-        if (unableToParseZIP) {
-            showErrorMessage("Sorry, I can't read this ZIP archive (created in MacOS Finder?)");
-            return;
-        }
+    //var inputFormat = $form.find('[name=inputFormat]').val();
+    var data = $form.find('#new-nameset-text').val();
+    try {
+        // first try to parse a JSON nameset
+        nameset = JSON.parse(data);
+    } catch(e) {
+        // IF this fails, try to import TSV/CSV, line-by-line text
+        nameset = convertToNamesetModel(data);
     }
-    switch(inputFormat) {
-        case 'zip':
-        case 'json':
-            // assume things are already OK?
-            break;
-        case 'csv':
-            break;
-        case 'tsv':
-            break;
-        default:
-            break;
+    if (nameset) {
+        // examine and apply these mappings to the OTUs in the current study
+        mergeNamesetData( nameset, loadedFileName, lastModifiedDate );
+    } else {
+        var msg = "Error reading names from pasted text! Please compare it to examples";
+        $hintArea.html(msg).show();
     }
-    showSuccessMessage('Tree(s) and OTUs merged successfully.');
 }
 function submitNameset() {
     // TODO: NOTE that this should submit the same arguments (except for file
