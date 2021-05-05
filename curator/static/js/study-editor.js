@@ -5826,7 +5826,7 @@ function processNamesetFromPastedText(evt) {
         nameset = JSON.parse(data);
     } catch(e) {
         // IF this fails, try to import TSV/CSV, line-by-line text
-        nameset = convertToNamesetModel(data);
+        nameset = tnrs.convertToNamesetModel(data);
     }
     if (nameset) {
         // examine and apply these mappings to the OTUs in the current study
