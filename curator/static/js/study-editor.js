@@ -5949,7 +5949,7 @@ function mergeNamesetData( nameset, loadedFileName, lastModifiedDate ) {
     var howManyMatched = 0;
     $.each(mappableNames, function(i, nameInfo ) {
         var exactMatchFound = false;
-        $.each(allOTUs, function(i, otu) {
+        $.each(unmappedOTUs, function(i, otu) {
             if ($.trim(otu['^ot:originalLabel']) === $.trim(nameInfo['originalLabel'])) {
                 // it's a match!  emulate existing name-mapping behavior
                 var OTUid = otu['@id'];
