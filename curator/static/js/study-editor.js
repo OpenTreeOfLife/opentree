@@ -5786,9 +5786,9 @@ function clearNamesetUploadWidget() {
 function processNamesetFromPastedText(evt) {
     // find validate input data
     var nameset; // common JS representation
-    var $form = $('#nameset-import-form');
     //var inputFormat = $form.find('[name=inputFormat]').val();
-    var data = $form.find('#new-nameset-text').val();
+    var $pastedTextField = $('#new-nameset-text');
+    var data = $.trim( $pastedTextField.val() );
     try {
         // first try to parse a JSON nameset
         nameset = JSON.parse(data);
