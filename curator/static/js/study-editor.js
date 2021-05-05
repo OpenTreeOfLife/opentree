@@ -6025,7 +6025,7 @@ function mergeNamesetData( nameset, loadedFileName, lastModifiedDate ) {
     if (howManyMatched === 0) {
         showInfoMessage("Nameset merged attempted, but no matches were found (of "+ howManyTried +" attempted) in this study's OTUs.");
     } else {
-        showSuccessMessage("Nameset merged successfully ("+ howManyTried +" mappings tried, "+ howManyMatched +" successfully applied).");
+        showSuccessMessage("Nameset merged ("+ howManyTried +" mappings tried, "+ howManyMatched +" successfully applied).");
     }
 }
 
