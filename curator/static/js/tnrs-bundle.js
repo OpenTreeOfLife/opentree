@@ -19567,7 +19567,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                                    } catch(e) {
                                                        // just swallow this and report below
                                                        nameset = null;
-                                                       var msg = "<code>main.json</code> is malformed ("+ e +")!";
+                                                       var msg = "<code>main.json</code> is malformed! ("+ e +")";
                                                        $hintArea.html(msg).show();
                                                    }
                                                } else {
