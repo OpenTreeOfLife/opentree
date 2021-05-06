@@ -611,7 +611,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                                    // we've read in all the ZIP data! open this nameset
                                                    // (TODO: setting its initial cache) and close this popup
                                                    if (!mainJsonPayloadFound) {
-                                                       var msg = "<code>main.json</code> not found in this ZIP!");
+                                                       var msg = "<code>main.json</code> not found in this ZIP!";
                                                        $hintArea.html(msg).show();
                                                        return;
                                                    }
