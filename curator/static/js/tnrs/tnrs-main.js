@@ -591,21 +591,21 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                                console.log("Success unzipping "+ zipEntry.name +":\n"+ data);
                                                zipEntriesToLoad--;
                                                // parse and stash the main JSON data; cache the rest
-                                               switch (zipEntry.name) {
-                                                   case 'main.json':
-                                                       mainJsonPayloadFound = true;
-                                                       try {
-                                                           nameset = JSON.parse(data);
-                                                       } catch(e) {
-                                                           // just swallow this and report below
-                                                           nameset = null;
-                                                           var msg = "<code>main.json</code> is malformed ("+ e +")!";
-                                                           $hintArea.html(msg).show();
-                                                       }
-                                                       break;
-                                                   default:
-                                                       // copy to our initial cache
-                                                       initialCache[ zipEntry.name ] = data;
+                                               // NB that this name could include a preceding path!
+                                               if ((zipEntry.name === 'main.json') || (zipEntry.name.endsWith('/main.json'))) {
+                                                   // this is the expected payload for a ZIPed nameset; try to parse it!
+                                                   mainJsonPayloadFound = true;
+                                                   try {
+                                                       nameset = JSON.parse(data);
+                                                   } catch(e) {
+                                                       // just swallow this and report below
+                                                       nameset = null;
+                                                       var msg = "<code>main.json</code> is malformed ("+ e +")!";
+                                                       $hintArea.html(msg).show();
+                                                   }
+                                               } else {
+                                                   // it's some other file; copy it to our initial cache
+                                                   initialCache[ zipEntry.name ] = data;
                                                }
                                                if (zipEntriesToLoad === 0) {
                                                    // we've read in all the ZIP data! open this nameset
