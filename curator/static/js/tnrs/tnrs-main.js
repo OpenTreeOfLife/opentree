@@ -567,6 +567,7 @@ function loadNamesetFromChosenFile( vm, evt ) {
                          $hintArea.html(msg).show();
                          // How will we know when it's all (async) loaded? Count down as each entry is read!
                          var zipEntriesToLoad = 0;
+                         var mainJsonPayloadFound = false;
                          var initialCache = {};
                          for (var p in zip.files) { zipEntriesToLoad++; }
                          // Stash most found data in the cache, but main JSON should be parsed
@@ -592,12 +593,13 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                                // parse and stash the main JSON data; cache the rest
                                                switch (zipEntry.name) {
                                                    case 'main.json':
+                                                       mainJsonPayloadFound = true;
                                                        try {
                                                            nameset = JSON.parse(data);
                                                        } catch(e) {
                                                            // just swallow this and report below
                                                            nameset = null;
-                                                           var msg = "<code>main.json</code> was missing or malformed ("+ e +")!";
+                                                           var msg = "<code>main.json</code> is malformed ("+ e +")!";
                                                            $hintArea.html(msg).show();
                                                        }
                                                        break;
@@ -608,6 +610,11 @@ function loadNamesetFromChosenFile( vm, evt ) {
                                                if (zipEntriesToLoad === 0) {
                                                    // we've read in all the ZIP data! open this nameset
                                                    // (TODO: setting its initial cache) and close this popup
+                                                   if (!mainJsonPayloadFound) {
+                                                       var msg = "<code>main.json</code> not found in this ZIP!");
+                                                       $hintArea.html(msg).show();
+                                                       return;
+                                                   }
 
                                                    // Capture some file metadata, in case it's needed in the nameset
                                                    var loadedFileName = fileInfo.name;
