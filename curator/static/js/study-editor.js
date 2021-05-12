@@ -992,7 +992,7 @@ function loadSelectedStudy() {
                 // confirm that recently-added features are there
                 var mappingHints = getOTUMappingHints(data.nexml);
                 if (mappingHints.data['autoAcceptExactMatches'] === undefined) {
-                    mappingHints['autoAcceptExactMatches'] = false;
+                    mappingHints.data['autoAcceptExactMatches'] = false;
                 }
             }
 
