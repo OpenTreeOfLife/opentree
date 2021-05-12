@@ -1685,6 +1685,13 @@ function showLoadListPopup( ) {
     showFilesystemPopup('#load-list-popup');
 }
 function showLoadNamesetPopup( ) {
+    $('#load-nameset-popup').off('hide').on('hide', function () {
+        clearNamesetUploadWidget();
+        clearNamesetPastedText();
+    });
+    $('#load-nameset-popup').off('hidden').on('hidden', function () {
+        ///console.log('@@@@@ hidden');
+    });
     showFilesystemPopup('#load-nameset-popup');
 }
 function showSaveNamesetPopup( ) {

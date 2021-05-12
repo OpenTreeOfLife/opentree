@@ -5783,6 +5783,9 @@ function clearNamesetUploadWidget() {
     */
     updateNamesetUploadForm();
 }
+function clearNamesetPastedText() {
+    $('#new-nameset-text').val("");
+}
 function processNamesetFromPastedText(evt) {
     // find validate input data
     var nameset; // common JS representation
