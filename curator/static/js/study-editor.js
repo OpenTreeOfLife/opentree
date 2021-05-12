@@ -5815,6 +5815,9 @@ function clearNamesetUploadWidget() {
     */
     updateNamesetUploadForm();
 }
+function clearNamesetPastedText() {
+    $('#new-nameset-text').val("");
+}
 function processNamesetFromPastedText(evt) {
     // find validate input data
     var nameset; // common JS representation
@@ -5960,7 +5963,7 @@ function mergeNamesetData( nameset, loadedFileName, lastModifiedDate ) {
     });
     if (mappableNames.length === 0) {
         // alert user and bail out
-        showErrorMessage('No mapped names found in this nameset.');
+        showErrorMessage('No mapped names found in this nameset (or malformed input?)');
         return;
     }
     var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
