@@ -1375,8 +1375,29 @@ function requestTaxonMapping( nameToMap ) {
                     }
                 });
 
-                proposeNameLabel(nameID, candidateMappingList);
-                // postpone actual mapping until user chooses, then approves
+                var autoAcceptableMapping = null;
+                if (candidateMappingList.length === 1) {
+                    var onlyMapping = candidateMappingList[0];
+                    /* NB - auto-accept includes synonyms if exact match!
+                    if (onlyMapping.originalMatch.is_synonym) {
+                        return;
+                    }
+                    */
+                    /* N.B. We never present the sole mapping suggestion as a
+                     * taxon-name homonym, so just consider the match score to
+                     * determine whether it's an "exact match".
+                     */
+                    if (onlyMapping.originalMatch.score === 1.0) {
+                        autoAcceptableMapping = onlyMapping;
+                    }
+                }
+                if (autoAcceptingExactMatches && autoAcceptableMapping) {
+                    // accept the obvious choice (and possibly update UI) immediately
+                    mapNameToTaxon( nameID, autoAcceptableMapping, {POSTPONE_UI_CHANGES: true} );
+                } else {
+                    // postpone actual mapping until user chooses
+                    proposeNameLabel(nameID, candidateMappingList);
+                }
         }
 
         currentlyMappingNames.remove( nameID );
