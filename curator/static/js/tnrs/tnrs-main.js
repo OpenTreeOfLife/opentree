@@ -76,6 +76,7 @@ var getNewNamesetModel = function(options) {
             "description": "Aids for mapping listed names to OTT taxa",
             "searchContext": "All life",
             "useFuzzyMatching": false,
+            "autoAcceptExactMatches": false,
             "substitutions": [
                 /* typical values in use
                 {
@@ -1245,6 +1246,7 @@ function requestTaxonMapping( nameToMap ) {
     // groom trimmed text based on our search rules
     var searchContextName = viewModel.mappingHints.searchContext();
     var usingFuzzyMatching = viewModel.mappingHints['useFuzzyMatching'] || false;
+    var autoAcceptingExactMatches = viewModel.mappingHints['autoAcceptExactMatches'] || false;
     // show spinner alongside this item...
     currentlyMappingNames.push( nameID );
 
@@ -1979,6 +1981,9 @@ function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
     if (loadedFileName) {
         // We just loaded an archive file! Store its latest filename.
         nameset.metadata.previous_filename = loadedFileName;
+    }
+    if (nameset.mappingHints['autoAcceptExactMatches'] === undefined) {
+        nameset.mappingHints['autoAcceptExactMatches'] = false;
     }
 
     /* Name and export the new viewmodel. NOTE that we don't create observables
