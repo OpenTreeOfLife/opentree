@@ -1686,12 +1686,11 @@ function showLoadListPopup( ) {
 }
 function showLoadNamesetPopup( ) {
     $('#load-nameset-popup').off('hide').on('hide', function () {
-        clearNamesetUploadWidget();
-        clearNamesetPastedText();
-        ///console.log('@@@@@ hide');
-    });
-    $('#load-nameset-popup').off('hidden').on('hidden', function () {
-        ///console.log('@@@@@ hidden');
+        if (context === 'STUDY_OTU_MAPPING') {
+            // clear any prior search input
+            clearNamesetUploadWidget();
+            clearNamesetPastedText();
+        }
     });
     showFilesystemPopup('#load-nameset-popup');
 }
@@ -2387,7 +2386,8 @@ var api = [
     'addSubstitution',
     'removeSubstitution',
     'formatISODate',
-    'convertToNamesetModel'
+    'convertToNamesetModel',
+    'context'
 ];
 $.each(api, function(i, methodName) {
     // populate the default 'module.exports' object
