@@ -1688,6 +1688,7 @@ function showLoadNamesetPopup( ) {
     $('#load-nameset-popup').off('hide').on('hide', function () {
         clearNamesetUploadWidget();
         clearNamesetPastedText();
+        ///console.log('@@@@@ hide');
     });
     $('#load-nameset-popup').off('hidden').on('hidden', function () {
         ///console.log('@@@@@ hidden');
