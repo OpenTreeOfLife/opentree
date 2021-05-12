@@ -1245,8 +1245,8 @@ function requestTaxonMapping( nameToMap ) {
 
     // groom trimmed text based on our search rules
     var searchContextName = viewModel.mappingHints.searchContext();
-    var usingFuzzyMatching = viewModel.mappingHints['useFuzzyMatching'] || false;
-    var autoAcceptingExactMatches = viewModel.mappingHints['autoAcceptExactMatches'] || false;
+    var usingFuzzyMatching = viewModel.mappingHints.useFuzzyMatching() || false;
+    var autoAcceptingExactMatches = viewModel.mappingHints.autoAcceptExactMatches() || false;
     // show spinner alongside this item...
     currentlyMappingNames.push( nameID );
 
