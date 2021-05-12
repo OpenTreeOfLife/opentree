@@ -6265,6 +6265,7 @@ var nexsonTemplates = {
                 "data": {
                     "searchContext": {"$": "All life"},
                     "useFuzzyMatching": false,
+                    "autoAcceptExactMatches": false,
                     "substitutions": {"substitution": [
                         // always one default (empty) substitution
                         {
@@ -7040,6 +7041,8 @@ function requestTaxonMapping( otuToMap ) {
     // groom trimmed text based on our search rules
     var searchContextName = getOTUMappingHints().data.searchContext.$;
     var usingFuzzyMatching = getOTUMappingHints().data['useFuzzyMatching'] || false;
+    var autoAcceptingExactMatches = getOTUMappingHints().data['autoAcceptExactMatches'] || false;
+
     // show spinner alongside this item...
     currentlyMappingOTUs.push( otuID );
 
@@ -7110,7 +7113,9 @@ function requestTaxonMapping( otuToMap ) {
              */
 
             default:
-                // multiple matches found, offer a choice
+                // One or more matches found! We should offer the curator a
+                // choice, or possibly auto-accept an exact match or synonym.
+                //
                 // ASSUMES we only get one result set, with n matches
 
                 // TODO: Sort matches based on exact text matches? fractional (matching) scores? synonyms or homonyms?
@@ -7188,8 +7193,29 @@ function requestTaxonMapping( otuToMap ) {
                     }
                 });
 
-                proposeOTULabel(otuID, candidateMappingList);
-                // postpone actual mapping until user chooses, then approves
+                var autoAcceptableMapping = null;
+                if (candidateMappingList.length === 1) {
+                    var onlyMapping = candidateMappingList[0];
+                    /* NB - auto-accept includes synonyms if exact match!
+                    if (onlyMapping.originalMatch.is_synonym) {
+                        return;
+                    }
+                    */
+                    /* N.B. We never present the sole mapping suggestion as a
+                     * taxon-name homonym, so just consider the match score to
+                     * determine whether it's an "exact match".
+                     */
+                    if (onlyMapping.originalMatch.score === 1.0) {
+                        autoAcceptableMapping = onlyMapping;
+                    }
+                }
+                if (autoAcceptingExactMatches && autoAcceptableMapping) {
+                    // accept the obvious choice (and possibly update UI) immediately
+                    mapOTUToTaxon( otuID, autoAcceptableMapping, {POSTPONE_UI_CHANGES: true} );
+                } else {
+                    // postpone actual mapping until user chooses
+                    proposeOTULabel(otuID, candidateMappingList);
+                }
         }
 
         currentlyMappingOTUs.remove( otuID );

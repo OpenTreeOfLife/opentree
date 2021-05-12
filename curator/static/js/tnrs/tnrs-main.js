@@ -2379,6 +2379,7 @@ var api = [
     'approveAllVisibleMappings',
     'rejectProposedNameLabel',
     'rejectAllVisibleMappings',
+    'mapNameToTaxon',
     'unmapNameFromTaxon',
     'clearSelectedMappings',
     'clearAllMappings',
