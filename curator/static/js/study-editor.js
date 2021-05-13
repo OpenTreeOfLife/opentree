@@ -587,6 +587,53 @@ $(document).ready(function() {
         console.log('tree - fileuploaddone');
     })
 
+    $('#namesetupload').fileupload({
+        // NOTE that this should submit the same arguments (except for file
+        // data) as submitNameset() below
+        disableImageResize: true,
+        // maxNumberOfFiles: 5,
+        // maxFileSize: 5000000,  // TODO: allow maximum
+        // acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i  // TODO: allow any
+        url: $('#nameset-import-form').attr('action'),
+        dataType: 'json',
+        autoUpload: false,
+        start: function(e, data) {
+            console.log('*** namesetupload - start ***');
+        },
+        add: function(e, data) {
+            console.log('*** namesetupload - add ***');
+            // add hints for nicer element IDs to the form
+            setElementIDHints();
+
+            /* BLOCK upload behavior for now, in favor of JS merge
+            $('[name=new-nameset-submit]').click(function() {
+                console.log('namesetupload - submitting...');
+                showModalScreen("Adding pre-mapped names...", {SHOW_BUSY_BAR:true});
+                data.submit();
+                return false; // suppress normal form submission!
+            });
+            */
+        },
+        always: function(e, data) {
+            // do this regardless of success or failure
+            console.log('*** namesetupload - (always) done ***');
+            returnFromNamesetSubmission( data.jqXHR, data.textStatus );
+        }
+    }).on('fileuploadprogressall', function (e, data) {
+        console.log('nameset - fileuploadprogressall');
+        var progress = parseInt(data.loaded / data.total * 100, 10);
+        $('#nameset-upload-progress .bar').css(
+            'width',
+            progress + '%'
+        );
+        $('#nameset-upload-progress .bar span').text(
+            progress + '%'
+        );
+    }).on('fileuploaddone', function (e, data) {
+        console.log('nameset - fileuploaddone');
+    })
+
+
     // enable taxon search
     $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
     $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
@@ -774,13 +821,13 @@ function loadSelectedStudy() {
                 'annotation': {  // an annotation event
                     highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
-                        return makeArray(nexml['^ot:annotationEvents']);
+                        return makeArray(nexml['^ot:annotationEvents']['annotation']);
                     }
                 },
                 'agent': {  // an annotation agent
                     highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
-                        return makeArray(nexml['^ot:agents']);
+                        return makeArray(nexml['^ot:agents']['agent']);
                     }
                 },
                 'message': {  // an annotation message
@@ -924,6 +971,18 @@ function loadSelectedStudy() {
                     nexsonTemplates['OTU mapping hints']
                 );
                 createAnnotation( hintsAnnotationBundle, data.nexml );
+            }
+
+            // add baseline (empty) annotation for merged namesets
+            if (getMergedNamesets(data.nexml) === null) {
+                var filesAnnotationBundle = $.extend(
+                    {
+                        targetElement: data.nexml,
+                        agent: curatorAgent
+                    },
+                    nexsonTemplates['merged namesets']
+                );
+                createAnnotation( filesAnnotationBundle, data.nexml );
             }
 
             // add baseline (empty) annotation for supporting files
@@ -5512,6 +5571,14 @@ function setElementIDHints() {
     $form.find('[name=firstAvailableAnnotationID]').val( getNextElementOrdinalNumber('annotation') );
     $form.find('[name=firstAvailableAgentID]').val( getNextElementOrdinalNumber('agent') );
     $form.find('[name=firstAvailableMessageID]').val( getNextElementOrdinalNumber('message') );
+    // and again for nameset-upload form
+    var $form = $('#nameset-import-form');
+    $form.find('[name=idPrefix]').val('');  // clear this field
+    $form.find('[name=firstAvailableOTUID]').val( getNextElementOrdinalNumber('otu') );
+    $form.find('[name=firstAvailableOTUsID]').val( getNextElementOrdinalNumber('otus') );
+    $form.find('[name=firstAvailableAnnotationID]').val( getNextElementOrdinalNumber('annotation') );
+    $form.find('[name=firstAvailableAgentID]').val( getNextElementOrdinalNumber('agent') );
+    $form.find('[name=firstAvailableMessageID]').val( getNextElementOrdinalNumber('message') );
 }
 
 function returnFromNewTreeSubmission( jqXHR, textStatus ) {
@@ -5572,7 +5639,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         $.merge(viewModel.nexml.otus, itsOTUsCollection);
         $.merge(viewModel.nexml.trees, itsTreesCollection);
     } catch(e) {
-        console.error('Unable to push collections (needs Nexson upgrade)');
+        console.error('Unable to merge tree and OTU collections (needs Nexson upgrade)');
     }
 
     // update the files list (and auto-save?)
@@ -5630,7 +5697,7 @@ function returnFromOTUMerge( jqXHR, textStatus ) {
     replaceViewModelNexson( responseJSON.data.nexml );
 
     hideModalScreen();
-    showSuccessMessage('Tree(s) added and merged.');
+    showSuccessMessage('Tree(s) and OTUs merged successfully.');
 }
 
 function replaceViewModelNexson( nexml ) {
@@ -5645,6 +5712,283 @@ function replaceViewModelNexson( nexml ) {
 
     // refresh the complete curation UI, via ticklers
     nudgeTickler('ALL');
+}
+
+/* support functions for uploading+importing pre-mapped names */
+function updateNamesetUploadForm() {
+    // check all fields, enable/disable button
+    var readyToSubmit = true;
+
+    // offer field for pasted text IF format is appropriate or unspecified
+    var $pastedTextField = $('#new-nameset-text');
+    
+    /*
+    var chosenFormat = $.trim( $('#nameset-import-format').val() );
+    switch (chosenFormat) {
+        case '':
+            readyToSubmit = false;
+            $pastedTextField.attr('disabled', 'disabled');
+            break;
+        case 'zip':
+            $pastedTextField.attr('disabled', 'disabled');
+            break;
+        case 'tsv':
+        case 'csv':
+        case 'json':
+            $pastedTextField.removeAttr('disabled');
+            break;
+        default:
+            console.error("Unexpected format for pre-mapped names: ["+ chosenFormat +"]");
+            $pastedTextField.attr('disabled', 'disabled');
+            readyToSubmit = false;
+    }
+    */
+
+    //var chosenFile = $.trim( $('#namesetupload').val() );
+    // NO, this is routinely cleared by the upload widget; the file-name
+    // display (white on blue) alongside, is actually a safer test.
+    var pastedText = $.trim( $pastedTextField.val() );
+    if (pastedText === '') {
+        readyToSubmit = false;
+    }
+
+    var $submitBtn = $('[name=new-nameset-submit]');
+    if (readyToSubmit) {
+        $submitBtn.unbind('click').click(function(e) {
+            e.preventDefault(); // BLOCK upload behavior in favor of local merge!
+            processNamesetFromPastedText(e); // pass data? or rely on global IDs?
+            return false;
+        });
+        $submitBtn.removeAttr('disabled');
+    } else {
+        $submitBtn.attr('disabled', 'disabled');
+    }
+    return true;
+}
+function clearNamesetUploadWidget() {
+    // un-bind fileupload submission
+    $('[name=new-nameset-submit]').off('click');
+
+    // clear the file widget and the field for pasted text
+    var $widgets = $('#nameset-file-for-study-curation, #new-nameset-text');
+    $widgets.val('');
+    $('#nameset-local-filesystem-warning').html("");
+    //$widgets.trigger('change');
+
+    /* OLD reset the progress bar
+    setTimeout( function() {
+        $('#nameset-upload-progress .bar').css( 'width', '0%' );
+        $('#nameset-upload-progress .bar span').text( '' );
+    }, 500);
+    */
+    updateNamesetUploadForm();
+}
+function clearNamesetPastedText() {
+    $('#new-nameset-text').val("");
+}
+function processNamesetFromPastedText(evt) {
+    // find validate input data
+    var nameset; // common JS representation
+    //var inputFormat = $form.find('[name=inputFormat]').val();
+    var $pastedTextField = $('#new-nameset-text');
+    var data = $.trim( $pastedTextField.val() );
+    try {
+        // first try to parse a JSON nameset
+        nameset = JSON.parse(data);
+    } catch(e) {
+        // IF this fails, try to import TSV/CSV, line-by-line text
+        nameset = tnrs.convertToNamesetModel(data);
+    }
+    if (nameset) {
+        // examine and apply these mappings to the OTUs in the current study
+        mergeNamesetData( nameset );
+    } else {
+        var msg = "Error reading names from pasted text! Please compare it to examples";
+        $hintArea.html(msg).show();
+    }
+}
+function submitNameset() {
+    // TODO: NOTE that this should submit the same arguments (except for file
+    // data) as the fileupload behavior for #namesetupload
+
+    showModalScreen("Adding pre-mapped names...", {SHOW_BUSY_BAR:true});
+
+    // add hints for nicer element IDs to the form
+    setElementIDHints();
+
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        // contentType: "application/json; charset=utf-8",
+        url: $('#nameset-import-form').attr('action'),
+        data: $('#nameset-import-form').serialize(),
+        complete: returnFromNamesetSubmission
+    });
+}
+function returnFromNamesetSubmission( jqXHR, textStatus ) {
+    // show results of nameset submission, whether from submitNameset()
+    // or special (fileupload) behavior
+
+    console.log('submitNameset(): done! textStatus = '+ textStatus);
+    // report errors or malformed data, if any
+    if (textStatus !== 'success') {
+        var errMsg;
+        // TODO: Update the literal-text check below indexOf( blah )?
+        if ((jqXHR.status === 501) && (jqXHR.responseText.indexOf("Conversion") === 0)) {
+            errMsg = 'Sorry, there was an error importing your pre-mapped names. Please double-check the format and data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+        } else {
+            errMsg = 'Sorry, there was an error importing your pre-mapped names. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+            console.warn("jqXHR.status: "+ jqXHR.status);
+            console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+        }
+        hideModalScreen();
+        showErrorMessage(errMsg);
+        return;
+    }
+
+    // Add supporting-file info for the submitted nameset
+    console.log("status: "+ jqXHR.status);
+    console.log("statusText: "+ jqXHR.statusText);
+    // convert raw response to JSON
+    var responseJSON = $.parseJSON(jqXHR.responseText);
+    var data = responseJSON['data'];
+    console.log("data: "+ data);
+
+
+
+    /* TODO: What do we need to incorporate/consolidate here? */
+    // move its collections into the view model Nexson
+    var nexmlName = ('nex:nexml' in data) ? 'nex:nexml' : 'nexml';
+
+    // check for needed collections
+    var itsOTUsCollection =  data[nexmlName]['otus'];
+    var itsTreesCollection = data[nexmlName]['trees'];
+    if (!itsOTUsCollection || !itsTreesCollection) {
+        hideModalScreen();
+        showErrorMessage('Sorry, no OTUs  were found in this file.');
+        return;
+    }
+
+    // coerce the inner array of each collection into an array
+    // (override Badgerfish singletons)
+    // NOTE that there may be multiple trees elements, otus elements
+    $.each(itsOTUsCollection, function(i, otusElement) {
+        otusElement['otu'] = makeArray( otusElement['otu'] );
+    });
+
+    $.each(itsTreesCollection, function(i, treesElement) {
+        treesElement['tree'] = makeArray( treesElement['tree'] );
+        $.each( treesElement.tree, function(i, tree) {
+            normalizeTree( tree );
+        });
+    });
+
+    try {
+        $.merge(viewModel.nexml.otus, itsOTUsCollection);
+        $.merge(viewModel.nexml.trees, itsTreesCollection);
+    } catch(e) {
+        console.error('Unable to merge OTU collections (needs Nexson upgrade)');
+    }
+
+    // update the files list (and auto-save?)
+    var file = responseJSON.annotationFileInfo;
+    console.log("annotationFileInfo:");
+    console.log(file);
+    getSupportingFiles().data.files.file.push(file);
+
+    // clear the import form (using Clear button to capture all behavior)
+    $('#nameset-import-form :reset').click();
+
+    showModalScreen("Merging trees and OTUs...", {SHOW_BUSY_BAR:true});
+
+    // clean any client-side junk from the study
+    scrubNexsonForTransport();
+
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: '/curator/default/merge_otus',
+        processData: false,
+        data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
+        error: returnFromOTUMerge,  // to suppress web2py's unhelpful error msg
+        complete: returnFromOTUMerge
+    });
+}
+
+/* nameset merge using local data; assumes nameset is in expected JS object */
+function mergeNamesetData( nameset, loadedFileName, lastModifiedDate ) {
+    // check for mappable names
+    var mappableNames = $.grep(nameset.names, function( nameInfo ) {
+        // is it fully mapped to OTT? at least with a canonical name?
+        if (!$.trim(nameInfo['originalLabel'])) return false;
+        if (!$.trim(nameInfo['ottTaxonName'])) return false;
+        // for now, let's require an OTT id as well
+        if (!$.trim(nameInfo['ottId'])) return false;
+        return true;
+    });
+    if (mappableNames.length === 0) {
+        // alert user and bail out
+        showErrorMessage('No mapped names found in this nameset (or malformed input?)');
+        return;
+    }
+    var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+    // NB This will override already-mapped OTUs!
+    var unmappedOTUs = $.grep(allOTUs, function( otu ) {
+        return ($.trim(otu['^ot:ottTaxonName']) === '');
+    });
+    var howManyTried = 0;
+    var howManyMatched = 0;
+    $.each(mappableNames, function(i, nameInfo ) {
+        var exactMatchFound = false;
+        $.each(unmappedOTUs, function(i, otu) {
+            if ($.trim(otu['^ot:originalLabel']) === $.trim(nameInfo['originalLabel'])) {
+                // it's a match!  emulate existing name-mapping behavior
+                var OTUid = otu['@id'];
+                var mappingInfo = {
+                    "name" : $.trim(nameInfo['ottTaxonName']),
+                    "ottId" : Number(nameInfo['ottId'])
+                };
+                mapOTUToTaxon( OTUid, mappingInfo, {POSTPONE_UI_CHANGES: true} );
+                exactMatchFound = true;
+                return false;  // skip the rest (ASSUMES no duplicate OTU labels!)
+            }
+        });
+        howManyTried++;
+        if (exactMatchFound) {
+            howManyMatched++;
+        }
+    });
+    // update display of both OTU Mapping and Home/Trees tabs
+    nudgeTickler('OTU_MAPPING_HINTS');
+    nudgeTickler('TREES');  // to hide/show duplicate-taxon prompts in tree list
+
+    // update the namesets list
+    var namesetNexson = cloneFromNexsonTemplate('single merged nameset');
+    var desc = "Nameset merged by `"+ userDisplayName +"`. "+ howManyTried +" mappings tried, "+ howManyMatched +" successfully applied.";
+    if (loadedFileName) {
+        // add this to comment
+        desc += " Nameset was loaded from file `"+ loadedFileName +"`";
+        if (lastModifiedDate) {
+            // add this to comment
+            desc += " (last modified on "+ lastModifiedDate +").";;
+        } else {
+            desc += ".";;
+        }
+    } else {
+        desc += " Nameset was pasted directly in curation app.";
+    }
+    namesetNexson['description']['$'] = desc;
+    getMergedNamesets().data.namesets.nameset.push(namesetNexson);
+
+    // summarize results for the curator
+    if (howManyMatched === 0) {
+        showInfoMessage("Nameset merged attempted, but no matches were found (of "+ howManyTried +" attempted) in this study's OTUs.");
+    } else {
+        showSuccessMessage("Nameset merged ("+ howManyTried +" mappings tried, "+ howManyMatched +" successfully applied).");
+    }
 }
 
 function adjustedLabelOrEmpty(label) {
@@ -5720,6 +6064,52 @@ var nexsonTemplates = {
         "@url": "https://github.com/OpenTreeOfLife/opentree",
         "@version": "0.0.0"   // TODO
     },
+
+    'merged namesets': {
+        /* App-specific metadata about namesets merged into this study.
+         *
+         * NOTE that this object describes an annotation bundle with
+         * several main parts, each of which will be applied separately to
+         * the target Nexml:
+         *  targetElement  // supplied by template consumer
+         *  annotationEvent
+         *  agent(s)
+         *  message(s)
+         */
+        // 'targetElement': ,
+        'annotationEvent': {
+            "@id": "merged-namesets-metadata",
+            "@description": "Describes external namesets merged into this study",
+            "@wasAssociatedWithAgentId": "opentree-curation-webapp",
+            // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
+            "@dateCreated": new Date().toISOString(),
+            "@passedChecks": true,  // this is moot
+            "@preserve": true,
+            "message": [{
+                //"@id": "",      // will be assigned via $.extend
+                "@severity": "INFO",
+                "@code": "MERGED_NAMESET_INFO",
+                "@humanMessageType": "NONE",
+                "data": {
+                    "namesets": { "nameset": [
+                        /* an array of objects based on 'single merged nameset' below */
+                    ]}
+                },
+                "refersTo": {
+                    "@top": {"$": "meta"}
+                }
+            }]
+            // "otherProperty": [ ]  // SKIP THIS, use messages for details
+        }
+        // 'agent': null,      // will be provided by template consumer
+    }, // END of 'merged namesets' template
+
+    'single merged nameset': {
+        /* A single nameset merged into this study
+         */
+        "description": {"$": ""}  // eg, "Alignment data for tree #3"
+    }, // END of 'single supporting file' template
+
 
     'supporting files': {
         /* App-specific metadata about associated support files for this study.
@@ -5903,6 +6293,35 @@ if (!Date.prototype.toISOString) {
         };
     }
     Date.prototype.toISOString = Date.prototype.toJSON;
+}
+
+function getMergedNamesets(nexml) {
+    // retrieve this annotation message from the model (or other specified
+    // object); return null if not found
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
+    var annotations = getStudyAnnotationEvents( nexml );
+    var namesetsAnnotation = null;
+    $.each(makeArray(annotations.annotation), function(i, annotation) {
+        var itsID = ko.unwrap(annotation['@id']);
+
+        if (itsID === 'merged-namesets-metadata') {
+            namesetsAnnotation = annotation;
+            return false;
+        }
+    });
+
+    if (!namesetsAnnotation) {
+        return null;
+    }
+
+    var namesetsMessages = makeArray( namesetsAnnotation.message );
+    if (namesetsMessages.length > 0) {
+        // return its message with the interesting parts
+        return namesetsMessages[0];
+    }
+    return null;
 }
 
 function getSupportingFiles(nexml) {

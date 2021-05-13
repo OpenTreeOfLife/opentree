@@ -1443,6 +1443,103 @@ body {
                 </button>
             </div>
 
+            <div class="well">
+                <h4 style="margin-top: 0;">Import pre-mapped names</h4>
+                <p>
+                If you have a set of mapped names from the 
+                <a href="/curator/tnrs/" target="_blank">TNRS bulk-mapping tool</a>
+                (or a simple text file with mapped names), you can import them
+                into this study to map any matching names automatically.
+                </p>
+                <div class="button-bar" style="margin-bottom: 1em;">
+                   <button class="btn"
+                           onclick="tnrs.showLoadNamesetPopup(); return false;"
+                           data-bind="enable: tnrs.browserSupportsFileAPI()">
+                      <i class="icon-circle-arrow-up"></i >
+                       Paste or upload names...</button>
+                </div>
+<!-- UNUSED form if submitting nameset data to the server for conversion and merge
+                <form id="nameset-import-form"
+                      style="margin: 0;"
+                      Xaction="{{= URL(a='curator', c='default', f='to_nexson')}}"
+                      action="/curator/default/to_nexson"
+                      method="POST"
+                      onsubmit="submitNameset(this); return false;">
+                 <fieldset>
+                 <input type="hidden" name="author_name"
+                   value="{{= auth.user and auth.user.name or 'ANONYMOUS' }}">
+                 <input type="hidden" name="author_email"
+                   value="{{= auth.user and auth.user.email or 'ANONYMOUS' }}">
+                 <input type="hidden" name="auth_token"
+                   value="{{= auth.user and auth.user.github_auth_token or 'ANONYMOUS'}}">
+                 <!- - pass along hints for new element IDs? - ->
+                 <input type="hidden" name="idPrefix" value="">
+                 <input type="hidden" name="firstAvailableOTUID" value="">
+                 <input type="hidden" name="firstAvailableOTUsID" value="">
+                 <input type="hidden" name="firstAvailableAnnotationID" value="">
+                 <input type="hidden" name="firstAvailableAgentID" value="">
+                 <input type="hidden" name="firstAvailableMessageID" value="">
+                  <select id="nameset-import-format" name="inputFormat"
+                          class="input-block-level"
+                          style="margin-bottom: 1em;"
+                          oninput="updateNamesetUploadForm(); return true;"
+                          onchange="updateNamesetUploadForm(); return true;">
+                      <option value="" selected="selected">What is the format of these mappings?</option>
+                      <option value="zip">ZIP archive (.nameset)</option>
+                      <option value="tsv">Tab-separated text (.tsv)</option>
+                      <option value="csv">Comma-separated text (.csv)</option>
+                      <option value="json">JSON (.json)</option>
+                  </select>
+
+                  <!- - NB - We disable this direct-input field if ZIP is chosen above - ->
+                  <label for="new-nameset-text">Paste mappings (using selected format)&hellip;</label>
+                  <textarea id="new-nameset-text" name="content" rows="5"
+                            class="input-block-level"
+                            placeholder="ORIGINAL LABEL, OTT TAXON NAME, OTT TAXON ID
+                                         dog, Canis lupus familiaris, 247333
+                                         cat, Felis catus, 563166"
+                            onkeyup="updateNamesetUploadForm(); return true;"
+                            oninput="updateNamesetUploadForm(); return true;"
+                            onchange="updateNamesetUploadForm(); return true;"
+                            ></textarea>
+
+                  <label for="treeupload">&hellip;or upload a file with pre-mapped names</label>
+
+
+                <div>
+                    <span class="btn fileinput-button">
+                        <i class="glyphicon glyphicon-plus"></i>
+                        <span>Select file to upload...</span>
+                        <!- - The file input field used as target for the file upload widget - ->
+                        <input id="namesetupload"
+                               type="file" name="file"
+                               Xonchange="$('#upload-nameset-info').html( filenameFromFakePath($(this).val()) ); updateNamesetUploadForm(); return true;"
+                               data-bind="event: { change: tnrs.loadNamesetFromChosenFile }">
+                    </span>
+                    &nbsp;
+                    <span class='label label-info' id="upload-nameset-info"></span>
+                </div>
+                <div id="nameset-upload-progress" class="progress progress-info"
+                     style="margin-top: 0.3em; margin-bottom: 1em; background-color: #333;">
+                  <div class="bar" style="text-align: center; width: 0%;">
+                      <span>&nbsp;</span>
+                  </div>
+                </div>
+
+                  <div Xclass="form-actions" style="margin-top: 1em;">
+                      <button name="new-nameset-submit" type="submit"
+                          class="btn btn-info btn-info-disabled"
+                          disabled="disabled">Import and map names
+                        <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
+                      <button type="reset" class="btn"
+                              onclick="clearNamesetUploadWidget(); return true;"
+                      >Clear form</button>
+                  </div>
+                 </fieldset>
+                </form>
+-->
+            </div>
+
         {{ pass }}
 
            </div><!-- end of right col -->
@@ -1832,6 +1929,8 @@ body {
     var API_create_amendment_POST_url = "{{=API_create_amendment_POST_url}}";
 </script>
 <script src="{{=URL('static','js/study-editor.js')}}"></script>
+<!-- main support scripts for bulk-TNRS webapp, built with npm -->
+<script src="{{=URL('static','js/tnrs-bundle.js')}}"></script>
 
 <!-- hidden template for DOI lookups -->
 <div class="modal hide fade modal-DOI-lookup" id="DOI-lookup" style="display: none;">
@@ -2176,8 +2275,55 @@ body {
     <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
 </div>
 
-
-
+<!-- hidden template for popup loader for nameset in various formats -->
+<div id="load-nameset-popup" class="modal fade" style="display: none;">
+    <div class="modal-header" style="padding: 0px inherit;">
+      <a data-dismiss="modal" class="close" style="margin-top: -2px;">x</a>
+      <h4 style="margin: 0;">
+         Paste or upload your mapped names
+      </h4>
+    </div>
+    <div class="modal-header modal-body">
+        <p>
+        A nameset from the <a href="/curator/tnrs/" target="_blank">TNRS bulk-mapping tool</a>
+        is typically stored as ZIP archive, with all inputs and metadata included. This
+        file will usually have a <code>.zip</code> or <code>.nameset</code> file
+        extension.
+        </p>
+        <p>
+        If you used another tool for mapping names to the 
+        <a href="/about/taxonomy-version" target="_blank">OpenTreed Taxonomy</a>, 
+        you can load a text file here. Expected text file formats are <code>.txt</code>, <code>.tsv</code>,
+        <code>.csv</code>, or <code>.json</code>.
+        </p>
+        <input id="nameset-file-for-study-curation" type="file" value="Load nameset from file..."
+               data-bind="event: { change: tnrs.loadNamesetFromChosenFile }"
+        />
+        <p id="nameset-local-filesystem-warning" style="color: #933; margin: 4px 0 6px;"
+           data-bind="visible: false">
+          Help text appears here.
+        </p>
+        <p>
+        ... <em>or</em> paste your text in the field below.
+        </p>
+        <textarea id="new-nameset-text" name="content" rows="5"
+                  class="input-block-level"
+                  placeholder="ORIGINAL LABEL, OTT TAXON NAME, OTT TAXON ID
+dog, Canis lupus familiaris, 247333
+cat, Felis catus, 563166"
+                  onkeyup="updateNamesetUploadForm(); return true;"
+                  oninput="updateNamesetUploadForm(); return true;"
+                  onchange="updateNamesetUploadForm(); return true;"
+         ></textarea>
+        <button name="new-nameset-submit" type="submit"
+                class="btn btn-info btn-info-disabled"
+                disabled="disabled">Import and map names
+          <i class="icon-circle-arrow-up Xicon-arrow-up Xicon-chevron-up Xicon-plusXicon-upload icon-white"></i></button>
+         <button type="reset" class="btn"
+                  onclick="clearNamesetUploadWidget(); clearNamesetPastedText(); return true;"
+         >Clear form</button>
+    </div>
+</div>
 
 <!-- hidden template for new-taxon form (for adding taxa to OT Taxonomy) -->
 <div class="modal hide fade" id="new-taxa-popup" style="display: none;">
