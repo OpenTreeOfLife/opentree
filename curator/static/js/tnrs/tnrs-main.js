@@ -76,6 +76,7 @@ var getNewNamesetModel = function(options) {
             "description": "Aids for mapping listed names to OTT taxa",
             "searchContext": "All life",
             "useFuzzyMatching": false,
+            "autoAcceptExactMatches": false,
             "substitutions": [
                 /* typical values in use
                 {
@@ -1244,7 +1245,8 @@ function requestTaxonMapping( nameToMap ) {
 
     // groom trimmed text based on our search rules
     var searchContextName = viewModel.mappingHints.searchContext();
-    var usingFuzzyMatching = viewModel.mappingHints['useFuzzyMatching'] || false;
+    var usingFuzzyMatching = viewModel.mappingHints.useFuzzyMatching() || false;
+    var autoAcceptingExactMatches = viewModel.mappingHints.autoAcceptExactMatches() || false;
     // show spinner alongside this item...
     currentlyMappingNames.push( nameID );
 
@@ -1373,8 +1375,29 @@ function requestTaxonMapping( nameToMap ) {
                     }
                 });
 
-                proposeNameLabel(nameID, candidateMappingList);
-                // postpone actual mapping until user chooses, then approves
+                var autoAcceptableMapping = null;
+                if (candidateMappingList.length === 1) {
+                    var onlyMapping = candidateMappingList[0];
+                    /* NB - auto-accept includes synonyms if exact match!
+                    if (onlyMapping.originalMatch.is_synonym) {
+                        return;
+                    }
+                    */
+                    /* N.B. We never present the sole mapping suggestion as a
+                     * taxon-name homonym, so just consider the match score to
+                     * determine whether it's an "exact match".
+                     */
+                    if (onlyMapping.originalMatch.score === 1.0) {
+                        autoAcceptableMapping = onlyMapping;
+                    }
+                }
+                if (autoAcceptingExactMatches && autoAcceptableMapping) {
+                    // accept the obvious choice (and possibly update UI) immediately
+                    mapNameToTaxon( nameID, autoAcceptableMapping, {POSTPONE_UI_CHANGES: true} );
+                } else {
+                    // postpone actual mapping until user chooses
+                    proposeNameLabel(nameID, candidateMappingList);
+                }
         }
 
         currentlyMappingNames.remove( nameID );
@@ -1980,6 +2003,9 @@ function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
         // We just loaded an archive file! Store its latest filename.
         nameset.metadata.previous_filename = loadedFileName;
     }
+    if (nameset.mappingHints['autoAcceptExactMatches'] === undefined) {
+        nameset.mappingHints['autoAcceptExactMatches'] = false;
+    }
 
     /* Name and export the new viewmodel. NOTE that we don't create observables
      * for names and their many properties! This should help keep things snappy
@@ -2379,6 +2405,7 @@ var api = [
     'approveAllVisibleMappings',
     'rejectProposedNameLabel',
     'rejectAllVisibleMappings',
+    'mapNameToTaxon',
     'unmapNameFromTaxon',
     'clearSelectedMappings',
     'clearAllMappings',

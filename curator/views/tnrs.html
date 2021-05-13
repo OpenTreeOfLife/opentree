@@ -420,6 +420,13 @@ About-Mapping
                 <!-- TODO: heading changes to reflect status -->
                 <h4 style="margin-top: 0;" data-bind="visible: tnrs.autoMappingInProgress()">Mapping in progress</h4>
                 <h4 style="margin-top: 0;" data-bind="visible: !tnrs.autoMappingInProgress()">Mapping suspended</h4>
+                <form class="form-inline" style="margin: 0; margin-left: 8px; margin-bottom: 2px;">
+                 <fieldset>
+                  <label><input id="toggle-auto-accept" type="checkbox" style="margin-top: 0; padding-top: 0;"
+                      data-bind="checked: viewModel.mappingHints['autoAcceptExactMatches'],
+                                 event: { click: tnrs.updateMappingHints }"> Auto-accept exact matches and synonyms</label>
+                 </fieldset>
+                </form>
                 <div class="progress"
                      style="margin-bottom: 0; background-color: #333;"
                      data-bind="css: recentMappingSpeedBarClass">
