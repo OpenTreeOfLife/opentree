@@ -10401,6 +10401,7 @@ function moveToNthTaxonCandidate( pos ) {
     // enable parent-taxon search
     $('input[name=parent-taxon-search]').unbind('keyup change').bind('keyup change', setParentTaxaSearchFuse );
     $('select[name=parent-taxon-search-context]').unbind('change').bind('change', searchForMatchingParentTaxa );
+    clearPriorSearchForParentTaxa();    // in case they type in the same initial taxon string
 
     // don't trigger unrelated form submission when pressing ENTER here
     $('input[name=parent-taxon-search], select[name=parent-taxon-search-context]')
@@ -10471,6 +10472,7 @@ function showNewTaxaPopup() {
             var adjustedOTULabel = $.trim(candidate['^ot:altLabel']) ||
                                    $.trim(adjustedLabel(candidate['^ot:originalLabel']));
             candidate.newTaxonMetadata = {
+                'skipped': ko.observable(false),
                 'rank': 'species',
                 'adjustedLabel': adjustedOTULabel,  // as modified by regex or manual edit
                 'modifiedName': ko.observable( adjustedOTULabel ),
@@ -10553,11 +10555,14 @@ function submitNewTaxa() {
             'login': userLogin, 
             'email': userEmail
         },
-        "new_ottids_required": candidateOTUsForNewTaxa.length
+        "new_ottids_required": 0 // update below with un-skipped taxa
     };
 
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
         // repackage its metadata to match the web service
+        if (candidate.newTaxonMetadata.skipped()) {
+            return;  // skipping this taxon (unable to validate)
+        }
         var newTaxon = {};
         newTaxon['tag'] = candidate['@id'];  // used to match results with candidate OTUs
         newTaxon['original_label'] = $.trim(candidate['^ot:originalLabel']);
@@ -10595,6 +10600,13 @@ function submitNewTaxa() {
         newTaxon['comment'] = candidate.newTaxonMetadata.comments;
         bundle.taxa.push(newTaxon);
     });
+    if (bundle.taxa.length === 0) {
+        // all labels were skipped! nothing to submit
+        showErrorMessage("All labels were skipped, so there's nothing to submit!");
+        return false;
+    } else {
+        bundle["new_ottids_required"] = bundle.taxa.length;
+    }
 
     // add non-JSON values to the query string
     var qsVars = $.param({
@@ -10654,6 +10666,11 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
     }
 
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        if (candidate.newTaxonMetadata.skipped()) {
+            // ignore this un-submitted candidate
+            delete proposedOTUMappings()[ OTUid ];
+            return;
+        }
         // REMINDER: we used the ID of each OTU as its tag!
         var OTUid = candidate['@id'];
         var mintedOTTid = Number(tagsToOTTids[ OTUid ]);
@@ -10676,6 +10693,15 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
     showSuccessMessage('Selected OTUs mapped to new taxa.');
 }
 
+function toggleSkipThisLabel( otu, event ) {
+    var skippingThisLabel = $(event.target).is(':checked');
+    if (skippingThisLabel) {
+        currentTaxonCandidate().newTaxonMetadata.skipped(true);
+    } else {
+        currentTaxonCandidate().newTaxonMetadata.skipped(false);
+    }
+    return true;
+}
 function toggleSharedParentID( otu, event ) {
     // Set a global for this (an observable, to update display).
     // NOTE that radio-button values are strings, so we convert to boolean below!
@@ -10747,6 +10773,14 @@ function setParentTaxaSearchFuse(e) {
 
 var showingResultsForParentSearchText = '';
 var showingResultsForParentSearchContextName = '';
+function clearPriorSearchForParentTaxa() {
+    /* Clear any prior parent-taxon search,  so we always get a fresh result,
+     * even if they type in the same initial taxon string after changing to
+     * a new taxon candidate.
+     */
+    showingResultsForParentSearchText = '';
+    showingResultsForParentSearchContextName = '';
+}
 function searchForMatchingParentTaxa() {
     // clear any pending search timeout and ID
     clearTimeout(parentSearchTimeoutID);
@@ -11042,6 +11076,10 @@ function taxonCondidateIsValid( candidate, options ) {
     // Check for essential fields, taking shared info into account
     if (!options) options = {REPORT_ERRORS: false};
     var metadata = candidate.newTaxonMetadata;
+    // any skipped label is considered valid (doesn't fail)
+    if (metadata.skipped()) {
+        return true;
+    }
     var requiredProperties = {  // non-empty
         'modifiedName': "Modified name must be a non-empty string",
         'parentTaxonID': "Please specify the parent taxon for this label",
@@ -11168,13 +11206,15 @@ function useOriginalLabelForNewTaxon(candidate) {
     // overwrite the new-taxon name with the original, and clear any reason for renaming
     candidate.newTaxonMetadata.modifiedName( candidate['^ot:originalLabel'] );
     candidate.newTaxonMetadata.modifiedNameReason(null);
+    // force a fresh check of this label against existing taxonomy
+    updateTaxonNameCheck(candidate);
 }
 
 function updateTaxonNameCheck(candidate) {
     // report status of last check, or initiate a new check
     if (!candidate) return false;
     ///console.log('updateTaxonNameCheck() STARTING...');
-    var testName = candidate.newTaxonMetadata.modifiedName();
+    var testName = $.trim( candidate.newTaxonMetadata.modifiedName() );
     ///console.log('>> test name is '+ testName);
     ///console.log('>> previous status is '+ candidate.newTaxonMetadata.modifiedNameStatus());
     // check first against other proposed names
@@ -11184,7 +11224,7 @@ function updateTaxonNameCheck(candidate) {
             return true; // don't compare to itself! skips to next
         }
         var compareName = compareCandidate.newTaxonMetadata.modifiedName();
-        if ($.trim(testName) === $.trim(compareName)) {
+        if (testName === $.trim(compareName)) {
             duplicateNameFound = true;
             candidate.newTaxonMetadata.modifiedNameStatus('FOUND IN CANDIDATES');
             return false;
