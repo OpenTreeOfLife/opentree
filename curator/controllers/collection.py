@@ -155,4 +155,4 @@ def _get_latest_synthesis_details_for_collection_id( collection_id ):
         return None
     except Exception, e:
         # throw 403 or 500 or just leave it
-        raise HTTP(500, T('Unable to retrieve latest synthesis details for collection {u}'.format(u=collection)))
+        raise HTTP(500, T('Unable to retrieve latest synthesis details for collection {u}'.format(u=collection_id)))
