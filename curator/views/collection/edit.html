@@ -783,16 +783,23 @@ body {
                           <!-- ko if: event['author_name'] -->
                           Version saved by<br/><strong data-bind="text: event['author_name']">?</strong>
                           <!-- /ko -->
-                          <!-- ko if: event['runner_name'] -->
-                          Synthesis run by<br/><strong data-bind="text: event['runner_name']">?</strong>
+                          <!-- ko if: event['synth_id'] -->
+                          Synthesis run [<strong data-bind="text: event['status']">?</strong>]
                           <!-- /ko -->
                         </td>
                         <td>
                           <!-- ko if: event['author_name'] -->
                             <pre class="rendered-comment" data-bind="text: event['message_subject'] + (event['message_body'] ? '\n\n'+ event['message_body'] : '')">?</pre>
                           <!-- /ko -->
-                          <!-- ko if: event['runner_name'] -->
-                            <pre class="synth-event" data-bind="text: event['run_comment']">?</pre>
+                          <!-- ko if: event['synth_id'] -->
+                            <pre class="synth-event" data-bind="">
+                              <a href="" target="_blank"
+                                 title="Download complete information about this synthesis run"
+                                 data-bind="text: event['synth_id'],
+                                            attr: {'href': event['download_url'] }">-</a>
+                              <br/>
+                              This run included <strong data-bind="text: event['collections'].split(',').length"></strong> collections.
+                            </pre>
                           <!-- /ko -->
                         </td>
                         <td>

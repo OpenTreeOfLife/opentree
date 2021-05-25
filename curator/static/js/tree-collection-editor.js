@@ -614,10 +614,9 @@ function loadSelectedCollection() {
              * entries.
              */
             // TODO: return this data as 'synthHistory' in collection JSON fetch!
+            /* EXAMPLES of synthesis events; adapt structure and display
+             * template as needed to show real data.
             response['synthHistory'] = [
-                /* EXAMPLES of synthesis events; adapt structure and display
-                 * template as needed to show real data.
-                 *
                 {
                     runner_email: "jim@ibang.com",
                     runner_name: "Jim Allman",
@@ -647,8 +646,8 @@ function loadSelectedCollection() {
                     run_comment: "Custom synth, incorporating all 2018 changes.",
                     relative_date: "2 years ago"
                 }
-                */
             ];
+            */
             // add external URLs (on GitHub) for the differences between code versions
             if (response['external_url']) {
                 // adapted from study 'shardName' logic
