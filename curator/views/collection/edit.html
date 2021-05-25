@@ -793,11 +793,6 @@ body {
                           <!-- /ko -->
                           <!-- ko if: event['synth_id'] -->
                             <pre class="synth-event" data-bind="">
-                              <a href="" target="_blank"
-                                 title="Download complete information about this synthesis run"
-                                 data-bind="text: event['synth_id'],
-                                            attr: {'href': event['download_url'] }">-</a>
-                              <br/>
                               This run included <strong data-bind="text: event['collections'].split(',').length"></strong> collections.
                             </pre>
                           <!-- /ko -->
@@ -807,11 +802,11 @@ body {
                             <a href="" target="_blank" title="See detailed differences on GitHub"
                                data-bind="attr: {'href': event['publicDiffURL']}">Diff view</a>
                           <!-- /ko -->
-                          <!-- ko if: event['publicSynthURL'] -->
-                            <a href="" target="_blank" title="More information about this synthesis run"
-                               data-bind="attr: {'href': event['publicSynthURL']}">Synthesis details</a>
+                          <!-- ko if: event['download_url'] -->
+                            <a href="" target="_blank" title="Download complete information about this synthesis run"
+                               data-bind="attr: {'href': event['download_url']}">Synthesis details</a>
                           <!-- /ko -->
-                          <!-- ko if: !event['publicDiffURL'] && !event['publicSynthURL'] -->
+                          <!-- ko if: !event['publicDiffURL'] && !event['download_url'] -->
                             &mdash;
                           <!-- /ko -->
                         </td>
