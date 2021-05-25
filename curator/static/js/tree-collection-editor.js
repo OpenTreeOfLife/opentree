@@ -672,11 +672,6 @@ function loadSelectedCollection() {
                     });
                 }
             }
-            // for synthesis runs, build a URL to synth details (if possible)
-            $.each(response['synthHistory'] || [ ], function(i, event) {
-                // TODO: Expect this from the JSON payload? esp. if there are many hosts for this information!
-                event['publicSynthURL'] = ('/about/synthesis-release/'+ event.id);
-            });
             // combine history and interleave these events by date
             viewModel.history = ko.observableArray(
                 buildCombinedCollectionHistory( response['versionHistory'], response['synthHistory'] )
@@ -1029,6 +1024,8 @@ function buildCombinedCollectionHistory( versionHistory, synthHistory ) {
     /* NB that this will "fail safe" if garbage input is found, returning a
      * usable (if incomplete) history array.
      */
+    // coerce synthHistory (object) to an array; NB keys are repeated within
+    synthHistory = Object.keys(synthHistory || {}).map( key => synthHistory[key] );
     var fullHistory = $.merge( $.merge( [], versionHistory || [] ), synthHistory || []);
     // sort the combined list by date (latest first)
     fullHistory.sort(function(a,b) {
