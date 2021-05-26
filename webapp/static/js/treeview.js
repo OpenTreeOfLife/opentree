@@ -1142,50 +1142,55 @@ function showObjectProperties( objInfo, options ) {
                         for (studyID in supportingStudyInfo) {
                             ///console.log(">>> study data for "+ studyID +" is COMPLETE, adding it now...");
                             var studyInfo = supportingStudyInfo[ studyID ];
-                            var pRef, pCompactRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pURL, pID, pCurator;
-                            // assemble and display study info
-                            pID = studyInfo['ot:studyId'];
-                            pRef = studyInfo['ot:studyPublicationReference'] || '???';
-                            pCompactRef = fullToCompactReference( pRef );
-                            // show compact reference for each study, with a toggle for more below
-                            var displayLinkEl = createCuratorAElement("/study/view/"+ pID,
-                                                                       pCompactRef,
-                                                                       "Link to this study in curation app");
-                            displayVal = '<div class="related-study">' + displayLinkEl.outerHTML + '</div>';
-                            displayVal += '<div class="full-study-details" style="display: none;">';
-                            displayVal += '<div class="full-ref">'+ pRef +'</div>';
+                            if (studyInfo === 'FAILED TO LOAD') {
+                                displayVal = '<div class="related-study">No information found for study '+ studyID +'</div>';
+                            } else {
+                                var pRef, pCompactRef, pCompactYear, pCompactPrimaryAuthor, pCompactRef, pDOITestParts, pURL, pID, pCurator;
+                                // assemble and display study info
+                                pID = studyInfo['ot:studyId'];
+                                pRef = studyInfo['ot:studyPublicationReference'] || '???';
+                                pCompactRef = fullToCompactReference( pRef );
+                                // show compact reference for each study, with a toggle for more below
+                                var displayLinkEl = createCuratorAElement("/study/view/"+ pID,
+                                                                           pCompactRef,
+                                                                           "Link to this study in curation app");
+                                displayVal = '<div class="related-study">' + displayLinkEl.outerHTML + '</div>';
+                                displayVal += '<div class="full-study-details" style="display: none;">';
+                                displayVal += '<div class="full-ref">'+ pRef +'</div>';
 
-                            // publication URL should always be present, non-empty, and a valid URL
-                            pURL = latestCrossRefURL( studyInfo['ot:studyPublication'] );
-                            if (pURL) {
-                                displayVal += 'Full publication: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pURL +'</a><br/>';
+                                // publication URL should always be present, non-empty, and a valid URL
+                                pURL = latestCrossRefURL( studyInfo['ot:studyPublication'] );
+                                if (pURL) {
+                                    displayVal += 'Full publication: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pURL +'</a><br/>';
+                                }
+
+                                /* Phylografter link
+                                displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
+                                */
+                                displayLinkEl.innerHTML = pID;
+                                displayVal += (
+                                    'Open Tree curation of this study: ' + displayLinkEl.outerHTML + '<br/>'
+                                  + 'Supporting '+ (studyInfo.supportingTrees.length > 1 ? 'trees:' : 'tree:')
+                                );
+                                for (var treeID in studyInfo.supportingTrees) {
+                                    var treeLinkEl = createCuratorAElement('/study/view/'+ pID + '?tab=trees&tree=' + treeID,
+                                                                           treeID, "Link to this supporting tree in curation app");
+                                    displayVal += ('&nbsp; ' + treeLinkEl.outerHTML);
+                                }
+
+                                pCurator = studyInfo['ot:curatorName'];
+                                if (pCurator) {
+                                    displayVal += ('<div>Curated by: '+ pCurator +'</div>');
+                                }
+                                displayVal += '</div>';  // end of .full-study-details
+                                displayVal += '<a class="full-ref-toggle" href="#">[show details]</a>';
+                                displayVal += '</div>';  // end of .related-study
                             }
-
-                            /* Phylografter link
-                            displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
-                            */
-                            displayLinkEl.innerHTML = pID;
-                            displayVal += (
-                                'Open Tree curation of this study: ' + displayLinkEl.outerHTML + '<br/>'
-                              + 'Supporting '+ (studyInfo.supportingTrees.length > 1 ? 'trees:' : 'tree:')
-                            );
-                            for (var treeID in studyInfo.supportingTrees) {
-                                var treeLinkEl = createCuratorAElement('/study/view/'+ pID + '?tab=trees&tree=' + treeID,
-                                                                       treeID, "Link to this supporting tree in curation app");
-                                displayVal += ('&nbsp; ' + treeLinkEl.outerHTML);
-                            }
-
-                            pCurator = studyInfo['ot:curatorName'];
-                            if (pCurator) {
-                                displayVal += ('<div>Curated by: '+ pCurator +'</div>');
-                            }
-                            displayVal += '</div>';  // end of .full-study-details
-                            displayVal += '<a class="full-ref-toggle" href="#">[show details]</a>';
-                            displayVal += '</div>';  // end of .related-study
-
                             //$details.append('<dt>'+ dLabel +'</dt>');
+
                             $details.append('<dd class="'+ markerClass +'">'+ displayVal +'</dd>');
-                        }
+
+                        }  // end of for loop for studies
                     }
                     if (supportedByTaxonomy) {
                         //$details.append('<dt>Supported by taxonomy</dt>');
@@ -1305,7 +1310,7 @@ function showObjectProperties( objInfo, options ) {
             // Make this name safe for use in our EOL search URL
             // (prefer '+' to '%20', but carefully encode other characters)
             var urlSafeDisplayName = encodeURIComponent(displayName).replace(/%20/g,'+');
-            $details.after('<ul class="external-links">' 
+            $details.after('<ul class="external-links">'
               + '<li><a target="_blank" href="http://eol.org/search?q='+ urlSafeDisplayName +'" id="link-to-EOL">'
               +    'Search EOL for \''+ displayName +'\'</a></li>'
               + '<li><a target="onezoom" href="http://www.onezoom.org/life.html/@='+ itsTaxon.ott_id +'" id="link-to-OneZoom">'
