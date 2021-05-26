@@ -794,7 +794,7 @@ body {
                           <!-- /ko -->
                           <!-- ko if: event['synth_id'] -->
                             <pre class="synth-event" data-bind="">This run included <strong data-bind="text: event['collections'].split(',').length"></strong> collections:<!-- ko foreach: event['collections'].split(',') -->
-    <a href="#" target="_blank" data-bind="text: $data,
+    <a href="#" target="_blank" title="View this collection in a new window" data-bind="text: $data,
                        attr: {'href': ('/curator/collection/view/'+ $data) }">LINK</a
 ><!-- /ko --></pre>
                           <!-- /ko -->
