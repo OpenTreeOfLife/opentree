@@ -784,7 +784,8 @@ body {
                           Version saved by<br/><strong data-bind="text: event['author_name']">?</strong>
                           <!-- /ko -->
                           <!-- ko if: event['synth_id'] -->
-                          Synthesis run [<strong data-bind="text: event['status']">?</strong>]
+                          Synthesis run<br/>
+                          Status: <strong data-bind="text: event['status']">?</strong>
                           <!-- /ko -->
                         </td>
                         <td>
@@ -792,9 +793,11 @@ body {
                             <pre class="rendered-comment" data-bind="text: event['message_subject'] + (event['message_body'] ? '\n\n'+ event['message_body'] : '')">?</pre>
                           <!-- /ko -->
                           <!-- ko if: event['synth_id'] -->
-                            <pre class="synth-event" data-bind="">
-                              This run included <strong data-bind="text: event['collections'].split(',').length"></strong> collections.
-                            </pre>
+                            <pre class="synth-event" data-bind="">This run included <strong data-bind="text: event['collections'].split(',').length"></strong> collections:
+<!-- ko foreach: event[''].split(',') -->
+   <a href="#" data-bind="text: $data,
+                          attr: {'href': ('/curator/collection/view/'+ $data) }">LINK</a>
+<!-- /ko --></pre>
                           <!-- /ko -->
                         </td>
                         <td>
