@@ -793,9 +793,8 @@ body {
                             <pre class="rendered-comment" data-bind="text: event['message_subject'] + (event['message_body'] ? '\n\n'+ event['message_body'] : '')">?</pre>
                           <!-- /ko -->
                           <!-- ko if: event['synth_id'] -->
-                            <pre class="synth-event" data-bind="">This run included <strong data-bind="text: event['collections'].split(',').length"></strong> collections:
-<!-- ko foreach: event['collections'].split(',') -->
-<a href="#" data-bind="text: $data,
+                            <pre class="synth-event" data-bind="">This run included <strong data-bind="text: event['collections'].split(',').length"></strong> collections:<!-- ko foreach: event['collections'].split(',') -->
+    <a href="#" data-bind="text: $data,
                        attr: {'href': ('/curator/collection/view/'+ $data) }">LINK</a
 ><!-- /ko --></pre>
                           <!-- /ko -->
