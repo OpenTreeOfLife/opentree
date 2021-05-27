@@ -67,8 +67,8 @@ if ( History && History.enabled ) {
 
         // Extract our state vars from State.url (not from State.data) for equal
         // treatment of initial URLs.
-        var activeFilter = viewModel.listFilters.COLLECTIONS;
-        var filterDefaults = listFilterDefaults.COLLECTIONS;
+        var activeFilter = viewModel.listFilters.SYNTHESIS_RUNS;
+        var filterDefaults = listFilterDefaults.SYNTHESIS_RUNS;
         // assert any saved filter values
         for (var prop in activeFilter) {
             if (prop in State.data) {
@@ -98,8 +98,8 @@ function updateListFiltersWithHistory() {
         var oldState = History.getState().data;
 
         // Determine which list filter is active (currently based on tab)
-        var activeFilter = viewModel.listFilters.COLLECTIONS;
-        var filterDefaults = listFilterDefaults.COLLECTIONS;
+        var activeFilter = viewModel.listFilters.SYNTHESIS_RUNS;
+        var filterDefaults = listFilterDefaults.SYNTHESIS_RUNS;
         var newState = { };
         var newQSValues = { };
         for (prop in activeFilter) {
@@ -188,8 +188,8 @@ function loadCollectionList(option) {
     var effectiveFilters = {};
     if (option === 'REFRESH') {
         // preserve current filter values
-        for (var fName in viewModel.listFilters.COLLECTIONS) {
-            effectiveFilters[fName] = ko.unwrap(viewModel.listFilters.COLLECTIONS[fName]);
+        for (var fName in viewModel.listFilters.SYNTHESIS_RUNS) {
+            effectiveFilters[fName] = ko.unwrap(viewModel.listFilters.SYNTHESIS_RUNS[fName]);
         }
     } else {
         // use default filter values
@@ -230,7 +230,7 @@ function loadCollectionList(option) {
             viewModel.listFilters = {
                 // UI widgets bound to these variables will trigger the
                 // computed display lists below..
-                'COLLECTIONS': {
+                'SYNTHESIS_RUNS': {
                     // use default (or preserved) filters, as determined above
                     'match': ko.observable(effectiveFilters['match']),
                     'order': ko.observable(effectiveFilters['order']),
@@ -239,24 +239,26 @@ function loadCollectionList(option) {
             };
 
             // maintain a persistent array to preserve pagination (reset when computed)
-            viewModel._filteredCollections = ko.observableArray( ).asPaged(20);
-            viewModel.filteredCollections = ko.computed(function() {
+            viewModel._filteredSynthesisRuns = ko.observableArray( ).asPaged(20);
+            viewModel.filteredSynthesisRuns = ko.computed(function() {
                 // filter raw tree list, returning a
                 // new paged observableArray
-                updateClearSearchWidget( '#collection-list-filter', viewModel.listFilters.COLLECTIONS.match );
+                updateClearSearchWidget( '#synthesis-run-list-filter', viewModel.listFilters.SYNTHESIS_RUNS.match );
                 updateListFiltersWithHistory();
 
-                var match = viewModel.listFilters.COLLECTIONS.match(),
+                var match = viewModel.listFilters.SYNTHESIS_RUNS.match(),
                     matchWithDiacriticals = addDiacriticalVariants(match),
                     matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
                     wholeSlugMatchPattern = new RegExp( '^'+ $.trim(matchWithDiacriticals) +'$' );
-                var order = viewModel.listFilters.COLLECTIONS.order();
-                var filter = viewModel.listFilters.COLLECTIONS.filter();
+                var order = viewModel.listFilters.SYNTHESIS_RUNS.order();
+                var filter = viewModel.listFilters.SYNTHESIS_RUNS.filter();
 
                 var showEmptyListWarningForAnonymousUser = false;
+                // TODO: Add these values if we offer a personalized view of synth runs
+                // TODO: Restore the "login" hints to this message, as on collections dashboard.
                 switch (filter) {
-                    case 'Collections I own':
-                    case 'Collections I participate in':
+                    case 'Synthesis runs I initiated':
+                    case 'Synthesis runs using my collections':
                         if (!userIsLoggedIn()) {
                             showEmptyListWarningForAnonymousUser = true;
                         }
@@ -270,76 +272,30 @@ function loadCollectionList(option) {
                 // map old array to new and return it
                 var filteredList = ko.utils.arrayFilter( 
                     viewModel, 
-                    function(collection) {
+                    function(synthRun) {
                         // match entered text against pub reference (author, title, journal name, DOI)
-                        var id = $.trim(collection['id']);
-                        var idParts = id.split('/');
-                        var ownerSlug = idParts[0];
-                        var titleSlug = (idParts.length === 2) ? idParts[1] : '';
-                        var name = $.trim(collection['name']);
-                        var description = $.trim(collection['description']);
-                        // extract names and IDs of all stakeholders (incl. creator!)
-                        if ($.isPlainObject(collection['creator'])) {
-                            creator = $.trim(collection['creator'].name)
-                                +'|'+ $.trim(collection['creator'].login);
-                        } else {
-                            creator = "";
-                        }
-                        if ($.isArray(collection['contributors'])) {
-                            contributors = "";
-                            $.each(collection['contributors'], function(i,c) {
-                                contributors += ('|'+ $.trim(c.name) +'|'+ $.trim(c.login));
-                            });
-                        } else {
-                            contributors = "";
-                        }
-
-                        if (!wholeSlugMatchPattern.test(id) && !wholeSlugMatchPattern.test(ownerSlug) && !wholeSlugMatchPattern.test(titleSlug) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
+                        var id = $.trim(synthRun['synth_id']);
+                        var idParts = id.split('_');
+                        var ownerSlug = idParts[1];  // from e.g. 'multi_snacktavish_woodpeckers_81461_tmp80eqeb6c'
+                        var collectionIDs = $.trim(synthRun['collections']);  // comma-delimited list of collection ids
+                        // TODO: extract description or comment text, if used
+                        // TODO: extract display names and IDs of any stakeholders, if provided
+                        if (!wholeSlugMatchPattern.test(id) && !wholeSlugMatchPattern.test(ownerSlug) && !matchPattern.test(collectionIDs)) {
                             return false;
                         }
                         
                         // check for preset filters
                         switch (filter) {
-                            case 'All tree collections':
+                            case 'All synthesis runs':
                                 // nothing to do here, all collections pass
                                 break;
 
-                            case 'Collections I own':
-                                // show only matching collections
-                                var userIsTheCreator = false;
-                                if (('creator' in collection) && ('login' in collection.creator)) { 
-                                    // compare to logged-in userid provide in the main page
-                                    if (collection.creator.login === userLogin) {
-                                        userIsTheCreator = true;
-                                    }
-                                }
-                                return userIsTheCreator;
-
-                            case 'Collections I participate in':
-                                var userIsTheCreator = false;
-                                var userIsAContributor = false;
-                                if (('creator' in collection) && ('login' in collection.creator)) { 
-                                    // compare to logged-in userid provide in the main page
-                                    if (collection.creator.login === userLogin) {
-                                        userIsTheCreator = true;
-                                    }
-                                }
-                                if (('contributors' in collection) && $.isArray(collection.contributors)) { 
-                                    // compare to logged-in userid provide in the main page
-                                    $.each(collection.contributors, function(i, c) {
-                                        if (c.login === userLogin) {
-                                            userIsAContributor = true;
-                                        }
-                                    });
-                                }
-                                return (userIsTheCreator || userIsAContributor);
-
-                            case 'Collections I follow':
-                                // TODO: implement this once we have a favorites API
-                                break;
+                            case 'Failed runs only':
+                                // show only matching synth runs
+                                return (synthRun['status'] === 'FAILED';
 
                             default:
-                                console.log("Unexpected filter for tree collection: ["+ filter +"]");
+                                console.log("Unexpected filter for synthesis runs: ["+ filter +"]");
                                 return false;
                         }
 
@@ -354,7 +310,7 @@ function loadCollectionList(option) {
                      *   0 = no change
                      *   1 = b comes before a
                      */
-                    case 'Most recently modified':
+                    case 'Most recently completed':
                         filteredList.sort(function(a,b) { 
                             // coerce any missing/goofy dates to strings
                             var aMod = $.trim(a.lastModified.ISO_date);
@@ -366,7 +322,7 @@ function loadCollectionList(option) {
                         });
                         break;
 
-                    case 'Most recently modified (reversed)':
+                    case 'Most recently completed (reversed)':
                         filteredList.sort(function(a,b) { 
                             // coerce any missing/goofy dates to strings
                             var aMod = $.trim(a.lastModified.ISO_date);
@@ -378,62 +334,32 @@ function loadCollectionList(option) {
                         });
                         break;
 
-                    case 'By owner/name':
-                        filteredList.sort(function(a,b) { 
-                            // first element is the ID with user-name/collection-name
-                            // (coerce any missing/goofy values to strings)
-                            var aName = $.trim(a.id);
-                            var bName = $.trim(b.id);
-                            if (aName === bName) {
-                                // N.B. this should not occur
-                                return maintainRelativeListPositions(a, b);
-                            }
-                            return (aName < bName) ? -1 : 1;
-                        });
-                        break;
-
-                    case 'By owner/name (reversed)':
-                        filteredList.sort(function(a,b) { 
-                            // first element is the ID with user-name/collection-name
-                            // (coerce any missing/goofy values to strings)
-                            var aName = $.trim(a.id);
-                            var bName = $.trim(b.id);
-                            if (aName === bName) {
-                                // N.B. this should not occur
-                                return maintainRelativeListPositions(a, b);
-                            }
-                            return (aName > bName) ? -1 : 1;
-                        });
-                        break;
-
-                    // TODO: add a filter for 'Has un-merged changes'?
-                    
                     default:
-                        console.warn("Unexpected order for collection list: ["+ order +"]");
+                        console.warn("Unexpected order for synth-run list: ["+ order +"]");
                         return null;
 
                 }
                 viewModel._filteredCollections( filteredList );
                 viewModel._filteredCollections.goToPage(1);
                 return viewModel._filteredCollections;
-            }); // END of filteredCollections
+            }); // END of filteredSynthesisRuns
                     
             // bind just to the main collection list (not the single-collection editor!)
-            var listArea = $('#collection-list-container')[0];
+            var listArea = $('#synthesis-run-list-container')[0];
             ko.cleanNode(listArea);
             // remove all but one list entry (else they multiply!)
             // N.B. that we also skip the first (header) row!
-            $('#collection-list-container tr:gt(1)').remove();
+            $('#synthesis-run-list-container tr:gt(1)').remove();
             // remove extra menu items in list filters
-            $('#collection-list-container .dropdown-menu').find('li:gt(0)').remove();
+            $('#synthesis-run-list-container .dropdown-menu').find('li:gt(0)').remove();
             // remove extra pagination elements below
-            $('#collection-list-container .pagination li.repeating-page:gt(0)').remove();
-            $('#collection-list-container .pagination li.repeating-spacer:gt(0)').remove();
+            $('#synthesis-run-list-container .pagination li.repeating-page:gt(0)').remove();
+            $('#synthesis-run-list-container .pagination li.repeating-spacer:gt(0)').remove();
             ko.applyBindings(viewModel, listArea);
             bindHelpPanels();
 
             if (option === 'REFRESH') {
-                updateClearSearchWidget( '#collection-list-filter', viewModel.listFilters.COLLECTIONS.match );
+                updateClearSearchWidget( '#synthesis-run-list-filter', viewModel.listFilters.SYNTHESIS_RUNS.match );
             }
             if (option === 'INIT') {
                 hideModalScreen();
