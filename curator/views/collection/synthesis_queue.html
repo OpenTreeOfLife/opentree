@@ -1,0 +1,186 @@
+{{# Pivot (in some places) based on whether the user is a logged-in user or
+  # a visitor browsing tree collections.
+isLoggedIn = (auth.user) and True or False
+}}
+
+{{left_sidebar_enabled,right_sidebar_enabled=False,False}}
+{{response.title = "Synthesis queue"}}
+
+{{### Add support scripts for single-page editor 
+
+# JSON support for older browsers (esp. IE7) 
+response.files.append(URL('static','js/json2.js'))
+
+# Knockout.js for binding JSON model to editing UI 
+response.files.append(URL('static','js/knockout-2.3.0.js'))
+
+# KO plugin for paginated lists
+response.files.append(URL('static','js/knockout-paged-e4a5770702.js'))
+
+# Knockout bindings for Twitter Bootstrap components
+response.files.append(URL('static','js/knockout-bootstrap.min.js'))
+
+}}
+
+{{extend 'layout.html'}}
+
+<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
+<script type='text/javascript'>
+    var isLoggedIn = {{= isLoggedIn and 'true' or 'false' }};
+
+    // If inbound URL specifies tab, tree, or filter settings, record them here
+    var initialState = {{= XML( dict(request.vars) ) }};
+    // set any required defaults (for clean/simple history behavior)
+    var listFilterDefaults = {
+        // track these defaults so we can reset them in history
+        'SYNTHESIS_RUNS': {
+            'match': "",
+            'order': "Most recently completed",
+            'filter': "All synthesis runs"
+        }
+    };
+    var filterDefaults = listFilterDefaults.SYNTHESIS_RUNS;
+    // apply any missing filter defaults
+    for (var prop in filterDefaults) {
+        if (!(prop in initialState)) {
+            initialState[prop] = filterDefaults[prop];
+        }
+    }
+</script>
+<script src="{{=URL('static','js/synthesis-dashboard.js')}}"></script>
+
+<div class="row">
+    <div class="span12">
+       {{if 'message' in globals():}}
+        <h4>{{=message}}</h4>
+       {{pass}}
+    </div>
+</div><!-- /.row -->
+
+<div class="row"  Xstyle="position: relative; top: -1em;">
+<div id="collection-list-container" class="span12"><!-- full width... -->
+      <button class="help-toggle" style="display: none;">
+          Show help for this page <i class="icon-chevron-down Xicon-white"></i>
+      </button>
+      <div class="help-box">
+        <button class="help-toggle">
+            Hide <i class="icon-chevron-up Xicon-white"></i>
+        </button>
+
+        <p>
+            The OpenTree projects builds 
+            <a target="_blank" href="/about/synthesis_release">our synthetic tree of life</a>.
+            by merging a list of tree collections over the "backbone" of the 
+            <a target="_blank" href="/about/taxonomy-version">latest OpenTree Taxonomy</a>.
+            This page shows a list of all recorded synthesis runs in the
+            current system, the collections and settings used for each run.
+        </p>
+        <p>
+            Our synthesis tools are now available for you to use!
+            <em>TODO: add lots more detail here.</em>
+        </p>
+      </div>
+
+      <!-- Adapt the existing New Collection button from tree popup -->
+      <a name="new-collection-submit" class="btn btn-info" style="margin-bottom: 1em;" href="#"
+{{ if maintenance_info.get('maintenance_in_progress', False): }}
+         onclick="showMaintenancePopup(); return false;"
+{{ else: }}
+         onclick="createNewTreeCollection(); return false;"
+{{ pass }}
+      >Run synthesis
+          <i class="icon-circle-arrow-up Xicon-plusXicon-upload icon-white"></i></a>
+
+      <div class="navbar" style="clear: both;">
+       <div class="navbar-inner">
+        <form class="navbar-search pull-left">
+            <input type="text" id="collection-list-filter" class="search-query" style="width: 290px;"
+                   placeholder="Filter by name, user, description&hellip;"
+                   data-bind="value: viewModel.listFilters.SYNTHESIS_RUNS.match, valueUpdate: ['afterkeydown', 'input']">
+        </form>
+        <ul class="nav" style="padding-left: 1em;">
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <span data-bind="text: viewModel.listFilters.SYNTHESIS_RUNS.order">Most recently completed</span>
+                  <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu" data-bind="foreach: ['Most recently completed', 'Most recently completed (reversed)'] ">
+                    <li data-bind="css: {'disabled': viewModel.listFilters.SYNTHESIS_RUNS.order() == $data }">
+                        <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.SYNTHESIS_RUNS.order($data); }">SORT</a>
+                    </li>
+                </ul>
+            </li>
+            <li class="dropdown">
+                <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                  <span data-bind="text: viewModel.listFilters.SYNTHESIS_RUNS.filter">All synthesis runs</span>
+                  <b class="caret"></b>
+                </a>
+                <ul class="dropdown-menu" data-bind="foreach: ['All synthesis runs', 'OpenTree synthetic tree only', 'Custom runs only', 'Failed runs only']">
+                    <li data-bind="css: {'disabled': viewModel.listFilters.SYNTHESIS_RUNS.filter() == $data }">
+                        <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.SYNTHESIS_RUNS.filter($data); }">FILTER</a>
+                    </li>
+                </ul>
+            </li>
+        </ul>
+       </div>
+      </div>
+
+        <table class="table table-condensed">
+          <thead>
+            <tr>
+                <th>Synthesis run id</th>
+                <th>Settings</th>
+                <th>Date completed</th>
+                <!--
+                <th>How many studies</th>
+                <th>How many trees</th>
+                <th>Owner</th>
+                -->
+                <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody data-bind="foreach: { data: viewModel.filteredCollections().pagedItems(), as: 'collection' }">
+            <tr>
+                <td>
+                    <span data-bind="html:getCollectionViewLink(collection, {VIEW: 'FULL_PAGE'})"></span>
+                    &nbsp; &nbsp;
+                    <span data-bind="html:getCollectionViewLink(collection, {VIEW: 'POPUP', LABEL: '[preview]', CLASS: 'preview-link'})"></span>
+                </td>
+                <td data-bind="html: getCollectionTreeCount(collection)">&nbsp;</td>
+                <td data-bind="html: getCollectionLastModification(collection)">&nbsp;</td>
+                <td data-bind="html: getCollectionCreatorLink(collection)">&nbsp;</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <div id="empty-collection-list-warning" class="empty-list-prompt" style="display: none;">
+            The active filter above (<strong data-bind="text: viewModel.listFilters.SYNTHESIS_RUNS.filter">...</strong>)
+            is hiding all synthesis runs. To see a more useful list, 
+            <a href="#" onclick="viewModel.listFilters.SYNTHESIS_RUNS.filter('All synthesis runs'); return false;">show all synthesis runs</a>.
+        </div>
+
+        <div class="pagination pagination-centered pagination-small" 
+             Xdata-bind="if: viewModel.filteredCollections()().length &gt; viewModel.filteredCollections().pagedItems().length">
+          <ul>
+            <li data-bind="css: { 'disabled': !viewModel.filteredCollections().prev.enabled() }" class="disabled">
+                <a href="#" onclick="viewModel.filteredCollections().prev(); return false;">&laquo;</a>
+            </li>
+
+           <!-- ko foreach: getPageNumbers( viewModel.filteredCollections() ) -->
+            <li class="active repeating-page" 
+                data-bind="if: isVisiblePage( $data, viewModel.filteredCollections() ), 
+                           css: { 'active': (viewModel.filteredCollections().current() === $data) }">
+                <a href="#" data-bind="text: $data, click: function() { viewModel.filteredCollections().goToPage($data); return false; }">0</a>
+            </li>
+            <li class="repeating-spacer" 
+                data-bind="if: ! isVisiblePage( $data, viewModel.filteredCollections() )"><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredCollections().goToPage($data); return false; }">&nbsp;</a></li>
+           <!-- /ko -->
+
+            <li data-bind="css: { 'disabled': !viewModel.filteredCollections().next.enabled() }" class="disabled">
+                <a href="#" onclick="viewModel.filteredCollections().next(); return false;">&raquo;</a>
+            </li>
+          </ul>
+        </div>
+
+    </div><!-- /div.spanX -->
+</div><!-- /.row -->
