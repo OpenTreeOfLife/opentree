@@ -99,6 +99,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         /* N.B. These methods are needed to manage tree collections from any page. */
         var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}";
         var findAllStudies_url = "{{=findAllStudies_url}}";
+        var findAllSynthesisRuns_url = "{{=findAllSynthesisRuns_url}}";
         var singlePropertySearchForTrees_url = "{{=singlePropertySearchForTrees_url}}";
         var API_create_collection_POST_url = "{{=API_create_collection_POST_url}}";
         var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}";
@@ -405,6 +406,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     <ul class="dropdown-menu">
                         <li><a href="/curator/profile#collections">Manage my collections</a></li>
                         <li><a href="/curator/collection/">Browse all collections</a></li>
+                        <li><a href="/curator/collection/synthesis_queue"></a></li>
                       {{ if (response.view != 'collection/edit.html'): }}
                         <li><a href="#" onclick="createNewTreeCollection(); return false;">Add new collection</a></li>
                       {{ pass }}
