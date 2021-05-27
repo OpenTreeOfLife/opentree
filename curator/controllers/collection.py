@@ -108,6 +108,17 @@ def load():
 def store():
     return dict(message="collection/store")
 
+def synthesis_dashboard():
+    """
+    Allow any visitor to view (read-only!) a queue of recent custom-synthesis runs
+    """
+    response.view = 'collection/synthesis_dashboard.html'
+    view_dict = get_opentree_services_method_urls(request)
+    view_dict['maintenance_info'] = get_maintenance_info(request)
+    #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
+    view_dict['userCanEdit'] = auth.is_logged_in() and True or False
+    return view_dict
+
 """ TODO: Adapt this for current collection status, based on new APIs """
 def _get_latest_synthesis_details_for_collection_id( collection_id ):
     # Fetch the last SHA for this collection that was used in the latest
