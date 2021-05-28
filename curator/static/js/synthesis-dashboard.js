@@ -194,8 +194,8 @@ function loadCollectionList(option) {
     } else {
         // use default filter values
         effectiveFilters['match']  = "";
-        effectiveFilters['order']  = "Most recently modified";
-        effectiveFilters['filter'] = "All tree collections";
+        effectiveFilters['order']  = "Most recently created";
+        effectiveFilters['filter'] = "All synthesis runs";
     }
     /*
     if (!userIsLoggedIn()) {
@@ -339,9 +339,9 @@ function loadCollectionList(option) {
                         return null;
 
                 }
-                viewModel._filteredCollections( filteredList );
-                viewModel._filteredCollections.goToPage(1);
-                return viewModel._filteredCollections;
+                viewModel._filteredSynthesisRuns( filteredList );
+                viewModel._filteredSynthesisRuns.goToPage(1);
+                return viewModel._filteredSynthesisRuns;
             }); // END of filteredSynthesisRuns
                     
             // bind just to the main collection list (not the single-collection editor!)
