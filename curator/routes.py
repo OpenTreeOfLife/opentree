@@ -15,7 +15,7 @@
 # See SITE.routes.py for recommended settings.
 
 routers = dict(
-    opentree=dict(
+    curator=dict(
         # convert dashes (hyphens) in URLs to underscores in web2py controller+action names
         map_hyphen=True,
     ),
