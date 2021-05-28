@@ -292,7 +292,7 @@ function loadCollectionList(option) {
 
                             case 'Failed runs only':
                                 // show only matching synth runs
-                                return (synthRun['status'] === 'FAILED';
+                                return (synthRun['status'] === 'FAILED');
 
                             default:
                                 console.log("Unexpected filter for synthesis runs: ["+ filter +"]");
