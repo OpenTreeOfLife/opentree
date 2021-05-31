@@ -170,7 +170,7 @@ function loadLocalComments( chosenFilter ) {
     // add a mnemonic to the comment header (for this page? which node?)
     var commentLabel = '';
 
-    if (argus.treeData) {
+    if (argus && argus.treeData) {
         // default filter is for the current location in the synthetic tree
         // TODO: pivot based on current page/view type..
         fetchArgs.filter = chosenFilter || 'synthtree_id,synthtree_node_id';
@@ -206,7 +206,7 @@ function loadLocalComments( chosenFilter ) {
         fetchArgs.url = getCommentIndexURL();
 
         commentLabel = window.document.title;
-        if (commentLabel.endsWidth(' - opentree')) {
+        if (commentLabel.match(/ - opentree$/)) {
             // trim to just the distinctive page title
             commentLabel = commentLabel.slice(0, -11);
         }
@@ -237,91 +237,99 @@ function loadLocalComments( chosenFilter ) {
     );
 }
 
-$(document).ready(function() {
-    // set default starting node and view, if the URL doesn't specify
-    // NOTE that we override this (using $.extend) with values set in the
-    // main page template, so we can build it from incoming URL in web2py.
-    var initialState = $.extend({
-        viewer: 'argus',
-        domSource: syntheticTreeID,                  // from main HTML view
-        nodeID: syntheticTreeDefaultStartingNodeID,  // from main HTML view
-        nodeName: '',  // names will be updated/corrected by argus callback
-        viewport: '24,201,0,800',
-        forcedByURL: false
-    }, urlState); // urlState should been defined in the main HTML view
+/* Not all tree viewers use argus! but we still need other functions in this file.
+ * N.B. 'viewer' should be defined in the parent page
+ */
+var viewer;
+if (viewer !== 'feedback') {
 
-    // check for server-supplied input[type=hidden] widget with depth value
-    var currentMaxDepth = $('#currentMaxDepth').length === 1 ? $('#currentMaxDepth').val() : 3;     // TODO: reset to 2?
+    $(document).ready(function() {
+        // set default starting node and view, if the URL doesn't specify
+        // NOTE that we override this (using $.extend) with values set in the
+        // main page template, so we can build it from incoming URL in web2py.
+        var initialState = $.extend({
+            viewer: 'argus',
+            domSource: syntheticTreeID,                  // from main HTML view
+            nodeID: syntheticTreeDefaultStartingNodeID,  // from main HTML view
+            nodeName: '',  // names will be updated/corrected by argus callback
+            viewport: '24,201,0,800',
+            forcedByURL: false
+        }, urlState); // urlState should been defined in the main HTML view
 
-    // TODO: how should these defaults (borrowed from synthview/index.html) be set?
-    argus = createArgus({
-      "domSource": "ottol",
-      "container": $('#argusCanvasContainer')[0], // get the "raw" element, not a jQuery set
-      "treemachineDomain": treemachine_domain,    // "global" vars from main page template
-      "taxomachineDomain": taxomachine_domain,
-      "useTreemachine": true, // TODO: pivot based on domSource? treeID?
-      "useSyntheticTree": true, // TODO: pivot based on domSource? treeID?
-      "maxDepth": currentMaxDepth
-    });
+        // check for server-supplied input[type=hidden] widget with depth value
+        var currentMaxDepth = $('#currentMaxDepth').length === 1 ? $('#currentMaxDepth').val() : 3;     // TODO: reset to 2?
 
-    if ( History && History.enabled && pageUsesHistory ) {
-        // if there's no prior state, go to the initial target node in the synthetic tree
-        var priorState = History.getState();
+        // TODO: how should these defaults (borrowed from synthview/index.html) be set?
+        argus = createArgus({
+          "domSource": "ottol",
+          "container": $('#argusCanvasContainer')[0], // get the "raw" element, not a jQuery set
+          "treemachineDomain": treemachine_domain,    // "global" vars from main page template
+          "taxomachineDomain": taxomachine_domain,
+          "useTreemachine": true, // TODO: pivot based on domSource? treeID?
+          "useSyntheticTree": true, // TODO: pivot based on domSource? treeID?
+          "maxDepth": currentMaxDepth
+        });
 
-        // Check first for incoming URL that might override prior history
-        if (initialState.forcedByURL) {
-            // apply the state as specified in the URL
-            ///console.log("Applying state from incoming URL...");
-            initialState.nudge = new Date().getTime();
-            History.replaceState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
-        } else if (!(priorState.data.nodeID)) {
-            // replace incomplete" prior history (if found) with default view
-            ///console.log("Correcting incomplete state with default view...");
-            initialState.nudge = new Date().getTime();
-            History.replaceState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
+        if ( History && History.enabled && pageUsesHistory ) {
+            // if there's no prior state, go to the initial target node in the synthetic tree
+            var priorState = History.getState();
+
+            // Check first for incoming URL that might override prior history
+            if (initialState.forcedByURL) {
+                // apply the state as specified in the URL
+                ///console.log("Applying state from incoming URL...");
+                initialState.nudge = new Date().getTime();
+                History.replaceState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
+            } else if (!(priorState.data.nodeID)) {
+                // replace incomplete" prior history (if found) with default view
+                ///console.log("Correcting incomplete state with default view...");
+                initialState.nudge = new Date().getTime();
+                History.replaceState( initialState, historyStateToWindowTitle(initialState), historyStateToURL(initialState));
+            } else {
+                // nudge the (existing) browser state to view it again
+                ///console.log("Nudging state (and hopefully initial view)...");
+                priorState.data.nudge = new Date().getTime();
+                History.replaceState( priorState.data, priorState.title, priorState.url );
+            }
         } else {
-            // nudge the (existing) browser state to view it again
-            ///console.log("Nudging state (and hopefully initial view)...");
-            priorState.data.nudge = new Date().getTime();
-            History.replaceState( priorState.data, priorState.title, priorState.url );
+            // force initial argus view using defaults above (mimic History state object)
+            // NOTE: we force this through common code to remap ottids to node ids
+            updateTreeView({'data': initialState});
         }
-    } else {
-        // force initial argus view using defaults above (mimic History state object)
-        // NOTE: we force this through common code to remap ottids to node ids
-        updateTreeView({'data': initialState});
-    }
 
-    /*
-    // add splitter between argus + provenance panel (using jquery.splitter plugin)
-    var viewSplitter = $('#viewer-collection').split({
-        orientation:'vertical',
-        limit: 280,             // don't come closer than this to edge
-        position:'70%'          // initial position
+        /*
+        // add splitter between argus + provenance panel (using jquery.splitter plugin)
+        var viewSplitter = $('#viewer-collection').split({
+            orientation:'vertical',
+            limit: 280,             // don't come closer than this to edge
+            position:'70%'          // initial position
+        });
+
+        // bind toggle for provenance panel
+        var lastViewSplitterPosition = viewSplitter.position();
+        $('#provenance-show').unbind('click').click(function() {
+            viewSplitter.position(lastViewSplitterPosition);
+            $(this).hide();
+            return false;
+        });
+        $('#provenance-hide').unbind('click').click(function() {
+            lastViewSplitterPosition = viewSplitter.position();
+            viewSplitter.position( viewSplitter.width() - 2 );
+            $('#provenance-show').show();
+            return false;
+        });
+        */
+        $('#comments-hide').unbind('click').click(function() {
+            toggleCommentsPanel('HIDE');
+            return false;
+        });
+        $('#provenance-hide').unbind('click').click(function() {
+            togglePropertiesPanel('HIDE');
+            return false;
+        });
     });
 
-    // bind toggle for provenance panel
-    var lastViewSplitterPosition = viewSplitter.position();
-    $('#provenance-show').unbind('click').click(function() {
-        viewSplitter.position(lastViewSplitterPosition);
-        $(this).hide();
-        return false;
-    });
-    $('#provenance-hide').unbind('click').click(function() {
-        lastViewSplitterPosition = viewSplitter.position();
-        viewSplitter.position( viewSplitter.width() - 2 );
-        $('#provenance-show').show();
-        return false;
-    });
-    */
-    $('#comments-hide').unbind('click').click(function() {
-        toggleCommentsPanel('HIDE');
-        return false;
-    });
-    $('#provenance-hide').unbind('click').click(function() {
-        togglePropertiesPanel('HIDE');
-        return false;
-    });
-});
+}
 
 var activeToggleFade = 0.5;
 var readyToggleFade = 1.0;
@@ -845,6 +853,9 @@ function showObjectProperties( objInfo, options ) {
     // start filling in the panel from the top
 
     displayName = (objName) ? objName : ("Unnamed "+ objType);
+    if (fullNode.isExtinct()) {
+        displayName = argus.leadingDagger + displayName;
+    }
     jQuery('#provenance-panel .provenance-title').html( displayName );
 
     /* Clear and rebuild collection of detailed properties, adapting to special
@@ -874,7 +885,9 @@ function showObjectProperties( objInfo, options ) {
                 // this supporting data is already in arguson
             } else {
                 // it's a study; call the index to get full details
-                if ((typeof sourceMetadata['sourceDetails'] === 'undefined') && (sourceMetadata['loadStatus'] !== 'PENDING')) {
+                if ((typeof sourceMetadata['sourceDetails'] === 'undefined')
+                 && (sourceMetadata['loadStatus'] !== 'PENDING')        // fetch in progress
+                 && (sourceMetadata['loadStatus'] !== 'FAILED')) {      // fetch tried and failed
                     // don't keep sending requests for the same source! we manage this with 'loadStatus'
                     sourceMetadata['loadStatus'] = 'PENDING';
                     ///console.warn('>>>>>>>>>>>>>>> sourceDetails NOT FOUND for sourceID '+ sourceID +', FETCHING NOW...');
@@ -899,13 +912,13 @@ function showObjectProperties( objInfo, options ) {
                                     var studyInfo = data.matched_studies[0];
                                     cbSourceMetadata['sourceDetails'] = studyInfo;
                                     cbSourceMetadata['loadStatus'] = 'COMPLETE';
-                                    // Nudge for a refresh of the properties display?
-                                    showObjectProperties( objInfo );
                                 } else {
                                     console.log(">>>> EXPECTED to find a matching study for id '"+ (cbSourceMetadata).study_id +"', not this:");
                                     console.log(data);
                                     cbSourceMetadata['loadStatus'] = 'FAILED';
                                 }
+                                // In either case, nudge for a refresh of the properties display?
+                                showObjectProperties( objInfo );
                             }
                         }
                     );
@@ -1117,6 +1130,9 @@ function showObjectProperties( objInfo, options ) {
                                 waitingForStudyInfo = true;
                             } else if ('taxonomy' in moreInfo) {
                                 // no problem, taxo sources are not loaded via AJAX
+                            } else if (moreInfo['loadStatus'] === 'FAILED') {
+                                // add a stub to study collection; we'll show an apology here
+                                supportingStudyInfo[ moreInfo.study_id ] = 'FAILED TO LOAD';
                             } else {
                                 console.error("! expected a study, but found mysterious stuff in metaMap:");
                                 for (p2 in moreInfo) {
@@ -1150,7 +1166,7 @@ function showObjectProperties( objInfo, options ) {
                                 pID = studyInfo['ot:studyId'];
                                 pRef = studyInfo['ot:studyPublicationReference'] || '???';
                                 pCompactRef = fullToCompactReference( pRef );
-                                // show compact reference for each study, with a toggle for more below
+
                                 var displayLinkEl = createCuratorAElement("/study/view/"+ pID,
                                                                            pCompactRef,
                                                                            "Link to this study in curation app");
@@ -1164,9 +1180,6 @@ function showObjectProperties( objInfo, options ) {
                                     displayVal += 'Full publication: <a href="'+ pURL +'" target="_blank" title="Permanent link to the full study">'+ pURL +'</a><br/>';
                                 }
 
-                                /* Phylografter link
-                                displayVal += ('Open Tree curation: <a href="http://www.reelab.net/phylografter/study/view/'+ pID +'" target="_blank" title="Link to this study in Phylografter">Study '+ pID +'</a>');
-                                */
                                 displayLinkEl.innerHTML = pID;
                                 displayVal += (
                                     'Open Tree curation of this study: ' + displayLinkEl.outerHTML + '<br/>'
@@ -1180,6 +1193,9 @@ function showObjectProperties( objInfo, options ) {
 
                                 pCurator = studyInfo['ot:curatorName'];
                                 if (pCurator) {
+                                    if ($.isArray(pCurator)) {
+                                        pCurator = pCurator.join(", ");
+                                    }
                                     displayVal += ('<div>Curated by: '+ pCurator +'</div>');
                                 }
                                 displayVal += '</div>';  // end of .full-study-details
@@ -1303,6 +1319,7 @@ function showObjectProperties( objInfo, options ) {
         // for proper taxon names (not nodes like '[Canis + Felis]'), link to EOL
         if ((displayName.indexOf('Unnamed ') !== 0) &&
             (displayName.indexOf('(unnamed ') !== 0) &&
+            (displayName.indexOf(argus.leadingDagger +'[') !== 0) &&
             (displayName.indexOf('[') !== 0)) {
             // Attempt to find a page for this taxon in the Encyclopedia of Life website
             // N.B. This 'external-links' list can hold similar entries.

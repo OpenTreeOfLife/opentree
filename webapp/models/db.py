@@ -205,7 +205,6 @@ class GitHubAccount(OAuthAccount):
 
         return dict(auth_user_fields)
 
-
 # use the class above to build a new login form
 auth.settings.login_form=GitHubAccount()
 

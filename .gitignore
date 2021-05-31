@@ -16,9 +16,12 @@ smasher/feed/*/in
 smasher/feed/*/out
 *.pem
 deploy/janrain.key
-deploy/GITHUB_CLIENT_SECRET
+GITHUB_CLIENT_SECRET
+GITHUB_APP_PRIVATE_KEY_PEM
 smasher/lib/json-simple-1.1.1.jar
 deploy/setup/CONFIG
 env
 web2py
 restart.sh
+webapp/static/statistics/
+lint/

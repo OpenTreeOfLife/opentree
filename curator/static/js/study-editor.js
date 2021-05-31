@@ -145,7 +145,7 @@ if ( History && History.enabled ) {
         if (currentTab) {
             goToTab( currentTab );
             switch(slugify(currentTab)) {
-                case 'trees':
+                case 'home':
                     activeFilter = viewModel.listFilters.TREES;
                     filterDefaults = listFilterDefaults.TREES;
                     break;
@@ -238,13 +238,13 @@ function changeTab(o) {
     // if we're using History.js, all tab changes should should be driven from history
     var newTabName = $.trim('tab' in o ? o.tab : '');
     if (newTabName === '') {
-        alert('changeTab(): No tab name specified!');
+        console.warn('changeTab(): No tab name specified!');
         return;
     }
     var $tabBar = $('ul.nav-tabs:eq(0)');
     var oldTabName = $.trim($tabBar.find('li.active a').text());
     if (newTabName === oldTabName) {
-        alert('changeTab(): Same tab specified, nothing to change...');
+        console.warn('changeTab(): Same tab specified, nothing to change...');
         return;
     }
     if (History && History.enabled) {
@@ -270,11 +270,11 @@ function showTreeWithHistory(tree) {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': tree['@id']
             }
         );
-        History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree) );
+        History.pushState( newState, (window.document.title), ('?tab=home&tree='+ newState.tree) );
     } else {
         // show tree normally (ignore browser history)
         showTreeViewer(tree);
@@ -293,12 +293,12 @@ function hideTreeWithHistory() {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': null,
                 'conflict': null
             }
         );
-        History.pushState( newState, (window.document.title), '?tab=trees' );
+        History.pushState( newState, (window.document.title), '?tab=home' );
     }
     fixLoginLinks();
 }
@@ -318,11 +318,11 @@ function updateListFiltersWithHistory() {
         var oldState = History.getState().data;
 
         // Determine which list filter is active (currently based on tab)
-        // N.B. There's currently just one filter per tab (Trees, Files, OTU Mapping).
+        // N.B. There's currently just one filter per tab (Home, Files, OTU Mapping).
         var activeFilter;
         var filterDefaults;
         switch(slugify(oldState.tab)) {
-            case 'trees':
+            case 'home':
                 activeFilter = viewModel.listFilters.TREES;
                 filterDefaults = listFilterDefaults.TREES;
                 break;
@@ -587,6 +587,53 @@ $(document).ready(function() {
         console.log('tree - fileuploaddone');
     })
 
+    $('#namesetupload').fileupload({
+        // NOTE that this should submit the same arguments (except for file
+        // data) as submitNameset() below
+        disableImageResize: true,
+        // maxNumberOfFiles: 5,
+        // maxFileSize: 5000000,  // TODO: allow maximum
+        // acceptFileTypes: /(\.|\/)(gif|jpe?g|png)$/i  // TODO: allow any
+        url: $('#nameset-import-form').attr('action'),
+        dataType: 'json',
+        autoUpload: false,
+        start: function(e, data) {
+            console.log('*** namesetupload - start ***');
+        },
+        add: function(e, data) {
+            console.log('*** namesetupload - add ***');
+            // add hints for nicer element IDs to the form
+            setElementIDHints();
+
+            /* BLOCK upload behavior for now, in favor of JS merge
+            $('[name=new-nameset-submit]').click(function() {
+                console.log('namesetupload - submitting...');
+                showModalScreen("Adding pre-mapped names...", {SHOW_BUSY_BAR:true});
+                data.submit();
+                return false; // suppress normal form submission!
+            });
+            */
+        },
+        always: function(e, data) {
+            // do this regardless of success or failure
+            console.log('*** namesetupload - (always) done ***');
+            returnFromNamesetSubmission( data.jqXHR, data.textStatus );
+        }
+    }).on('fileuploadprogressall', function (e, data) {
+        console.log('nameset - fileuploadprogressall');
+        var progress = parseInt(data.loaded / data.total * 100, 10);
+        $('#nameset-upload-progress .bar').css(
+            'width',
+            progress + '%'
+        );
+        $('#nameset-upload-progress .bar span').text(
+            progress + '%'
+        );
+    }).on('fileuploaddone', function (e, data) {
+        console.log('nameset - fileuploaddone');
+    })
+
+
     // enable taxon search
     $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
     $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
@@ -612,6 +659,11 @@ function goToTab( tabName ) {
         }
         return false;
     })
+    if ($matchingTab.length === 0) {
+        console.warn("No such tab, going to Home...");
+        goToTab('home');
+        return;
+    }
     $matchingTab.tab('show');
 }
 
@@ -769,13 +821,13 @@ function loadSelectedStudy() {
                 'annotation': {  // an annotation event
                     highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
-                        return makeArray(nexml['^ot:annotationEvents']);
+                        return makeArray(nexml['^ot:annotationEvents']['annotation']);
                     }
                 },
                 'agent': {  // an annotation agent
                     highestOrdinalNumber: null,
                     gatherAll: function(nexml) {
-                        return makeArray(nexml['^ot:agents']);
+                        return makeArray(nexml['^ot:agents']['agent']);
                     }
                 },
                 'message': {  // an annotation message
@@ -919,6 +971,24 @@ function loadSelectedStudy() {
                     nexsonTemplates['OTU mapping hints']
                 );
                 createAnnotation( hintsAnnotationBundle, data.nexml );
+            } else {
+                // confirm that recently-added features are there
+                var mappingHints = getOTUMappingHints(data.nexml);
+                if (mappingHints.data['autoAcceptExactMatches'] === undefined) {
+                    mappingHints.data['autoAcceptExactMatches'] = false;
+                }
+            }
+
+            // add baseline (empty) annotation for merged namesets
+            if (getMergedNamesets(data.nexml) === null) {
+                var filesAnnotationBundle = $.extend(
+                    {
+                        targetElement: data.nexml,
+                        agent: curatorAgent
+                    },
+                    nexsonTemplates['merged namesets']
+                );
+                createAnnotation( filesAnnotationBundle, data.nexml );
             }
 
             // add baseline (empty) annotation for supporting files
@@ -1035,6 +1105,36 @@ function loadSelectedStudy() {
                     'filter': ko.observable( listFilterDefaults.COLLECTIONS.filter )
                 }
             };
+            // any change to these list filters should reset pagination for the current display list
+            $.each(viewModel.listFilters, function(displayListID, itsFilters) {
+                $.each(itsFilters, function(filterName, filterObservable) {
+                    filterObservable.subscribe(function(newValue) {
+                        // ignore value, just reset pagination (back to page 1)
+                        resetPagination( displayListID );
+                    });
+                });
+            });
+
+            function resetPagination( displayListID ) {
+                // list filter or sorting has changed; return to page 1!
+                switch( displayListID ) {
+                    case 'TREES':
+                        viewModel._filteredTrees.goToPage(1);
+                        break;
+                    case 'FILES':
+                        viewModel._filteredFiles.goToPage(1);
+                        break;
+                    case 'OTUS':
+                        viewModel._filteredOTUs.goToPage(1);
+                        break;
+                    case 'ANNOTATIONS':
+                        viewModel._filteredAnnotations.goToPage(1);
+                        break;
+                    case 'COLLECTIONS':
+                        viewModel._filteredCollections.goToPage(1);
+                        break;
+                }
+            }
 
             // maintain a persistent array to preserve pagination (reset when computed)
             viewModel._filteredTrees = ko.observableArray( ).asPaged(20);
@@ -1074,7 +1174,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredTrees( filteredList );
-                viewModel._filteredTrees.goToPage(1);
                 return viewModel._filteredTrees;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredTrees
 
@@ -1115,7 +1214,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredFiles( filteredList );
-                viewModel._filteredFiles.goToPage(1);
                 return viewModel._filteredFiles;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredFiles
 
@@ -1327,7 +1425,6 @@ function loadSelectedStudy() {
                 lastClickedTogglePosition = null;
 
                 viewModel._filteredOTUs( filteredList );
-                viewModel._filteredOTUs.goToPage(1);
                 return viewModel._filteredOTUs;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredOTUs
 
@@ -1399,7 +1496,6 @@ function loadSelectedStudy() {
                 );  // END of list filtering
 
                 viewModel._filteredAnnotations( filteredList );
-                viewModel._filteredAnnotations.goToPage(1);
                 return viewModel._filteredAnnotations;
             }).extend({ throttle: viewModel.filterDelay }); // END of filteredAnnotations
 
@@ -1451,6 +1547,8 @@ function loadSelectedStudy() {
             ko.applyBindings(viewModel, headerQualityPanel);
             var qualityDetailsViewer = $('#quality-details-viewer')[0];
             ko.applyBindings(viewModel, qualityDetailsViewer);
+            var metadataPopup = $('#study-metadata-popup')[0];
+            ko.applyBindings(viewModel, metadataPopup);
 
             // Any further changes (*after* tree normalization) should prompt for a save before leaving
             viewModel.ticklers.STUDY_HAS_CHANGED.subscribe( function() {
@@ -1593,6 +1691,19 @@ function updateQualityDisplay () {
         if (suggestionCount === 0) {
             $cTabTally.hide();
         } else {
+            // if read-only, prompot the user to login and fix things
+            if (viewOrEdit == 'VIEW') {
+                var editPromptHTML;
+                // show appropriate text for logged-in vs anonymous user
+                var $loginToEditLink = $('a.sticky-login').eq(0);
+                editPromptHTML = 'If you want to improve this study, click <a class="sticky-login" href="#">'+ $loginToEditLink.text() +'</a> to begin.'
+                $cTabSugestionList.append('<li class="edit-prompt">'+ editPromptHTML +'</li>');
+                // clicking the new link should click our smart login link
+                $cTabSugestionList.find('li.edit-prompt').unbind('click').click(function(evt) {
+                    $loginToEditLink[0].click();  // call the bare DOM element for full support of onclick AND href
+                    return false;
+                });
+            }
             $cTabTally.text(suggestionCount).show();
         }
 
@@ -1812,8 +1923,7 @@ function displayConflictSummary(conflictInfo) {
     var $reportArea = $('#analysis-results');
     var targetTree = $('#reference-select').val();
     var referenceTreeID = $('#tree-select').val();
-    var treeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ referenceTreeID;
-      +"&conflict="+ targetTree;
+    var treeURL = getViewURLFromStudyID(studyID) +"?tab=home&tree="+ referenceTreeID +"&conflict="+ targetTree;
     $reportArea.empty()
            .append('<h4>Conflict summary</h4>')
            .append('<p><a href="'+ treeURL +'" target="conflicttree">Open labelled tree in new window</a></p>')
@@ -2085,7 +2195,7 @@ function showTreeConflictDetailsFromPopup(tree) {
     // call the above from the tree-view popup
     if (!tree) {
         // this should *never* happen
-        alert("showTreeConflictDetailsFromPopup(): No tree specified!");
+        console.warn("showTreeConflictDetailsFromPopup(): No tree specified!");
         return;
     }
     var newReferenceTreeID = $('#treeview-reference-select').val();
@@ -2120,12 +2230,12 @@ function addConflictInfoToTree( treeOrID, conflictInfo ) {
     }
     if (!tree) {
         // this should *never* happen
-        alert("addConflictInfoToTree(): No tree specified!");
+        console.warn("addConflictInfoToTree(): No tree specified!");
         return;
     }
     if (!conflictInfo) {
         // this should *never* happen
-        alert("addConflictInfoToTree(): No conflict info provided!");
+        console.warn("addConflictInfoToTree(): No conflict info provided!");
         return;
     }
     // Add general information on the tree itself...
@@ -2158,7 +2268,7 @@ function removeTaxonMappingInfoFromTree( treeOrID ) {
     }
     if (!tree) {
         // this should *never* happen
-        alert("removeTaxonMappingInfoFromTree(): No tree specified!");
+        console.warn("removeTaxonMappingInfoFromTree(): No tree specified!");
         return;
     }
     // Clear conflict information from the tree itself...
@@ -2175,7 +2285,7 @@ function removeConflictInfoFromTree( treeOrID ) {
     }
     if (!tree) {
         // this should *never* happen
-        alert("removeConflictInfoFromTree(): No tree specified!");
+        console.warn("removeConflictInfoFromTree(): No tree specified!");
         return;
     }
     // Clear conflict information from the tree itself...
@@ -2209,12 +2319,12 @@ function showConflictDetailsWithHistory(tree, referenceTreeID) {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': tree['@id'],
                 'conflict': referenceTreeID
             }
         );
-        History.pushState( newState, (window.document.title), ('?tab=trees&tree='+ newState.tree +'&conflict='+ newState.conflict) );
+        History.pushState( newState, (window.document.title), ('?tab=home&tree='+ newState.tree +'&conflict='+ newState.conflict) );
     } else {
         // show conflict normally (ignore browser history)
         showTreeConflictDetailsFromPopup(tree);
@@ -2228,12 +2338,12 @@ function hideConflictDetailsWithHistory(tree) {
         var newState = $.extend(
             cloneFromSimpleObject( oldState ),
             {
-                'tab': 'Trees',
+                'tab': 'Home',
                 'tree': tree['@id'],
                 'conflict': null
             }
         );
-        History.pushState( newState, (window.document.title), '?tab=trees&tree='+ newState.tree );
+        History.pushState( newState, (window.document.title), '?tab=home&tree='+ newState.tree );
     } else {
         // hide conflict normally (ignore browser history)
         hideTreeConflictDetails(tree);
@@ -2361,7 +2471,7 @@ function validateFormData() {
     // check for a study year (non-empty integer)
     var studyYear = Number(viewModel.nexml["^ot:studyYear"]);
     if (isNaN(studyYear) || studyYear === 0) {
-        showErrorMessage('Please enter an non-zero integer for the Study Year (in Metadata tab).');
+        showErrorMessage("Please enter an non-zero integer for the Study Year (in Home tab's metadata editor).");
         return false;
     }
     // TODO: Add other validation logic to match changes on the server side.
@@ -3544,17 +3654,17 @@ function TreeNode() {
  *
  * validity? or should we make it "impossible" to build invalid data here?
  *
- * Let's try again, organizing by tab (Metadata, Trees, etc)
+ * Let's try again, organizing by tab (Home, Files, etc)
  */
 
 var roughDOIpattern = new RegExp('(doi|DOI)[\\s\\.\\:]{0,2}\\b10[.\\d]{2,}\\b');
 // this checks for *attempts* to include a DOI, not necessarily valid
 
 // runs various tests on a study; used for building the scoreInfo var
-// tests divided into Metadata, Files, Trees and OTU mapping
+// tests divided into Home, Files, and OTU mapping
 var studyScoringRules = {
-    'Metadata': [
-        // problems with study metadata, DOIs, etc
+    'Home': [  // combines former Metadata and Trees tabs
+        // problems with study metadata, DOIs, etc. AND TREES
         {
             description: "The study should have all metadata fields complete.",
             test: function(studyData) {
@@ -3695,9 +3805,7 @@ var studyScoringRules = {
             failureMessage: "This study has no license or waiver.",
             suggestedAction: "A study author should add an appropriate license or waiver."
             // TODO: add hint/URL/fragment for when curator clicks on suggested action?
-        }
-    ],
-    'Trees': [
+        },
         {
             description: "The study should contain at least one tree.",
             test: function(studyData) {
@@ -3731,7 +3839,7 @@ var studyScoringRules = {
                         return false;
                     }
                 });
-                console.log("total elapsed: "+ (new Date() - startTime) +" ms");
+                console.log("check for non-monophyletic tips... total elapsed: "+ (new Date() - startTime) +" ms");
                 return !(duplicateNodesFound);
             },
             weight: 0.2,
@@ -4120,7 +4228,7 @@ function showTreeViewer( tree, options ) {
         }
         if (!tree) {
             // this should *never* happen
-            alert("showTreeViewer(): No tree specified!");
+            console.warn("showTreeViewer(): No tree specified!");
             return;
         }
     }
@@ -4313,7 +4421,7 @@ function showTreeViewer( tree, options ) {
             // dim and disable the full-screen toggle
             $fullScreenToggle.css("opacity: 0.5;")
                              .click(function() {
-                                alert("This browser does not support full-screen display.");
+                                asyncAlert("This browser does not support full-screen display.");
                                 return false;
                              })
                              .show();
@@ -4339,7 +4447,7 @@ function showTreeViewer( tree, options ) {
             // dim and disable the full-screen toggle
             $printTreeViewButton.css("opacity: 0.5;")
                                 .click(function() {
-                                    alert("This browser does not support full-screen display, so it cannot print the tree.");
+                                    asyncAlert("This browser does not support full-screen display, so it cannot print the tree.");
                                     return false;
                                 })
                              .show();
@@ -4464,7 +4572,7 @@ function showOTUInContext() {
     $.merge( otuContextsToShow, findOTUInTrees( otu, getTreesNotYetNominated() ) );
     // if this OTU is unused, something's very wrong; bail out now
     if (otuContextsToShow.length === 0) {
-        alert("This OTU doesn't appear in any tree. (This is not expected.)");
+        asyncAlert("This OTU doesn't appear in any tree. (This is not expected.)");
         return;
     }
     // otherwise show the tree viewer with first result highlighted, UI to show more
@@ -5469,6 +5577,14 @@ function setElementIDHints() {
     $form.find('[name=firstAvailableAnnotationID]').val( getNextElementOrdinalNumber('annotation') );
     $form.find('[name=firstAvailableAgentID]').val( getNextElementOrdinalNumber('agent') );
     $form.find('[name=firstAvailableMessageID]').val( getNextElementOrdinalNumber('message') );
+    // and again for nameset-upload form
+    var $form = $('#nameset-import-form');
+    $form.find('[name=idPrefix]').val('');  // clear this field
+    $form.find('[name=firstAvailableOTUID]').val( getNextElementOrdinalNumber('otu') );
+    $form.find('[name=firstAvailableOTUsID]').val( getNextElementOrdinalNumber('otus') );
+    $form.find('[name=firstAvailableAnnotationID]').val( getNextElementOrdinalNumber('annotation') );
+    $form.find('[name=firstAvailableAgentID]').val( getNextElementOrdinalNumber('agent') );
+    $form.find('[name=firstAvailableMessageID]').val( getNextElementOrdinalNumber('message') );
 }
 
 function returnFromNewTreeSubmission( jqXHR, textStatus ) {
@@ -5529,7 +5645,7 @@ function returnFromNewTreeSubmission( jqXHR, textStatus ) {
         $.merge(viewModel.nexml.otus, itsOTUsCollection);
         $.merge(viewModel.nexml.trees, itsTreesCollection);
     } catch(e) {
-        console.error('Unable to push collections (needs Nexson upgrade)');
+        console.error('Unable to merge tree and OTU collections (needs Nexson upgrade)');
     }
 
     // update the files list (and auto-save?)
@@ -5587,7 +5703,7 @@ function returnFromOTUMerge( jqXHR, textStatus ) {
     replaceViewModelNexson( responseJSON.data.nexml );
 
     hideModalScreen();
-    showSuccessMessage('Tree(s) added and merged.');
+    showSuccessMessage('Tree(s) and OTUs merged successfully.');
 }
 
 function replaceViewModelNexson( nexml ) {
@@ -5602,6 +5718,283 @@ function replaceViewModelNexson( nexml ) {
 
     // refresh the complete curation UI, via ticklers
     nudgeTickler('ALL');
+}
+
+/* support functions for uploading+importing pre-mapped names */
+function updateNamesetUploadForm() {
+    // check all fields, enable/disable button
+    var readyToSubmit = true;
+
+    // offer field for pasted text IF format is appropriate or unspecified
+    var $pastedTextField = $('#new-nameset-text');
+    
+    /*
+    var chosenFormat = $.trim( $('#nameset-import-format').val() );
+    switch (chosenFormat) {
+        case '':
+            readyToSubmit = false;
+            $pastedTextField.attr('disabled', 'disabled');
+            break;
+        case 'zip':
+            $pastedTextField.attr('disabled', 'disabled');
+            break;
+        case 'tsv':
+        case 'csv':
+        case 'json':
+            $pastedTextField.removeAttr('disabled');
+            break;
+        default:
+            console.error("Unexpected format for pre-mapped names: ["+ chosenFormat +"]");
+            $pastedTextField.attr('disabled', 'disabled');
+            readyToSubmit = false;
+    }
+    */
+
+    //var chosenFile = $.trim( $('#namesetupload').val() );
+    // NO, this is routinely cleared by the upload widget; the file-name
+    // display (white on blue) alongside, is actually a safer test.
+    var pastedText = $.trim( $pastedTextField.val() );
+    if (pastedText === '') {
+        readyToSubmit = false;
+    }
+
+    var $submitBtn = $('[name=new-nameset-submit]');
+    if (readyToSubmit) {
+        $submitBtn.unbind('click').click(function(e) {
+            e.preventDefault(); // BLOCK upload behavior in favor of local merge!
+            processNamesetFromPastedText(e); // pass data? or rely on global IDs?
+            return false;
+        });
+        $submitBtn.removeAttr('disabled');
+    } else {
+        $submitBtn.attr('disabled', 'disabled');
+    }
+    return true;
+}
+function clearNamesetUploadWidget() {
+    // un-bind fileupload submission
+    $('[name=new-nameset-submit]').off('click');
+
+    // clear the file widget and the field for pasted text
+    var $widgets = $('#nameset-file-for-study-curation, #new-nameset-text');
+    $widgets.val('');
+    $('#nameset-local-filesystem-warning').html("");
+    //$widgets.trigger('change');
+
+    /* OLD reset the progress bar
+    setTimeout( function() {
+        $('#nameset-upload-progress .bar').css( 'width', '0%' );
+        $('#nameset-upload-progress .bar span').text( '' );
+    }, 500);
+    */
+    updateNamesetUploadForm();
+}
+function clearNamesetPastedText() {
+    $('#new-nameset-text').val("");
+}
+function processNamesetFromPastedText(evt) {
+    // find validate input data
+    var nameset; // common JS representation
+    //var inputFormat = $form.find('[name=inputFormat]').val();
+    var $pastedTextField = $('#new-nameset-text');
+    var data = $.trim( $pastedTextField.val() );
+    try {
+        // first try to parse a JSON nameset
+        nameset = JSON.parse(data);
+    } catch(e) {
+        // IF this fails, try to import TSV/CSV, line-by-line text
+        nameset = tnrs.convertToNamesetModel(data);
+    }
+    if (nameset) {
+        // examine and apply these mappings to the OTUs in the current study
+        mergeNamesetData( nameset );
+    } else {
+        var msg = "Error reading names from pasted text! Please compare it to examples";
+        $hintArea.html(msg).show();
+    }
+}
+function submitNameset() {
+    // TODO: NOTE that this should submit the same arguments (except for file
+    // data) as the fileupload behavior for #namesetupload
+
+    showModalScreen("Adding pre-mapped names...", {SHOW_BUSY_BAR:true});
+
+    // add hints for nicer element IDs to the form
+    setElementIDHints();
+
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        // contentType: "application/json; charset=utf-8",
+        url: $('#nameset-import-form').attr('action'),
+        data: $('#nameset-import-form').serialize(),
+        complete: returnFromNamesetSubmission
+    });
+}
+function returnFromNamesetSubmission( jqXHR, textStatus ) {
+    // show results of nameset submission, whether from submitNameset()
+    // or special (fileupload) behavior
+
+    console.log('submitNameset(): done! textStatus = '+ textStatus);
+    // report errors or malformed data, if any
+    if (textStatus !== 'success') {
+        var errMsg;
+        // TODO: Update the literal-text check below indexOf( blah )?
+        if ((jqXHR.status === 501) && (jqXHR.responseText.indexOf("Conversion") === 0)) {
+            errMsg = 'Sorry, there was an error importing your pre-mapped names. Please double-check the format and data. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+        } else {
+            errMsg = 'Sorry, there was an error importing your pre-mapped names. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +'</pre>';
+            console.warn("jqXHR.status: "+ jqXHR.status);
+            console.warn("jqXHR.responseText: "+ jqXHR.responseText);
+        }
+        hideModalScreen();
+        showErrorMessage(errMsg);
+        return;
+    }
+
+    // Add supporting-file info for the submitted nameset
+    console.log("status: "+ jqXHR.status);
+    console.log("statusText: "+ jqXHR.statusText);
+    // convert raw response to JSON
+    var responseJSON = $.parseJSON(jqXHR.responseText);
+    var data = responseJSON['data'];
+    console.log("data: "+ data);
+
+
+
+    /* TODO: What do we need to incorporate/consolidate here? */
+    // move its collections into the view model Nexson
+    var nexmlName = ('nex:nexml' in data) ? 'nex:nexml' : 'nexml';
+
+    // check for needed collections
+    var itsOTUsCollection =  data[nexmlName]['otus'];
+    var itsTreesCollection = data[nexmlName]['trees'];
+    if (!itsOTUsCollection || !itsTreesCollection) {
+        hideModalScreen();
+        showErrorMessage('Sorry, no OTUs  were found in this file.');
+        return;
+    }
+
+    // coerce the inner array of each collection into an array
+    // (override Badgerfish singletons)
+    // NOTE that there may be multiple trees elements, otus elements
+    $.each(itsOTUsCollection, function(i, otusElement) {
+        otusElement['otu'] = makeArray( otusElement['otu'] );
+    });
+
+    $.each(itsTreesCollection, function(i, treesElement) {
+        treesElement['tree'] = makeArray( treesElement['tree'] );
+        $.each( treesElement.tree, function(i, tree) {
+            normalizeTree( tree );
+        });
+    });
+
+    try {
+        $.merge(viewModel.nexml.otus, itsOTUsCollection);
+        $.merge(viewModel.nexml.trees, itsTreesCollection);
+    } catch(e) {
+        console.error('Unable to merge OTU collections (needs Nexson upgrade)');
+    }
+
+    // update the files list (and auto-save?)
+    var file = responseJSON.annotationFileInfo;
+    console.log("annotationFileInfo:");
+    console.log(file);
+    getSupportingFiles().data.files.file.push(file);
+
+    // clear the import form (using Clear button to capture all behavior)
+    $('#nameset-import-form :reset').click();
+
+    showModalScreen("Merging trees and OTUs...", {SHOW_BUSY_BAR:true});
+
+    // clean any client-side junk from the study
+    scrubNexsonForTransport();
+
+    $.ajax({
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: '/curator/default/merge_otus',
+        processData: false,
+        data: ('{"nexml":'+ JSON.stringify(viewModel.nexml) +'}'),
+        error: returnFromOTUMerge,  // to suppress web2py's unhelpful error msg
+        complete: returnFromOTUMerge
+    });
+}
+
+/* nameset merge using local data; assumes nameset is in expected JS object */
+function mergeNamesetData( nameset, loadedFileName, lastModifiedDate ) {
+    // check for mappable names
+    var mappableNames = $.grep(nameset.names, function( nameInfo ) {
+        // is it fully mapped to OTT? at least with a canonical name?
+        if (!$.trim(nameInfo['originalLabel'])) return false;
+        if (!$.trim(nameInfo['ottTaxonName'])) return false;
+        // for now, let's require an OTT id as well
+        if (!$.trim(nameInfo['ottId'])) return false;
+        return true;
+    });
+    if (mappableNames.length === 0) {
+        // alert user and bail out
+        showErrorMessage('No mapped names found in this nameset (or malformed input?)');
+        return;
+    }
+    var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
+    // NB This will override already-mapped OTUs!
+    var unmappedOTUs = $.grep(allOTUs, function( otu ) {
+        return ($.trim(otu['^ot:ottTaxonName']) === '');
+    });
+    var howManyTried = 0;
+    var howManyMatched = 0;
+    $.each(mappableNames, function(i, nameInfo ) {
+        var exactMatchFound = false;
+        $.each(unmappedOTUs, function(i, otu) {
+            if ($.trim(otu['^ot:originalLabel']) === $.trim(nameInfo['originalLabel'])) {
+                // it's a match!  emulate existing name-mapping behavior
+                var OTUid = otu['@id'];
+                var mappingInfo = {
+                    "name" : $.trim(nameInfo['ottTaxonName']),
+                    "ottId" : Number(nameInfo['ottId'])
+                };
+                mapOTUToTaxon( OTUid, mappingInfo, {POSTPONE_UI_CHANGES: true} );
+                exactMatchFound = true;
+                return false;  // skip the rest (ASSUMES no duplicate OTU labels!)
+            }
+        });
+        howManyTried++;
+        if (exactMatchFound) {
+            howManyMatched++;
+        }
+    });
+    // update display of both OTU Mapping and Home/Trees tabs
+    nudgeTickler('OTU_MAPPING_HINTS');
+    nudgeTickler('TREES');  // to hide/show duplicate-taxon prompts in tree list
+
+    // update the namesets list
+    var namesetNexson = cloneFromNexsonTemplate('single merged nameset');
+    var desc = "Nameset merged by `"+ userDisplayName +"`. "+ howManyTried +" mappings tried, "+ howManyMatched +" successfully applied.";
+    if (loadedFileName) {
+        // add this to comment
+        desc += " Nameset was loaded from file `"+ loadedFileName +"`";
+        if (lastModifiedDate) {
+            // add this to comment
+            desc += " (last modified on "+ lastModifiedDate +").";;
+        } else {
+            desc += ".";;
+        }
+    } else {
+        desc += " Nameset was pasted directly in curation app.";
+    }
+    namesetNexson['description']['$'] = desc;
+    getMergedNamesets().data.namesets.nameset.push(namesetNexson);
+
+    // summarize results for the curator
+    if (howManyMatched === 0) {
+        showInfoMessage("Nameset merged attempted, but no matches were found (of "+ howManyTried +" attempted) in this study's OTUs.");
+    } else {
+        showSuccessMessage("Nameset merged ("+ howManyTried +" mappings tried, "+ howManyMatched +" successfully applied).");
+    }
 }
 
 function adjustedLabelOrEmpty(label) {
@@ -5677,6 +6070,52 @@ var nexsonTemplates = {
         "@url": "https://github.com/OpenTreeOfLife/opentree",
         "@version": "0.0.0"   // TODO
     },
+
+    'merged namesets': {
+        /* App-specific metadata about namesets merged into this study.
+         *
+         * NOTE that this object describes an annotation bundle with
+         * several main parts, each of which will be applied separately to
+         * the target Nexml:
+         *  targetElement  // supplied by template consumer
+         *  annotationEvent
+         *  agent(s)
+         *  message(s)
+         */
+        // 'targetElement': ,
+        'annotationEvent': {
+            "@id": "merged-namesets-metadata",
+            "@description": "Describes external namesets merged into this study",
+            "@wasAssociatedWithAgentId": "opentree-curation-webapp",
+            // dates are UTC strings, eg, "2013-10-27T02:47:35.029323"
+            "@dateCreated": new Date().toISOString(),
+            "@passedChecks": true,  // this is moot
+            "@preserve": true,
+            "message": [{
+                //"@id": "",      // will be assigned via $.extend
+                "@severity": "INFO",
+                "@code": "MERGED_NAMESET_INFO",
+                "@humanMessageType": "NONE",
+                "data": {
+                    "namesets": { "nameset": [
+                        /* an array of objects based on 'single merged nameset' below */
+                    ]}
+                },
+                "refersTo": {
+                    "@top": {"$": "meta"}
+                }
+            }]
+            // "otherProperty": [ ]  // SKIP THIS, use messages for details
+        }
+        // 'agent': null,      // will be provided by template consumer
+    }, // END of 'merged namesets' template
+
+    'single merged nameset': {
+        /* A single nameset merged into this study
+         */
+        "description": {"$": ""}  // eg, "Alignment data for tree #3"
+    }, // END of 'single supporting file' template
+
 
     'supporting files': {
         /* App-specific metadata about associated support files for this study.
@@ -5800,6 +6239,7 @@ var nexsonTemplates = {
                 "data": {
                     "searchContext": {"$": "All life"},
                     "useFuzzyMatching": false,
+                    "autoAcceptExactMatches": false,
                     "substitutions": {"substitution": [
                         // always one default (empty) substitution
                         {
@@ -5860,6 +6300,35 @@ if (!Date.prototype.toISOString) {
         };
     }
     Date.prototype.toISOString = Date.prototype.toJSON;
+}
+
+function getMergedNamesets(nexml) {
+    // retrieve this annotation message from the model (or other specified
+    // object); return null if not found
+    if (!nexml) {
+        nexml = viewModel.nexml;
+    }
+    var annotations = getStudyAnnotationEvents( nexml );
+    var namesetsAnnotation = null;
+    $.each(makeArray(annotations.annotation), function(i, annotation) {
+        var itsID = ko.unwrap(annotation['@id']);
+
+        if (itsID === 'merged-namesets-metadata') {
+            namesetsAnnotation = annotation;
+            return false;
+        }
+    });
+
+    if (!namesetsAnnotation) {
+        return null;
+    }
+
+    var namesetsMessages = makeArray( namesetsAnnotation.message );
+    if (namesetsMessages.length > 0) {
+        // return its message with the interesting parts
+        return namesetsMessages[0];
+    }
+    return null;
 }
 
 function getSupportingFiles(nexml) {
@@ -5947,9 +6416,9 @@ function addSupportingFileFromURL() {
 
 }
 
-function removeTree( tree ) {
+async function removeTree( tree ) {
     // let's be sure, since adding may be slow...
-    if (!confirm("Are you sure you want to delete this tree from the study?")) {
+    if (!(await asyncConfirm("Are you sure you want to delete this tree from the study?"))) {
         return;
     }
 
@@ -5979,9 +6448,9 @@ function removeTree( tree ) {
     nudgeTickler('STUDY_HAS_CHANGED');
 }
 
-function removeSupportingFile( fileInfo ) {
+async function removeSupportingFile( fileInfo ) {
     // let's be sure, since adding may be slow...
-    if (!confirm("Are you sure you want to delete this file?")) {
+    if (!(await asyncConfirm("Are you sure you want to delete this file?"))) {
         return;
     }
 
@@ -6546,6 +7015,8 @@ function requestTaxonMapping( otuToMap ) {
     // groom trimmed text based on our search rules
     var searchContextName = getOTUMappingHints().data.searchContext.$;
     var usingFuzzyMatching = getOTUMappingHints().data['useFuzzyMatching'] || false;
+    var autoAcceptingExactMatches = getOTUMappingHints().data['autoAcceptExactMatches'] || false;
+
     // show spinner alongside this item...
     currentlyMappingOTUs.push( otuID );
 
@@ -6616,7 +7087,9 @@ function requestTaxonMapping( otuToMap ) {
              */
 
             default:
-                // multiple matches found, offer a choice
+                // One or more matches found! We should offer the curator a
+                // choice, or possibly auto-accept an exact match or synonym.
+                //
                 // ASSUMES we only get one result set, with n matches
 
                 // TODO: Sort matches based on exact text matches? fractional (matching) scores? synonyms or homonyms?
@@ -6694,8 +7167,29 @@ function requestTaxonMapping( otuToMap ) {
                     }
                 });
 
-                proposeOTULabel(otuID, candidateMappingList);
-                // postpone actual mapping until user chooses, then approves
+                var autoAcceptableMapping = null;
+                if (candidateMappingList.length === 1) {
+                    var onlyMapping = candidateMappingList[0];
+                    /* NB - auto-accept includes synonyms if exact match!
+                    if (onlyMapping.originalMatch.is_synonym) {
+                        return;
+                    }
+                    */
+                    /* N.B. We never present the sole mapping suggestion as a
+                     * taxon-name homonym, so just consider the match score to
+                     * determine whether it's an "exact match".
+                     */
+                    if (onlyMapping.originalMatch.score === 1.0) {
+                        autoAcceptableMapping = onlyMapping;
+                    }
+                }
+                if (autoAcceptingExactMatches && autoAcceptableMapping) {
+                    // accept the obvious choice (and possibly update UI) immediately
+                    mapOTUToTaxon( otuID, autoAcceptableMapping, {POSTPONE_UI_CHANGES: true} );
+                } else {
+                    // postpone actual mapping until user chooses
+                    proposeOTULabel(otuID, candidateMappingList);
+                }
         }
 
         currentlyMappingOTUs.remove( otuID );
@@ -6876,9 +7370,9 @@ function clearSelectedMappings() {
     nudgeTickler('TREES');  // to hide/show duplicate-taxon prompts in tree list
 }
 
-function clearAllMappings() {
+async function clearAllMappings() {
     var allOTUs = viewModel.elementTypes.otu.gatherAll(viewModel.nexml);
-    if (confirm("WARNING: This will un-map all "+ allOTUs.length +" OTUs in the current study! Are you sure you want to do this?")) {
+    if (await asyncConfirm("WARNING: This will un-map all "+ allOTUs.length +" OTUs in the current study! Are you sure you want to do this?")) {
         // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) OTUs.
         $.each( allOTUs, function (i, otu) {
             // clear any "established" mapping (already approved)
@@ -6954,7 +7448,7 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
     }
     nodeInfoBox.append('<span class="node-name">'+ nodeOptionsLabel +'</span>');
 
-    var nodeURL = getViewURLFromStudyID(studyID) +"?tab=trees&tree="+ tree['@id'] +"&node="+ node['@id'];
+    var nodeURL = getViewURLFromStudyID(studyID) +"?tab=home&tree="+ tree['@id'] +"&node="+ node['@id'];
     nodeInfoBox.append('<a class="node-direct-link" title="Link directly to this node (opens in new window)" target="_blank" href="'+ 
                        nodeURL +'"><i class="icon-share-alt"></i></a>');
 
@@ -7017,85 +7511,94 @@ function showNodeOptionsMenu( tree, node, nodePageOffset, importantNodeIDs ) {
 }
 
 function getNodeConflictDescription(tree, node) {
-    var witnessURL = "",
-        missingWitnessDescription = "";
-    // Build "witness" node URLs based on the chosen reference tree.
-    switch (tree.conflictDetails.referenceTreeID) {
-        case 'ott':
-            if (node.conflictDetails.witness) {
-                witnessURL = getTaxobrowserURL(node.conflictDetails.witness);
-            } else {
-                missingWitnessDescription = "anonymous taxonomy node"; // unlikely!
-            }
-            break;
-        case 'synth':
-            if (node.conflictDetails.witness) {
-                // EXAMPLE:  https://tree.opentreeoflife.org/opentree/argus/ottol@770315/Homo-sapiens
-                if (isNaN(node.conflictDetails.witness)) {
-                    // it's a synthetic-tree node ID (e.g. 'ott1234' or 'mrcaott123ott456')
-                   /* N.B. Ideally we'd include the current synth-version (e.g. '/opentree7.0@ott123'),
-                    * like so:
+    var statusHTML = "",
+        witnessHTML = "";
 
-                    witnessURL = "/opentree/argus/{SYNTH_VERSION}@{NODE_ID}"
-                        .replace('{SYNTH_VERSION}', referenceTreeVersion)
-                        .replace('{NODE_ID}', node.conflictDetails.witness);
-
-                    * But this is not yet provided by the conflict service. Perhaps we could capture
-                    * this as <tree>.conflictDetails['referenceTreeVersion']
-                    *
-                    * For now, omitting the version entirely (e.g. '/@ott123') will redirect to
-                    * the latest-version URL.
-                    */
-                    witnessURL = "/opentree/argus/@{NODE_ID}"
-                        .replace('{NODE_ID}', node.conflictDetails.witness);
-                } else {
-                    // it's a numeric OTT taxon ID (e.g. '1234')
-                    witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', node.conflictDetails.witness);
-                }
-            } else {
-                missingWitnessDescription = "anonymous synth node";
-            }
-            break;
-        default:
-            console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
-            return;
-    }
-
-    var conflictHTML = "";
     switch(node.conflictDetails.status) {
       case 'terminal':
       case 'supported_by':
       case 'partial_path_of':
       case 'mapped_to_taxon':
-          if (witnessURL) {
-              conflictHTML = 'Aligned with <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
-          } else {
-              conflictHTML = 'Aligned with '+ missingWitnessDescription;
-          }
+          statusHTML = "Aligned with ";
           break;
       case 'conflicts_with':
-          if (witnessURL) {
-              conflictHTML = 'Conflicts with <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
-          } else {
-              conflictHTML = 'Conflicts with '+ missingWitnessDescription;
-          }
+          statusHTML = "Conflicts with ";
           break;
       case 'resolved_by':
       case 'resolves':
-          if (witnessURL) {
-              conflictHTML = 'Resolves <a href="'+ witnessURL +'" target="_blank">'+
-                  (node.conflictDetails.witness_name || node.conflictDetails.witness) +'</a>';
-          } else {
-              conflictHTML = 'Resolves '+ missingWitnessDescription;
-          }
+          statusHTML = "Resolves ";
           break;
       default:
           console.error("ERROR: unknown conflict status '"+ node.conflictDetails.status +"'!");
     }
 
-    return '<div class="node-conflict-status-'+ node.conflictDetails.status +'">'+ conflictHTML +'</div>';
+    // Build "witness" node URLs based on the chosen reference tree.
+    if (node.conflictDetails.witness) {
+        // NB that there can be zero, one, or more witness nodes. These should be listed in two matching arrays in an array
+        // wrap any single value found into an array for uniform treatment
+        var idArray = $.isArray(node.conflictDetails.witness) ? node.conflictDetails.witness : [node.conflictDetails.witness] ;
+        var nameArray = $.isArray(node.conflictDetails.witness_name) ? node.conflictDetails.witness_name : [node.conflictDetails.witness_name] ;
+        $.each(idArray, function(i, witnessID) {
+            var witnessName = nameArray[i],
+                witnessURL = "";
+
+            switch (tree.conflictDetails.referenceTreeID) {
+                case 'ott':
+                    witnessURL = getTaxobrowserURL(witnessID);
+                    break;
+
+                case 'synth':
+                    if (isNaN(witnessID)) {
+                        // it's a synthetic-tree node ID (e.g. 'ott1234' or 'mrcaott123ott456')
+                        /* N.B. Ideally we'd include the current synth-version (e.g. '/opentree7.0@ott123'),
+                         * like so:
+
+                        witnessURL = "/opentree/argus/{SYNTH_VERSION}@{NODE_ID}"
+                            .replace('{SYNTH_VERSION}', referenceTreeVersion)
+                            .replace('{NODE_ID}', node.conflictDetails.witness);
+
+                        * But this is not yet provided by the conflict service. Perhaps we could capture
+                        * this as <tree>.conflictDetails['referenceTreeVersion']
+                        *
+                        * For now, omitting the version entirely (e.g. '/@ott123') will redirect to
+                        * the latest-version URL.
+                        */
+                        witnessURL = "/opentree/argus/@{NODE_ID}".replace('{NODE_ID}', witnessID);
+                    } else {
+                        // it's a numeric OTT taxon ID (e.g. '1234')
+                        witnessURL = "/opentree/argus/ottol@{NODE_ID}".replace('{NODE_ID}', witnessID);
+                    }
+                    break;
+
+                default:
+                    console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+                    return;
+            }
+
+            witnessHTML += '<a href="'+ witnessURL +'" target="_blank">'+ (witnessName || witnessID) +'</a>';
+            if (idArray.length > (i+1)) {
+                witnessHTML += ", ";
+                if (i % 2) {  
+                    // after every 2 witness links, add a new line and indent
+                    witnessHTML += '<br> &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; '
+                }
+            }
+        });
+    } else {
+        // if empty or not found, assume there is no witness
+        switch (tree.conflictDetails.referenceTreeID) {
+            case 'ott':
+                witnessHTML = "anonymous taxonomy node"; // unlikely!
+                break;
+            case 'synth':
+                witnessHTML = "anonymous synth node";
+                break;
+            default:
+                console.error('showNodeOptionsMenu(): ERROR, expecting either "ott" or "synth" as referenceTreeID!');
+                return;
+        }
+    }
+    return '<div class="node-conflict-status-'+ node.conflictDetails.status +'">'+ statusHTML + witnessHTML +'</div>';
 }
 
 
@@ -7337,7 +7840,7 @@ function createAnnotation( annotationBundle, nexml ) {
     // add message(s) to its target element, building a local message
     // collection if not found
     if (!target) {
-        alert("ERROR: target element not found: "+ target +" <"+ typeof(target) +">");
+        console.error("ERROR: target element not found: "+ target +" <"+ typeof(target) +">");
         return;
     }
     $.each( annEvent.message, function( i, msg ) {
@@ -7490,9 +7993,14 @@ function findHighestElementOrdinalNumber( nexml, prefix, gatherAllFunc ) {
         var testElement = allElements[i];
         var testID = ko.unwrap(testElement['@id']) || '';
         if (testID === '') {
-            // TODO: Suppress these warnings if prefix is 'message'?
-            console.error("MISSING ID for this "+ prefix +":");
-            console.error(testElement);
+            /* Suppress these warnings for 'message' prefix; it's just noise
+             * until we have established a need and a batch solution for minting
+             * unique message IDs.
+             */
+            if (prefix !== 'message') {
+                console.error("MISSING ID for this "+ prefix +":");
+                console.error(testElement);
+            }
             continue;  // skip to next element
         }
         if (testID.indexOf(prefix) === 0) {
@@ -8343,7 +8851,7 @@ function lookUpDOI() {
                 var foundItems = resultsJSON.message.items;
                 console.log("FOUND "+ foundItems.length +" matching items");
                 if (foundItems.length === 0) {
-                    alert('No matches found, please check your publication reference text.')
+                    asyncAlert('No matches found, please check your publication reference text.')
                 } else {
                     var $lookup = $('#DOI-lookup');
                     $lookup.find('.found-matches-count').text(foundItems.length);
@@ -8884,12 +9392,17 @@ var nodeLabelModes = [
         }
     }
 ];
-function updateNodeLabelMode(tree) {
+
+async function updateNodeLabelMode(tree) {
     /* Translate the choices in nodeLabelModes into action:
          - update the tree's nodeLabelMode
          - transform the node @label properties and shift them to their new
            locations (or not)
    */
+    if (!(await asyncConfirm('Warning: This can shift ambiguous node labels to their adjacent edges. '
+                            +'Check rooting carefully! OK to proceed?'))) {
+        return;
+    }
     tree['^ot:nodeLabelMode'] = viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode;
     switch(viewModel.chosenNodeLabelModeInfo().treeNodeLabelMode) {
         case 'ot:otherSupport':
@@ -9043,18 +9556,41 @@ function showStudyCommentEditor() {
     $('#comment-preview').hide();
     $('#comment-editor').show();
 }
+function fetchRenderedMarkdown(successCallback, failureCallback) {
+    $.ajax({
+        crossdomain: true,
+        type: 'POST',
+        url: render_markdown_url,
+        data: {'src': viewModel.nexml['^ot:comment']},
+        success: successCallback,
+        error: failureCallback
+    });
+}
+function updateStudyRenderedComment() {
+    // just update our pre-rendered curation notes
+    fetchRenderedMarkdown(
+        // success callback
+        function( data, textstatus, jqxhr ) {
+            viewModel['commentHTML'] = data;
+            nudgeTickler('GENERAL_METADATA');
+        },
+        // failure callback (just show raw markdown)
+        function(jqXHR, textStatus, errorThrown) {
+            // report errors or malformed data, if any
+            viewModel['commentHTML'] = viewModel.nexml['^ot:comment'];
+            nudgeTickler('GENERAL_METADATA');
+        }
+    );
+}
 function showStudyCommentPreview() {
     // show spinner? no, it's really quick
     $('#edit-comment-button').removeClass('active');
     $('#preview-comment-button').addClass('active');
     // stash and restore the current scroll position, lest it jump
     var savedPageScroll = $('body').scrollTop();
-    $.ajax({
-        crossdomain: true,
-        type: 'POST',
-        url: render_markdown_url,
-        data: {'src': viewModel.nexml['^ot:comment']},
-        success: function( data, textstatus, jqxhr ) {
+    fetchRenderedMarkdown(
+        // success callback
+        function( data, textstatus, jqxhr ) {
             $('#comment-preview').html(data);
             $('#comment-preview').show();
             //setTimeout(function() {
@@ -9062,7 +9598,8 @@ function showStudyCommentPreview() {
             //}, 10);
             $('#comment-editor').hide();
         },
-        error: function(jqXHR, textStatus, errorThrown) {
+        // failure callback
+        function(jqXHR, textStatus, errorThrown) {
             // report errors or malformed data, if any
             var errMsg;
             if (jqXHR.responseText.length === 0) {
@@ -9072,7 +9609,7 @@ function showStudyCommentPreview() {
             }
             showErrorMessage(errMsg);
         }
-    });
+    );
 }
 
 function studyContributedToLatestSynthesis() {
@@ -9084,35 +9621,39 @@ function currentStudyVersionContributedToLatestSynthesis() {
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
 }
 
-function getStudyPublicationLink() {
+function getNormalizedStudyPublicationURL() {
+    // just the bare URL, or '' if not found
     var url = $.trim(viewModel.nexml['^ot:studyPublication']['@href']);
     // If there's no URL, we have nothing to say
     if (url === '') {
         return '';
     }
     if (urlPattern.test(url) === true) {
-        // It's a proper URL, wrap it in a hyperlink; but first,
-        // update to match latest CrossRef guidelines
+        // It's a proper URL, update it to match latest CrossRef guidelines
         url = latestCrossRefURL(url);
+        return url;
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
+}
+
+function getStudyPublicationLink() {
+    // this is displayed HTML (typically a hyperlink, occasionally a bare string)
+    var url = getNormalizedStudyPublicationURL();
+    // If there's no URL, we have nothing to say
+    if (url === '') {
+        return '';
+    }
+    if (urlPattern.test(url) === true) {
+        // It's a proper URL, wrap it in a hyperlink
         return '<a target="_blank" href="'+ url +'">'+ url +'</a>';
     }
     // It's not a proper URL! Return the bare value.
     return url;
 }
 
-function getDataDepositMessage() {
-    // Returns HTML explaining where to find this study's data, or an empty
-    // string if no URL is found. Some cryptic dataDeposit URLs may require
-    // more explanation or a modified URL to be more web-friendly.
-    //
-    // NOTE that we maintain a server-side counterpart in
-    // webapp/modules/opentreewebapputil.py > get_data_deposit_message
+function getNormalizedDataDepositURL() {
     var url = $.trim(viewModel.nexml['^ot:dataDeposit']['@href']);
-    // If there's no URL, we have nothing to say
-    if (url === '') {
-        return '';
-    }
-
     // TreeBASE URLs should point to a web page (vs RDF)
     // EXAMPLE: http://purl.org/phylo/treebase/phylows/study/TB2:S13451
     //    => http://treebase.org/treebase-web/search/study/summary.html?id=13451
@@ -9124,24 +9665,61 @@ function getDataDepositMessage() {
             regex,
             '//treebase.org/treebase-web/search/study/summary.html?id=$1'
         );
-        return 'Data for this study is archived as <a href="'+ url +'" target="_blank">Treebase study '+ treebaseStudyID +'</a>';
+        return url;
+    }
+    if (urlPattern.test(url) === true) {
+        // It's a proper URL, update it to match latest CrossRef guidelines
+        // (this is harmless for other URLs)
+        url = latestCrossRefURL(url);
+        return url;
+    }
+    // It's not a proper URL! Return the bare value.
+    return url;
+}
+function getDataDepositMessage() {
+    // Returns HTML explaining where to find this study's data, or an empty
+    // string if no URL is found. Some cryptic dataDeposit URLs may require
+    // more explanation or a modified URL to be more web-friendly.
+    //
+    // NOTE that we maintain a server-side counterpart in
+    // webapp/modules/opentreewebapputil.py > get_data_deposit_message
+    var url = getNormalizedDataDepositURL();
+    // If there's no URL, we have nothing to say
+    if (url === '') {
+        return '';
     }
 
-    // TODO: Add other substitutions?
+    // TreeBASE URLs get a special description here
+    // EXAMPLE: http://purl.org/phylo/treebase/phylows/study/TB2:S13451
+    //    => http://treebase.org/treebase-web/search/study/summary.html?id=13451
+    var treebasePattern = new RegExp('//treebase.org/treebase-web/.*?id=(\\d+)');
+    var matches = treebasePattern.exec(url);
+    if (matches && matches.length === 2) {
+        var treebaseStudyID = matches[1];
+        return 'Data for this study is archived as <a href="'+ url +'" target="_blank">Treebase study '+ treebaseStudyID +'</a>';
+    }
+    // TODO: Add other special messages?
 
     if (urlPattern.test(url) === true) {
-        // Default message simply repeats the dataDeposit URL; but first,
-        // update to match latest CrossRef guidelines
-        url = latestCrossRefURL(url);
+        // Default message simply repeats the dataDeposit URL
         return 'Data for this study is permanently archived here:<br/><a href="'+ url +'" target="_blank">'+ url +'</a>';
     }
     // It's not a proper URL! Return the bare value.
     return url;
 }
 
+function showStudyMetadata() {
+    // show details in a popup (already bound)
+    $('#study-metadata-popup').off('hidden').on('hidden', function () {
+        updateStudyRenderedComment();
+        nudgeTickler('GENERAL_METADATA');
+    });
+    $('#study-metadata-popup').modal('show');
+}
+
 function showDownloadFormatDetails() {
-  // show details in a popup (already bound)
-  $('#download-formats-popup').modal('show');
+    // show details in a popup (already bound)
+    $('#download-formats-popup').modal('show');
 }
 
 function applyCC0Waiver() {
@@ -9262,7 +9840,7 @@ function loadCollectionList(option) {
     }
 
     $.ajax({
-        type: 'POST',
+        type: 'GET',
         dataType: 'json',
         url: findAllTreeCollections_url,
         data: null,
@@ -9492,7 +10070,6 @@ function loadCollectionList(option) {
 
                 }
                 viewModel._filteredCollections( filteredList );
-                //viewModel._filteredCollections.goToPage(1);
                 return viewModel._filteredCollections;
             }); // END of filteredCollections
             nudgeTickler('COLLECTIONS_LIST');
@@ -9509,7 +10086,7 @@ function getAssociatedCollectionsCount() {
     return '';
 }
 
-function addTreeToExistingCollection(clicked) {
+async function addTreeToExistingCollection(clicked) {
     if (userIsLoggedIn()) {
         // show the autocomplete widget and mute this button
         var $btn = $(clicked);
@@ -9518,7 +10095,7 @@ function addTreeToExistingCollection(clicked) {
         $collectionPrompt.show()
         $collectionPrompt.find('input').eq(0).focus();
     } else {
-        if (confirm('This requires login via Github. OK to proceed?')) {
+        if (await asyncConfirm('This requires login via Github. OK to proceed?')) {
             loginAndReturn();
         }
     }
@@ -9740,13 +10317,13 @@ function addCurrentTreeToCollection( collection ) {
     editCollection( collection, {SCROLL_TO_BOTTOM: true} );
 }
 
-function addTreeToNewCollection() {
+async function addTreeToNewCollection() {
     if (userIsLoggedIn()) {
         var c = createNewTreeCollection();
         addCurrentTreeToCollection(c);
         showCollectionViewer( c, {SCROLL_TO_BOTTOM: true} );
     } else {
-        if (confirm('This requires login via Github. OK to proceed?')) {
+        if (await asyncConfirm('This requires login via Github. OK to proceed?')) {
             loginAndReturn();
         }
     }
@@ -9824,6 +10401,7 @@ function moveToNthTaxonCandidate( pos ) {
     // enable parent-taxon search
     $('input[name=parent-taxon-search]').unbind('keyup change').bind('keyup change', setParentTaxaSearchFuse );
     $('select[name=parent-taxon-search-context]').unbind('change').bind('change', searchForMatchingParentTaxa );
+    clearPriorSearchForParentTaxa();    // in case they type in the same initial taxon string
 
     // don't trigger unrelated form submission when pressing ENTER here
     $('input[name=parent-taxon-search], select[name=parent-taxon-search-context]')
@@ -9894,6 +10472,7 @@ function showNewTaxaPopup() {
             var adjustedOTULabel = $.trim(candidate['^ot:altLabel']) ||
                                    $.trim(adjustedLabel(candidate['^ot:originalLabel']));
             candidate.newTaxonMetadata = {
+                'skipped': ko.observable(false),
                 'rank': 'species',
                 'adjustedLabel': adjustedOTULabel,  // as modified by regex or manual edit
                 'modifiedName': ko.observable( adjustedOTULabel ),
@@ -9925,7 +10504,7 @@ function showNewTaxaPopup() {
     // Block any method of closing this window if there is unsaved work
     $('#new-taxa-popup').off('hide').on('hide', function () {
         if (currentTaxonCandidate() || candidateOTUsForNewTaxa.length > 0) {
-            alert("Please submit (or cancel) your proposed taxa!");
+            asyncAlert("Please submit (or cancel) your proposed taxa!");
             return false;
         }
     });
@@ -9976,11 +10555,14 @@ function submitNewTaxa() {
             'login': userLogin, 
             'email': userEmail
         },
-        "new_ottids_required": candidateOTUsForNewTaxa.length
+        "new_ottids_required": 0 // update below with un-skipped taxa
     };
 
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
         // repackage its metadata to match the web service
+        if (candidate.newTaxonMetadata.skipped()) {
+            return;  // skipping this taxon (unable to validate)
+        }
         var newTaxon = {};
         newTaxon['tag'] = candidate['@id'];  // used to match results with candidate OTUs
         newTaxon['original_label'] = $.trim(candidate['^ot:originalLabel']);
@@ -10018,6 +10600,13 @@ function submitNewTaxa() {
         newTaxon['comment'] = candidate.newTaxonMetadata.comments;
         bundle.taxa.push(newTaxon);
     });
+    if (bundle.taxa.length === 0) {
+        // all labels were skipped! nothing to submit
+        showErrorMessage("All labels were skipped, so there's nothing to submit!");
+        return false;
+    } else {
+        bundle["new_ottids_required"] = bundle.taxa.length;
+    }
 
     // add non-JSON values to the query string
     var qsVars = $.param({
@@ -10077,6 +10666,11 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
     }
 
     $.each(candidateOTUsForNewTaxa, function(i, candidate) {
+        if (candidate.newTaxonMetadata.skipped()) {
+            // ignore this un-submitted candidate
+            delete proposedOTUMappings()[ OTUid ];
+            return;
+        }
         // REMINDER: we used the ID of each OTU as its tag!
         var OTUid = candidate['@id'];
         var mintedOTTid = Number(tagsToOTTids[ OTUid ]);
@@ -10099,6 +10693,15 @@ function returnFromNewTaxaSubmission( jqXHR, textStatus ) {
     showSuccessMessage('Selected OTUs mapped to new taxa.');
 }
 
+function toggleSkipThisLabel( otu, event ) {
+    var skippingThisLabel = $(event.target).is(':checked');
+    if (skippingThisLabel) {
+        currentTaxonCandidate().newTaxonMetadata.skipped(true);
+    } else {
+        currentTaxonCandidate().newTaxonMetadata.skipped(false);
+    }
+    return true;
+}
 function toggleSharedParentID( otu, event ) {
     // Set a global for this (an observable, to update display).
     // NOTE that radio-button values are strings, so we convert to boolean below!
@@ -10170,6 +10773,14 @@ function setParentTaxaSearchFuse(e) {
 
 var showingResultsForParentSearchText = '';
 var showingResultsForParentSearchContextName = '';
+function clearPriorSearchForParentTaxa() {
+    /* Clear any prior parent-taxon search,  so we always get a fresh result,
+     * even if they type in the same initial taxon string after changing to
+     * a new taxon candidate.
+     */
+    showingResultsForParentSearchText = '';
+    showingResultsForParentSearchContextName = '';
+}
 function searchForMatchingParentTaxa() {
     // clear any pending search timeout and ID
     clearTimeout(parentSearchTimeoutID);
@@ -10465,6 +11076,10 @@ function taxonCondidateIsValid( candidate, options ) {
     // Check for essential fields, taking shared info into account
     if (!options) options = {REPORT_ERRORS: false};
     var metadata = candidate.newTaxonMetadata;
+    // any skipped label is considered valid (doesn't fail)
+    if (metadata.skipped()) {
+        return true;
+    }
     var requiredProperties = {  // non-empty
         'modifiedName': "Modified name must be a non-empty string",
         'parentTaxonID': "Please specify the parent taxon for this label",
@@ -10591,13 +11206,15 @@ function useOriginalLabelForNewTaxon(candidate) {
     // overwrite the new-taxon name with the original, and clear any reason for renaming
     candidate.newTaxonMetadata.modifiedName( candidate['^ot:originalLabel'] );
     candidate.newTaxonMetadata.modifiedNameReason(null);
+    // force a fresh check of this label against existing taxonomy
+    updateTaxonNameCheck(candidate);
 }
 
 function updateTaxonNameCheck(candidate) {
     // report status of last check, or initiate a new check
     if (!candidate) return false;
     ///console.log('updateTaxonNameCheck() STARTING...');
-    var testName = candidate.newTaxonMetadata.modifiedName();
+    var testName = $.trim( candidate.newTaxonMetadata.modifiedName() );
     ///console.log('>> test name is '+ testName);
     ///console.log('>> previous status is '+ candidate.newTaxonMetadata.modifiedNameStatus());
     // check first against other proposed names
@@ -10607,7 +11224,7 @@ function updateTaxonNameCheck(candidate) {
             return true; // don't compare to itself! skips to next
         }
         var compareName = compareCandidate.newTaxonMetadata.modifiedName();
-        if ($.trim(testName) === $.trim(compareName)) {
+        if (testName === $.trim(compareName)) {
             duplicateNameFound = true;
             candidate.newTaxonMetadata.modifiedNameStatus('FOUND IN CANDIDATES');
             return false;
@@ -10725,20 +11342,29 @@ function updateSaveTreeViewLink() {
     var fileName = slugify( treeName ) +'.svg';
 
     // confirm SVG has needed attributes (missing in Firefox)
-    $treeSVG.attr({ version: '1.1' , xmlns:"http://www.w3.org/2000/svg"});
+    var svgUrl = "http://www.w3.org/2000/svg";
+    $treeSVG.attr({ version: '1.1' , xmlns: svgUrl});
 
     // confirm SVG has our CSS styles for the tree view (or add them now)
     if ($treeSVG.find('style').length === 0) {
         // copy the main page's tree-view stylesheet exactly
         // N.B. putting it where even Inkscape can find it :-/
-        $treeSVG.prepend( $treeStylesheet[0].outerHTML );
+        var stylesheetHTML = $treeStylesheet[0].outerHTML;
+        /* Inkscape is picky about `svg:style` vs. `xhtml:style`!
+         * jQuery's $.prepend() implicitly creates a DOM element from our HTML, and
+         * that element is always from the xhtml namespace. We need to use an
+         * alternative, explicit method to create an `svg:style` element.
+        */
+        var svgHolder = document.createElementNS(svgUrl, "svg");
+        svgHolder.innerHTML = stylesheetHTML;  // N.B. this inherits the parent's namespace!
+        $treeSVG.prepend( svgHolder.firstChild );
     }
 
     // Serialize the main SVG node (converting HTML entities to Unicode); first, we
     // create a temporary XML document
     var serializer = new XMLSerializer();
     var tempXMLDoc = document.implementation.createDocument(
-        null,   // desired namespace, or null
+        "http://www.w3.org/2000/svg",   // desired namespace, or null
         "svg",  // name of top-level element
         null    // desired doctype, or null
     )

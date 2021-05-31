@@ -9,7 +9,9 @@ import bleach
 from bleach.sanitizer import Cleaner
 from datetime import datetime
 import json
+from opentreewebapputil import fetch_github_app_auth_token
 from pprint import pprint
+
 
 
 def error(): raise HTTP(404)
@@ -155,6 +157,14 @@ function capture_form() {
         if (!validateFeedbackForm({VERBOSE: true})) {
             // something's wrong
             return false;
+        }
+
+        if (window.opener) {
+            /* This window was opened by another page! Copy its URL to the 'url' field
+             * This is probably OneZoom, or our curation tool, or some other site using
+             * OpenTree data. We'll group these issues by URL.
+             */
+            $form.find('input[name="url"]').val( window.opener.location.href );
         }
 
         jQuery.post(action,
@@ -376,7 +386,7 @@ def index():
         # Examine the comment metadata (if any) to get the best display name
         # and URL for its author. Guests should appear here as the name and
         # email address they entered when creating a comment, rather than the
-        # 'opentreeapi' bot user.
+        # GitHub app (bot).
         #
         # Default values are what we can fetch from the issues API
         author_display_name = comment['user']['login']
@@ -534,10 +544,10 @@ def index():
 
             # more useful links for some footer fields
             if url.startswith('http'):
-                # truncate visible link
-                url_link = '[{0}]({1})'.format(url.split('//')[1], url)
+                # repeat full (absolute) URL as link text
+                url_link = '[{0}]({1})'.format(url, url)
             else:
-                # expand hidden link
+                # expand hidden link for root-relative URL
                 url_link = '[{0}]({1}{2})'.format(url, request.get('env').get('http_origin'), url)
 
             # add full metadata for an issue 
@@ -593,6 +603,17 @@ def index():
     elif filter == 'ottol_id':
         comments = get_local_comments({"Open Tree Taxonomy id": ottol_id})
     else:   # fall back to url
+        if 'parentWindowURL=' in url:
+            #pprint("=== EXTRACTING parentWindowURL...")
+            try:
+                from urllib import unquote_plus
+            except ImportError:
+                from urllib.parse import unquote_plus
+            # capture the absolute URL of a parent window (i.e. from OneZoom or the study-curation app)
+            raw_qs_value = url.split('parentWindowURL=')[1];
+            #pprint("=== raw_qs_value: %s" % raw_qs_value)
+            url = unquote_plus(raw_qs_value)  # decode to a proper URL
+            #pprint("=== NEW url: %s" % url)
         comments = get_local_comments({"URL": url})
 
     #pprint(comments) 
@@ -643,25 +664,25 @@ def index():
 # Perform basic CRUD for local comments, using GitHub Issues API
 #
 GH_BASE_URL = 'https://api.github.com'
-oauth_token_path = os.path.expanduser('~/.ssh/OPENTREEAPI_OAUTH_TOKEN')
-try:
-    OPENTREEAPI_AUTH_TOKEN = open(oauth_token_path).read().strip()
-except:
-    OPENTREEAPI_AUTH_TOKEN = ''
-    print("OAuth token (%s) not found!" % oauth_token_path)
 
 # if the current user is logged in, use their auth token instead
 USER_AUTH_TOKEN = auth.user and auth.user.github_auth_token or None
 
 # Specify the media-type from GitHub, to freeze v3 API responses and get
 # the comment body as markdown (vs. plaintext or HTML)
-PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json'
+PREFERRED_MEDIA_TYPE = 'application/vnd.github.v3.raw+json, application/vnd.github.machine-man-preview+json'
 # to get markdown AND html body, use 'application/vnd.github.v3.full+json'
 
 GH_DATETIME_FORMAT = '%Y-%m-%dT%H:%M:%SZ'
-GH_GET_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
+if USER_AUTH_TOKEN:
+    auth_header_value = 'token %s' % USER_AUTH_TOKEN
+else:
+    GITHUB_APP_INSTALLATION_TOKEN = fetch_github_app_auth_token(request)
+    auth_header_value = 'token %s' % GITHUB_APP_INSTALLATION_TOKEN
+
+GH_GET_HEADERS = {'Authorization': auth_header_value,
                   'Accept': PREFERRED_MEDIA_TYPE}
-GH_POST_HEADERS = {'Authorization': ('token %s' % (USER_AUTH_TOKEN or OPENTREEAPI_AUTH_TOKEN)),
+GH_POST_HEADERS = {'Authorization': auth_header_value,
                    'Content-Type': 'application/json',
                    'Accept': PREFERRED_MEDIA_TYPE}
 
@@ -792,11 +813,13 @@ def get_local_comments(location={}):
     ##TODO: search only within body?
     ## url = '{0}/search/issues?q={1}repo:OpenTreeOfLife%2Ffeedback+in:body+state:open&sort=created&order=asc'
     url = url.format(GH_BASE_URL, search_text)
-    resp = requests.get(url, headers=GH_GET_HEADERS, timeout=10)  
-    # N.B. Timeout is in seconds, and watches for *any* new data within that time (vs. whole response)
-    ##print(url)
-    ##print(resp)
     try:
+        # 21 Apr, 2020: bug fix: keep this .get in a try block, because a HTTPSConnectionPool can be
+        #   raised here (e.g. when GitHub is down)
+        resp = requests.get(url, headers=GH_GET_HEADERS, timeout=10)
+        # N.B. Timeout is in seconds, and watches for *any* new data within that time (vs. whole response)
+        ##print(url)
+        ##print(resp)
         resp.raise_for_status()
     except:
         print('call to {u} failed. Returning empty comments list'.format(u=url))

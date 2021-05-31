@@ -23,6 +23,10 @@ def index():
     #
     # TODO: add another optional arg 'viewport', like so
     #   http://opentree.com/opentree/argus/0,23,100,400/ottol@123456/Homo+sapiens
+    try:
+        from urllib import unquote_plus
+    except ImportError:
+        from urllib.parse import unquote_plus
 
     # modify the normal view dictionary to include location+view hints from the URL
     treeview_dict = default_view_dict.copy()
@@ -34,6 +38,11 @@ def index():
     treeview_dict['nudgingToLatestSyntheticTree'] = False
     treeview_dict['incomingDomSource'] = 'none'
     treeview_dict['showLegendOnLoad'] = request.vars.get('show-legend') or False
+    if request.vars.get('parentWindowURL', None):
+        plain_feedback_url = unquote_plus(request.vars.get('parentWindowURL'))
+        treeview_dict['feedbackParentWindowURL'] = plain_feedback_url
+    else:
+        treeview_dict['feedbackParentWindowURL'] = None
 
     # add a flag to determine whether to force the viewer to this node (vs. using the
     # browser's stored state for this URL, or a default starting node)
@@ -41,7 +50,7 @@ def index():
 
     # handle the first arg (path part) found
     if len(request.args) > 0:
-        if request.args[0] in ['argus',]:  # TODO: add 'onezoom','phylet', others?
+        if request.args[0] in ['argus', 'feedback', 'properties']:  # TODO: add 'onezoom','phylet', others?
             treeview_dict['viewer'] = request.args[0]
         elif '@' in request.args[0]:
             treeview_dict['domSource'], treeview_dict['nodeID'] = request.args[0].split('@')
@@ -98,7 +107,6 @@ def download_subtree():
     node_or_ottol_id = request.args(1)
     node_name = request.args(2)
     import cStringIO
-    import contenttype as c
     s=cStringIO.StringIO()
      
     try:
@@ -180,3 +188,5 @@ def phylopic_proxy():
         return requests.get(url=phylopic_url, timeout=10).content
     except requests.exceptions.ReadTimeout, e:
         raise HTTP(503, 'The attempt to fetch an image from phylopic timed out')
+    except:
+        raise HTTP(503, 'The attempt to fetch an image from phylopic failed')

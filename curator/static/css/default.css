@@ -334,11 +334,13 @@ div.viewer-frame {
     color: #000;
     margin-bottom: 4px;
 }
-a.full-ref-toggle {
+a.full-ref-toggle,
+a.preview-link {
     color: #999 !important;
     text-decoration: none;
 }
-a.full-ref-toggle:hover {
+a.full-ref-toggle:hover,
+a.preview-link:hover {
     color: #333 !important;
     text-decoration: underline;
 }
@@ -468,12 +470,14 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
     padding: 0.25em 0;
 }
 
-.suggestion-list {
-    /* list-style-type: none; */
-}
 .suggestion-list li {
     padding-bottom: 0.2em;
     color: #b94a48;
+    list-style-position: inside;
+}
+.suggestion-list li.edit-prompt {
+    list-style: none;
+    list-style-position: outside;
 }
 .suggestion-list span.label {
     padding: 0.3em 0.7em 0.4em;
@@ -488,8 +492,14 @@ div.flash #closeflash{color:inherit; float:right; margin-left:15px; cursor:point
     font-weight: bold;
 }
 .rendered-comment {
-    background-color: #f5f5f5;
+    background-color: #eee;
     border: none;
+    border-radius: 4px;
+    padding: 5px;
+}
+.synth-event {
+    background-color: #edb;
+    border: 1px solid #cb9;
     border-radius: 4px;
     padding: 5px;
 }
@@ -645,6 +655,12 @@ tr:hover .row-controls-ghosted.btn[disabled] {
     text-align: center;
     font-size: 1.6em;
     color: #888;
+}
+
+/* override default width for dialog-polyfill */
+dialog.modal {
+    width: 360px;
+    margin-left: -180px;
 }
 
 /* DOI lookup window */
@@ -871,6 +887,14 @@ tr.after-shims th {
 .form-horizontal.metadata-readonly .control-group {
   margin-bottom: 12px;
 }
+#core-metadata-pane {
+  border-radius: 5px;
+  border: 1px #ddd solid;
+  overflow: hidden;
+  margin-bottom: 14px;
+  padding: 12px 18px;
+  box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
+}
 
 .profile-header .control-group > .control-label,
 .profile-header .control-group > .controls {
@@ -907,6 +931,11 @@ tr.after-shims th {
 		margin-left: 4em;
 }
 
+#study-metadata-popup {
+    width: 80%;
+    margin: auto -40%;
+}
+
 #new-taxa-popup {
     width: 80%;
     margin: auto -40%;
@@ -916,6 +945,13 @@ tr.after-shims th {
 }
 #new-taxa-popup .form-horizontal .control-group {
     margin-bottom: 10px;
+}
+
+#new-taxa-popup .form-horizontal .control-label {
+    width: 148px;
+}
+#new-taxa-popup .form-horizontal .controls {
+    margin-left: 140px;
 }
 
 .required-field {
@@ -931,4 +967,50 @@ a.node-direct-link {
     margin-top: -4px;
     margin-right: -16px;
     border-radius: 4px;
+}
+.tree-status-marker {
+    font-weight: bold;
+    margin: 4px 0 0 2px;
+}
+
+.curation-feedback-btn {
+    clear: right;
+    float: right;
+    margin: -6px 0 10px;
+}
+.dropdown-item-checked::before {
+  position: absolute;
+  left: .4rem;
+  content: '✓';
+  font-weight: 600;
+}
+.placeholder-data {
+    color: #939;
+    font-style: italic;
+}
+/* highlight sorting headers in collection editor */
+#tree-list-holder table th:hover {
+    background-color: #eee !important;
+    cursor: ns-resize;
+}
+#tree-list-holder table th:hover i {
+    opacity: 1.0 !important;
+}
+#tree-list-holder table th.non-sorting:hover {
+    background-color: inherit !important;
+    cursor: default !important;
+}
+.skip-label {
+    background-color: #eee;
+    border-radius: 8px;
+}
+form.skip-label {
+    padding: 4px;
+    margin: -4px;
+}
+form.skip-label * {
+    opacity: 0.75;
+}
+form.skip-label *.non-fading {
+    opacity: 1.0;
 }

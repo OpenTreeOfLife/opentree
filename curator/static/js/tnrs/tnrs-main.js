@@ -48,6 +48,16 @@ var getContextForNames_url;
 var render_markdown_url;
 */
 
+// sometimes we use this script in other pages; let's check!
+var context;
+if (window.location.pathname.indexOf("/curator/tnrs/") === 0) {
+    context = 'BULK_TNRS';
+} else if (window.location.pathname.indexOf("/curator/study/edit/") === 0) {
+    context = 'STUDY_OTU_MAPPING';
+} else {
+    context = '???';
+}
+
 /* Return the data model for a new nameset (our JSON representation) */
 var getNewNamesetModel = function(options) {
     if (!options) options = {};
@@ -66,6 +76,7 @@ var getNewNamesetModel = function(options) {
             "description": "Aids for mapping listed names to OTT taxa",
             "searchContext": "All life",
             "useFuzzyMatching": false,
+            "autoAcceptExactMatches": false,
             "substitutions": [
                 /* typical values in use
                 {
@@ -105,6 +116,113 @@ var getNewNamesetModel = function(options) {
     */
     return obj;
 };
+function convertToNamesetModel( listText ) {
+    /* Test for proper delimited text (TSV or CSV, with a pair of names on each line).
+     * The first value on each line is a vernacular label, the second its mapped taxon name.
+     */
+    var nameset = getNewNamesetModel();  // we'll add name pairs to this
+    console.log( listText );
+    // test a variety of delimiters to use with this text
+    var lineDelimiters = ['\n','\r'];
+    var lineDelimFound = null;
+    $.each(lineDelimiters, function(i, delim) {
+        if (!lineDelimFound) {
+            if (listText.split(delim).length > 1) {
+                lineDelimFound = delim;
+            }
+        }
+    });
+    var itemDelimiters = [',','\t'];
+    var itemDelimFound = null;
+    $.each(itemDelimiters, function(i, delim) {
+        if (!itemDelimFound) {
+            if (listText.split(delim).length > 1) {
+                itemDelimFound = delim;
+            }
+        }
+    });
+    if ((!lineDelimFound) || (!itemDelimFound)) {
+        return nameset;  // probably still empty
+    }
+    // now apply labels and keep count of any duplicate labels
+    var foundLabels = [ ];
+    var dupeLabelsFound = 0;
+    var lines = listText.split(lineDelimFound);
+    // filter out empty empty lines, etc.
+    lines = $.grep(lines, function(line, i) {
+        return $.trim(line) !== "";
+    });
+    console.warn( lines.length +" lines found with line delimiter '"+ lineDelimFound +"'");
+    var localNameNumber = 0;  // these are not imported, so local integers are find
+    $.each(lines, function(i, line) {
+        var items = line.split(itemDelimFound);
+        // filter out empty empty labels and taxa
+        items = $.grep(items, function(item, i) {
+            return $.trim(item) !== "";
+        });
+        switch (items.length) {
+            case 0:
+            case 1:
+                return true;  // skip to next line
+            default:
+                // we assume the same fields as in out nameset output files
+                var label = $.trim(items[0]);   // its original, vernacular label
+                if (label === 'ORIGINAL LABEL') {
+                    // skip the header row, if found
+                    return true;
+                }
+                // skip this label if it's a duplicate
+                if (foundLabels.indexOf(label) === -1) {
+                    // add this to labels found (test later names against this)
+                    foundLabels.push(label);
+                } else {
+                    // this is a dupe of an earlier name!
+                    dupeLabelsFound++;
+                    return true;
+                }
+                var canonicalTaxonName = $.trim(items[1]);  // its mapped taxon name
+                // include ottid and any taxonomic sources, if provided
+                var taxonID = (items.length > 2) ? items[2] : null;
+                var sources = (items.length > 3) ? items[3].split(';') : null;
+                // add this information in the expected nameset form
+                console.log("...adding label '"+ label +"'...");
+                var nameInfo = {
+                    "id": ("name"+ localNameNumber++),
+                    "originalLabel": label,
+                    "ottTaxonName": canonicalTaxonName,
+                    "selectedForAction": false
+                };
+                if (taxonID) {
+                    nameInfo["ottId"] = taxonID;
+                }
+                if (sources) {
+                    nameInfo["taxonomicSources"] = [];
+                    $.each(sources, function(i, source) {
+                        source = $.trim(source);
+                        if (source) {  // it's not an empty string
+                            nameInfo["taxonomicSources"].push( source );
+                        }
+                    });
+                }
+                nameset.names.push( nameInfo );
+        }
+        return;
+    });
+    nudgeTickler('VISIBLE_NAME_MAPPINGS');
+    var namesAdded = nameset.names.length;
+    var msg;
+    if (dupeLabelsFound === 0) {
+        msg = "Adding "+ namesAdded +" names found in this file...";
+    } else {
+        msg = "Adding "+ namesAdded +" name"+
+            (namesAdded === 1? "" : "s") +" found in this file ("+
+            dupeLabelsFound +" duplicate label"+ (dupeLabelsFound === 1? "" : "s")
+            +" removed)...";
+    }
+    // where do we show these messages?
+    showInfoMessage(msg);
+    return nameset;
+}
 
 /* Load and save (to/from ZIP file on the user's filesystem) */
 
@@ -218,7 +336,7 @@ function saveCurrentNameset( options ) {
                   },
                   function (err) {    
                       // failure callback
-                      alert('ERROR generating this ZIP archive:\n'+ err);
+                      asyncAlert('ERROR generating this ZIP archive:<br/><br/>'+ err);
                       // revert to previous last-save info in the active document
                       viewModel.metadata.last_saved( previousSaveTimestamp );
                       viewModel.metadata.save_count( previousSaveCount );
@@ -393,85 +511,170 @@ function loadNamesetFromChosenFile( vm, evt ) {
             var fileInfo = eventTarget.files[0];
             console.warn("fileInfo.name = "+ fileInfo.name);
             console.warn("fileInfo.type = "+ fileInfo.type);
+            var usesNamesetFileFormat = false;
             var isValidArchive = false;
-            switch (fileInfo.type) {
-                case 'application/zip':
-                    isValidArchive = true;
-                    break;
-                case '':
-                    // check file extension
-                    if (fileInfo.name.match('.(zip|nameset)$')) {
+            if (context === 'BULK_TNRS') {
+                switch (fileInfo.type) {
+                    case 'application/zip':
+                        usesNamesetFileFormat = true;
                         isValidArchive = true;
-                    }
-                    break;
+                        break;
+                    case '':
+                        // check file extension
+                        if (fileInfo.name.match('.(zip|nameset)$')) {
+                            usesNamesetFileFormat = true;
+                            isValidArchive = true;
+                        }
+                        break;
+                }
+                if (!isValidArchive) {
+                    var msg = "Archived nameset file should end in <code>.zip</code> or <code>.nameset</code>. Choose another file?";
+                    $hintArea.html(msg).show();
+                    return;
+                }
+            } else {  // presumably 'STUDY_OTU_MAPPING'
+                switch (fileInfo.type) {
+                    case 'application/zip':
+                        usesNamesetFileFormat = true;
+                        isValidArchive = true;
+                        break;
+                    case 'text/plain':
+                    case 'text/tab-separated-values':
+                    case 'text/csv':
+                    case 'application/json':
+                        usesNamesetFileFormat = true;
+                        break;
+                    default:
+                        // check file extension
+                        if (fileInfo.name.match('.(zip|nameset|txt|tsv|csv|json)$')) {
+                            usesNamesetFileFormat = true;
+                            isValidArchive = true;
+                        }
+                        break;
+                }
+                if (!usesNamesetFileFormat) {
+                    var msg = "Nameset file should end in one of <code>.zip .nameset .txt .tsv .csv .json</code>. Choose another file?";
+                    $hintArea.html(msg).show();
+                    return;
+                }
             }
-            if (!isValidArchive) {
-                var msg = "Archived nameset file should end in <code>.zip</code> or <code>.nameset</code>. Choose another file?";
-                $hintArea.html(msg).show();
-                return;
-            }
-            // Still here? try to read and unzip this archive!
-            JSZip.loadAsync(fileInfo)   // read the Blob
-                 .then(function(zip) {  // success callback
-                     console.log('reading ZIP contents...');
-                     var msg = "Reading nameset contents...";
-                     $hintArea.html(msg).show();
-                     // How will we know when it's all (async) loaded? Count down as each entry is read!
-                     var zipEntriesToLoad = 0;
-                     var initialCache = {};
-                     for (var p in zip.files) { zipEntriesToLoad++; }
-                     // Stash most found data in the cache, but main JSON should be parsed
-                     var mainNamesetJSON = null;
-                     zip.forEach(function (relativePath, zipEntry) {  // 2) print entries
-                         console.log('  '+ zipEntry.name);
-                         console.log(zipEntry);
-                         // skip directories (nothing to do here)
-                         if (zipEntry.dir) {
-                             console.warn("SKIPPING directory "+ zipEntry.name +"...");
-                             zipEntriesToLoad--;
-                             return;
-                         }
-                         // read and store files
-                         zipEntry.async('text', function(metadata) {
-                                    // report progress?
-                                    var msg = "Reading nameset contents ("+ zipEntry.name +"): "+ metadata.percent.toFixed(2) +" %";
-                                    $hintArea.html(msg).show();
-                                 })
-                                 .then(function success(data) {
-                                           console.log("Success unzipping "+ zipEntry.name +":\n"+ data);
-                                           zipEntriesToLoad--;
-                                           // parse and stash the main JSON data; cache the rest
-                                           switch (zipEntry.name) {
-                                               case 'main.json':
-                                                   mainNamesetJSON = JSON.parse(data);
-                                                   break;
-                                               default:
-                                                   // copy to our initial cache
+            // Still here? try to extract a nameset from the chosen file
+            if (isValidArchive) {
+                // try to read and unzip this archive!
+                JSZip.loadAsync(fileInfo)   // read the Blob
+                     .then(function(zip) {  // success callback
+                         console.log('reading ZIP contents...');
+                         var msg = "Reading nameset contents...";
+                         $hintArea.html(msg).show();
+                         // How will we know when it's all (async) loaded? Count down as each entry is read!
+                         var zipEntriesToLoad = 0;
+                         var mainJsonPayloadFound = false;
+                         var initialCache = {};
+                         for (var p in zip.files) { zipEntriesToLoad++; }
+                         // Stash most found data in the cache, but main JSON should be parsed
+                         var nameset = null;
+                         zip.forEach(function (relativePath, zipEntry) {  // 2) print entries
+                             console.log('  '+ zipEntry.name);
+                             console.log(zipEntry);
+                             // skip directories (nothing to do here)
+                             if (zipEntry.dir) {
+                                 console.warn("SKIPPING directory "+ zipEntry.name +"...");
+                                 zipEntriesToLoad--;
+                                 return;
+                             }
+                             // read and store files
+                             zipEntry.async('text', function(metadata) {
+                                        // report progress?
+                                        var msg = "Reading nameset contents ("+ zipEntry.name +"): "+ metadata.percent.toFixed(2) +" %";
+                                        $hintArea.html(msg).show();
+                                     })
+                                     .then(function success(data) {
+                                               console.log("Success unzipping "+ zipEntry.name +":\n"+ data);
+                                               zipEntriesToLoad--;
+                                               // parse and stash the main JSON data; cache the rest
+                                               // NB that this name could include a preceding path!
+                                               if ((zipEntry.name === 'main.json') || (zipEntry.name.endsWith('/main.json'))) {
+                                                   // this is the expected payload for a ZIPed nameset; try to parse it!
+                                                   mainJsonPayloadFound = true;
+                                                   try {
+                                                       nameset = JSON.parse(data);
+                                                   } catch(e) {
+                                                       // just swallow this and report below
+                                                       nameset = null;
+                                                       var msg = "<code>main.json</code> is malformed ("+ e +")!";
+                                                       $hintArea.html(msg).show();
+                                                   }
+                                               } else {
+                                                   // it's some other file; copy it to our initial cache
                                                    initialCache[ zipEntry.name ] = data;
-                                           }
-                                           if (zipEntriesToLoad === 0) {
-                                               // we've read in all the ZIP data! open this nameset
-                                               // (TODO: setting its initial cache) and close this popup
+                                               }
+                                               if (zipEntriesToLoad === 0) {
+                                                   // we've read in all the ZIP data! open this nameset
+                                                   // (TODO: setting its initial cache) and close this popup
+                                                   if (!mainJsonPayloadFound) {
+                                                       var msg = "<code>main.json</code> not found in this ZIP!";
+                                                       $hintArea.html(msg).show();
+                                                       return;
+                                                   }
 
-                                               // Capture some file metadata, in case it's needed in the nameset
-                                               var loadedFileName = fileInfo.name;
-                                               var lastModifiedDate = fileInfo.lastModifiedDate;
-                                               console.log("LOADING FROM FILE '"+ loadedFileName +"', LAST MODIFIED: "+ lastModifiedDate);
-                                               loadNamesetData( mainNamesetJSON, loadedFileName, lastModifiedDate );
-                                               // N.B. the File API *always* downloads to an unused path+filename
-                                               $('#storage-options-popup').modal('hide');
-                                           }
-                                       },
-                                       function error(e) {
-                                           var msg = "Problem unzipping "+ zipEntry.name +":\n"+ e.message;
-                                           $hintArea.html(msg).show();
-                                       });
+                                                   // Capture some file metadata, in case it's needed in the nameset
+                                                   var loadedFileName = fileInfo.name;
+                                                   var lastModifiedDate = fileInfo.lastModifiedDate;
+                                                   console.log("LOADING FROM FILE '"+ loadedFileName +"', LAST MODIFIED: "+ lastModifiedDate);
+                                                   if (context === 'BULK_TNRS') {
+                                                       // replace the main view-model on this page
+                                                       loadNamesetData( nameset, loadedFileName, lastModifiedDate );
+                                                       // N.B. the File API *always* downloads to an unused path+filename
+                                                       $('#storage-options-popup').modal('hide');
+                                                   } else {  // presumably 'STUDY_OTU_MAPPING'
+                                                       // examine and apply these mappings to the OTUs in the current study
+                                                       if (nameset) {
+                                                           mergeNamesetData( nameset, loadedFileName, lastModifiedDate );
+                                                       }
+                                                       // NB if it failed to parse, we're showing a deatiled error message above
+                                                   }
+                                               }
+                                           },
+                                           function error(e) {
+                                               var msg = "Problem unzipping "+ zipEntry.name +":\n"+ e.message;
+                                               $hintArea.html(msg).show();
+                                           });
+                         });
+                     },
+                     function (e) {         // failure callback
+                         var msg = "Error reading <strong>" + fileInfo.name + "</strong>! Is this a proper zip file?";
+                         $hintArea.html(msg).show();
                      });
-                 },
-                 function (e) {         // failure callback
-                     var msg = "Error reading <strong>" + fileInfo.name + "</strong>! Is this a proper zip file?";
-                     $hintArea.html(msg).show();
-                 });
+            } else {
+                // try to extract nameset from a simple (non-ZIP) file
+                var fr = new FileReader();
+                fr.onload = function( evt ) {
+                    var data = evt.target.result;
+                    var nameset = null;
+                    console.log( data );
+                    if (context === 'BULK_TNRS') {
+                        console.error("Unexpected context 'BULK_TNRS' for flat-file nameset!");
+                    } else {  // presumably 'STUDY_OTU_MAPPING'
+                        // TODO: Try conversion to standard nameset JS object
+                        try {
+                            nameset = JSON.parse(data);
+                        } catch(e) {
+                            // IF this fails, try to import TSV/CSV, line-by-line text
+                            nameset = convertToNamesetModel(data);
+                        }
+                        if (nameset) {
+                            // examine and apply these mappings to the OTUs in the current study
+                            var loadedFileName = fileInfo.name;
+                            var lastModifiedDate = fileInfo.lastModifiedDate;
+                            mergeNamesetData( nameset, loadedFileName, lastModifiedDate );
+                        } else {
+                             var msg = "Error reading names from <strong>" + fileInfo.name + "</strong>! Please compare it to examples";
+                             $hintArea.html(msg).show();
+                        }
+                    }
+                };
+                fr.readAsText(fileInfo);  // default encoding is utf-8
+            }
     }
 }
 
@@ -1042,7 +1245,8 @@ function requestTaxonMapping( nameToMap ) {
 
     // groom trimmed text based on our search rules
     var searchContextName = viewModel.mappingHints.searchContext();
-    var usingFuzzyMatching = viewModel.mappingHints['useFuzzyMatching'] || false;
+    var usingFuzzyMatching = viewModel.mappingHints.useFuzzyMatching() || false;
+    var autoAcceptingExactMatches = viewModel.mappingHints.autoAcceptExactMatches() || false;
     // show spinner alongside this item...
     currentlyMappingNames.push( nameID );
 
@@ -1069,13 +1273,13 @@ function requestTaxonMapping( nameToMap ) {
 
                 case 1:
                     // the expected case
-                    candidateMatches = data.results[0].matches;
+                    candidateMatches = data.results[0].matches || [ ];
                     break;
 
                 default:
                     console.warn('MULTIPLE SEARCH RESULT SETS (USING FIRST)');
                     console.warn(data['results']);
-                    candidateMatches = data.results[0].matches;
+                    candidateMatches = data.results[0].matches || [ ];
             }
         }
         // TODO: Filter candidate matches based on their properties, scores, etc.?
@@ -1171,8 +1375,29 @@ function requestTaxonMapping( nameToMap ) {
                     }
                 });
 
-                proposeNameLabel(nameID, candidateMappingList);
-                // postpone actual mapping until user chooses, then approves
+                var autoAcceptableMapping = null;
+                if (candidateMappingList.length === 1) {
+                    var onlyMapping = candidateMappingList[0];
+                    /* NB - auto-accept includes synonyms if exact match!
+                    if (onlyMapping.originalMatch.is_synonym) {
+                        return;
+                    }
+                    */
+                    /* N.B. We never present the sole mapping suggestion as a
+                     * taxon-name homonym, so just consider the match score to
+                     * determine whether it's an "exact match".
+                     */
+                    if (onlyMapping.originalMatch.score === 1.0) {
+                        autoAcceptableMapping = onlyMapping;
+                    }
+                }
+                if (autoAcceptingExactMatches && autoAcceptableMapping) {
+                    // accept the obvious choice (and possibly update UI) immediately
+                    mapNameToTaxon( nameID, autoAcceptableMapping, {POSTPONE_UI_CHANGES: true} );
+                } else {
+                    // postpone actual mapping until user chooses
+                    proposeNameLabel(nameID, candidateMappingList);
+                }
         }
 
         currentlyMappingNames.remove( nameID );
@@ -1366,9 +1591,9 @@ function clearSelectedMappings() {
     nudgeTickler('NAME_MAPPING_HINTS');
 }
 
-function clearAllMappings() {
+async function clearAllMappings() {
     var allNames = viewModel.names();
-    if (confirm("WARNING: This will un-map all "+ allNames.length +" names in the current study! Are you sure you want to do this?")) {
+    if (await asyncConfirm("WARNING: This will un-map all "+ allNames.length +" names in the current study! Are you sure you want to do this?")) {
         // TEMPORARY helper to demo mapping tools, clears mapping for the visible (paged) names.
         $.each( allNames, function (i, name) {
             // clear any "established" mapping (already approved)
@@ -1473,7 +1698,7 @@ function enableSaveButton() {
         if (browserSupportsFileAPI()) {
             showSaveNamesetPopup();
         } else {
-            alert("Sorry, this browser does not support saving to a local file!");
+            asyncAlert("Sorry, this browser does not support saving to a local file!");
         }
         return false;
     });
@@ -1483,6 +1708,13 @@ function showLoadListPopup( ) {
     showFilesystemPopup('#load-list-popup');
 }
 function showLoadNamesetPopup( ) {
+    $('#load-nameset-popup').off('hide').on('hide', function () {
+        if (context === 'STUDY_OTU_MAPPING') {
+            // clear any prior search input
+            clearNamesetUploadWidget();
+            clearNamesetPastedText();
+        }
+    });
     showFilesystemPopup('#load-nameset-popup');
 }
 function showSaveNamesetPopup( ) {
@@ -1736,7 +1968,12 @@ function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
             nameset = getNewNamesetModel();
             break;
         case 'string':
-            nameset = JSON.parse(data);
+            try {
+                nameset = JSON.parse(data);
+            } catch(e) {
+                // IF this fails, try to import TSV/CSV, line-by-line text
+                nameset = convertToNamesetModel(data);
+            }
             break;
         default: 
             console.error("Unexpected type for nameset data: "+ (typeof data));
@@ -1765,6 +2002,9 @@ function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
     if (loadedFileName) {
         // We just loaded an archive file! Store its latest filename.
         nameset.metadata.previous_filename = loadedFileName;
+    }
+    if (nameset.mappingHints['autoAcceptExactMatches'] === undefined) {
+        nameset.mappingHints['autoAcceptExactMatches'] = false;
     }
 
     /* Name and export the new viewmodel. NOTE that we don't create observables
@@ -1847,6 +2087,14 @@ function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
             'order': ko.observable( listFilterDefaults.NAMES.order )
         }
     };
+    // any change to these list filters should reset pagination for the current display list
+    // NB this is a streamlined version of the more general fix in study-editor.js!
+    $.each(viewModel.listFilters.NAMES, function(filterName, filterObservable) {
+        filterObservable.subscribe(function(newValue) {
+            // ignore value, just reset pagination (back to page 1)
+            viewModel._filteredOTUs.goToPage(1);
+        });
+    });
  
     // maintain a persistent array to preserve pagination (reset when computed)
     viewModel._filteredNames = ko.observableArray( ).asPaged(500);
@@ -1991,7 +2239,6 @@ function loadNamesetData( data, loadedFileName, lastModifiedDate ) {
         lastClickedTogglePosition = null;
 
         viewModel._filteredNames( filteredList );
-        viewModel._filteredNames.goToPage(1);
         return viewModel._filteredNames;
     }).extend({ throttle: viewModel.filterDelay }); // END of filteredNames
 
@@ -2101,35 +2348,21 @@ function showPossibleMappingsKey() {
 }
 
 $(document).ready(function() {
-    // Always start with an empty set, binding it to the UI
-    loadNamesetData( null );
-
-    /* typical setup and binding of update logic
-    // set initial state for all widgets
-    updateMyStuff();
-
-    // any change in widgets should (potentially) update all
-    $('input, textarea, select').unbind('change').change(updateMyStuff);
-    $('input, textarea').unbind('keyup').keyup(updateMyStuff);
-
-    // any change to the TreeBASE ID or DOI fields should also disable Continue
-    $('input[name=treebase-id]').unbind('change keyup').bind('change keyup', function() {
-        duplicateStudiesBasedOnTreeBASEUrl = null;
-        updateMyStuff();
-    });
-    $('input[name=publication-DOI]').unbind('change keyup').bind('change keyup', function() {
-        duplicateStudiesBasedOnDOI = null;
-        updateMyStuff();
-    });
-    // normalize to URL and test for duplicates after significant changes in the DOI field
-    $('input[name=treebase-id]').unbind('blur').blur(validateAndTestTreeBaseID);
-    $('input[name=publication-DOI]').unbind('blur').blur(validateAndTestDOI);
-    */
-    //
-    // auto-select the main (UI) tab
-    $('a[href=#Name-Mapping]').tab('show');
-
-    console.log("READY");
+    switch (context) {
+        case 'BULK_TNRS':
+            // Always start with an empty set, binding it to the UI
+            loadNamesetData( null );
+            // auto-select the main (UI) tab
+            $('a[href=#Name-Mapping]').tab('show');
+            break;
+        case 'STUDY_OTU_MAPPING':
+            console.log("Anything to do on ready?");
+            break;
+        case '???':
+        default:
+            // do nothing for now (possibly study View page)
+            break;
+    }
 });
 
 // export some members as a simple API
@@ -2172,13 +2405,16 @@ var api = [
     'approveAllVisibleMappings',
     'rejectProposedNameLabel',
     'rejectAllVisibleMappings',
+    'mapNameToTaxon',
     'unmapNameFromTaxon',
     'clearSelectedMappings',
     'clearAllMappings',
     'showPossibleMappingsKey',
     'addSubstitution',
     'removeSubstitution',
-    'formatISODate'
+    'formatISODate',
+    'convertToNamesetModel',
+    'context'
 ];
 $.each(api, function(i, methodName) {
     // populate the default 'module.exports' object

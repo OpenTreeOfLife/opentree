@@ -540,7 +540,7 @@ var populateSVG = function(data) {
               // try to retrieve data
               var matchingProfiles = data.filter(function(d) {return d.Date === targetDate});
               if (matchingProfiles.length === 0) {
-                alert("No data was found for this date: "+ targetDate);
+                asyncAlert("No data was found for this date: "+ targetDate);
                 return;
               }
               profileData = matchingProfiles[0];

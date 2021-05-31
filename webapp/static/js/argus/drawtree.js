@@ -154,6 +154,9 @@ function createArgus(spec) {
         "pathColor": "#999",
         "strongPathColor": "#000",
         "labelColor": "#000",
+        "extinctNodeColor": "#c96",  // or maybe #963
+        "extinctPathColor": "#c96",
+        "extinctLabelColor": "#a74",
         "provenanceHighlightColor": "#3333ff",
         "provenanceHighlightLabelColor": "#3333ff",
         "provenanceHighlightLabelBackgroundColor": "#ffffff",
@@ -163,7 +166,9 @@ function createArgus(spec) {
         "backStack": [], // args to previous displayNode calls
         "forwardStack": [], // args to displayNode calls after the back button has been clicked
         "currDisplayContext": undefined, //arg to most recent displayNode call
-
+        // add dagger † before (or after) extinct node labels
+        "leadingDagger": "\u2020 ",
+        "trailingDagger": " \u2020",
         clusters: {},      // a registry of clustered child-nodes, keyed to the parent-node's ID
         maxClusterSize: 100,   // try to bundle sets of n children
         minClusterSize: 10, // add fewer to the previous cluster (or unclustered children) instead
@@ -283,7 +288,7 @@ function createArgus(spec) {
             ds = o.domSource === undefined ? "ottol" : o.domSource;
             ajaxData = {"domsource": ds}; // phylotastic TNRS API wants domsource, MTH believes.
             */
-            alert("AJAX calls via taxomachine are no longer supported.");
+            console.error("AJAX calls via taxomachine are no longer supported.");
             return;
         }
         return {
@@ -403,7 +408,7 @@ function createArgus(spec) {
                 argus.supportingTaxonomyVersion = ottInfo['taxonomy'];
             }
             if (!argus.supportingTaxonomyVersion) {
-                alert("No supporting OTT version found!");
+                console.warn("No supporting OTT version found!");
                 return;
             }
 
@@ -704,8 +709,9 @@ function createArgus(spec) {
             var mainFetchXHR = jqXHR;
             var mainFetchJSON;
             try {
-                // IF there was a JSON payload, we want to keep it
-                mainFetchJSON = $.parseJSON(mainFetchXHR.responseText);
+                // IF there was a JSON payload, we want to keep it (if the payload is
+                // empty/null, make an empty object)
+                mainFetchJSON = $.parseJSON(mainFetchXHR.responseText) || { };
             } catch(e) {
                 // make an empty object for now
                 mainFetchJSON = { };
@@ -1210,6 +1216,7 @@ function createArgus(spec) {
                     "clusterPosition": $.inArray(dlChild, node.getClusters()), // returns index
                     "domSource": domSource,
                     "parentNodeX": node.x,
+                    "parentNodeExtinct": node.isExtinct(),
                     "currentYoffset": currentYoffset,
                     "depthFromTargetNode": depthFromTargetNode
                 });
@@ -1240,11 +1247,11 @@ function createArgus(spec) {
         } else {
             node.r = this.minTipRadius + this.nodeDiamScalar * Math.log(node.num_tips);
         }
-        var nodeFill = this.nodeColor;
-        var nodeStroke = this.pathColor;
+        var nodeFill = node.isExtinct() ? this.extinctNodeColor : this.nodeColor;
+        var nodeStroke = node.isExtinct() ? this.extinctPathColor : this.pathColor;
         // override for special cases
         if (node.isActualLeafNode()) {
-            nodeFill = this.actualLeafColor;
+            nodeFill = node.isExtinct() ? this.extinctNodeColor : this.actualLeafColor;
             nodeStroke = this.bgColor;
         } else if (node.isVisibleLeafNode()) {
             nodeFill = this.visibleLeafColor;
@@ -1327,10 +1334,17 @@ function createArgus(spec) {
                                           (node.name.indexOf(compoundNodeNameSuffix) === (node.name.length -1)));
                 displayLabel = (isCompoundNodeName ? '' : node.name || '');
             }
+            if (node.isExtinct()) {
+                if (labelAnchor === 'start') {
+                    displayLabel = this.markLabelAsExtinct(displayLabel, 'LEADING');
+                } else {
+                    displayLabel = this.markLabelAsExtinct(displayLabel, 'TRAILING');
+                }
+            }
             label = paper.text(labelX, labelY, displayLabel).attr({
                 'text-anchor': labelAnchor,
                 "title": displayLabel,
-                "fill": this.labelColor,
+                "fill": node.isExtinct() ? this.extinctLabelColor : this.labelColor,
                 "font-size": fontSize
             }).insertBefore(dividerBeforeHighlights);
             label.id = (nodeLabelElementID);
@@ -1349,7 +1363,7 @@ function createArgus(spec) {
             } else {
                 // create the new spine
                 spine = paper.path(spineSt).toBack().attr({
-                    "stroke": this.pathColor,
+                    "stroke": node.isExtinct() ? this.extinctPathColor : this.pathColor,
                     "stroke-linecap": 'round'
                 }).insertBefore(dividerBeforeLabels)
                   .id = (nodeSpineElementID);
@@ -1368,13 +1382,13 @@ function createArgus(spec) {
             if (supportedByTaxonomy && supportedByPhylogeny) {
                 //lineDashes = '--..';
                 lineDashes = '';
-                lineColor = this.strongPathColor;
+                lineColor = node.isExtinct() ? this.extinctPathColor : this.strongPathColor;
             } else if (supportedByPhylogeny){
                 lineDashes = '';
-                lineColor = this.strongPathColor;
+                lineColor = node.isExtinct() ? this.extinctPathColor : this.strongPathColor;
             } else if (supportedByTaxonomy){
                 lineDashes = '- ';
-                lineColor = this.pathColor;
+                lineColor = node.isExtinct() ? this.extinctPathColor : this.pathColor;
             } else {
                 lineDashes = '--..';
                 lineColor = 'orange';
@@ -1405,7 +1419,7 @@ function createArgus(spec) {
                     "stroke-width": 1,
                     "stroke-linecap": (lineDashes === '.') || (lineDashes === '--..') || (lineDashes === '--.') ? 'butt' : 'round',      // avoids Chrome bug with dotted lines + round caps
                     "stroke-dasharray": lineDashes,
-                    "stroke": lineColor          // this.pathColor
+                    "stroke": node.isExtinct() ? this.extinctPathColor : this.pathColor
                 }).insertBefore(dividerBeforeLabels);
                 visibleBranch.id = (nodeVisibleBranchElementID);
 
@@ -1455,7 +1469,7 @@ function createArgus(spec) {
                     } else {
                         // create the new branch
                         branch = paper.path(upwardSt).toBack().attr({
-                            "stroke": this.pathColor,
+                            "stroke": node.isExtinct() ? this.extinctPathColor : this.pathColor,
                             "stroke-linecap": 'butt', // REQUIRED if stroke-dasharray is '.'
                             "stroke-dasharray": '. ',
                             "opacity": pathOpacity
@@ -1481,16 +1495,19 @@ function createArgus(spec) {
                         } else {
                             // create the new circle and label
                             circle = paper.circle(endX, endY, this.minTipRadius).attr({
-                                "fill": this.nodeColor,
+                                "fill": ancestorNode.isExtinct() ? this.extinctNodeColor : this.nodeColor,
                                 "title": "Click to move to this node",
-                                "stroke": this.pathColor
+                                "stroke": ancestorNode.isExtinct() ? this.extinctPathColor : this.pathColor
                             }).insertBefore(dividerBeforeAnchoredUI);
                             circle.id = (nodeCircleElementID);
-
-                            label = paper.text(labelX, labelY, ancestorNode.name || "").attr({
+                            var displayLabel = (ancestorNode.name || "");
+                            if (ancestorNode.isExtinct()) {
+                                displayLabel = this.markLabelAsExtinct(displayLabel, 'TRAILING');
+                            }
+                            label = paper.text(labelX, labelY, displayLabel).attr({
                                 'text-anchor': 'end',
-                                "title": (ancestorNode.name || ""),
-                                "fill": this.labelColor,
+                                "title": displayLabel,
+                                "fill": ancestorNode.isExtinct() ? this.extinctLabelColor :this.labelColor,
                                 "font-size": fontSize
                             }).insertBefore(dividerBeforeHighlights);
                             label.id = (nodeLabelElementID);
@@ -1506,7 +1523,7 @@ function createArgus(spec) {
                             circle.hover(getHoverHandlerNodeAndEdge('OVER', circle, {
                                 "fill": this.nodeHoverColor
                             }), getHoverHandlerNodeAndEdge('OUT', circle, {
-                                "fill": this.nodeColor
+                                "fill": ancestorNode.isExtinct() ? this.extinctNodeColor : this.nodeColor
                             }));
                         }
 
@@ -1521,10 +1538,23 @@ function createArgus(spec) {
         }
     }
 
+    // add dagger † before (or after) the label of an extinct node
+    argusObj.markLabelAsExtinct = function(label, leadingOrTrailing) {
+        if ($.trim(label) === "") {
+            return "";
+        }
+        if (leadingOrTrailing === 'TRAILING') {
+            return (label + this.trailingDagger);
+        } else {
+            return (this.leadingDagger + label);
+        }
+    };
+
     argusObj.drawCluster = function (obj) {
         var cluster = obj.cluster;
         var parentNodeID = cluster.parentNodeID;
         var parentNodeX = obj.parentNodeX;
+        var parentNodeExtinct = obj.parentNodeExtinct;
         var depthFromTargetNode = obj.depthFromTargetNode;
         var currentYoffset = obj.currentYoffset;
         var clusterPosition = obj.clusterPosition;
@@ -1556,7 +1586,7 @@ function createArgus(spec) {
                 "stroke-width": 1,
                 "stroke-linecap": 'butt', // REQUIRED if stroke-dasharray is '.'
                 "stroke-dasharray": '. ',
-                "stroke": this.pathColor
+                "stroke": parentNodeExtinct ? this.extinctPathColor : this.pathColor
             }).insertBefore(dividerBeforeLabels);
             branch.id = (clusterBranchElementID);
         }
@@ -1581,7 +1611,7 @@ function createArgus(spec) {
             label = paper.text(clusterLeftEdge + 8, cluster.y - (this.nodeHeight * 0.0), clusterLabel).attr({
                 'text-anchor': 'start',
                 "title": clusterLabel,
-                "fill": this.labelColor,
+                "fill": parentNodeExtinct ? this.extinctLabelColor : this.labelColor,
                 "font-size": fontSize,
                 "cursor": "pointer"
             });
@@ -2026,6 +2056,12 @@ ArgusNode.prototype.isLocalLeafNode = function() {
 };
 ArgusNode.prototype.isActualLeafNode = function() {
     return this.num_tips === 0;
+};
+ArgusNode.prototype.isExtinct = function() {
+    if (typeof this.extinct === 'undefined') {
+        return false;  // allow parsimony (omit property for non-extinct nodes)
+    }
+    return (this.extinct === true);
 };
 ArgusNode.prototype.isVisibleLeafNode = function() {
     return this.hasChildren === false || this.num_tips_in_view === 0;

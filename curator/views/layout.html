@@ -3,6 +3,7 @@
 from applications.opentree.modules.opentreewebapputil import get_user_login, get_user_display_name, get_conf, get_domain_banner_text, get_domain_banner_hovertext, get_currently_deployed_opentree_branch
 }}
 <html lang="{{=T.accepted_language or 'en'}}" class="no-js"><!-- no-js need it for modernzr -->
+  <link rel="stylesheet" type="text/css" href="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.css" />
   <head>
   <!-- Global site tag (gtag.js) - Google Analytics -->
   <script async src="https://www.googletagmanager.com/gtag/js?id=UA-143548106-1"></script>
@@ -103,6 +104,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}";
         var API_update_collection_PUT_url = "{{=API_update_collection_PUT_url}}";
         var API_remove_collection_DELETE_url = "{{=API_remove_collection_DELETE_url}}";
+
+        // Adjust behavior based on whether we'd manage collections in a popup or a full-page editor
+        var collectionUI = "{{=(response.view == 'collection/edit.html') and 'FULL_PAGE' or 'POPUP' }}";  // to modify behaviors, vs. popup viewer
     </script>
 
     {{#------  require CSS and JS files for this page (read info in base.css) ------}}
@@ -116,6 +120,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       {{#response.files.append(URL('static','jquery-ui.min.js'))}}
       {{#response.files.append(URL('static','jquery.hoverIntent.js'))}}
       {{#response.files.append(URL('static','jquery-ui-1.8.5.custom.css'))}}
+
+    <!-- support for dialog polyfill (replace JS confirm, prompt, alert) -->
+    {{response.files.append(URL('static','js/dialog-polyfill.js'))}}
+    {{response.files.append(URL('static','css/dialog-polyfill.css'))}}
 
     <!-- js for history management -->
     {{response.files.append(URL('static','js/jquery.history.js'))}}
@@ -187,6 +195,23 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
       // show details in a popup (already bound)
       $('#maintenance-notice').modal('show');
   }
+
+  // Open a new window for bug reports and other feedback
+  function showFeedbackWindow() {
+      // ASSUMES that synth-tree viewer is on the same domain!
+      var fbUrl = window.location.protocol + "//" + window.location.hostname
+          + (window.location.port ? ':' + window.location.port: '')
+          + "/opentree/feedback?parentWindowURL="+ escape(window.location.href);
+      var fbWindow = window.open(fbUrl, 'feedback');
+      if (fbWindow) {
+          fbWindow.focus();
+      } else {
+          asyncAlert("Couldn't open a new window. Are you using a popup blocker?");
+          return false;
+      };
+      return false;
+  }
+
 
   // Fetch the current user information for general use
   var userLogin = "{{= get_user_login() }}";
@@ -368,7 +393,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <li><a href="/curator/default/quickstart">Instructions</a></li>
                 -->
                 <li class="dropdown">
-                    <a href="/curator/study" class="dropdown-toggle" data-toggle="dropdown">Studies  <b class="caret"></b></a>
+                    <a href="/curator" class="dropdown-toggle" data-toggle="dropdown">Studies  <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                         <li><a href="/curator">Browse all studies</a></li><!-- TODO: point to /curator/study once we have a full list -->
                         <li><a href="/curator/study/create">Add new study</a></li>
@@ -379,8 +404,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     <a href="/curator#TODO" class="dropdown-toggle" data-toggle="dropdown">Tree collections  <b class="caret"></b></a>
                     <ul class="dropdown-menu">
                         <li><a href="/curator/profile#collections">Manage my collections</a></li>
-                        <li><a href="/curator/collections">Browse all collections</a></li>
+                        <li><a href="/curator/collection/">Browse all collections</a></li>
+                      {{ if (response.view != 'collection/edit.html'): }}
                         <li><a href="#" onclick="createNewTreeCollection(); return false;">Add new collection</a></li>
+                      {{ pass }}
                     </ul>
                 </li>
                 <!--
@@ -472,9 +499,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
           <h3>Right Sidebar</h3>
           <p></p>
           {{end}}
-        </div>
+          <p></p>
         {{pass}}
-
+          <a class="btn Xbtn-small btn-info curation-feedback-btn" href="#"
+             onclick="showFeedbackWindow(); return false;">Submit a bug report or suggestion</a>
+        </div>
     </section><!-- #main.main row -->
     </div><!-- .container -->
       <!--</div>--><!-- main -->
@@ -545,6 +574,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         </div>
     </div>
 
+{{ # Supress this popup template in our full-page collection viewer/editor
+   if response.view != 'collection/edit.html': }}
   <!-- hidden template for the tree-collection-viewer (editor) -->
   <div class="modal hide fade" id="tree-collection-viewer"
        Xtabindex="-1" Xrole="dialog" Xaria-labelledby="myModalLabel" Xaria-hidden="true">
@@ -596,19 +627,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             -->
            <!-- /ko -->
 
-           <!-- ko if: ('external_url' in $data) -->
-            <!-- HISTORY button -->
-            <a data-bind="attr: { href: getCollectionHistoryURL($data) }"
-               title="See full version history on GitHub"
-               class="pull-right btn btn-mini row-controls-ghosted"
-               style="margin-left: 4px;"
-               href="#" target="_blank">
-               History
-               <img src="/curator/static/images/GitHub-Mark-32px.png"
-                    style="width: 14px; height: 14px; padding-left: 2px; margin-top: -2px;"/>
-            </a>
-           <!-- /ko -->
-
            <!-- ko if: !userIsEditingCollection($data) -->
             <!-- SHARE button -->
             <button data-bind="click: shareCollection,
@@ -652,27 +670,35 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
            <!-- /ko -->
 
             <!-- EDIT button -->
-            <button data-bind="click: editCollection,
-                               visible: !(userIsEditingCollection($data)),
-                               attr: {'title': userIsLoggedIn() ? 'Edit collection, including add/remove trees' : 'Edit collection (requires login)'}"
-                title=""
+            <a data-bind="visible: !(userIsEditingCollection($data)),
+                          attr: {'title': userIsLoggedIn() ? 'Edit collection, including add/remove trees' : 'Edit collection (requires login)',
+                                 'href': userIsLoggedIn() ? ('/curator/collection/edit/'+ getCollectionIDFromURL($data.data.url)) :
+                                                            ('/curator/collection/view/'+ getCollectionIDFromURL($data.data.url))}"
+                title="" target="_blank" href="#"
                 class="pull-right btn btn-info btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
-                Edit <i class="icon-edit icon-white"></i>
-            </button>
+                <span data-bind="text: userIsLoggedIn() ? 'Edit details' : 'View Details'">DETAILS</span> <i class="icon-edit icon-white"></i>
+            </a>
             <button data-bind="click: cancelChangesToCollection,
                                visible: userIsEditingCollection($data)"
                 title="Cancel your changes to this collection"
                 class="pull-right btn btn-warning btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
-                Cancel</i>
+                Cancel
             </button>
             <button data-bind="click: promptForSaveCollectionComments,
                                visible: userIsEditingCollection($data)"
                 title="Save your changes to this collection"
                 class="pull-right btn btn-info btn-mini row-controls-ghosted"
                 style="margin-left: 4px;">
-                Save Changes</i>
+                Save Changes
+            </button>
+            <button data-bind="click: updateCollectionTrees,
+                               visible: userIsEditingCollection($data)"
+                title="Use latest tree labels, detect removed trees"
+                class="pull-right btn btn-mini row-controls-ghosted"
+                style="margin-left: 4px;">
+                Update trees <i class="icon-refresh"></i>
             </button>
 
            </div>
@@ -729,12 +755,6 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 </ul>
               </div>
 
-                <!-- let's keep it simple for now
-                <div class="btn-group" style="margin-left: 80px; margin-top: 6px;">
-                  <button id="show-included-trees-button" class="btn btn-small active" onclick="alert('COMING SOON'); return false;">&nbsp; Show only included trees &nbsp;</button>
-                  <button id="show-all-trees-button" class="btn btn-small" onclick="alert('COMING SOON'); return false;">&nbsp; Show all tree decisions &nbsp;</button>
-                </div>
-                -->
               <div id="tree-list-holder"
                    style="overflow: auto;">
       <!-- ko if: ('decisions' in $data.data) && ($data.data.decisions.length > 0) -->
@@ -756,8 +776,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     </tr>
                   </thead>
                   <tbody id="tree-collection-decisions"
-                         data-bind="foreach: { data: $data.data.decisions, as: 'decision' }">
-                      <tr class="single-tree-row">
+                         data-bind="foreach: { data: $data.data.decisions }">
+                      <tr data-bind="attr: { class: (userIsEditingCollection($parent) && $data['status'] == 'REMOVED') ?
+                                                      'single-tree-row error' :
+                                                      (userIsEditingCollection($parent) && $data['status'] == 'RENAMED' ?
+                                                        'single-tree-row warning' :
+                                                        'single-tree-row-'+ $data['status'] )
+                                            }">
                           <td>
                           <!-- ko if: userIsEditingCollection($parent) -->
                             <input type="text"
@@ -802,6 +827,12 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                                class="icon-chevron-down">
                             </a>
                            <!-- /ko -->
+                           <!-- ko if: $data['status'] == 'REMOVED' -->
+                             <div class="tree-status-marker text-error">REMOVED</div>
+                           <!-- /ko -->
+                           <!-- ko if: $data['status'] == 'RENAMED' -->
+                             <div class="tree-status-marker text-warning">RENAMED</div>
+                           <!-- /ko -->
 
                           <!-- /ko --><!-- END of editing widgets -->
                           <!-- ko if: !userIsEditingCollection($parent) -->
@@ -830,7 +861,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                               <a data-bind="html: name,
                                             attr: { href: getTreeViewURL($data) }"
                                  title="View this tree in a new window"
-                                 href="#" target="_blank"><!--NAME--></a>
+                                 href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
                              <!-- this is no longer editable
                               <input type="text"
                                      class="input-large"
@@ -851,7 +882,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                             <!-- ko if: !userIsEditingCollection($parent) -->
                               <a data-bind="html: name,
                                             attr: { href: getTreeViewURL($data), title: comments || '(no description provided)' }"
-                                 href="#" target="_blank"><!--NAME--></a>
+                                 href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
                             <!-- /ko -->
                           </td>
                       </tr>
@@ -960,6 +991,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div><!-- end of .modal-body -->
     <div class="modal-footer" style="padding: 5px;"><!-- nothing here! --></div>
   </div><!-- end of #tree-collection-viewer.modal- -->
+{{ pass }}
+
 
 <!-- hidden template for gathering comments when saving a tree collection -->
 <div class="modal hide fade modal-save-comments" id="save-collection-comments-popup" style="display: none;">
@@ -1034,5 +1067,190 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     </div>
 {{ pass }}
 
+<!-- cookie consent for first-time visitors -->
+<script src="https://cdn.jsdelivr.net/npm/cookieconsent@3/build/cookieconsent.min.js" data-cfasync="false"></script>
+<script type="text/javascript">
+    function showCurrentCookieStatus() {
+        // TODO: Vary this message based on latest user decision?
+        return "This website uses cookies to maintain user sessions (essential) and to anonymously track how people use the website (optional).";
+    }
+    function forceDeleteTrackingCookies() {
+      // Clear any existing tracking cookies from Google Analytics!
+      ///window['ga-disable-UA-143548106-1'] = true;
+      // N.B. `document.cookie` is a smart setter, won't affect other cookies
+      document.cookie = "_ga=;max-age=-1;path=/;domain=.opentreeoflife.org";
+      document.cookie = "_gid=;max-age=-1;path=/;domain=.opentreeoflife.org";
+      // sometimes these cookies are set to third-level domains! why?!
+      document.cookie = "_ga=;max-age=-1;path=/;domain=.devtree.opentreeoflife.org";
+      document.cookie = "_gid=;max-age=-1;path=/;domain=.devtree.opentreeoflife.org";
+      document.cookie = "_ga=;max-age=-1;path=/;domain=.tree.opentreeoflife.org";
+      document.cookie = "_gid=;max-age=-1;path=/;domain=.tree.opentreeoflife.org";
+    }
+    window.cookieconsent.initialise({
+      "palette": {
+        "popup": {
+          "background": "#cc0000",
+          "text": "#ffffff"
+        },
+        "button": {
+          "background": "#ffffff"
+        }
+      },
+      "theme": "classic",
+      "position": "bottom",
+      "type": "opt-out",
+      "onStatusChange": function(status) {
+          if (this.hasConsented()) {
+              // anything to do here?
+          } else {
+              forceDeleteTrackingCookies();
+          }
+      },
+      "onInitialise": function(status) {
+          if (status === 'deny') {
+            forceDeleteTrackingCookies();
+          }
+      },
+      "content": {
+        "message": showCurrentCookieStatus(),
+        // "dismiss": "OK",
+        "deny": "Refuse tracking",
+        "href": "/about/privacy-policy"
+      }
+    });
+
+    /* Basic emulation of JS `alert`, `confirm`, `prompt`
+     * using Google's dialog-polyfill
+     */
+    var dialogSingleton; // one is enough for our needs
+    function getEmptyDialog() {
+        if (dialogSingleton) {
+            dialogSingleton.returnValue = null;
+            $(dialogSingleton).empty(); // clear any prior contents
+        } else {
+            // emulate Bootstrap style and choose a sensible width
+            dialogSingleton = $('<dialog class="fixed modal"></dialog>')[0];
+            $('body').append(dialogSingleton);
+            dialogPolyfill.registerDialog(dialogSingleton);
+        }
+        return dialogSingleton;
+    }
+    async function asyncAlert(msg) {
+      return new Promise((resolve, reject) => {
+        // no return value
+        var dialog = getEmptyDialog();
+        $(dialog).addClass('fixed')
+                 .html('<p>'+ msg +'</p>');
+        var $form = $('<form method="dialog"></form>');
+        var $OKBtn = $('<input type="submit" class="btn-info pull-right" value="OK" />').click(function(evt) {
+            resolve(true);  // always true
+            dialog.close();
+        }) ;
+        $form.append($OKBtn);
+        $(dialog).append($form);
+        dialog.addEventListener('cancel', function(evt) {
+            // capture ESC key closing window; return true regardless
+            resolve(true);
+        });
+        dialog.showModal();
+      });
+    }
+    async function asyncConfirm(question, options) {
+      return new Promise((resolve, reject) => {
+        options = options || {'FULL_HTML': false};
+        var dialog = getEmptyDialog();
+        dialog.addEventListener('close', function(evt) {
+            return dialog.returnValue || null;
+        });
+        $(dialog).addClass('fixed')
+                 .html( options.FULL_HTML ? question : '<p>'+ question +'</p>');
+        var $form = $('<form method="dialog"></form>');
+        var $OKBtn = $('<input type="submit" class="btn-info pull-right" value="OK" />').click(function(evt) {
+            resolve(true);
+            dialog.close();
+        }) ;
+        var $cancelBtn = $('<input type="submit" class="btn pull-left" value="Cancel" />').click(function(evt) {
+            resolve(false);
+            dialog.close();
+        }) ;
+        $form.append($OKBtn);
+        $form.append($cancelBtn);
+        $(dialog).append($form);
+        dialog.addEventListener('cancel', function(evt) {
+            // capture ESC key closing window
+            resolve(false);
+        });
+        dialog.showModal();
+      });
+    }
+    async function asyncPrompt(question, defaultValue) {
+      return new Promise((resolve, reject) => {
+        if (!defaultValue) defaultValue = "";
+        var userInput = null;
+        var promptCanceled = false;
+        var dialog = getEmptyDialog();
+        dialog.addEventListener('close', function(evt) {
+            return dialog.returnValue || null;
+        });
+        $(dialog).addClass('fixed')
+                 .html('<p>'+ question +'</p>');
+        var $form = $('<form method="dialog"></form>');
+        var $inputField = $('<input class="input-block-level" type="text" name="userInput" value="'+ defaultValue +'" />');
+        $inputField
+        var $OKBtn = $('<input type="submit" class="btn-info pull-right" value="OK" />').click(function(evt) {
+            resolve( $inputField.val() );
+            dialog.close();
+        }) ;
+        var $cancelBtn = $('<input type="submit" class="btn pull-left" value="Cancel" />').click(function(evt) {
+            resolve(null);  // mimic window.prompt response
+            dialog.close();
+        }) ;
+        $form.append($inputField);
+        $form.append($OKBtn);
+        $form.append($cancelBtn);
+        $(dialog).append($form);
+        dialog.addEventListener('cancel', function(evt) {
+            // capture ESC key closing window
+            resolve(null);  // mimic window.prompt response
+        });
+        dialog.showModal();
+      });
+    }
+
+/*
+ * Test functions for our dialog-polyfill (run from JS console)
+ */
+async function testAlert() {
+    // use `await` here
+    console.log('STARTING testAlert...');
+    var test = null;
+    try {
+        test = await asyncAlert('This is a test!');
+    }
+    catch (rejectedValue) {
+        console.warn("promise rejected!", rejectedValue);
+        test = "NADA";
+    }
+    console.log('RESPONSE to testAlert?', test);
+}
+async function testConfirm() {
+    console.log('STARTING testConfirm...');
+    var test = await asyncConfirm('This is a test!')
+                .then(function(x) {
+                    return x;
+                })
+                .catch(function(x) {
+                    console.warn("promise rejected!", x);
+                    return 'NADA';
+                });
+    console.log('RESPONSE to testConfirm:', test);
+}
+async function testPrompt() {
+    console.log('STARTING testPrompt...');
+    var test = await asyncPrompt('Favorite flavor?', 'vanilla');
+    console.log('RESPONSE to testPrompt:');
+    console.log(test);
+}
+</script>
   </body>
 </html>

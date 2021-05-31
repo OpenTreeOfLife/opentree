@@ -1,0 +1,1165 @@
+{{# Pivot (in many places) based on whether the user is an editor (curator) or
+# someone else looking at the tree collection
+#
+# userCanEdit = True if the user is authorized to edit this collection
+# viewOrEdit  = the function of this page ('EDIT' or 'VIEW'), regardless of
+#               user's permissions
+
+response.title = (viewOrEdit == 'EDIT') and "Edit Tree Collection" or "View Tree Collection"
+}}
+
+{{# Pivot (in some places) based on whether the user is a logged-in user or
+  # a visitor browsing tree collections.
+isLoggedIn = (auth.user) and True or False
+}}
+
+{{left_sidebar_enabled,right_sidebar_enabled=False,False}}
+{{response.subtitle = "loading collection %s..." % request.args[0]}}
+{{# TODO: make this sure shows the full collection ID! }}
+
+{{### Add support scripts for single-page editor
+
+# JSON support for older browsers (esp. IE7)
+response.files.append(URL('static','js/json2.js'))
+
+# Knockout.js for binding JSON model to editing UI
+response.files.append(URL('static','js/knockout-2.3.0.js'))
+
+# KO plugin for paginated lists
+response.files.append(URL('static','js/knockout-paged-e4a5770702.js'))
+
+# Knockout bindings for Twitter Bootstrap components
+response.files.append(URL('static','js/knockout-bootstrap.min.js'))
+
+# TODO: remove if not used
+# jQuery-File-Upload plugin and supporting files (TODO)
+# minimal support for $.widget()
+response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/vendor/jquery.ui.widget.js'))
+# Iframe Transport is required for browsers without support for XHR file uploads
+response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.iframe-transport.js'))
+response.files.append(URL('static','jQuery-File-Upload-9.5.2/js/jquery.fileupload.js'))
+response.files.append(URL('static','jQuery-File-Upload-9.5.2/css/jquery.fileupload.css'))
+}}
+{{extend 'layout.html'}}
+
+<style id="tree-view-style" type="text/css">
+body {
+    overflow-y: scroll;
+}
+
+</style>
+
+<div class="row">
+ <div class="span12">
+  <div class="tabbable tabs">
+    <ul class="nav nav-tabs">
+      <li><a href="#Home" data-toggle="tab">Home <span class="badge badge-important" style="display: none;">?</span></a></li>
+      <li><a href="#Synthesis" data-toggle="tab">Synthesis Tools <span class="badge badge-important" style="display: none;">?</span></a></li>
+      <li><a href="#History" data-toggle="tab">History <span class="badge badge-important" style="display: none;">?</span></a></li>
+      <!-- split history tabs?
+      <li><a href="#Change-History" data-toggle="tab">Change History <span class="badge badge-important" style="display: none;">?</span></a></li>
+      <li><a href="#Synthesis-History" data-toggle="tab">Synthesis History <span class="badge badge-important" style="display: none;">?</span></a></li>
+      -->
+    </ul>
+
+    <div class="span6" style="float: right; margin-top: -56px;">
+        {{ if viewOrEdit == 'EDIT': }}
+        {{# TODO: revisit these buttons }}
+          <button id="save-collection-button" class="btn">Save Collection</button>
+          <input type="hidden" id="return-to-collection-list"
+                 value="{{= URL(a='curator', c='collection', f='index')}}">
+          <a id="cancel-collection-edits" class="btn btn-link" href="#">Cancel</a>
+          <button class="btn btn-danger pull-right"
+            onclick="ejjjjjfgpromptForDeleteComments(); return false;">Delete Collection</button>
+        {{ else: }}
+         {{ if userCanEdit: }}
+          <a class="btn btn-info pull-right sticky-login" href="{{=URL('collection', 'edit/'+ collectionID)}}"
+           {{ if maintenance_info.get('maintenance_in_progress', False): }}
+            onclick="showMaintenancePopup(); return false;"
+           {{ else: }}
+            onclick="confirmHyperlink(this, 'Are you sure you want to edit this collection?'); return false;"
+           {{ pass }}
+          >Edit Collection</a>
+          <a onclick="copyCollection(); return false;"
+             title="Copy this collection (you will own the copy)"
+             class="pull-right btn" style="margin-right: 8px;">
+                Save a copy <i class="icon-repeat"></i>
+          </a>
+         {{ else: }}
+          <a class="btn btn-info pull-right sticky-login" href="{{=URL('collection', 'edit/'+ collectionID)}}"
+           {{ if maintenance_info.get('maintenance_in_progress', False): }}
+            onclick="showMaintenancePopup(); return false;"
+           {{ else: }}
+            onclick="confirmHyperlink(this, 'Are you sure you want to edit this collection?'); return false;"
+           {{ pass }}
+          >Login to Edit Collection</a>
+          <a onclick="copyCollection(); return false;"
+             title="Copy this collection (requires login)"
+             class="pull-right btn" style="margin-right: 8px;">
+                Save a copy <i class="icon-repeat"></i>
+          </a>
+         {{ pass }}
+          <a class="btn pull-right" style="margin-right: 8px;" href="{{= URL(a='curator', c='collection', f='index')}}">Return to collection list</a>
+        {{ pass }}
+    </div>
+  </div>
+ </div>
+</div>
+<div class="row">
+    <div class="span12">
+       {{if 'message' in globals():}}
+        <h4>{{=message}}</h4>
+       {{pass}}
+    </div>
+</div><!-- /.row -->
+
+<div class="row">
+    <div class="tab-content">
+
+          <div class="tab-pane" id="Home">
+           <div class="span12"><!-- full width for more tree info! -->
+
+            <button class="help-toggle" style="display: none;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+              <p>
+                There are just a few tabs here. The
+                <strong>Home</strong> tab shows metadata and lists the
+                phylogenetic trees in the current collection. There's not much
+                metadata for a collection, just a name and brief description.
+                Note that the collection ID becomes the URL for this
+                collection. This is based on the <em>first</em> name saved with
+                this collection; you should't change the name after that, since
+                that would break any links to the collection.
+              </p>
+        {{ if viewOrEdit == 'EDIT': }}
+              <p>
+                To add a tree from any study in the Open Tree of Life corpus
+                (a.k.a.  "phylesystem"), see <strong>Add a tree to this
+                collection</strong> below. You'll need to find the study and
+                tree with the search tool, or paste in a direct URL to this tree in
+                the curation tool.
+              </p>
+        {{ pass }}
+              <p>
+                Click on the name of any included tree to view it in the Open
+                Tree study curation tool. Click <strong>Synthesis</strong> to submit
+                this collection to our synthesis tools or to see its status in synthesis.
+                Click <strong>History</strong> to see a combined history of
+                changes to this collection and its use in synthesis.
+              </p>
+            </div>
+
+        {{ if viewOrEdit == 'VIEW': }}
+            <div class="control-group">
+                <a class="btn btn-info"
+                   href="{{= API_load_collection_GET_url.replace('{COLLECTION_ID}', collectionID) + '.json' }}"
+                   target="_blank">Download collection as JSON <i class="icon-arrow-down icon-white"></i></a>
+                <span> or you can use the
+                    <strong><a href="https://github.com/OpenTreeOfLife/germinator/wiki/Open-Tree-of-Life-Web-APIs"
+                       target="_blank">Open Tree API</a></strong>
+                </span>
+            </div>
+        {{ pass }}
+
+              <div Xclass="modal hide fade" Xstyle="border: solid red 1px;" id="tree-collection-viewer">
+                <div Xclass="modal-header" style="padding-bottom: 0;">
+                  <h3 id='dialog-heading' style="margin-top: 0px; margin-bottom: 2px;">
+                        <span style="color: #999;">Collection name</span>
+                       <!-- ko if: userIsEditingCollection($data) -->
+                        <input type="text" style="font-size: inherit; vertical-align: baseline; color: #000;
+                                                  font-weight: bold; width: 60%; margin-bottom: 0px;"
+                               data-bind="value: $data.data['name'],
+                                          valueUpdate: ['afterkeydown', 'input'],
+                                          event: { keyup: updateNewCollectionID, change: updateNewCollectionID }
+                                          "
+                        />
+                       <!-- /ko -->
+                       <!-- ko if: !userIsEditingCollection($data) -->
+                         <span data-bind="html: $data.data['name'] || 'Untitled'"></span>
+                       <!-- /ko -->
+                  </h3>
+                  <div style="color: #999; position: relative;">
+                    <p style="position: absolute; width: 170px; text-align: right;">
+                        Collection ID
+                    </p>
+                    <p style="margin-left: 180px;">
+                        <span id="collection-id-display"
+                              data-bind="text: getCollectionIDFromURL($data.data.url)">&nbsp;</a>
+                    </p>
+                  </div>
+                </div>
+                <div Xclass="modal-body" style="max-height: none;">
+                  <div class="tab-pane active">
+                      <form class="form-inline"
+                            style="margin-bottom: -12px; margin-top: -12px; padding-top: 12px;">
+                       <div class="collection-actions" style="padding-right: 8px;">
+                        <!-- action buttons, from right to left -->
+
+                       <!-- ko if: userIsEditingCollection($data) -->
+                        <!-- DELETE button (for now, this only appears in the My Collections list)
+                        <button data-bind="click: promptForDeleteCollectionComments,
+                                           visible: true"
+                            title="Delete this tree collection"
+                            class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                            style="margin-left: 14px;">
+                            Delete <i class="icon-trash icon-white"></i>
+                        </button>
+                        -->
+                       <!-- /ko -->
+
+                       <!-- ko if: !userIsEditingCollection($data) -->
+                        <!-- SYNTHESIS REPORT button (TODO?)
+                        <button Xdata-bind="click: TODO-follow-this-collection,
+                                            visible: true"
+                            title="(PROPOSED) View synthesis report for this collection"
+                            class="pull-right btn btn-mini row-controls-ghosted"
+                            style="margin-left: 4px; opacity: 0.5;">
+                            <i class="icon-list-alt"></i>
+                        </button>
+                        -->
+
+                        <!-- DUPLICATE button
+                        <button data-bind="click: copyCollection,
+                                            visible: true,
+                                            attr: {'title': userIsLoggedIn() ? 'Copy this collection (you will own the copy)' : 'Copy this collection (requires login)'}"
+                            title=""
+                            class="pull-right btn btn-mini row-controls-ghosted"
+                            style="margin-left: 4px;">
+                            Save a copy <i class="icon-repeat"></i>
+                        </button>
+                        -->
+                       <!-- /ko -->
+
+                        <!-- EDIT button 
+                        <button data-bind="click: editCollection,
+                                           visible: !(userIsEditingCollection($data)),
+                                           attr: {'title': userIsLoggedIn() ? 'Edit collection, including add/remove trees' : 'Edit collection (requires login)'}"
+                            title=""
+                            class="pull-right btn btn-info btn-mini row-controls-ghosted"
+                            style="margin-left: 4px;">
+                            Edit <i class="icon-edit icon-white"></i>
+                        </button>
+                        <button data-bind="click: cancelChangesToCollection,
+                                           visible: userIsEditingCollection($data)"
+                            title="Cancel your changes to this collection"
+                            class="pull-right btn btn-warning btn-mini row-controls-ghosted"
+                            style="margin-left: 4px;">
+                            Cancel
+                        </button>
+                        <button data-bind="click: promptForSaveCollectionComments,
+                                           visible: userIsEditingCollection($data)"
+                            title="Save your changes to this collection"
+                            class="pull-right btn btn-info btn-mini row-controls-ghosted"
+                            style="margin-left: 4px;">
+                            Save Changes
+                        </button>
+                        -->
+
+                       </div>
+
+                        <!-- editable collection properties here -->
+
+                            <label>Description</label>
+                          <!-- ko if: userIsEditingCollection($data) -->
+                            <input type="text"
+                                class="input-xlarge" style="width: 500px; margin-bottom: 2px;"
+                                placeholder="Describe this collection's focus or purpose"
+                                data-bind="value: $data.data['description'],
+                                           valueUpdate: ['afterkeydown', 'input']
+                                           "
+                            ></input>
+                          <!-- /ko -->
+                          <!-- ko if: !userIsEditingCollection($data) -->
+                            <div style="background-color: #eee; width: 500px;
+                                        margin: 0px 0px 2px -1px;
+                                        border-radius: 4px; padding: 5px 8px;"
+                                 data-bind="html: $data.data['description'] || '&nbsp;'"
+                            ></div>
+                          <!-- /ko -->
+
+                            <br/>
+                            <label data-bind="html: 'Last modified '+ getCollectionLastModification($data),
+                                              css: viewModel.ticklers.GENERAL_METADATA"
+                                   style="font-style: italic; float: right; margin-top: 6px; margin-right: 0.5em;">Last modified ?????</label>
+                            <label style="clear: left; margin-top: 6px;">Created by </label>
+                            <strong><a href="https://github.com/jimallman" target="_blank"
+                                       data-bind="text: $data.data.creator['name'],
+                                                  attr: {
+                                                    href: ('https://github.com/'+ $data.data.creator['login'])
+                                                  }
+                                                  "
+                                    >&nbsp;</a></strong>, with
+                          <!-- list collaborators (links) in a popup -->
+                          <div id="collection-collab-toggle" Xclass="btn-group"
+                               style="display: inline-block; position: relative;">
+                            <strong id="collection-collab-toggle" class="dropdown-toggle"
+                                    style="cursor: pointer;"
+                                    data-toggle="dropdown">
+                                <span data-bind="text: $data.data.contributors.length">0</span>
+                                collaborator<span data-bind="if: $data.data.contributors.length != 1">s</span>
+                               <span class="caret" style="vertical-align: middle;"></span>
+                            </strong>
+                            <ul id="tree-collection-contributors" class="dropdown-menu"
+                                data-bind="foreach: { data: $data.data.contributors, as: 'contributor' }">
+                                <li>
+                                    <a target="_blank"
+                                       data-bind="text: contributor['name'],
+                                                  attr: {
+                                                    href: ('https://github.com/'+ contributor['login'])
+                                                  }
+                                                  "
+                                    >&nbsp;</a>
+                                </li>
+                            </ul>
+                          </div>
+                        </form>
+                      </div>
+                </div><!-- end of .modal-body -->
+              </div><!-- end of #tree-collection-viewer.modal- -->
+
+            <div style="margin-bottom: 100px; clear: right; padding-top: 1em;">
+              <div class="navbar">
+               <div class="navbar-inner">
+                <form class="navbar-search pull-left">
+                    <h4 class="pull-left" style="margin: 5px 1em 0 0"
+                        data-bind="text: $data.data.decisions.length +' trees in this collection', 
+                                   css: viewModel.ticklers.TREES"># trees in this collection</h4>
+                    <input type="text" id="tree-list-filter" class="search-query" placeholder="Filter by name, ID, clade..."
+                           data-bind="value: viewModel.listFilters.TREES.match, valueUpdate: ['afterkeydown', 'input']">
+                </form>
+                <ul class="nav" style="padding-left: 1em;">
+                    <!-- hide/show columns UI, with hidden columns ghosted -->
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                          <span data-bind="text: countHiddenTreeColumns() + ' columns hidden',
+                                           css: viewModel.ticklers.TREES">N COLUMNS HIDDEN</span>
+                          <!-- TODO: Show actual value -->
+                          <b class="caret"></b>
+                        </a>
+                        <ul id="tree-list-columns" class="dropdown-menu"
+                            data-bind="foreach: collectionTreeListColumns,
+                                       css: viewModel.ticklers.TREES">
+                            <li data-bind="css: {'disabled': $data.locked,
+                                                 'dropdown-item-checked': getTreeColumnVisibility($data.id),
+                                                 'IGNORE-ME': viewModel.ticklers.TREES}">
+                                <!-- TODO: apply 'disabled' if column is NOT currently being used -->
+                                <a href="#" data-bind="text: $data.name, 
+                                                       click: function () { if (!$data.locked) toggleTreeColumnVisibility($data.id) }">COLNAME</a>
+                            </li>
+                        </ul>
+                    </li>
+                    <!-- sorting options
+                    <li class="dropdown">
+                        <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                          <span data-bind="text: viewModel.listFilters.TREES.order">SORT</span>
+                          <b class="caret"></b>
+                        </a>
+                        <ul id="tree-list-order" class="dropdown-menu" data-bind="foreach: [
+                                                                                            'Rank (ascending)',
+                                                                                            'Rank (descending)', 
+                                                                                            'Newest publication first', 
+                                                                                            'Oldest publication first', 
+                                                                                            'Mapped nodes (ascending)', 
+                                                                                            'Mapped nodes (descending)', 
+                                                                                            'Root of ingroup (alpha, ascending)', 
+                                                                                            'Root of ingroup (alpha, descending)', 
+                                                                                            'Taxonomic rank (ascending)', 
+                                                                                            'Taxonomic rank (descending)',
+                                                                                            'Focal clade of study (alpha, ascending)',
+                                                                                            'Focal clade of study (alpha, descending)',
+                                                                                            'Coflict vs. OpenTree synthetic tree (ascending)',
+                                                                                            'Coflict vs. OpenTree synthetic tree (descending)'
+                                                                                            ] ">
+                            <li data-bind="css: {'disabled': viewModel.listFilters.TREES.order() == $data }">
+                                <a href="#" data-bind="text: $data, click: function () { viewModel.listFilters.TREES.order($data); }">SORT</a>
+                            </li>
+                        </ul>
+                    </li>
+                    -->
+                </ul>
+               </div>
+              </div>
+
+        {{ if viewOrEdit == 'EDIT': }}
+            <div xclass="form-actions" style="margin-top: -10px; margin-bottom: 0.25em;">
+              <button id="freeze-tree-list-order" type="submit"
+                      data-bind="attr: {'disabled': viewModel.filteredTrees().pagedItems().length === 0},
+                                 css: (viewModel.ticklers.TREES +' btn btn-warning')"
+                      class="btn btn-warning pull-right"
+                      onclick="return false;">
+                    Freeze list order shown below
+              </button>
+              <button data-bind="click: updateCollectionTrees,
+                                 visible: userIsEditingCollection($data)"
+                      title="Use latest tree labels, detect removed trees"
+                      class="pull-right btn info-btn"
+                      style="margin-left: 4px; margin-right: 12px;">
+                      Update trees <i class="icon-refresh"></i>
+              </button>
+              <button id="new-collection-tree-start" type="submit"
+                      class="btn btn-info Xbtn-info-disabled"
+                      onclick="return false;"
+              ><span data-bind="text: ($data.data.decisions.length > 0) ? 'Add another tree' : 'Add a tree to this collection'">ADD TREE</span>
+                    &nbsp;<i class="icon-plus Xicon-upload icon-white"></i>
+              </button>
+              <button id="new-collection-tree-cancel" type="submit"
+                      style="display: none;" class="btn">Cancel
+              </button>
+            </div>
+            <div id="new-collection-tree-by-lookup"
+                 class="well new-collection-tree-options" style="display: none; padding-left: 12px; margin-bottom: 5px; margin-left: 20px;">
+                <div class="dropup" style="position: relative; margin-left: 146px;">
+                    <ul id="study-lookup-results" class="dropdown-menu" role="menu">
+                        ...
+                    </ul>
+                </div>
+                <label style="display: inline-block;">&hellip; by matching a study &nbsp;</label>
+                <!-- "active" wiget for study lookup -->
+                <i class="icon-search study-lookup-active" style="position: absolute; margin: 8px 0 0 7px; pointer-events: none;"></i>
+                <input type="text" name="study-lookup"
+                    class="input-xlarge study-lookup-active" style="margin-bottom: 2px; padding-left: 25px;"
+                    placeholder="Enter its title, DOI, reference, tag, ID..."
+                    data-bind="value: '',
+                               valueUpdate: ['afterkeydown', 'input'],
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                ></input>
+                <!-- hidden field to store chosen ID -->
+                <input type="hidden" name="study-lookup-id"
+                       data-bind="value: '',
+                                  event: { change: updateNewCollTreeUI }
+                                 "></input>
+                <!-- "passive" wiget once study is chosen -->
+                <a class="btn btn-small study-lookup-passive" style="display: none; margin: 3px 0 3px;"
+                   onclick="resetStudyLookup(); return false;">
+                    <i class="icon-search"></i>
+                </a>
+                <a id="study-lookup-indicator" class="study-lookup-passive"
+                   style="font-weight: bold; display: none;"
+                   title="" href="" target="_blank">...</a>
+                <br />
+
+                <label style="padding-left: 1em; display: inline-block;">and one of its trees &nbsp;</label>
+                <select name="tree-lookup"
+                    class="input-xlarge" style="margin-bottom: 2px;"
+                    disabled="disabled"
+                    placeholder="Enter its name, ID, ingroup clade..."
+                    data-bind="value: '',
+                               valueUpdate: ['afterkeydown', 'input'],
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                >
+                    <option disabled="disabled" value="">Find the study above first</option>
+                </select>
+                <button class="btn btn-info"
+                        data-bind="click: function() {addTreeToCollection($data, 'FROM_LOOKUPS'); return false;}"
+                >
+                      <i class="icon-plus icon-white"></i>
+                </button>
+            </div>
+            <div id="new-collection-tree-by-url"
+                 class="well new-collection-tree-options" style="display: none; padding-left: 12px; margin-left: 20px;">
+                <label>&hellip; by URL</label>
+                <input type="text"  name="tree-url"
+                    class="input-xlarge" style="width: 385px; margin-bottom: 2px;"
+                    placeholder=".../curator/study/view/pg_2826/?tab=trees&tree=tree6573"
+                    data-bind="value: '',
+                               valueUpdate: ['afterkeydown', 'input'],
+                               event: { keyup: updateNewCollTreeUI, change: updateNewCollTreeUI }
+                               "
+                ></input>
+                <button class="btn btn-info"
+                        data-bind="click: function() {addTreeToCollection($data, 'FROM_URL'); return false;}"
+                >
+                      <i class="icon-plus icon-white"></i>
+                </button>
+            </div>
+        {{ pass }}
+
+              <div class="empty-list-prompt" style="margin-top: 12px;" data-bind="visible: viewModel.filteredTrees().pagedItems().length === 0">
+                  No matching trees found! Add new trees or clear the
+                  filter above to see trees in this collection.
+              </div>
+
+              <div id="tree-list-holder"
+                   style="x-overflow: hidden; y-overflow: auto;">
+                <table class="table table-condensed table-hover"
+                    data-bind="visible: viewModel.filteredTrees().pagedItems().length &gt; 0">
+                  <thead>
+                    <tr>
+                       <!-- ko foreach: collectionTreeListColumns -->
+                        <th data-bind="visible: getTreeColumnVisibility($data.id),
+                                       attr: {'width': $data.colWidth || ''},
+                                       click: ($data.sortable) ? function () { toggleTreeListOrder($data); } : null,
+                                       css: { 'IGNORE-ME': viewModel.ticklers.TREES,
+                                              'non-sorting': !($data.sortable) }">
+                          <span data-bind="text: $data.shortName || $data.name,
+                                           attr: {'title': $data.name + ($data.sortable) ? ' (click to sort)' : ''}">COLNAME</span>
+                          <i class=""
+                             data-bind="visible: $data.sortable,
+                                        style: {'opacity': viewModel.listFilters.TREES.order().indexOf($data.id +'-') === 0 ? '1.0' : '0.3'},
+                                        css: viewModel.listFilters.TREES.order().indexOf($data.id +'-') === 0 ?
+                                              viewModel.listFilters.TREES.order().indexOf('ASC') === -1 ? 'icon-arrow-down' : 'icon-arrow-up' : 
+                                              'icon-resize-vertical'"></i>
+                        </th>
+                       <!-- /ko -->
+                        <th class="non-sorting">&nbsp;</th><!-- final tools cell, always visible -->
+                    </tr>
+                  </thead>
+
+                  <tbody data-bind="foreach: { data: viewModel.filteredTrees().pagedItems(), as: 'tree' }">
+                    <tr data-bind="attr: { class: (userIsEditingCollection($parent) && $data['status'] == 'REMOVED') ?
+                                                    'single-tree-row error' :
+                                                    (userIsEditingCollection($parent) && $data['status'] == 'RENAMED' ?
+                                                      'single-tree-row warning' :
+                                                      'single-tree-row-'+ $data['status'] )
+                                          },
+                                   css: viewModel.ticklers.TREES">
+                        <td style="white-space: nowrap;" data-bind="visible: getTreeColumnVisibility('RANK')">
+                        <!-- ko if: userIsEditingCollection($parent) -->
+                          <input type="text"
+                                 data-bind="value: $data['rank'],
+                                            valueUpdate: ['afterkeydown', 'input'],
+                                            css: viewModel.ticklers.TREES,
+                                            event: {
+                      keyup: function() {showCollectionMoveUI($data, $element, $parent)},
+                      change: function() {showCollectionMoveUI($data, $element, $parent)}
+                                            }"
+                                 style="color: #999; width: 24px;
+                                        margin-left: -4px; text-align: right;"
+                                 value=""
+                           />&nbsp;
+                         <!-- /ko -->
+                        <!-- ko if: userCanReorderTrees($parent) -->
+                         <!-- SORTING widgets -->
+                          <a data-bind="visible: $data['rank'] === 1,
+                                        css: viewModel.ticklers.TREES"
+                             style="opacity: 0.5;"
+                             href="#"
+                             onclick="return false;"
+                             class="icon-chevron-up">
+                          </a>
+                          <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'UP'); return false;},
+                                        visible: $data['rank'] > 1,
+                                        css: viewModel.ticklers.TREES"
+                             href="#"
+                             title="Move this tree up in the list"
+                             class="icon-chevron-up">
+                          </a>
+
+                          <a data-bind="visible: $data['rank'] === ($parent.data.decisions.length),
+                                        css: viewModel.ticklers.TREES"style="opacity: 0.5;"
+                             href="#"
+                             onclick="return false;"
+                             class="icon-chevron-down">
+                          </a>
+                          <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'DOWN'); return false;},
+                                        visible: $data['rank'] < ($parent.data.decisions.length),
+                                        css: viewModel.ticklers.TREES"
+                             href="#"
+                             title="Move this tree down in the list"
+                             class="icon-chevron-down">
+                          </a>
+
+                        <!-- /ko --><!-- END of re-ordering widgets -->
+
+                        <div data-bind="visible: $data['status'] == 'REMOVED',
+                                        css: viewModel.ticklers.TREES"
+                             class="tree-status-marker text-error">REMOVED</div>
+                        <div data-bind="visible: $data['status'] == 'RENAMED',
+                                        css: viewModel.ticklers.TREES"
+                             class="tree-status-marker text-warning">RENAMED</div>
+
+                        <!-- ko if: !userIsEditingCollection($parent) -->
+                        <div data-bind="text: $data['rank']"
+                             style="text-align: right; width: 27px; margin-top: 5px;">XX</div>
+                        <!-- /ko -->
+
+                        </td>
+                        <td data-bind="visible: getTreeColumnVisibility('NAME')">
+
+                          <!-- ko if: userIsEditingCollection($parent) -->
+                            <a data-bind="html: name,
+                                          attr: { href: getTreeViewURL($data) },
+                                          css:  viewModel.ticklers.TREES"
+                               title="View this tree in a new window"
+                               href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
+                           <!-- this is no longer editable
+                            <input type="text"
+                                   class="input-large"
+                                   style="width: 320px; margin-right: 10px; margin-bottom: 2px;"
+                                   placeholder="Name this tree"
+                                   data-bind="value: name,
+                                              valueUpdate: ['afterkeydown', 'input']
+                                              "
+                            >
+                            </input>
+                            -->
+                            <br/>
+                            <textarea data-bind="value: comments,
+                                                 valueUpdate: ['afterkeydown', 'input']"
+                                      class="span4"
+                                      style="color: #333; margin-bottom: 4px; height: 2em;"
+                                      placeholder="Describe your reasons for including this tree">
+                              <!--COMMENTS--></textarea>
+                          <!-- /ko -->
+                          <!-- ko if: !userIsEditingCollection($parent) -->
+                            <a data-bind="html: name,
+                                          attr: { href: getTreeViewURL($data), title: comments || '(no description provided)' }"
+                               href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
+                             <!-- ko if: comments -->
+                               <span data-bind="html: '&ndash; '+ comments(),
+                                                attr: { title: comments }""
+                                     style="color: #999; Xwhite-space: nowrap;"><!-- COMMENTS --></span>
+                             <!-- /ko -->
+                          <!-- /ko -->
+                        </td>
+                        <td data-bind="visible: getTreeColumnVisibility('CREF'),
+                                       css:  viewModel.ticklers.TREES">
+                            <span data-bind="html: getCompactReferenceLinkForTreeListEntry( $data ) || '??',
+                                             css:  viewModel.ticklers.TREES"
+                                  class="placeholder-data">{Study reference}</span>
+                        </td>
+                        <td data-bind="visible: getTreeColumnVisibility('MAPD'),
+                                       css:  viewModel.ticklers.TREES">
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeMappedNodes') || '??',
+                                             css:  viewModel.ticklers.TREES"
+                                  class="placeholder-data">{Mapped nodes}</span>
+                        </td>
+                        <td data-bind="visible: getTreeColumnVisibility('ROOT'),
+                                       css:  viewModel.ticklers.TREES">
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeIngroupRoot') || '??',
+                                             css:  viewModel.ticklers.TREES"
+                                  class="placeholder-data">{Root of ingroup}</span>
+                        </td>
+                        <td data-bind="visible: getTreeColumnVisibility('TRNK'),
+                                       css:  viewModel.ticklers.TREES">
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeIngroupTaxonomicRank') || '??',
+                                             css:  viewModel.ticklers.TREES"
+                                  class="placeholder-data">{Taxonomic rank}</span>
+                        </td>
+                        <td data-bind="visible: getTreeColumnVisibility('CONF'),
+                                       css:  viewModel.ticklers.TREES">
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'treeConflictScore') || '??',
+                                             css:  viewModel.ticklers.TREES"
+                                  class="placeholder-data">{Conflict vs. OpenTree}</span>
+                        </td>
+                        <td data-bind="visible: getTreeColumnVisibility('CLAD'),
+                                       css:  viewModel.ticklers.TREES">
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:focalCladeOTTTaxonName') || '&mdash;',
+                                             css:  viewModel.ticklers.TREES"
+                                  class="">{Focal clade}</span>
+                        </td>
+                        <td data-bind="visible: getTreeColumnVisibility('YEAR'),
+                                       css:  viewModel.ticklers.TREES">
+                            <span data-bind="html: getMetadataForTreeListEntry( $data, 'ot:studyYear') || '&mdash;',
+                                             css:  viewModel.ticklers.TREES"
+                                  class="">{Year}</span>
+                        </td>
+                        <td>
+                          <!-- ko if: userIsEditingCollection($parent) -->
+                            <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;},
+                                               css:  viewModel.ticklers.TREES"
+                                    title="Remove this tree from the collection"
+                                    class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                                    style="margin-left: 4px;">
+                                <i class="icon-trash icon-white"></i>
+                            </button>
+                          <!-- /ko -->
+                        </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+              {{ if False: }}
+                <div class="pagination pagination-centered pagination-small"
+                     Xdata-bind="if: viewModel.filteredTrees()().length &gt; viewModel.filteredTrees().pagedItems().length">
+                  <ul>
+                    <li data-bind="css: { 'disabled': !viewModel.filteredTrees().prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredTrees().prev(); return false;">&laquo;</a>
+                    </li>
+                   <!-- ko foreach: getPageNumbers( viewModel.filteredTrees() ) -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.filteredTrees() ) -->
+                    <li data-bind="css: { 'active': (viewModel.filteredTrees().current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.filteredTrees().goToPage($data); return false; }">0</a>
+                    </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.filteredTrees() ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.filteredTrees().goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
+                   <!-- /ko -->
+                    <li data-bind="css: { 'disabled': !viewModel.filteredTrees().next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.filteredTrees().next(); return false;">&raquo;</a>
+                    </li>
+                  </ul>
+                </div>
+              {{ pass }}
+
+              </div><!-- #tree-list-holder -->
+
+            </div>
+
+           </div><!-- end of main column... -->
+
+
+
+          </div><!-- /.tab-pane -->
+
+          <div class="tab-pane" id="Synthesis">
+           <div class="span12"><!-- full width... -->
+
+            <button class="help-toggle" style="display: none; margin-bottom: 0px;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+              <p>
+                This tab includes <strong>tools for synthesis</strong> using this collection. The underlying APIs are still
+                under active development. If you're comfortable using command-line tools, you can try them using
+                <a href="https://github.com/OpenTreeOfLife/ws_wrapper/blob/synth-on-demand/synth-on-demand.md" target="_blank">these instructions</a>.
+              </p>
+            </div>
+            <h3>Synthesis tools TBD</h3>
+           </div><!-- /.span12 -->
+          </div><!-- /#Synthesis -->
+
+          <div class="tab-pane" id="History">
+           <div class="span12"><!-- full width... -->
+
+            <button class="help-toggle" style="display: none; margin-bottom: 0px;">
+                Show help for this tab <i class="icon-chevron-down Xicon-white"></i>
+            </button>
+            <div class="help-box">
+              <button class="help-toggle">
+                  Hide <i class="icon-chevron-up Xicon-white"></i>
+              </button>
+              <p>
+                This tab shows the <strong>edit history</strong> for this collection:
+                each saved version of the data, who submitted the changes, and
+                a comment added each time. The history might include edits
+                made in other tools or by automated software. This history is
+                possible because we keep collection files under version control
+                in a <a href="https://github.com/OpenTreeOfLife/phylesystem" target="_blank">GitHub repository</a>.
+              </p>
+              <p>
+                You'll also see its <strong>synthesis history</strong>, whenever it
+                was submitted as an input to synthesis. These events are
+                interleaved with the change history to show the collection's state
+                for that particular synthesis run.
+              </p>
+            </div>
+
+            <ul class="suggestion-list" style="clear: right;"></ul>
+            <div style="margin-bottom: 100px;">
+
+                <div class="empty-list-prompt" data-bind="visible: viewModel.history.pagedItems().length === 0,
+                                                          css: viewModel.ticklers.HISTORY">
+                    No previous code versions or synthesis events found! (This is a new collection.)
+                </div>
+
+                <table class="table table-condensed"
+                    data-bind="visible: viewModel.history.pagedItems().length &gt; 0,
+                               css: viewModel.ticklers.HISTORY">
+                  <thead>
+                    <tr>
+                        <th width="20%">Date</th>
+                        <th width="20%">Event</th>
+                        <th width="50%">Summary</th>
+                        <th width="10%">Details</th>
+                    </tr>
+                  </thead>
+                  <tbody data-bind="foreach: { data: viewModel.history.pagedItems(), as: 'event' },
+                                    css: viewModel.ticklers.HISTORY">
+                    <tr>
+                        <td><span data-bind="text: event['relative_date'], attr: {'title': event['date']}">?</span></td>
+                        <td>
+                          <!-- ko if: event['author_name'] -->
+                          Version saved by<br/><strong data-bind="text: event['author_name']">?</strong>
+                          <!-- /ko -->
+                          <!-- ko if: event['runner_name'] -->
+                          Synthesis run by<br/><strong data-bind="text: event['runner_name']">?</strong>
+                          <!-- /ko -->
+                        </td>
+                        <td>
+                          <!-- ko if: event['author_name'] -->
+                            <pre class="rendered-comment" data-bind="text: event['message_subject'] + (event['message_body'] ? '\n\n'+ event['message_body'] : '')">?</pre>
+                          <!-- /ko -->
+                          <!-- ko if: event['runner_name'] -->
+                            <pre class="synth-event" data-bind="text: event['run_comment']">?</pre>
+                          <!-- /ko -->
+                        </td>
+                        <td>
+                          <!-- ko if: event['publicDiffURL'] -->
+                            <a href="" target="_blank" title="See detailed differences on GitHub"
+                               data-bind="attr: {'href': event['publicDiffURL']}">Diff view</a>
+                          <!-- /ko -->
+                          <!-- ko if: event['publicSynthURL'] -->
+                            <a href="" target="_blank" title="More information about this synthesis run"
+                               data-bind="attr: {'href': event['publicSynthURL']}">Synthesis details</a>
+                          <!-- /ko -->
+                          <!-- ko if: !event['publicDiffURL'] && !event['publicSynthURL'] -->
+                            &mdash;
+                          <!-- /ko -->
+                        </td>
+                    </tr>
+                  </tbody>
+                </table>
+
+                <div class="pagination pagination-centered pagination-small"
+                     Xdata-bind="if: viewModel.history()().length &gt; viewModel.history().pagedItems().length">
+                  <ul>
+                    <li data-bind="css: { 'disabled': !viewModel.history.prev.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.history.prev(); return false;">&laquo;</a>
+                    </li>
+                   <!-- ko foreach: getPageNumbers( viewModel.history ) || viewModel.ticklers.HISTORY -->
+                    <!-- ko if: isVisiblePage( $data, viewModel.history ) -->
+                    <li data-bind="css: { 'active': (viewModel.history.current() === $data) }" class="active">
+                        <a href="#" data-bind="text: $data, click: function() { viewModel.history.goToPage($data); return false; }">0</a>
+                    </li>
+                    <!-- /ko -->
+                    <!-- ko if: ! isVisiblePage( $data, viewModel.history ) -->
+                    <li><a class="pagination-spacer" href="#" data-bind="click: function() { viewModel.history.goToPage($data); return false; }">&nbsp;</a></li>
+                    <!-- /ko -->
+                   <!-- /ko -->
+                    <li data-bind="css: { 'disabled': !viewModel.history.next.enabled() }" class="disabled">
+                        <a href="#" onclick="viewModel.history.next(); return false;">&raquo;</a>
+                    </li>
+                  </ul>
+                </div>
+
+            </div>
+           </div><!-- end of full-width column... -->
+          </div><!-- /.tab-pane -->
+    </div><!-- /.tab-content -->
+
+
+</div><!-- /.row -->
+
+<script src="{{=URL('static','js/curation-helpers.js')}}"></script>
+<script type='text/javascript'>
+    var collectionID = '{{= collectionID }}';
+    var currentlyEditingCollectionID = '{{= (viewOrEdit == 'EDIT') and collectionID or "null" }}';
+    var latestSynthesisSHA = '{{= latestSynthesisSHA }}';
+    //var latestSynthesisTreeIDs = {{# = XML( json.dumps(latestSynthesisTreeIDs) ) }};
+    var treesQueuedForSynthesis = {{=XML( json.dumps(treesQueuedForSynthesis) ) }};
+    var viewOrEdit = '{{= viewOrEdit }}';
+
+    var API_create_collection_POST_url = '{{=API_create_collection_POST_url}}';
+    var API_load_collection_GET_url = '{{=API_load_collection_GET_url}}';
+    var API_update_collection_PUT_url = '{{=API_update_collection_PUT_url}}';
+    var API_remove_collection_DELETE_url = '{{=API_remove_collection_DELETE_url}}';
+
+    // If inbound URL specifies tab, tree, or filter settings, record them here
+    var initialState = {{= XML( dict(request.vars) ) }};
+    // set any required defaults (for clean/simple history behavior)
+    if (!('tab' in initialState)) {
+        initialState.tab = 'Metadata';
+    }
+    var listFilterDefaults = {
+        // track these defaults so we can reset them in history
+        'TREES': {
+            'match': "",
+            'columns': ['RANK', 'NAME', 'CREF', 'CLAD', 'YEAR'],
+            'order': "RANK-ASC"  // ie, list position
+        },
+        'FILES': {
+            'match': ""
+        },
+        'OTUS': {
+            // TODO: add 'pagesize'?
+            'match': "",
+            'scope': "In any tree",
+            'order': "Unmapped OTUs first"
+        },
+        'ANNOTATIONS': {
+            'match': "",
+            'scope': "Anywhere in the collection",
+            'submitter': "Submitted by all"
+        },
+        'COLLECTIONS': {
+            // NOTE 'match' and 'filter' are currently unused
+            'match': "",
+            'order': "Most recently modified",
+            'filter': "All tree collections"
+        }
+    };
+    var filterDefaults = null;
+    switch(slugify(initialState.tab)) {
+        case 'trees':
+            filterDefaults = listFilterDefaults.TREES;
+            break;
+        case 'files':
+            filterDefaults = listFilterDefaults.FILES;
+            break;
+        case 'otu-mapping':
+            filterDefaults = listFilterDefaults.OTUS;
+            break;
+    }
+    if (filterDefaults) {
+        // apply any missing filter defaults
+        for (var prop in filterDefaults) {
+            if (!(prop in initialState)) {
+                initialState[prop] = filterDefaults[prop];
+            }
+        }
+    }
+
+    var treemachine_domain = "{{=treemachine_domain}}";
+    var taxomachine_domain = "{{=taxomachine_domain}}";
+    var doTNRSForAutocomplete_url = "{{=doTNRSForAutocomplete_url}}";
+    var doTNRSForMappingOTUs_url = "{{=doTNRSForMappingOTUs_url}}";
+    var getContextForNames_url = "{{=getContextForNames_url}}";
+    var render_markdown_url = "{{=render_markdown_url}}";
+    var getTreesQueuedForSynthesis_url ="{{=getTreesQueuedForSynthesis_url}}";
+    var includeTreeInSynthesis_url ="{{=includeTreeInSynthesis_url}}";
+    var excludeTreeFromSynthesis_url ="{{=excludeTreeFromSynthesis_url}}";
+
+    var getDraftTreeMRCAForNodes_url = "{{=getDraftTreeMRCAForNodes_url}}";
+    var getTaxonomicMRCAForNodes_url = "{{=getTaxonomicMRCAForNodes_url}}";
+    var singlePropertySearchForStudies_url = "{{=singlePropertySearchForStudies_url}}";
+    var treeConflictStatus_url = "{{=treeConflictStatus_url}}";
+
+    var API_create_amendment_POST_url = "{{=API_create_amendment_POST_url}}";
+</script>
+<script src="{{=URL('static','js/tree-collection-editor.js')}}"></script>
+
+<!-- hidden template for DOI lookups -->
+<div class="modal hide fade modal-DOI-lookup" id="DOI-lookup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Matching DOIs and references
+      </h3>
+    </div>
+    <div class="modal-body" style="overflow-y: inherit;">
+        <div class="before-matches">
+            <div class="current-ref-values">
+                <strong>Current reference text and DOI/URL:</strong>
+                <p id="current-ref-text" style="margin-bottom: 0.25em;">&nbsp;</p>
+                <a id="current-ref-URL" style="display: block;" href="#" target="_blank" onclick="return false;">&nbsp;</a>
+            </div>
+            <p>
+                Based on the reference text for this study,
+                <a href="http://crossref.org/" target="_blank">CrossRef.org</a>
+                returned these <span class="found-matches-count"></span> matching records (best matches first).
+            </p>
+        </div>
+        <div class="found-matches" style="overflow-y: auto;"></div>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>
+
+<!-- hidden template for explaining colors and opacity of OTU mapping option -->
+<div class="modal hide fade" id="possible-mappings-key" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         How to interpret possible OTU mappings
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            When an OTU cannot be clearly mapped to a single taxon in the Open
+            Tree taxonomy, the most likely matches will appear in a list like
+            the one below.
+        </p>
+        <ul class="mapping-options" style="padding-left: 20px;">
+            <li>
+                <div class="key-note">possible matches are green</div>
+                <a class="badge badge-success"
+                   style="opacity: 1.0;"
+                   title="100% match of original label"
+                   href="#" onclick="return false;"
+                >Hominidae</a>
+            </li>
+            <li>
+                <div class="key-note">closer matches are darker</div>
+                <a class="badge badge-success"
+                   style="opacity: 0.78;"
+                   title="78% match of original label"
+                   href="#" onclick="return false;"
+                >Homininae</a>
+            </li>
+            <li>
+                <a class="badge badge-success"
+                   style="opacity: 0.56;"
+                   title="56% match of original label"
+                   href="#" onclick="return false;"
+                >Homo</a>
+            </li>
+            <li>
+                <div class="key-note">synonyms are blue</div>
+                <a class="badge badge-info"
+                   style="opacity: 1;"
+                   title="Synonym for Drosophila"
+                   href="#" onclick="return false;"
+                >Psathyrella</a>
+            </li>
+            <li>
+                <div class="key-note">homonyms are amber</div>
+                <a class="badge badge-warning"
+                   style="opacity: 1;"
+                   title="Taxon-name homonym"
+                   href="#" onclick="return false;"
+                >Drosophila (genus in Drosophiliti)</a>
+            </li>
+        </ul>
+        <p>
+            Click <button
+            class="btn btn-mini row-controls-ghosted"
+            type="button" onclick="return true;"><i class="icon-ok"></i>
+            </button> to
+            map the OTU to this taxon. Click
+            <button class="btn btn-mini row-controls-ghosted"
+                    type="button" onclick="return false;"><i class="icon-remove"></i>
+            </button>
+            to reject all mappings; then try modifying the original label and re-mapping.
+        </p>
+        <p>
+          Roll over each match to learn more about it. Click a name to
+          open the taxonomy browser for that taxon.
+        </p>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>
+
+<!-- hidden template for gathering comments when saving the collection -->
+<div class="modal hide fade modal-save-comments" id="save-comments-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Add a comment for these changes
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Add a brief description of the work you've done.
+            This will appear in the History tab.
+        </p>
+        <input type="text" id="save-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
+        <textarea id="save-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
+        <p id="save-collection-noemail-warning" class="help-box">
+          <strong>Warning</strong>: You have not provided a public email address
+            in your GitHub profile. You can still edit data but this activity
+            will not be shown on your GitHub or OpenTree profiles (and cannot be
+            linked back at a later date). See
+            <a href="https://github.com/OpenTreeOfLife/opentree/wiki/OpenTree-user-accounts-and-GitHub" target="_blank">
+            the help page</a> for details.
+        </p>
+  </div>
+    <div class="modal-footer">
+      <button class="btn btn-info pull-right" style="margin-left: 20px;"
+              onclick="$('#save-comments-popup').modal('hide'); saveFormDataToCollectionJSON(); return false;">Save Collection</button>
+      <a data-dismiss="modal" class="btn" >Cancel</a>
+    </div>
+</div>
+
+<!-- hidden template for gathering comments when deleting the collection -->
+<div class="modal hide fade modal-save-comments" id="delete-comments-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Are you sure you want to do this?
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Add a brief description of why you're deleting this collection.
+            (This will be saved in the main repository.)
+        </p>
+        <input type="text" id="delete-comment-first-line" class="input-block-level" maxlength="50" placeholder="Add a one-line summary (50 chars max)"/>
+        <textarea id="delete-comment-more-lines" class="input-block-level" rows="4" placeholder="Add more details and background as needed."></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-danger pull-right" style="margin-left: 20px;"
+              onclick="$('#delete-comments-popup').modal('hide'); removeCollection(); return false;">Delete Collection</button>
+      <a data-dismiss="modal" class="btn" >Cancel</a>
+    </div>
+</div>
+
+<!-- hidden template reminding about adding data if a data deposit already exists -->
+<div class="modal hide fade" id="late-data-reminder" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+         Reminder
+      </h3>
+    </div>
+    <div class="modal-body">
+        <p>
+            Files or trees added here should already be present in the data deposit for this study.
+            <span id="data-deposit-reminder">&nbsp;</span>
+        </p>
+        <p>(This reminder will only appear once per editing session.)</p>
+    </div>
+    <div class="modal-footer">
+      <a data-dismiss="modal" class="btn" >Close</a>
+    </div>
+</div>
+
+<!-- hidden template for gathering comments when saving the collection -->
+<div class="modal hide fade modal-save-comments" id="collection-metadata-popup" style="display: none;">
+    <div class="modal-header">
+      <a data-dismiss="modal" class="close">×</a>
+      <h3 id='dialog-heading'>
+          Collection metadata <span style="color: #ccc;">& curator notes</span>
+      </h3>
+    </div>
+    <div class="modal-body">
+      <div class="row">
+
+           <div class="span"><!-- main column... -->
+            <ul class="suggestion-list"></ul>
+            <form class="form-horizontal wider-fields{{= (viewOrEdit == 'VIEW') and ' metadata-readonly' or '' }}">
+              <div class="control-group">
+                <label class="control-label" for="ot_studyPublicationReference">Publication reference</label>
+                <div class="controls">
+                {{ if viewOrEdit == 'EDIT': }}
+                  <textarea Xdata-bind="value: nexml['^ot:studyPublicationReference'], valueUpdate: ['afterkeydown', 'input'], event: { keyup: nudge.GENERAL_METADATA, change: nudge.GENERAL_METADATA }, css: viewModel.ticklers.GENERAL_METADATA" id="ot_studyPublicationReference" class="input-xlarge" style="height: 160px;" placeholder=""></textarea>
+                {{ else: }}
+                  <p class="static-form-value" Xdata-bind="text: nexml['^ot:studyPublicationReference']"></p>
+                {{ pass }}
+                </div>
+              </div>
+
+              <!-- <div class="control-group">
+                <label class="control-label" for="ot_curatorName">Submitted by</label>
+                <div class="controls">
+                  <p class="static-form-value" data-bind="text: nexml['^ot:curatorName'].join(', ')"></p>
+                </div>
+              </div> -->
+
+              <div class="control-group">
+                <label class="control-label" for="ot_curatorName">Collection ID</label>
+                <div class="controls">
+                  <p class="static-form-value" data-bind="text: getCollectionIDFromURL($data.data.url)"></p>
+                </div>
+              </div>
+
+              <!-- <div class="control-group">
+                <div class="controls">
+
+                  <p class="static-form-value interesting-value" data-bind="text: studyContributedToLatestSynthesis() ? (currentStudyVersionContributedToLatestSynthesis() ? 'This version was used to build the latest synthetic tree' : 'This study has changed since building the last synthetic tree.') : 'This study was not used in the latest synthesis.'"></p>
+
+                </div>
+
+              </div> -->
+            </form>
+
+           </div><!-- end of main column... -->
+
+      </div><!-- div.row -->
+    </div><!-- div.modal-body -->
+</div><!-- div.modal -->
+

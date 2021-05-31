@@ -100,7 +100,7 @@ function updateListFiltersWithHistory() {
         var oldState = History.getState().data;
 
         // Determine which list filter is active (currently based on tab)
-        // N.B. There's currently just one filter per tab (Trees, Files, OTU Mapping).
+        // N.B. There's currently just one filter per tab (Home, Files, OTU Mapping).
         var activeFilter = viewModel.listFilters.STUDIES;
         var filterDefaults = listFilterDefaults.STUDIES;
         var newState = { };
@@ -213,8 +213,9 @@ function loadStudyList() {
                         var pubReference = study['ot:studyPublicationReference'];
                         var pubURL = study['ot:studyPublication'];
                         var pubYear = study['ot:studyYear'];
+                        // NB playing it safe here, since JS regex isn't guaranteed to match against array values
                         var tags = $.isArray(study['ot:tag']) ? study['ot:tag'].join('|') : study['ot:tag'];
-                        var curator = study['ot:curatorName'];
+                        var curator = $.isArray(study['ot:curatorName']) ? study['ot:curatorName'].join('|') : study['ot:curatorName'];
                         var clade = ('ot:focalCladeOTTTaxonName' in study && 
                                      ($.trim(study['ot:focalCladeOTTTaxonName']) !== "")) ?
                                         study['ot:focalCladeOTTTaxonName'] :  // use mapped name if found
