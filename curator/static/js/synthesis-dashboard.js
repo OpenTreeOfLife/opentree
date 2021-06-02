@@ -119,7 +119,7 @@ function updateListFiltersWithHistory() {
 
 $(document).ready(function() {
     bindHelpPanels();
-    loadCollectionList();
+    loadSynthesisRunList();
     
     // NOTE that our initial state is set in the main page template, so we 
     // can build it from incoming URL in web2py. Try to recapture this state,
@@ -172,12 +172,12 @@ $(document).ready(function() {
     }
     if (collectionID) {
         // TODO: Open this collection (and hide any other, IF changes are saved)
-        fetchAndShowCollection(collectionID);
+        fetchAndShowSynthesisRun(collectionID);
     }
 
 });
 
-function loadCollectionList(option) {
+function loadSynthesisRunList(option) {
     // Used for both initial list and refresh (to reflect adding/deleting collections).
     option = option ? option: 'INIT'; // or 'REFRESH'
 
@@ -208,7 +208,7 @@ function loadCollectionList(option) {
     $.ajax({
         type: 'GET',
         dataType: 'json',
-        url: findAllTreeCollections_url,
+        url: findAllSynthesisRuns_url,
         data: null,  // TODO: do we need { verbose: true } or other options here?
         success: function( data, textStatus, jqXHR ) {
             // this should be properly parsed JSON
