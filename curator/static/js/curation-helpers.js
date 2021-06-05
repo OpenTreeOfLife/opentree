@@ -2860,3 +2860,19 @@ async function confirmHyperlink( link, message ) {
     }
 }
 
+function createSynthesisRunRequest() {
+    /* Prompt for settings and request a new attempt at custom synthesis.
+     * This might initiate a new run, or it might be redirected to an existing
+     * run with identical settings and versions.
+     *
+     * NB: This can be triggered from different contexts:
+     *   - from the main synthesis queue
+     *   - from a single collection (editor)
+     */
+    console.warn() {
+        showInfoMessage("Now I'd prompt for detailed settings...");
+    }
+
+    // TODO show a shared popup (from shared page template)
+    // TODO show response from synth-API server (run started, or redirected, or ???)
+}
