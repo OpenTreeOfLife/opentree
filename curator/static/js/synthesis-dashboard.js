@@ -194,7 +194,7 @@ function loadSynthesisRunList(option) {
     } else {
         // use default filter values
         effectiveFilters['match']  = "";
-        effectiveFilters['order']  = "Most recently created";
+        effectiveFilters['order']  = "Most recently completed";
         effectiveFilters['filter'] = "All synthesis runs";
     }
     /*
