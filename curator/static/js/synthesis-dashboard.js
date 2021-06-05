@@ -280,17 +280,26 @@ function loadSynthesisRunList(option) {
                     case 'Most recently completed':
                         filteredList.sort(function(a,b) { 
                             // coerce any missing/goofy dates to strings
+                            /* if bare dates are provided...
+                            if (a.date_ISO_8601 == b.date_ISO_8601) return 0;
+                            if (a.date_ISO_8601 > b.date_ISO_8601) return -1;
+                            return 1;
+                            */
+                            /* if more complex dates are provided...
                             var aMod = $.trim(a.lastModified.ISO_date);
                             var bMod = $.trim(b.lastModified.ISO_date);
                             if (aMod === bMod) {
                                 return maintainRelativeListPositions(a, b);
                             }
                             return (aMod < bMod)? 1 : -1;
+                            */
+                            return 0;
                         });
                         break;
 
                     case 'Most recently completed (reversed)':
                         filteredList.sort(function(a,b) { 
+                            /* see sorting possibilities above
                             // coerce any missing/goofy dates to strings
                             var aMod = $.trim(a.lastModified.ISO_date);
                             var bMod = $.trim(b.lastModified.ISO_date);
@@ -298,6 +307,8 @@ function loadSynthesisRunList(option) {
                                 return maintainRelativeListPositions(a, b);
                             }
                             return (aMod > bMod)? 1 : -1;
+                            */
+                            return 0;
                         });
                         break;
 
