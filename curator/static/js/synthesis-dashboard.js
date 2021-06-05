@@ -218,11 +218,24 @@ function loadSynthesisRunList(option) {
                 showErrorMessage('Sorry, there was an error loading the list of tree collections.');
                 return;
             }
-            if (typeof data !== 'object' || !($.isArray(data))) {
-                showErrorMessage('Sorry, there is a problem with the tree-collection data.');
-                return;
+            if (typeof data !== 'object'){
+                // TEMP parse JSON from our testing file
+                try {
+                    data = JSON.parse(data);
+                } catch(e) {
+                    showErrorMessage('Sorry, there is a problem with the tree-collection data.');
+                    return;
+                }
             }
-            
+            if (!($.isArray(data))) {
+                // convert from associative array (IDs are also stored in each run)
+                try {
+                    data = Object.keys(data || {}).map( key => data[key] );
+                } catch(e) {
+                    showErrorMessage('Sorry, there is a problem with the tree-collection data.');
+                    return;
+                }
+            }
             captureDefaultSortOrder(data);
             viewModel = data;
 
