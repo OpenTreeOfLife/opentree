@@ -2869,9 +2869,7 @@ function createSynthesisRunRequest() {
      *   - from the main synthesis queue
      *   - from a single collection (editor)
      */
-    console.warn() {
-        showInfoMessage("Now I'd prompt for detailed settings...");
-    }
+    showInfoMessage("Now I'd prompt for detailed settings...");
 
     // TODO show a shared popup (from shared page template)
     // TODO show response from synth-API server (run started, or redirected, or ???)
