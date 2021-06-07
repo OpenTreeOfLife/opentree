@@ -162,8 +162,7 @@ function loadSynthesisRunList(option) {
     $.ajax({
         type: 'GET',
         dataType: 'json',
-        //url: '../static/synth-queue.json',
-        url: findAllSynthesisRuns_url,
+        url: '../static/synth-queue.json',
         data: null,  // TODO: do we need { verbose: true } or other options here?
         success: function( data, textStatus, jqXHR ) {
             // this should be properly parsed JSON
