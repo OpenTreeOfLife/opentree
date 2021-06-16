@@ -219,6 +219,7 @@ function loadSynthesisRunList(option) {
                     matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
                     wholeSlugMatchPattern = new RegExp( '^'+ $.trim(matchWithDiacriticals) +'$' );
                 var order = viewModel.listFilters.SYNTHESIS_RUNS.order();
+                var view = viewModel.listFilters.SYNTHESIS_RUNS.view();
                 var filter = viewModel.listFilters.SYNTHESIS_RUNS.filter();
 
                 var showEmptyListWarningForAnonymousUser = false;
