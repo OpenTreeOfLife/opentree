@@ -330,7 +330,7 @@ function loadSynthesisRunList(option) {
             ko.cleanNode(listArea);
             // remove all but one list entry (else they multiply!)
             // N.B. that we also skip the first (header) row!
-            $('#synthesis-run-list-container tr:gt(1)').remove();
+            $('#synthesis-run-list-container tr:gt(2)').remove();
             // remove extra menu items in list filters
             $('#synthesis-run-list-container .dropdown-menu').find('li:gt(0)').remove();
             // remove extra pagination elements below
