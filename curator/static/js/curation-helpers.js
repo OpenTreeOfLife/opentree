@@ -2878,10 +2878,12 @@ function showSynthesisRunPopup(options) {
         // add this collection (id?) as the start of our job list
         includedCollectionIDs.push(options.INITIAL_COLLECTION);
     }
-    showInfoMessage("Now I'd prompt for detailed settings...");
+    // populate some fields based on options provided
+    $('#new-synth-collection-list').val(includedCollectionIDs.join('\n'));
 
-    // TODO show a shared popup (from shared page template)
-    // TODO show response from synth-API server (run started, or redirected, or ???)
+    // show a shared popup (from shared page template)
+    $('#define-synth-run-popup').modal('show');
+    // TODO Upon submission, show response from synth-API server (run started, or redirected, or ???)
 }
 function createSynthesisRunRequest( synthRunInfo ) {
     /* Actual initiation of synth run, the result of hitting Submit in the
