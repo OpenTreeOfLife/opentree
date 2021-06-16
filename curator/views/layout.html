@@ -1069,13 +1069,13 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         <!--
         <input type="text" id="new-synth-TODO" class="input-block-level" maxlength="50" placeholder=" (50 chars max)"/>
         -->
-        <textarea id="new-synth-description" class="input-block-level" rows="5" placeholder="How would you describe this synthesis or its purpose?"></textarea>
+        <textarea id="new-synth-description" class="input-block-level" rows="2" placeholder="Briefly describe this synthesis and/or its purpose"></textarea>
         <input type="text" id="new-synth-root-ottid" class="input-block-level" maxlength="20" placeholder="Choose the root taxonomic ID for this synthesis"/>
         <!-- TODO: Build a visual list (constrained entry?) of collectin ids -->
         <textarea id="new-synth-collection-list" class="input-block-level" rows="8" placeholder="example/turtles
- example/goldfish
- opentreeoflife/default"></textarea>
-
+example/goldfish
+opentreeoflife/default"></textarea>
+        <!-- TODO: Add validation for the list and its ids? -->
     </div>
     <div class="modal-footer">
       <button id="new-synth-submit"
