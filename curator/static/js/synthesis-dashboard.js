@@ -348,3 +348,51 @@ function loadSynthesisRunList(option) {
         }
     });
 }
+
+// Copy full vs. compact view of study list, for synthesis runs
+function toggleSynthRunDetails( clicked ) {
+    var $toggle = $(clicked);
+    var $fullRunDetails = $toggle.closest('tr').next().find('.full-synth-run-details');
+    if ($fullRunDetails.is(':visible')) {
+        $fullRunDetails.hide();
+        $toggle.text('[show details]');
+    } else {
+        $fullRunDetails.show();
+        $toggle.text('[hide details]');
+    }
+}
+function toggleAllSynthRunDetails( hidingOrShowing ) {
+    // Show (or hide) details for all visible studies
+    var $synthRunList = $('#synthesis-run-list-container');
+    var $singleSynthRunToggles = $synthRunList.find('a.full-ref-toggle');
+    var $synthRunDetailBlocks = $singleSynthRunToggles.closest('tr').next('tr').find('div.full-synth-run-details');
+    if ($.inArray(hidingOrShowing, ['SHOWING', 'HIDING']) === -1) {
+        // Operation not specified! Follow the current state of the detail blocks.
+        var $visibleSynthRunDetailBlocks = $synthRunDetailBlocks.filter(':visible');
+        if ($visibleSynthRunDetailBlocks.length === $singleSynthRunToggles.length) {
+            // all blocks found and currently visible, so we should hide all
+            hidingOrShowing = 'HIDING';
+        } else {
+            // show all blocks by default
+            hidingOrShowing = 'SHOWING';
+        }
+    }
+    $singleSynthRunToggles.each(function(i, toggle) {
+        var $toggle = $(toggle);
+        var $synthRunRow = $toggle.closest('tr');
+        var $synthRunDetailsRow = $synthRunRow.next('tr:has(.full-synth-run-details)');
+        if ($synthRunDetailsRow.length > 0) {
+            // there should always be a corresponding block
+            var detailsBlock = $synthRunDetailBlocks[i];
+            if ($(detailsBlock).is(':visible')) {
+                if (hidingOrShowing==='HIDING') {
+                    toggleSynthRunDetails($toggle);
+                }
+            } else {  // block is hidden
+                if (hidingOrShowing==='SHOWING') {
+                    toggleSynthRunDetails($toggle);
+                }
+            }
+        }
+    });
+}
