@@ -2869,20 +2869,30 @@ function showSynthesisRunPopup(options) {
      *   - from the main synthesis queue
      *   - from a single collection (editor)
      *
-     * Options can include a first collection in the list, if we're doing this
+     * Options can include collection IDs to start the list, if we're doing this
      * from a particular context like the collection-curation tool.
      */
     options = options || {};
     var includedCollectionIDs = [ ];
-    if (options.INITIAL_COLLECTION) {
-        // add this collection (id?) as the start of our job list
-        includedCollectionIDs.push(options.INITIAL_COLLECTION);
-    }
     // populate some fields based on options provided
+    if (options.INITIAL_COLLECTIONS) {
+        // add this collection (id?) as the start of our job list
+        $.merge(includedCollectionIDs, options.INITIAL_COLLECTIONS)
+    }
     $('#new-synth-collection-list').val(includedCollectionIDs.join('\n'));
+    if (options.INITIAL_ROOT_OTTID) {
+        // add this collection (id?) as the start of our job list
+        $('#new-synth-root-ottid').val(options.INITIAL_ROOT_OTTID);
+    }
+    if (options.INITIAL_DESCRIPTION) {
+        // add this collection (id?) as the start of our job list
+        $('#new-synth-description').val(options.INITIAL_DESCRIPTION);
+    }
 
     // show a shared popup (from shared page template)
     $('#define-synth-run-popup').modal('show');
+
+    // TODL validate initial settings and warn if needed
     // TODO Upon submission, show response from synth-API server (run started, or redirected, or ???)
 }
 function createSynthesisRunRequest( synthRunInfo ) {
