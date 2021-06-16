@@ -202,6 +202,7 @@ function loadSynthesisRunList(option) {
                     // use default (or preserved) filters, as determined above
                     'match': ko.observable(effectiveFilters['match']),
                     'order': ko.observable(effectiveFilters['order']),
+                    'view': ko.observable(effectiveFilters['view']),
                     'filter': ko.observable(effectiveFilters['filter'])
                 }
             };
