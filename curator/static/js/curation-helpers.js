@@ -2860,7 +2860,7 @@ async function confirmHyperlink( link, message ) {
     }
 }
 
-function createSynthesisRunRequest() {
+function showSynthesisRunPopup(options) {
     /* Prompt for settings and request a new attempt at custom synthesis.
      * This might initiate a new run, or it might be redirected to an existing
      * run with identical settings and versions.
@@ -2868,9 +2868,30 @@ function createSynthesisRunRequest() {
      * NB: This can be triggered from different contexts:
      *   - from the main synthesis queue
      *   - from a single collection (editor)
+     *
+     * Options can include a first collection in the list, if we're doing this
+     * from a particular context like the collection-curation tool.
      */
+    options = options || {};
+    var includedCollectionIDs = [ ];
+    if (options.INITIAL_COLLECTION) {
+        // add this collection (id?) as the start of our job list
+        includedCollectionIDs.push(options.INITIAL_COLLECTION);
+    }
     showInfoMessage("Now I'd prompt for detailed settings...");
 
     // TODO show a shared popup (from shared page template)
     // TODO show response from synth-API server (run started, or redirected, or ???)
+}
+function createSynthesisRunRequest( synthRunInfo ) {
+    /* Actual initiation of synth run, the result of hitting Submit in the
+     * popup above (or any equivalent action). This should bundle up a
+     * submission along with personala identity and credentials, then report
+     * any immediate error or result codes.
+     *
+     * If the submission was accepted, we should clear the synth-queue cache
+     * (if any) and prompt for a fresh listing, then perhaps highlight the
+     * newly-submitted item in the list..?
+     */
+    showInfoMessage("Now I'd submit those detailed settings...");
 }
