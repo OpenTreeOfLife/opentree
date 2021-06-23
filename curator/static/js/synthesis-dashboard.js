@@ -136,7 +136,7 @@ function loadSynthesisRunList(option) {
     option = option ? option: 'INIT'; // or 'REFRESH'
 
     if (option === 'INIT') {
-        showModalScreen("Loading tree collection list...", {SHOW_BUSY_BAR:true});
+        showModalScreen("Loading custom synthesis history...", {SHOW_BUSY_BAR:true});
     }
 
     var effectiveFilters = {};
