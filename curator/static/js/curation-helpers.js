@@ -2860,6 +2860,7 @@ async function confirmHyperlink( link, message ) {
     }
 }
 
+var synthRunSpec;
 function showSynthesisRunPopup(options) {
     /* Prompt for settings and request a new attempt at custom synthesis.
      * This might initiate a new run, or it might be redirected to an existing
@@ -2873,26 +2874,30 @@ function showSynthesisRunPopup(options) {
      * from a particular context like the collection-curation tool.
      */
     options = options || {};
-    var includedCollectionIDs = [ ];
-    // populate some fields based on options provided
-    if (options.INITIAL_COLLECTIONS) {
-        // add this collection (id?) as the start of our job list
-        $.merge(includedCollectionIDs, options.INITIAL_COLLECTIONS)
-    }
-    $('#new-synth-collection-list').val(includedCollectionIDs.join('\n'));
-    if (options.INITIAL_ROOT_OTTID) {
-        // add this collection (id?) as the start of our job list
-        $('#new-synth-root-ottid').val(options.INITIAL_ROOT_OTTID);
-    }
-    if (options.INITIAL_DESCRIPTION) {
-        // add this collection (id?) as the start of our job list
-        $('#new-synth-description').val(options.INITIAL_DESCRIPTION);
-    }
-
+    synthRunSpec = {
+        'runner': {
+            'login': userLogin,
+            'displayName': userDisplayName,
+            'email': ko.observable(userEmail)
+        },
+        // use any initial values provided above
+        'description': ko.observable(options.DESCRIPTION || ''),
+        'rootTaxonID': ko.observable(options.ROOT_TAXON_OTTID || ''),
+        'rootTaxonName': ko.observable(options.ROOT_TAXON_NAME || ''),
+        'collections': ko.observableArray(options.COLLECTIONS || [ ])
+    };
     // show a shared popup (from shared page template)
+    var $synthRunPopup = $('#define-synth-run-popup');
+    var popup = $synthRunPopup[0];
+    ko.cleanNode(popup);
+    ko.applyBindings(synthRunSpec, popup);
+    $('#define-synth-run-popup').off('hidden').on('hidden', function () {
+        // clear any proposed spec for next time
+        ko.cleanNode(popup);
+        synthRunSpec = null;
+    });
     $('#define-synth-run-popup').modal('show');
-
-    // TODL validate initial settings and warn if needed
+    // TODO validate initial settings and warn if needed
     // TODO Upon submission, show response from synth-API server (run started, or redirected, or ???)
 }
 function createSynthesisRunRequest( synthRunInfo ) {

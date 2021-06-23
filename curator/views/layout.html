@@ -1076,7 +1076,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <label class="control-label" for="ot_focalClade">Focal clade</label>
                 <div class="controls">
                   <div class="static-form-value"
-                       data-bind="text: nexml['^ot:focalCladeOTTTaxonName'] || 'None', attr:{'title': ('ottid:'+ nexml['^ot:focalClade'])}, css: viewModel.ticklers.GENERAL_METADATA">
+                       data-bind="text: rootTaxonName || 'None', attr:{'title': ('ottid:'+ rootTaxonID)}">
                     &nbsp;
                   </div>
                   <!-- reuse some (not all) style and behavior for taxon search in synth-tree viewer -->
@@ -1110,10 +1110,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                           </ul>
                       </div>
                     </div>
-                  <input data-bind="value: nexml['^ot:focalClade'], event: { change: nudge.GENERAL_METADATA }, css: viewModel.ticklers.GENERAL_METADATA" type="hidden" id="ot_focalClade" placeholder="">
                 </div>
               </div>
-
 
 
         <!-- TODO: Build a visual list (constrained entry?) of collectin ids -->
