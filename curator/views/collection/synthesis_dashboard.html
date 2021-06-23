@@ -168,7 +168,7 @@ response.files.append(URL('static','js/knockout-bootstrap.min.js'))
             <tr>
                 <td colspan="5" style="border-top: none; padding-top: 0px;">
                     <pre class="synth-event" style="overflow: visible;"
-                         data-bind="visible: viewModel.listFilters.SYNTHESIS_RUNS.view() === 'Full view (show details)'">This run included <strong data-bind="text: run['collections'].split(',').length"></strong> collections:<!-- ko foreach: run['collections'].split(',') -->
+                         data-bind="visible: viewModel.listFilters.SYNTHESIS_RUNS.view() === 'Full view (show details)'">This run included <strong data-bind="text: run['collections'].split(',').length"></strong> collection<span data-bind="visible: event['collections'].split(',').length > 1">s</span>:<!-- ko foreach: run['collections'].split(',') -->
     <a href="#" target="_blank" title="View this collection in a new window" data-bind="text: $data,
                                            attr: {'href': ('/curator/collection/view/'+ $data) }">LINK</a
                         ><!-- /ko -->
