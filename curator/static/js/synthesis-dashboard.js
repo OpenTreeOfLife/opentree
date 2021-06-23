@@ -352,7 +352,7 @@ function loadSynthesisRunList(option) {
 // Copy full vs. compact view of study list, for synthesis runs
 function toggleSynthRunDetails( clicked ) {
     var $toggle = $(clicked);
-    var $fullRunDetails = $toggle.closest('tr').next().find('.full-synth-run-details');
+    var $fullRunDetails = $toggle.closest('tr').next().find('.synth-event');
     if ($fullRunDetails.is(':visible')) {
         $fullRunDetails.hide();
         $toggle.text('[show details]');
@@ -365,7 +365,7 @@ function toggleAllSynthRunDetails( hidingOrShowing ) {
     // Show (or hide) details for all visible studies
     var $synthRunList = $('#synthesis-run-list-container');
     var $singleSynthRunToggles = $synthRunList.find('a.full-ref-toggle');
-    var $synthRunDetailBlocks = $singleSynthRunToggles.closest('tr').next('tr').find('div.full-synth-run-details');
+    var $synthRunDetailBlocks = $singleSynthRunToggles.closest('tr').next('tr').find('.synth-event');
     if ($.inArray(hidingOrShowing, ['SHOWING', 'HIDING']) === -1) {
         // Operation not specified! Follow the current state of the detail blocks.
         var $visibleSynthRunDetailBlocks = $synthRunDetailBlocks.filter(':visible');
@@ -380,7 +380,7 @@ function toggleAllSynthRunDetails( hidingOrShowing ) {
     $singleSynthRunToggles.each(function(i, toggle) {
         var $toggle = $(toggle);
         var $synthRunRow = $toggle.closest('tr');
-        var $synthRunDetailsRow = $synthRunRow.next('tr:has(.full-synth-run-details)');
+        var $synthRunDetailsRow = $synthRunRow.next('tr:has(.synth-event)');
         if ($synthRunDetailsRow.length > 0) {
             // there should always be a corresponding block
             var detailsBlock = $synthRunDetailBlocks[i];

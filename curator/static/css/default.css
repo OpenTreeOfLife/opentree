@@ -344,8 +344,7 @@ a.preview-link:hover {
     color: #333 !important;
     text-decoration: underline;
 }
-.full-study-ref,
-.full-synth-run-details {
+.full-study-ref {
     background-color: #f3f3f3;
     padding: 3px 5px;
     font-size: 90%;
