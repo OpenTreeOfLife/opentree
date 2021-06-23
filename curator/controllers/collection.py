@@ -115,7 +115,7 @@ def synthesis_dashboard():
     response.view = 'collection/synthesis_dashboard.html'
     view_dict = get_opentree_services_method_urls(request)
     view_dict['maintenance_info'] = get_maintenance_info(request)
-    #view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
+    view_dict['taxonSearchContextNames'] = fetch_current_TNRS_context_names(request)
     view_dict['userCanEdit'] = auth.is_logged_in() and True or False
     return view_dict
 
