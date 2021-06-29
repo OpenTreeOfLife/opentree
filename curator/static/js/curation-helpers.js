@@ -3047,7 +3047,7 @@ function searchForMatchingTaxa() {
                 $('#search-results a')
                     .click(function(e) {
                         var $link = $(this);
-                        if () {
+                        if ($link.closest('#study-metadata-popup').length === 1) {
                             /* WE'RE EDITING A STUDY */
                             // modify its focal clade (name and ottid)
                             viewModel.nexml['^ot:focalCladeOTTTaxonName'] = $link.text();
