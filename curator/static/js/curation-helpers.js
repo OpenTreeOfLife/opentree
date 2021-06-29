@@ -2896,6 +2896,16 @@ function showSynthesisRunPopup(options) {
         ko.cleanNode(popup);
         synthRunSpec = null;
     });
+
+    // enable taxon search
+    $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
+    $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
+
+    // don't trigger unrelated form submission when pressing ENTER here
+    $('input[name=taxon-search], select[name=taxon-search-context]')
+        .unbind('keydown')
+        .bind('keydown', function(e) { return e.which !== 13; });
+
     $('#define-synth-run-popup').modal('show');
     // TODO validate initial settings and warn if needed
     // TODO Upon submission, show response from synth-API server (run started, or redirected, or ???)
