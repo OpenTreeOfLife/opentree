@@ -1069,50 +1069,49 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         <!--
         <input type="text" id="new-synth-TODO" class="input-block-level" maxlength="50" placeholder=" (50 chars max)"/>
         -->
-        <textarea id="new-synth-description" class="input-block-level" rows="2" placeholder="Briefly describe this synthesis and/or its purpose (optional)"></textarea>
-        <input type="text" id="new-synth-root-ottid" class="input-block-level" maxlength="20" placeholder="Choose the root taxonomic ID for this synthesis"/>
+        <textarea id="new-synth-description" class="input-block-level" rows="2" placeholder="Briefly describe this synthesis and/or its purpose (optional)"                  data-bind="value: $data.description,
+                             valueUpdate: ['afterkeydown', 'input']"></textarea>
 
-              <div class="control-group">
-                <label class="control-label" for="ot_focalClade">Focal clade</label>
-                <div class="controls">
-                  <div class="static-form-value"
-                       data-bind="text: rootTaxonName || 'None', attr:{'title': ('ottid:'+ rootTaxonID)}">
-                    &nbsp;
-                  </div>
-                  <!-- reuse some (not all) style and behavior for taxon search in synth-tree viewer -->
-                  <div id="taxon-search-form" class="Xnavbar-search Xpull-right" autocomplete="off" style="Xdisplay: inline-block; position: relative;">
-                      <input type="text" name="taxon-search" class="" style="width: 365px;"
-                          placeholder="Choose the smallest taxon that contains the ingroup..." autocomplete="off">
-                      <!-- <input type="submit" style="" name="taxon-search-go" value="Go" onclick="return false;"/> -->
-                      <!-- then show dropdown when results are ready... -->
-                      <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
-                      <select style="margin-bottom: 0; width: auto;" name="taxon-search-context">
-                          {{ # generate our contextNames list based on newly fetched names
-                            try:
-                             for context_name in taxonSearchContextNames:
-                                if context_name == 'All life': }}
-                                  <option selected="selected" value="{{= context_name }}">{{= context_name }}</option>
-                             {{ else: }}
-                                  <option value="{{= context_name }}">{{= context_name }}</option>
-                             {{ pass }}
-                          {{ pass }}
-                          {{ except: }}
-                                  <option selected="selected">ERROR loading context values</option>
-                          {{ pass }}
-                      <!--
-                      NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted
-                      by the server, ie, there's no distinction between visible and occult values.
-                      -->
-                      </select>
-                      <div class="">
-                          <ul id="search-results" class="dropdown-menu" role="menu">
-                              ...
-                          </ul>
-                      </div>
-                    </div>
+        <div class="control-group">
+          <label class="control-label" for="ot_focalClade">Root taxon for this synthesis:</label>
+          <input type="text" id="new-synth-root-name" Xclass="input-block-level" maxlength="40" placeholder="Choose the root taxonomic ID for this synthesis"
+                 data-bind="value: $data.rootTaxonName" />
+          <input type="text" id="new-synth-root-ottid" style="color: #999;" readonly="readonly" eaxlength="10"
+                 data-bind="value: $data.rootTaxonID" />
+
+          <div class="controls">
+            <!-- reuse some (not all) style and behavior for taxon search in synth-tree viewer -->
+            <div id="taxon-search-form" autocomplete="off">
+                <input type="text" name="taxon-search" class="" style="width: 365px;"
+                    placeholder="Choose the root taxon for this synthesis" autocomplete="off">
+                <!-- then show dropdown when results are ready... -->
+                <span style="color: #999; padding: 0 2px; font-size: 14px;">in</span>
+                <select style="margin-bottom: 0; width: auto;" name="taxon-search-context">
+                    {{ # generate our contextNames list based on newly fetched names
+                      try:
+                       for context_name in taxonSearchContextNames:
+                          if context_name == 'All life': }}
+                            <option selected="selected" value="{{= context_name }}">{{= context_name }}</option>
+                       {{ else: }}
+                            <option value="{{= context_name }}">{{= context_name }}</option>
+                       {{ pass }}
+                    {{ pass }}
+                    {{ except: }}
+                            <option selected="selected">ERROR loading context values</option>
+                    {{ pass }}
+                <!--
+                NOTE that the displayed OPTION values (confirmed as current via AJAX) are accepted
+                by the server, ie, there's no distinction between visible and occult values.
+                -->
+                </select>
+                <div class="">
+                    <ul id="search-results" class="dropdown-menu" role="menu">
+                        ...
+                    </ul>
                 </div>
               </div>
-
+          </div>
+        </div>
 
         <!-- TODO: Build a visual list (constrained entry?) of collectin ids -->
         <textarea id="new-synth-collection-list" class="input-block-level" rows="8" placeholder="example/turtles

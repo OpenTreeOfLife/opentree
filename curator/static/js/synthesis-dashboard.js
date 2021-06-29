@@ -129,6 +129,16 @@ $(document).ready(function() {
         initialState.nudge = new Date().getTime();
         History.replaceState(initialState, window.document.title, window.location.href);
     }
+
+    // enable taxon search
+    $('input[name=taxon-search]').unbind('keyup change').bind('keyup change', setTaxaSearchFuse );
+    $('select[name=taxon-search-context]').unbind('change').bind('change', searchForMatchingTaxa );
+
+    // don't trigger unrelated form submission when pressing ENTER here
+    $('input[name=taxon-search], select[name=taxon-search-context]')
+        .unbind('keydown')
+        .bind('keydown', function(e) { return e.which !== 13; });
+
 });
 
 function loadSynthesisRunList(option) {
