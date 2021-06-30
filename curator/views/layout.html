@@ -1113,11 +1113,26 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
           </div>
         </div>
 
-        <!-- TODO: Build a visual list (constrained entry?) of collectin ids -->
-        <textarea id="new-synth-collection-list" class="input-block-level" rows="8" placeholder="example/turtles
-example/goldfish
-opentreeoflife/default"></textarea>
-        <!-- TODO: Add validation for the list and its ids? -->
+        <table class="table table-condensed">
+          <thead>
+            <tr>
+                <th>Collection name (click to view)</th>
+                <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody data-bind="foreach: { data: $data.collections, as: 'collectionID' }">
+            <tr>
+                <td>
+                    <a data-bind="text: collectionID,
+                                  click: fetchAndShowCollection( collectionID ),
+                                  attr: {'href': '/curator/collection/view/'+ collectionID}">
+                    </a>
+                </td>
+                <td>&emdash;</td>
+            </tr>
+          </tbody>
+        </table>
+
     </div>
     <div class="modal-footer">
       <button id="new-synth-submit"
