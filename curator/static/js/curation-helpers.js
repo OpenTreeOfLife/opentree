@@ -3125,3 +3125,12 @@ function autoApplyExactMatch() {
         });
     }
 }
+
+async function promptToAddCollection(clicked) {
+    // show the autocomplete widget and mute this button
+    var $btn = $(clicked);
+    $btn.addClass('disabled');
+    var $collectionPrompt = $('#add-collection-search-form');
+    $collectionPrompt.show()
+    $collectionPrompt.find('input').eq(0).focus();
+}
