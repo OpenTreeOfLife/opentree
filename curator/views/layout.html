@@ -1113,6 +1113,25 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
           </div>
         </div>
 
+        <button class="btn btn-info pull-left"
+                onclick="promptToAddCollection(this); return false;">
+            Add a tree to this synthesis run
+            <i class="icon-book icon-white"></i>
+        </button>
+        <form id="add-collection-search-form" class="navbar-search" autocomplete="off"
+              style="display: none; margin-top: 0;">
+            <div class="left-inner-addon">
+                <i class="icon-search"></i>
+                <input type="text" name="collection-search" class="search-query" placeholder="Match by name, id, owner, description..." autocomplete="off" style="width: 260px;">
+            </div>
+            <!-- then show dropdown when results are ready... -->
+            <div class="">
+                <ul id="add-collection-search-results" class="dropdown-menu" role="menu">
+                    ...
+                </ul>
+            </div>
+        </form>
+
         <table class="table table-condensed">
           <thead>
             <tr>
@@ -1120,7 +1139,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 <th>Actions</th>
             </tr>
           </thead>
-          <tbody data-bind="foreach: { data: $data.collections, as: 'collectionID' }">
+          <tbody style="y-overflow: auto;"
+                 data-bind="foreach: { data: $data.collections, as: 'collectionID' }">
             <tr>
                 <td>
                     <a data-bind="text: collectionID,
@@ -1132,6 +1152,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             </tr>
           </tbody>
         </table>
+        <div class="empty-list-prompt" data-bind="visible: $data.collections().length === 0">
+            There are no collections here yet. Use the buttons above to add a collection.
+        </div>
 
     </div>
     <div class="modal-footer">
