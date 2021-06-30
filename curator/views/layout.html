@@ -1115,11 +1115,11 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
 
         <button class="btn btn-info pull-left"
                 onclick="promptToAddCollection(this); return false;">
-            Add a tree to this synthesis run
+            Add a collection to this synthesis run
             <i class="icon-book icon-white"></i>
         </button>
         <form id="add-collection-search-form" class="navbar-search" autocomplete="off"
-              style="display: none; margin-top: 0;">
+              style="display: none;">
             <div class="left-inner-addon">
                 <i class="icon-search"></i>
                 <input type="text" name="collection-search" class="search-query" placeholder="Match by name, id, owner, description..." autocomplete="off" style="width: 260px;">
@@ -1132,7 +1132,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             </div>
         </form>
 
-        <table class="table table-condensed">
+        <table class="table table-condensed" style="margin-bottom: 0px;">
           <thead>
             <tr>
                 <th>Collection name (click to view)</th>
