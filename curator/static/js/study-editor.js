@@ -799,12 +799,16 @@ function loadSelectedStudy() {
                 },
                 'tree': {
                     highestOrdinalNumber: null,
-                    gatherAll: function(nexml) {
+                    gatherAll: function(nexml, options) {
                         // return an array of all matching elements
+                        if (!options) options = {INCLUDE_SCRIPT_MANAGED_TREES: true};
                         var allTrees = [];
                         var allTreesCollections = viewModel.elementTypes.trees.gatherAll(nexml);
                         $.each(allTreesCollections, function(i, treesCollection) {
                             $.each(treesCollection.tree, function(i, tree) {
+                                if (!options.INCLUDE_SCRIPT_MANAGED_TREES) {
+                                    if (isScriptManagedTree(tree)) return true;
+                                }
                                 allTrees.push( tree );
                             });
                         });
@@ -1260,6 +1264,10 @@ function loadSelectedStudy() {
                 if ($.isArray(chosenTrees)) {
                     // it's a list of zero or more trees
                     $.each( chosenTrees, function(i, tree) {
+                        if (isScriptManagedTree(tree)) {
+                            // ignore "empty" (script-managed) trees
+                            return;
+                        }
                         // check this tree's nodes for this OTU id
                         $.each( tree.node, function( i, node ) {
                             if (node['@otu']) {
@@ -3124,6 +3132,10 @@ function getRootedStatusForTree( tree ) {
 // Let's check for some/all/none with separate functions.
 function anyBranchLengthsFoundInTree( tree ) {
     var foundBranchWithLength = false;
+    if (isScriptManagedTree(tree)) {
+        // ignore "empty" (script-managed) trees
+        return false;
+    }
     $.each(tree.edge, function(i, edge) {
         if ('@length' in edge) {
             foundBranchWithLength = true;
@@ -3134,6 +3146,10 @@ function anyBranchLengthsFoundInTree( tree ) {
 }
 function allBranchLengthsFoundInTree( tree ) {
     var foundBranchWithoutLength = false;
+    if (isScriptManagedTree(tree)) {
+        // ignore "empty" (script-managed) trees
+        return false;
+    }
     $.each(tree.edge, function(i, edge) {
         if (!('@length' in edge)) {
             foundBranchWithoutLength = true;
@@ -9456,6 +9472,11 @@ function getAmbiguousLabelsInTree(tree) {
         return labelData;
     }
 
+    if (isScriptManagedTree(tree)) {
+        // ignore "empty" (script-managed) trees
+        return labelData;
+    }
+
     $.each( tree.node, function(i, node) {
         if (node['^ot:isLeaf'] === true) {
             /* We sometimes save a misspelled taxon name as `node[@label]` so
@@ -9468,6 +9489,7 @@ function getAmbiguousLabelsInTree(tree) {
             labelData[ nodeID ] = node['@label'];
         }
     });
+
     return labelData;
 }
 function showAmbiguousLabelsInTreeViewer(tree) {
@@ -9619,6 +9641,20 @@ function studyContributedToLatestSynthesis() {
 function currentStudyVersionContributedToLatestSynthesis() {
     // compare SHA values and return true if they match
     return (viewModel.startingCommitSHA === latestSynthesisSHA);
+}
+
+function studyContainsScriptManagedTrees() {
+    // check for signature for this in Nexson (to modify UI, hide/block some features?)
+    var allTrees = viewModel.elementTypes.tree.gatherAll(viewModel.nexml);
+    var bigTrees = ko.utils.arrayFilter(
+        allTrees,
+        isScriptManagedTree
+    );
+    return (bigTrees.length > 0);
+}
+function isScriptManagedTree(tree) {
+    // if this property is found (even if it's an empty object), assume it's a huge script-managed tree
+    return (tree["^ot:external_data"] !== undefined);
 }
 
 function getNormalizedStudyPublicationURL() {
