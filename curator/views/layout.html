@@ -1073,7 +1073,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                              valueUpdate: ['afterkeydown', 'input']"></textarea>
 
         <div class="control-group">
-          <label class="control-label" for="ot_focalClade">Root taxon for this synthesis:</label>
+          <label class="control-label" for="ot_focalClade" style="display: inline-block;">Root taxon for this synthesis:</label>
           <div id="new-synth-root-name" class="input-block-level static-form-value"
                data-bind="text: $data.rootTaxonName() || 'None'">&nbsp;</div>
           <input type="hidden" id="new-synth-root-ottid" style="color: #999;" readonly="readonly" eaxlength="10"
