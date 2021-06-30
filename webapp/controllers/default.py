@@ -100,7 +100,8 @@ def index():
     return treeview_dict
 
 def error():
-    return dict()
+    default_view_dict = get_opentree_services_method_urls(request)
+    return default_view_dict
 
 def download_subtree():
     id_type = request.args(0)  # 'ottol-id' or 'node-id'
