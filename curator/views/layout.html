@@ -1074,8 +1074,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
 
         <div class="control-group">
           <label class="control-label" class="display: inline-block;" for="ot_focalClade">Root taxon for this synthesis:</label>
-          <div id="new-synth-root-name" class="input-block-level static-form-value" class="display: inline;"
-               data-bind="text: $data.rootTaxonName || 'None'">&nbsp;</div>
+          <div id="new-synth-root-name" class="input-block-level"
+               data-bind="text: $data.rootTaxonName() || 'None'">&nbsp;</div>
           <input type="hidden" id="new-synth-root-ottid" style="color: #999;" readonly="readonly" eaxlength="10"
                  data-bind="value: $data.rootTaxonID" />
 
