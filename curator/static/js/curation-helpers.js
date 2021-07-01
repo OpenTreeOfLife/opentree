@@ -3353,10 +3353,10 @@ function searchForMatchingCollections( options ) {
                 var itsCollectionID = $link.find('.collection-id').text();
                 // insert this tree before opening the editor
                 switch (options.CONTEXT) {
-                    case 'ADD_TREE_TO_COLLECTION'):
+                    case 'ADD_TREE_TO_COLLECTION':
                         fetchAndShowCollection( itsCollectionID, addCurrentTreeToCollection );
                         break;
-                    case 'ADD_COLLECTION_TO_SYNTHESIS_RUN'):
+                    case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
                         alert("WHAT NEXT?");
                         break;
                 }
