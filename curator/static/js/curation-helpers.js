@@ -2906,6 +2906,18 @@ function showSynthesisRunPopup(options) {
         .unbind('keydown')
         .bind('keydown', function(e) { return e.which !== 13; });
 
+    // enable collection search (in synth-run details popup)
+    console.warn('BINDING COLLECTION SEARCH (SYNTH)');
+    $('input[name=collection-search]').unbind('keyup change')
+                                      .bind('keyup change', setCollectionSearchFuse )
+                                      .unbind('keydown')  // block errant form submission
+                                      .bind('keydown', function(e) { return e.which !== 13; });
+    $('#add-collection-search-form').unbind('submit').submit(function() {
+        searchForMatchingCollections( {CONTEXT: 'ADD_COLLECTION_TO_SYNTHESIS_RUN'} );
+        return false;
+    });
+    resetExistingCollectionPrompt( {CONTEXT: 'ADD_COLLECTION_TO_SYNTHESIS_RUN'} );
+
     $('#define-synth-run-popup').modal('show');
     // TODO validate initial settings and warn if needed
     // TODO Upon submission, show response from synth-API server (run started, or redirected, or ???)
