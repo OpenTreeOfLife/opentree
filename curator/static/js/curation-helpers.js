@@ -3134,3 +3134,239 @@ async function promptToAddCollection(clicked) {
     $collectionPrompt.show()
     $collectionPrompt.find('input').eq(0).focus();
 }
+
+function resetExistingCollectionPrompt( options ) {
+    options = options || {};
+    if (!options.CONTEXT) {
+        // are we editing synth-run details or adding a tree?
+        options.CONTEXT = 'ADD_TREE_TO_COLLECTION';
+    }
+    var promptSelector,
+        resultsSelector;
+    switch (options.CONTEXT) {
+        case 'ADD_TREE_TO_COLLECTION':
+            promptSelector = '#collection-search-form';
+            resultsSelector = '#collection-search-results';
+            break;
+        case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
+            promptSelector = '#add-collection-search-form';
+            resultsSelector = '#add-collection-search-results';
+            break;
+        default:
+           console.error("resetExistingCollectionPrompt(): ERROR, unknown context: '"+ options.CONTEXT +"'!");
+           return;
+    }
+    var $collectionPrompt = $(promptSelector);
+    var $collectionResults = $(resultsSelector);
+
+    var $btn = $collectionPrompt.prev('.btn');
+    $btn.removeClass('disabled');
+    $collectionPrompt.hide();
+    $collectionPrompt.find('input').val('');
+    $collectionResults.html('');
+    $collectionResults.hide();
+}
+
+/* More autocomplete behavior for tree-collection search.
+ */
+clearTimeout(collectionSearchTimeoutID);  // in case there's a lingering search from last page!
+var collectionSearchTimeoutID = null;
+var collectionSearchDelay = 250; // milliseconds
+var hopefulCollectionSearchString = null;
+function setCollectionSearchFuse(e) {
+    if (collectionSearchTimeoutID) {
+        // kill any pending search, apparently we're still typing
+        clearTimeout(collectionSearchTimeoutID);
+    }
+    // reset the timeout for another n milliseconds
+    collectionSearchTimeoutID = setTimeout(searchForMatchingCollections, collectionSearchDelay);
+
+    /* If the last key pressed was the ENTER key, stash the current (trimmed)
+     * string and auto-jump if it's a valid taxon name.
+     */
+    if (e.type === 'keyup') {
+        switch (e.which) {
+            case 13:
+                hopefulCollectionSearchString = $('input[name=collection-search]').val().trim();
+                // TODO? jumpToExactMatch();  // use existing menu, if found
+                break;
+            case 17:
+                // do nothing (probably a second ENTER key)
+                break;
+            case 39:
+            case 40:
+                // down or right arrow should try to tab to first result
+                $('#collection-search-results a:eq(0)').focus();
+                break;
+            default:
+                hopefulCollectionSearchString = null;
+        }
+    } else {
+        hopefulCollectionSearchString = null;
+    }
+}
+
+var showingResultsForCollectionSearchText = '';
+function searchForMatchingCollections( options ) {
+    options = options || {};
+    if (!options.CONTEXT) {
+        // are we editing synth-run details or adding a tree?
+        options.CONTEXT = 'ADD_TREE_TO_COLLECTION';
+    }
+    var promptSelector,
+        resultsSelector;
+    switch (options.CONTEXT) {
+        case 'ADD_TREE_TO_COLLECTION':
+            promptSelector = '#collection-search-form';
+            resultsSelector = '#collection-search-results';
+            break;
+        case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
+            promptSelector = '#add-collection-search-form';
+            resultsSelector = '#add-collection-search-results';
+            break;
+        default:
+           console.error("resetExistingCollectionPrompt(): ERROR, unknown context: '"+ options.CONTEXT +"'!");
+           return;
+    }
+    var $collectionPrompt = $(promptSelector);
+    var $collectionResults = $(resultsSelector);
+
+    // clear any pending search timeout and ID
+    clearTimeout(collectionSearchTimeoutID);
+    collectionSearchTimeoutID = null;
+
+    var $input = $('input[name=collection-search]'); // in all contexts!
+    var searchText = $input.val().trimLeft();
+
+    if (searchText.length === 0) {
+        $collectionResults.html('');
+        return false;
+    } else if (searchText.length < 2) {
+        $collectionResults.html('<li class="disabled"><a><span class="text-error">Enter two or more characters to search</span></a></li>');
+        $collectionResults.dropdown('toggle');
+        return false;
+    }
+
+    // is this unchanged from last time? no need to search again..
+    if (searchText == showingResultsForCollectionSearchText) {
+        ///console.log("Search text and context UNCHANGED!");
+        return false;
+    }
+
+    // search local viewModel.allCollections for any matches
+    var searchNotAvailable = (!viewModel.allCollections || viewModel.allCollections.length === 0);
+    var statusMsg;
+    if (searchNotAvailable) {
+        // block search (no collection data in the view model)
+        statusMsg = 'Unable to search (no collections found)';
+    } else {
+        // stash our search text to use for later comparison (to avoid redundant searches)
+        showingResultsForCollectionSearchText = searchText; // trimmed above
+        statusMsg = 'Search in progress...';
+    }
+
+    $collectionResults.html('<li class="disabled"><a><span class="text-warning">'
+        + statusMsg +'</span></a></li>');
+    $collectionResults.show();
+    $collectionResults.dropdown('toggle');
+
+    if (searchNotAvailable) {
+        return false;
+    }
+
+    var matchWithDiacriticals = addDiacriticalVariants(searchText),
+        matchPattern = new RegExp( $.trim(matchWithDiacriticals), 'i' ),
+        wholeSlugMatchPattern = new RegExp( '^'+ $.trim(matchWithDiacriticals) +'$' );
+
+    var matchingCollections = ko.utils.arrayFilter(
+        viewModel.allCollections,
+        function(collection) {
+            // skip collections that already include this tree
+            if ($.inArray(collection, viewModel.filteredCollections()()) !== -1) {
+                console.warn("SKIPPING collection that's already listed!");
+                return false;
+            }
+            // match entered text against collections (id, owner, description...)
+            var id = $.trim(collection['id']);
+            var idParts = id.split('/');
+            var ownerSlug = idParts[0];
+            var titleSlug = (idParts.length === 2) ? idParts[1] : '';
+            var name = $.trim(collection['name']);
+            var description = $.trim(collection['description']);
+            // extract names and IDs of all stakeholders (incl. creator!)
+            if ($.isPlainObject(collection['creator'])) {
+                creator = $.trim(collection['creator'].name)
+                    +'|'+ $.trim(collection['creator'].login);
+            } else {
+                creator = "";
+            }
+            if ($.isArray(collection['contributors'])) {
+                contributors = "";
+                $.each(collection['contributors'], function(i,c) {
+                    contributors += ('|'+ $.trim(c.name) +'|'+ $.trim(c.login));
+                });
+            } else {
+                contributors = "";
+            }
+            // skip collections that don't match on any field
+            if (!wholeSlugMatchPattern.test(id) && !wholeSlugMatchPattern.test(ownerSlug) && !wholeSlugMatchPattern.test(titleSlug) && !matchPattern.test(name) && !matchPattern.test(description) && !matchPattern.test(creator) && !matchPattern.test(contributors)) {
+                return false;
+            }
+            return true;
+        }
+    );
+
+    $collectionResults.html('');
+    var maxResults = 10;
+    var visibleResults = 0;
+    if (matchingCollections.length > 0) {
+        // show all sorted results, up to our preset maximum
+        $.each(matchingCollections, function(i, collection) {
+            if (visibleResults >= maxResults) {
+                $collectionResults.append(
+                    '<li class="disabled"><a><span class="text-warning">'
+                      +'Refine your search text to see other results'
+                   +'</span></a></li>'
+                );
+                return false;
+            }
+            $collectionResults.append(
+                '<li>'+ getCollectionViewLink(collection) +'</li>'
+            );
+            visibleResults++;
+        });
+
+        $collectionResults.find('li:not(.disabled) a')
+            .click(function(e) {
+                var $link = $(this);
+                // Override its default onclick behavior to add the tree, then
+                // refresh the associated-collections list.
+                //
+                // hide menu and reset search field
+                $collectionResults.html('');
+                $collectionResults.hide();
+                $('input[name=collection-search]').val('');
+                if (options.CONTEXT === 'ADD_COLLECTION_TO_SYNTHESIS_RUN') {
+                    nudgeTickler('COLLECTIONS_LIST');
+                }
+                // retrieve the collection ID from the link's text
+                var itsCollectionID = $link.find('.collection-id').text();
+                // insert this tree before opening the editor
+                switch (options.CONTEXT) {
+                    case 'ADD_TREE_TO_COLLECTION'):
+                        fetchAndShowCollection( itsCollectionID, addCurrentTreeToCollection );
+                        break;
+                    case 'ADD_COLLECTION_TO_SYNTHESIS_RUN'):
+                        alert("WHAT NEXT?");
+                        break;
+                }
+                return false;
+            });
+        $collectionResults.dropdown('toggle');
+    } else {
+        $collectionResults.html('<li class="disabled"><a><span class="muted">No results for this search</span></a></li>');
+        $collectionResults.dropdown('toggle');
+    }
+
+    return false;
+}
