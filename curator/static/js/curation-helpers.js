@@ -3375,7 +3375,7 @@ function searchForMatchingCollections( options ) {
                 $collectionResults.html('');
                 $collectionResults.hide();
                 $('input[name=collection-search]').val('');
-                if (options.CONTEXT === 'ADD_COLLECTION_TO_SYNTHESIS_RUN') {
+                if (options.CONTEXT === 'ADD_TREE_TO_COLLECTION') {
                     nudgeTickler('COLLECTIONS_LIST');
                 }
                 // retrieve the collection ID from the link's text
