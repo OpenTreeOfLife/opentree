@@ -3310,6 +3310,7 @@ function searchForMatchingCollections( options ) {
                 case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
                     allCollections = synthRunSpec.collections();
                     break;
+            }
             if ($.inArray(collection, allCollections) !== -1) {
                 console.warn("SKIPPING collection that's already listed!");
                 return false;
