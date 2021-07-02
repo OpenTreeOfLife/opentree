@@ -1144,7 +1144,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             <tr>
                 <td>
                     <a data-bind="text: collectionID,
-                                  click: fetchAndShowCollection( collectionID ),
+                                  click: function() {fetchAndShowCollection( collectionID )},
                                   attr: {'href': '/curator/collection/view/'+ collectionID}">
                     </a>
                 </td>
