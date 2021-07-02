@@ -3190,8 +3190,16 @@ function setCollectionSearchFuse(e) {
         // kill any pending search, apparently we're still typing
         clearTimeout(collectionSearchTimeoutID);
     }
+    var CONTEXT;
+    if ($(e.target).closest('#define-synth-run-popup').length === 1) {
+        CONTEXT = 'ADD_COLLECTION_TO_SYNTHESIS_RUN';
+    } else {
+        CONTEXT = 'ADD_TREE_TO_COLLECTION';
+    }
     // reset the timeout for another n milliseconds
-    collectionSearchTimeoutID = setTimeout(searchForMatchingCollections, collectionSearchDelay);
+    collectionSearchTimeoutID = setTimeout(function() {
+        searchForMatchingCollections( {context: CONTEXT} );
+    }, collectionSearchDelay);
 
     /* If the last key pressed was the ENTER key, stash the current (trimmed)
      * string and auto-jump if it's a valid taxon name.
