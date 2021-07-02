@@ -1019,3 +1019,11 @@ form.skip-label * {
 form.skip-label *.non-fading {
     opacity: 1.0;
 }
+.loading-message {
+    display: inline-block; 
+    position: relative; 
+    top: -6px; 
+    left: 8px; 
+    color: #999; 
+    font-style: italic;
+}
