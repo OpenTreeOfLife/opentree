@@ -2860,6 +2860,8 @@ async function confirmHyperlink( link, message ) {
     }
 }
 
+// Keep a safe copy of our UI markup, for re-use as a Knockout template (see below)
+var $stashedSynthRunPopup = null;
 var synthRunSpec;
 function showSynthesisRunPopup(options) {
     /* Prompt for settings and request a new attempt at custom synthesis.
@@ -2888,6 +2890,15 @@ function showSynthesisRunPopup(options) {
     };
     // show a shared popup (from shared page template)
     var $synthRunPopup = $('#define-synth-run-popup');
+    // stash the pristine markup before binding our UI for the first time
+    if ($stashedSynthRunPopup === null) {
+        $stashedSynthRunPopup = $synthRunPopup.clone();
+    } else {
+        // Replace with pristine markup to avoid weird results when loading a new nameset
+        $synthRunPopup.contents().replaceWith(
+            $stashedSynthRunPopup.clone().contents()
+        );
+    }
     var popup = $synthRunPopup[0];
     ko.cleanNode(popup);
     ko.applyBindings(synthRunSpec, popup);
