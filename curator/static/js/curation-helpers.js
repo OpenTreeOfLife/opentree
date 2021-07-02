@@ -3198,7 +3198,7 @@ function setCollectionSearchFuse(e) {
     }
     // reset the timeout for another n milliseconds
     collectionSearchTimeoutID = setTimeout(function() {
-        searchForMatchingCollections( {context: CONTEXT} );
+        searchForMatchingCollections( {CONTEXT: CONTEXT} );
     }, collectionSearchDelay);
 
     /* If the last key pressed was the ENTER key, stash the current (trimmed)
