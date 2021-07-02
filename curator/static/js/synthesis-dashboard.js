@@ -130,6 +130,37 @@ $(document).ready(function() {
         History.replaceState(initialState, window.document.title, window.location.href);
     }
 
+    // disable the new-synth-spec UI until we've loaded all collections
+    var $synthSpecButton = $('input[name=new-collection-submit]');
+    $synthSpecButton.addClass('disabled');
+    $synthSpecButton.attr('disabled', 'disabled');
+    $.ajax({
+        type: 'GET',
+        dataType: 'json',
+        url: findAllTreeCollections_url,
+        data: null,
+        success: function( data, textStatus, jqXHR ) {
+            // this should be properly parsed JSON
+
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                showErrorMessage('Sorry, there was an error loading the list of tree collections.');
+                return;
+            }
+            if (typeof data !== 'object' || !($.isArray(data))) {
+                showErrorMessage('Sorry, there is a problem with the tree-collection data.');
+                return;
+            }
+
+            viewModel.allCollections = data;
+            captureDefaultSortOrder(viewModel.allCollections);
+
+            // enable the UI for defining a new synth spec
+            $synthSpecButton.removeClass('disabled');
+            $synthSpecButton.remoteAttr('disabled');
+        }
+    });
+
 });
 
 function loadSynthesisRunList(option) {
