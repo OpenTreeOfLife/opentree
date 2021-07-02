@@ -3245,15 +3245,18 @@ function searchForMatchingCollections( options ) {
         options.CONTEXT = 'ADD_TREE_TO_COLLECTION';
     }
     var promptSelector,
-        resultsSelector;
+        resultsSelector,
+        linkViewBehavior;
     switch (options.CONTEXT) {
         case 'ADD_TREE_TO_COLLECTION':
             promptSelector = '#collection-search-form';
             resultsSelector = '#collection-search-results';
+            linkViewBehavior = 'POPUP';
             break;
         case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
             promptSelector = '#add-collection-search-form';
             resultsSelector = '#add-collection-search-results';
+            linkViewBehavior = 'FULL_PAGE';  // suppress popup on click
             break;
         default:
            console.error("resetExistingCollectionPrompt(): ERROR, unknown context: '"+ options.CONTEXT +"'!");
@@ -3371,7 +3374,7 @@ function searchForMatchingCollections( options ) {
                 return false;
             }
             $collectionResults.append(
-                '<li>'+ getCollectionViewLink(collection) +'</li>'
+                '<li>'+ getCollectionViewLink(collection, {VIEW: linkView}) +'</li>'
             );
             visibleResults++;
         });
