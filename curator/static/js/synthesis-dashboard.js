@@ -161,6 +161,7 @@ $(document).ready(function() {
             $synthSpecButton.unbind('click').click(function() {
                 showSynthesisRunPopup();
             });;
+            $synthSpecButton.next('.loading-message').hide();
         }
     });
 
