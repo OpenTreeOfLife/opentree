@@ -157,7 +157,7 @@ $(document).ready(function() {
 
             // enable the UI for defining a new synth spec
             $synthSpecButton.removeClass('disabled');
-            $synthSpecButton.remoteAttr('disabled');
+            $synthSpecButton.removeAttr('disabled');
         }
     });
 
