@@ -3374,7 +3374,7 @@ function searchForMatchingCollections( options ) {
                 return false;
             }
             $collectionResults.append(
-                '<li>'+ getCollectionViewLink(collection, {VIEW: linkView}) +'</li>'
+                '<li>'+ getCollectionViewLink(collection, {VIEW: linkViewBehavior}) +'</li>'
             );
             visibleResults++;
         });
