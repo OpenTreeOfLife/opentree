@@ -3302,7 +3302,15 @@ function searchForMatchingCollections( options ) {
         viewModel.allCollections,
         function(collection) {
             // skip collections that already include this tree
-            if ($.inArray(collection, viewModel.filteredCollections()()) !== -1) {
+            var allCollections;
+            switch (options.CONTEXT) {
+                case 'ADD_TREE_TO_COLLECTION':
+                    allCollections = viewModel.filteredCollections()();
+                    break;
+                case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
+                    allCollections = synthRunSpec.collections();
+                    break;
+            if ($.inArray(collection, allCollections) !== -1) {
                 console.warn("SKIPPING collection that's already listed!");
                 return false;
             }
