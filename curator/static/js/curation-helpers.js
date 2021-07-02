@@ -3386,7 +3386,8 @@ function searchForMatchingCollections( options ) {
                         fetchAndShowCollection( itsCollectionID, addCurrentTreeToCollection );
                         break;
                     case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
-                        alert("WHAT NEXT?");
+                        synthRunSpec.collections.push( itsCollectionID );
+                        e.preventDefault();
                         break;
                 }
                 return false;
