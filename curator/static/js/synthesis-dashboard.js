@@ -131,7 +131,7 @@ $(document).ready(function() {
     }
 
     // disable the new-synth-spec UI until we've loaded all collections
-    var $synthSpecButton = $('input[name=new-collection-submit]');
+    var $synthSpecButton = $('a[name=new-collection-submit]');
     $synthSpecButton.addClass('disabled');
     $synthSpecButton.attr('disabled', 'disabled');
     $.ajax({
