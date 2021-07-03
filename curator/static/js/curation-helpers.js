@@ -3421,18 +3421,20 @@ function searchForMatchingCollections( options ) {
     return false;
 }
 
-function validateSynthRunSpec( runSpec ) {
+function validateSynthRunSpec( newValue ) {
+    // Ignore the specific value, validate the entire spec
     // do some basic sanity checks on the requested synthesis run
-    if (!runSpec) {
+    if (!synthRunSpec) {
+        console.error("EXPECTED to find synthRunSpec in this page!");
         return false;
     }
     // it should have at least one collection
-    if (runSpec.collections().length < 1) {
+    if (synthRunSpec.collections().length < 1) {
         showErrorMessage('Synthesis requires at least one input tree collection');
         return false;
     }
     // it should have a specified taxonomic root (id and name)
-    if ($.trim(runSpec.rootTaxonID()) === '') {
+    if ($.trim(synthRunSpec.rootTaxonID()) === '') {
         showErrorMessage('Synthesis requires a specified root taxon');
         return false;
     }
