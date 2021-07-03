@@ -2877,7 +2877,7 @@ function showSynthesisRunPopup(options) {
      * from a particular context like the collection-curation tool.
      */
     options = options || {};
-    synthRunSpec = {
+    synthRunSpec = ko.observable({
         'runner': {
             'login': userLogin,
             'displayName': userDisplayName,
@@ -2888,7 +2888,9 @@ function showSynthesisRunPopup(options) {
         'rootTaxonID': ko.observable(options.ROOT_TAXON_OTTID || ''),
         'rootTaxonName': ko.observable(options.ROOT_TAXON_NAME || ''),
         'collections': ko.observableArray(options.COLLECTIONS || [ ])
-    };
+    });
+    synthRunSpec.subscribe(validateSynthRunSpec);  // any change should prompt validation
+
     // show a shared popup (from shared page template)
     var $synthRunPopup = $('#define-synth-run-popup');
     // stash the pristine markup before binding our UI for the first time
