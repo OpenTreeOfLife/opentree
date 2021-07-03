@@ -3418,6 +3418,9 @@ function searchForMatchingCollections( options ) {
 
 function validateSynthRunSpec( runSpec ) {
     // do some basic sanity checks on the requested synthesis run
+    if (!runSpec) {
+        return false;
+    }
     // it should have at least one collection
     if (runSpec.collections().length < 1) {
         showErrorMessage('Synthesis requires at least one input tree collection');
