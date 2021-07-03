@@ -61,6 +61,7 @@ getSynthesisSourceList_url = {CACHED_treemachine_domain}/v3/tree_of_life/about
 getTaxonomicMRCAForNodes_url = {taxomachine_domain}/v3/taxonomy/mrca
 getDraftTreeMRCAForNodes_url = {treemachine_domain}/v3/tree_of_life/mrca
 findAllSynthesisRuns_url = https://ot38.opentreeoflife.org/v3/tree_of_life/list_custom_built_trees
+requestNewSynthesisRun_url = https://ot38.opentreeoflife.org/v3/tree_of_life/build_tree
 # TODO: This should start {treemachine_domain} OR {CACHED_treemachine_domain}
 findAllStudies_url = {CACHED_oti_domain}/v3/studies/find_studies
 # TODO: Can we use CACHED_oti_domain for this?
