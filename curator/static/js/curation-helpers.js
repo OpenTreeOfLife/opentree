@@ -2878,11 +2878,11 @@ function showSynthesisRunPopup(options) {
      */
     options = options || {};
     synthRunSpec = {
-        'runner': {
+        'runner': ko.observable({
             'login': userLogin,
             'displayName': userDisplayName,
             'email': ko.observable(userEmail)
-        },
+        }),
         // use any initial values provided above
         'description': ko.observable(options.DESCRIPTION || ''),
         'rootTaxonID': ko.observable(options.ROOT_TAXON_OTTID || ''),
