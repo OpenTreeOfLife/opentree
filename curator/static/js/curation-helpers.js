@@ -3421,8 +3421,9 @@ function searchForMatchingCollections( options ) {
     return false;
 }
 
-function validateSynthRunSpec( newValue ) {
+function validateSynthRunSpec( options ) {
     // Ignore the specific value, validate the entire spec
+    var verbose = options.VERBOSE || false;
     // do some basic sanity checks on the requested synthesis run
     if (!synthRunSpec) {
         console.error("EXPECTED to find synthRunSpec in this page!");
@@ -3430,12 +3431,12 @@ function validateSynthRunSpec( newValue ) {
     }
     // it should have at least one collection
     if (synthRunSpec.collections().length < 1) {
-        showErrorMessage('Synthesis requires at least one input tree collection');
+        if (verbose) showErrorMessage('Synthesis requires at least one input tree collection');
         return false;
     }
     // it should have a specified taxonomic root (id and name)
     if ($.trim(synthRunSpec.rootTaxonID()) === '') {
-        showErrorMessage('Synthesis requires a specified root taxon');
+        if (verbose) showErrorMessage('Synthesis requires a specified root taxon');
         return false;
     }
     // TODO: block submissions by anonymous users?
@@ -3447,6 +3448,9 @@ function requestNewSynthRun() {
      *
      * NB - Our payload is constructed using `synthRunSpec`, a persistent, page-level singleton
      */
+    if (!validateSynthRunSpec({VERBOSE:true})) {
+        return false;
+    }
     showModalScreen( "Requesting synthesis run...", {SHOW_BUSY_BAR:true});
     var payload = {
         'input_collection': ko.unwrap(synthRunSpec.collections),
