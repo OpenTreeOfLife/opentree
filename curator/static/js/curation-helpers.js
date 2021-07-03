@@ -539,6 +539,7 @@ function slugify(str) {
 var userLogin;
 var userDisplayName;
 var singlePropertySearchForTrees_url;
+var requestNewSynthesisRun_url;
 
 function fetchAndShowCollection( collectionID, specialHandling ) {
     /* Fetch a known-good collection from the tree-collections API, and open it
@@ -3415,11 +3416,84 @@ function searchForMatchingCollections( options ) {
     return false;
 }
 
+function validateSynthRunSpec( runSpec ) {
+    // do some basic sanity checks on the requested synthesis run
+    // it should have at least one collection
+    if (runSpec.collections().length < 1) {
+        showErrorMessage('Synthesis requires at least one input tree collection');
+        return false;
+    }
+    // it should have a specified taxonomic root (id and name)
+    if ($.trim(runSpec.rootTaxonID()) === '') {
+        showErrorMessage('Synthesis requires a specified root taxon');
+        return false;
+    }
+    // TODO: block submissions by anonymous users?
+    return true;
+}
 function requestNewSynthRun() {
     /* Try sending this to the server, and respond with a ticket (if successful),
      * a message if REDIRECTed (due to an prior/identical synth run), or an error message.
+     *
+     * NB - Our payload is constructed using `synthRunSpec`, a persistent, page-level singleton
      */
-    var payload = synthRunSpec;  // persistent, page-level singleton
-    // TODO any changes or additions required to suit the API?
-    console.warn("Now I'd request this synthesis run...");
+    showModalScreen( "Requesting synthesis run...", {SHOW_BUSY_BAR:true});
+    var payload = {
+        'input_collection': ko.unwrap(synthRunSpec.collections),
+        'root_id': ko.unwrap(synthRunSec.rootTaxonID),
+        // more good stuff we should use in the API
+        'description': ko.unwrap(synthRunSec.description),
+        'root_name': ko.unwrap(synthRunSec.rootTaxonID),
+        'runner': ko.unwrap(synthRunSec.runner)
+    };
+
+    $.ajax({
+        global: false,  // suppress web2py's aggressive error handling
+        type: 'POST',
+        dataType: 'json',
+        // crossdomain: true,
+        contentType: "application/json; charset=utf-8",
+        url: requestNewSynthesisRun_url,
+        data: payload,
+        processData: false,
+        complete: function( jqXHR, textStatus ) {
+            // report errors or malformed data, if any
+            if (textStatus !== 'success') {
+                if (jqXHR.status >= 500) {
+                    // major server-side error, just show raw response for tech support
+                    var errMsg = 'Sorry, there was an error requesting ths run.. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [auto-parsed]</pre>';
+                    hideModalScreen();
+                    showErrorMessage(errMsg);
+                    if (typeof(errorCallback) === 'function') errorCallback();
+                    return;
+                }
+                // Server blocked the operation due to validation errors(?)
+                var data = $.parseJSON(jqXHR.responseText);
+                // TODO: this should be properly parsed JSON, show it more sensibly
+                // (but for now, repeat the crude feedback used above)
+                var errMsg = 'Sorry, there was an error requesting this run. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">'+ jqXHR.responseText +' [parsed in JS]</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                if (typeof(errorCallback) === 'function') errorCallback();
+                return;
+            }
+            // if we're still here, use the success callback provided
+            var responseObj = $.parseJSON(jqXHR.responseText);
+            debugger;
+/*
+            if ($.isArray(responseObj['matched_studies'])) {
+                var matchingStudyIDs = [];
+                $.each(responseObj['matched_studies'], function(i,obj) {
+                    matchingStudyIDs.push( obj['ot:studyId'] );
+                });
+            } else {
+                var errMsg = 'Sorry, there was an error checking for duplicate studies. <a href="#" onclick="toggleFlashErrorDetails(this); return false;">Show details</a><pre class="error-details" style="display: none;">Missing or malformed "matching_studies" in JSON response:\n\n'+
+                    jqXHR.responseText+'</pre>';
+                hideModalScreen();
+                showErrorMessage(errMsg);
+                return;
+            }
+*/
+        }
+    });
 }

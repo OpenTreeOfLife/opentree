@@ -100,6 +100,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
         var findAllTreeCollections_url = "{{=findAllTreeCollections_url}}";
         var findAllStudies_url = "{{=findAllStudies_url}}";
         var findAllSynthesisRuns_url = "{{=findAllSynthesisRuns_url}}";
+        var requestNewSynthesisRun_url = "{{=requestNewSynthesisRun_url}}";
         var singlePropertySearchForTrees_url = "{{=singlePropertySearchForTrees_url}}";
         var API_create_collection_POST_url = "{{=API_create_collection_POST_url}}";
         var API_load_collection_GET_url = "{{=API_load_collection_GET_url}}";
@@ -1160,7 +1161,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     <div class="modal-footer">
       <button id="new-synth-submit"
               class="btn btn-danger pull-right" style="margin-left: 20px;"
-              data-bind="disable: true,
+              data-bind="enable: validateSynthRunSpec(),
                          click: requestNewSynthRun"
               >Generate this synthetic tree</button>
       <a id="new-synth-cancel" data-dismiss="modal" class="btn" >Cancel</a>
