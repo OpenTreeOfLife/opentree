@@ -3443,11 +3443,11 @@ function requestNewSynthRun() {
     showModalScreen( "Requesting synthesis run...", {SHOW_BUSY_BAR:true});
     var payload = {
         'input_collection': ko.unwrap(synthRunSpec.collections),
-        'root_id': ko.unwrap(synthRunSec.rootTaxonID),
+        'root_id': ko.unwrap(synthRunSpec.rootTaxonID),
         // more good stuff we should use in the API
-        'description': ko.unwrap(synthRunSec.description),
-        'root_name': ko.unwrap(synthRunSec.rootTaxonID),
-        'runner': ko.unwrap(synthRunSec.runner)
+        'description': ko.unwrap(synthRunSpec.description),
+        'root_name': ko.unwrap(synthRunSpec.rootTaxonID),
+        'runner': ko.unwrap(synthRunSpec.runner)
     };
 
     $.ajax({
