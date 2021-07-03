@@ -2877,7 +2877,7 @@ function showSynthesisRunPopup(options) {
      * from a particular context like the collection-curation tool.
      */
     options = options || {};
-    synthRunSpec = ko.observable({
+    synthRunSpec = {
         'runner': {
             'login': userLogin,
             'displayName': userDisplayName,
@@ -2888,8 +2888,11 @@ function showSynthesisRunPopup(options) {
         'rootTaxonID': ko.observable(options.ROOT_TAXON_OTTID || ''),
         'rootTaxonName': ko.observable(options.ROOT_TAXON_NAME || ''),
         'collections': ko.observableArray(options.COLLECTIONS || [ ])
-    });
-    synthRunSpec.subscribe(validateSynthRunSpec);  // any change should prompt validation
+    };
+    synthRunSpec.runner.subscribe(validateSynthRunSpec);  // any change should prompt validation
+    synthRunSpec.rootTaxonID.subscribe(validateSynthRunSpec);  // any change should prompt validation
+    synthRunSpec.collections.subscribe(validateSynthRunSpec);  // any change should prompt validation
+    // TODO: add more subscriptions here?
 
     // show a shared popup (from shared page template)
     var $synthRunPopup = $('#define-synth-run-popup');
