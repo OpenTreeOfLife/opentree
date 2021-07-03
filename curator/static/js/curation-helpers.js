@@ -3414,3 +3414,12 @@ function searchForMatchingCollections( options ) {
 
     return false;
 }
+
+function requestNewSynthRun() {
+    /* Try sending this to the server, and respond with a ticket (if successful),
+     * a message if REDIRECTed (due to an prior/identical synth run), or an error message.
+     */
+    var payload = synthRunSpec;  // persistent, page-level singleton
+    // TODO any changes or additions required to suit the API?
+    console.warn("Now I'd request this synthesis run...");
+}

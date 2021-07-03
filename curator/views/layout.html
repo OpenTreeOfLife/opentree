@@ -1160,7 +1160,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
     <div class="modal-footer">
       <button id="new-synth-submit"
               class="btn btn-danger pull-right" style="margin-left: 20px;"
-              onclick="return false;">Generate this synthetic tree</button>
+              data-bind="disable: true,
+                         click: requestNewSynthRun"
+              >Generate this synthetic tree</button>
       <a id="new-synth-cancel" data-dismiss="modal" class="btn" >Cancel</a>
     </div>
 </div>
