@@ -3424,7 +3424,7 @@ function searchForMatchingCollections( options ) {
 
 function validateSynthRunSpec( options ) {
     // Ignore the specific value, validate the entire spec
-    var verbose = options.VERBOSE || false;
+    var verbose = (options && options.VERBOSE) || false;
     // do some basic sanity checks on the requested synthesis run
     if (!synthRunSpec) {
         console.error("EXPECTED to find synthRunSpec in this page!");
