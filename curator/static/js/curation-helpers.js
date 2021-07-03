@@ -2889,9 +2889,10 @@ function showSynthesisRunPopup(options) {
         'rootTaxonName': ko.observable(options.ROOT_TAXON_NAME || ''),
         'collections': ko.observableArray(options.COLLECTIONS || [ ])
     };
-    synthRunSpec.runner.subscribe(validateSynthRunSpec);  // any change should prompt validation
-    synthRunSpec.rootTaxonID.subscribe(validateSynthRunSpec);  // any change should prompt validation
-    synthRunSpec.collections.subscribe(validateSynthRunSpec);  // any change should prompt validation
+    // any change should prompt QUIET validation
+    synthRunSpec.runner.subscribe(validateSynthRunSpec);
+    synthRunSpec.rootTaxonID.subscribe(validateSynthRunSpec);
+    synthRunSpec.collections.subscribe(validateSynthRunSpec);
     // TODO: add more subscriptions here?
 
     // show a shared popup (from shared page template)
