@@ -3539,7 +3539,7 @@ function indexOfObservable( item, array ) {
             foundPosition = i;
             return false;  // skip the rest
         }
-    }
+    });
     return foundPosition;
 }
 function moveInSynthesisRun( collection, synthRun, newPosition ) {
