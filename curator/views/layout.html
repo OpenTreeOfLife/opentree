@@ -1149,8 +1149,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                            data-bind="value: $data['rank'] || $index,
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: {
-                        keyup: function() {showCollectionMoveUI($data, $element, $parent)},
-                        change: function() {showCollectionMoveUI($data, $element, $parent)}
+                        keyup: function() {showSynthRunMoveUI($data, $element, $parent)},
+                        change: function() {showSynthRunMoveUI($data, $element, $parent)}
                                               }"
                                    style="color: #999; width: 24px;
                                           margin-left: -4px; text-align: right;"
@@ -1166,9 +1166,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     </a>
                    <!-- /ko -->
                    <!-- ko if: $index() > 0 -->
-                    <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'UP'); return false;}"
+                    <a data-bind="click: function() {moveInSynthesisRun($data, $parent, 'UP'); return false;}"
                        href="#"
-                       title="Move this tree up in the list"
+                       title="Move this collection up in the list"
                        class="icon-chevron-up">
                     </a>
                    <!-- /ko -->
@@ -1181,22 +1181,25 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     </a>
                    <!-- /ko -->
                    <!-- ko if: $index() < ($parent.collections().length-1) -->
-                    <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'DOWN'); return false;}"
+                    <a data-bind="click: function() {moveInSynthesisRun($data, $parent, 'DOWN'); return false;}"
                        href="#"
-                       title="Move this tree down in the list"
+                       title="Move this collection down in the list"
                        class="icon-chevron-down">
                     </a>
                    <!-- /ko -->
+
+                   <!-- TODO: Offer similar refresh/status features as in collection editor?-->
                    <!-- ko if: $data['status'] == 'REMOVED' -->
                      <div class="tree-status-marker text-error">REMOVED</div>
                    <!-- /ko -->
                    <!-- ko if: $data['status'] == 'RENAMED' -->
                      <div class="tree-status-marker text-warning">RENAMED</div>
                    <!-- /ko -->
+
                   <!-- /ko --><!-- END of editing widgets -->
                 </td>
                 <td>
-                  <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;}"
+                  <button data-bind="click: function() {removeCollectionFromSynthRun($data, $parent); return false;}"
                           title="Remove this collection from the synthesis run"
                           class="pull-right btn btn-mini btn-danger row-controls-ghosted"
                           style="margin-left: 4px;">

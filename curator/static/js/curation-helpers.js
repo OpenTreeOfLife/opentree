@@ -3515,3 +3515,232 @@ function requestNewSynthRun() {
         }
     });
 }
+
+/* Adapt tree-ordering features (from tree collection editor) for ordering the
+ * collections in a proposed synth-run
+ */
+function moveInSynthesisRun( collection, synthRun, newPosition ) {
+    // Move this collection to an explicit position in the list
+    // N.B. We use zero-based counting here!
+    var collectionList = synthRun.collections;
+    var oldPosition = collectionList.indexOf( collection );
+    if (oldPosition === -1) {
+        // this should *never* happen
+        console.warn('No such collection in this synthesis run!');
+        return false;
+    }
+
+    // Find the new position using simple "stepper" widgets or an
+    // explicit/stated rank.
+    switch(newPosition) {
+        case 'UP':
+            newPosition = Math.max(0, oldPosition - 1);
+            break;
+
+        case 'DOWN':
+            newPosition = Math.min(collectionList.length, oldPosition + 1);
+            break;
+
+        default:
+            // stated rank should be an integer or int-as-string
+            if (isNaN(Number(collection['rank'])) || ($.trim(collection['rank']) == '')) {
+                // don't move if it's not a valid rank!
+                console.log(">> INVALID rank: "+ collection['rank'] +" <"+ typeof(collection['rank']) +">");
+                return false;
+            }
+            var movingRank = Number(collection['rank']);
+            // displace the first collection that has the same or higher stated rank
+            var movingCollection = collection;
+            var sameRankOrHigher = $.grep(collectionList, function(testCollection, i) {
+                if (testCollection === movingCollection) {
+                    return false;  // skip the moving collection!
+                }
+                // Does its stated 'rank' match its list position? N.B. that we're not
+                // looking for an exact match, just relative value vs. its neighbors
+                // in the collection list.
+                var statedRank = Number(testCollection['rank']);
+                if (isNaN(statedRank) || ($.trim(testCollection['rank']) == '')) {
+                    // treat invalid/missing values as zero, I guess
+                    statedRank = 0;
+                }
+                if (statedRank >= movingRank) {
+                    return true;
+                }
+                return false;
+            });
+            var nextCollection;
+            if (sameRankOrHigher.length === 0) {
+                // looks like we're moving to the end of the list
+                newPosition = collectionList.length - 1;
+            } else {
+                // displace the first matching collection
+                nextCollection = sameRankOrHigher[0];
+                newPosition = collectionList.indexOf( nextCollection );
+            }
+            break;
+    }
+
+    // just grab the moving item and move (or append) it
+    var grabbedItem = collectionList.splice( oldPosition, 1 )[0];
+    collectionList.splice(newPosition, 0, grabbedItem);
+
+    resetSynthRunRanking( synthRun );
+}
+
+function showSynthRunMoveUI( collection, itsElement, synthRun ) {
+    // show/add? a simple panel with Move, Move All, and Cancel buttons
+
+    // build the panel if it's not already hidden in the DOM
+    var $synthRunMoveUI = $('#synthrun-move-ui');
+    if ($synthRunMoveUI.length === 0) {
+        $synthRunMoveUI = $(
+          '<div id="synthrun-move-ui" class="synthrun-move-panel btn-group">'
+             +'<button class="btn">Move</button>'
+             +'<button class="btn" disabled="disabled">Move All</button>'
+             +'<button class="btn btn-danger">Cancel</button>'
+         +'</div>'
+        );
+    }
+
+    // check for integer value, and alert if not valid!
+    if (isNaN(Number(collection['rank'])) || ($.trim(collection['rank']) == '')) {
+        $(itsElement).css('color','#f33');
+        $synthRunMoveUI.hide();
+        return false;
+    } else {
+        $(itsElement).css('color', '');
+    }
+
+    // (re)bind buttons to this collection
+    $synthRunMoveUI.find('button:contains(Move)')
+                     .unbind('click').click(function() {
+                        var newPosition = (Number(collection.rank) - 1) || 0;
+                        moveInSynthesisRun( collection, synthRun, newPosition );
+                        resetSynthRunRanking( synthRun );
+                        $('#synthrun-move-ui').hide();
+                        return false;
+                      });
+    $synthRunMoveUI.find('button:contains(Move All)')
+                     .unbind('click').click(function() {
+                        // sort all collections by rank-as-number, in ascending order
+                        var collectionList = synthRun.collections;
+                        collectionList.sort(function(a,b) {
+                            // N.B. This works even if there's no such property.
+                            var aStatedRank = Number(a['rank']);
+                            var bStatedRank = Number(b['rank']);
+                            // if either field has an invalid rank value, freeze this pair
+                            if (isNaN(aStatedRank) || ($.trim(a['rank']) == '')
+                             || isNaN(bStatedRank) || ($.trim(b['rank']) == '')) {
+                                return 0;
+                            }
+                            if (aStatedRank === bStatedRank) {
+                                return 0;
+                            }
+                            // sort these from low to high
+                            return (aStatedRank > bStatedRank) ? 1 : -1;
+                        });
+                        resetSynthRunRanking( synthRun );
+                        $('#synthrun-move-ui').hide();
+                        return false;
+                      });
+    $synthRunMoveUI.find('button:contains(Cancel)')
+                     .unbind('click').click(function() {
+                        resetSynthRunRanking( synthRun );
+                        $('#synthrun-move-ui').hide();
+                        return false;
+                      });
+
+    // en/disable widgets in the move UI, based on how many pending moves
+    var highestRankSoFar = -1;
+    var collectionsOutOfPlace = $.grep(synthRun.collections, function(collection, i) {
+        // Does its stated 'rank' match its list position? N.B. that we're not
+        // looking for an exact match, just relative value vs. its neighbors
+        // in the collection list.
+        if (isNaN(Number(collection['rank'])) || ($.trim(collection['rank']) == '')) {
+            // weird values should prompt us to move+refresh
+            return true;
+        }
+        var statedRank = Number(collection['rank']);
+        if (statedRank < highestRankSoFar) {
+            return true;
+        }
+        highestRankSoFar = statedRank;
+        return false;
+    });
+    switch(collectionsOutOfPlace.length) {
+        case 0:
+            // don't show the UI, nothing to move!
+            $('#synthrun-move-ui').hide();
+            return false;
+        case 1:
+            $synthRunMoveUI.find('button:contains(Move)')
+                             .attr('disabled', null);
+            $synthRunMoveUI.find('button:contains(Move All)')
+                             .attr('disabled', 'disabled');
+            break;
+        default:
+            $synthRunMoveUI.find('button:contains(Move)')
+                             .attr('disabled', null);
+            $synthRunMoveUI.find('button:contains(Move All)')
+                             .attr('disabled', null);
+    }
+
+    // float this panel alongside the specified collection, IF it's not already there
+    if ($(itsElement).nextAll('#synthrun-move-ui:visible').length === 0) {
+        $synthRunMoveUI.insertAfter(itsElement);
+    }
+    $synthRunMoveUI.css('display','inline-block');
+}
+
+function ensureSynthRunRanking( synthRun ) {
+    // add a 'rank' property to any collection that doesn't have one; if any are
+    // missing, reset ALL values based on their "natural" order in the array
+    var missingRankProperties = false;
+    // check for any missing properties (if so, reset all)
+    $.each(synthRun.collections, function(i, collection) {
+        if (!('rank' in collection)) {
+            collection['rank'] = null;
+            missingRankProperties = true;
+        }
+    });
+    if (missingRankProperties) {
+        resetSynthRunRanking( synthRun );
+    }
+}
+function resetSynthRunRanking( synthRun ) {
+    // update existing 'rank' property to each of its collections, using
+    // their "natural" order in the array
+    $.each(synthRun.collections, function(i, collection) {
+        collection.rank = (i+1);
+    });
+}
+function stripSynthRunRanking( synthRun ) {
+    // remove explicit 'rank' properties before saving a collection, since the
+    // JSON array already has the current order
+    var collectionList = synthRun.collections;
+    $.each(collectionList, function(i, collection) {
+        delete collection['rank'];
+    });
+}
+function stripSynthRunStatusMarkers( synthRun ) {
+    // remove temporary 'status' properties before submitting a synthesis run,
+    // since these are only used to review after updating collections from phylesystem
+    var collectionList = synthRun.collections;
+    $.each(collectionList, function(i, collection) {
+        delete collection['status'];
+    });
+}
+
+async function removeCollectionFromSynthRun(collection, synthRun) {
+    if (await asyncConfirm('Are you sure you want to remove this collection from synthesis?')) {
+        var collectionList = synthRun.collections;
+        var oldPosition = collectionList.indexOf( collection );
+        if (oldPosition === -1) {
+            // this should *never* happen
+            console.warn('No such collection in this synthesis run!');
+            return false;
+        }
+        collectionList.splice(oldPosition, 1);
+        resetSynthRunRanking( synthRun );
+    }
+}
