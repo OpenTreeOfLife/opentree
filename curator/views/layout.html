@@ -1173,14 +1173,14 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     </a>
                    <!-- /ko -->
 
-                   <!-- ko if: $index() === ($parent.data.collections.length-1) -->
+                   <!-- ko if: $index() === ($parent.collections.length-1) -->
                     <a style="opacity: 0.5;"
                        href="#"
                        onclick="return false;"
                        class="icon-chevron-down">
                     </a>
                    <!-- /ko -->
-                   <!-- ko if: $index() < ($parent.data.collections.length-1) -->
+                   <!-- ko if: $index() < ($parent.collections.length-1) -->
                     <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'DOWN'); return false;}"
                        href="#"
                        title="Move this tree down in the list"
