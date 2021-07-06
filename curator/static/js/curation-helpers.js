@@ -3531,11 +3531,22 @@ function requestNewSynthRun() {
 /* Adapt tree-ordering features (from tree collection editor) for ordering the
  * collections in a proposed synth-run
  */
+function indexOfObservable( item, array ) {
+    // unwrap array items to find the target
+    var foundPosition = -1;
+    $.each(array, function(i, wrappedItem) {
+        if (ko.unwrap(wrappedItem) === item) {
+            foundPosition = i;
+            return false;  // skip the rest
+        }
+    }
+    return foundPosition;
+}
 function moveInSynthesisRun( collection, synthRun, newPosition ) {
     // Move this collection to an explicit position in the list
     // N.B. We use zero-based counting here!
     var collectionList = synthRun.collections();
-    var oldPosition = collectionList.indexOf( collection );
+    var oldPosition = indexOfObservable( collectionList, collection );
     if (oldPosition === -1) {
         // this should *never* happen
         console.warn('No such collection in this synthesis run!');
@@ -3587,7 +3598,7 @@ function moveInSynthesisRun( collection, synthRun, newPosition ) {
             } else {
                 // displace the first matching collection
                 nextCollection = sameRankOrHigher[0];
-                newPosition = collectionList.indexOf( nextCollection );
+                newPosition = indexOfObservable( collectionList, collection );
             }
             break;
     }
@@ -3746,7 +3757,7 @@ function stripSynthRunStatusMarkers( synthRun ) {
 async function removeCollectionFromSynthRun(collection, synthRun) {
     if (await asyncConfirm('Are you sure you want to remove this collection from synthesis?')) {
         var collectionList = synthRun.collections();
-        var oldPosition = collectionList.indexOf( collection );
+        var oldPosition = indexOfObservable( collectionList, collection );
         if (oldPosition === -1) {
             // this should *never* happen
             console.warn('No such collection in this synthesis run!');
