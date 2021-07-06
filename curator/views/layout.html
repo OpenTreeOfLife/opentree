@@ -1142,17 +1142,17 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             </tr>
           </thead>
           <tbody style="y-overflow: auto;"
-                 data-bind="foreach: { data: $data.collections, as: 'collectionID' }">
+                 data-bind="foreach: { data: $data.collections, as: 'collectionInfo' }">
             <tr>
                 <td>
                     <input type="text"
-                           data-bind="value: $data['rank'] || $index,
+                           data-bind="value: $data['rank'],
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: {
                         keyup: function() {showSynthRunMoveUI($data, $element, $parent)},
                         change: function() {showSynthRunMoveUI($data, $element, $parent)}
                                               }"
-                                   style="color: #999; width: 24px;
+                                   style="color: #999; width: 24px; margin-bottom: 0px;
                                           margin-left: -4px; text-align: right;"
                                    value=""
                      />&nbsp;
@@ -1205,10 +1205,10 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                           style="margin-left: 4px;">
                       <i class="icon-trash icon-white"></i>
                   </button>
-                  <a data-bind="text: collectionID,
-                                click: function() {fetchAndShowCollection( collectionID )},
-                                attr: {'href': '/curator/collection/view/'+ collectionID}"
-                                href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
+                  <a data-bind="text: collectionInfo.id,
+                                click: function() {fetchAndShowCollection( collectionInfo.id )},
+                                attr: {'href': '/curator/collection/view/'+ collectionInfo.id}"
+                                href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere; display: inline-block; margin-top: 4px;"><!--NAME--></a>
                   </a>
                 </td>
             </tr>

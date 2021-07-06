@@ -3407,7 +3407,12 @@ function searchForMatchingCollections( options ) {
                         fetchAndShowCollection( itsCollectionID, addCurrentTreeToCollection );
                         break;
                     case 'ADD_COLLECTION_TO_SYNTHESIS_RUN':
-                        synthRunSpec.collections.push( itsCollectionID );
+                        var collectionInfo = ko.observable({
+                            id: itsCollectionID,
+                            rank: null,
+                            status: null
+                        });
+                        synthRunSpec.collections.push( collectionInfo );
                         e.preventDefault();
                         break;
                 }
@@ -3453,8 +3458,15 @@ function requestNewSynthRun() {
         return false;
     }
     showModalScreen( "Requesting synthesis run...", {SHOW_BUSY_BAR:true});
+    var flattenedCollections = $.map(
+        ko.unwrap(synthRunSpec.collections),
+        function( collecytionInfo, i ) {
+            // ignore collection rank and status, keep just the IDs
+            return collectionInfo.id;
+        }
+    );
     var payload = {
-        'input_collection': ko.unwrap(synthRunSpec.collections),
+        'input_collection': flattenedCollections,
         'root_id': ko.unwrap(synthRunSpec.rootTaxonID),
         // more good stuff we should use in the API
         'description': ko.unwrap(synthRunSpec.description),
