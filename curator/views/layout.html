@@ -1133,7 +1133,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             </div>
         </form>
 
-      <div id="synth-run-ranked-list-holder" style="overflow: auto; max-height: 508px;">
+      <div id="synth-run-ranked-list-holder" style="clear: both; overflow: auto; max-height: 508px;">
         <table class="table table-condensed" style="margin-bottom: 2px; position: relative">
           <thead>
             <tr>
@@ -1156,11 +1156,8 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                                           margin-left: -4px; text-align: right;"
                                    value=""
                      />&nbsp;
+
                    <!-- SORTING widgets -->
-
-                   <strong data-bind="text: $index()"></strong>
-                   <em data-bind="text: $parent.collections.length-1"></em>
-
                    <!-- ko if: $index() === 0 -->
                     <a style="opacity: 0.5;"
                        href="#"
@@ -1176,14 +1173,14 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     </a>
                    <!-- /ko -->
 
-                   <!-- ko if: $index() === ($parent.collections.length-1) -->
+                   <!-- ko if: $index() === ($parent.collections().length-1) -->
                     <a style="opacity: 0.5;"
                        href="#"
                        onclick="return false;"
                        class="icon-chevron-down">
                     </a>
                    <!-- /ko -->
-                   <!-- ko if: $index() < ($parent.collections.length-1) -->
+                   <!-- ko if: $index() < ($parent.collections().length-1) -->
                     <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'DOWN'); return false;}"
                        href="#"
                        title="Move this tree down in the list"
