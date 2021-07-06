@@ -3534,7 +3534,7 @@ function requestNewSynthRun() {
 function moveInSynthesisRun( collection, synthRun, newPosition ) {
     // Move this collection to an explicit position in the list
     // N.B. We use zero-based counting here!
-    var collectionList = synthRun.collections;
+    var collectionList = synthRun.collections();
     var oldPosition = collectionList.indexOf( collection );
     if (oldPosition === -1) {
         // this should *never* happen
@@ -3635,7 +3635,7 @@ function showSynthRunMoveUI( collection, itsElement, synthRun ) {
     $synthRunMoveUI.find('button:contains(Move All)')
                      .unbind('click').click(function() {
                         // sort all collections by rank-as-number, in ascending order
-                        var collectionList = synthRun.collections;
+                        var collectionList = synthRun.collections();
                         collectionList.sort(function(a,b) {
                             // N.B. This works even if there's no such property.
                             var aStatedRank = Number(a['rank']);
@@ -3664,7 +3664,7 @@ function showSynthRunMoveUI( collection, itsElement, synthRun ) {
 
     // en/disable widgets in the move UI, based on how many pending moves
     var highestRankSoFar = -1;
-    var collectionsOutOfPlace = $.grep(synthRun.collections, function(collection, i) {
+    var collectionsOutOfPlace = $.grep(synthRun.collections(), function(collection, i) {
         // Does its stated 'rank' match its list position? N.B. that we're not
         // looking for an exact match, just relative value vs. its neighbors
         // in the collection list.
@@ -3709,7 +3709,7 @@ function ensureSynthRunRanking( synthRun ) {
     // missing, reset ALL values based on their "natural" order in the array
     var missingRankProperties = false;
     // check for any missing properties (if so, reset all)
-    $.each(synthRun.collections, function(i, collection) {
+    $.each(synthRun.collections(), function(i, collection) {
         if (!('rank' in collection)) {
             collection['rank'] = null;
             missingRankProperties = true;
@@ -3722,14 +3722,14 @@ function ensureSynthRunRanking( synthRun ) {
 function resetSynthRunRanking( synthRun ) {
     // update existing 'rank' property to each of its collections, using
     // their "natural" order in the array
-    $.each(synthRun.collections, function(i, collection) {
+    $.each(synthRun.collections(), function(i, collection) {
         collection.rank = (i+1);
     });
 }
 function stripSynthRunRanking( synthRun ) {
     // remove explicit 'rank' properties before saving a collection, since the
     // JSON array already has the current order
-    var collectionList = synthRun.collections;
+    var collectionList = synthRun.collections();
     $.each(collectionList, function(i, collection) {
         delete collection['rank'];
     });
@@ -3737,7 +3737,7 @@ function stripSynthRunRanking( synthRun ) {
 function stripSynthRunStatusMarkers( synthRun ) {
     // remove temporary 'status' properties before submitting a synthesis run,
     // since these are only used to review after updating collections from phylesystem
-    var collectionList = synthRun.collections;
+    var collectionList = synthRun.collections();
     $.each(collectionList, function(i, collection) {
         delete collection['status'];
     });
@@ -3745,7 +3745,7 @@ function stripSynthRunStatusMarkers( synthRun ) {
 
 async function removeCollectionFromSynthRun(collection, synthRun) {
     if (await asyncConfirm('Are you sure you want to remove this collection from synthesis?')) {
-        var collectionList = synthRun.collections;
+        var collectionList = synthRun.collections();
         var oldPosition = collectionList.indexOf( collection );
         if (oldPosition === -1) {
             // this should *never* happen
