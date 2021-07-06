@@ -3492,7 +3492,10 @@ function requestNewSynthRun() {
                 if (typeof(errorCallback) === 'function') errorCallback();
                 return;
             }
-            // if we're still here, use the success callback provided
+            /* if we're still here, use the success callback provided
+             * NB - We should expect a "run status" object as described here:
+             *   https://github.com/OpenTreeOfLife/ws_wrapper/blob/synth-on-demand/synth-on-demand.md#response-1
+             */
             var responseObj = $.parseJSON(jqXHR.responseText);
             debugger;
 /*

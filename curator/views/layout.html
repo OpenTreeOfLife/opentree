@@ -1133,26 +1133,85 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             </div>
         </form>
 
-        <table class="table table-condensed" style="margin-bottom: 0px;">
+      <div id="synth-run-ranked-list-holder" style="overflow: auto; max-height: 508px;">
+        <table class="table table-condensed" style="margin-bottom: 2px; position: relative">
           <thead>
             <tr>
-                <th>Collection name (click to preview)</th>
-                <th>Actions</th>
+                <th width="76">Rank</th>
+                <th width="*">Collection name (click to preview)</th>
             </tr>
           </thead>
           <tbody style="y-overflow: auto;"
                  data-bind="foreach: { data: $data.collections, as: 'collectionID' }">
             <tr>
                 <td>
-                    <a data-bind="text: collectionID,
-                                  click: function() {fetchAndShowCollection( collectionID )},
-                                  attr: {'href': '/curator/collection/view/'+ collectionID}">
+                    <input type="text"
+                           data-bind="value: $data['rank'],
+                                      valueUpdate: ['afterkeydown', 'input'],
+                                      event: {
+                        keyup: function() {showCollectionMoveUI($data, $element, $parent)},
+                        change: function() {showCollectionMoveUI($data, $element, $parent)}
+                                              }"
+                                   style="color: #999; width: 24px;
+                                          margin-left: -4px; text-align: right;"
+                                   value=""
+                     />&nbsp;
+                   <!-- SORTING widgets -->
+
+                   <!-- ko if: $index() === 0 -->
+                    <a style="opacity: 0.5;"
+                       href="#"
+                       onclick="return false;"
+                       class="icon-chevron-up">
                     </a>
+                   <!-- /ko -->
+                   <!-- ko if: $index() > 0 -->
+                    <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'UP'); return false;}"
+                       href="#"
+                       title="Move this tree up in the list"
+                       class="icon-chevron-up">
+                    </a>
+                   <!-- /ko -->
+
+                   <!-- ko if: $index() === ($parent.data.decisions.length-1) -->
+                    <a style="opacity: 0.5;"
+                       href="#"
+                       onclick="return false;"
+                       class="icon-chevron-down">
+                    </a>
+                   <!-- /ko -->
+                   <!-- ko if: $index() < ($parent.data.decisions.length-1) -->
+                    <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'DOWN'); return false;}"
+                       href="#"
+                       title="Move this tree down in the list"
+                       class="icon-chevron-down">
+                    </a>
+                   <!-- /ko -->
+                   <!-- ko if: $data['status'] == 'REMOVED' -->
+                     <div class="tree-status-marker text-error">REMOVED</div>
+                   <!-- /ko -->
+                   <!-- ko if: $data['status'] == 'RENAMED' -->
+                     <div class="tree-status-marker text-warning">RENAMED</div>
+                   <!-- /ko -->
+                  <!-- /ko --><!-- END of editing widgets -->
                 </td>
-                <td>&mdash;</td>
+                <td>
+                  <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;}"
+                          title="Remove this tree from the collection"
+                          class="pull-right btn btn-mini btn-danger row-controls-ghosted"
+                          style="margin-left: 4px;">
+                      <i class="icon-trash icon-white"></i>
+                  </button>
+                   <a data-bind="text: collectionID,
+                                 click: function() {fetchAndShowCollection( collectionID )},
+                                 attr: {'href': '/curator/collection/view/'+ collectionID}"
+                                 href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
+                   </a>
+                </td>
             </tr>
           </tbody>
         </table>
+      </div>
         <div class="empty-list-prompt" data-bind="visible: $data.collections().length === 0">
             There are no collections here yet. Use the buttons above to add a collection.
         </div>
