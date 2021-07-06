@@ -3545,7 +3545,8 @@ function indexOfObservable( array, item ) {
 function moveInSynthesisRun( collection, synthRun, newPosition ) {
     // Move this collection to an explicit position in the list
     // N.B. We use zero-based counting here!
-    var collectionList = synthRun.collections();
+    var collectionListObservable = synthRun.collections,
+        collectionList = collectionListObservable();
     var oldPosition = indexOfObservable( collectionList, collection );
     if (oldPosition === -1) {
         // this should *never* happen
@@ -3604,8 +3605,8 @@ function moveInSynthesisRun( collection, synthRun, newPosition ) {
     }
 
     // just grab the moving item and move (or append) it
-    var grabbedItem = collectionList.splice( oldPosition, 1 )[0];
-    collectionList.splice(newPosition, 0, grabbedItem);
+    var grabbedItem = collectionListObservable.splice( oldPosition, 1 )[0];
+    collectionListObservable.splice(newPosition, 0, grabbedItem);
 
     resetSynthRunRanking( synthRun );
 }
@@ -3646,8 +3647,9 @@ function showSynthRunMoveUI( collection, itsElement, synthRun ) {
     $synthRunMoveUI.find('button:contains(Move All)')
                      .unbind('click').click(function() {
                         // sort all collections by rank-as-number, in ascending order
-                        var collectionList = synthRun.collections();
-                        collectionList.sort(function(a,b) {
+                        var collectionListObservable = synthRun.collections,
+                            collectionList = collectionListObservable();
+                        collectionListObservable.sort(function(a,b) {
                             // N.B. This works even if there's no such property.
                             var aStatedRank = Number(a['rank']);
                             var bStatedRank = Number(b['rank']);
@@ -3756,14 +3758,15 @@ function stripSynthRunStatusMarkers( synthRun ) {
 
 async function removeCollectionFromSynthRun(collection, synthRun) {
     if (await asyncConfirm('Are you sure you want to remove this collection from synthesis?')) {
-        var collectionList = synthRun.collections();
+        var collectionListObservable = synthRun.collections,
+            collectionList = collectionListObservable();
         var oldPosition = indexOfObservable( collectionList, collection );
         if (oldPosition === -1) {
             // this should *never* happen
             console.warn('No such collection in this synthesis run!');
             return false;
         }
-        collectionList.splice(oldPosition, 1);
+        collectionListObservable.splice(oldPosition, 1);
         resetSynthRunRanking( synthRun );
     }
 }
