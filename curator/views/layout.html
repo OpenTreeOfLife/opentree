@@ -1158,6 +1158,9 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                      />&nbsp;
                    <!-- SORTING widgets -->
 
+                   <strong data-bind="text: $index()"></strong>
+                   <em data-bind="text: $parent.collections.length-1"></em>
+
                    <!-- ko if: $index() === 0 -->
                     <a style="opacity: 0.5;"
                        href="#"
