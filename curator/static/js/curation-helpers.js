@@ -3531,7 +3531,7 @@ function requestNewSynthRun() {
 /* Adapt tree-ordering features (from tree collection editor) for ordering the
  * collections in a proposed synth-run
  */
-function indexOfObservable( item, array ) {
+function indexOfObservable( array, item ) {
     // unwrap array items to find the target
     var foundPosition = -1;
     $.each(array, function(i, wrappedItem) {
