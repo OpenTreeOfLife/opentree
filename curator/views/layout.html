@@ -1146,7 +1146,7 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
             <tr>
                 <td>
                     <input type="text"
-                           data-bind="value: $data['rank'],
+                           data-bind="value: $data['rank'] || $index,
                                       valueUpdate: ['afterkeydown', 'input'],
                                       event: {
                         keyup: function() {showCollectionMoveUI($data, $element, $parent)},
@@ -1173,14 +1173,14 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                     </a>
                    <!-- /ko -->
 
-                   <!-- ko if: $index() === ($parent.data.decisions.length-1) -->
+                   <!-- ko if: $index() === ($parent.data.collections.length-1) -->
                     <a style="opacity: 0.5;"
                        href="#"
                        onclick="return false;"
                        class="icon-chevron-down">
                     </a>
                    <!-- /ko -->
-                   <!-- ko if: $index() < ($parent.data.decisions.length-1) -->
+                   <!-- ko if: $index() < ($parent.data.collections.length-1) -->
                     <a data-bind="click: function() {moveInTreeCollection($data, $parent, 'DOWN'); return false;}"
                        href="#"
                        title="Move this tree down in the list"
@@ -1197,16 +1197,16 @@ from applications.opentree.modules.opentreewebapputil import get_user_login, get
                 </td>
                 <td>
                   <button data-bind="click: function() {removeTreeFromCollection($data, $parent); return false;}"
-                          title="Remove this tree from the collection"
+                          title="Remove this collection from the synthesis run"
                           class="pull-right btn btn-mini btn-danger row-controls-ghosted"
                           style="margin-left: 4px;">
                       <i class="icon-trash icon-white"></i>
                   </button>
-                   <a data-bind="text: collectionID,
-                                 click: function() {fetchAndShowCollection( collectionID )},
-                                 attr: {'href': '/curator/collection/view/'+ collectionID}"
-                                 href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
-                   </a>
+                  <a data-bind="text: collectionID,
+                                click: function() {fetchAndShowCollection( collectionID )},
+                                attr: {'href': '/curator/collection/view/'+ collectionID}"
+                                href="#" target="_blank" style="hyphens: auto; overflow-wrap: anywhere;"><!--NAME--></a>
+                  </a>
                 </td>
             </tr>
           </tbody>
