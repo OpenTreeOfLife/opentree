@@ -3723,6 +3723,7 @@ function ensureSynthRunRanking( synthRun ) {
     var missingRankProperties = false;
     // check for any missing properties (if so, reset all)
     $.each(synthRun.collections(), function(i, collection) {
+        collection = ko.unwrap( collection );
         if (!('rank' in collection)) {
             collection['rank'] = null;
             missingRankProperties = true;
@@ -3736,6 +3737,7 @@ function resetSynthRunRanking( synthRun ) {
     // update existing 'rank' property to each of its collections, using
     // their "natural" order in the array
     $.each(synthRun.collections(), function(i, collection) {
+        collection = ko.unwrap( collection );
         collection.rank = (i+1);
     });
 }
@@ -3744,6 +3746,7 @@ function stripSynthRunRanking( synthRun ) {
     // JSON array already has the current order
     var collectionList = synthRun.collections();
     $.each(collectionList, function(i, collection) {
+        collection = ko.unwrap( collection );
         delete collection['rank'];
     });
 }
@@ -3752,6 +3755,7 @@ function stripSynthRunStatusMarkers( synthRun ) {
     // since these are only used to review after updating collections from phylesystem
     var collectionList = synthRun.collections();
     $.each(collectionList, function(i, collection) {
+        collection = ko.unwrap( collection );
         delete collection['status'];
     });
 }
