@@ -3658,6 +3658,8 @@ function showSynthRunMoveUI( collection, itsElement, synthRun ) {
                             collectionList = collectionListObservable();
                         collectionListObservable.sort(function(a,b) {
                             // N.B. This works even if there's no such property.
+                            a = ko.unwrap(a);
+                            b = ko.unwrap(b);
                             var aStatedRank = Number(a['rank']);
                             var bStatedRank = Number(b['rank']);
                             // if either field has an invalid rank value, freeze this pair
