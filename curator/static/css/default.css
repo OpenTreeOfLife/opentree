@@ -875,7 +875,8 @@ tr.after-shims th {
   margin-bottom: 12px;
 }
 
-.collection-move-panel {
+.collection-move-panel,
+.synthrun-move-panel {
     position: absolute;
     margin-left: 2px;
     z-index: 1;
@@ -885,7 +886,8 @@ tr.after-shims th {
     -moz-box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
     box-shadow: 1px 2px 4px rgba(0, 0, 0, 0.5);
 }
-.collection-move-panel button {
+.collection-move-panel button,
+.synthrun-move-panel button {
     opacity: 1.0;
 }
 
