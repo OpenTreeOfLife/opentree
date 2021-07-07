@@ -3581,6 +3581,7 @@ function moveInSynthesisRun( collection, synthRun, newPosition ) {
             // displace the first collection that has the same or higher stated rank
             var movingCollection = collection;
             var sameRankOrHigher = $.grep(collectionList, function(testCollection, i) {
+                testCollection = ko.unwrap(testCollection);
                 if (testCollection === movingCollection) {
                     return false;  // skip the moving collection!
                 }
