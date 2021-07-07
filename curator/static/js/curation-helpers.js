@@ -3605,7 +3605,8 @@ function moveInSynthesisRun( collection, synthRun, newPosition ) {
             } else {
                 // displace the first matching collection
                 nextCollection = sameRankOrHigher[0];
-                newPosition = indexOfObservable( collectionList, collection );
+                nextCollection = ko.unwrap(nextCollection);
+                newPosition = indexOfObservable( collectionList, nextCollection );
             }
             break;
     }
