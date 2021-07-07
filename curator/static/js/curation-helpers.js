@@ -3416,6 +3416,8 @@ function searchForMatchingCollections( options ) {
                             status: null
                         });
                         synthRunSpec.collections.push( collectionInfo );
+                        // (re)assert sensible rankings
+                        resetSynthRunRanking( synthRunSpec );
                         e.preventDefault();
                         break;
                 }
