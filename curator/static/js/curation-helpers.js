@@ -3728,10 +3728,11 @@ function ensureSynthRunRanking( synthRun ) {
     var missingRankProperties = false;
     // check for any missing properties (if so, reset all)
     $.each(synthRun.collections(), function(i, collection) {
-        collection = ko.unwrap( collection );
+        collection = ko.unwrap( observable );
         if (!('rank' in collection)) {
             collection['rank'] = null;
             missingRankProperties = true;
+            observable.notifySubscribers();
         }
     });
     if (missingRankProperties) {
@@ -3741,9 +3742,10 @@ function ensureSynthRunRanking( synthRun ) {
 function resetSynthRunRanking( synthRun ) {
     // update existing 'rank' property to each of its collections, using
     // their "natural" order in the array
-    $.each(synthRun.collections(), function(i, collection) {
-        collection = ko.unwrap( collection );
+    $.each(synthRun.collections(), function(i, observable) {
+        collection = ko.unwrap( observable );
         collection.rank = (i+1);
+        observable.notifySubscribers();
     });
 }
 function stripSynthRunRanking( synthRun ) {
