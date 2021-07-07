@@ -3465,7 +3465,7 @@ function requestNewSynthRun() {
     showModalScreen( "Requesting synthesis run...", {SHOW_BUSY_BAR:true});
     var flattenedCollections = $.map(
         ko.unwrap(synthRunSpec.collections),
-        function( collecytionInfo, i ) {
+        function( collectionInfo, i ) {
             // ignore collection rank and status, keep just the IDs
             return collectionInfo.id;
         }
