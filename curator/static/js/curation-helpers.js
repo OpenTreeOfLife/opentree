@@ -2895,6 +2895,9 @@ function showSynthesisRunPopup(options) {
     synthRunSpec.collections.subscribe(validateSynthRunSpec);
     // TODO: add more subscriptions here?
 
+    // add any missing/empty 'rank' properties
+    ensureSynthRunRanking();
+
     // show a shared popup (from shared page template)
     var $synthRunPopup = $('#define-synth-run-popup');
     // stash the pristine markup before binding our UI for the first time
