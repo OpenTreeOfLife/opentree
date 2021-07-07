@@ -2896,7 +2896,7 @@ function showSynthesisRunPopup(options) {
     // TODO: add more subscriptions here?
 
     // add any missing/empty 'rank' properties
-    ensureSynthRunRanking();
+    ensureSynthRunRanking(synthRunSpec);
 
     // show a shared popup (from shared page template)
     var $synthRunPopup = $('#define-synth-run-popup');
