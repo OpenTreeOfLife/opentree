@@ -27,12 +27,17 @@
     "acorn": "^6.4.1",
     "blob-polyfill": "1.x",
     "file-saver": "1.3.x",
-    "jszip": "3.7.0"
+    "jszip": "^3.7.1"
   },
   "devDependencies": {
     "browserify": "^16.5.1",
     "browserify-versionify": "^1.0.4",
     "watchify": "^4.0.0"
+  },
+  "engineStrict": false,
+  "engines": {
+    "node": "0.12.7",
+    "npm": "2.11.3"
   },
   "preferGlobal": false,
   "private": true,
