@@ -13,9 +13,10 @@ then completely replace all related files in master. For example, if changes
 were made and tested in `development` branch, commit them there, then...
 ```sh
  $ git checkout master
- $ git checkout development curator/statis/js/tnrs/package.json
- $ git checkout development curator/statis/js/tnrs/package-lock.json
- $ git checkout development curator/statis/js/tnrs-bundle.js
+ $ cd curator/statis/js/tnrs
+ $ git checkout development package.json
+ $ git checkout development package-lock.json
+ $ git checkout development ../tnrs-bundle.js
  $ git commit -a
 ```
 Further explanation of the git steps here:
